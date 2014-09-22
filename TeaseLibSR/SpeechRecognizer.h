@@ -1,0 +1,51 @@
+#pragma once
+
+#include <string>
+#include <thread>
+#include <vector>
+
+#include <atlbase.h>
+
+#include <sapi.h>
+#include <sperror.h>
+
+#include <NativeObject.h>
+#include <COMUser.h>
+
+
+class SpeechRecognizer : public NativeObject, protected COMUser
+{
+public:
+	typedef std::vector<std::wstring> Choices;
+
+	SpeechRecognizer(JNIEnv *env, jobject jthis, jobject jevents, wchar_t* recognizerAttributes);
+	virtual ~SpeechRecognizer();
+	void speechRecognitionEventHandlerThread(JNIEnv* threadEnv);
+
+	void setChoices(const Choices& choices);
+	void setMaxAlternates(const int maxAlternates);
+	void startRecognition();
+	void stopRecognition();
+
+private:
+	std::thread speechRecognitionThread;
+	HANDLE hExitEvent;
+	HRESULT recognizerStatus;
+
+	void speechRecognitionEventHandlerLoop(HANDLE* rghEvents);
+	HRESULT speechRecognitionInitContext();
+	HRESULT speechRecognitionInitAudio();
+	HRESULT speechRecognitionInitInterests();
+
+	std::wstring recognizerAttributes;
+
+	CComPtr<ISpRecognizer> cpRecognizer;
+	CComPtr<ISpRecoContext> cpContext;
+	CComPtr<ISpAudio> cpAudioIn;
+	CComPtr<ISpRecoGrammar> cpGrammar;
+
+	jobject gjthis;
+	jobject gjevents;
+	JNIEnv* threadEnv;
+};
+

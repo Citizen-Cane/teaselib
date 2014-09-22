@@ -1,0 +1,3 @@
+LIBRARY   TeaseLibFramework
+EXPORTS 
+Java_teaselib_util_jni_NativeObject_disposeNativeObject

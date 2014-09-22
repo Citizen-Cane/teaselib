@@ -55,17 +55,27 @@ public class RenderMessage extends MediaRendererThread implements MediaRenderer,
 				// It's rude to interrupt mistress while she speaks,
 				// so let's just render speech synchronous for now,
 				// and decide about async speech later
-				if (speechSynthesizer.isReady()) {
+				if (speechSynthesizer == null)
+				{
+					// Text is not meant to be spoken, just to be displayed -> don't wait
+				}
+				else if (!speechSynthesizer.isReady()) {
+					// Unable to speak, just display the estimated duration
+					long duration = TextToSpeech.getEstimatedSpeechDuration(paragraph);
+					synchronized (completedAll) {
+						completedAll.wait(duration);
+					}
+				} else {
+					// Fully able to speak, wait until finished speaking
 					try {
 						speechSynthesizer.speak(paragraph);
 					} catch (Throwable t) {
 						TeaseLib.log(this, t);
 						long duration = TextToSpeech.getEstimatedSpeechDuration(paragraph);
-						wait(duration);
+						synchronized (completedAll) {
+							completedAll.wait(duration);
+						}
 					}
-				} else {
-					long duration = TextToSpeech.getEstimatedSpeechDuration(paragraph);
-					wait(duration);
 				}
 				if (endThread) {
 					break;

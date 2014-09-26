@@ -3,14 +3,12 @@ package teaselib.text;
 import java.util.Collection;
 import java.util.Iterator;
 
+import teaselib.ScriptInterruptedException;
 import teaselib.TeaseLib;
 import teaselib.image.ImageIterator;
 import teaselib.texttospeech.TextToSpeech;
 import teaselib.userinterface.MediaRenderer;
 import teaselib.userinterface.MediaRendererThread;
-
-// TODO Wait until the image has been displayed, or else
-// the text is - for a short moment after displaying no image - displayed at the wrong position in SexScripts
 
 public class RenderMessage extends MediaRendererThread implements MediaRenderer,
 		MediaRenderer.Threaded {
@@ -63,7 +61,7 @@ public class RenderMessage extends MediaRendererThread implements MediaRenderer,
 					// Unable to speak, just display the estimated duration
 					long duration = TextToSpeech.getEstimatedSpeechDuration(paragraph);
 					synchronized (completedAll) {
-						completedAll.wait(duration);
+						teaseLib.host.sleep(duration);
 					}
 				} else {
 					// Fully able to speak, wait until finished speaking
@@ -73,7 +71,7 @@ public class RenderMessage extends MediaRendererThread implements MediaRenderer,
 						TeaseLib.log(this, t);
 						long duration = TextToSpeech.getEstimatedSpeechDuration(paragraph);
 						synchronized (completedAll) {
-							completedAll.wait(duration);
+							teaseLib.host.sleep(duration);
 						}
 					}
 				}
@@ -87,12 +85,12 @@ public class RenderMessage extends MediaRendererThread implements MediaRenderer,
 						completedMandatoryParts.notifyAll();
 					}
 					synchronized (completedAll) {
-						completedAll.wait(DELAYATENDOFTEXT);
+						teaseLib.host.sleep(DELAYATENDOFTEXT);
 					}
 					endThread = true;
 				} else {
 					synchronized (completedAll) {
-						completedAll.wait(DELAYBETWEENPARAGRAPHS);
+						teaseLib.host.sleep(DELAYBETWEENPARAGRAPHS);
 					}
 				}
 				ending = paragraph.charAt(paragraph.length() - 1);
@@ -109,8 +107,8 @@ public class RenderMessage extends MediaRendererThread implements MediaRenderer,
 					break;
 				}
 			}
-		} catch(InterruptedException e){
-			// Ignore, this is expected
+		} catch(ScriptInterruptedException e){
+			// Expected
 		} catch (Throwable t) {
 			TeaseLib.log(this, t);
 		}

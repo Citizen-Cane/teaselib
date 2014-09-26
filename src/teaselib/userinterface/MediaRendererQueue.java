@@ -2,6 +2,7 @@ package teaselib.userinterface;
 
 import java.util.HashMap;
 
+import teaselib.ScriptInterruptedException;
 import teaselib.TeaseLib;
 
 public class MediaRendererQueue {
@@ -19,19 +20,27 @@ public class MediaRendererQueue {
 	 */
 	public void start(MediaRenderer mediaMenderer, TeaseLib teaseLib)
 	{
+		if (Thread.currentThread().isInterrupted())
+		{
+			throw new ScriptInterruptedException();
+		}
 		if (mediaMenderer instanceof MediaRenderer.Threaded)
 		{
+			// Before a media renderer can render, all predecessors must complete their work
 			Class<?> key = mediaMenderer.getClass();
-			if (threadedMediaRenderers.containsKey(key))
+			synchronized(this)
 			{
-				threadedMediaRenderers.get(key).completeAll();
+				if (threadedMediaRenderers.containsKey(key))
+				{
+					threadedMediaRenderers.get(key).completeAll();
+				}
+				threadedMediaRenderers.put(mediaMenderer.getClass(), (MediaRenderer.Threaded) mediaMenderer);
 			}
-			threadedMediaRenderers.put(mediaMenderer.getClass(), (MediaRenderer.Threaded) mediaMenderer);
 		}
 		mediaMenderer.render(teaseLib);
 	}
 
-	public void completeAllMandatories()
+	public synchronized void completeAllMandatories()
 	{
 		for(MediaRenderer.Threaded renderer : threadedMediaRenderers.values())
 		{
@@ -39,14 +48,14 @@ public class MediaRendererQueue {
 		}
 	}
 
-	public void completeAll()
+	public synchronized void completeAll()
 	{
 		for(MediaRenderer.Threaded renderer : threadedMediaRenderers.values())
 		{
 			renderer.completeAll();
 		}
 	}
-	public void endAll()
+	public synchronized void endAll()
 	{
 		for(MediaRenderer.Threaded renderer : threadedMediaRenderers.values())
 		{

@@ -1,5 +1,6 @@
 package teaselib.text;
 
+import teaselib.ScriptInterruptedException;
 import teaselib.TeaseLib;
 import teaselib.userinterface.MediaRendererThread;
 
@@ -22,7 +23,11 @@ public class RenderDelay extends MediaRendererThread {
 		TeaseLib.log(getClass().getSimpleName() + " " + toString() + ": " + actual + " seconds");
 		synchronized(completedMandatoryParts)
 		{
-			completedMandatoryParts.wait(actual * 1000);
+			try {
+				teaseLib.host.sleep(actual * 1000);
+			} catch (ScriptInterruptedException e) {
+				// Expected
+			}
 		}
 	}
 

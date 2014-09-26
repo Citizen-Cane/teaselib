@@ -1,7 +1,13 @@
 package teaselib;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.FutureTask;
 import java.util.concurrent.locks.Lock;
 
 import teaselib.audio.RenderSound;
@@ -48,16 +54,9 @@ public abstract class TeaseScript extends TeaseScriptBase {
 			for (Voice voice : voices.values()) {
 				TeaseLib.log(voice.toString());
 			}
-			// TODO Set voice as defined in script
+			// TODO Set voice as defined in script or config
 			speechSynthesizer.setVoice(null);
 		}
-	}
-
-	public TeaseScript(TeaseScript rvalue)
-	{
-		super(rvalue.teaseLib);
-		this.speechSynthesizer = rvalue.speechSynthesizer;
-		this.speechRecognizer = rvalue.speechRecognizer;
 	}
 
 	/**
@@ -139,7 +138,7 @@ public abstract class TeaseScript extends TeaseScriptBase {
 		RenderDelay renderDelay = new RenderDelay(seconds);
 		renderQueue.start(renderDelay, teaseLib);
 	}
-	
+
 	/**
 	 * Displays the requested choices in the user interface after the mandatory
 	 * parts of all renderers have been completed. This means especially that
@@ -163,36 +162,81 @@ public abstract class TeaseScript extends TeaseScriptBase {
 	 */
 	public int choose(final List<String> choices, int timeout) {
 		completeMandatory();
-		return showChoices(choices, timeout);
+		return showChoices(choices, timeout, null);
 	}
 
-	public int choose(List<String> choices, int timeout, Runnable scriptFunction)
-	{
-		// To display buttons and to start scriptFunction at the same time, completeAll() has to be called
+	/**
+	 * @param choices
+	 * @param timeout
+	 *            The timeout for the button set in seconds, or
+	 *            TeaseScript.NoTimeout if no timeout is desired
+	 * @param scriptFunction
+	 * @return
+	 */
+	public int choose(List<String> choices, int timeout, Runnable scriptFunction) {
+		// To display buttons and to start scriptFunction at the same time,
+		// completeAll() has to be called
 		// in advance in order to finish all previous render commands,
-		// TODO this breaks PCM "Stop" interaction, as that class misuses this to immediately display stop button
 		completeAll();
-		Thread scriptThread = new Thread(scriptFunction);
-		scriptThread.start();
-		int choice = showChoices(choices, timeout);
-		if (choice == Timeout)
-		{
+		int choice = showChoices(choices, timeout, scriptFunction);
+		if (choice == Timeout) {
 			renderQueue.completeAll();
-		}
-		else
-		{
+		} else {
 			renderQueue.endAll();
-		}
-		try {
-			scriptThread.join();
-		} catch (InterruptedException e) {
-			TeaseLib.log(this, e);
 		}
 		return choice;
 	}
 
-	public int showChoices(final List<String> choices, int timeout) {
+	public int showChoices(final List<String> choices, int timeout,
+			Runnable scriptFunction) {
+		// arguments check
+		for (String choice : choices) {
+			if (choice == null) {
+				throw new IllegalArgumentException("Choice may not be null");
+			}
+		}
 		TeaseLib.log("choose: " + choices.toString());
+		// Timeout
+		FutureTask<Integer> timeoutTask = timeout == TeaseScript.NoTimeout ? null
+				: new FutureTask<>(new Callable<Integer>() {
+					@Override
+					public Integer call() throws Exception {
+						try {
+							TeaseScript.this.teaseLib.host
+							 .sleep(timeout * 1000);
+						} catch (ScriptInterruptedException e) {
+							return null;
+						} catch (Exception e) {
+							TeaseLib.log(this, e);
+						}
+						List<Delegate> clickables = teaseLib.host.getClickableChoices(choices);
+						if (!clickables.isEmpty())
+						{
+							clickables.get(0).run();
+						}
+						return new Integer(TeaseScript.Timeout);
+					}
+				});
+		// Script closure
+		FutureTask<Integer> scriptTask = scriptFunction == null ? null
+				: new FutureTask<>(new Callable<Integer>() {
+					@Override
+					public Integer call() throws Exception {
+						try {
+							scriptFunction.run();
+						} catch (ScriptInterruptedException e) {
+							return null;
+						}
+						List<Delegate> clickables = teaseLib.host.getClickableChoices(choices);
+						if (!clickables.isEmpty())
+						{
+							clickables.get(0).run();
+						}
+						return new Integer(TeaseScript.Timeout);
+					}
+				});
+		// Speech recognition
+		List<Integer> srChoice = new ArrayList<>(1);
 		Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs> speechRecognizedEvent = new Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs>() {
 			@Override
 			public void run(SpeechRecognitionImplementation sender,
@@ -203,16 +247,16 @@ public abstract class TeaseScript extends TeaseScriptBase {
 					// Click the button
 					SpeechRecognitionResult speechRecognitionResult = eventArgs.result[0];
 					if (speechRecognitionResult.isChoice(choices)) {
+						// This assigns the result even if the buttons have unrealized
 						int choice = speechRecognitionResult.index;
+						srChoice.add(choice);
 						try {
 							Delegate delegate = uiElements.get(choice);
-							if (delegate != null)
-							{
+							if (delegate != null) {
 								delegate.run();
-							}
-							else
-							{
-								TeaseLib.log("Button gone for choice " + choice + ": " + speechRecognitionResult.text);
+							} else {
+								TeaseLib.log("Button gone for choice " + choice
+										+ ": " + speechRecognitionResult.text);
 							}
 						} catch (Throwable t) {
 							TeaseLib.log(this, t);
@@ -223,29 +267,126 @@ public abstract class TeaseScript extends TeaseScriptBase {
 					// recognition
 				}
 			}
-		}; 
+		};
 		speechRecognizer.events.recognitionCompleted.add(speechRecognizedEvent);
 		speechRecognizer.startRecognition(choices);
-		// TODO Timeout doesn't wait for speech recognition in progress
-		int choice = teaseLib.host.choose(choices, timeout);
-		final Lock speechRecognitionInProgress = SpeechRecognition.SpeechRecognitionInProgress;
-		synchronized(speechRecognitionInProgress)
+		int choice;
+		try
 		{
-			if (speechRecognitionInProgress.tryLock())
+			int tasks = (timeoutTask != null ? 1 : 0) + (scriptTask != null ? 1 : 0);
+			if (tasks > 0)
 			{
-				speechRecognitionInProgress.unlock();
+				ExecutorService executor = Executors.newFixedThreadPool(tasks);
+				if (timeoutTask != null)
+				{
+					executor.execute(timeoutTask);
+				}
+				if (scriptTask != null)
+				{
+					executor.execute(scriptTask);
+					// TODO Catch errors in script thread
+				}
 			}
-			else
+			choice = teaseLib.host.choose(choices, NoTimeout);
+			// Cancel
+			if (timeoutTask != null)
 			{
-				try {
-					speechRecognitionInProgress.wait();
-				} catch (InterruptedException e) {
-					// Ignored
+				timeoutTask.cancel(true);
+			}
+			if (scriptTask != null)
+			{
+				scriptTask.cancel(true);
+			}
+			// Wait to finish recognition
+			final Lock speechRecognitionInProgress = SpeechRecognition.SpeechRecognitionInProgress;
+			synchronized (speechRecognitionInProgress) {
+				if (speechRecognitionInProgress.tryLock()) {
+					speechRecognitionInProgress.unlock();
+				} else {
+					try {
+						speechRecognitionInProgress.wait();
+					} catch (InterruptedException e) {
+						// Ignored
+					}
 				}
 			}
 		}
-		speechRecognizer.stopRecognition();
-		speechRecognizer.events.recognitionCompleted.remove(speechRecognizedEvent);
+		finally
+		{
+			speechRecognizer.stopRecognition();
+			speechRecognizer.events.recognitionCompleted
+			.remove(speechRecognizedEvent);
+		}
+		// Assign result from speech recognition, tasks or button click
+		if  (!srChoice.isEmpty())
+		{
+			choice = srChoice.get(0);
+		}
+		else
+		{
+			Integer r = null;
+			// Timeout
+			if (timeoutTask != null)
+			{
+				if (!timeoutTask.isCancelled())
+				{
+					try {
+						r = timeoutTask.get();
+					} catch (InterruptedException e) {
+						TeaseLib.log(this, e);
+					} catch (ExecutionException e) {
+						Throwable cause = e.getCause();
+						if (cause != null)
+						{
+							// Forward error from closure to main thread
+							throw new RuntimeException(cause);
+						}
+						else
+						{
+							TeaseLib.log(this, e);
+						}
+					}
+				}
+			}
+			if (r != null)
+			{
+				choice = r;
+			}
+			else
+			{
+				// Script function completed?
+				if (scriptTask != null)
+				{
+					if (!scriptTask.isCancelled())
+					{
+						try {
+							r = scriptTask.get();
+						} catch (InterruptedException e) {
+							TeaseLib.log(this, e);
+						} catch (ExecutionException e) {
+							Throwable cause = e.getCause();
+							if (cause != null)
+							{
+								// Forward error from closure to main thread
+								throw new RuntimeException(cause);
+							}
+							else
+							{
+								TeaseLib.log(this, e);
+							}
+						}
+					}
+				}
+				if (r != null)
+				{
+					choice = r;
+				}
+				else
+				{
+					// User clicked button, choice already assigned
+				}
+			}
+		}
 		renderQueue.endAll();
 		return choice;
 	}

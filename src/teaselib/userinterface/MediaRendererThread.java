@@ -1,5 +1,6 @@
 package teaselib.userinterface;
 
+import teaselib.ScriptInterruptedException;
 import teaselib.TeaseLib;
 
 public abstract class MediaRendererThread implements Runnable, MediaRenderer,
@@ -60,7 +61,7 @@ public abstract class MediaRendererThread implements Runnable, MediaRenderer,
 				try {
 					completedMandatoryParts.wait();
 				} catch (InterruptedException e) {
-					TeaseLib.logDetail(this, e);
+					// Expected
 				} catch (IllegalMonitorStateException e) {
 					TeaseLib.logDetail(this, e);
 				}
@@ -73,29 +74,24 @@ public abstract class MediaRendererThread implements Runnable, MediaRenderer,
 
 	public void completeAll() {
 		if (renderThread == null) return;
-		if (!endThread)
+		try
 		{
-			synchronized (completedAll) {
+			while (renderThread.isAlive()) {
 				try {
-					completedAll.wait();
+					renderThread.join();
+					TeaseLib.logDetail(getClass().getSimpleName()
+							+ " completed all after "
+							+ String.format("%.2f", getElapsedSeconds()));
 				} catch (InterruptedException e) {
-					TeaseLib.logDetail(this, e);
-				} catch (IllegalMonitorStateException e) {
-					TeaseLib.logDetail(this, e);
+					end();
+					throw new ScriptInterruptedException();
 				}
 			}
 		}
-		while (renderThread.isAlive()) {
-			try {
-				renderThread.join();
-			} catch (InterruptedException e) {
-				TeaseLib.logDetail(this, e);
-			}
+		finally
+		{
+			renderThread = null;
 		}
-		renderThread = null;
-		TeaseLib.logDetail(getClass().getSimpleName()
-				+ " completed all after "
-				+ String.format("%.2f", getElapsedSeconds()));
 	}
 
 	private double getElapsedSeconds() {
@@ -109,6 +105,23 @@ public abstract class MediaRendererThread implements Runnable, MediaRenderer,
 		renderThread.interrupt();
 		TeaseLib.logDetail(getClass().getSimpleName() + " interrupted after "
 				+ String.format("%.2f", getElapsedSeconds()));
-		completeAll();
+		// Almost like complete, but avoid recursion
+		try
+		{
+			while (renderThread.isAlive()) {
+				try {
+					renderThread.join();
+				} catch (InterruptedException e) {
+					throw new ScriptInterruptedException();
+				}
+			}
+		}
+		finally
+		{
+			renderThread = null;
+			TeaseLib.logDetail(getClass().getSimpleName()
+					+ " ended after "
+					+ String.format("%.2f", getElapsedSeconds()));
+		}
 	}
 }

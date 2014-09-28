@@ -9,52 +9,58 @@ public class Message {
 
 	private final Vector<String> message;
 
-	public Message()
-	{
+	public Message() {
 		this.message = new Vector<String>();
 	}
 
-	public Message(String message)
-	{
-		this.message = new Vector<>(1);
-		this.message.add(message);
+	/**
+	 * @param message
+	 *            The message to render, or null to display no message
+	 */
+	public Message(String message) {
+		if (message != null) {
+			this.message = new Vector<>(1);
+			this.message.add(message);
+		} else {
+			this.message = new Vector<>();
+		}
 	}
 
-	public Message(Vector<String> message)
-	{
-		this.message = message;
+	/**
+	 * @param message
+	 *            The message to render, or null or an empty vector to display
+	 *            no message
+	 */
+	public Message(Vector<String> message) {
+		if (message == null) {
+			this.message = new Vector<>();
+		} else {
+			this.message = message;
+		}
 	}
-	
-	public void add(String text)
-	{
-		if (text == null) throw new IllegalArgumentException();
+
+	public void add(String text) {
+		if (text == null)
+			throw new IllegalArgumentException();
 		message.add(text);
 	}
 
-	public String toString()
-	{
-		final int s = message.size();
-		if (s == 0)
-		{
+	public String toString() {
+		if (message == null) {
 			return "";
-		}
-		else
-		{
+		} else if (message.isEmpty()) {
+			return "";
+		} else {
+			final int s = message.size();
 			StringBuilder format = new StringBuilder(message.elementAt(0));
-			for(int i = 1; i < s; i++)
-			{
-				String last = message.elementAt(i - 1);
-				boolean newLine =
-						last.endsWith(",") ||
-						last.endsWith(".") ||
-						last.endsWith("!") ||
-						last.endsWith("?");
-				if (newLine)
-				{
+			for (int i = 1; i < s; i++) {
+				String previous = message.elementAt(i - 1);
+				boolean newLine = previous.endsWith(",")
+						|| previous.endsWith(".") || previous.endsWith("!")
+						|| previous.endsWith("?");
+				if (newLine) {
 					format.append("\n\n");
-				}
-				else
-				{
+				} else {
 					format.append(" ");
 				}
 				String line = message.elementAt(i);
@@ -64,34 +70,29 @@ public class Message {
 		}
 	}
 
-	public List<String> getParagraphs()
-	{
+	public List<String> getParagraphs() {
 		List<String> paragraphs = new ArrayList<>();
-		StringBuilder paragraph = null;
-		for(Iterator<String> it = message.iterator(); it.hasNext() ; )
-		{
-			String line = it.next();
-			if (paragraph == null)
-			{
-				paragraph = new StringBuilder(); 
-			}
-			paragraph.append(line);
-			boolean ending =
-					line.endsWith(",") ||
-					line.endsWith(".") ||
-					line.endsWith("!") ||
-					line.endsWith("?");
-			if (ending || !it.hasNext())
-			{
-				paragraphs.add(paragraph.toString());
-				paragraph = null;
-			}
-			else
-			{
-				paragraph.append(" ");
+		if (message != null) {
+			if (!message.isEmpty()) {
+				StringBuilder paragraph = null;
+				for (Iterator<String> it = message.iterator(); it.hasNext();) {
+					String line = it.next();
+					if (paragraph == null) {
+						paragraph = new StringBuilder();
+					}
+					paragraph.append(line);
+					boolean ending = line.endsWith(",") || line.endsWith(".")
+							|| line.endsWith("!") || line.endsWith("?");
+					if (ending || !it.hasNext()) {
+						paragraphs.add(paragraph.toString());
+						paragraph = null;
+					} else {
+						paragraph.append(" ");
+					}
+				}
 			}
 		}
 		return paragraphs;
 	}
-	
+
 }

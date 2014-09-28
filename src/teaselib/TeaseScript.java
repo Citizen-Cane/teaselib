@@ -162,7 +162,9 @@ public abstract class TeaseScript extends TeaseScriptBase {
 	 */
 	public int choose(final List<String> choices, int timeout) {
 		completeMandatory();
-		return showChoices(choices, timeout, null);
+		return showChoices(choices, timeout > 0 ? () -> {
+			teaseLib.host.sleep(timeout * 1000);
+		} : null);
 	}
 
 	/**
@@ -173,12 +175,12 @@ public abstract class TeaseScript extends TeaseScriptBase {
 	 * @param scriptFunction
 	 * @return
 	 */
-	public int choose(List<String> choices, int timeout, Runnable scriptFunction) {
+	public int choose(List<String> choices, Runnable scriptFunction) {
 		// To display buttons and to start scriptFunction at the same time,
 		// completeAll() has to be called
 		// in advance in order to finish all previous render commands,
 		completeAll();
-		int choice = showChoices(choices, timeout, scriptFunction);
+		int choice = showChoices(choices, scriptFunction);
 		if (choice == Timeout) {
 			renderQueue.completeAll();
 		} else {
@@ -187,8 +189,7 @@ public abstract class TeaseScript extends TeaseScriptBase {
 		return choice;
 	}
 
-	public int showChoices(final List<String> choices, int timeout,
-			Runnable scriptFunction) {
+	public int showChoices(final List<String> choices, Runnable scriptFunction) {
 		// arguments check
 		for (String choice : choices) {
 			if (choice == null) {
@@ -196,27 +197,6 @@ public abstract class TeaseScript extends TeaseScriptBase {
 			}
 		}
 		TeaseLib.log("choose: " + choices.toString());
-		// Timeout
-		FutureTask<Integer> timeoutTask = timeout == TeaseScript.NoTimeout ? null
-				: new FutureTask<>(new Callable<Integer>() {
-					@Override
-					public Integer call() throws Exception {
-						try {
-							TeaseScript.this.teaseLib.host
-							 .sleep(timeout * 1000);
-						} catch (ScriptInterruptedException e) {
-							return null;
-						} catch (Exception e) {
-							TeaseLib.log(this, e);
-						}
-						List<Delegate> clickables = teaseLib.host.getClickableChoices(choices);
-						if (!clickables.isEmpty())
-						{
-							clickables.get(0).run();
-						}
-						return new Integer(TeaseScript.Timeout);
-					}
-				});
 		// Script closure
 		FutureTask<Integer> scriptTask = scriptFunction == null ? null
 				: new FutureTask<>(new Callable<Integer>() {
@@ -227,10 +207,19 @@ public abstract class TeaseScript extends TeaseScriptBase {
 						} catch (ScriptInterruptedException e) {
 							return null;
 						}
-						List<Delegate> clickables = teaseLib.host.getClickableChoices(choices);
-						if (!clickables.isEmpty())
-						{
-							clickables.get(0).run();
+						List<Delegate> clickables = teaseLib.host
+								.getClickableChoices(choices);
+						if (!clickables.isEmpty()) {
+							Delegate clickable = clickables.get(0);
+							if (clickable != null) {
+								clickables.get(0).run();
+							} else {
+								// Means that the host implementation is
+								// incomplete
+								new IllegalStateException(
+										"Host didn't return clickables for choices: "
+												+ choices.toString());
+							}
 						}
 						return new Integer(TeaseScript.Timeout);
 					}
@@ -247,7 +236,8 @@ public abstract class TeaseScript extends TeaseScriptBase {
 					// Click the button
 					SpeechRecognitionResult speechRecognitionResult = eventArgs.result[0];
 					if (speechRecognitionResult.isChoice(choices)) {
-						// This assigns the result even if the buttons have unrealized
+						// This assigns the result even if the buttons have
+						// unrealized
 						int choice = speechRecognitionResult.index;
 						srChoice.add(choice);
 						try {
@@ -271,30 +261,16 @@ public abstract class TeaseScript extends TeaseScriptBase {
 		speechRecognizer.events.recognitionCompleted.add(speechRecognizedEvent);
 		speechRecognizer.startRecognition(choices);
 		int choice;
-		try
-		{
-			int tasks = (timeoutTask != null ? 1 : 0) + (scriptTask != null ? 1 : 0);
-			if (tasks > 0)
-			{
-				ExecutorService executor = Executors.newFixedThreadPool(tasks);
-				if (timeoutTask != null)
-				{
-					executor.execute(timeoutTask);
-				}
-				if (scriptTask != null)
-				{
+		try {
+			if (scriptTask != null) {
+				ExecutorService executor = Executors.newFixedThreadPool(1);
+				if (scriptTask != null) {
 					executor.execute(scriptTask);
 					// TODO Catch errors in script thread
 				}
 			}
-			choice = teaseLib.host.choose(choices, NoTimeout);
-			// Cancel
-			if (timeoutTask != null)
-			{
-				timeoutTask.cancel(true);
-			}
-			if (scriptTask != null)
-			{
+			choice = teaseLib.host.choose(choices);
+			if (scriptTask != null) {
 				scriptTask.cancel(true);
 			}
 			// Wait to finish recognition
@@ -310,81 +286,38 @@ public abstract class TeaseScript extends TeaseScriptBase {
 					}
 				}
 			}
-		}
-		finally
-		{
+		} finally {
 			speechRecognizer.stopRecognition();
 			speechRecognizer.events.recognitionCompleted
-			.remove(speechRecognizedEvent);
+					.remove(speechRecognizedEvent);
 		}
 		// Assign result from speech recognition, tasks or button click
-		if  (!srChoice.isEmpty())
-		{
+		if (!srChoice.isEmpty()) {
 			choice = srChoice.get(0);
-		}
-		else
-		{
+		} else {
 			Integer r = null;
-			// Timeout
-			if (timeoutTask != null)
-			{
-				if (!timeoutTask.isCancelled())
-				{
+			// Script function completed?
+			if (scriptTask != null) {
+				if (!scriptTask.isCancelled()) {
 					try {
-						r = timeoutTask.get();
+						r = scriptTask.get();
 					} catch (InterruptedException e) {
 						TeaseLib.log(this, e);
 					} catch (ExecutionException e) {
 						Throwable cause = e.getCause();
-						if (cause != null)
-						{
+						if (cause != null) {
 							// Forward error from closure to main thread
 							throw new RuntimeException(cause);
-						}
-						else
-						{
+						} else {
 							TeaseLib.log(this, e);
 						}
 					}
 				}
 			}
-			if (r != null)
-			{
+			if (r != null) {
 				choice = r;
-			}
-			else
-			{
-				// Script function completed?
-				if (scriptTask != null)
-				{
-					if (!scriptTask.isCancelled())
-					{
-						try {
-							r = scriptTask.get();
-						} catch (InterruptedException e) {
-							TeaseLib.log(this, e);
-						} catch (ExecutionException e) {
-							Throwable cause = e.getCause();
-							if (cause != null)
-							{
-								// Forward error from closure to main thread
-								throw new RuntimeException(cause);
-							}
-							else
-							{
-								TeaseLib.log(this, e);
-							}
-						}
-					}
-				}
-				if (r != null)
-				{
-					choice = r;
-				}
-				else
-				{
-					// User clicked button, choice already assigned
-				}
+			} else {
+				// User clicked button, choice already assigned
 			}
 		}
 		renderQueue.endAll();

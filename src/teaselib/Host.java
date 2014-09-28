@@ -15,10 +15,6 @@ import teaselib.util.Delegate;
  *
  */
 public interface Host {
-
-	// @Deprecated
-	// boolean askYesNo(String yes, String no);
-
 	/**
 	 * Get a random number between min and max (included)
 	 * 
@@ -68,18 +64,10 @@ public interface Host {
 	List<Boolean> showCheckboxes(String caption, List<String> choices,
 			List<Boolean> values);
 
-	@Deprecated
-	int showMenu(List<String> choices);
-
-	@Deprecated
-	boolean showButton(String message, int seconds);
-
 	/**
 	 * Stop any playing background sounds
 	 */
 	void stopSounds();
-
-	void useFile(String file);
 
 	/**
 	 * Preferred method to wait, since it allows us to write a debug host with
@@ -87,6 +75,7 @@ public interface Host {
 	 * It's a runtime exception so it doesn't have to be declared. This way
 	 * simple scripts are safe, but script closures can be cancelled.
 	 * 
+	 * May also be called with Infinitely in order to stop execution.
 	 * @param milliseconds The time to sleep.
 	 */
 	void sleep(long milliseconds);
@@ -111,5 +100,5 @@ public interface Host {
 	 * @return The index of the chosen item, or TeaseScript.TimeOut = -1 if no
 	 *         button was clicked
 	 */
-	int choose(List<String> choices, int timeout);
+	int choose(List<String> choices);
 }

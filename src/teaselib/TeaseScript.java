@@ -39,8 +39,8 @@ public abstract class TeaseScript extends TeaseScriptBase {
 
 	public ImageIterator mistress = null;
 	private String displayImage = MistressImage;
-	private final static String NoImage = "";
-	private final static String MistressImage = null;
+	public final static String NoImage = "";
+	public final static String MistressImage = null;
 
 	public final TextToSpeech speechSynthesizer;
 	public final SpeechRecognition speechRecognizer;
@@ -71,15 +71,20 @@ public abstract class TeaseScript extends TeaseScriptBase {
 	}
 
 	public void setImage(String name) {
-		final MediaRenderer image;
-		if (name != null) {
-			image = new RenderImage(name);
-			displayImage = name;
-		} else {
-			image = RenderNoImage.instance;
-			displayImage = NoImage;
+		if (name == MistressImage)
+		{
+			displayImage = MistressImage;
+			// Render mistress image with the next message
 		}
-		renderQueue.start(image, teaseLib);
+		else if (name == NoImage) {
+			displayImage = NoImage;
+			renderQueue.start(RenderNoImage.instance, teaseLib);
+		}
+		else
+		{
+			displayImage = name;
+			renderQueue.start(new RenderImage(name), teaseLib);
+		}
 	}
 
 	public void showDesktopItem(String name) {

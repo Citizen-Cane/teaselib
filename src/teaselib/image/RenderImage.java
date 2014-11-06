@@ -29,7 +29,6 @@ public class RenderImage implements MediaRenderer {
 			image = teaseLib.resources.image(IMAGES + path);
 			TeaseLib.log(this.getClass().getSimpleName() + ": "+ path);
 		} catch (IOException e) {
-			// throw new ScriptError("Unable to display image", e);
 			TeaseLib.log(this, e);
 		}
 		teaseLib.host.setImage(image);

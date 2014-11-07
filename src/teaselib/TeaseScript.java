@@ -1,6 +1,8 @@
 package teaselib;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -13,7 +15,6 @@ import java.util.concurrent.locks.Lock;
 import teaselib.audio.RenderSound;
 import teaselib.image.ImageIterator;
 import teaselib.image.RenderImage;
-import teaselib.image.RenderImageIterator;
 import teaselib.image.RenderNoImage;
 import teaselib.speechrecognition.SpeechRecognition;
 import teaselib.speechrecognition.SpeechRecognitionImplementation;
@@ -39,11 +40,14 @@ public abstract class TeaseScript extends TeaseScriptBase {
 
 	public ImageIterator mistress = null;
 	private String displayImage = MistressImage;
-	public final static String NoImage = "";
-	public final static String MistressImage = null;
+	public final static String NoImage = "NoImage";
+	public final static String MistressImage = "MistressImage";
 
 	public final TextToSpeech speechSynthesizer;
 	public final SpeechRecognition speechRecognizer;
+
+	private final Deque<MediaRenderer> deferredRenderers = new ArrayDeque<MediaRenderer>();
+	private String attitude = Attitude.Neutral;
 
 	public TeaseScript(TeaseLib teaseLib) {
 		super(teaseLib);
@@ -70,30 +74,38 @@ public abstract class TeaseScript extends TeaseScriptBase {
 		return teaseLib.host.getRandom(min, max);
 	}
 
-	public void setImage(String name) {
-		if (name == MistressImage)
-		{
+	/**
+	 * Renders the image denoted by the path. The image will not be displayed
+	 * immediately but during the next message rendering. This is because if no
+	 * image is specified, a mistress image will be rendered per default.
+	 * 
+	 * @param path
+	 *            The path to the image
+	 */
+	public void showImage(String path) {
+		if (path == MistressImage) {
 			displayImage = MistressImage;
 			// Render mistress image with the next message
-		}
-		else if (name == NoImage) {
+		} else if (path == NoImage) {
 			displayImage = NoImage;
-			renderQueue.start(RenderNoImage.instance, teaseLib);
-		}
-		else
-		{
-			displayImage = name;
-			renderQueue.start(new RenderImage(name), teaseLib);
+			deferredRenderers.add(RenderNoImage.instance);
+		} else {
+			displayImage = path;
+			deferredRenderers.add(new RenderImage(path));
 		}
 	}
 
-	public void showDesktopItem(String name) {
-		MediaRenderer desktopItem = new RenderDesktopItem(name);
-		renderQueue.start(desktopItem, teaseLib);
+	public void showDesktopItem(String path) {
+		MediaRenderer desktopItem = new RenderDesktopItem(path);
+		deferredRenderers.add(desktopItem);
 	}
 
-	public void playSound(String soundFile) {
-		renderQueue.start(new RenderSound(soundFile), teaseLib);
+	public void playSound(String path) {
+		deferredRenderers.add(new RenderSound(path));
+	}
+
+	void setAttitude(String attitude) {
+		this.attitude = attitude;
 	}
 
 	public void say(String text) {
@@ -104,29 +116,40 @@ public abstract class TeaseScript extends TeaseScriptBase {
 		say(message);
 	}
 
-	public void say(Message text) {
-		RenderMessage renderMessage = new RenderMessage(text,
+	public void say(String ... message)
+	{
+		say(new Message(message));
+	}
+
+	public void say(Message message) {
+		completeAll();
+		mistress.hint(attitude);
+		renderQueue.start(deferredRenderers, teaseLib);
+		deferredRenderers.clear();
+		RenderMessage renderMessage = new RenderMessage(message,
 				speechSynthesizer, displayImage == MistressImage ? mistress
 						: null);
 		renderQueue.start(renderMessage, teaseLib);
 		displayImage = MistressImage;
+		attitude = Attitude.Neutral;
 	}
 
 	/**
-	 * Show instructional text, this is not spoken, just displayed, and to be
-	 * used for hints/cues alongside spoken dialog
+	 * Show instructional text, this is not spoken, just displayed
 	 * 
-	 * @param text
+	 * @param message
 	 *            The text top be displayed
 	 */
-	public void show(String text) {
-		if (displayImage == MistressImage) {
-			renderQueue.start(new RenderImageIterator(mistress), teaseLib);
-		}
-		RenderMessage renderMessage = new RenderMessage(new Message(text),
-				null, null);
+	public void show(String message) {
+		completeAll();
+		mistress.hint(attitude);
+		renderQueue.start(deferredRenderers, teaseLib);
+		deferredRenderers.clear();
+		RenderMessage renderMessage = new RenderMessage(new Message(message),
+				null, displayImage == MistressImage ? mistress : null);
 		renderQueue.start(renderMessage, teaseLib);
 		displayImage = MistressImage;
+		attitude = Attitude.Neutral;
 	}
 
 	/**

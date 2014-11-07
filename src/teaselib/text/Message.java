@@ -31,6 +31,23 @@ public class Message {
 	 *            The message to render, or null or an empty vector to display
 	 *            no message
 	 */
+	public Message(String ... message) {
+		if (message == null) {
+			this.message = new Vector<>();
+		} else {
+			this.message = new Vector<>();
+			for(String s : message)
+			{
+				this.message.add(s);
+			}
+		}
+	}
+
+	/**
+	 * @param message
+	 *            The message to render, or null or an empty vector to display
+	 *            no message
+	 */
 	public Message(Vector<String> message) {
 		if (message == null) {
 			this.message = new Vector<>();

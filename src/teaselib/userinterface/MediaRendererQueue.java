@@ -1,5 +1,6 @@
 package teaselib.userinterface;
 
+import java.util.Collection;
 import java.util.HashMap;
 
 import teaselib.ScriptInterruptedException;
@@ -13,6 +14,14 @@ public class MediaRendererQueue {
 	{
 	}
 
+	public void start(Collection<MediaRenderer> renderers, TeaseLib teaseLib)
+	{
+		for(MediaRenderer r : renderers)
+		{
+			start(r, teaseLib);
+		}
+	}
+	
 	/**
 	 * Start a media renderer, but wait for other renderers of the same kind to complete first
 	 * @param mediaMenderer

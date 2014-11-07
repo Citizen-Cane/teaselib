@@ -18,4 +18,5 @@ public interface ImageIterator {
 	 * @return Image object with the next image
 	 */
 	Image next() throws IOException;
+	void hint(String hint);
 }

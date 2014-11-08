@@ -141,7 +141,7 @@ public class RenderMessage extends MediaRendererThread implements MediaRenderer,
 							teaseLib.host.sleep(DELAYBETWEENPARAGRAPHS);
 						}
 					}
-					ending = line.charAt(line.length() - 1);
+					ending = line.isEmpty() ? ' ' : line.charAt(line.length() - 1);
 					// TODO Nice, but in SexScripts text is always centered
 					// vertically,
 					// so the text kind of scrolls up when multiple paragraphs are

@@ -108,6 +108,16 @@ public abstract class TeaseScript extends TeaseScriptBase {
 		this.attitude = attitude;
 	}
 
+	/**
+	 * Wait the requested numbers of seconds after displaying a message.
+	 * 
+	 * @param seconds
+	 *            How long to wait.
+	 */
+	public void delay(int seconds) {
+		deferredRenderers.add(new RenderDelay(seconds));
+	}
+
 	public void say(String text) {
 		Message message = new Message();
 		if (text != null) {
@@ -116,8 +126,7 @@ public abstract class TeaseScript extends TeaseScriptBase {
 		say(message);
 	}
 
-	public void say(String ... message)
-	{
+	public void say(String... message) {
 		say(new Message(message));
 	}
 
@@ -150,21 +159,6 @@ public abstract class TeaseScript extends TeaseScriptBase {
 		renderQueue.start(renderMessage, teaseLib);
 		displayImage = MistressImage;
 		attitude = Attitude.Neutral;
-	}
-
-	/**
-	 * Wait the requested numbers of seconds. The time starts to count from
-	 * completing the last teaselib command, or from starting the last teaselib
-	 * thread.
-	 * 
-	 * As a result, the wait would start right after a choice, or right after
-	 * starting to display/speak text.
-	 * 
-	 * @param seconds
-	 */
-	public void delay(int seconds) {
-		RenderDelay renderDelay = new RenderDelay(seconds);
-		renderQueue.start(renderDelay, teaseLib);
 	}
 
 	/**

@@ -6,12 +6,6 @@ import java.io.IOException;
 import teaselib.TeaseLib;
 import teaselib.userinterface.MediaRenderer;
 
-/**
- * MistressImage is a default command. As such, every action has one (if no other specified),
- * but since it doesn't have a state, we can use the same instance for all actions.
- * @author someone
- *
- */
 public class RenderImageIterator implements MediaRenderer {
 
 	private final ImageIterator imageIterator;

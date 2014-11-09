@@ -40,10 +40,10 @@ public abstract class TeaseScript extends TeaseScriptBase {
 
 	public static final int NoTimeout = 0;
 
-	public ImageIterator mistress = null;
-	private String displayImage = MistressImage;
+	public ImageIterator dominant = null;
+	private String displayImage = DominantImage;
 	public final static String NoImage = "NoImage";
-	public final static String MistressImage = "MistressImage";
+	public final static String DominantImage = "DominantImage";
 
 	public final TextToSpeech speechSynthesizer;
 	public final SpeechRecognition speechRecognizer;
@@ -79,15 +79,15 @@ public abstract class TeaseScript extends TeaseScriptBase {
 	/**
 	 * Renders the image denoted by the path. The image will not be displayed
 	 * immediately but during the next message rendering. This is because if no
-	 * image is specified, a mistress image will be rendered per default.
+	 * image is specified, an image of the dominant character will be used.
 	 * 
 	 * @param path
 	 *            The path to the image
 	 */
 	public void showImage(String path) {
-		if (path == MistressImage) {
-			displayImage = MistressImage;
-			// Render mistress image with the next message
+		if (path == DominantImage) {
+			displayImage = DominantImage;
+			// Render dominant image with the next message
 		} else if (path == NoImage) {
 			displayImage = NoImage;
 			deferredRenderers.add(RenderNoImage.instance);
@@ -156,11 +156,11 @@ public abstract class TeaseScript extends TeaseScriptBase {
 			hints.add(ImageIterator.SameResolution);
 			hints.add(attitude);
 			RenderMessage renderMessage = new RenderMessage(message,
-					speechSynthesizer, displayImage == MistressImage ? mistress
+					speechSynthesizer, displayImage == DominantImage ? dominant
 							: null, hints);
 			renderQueue.start(renderMessage, teaseLib);
 		} finally {
-			displayImage = MistressImage;
+			displayImage = DominantImage;
 			attitude = Attitude.Neutral;
 		}
 	}

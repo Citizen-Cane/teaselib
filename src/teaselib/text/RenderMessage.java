@@ -72,7 +72,7 @@ public class RenderMessage extends MediaRendererThread implements
 						}
 						// TODO Handle desktop item, but how would we detect
 						// such strings (*.*) ?
-						else if (line.equals(TeaseScript.MistressImage)) {
+						else if (line.equals(TeaseScript.DominantImage)) {
 							image = null;
 						} else if (line.equals(TeaseScript.NoImage)) {
 							image = line;
@@ -98,7 +98,7 @@ public class RenderMessage extends MediaRendererThread implements
 					}
 					teaseLib.host.show(text.toString());
 					final boolean lastParagraph = !it.hasNext();
-					// It's rude to interrupt mistress while she speaks,
+					// It's rude to interrupt the dominant while speaking,
 					// so let's just render speech synchronous for now,
 					// and decide about async speech later
 					if (speechSynthesizer == null) {

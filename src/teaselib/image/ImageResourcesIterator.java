@@ -38,7 +38,7 @@ public class ImageResourcesIterator implements ImageIterator {
 	}
 
 	@Override
-	public void hint(String hint) {
+	public void hint(String... hint) {
 	}
 
 }

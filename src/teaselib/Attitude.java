@@ -11,4 +11,5 @@ public class Attitude
 	}
 	
 	public static final String Neutral = "<attitude neutral/>";
+	public static final String Reading = "<attitude reading/>";
 }

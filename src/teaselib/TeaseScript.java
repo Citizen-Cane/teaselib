@@ -3,8 +3,10 @@ package teaselib;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -131,16 +133,7 @@ public abstract class TeaseScript extends TeaseScriptBase {
 	}
 
 	public void say(Message message) {
-		completeAll();
-		mistress.hint(attitude);
-		renderQueue.start(deferredRenderers, teaseLib);
-		deferredRenderers.clear();
-		RenderMessage renderMessage = new RenderMessage(message,
-				speechSynthesizer, displayImage == MistressImage ? mistress
-						: null);
-		renderQueue.start(renderMessage, teaseLib);
-		displayImage = MistressImage;
-		attitude = Attitude.Neutral;
+		renderMessage(message, speechSynthesizer);
 	}
 
 	/**
@@ -150,15 +143,26 @@ public abstract class TeaseScript extends TeaseScriptBase {
 	 *            The text top be displayed
 	 */
 	public void show(String message) {
-		completeAll();
-		mistress.hint(attitude);
-		renderQueue.start(deferredRenderers, teaseLib);
-		deferredRenderers.clear();
-		RenderMessage renderMessage = new RenderMessage(new Message(message),
-				null, displayImage == MistressImage ? mistress : null);
-		renderQueue.start(renderMessage, teaseLib);
-		displayImage = MistressImage;
-		attitude = Attitude.Neutral;
+		renderMessage(new Message(message), null);
+	}
+
+	protected void renderMessage(Message message, TextToSpeech speechSynthesizer) {
+		try {
+			completeAll();
+			renderQueue.start(deferredRenderers, teaseLib);
+			deferredRenderers.clear();
+			Set<String> hints = new HashSet<>(); 
+			hints.add(ImageIterator.SameCameraPosition);
+			hints.add(ImageIterator.SameResolution);
+			hints.add(attitude);
+			RenderMessage renderMessage = new RenderMessage(message,
+					speechSynthesizer, displayImage == MistressImage ? mistress
+							: null, hints);
+			renderQueue.start(renderMessage, teaseLib);
+		} finally {
+			displayImage = MistressImage;
+			attitude = Attitude.Neutral;
+		}
 	}
 
 	/**

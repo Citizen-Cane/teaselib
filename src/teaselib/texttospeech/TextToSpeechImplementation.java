@@ -17,6 +17,18 @@ public abstract class TextToSpeechImplementation {
 	
 	public abstract void dispose();
 
+	protected String [] hints = null;
+
+	public void setHints(String ... hints)
+	{
+		this.hints = hints;
+	}
+	
+	public String [] getHints()
+	{
+		return hints;
+	}
+
 	@Override
 	protected void finalize() throws Throwable {
 		try {

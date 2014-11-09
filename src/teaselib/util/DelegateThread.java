@@ -52,6 +52,11 @@ public class DelegateThread extends Thread {
 //		}
 //	}
 
+	/**
+	 * Execute the delegate synchronized. The current thread waits until the delegates has completed execution. 
+	 * @param delegate The delegate to execute in the delegate thread.
+	 * @throws Throwable If the delegate throws, the throwable is forwarded to the current thread.
+	 */
 	public void run(Delegate delegate) throws Throwable {
 		synchronized (delegate) {
 			synchronized (this) {

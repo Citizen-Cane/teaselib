@@ -16,13 +16,14 @@ public class TextToSpeech {
 
 	private DelegateThread delegateThread = new DelegateThread();
 
-	private void ttsEngineNotInitialized()
-	{
+	private String[] NoHints = null;
+
+	private void ttsEngineNotInitialized() {
 		throw new IllegalStateException("TTS engine not initialized");
 	}
 
 	public static final Lock AudioOutput = new ReentrantLock();
-	
+
 	public TextToSpeech() {
 		try {
 			Delegate delegate = new Delegate() {
@@ -50,9 +51,8 @@ public class TextToSpeech {
 
 	public Map<String, Voice> getVoices() {
 		final Map<String, Voice> voices = new HashMap<>();
-		if (tts != null)
-		{
-			Delegate delegate = new Delegate()  {
+		if (tts != null) {
+			Delegate delegate = new Delegate() {
 				@Override
 				public void run() {
 					tts.getVoices(voices);
@@ -63,9 +63,7 @@ public class TextToSpeech {
 			} catch (Throwable t) {
 				TeaseLib.log(this, t);
 			}
-		}
-		else
-		{
+		} else {
 			ttsEngineNotInitialized();
 		}
 		return voices;
@@ -76,10 +74,8 @@ public class TextToSpeech {
 	 * 
 	 * @param voice
 	 */
-	public void setVoice(final Voice voice)
-	{
-		if (tts != null)
-		{
+	public void setVoice(final Voice voice) {
+		if (tts != null) {
 			Delegate delegate = new Delegate() {
 				@Override
 				public void run() {
@@ -91,22 +87,44 @@ public class TextToSpeech {
 			} catch (Throwable t) {
 				TeaseLib.log(this, t);
 			}
+		} else {
+			ttsEngineNotInitialized();
 		}
-		else
-		{
+	}
+
+	/**
+	 * Set hints for the next call to speak(...). Hints are cleared after each call to speak.
+	 * @param hints The  hints to consider for the next call to speak(..)
+	 */
+	public void setHint(final String... hints) {
+		if (tts != null) {
+			Delegate delegate = new Delegate() {
+				@Override
+				public void run() {
+					tts.setHints(hints);
+				}
+			};
+			try {
+				delegateThread.run(delegate);
+			} catch (Throwable t) {
+				TeaseLib.log(this, t);
+			}
+		} else {
 			ttsEngineNotInitialized();
 		}
 	}
 
 	public void speak(final String prompt) {
-		if (tts != null)
-		{
+		if (tts != null) {
 			Delegate delegate = new Delegate() {
 				@Override
 				public void run() {
-					synchronized(AudioOutput)
-					{
-						tts.speak(prompt);
+					synchronized (AudioOutput) {
+						try {
+							tts.speak(prompt);
+						} finally {
+							tts.setHints(NoHints);
+						}
 					}
 				}
 			};
@@ -115,20 +133,21 @@ public class TextToSpeech {
 			} catch (Throwable t) {
 				TeaseLib.log(this, t);
 			}
-		}
-		else
-		{
+		} else {
 			ttsEngineNotInitialized();
 		}
 	}
 
 	public void speak(final String prompt, final String wav) {
-		if (tts != null)
-		{
+		if (tts != null) {
 			Delegate delegate = new Delegate() {
 				@Override
 				public void run() {
-					tts.speak(prompt, wav);
+					try {
+						tts.speak(prompt, wav);
+					} finally {
+						tts.setHints(NoHints);
+					}
 				}
 			};
 			try {
@@ -136,24 +155,24 @@ public class TextToSpeech {
 			} catch (Throwable t) {
 				TeaseLib.log(this, t);
 			}
-		}
-		else
-		{
+		} else {
 			ttsEngineNotInitialized();
 		}
 	}
 
-//	public Delegates speechFinished() {
-//		return tts.speechFinished;
-//	}
-	
+	// public Delegates speechFinished() {
+	// return tts.speechFinished;
+	// }
+
 	/**
-	 * Estimate the duration for displaying the text when not spoken by speech synthesis.
-	 * @param text Text to estimate the time needed to speak for
+	 * Estimate the duration for displaying the text when not spoken by speech
+	 * synthesis.
+	 * 
+	 * @param text
+	 *            Text to estimate the time needed to speak for
 	 * @return duration, in milliseconds
 	 */
-	public static long getEstimatedSpeechDuration(String text)
-	{
+	public static long getEstimatedSpeechDuration(String text) {
 		long millisecondsPerLetter = 70;
 		long pauseAfterParagraph = 1 * 1000;
 		return text.length() * millisecondsPerLetter + pauseAfterParagraph;

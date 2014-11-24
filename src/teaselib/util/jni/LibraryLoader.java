@@ -5,7 +5,7 @@ import java.io.File;
 public class LibraryLoader {
 
 	public static void load(String name) {
-		File folder = new File("lib");
+		File folder = new File("lib/TeaseLib");
 		String extension;
 		String os = System.getProperty("os.name");
 		if (os.startsWith("Windows")) {

@@ -23,37 +23,11 @@ import teaselib.TeaseLib;
 import teaselib.text.Message;
 
 public class TextToSpeechRecorder {
-
-	/*
-	 * Prerender voice for PCM: Compressed audio format needed, can Windows
-	 * provide one? -> research -> No ... Write a SpeechRenderer that uses the
-	 * sound files - Android doesn't support speech bookmarks - bookmarks are
-	 * really complex to implement -> no bookmarks, no commata, render full
-	 * sentences only
-	 * 
-	 * Final conclusions: + remove comma feature from message rendering in order
-	 * to render only complete sentences + collect speech items from scripts +
-	 * render each paragraph into a single sound file + store all sounds files
-	 * of the message in one folder + store the message text with the sound
-	 * files + use action number as key -> easy - use SHA-256 of complete
-	 * message to create folder names otherwise - update items whose text has
-	 * actually changed - update items older than script, a collision occurred
-	 * when the texfile date is newer than the build start date
-	 * 
-	 * How does it work: + recorder will work from project and produces output
-	 * in target folder - next to the zips + recorder will enum TTS- renderers
-	 * to find available voices and write them to available.cfg + recorder will
-	 * create voice recordings for voices in create. cfg + message renderer will
-	 * read the project config file and use the pre-rendered voice set there +
-	 * message renderer will calc the SHA-256 checksum of each message, load the
-	 * sound files and play them instead of calling TTS
-	 */
-
-	public final static String ResourcesFilename = "inventory.txt";
-	public final static String MessageFilename = "message.txt";
-	public final static String SpeechDirName = "speech";
 	public final static String AvailableVoicesFilename = "installed.properties";
 	public final static String RecordedVoicesFilename = "recorded.properties";
+	public final static String SpeechDirName = "speech";
+	public final static String MessageFilename = "message.txt";
+	public final static String ResourcesFilename = "inventory.txt";
 
 	private final TextToSpeech textToSpeech;
 	private File speechDir = null;
@@ -71,13 +45,14 @@ public class TextToSpeechRecorder {
 		this.voices = textToSpeech.getVoices();
 		TextToSpeechPlayer ttsPlayer = new TextToSpeechPlayer(resources,
 				textToSpeech);
-		speechDir = createSubDir(resources.getAssetsPath(""), SpeechDirName);
+		File assetsDir = resources.getAssetsPath("");
+		speechDir = createSubDir(assetsDir, SpeechDirName);
 		Properties available = new Properties();
 		// List available voices by guid and language
 		for (String key : voices.keySet()) {
 			available.put(key, voices.get(key).language);
 		}
-		File availableVoicesFile = new File(speechDir, AvailableVoicesFilename);
+		File availableVoicesFile = new File(assetsDir, AvailableVoicesFilename);
 		TeaseLib.log("Creating " + availableVoicesFile.toString());
 		available.store(new FileOutputStream(availableVoicesFile), "");
 		if (!ttsPlayer.hasPrerecordedVoices()) {
@@ -87,7 +62,7 @@ public class TextToSpeechRecorder {
 			String first = voices.keySet().iterator().next();
 			Properties record = new Properties();
 			record.put(Message.Dominant, voices.get(first).guid);
-			record.store(new FileOutputStream(new File(speechDir,
+			record.store(new FileOutputStream(new File(assetsDir,
 					RecordedVoicesFilename)), "");
 			ttsPlayer = new TextToSpeechPlayer(resources, textToSpeech);
 		}

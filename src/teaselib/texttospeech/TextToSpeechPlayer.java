@@ -31,8 +31,7 @@ public class TextToSpeechPlayer {
 		this.textToSpeech = textToSpeech;
 		// Read pre-recorded voices config
 		InputStream recordedVoicesConfig;
-		String path = TextToSpeechRecorder.SpeechDirName + "/"
-				+ TextToSpeechRecorder.RecordedVoicesFilename;
+		String path = TextToSpeechRecorder.RecordedVoicesFilename;
 		try {
 			recordedVoicesConfig = resources.getResource(path);
 		} catch (IOException e1) {

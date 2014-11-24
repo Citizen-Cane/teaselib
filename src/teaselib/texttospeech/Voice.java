@@ -13,6 +13,10 @@ import teaselib.util.jni.NativeObject;
  * 
  */
 public class Voice extends NativeObject {
+	/**
+	 * A unique identifier for the voice. Only alphanumeric characters and dots are
+	 * allowed. Avoid file system characters like '/', '\', ':'.
+	 */
 	public final String guid;
 	public final String langID;
 	public final String language;
@@ -24,8 +28,8 @@ public class Voice extends NativeObject {
 		Male, Female, Robot
 	}
 
-	public Voice(long nativeObject, String guid, String langID, String language,
-			Gender gender, String name, String vendor) {
+	public Voice(long nativeObject, String guid, String langID,
+			String language, Gender gender, String name, String vendor) {
 		super(nativeObject);
 		this.guid = guid;
 		this.gender = gender;
@@ -37,12 +41,8 @@ public class Voice extends NativeObject {
 
 	@Override
 	public String toString() {
-		return getClass().getSimpleName()
-				+ ": guid=" + guid
-				+ " , gender= "	+ gender
-				+ " , lang-id=" + langID
-				+ " , language=" + language
-				+ " , name=" + name
-				+ " , vendor=" + vendor;
+		return getClass().getSimpleName() + ": guid=" + guid + " , gender= "
+				+ gender + " , lang-id=" + langID + " , language=" + language
+				+ " , name=" + name + " , vendor=" + vendor;
 	}
 }

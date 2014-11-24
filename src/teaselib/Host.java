@@ -33,9 +33,8 @@ public interface Host {
 
 	void log(String line);
 
-	void playSound(String file);
-
 	void playBackgroundSound(String path, InputStream inputStream);
+	void playSound(String path, InputStream inputStream);
 
 	void setImage(Image image);
 

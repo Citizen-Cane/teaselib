@@ -6,12 +6,18 @@ import java.util.List;
 import java.util.Vector;
 
 public class Message {
+	public final static String Dominant = "Dominant";
+
+	public final String character;
 
 	private final Vector<String> message;
 
 	public Message() {
 		this.message = new Vector<String>();
+		this.character = Dominant;
 	}
+
+	// TODO character type  cannot be string
 
 	/**
 	 * @param message
@@ -24,6 +30,7 @@ public class Message {
 		} else {
 			this.message = new Vector<>();
 		}
+		this.character = Dominant;
 	}
 
 	/**
@@ -31,16 +38,16 @@ public class Message {
 	 *            The message to render, or null or an empty vector to display
 	 *            no message
 	 */
-	public Message(String ... message) {
+	public Message(String... message) {
 		if (message == null) {
 			this.message = new Vector<>();
 		} else {
 			this.message = new Vector<>();
-			for(String s : message)
-			{
+			for (String s : message) {
 				this.message.add(s);
 			}
 		}
+		this.character = Dominant;
 	}
 
 	/**
@@ -54,6 +61,11 @@ public class Message {
 		} else {
 			this.message = message;
 		}
+		this.character = Dominant;
+	}
+
+	public String getCharacter() {
+		return character;
 	}
 
 	public void add(String text) {
@@ -72,11 +84,32 @@ public class Message {
 			StringBuilder format = new StringBuilder(message.elementAt(0));
 			for (int i = 1; i < s; i++) {
 				String previous = message.elementAt(i - 1);
-				boolean newLine = previous.endsWith(",")
-						|| previous.endsWith(".") || previous.endsWith("!")
-						|| previous.endsWith("?");
+				boolean newLine = endOfSentence(previous);
 				if (newLine) {
 					format.append("\n\n");
+				} else {
+					format.append(" ");
+				}
+				String line = message.elementAt(i);
+				format.append(line);
+			}
+			return format.toString();
+		}
+	}
+
+	public String toHashString() {
+		if (message == null) {
+			return "";
+		} else if (message.isEmpty()) {
+			return "";
+		} else {
+			final int s = message.size();
+			StringBuilder format = new StringBuilder(message.elementAt(0));
+			for (int i = 1; i < s; i++) {
+				String previous = message.elementAt(i - 1);
+				boolean newLine = endOfSentence(previous);
+				if (newLine) {
+					format.append("\n");
 				} else {
 					format.append(" ");
 				}
@@ -98,8 +131,7 @@ public class Message {
 						paragraph = new StringBuilder();
 					}
 					paragraph.append(line);
-					boolean ending = line.endsWith(",") || line.endsWith(".")
-							|| line.endsWith("!") || line.endsWith("?");
+					boolean ending = endOfSentence(line);
 					if (ending || !it.hasNext()) {
 						paragraphs.add(paragraph.toString());
 						paragraph = null;
@@ -110,6 +142,12 @@ public class Message {
 			}
 		}
 		return paragraphs;
+	}
+
+	private boolean endOfSentence(String line) {
+		boolean ending = line.endsWith(":") || line.endsWith(".")
+				|| line.endsWith("!") || line.endsWith("?");
+		return ending;
 	}
 
 }

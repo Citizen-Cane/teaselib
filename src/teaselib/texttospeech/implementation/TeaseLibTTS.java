@@ -22,13 +22,13 @@ public class TeaseLibTTS extends TextToSpeechImplementation {
 	}
 
 	@Override
-	public native void init(Voice voice);
+	public native void setVoice(Voice voice);
 
 	@Override
 	public native void speak(String prompt);
 
 	@Override
-	public native void speak(String prompt, String wav);
+	public native String speak(String prompt, String wav);
 
 	@Override
 	public native void dispose();

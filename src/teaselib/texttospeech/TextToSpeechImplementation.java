@@ -10,10 +10,10 @@ public abstract class TextToSpeechImplementation {
 
 	public abstract void getVoices(Map<String, Voice> voices);
 
-	public abstract void init(Voice voice);
+	public abstract void setVoice(Voice voice);
 
 	public abstract void speak(String prompt);
-	public abstract void speak(String prompt, String wav);
+	public abstract String speak(String prompt, String wav);
 	
 	public abstract void dispose();
 

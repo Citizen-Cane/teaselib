@@ -21,7 +21,6 @@ public class RenderSound implements MediaRenderer {
 			teaseLib.host.playBackgroundSound(path,
 					teaseLib.resources.getResource(path));
 		} catch (Throwable e) {
-			// throw new ScriptError("Unable to play sound file", e);
 			TeaseLib.log(this, e);
 		}
 	}

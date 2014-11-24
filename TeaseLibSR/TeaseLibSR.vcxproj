@@ -165,7 +165,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="..\TeaseLib\include\teaselib_speechrecognition_implementation_TeaseLibSR.h" />
+    <ClInclude Include="..\include\teaselib_speechrecognition_implementation_TeaseLibSR.h" />
     <ClInclude Include="AudioLevelSignalProblemOccuredEvent.h" />
     <ClInclude Include="AudioLevelUpdatedEvent.h" />
     <ClInclude Include="SpeechRecognitionStartedEvent.h" />

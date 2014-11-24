@@ -39,9 +39,6 @@
     <ClInclude Include="JNIException.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\TeaseLib\include\teaselib_util_jni_NativeObject.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="NativeObject.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -52,6 +49,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="JNIClass.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\teaselib_util_jni_NativeObject.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -14,6 +14,7 @@ public:
 	virtual ~SpeechSynthesizer();
 
 	void speak(const wchar_t *prompt);
+	std::wstring speak(const wchar_t *prompt, const wchar_t *path);
 
 private:
 	ISpVoice *pVoice;

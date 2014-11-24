@@ -1,7 +1,9 @@
 package teaselib.texttospeech;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -25,14 +27,45 @@ public class TextToSpeech {
 	public static final Lock AudioOutput = new ReentrantLock();
 
 	public TextToSpeech() {
+		Set<String> names = getImplementations();
+		if (!names.isEmpty()) {
+			// Just use the first (as there will be usually just one per
+			// platform)
+			setImplementation(names.iterator().next());
+		}
+	}
+
+	static private Set<String> getImplementations() {
+		Set<String> names = new HashSet<>();
+		names.add(TeaseLibTTS.class.getName());
+		return names;
+	}
+
+	private void setImplementation(String className) {
+		// Create class here
+		if (tts != null && tts.getClass().getName().equals(className)) {
+			return;
+		}
 		try {
 			Delegate delegate = new Delegate() {
 				@Override
 				public void run() {
+					TextToSpeechImplementation currentTTS = tts;
+					TextToSpeechImplementation newTTS = null;
 					try {
-						tts = new TeaseLibTTS();
-					} catch (UnsatisfiedLinkError e) {
-						TeaseLib.log(this, e);
+						Class<? extends Object> ttsClass = getClass()
+								.getClassLoader().loadClass(className);
+						newTTS = (TextToSpeechImplementation) ttsClass
+								.newInstance();
+						// tts = new TeaseLibTTS();
+					} catch (Throwable t) {
+						setError(t);
+					} finally {
+						tts = newTTS;
+						if (currentTTS != null) {
+							currentTTS.dispose();
+							currentTTS = null;
+						}
 					}
 				}
 			};
@@ -79,7 +112,7 @@ public class TextToSpeech {
 			Delegate delegate = new Delegate() {
 				@Override
 				public void run() {
-					tts.init(voice);
+					tts.setVoice(voice);
 				}
 			};
 			try {
@@ -93,8 +126,11 @@ public class TextToSpeech {
 	}
 
 	/**
-	 * Set hints for the next call to speak(...). Hints are cleared after each call to speak.
-	 * @param hints The  hints to consider for the next call to speak(..)
+	 * Set hints for the next call to speak(...). Hints are cleared after each
+	 * call to speak.
+	 * 
+	 * @param hints
+	 *            The hints to consider for the next call to speak(..)
 	 */
 	public void setHint(final String... hints) {
 		if (tts != null) {
@@ -138,13 +174,15 @@ public class TextToSpeech {
 		}
 	}
 
-	public void speak(final String prompt, final String wav) {
+	public String speak(final String prompt, final String wav) {
+		StringBuilder soundFilePath = new StringBuilder();
 		if (tts != null) {
 			Delegate delegate = new Delegate() {
 				@Override
 				public void run() {
 					try {
-						tts.speak(prompt, wav);
+						String actualPath = tts.speak(prompt, wav);
+						soundFilePath.append(actualPath);
 					} finally {
 						tts.setHints(NoHints);
 					}
@@ -152,12 +190,15 @@ public class TextToSpeech {
 			};
 			try {
 				delegateThread.run(delegate);
+			} catch (RuntimeException e) {
+				throw e;
 			} catch (Throwable t) {
-				TeaseLib.log(this, t);
+				throw new RuntimeException(t);
 			}
 		} else {
 			ttsEngineNotInitialized();
 		}
+		return soundFilePath.toString();
 	}
 
 	// public Delegates speechFinished() {

@@ -17,10 +17,10 @@ JNIEXPORT void JNICALL Java_teaselib_texttospeech_implementation_TeaseLibTTS_get
 
 /*
  * Class:     teaselib_texttospeech_implementation_TeaseLibTTS
- * Method:    init
+ * Method:    setVoice
  * Signature: (Lteaselib/texttospeech/Voice;)V
  */
-JNIEXPORT void JNICALL Java_teaselib_texttospeech_implementation_TeaseLibTTS_init
+JNIEXPORT void JNICALL Java_teaselib_texttospeech_implementation_TeaseLibTTS_setVoice
   (JNIEnv *, jobject, jobject);
 
 /*
@@ -34,9 +34,9 @@ JNIEXPORT void JNICALL Java_teaselib_texttospeech_implementation_TeaseLibTTS_spe
 /*
  * Class:     teaselib_texttospeech_implementation_TeaseLibTTS
  * Method:    speak
- * Signature: (Ljava/lang/String;Ljava/lang/String;)V
+ * Signature: (Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
  */
-JNIEXPORT void JNICALL Java_teaselib_texttospeech_implementation_TeaseLibTTS_speak__Ljava_lang_String_2Ljava_lang_String_2
+JNIEXPORT jstring JNICALL Java_teaselib_texttospeech_implementation_TeaseLibTTS_speak__Ljava_lang_String_2Ljava_lang_String_2
   (JNIEnv *, jobject, jstring, jstring);
 
 /*

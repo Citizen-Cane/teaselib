@@ -9,7 +9,7 @@ public:
 	Voice(JNIEnv* env, ISpObjectToken* pVoiceToken);
 	virtual ~Voice();
 	operator ISpObjectToken*() const;
-	LPWSTR guid;
+	std::wstring guid;
 private:
 	ISpObjectToken* pVoiceToken;
 	HRESULT SpGetAttribute(_In_ ISpObjectToken * pObjToken, _In_ LPCWSTR pAttributeName, _Outptr_ PWSTR *ppszDescription);

@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import java.util.Deque;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -26,7 +25,7 @@ import teaselib.text.Message;
 import teaselib.text.RenderDelay;
 import teaselib.text.RenderMessage;
 import teaselib.texttospeech.TextToSpeech;
-import teaselib.texttospeech.Voice;
+import teaselib.texttospeech.TextToSpeechPlayer;
 import teaselib.userinterface.MediaRenderer;
 import teaselib.util.Delegate;
 import teaselib.util.Event;
@@ -45,7 +44,7 @@ public abstract class TeaseScript extends TeaseScriptBase {
 	public final static String NoImage = "NoImage";
 	public final static String DominantImage = "DominantImage";
 
-	public final TextToSpeech speechSynthesizer;
+	public final TextToSpeechPlayer speechSynthesizer;
 	public final SpeechRecognition speechRecognizer;
 
 	private final Deque<MediaRenderer> deferredRenderers = new ArrayDeque<MediaRenderer>();
@@ -53,16 +52,16 @@ public abstract class TeaseScript extends TeaseScriptBase {
 
 	public TeaseScript(TeaseLib teaseLib) {
 		super(teaseLib);
-		speechSynthesizer = new TextToSpeech();
+		speechSynthesizer = new TextToSpeechPlayer(teaseLib.resources, new TextToSpeech());
 		speechRecognizer = new SpeechRecognition();
-		if (speechSynthesizer.isReady()) {
-			Map<String, Voice> voices = speechSynthesizer.getVoices();
-			for (Voice voice : voices.values()) {
-				TeaseLib.log(voice.toString());
-			}
-			// TODO Set voice as defined in script or config
-			speechSynthesizer.setVoice(null);
-		}
+//		if (speechSynthesizer.isReady()) {
+//			Map<String, Voice> voices = speechSynthesizer.getVoices();
+//			for (Voice voice : voices.values()) {
+//				TeaseLib.log(voice.toString());
+//			}
+//			// TODO Set voice as defined in script or config
+//			speechSynthesizer.setVoice(null);
+//		}
 	}
 
 	/**
@@ -146,12 +145,14 @@ public abstract class TeaseScript extends TeaseScriptBase {
 		renderMessage(new Message(message), null);
 	}
 
-	protected void renderMessage(Message message, TextToSpeech speechSynthesizer) {
+	protected void renderMessage(Message message, TextToSpeechPlayer speechSynthesizer) {
 		try {
 			completeAll();
 			renderQueue.start(deferredRenderers, teaseLib);
 			deferredRenderers.clear();
 			Set<String> hints = new HashSet<>(); 
+			// Within messages, images might change fast, and changing
+			// the camera position, image size or aspect would be too distracting
 			hints.add(ImageIterator.SameCameraPosition);
 			hints.add(ImageIterator.SameResolution);
 			hints.add(attitude);

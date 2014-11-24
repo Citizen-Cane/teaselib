@@ -45,7 +45,9 @@ Voice::Voice(JNIEnv* env, ISpObjectToken* pVoiceToken)
 , pVoiceToken(pVoiceToken)
 {
 	pVoiceToken->AddRef();
-	HRESULT hr = pVoiceToken->GetId(&guid);
+	LPWSTR id;
+	HRESULT hr = pVoiceToken->GetId(&id);
+	guid = ::PathFindFileName(id);
 	if (FAILED(hr)) throw new COMException(hr);
 	LANGID langid;
 	hr = SpGetLanguageFromToken(pVoiceToken, &langid);
@@ -82,7 +84,7 @@ Voice::Voice(JNIEnv* env, ISpObjectToken* pVoiceToken)
 		clazz,
 		JNIClass::getMethodID(env, clazz, "<init>", "(JLjava/lang/String;Ljava/lang/String;Ljava/lang/String;Lteaselib/texttospeech/Voice$Gender;Ljava/lang/String;Ljava/lang/String;)V"),
 		thisPtr,
-		JNIString(env, guid).operator jstring(),
+		JNIString(env, guid.c_str()).operator jstring(),
 		JNIString(env, langID).operator jstring(),
 		JNIString(env, language).operator jstring(),
 		jgender,

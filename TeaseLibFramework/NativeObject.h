@@ -2,6 +2,7 @@
 
 #include <jni.h>
 
+#include <NativeException.h>
 #include <JNIException.h>
 
 class NativeObject
@@ -45,9 +46,16 @@ public:
 		if (env->ExceptionCheck()) throw new JNIException(env);
 		jlong x = env->GetLongField(jthis, env->GetFieldID(nativeObjectClass, "nativeObject", "J"));
 		if (env->ExceptionCheck()) throw new JNIException(env);
-		NativeObject* nativeObject = reinterpret_cast<NativeObject*>(x);
-		*nativeObject = jthis;
-		return nativeObject;
+		if (x)
+		{
+			NativeObject* nativeObject = reinterpret_cast<NativeObject*>(x);
+			*nativeObject = jthis;
+			return nativeObject;
+		}
+		else
+		{
+			return NULL;
+		}
 	}
 
 	static void dispose(JNIEnv * env, jobject jthis)
@@ -68,6 +76,15 @@ public:
 		catch (...)
 		{
 			// Ignore
+		}
+	}
+
+	static void checkInitializedOrThrow(const NativeObject* nativeObject)
+	{
+		if (nativeObject == NULL)
+		{
+			assert(false);
+			throw new NativeException(E_POINTER, L"Unitialized native object");
 		}
 	}
 protected:

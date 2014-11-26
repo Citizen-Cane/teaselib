@@ -39,7 +39,7 @@ public class TextToSpeechRecorder {
 	int changedEntries = 0;
 	int upToDateEntries = 0;
 	int reusedDuplicates = 0;
-	
+
 	public TextToSpeechRecorder(ResourceLoader resources) throws IOException {
 		this.textToSpeech = new TextToSpeech();
 		this.voices = textToSpeech.getVoices();
@@ -67,8 +67,7 @@ public class TextToSpeechRecorder {
 			ttsPlayer = new TextToSpeechPlayer(resources, textToSpeech);
 		}
 		this.ttsPlayer = ttsPlayer;
-		TeaseLib.log("Build start: "
-				+ new Date(buildStart).toString());
+		TeaseLib.log("Build start: " + new Date(buildStart).toString());
 	}
 
 	private File createSubDir(File dir, String name) {
@@ -138,8 +137,7 @@ public class TextToSpeechRecorder {
 		}
 	}
 
-	public void finish()
-	{
+	public void finish() {
 		TeaseLib.log("Finished: " + upToDateEntries + " up to date, "
 				+ reusedDuplicates + " reused duplicates, " + changedEntries
 				+ " changed, " + newEntries + " new");
@@ -172,6 +170,7 @@ public class TextToSpeechRecorder {
 	public void create(Message message, File messageDir) throws IOException {
 		TeaseLib.log("Recording message:\n" + message.toHashString());
 		int index = 0;
+		mp3.Main lame = new mp3.Main();
 		List<String> soundFiles = new Vector<>();
 		for (String paragraph : message.getParagraphs()) {
 			// TODO Process or ignore special instructions
@@ -181,6 +180,16 @@ public class TextToSpeechRecorder {
 			File soundFile = new File(messageDir, Integer.toString(index));
 			String recordedSoundFile = textToSpeech.speak(paragraph,
 					soundFile.getAbsolutePath());
+			if (!recordedSoundFile.endsWith(".mp3")) {
+				String encodedSoundFile = recordedSoundFile.replace(".wav",
+						".mp3");
+				// sampling frequency is read from the wav audio file
+				String[] argv = { recordedSoundFile, encodedSoundFile,
+						"--preset", "standard" };
+				lame.run(argv);
+				new File(recordedSoundFile).delete();
+				recordedSoundFile = encodedSoundFile;
+			}
 			soundFiles.add(new File(recordedSoundFile).getName());
 			index++;
 		}

@@ -31,15 +31,14 @@ extern "C"
 	* Signature: (Lteaselib/speechrecognition/SpeechRecognitionEvents;Ljava/lang/String;)V
 	*/
 	JNIEXPORT void JNICALL Java_teaselib_speechrecognition_implementation_TeaseLibSR_initSR
-	(JNIEnv *env, jobject jthis, jobject jevents, jstring jlangCode)
+		(JNIEnv *env, jobject jthis, jobject jevents, jstring jlocale)
 	{
 		try
 		{
 			// TODO Language
-			JNIString languageCode(env, jlangCode);
-			assert(wcscmp(languageCode, L"en-us") == 0);
+			JNIString locale(env, jlocale);
 			// TODO Pass language code instead of recognizer attribute
-			SpeechRecognizer* speechRecognizer = new SpeechRecognizer(env, jthis, jevents, L"language=409");
+			SpeechRecognizer* speechRecognizer = new SpeechRecognizer(env, jthis, jevents, locale);
 			NativeObject::checkInitializedOrThrow(speechRecognizer);
 		}
 		catch (NativeException *e)

@@ -18,7 +18,7 @@ class SpeechRecognizer : public NativeObject, protected COMUser
 public:
 	typedef std::vector<std::wstring> Choices;
 
-	SpeechRecognizer(JNIEnv *env, jobject jthis, jobject jevents, wchar_t* recognizerAttributes);
+	SpeechRecognizer(JNIEnv *env, jobject jthis, jobject jevents, const wchar_t* recognizerAttributes);
 	virtual ~SpeechRecognizer();
 	void speechRecognitionEventHandlerThread(JNIEnv* threadEnv);
 
@@ -37,7 +37,7 @@ private:
 	HRESULT speechRecognitionInitAudio();
 	HRESULT speechRecognitionInitInterests();
 
-	std::wstring recognizerAttributes;
+	std::wstring locale;
 
 	CComPtr<ISpRecognizer> cpRecognizer;
 	CComPtr<ISpRecoContext> cpContext;

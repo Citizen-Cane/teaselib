@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Set;
 
 import teaselib.Attitude;
@@ -17,7 +16,6 @@ import teaselib.image.RenderImage;
 import teaselib.image.RenderNoImage;
 import teaselib.texttospeech.TextToSpeech;
 import teaselib.texttospeech.TextToSpeechPlayer;
-import teaselib.texttospeech.Voice;
 import teaselib.userinterface.MediaRenderer;
 import teaselib.userinterface.MediaRendererThread;
 
@@ -56,29 +54,14 @@ public class RenderMessage extends MediaRendererThread implements
 			StringBuilder text = null;
 			char ending = ' ';
 			try {
-				// Prerendered speech
-				final Iterator<String> prerenderedSpeech;
+				// Start speaking a message, replay prerecorded items or speak
+				// with TTS later
+				final Iterator<String> prerenderedSpeechItems;
 				if (speechSynthesizer != null) {
-					List<String> prerenderedSpeechFiles = speechSynthesizer
-							.getSpeechResources(message);
-					if (prerenderedSpeechFiles != null) {
-						prerenderedSpeech = prerenderedSpeechFiles.iterator();
-					} else {
-						prerenderedSpeech = new ArrayList<String>().iterator();
-					}
-					// Do we have any prerecorded speech?
-					if (!prerenderedSpeech.hasNext()) {
-						final TextToSpeech textToSpeech = speechSynthesizer.textToSpeech;
-						if (textToSpeech.isReady()) {
-							// No, setup voice
-							Voice voice = speechSynthesizer
-									.getMatchingOrBestVoiceFor(message.character);
-							textToSpeech.setVoice(voice);
-						}
-					}
+					prerenderedSpeechItems = speechSynthesizer
+							.selectVoice(message);
 				} else {
-					// Just display
-					prerenderedSpeech = new ArrayList<String>().iterator();
+					prerenderedSpeechItems = new ArrayList<String>().iterator();
 				}
 				// Process message paragraphs
 				String image = null;
@@ -132,9 +115,7 @@ public class RenderMessage extends MediaRendererThread implements
 					teaseLib.host.show(text.toString());
 					final boolean lastParagraph = !it.hasNext();
 					if (speechSynthesizer != null) {
-						String prerecorded = prerenderedSpeech.hasNext() ? prerenderedSpeech
-								.next() : null;
-						speechSynthesizer.speak(line, prerecorded,
+						speechSynthesizer.speak(line, prerenderedSpeechItems,
 								completedAll, teaseLib);
 					} else {
 						// Text is not meant to be spoken, just to be displayed

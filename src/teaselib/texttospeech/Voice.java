@@ -18,7 +18,7 @@ public class Voice extends NativeObject {
 	 * allowed. Avoid file system characters like '/', '\', ':'.
 	 */
 	public final String guid;
-	public final String langID;
+	public final String locale;
 	public final String language;
 	public final Gender gender;
 	public final String name;
@@ -28,12 +28,12 @@ public class Voice extends NativeObject {
 		Male, Female, Robot
 	}
 
-	public Voice(long nativeObject, String guid, String langID,
+	public Voice(long nativeObject, String guid, String locale,
 			String language, Gender gender, String name, String vendor) {
 		super(nativeObject);
 		this.guid = guid;
 		this.gender = gender;
-		this.langID = langID;
+		this.locale = locale;
 		this.language = language;
 		this.name = name;
 		this.vendor = vendor;
@@ -42,7 +42,7 @@ public class Voice extends NativeObject {
 	@Override
 	public String toString() {
 		return getClass().getSimpleName() + ": guid=" + guid + " , gender= "
-				+ gender + " , lang-id=" + langID + " , language=" + language
+				+ gender + " , locale=" + locale + " , language=" + language
 				+ " , name=" + name + " , vendor=" + vendor;
 	}
 }

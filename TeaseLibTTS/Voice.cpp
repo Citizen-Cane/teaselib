@@ -49,17 +49,17 @@ Voice::Voice(JNIEnv* env, ISpObjectToken* pVoiceToken)
 	HRESULT hr = pVoiceToken->GetId(&id);
 	guid = ::PathFindFileName(id);
 	if (FAILED(hr)) throw new COMException(hr);
-	LANGID langid;
-	hr = SpGetLanguageFromToken(pVoiceToken, &langid);
+	LANGID langID;
+	hr = SpGetLanguageFromToken(pVoiceToken, &langID);
 	if (FAILED(hr)) throw new COMException(hr);
 	// en-AU
-	TCHAR langID[MAX_PATH];
-	wcscpy_s(langID, L"??-??");
-	GetLocaleInfo(MAKELCID(langid, 0), LOCALE_SNAME, langID, MAX_PATH);
+	TCHAR locale[MAX_PATH];
+	wcscpy_s(locale, L"??-??");
+	GetLocaleInfo(MAKELCID(langID, 0), LOCALE_SNAME, locale, MAX_PATH);
 	// English (Australia)
 	TCHAR language[MAX_PATH];
 	wcscpy_s(language, L"Unknown");
-	GetLocaleInfo(MAKELCID(langid, 0), LOCALE_SLOCALIZEDDISPLAYNAME, language, MAX_PATH);
+	GetLocaleInfo(MAKELCID(langID, 0), LOCALE_SLOCALIZEDDISPLAYNAME, language, MAX_PATH);
 	if (FAILED(hr)) throw new COMException(hr);
 	// Gender
 	LPWSTR gender;
@@ -85,7 +85,7 @@ Voice::Voice(JNIEnv* env, ISpObjectToken* pVoiceToken)
 		JNIClass::getMethodID(env, clazz, "<init>", "(JLjava/lang/String;Ljava/lang/String;Ljava/lang/String;Lteaselib/texttospeech/Voice$Gender;Ljava/lang/String;Ljava/lang/String;)V"),
 		thisPtr,
 		JNIString(env, guid.c_str()).operator jstring(),
-		JNIString(env, langID).operator jstring(),
+		JNIString(env, locale).operator jstring(),
 		JNIString(env, language).operator jstring(),
 		jgender,
 		JNIString(env, name).operator jstring(),

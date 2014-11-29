@@ -3,7 +3,6 @@ package teaselib.texttospeech;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -14,24 +13,25 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.Set;
 import java.util.Vector;
 
+import teaselib.Actor;
 import teaselib.ResourceLoader;
 import teaselib.TeaseLib;
 import teaselib.text.Message;
 
 public class TextToSpeechRecorder {
-	public final static String AvailableVoicesFilename = "installed.properties";
-	public final static String RecordedVoicesFilename = "recorded.properties";
 	public final static String SpeechDirName = "speech";
 	public final static String MessageFilename = "message.txt";
 	public final static String ResourcesFilename = "inventory.txt";
 
+	private final ResourceLoader resources;
 	private final TextToSpeech textToSpeech;
 	private File speechDir = null;
 	private final Map<String, Voice> voices;
+	private final Set<String> actors = new HashSet<>();
+
 	private final TextToSpeechPlayer ttsPlayer;
 
 	private final long buildStart = System.currentTimeMillis();
@@ -41,29 +41,24 @@ public class TextToSpeechRecorder {
 	int reusedDuplicates = 0;
 
 	public TextToSpeechRecorder(ResourceLoader resources) throws IOException {
+		this.resources = resources;
 		this.textToSpeech = new TextToSpeech();
 		this.voices = textToSpeech.getVoices();
 		TextToSpeechPlayer ttsPlayer = new TextToSpeechPlayer(resources,
 				textToSpeech);
 		File assetsDir = resources.getAssetsPath("");
 		speechDir = createSubDir(assetsDir, SpeechDirName);
-		Properties available = new Properties();
-		// List available voices by guid and language
-		for (String key : voices.keySet()) {
-			available.put(key, voices.get(key).language);
-		}
-		File availableVoicesFile = new File(assetsDir, AvailableVoicesFilename);
-		TeaseLib.log("Creating " + availableVoicesFile.toString());
-		available.store(new FileOutputStream(availableVoicesFile), "");
-		if (!ttsPlayer.hasPrerecordedVoices()) {
+		AvailableVoicesProperties available = new AvailableVoicesProperties(
+				voices);
+		available.store(assetsDir);
+
+		VoicesProperties voicesProperties = new VoicesProperties(resources);
+		if (voicesProperties.empty()) {
 			// Write default file
-			TeaseLib.log("Creating defaults for " + RecordedVoicesFilename);
 			// TODO Language and gender selection for voices
 			String first = voices.keySet().iterator().next();
-			Properties record = new Properties();
-			record.put(Message.Dominant, voices.get(first).guid);
-			record.store(new FileOutputStream(new File(assetsDir,
-					RecordedVoicesFilename)), "");
+			voicesProperties.put(Actor.Dominant, voices.get(first));
+			voicesProperties.store(assetsDir);
 			ttsPlayer = new TextToSpeechPlayer(resources, textToSpeech);
 		}
 		this.ttsPlayer = ttsPlayer;
@@ -86,14 +81,35 @@ public class TextToSpeechRecorder {
 		Set<String> created = new HashSet<>();
 		for (Message message : scanner) {
 			String hash = getHash(message);
-			File characterDir = createSubDir(speechDir, message.getCharacter());
+			Actor actor = message.actor;
+			File characterDir = createSubDir(speechDir, actor.name);
 			// Process voices for each character
-			String voiceForCharacter = ttsPlayer.getVoiceFor(message
-					.getCharacter());
-			Voice voice = voices.get(voiceForCharacter);
+			final Voice voice;
+			String voiceGuid = ttsPlayer.getAssignedVoiceFor(actor);
+			if (voiceGuid == null) {
+				voice = ttsPlayer.getVoiceFor(actor);
+			} else {
+				voice = voices.get(voiceGuid);
+			}
+			if (voice == null) {
+				throw new IllegalArgumentException("Voice for actor '" + actor
+						+ "' not found in " + VoicesProperties.VoicesFilename);
+			}
 			TeaseLib.log("Voice: " + voice.name);
 			textToSpeech.setVoice(voice);
 			File voiceDir = createSubDir(characterDir, voice.guid);
+			if (!actors.contains(actor.name)) {
+				// Create a tag file containing the actor voice properties, for
+				// information and because
+				// the resource loader can just load files, but not check for
+				// directories in the resource paths
+				actors.add(actor.name);
+				ActorVoice actorVoice = new ActorVoice(actor.name, voice.guid,
+						resources);
+				actorVoice.clear();
+				actorVoice.put(actor.name, voice);
+				actorVoice.store(new File(new File(speechDir, actor.name), voice.guid));
+			}
 			File messageDir = new File(voiceDir, hash);
 			if (messageDir.exists()) {
 				long lastModified = messageDir.lastModified();
@@ -145,7 +161,7 @@ public class TextToSpeechRecorder {
 
 	private boolean isUpToDate(Message message, File messageDir)
 			throws IOException {
-		Message readIn = new Message();
+		Message readIn = new Message(message.actor);
 		File file = new File(messageDir, MessageFilename);
 		if (file.exists()) {
 			BufferedReader fileReader = new BufferedReader(new FileReader(file));

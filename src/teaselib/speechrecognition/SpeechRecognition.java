@@ -16,6 +16,8 @@ import teaselib.util.Event;
 public class SpeechRecognition {
 	public final SpeechRecognitionEvents events = new SpeechRecognitionEvents();
 
+	private String locale;
+	
 	private SpeechRecognitionImplementation sr;
 
 	private DelegateThread delegateThread = new DelegateThread();
@@ -30,14 +32,15 @@ public class SpeechRecognition {
 
 	public static final Lock SpeechRecognitionInProgress = new ReentrantLock();
 
-	public SpeechRecognition() {
+	public SpeechRecognition(String locale) {
+		this.locale = locale.toLowerCase();
 		try {
 			Delegate delegate = new Delegate() {
 				@Override
 				public void run() {
 					try {
 						sr = new TeaseLibSR();
-						sr.init(events, "en-us");
+						sr.init(events, SpeechRecognition.this.locale);
 					} catch (UnsatisfiedLinkError e) {
 						TeaseLib.log(this, e);
 					}

@@ -21,10 +21,10 @@
 #include "SpeechRecognizer.h"
 
 
-SpeechRecognizer::SpeechRecognizer(JNIEnv *env, jobject jthis, jobject jevents, wchar_t* recognizerAttributes)
+SpeechRecognizer::SpeechRecognizer(JNIEnv *env, jobject jthis, jobject jevents, const wchar_t* locale)
 : NativeObject(env, jthis)
 , speechRecognitionThread()
-, recognizerAttributes()
+, locale(locale)
 , hExitEvent(INVALID_HANDLE_VALUE)
 , gjthis(env->NewGlobalRef(jthis))
 , gjevents(env->NewGlobalRef(jevents))
@@ -86,13 +86,76 @@ void SpeechRecognizer::speechRecognitionEventHandlerThread(JNIEnv* threadEnv)
 	});
 }
 
+std::wstring getLOCALE_ILANGUAGE(std::wstring locale)
+{
+	// Parse langID (e.g. en-us) into Locale identifier (409) and then into recognizer attribute (L"language=409")
+	// http://msdn.microsoft.com/en-us/library/dd318693%28VS.85%29.aspx
+	// http://msdn.microsoft.com/en-us/library/hh378476%28v=office.14%29.aspx
+	const int n = 23;
+	struct langID2localeID
+	{
+		const wchar_t* locale;
+		const wchar_t* langID;
+	} table[n] =
+	{
+		{ L"es", L"2c0a" },
+		{ L"ca-es", L"403" },
+		{ L"es-es", L"2c0a" },
+		{ L"es-mx", L"80a" },
+		{ L"en", L"409" },
+		{ L"en-au", L"c09" },
+		{ L"en-ca", L"1009" },
+		{ L"en-us", L"409" },
+		{ L"en-gb", L"809" },
+		{ L"en-in", L"4009" },
+		{ L"de", L"407" },	// or 407, test
+		{ L"de-de", L"c07" },
+		{ L"de-at", L"c07" },
+		{ L"de-li", L"c07" },
+		{ L"de-lu", L"c07" },
+		{ L"de-ch", L"c07" },
+		{ L"fr", L"40c" },
+		{ L"fr-fr", L"40c" },
+		{ L"fr-ca", L"c0c" },
+		{ L"it", L"410" },
+		{ L"it-it", L"410" },
+		{ L"nl", L"813" },
+		{ L"nl-nl", L"813" },
+	};
+	std::wstring langID = L"";
+	for (int i = 0; i < n; i++)
+	{
+		if (locale.compare(table[i].locale) == 0)
+		{
+			langID = table[i].langID;
+		}
+	}
+	return langID;
+}
 
 HRESULT SpeechRecognizer::speechRecognitionInitContext()
 {
-	// Find the best matching installed recognizer
+	//std::wstring id = getLOCALE_ILANGUAGE(langID);
+	//if (id.empty())
+	//{
+	//	throw new NativeException(E_INVALIDARG, L"Unsupported language or region");
+	//}
+	TCHAR languageID[MAX_PATH];
+	int size = GetLocaleInfoEx(locale.c_str(), LOCALE_ILANGUAGE, languageID, MAX_PATH);
+	const wchar_t* langIDWithoutTrailingZeros = languageID;
+	while (*langIDWithoutTrailingZeros == '0')
+	{
+		langIDWithoutTrailingZeros++;
+	}
+	std::wstring recognizerAttributes = std::wstring(L"language=") + langIDWithoutTrailingZeros;
+	// Find the best matching installed recognizer for the language
 	CComPtr<ISpObjectToken> cpRecognizerToken;
 	HRESULT hr = SpFindBestToken(SPCAT_RECOGNIZERS, recognizerAttributes.c_str(), NULL, &cpRecognizerToken);
 	assert(SUCCEEDED(hr));
+	if (cpRecognizerToken == NULL)
+	{
+		throw new NativeException(E_INVALIDARG, (std::wstring(L"Unsupported language or region ") + locale).c_str());
+	}
 	// Create a recognizer and immediately set its state to inactive
 	if (SUCCEEDED(hr))
 	{

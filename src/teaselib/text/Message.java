@@ -5,16 +5,17 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Vector;
 
-public class Message {
-	public final static String Dominant = "Dominant";
+import teaselib.Actor;
 
-	public final String character;
+public class Message {
+
+	public final Actor actor;
 
 	private final Vector<String> message;
 
-	public Message() {
+	public Message(Actor actor) {
 		this.message = new Vector<String>();
-		this.character = Dominant;
+		this.actor = actor;
 	}
 
 	// TODO character type  cannot be string
@@ -23,14 +24,14 @@ public class Message {
 	 * @param message
 	 *            The message to render, or null to display no message
 	 */
-	public Message(String message) {
+	public Message(Actor actor,String message) {
 		if (message != null) {
 			this.message = new Vector<>(1);
 			this.message.add(message);
 		} else {
 			this.message = new Vector<>();
 		}
-		this.character = Dominant;
+		this.actor = actor;
 	}
 
 	/**
@@ -38,7 +39,7 @@ public class Message {
 	 *            The message to render, or null or an empty vector to display
 	 *            no message
 	 */
-	public Message(String... message) {
+	public Message(Actor actor, String... message) {
 		if (message == null) {
 			this.message = new Vector<>();
 		} else {
@@ -47,7 +48,7 @@ public class Message {
 				this.message.add(s);
 			}
 		}
-		this.character = Dominant;
+		this.actor = actor;
 	}
 
 	/**
@@ -55,17 +56,13 @@ public class Message {
 	 *            The message to render, or null or an empty vector to display
 	 *            no message
 	 */
-	public Message(Vector<String> message) {
+	public Message(Actor actor, Vector<String> message) {
 		if (message == null) {
 			this.message = new Vector<>();
 		} else {
 			this.message = message;
 		}
-		this.character = Dominant;
-	}
-
-	public String getCharacter() {
-		return character;
+		this.actor = actor;
 	}
 
 	public void add(String text) {

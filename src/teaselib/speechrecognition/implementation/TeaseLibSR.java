@@ -29,9 +29,13 @@ public class TeaseLibSR extends SpeechRecognitionImplementation {
 						eventThread.notifyAll();
 					}
 				} catch (IllegalMonitorStateException e) {
-					TeaseLib.logDetail(this, e);
+					TeaseLib.log(this, e);
 				}
-				TeaseLibSR.this.initSREventThread(TeaseLibSR.this);
+				try {
+					TeaseLibSR.this.initSREventThread(TeaseLibSR.this);
+				} catch (Throwable t) {
+					TeaseLib.log(this, t);
+				}
 			}
 		});
 		synchronized (eventThread)

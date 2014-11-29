@@ -81,14 +81,14 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
     <TargetName>$(ProjectName)_$(PlatformShortName)</TargetName>
-    <OutDir>$(SolutionDir)TeaseLib\lib\</OutDir>
+    <OutDir>$(SolutionDir)lib\</OutDir>
     <IntDir>$(ProjectDir)$(Configuration)_$(PlatformShortName)\obj\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <TargetName>$(ProjectName)_$(PlatformShortName)</TargetName>
     <IntDir>$(ProjectDir)$(Configuration)_$(PlatformShortName)\obj\</IntDir>
-    <OutDir>$(SolutionDir)TeaseLib\lib\</OutDir>
+    <OutDir>$(SolutionDir)lib\</OutDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>

@@ -8,6 +8,12 @@ public interface MediaRenderer {
 	public void render(TeaseLib teaseLib);
 
 	public interface Threaded {
+
+		/**
+		 * Wait for the renderer having completed the introduction phase of its content 
+		 */
+		public void completeStart();
+
 		/**
 		 * Wait for the renderer having completed the mandatory part of its content
 		 */

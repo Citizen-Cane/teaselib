@@ -11,9 +11,10 @@ public abstract class MediaRendererThread implements Runnable, MediaRenderer,
 	protected boolean finishedMandatoryParts = false;
 	protected TeaseLib teaseLib = null;
 
+	protected final Object completedStart = new Object();
 	protected final Object completedMandatoryParts = new Object();
 	protected final Object completedAll = new Object();
-	
+
 	private long start = 0;
 
 	/**
@@ -22,24 +23,22 @@ public abstract class MediaRendererThread implements Runnable, MediaRenderer,
 	protected abstract void render() throws InterruptedException;
 
 	@Override
-	public final void run()
-	{
+	public final void run() {
 		try {
 			render();
 		} catch (InterruptedException e) {
 			TeaseLib.logDetail(this, e);
-		}
-		catch(Throwable t)
-		{
+		} catch (Throwable t) {
 			TeaseLib.log(this, t);
 		}
 		endThread = true;
-		synchronized(completedMandatoryParts)
-		{
+		synchronized (completedStart) {
+			completedStart.notifyAll();
+		}
+		synchronized (completedMandatoryParts) {
 			completedMandatoryParts.notifyAll();
 		}
-		synchronized(completedAll)
-		{
+		synchronized (completedAll) {
 			completedAll.notifyAll();
 		}
 	}
@@ -54,9 +53,39 @@ public abstract class MediaRendererThread implements Runnable, MediaRenderer,
 		renderThread.start();
 	}
 
+	protected void notifyStartCompleted()
+	{
+		synchronized (completedStart) {
+			completedStart.notifyAll();
+		}
+	}
+
+	public void completeStart() {
+		// Wait until all renders have completed their startup
+		// to avoid buttons displayed to early
+		// TODO completeStarts() doesn't work since it is not guaranteed
+		// that the object we're going to wait for has been locked at this point
+		// -> lock completStarts at object construction, and release after
+		// content has rendered
+		// if (!endThread)
+		// {
+		// synchronized (completedStart) {
+		// try {
+		// completedStart.wait();
+		// } catch (InterruptedException e) {
+		// // Expected
+		// } catch (IllegalMonitorStateException e) {
+		// TeaseLib.logDetail(this, e);
+		// }
+		// }
+		// }
+		TeaseLib.logDetail(getClass().getSimpleName()
+				+ " completed start part after "
+				+ String.format("%.2f seconds", getElapsedSeconds()));
+	}
+
 	public void completeMandatory() {
-		if (!endThread)
-		{
+		if (!endThread) {
 			synchronized (completedMandatoryParts) {
 				try {
 					completedMandatoryParts.wait();
@@ -66,16 +95,16 @@ public abstract class MediaRendererThread implements Runnable, MediaRenderer,
 					TeaseLib.logDetail(this, e);
 				}
 			}
-		}		
+		}
 		TeaseLib.logDetail(getClass().getSimpleName()
 				+ " completed mandatory part after "
 				+ String.format("%.2f seconds", getElapsedSeconds()));
 	}
 
 	public void completeAll() {
-		if (renderThread == null) return;
-		try
-		{
+		if (renderThread == null)
+			return;
+		try {
 			while (renderThread.isAlive()) {
 				try {
 					renderThread.join();
@@ -87,9 +116,7 @@ public abstract class MediaRendererThread implements Runnable, MediaRenderer,
 					throw new ScriptInterruptedException();
 				}
 			}
-		}
-		finally
-		{
+		} finally {
 			renderThread = null;
 		}
 	}
@@ -100,14 +127,14 @@ public abstract class MediaRendererThread implements Runnable, MediaRenderer,
 
 	@Override
 	public void end() {
-		if (renderThread == null) return;
+		if (renderThread == null)
+			return;
 		endThread = true;
 		renderThread.interrupt();
 		TeaseLib.logDetail(getClass().getSimpleName() + " interrupted after "
 				+ String.format("%.2f", getElapsedSeconds()));
 		// Almost like complete, but avoid recursion
-		try
-		{
+		try {
 			while (renderThread.isAlive()) {
 				try {
 					renderThread.join();
@@ -115,12 +142,9 @@ public abstract class MediaRendererThread implements Runnable, MediaRenderer,
 					throw new ScriptInterruptedException();
 				}
 			}
-		}
-		finally
-		{
+		} finally {
 			renderThread = null;
-			TeaseLib.logDetail(getClass().getSimpleName()
-					+ " ended after "
+			TeaseLib.logDetail(getClass().getSimpleName() + " ended after "
 					+ String.format("%.2f", getElapsedSeconds()));
 		}
 	}

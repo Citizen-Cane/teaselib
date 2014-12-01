@@ -113,6 +113,8 @@ public class RenderMessage extends MediaRendererThread implements
 						teaseLib.host.setImage(imageIterator.next());
 					}
 					teaseLib.host.show(text.toString());
+					// First message shown - start part completed
+					notifyStartCompleted();
 					final boolean lastParagraph = !it.hasNext();
 					if (speechSynthesizer != null) {
 						speechSynthesizer.speak(line, prerenderedSpeechItems,

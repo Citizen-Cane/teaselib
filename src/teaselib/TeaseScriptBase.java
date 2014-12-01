@@ -27,7 +27,6 @@ import teaselib.userinterface.MediaRendererQueue;
 import teaselib.util.Delegate;
 import teaselib.util.Event;
 
-
 public abstract class TeaseScriptBase {
 
 	public final TeaseLib teaseLib;
@@ -37,7 +36,7 @@ public abstract class TeaseScriptBase {
 
 	protected final MediaRendererQueue renderQueue = new MediaRendererQueue();
 	protected final Deque<MediaRenderer> deferredRenderers = new ArrayDeque<MediaRenderer>();
-	
+
 	public TeaseScriptBase(TeaseLib teaseLib, String locale) {
 		this.teaseLib = teaseLib;
 		speechSynthesizer = new TextToSpeechPlayer(teaseLib.resources,
@@ -55,18 +54,20 @@ public abstract class TeaseScriptBase {
 	}
 
 	/**
-	 * Workaround as of now because PCMPlayer must display the stop button immediately
+	 * Workaround as of now because PCMPlayer must display the stop button
+	 * immediately
 	 */
 	public void completeMandatory() {
-		renderQueue.completeAllMandatories();
+		renderQueue.completeMandatories();
 	}
 
-	public void renderMessage(Message message, TextToSpeechPlayer speechSynthesizer, ImageIterator dominantImages, String attitude)
-	{
+	public void renderMessage(Message message,
+			TextToSpeechPlayer speechSynthesizer, ImageIterator dominantImages,
+			String attitude) {
 		completeAll();
 		renderQueue.start(deferredRenderers, teaseLib);
 		deferredRenderers.clear();
-		Set<String> hints = new HashSet<>(); 
+		Set<String> hints = new HashSet<>();
 		// Within messages, images might change fast, and changing
 		// the camera position, image size or aspect would be too distracting
 		hints.add(ImageIterator.SameCameraPosition);
@@ -152,10 +153,15 @@ public abstract class TeaseScriptBase {
 		try {
 			if (scriptTask != null) {
 				ExecutorService executor = Executors.newFixedThreadPool(1);
-				if (scriptTask != null) {
-					executor.execute(scriptTask);
-					// TODO Catch errors in script thread
-				}
+				executor.execute(scriptTask);
+				// renderQueue.completeStarts();
+				// TODO completeStarts() doesn't work
+				// Workaround: A bit unsatisfying, but the choice buttons appear
+				// too early
+				// Let's workaround this for now, and pretend it's not our fault
+				// :^)
+				Thread.yield();
+				teaseLib.host.sleep(200);
 			}
 			choice = teaseLib.host.choose(choices);
 			if (scriptTask != null) {

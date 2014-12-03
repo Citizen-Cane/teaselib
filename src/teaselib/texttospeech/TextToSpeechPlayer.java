@@ -216,7 +216,7 @@ public class TextToSpeechPlayer {
 	 *            instance to call sleep on
 	 */
 	public void speak(String prompt, Iterator<String> prerecorded,
-			Object completionSync, TeaseLib teaseLib) throws IOException {
+			TeaseLib teaseLib) throws IOException {
 		final String path;
 		if (prerecorded != null) {
 			path = prerecorded.hasNext() ? prerecorded.next() : null;
@@ -231,19 +231,16 @@ public class TextToSpeechPlayer {
 				textToSpeech.speak(prompt);
 			} catch (Throwable t) {
 				TeaseLib.log(this, t);
-				speakSilent(prompt, completionSync, teaseLib);
+				speakSilent(prompt, teaseLib);
 			}
 		} else {
-			speakSilent(prompt, completionSync, teaseLib);
+			speakSilent(prompt, teaseLib);
 		}
 	}
 
-	private void speakSilent(String prompt, Object completionSync,
-			TeaseLib teaseLib) {
+	private void speakSilent(String prompt, TeaseLib teaseLib) {
 		// Unable to speak, just display the estimated duration
 		long duration = TextToSpeech.getEstimatedSpeechDuration(prompt);
-		synchronized (completionSync) {
-			teaseLib.host.sleep(duration);
-		}
+		teaseLib.host.sleep(duration);
 	}
 }

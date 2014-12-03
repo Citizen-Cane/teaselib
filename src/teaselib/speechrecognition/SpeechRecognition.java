@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+import teaselib.ScriptInterruptedException;
 import teaselib.TeaseLib;
 import teaselib.speechrecognition.events.SpeechRecognitionStartedEventArgs;
 import teaselib.speechrecognition.events.SpeechRecognizedEventArgs;
@@ -109,7 +110,11 @@ public class SpeechRecognition {
 			Delegate delegate = new Delegate() {
 				@Override
 				public void run() {
-					sr.stopRecognition();
+					try {
+						sr.stopRecognition();
+					} finally {
+						SpeechRecognitionInProgress.unlock();
+					}
 				}
 			};
 			try {
@@ -119,6 +124,20 @@ public class SpeechRecognition {
 			}
 		} else {
 			recognizerNotInitialized();
+		}
+	}
+	
+	public void completeSpeechRecognitionInProgress()
+	{
+		try
+		{
+			SpeechRecognitionInProgress.lockInterruptibly();
+		} catch (InterruptedException e) {
+			throw new ScriptInterruptedException();
+		}
+		finally
+		{
+			SpeechRecognitionInProgress.unlock();
 		}
 	}
 }

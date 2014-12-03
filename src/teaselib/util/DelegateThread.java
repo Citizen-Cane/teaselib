@@ -3,11 +3,13 @@ package teaselib.util;
 import java.util.ArrayDeque;
 import java.util.Deque;
 
+import teaselib.ScriptInterruptedException;
 import teaselib.TeaseLib;
 
 public class DelegateThread extends Thread {
 
 	private final Deque<Delegate> queue = new ArrayDeque<>();
+	private boolean endThread = false;
 
 	public DelegateThread() {
 		start();
@@ -16,43 +18,37 @@ public class DelegateThread extends Thread {
 	@Override
 	public void run() {
 		// TOOD Don't lock the whole queue! (but doing so prevents dead locks)
-		synchronized (this) {
-			while (true) {
-				try {
-					wait();
-					while (!queue.isEmpty()) {
-						Delegate delegate = queue.removeFirst();
-						synchronized (delegate) {
-							try {
-								delegate.run();
-							} catch (Throwable t) {
-								TeaseLib.log(delegate, t);
-								delegate.setError(t);
-							}
-							delegate.notifyAll();
+		while (true) {
+			try {
+				Delegate delegate;
+				synchronized (queue) {
+					while (queue.isEmpty()) {
+						try {
+							queue.wait();
+						} catch (InterruptedException ignored) {
+						}
+						if (endThread) {
+							break;
 						}
 					}
-				} catch (InterruptedException e) {
-					// Expected
-				} catch (Throwable t) {
-					TeaseLib.log(this, t);
+					delegate = queue.removeFirst();
 				}
+				synchronized (delegate) {
+					try {
+						delegate.run();
+					} catch (Throwable t) {
+						delegate.setError(t);
+					}
+					delegate.notifyAll();
+				}
+			} catch (Throwable t) {
+				TeaseLib.log(this, t);
+			}
+			if (endThread) {
+				break;
 			}
 		}
 	}
-
-	// TODO Must lock delegate immediately, and release when executed to make
-	// this work
-	// TODO Need to query execution state of delegate -> provide wait(delegate)
-	// method
-	// public void runAsync(Delegate delegate) {
-	// synchronized (delegate) {
-	// synchronized (this) {
-	// queue.add(delegate);
-	// notify();
-	// }
-	// }
-	// }
 
 	/**
 	 * Execute the delegate synchronized. The current thread waits until the
@@ -66,14 +62,14 @@ public class DelegateThread extends Thread {
 	 */
 	public void run(Delegate delegate) throws Throwable {
 		synchronized (delegate) {
-			synchronized (this) {
-				queue.add(delegate);
-				notify();
+			synchronized (queue) {
+				queue.addLast(delegate);
+				queue.notify();
 			}
 			try {
 				delegate.wait();
 			} catch (InterruptedException e) {
-				// Ignore
+				throw new ScriptInterruptedException();
 			}
 		}
 		Throwable t = delegate.getError();
@@ -83,7 +79,7 @@ public class DelegateThread extends Thread {
 	}
 
 	void end() {
-		interrupt();
+		endThread = true;
 		try {
 			join();
 		} catch (InterruptedException e) {

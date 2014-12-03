@@ -21,13 +21,15 @@ public class RenderDelay extends MediaRendererThread {
 	public void render() throws InterruptedException {
 		int actual = teaseLib.host.getRandom(from, to);
 		TeaseLib.log(getClass().getSimpleName() + " " + toString() + ": " + actual + " seconds");
-		synchronized(completedMandatoryParts)
+		startCompleted();
+		try {
+			teaseLib.host.sleep(actual * 1000);
+		} catch (ScriptInterruptedException e) {
+			// Expected
+		}
+		finally
 		{
-			try {
-				teaseLib.host.sleep(actual * 1000);
-			} catch (ScriptInterruptedException e) {
-				// Expected
-			}
+			mandatoryCompleted();
 		}
 	}
 

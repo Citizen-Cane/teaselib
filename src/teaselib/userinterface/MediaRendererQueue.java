@@ -13,8 +13,13 @@ public class MediaRendererQueue {
 	public MediaRendererQueue() {
 	}
 
-	public synchronized void start(Collection<MediaRenderer> renderers,
-			TeaseLib teaseLib) {
+	/**
+	 * Start multiple renderers at once
+	 * 
+	 * @param renderers
+	 * @param teaseLib
+	 */
+	public void start(Collection<MediaRenderer> renderers, TeaseLib teaseLib) {
 		for (MediaRenderer r : renderers) {
 			start(r, teaseLib);
 		}
@@ -41,32 +46,49 @@ public class MediaRendererQueue {
 				}
 				threadedMediaRenderers.put(mediaMenderer.getClass(),
 						(MediaRenderer.Threaded) mediaMenderer);
+				mediaMenderer.render(teaseLib);
 			}
+		} else {
+			// Just start immediately
+			mediaMenderer.render(teaseLib);
 		}
-		mediaMenderer.render(teaseLib);
 	}
 
 	public synchronized void completeStarts() {
-		for (MediaRenderer.Threaded renderer : threadedMediaRenderers.values()) {
-			renderer.completeStart();
+		if (threadedMediaRenderers.size() > 0) {
+			for (MediaRenderer.Threaded renderer : threadedMediaRenderers
+					.values()) {
+				renderer.completeStart();
+			}
 		}
 	}
 
 	public synchronized void completeMandatories() {
-		for (MediaRenderer.Threaded renderer : threadedMediaRenderers.values()) {
-			renderer.completeMandatory();
+		if (threadedMediaRenderers.size() > 0) {
+			for (MediaRenderer.Threaded renderer : threadedMediaRenderers
+					.values()) {
+				renderer.completeMandatory();
+			}
 		}
 	}
 
 	public synchronized void completeAll() {
-		for (MediaRenderer.Threaded renderer : threadedMediaRenderers.values()) {
-			renderer.completeAll();
+		if (threadedMediaRenderers.size() > 0) {
+			for (MediaRenderer.Threaded renderer : threadedMediaRenderers
+					.values()) {
+				renderer.completeAll();
+			}
+			threadedMediaRenderers.clear();
 		}
 	}
 
 	public synchronized void endAll() {
-		for (MediaRenderer.Threaded renderer : threadedMediaRenderers.values()) {
-			renderer.end();
+		if (threadedMediaRenderers.size() > 0) {
+			for (MediaRenderer.Threaded renderer : threadedMediaRenderers
+					.values()) {
+				renderer.end();
+			}
+			threadedMediaRenderers.clear();
 		}
 	}
 }

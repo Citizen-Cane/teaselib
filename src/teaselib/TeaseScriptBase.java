@@ -11,7 +11,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.FutureTask;
-import java.util.concurrent.locks.Lock;
 
 import teaselib.image.ImageIterator;
 import teaselib.speechrecognition.SpeechRecognition;
@@ -86,33 +85,6 @@ public abstract class TeaseScriptBase {
 			}
 		}
 		TeaseLib.log("choose: " + choices.toString());
-		// Script closure
-		FutureTask<Integer> scriptTask = scriptFunction == null ? null
-				: new FutureTask<>(new Callable<Integer>() {
-					@Override
-					public Integer call() throws Exception {
-						try {
-							scriptFunction.run();
-						} catch (ScriptInterruptedException e) {
-							return null;
-						}
-						List<Delegate> clickables = teaseLib.host
-								.getClickableChoices(choices);
-						if (!clickables.isEmpty()) {
-							Delegate clickable = clickables.get(0);
-							if (clickable != null) {
-								clickables.get(0).run();
-							} else {
-								// Means that the host implementation is
-								// incomplete
-								new IllegalStateException(
-										"Host didn't return clickables for choices: "
-												+ choices.toString());
-							}
-						}
-						return new Integer(TeaseScript.Timeout);
-					}
-				});
 		// Speech recognition
 		List<Integer> srChoice = new ArrayList<>(1);
 		Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs> speechRecognizedEvent = new Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs>() {
@@ -149,37 +121,50 @@ public abstract class TeaseScriptBase {
 		};
 		speechRecognizer.events.recognitionCompleted.add(speechRecognizedEvent);
 		speechRecognizer.startRecognition(choices);
+		// Script closure
+		FutureTask<Integer> scriptTask = scriptFunction == null ? null
+				: new FutureTask<>(new Callable<Integer>() {
+					@Override
+					public Integer call() throws Exception {
+						try {
+							scriptFunction.run();
+						} catch (ScriptInterruptedException e) {
+							return null;
+						}
+						List<Delegate> clickables = teaseLib.host
+								.getClickableChoices(choices);
+						if (!clickables.isEmpty()) {
+							Delegate clickable = clickables.get(0);
+							if (clickable != null) {
+								clickables.get(0).run();
+							} else {
+								// Means that the host implementation is
+								// incomplete
+								new IllegalStateException(
+										"Host didn't return clickables for choices: "
+												+ choices.toString());
+							}
+						}
+						return new Integer(TeaseScript.Timeout);
+					}
+				});
 		int choice;
 		try {
 			if (scriptTask != null) {
 				ExecutorService executor = Executors.newFixedThreadPool(1);
 				executor.execute(scriptTask);
-				// renderQueue.completeStarts();
-				// TODO completeStarts() doesn't work
-				// Workaround: A bit unsatisfying, but the choice buttons appear
-				// too early
-				// Let's workaround this for now, and pretend it's not our fault
-				// :^)
-				Thread.yield();
-				teaseLib.host.sleep(200);
+				renderQueue.completeStarts();
+				// TODO completeStarts() doesn't work because first we need to
+				// wait for render threads that can be completed
+				// Workaround: A bit unsatisfying, but otherwise the choice
+				// buttons would appear too early
+				teaseLib.host.sleep(300);
 			}
 			choice = teaseLib.host.choose(choices);
 			if (scriptTask != null) {
 				scriptTask.cancel(true);
 			}
-			// Wait to finish recognition
-			final Lock speechRecognitionInProgress = SpeechRecognition.SpeechRecognitionInProgress;
-			synchronized (speechRecognitionInProgress) {
-				if (speechRecognitionInProgress.tryLock()) {
-					speechRecognitionInProgress.unlock();
-				} else {
-					try {
-						speechRecognitionInProgress.wait();
-					} catch (InterruptedException e) {
-						// Ignored
-					}
-				}
-			}
+			speechRecognizer.completeSpeechRecognitionInProgress();
 		} finally {
 			speechRecognizer.stopRecognition();
 			speechRecognizer.events.recognitionCompleted
@@ -194,9 +179,10 @@ public abstract class TeaseScriptBase {
 			if (scriptTask != null) {
 				if (!scriptTask.isCancelled()) {
 					try {
+						// Wait for script task completion
 						r = scriptTask.get();
 					} catch (InterruptedException e) {
-						TeaseLib.log(this, e);
+						throw new ScriptInterruptedException();
 					} catch (ExecutionException e) {
 						Throwable cause = e.getCause();
 						if (cause != null) {

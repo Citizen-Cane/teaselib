@@ -114,11 +114,11 @@ public class RenderMessage extends MediaRendererThread implements
 					}
 					teaseLib.host.show(text.toString());
 					// First message shown - start part completed
-					notifyStartCompleted();
+					startCompleted();
 					final boolean lastParagraph = !it.hasNext();
 					if (speechSynthesizer != null) {
 						speechSynthesizer.speak(line, prerenderedSpeechItems,
-								completedAll, teaseLib);
+								teaseLib);
 					} else {
 						// Text is not meant to be spoken, just to be displayed
 						// -> don't wait
@@ -128,18 +128,12 @@ public class RenderMessage extends MediaRendererThread implements
 					}
 					if (lastParagraph) {
 						// Interaction should start before the final delay
-						finishedMandatoryParts = true;
-						synchronized (completedMandatoryParts) {
-							completedMandatoryParts.notifyAll();
-						}
-						synchronized (completedAll) {
-							teaseLib.host.sleep(DELAYATENDOFTEXT);
-						}
+						mandatoryCompleted();
+						teaseLib.host.sleep(DELAYATENDOFTEXT);
+						allCompleted();
 						endThread = true;
 					} else {
-						synchronized (completedAll) {
-							teaseLib.host.sleep(DELAYBETWEENPARAGRAPHS);
-						}
+						teaseLib.host.sleep(DELAYBETWEENPARAGRAPHS);
 					}
 					ending = line.isEmpty() ? ' ' : line
 							.charAt(line.length() - 1);

@@ -1,5 +1,7 @@
 package teaselib.userinterface;
 
+import java.util.concurrent.CountDownLatch;
+
 import teaselib.ScriptInterruptedException;
 import teaselib.TeaseLib;
 
@@ -8,12 +10,11 @@ public abstract class MediaRendererThread implements Runnable, MediaRenderer,
 
 	protected Thread renderThread = null;
 	protected boolean endThread = false;
-	protected boolean finishedMandatoryParts = false;
 	protected TeaseLib teaseLib = null;
 
-	protected final Object completedStart = new Object();
-	protected final Object completedMandatoryParts = new Object();
-	protected final Object completedAll = new Object();
+	protected final CountDownLatch completedStart = new CountDownLatch(1);
+	protected final CountDownLatch completedMandatory = new CountDownLatch(1);
+	protected final CountDownLatch completedAll = new CountDownLatch(1);
 
 	private long start = 0;
 
@@ -32,78 +33,71 @@ public abstract class MediaRendererThread implements Runnable, MediaRenderer,
 			TeaseLib.log(this, t);
 		}
 		endThread = true;
-		synchronized (completedStart) {
-			completedStart.notifyAll();
-		}
-		synchronized (completedMandatoryParts) {
-			completedMandatoryParts.notifyAll();
-		}
-		synchronized (completedAll) {
-			completedAll.notifyAll();
-		}
+		startCompleted();
+		mandatoryCompleted();
+		allCompleted();
 	}
 
 	@Override
 	public void render(TeaseLib teaseLib) {
 		this.teaseLib = teaseLib;
 		endThread = false;
-		finishedMandatoryParts = false;
 		renderThread = new Thread(this);
 		start = System.currentTimeMillis();
 		renderThread.start();
 	}
 
-	protected void notifyStartCompleted()
+	protected void startCompleted()
 	{
-		synchronized (completedStart) {
-			completedStart.notifyAll();
-		}
+		completedStart.countDown();
+	}
+
+	protected void mandatoryCompleted()
+	{
+		completedMandatory.countDown();
+	}
+
+	protected void allCompleted()
+	{
+		completedAll.countDown();
 	}
 
 	public void completeStart() {
-		// Wait until all renders have completed their startup
-		// to avoid buttons displayed to early
-		// TODO completeStarts() doesn't work since it is not guaranteed
-		// that the object we're going to wait for has been locked at this point
-		// -> lock completStarts at object construction, and release after
-		// content has rendered
-		// if (!endThread)
-		// {
-		// synchronized (completedStart) {
-		// try {
-		// completedStart.wait();
-		// } catch (InterruptedException e) {
-		// // Expected
-		// } catch (IllegalMonitorStateException e) {
-		// TeaseLib.logDetail(this, e);
-		// }
-		// }
-		// }
+		if (!endThread) {
+			try {
+				completedStart.await();
+			} catch (InterruptedException e) {
+				throw new ScriptInterruptedException();
+			}
+		}
 		TeaseLib.logDetail(getClass().getSimpleName()
-				+ " completed start part after "
+				+ " completed start after "
 				+ String.format("%.2f seconds", getElapsedSeconds()));
 	}
 
 	public void completeMandatory() {
 		if (!endThread) {
-			synchronized (completedMandatoryParts) {
-				try {
-					completedMandatoryParts.wait();
-				} catch (InterruptedException e) {
-					// Expected
-				} catch (IllegalMonitorStateException e) {
-					TeaseLib.logDetail(this, e);
-				}
+			try {
+				completedMandatory.await();
+			} catch (InterruptedException e) {
+				throw new ScriptInterruptedException();
 			}
 		}
 		TeaseLib.logDetail(getClass().getSimpleName()
-				+ " completed mandatory part after "
+				+ " completed mandatory after "
 				+ String.format("%.2f seconds", getElapsedSeconds()));
 	}
 
 	public void completeAll() {
 		if (renderThread == null)
 			return;
+		if (!endThread) {
+			try {
+				completedMandatory.await();
+			} catch (InterruptedException e) {
+				throw new ScriptInterruptedException();
+			}
+		}
 		try {
 			while (renderThread.isAlive()) {
 				try {

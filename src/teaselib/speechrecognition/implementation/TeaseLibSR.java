@@ -9,16 +9,15 @@ import teaselib.speechrecognition.SpeechRecognitionImplementation;
 public class TeaseLibSR extends SpeechRecognitionImplementation {
 
 	private long nativeObject;
-	
+
 	private Thread eventThread;
-	
-	public TeaseLibSR() throws UnsatisfiedLinkError{
+
+	public TeaseLibSR() throws UnsatisfiedLinkError {
 		teaselib.util.jni.LibraryLoader.load("TeaseLibSR");
 	}
 
 	@Override
-	public void init(SpeechRecognitionEvents events, String languageCode)
-	{
+	public void init(SpeechRecognitionEvents events, String languageCode) {
 		initSR(events, languageCode);
 		eventThread = new Thread(new Runnable() {
 			@Override
@@ -38,8 +37,7 @@ public class TeaseLibSR extends SpeechRecognitionImplementation {
 				}
 			}
 		});
-		synchronized (eventThread)
-		{
+		synchronized (eventThread) {
 			eventThread.start();
 			try {
 				eventThread.wait();
@@ -50,18 +48,21 @@ public class TeaseLibSR extends SpeechRecognitionImplementation {
 	}
 
 	/**
-	// Init the recognizer
+	 * // Init the recognizer
+	 * 
 	 * @param languageCode
 	 */
-	public native void initSR(SpeechRecognitionEvents events, String languageCode);
-	
+	public native void initSR(SpeechRecognitionEvents events,
+			String languageCode);
+
 	/**
-	 * Init the speech recognizer event handling thread. Creating the thread in native code
-	 * and then attaching the VM would cause the thread to get a default class loader, without
-	 * the class path to teaselib, resulting in not being able to create event objects 
+	 * Init the speech recognizer event handling thread. Creating the thread in
+	 * native code and then attaching the VM would cause the thread to get a
+	 * default class loader, without the class path to teaselib, resulting in
+	 * not being able to create event objects
 	 */
 	private native void initSREventThread(TeaseLibSR jthis);
-	
+
 	@Override
 	public native void setChoices(List<String> choices);
 

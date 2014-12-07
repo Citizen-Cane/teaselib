@@ -17,7 +17,7 @@ public class TeaseLibSR extends SpeechRecognitionImplementation {
 	}
 
 	@Override
-	public void init(SpeechRecognitionEvents events, String languageCode) {
+	public void init(SpeechRecognitionEvents<SpeechRecognitionImplementation> events, String languageCode) {
 		initSR(events, languageCode);
 		eventThread = new Thread(new Runnable() {
 			@Override
@@ -52,7 +52,7 @@ public class TeaseLibSR extends SpeechRecognitionImplementation {
 	 * 
 	 * @param languageCode
 	 */
-	public native void initSR(SpeechRecognitionEvents events,
+	public native void initSR(SpeechRecognitionEvents<SpeechRecognitionImplementation> events,
 			String languageCode);
 
 	/**

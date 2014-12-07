@@ -10,7 +10,7 @@ public abstract class SpeechRecognitionImplementation {
 	 * Get a recognizer for the requested language
 	 * @param languageCode A language code in the form XX[X]-YY[Y], like en-us, en-uk, ger, etc.
 	 */
-	public abstract void init(SpeechRecognitionEvents events, String languageCode);
+	public abstract void init(SpeechRecognitionEvents<SpeechRecognitionImplementation> events, String languageCode);
 
 	public abstract void setChoices(List<String> choices);
 

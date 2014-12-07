@@ -30,6 +30,12 @@ SpeechRecognizer::SpeechRecognizer(JNIEnv *env, jobject jthis, jobject jevents, 
 , gjevents(env->NewGlobalRef(jevents))
 , threadEnv(NULL)
 {
+	assert(env);
+	assert(jthis);
+	assert(jevents);
+	assert(locale);
+	if (jevents == NULL) throw new NativeException(E_POINTER, L"Events");
+	if (locale == NULL) throw new NativeException(E_POINTER, L"Locale");
 }
 
 SpeechRecognizer::~SpeechRecognizer()

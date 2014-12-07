@@ -14,12 +14,8 @@ import teaselib.util.DelegateThread;
 import teaselib.util.Event;
 
 public class SpeechRecognition {
-	public final SpeechRecognitionEvents events = new SpeechRecognitionEvents();
-
 	private String locale;
-
 	private SpeechRecognitionImplementation sr;
-
 	private DelegateThread delegateThread = new DelegateThread();
 
 	private void recognizerNotInitialized() {
@@ -31,6 +27,54 @@ public class SpeechRecognition {
 	}
 
 	private final ReentrantLock SpeechRecognitionInProgress = new ReentrantLock();
+
+	// Allow other threads to wait while speech recognition is action
+	private Event<SpeechRecognitionImplementation, SpeechRecognitionStartedEventArgs> lockSpeechRecognitionInProgress = new Event<SpeechRecognitionImplementation, SpeechRecognitionStartedEventArgs>() {
+		@Override
+		public void run(SpeechRecognitionImplementation sender,
+				SpeechRecognitionStartedEventArgs args) {
+			Delegate delegate = new Delegate() {
+				@Override
+				public void run() {
+					try {
+						SpeechRecognitionInProgress.lock();
+					} catch (Throwable t) {
+						TeaseLib.log(this, t);
+					}
+				}
+			};
+			try {
+				delegateThread.run(delegate);
+			} catch (Throwable t) {
+				TeaseLib.log(this, t);
+			}
+		}
+	};
+	private Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs> unlockSpeechRecognitionInProgress = new Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs>() {
+		@Override
+		public void run(SpeechRecognitionImplementation sender,
+				SpeechRecognizedEventArgs args) {
+			Delegate delegate = new Delegate() {
+				@Override
+				public void run() {
+					try {
+						SpeechRecognitionInProgress.unlock();
+					} catch (Throwable t) {
+						TeaseLib.log(this, t);
+					}
+				}
+			};
+			try {
+				delegateThread.run(delegate);
+			} catch (Throwable t) {
+				TeaseLib.log(this, t);
+			}
+		}
+	};
+
+	public final SpeechRecognitionEvents<SpeechRecognitionImplementation> events = new SpeechRecognitionEvents<>(
+			lockSpeechRecognitionInProgress,
+			unlockSpeechRecognitionInProgress);
 
 	public SpeechRecognition(String locale) {
 		this.locale = locale.toLowerCase();
@@ -50,56 +94,6 @@ public class SpeechRecognition {
 		} catch (Throwable t) {
 			TeaseLib.log(this, t);
 		}
-		// Init further more
-		if (sr != null) {
-			// Allow other threads to wait while speech recognition is action
-			Event<SpeechRecognitionImplementation, SpeechRecognitionStartedEventArgs> lockSpeechRecognitionInProgress = new Event<SpeechRecognitionImplementation, SpeechRecognitionStartedEventArgs>() {
-				@Override
-				public void run(SpeechRecognitionImplementation sender,
-						SpeechRecognitionStartedEventArgs args) {
-					Delegate delegate = new Delegate() {
-						@Override
-						public void run() {
-							try {
-								SpeechRecognitionInProgress.lock();
-							} catch(Throwable t) {
-								TeaseLib.log(this, t);
-							}
-						}
-					};
-					try {
-						delegateThread.run(delegate);
-					} catch (Throwable t) {
-						TeaseLib.log(this, t);
-					}
-				}
-			};
-			Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs> unlockSpeechRecognitionInProgress = new Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs>() {
-				@Override
-				public void run(SpeechRecognitionImplementation sender,
-						SpeechRecognizedEventArgs args) {
-					Delegate delegate = new Delegate() {
-						@Override
-						public void run() {
-							try {
-								SpeechRecognitionInProgress.unlock();
-							} catch(Throwable t) {
-								TeaseLib.log(this, t);
-							}
-						}
-					};
-					try {
-						delegateThread.run(delegate);
-					} catch (Throwable t) {
-						TeaseLib.log(this, t);
-					}
-				}
-			};
-			events.recognitionStarted.add(lockSpeechRecognitionInProgress);
-			events.recognitionRejected.add(unlockSpeechRecognitionInProgress);
-			events.recognitionCompleted.add(unlockSpeechRecognitionInProgress);
-		}
-
 	}
 
 	/**
@@ -141,13 +135,11 @@ public class SpeechRecognition {
 						sr.stopRecognition();
 					} finally {
 						// This unlock is optional
-						if (SpeechRecognitionInProgress.tryLock())
-						{
+						if (SpeechRecognitionInProgress.tryLock()) {
 							SpeechRecognitionInProgress.unlock();
-						}
-						else{
+						} else {
 							throw new IllegalStateException();
-					}
+						}
 					}
 				}
 			};

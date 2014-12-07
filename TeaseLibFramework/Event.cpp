@@ -13,6 +13,10 @@ Event::Event(JNIEnv *env, jobject sender, jobject jevent, const char* name)
 , jevent(jevent)
 , name(name)
 {
+	assert(env);
+	assert(sender);
+	assert(jevent);
+	assert(name);
 }
 
 

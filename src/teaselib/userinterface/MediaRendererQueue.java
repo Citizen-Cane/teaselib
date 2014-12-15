@@ -8,87 +8,89 @@ import teaselib.TeaseLib;
 
 public class MediaRendererQueue {
 
-	protected final HashMap<Class<?>, MediaRenderer.Threaded> threadedMediaRenderers = new HashMap<>();
+    protected final HashMap<Class<?>, MediaRenderer.Threaded> threadedMediaRenderers = new HashMap<>();
 
-	public MediaRendererQueue() {
-	}
+    public MediaRendererQueue() {
+    }
 
-	/**
-	 * Start multiple renderers at once
-	 * 
-	 * @param renderers
-	 * @param teaseLib
-	 */
-	public void start(Collection<MediaRenderer> renderers, TeaseLib teaseLib) {
-		for (MediaRenderer r : renderers) {
-			start(r, teaseLib);
-		}
-	}
+    /**
+     * Start multiple renderers at once
+     * 
+     * @param renderers
+     * @param teaseLib
+     */
+    public void start(Collection<MediaRenderer> renderers, TeaseLib teaseLib) {
+        synchronized (this) {
+            for (MediaRenderer r : renderers) {
+                start(r, teaseLib);
+            }
+        }
+    }
 
-	/**
-	 * Start a media renderer, but wait for other renderers of the same kind to
-	 * complete first
-	 * 
-	 * @param mediaMenderer
-	 * @param teaseScript
-	 */
-	public void start(MediaRenderer mediaMenderer, TeaseLib teaseLib) {
-		if (Thread.currentThread().isInterrupted()) {
-			throw new ScriptInterruptedException();
-		}
-		if (mediaMenderer instanceof MediaRenderer.Threaded) {
-			// Before a media renderer can render, all predecessors must
-			// complete their work
-			Class<?> key = mediaMenderer.getClass();
-			synchronized (this) {
-				if (threadedMediaRenderers.containsKey(key)) {
-					threadedMediaRenderers.get(key).completeAll();
-				}
-				threadedMediaRenderers.put(mediaMenderer.getClass(),
-						(MediaRenderer.Threaded) mediaMenderer);
-				mediaMenderer.render(teaseLib);
-			}
-		} else {
-			// Just start immediately
-			mediaMenderer.render(teaseLib);
-		}
-	}
+    /**
+     * Start a media renderer, but wait for other renderers of the same kind to
+     * complete first
+     * 
+     * @param mediaMenderer
+     * @param teaseScript
+     */
+    public void start(MediaRenderer mediaMenderer, TeaseLib teaseLib) {
+        if (Thread.currentThread().isInterrupted()) {
+            throw new ScriptInterruptedException();
+        }
+        if (mediaMenderer instanceof MediaRenderer.Threaded) {
+            // Before a media renderer can render, all predecessors must
+            // complete their work
+            Class<?> key = mediaMenderer.getClass();
+            synchronized (this) {
+                if (threadedMediaRenderers.containsKey(key)) {
+                    threadedMediaRenderers.get(key).completeAll();
+                }
+                threadedMediaRenderers.put(mediaMenderer.getClass(),
+                        (MediaRenderer.Threaded) mediaMenderer);
+                mediaMenderer.render(teaseLib);
+            }
+        } else {
+            // Just start immediately
+            mediaMenderer.render(teaseLib);
+        }
+    }
 
-	public synchronized void completeStarts() {
-		if (threadedMediaRenderers.size() > 0) {
-			for (MediaRenderer.Threaded renderer : threadedMediaRenderers
-					.values()) {
-				renderer.completeStart();
-			}
-		}
-	}
+    public synchronized void completeStarts() {
+        if (threadedMediaRenderers.size() > 0) {
+            for (MediaRenderer.Threaded renderer : threadedMediaRenderers
+                    .values()) {
+                renderer.completeStart();
+            }
+        }
+    }
 
-	public synchronized void completeMandatories() {
-		if (threadedMediaRenderers.size() > 0) {
-			for (MediaRenderer.Threaded renderer : threadedMediaRenderers
-					.values()) {
-				renderer.completeMandatory();
-			}
-		}
-	}
+    public synchronized void completeMandatories() {
+        if (threadedMediaRenderers.size() > 0) {
+            for (MediaRenderer.Threaded renderer : threadedMediaRenderers
+                    .values()) {
+                renderer.completeMandatory();
+            }
+        }
+    }
 
-	public synchronized void completeAll() {
-		if (threadedMediaRenderers.size() > 0) {
-			for (MediaRenderer.Threaded renderer : threadedMediaRenderers
-					.values()) {
-				renderer.completeAll();
-			}
-			threadedMediaRenderers.clear();
-		}
-	}
+    public synchronized void completeAll() {
+        if (threadedMediaRenderers.size() > 0) {
+            for (MediaRenderer.Threaded renderer : threadedMediaRenderers
+                    .values()) {
+                renderer.completeAll();
+            }
+            threadedMediaRenderers.clear();
+        }
+    }
 
-	public synchronized void endAll() {
-		if (threadedMediaRenderers.size() > 0) {
-			for (MediaRenderer.Threaded renderer : threadedMediaRenderers
-					.values()) {
-				renderer.end();
-			}
-			threadedMediaRenderers.clear();
-		}
-	}
+    public synchronized void endAll() {
+        if (threadedMediaRenderers.size() > 0) {
+            for (MediaRenderer.Threaded renderer : threadedMediaRenderers
+                    .values()) {
+                renderer.end();
+            }
+            threadedMediaRenderers.clear();
+        }
+    }
 }

@@ -65,18 +65,28 @@ public abstract class TeaseScriptBase {
     public void renderMessage(Message message,
             TextToSpeechPlayer speechSynthesizer, ImageIterator dominantImages,
             String attitude) {
-        completeAll();
-        renderQueue.start(deferredRenderers, teaseLib);
-        deferredRenderers.clear();
+        renderDeferred();
+        Set<String> hints = getHints(attitude);
+        RenderMessage renderMessage = new RenderMessage(message,
+                speechSynthesizer, dominantImages, hints);
+        renderQueue.start(renderMessage, teaseLib);
+        renderQueue.completeStarts();
+    }
+
+    private Set<String> getHints(String attitude) {
         Set<String> hints = new HashSet<>();
         // Within messages, images might change fast, and changing
         // the camera position, image size or aspect would be too distracting
         hints.add(ImageIterator.SameCameraPosition);
         hints.add(ImageIterator.SameResolution);
         hints.add(attitude);
-        RenderMessage renderMessage = new RenderMessage(message,
-                speechSynthesizer, dominantImages, hints);
-        renderQueue.start(renderMessage, teaseLib);
+        return hints;
+    }
+
+    private void renderDeferred() {
+        completeAll();
+        renderQueue.start(deferredRenderers, teaseLib);
+        deferredRenderers.clear();
     }
 
     public String showChoices(Runnable scriptFunction,

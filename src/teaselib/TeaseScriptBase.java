@@ -113,6 +113,9 @@ public abstract class TeaseScriptBase {
                     public String call() throws Exception {
                         try {
                             scriptFunction.run();
+                            // Keep choices are available until the last part of
+                            // the script function has finished rendering
+                            completeAll();
                         } catch (ScriptInterruptedException e) {
                             return null;
                         }
@@ -199,13 +202,19 @@ public abstract class TeaseScriptBase {
             }
             choiceIndex = teaseLib.host.choose(choices);
             if (scriptTask != null) {
+                // TODO Doesn't always work:
+                // The stop is sometimes applied only
+                // after the delay renderer has finished
+                TeaseLib.logDetail("choose: Cancelling script task");
                 scriptTask.cancel(true);
             }
             if (speechRecognizer.isReady()) {
+                TeaseLib.logDetail("choose: completing speech recognition");
                 speechRecognizer.completeSpeechRecognitionInProgress();
             }
         } finally {
             if (speechRecognizer.isReady()) {
+                TeaseLib.logDetail("choose: stopping speech recognition");
                 speechRecognizer.stopRecognition();
                 speechRecognizer.events.recognitionCompleted
                         .remove(speechRecognizedEvent);
@@ -221,6 +230,7 @@ public abstract class TeaseScriptBase {
         } else if (timeoutClick.clicked) {
             choice = Timeout;
         }
+        TeaseLib.logDetail("choose: ending render queue");
         renderQueue.endAll();
         if (choice == null) {
             choice = choices.get(choiceIndex);

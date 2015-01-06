@@ -7,7 +7,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.FutureTask;
@@ -62,6 +61,10 @@ public abstract class TeaseScriptBase {
         renderQueue.completeMandatories();
     }
 
+    public void completeStarts() {
+        renderQueue.completeStarts();
+    }
+
     public void renderMessage(Message message,
             TextToSpeechPlayer speechSynthesizer, ImageIterator dominantImages,
             String attitude) {
@@ -89,6 +92,10 @@ public abstract class TeaseScriptBase {
         deferredRenderers.clear();
     }
 
+    private class TimeoutClick {
+        public boolean clicked = false;
+    }
+
     public String showChoices(Runnable scriptFunction,
             final List<String> choices) {
         // arguments check
@@ -98,43 +105,8 @@ public abstract class TeaseScriptBase {
             }
         }
         TeaseLib.log("choose: " + choices.toString());
-        // Speech recognition
-        List<Integer> srChoiceIndices = new ArrayList<>(1);
-        Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs> speechRecognizedEvent = new Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs>() {
-            @Override
-            public void run(SpeechRecognitionImplementation sender,
-                    SpeechRecognizedEventArgs eventArgs) {
-                if (eventArgs.result.length == 1) {
-                    List<Delegate> uiElements = teaseLib.host
-                            .getClickableChoices(choices);
-                    // Click the button
-                    SpeechRecognitionResult speechRecognitionResult = eventArgs.result[0];
-                    if (speechRecognitionResult.isChoice(choices)) {
-                        // This assigns the result even if the buttons have
-                        // unrealized
-                        int choice = speechRecognitionResult.index;
-                        srChoiceIndices.add(choice);
-                        try {
-                            Delegate delegate = uiElements.get(choice);
-                            if (delegate != null) {
-                                delegate.run();
-                            } else {
-                                TeaseLib.log("Button gone for choice " + choice
-                                        + ": " + speechRecognitionResult.text);
-                            }
-                        } catch (Throwable t) {
-                            TeaseLib.log(this, t);
-                        }
-                    }
-                } else {
-                    // TODO none or more than one result means incorrect
-                    // recognition
-                }
-            }
-        };
-        speechRecognizer.events.recognitionCompleted.add(speechRecognizedEvent);
-        speechRecognizer.startRecognition(choices);
         // Script closure
+        TimeoutClick timeoutClick = new TimeoutClick();
         FutureTask<String> scriptTask = scriptFunction == null ? null
                 : new FutureTask<>(new Callable<String>() {
                     @Override
@@ -151,6 +123,8 @@ public abstract class TeaseScriptBase {
                         if (!clickables.isEmpty()) {
                             Delegate clickable = clickables.get(0);
                             if (clickable != null) {
+                                // Flag timeout and click any button
+                                timeoutClick.clicked = true;
                                 clickables.get(0).run();
                             } else {
                                 // Host implementation is incomplete
@@ -162,6 +136,54 @@ public abstract class TeaseScriptBase {
                         return TeaseScript.Timeout;
                     }
                 });
+        // Speech recognition
+        List<Integer> srChoiceIndices = new ArrayList<>(1);
+        final Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs> speechRecognizedEvent;
+        if (speechRecognizer.isReady()) {
+            speechRecognizedEvent = new Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs>() {
+                @Override
+                public void run(SpeechRecognitionImplementation sender,
+                        SpeechRecognizedEventArgs eventArgs) {
+                    if (eventArgs.result.length == 1) {
+                        List<Delegate> uiElements = teaseLib.host
+                                .getClickableChoices(choices);
+                        // Find the button to click
+                        SpeechRecognitionResult speechRecognitionResult = eventArgs.result[0];
+                        if (speechRecognitionResult.isChoice(choices)) {
+                            // This assigns the result even if the buttons have
+                            // unrealized
+                            int choice = speechRecognitionResult.index;
+                            srChoiceIndices.add(choice);
+                            try {
+                                Delegate delegate = uiElements.get(choice);
+                                if (delegate != null) {
+                                    if (scriptTask != null) {
+                                        scriptTask.cancel(true);
+                                    }
+                                    // Click the button
+                                    timeoutClick.clicked = false;
+                                    delegate.run();
+                                } else {
+                                    TeaseLib.log("Button gone for choice "
+                                            + choice + ": "
+                                            + speechRecognitionResult.text);
+                                }
+                            } catch (Throwable t) {
+                                TeaseLib.log(this, t);
+                            }
+                        }
+                    } else {
+                        // TODO none or more than one result means incorrect
+                        // recognition
+                    }
+                }
+            };
+            speechRecognizer.events.recognitionCompleted
+                    .add(speechRecognizedEvent);
+            speechRecognizer.startRecognition(choices);
+        } else {
+            speechRecognizedEvent = null;
+        }
         // Get the user's choice
         int choiceIndex;
         try {
@@ -179,43 +201,25 @@ public abstract class TeaseScriptBase {
             if (scriptTask != null) {
                 scriptTask.cancel(true);
             }
-            speechRecognizer.completeSpeechRecognitionInProgress();
+            if (speechRecognizer.isReady()) {
+                speechRecognizer.completeSpeechRecognitionInProgress();
+            }
         } finally {
-            speechRecognizer.stopRecognition();
-            speechRecognizer.events.recognitionCompleted
-                    .remove(speechRecognizedEvent);
+            if (speechRecognizer.isReady()) {
+                speechRecognizer.stopRecognition();
+                speechRecognizer.events.recognitionCompleted
+                        .remove(speechRecognizedEvent);
+            }
         }
-        // Assign result from speech recognition, tasks or button click
+        // Assign result from speech recognition,
+        // script task timeout or button click
         String choice = null;
         if (!srChoiceIndices.isEmpty()) {
             // Use the first speech recognition result
             choiceIndex = srChoiceIndices.get(0);
             choice = choices.get(choiceIndex);
-        } else {
-            String r = null;
-            // Script function completed or cancelled?
-            if (scriptTask != null) {
-                if (!scriptTask.isCancelled()) {
-                    try {
-                        // Wait for script task completion
-                        r = scriptTask.get();
-                        if (r == Timeout) {
-                            // Task completed
-                            choice = Timeout;
-                        }
-                    } catch (InterruptedException e) {
-                        throw new ScriptInterruptedException();
-                    } catch (ExecutionException e) {
-                        Throwable cause = e.getCause();
-                        if (cause != null) {
-                            // Forward error from closure to main thread
-                            throw new RuntimeException(cause);
-                        } else {
-                            throw new RuntimeException(e);
-                        }
-                    }
-                }
-            }
+        } else if (timeoutClick.clicked) {
+            choice = Timeout;
         }
         renderQueue.endAll();
         if (choice == null) {

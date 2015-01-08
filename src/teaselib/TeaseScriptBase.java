@@ -113,7 +113,7 @@ public abstract class TeaseScriptBase {
                     public String call() throws Exception {
                         try {
                             scriptFunction.run();
-                            // Keep choices are available until the last part of
+                            // Keep choices available until the last part of
                             // the script function has finished rendering
                             completeAll();
                         } catch (ScriptInterruptedException e) {

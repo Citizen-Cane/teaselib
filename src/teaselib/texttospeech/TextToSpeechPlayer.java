@@ -13,6 +13,7 @@ import java.util.Vector;
 
 import teaselib.Actor;
 import teaselib.ResourceLoader;
+import teaselib.ScriptInterruptedException;
 import teaselib.TeaseLib;
 import teaselib.text.Message;
 
@@ -234,6 +235,8 @@ public class TextToSpeechPlayer {
         } else if (textToSpeech.isReady()) {
             try {
                 textToSpeech.speak(prompt);
+            } catch (ScriptInterruptedException e) {
+                throw e;
             } catch (Throwable t) {
                 TeaseLib.log(this, t);
                 speakSilent(prompt, teaseLib);

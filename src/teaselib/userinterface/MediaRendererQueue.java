@@ -1,7 +1,9 @@
 package teaselib.userinterface;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 
 import teaselib.ScriptInterruptedException;
 import teaselib.TeaseLib;
@@ -14,7 +16,10 @@ public class MediaRendererQueue {
     }
 
     /**
-     * Start multiple renderers at once
+     * Start multiple renderers at once. This is reentrant and caleld from
+     * multiple threads. Prominent users are the main script thread and closure
+     * threads. So don't block for too long, or stop button response may suffer
+     * from long delays.
      * 
      * @param renderers
      * @param teaseLib
@@ -42,55 +47,102 @@ public class MediaRendererQueue {
             // Before a media renderer can render, all predecessors must
             // complete their work
             Class<?> key = mediaMenderer.getClass();
-            synchronized (this) {
+            final MediaRenderer.Threaded renderer;
+            synchronized (threadedMediaRenderers) {
                 if (threadedMediaRenderers.containsKey(key)) {
-                    threadedMediaRenderers.get(key).completeAll();
+                    renderer = threadedMediaRenderers.get(key);
+                } else {
+                    renderer = null;
                 }
+            }
+            if (renderer != null) {
+                renderer.completeAll();
+            }
+            synchronized (threadedMediaRenderers) {
                 threadedMediaRenderers.put(mediaMenderer.getClass(),
                         (MediaRenderer.Threaded) mediaMenderer);
-                mediaMenderer.render(teaseLib);
             }
+            mediaMenderer.render(teaseLib);
         } else {
             // Just start immediately
             mediaMenderer.render(teaseLib);
         }
     }
 
-    public synchronized void completeStarts() {
-        if (threadedMediaRenderers.size() > 0) {
-            for (MediaRenderer.Threaded renderer : threadedMediaRenderers
-                    .values()) {
+    private Collection<MediaRenderer.Threaded> getMediaRenderersThreadSafe() {
+        List<MediaRenderer.Threaded> copy;
+        synchronized (threadedMediaRenderers) {
+            copy = new ArrayList<>(threadedMediaRenderers.values());
+        }
+        return copy;
+    }
+
+    public void completeStarts() {
+        Collection<MediaRenderer.Threaded> renderers = getMediaRenderersThreadSafe();
+        if (renderers.size() > 0) {
+            for (MediaRenderer.Threaded renderer : renderers) {
                 renderer.completeStart();
             }
         }
     }
 
-    public synchronized void completeMandatories() {
-        if (threadedMediaRenderers.size() > 0) {
-            for (MediaRenderer.Threaded renderer : threadedMediaRenderers
-                    .values()) {
+    public void completeMandatories() {
+        Collection<MediaRenderer.Threaded> renderers = getMediaRenderersThreadSafe();
+        if (renderers.size() > 0) {
+            for (MediaRenderer.Threaded renderer : renderers) {
                 renderer.completeMandatory();
             }
+        } else {
+            TeaseLib.logDetail("Threaded Renderers queue: empty");
         }
     }
 
-    public synchronized void completeAll() {
-        if (threadedMediaRenderers.size() > 0) {
-            for (MediaRenderer.Threaded renderer : threadedMediaRenderers
-                    .values()) {
+    /**
+     * Completes rendering of all currently running renderers. Returns after all
+     * renderers that running at the start of this method have been finished.
+     * The method is not synchronized, so other threads may start new renderers
+     * during the completion of the current batch.
+     */
+    public void completeAll() {
+        // No additional synchronization needed here,
+        // since a new renderer is started only
+        // after the previous instance has finished
+        Collection<MediaRenderer.Threaded> renderers = getMediaRenderersThreadSafe();
+        if (renderers.size() > 0) {
+            for (MediaRenderer.Threaded renderer : renderers) {
                 renderer.completeAll();
             }
-            threadedMediaRenderers.clear();
+            // TODO New entries may have been added!
+            synchronized (threadedMediaRenderers) {
+                threadedMediaRenderers.clear();
+            }
+        } else {
+            TeaseLib.logDetail("Threaded Renderers queue: empty");
         }
     }
 
-    public synchronized void endAll() {
-        if (threadedMediaRenderers.size() > 0) {
-            for (MediaRenderer.Threaded renderer : threadedMediaRenderers
-                    .values()) {
+    // TODO Locked on "stop", choose() hangs until Delay Renderer has completed
+    // A closure thread calls completeAll() -> can enter endAll() only after the
+    // completeAll() returns because they're both synchronized
+    /**
+     * Ends rendering of all currently running renderers. The renderer thread is
+     * interrupted and should end as soon as possible.
+     */
+    public void endAll() {
+        // No additional synchronization needed here,
+        // since a new renderer is started only
+        // after the previous instance has finished
+        Collection<MediaRenderer.Threaded> renderers = getMediaRenderersThreadSafe();
+        if (renderers.size() > 0) {
+            for (MediaRenderer.Threaded renderer : renderers) {
                 renderer.end();
             }
-            threadedMediaRenderers.clear();
+            // TODO New ones may have been added
+            synchronized (threadedMediaRenderers) {
+                threadedMediaRenderers.clear();
+            }
+        } else {
+            TeaseLib.logDetail("Threaded Renderers queue: empty");
         }
     }
 }

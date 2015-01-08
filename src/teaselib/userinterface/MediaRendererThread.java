@@ -96,7 +96,8 @@ public abstract class MediaRendererThread implements Runnable, MediaRenderer,
     }
 
     public void completeAll() {
-        if (renderThread == null)
+        Thread thread = renderThread;
+        if (!thread.isAlive())
             return;
         if (!endThread) {
             try {
@@ -105,20 +106,17 @@ public abstract class MediaRendererThread implements Runnable, MediaRenderer,
                 throw new ScriptInterruptedException();
             }
         }
-        try {
-            while (renderThread.isAlive()) {
-                try {
-                    renderThread.join();
-                    TeaseLib.logDetail(getClass().getSimpleName()
-                            + " completed all after "
-                            + String.format("%.2f", getElapsedSeconds()));
-                } catch (InterruptedException e) {
-                    end();
-                    throw new ScriptInterruptedException();
-                }
+        thread.interrupt();
+        while (thread.isAlive()) {
+            try {
+                thread.join();
+                TeaseLib.logDetail(getClass().getSimpleName()
+                        + " completed all after "
+                        + String.format("%.2f", getElapsedSeconds()));
+            } catch (InterruptedException e) {
+                end();
+                throw new ScriptInterruptedException();
             }
-        } finally {
-            renderThread = null;
         }
     }
 
@@ -128,23 +126,22 @@ public abstract class MediaRendererThread implements Runnable, MediaRenderer,
 
     @Override
     public void end() {
-        if (renderThread == null)
-            return;
-        endThread = true;
-        renderThread.interrupt();
+        Thread thread = renderThread;
+        if (!thread.isAlive())
+            endThread = true;
+        thread.interrupt();
         TeaseLib.logDetail(getClass().getSimpleName() + " interrupted after "
                 + String.format("%.2f", getElapsedSeconds()));
         // Almost like complete, but avoid recursion
         try {
-            while (renderThread.isAlive()) {
+            while (thread.isAlive()) {
                 try {
-                    renderThread.join();
+                    thread.join();
                 } catch (InterruptedException e) {
                     throw new ScriptInterruptedException();
                 }
             }
         } finally {
-            renderThread = null;
             TeaseLib.logDetail(getClass().getSimpleName() + " ended after "
                     + String.format("%.2f", getElapsedSeconds()));
         }

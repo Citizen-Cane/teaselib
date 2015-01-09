@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import teaselib.audio.RenderBackgroundSound;
+import teaselib.audio.RenderSound;
 import teaselib.image.ImageIterator;
 import teaselib.image.RenderImage;
 import teaselib.image.RenderNoImage;
@@ -74,7 +74,7 @@ public abstract class TeaseScript extends TeaseScriptBase {
     }
 
     public void playSound(String path) {
-        deferredRenderers.add(new RenderBackgroundSound(path));
+        deferredRenderers.add(new RenderSound(path));
     }
 
     void setAttitude(String attitude) {

@@ -106,7 +106,6 @@ public abstract class MediaRendererThread implements Runnable, MediaRenderer,
                 throw new ScriptInterruptedException();
             }
         }
-        thread.interrupt();
         while (thread.isAlive()) {
             try {
                 thread.join();

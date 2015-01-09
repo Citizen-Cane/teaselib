@@ -251,4 +251,10 @@ public class TextToSpeechPlayer {
         long duration = TextToSpeech.getEstimatedSpeechDuration(prompt);
         teaseLib.host.sleep(duration);
     }
+
+    public void stop() {
+        if (textToSpeech != null) {
+            textToSpeech.stop();
+        }
+    }
 }

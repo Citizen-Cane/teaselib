@@ -10,7 +10,7 @@ import teaselib.Attitude;
 import teaselib.ScriptInterruptedException;
 import teaselib.TeaseLib;
 import teaselib.TeaseScript;
-import teaselib.audio.RenderSound;
+import teaselib.audio.RenderBackgroundSound;
 import teaselib.image.ImageIterator;
 import teaselib.image.RenderImage;
 import teaselib.image.RenderNoImage;
@@ -89,7 +89,7 @@ public class RenderMessage extends MediaRendererThread implements
                         } else if (command.endsWith(".wav")
                                 || command.endsWith(".ogg")
                                 || command.endsWith(".mp3")) {
-                            new RenderSound(line).render(teaseLib);
+                            new RenderBackgroundSound(line).render(teaseLib);
                         }
                         // TODO Handle desktop item, but how would we detect
                         // such strings (*.*) ?
@@ -184,4 +184,17 @@ public class RenderMessage extends MediaRendererThread implements
                 + String.format("%.2f", (double) delay / 1000);
     }
 
+    @Override
+    public void end() {
+        // Cancel ongoing TTS speech
+        if (speechSynthesizer != null) {
+            speechSynthesizer.stop();
+        }
+        // Cancel prerecorded TTS speech
+        // as well as any other sounds
+        teaseLib.host.stopSounds();
+        // TODO Only stop speech and sounds that
+        // have been stated by this message renderer
+        super.end();
+    }
 }

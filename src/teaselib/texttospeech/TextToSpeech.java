@@ -212,9 +212,13 @@ public class TextToSpeech {
         return soundFilePath.toString();
     }
 
-    // public Delegates speechFinished() {
-    // return tts.speechFinished;
-    // }
+    public void stop() {
+        if (tts != null) {
+            tts.stop();
+        } else {
+            ttsEngineNotInitialized();
+        }
+    }
 
     /**
      * Estimate the duration for displaying the text when not spoken by speech

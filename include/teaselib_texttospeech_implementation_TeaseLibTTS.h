@@ -41,6 +41,14 @@ JNIEXPORT jstring JNICALL Java_teaselib_texttospeech_implementation_TeaseLibTTS_
 
 /*
  * Class:     teaselib_texttospeech_implementation_TeaseLibTTS
+ * Method:    stop
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL Java_teaselib_texttospeech_implementation_TeaseLibTTS_stop
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     teaselib_texttospeech_implementation_TeaseLibTTS
  * Method:    dispose
  * Signature: ()V
  */

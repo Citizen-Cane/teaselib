@@ -5,37 +5,38 @@ import java.util.Map;
 import teaselib.TeaseLib;
 
 public abstract class TextToSpeechImplementation {
-	
-//	public Delegates speechFinished;
+    public abstract void getVoices(Map<String, Voice> voices);
 
-	public abstract void getVoices(Map<String, Voice> voices);
+    public abstract void setVoice(Voice voice);
 
-	public abstract void setVoice(Voice voice);
+    public abstract void speak(String prompt);
 
-	public abstract void speak(String prompt);
-	public abstract String speak(String prompt, String wav);
-	
-	public abstract void dispose();
+    public abstract String speak(String prompt, String wav);
 
-	protected String [] hints = null;
+    /**
+     * Stop current speech (if any)
+     */
+    public abstract void stop();
 
-	public void setHints(String ... hints)
-	{
-		this.hints = hints;
-	}
-	
-	public String [] getHints()
-	{
-		return hints;
-	}
+    public abstract void dispose();
 
-	@Override
-	protected void finalize() throws Throwable {
-		try {
-			dispose();
-		} catch (Throwable t) {
-			TeaseLib.log(this, t);
-		}
-		super.finalize();
-	}
+    protected String[] hints = null;
+
+    public void setHints(String... hints) {
+        this.hints = hints;
+    }
+
+    public String[] getHints() {
+        return hints;
+    }
+
+    @Override
+    protected void finalize() throws Throwable {
+        try {
+            dispose();
+        } catch (Throwable t) {
+            TeaseLib.log(this, t);
+        }
+        super.finalize();
+    }
 }

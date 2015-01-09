@@ -7,30 +7,31 @@ import teaselib.texttospeech.Voice;
 
 public class TeaseLibTTS extends TextToSpeechImplementation {
 
-	private long nativeObject;
+    private long nativeObject;
 
-	public TeaseLibTTS() throws UnsatisfiedLinkError{
-		teaselib.util.jni.LibraryLoader.load("TeaseLibTTS");
-	}
+    public TeaseLibTTS() throws UnsatisfiedLinkError {
+        teaselib.util.jni.LibraryLoader.load("TeaseLibTTS");
+    }
 
-	public static native void getInstalledVoices(Map<String, Voice> voices);
+    public static native void getInstalledVoices(Map<String, Voice> voices);
 
-	@Override
-	public void getVoices(Map<String, Voice> voices)
-	{
-		TeaseLibTTS.getInstalledVoices(voices);
-	}
+    @Override
+    public void getVoices(Map<String, Voice> voices) {
+        TeaseLibTTS.getInstalledVoices(voices);
+    }
 
-	@Override
-	public native void setVoice(Voice voice);
+    @Override
+    public native void setVoice(Voice voice);
 
-	@Override
-	public native void speak(String prompt);
+    @Override
+    public native void speak(String prompt);
 
-	@Override
-	public native String speak(String prompt, String wav);
+    @Override
+    public native String speak(String prompt, String wav);
 
-	@Override
-	public native void dispose();
+    @Override
+    public native void stop();
 
+    @Override
+    public native void dispose();
 }

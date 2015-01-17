@@ -23,6 +23,8 @@ public class TeaseLib {
     public final ResourceLoader resources;
     public final Persistence persistence;
 
+    public final static boolean logDetails = false;
+
     /**
      * @param host
      * @param persistence
@@ -95,7 +97,9 @@ public class TeaseLib {
     }
 
     public static void logDetail(Object instance, Throwable e) {
-        log(instance, e);
+        if (logDetails) {
+            log(instance, e);
+        }
     }
 
     public static void log(Object instance, Throwable e) {

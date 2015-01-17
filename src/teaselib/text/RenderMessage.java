@@ -6,11 +6,10 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
-import teaselib.Attitude;
 import teaselib.ScriptInterruptedException;
 import teaselib.TeaseLib;
 import teaselib.TeaseScript;
-import teaselib.audio.RenderBackgroundSound;
+import teaselib.audio.RenderSound;
 import teaselib.image.ImageIterator;
 import teaselib.image.RenderImage;
 import teaselib.image.RenderNoImage;
@@ -18,6 +17,7 @@ import teaselib.texttospeech.TextToSpeech;
 import teaselib.texttospeech.TextToSpeechPlayer;
 import teaselib.userinterface.MediaRenderer;
 import teaselib.userinterface.MediaRendererThread;
+import teaselib.util.RenderDesktopItem;
 
 public class RenderMessage extends MediaRendererThread implements
         MediaRenderer, MediaRenderer.Threaded {
@@ -47,9 +47,8 @@ public class RenderMessage extends MediaRendererThread implements
 
     @Override
     public void render() throws InterruptedException {
-        Collection<String> paragraphs = message.getParagraphs();
         try {
-            if (paragraphs.size() == 0) {
+            if (message.isEmpty()) {
                 teaseLib.host.show(null);
                 // Set image
                 if (imageIterator != null) {
@@ -72,45 +71,72 @@ public class RenderMessage extends MediaRendererThread implements
                 }
                 // Process message paragraphs
                 String image = null;
-                for (Iterator<String> it = paragraphs.iterator(); it.hasNext();) {
-                    String line = it.next();
+                for (Iterator<String> it = message.iterator(); it.hasNext();) {
                     Set<String> additionalHints = new HashSet<>();
                     additionalHints.addAll(hints);
                     // Handle message commands
+                    String paragraph = it.next();
                     do {
-                        TeaseLib.log(line);
-                        String command = line.toLowerCase();
-                        if (Attitude.matches(command)) {
-                            additionalHints.add(command);
-                        } else if (command.endsWith(".png")
-                                || command.endsWith(".jpg")) {
-                            image = line;
-                            new RenderImage(image).render(teaseLib);
-                        } else if (command.endsWith(".wav")
-                                || command.endsWith(".ogg")
-                                || command.endsWith(".mp3")) {
-                            new RenderBackgroundSound(line).render(teaseLib);
-                        }
-                        // TODO Handle desktop item, but how would we detect
-                        // such strings (*.*) ?
-                        else if (line.equals(TeaseScript.DominantImage)) {
-                            image = null;
-                        } else if (line.equals(TeaseScript.NoImage)) {
-                            image = line;
-                            RenderNoImage.instance.render(teaseLib);
+                        TeaseLib.log(paragraph);
+                        if (Message.isFile(paragraph)) {
+                            String fileOrKeyword = paragraph.toLowerCase();
+                            if (Message.isImage(fileOrKeyword)) {
+                                image = paragraph;
+                                new RenderImage(image).render(teaseLib);
+                            } else if (Message.isSound(fileOrKeyword)) {
+                                new RenderSound(paragraph).render(teaseLib);
+                            } else {
+                                new RenderDesktopItem(paragraph)
+                                        .render(teaseLib);
+                            }
                         } else {
-                            break;
+                            if (Message.isMood(paragraph)) {
+                                // Mood
+                                additionalHints.add(paragraph);
+                            } else {
+                                String keyWord = paragraph.toLowerCase();
+                                if (keyWord.equals(TeaseScript.DominantImage)) {
+                                    // Mistress image
+                                    image = TeaseScript.DominantImage;
+                                } else if (keyWord.equals(TeaseScript.NoImage)) {
+                                    // No image
+                                    image = TeaseScript.NoImage;
+                                    RenderNoImage.instance.render(teaseLib);
+                                } else if (keyWord.startsWith(Message.Delay)) {
+                                    // Pause
+                                    String[] cmd = paragraph.split(" ");
+                                    if (cmd.length == 1) {
+                                        // Fixed pause
+                                        teaseLib.host.sleep(DELAYATENDOFTEXT);
+                                    } else if (cmd.length > 1) {
+                                        try {
+                                            double delay = Double
+                                                    .parseDouble(cmd[1]) * 1000;
+                                            teaseLib.host.sleep((int) delay);
+                                        } catch (NumberFormatException ignore) {
+                                            // Fixed pause
+                                            teaseLib.host
+                                                    .sleep(DELAYATENDOFTEXT);
+                                        }
+                                    }
+                                } else {
+                                    // Text detected
+                                    break;
+                                }
+                            }
                         }
+                        // Advance after processing mood, file or keyword
+                        paragraph = it.next();
                     } while (true);
                     // Handle message text
                     if (text == null) {
-                        text = new StringBuilder(line);
+                        text = new StringBuilder(paragraph);
                     } else if (ending == ',') {
                         text.append(" ");
-                        text.append(line);
+                        text.append(paragraph);
                     } else {
                         text.append("\n\n");
-                        text.append(line);
+                        text.append(paragraph);
                     }
                     // Set image
                     if (imageIterator != null && image == null) {
@@ -124,8 +150,8 @@ public class RenderMessage extends MediaRendererThread implements
                     startCompleted();
                     final boolean lastParagraph = !it.hasNext();
                     if (speechSynthesizer != null) {
-                        speechSynthesizer.speak(line, prerenderedSpeechItems,
-                                teaseLib);
+                        speechSynthesizer.speak(paragraph,
+                                prerenderedSpeechItems, teaseLib);
                     } else {
                         // Text is not meant to be spoken, just to be displayed
                         // -> don't wait
@@ -142,8 +168,8 @@ public class RenderMessage extends MediaRendererThread implements
                     } else {
                         teaseLib.host.sleep(DELAYBETWEENPARAGRAPHS);
                     }
-                    ending = line.isEmpty() ? ' ' : line
-                            .charAt(line.length() - 1);
+                    ending = paragraph.isEmpty() ? ' ' : paragraph
+                            .charAt(paragraph.length() - 1);
                     // TODO Nice, but in SexScripts text is always centered
                     // vertically,
                     // so the text kind of scrolls up when multiple paragraphs

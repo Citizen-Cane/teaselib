@@ -103,6 +103,10 @@ public abstract class TeaseScript extends TeaseScriptBase {
         say(new Message(actor, message));
     }
 
+    public void say(List<String> message) {
+        say(new Message(actor, message));
+    }
+
     public void say(Message message) {
         renderMessage(message, speechSynthesizer);
     }

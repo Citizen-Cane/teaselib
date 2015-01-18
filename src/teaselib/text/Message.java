@@ -149,9 +149,9 @@ public class Message {
     }
 
     public static boolean isKeyword(String m) {
-        String mm = m.toLowerCase();
-        return mm.startsWith(Delay) || m.equals(TeaseScript.NoImage)
-                || m.equals(TeaseScript.DominantImage);
+        return m.toLowerCase().startsWith(Delay)
+                || m.equalsIgnoreCase(TeaseScript.NoImage)
+                || m.equalsIgnoreCase(TeaseScript.DominantImage);
     }
 
     public static boolean endOfSentence(String line) {

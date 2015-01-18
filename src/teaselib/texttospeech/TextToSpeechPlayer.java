@@ -237,16 +237,23 @@ public class TextToSpeechPlayer {
         } else {
             path = null;
         }
-        if (path != null) {
-            if (speechRecognizer != null) {
-                speechRecognizer.completeSpeechRecognitionInProgress();
-            }
+        boolean usePrerecorded = path != null;
+        boolean useTTS = textToSpeech.isReady();
+        final boolean reactivateSpeechRecognition;
+        // Suspend speech recognition while speaking,
+        // to avoid wrong recognitions
+        // - and the mistress speech isn't to be interrupted anyway
+        if ((usePrerecorded || useTTS) && speechRecognizer != null) {
+            speechRecognizer.completeSpeechRecognitionInProgress();
+            reactivateSpeechRecognition = speechRecognizer.isActive();
+            speechRecognizer.stopRecognition();
+        } else {
+            reactivateSpeechRecognition = false;
+        }
+        if (usePrerecorded) {
             teaseLib.host.playSound(resources.getAssetsPath(path)
                     .getAbsolutePath(), teaseLib.resources.getResource(path));
-        } else if (textToSpeech.isReady()) {
-            if (speechRecognizer != null) {
-                speechRecognizer.completeSpeechRecognitionInProgress();
-            }
+        } else if (useTTS) {
             try {
                 textToSpeech.speak(prompt);
             } catch (ScriptInterruptedException e) {
@@ -257,6 +264,10 @@ public class TextToSpeechPlayer {
             }
         } else {
             speakSilent(prompt, teaseLib);
+        }
+        // resume SR if necessary
+        if (reactivateSpeechRecognition) {
+            speechRecognizer.resumeRecognition();
         }
     }
 

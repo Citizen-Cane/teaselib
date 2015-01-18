@@ -28,6 +28,8 @@ public class SpeechRecognition {
 
     private final ReentrantLock SpeechRecognitionInProgress = new ReentrantLock();
 
+    private boolean speechRecognitionActive = false;
+
     // Allow other threads to wait while speech recognition is action
     private Event<SpeechRecognitionImplementation, SpeechRecognitionStartedEventArgs> lockSpeechRecognitionInProgress = new Event<SpeechRecognitionImplementation, SpeechRecognitionStartedEventArgs>() {
         @Override
@@ -112,16 +114,42 @@ public class SpeechRecognition {
                     // other speech related audio output
                     synchronized (TextToSpeech.AudioOutput) {
                         sr.startRecognition();
+                        SpeechRecognition.this.speechRecognitionActive = true;
                     }
                 }
             };
             try {
                 delegateThread.run(delegate);
             } catch (Throwable t) {
+                SpeechRecognition.this.speechRecognitionActive = false;
                 TeaseLib.log(this, t);
             }
-             } else {
-                 recognizerNotInitialized();
+        } else {
+            recognizerNotInitialized();
+        }
+    }
+
+    public void resumeRecognition() {
+        if (sr != null) {
+            Delegate delegate = new Delegate() {
+                @Override
+                public void run() {
+                    // Don't try to recognize speech during speech synthesis or
+                    // other speech related audio output
+                    synchronized (TextToSpeech.AudioOutput) {
+                        sr.startRecognition();
+                        SpeechRecognition.this.speechRecognitionActive = true;
+                    }
+                }
+            };
+            try {
+                delegateThread.run(delegate);
+            } catch (Throwable t) {
+                SpeechRecognition.this.speechRecognitionActive = false;
+                TeaseLib.log(this, t);
+            }
+        } else {
+            recognizerNotInitialized();
         }
     }
 
@@ -133,6 +161,7 @@ public class SpeechRecognition {
                     try {
                         sr.stopRecognition();
                     } finally {
+                        SpeechRecognition.this.speechRecognitionActive = false;
                         // This unlock is optional
                         if (SpeechRecognitionInProgress.tryLock()) {
                             SpeechRecognitionInProgress.unlock();
@@ -147,8 +176,8 @@ public class SpeechRecognition {
             } catch (Throwable t) {
                 TeaseLib.log(this, t);
             }
-          } else {
-              recognizerNotInitialized();
+        } else {
+            recognizerNotInitialized();
         }
     }
 
@@ -172,5 +201,14 @@ public class SpeechRecognition {
                 TeaseLib.log(this, t);
             }
         }
+    }
+
+    /**
+     * Determine whether speech recognition listens to voice input
+     * 
+     * @return
+     */
+    public boolean isActive() {
+        return speechRecognitionActive;
     }
 }

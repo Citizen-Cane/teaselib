@@ -93,7 +93,9 @@ public class TeaseLib {
      *            Log output
      */
     public static void logDetail(String line) {
-        log(line);
+        if (logDetails) {
+            log(line);
+        }
     }
 
     public static void logDetail(Object instance, Throwable e) {

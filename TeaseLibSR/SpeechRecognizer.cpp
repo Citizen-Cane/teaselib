@@ -180,6 +180,15 @@ HRESULT SpeechRecognizer::speechRecognitionInitContext()
 				{
 					hr = cpRecognizer->CreateRecoContext(&cpContext);
 					assert(SUCCEEDED(hr));
+					if (SUCCEEDED(hr))
+					{
+						HRESULT hr = cpContext->SetContextState(SPCS_DISABLED);
+						assert(SUCCEEDED(hr));
+						if (SUCCEEDED(hr))
+						{
+							hr = cpRecognizer->SetRecoState(SPRST_ACTIVE);
+						}
+					}
 				}
 			}
 		}
@@ -409,9 +418,13 @@ void SpeechRecognizer::setMaxAlternates(const int maxAlternates)
 void SpeechRecognizer::startRecognition()
 {
 	if (FAILED(recognizerStatus)) throw new COMException(recognizerStatus);
-	//	HRESULT hr = speechRecognitionInitInterests();
-	// assert(SUCCEEDED(hr));
 	HRESULT hr = cpRecognizer->SetRecoState(SPRST_ACTIVE_ALWAYS);
+	assert(SUCCEEDED(hr));
+	if (FAILED(hr))
+	{
+		throw new COMException(hr);
+	}
+	hr = cpContext->SetContextState(SPCS_ENABLED);
 	assert(SUCCEEDED(hr));
 	if (FAILED(hr))
 	{
@@ -422,7 +435,7 @@ void SpeechRecognizer::startRecognition()
 void SpeechRecognizer::stopRecognition()
 {
 	if (FAILED(recognizerStatus)) throw new COMException(recognizerStatus);
-	HRESULT hr = cpRecognizer->SetRecoState(SPRST_INACTIVE_WITH_PURGE);
+	HRESULT hr = cpContext->SetContextState(SPCS_DISABLED);
 	assert(SUCCEEDED(hr));
 	if (FAILED(hr))
 	{

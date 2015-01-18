@@ -15,12 +15,14 @@ import teaselib.Actor;
 import teaselib.ResourceLoader;
 import teaselib.ScriptInterruptedException;
 import teaselib.TeaseLib;
+import teaselib.speechrecognition.SpeechRecognition;
 import teaselib.text.Message;
 
 public class TextToSpeechPlayer {
 
     public final ResourceLoader resources;
     public final TextToSpeech textToSpeech;
+    protected final SpeechRecognition speechRecognizer;
 
     private final VoicesProperties actorVoices;
 
@@ -32,9 +34,15 @@ public class TextToSpeechPlayer {
 
     public TextToSpeechPlayer(ResourceLoader resources,
             TextToSpeech textToSpeech) {
+        this(resources, textToSpeech, null);
+    }
+
+    public TextToSpeechPlayer(ResourceLoader resources,
+            TextToSpeech textToSpeech, SpeechRecognition speechRecognizer) {
         super();
         this.resources = resources;
         this.textToSpeech = textToSpeech;
+        this.speechRecognizer = speechRecognizer;
         // TTS might not be available
         if (textToSpeech.isReady()) {
             this.voices = textToSpeech.getVoices();
@@ -230,9 +238,15 @@ public class TextToSpeechPlayer {
             path = null;
         }
         if (path != null) {
+            if (speechRecognizer != null) {
+                speechRecognizer.completeSpeechRecognitionInProgress();
+            }
             teaseLib.host.playSound(resources.getAssetsPath(path)
                     .getAbsolutePath(), teaseLib.resources.getResource(path));
         } else if (textToSpeech.isReady()) {
+            if (speechRecognizer != null) {
+                speechRecognizer.completeSpeechRecognitionInProgress();
+            }
             try {
                 textToSpeech.speak(prompt);
             } catch (ScriptInterruptedException e) {

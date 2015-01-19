@@ -102,6 +102,11 @@ public class RenderMessage extends MediaRendererThread implements
                                         .equalsIgnoreCase(TeaseScript.NoImage)) {
                                     // No image
                                     image = TeaseScript.NoImage;
+                                } else if (keyWord
+                                        .equalsIgnoreCase(Message.MandatoryCompleted)) {
+                                    // Complete the mandatory part of the
+                                    // message
+                                    mandatoryCompleted();
                                 } else if (keyWord.startsWith(Message.Delay)) {
                                     // Pause
                                     String[] cmd = paragraph.split(" ");

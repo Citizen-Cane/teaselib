@@ -11,7 +11,18 @@ import teaselib.TeaseScript;
 
 public class Message {
 
+    /**
+     * Usage: Delay n Insert a pause, n seconds long
+     */
     public final static String Delay = "delay";
+
+    /**
+     * Declare he mandatory part of the message to be completed. If the message
+     * is followed by a choice, the choice buttons are displayed, but the
+     * message will continue to render its optional part. Nice to comment
+     * actions when the slave is busy for a longer duration.
+     */
+    public final static String MandatoryCompleted = "mandatorycompleted";
 
     public final Actor actor;
 
@@ -150,6 +161,7 @@ public class Message {
 
     public static boolean isKeyword(String m) {
         return m.toLowerCase().startsWith(Delay)
+                || m.equalsIgnoreCase(MandatoryCompleted)
                 || m.equalsIgnoreCase(TeaseScript.NoImage)
                 || m.equalsIgnoreCase(TeaseScript.DominantImage);
     }

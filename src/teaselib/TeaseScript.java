@@ -14,7 +14,7 @@ import teaselib.texttospeech.TextToSpeechPlayer;
 import teaselib.userinterface.MediaRenderer;
 import teaselib.util.RenderDesktopItem;
 
-public abstract class TeaseScript extends TeaseScriptBase {
+public abstract class TeaseScript extends TeaseScriptBase implements Runnable {
 
     public static final int NoTimeout = 0;
 

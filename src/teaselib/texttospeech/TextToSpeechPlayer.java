@@ -251,7 +251,7 @@ public class TextToSpeechPlayer {
             reactivateSpeechRecognition = false;
         }
         if (usePrerecorded) {
-            teaseLib.host.playSound(resources.getAssetsPath(path)
+            teaseLib.host.playSound(resources.getAssetPath(path)
                     .getAbsolutePath(), teaseLib.resources.getResource(path));
         } else if (useTTS) {
             try {

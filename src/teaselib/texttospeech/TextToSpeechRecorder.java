@@ -46,7 +46,7 @@ public class TextToSpeechRecorder {
 		this.voices = textToSpeech.getVoices();
 		TextToSpeechPlayer ttsPlayer = new TextToSpeechPlayer(resources,
 				textToSpeech);
-		File assetsDir = resources.getAssetsPath("");
+		File assetsDir = resources.getAssetPath("");
 		speechDir = createSubDir(assetsDir, SpeechDirName);
 		AvailableVoicesProperties available = new AvailableVoicesProperties(
 				voices);

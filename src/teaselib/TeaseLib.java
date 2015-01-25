@@ -1,6 +1,5 @@
 package teaselib;
 
-import java.net.URI;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
@@ -25,26 +24,10 @@ public class TeaseLib {
 
     public final static boolean logDetails = false;
 
-    /**
-     * @param host
-     * @param persistence
-     * @param resourceLoader
-     */
-    @Deprecated
-    public TeaseLib(Host host, Persistence persistence,
-            ResourceLoader resourceLoader) {
-        if (host == null || resourceLoader == null) {
-            throw new IllegalArgumentException();
-        }
-        this.host = host;
-        this.resources = resourceLoader;
-        this.persistence = persistence;
-        TeaseLib.instance = this;
-    }
-
     public TeaseLib(Host host, Persistence persistence, String basePath,
-            URI[] assets, String assetRoot) {
-        if (host == null || assets == null || assetRoot == null) {
+            String assetRoot) {
+        if (host == null || persistence == null || basePath == null
+                || assetRoot == null) {
             throw new IllegalArgumentException();
         }
         this.host = host;
@@ -52,7 +35,7 @@ public class TeaseLib {
         TeaseLib.instance = this;
         // Now we can log errors
         try {
-            this.resources = new ResourceLoader(basePath, assets, assetRoot);
+            this.resources = new ResourceLoader(basePath, assetRoot);
         } catch (Throwable t) {
             log(this, t);
             throw new RuntimeException(t);
@@ -121,5 +104,9 @@ public class TeaseLib {
         for (StackTraceElement ste : e.getStackTrace()) {
             log("\t" + ste.toString());
         }
+    }
+
+    public void addAssets(String... assets) {
+        resources.addAssets(assets);
     }
 }

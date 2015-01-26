@@ -96,7 +96,7 @@ public abstract class TeaseScriptBase {
         public boolean clicked = false;
     }
 
-    public String showChoices(Runnable scriptFunction,
+    public String showChoices(final Runnable scriptFunction,
             final List<String> choices) {
         // arguments check
         for (String choice : choices) {
@@ -106,8 +106,8 @@ public abstract class TeaseScriptBase {
         }
         TeaseLib.log("choose: " + choices.toString());
         // Script closure
-        TimeoutClick timeoutClick = new TimeoutClick();
-        FutureTask<String> scriptTask = scriptFunction == null ? null
+        final TimeoutClick timeoutClick = new TimeoutClick();
+        final FutureTask<String> scriptTask = scriptFunction == null ? null
                 : new FutureTask<>(new Callable<String>() {
                     @Override
                     public String call() throws Exception {
@@ -140,7 +140,7 @@ public abstract class TeaseScriptBase {
                     }
                 });
         // Speech recognition
-        List<Integer> srChoiceIndices = new ArrayList<>(1);
+        final List<Integer> srChoiceIndices = new ArrayList<>(1);
         final Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs> speechRecognizedEvent;
         if (speechRecognizer.isReady()) {
             speechRecognizedEvent = new Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs>() {

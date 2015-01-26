@@ -154,11 +154,15 @@ public abstract class TeaseScript extends TeaseScriptBase implements Runnable {
      *            is desired
      * @return The button index, or TeaseLib.None if the buttons timed out
      */
-    public String choose(int timeout, final List<String> choices) {
+    public String choose(final int timeout, final List<String> choices) {
         completeMandatory();
-        return showChoices(timeout > NoTimeout ? () -> {
-            teaseLib.host.sleep(timeout * 1000);
-        } : null, choices);
+        Runnable delayFunction = timeout > NoTimeout ? new Runnable() {
+            @Override
+            public void run() {
+                teaseLib.host.sleep(timeout * 1000);
+            }
+        } : null;
+        return showChoices(delayFunction, choices);
     }
 
     /**

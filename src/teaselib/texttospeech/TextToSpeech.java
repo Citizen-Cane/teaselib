@@ -42,7 +42,7 @@ public class TextToSpeech {
         return names;
     }
 
-    private void setImplementation(String className) {
+    private void setImplementation(final String className) {
         // Create class here
         if (tts != null && tts.getClass().getName().equals(className)) {
             return;
@@ -186,7 +186,7 @@ public class TextToSpeech {
     }
 
     public String speak(final String prompt, final String wav) {
-        StringBuilder soundFilePath = new StringBuilder();
+        final StringBuilder soundFilePath = new StringBuilder();
         if (tts != null) {
             Delegate delegate = new Delegate() {
                 @Override

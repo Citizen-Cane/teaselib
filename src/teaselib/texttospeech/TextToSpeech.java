@@ -37,7 +37,7 @@ public class TextToSpeech {
     }
 
     static private Set<String> getImplementations() {
-        Set<String> names = new HashSet<>();
+        Set<String> names = new HashSet<String>();
         names.add(TeaseLibTTS.class.getName());
         return names;
     }
@@ -86,7 +86,7 @@ public class TextToSpeech {
     }
 
     public Map<String, Voice> getVoices() {
-        final Map<String, Voice> voices = new HashMap<>();
+        final Map<String, Voice> voices = new HashMap<String, Voice>();
         if (tts != null) {
             Delegate delegate = new Delegate() {
                 @Override

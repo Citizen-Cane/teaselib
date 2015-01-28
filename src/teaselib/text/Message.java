@@ -128,7 +128,7 @@ public class Message {
     }
 
     public List<String> getParagraphs() {
-        List<String> p = new ArrayList<>();
+        List<String> p = new ArrayList<String>();
         for (String s : paragraphs) {
             p.add(s);
         }
@@ -174,7 +174,7 @@ public class Message {
     }
 
     class XParagraphs implements Iterable<String> {
-        private final List<String> p = new Vector<>();
+        private final List<String> p = new Vector<String>();
 
         private boolean newParagraph = false;
 

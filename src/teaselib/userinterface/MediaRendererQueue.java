@@ -10,7 +10,7 @@ import teaselib.TeaseLib;
 
 public class MediaRendererQueue {
 
-    protected final HashMap<Class<?>, MediaRenderer.Threaded> threadedMediaRenderers = new HashMap<>();
+    protected final HashMap<Class<?>, MediaRenderer.Threaded> threadedMediaRenderers = new HashMap<Class<?>, MediaRenderer.Threaded>();
 
     public MediaRendererQueue() {
     }
@@ -72,7 +72,8 @@ public class MediaRendererQueue {
     private Collection<MediaRenderer.Threaded> getMediaRenderersThreadSafe() {
         List<MediaRenderer.Threaded> copy;
         synchronized (threadedMediaRenderers) {
-            copy = new ArrayList<>(threadedMediaRenderers.values());
+            copy = new ArrayList<MediaRenderer.Threaded>(
+                    threadedMediaRenderers.values());
         }
         return copy;
     }

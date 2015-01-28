@@ -74,7 +74,7 @@ public class SpeechRecognition {
         }
     };
 
-    public final SpeechRecognitionEvents<SpeechRecognitionImplementation> events = new SpeechRecognitionEvents<>(
+    public final SpeechRecognitionEvents<SpeechRecognitionImplementation> events = new SpeechRecognitionEvents<SpeechRecognitionImplementation>(
             lockSpeechRecognitionInProgress, unlockSpeechRecognitionInProgress);
 
     public SpeechRecognition(String locale) {

@@ -77,7 +77,7 @@ public abstract class TeaseScriptBase {
     }
 
     private Set<String> getHints(String attitude) {
-        Set<String> hints = new HashSet<>();
+        Set<String> hints = new HashSet<String>();
         // Within messages, images might change fast, and changing
         // the camera position, image size or aspect would be too distracting
         hints.add(ImageIterator.SameCameraPosition);
@@ -108,7 +108,7 @@ public abstract class TeaseScriptBase {
         // Script closure
         final TimeoutClick timeoutClick = new TimeoutClick();
         final FutureTask<String> scriptTask = scriptFunction == null ? null
-                : new FutureTask<>(new Callable<String>() {
+                : new FutureTask<String>(new Callable<String>() {
                     @Override
                     public String call() throws Exception {
                         try {
@@ -140,7 +140,7 @@ public abstract class TeaseScriptBase {
                     }
                 });
         // Speech recognition
-        final List<Integer> srChoiceIndices = new ArrayList<>(1);
+        final List<Integer> srChoiceIndices = new ArrayList<Integer>(1);
         final Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs> speechRecognizedEvent;
         if (speechRecognizer.isReady()) {
             speechRecognizedEvent = new Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs>() {

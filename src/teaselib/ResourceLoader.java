@@ -28,7 +28,7 @@ public class ResourceLoader {
     private final String assetRoot;
 
     private final ClassLoader classLoader = getClass().getClassLoader();
-    private final Set<URI> enumeratableClassPaths = new HashSet<>();
+    private final Set<URI> enumeratableClassPaths = new HashSet<URI>();
 
     public ResourceLoader(String basePath, String assetRoot)
             throws NoSuchMethodException, InvocationTargetException,
@@ -140,7 +140,7 @@ public class ResourceLoader {
      */
     public List<String> resources(String pathPattern) {
         Pattern pattern = Pattern.compile(assetRoot + pathPattern);
-        List<String> resources = new LinkedList<>();
+        List<String> resources = new LinkedList<String>();
         int start = assetRoot.length();
         for (URI uri : enumeratableClassPaths) {
             Collection<String> matches = ResourceList

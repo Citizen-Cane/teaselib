@@ -27,10 +27,10 @@ public class TextToSpeechPlayer {
     private final VoicesProperties actorVoices;
 
     private final Map<String, Voice> voices;
-    private final Map<String, String> actor2PrerecordedVoice = new HashMap<>();
-    private final Map<String, Voice> actor2TTSVoice = new HashMap<>();
+    private final Map<String, String> actor2PrerecordedVoice = new HashMap<String, String>();
+    private final Map<String, Voice> actor2TTSVoice = new HashMap<String, Voice>();
 
-    private final Set<String> usedVoices = new HashSet<>();
+    private final Set<String> usedVoices = new HashSet<String>();
 
     public TextToSpeechPlayer(ResourceLoader resources,
             TextToSpeech textToSpeech) {
@@ -47,7 +47,7 @@ public class TextToSpeechPlayer {
         if (textToSpeech.isReady()) {
             this.voices = textToSpeech.getVoices();
         } else {
-            this.voices = new HashMap<>();
+            this.voices = new HashMap<String, Voice>();
         }
         // Read pre-recorded voices config
         actorVoices = new VoicesProperties(resources);
@@ -176,7 +176,7 @@ public class TextToSpeechPlayer {
                     + "/" + voice + "/" + TextToSpeechRecorder.getHash(message)
                     + "/";
             BufferedReader reader = null;
-            List<String> speechResources = new Vector<>();
+            List<String> speechResources = new Vector<String>();
             try {
                 reader = new BufferedReader(new InputStreamReader(
                         resources.getResource(path

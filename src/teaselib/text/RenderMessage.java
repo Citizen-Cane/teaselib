@@ -25,7 +25,7 @@ public class RenderMessage extends MediaRendererThread implements
     private final Message message;
     private final TextToSpeechPlayer speechSynthesizer;
     private final ImageIterator imageIterator;
-    private final Set<String> hints = new HashSet<>();
+    private final Set<String> hints = new HashSet<String>();
 
     private final static long DELAYBETWEENPARAGRAPHS = 500;
     private final static long DELAYATENDOFTEXT = 2000;
@@ -72,7 +72,7 @@ public class RenderMessage extends MediaRendererThread implements
                 // Process message paragraphs
                 String image = TeaseScript.DominantImage;
                 for (Iterator<String> it = message.iterator(); it.hasNext();) {
-                    Set<String> additionalHints = new HashSet<>();
+                    Set<String> additionalHints = new HashSet<String>();
                     additionalHints.addAll(hints);
                     // Handle message commands
                     String paragraph = it.next();

@@ -67,11 +67,11 @@ public abstract class TeaseScriptBase {
 
     public void renderMessage(Message message,
             TextToSpeechPlayer speechSynthesizer, ImageIterator dominantImages,
-            String attitude) {
+            String displayImage, String attitude) {
         renderDeferred();
         Set<String> hints = getHints(attitude);
         RenderMessage renderMessage = new RenderMessage(message,
-                speechSynthesizer, dominantImages, hints);
+                speechSynthesizer, dominantImages, displayImage, hints);
         renderQueue.start(renderMessage, teaseLib);
         renderQueue.completeStarts();
     }

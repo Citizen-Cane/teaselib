@@ -6,8 +6,6 @@ import java.util.List;
 
 import teaselib.audio.RenderSound;
 import teaselib.image.ImageIterator;
-import teaselib.image.RenderImage;
-import teaselib.image.RenderNoImage;
 import teaselib.text.Message;
 import teaselib.text.RenderDelay;
 import teaselib.texttospeech.TextToSpeechPlayer;
@@ -56,15 +54,12 @@ public abstract class TeaseScript extends TeaseScriptBase implements Runnable {
      *            The path to the image
      */
     public void showImage(String path) {
-        if (path == DominantImage) {
+        if (path.equalsIgnoreCase(DominantImage)) {
             displayImage = DominantImage;
-            // Render dominant image with the next message
-        } else if (path == NoImage) {
+        } else if (path.equalsIgnoreCase(NoImage)) {
             displayImage = NoImage;
-            deferredRenderers.add(RenderNoImage.instance);
         } else {
             displayImage = path;
-            deferredRenderers.add(new RenderImage(path));
         }
     }
 
@@ -124,9 +119,8 @@ public abstract class TeaseScript extends TeaseScriptBase implements Runnable {
     protected void renderMessage(Message message,
             TextToSpeechPlayer speechSynthesizer) {
         try {
-            renderMessage(message, speechSynthesizer,
-                    displayImage == DominantImage ? dominantImages : null,
-                    attitude);
+            renderMessage(message, speechSynthesizer, dominantImages,
+                    displayImage, attitude);
         } finally {
             displayImage = DominantImage;
             attitude = Attitude.Neutral;

@@ -1,5 +1,6 @@
 package teaselib.text;
 
+import java.awt.Image;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -11,8 +12,6 @@ import teaselib.TeaseLib;
 import teaselib.TeaseScript;
 import teaselib.audio.RenderSound;
 import teaselib.image.ImageIterator;
-import teaselib.image.RenderImage;
-import teaselib.image.RenderNoImage;
 import teaselib.texttospeech.TextToSpeech;
 import teaselib.texttospeech.TextToSpeechPlayer;
 import teaselib.userinterface.MediaRenderer;
@@ -25,19 +24,24 @@ public class RenderMessage extends MediaRendererThread implements
     private final Message message;
     private final TextToSpeechPlayer speechSynthesizer;
     private final ImageIterator imageIterator;
+    private String displayImage;
     private final Set<String> hints = new HashSet<String>();
 
     private final static long DELAYBETWEENPARAGRAPHS = 500;
     private final static long DELAYATENDOFTEXT = 2000;
 
+    private static final String IMAGES = "images/";
+
     public RenderMessage(Message message, TextToSpeechPlayer speechSynthesizer,
-            ImageIterator imageIterator, Collection<String> hints) {
+            ImageIterator imageIterator, String displayImage,
+            Collection<String> hints) {
         if (message == null) {
             throw new NullPointerException();
         }
         this.message = message;
         this.speechSynthesizer = speechSynthesizer;
         this.imageIterator = imageIterator;
+        this.displayImage = displayImage;
         hints.addAll(hints);
     }
 
@@ -49,13 +53,16 @@ public class RenderMessage extends MediaRendererThread implements
     public void render() throws InterruptedException {
         try {
             if (message.isEmpty()) {
-                teaseLib.host.show(null);
-                // Set image
-                if (imageIterator != null) {
+                // Set image and no text
+                if (displayImage == TeaseScript.NoImage) {
+                    teaseLib.host.show(null, null);
+                } else if (displayImage != TeaseScript.DominantImage) {
+                    teaseLib.host.show(imageIterator.next(), null);
+                } else {
                     String[] hintArray = new String[hints.size()];
                     hintArray = hints.toArray(hintArray);
                     imageIterator.hint(hintArray);
-                    teaseLib.host.setImage(imageIterator.next());
+                    teaseLib.host.show(imageIterator.next(), null);
                 }
             } else {
                 StringBuilder text = null;
@@ -70,7 +77,6 @@ public class RenderMessage extends MediaRendererThread implements
                     prerenderedSpeechItems = new ArrayList<String>().iterator();
                 }
                 // Process message paragraphs
-                String image = TeaseScript.DominantImage;
                 for (Iterator<String> it = message.iterator(); it.hasNext();) {
                     Set<String> additionalHints = new HashSet<String>();
                     additionalHints.addAll(hints);
@@ -81,7 +87,7 @@ public class RenderMessage extends MediaRendererThread implements
                         if (Message.isFile(paragraph)) {
                             String fileOrKeyword = paragraph.toLowerCase();
                             if (Message.isImage(fileOrKeyword)) {
-                                image = paragraph;
+                                displayImage = paragraph;
                             } else if (Message.isSound(fileOrKeyword)) {
                                 new RenderSound(paragraph).render(teaseLib);
                             } else {
@@ -97,11 +103,11 @@ public class RenderMessage extends MediaRendererThread implements
                                 if (keyWord
                                         .equalsIgnoreCase(TeaseScript.DominantImage)) {
                                     // Mistress image
-                                    image = TeaseScript.DominantImage;
+                                    displayImage = TeaseScript.DominantImage;
                                 } else if (keyWord
                                         .equalsIgnoreCase(TeaseScript.NoImage)) {
                                     // No image
-                                    image = TeaseScript.NoImage;
+                                    displayImage = TeaseScript.NoImage;
                                 } else if (keyWord
                                         .equalsIgnoreCase(Message.MandatoryCompleted)) {
                                     // Complete the mandatory part of the
@@ -143,21 +149,21 @@ public class RenderMessage extends MediaRendererThread implements
                         text.append("\n\n");
                         text.append(paragraph);
                     }
-                    // TODO Set image and text with a single API call
-                    if (image == TeaseScript.DominantImage) {
-                        if (imageIterator != null) {
-                            String[] hintArray = new String[additionalHints
-                                    .size()];
-                            hintArray = additionalHints.toArray(hintArray);
-                            imageIterator.hint(hintArray);
-                            teaseLib.host.setImage(imageIterator.next());
-                        }
-                    } else if (image == TeaseScript.NoImage) {
-                        RenderNoImage.instance.render(teaseLib);
+                    // Apply image and text
+                    final Image image;
+                    if (displayImage == TeaseScript.DominantImage) {
+                        String[] hintArray = new String[additionalHints.size()];
+                        hintArray = additionalHints.toArray(hintArray);
+                        imageIterator.hint(hintArray);
+                        image = imageIterator.next();
+                    } else if (displayImage == TeaseScript.NoImage) {
+                        // RenderNoImage.instance.render(teaseLib);
+                        image = null;
                     } else {
-                        new RenderImage(image).render(teaseLib);
+                        // new RenderImage(image).render(teaseLib);
+                        image = teaseLib.resources.image(IMAGES + displayImage);
                     }
-                    teaseLib.host.show(text.toString());
+                    teaseLib.host.show(image, text.toString());
                     // First message shown - start part completed
                     startCompleted();
                     final boolean lastParagraph = !it.hasNext();
@@ -201,7 +207,7 @@ public class RenderMessage extends MediaRendererThread implements
             // Expected
         } catch (Throwable t) {
             TeaseLib.log(this, t);
-            teaseLib.host.show(t.getMessage());
+            teaseLib.host.show(null, t.getMessage());
         }
     }
 

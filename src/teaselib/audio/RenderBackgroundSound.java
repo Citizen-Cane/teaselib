@@ -3,9 +3,11 @@ package teaselib.audio;
 import teaselib.TeaseLib;
 import teaselib.userinterface.MediaRenderer;
 
-public class RenderBackgroundSound implements MediaRenderer {
+public class RenderBackgroundSound implements AutoCloseable, MediaRenderer {
 
     private final String soundFile;
+    private TeaseLib teaseLib;
+    private Object handle = null;
 
     public RenderBackgroundSound(String soundFile) {
         this.soundFile = soundFile;
@@ -16,11 +18,24 @@ public class RenderBackgroundSound implements MediaRenderer {
         try {
             String path = RenderSound.SOUNDS + soundFile;
             TeaseLib.log(this.getClass().getSimpleName() + ": " + path);
-            teaseLib.host.playBackgroundSound(path,
+            // TODO Use the handle to allow stopping the sound
+            // Implement when needed
+            handle = teaseLib.host.playBackgroundSound(path,
                     teaseLib.resources.getResource(path));
         } catch (Throwable e) {
             TeaseLib.log(this, e);
         }
+    }
+
+    public void stop() {
+        if (teaseLib != null && handle != null) {
+            teaseLib.host.stopSound(handle);
+        }
+    }
+
+    @Override
+    public void close() throws Exception {
+        stop();
     }
 
     @Override

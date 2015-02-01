@@ -33,9 +33,44 @@ public interface Host {
 
     void log(String line);
 
+    /**
+     * Play the sound denoted by path and wait until it's finished. Sound stops
+     * if the current thread is interrupted.
+     * 
+     * @param path
+     *            The path to the wav, mp3 or ogg sound. This is a helper and
+     *            should be removed, but so far SexScripts won't play from an
+     *            input stream.
+     * @param inputStream
+     *            The sound stream.
+     */
     void playSound(String path, InputStream inputStream);
 
-    void playBackgroundSound(String path, InputStream inputStream);
+    /**
+     * Play the sound denoted by path. Return immediately.
+     * 
+     * @param path
+     *            The path to the wav, mp3 or ogg sound. This is a helper and
+     *            should be removed, but so far SexScripts won't play from an
+     *            input stream.
+     * @param inputStream
+     *            The sound stream.
+     * @return An opaque handle to the sound. Can be used to stop the sound.
+     */
+    Object playBackgroundSound(String path, InputStream inputStream);
+
+    /**
+     * Stop any playing sounds
+     */
+    void stopSounds();
+
+    /**
+     * Stop the background sound denoted by the handle.
+     * 
+     * @param handle
+     *            A handle obtained by playBackgroundSound(...)
+     */
+    void stopSound(Object handle);
 
     /**
      * Show text and image. Since text and image determine the layout, they must
@@ -61,11 +96,6 @@ public interface Host {
      */
     List<Boolean> showCheckboxes(String caption, List<String> choices,
             List<Boolean> values);
-
-    /**
-     * Stop any playing background sounds
-     */
-    void stopSounds();
 
     /**
      * Preferred method to wait, since it allows us to write a debug host with

@@ -33,7 +33,19 @@ public class DummyHost implements Host {
     }
 
     @Override
-    public void playBackgroundSound(String path, InputStream inputStream) {
+    public Object playBackgroundSound(String path, InputStream inputStream) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public void stopSounds() {
+        // TODO Auto-generated method stub
+
+    }
+
+    @Override
+    public void stopSound(Object handle) {
         // TODO Auto-generated method stub
 
     }
@@ -49,12 +61,6 @@ public class DummyHost implements Host {
             List<Boolean> values) {
         // TODO Auto-generated method stub
         return null;
-    }
-
-    @Override
-    public void stopSounds() {
-        // TODO Auto-generated method stub
-
     }
 
     @Override

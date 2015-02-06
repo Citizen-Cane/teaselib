@@ -20,6 +20,7 @@ import teaselib.Actor;
 import teaselib.ResourceLoader;
 import teaselib.TeaseLib;
 import teaselib.text.Message;
+import teaselib.text.Message.Part;
 
 public class TextToSpeechRecorder {
     public final static String SpeechDirName = "speech";
@@ -189,13 +190,13 @@ public class TextToSpeechRecorder {
         int index = 0;
         mp3.Main lame = new mp3.Main();
         List<String> soundFiles = new Vector<String>();
-        for (String paragraph : message.getParagraphs()) {
+        for (Part paragraph : message.getParagraphs()) {
             // TODO Process or ignore special instructions
             // TODO refactor message handling into separate class,
             // because otherwise it would be handled here and in MessageRenderer
             TeaseLib.log("Recording part " + index);
             File soundFile = new File(messageDir, Integer.toString(index));
-            String recordedSoundFile = textToSpeech.speak(paragraph,
+            String recordedSoundFile = textToSpeech.speak(paragraph.value,
                     soundFile.getAbsolutePath());
             if (!recordedSoundFile.endsWith(".mp3")) {
                 String encodedSoundFile = recordedSoundFile.replace(".wav",

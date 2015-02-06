@@ -12,6 +12,7 @@ import teaselib.TeaseLib;
 import teaselib.TeaseScript;
 import teaselib.audio.RenderSound;
 import teaselib.image.ImageIterator;
+import teaselib.text.Message.Part;
 import teaselib.texttospeech.TextToSpeech;
 import teaselib.texttospeech.TextToSpeechPlayer;
 import teaselib.userinterface.MediaRenderer;
@@ -65,7 +66,7 @@ public class RenderMessage extends MediaRendererThread implements
                     teaseLib.host.show(imageIterator.next(), null);
                 }
             } else {
-                StringBuilder text = null;
+                StringBuilder accumulatedText = null;
                 char ending = ' ';
                 // Start speaking a message, replay prerecorded items or speak
                 // with TTS later
@@ -77,98 +78,100 @@ public class RenderMessage extends MediaRendererThread implements
                     prerenderedSpeechItems = new ArrayList<String>().iterator();
                 }
                 // Process message paragraphs
-                for (Iterator<String> it = message.iterator(); it.hasNext();) {
+                for (Iterator<Part> it = message.iterator(); it.hasNext();) {
                     Set<String> additionalHints = new HashSet<String>();
                     additionalHints.addAll(hints);
                     // Handle message commands
-                    String paragraph = it.next();
+                    Part part;
                     do {
-                        TeaseLib.log(paragraph);
-                        if (Message.isFile(paragraph)) {
-                            String fileOrKeyword = paragraph.toLowerCase();
-                            if (Message.isImage(fileOrKeyword)) {
-                                displayImage = paragraph;
-                            } else if (Message.isSound(fileOrKeyword)) {
-                                new RenderSound(paragraph).render(teaseLib);
+                        part = it.next();
+                        TeaseLib.log(part.type.toString() + ": " + part.value);
+                        if (part.type == Message.Type.Image) {
+                            displayImage = part.value;
+                        } else if (part.type == Message.Type.Sound) {
+                            new RenderSound(part.value).render(teaseLib);
+                        } else if (part.type == Message.Type.DesktopItem) {
+                            new RenderDesktopItem(part.value).render(teaseLib);
+                        } else if (part.type == Message.Type.Mood) {
+                            // Mood
+                            additionalHints.add(part.value);
+                        } else if (part.type == Message.Type.Keyword) {
+                            String keyword = part.value;
+                            if (keyword == TeaseScript.DominantImage) {
+                                // Mistress image
+                                displayImage = TeaseScript.DominantImage;
+                            } else if (keyword == TeaseScript.NoImage) {
+                                // No image
+                                displayImage = TeaseScript.NoImage;
+                            } else if (keyword == Message.ShowChoices) {
+                                // Complete the mandatory part of the
+                                // message
+                                mandatoryCompleted();
                             } else {
-                                new RenderDesktopItem(paragraph)
-                                        .render(teaseLib);
+                                // Unimplemented keyword
+                                throw new IllegalArgumentException(
+                                        "Unimplemented keyword: " + keyword);
                             }
-                        } else {
-                            if (Message.isMood(paragraph)) {
-                                // Mood
-                                additionalHints.add(paragraph);
-                            } else {
-                                String keyWord = paragraph.toLowerCase();
-                                if (keyWord
-                                        .equalsIgnoreCase(TeaseScript.DominantImage)) {
-                                    // Mistress image
-                                    displayImage = TeaseScript.DominantImage;
-                                } else if (keyWord
-                                        .equalsIgnoreCase(TeaseScript.NoImage)) {
-                                    // No image
-                                    displayImage = TeaseScript.NoImage;
-                                } else if (keyWord
-                                        .equalsIgnoreCase(Message.MandatoryCompleted)) {
-                                    // Complete the mandatory part of the
-                                    // message
-                                    mandatoryCompleted();
-                                } else if (keyWord.startsWith(Message.Delay)) {
-                                    // Pause
-                                    String[] cmd = paragraph.split(" ");
-                                    if (cmd.length == 1) {
-                                        // Fixed pause
-                                        teaseLib.host.sleep(DELAYATENDOFTEXT);
-                                    } else if (cmd.length > 1) {
-                                        try {
-                                            double delay = Double
-                                                    .parseDouble(cmd[1]) * 1000;
-                                            teaseLib.host.sleep((int) delay);
-                                        } catch (NumberFormatException ignore) {
-                                            // Fixed pause
-                                            teaseLib.host
-                                                    .sleep(DELAYATENDOFTEXT);
-                                        }
-                                    }
-                                } else {
-                                    // Text detected
-                                    break;
+                        } else if (part.type == Message.Type.Delay) {
+                            // Pause
+                            String[] cmd = part.value.split(" ");
+                            if (cmd.length == 1) {
+                                // Fixed pause
+                                teaseLib.host.sleep(DELAYATENDOFTEXT);
+                            } else if (cmd.length > 1) {
+                                try {
+                                    double delay = Double.parseDouble(cmd[1]) * 1000;
+                                    teaseLib.host.sleep((int) delay);
+                                } catch (NumberFormatException ignore) {
+                                    // Fixed pause
+                                    teaseLib.host.sleep(DELAYATENDOFTEXT);
                                 }
                             }
+                        } else {
+                            // Text detected
+                            break;
                         }
-                        // Advance after processing mood, file or keyword
-                        paragraph = it.next();
                     } while (true);
                     // Handle message text
-                    if (text == null) {
-                        text = new StringBuilder(paragraph);
+                    if (accumulatedText == null) {
+                        accumulatedText = new StringBuilder(part.value);
                     } else if (ending == ',') {
-                        text.append(" ");
-                        text.append(paragraph);
+                        accumulatedText.append(" ");
+                        accumulatedText.append(part.value);
                     } else {
-                        text.append("\n\n");
-                        text.append(paragraph);
+                        accumulatedText.append("\n\n");
+                        accumulatedText.append(part.value);
                     }
                     // Apply image and text
-                    final Image image;
-                    if (displayImage == TeaseScript.DominantImage) {
-                        String[] hintArray = new String[additionalHints.size()];
-                        hintArray = additionalHints.toArray(hintArray);
-                        imageIterator.hint(hintArray);
-                        image = imageIterator.next();
-                    } else if (displayImage == TeaseScript.NoImage) {
-                        // RenderNoImage.instance.render(teaseLib);
+                    Image image;
+                    try {
+                        if (displayImage == TeaseScript.DominantImage) {
+                            String[] hintArray = new String[additionalHints
+                                    .size()];
+                            hintArray = additionalHints.toArray(hintArray);
+                            imageIterator.hint(hintArray);
+                            image = imageIterator.next();
+                        } else if (displayImage == TeaseScript.NoImage) {
+                            image = null;
+                        } else {
+                            // TODO Cache image or detect reusage, since
+                            // currently the same image is reloaded for each
+                            // text part (usually when setting the image outside
+                            // the message)
+                            image = teaseLib.resources.image(IMAGES
+                                    + displayImage);
+                        }
+                    } catch (Exception e) {
+                        accumulatedText.append("\n" + e.getClass() + ": " + e.getMessage()
+                                + "\n");
                         image = null;
-                    } else {
-                        // new RenderImage(image).render(teaseLib);
-                        image = teaseLib.resources.image(IMAGES + displayImage);
                     }
-                    teaseLib.host.show(image, text.toString());
+                    teaseLib.host.show(image, accumulatedText.toString());
                     // First message shown - start part completed
                     startCompleted();
                     final boolean lastParagraph = !it.hasNext();
                     if (speechSynthesizer != null) {
-                        speechSynthesizer.speak(paragraph,
+                        speechSynthesizer.speak(part.value,
                                 prerenderedSpeechItems, teaseLib);
                     } else {
                         // Text is not meant to be spoken, just to be displayed
@@ -186,8 +189,9 @@ public class RenderMessage extends MediaRendererThread implements
                     } else {
                         teaseLib.host.sleep(DELAYBETWEENPARAGRAPHS);
                     }
-                    ending = paragraph.isEmpty() ? ' ' : paragraph
-                            .charAt(paragraph.length() - 1);
+                    String value = part.value;
+                    ending = value.isEmpty() ? ' ' : value.charAt(value
+                            .length() - 1);
                     // TODO Nice, but in SexScripts text is always centered
                     // vertically,
                     // so the text kind of scrolls up when multiple paragraphs
@@ -214,10 +218,10 @@ public class RenderMessage extends MediaRendererThread implements
     @Override
     public String toString() {
         long delay = 0;
-        Collection<String> paragraphs = message.getParagraphs();
-        for (Iterator<String> it = paragraphs.iterator(); it.hasNext();) {
-            String paragraph = it.next();
-            delay += TextToSpeech.getEstimatedSpeechDuration(paragraph);
+        Collection<Part> paragraphs = message.getParagraphs();
+        for (Iterator<Part> it = paragraphs.iterator(); it.hasNext();) {
+            Part paragraph = it.next();
+            delay += TextToSpeech.getEstimatedSpeechDuration(paragraph.value);
             if (it.hasNext()) {
                 delay += DELAYBETWEENPARAGRAPHS;
             } else {

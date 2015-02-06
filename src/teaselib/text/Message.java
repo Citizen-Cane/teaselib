@@ -12,6 +12,13 @@ import teaselib.TeaseScript;
 public class Message {
 
     /**
+     * Message types.
+     */
+    enum Type {
+        Text, Image, Sound, DesktopItem, Mood, Keyword, Delay
+    }
+
+    /**
      * Usage: Delay n Insert a pause, n seconds long
      */
     public final static String Delay = "delay";
@@ -22,14 +29,17 @@ public class Message {
      * message will continue to render its optional part. Nice to comment
      * actions when the slave is busy for a longer duration.
      */
-    public final static String MandatoryCompleted = "mandatorycompleted";
+    public final static String ShowChoices = "ShowChoices";
+
+    public final static String[] Keywords = { Delay, ShowChoices,
+            TeaseScript.DominantImage, TeaseScript.NoImage };
 
     public final Actor actor;
 
-    private final XParagraphs paragraphs;
+    private final Parts parts;
 
     public Message(Actor actor) {
-        this.paragraphs = new XParagraphs();
+        this.parts = new Parts();
         this.actor = actor;
     }
 
@@ -40,9 +50,9 @@ public class Message {
      *            The message to render, or null to display no message
      */
     public Message(Actor actor, String message) {
-        paragraphs = new XParagraphs();
+        parts = new Parts();
         if (message != null) {
-            paragraphs.add(message);
+            parts.add(message);
         }
         this.actor = actor;
     }
@@ -53,9 +63,9 @@ public class Message {
      *            no message
      */
     public Message(Actor actor, String... message) {
-        paragraphs = new XParagraphs();
+        parts = new Parts();
         if (message != null) {
-            paragraphs.addAll(message);
+            parts.addAll(message);
         }
         this.actor = actor;
     }
@@ -66,19 +76,19 @@ public class Message {
      *            no message
      */
     public Message(Actor actor, List<String> message) {
-        this.paragraphs = new XParagraphs();
+        this.parts = new Parts();
         if (message != null) {
-            paragraphs.addAll(message);
+            parts.addAll(message);
         }
         this.actor = actor;
     }
 
     public boolean isEmpty() {
-        return paragraphs.isEmpty();
+        return parts.isEmpty();
     }
 
-    public Iterator<String> iterator() {
-        return paragraphs.iterator();
+    public Iterator<Part> iterator() {
+        return parts.iterator();
     }
 
     /**
@@ -93,7 +103,7 @@ public class Message {
     public void add(String text) {
         if (text == null)
             throw new IllegalArgumentException();
-        paragraphs.add(text);
+        parts.add(text);
     }
 
     public String toString() {
@@ -105,19 +115,18 @@ public class Message {
     }
 
     private String buildString(String newLine, boolean all) {
-        if (paragraphs == null) {
+        if (parts == null) {
             return "";
-        } else if (paragraphs.isEmpty()) {
+        } else if (parts.isEmpty()) {
             return "";
         } else {
-            Iterator<String> i = paragraphs.iterator();
-            StringBuilder format = new StringBuilder(i.next());
+            Iterator<Part> i = parts.iterator();
+            StringBuilder format = new StringBuilder();
             for (; i.hasNext();) {
-                String line = i.next();
-                boolean append = all
-                        || (!isFile(line) && !isKeyword(line) && !isMood(line));
+                Part part = i.next();
+                boolean append = all || part.type == Type.Text;
                 if (append) {
-                    format.append(line);
+                    format.append(part.value);
                 }
                 if (i.hasNext()) {
                     format.append(newLine);
@@ -127,9 +136,9 @@ public class Message {
         }
     }
 
-    public List<String> getParagraphs() {
-        List<String> p = new ArrayList<String>();
-        for (String s : paragraphs) {
+    public List<Part> getParagraphs() {
+        List<Part> p = new ArrayList<Part>();
+        for (Part s : parts) {
             p.add(s);
         }
         return p;
@@ -147,6 +156,10 @@ public class Message {
         }
     }
 
+    public static boolean isFile(Type t) {
+        return t == Type.Image || t == Type.Sound || t == Type.DesktopItem;
+    }
+
     public static boolean isImage(String m) {
         return m.endsWith(".png") || m.endsWith(".jpg");
     }
@@ -160,10 +173,23 @@ public class Message {
     }
 
     public static boolean isKeyword(String m) {
-        return m.toLowerCase().startsWith(Delay)
-                || m.equalsIgnoreCase(MandatoryCompleted)
-                || m.equalsIgnoreCase(TeaseScript.NoImage)
-                || m.equalsIgnoreCase(TeaseScript.DominantImage);
+        return keywordFrom(m) != null;
+    }
+
+    public static String keywordFrom(String m) {
+        final String candidate;
+        int i = m.indexOf(' ');
+        if (i < 1) {
+            candidate = m.toLowerCase();
+        } else {
+            candidate = m.substring(0, i).toLowerCase();
+        }
+        for (String keyword : Keywords) {
+            if (candidate.equalsIgnoreCase(keyword)) {
+                return keyword;
+            }
+        }
+        return null;
     }
 
     public static boolean endOfSentence(String line) {
@@ -173,8 +199,46 @@ public class Message {
         return ending;
     }
 
-    class XParagraphs implements Iterable<String> {
-        private final List<String> p = new Vector<String>();
+    public static Type determineType(String m) {
+        if (isMood(m)) {
+            return Type.Mood;
+        } else if (isFile(m)) {
+            if (isImage(m)) {
+                return Type.Image;
+            } else if (isSound(m)) {
+                return Type.Sound;
+            } else {
+                return Type.DesktopItem;
+            }
+        } else if (isKeyword(m)) {
+            if (m.toLowerCase().startsWith(Delay)) {
+                return Type.Delay;
+            } else {
+                return Type.Keyword;
+            }
+        } else {
+            // TODO Keyword check
+            return Type.Text;
+        }
+    }
+
+    public class Part {
+        public final String value;
+        public final Type type;
+
+        public Part(String value, Type type) {
+            this.value = value;
+            this.type = type;
+        }
+
+        public boolean isFile() {
+            return Message.isFile(type);
+        }
+    }
+
+    class Parts implements Iterable<Part> {
+
+        private final List<Part> p = new Vector<Part>();
 
         private boolean newParagraph = false;
 
@@ -195,32 +259,34 @@ public class Message {
         }
 
         @Override
-        public Iterator<String> iterator() {
+        public Iterator<Part> iterator() {
             return p.iterator();
         }
 
-        public void add(String m) {
-            boolean requiresSeparateLine = isFile(m) || isMood(m)
-                    || isKeyword(m);
+        public void add(String text) {
+            final Type type = determineType(text);
+            if (type == Type.Keyword) {
+                text = keywordFrom(text);
+            }
+            boolean requiresSeparateLine = type != Type.Text;
             boolean requiresNewParagraphBefore = requiresSeparateLine;
             boolean requiresNewParagraphAfter = requiresSeparateLine
-                    || endOfSentence(m);
+                    || endOfSentence(text);
             if (p.isEmpty()) {
                 // First
-                p.add(m);
+                p.add(new Part(text, type));
                 newParagraph = requiresNewParagraphAfter;
             } else if (requiresNewParagraphBefore) {
                 // File as new paragraph
-                p.add(m);
+                p.add(new Part(text, type));
                 newParagraph = true;
             } else if (newParagraph) {
-                p.add(m);
+                p.add(new Part(text, type));
                 newParagraph = requiresNewParagraphAfter;
-                ;
             } else {
                 // Append
                 int i = p.size() - 1;
-                p.set(i, p.get(i) + " " + m);
+                p.set(i, new Part(p.get(i).value + " " + text, type));
                 newParagraph = requiresNewParagraphAfter;
             }
         }

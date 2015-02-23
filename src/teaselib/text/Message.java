@@ -36,6 +36,9 @@ public class Message {
 
     public final Actor actor;
 
+    private static String[] endOfSentence = { ":", ".", ";", "!", "?" };
+    private static String[] endOfTextOther = { "\"", ">", "," };
+
     private final Parts parts;
 
     public Message(Actor actor) {
@@ -93,10 +96,10 @@ public class Message {
 
     /**
      * Add text to the message. Text is automatically appended to the last
-     * paragraph until a sencente is completed. To add multiple sentences to a
+     * paragraph until a sentence is completed. To add multiple sentences to a
      * single paragraph, add text containing the two sentences.
      * 
-     * File names and keywords are added as speparate paragraphs.
+     * File names and keywords are added as separate paragraphs.
      * 
      * @param text
      */
@@ -173,7 +176,7 @@ public class Message {
     }
 
     public static boolean isKeyword(String m) {
-        return keywordFrom(m) != null;
+        return !endOf(m, endOfSentence) && keywordFrom(m) != null;
     }
 
     public static String keywordFrom(String m) {
@@ -192,11 +195,12 @@ public class Message {
         return null;
     }
 
-    public static boolean endOfSentence(String line) {
-        boolean ending = line.endsWith(":") || line.endsWith(".")
-                || line.endsWith("!") || line.endsWith("?")
-                || line.endsWith(">");
-        return ending;
+    public static boolean endOf(String line, String[] endOf) {
+        for (String s : endOf) {
+            if (line.endsWith(s))
+                return true;
+        }
+        return false;
     }
 
     public static Type determineType(String m) {
@@ -211,15 +215,32 @@ public class Message {
                 return Type.DesktopItem;
             }
         } else if (isKeyword(m)) {
+            // For commands with parameters, the command is stored in the type,
+            // and the parameters as the text
             if (m.toLowerCase().startsWith(Delay)) {
                 return Type.Delay;
             } else {
                 return Type.Keyword;
             }
         } else {
-            // TODO Keyword check
-            return Type.Text;
+            // Catch misspelled keywords - not foolproof since we decided to
+            // implement keywords as natural words without using special
+            // characters
+            int s = words(m).length;
+            // s == 2 also catches misspelled delay commands
+            if (s > 2 || endOf(m, endOfSentence) || endOf(m, endOfTextOther)) {
+                return Type.Text;
+            } else {
+                // A bit harsh, but necessary to avoid keywords to be spoken
+                throw new IllegalArgumentException(
+                        "I Can't believe this is supposed to be a text message: "
+                                + m);
+            }
         }
+    }
+
+    private static String[] words(String m) {
+        return m.split(" |\t");
     }
 
     public class Part {
@@ -271,7 +292,7 @@ public class Message {
             boolean requiresSeparateLine = type != Type.Text;
             boolean requiresNewParagraphBefore = requiresSeparateLine;
             boolean requiresNewParagraphAfter = requiresSeparateLine
-                    || endOfSentence(text);
+                    || endOf(text, endOfSentence);
             if (p.isEmpty()) {
                 // First
                 p.add(new Part(text, type));

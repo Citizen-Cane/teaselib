@@ -6,6 +6,9 @@ import java.util.List;
 
 import teaselib.audio.RenderSound;
 import teaselib.image.ImageIterator;
+import teaselib.persistence.Clothes;
+import teaselib.persistence.Item;
+import teaselib.persistence.Toys;
 import teaselib.text.Message;
 import teaselib.text.RenderDelay;
 import teaselib.texttospeech.TextToSpeechPlayer;
@@ -207,4 +210,11 @@ public abstract class TeaseScript extends TeaseScriptBase implements Runnable {
         return teaseLib.host.showCheckboxes(caption, choices, values);
     }
 
+    public Item get(Toys item) {
+        return teaseLib.persistence.get(item);
+    }
+
+    public Item get(Clothes item) {
+        return teaseLib.persistence.get(item);
+    }
 }

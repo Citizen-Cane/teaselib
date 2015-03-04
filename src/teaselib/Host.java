@@ -95,7 +95,7 @@ public interface Host {
      * @return
      */
     List<Boolean> showCheckboxes(String caption, List<String> choices,
-            List<Boolean> values);
+            List<Boolean> values, boolean allowCancel);
 
     /**
      * Preferred method to wait, since it allows us to write a debug host with
@@ -131,4 +131,5 @@ public interface Host {
      *         button was clicked
      */
     int choose(List<String> choices);
+
 }

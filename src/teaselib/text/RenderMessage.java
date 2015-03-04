@@ -162,8 +162,8 @@ public class RenderMessage extends MediaRendererThread implements
                                     + displayImage);
                         }
                     } catch (Exception e) {
-                        accumulatedText.append("\n" + e.getClass() + ": " + e.getMessage()
-                                + "\n");
+                        accumulatedText.append("\n" + e.getClass() + ": "
+                                + e.getMessage() + "\n");
                         image = null;
                     }
                     teaseLib.host.show(image, accumulatedText.toString());

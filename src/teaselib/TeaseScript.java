@@ -6,7 +6,7 @@ import java.util.List;
 
 import teaselib.audio.RenderSound;
 import teaselib.image.ImageIterator;
-import teaselib.persistence.Clothes;
+import teaselib.persistence.Clothing;
 import teaselib.persistence.Item;
 import teaselib.persistence.Toys;
 import teaselib.text.Message;
@@ -206,15 +206,74 @@ public abstract class TeaseScript extends TeaseScriptBase implements Runnable {
      * @return
      */
     public List<Boolean> showCheckboxes(String caption, List<String> choices,
-            List<Boolean> values) {
-        return teaseLib.host.showCheckboxes(caption, choices, values);
+            List<Boolean> values, boolean allowCancel) {
+        List<Boolean> results = teaseLib.host.showCheckboxes(caption, choices,
+                values, false);
+        renderQueue.endAll();
+        return results;
     }
 
     public Item get(Toys item) {
         return teaseLib.persistence.get(item);
     }
 
-    public Item get(Clothes item) {
+    public Item get(Clothing item) {
         return teaseLib.persistence.get(item);
+    }
+
+    public boolean isAvailable(Toys... toys) {
+        for (Toys toy : toys) {
+            Item item = teaseLib.persistence.get(toy);
+            if (item.isAvailable()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public List<Item> get(Toys... toys) {
+        List<Item> items = new ArrayList<Item>();
+        for (Toys toy : toys) {
+            Item item = teaseLib.persistence.get(toy);
+            items.add(item);
+        }
+        return items;
+    }
+
+    public boolean isAvailable(Clothing... clothes) {
+        for (Clothing clothing : clothes) {
+            Item item = teaseLib.persistence.get(clothing);
+            if (item.isAvailable()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public List<Item> get(Clothing... clothes) {
+        List<Item> items = new ArrayList<Item>();
+        for (Clothing clothing : clothes) {
+            Item item = teaseLib.persistence.get(clothing);
+            items.add(item);
+        }
+        return items;
+    }
+
+    public boolean isAvailable(List<Item> items) {
+        for (Item item : items) {
+            if (item.isAvailable()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean isAvailable(Item... items) {
+        for (Item item : items) {
+            if (item.isAvailable()) {
+                return true;
+            }
+        }
+        return false;
     }
 }

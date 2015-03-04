@@ -1,6 +1,6 @@
 package teaselib;
 
-import teaselib.persistence.Clothes;
+import teaselib.persistence.Clothing;
 import teaselib.persistence.Item;
 import teaselib.persistence.Toys;
 
@@ -9,6 +9,10 @@ public interface Persistence {
     String get(String name);
 
     void set(String name, String value);
+
+    boolean getBoolean(String name);
+
+    void set(String name, boolean value);
 
     /**
      * Return the corresponding persistent toy object
@@ -24,6 +28,10 @@ public interface Persistence {
      * @param item
      * @return
      */
-    Item get(Clothes item);
+    Item get(Clothing item);
+
+    Item getToy(String item);
+
+    Item getClothingItem(String item);
 
 }

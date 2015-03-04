@@ -26,7 +26,7 @@ public class ResourceLoader {
 
     private final String basePath;
     private final String assetRoot;
-
+    public final String namespace;
     private final ClassLoader classLoader = getClass().getClassLoader();
     private final Set<URI> enumeratableClassPaths = new HashSet<URI>();
 
@@ -35,7 +35,11 @@ public class ResourceLoader {
             IllegalAccessException, MalformedURLException,
             FileNotFoundException {
         this.basePath = basePath.endsWith("/") ? basePath : basePath + "/";
-        this.assetRoot = assetRoot.endsWith("/") ? assetRoot : assetRoot + "/";
+        if (assetRoot.contains("/") || assetRoot.contains("\\"))
+            throw new IllegalArgumentException(
+                    "No slashes '/' or backlashes '\\' for resource loader root please");
+        this.assetRoot = assetRoot + "/";
+        this.namespace = assetRoot;
         Method addURI = addURLMethod();
         addAsset(addURI, getAssetPath("").toURI());
     }

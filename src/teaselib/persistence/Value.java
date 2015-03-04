@@ -10,19 +10,23 @@ import teaselib.Persistence;
  *
  */
 public class Value {
-    private final String name;
-    private final Persistence persistence;
+    protected final String name;
+    public final String displayName;
+    protected final Persistence persistence;
 
-    public Value(String name, Persistence persistence) {
+    public Value(String name, String displayName, Persistence persistence) {
         this.name = name;
+        this.displayName = displayName;
         this.persistence = persistence;
     }
 
-    public String get() {
-        return persistence.get(name);
+    public static String createDisplayName(String name) {
+        String displayName = name.replace("_", " ");
+        return displayName;
     }
 
-    public void set(String value) {
-        persistence.set(name, value);
+    @Override
+    public String toString() {
+        return name;
     }
 }

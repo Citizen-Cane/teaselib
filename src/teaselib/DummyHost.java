@@ -58,7 +58,7 @@ public class DummyHost implements Host {
 
     @Override
     public List<Boolean> showCheckboxes(String caption, List<String> choices,
-            List<Boolean> values) {
+            List<Boolean> values, boolean allowCancel) {
         // TODO Auto-generated method stub
         return null;
     }

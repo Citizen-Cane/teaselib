@@ -11,15 +11,15 @@ import teaselib.Persistence;
  */
 public class Item extends Value {
 
-    public Item(String name, Persistence persistence) {
-        super(name, persistence);
+    public Item(String name, String displayName, Persistence persistence) {
+        super(name, displayName, persistence);
     }
 
     public boolean isAvailable() {
-        return get().equals("0");
+        return persistence.getBoolean(name);
     }
 
     public void setAvailable(boolean isAvailable) {
-        set(isAvailable ? "1" : "0");
+        persistence.set(name, isAvailable);
     }
 }

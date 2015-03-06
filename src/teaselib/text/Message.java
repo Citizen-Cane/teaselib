@@ -29,10 +29,13 @@ public class Message {
      * message will continue to render its optional part. Nice to comment
      * actions when the slave is busy for a longer duration.
      */
-    public final static String ShowChoices = "ShowChoices";
+    public final static String ShowChoices = "showChoices";
+
+    public final static String AwaitSoundCompletion = "awaitSoundCompletion";
 
     public final static String[] Keywords = { Delay, ShowChoices,
-            TeaseScript.DominantImage, TeaseScript.NoImage };
+            AwaitSoundCompletion, TeaseScript.DominantImage,
+            TeaseScript.NoImage };
 
     public final Actor actor;
 

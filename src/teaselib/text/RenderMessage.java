@@ -78,6 +78,7 @@ public class RenderMessage extends MediaRendererThread implements
                     prerenderedSpeechItems = new ArrayList<String>().iterator();
                 }
                 // Process message paragraphs
+                RenderSound currentSound = null;
                 for (Iterator<Part> it = message.iterator(); it.hasNext();) {
                     Set<String> additionalHints = new HashSet<String>();
                     additionalHints.addAll(hints);
@@ -89,7 +90,9 @@ public class RenderMessage extends MediaRendererThread implements
                         if (part.type == Message.Type.Image) {
                             displayImage = part.value;
                         } else if (part.type == Message.Type.Sound) {
-                            new RenderSound(part.value).render(teaseLib);
+                            // Play sound, continue message execution
+                            currentSound = new RenderSound(part.value);
+                            currentSound.render(teaseLib);
                         } else if (part.type == Message.Type.DesktopItem) {
                             new RenderDesktopItem(part.value).render(teaseLib);
                         } else if (part.type == Message.Type.Mood) {
@@ -104,9 +107,11 @@ public class RenderMessage extends MediaRendererThread implements
                                 // No image
                                 displayImage = TeaseScript.NoImage;
                             } else if (keyword == Message.ShowChoices) {
-                                // Complete the mandatory part of the
-                                // message
+                                // Complete the mandatory part of the message
                                 mandatoryCompleted();
+                            } else if (keyword == Message.AwaitSoundCompletion) {
+                                // Complete the mandatory part of the message
+                                currentSound.completeMandatory();
                             } else {
                                 // Unimplemented keyword
                                 throw new IllegalArgumentException(

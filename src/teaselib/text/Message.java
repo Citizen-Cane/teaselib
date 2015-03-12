@@ -207,20 +207,21 @@ public class Message {
     }
 
     public static Type determineType(String m) {
-        if (isMood(m)) {
+        String mToLower = m.toLowerCase();
+        if (isMood(mToLower)) {
             return Type.Mood;
-        } else if (isFile(m)) {
-            if (isImage(m)) {
+        } else if (isFile(mToLower)) {
+            if (isImage(mToLower)) {
                 return Type.Image;
-            } else if (isSound(m)) {
+            } else if (isSound(mToLower)) {
                 return Type.Sound;
             } else {
                 return Type.DesktopItem;
             }
-        } else if (isKeyword(m)) {
+        } else if (isKeyword(mToLower)) {
             // For commands with parameters, the command is stored in the type,
             // and the parameters as the text
-            if (m.toLowerCase().startsWith(Delay)) {
+            if (mToLower.startsWith(Delay)) {
                 return Type.Delay;
             } else {
                 return Type.Keyword;

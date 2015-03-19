@@ -1,6 +1,7 @@
 package teaselib.text;
 
 import java.awt.Image;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -54,20 +55,21 @@ public class RenderMessage extends MediaRendererThread implements
     public void render() throws InterruptedException {
         try {
             if (message.isEmpty()) {
-                // Set image and no text
-                if (displayImage == TeaseScript.NoImage) {
-                    teaseLib.host.show(null, null);
-                } else if (displayImage != TeaseScript.DominantImage) {
-                    teaseLib.host.show(imageIterator.next(), null);
-                } else {
-                    String[] hintArray = new String[hints.size()];
-                    hintArray = hints.toArray(hintArray);
-                    imageIterator.hint(hintArray);
-                    teaseLib.host.show(imageIterator.next(), null);
-                }
+                // // Set image and no text
+                // if (displayImage == TeaseScript.NoImage) {
+                // teaseLib.host.show(null, null);
+                // } else if (displayImage != TeaseScript.DominantImage) {
+                // teaseLib.host.show(imageIterator.next(), null);
+                // } else {
+                // String[] hintArray = new String[hints.size()];
+                // hintArray = hints.toArray(hintArray);
+                // imageIterator.hint(hintArray);
+                // teaseLib.host.show(imageIterator.next(), null);
+                // }
+                showImageAndText(null, hints);
             } else {
                 StringBuilder accumulatedText = null;
-                char ending = ' ';
+                boolean append = false;
                 // Start speaking a message, replay prerecorded items or speak
                 // with TTS later
                 final Iterator<String> prerenderedSpeechItems;
@@ -78,138 +80,55 @@ public class RenderMessage extends MediaRendererThread implements
                     prerenderedSpeechItems = new ArrayList<String>().iterator();
                 }
                 // Process message paragraphs
-                RenderSound currentSound = null;
+                RenderSound soundRenderer = null;
                 for (Iterator<Part> it = message.iterator(); it.hasNext();) {
                     Set<String> additionalHints = new HashSet<String>();
                     additionalHints.addAll(hints);
                     // Handle message commands
                     Part part;
-                    do {
-                        part = it.next();
-                        TeaseLib.log(part.type.toString() + ": " + part.value);
-                        if (part.type == Message.Type.Image) {
-                            displayImage = part.value;
-                        } else if (part.type == Message.Type.Sound) {
-                            // Play sound, continue message execution
-                            currentSound = new RenderSound(part.value);
-                            currentSound.render(teaseLib);
-                        } else if (part.type == Message.Type.DesktopItem) {
-                            new RenderDesktopItem(part.value).render(teaseLib);
-                        } else if (part.type == Message.Type.Mood) {
-                            // Mood
-                            additionalHints.add(part.value);
-                        } else if (part.type == Message.Type.Keyword) {
-                            String keyword = part.value;
-                            if (keyword == TeaseScript.DominantImage) {
-                                // Mistress image
-                                displayImage = TeaseScript.DominantImage;
-                            } else if (keyword == TeaseScript.NoImage) {
-                                // No image
-                                displayImage = TeaseScript.NoImage;
-                            } else if (keyword == Message.ShowChoices) {
-                                // Complete the mandatory part of the message
-                                mandatoryCompleted();
-                            } else if (keyword == Message.AwaitSoundCompletion) {
-                                // Complete the mandatory part of the message
-                                currentSound.completeMandatory();
-                            } else {
-                                // Unimplemented keyword
-                                throw new IllegalArgumentException(
-                                        "Unimplemented keyword: " + keyword);
-                            }
-                        } else if (part.type == Message.Type.Delay) {
-                            // Pause
-                            String[] cmd = part.value.split(" ");
-                            if (cmd.length == 1) {
-                                // Fixed pause
-                                teaseLib.host.sleep(DELAYATENDOFTEXT);
-                            } else if (cmd.length > 1) {
-                                try {
-                                    double delay = Double.parseDouble(cmd[1]) * 1000;
-                                    teaseLib.host.sleep((int) delay);
-                                } catch (NumberFormatException ignore) {
-                                    // Fixed pause
-                                    teaseLib.host.sleep(DELAYATENDOFTEXT);
-                                }
-                            }
-                        } else {
-                            // Text detected
-                            break;
-                        }
-                    } while (true);
-                    // Handle message text
-                    if (accumulatedText == null) {
-                        accumulatedText = new StringBuilder(part.value);
-                    } else if (ending == ',') {
-                        accumulatedText.append(" ");
-                        accumulatedText.append(part.value);
+                    part = it.next();
+                    TeaseLib.log(part.type.toString() + ": " + part.value);
+                    if (part.type == Message.Type.Image) {
+                        displayImage = part.value;
+                    } else if (part.type == Message.Type.Sound) {
+                        // Play sound, continue message execution
+                        soundRenderer = new RenderSound(part.value);
+                        soundRenderer.render(teaseLib);
+                    } else if (part.type == Message.Type.DesktopItem) {
+                        new RenderDesktopItem(part.value).render(teaseLib);
+                    } else if (part.type == Message.Type.Mood) {
+                        // Mood
+                        additionalHints.add(part.value);
+                    } else if (part.type == Message.Type.Keyword) {
+                        doKeyword(soundRenderer, part);
+                    } else if (part.type == Message.Type.Delay) {
+                        // Pause
+                        doPause(part);
                     } else {
-                        accumulatedText.append("\n\n");
-                        accumulatedText.append(part.value);
-                    }
-                    // Apply image and text
-                    Image image;
-                    try {
-                        if (displayImage == TeaseScript.DominantImage) {
-                            String[] hintArray = new String[additionalHints
-                                    .size()];
-                            hintArray = additionalHints.toArray(hintArray);
-                            imageIterator.hint(hintArray);
-                            image = imageIterator.next();
-                        } else if (displayImage == TeaseScript.NoImage) {
-                            image = null;
-                        } else {
-                            // TODO Cache image or detect reusage, since
-                            // currently the same image is reloaded for each
-                            // text part (usually when setting the image outside
-                            // the message)
-                            image = teaseLib.resources.image(IMAGES
-                                    + displayImage);
-                        }
-                    } catch (Exception e) {
-                        accumulatedText.append("\n" + e.getClass() + ": "
-                                + e.getMessage() + "\n");
-                        image = null;
-                    }
-                    teaseLib.host.show(image, accumulatedText.toString());
-                    // First message shown - start part completed
-                    startCompleted();
-                    final boolean lastParagraph = !it.hasNext();
-                    if (speechSynthesizer != null) {
-                        speechSynthesizer.speak(part.value,
-                                prerenderedSpeechItems, teaseLib);
-                    } else {
-                        // Text is not meant to be spoken, just to be displayed
-                        // -> don't wait
+                        // Text detected
+                        String text = part.value;
+                        accumulatedText = accumulateText(accumulatedText, text,
+                                append);
+                        // Update text
+                        showImageAndText(accumulatedText.toString(),
+                                additionalHints);
+                        // First message shown - start part completed
+                        startCompleted();
+                        speak(prerenderedSpeechItems, text);
+                        // if (endThread) {
+                        // break;
+                        // }
+                        pauseAfterParagraph(it);
+                        // if (endThread) {
+                        // break;
+                        // }
                     }
                     if (endThread) {
                         break;
                     }
-                    if (lastParagraph) {
-                        // Interaction should start before the final delay
-                        mandatoryCompleted();
-                        teaseLib.host.sleep(DELAYATENDOFTEXT);
-                        allCompleted();
-                        endThread = true;
-                    } else {
-                        teaseLib.host.sleep(DELAYBETWEENPARAGRAPHS);
-                    }
-                    String value = part.value;
-                    ending = value.isEmpty() ? ' ' : value.charAt(value
-                            .length() - 1);
-                    // TODO Nice, but in SexScripts text is always centered
-                    // vertically,
-                    // so the text kind of scrolls up when multiple paragraphs
-                    // are
-                    // displayed.
-                    // And because we don't know about the Word Wrap in
-                    // SexScripts,
-                    // there's no way to estimate the wrap or just insert
-                    // empty
-                    // lines.
-                    if (endThread) {
-                        break;
-                    }
+                    // Find out whether to append the next sentence to the same
+                    // or a new line
+                    append = canAppend(part.value);
                 }
             }
         } catch (ScriptInterruptedException e) {
@@ -218,6 +137,113 @@ public class RenderMessage extends MediaRendererThread implements
             TeaseLib.log(this, t);
             teaseLib.host.show(null, t.getMessage());
         }
+    }
+
+    private void doKeyword(RenderSound soundRenderer, Part part) {
+        String keyword = part.value;
+        if (keyword == TeaseScript.DominantImage) {
+            // Mistress image
+            displayImage = TeaseScript.DominantImage;
+        } else if (keyword == TeaseScript.NoImage) {
+            // No image
+            displayImage = TeaseScript.NoImage;
+        } else if (keyword == Message.ShowChoices) {
+            // Complete the mandatory part of the message
+            mandatoryCompleted();
+        } else if (keyword == Message.AwaitSoundCompletion) {
+            // Complete the mandatory part of the message
+            soundRenderer.completeMandatory();
+        } else {
+            // Unimplemented keyword
+            throw new IllegalArgumentException("Unimplemented keyword: "
+                    + keyword);
+        }
+    }
+
+    private void doPause(Part part) {
+        String[] cmd = part.value.split(" ");
+        if (cmd.length == 1) {
+            // Fixed pause
+            teaseLib.host.sleep(DELAYATENDOFTEXT);
+        } else if (cmd.length > 1) {
+            try {
+                double delay = Double.parseDouble(cmd[1]) * 1000;
+                teaseLib.host.sleep((int) delay);
+            } catch (NumberFormatException ignore) {
+                // Fixed pause
+                teaseLib.host.sleep(DELAYATENDOFTEXT);
+            }
+        }
+    }
+
+    private void speak(final Iterator<String> prerenderedSpeechItems,
+            String text) throws IOException {
+        if (speechSynthesizer != null) {
+            speechSynthesizer.speak(text, prerenderedSpeechItems, teaseLib);
+        } else {
+            // Text is not meant to be spoken, just to be
+            // displayed
+            // -> don't wait
+        }
+    }
+
+    private StringBuilder accumulateText(StringBuilder accumulatedText,
+            String text, boolean concatenate) {
+        if (accumulatedText == null) {
+            accumulatedText = new StringBuilder(text);
+        } else if (concatenate) {
+            accumulatedText.append(" ");
+            accumulatedText.append(text);
+        } else {
+            accumulatedText.append("\n\n");
+            accumulatedText.append(text);
+        }
+        return accumulatedText;
+    }
+
+    private void pauseAfterParagraph(Iterator<Message.Part> it) {
+        final boolean lastParagraph = !it.hasNext();
+        if (lastParagraph) {
+            // Interaction should start before the final delay
+            mandatoryCompleted();
+            teaseLib.host.sleep(DELAYATENDOFTEXT);
+            allCompleted();
+            endThread = true;
+        } else {
+            teaseLib.host.sleep(DELAYBETWEENPARAGRAPHS);
+        }
+    }
+
+    private boolean canAppend(String s) {
+        char ending = s.isEmpty() ? ' ' : s.charAt(s.length() - 1);
+        return ending == ',' || ending == ';';
+    }
+
+    private void showImageAndText(String text, Set<String> additionalHints) {
+        // Apply image and text
+        Image image;
+        try {
+            if (displayImage == TeaseScript.DominantImage) {
+                String[] hintArray = new String[additionalHints.size()];
+                hintArray = additionalHints.toArray(hintArray);
+                imageIterator.hint(hintArray);
+                image = imageIterator.next();
+            } else if (displayImage == TeaseScript.NoImage) {
+                image = null;
+            } else {
+                // TODO Cache image or detect reusage, since
+                // currently the same image is reloaded for
+                // each
+                // text part (usually when setting the image
+                // outside
+                // the message)
+                image = teaseLib.resources.image(IMAGES + displayImage);
+            }
+        } catch (Exception e) {
+            text = text + "\n\n" + e.getClass() + ": " + e.getMessage() + "\n";
+            image = null;
+        }
+        teaseLib.host.show(image, text);
     }
 
     @Override

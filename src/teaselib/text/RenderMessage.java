@@ -104,6 +104,9 @@ public class RenderMessage extends MediaRendererThread implements
                     } else if (part.type == Message.Type.Delay) {
                         // Pause
                         doPause(part);
+                    } else if (part.type == Message.Type.Exec) {
+                        // Exec
+                        doExec(part);
                     } else {
                         // Text detected
                         String text = part.value;
@@ -161,18 +164,33 @@ public class RenderMessage extends MediaRendererThread implements
     }
 
     private void doPause(Part part) {
-        String[] cmd = part.value.split(" ");
-        if (cmd.length == 1) {
+        String arg = removeCommandNameFromValue(part);
+        if (arg.isEmpty()) {
             // Fixed pause
             teaseLib.host.sleep(DELAYATENDOFTEXT);
-        } else if (cmd.length > 1) {
+        } else {
             try {
-                double delay = Double.parseDouble(cmd[1]) * 1000;
+                double delay = Double.parseDouble(arg) * 1000;
                 teaseLib.host.sleep((int) delay);
             } catch (NumberFormatException ignore) {
                 // Fixed pause
                 teaseLib.host.sleep(DELAYATENDOFTEXT);
             }
+        }
+    }
+
+    private void doExec(Part part) {
+        String path = removeCommandNameFromValue(part);
+        MediaRenderer desktopItem = new RenderDesktopItem(path);
+        desktopItem.render(teaseLib);
+    }
+
+    private String removeCommandNameFromValue(Part part) {
+        String value = part.value;
+        if (value.equalsIgnoreCase(part.type.toString())) {
+            return "";
+        } else {
+            return part.value.substring(part.type.toString().length() + 1);
         }
     }
 

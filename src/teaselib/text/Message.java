@@ -15,13 +15,18 @@ public class Message {
      * Message types.
      */
     enum Type {
-        Text, Image, Sound, DesktopItem, Mood, Keyword, Delay
+        Text, Image, Sound, DesktopItem, Mood, Keyword, Delay, Exec
     }
 
     /**
      * Usage: Delay n Insert a pause, n seconds long
      */
     public final static String Delay = "delay";
+
+    /**
+     * Execute the desktop action
+     */
+    public final static String Exec = "exec";
 
     /**
      * Declare he mandatory part of the message to be completed. If the message
@@ -33,7 +38,7 @@ public class Message {
 
     public final static String AwaitSoundCompletion = "awaitSoundCompletion";
 
-    public final static String[] Keywords = { Delay, ShowChoices,
+    public final static String[] Keywords = { Delay, Exec, ShowChoices,
             AwaitSoundCompletion, TeaseScript.DominantImage,
             TeaseScript.NoImage };
 
@@ -210,6 +215,18 @@ public class Message {
         String mToLower = m.toLowerCase();
         if (isMood(mToLower)) {
             return Type.Mood;
+        } else if (isKeyword(mToLower)) {
+            // For commands with parameters, the command is stored in the type,
+            // and the parameters as the text
+            if (mToLower.startsWith(Delay)) {
+                return Type.Delay;
+            } else if (mToLower.startsWith(Exec)) {
+                return Type.Exec;
+            } else {
+                return Type.Keyword;
+            }
+            // keywords and commands must be processed before files, since
+            // commands may contain file arguments
         } else if (isFile(mToLower)) {
             if (isImage(mToLower)) {
                 return Type.Image;
@@ -217,14 +234,6 @@ public class Message {
                 return Type.Sound;
             } else {
                 return Type.DesktopItem;
-            }
-        } else if (isKeyword(mToLower)) {
-            // For commands with parameters, the command is stored in the type,
-            // and the parameters as the text
-            if (mToLower.startsWith(Delay)) {
-                return Type.Delay;
-            } else {
-                return Type.Keyword;
             }
         } else {
             // Catch misspelled keywords - not foolproof since we decided to

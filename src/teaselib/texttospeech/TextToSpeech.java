@@ -159,7 +159,7 @@ public class TextToSpeech {
         }
     }
 
-    public void speak(final String prompt) {
+    public void speak(final String prompt, final String attitude) {
         if (tts != null) {
             Delegate delegate = new Delegate() {
                 @Override
@@ -185,7 +185,8 @@ public class TextToSpeech {
         }
     }
 
-    public String speak(final String prompt, final String wav) {
+    public String speak(final String prompt, final String attitude,
+            final String wav) {
         final StringBuilder soundFilePath = new StringBuilder();
         if (tts != null) {
             Delegate delegate = new Delegate() {

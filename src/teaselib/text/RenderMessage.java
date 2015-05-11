@@ -8,6 +8,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
+import teaselib.Mood;
 import teaselib.ScriptInterruptedException;
 import teaselib.TeaseLib;
 import teaselib.TeaseScript;
@@ -81,6 +82,7 @@ public class RenderMessage extends MediaRendererThread implements
                 }
                 // Process message paragraphs
                 RenderSound soundRenderer = null;
+                String attitude = Mood.Neutral;
                 for (Iterator<Part> it = message.iterator(); it.hasNext();) {
                     Set<String> additionalHints = new HashSet<String>();
                     additionalHints.addAll(hints);
@@ -98,7 +100,7 @@ public class RenderMessage extends MediaRendererThread implements
                         new RenderDesktopItem(part.value).render(teaseLib);
                     } else if (part.type == Message.Type.Mood) {
                         // Mood
-                        additionalHints.add(part.value);
+                        attitude = part.value;
                     } else if (part.type == Message.Type.Keyword) {
                         doKeyword(soundRenderer, part);
                     } else if (part.type == Message.Type.Delay) {
@@ -113,11 +115,12 @@ public class RenderMessage extends MediaRendererThread implements
                         accumulatedText = accumulateText(accumulatedText, text,
                                 append);
                         // Update text
+                        additionalHints.add(attitude);
                         showImageAndText(accumulatedText.toString(),
                                 additionalHints);
                         // First message shown - start part completed
                         startCompleted();
-                        speak(prerenderedSpeechItems, text);
+                        speak(prerenderedSpeechItems, text, attitude);
                         // if (endThread) {
                         // break;
                         // }
@@ -195,9 +198,10 @@ public class RenderMessage extends MediaRendererThread implements
     }
 
     private void speak(final Iterator<String> prerenderedSpeechItems,
-            String text) throws IOException {
+            String text, final String attitude) throws IOException {
         if (speechSynthesizer != null) {
-            speechSynthesizer.speak(text, prerenderedSpeechItems, teaseLib);
+            speechSynthesizer.speak(text, attitude, prerenderedSpeechItems,
+                    teaseLib);
         } else {
             // Text is not meant to be spoken, just to be
             // displayed
@@ -267,7 +271,7 @@ public class RenderMessage extends MediaRendererThread implements
     @Override
     public String toString() {
         long delay = 0;
-        Collection<Part> paragraphs = message.getParagraphs();
+        Collection<Part> paragraphs = message.getParts();
         for (Iterator<Part> it = paragraphs.iterator(); it.hasNext();) {
             Part paragraph = it.next();
             delay += TextToSpeech.getEstimatedSpeechDuration(paragraph.value);

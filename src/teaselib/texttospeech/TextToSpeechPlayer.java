@@ -229,8 +229,8 @@ public class TextToSpeechPlayer {
      * @param teaseLib
      *            instance to call sleep on
      */
-    public void speak(String prompt, Iterator<String> prerecorded,
-            TeaseLib teaseLib) throws IOException {
+    public void speak(String prompt, String attitude,
+            Iterator<String> prerecorded, TeaseLib teaseLib) throws IOException {
         final String path;
         if (prerecorded != null) {
             path = prerecorded.hasNext() ? prerecorded.next() : null;
@@ -255,7 +255,7 @@ public class TextToSpeechPlayer {
                     .getAbsolutePath(), teaseLib.resources.getResource(path));
         } else if (useTTS) {
             try {
-                textToSpeech.speak(prompt);
+                textToSpeech.speak(prompt, attitude);
             } catch (ScriptInterruptedException e) {
                 throw e;
             } catch (Throwable t) {

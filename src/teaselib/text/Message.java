@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Vector;
 
 import teaselib.Actor;
-import teaselib.Attitude;
+import teaselib.Mood;
 import teaselib.TeaseScript;
 
 public class Message {
@@ -14,7 +14,7 @@ public class Message {
     /**
      * Message types.
      */
-    enum Type {
+    public enum Type {
         Text, Image, Sound, DesktopItem, Mood, Keyword, Delay, Exec
     }
 
@@ -147,7 +147,7 @@ public class Message {
         }
     }
 
-    public List<Part> getParagraphs() {
+    public List<Part> getParts() {
         List<Part> p = new ArrayList<Part>();
         for (Part s : parts) {
             p.add(s);
@@ -159,9 +159,16 @@ public class Message {
         int s = m.length();
         int i = m.lastIndexOf(".");
         if (i > 0 && i != s - 1) {
-            // This could certainly be done better than just assuming
-            // file extensions are non-space letters after a dot
-            return m.substring(i, s - 1).indexOf(" ") < 0;
+            // Inline-files must have extensions with at least one alphanumeric
+            // letter after the dot
+            String extension = m.substring(i + 1, m.length());
+            if (extension.matches("[A-Za-z]+")) {
+                // This could certainly be done better than just assuming
+                // file extensions are non-space letters after a dot
+                return m.substring(i, s - 1).indexOf(" ") < 0;
+            } else {
+                return false;
+            }
         } else {
             return false;
         }
@@ -180,7 +187,7 @@ public class Message {
     }
 
     public static boolean isMood(String m) {
-        return Attitude.matches(m);
+        return Mood.matches(m);
     }
 
     public static boolean isKeyword(String m) {
@@ -207,6 +214,13 @@ public class Message {
         for (String s : endOf) {
             if (line.endsWith(s))
                 return true;
+        }
+        // Check sentences with ending quote
+        if (line.endsWith("\"")) {
+            for (String s : endOf) {
+                if (line.endsWith(s + "\""))
+                    return true;
+            }
         }
         return false;
     }
@@ -257,10 +271,10 @@ public class Message {
     }
 
     public class Part {
-        public final String value;
         public final Type type;
+        public final String value;
 
-        public Part(String value, Type type) {
+        public Part(Type type, String value) {
             this.value = value;
             this.type = type;
         }
@@ -297,6 +311,34 @@ public class Message {
             return p.iterator();
         }
 
+        private void add(Part part) {
+            if (part.type == Type.Text) {
+                // Quoted paragraph? -> read aloud, change mood
+                String text = part.value;
+                boolean readAloudStart = text.startsWith("\"");
+                boolean readAloudEnd = text.endsWith("\"");
+                if (readAloudStart) {
+                    add(new Part(Type.Mood, Mood.Reading));
+                }
+                p.add(part);
+                if (readAloudEnd) {
+                    add(new Part(Type.Mood, Mood.Neutral));
+                }
+            } else if (part.type == Type.Mood) {
+                if (!p.isEmpty()) {
+                    int i = p.size() - 1;
+                    Part last = p.get(i);
+                    if (last.type == Type.Mood) {
+                        p.set(i, part);
+                    } else {
+                        p.add(part);
+                    }
+                } else {
+                    p.add(part);
+                }
+            }
+        }
+
         public void add(String text) {
             final Type type = determineType(text);
             if (type == Type.Keyword) {
@@ -306,21 +348,23 @@ public class Message {
             boolean requiresNewParagraphBefore = requiresSeparateLine;
             boolean requiresNewParagraphAfter = requiresSeparateLine
                     || endOf(text, endOfSentence);
-            if (p.isEmpty()) {
+            if (isEmpty()) {
                 // First
-                p.add(new Part(text, type));
+                add(new Part(type, text));
                 newParagraph = requiresNewParagraphAfter;
             } else if (requiresNewParagraphBefore) {
                 // File as new paragraph
-                p.add(new Part(text, type));
+                add(new Part(type, text));
                 newParagraph = true;
             } else if (newParagraph) {
-                p.add(new Part(text, type));
+                add(new Part(type, text));
                 newParagraph = requiresNewParagraphAfter;
             } else {
                 // Append
                 int i = p.size() - 1;
-                p.set(i, new Part(p.get(i).value + " " + text, type));
+                String accumulatedText = p.get(i).value + " " + text;
+                p.remove(i);
+                add(new Part(type, accumulatedText));
                 newParagraph = requiresNewParagraphAfter;
             }
         }

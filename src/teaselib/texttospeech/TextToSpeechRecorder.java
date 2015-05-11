@@ -17,6 +17,7 @@ import java.util.Set;
 import java.util.Vector;
 
 import teaselib.Actor;
+import teaselib.Mood;
 import teaselib.ResourceLoader;
 import teaselib.TeaseLib;
 import teaselib.text.Message;
@@ -190,26 +191,31 @@ public class TextToSpeechRecorder {
         int index = 0;
         mp3.Main lame = new mp3.Main();
         List<String> soundFiles = new Vector<String>();
-        for (Part paragraph : message.getParagraphs()) {
+        String attitude = Mood.Neutral;
+        for (Part part : message.getParts()) {
             // TODO Process or ignore special instructions
             // TODO refactor message handling into separate class,
             // because otherwise it would be handled here and in MessageRenderer
-            TeaseLib.log("Recording part " + index);
-            File soundFile = new File(messageDir, Integer.toString(index));
-            String recordedSoundFile = textToSpeech.speak(paragraph.value,
-                    soundFile.getAbsolutePath());
-            if (!recordedSoundFile.endsWith(".mp3")) {
-                String encodedSoundFile = recordedSoundFile.replace(".wav",
-                        ".mp3");
-                // sampling frequency is read from the wav audio file
-                String[] argv = { recordedSoundFile, encodedSoundFile,
-                        "--preset", "standard" };
-                lame.run(argv);
-                new File(recordedSoundFile).delete();
-                recordedSoundFile = encodedSoundFile;
+            if (part.type == Message.Type.Mood) {
+                attitude = part.value;
+            } else if (part.type == Message.Type.Text) {
+                TeaseLib.log("Recording part " + index);
+                File soundFile = new File(messageDir, Integer.toString(index));
+                String recordedSoundFile = textToSpeech.speak(part.value,
+                        attitude, soundFile.getAbsolutePath());
+                if (!recordedSoundFile.endsWith(".mp3")) {
+                    String encodedSoundFile = recordedSoundFile.replace(".wav",
+                            ".mp3");
+                    // sampling frequency is read from the wav audio file
+                    String[] argv = { recordedSoundFile, encodedSoundFile,
+                            "--preset", "standard" };
+                    lame.run(argv);
+                    new File(recordedSoundFile).delete();
+                    recordedSoundFile = encodedSoundFile;
+                }
+                soundFiles.add(new File(recordedSoundFile).getName());
+                index++;
             }
-            soundFiles.add(new File(recordedSoundFile).getName());
-            index++;
         }
         {
             // Write sound inventory file

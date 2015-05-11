@@ -24,7 +24,7 @@ public abstract class TeaseScript extends TeaseScriptBase implements Runnable {
     public final static String NoImage = "NoImage";
     public final static String DominantImage = "DominantImage";
 
-    private String attitude = Attitude.Neutral;
+    private String attitude = Mood.Neutral;
 
     public final Actor actor;
 
@@ -126,7 +126,7 @@ public abstract class TeaseScript extends TeaseScriptBase implements Runnable {
                     displayImage, attitude);
         } finally {
             displayImage = DominantImage;
-            attitude = Attitude.Neutral;
+            attitude = Mood.Neutral;
         }
     }
 

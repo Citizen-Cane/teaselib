@@ -138,9 +138,9 @@ public class Message {
                 boolean append = all || part.type == Type.Text;
                 if (append) {
                     format.append(part.value);
-                }
-                if (i.hasNext()) {
-                    format.append(newLine);
+                    if (i.hasNext()) {
+                        format.append(newLine);
+                    }
                 }
             }
             return format.toString();
@@ -316,7 +316,8 @@ public class Message {
                 // Quoted paragraph? -> read aloud, change mood
                 String text = part.value;
                 boolean readAloudStart = text.startsWith("\"");
-                boolean readAloudEnd = text.endsWith("\"");
+                boolean readAloudEnd = text.endsWith("\"")
+                        || text.endsWith("\"."); // todo generalize
                 if (readAloudStart) {
                     add(new Part(Type.Mood, Mood.Reading));
                 }

@@ -86,32 +86,32 @@ public class TextToSpeechRecorder {
             Actor actor = message.actor;
             File characterDir = createSubDir(speechDir, actor.name);
             // Process voices for each character
-            final Voice voice;
+            final Voice neutralVoice;
             String voiceGuid = ttsPlayer.getAssignedVoiceFor(actor);
             if (voiceGuid == null) {
-                voice = ttsPlayer.getVoiceFor(actor);
+                neutralVoice = ttsPlayer.getVoiceFor(actor);
             } else {
-                voice = voices.get(voiceGuid);
+                neutralVoice = voices.get(voiceGuid);
             }
-            if (voice == null) {
+            if (neutralVoice == null) {
                 throw new IllegalArgumentException("Voice for actor '" + actor
                         + "' not found in " + VoicesProperties.VoicesFilename);
             }
-            TeaseLib.log("Voice: " + voice.name);
-            textToSpeech.setVoice(voice);
-            File voiceDir = createSubDir(characterDir, voice.guid);
+            TeaseLib.log("Voice: " + neutralVoice.name);
+            textToSpeech.setVoice(neutralVoice);
+            File voiceDir = createSubDir(characterDir, neutralVoice.guid);
             if (!actors.contains(actor.name)) {
                 // Create a tag file containing the actor voice properties, for
                 // information and because
                 // the resource loader can just load files, but not check for
                 // directories in the resource paths
                 actors.add(actor.name);
-                ActorVoice actorVoice = new ActorVoice(actor.name, voice.guid,
-                        resources);
+                ActorVoice actorVoice = new ActorVoice(actor.name,
+                        neutralVoice.guid, resources);
                 actorVoice.clear();
-                actorVoice.put(actor.name, voice);
+                actorVoice.put(actor.name, neutralVoice);
                 actorVoice.store(new File(new File(speechDir, actor.name),
-                        voice.guid));
+                        neutralVoice.guid));
             }
             File messageDir = new File(voiceDir, hash);
             if (messageDir.exists()) {
@@ -134,7 +134,7 @@ public class TextToSpeechRecorder {
                     for (String file : messageDir.list()) {
                         new File(messageDir, file).delete();
                     }
-                    create(message, messageDir);
+                    create(message, messageDir, neutralVoice);
                     changedEntries++;
                 }
                 // - check whether we have created this during the current
@@ -146,7 +146,7 @@ public class TextToSpeechRecorder {
                 TeaseLib.log(hash + " is new");
                 // new
                 messageDir.mkdir();
-                create(message, messageDir);
+                create(message, messageDir, neutralVoice);
                 newEntries++;
             }
             // Unused directories will remain because an update changes the
@@ -186,23 +186,26 @@ public class TextToSpeechRecorder {
         }
     }
 
-    public void create(Message message, File messageDir) throws IOException {
+    public void create(Message message, File messageDir, Voice neutralVoice)
+            throws IOException {
         TeaseLib.log("Recording message:\n" + message.toHashString());
         int index = 0;
         mp3.Main lame = new mp3.Main();
         List<String> soundFiles = new Vector<String>();
-        String attitude = Mood.Neutral;
+        String mood = Mood.Neutral;
         for (Part part : message.getParts()) {
             // TODO Process or ignore special instructions
             // TODO refactor message handling into separate class,
             // because otherwise it would be handled here and in MessageRenderer
             if (part.type == Message.Type.Mood) {
-                attitude = part.value;
+                mood = part.value;
             } else if (part.type == Message.Type.Text) {
                 TeaseLib.log("Recording part " + index);
                 File soundFile = new File(messageDir, Integer.toString(index));
-                String recordedSoundFile = textToSpeech.speak(part.value,
-                        attitude, soundFile.getAbsolutePath());
+                textToSpeech.setVoice(neutralVoice);
+                textToSpeech.setHint(mood);
+                String recordedSoundFile = textToSpeech.speak(part.value, mood,
+                        soundFile.getAbsolutePath());
                 if (!recordedSoundFile.endsWith(".mp3")) {
                     String encodedSoundFile = recordedSoundFile.replace(".wav",
                             ".mp3");

@@ -82,7 +82,7 @@ public class RenderMessage extends MediaRendererThread implements
                 }
                 // Process message paragraphs
                 RenderSound soundRenderer = null;
-                String attitude = Mood.Neutral;
+                String mood = Mood.Neutral;
                 for (Iterator<Part> it = message.iterator(); it.hasNext();) {
                     Set<String> additionalHints = new HashSet<String>();
                     additionalHints.addAll(hints);
@@ -100,7 +100,7 @@ public class RenderMessage extends MediaRendererThread implements
                         new RenderDesktopItem(part.value).render(teaseLib);
                     } else if (part.type == Message.Type.Mood) {
                         // Mood
-                        attitude = part.value;
+                        mood = part.value;
                     } else if (part.type == Message.Type.Keyword) {
                         doKeyword(soundRenderer, part);
                     } else if (part.type == Message.Type.Delay) {
@@ -115,12 +115,13 @@ public class RenderMessage extends MediaRendererThread implements
                         accumulatedText = accumulateText(accumulatedText, text,
                                 append);
                         // Update text
-                        additionalHints.add(attitude);
+                        additionalHints.add(mood);
                         showImageAndText(accumulatedText.toString(),
                                 additionalHints);
                         // First message shown - start part completed
                         startCompleted();
-                        speak(prerenderedSpeechItems, text, attitude);
+                        speechSynthesizer.setMood(mood, prerenderedSpeechItems);
+                        speak(prerenderedSpeechItems, text, mood);
                         // if (endThread) {
                         // break;
                         // }

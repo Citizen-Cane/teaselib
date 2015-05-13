@@ -31,6 +31,7 @@ public class TextToSpeechPlayer {
     private final Map<String, Voice> actor2TTSVoice = new HashMap<String, Voice>();
 
     private final Set<String> usedVoices = new HashSet<String>();
+    private Voice neutralVoice = null;
 
     public TextToSpeechPlayer(ResourceLoader resources,
             TextToSpeech textToSpeech) {
@@ -202,6 +203,7 @@ public class TextToSpeechPlayer {
      * @throws IOException
      */
     public Iterator<String> selectVoice(Message message) throws IOException {
+        // Do we have a prerecorded voice?
         List<String> prerenderedSpeechFiles = getSpeechResources(message);
         final Iterator<String> prerenderedSpeech;
         if (prerenderedSpeechFiles != null) {
@@ -212,11 +214,16 @@ public class TextToSpeechPlayer {
         }
         // Use TTS voice
         if (textToSpeech.isReady()) {
-            // No, setup voice
-            Voice voice = getVoiceFor(message.actor);
-            textToSpeech.setVoice(voice);
+            neutralVoice = getVoiceFor(message.actor);
+            textToSpeech.setVoice(neutralVoice);
         }
         return null;
+    }
+
+    public void setMood(String mood, Iterator<String> prerecorded) {
+        if (prerecorded == null) {
+            textToSpeech.setHint(mood);
+        }
     }
 
     /**

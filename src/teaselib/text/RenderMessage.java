@@ -201,7 +201,7 @@ public class RenderMessage extends MediaRendererThread implements
     private void speak(final Iterator<String> prerenderedSpeechItems,
             String text) throws IOException {
         if (speechSynthesizer != null) {
-            speechSynthesizer.speak(text, prerenderedSpeechItems, teaseLib);
+            speechSynthesizer.speak(text, prerenderedSpeechItems);
         } else {
             // Text is not meant to be spoken, just to be
             // displayed

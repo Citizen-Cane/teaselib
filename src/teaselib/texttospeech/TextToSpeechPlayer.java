@@ -12,6 +12,7 @@ import java.util.Set;
 import java.util.Vector;
 
 import teaselib.Actor;
+import teaselib.Host;
 import teaselib.ResourceLoader;
 import teaselib.ScriptInterruptedException;
 import teaselib.TeaseLib;
@@ -21,6 +22,7 @@ import teaselib.text.Message;
 public class TextToSpeechPlayer {
 
     public final ResourceLoader resources;
+    public final Host host;
     public final TextToSpeech textToSpeech;
     protected final SpeechRecognition speechRecognizer;
 
@@ -35,13 +37,14 @@ public class TextToSpeechPlayer {
 
     public TextToSpeechPlayer(ResourceLoader resources,
             TextToSpeech textToSpeech) {
-        this(resources, textToSpeech, null);
+        this(resources, null, textToSpeech, null);
     }
 
-    public TextToSpeechPlayer(ResourceLoader resources,
+    public TextToSpeechPlayer(ResourceLoader resources, Host host,
             TextToSpeech textToSpeech, SpeechRecognition speechRecognizer) {
         super();
         this.resources = resources;
+        this.host = host;
         this.textToSpeech = textToSpeech;
         this.speechRecognizer = speechRecognizer;
         // TTS might not be available
@@ -236,8 +239,8 @@ public class TextToSpeechPlayer {
      * @param teaseLib
      *            instance to call sleep on
      */
-    public void speak(String prompt, Iterator<String> prerecorded,
-            TeaseLib teaseLib) throws IOException {
+    public void speak(String prompt, Iterator<String> prerecorded)
+            throws IOException {
         final String path;
         if (prerecorded != null) {
             path = prerecorded.hasNext() ? prerecorded.next() : null;
@@ -258,8 +261,8 @@ public class TextToSpeechPlayer {
             reactivateSpeechRecognition = false;
         }
         if (usePrerecorded) {
-            teaseLib.host.playSound(resources.getAssetPath(path)
-                    .getAbsolutePath(), teaseLib.resources.getResource(path));
+            host.playSound(resources.getAssetPath(path).getAbsolutePath(),
+                    resources.getResource(path));
         } else if (useTTS) {
             try {
                 textToSpeech.speak(prompt);
@@ -267,10 +270,10 @@ public class TextToSpeechPlayer {
                 throw e;
             } catch (Throwable t) {
                 TeaseLib.log(this, t);
-                speakSilent(prompt, teaseLib);
+                speakSilent(prompt);
             }
         } else {
-            speakSilent(prompt, teaseLib);
+            speakSilent(prompt);
         }
         // resume SR if necessary
         if (reactivateSpeechRecognition) {
@@ -278,10 +281,10 @@ public class TextToSpeechPlayer {
         }
     }
 
-    private void speakSilent(String prompt, TeaseLib teaseLib) {
+    private void speakSilent(String prompt) {
         // Unable to speak, just display the estimated duration
         long duration = TextToSpeech.getEstimatedSpeechDuration(prompt);
-        teaseLib.host.sleep(duration);
+        host.sleep(duration);
     }
 
     public void stop() {

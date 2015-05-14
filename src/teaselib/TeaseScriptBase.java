@@ -41,7 +41,7 @@ public abstract class TeaseScriptBase {
         this.teaseLib = teaseLib;
         speechRecognizer = new SpeechRecognition(locale);
         speechSynthesizer = new TextToSpeechPlayer(teaseLib.resources,
-                new TextToSpeech(), speechRecognizer);
+                teaseLib.host, new TextToSpeech(), speechRecognizer);
     }
 
     /**

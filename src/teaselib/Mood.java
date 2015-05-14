@@ -11,10 +11,10 @@ public class Mood {
     /**
      * The default mood, spoken with TTS default settings
      */
-    public static final String Neutral = "mood=neutral";
+    public static final String Neutral = "<mood=neutral>";
 
     /**
      * Mood when reading, concentrated, speaks somewhat slower, a bit louder
      */
-    public static final String Reading = "mood=reading";
+    public static final String Reading = "<mood=reading>";
 }

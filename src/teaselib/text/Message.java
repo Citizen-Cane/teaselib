@@ -187,7 +187,7 @@ public class Message {
     }
 
     public static boolean isMood(String m) {
-        return Mood.matches(m);
+        return Mood.isMood(m);
     }
 
     public static boolean isKeyword(String m) {

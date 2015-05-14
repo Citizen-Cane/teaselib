@@ -121,7 +121,7 @@ public class RenderMessage extends MediaRendererThread implements
                         // First message shown - start part completed
                         startCompleted();
                         speechSynthesizer.setMood(mood, prerenderedSpeechItems);
-                        speak(prerenderedSpeechItems, text, mood);
+                        speak(prerenderedSpeechItems, text);
                         // if (endThread) {
                         // break;
                         // }
@@ -199,10 +199,9 @@ public class RenderMessage extends MediaRendererThread implements
     }
 
     private void speak(final Iterator<String> prerenderedSpeechItems,
-            String text, final String attitude) throws IOException {
+            String text) throws IOException {
         if (speechSynthesizer != null) {
-            speechSynthesizer.speak(text, attitude, prerenderedSpeechItems,
-                    teaseLib);
+            speechSynthesizer.speak(text, prerenderedSpeechItems, teaseLib);
         } else {
             // Text is not meant to be spoken, just to be
             // displayed

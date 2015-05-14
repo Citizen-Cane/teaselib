@@ -204,7 +204,7 @@ public class TextToSpeechRecorder {
                 File soundFile = new File(messageDir, Integer.toString(index));
                 textToSpeech.setVoice(neutralVoice);
                 textToSpeech.setHint(mood);
-                String recordedSoundFile = textToSpeech.speak(part.value, mood,
+                String recordedSoundFile = textToSpeech.speak(part.value,
                         soundFile.getAbsolutePath());
                 if (!recordedSoundFile.endsWith(".mp3")) {
                     String encodedSoundFile = recordedSoundFile.replace(".wav",

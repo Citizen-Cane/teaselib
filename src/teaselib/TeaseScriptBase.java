@@ -67,22 +67,22 @@ public abstract class TeaseScriptBase {
 
     public void renderMessage(Message message,
             TextToSpeechPlayer speechSynthesizer, ImageIterator dominantImages,
-            String displayImage, String attitude) {
+            String displayImage, String mood) {
         renderDeferred();
-        Set<String> hints = getHints(attitude);
+        Set<String> hints = getHints(mood);
         RenderMessage renderMessage = new RenderMessage(message,
                 speechSynthesizer, dominantImages, displayImage, hints);
         renderQueue.start(renderMessage, teaseLib);
         renderQueue.completeStarts();
     }
 
-    private Set<String> getHints(String attitude) {
+    private Set<String> getHints(String mood) {
         Set<String> hints = new HashSet<String>();
         // Within messages, images might change fast, and changing
         // the camera position, image size or aspect would be too distracting
         hints.add(ImageIterator.SameCameraPosition);
         hints.add(ImageIterator.SameResolution);
-        hints.add(attitude);
+        hints.add(mood);
         return hints;
     }
 

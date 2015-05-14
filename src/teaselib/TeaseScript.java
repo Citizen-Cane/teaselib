@@ -24,7 +24,7 @@ public abstract class TeaseScript extends TeaseScriptBase implements Runnable {
     public final static String NoImage = "NoImage";
     public final static String DominantImage = "DominantImage";
 
-    private String attitude = Mood.Neutral;
+    private String mood = Mood.Neutral;
 
     public final Actor actor;
 
@@ -75,8 +75,8 @@ public abstract class TeaseScript extends TeaseScriptBase implements Runnable {
         deferredRenderers.add(new RenderSound(path));
     }
 
-    void setAttitude(String attitude) {
-        this.attitude = attitude;
+    void setMood(String mood) {
+        this.mood = mood;
     }
 
     /**
@@ -123,10 +123,10 @@ public abstract class TeaseScript extends TeaseScriptBase implements Runnable {
             TextToSpeechPlayer speechSynthesizer) {
         try {
             renderMessage(message, speechSynthesizer, dominantImages,
-                    displayImage, attitude);
+                    displayImage, mood);
         } finally {
             displayImage = DominantImage;
-            attitude = Mood.Neutral;
+            mood = Mood.Neutral;
         }
     }
 

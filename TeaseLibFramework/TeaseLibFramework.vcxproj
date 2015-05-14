@@ -179,6 +179,7 @@
     <ClInclude Include="JNIObject.h" />
     <ClInclude Include="JNIObjectSibling.h" />
     <ClInclude Include="JNIString.h" />
+    <ClInclude Include="JNIUtilities.h" />
     <ClInclude Include="NativeException.h" />
     <ClInclude Include="NativeObject.h" />
     <ClInclude Include="sphelper.h" />
@@ -194,6 +195,7 @@
     <ClCompile Include="JNIObject.cpp" />
     <ClCompile Include="JNIObjectSibling.cpp" />
     <ClCompile Include="JNIString.cpp" />
+    <ClCompile Include="JNIUtilities.cpp" />
     <ClCompile Include="NativeException.cpp" />
     <ClCompile Include="NativeObject.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>

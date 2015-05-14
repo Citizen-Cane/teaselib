@@ -15,6 +15,7 @@
 #include <COMUser.h>
 #include <JNIException.h>
 #include <JNIString.h>
+#include <JNIUtilities.h>
 #include <NativeException.h>
 #include <NativeObject.h>
 
@@ -113,6 +114,16 @@ extern "C"
         }
     }
 
+	jobjectArray getHints(JNIEnv* env, jobject jthis)
+	{
+		jclass jclass = env->GetObjectClass(jthis);
+		jobjectArray hints = (jobjectArray) env->GetObjectField(jthis, env->GetFieldID(jclass, "hints", "[Ljava/lang/String;"));
+		if (env->ExceptionCheck()) {
+			throw new JNIException(env);
+		}
+		return hints;
+	}
+
     /*
     * Class:     teaselib_texttospeech_implementation_TeaseLibTTS
     * Method:    speak
@@ -123,7 +134,8 @@ extern "C"
         try {
             SpeechSynthesizer* speechSynthesizer = static_cast<SpeechSynthesizer*>(NativeObject::get(env, jthis));
             NativeObject::checkInitializedOrThrow(speechSynthesizer);
-            speechSynthesizer->speak(JNIString(env, prompt));
+			speechSynthesizer->applyHints(JNIUtilities::stringArray(env, getHints(env, jthis)));
+			speechSynthesizer->speak(JNIString(env, prompt));
         } catch (NativeException *e) {
             JNIException::throwNew(env, e);
         } catch (JNIException /**e*/) {
@@ -142,7 +154,8 @@ extern "C"
         try {
             SpeechSynthesizer* speechSynthesizer = static_cast<SpeechSynthesizer*>(NativeObject::get(env, jthis));
             NativeObject::checkInitializedOrThrow(speechSynthesizer);
-            std::wstring soundFile = speechSynthesizer->speak(JNIString(env, prompt), JNIString(env, path));
+			speechSynthesizer->applyHints(JNIUtilities::stringArray(env, getHints(env, jthis)));
+			std::wstring soundFile = speechSynthesizer->speak(JNIString(env, prompt), JNIString(env, path));
             actualPath = JNIString(env, soundFile.c_str()).detach();
         } catch (NativeException *e) {
             JNIException::throwNew(env, e);

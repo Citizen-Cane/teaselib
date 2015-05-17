@@ -5,6 +5,8 @@ import java.nio.ByteOrder;
 import java.util.LinkedList;
 import java.util.List;
 
+import teaselib.util.jni.LibraryLoader;
+
 /**
  * Represents all XInput devices registered in the system. Use the
  * {@link #getAllDevices()} or {@link #getDeviceFor(int)} methods to start using
@@ -28,55 +30,9 @@ public class XInputDevice {
 
     private final List<XInputDeviceListener> listeners;
 
-    private static final XInputDevice[] DEVICES = new XInputDevice[MAX_PLAYERS];
-    static {
-        // Doesn't fitr into my own lib loading concept
-        // final String arch = System.getProperty("os.arch").contains("64") ?
-        // "64" : "32";
-        // try {
-        // final File dir = new File("lib/native");
-        // dir.mkdirs();
-        //
-        // final String libName = "XInputReader-" + arch + ".dll";
-        // final File file = new File(dir, libName);
-        // try {
-        // final InputStream input =
-        // XInputDevice.class.getClassLoader().getResourceAsStream("lib/native/"
-        // + libName);
-        // try {
-        // file.createNewFile();
-        //
-        // final FileOutputStream fos = new FileOutputStream(file);
-        // try {
-        // final byte[] buf = new byte[65536];
-        // int len;
-        // while ((len = input.read(buf)) > -1) {
-        // fos.write(buf, 0, len);
-        // }
-        // } finally {
-        // fos.close();
-        // }
-        // } finally {
-        // input.close();
-        // }
-        // } catch (final Exception e) {
-        // throw new Error("Could not load native libraries", e);
-        // }
-        //
-        // System.load(file.getAbsolutePath());
-        // } catch (final UnsatisfiedLinkError e) {
-        // throw new
-        // Error("XInputDevice could not find required library: XInputReader-" +
-        // arch, e);
-        // }
-        for (int i = 0; i < MAX_PLAYERS; i++) {
-            DEVICES[i] = new XInputDevice(i);
-        }
-    }
+    private static boolean libLoaded = false;
 
-    public static void main(final String[] args) {
-        System.out.println(XInputDevice.getDeviceFor(1).isConnected());
-    }
+    private static final XInputDevice[] DEVICES = new XInputDevice[MAX_PLAYERS];
 
     private XInputDevice(final int playerNum) {
         this.playerNum = playerNum;
@@ -98,6 +54,12 @@ public class XInputDevice {
      * @return all XInput devices
      */
     public static XInputDevice[] getAllDevices() {
+        if (!libLoaded) {
+            LibraryLoader.load("TeaseLibx360c");
+            for (int i = 0; i < MAX_PLAYERS; i++) {
+                DEVICES[i] = new XInputDevice(i);
+            }
+        }
         return DEVICES.clone();
     }
 

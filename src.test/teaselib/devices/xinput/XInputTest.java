@@ -6,9 +6,6 @@ package teaselib.devices.xinput;
 import org.junit.Assert;
 import org.junit.Test;
 
-import teaselib.devices.xinput.XInputDevice;
-import teaselib.util.jni.LibraryLoader;
-
 /**
  * @author someone
  *
@@ -16,9 +13,7 @@ import teaselib.util.jni.LibraryLoader;
 public class XInputTest {
 
     @Test
-    public void test() {
-        LibraryLoader.load("TeaseLibx360c");
-        // retrieve all devices
+    public void testEnumDevices() {
         XInputDevice[] devices = XInputDevice.getAllDevices();
         Assert.assertTrue(devices.length == 4);
         for (XInputDevice device : devices) {

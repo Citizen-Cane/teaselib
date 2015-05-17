@@ -9,6 +9,11 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import teaselib.stimulation.pattern.Gait;
+import teaselib.stimulation.pattern.Run;
+import teaselib.stimulation.pattern.Trot;
+import teaselib.stimulation.pattern.Walk;
+
 /**
  * @author someone
  *
@@ -46,11 +51,16 @@ public class StimulationTest {
     @Test
     public void test() {
         Stimulator stimulator = Stimulators.getAll().get(0);
-        Walk walk = new Walk(stimulator);
+        testGait(new Walk(stimulator));
+        testGait(new Trot(stimulator));
+        testGait(new Run(stimulator));
+    }
+
+    static private void testGait(Gait gait) {
         for (int i = 1; i <= Stimulation.maxIntensity; i++) {
-            walk.play(i, 5.0 * Walk.StepDurationSeconds);
+            gait.play(i, 5.0 * gait.stepDurationSeconds);
             try {
-                Thread.sleep((long) (5000 * Walk.StepDurationSeconds));
+                Thread.sleep((long) (5 * 1000 * gait.stepDurationSeconds));
             } catch (InterruptedException e) {
                 break;
             }

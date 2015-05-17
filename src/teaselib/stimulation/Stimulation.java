@@ -12,7 +12,7 @@ public abstract class Stimulation implements Runnable {
     protected final static int maxIntensity = 10;
     protected final static double maxStrength = 1.0;
 
-    final Stimulator stimulator;
+    protected final Stimulator stimulator;
     protected int intensity;
     protected double durationSeconds;
 

@@ -37,6 +37,13 @@ import teaselib.devices.xinput.XInputDevice;
  *         You have to connect a 10Kohm resistor parallel to the reed relay to
  *         avoid the e-stim device shutting off. The current will then pass
  *         either through the resistor or through the relay.
+ *         
+ *         Motors do have some intertia.
+ *         
+ *         The rough rumble motor definitely needs about 150ms to run at full speed.
+ *         
+ *          When using relays, the shortest time the xinput driver allows seems to be around 50-100ms
+ *           
  */
 public class XInputStimulator implements Stimulator {
 

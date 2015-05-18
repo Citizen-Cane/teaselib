@@ -17,9 +17,9 @@ public class SquareWave extends WaveForm {
      * @param onTimeMillis
      *            The on-time during each period
      */
-    public SquareWave(long periodTimeMillis, long onTimeMillis) {
-        this.periodTimeMillis = periodTimeMillis;
-        this.onTimeMillis = onTimeMillis;
+    public SquareWave(double periodTimeMillis, double onTimeMillis) {
+        this.periodTimeMillis = (long) periodTimeMillis;
+        this.onTimeMillis = (long) onTimeMillis;
     }
 
     /*

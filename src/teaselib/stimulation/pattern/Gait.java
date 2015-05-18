@@ -13,18 +13,15 @@ import teaselib.stimulation.Stimulator;
  */
 public class Gait extends Stimulation {
 
-    public final double stepDurationSeconds;
-
-    public Gait(Stimulator stimulator, double stepDurationSeconds) {
-        super(stimulator);
-        this.stepDurationSeconds = stepDurationSeconds;
+    public Gait(Stimulator stimulator, double periodDurationSeconds) {
+        super(stimulator, periodDurationSeconds);
     }
 
     @Override
     public void run() {
-        double d = stepDurationSeconds * 1000;
-        long onTimeMillis = (long) ((d * intensity / maxIntensity) * 0.6);
-        new SquareWave((long) d, onTimeMillis).play(stimulator,
-                durationSeconds, Stimulation.maxStrength);
+        double onTimeMillis = periodDurationSeconds * intensity / MaxIntensity
+                * 0.5;
+        new SquareWave(periodDurationSeconds * 1000, onTimeMillis * 1000).play(
+                stimulator, durationSeconds, Stimulation.maxStrength);
     }
 }

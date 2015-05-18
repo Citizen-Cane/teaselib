@@ -63,7 +63,7 @@ public class XInputStimulator implements Stimulator {
         }
 
         public void setRightMotor(short value) {
-            leftMotor = value;
+            rightMotor = value;
             device.setVibration(leftMotor, rightMotor);
         }
     }

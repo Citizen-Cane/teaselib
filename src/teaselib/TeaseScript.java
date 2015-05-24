@@ -57,6 +57,9 @@ public abstract class TeaseScript extends TeaseScriptBase implements Runnable {
      *            The path to the image
      */
     public void showImage(String path) {
+        if (path == null) {
+            displayImage = NoImage;
+        }
         if (path.equalsIgnoreCase(DominantImage)) {
             displayImage = DominantImage;
         } else if (path.equalsIgnoreCase(NoImage)) {

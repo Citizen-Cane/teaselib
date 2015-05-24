@@ -256,7 +256,9 @@ public class TextToSpeechPlayer {
         if ((usePrerecorded || useTTS) && speechRecognizer != null) {
             speechRecognizer.completeSpeechRecognitionInProgress();
             reactivateSpeechRecognition = speechRecognizer.isActive();
-            speechRecognizer.stopRecognition();
+            if (reactivateSpeechRecognition) {
+                speechRecognizer.stopRecognition();
+            }
         } else {
             reactivateSpeechRecognition = false;
         }

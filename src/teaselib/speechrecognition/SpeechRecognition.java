@@ -18,7 +18,7 @@ public class SpeechRecognition {
     private SpeechRecognitionImplementation sr;
     private DelegateThread delegateThread = new DelegateThread();
 
-    private void recognizerNotInitialized() {
+    private static void recognizerNotInitialized() {
         throw new IllegalStateException("Recognizer not initialized");
     }
 
@@ -88,6 +88,10 @@ public class SpeechRecognition {
                         sr.init(events, SpeechRecognition.this.locale);
                     } catch (UnsatisfiedLinkError e) {
                         TeaseLib.log(this, e);
+                        sr = null;
+                    } catch (Throwable t) {
+                        TeaseLib.log(this, t);
+                        sr = null;
                     }
                 }
             };
@@ -206,9 +210,9 @@ public class SpeechRecognition {
     /**
      * Determine whether speech recognition listens to voice input
      * 
-     * @return
+     * @return True if speech recognition is listening to voice input
      */
     public boolean isActive() {
-        return speechRecognitionActive;
+        return speechRecognitionActive && isReady();
     }
 }

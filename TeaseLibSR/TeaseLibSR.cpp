@@ -57,13 +57,36 @@ extern "C"
 	* Signature: (Lteaselib/speechrecognition/implementation/TeaseLibSR;)V
 	*/
 	JNIEXPORT void JNICALL Java_teaselib_speechrecognition_implementation_TeaseLibSR_initSREventThread
-		(JNIEnv *threadEnv, jobject jthread, jobject jthis)
+		(JNIEnv *threadEnv, jobject jthis, jobject jthread)
 	{
 		try
 		{
 			SpeechRecognizer* speechRecognizer = static_cast<SpeechRecognizer*>(NativeObject::get(threadEnv, jthis));
 			NativeObject::checkInitializedOrThrow(speechRecognizer);
-			speechRecognizer->speechRecognitionEventHandlerThread(threadEnv);
+			COMUser([&speechRecognizer, &threadEnv, &jthis, &jthread]() {
+				HRESULT hr = speechRecognizer->speechRecognitionInitContext();
+				assert(SUCCEEDED(hr));
+				if (SUCCEEDED(hr)) {
+					threadEnv->CallVoidMethod(jthread, threadEnv->GetMethodID(threadEnv->GetObjectClass(jthread), "notifyAll", "()V"));
+					if (threadEnv->ExceptionCheck()) {
+						throw new JNIException(threadEnv);
+					}
+
+					// notifyAll() doesn't cause the waiting threads to continue immediately,
+					// first the thread that obtains the monitor (that's us) has to leave the synchronized block
+					// We have to do it manually here, since
+					// the thread never leaves the synchronized() context that was established in TeaseLibSR.init()
+					threadEnv->MonitorExit(jthread);
+					if (threadEnv->ExceptionCheck()) {
+						throw new JNIException(threadEnv);
+					}
+					speechRecognizer->speechRecognitionEventHandlerThread(threadEnv);
+				}
+				else
+				{
+					throw new NativeException(hr, L"Unable to init speech recognition context");
+				}
+			});
 		}
 		catch (NativeException *e)
 		{

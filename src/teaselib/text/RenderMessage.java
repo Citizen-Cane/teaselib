@@ -21,8 +21,7 @@ import teaselib.userinterface.MediaRenderer;
 import teaselib.userinterface.MediaRendererThread;
 import teaselib.util.RenderDesktopItem;
 
-public class RenderMessage extends MediaRendererThread implements
-        MediaRenderer, MediaRenderer.Threaded {
+public class RenderMessage extends MediaRendererThread {
 
     private final Message message;
     private final TextToSpeechPlayer speechSynthesizer;
@@ -189,7 +188,7 @@ public class RenderMessage extends MediaRendererThread implements
         desktopItem.render(teaseLib);
     }
 
-    private String removeCommandNameFromValue(Part part) {
+    private static String removeCommandNameFromValue(Part part) {
         String value = part.value;
         if (value.equalsIgnoreCase(part.type.toString())) {
             return "";
@@ -209,7 +208,7 @@ public class RenderMessage extends MediaRendererThread implements
         }
     }
 
-    private StringBuilder accumulateText(StringBuilder accumulatedText,
+    private static StringBuilder accumulateText(StringBuilder accumulatedText,
             String text, boolean concatenate) {
         if (accumulatedText == null) {
             accumulatedText = new StringBuilder(text);
@@ -236,7 +235,7 @@ public class RenderMessage extends MediaRendererThread implements
         }
     }
 
-    private boolean canAppend(String s) {
+    private static boolean canAppend(String s) {
         char ending = s.isEmpty() ? ' ' : s.charAt(s.length() - 1);
         return ending == ',' || ending == ';';
     }
@@ -248,8 +247,13 @@ public class RenderMessage extends MediaRendererThread implements
             if (displayImage == TeaseScript.DominantImage) {
                 String[] hintArray = new String[additionalHints.size()];
                 hintArray = additionalHints.toArray(hintArray);
-                imageIterator.hint(hintArray);
-                image = imageIterator.next();
+                if (imageIterator != null) {
+                    imageIterator.hint(hintArray);
+                    image = imageIterator.next();
+                } else {
+                    image = null;
+                    TeaseLib.log("Dominant images missing - please initialize");
+                }
             } else if (displayImage == TeaseScript.NoImage) {
                 image = null;
             } else {
@@ -264,6 +268,7 @@ public class RenderMessage extends MediaRendererThread implements
         } catch (Exception e) {
             text = text + "\n\n" + e.getClass() + ": " + e.getMessage() + "\n";
             image = null;
+            TeaseLib.log(this, e);
         }
         teaseLib.host.show(image, text);
     }

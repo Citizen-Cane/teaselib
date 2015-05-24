@@ -3,7 +3,6 @@ package teaselib;
 import java.awt.Image;
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -32,8 +31,7 @@ public class ResourceLoader {
 
     public ResourceLoader(String basePath, String assetRoot)
             throws NoSuchMethodException, InvocationTargetException,
-            IllegalAccessException, MalformedURLException,
-            FileNotFoundException {
+            IllegalAccessException, MalformedURLException {
         this.basePath = basePath.endsWith("/") ? basePath : basePath + "/";
         if (assetRoot.contains("/") || assetRoot.contains("\\"))
             throw new IllegalArgumentException(
@@ -41,7 +39,9 @@ public class ResourceLoader {
         this.assetRoot = assetRoot + "/";
         this.namespace = assetRoot;
         Method addURI = addURLMethod();
-        addAsset(addURI, getAssetPath("").toURI());
+        // Add the base path to allow unpacking resource archives or to or to
+        // deploy directories
+        addAsset(addURI, new File(basePath).toURI());
     }
 
     public void addAssets(String[] paths) {
@@ -52,7 +52,7 @@ public class ResourceLoader {
         }
     }
 
-    private static URI[] toURIs(String root, String[] paths) throws IOException {
+    private static URI[] toURIs(String root, String[] paths) {
         URI[] uris = new URI[paths.length];
         for (int i = 0; i < paths.length; i++) {
             uris[i] = new File(root + paths[i]).toURI();
@@ -62,19 +62,19 @@ public class ResourceLoader {
 
     private void addAssets(URI[] assets) throws IllegalAccessException,
             InvocationTargetException, MalformedURLException,
-            FileNotFoundException, NoSuchMethodException {
+            NoSuchMethodException {
         addAssets(assets, addURLMethod());
     }
 
     private void addAssets(URI[] assets, Method addURI)
             throws IllegalAccessException, InvocationTargetException,
-            MalformedURLException, FileNotFoundException {
+            MalformedURLException {
         for (URI uri : assets) {
             addAsset(addURI, uri);
         }
     }
 
-    private Method addURLMethod() throws NoSuchMethodException {
+    private static Method addURLMethod() throws NoSuchMethodException {
         Class<URLClassLoader> classLoaderClass = URLClassLoader.class;
         @SuppressWarnings("rawtypes")
         final Class[] parameters = new Class[] { URL.class };
@@ -86,10 +86,11 @@ public class ResourceLoader {
 
     private void addAsset(Method method, URI uri)
             throws IllegalAccessException, InvocationTargetException,
-            MalformedURLException, FileNotFoundException {
-        if (new File(uri).exists()) {
+            MalformedURLException {
+        File file = new File(uri);
+        if (file.exists()) {
             method.invoke(classLoader, new Object[] { uri.toURL() });
-            if (uri.getPath().endsWith(".zip")) {
+            if (uri.getPath().endsWith(".zip") || file.isDirectory()) {
                 enumeratableClassPaths.add(uri);
                 TeaseLib.log("Using: " + uri.toString());
             }
@@ -125,13 +126,27 @@ public class ResourceLoader {
     }
 
     public Image image(String path) throws IOException {
-        InputStream inputStream = getResource(path);
-        return ImageIO.read(inputStream);
+        InputStream inputStream = null;
+        try {
+            inputStream = getResource(path);
+            return ImageIO.read(inputStream);
+        } finally {
+            if (inputStream != null) {
+                inputStream.close();
+            }
+        }
     }
 
     public Image image(URL path) throws IOException {
-        InputStream inputStream = getResource(path);
-        return ImageIO.read(inputStream);
+        InputStream inputStream = null;
+        try {
+            inputStream = getResource(path);
+            return ImageIO.read(inputStream);
+        } finally {
+            if (inputStream != null) {
+                inputStream.close();
+            }
+        }
     }
 
     /**
@@ -143,14 +158,26 @@ public class ResourceLoader {
      * @throws IOException
      */
     public List<String> resources(String pathPattern) {
-        Pattern pattern = Pattern.compile(assetRoot + pathPattern);
+        Pattern pattern = Pattern.compile("(.*)(" + pathPattern + ")$");
         List<String> resources = new LinkedList<String>();
         int start = assetRoot.length();
         for (URI uri : enumeratableClassPaths) {
             Collection<String> matches = ResourceList
                     .getResources(uri, pattern);
             for (String match : matches) {
-                resources.add(match.substring(start));
+                // assets are stored in the folder specified when instanciating
+                // the resource loader
+                // As a result, we don't have to mention it again in the script
+                // When unpacking a zip, all files are stored into a single
+                // folder (thew asset root folder) as well
+                // Now when enumerating zip entries, we can just search for the
+                // full path
+                if (match.startsWith(assetRoot)) {
+                    resources.add(match.substring(start));
+                } else {
+                    resources.add(match);
+                }
+
             }
         }
         return resources;

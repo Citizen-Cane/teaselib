@@ -29,14 +29,14 @@ public class ResourceList {
      *            the pattern to match
      * @return the resources in the order they are found
      */
-    public static Collection<String> getResources(final URI element,
+    public static Collection<String> getResources(final URI path,
             final Pattern pattern) {
         final ArrayList<String> retval = new ArrayList<String>();
-        final File file = new File(element.getPath());
-        if (file.isDirectory()) {
-            retval.addAll(getResourcesFromDirectory(file, pattern));
+        final File element = new File(path.getPath());
+        if (element.isDirectory()) {
+            retval.addAll(getResourcesFromDirectory(path, element, pattern));
         } else {
-            retval.addAll(getResourcesFromJarFile(file, pattern));
+            retval.addAll(getResourcesFromJarFile(element, pattern));
         }
         return retval;
     }
@@ -69,22 +69,19 @@ public class ResourceList {
         return retval;
     }
 
-    private static Collection<String> getResourcesFromDirectory(
+    private static Collection<String> getResourcesFromDirectory(final URI base,
             final File directory, final Pattern pattern) {
         final ArrayList<String> retval = new ArrayList<String>();
         final File[] fileList = directory.listFiles();
         for (final File file : fileList) {
             if (file.isDirectory()) {
-                retval.addAll(getResourcesFromDirectory(file, pattern));
+                retval.addAll(getResourcesFromDirectory(base, file, pattern));
             } else {
-                try {
-                    final String fileName = file.getCanonicalPath();
-                    final boolean accept = pattern.matcher(fileName).matches();
-                    if (accept) {
-                        retval.add(fileName);
-                    }
-                } catch (final IOException e) {
-                    throw new Error(e);
+                URI absolute = file.toURI();
+                URI relative = base.relativize(absolute);
+                boolean accept = pattern.matcher(relative.toString()).matches();
+                if (accept) {
+                    retval.add(relative.toString());
                 }
             }
         }

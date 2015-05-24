@@ -131,7 +131,7 @@ public abstract class TeaseScriptBase {
                                 clickables.get(0).run();
                             } else {
                                 // Host implementation is incomplete
-                                new IllegalStateException(
+                                throw new IllegalStateException(
                                         "Host didn't return clickables for choices: "
                                                 + choices.toString());
                             }

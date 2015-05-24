@@ -20,21 +20,23 @@ public abstract class TeaseScript extends TeaseScriptBase implements Runnable {
     public static final int NoTimeout = 0;
 
     public ImageIterator dominantImages = null;
-    private String displayImage = DominantImage;
     public final static String NoImage = "NoImage";
     public final static String DominantImage = "DominantImage";
 
-    private String mood = Mood.Neutral;
-
     public final Actor actor;
+    public final String namespace;
 
-    public TeaseScript(TeaseLib teaseLib, String locale) {
-        this(teaseLib, new Actor("Dominant", locale));
+    private String mood = Mood.Neutral;
+    private String displayImage = DominantImage;
+
+    public TeaseScript(TeaseLib teaseLib, String locale, String namespace) {
+        this(teaseLib, new Actor("Dominant", locale), namespace);
     }
 
-    public TeaseScript(TeaseLib teaseLib, Actor actor) {
+    public TeaseScript(TeaseLib teaseLib, Actor actor, String namespace) {
         super(teaseLib, actor.locale);
         this.actor = actor;
+        this.namespace = namespace;
     }
 
     /**
@@ -59,8 +61,7 @@ public abstract class TeaseScript extends TeaseScriptBase implements Runnable {
     public void showImage(String path) {
         if (path == null) {
             displayImage = NoImage;
-        }
-        if (path.equalsIgnoreCase(DominantImage)) {
+        } else if (path.equalsIgnoreCase(DominantImage)) {
             displayImage = DominantImage;
         } else if (path.equalsIgnoreCase(NoImage)) {
             displayImage = NoImage;

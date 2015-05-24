@@ -25,10 +25,21 @@ public class ResourceLoader {
 
     private final String basePath;
     private final String assetRoot;
-    public final String namespace;
     private final ClassLoader classLoader = getClass().getClassLoader();
     private final Set<URI> enumeratableClassPaths = new HashSet<URI>();
 
+    /**
+     * @param basePath
+     *            The base path under which to find the resource zips, jars and
+     *            directories
+     * @param assetRoot
+     *            The root folder for all resources - either a directory in the
+     *            base folder or the single root entry in a zip or jar
+     * @throws NoSuchMethodException
+     * @throws InvocationTargetException
+     * @throws IllegalAccessException
+     * @throws MalformedURLException
+     */
     public ResourceLoader(String basePath, String assetRoot)
             throws NoSuchMethodException, InvocationTargetException,
             IllegalAccessException, MalformedURLException {
@@ -37,7 +48,6 @@ public class ResourceLoader {
             throw new IllegalArgumentException(
                     "No slashes '/' or backlashes '\\' for resource loader root please");
         this.assetRoot = assetRoot + "/";
-        this.namespace = assetRoot;
         Method addURI = addURLMethod();
         // Add the base path to allow unpacking resource archives or to or to
         // deploy directories

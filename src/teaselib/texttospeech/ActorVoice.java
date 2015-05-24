@@ -8,25 +8,28 @@ import teaselib.ResourceLoader;
 import teaselib.TeaseLib;
 
 public class ActorVoice extends VoiceProperties {
-	public final static String ActorPropertiesFilename = "actor.properties";
+    public final static String ActorPropertiesFilename = "actor.properties";
 
-	public ActorVoice(String actorName, String voiceGuid, ResourceLoader resources) {
-		InputStream recordedVoicesConfig;
-		String path = TextToSpeechRecorder.SpeechDirName +"/" + actorName + "/" + voiceGuid +"/" + ActorPropertiesFilename;
-		try {
-			recordedVoicesConfig = resources.getResource(path);
-		} catch (IOException e1) {
-			recordedVoicesConfig = null;
-			TeaseLib.logDetail("No prerecorded voices config: " + path);
-		}
-		try {
-			properties.load(recordedVoicesConfig);
-		} catch (Exception e) {
-			// No file or no voices defined, ok
-		}
-	}
+    public ActorVoice(String actorName, String voiceGuid,
+            ResourceLoader resources) {
+        InputStream recordedVoicesConfig = null;
+        String path = TextToSpeechRecorder.SpeechDirName + "/" + actorName
+                + "/" + voiceGuid + "/" + ActorPropertiesFilename;
+        try {
+            try {
+                recordedVoicesConfig = resources.getResource(path);
+                properties.load(recordedVoicesConfig);
+            } finally {
+                if (recordedVoicesConfig != null) {
+                    recordedVoicesConfig.close();
+                }
+            }
+        } catch (IOException e) {
+            TeaseLib.logDetail("No prerecorded voices config: " + path);
+        }
+    }
 
-	public void store(File path) throws IOException {
-		store(path, ActorPropertiesFilename);
-	}
+    public void store(File path) throws IOException {
+        store(path, ActorPropertiesFilename);
+    }
 }

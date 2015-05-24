@@ -9,25 +9,26 @@ import teaselib.TeaseLib;
 
 public class VoicesProperties extends VoiceProperties {
 
-	public final static String VoicesFilename = "voices.properties";
+    public final static String VoicesFilename = "voices.properties";
 
-	public VoicesProperties(ResourceLoader resources) {
-		InputStream recordedVoicesConfig;
-		String path = VoicesFilename;
-		try {
-			recordedVoicesConfig = resources.getResource(path);
-		} catch (IOException e1) {
-			recordedVoicesConfig = null;
-			TeaseLib.logDetail("No assigned voices config: " + path);
-		}
-		try {
-			properties.load(recordedVoicesConfig);
-		} catch (Exception e) {
-			// No file or no voices defined, ok
-		}
-	}
+    public VoicesProperties(ResourceLoader resources) {
+        InputStream recordedVoicesConfig = null;
+        String path = VoicesFilename;
+        try {
+            try {
+                recordedVoicesConfig = resources.getResource(path);
+                properties.load(recordedVoicesConfig);
+            } finally {
+                if (recordedVoicesConfig != null) {
+                    recordedVoicesConfig.close();
+                }
+            }
+        } catch (IOException e1) {
+            TeaseLib.log("No assigned voices config: " + path);
+        }
+    }
 
-	public void store(File path) throws IOException {
-		store(path, VoicesFilename);
-	}
+    public void store(File path) throws IOException {
+        store(path, VoicesFilename);
+    }
 }

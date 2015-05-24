@@ -62,6 +62,13 @@ public class VoiceProperties {
     protected void store(File path, String fileName) throws IOException {
         File file = new File(path, fileName);
         TeaseLib.log("Saving " + file.toString());
-        properties.store(new FileOutputStream(file), "");
+        FileOutputStream fileOutputStream = null;
+        try {
+            fileOutputStream = new FileOutputStream(file);
+            properties.store(fileOutputStream, "");
+        } finally {
+            if (fileOutputStream != null)
+                fileOutputStream.close();
+        }
     }
 }

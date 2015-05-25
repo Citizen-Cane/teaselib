@@ -226,6 +226,9 @@ public class Message {
     }
 
     public static Type determineType(String m) {
+        if (m.isEmpty()) {
+            return Type.Text;
+        }
         String mToLower = m.toLowerCase();
         if (isMood(mToLower)) {
             return Type.Mood;

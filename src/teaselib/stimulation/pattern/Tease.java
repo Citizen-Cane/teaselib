@@ -14,6 +14,10 @@ public class Tease extends Stimulation {
 
     private final double burstOnOffSeconds;
 
+    public Tease(Stimulator stimulator) {
+        this(stimulator, 1.0, 0.05);
+    }
+
     public Tease(Stimulator stimulator, double periodDurationSeconds,
             double burstOnOffSeconds) {
         super(stimulator, periodDurationSeconds);

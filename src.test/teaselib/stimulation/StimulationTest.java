@@ -71,7 +71,7 @@ public class StimulationTest {
     @Test
     public void testTease() {
         Stimulator stimulator = getSmoothStimulator();
-        testStimulation(new Tease(stimulator, 1.0, 0.05));
+        testStimulation(new Tease(stimulator));
     }
 
     @Test

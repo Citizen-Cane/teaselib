@@ -76,7 +76,7 @@ public class DummyHost implements Host {
     }
 
     @Override
-    public int choose(List<String> choices) {
+    public int reply(List<String> choices) {
         // TODO Auto-generated method stub
         return 0;
     }

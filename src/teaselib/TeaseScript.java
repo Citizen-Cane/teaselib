@@ -29,6 +29,12 @@ public abstract class TeaseScript extends TeaseScriptBase implements Runnable {
     private String mood = Mood.Neutral;
     private String displayImage = DominantImage;
 
+    public TeaseScript(TeaseScript teaseScript, Actor actor) {
+        super(teaseScript.teaseLib, actor.locale);
+        this.actor = actor;
+        this.namespace = teaseScript.namespace;
+    }
+
     public TeaseScript(TeaseLib teaseLib, String locale, String namespace) {
         this(teaseLib, new Actor("Dominant", locale), namespace);
     }
@@ -46,7 +52,7 @@ public abstract class TeaseScript extends TeaseScriptBase implements Runnable {
      * @param max
      * @return A value in the interval [min, max]
      */
-    public int getRandom(int min, int max) {
+    public int random(int min, int max) {
         return teaseLib.host.getRandom(min, max);
     }
 
@@ -142,8 +148,8 @@ public abstract class TeaseScript extends TeaseScriptBase implements Runnable {
      * @param choices
      * @return
      */
-    public String choose(List<String> choices) {
-        return choose(NoTimeout, choices);
+    public String reply(List<String> choices) {
+        return reply(NoTimeout, choices);
     }
 
     /**
@@ -155,7 +161,7 @@ public abstract class TeaseScript extends TeaseScriptBase implements Runnable {
      *            is desired
      * @return The button index, or TeaseLib.None if the buttons timed out
      */
-    public String choose(final int timeout, final List<String> choices) {
+    public String reply(final int timeout, final List<String> choices) {
         completeMandatory();
         Runnable delayFunction = timeout > NoTimeout ? new Runnable() {
             @Override
@@ -174,7 +180,7 @@ public abstract class TeaseScript extends TeaseScriptBase implements Runnable {
      * @param scriptFunction
      * @return
      */
-    public String choose(Runnable scriptFunction, List<String> choices) {
+    public String reply(Runnable scriptFunction, List<String> choices) {
         // To display buttons and to start scriptFunction at the same time,
         // completeAll() has to be called
         // in advance in order to finish all previous render commands,
@@ -188,12 +194,16 @@ public abstract class TeaseScript extends TeaseScriptBase implements Runnable {
         return choice;
     }
 
-    public String choose(String... choices) {
-        return choose(NoTimeout, new ArrayList<String>(Arrays.asList(choices)));
+    public String reply(String... choices) {
+        return reply(NoTimeout, choices);
     }
 
-    public String choose(Runnable scriptFunction, String... choices) {
-        return choose(scriptFunction,
+    public String reply(final int timeout, String... choices) {
+        return reply(timeout, new ArrayList<String>(Arrays.asList(choices)));
+    }
+
+    public String reply(Runnable scriptFunction, String... choices) {
+        return reply(scriptFunction,
                 new ArrayList<String>(Arrays.asList(choices)));
     }
 
@@ -212,7 +222,7 @@ public abstract class TeaseScript extends TeaseScriptBase implements Runnable {
     public List<Boolean> showCheckboxes(String caption, List<String> choices,
             List<Boolean> values, boolean allowCancel) {
         List<Boolean> results = teaseLib.host.showCheckboxes(caption, choices,
-                values, false);
+                values, allowCancel);
         renderQueue.endAll();
         return results;
     }

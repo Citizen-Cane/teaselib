@@ -291,7 +291,7 @@ public class SexScriptsHost implements Host {
     }
 
     @Override
-    public int choose(List<String> choices) throws ScriptInterruptedException {
+    public int reply(List<String> choices) throws ScriptInterruptedException {
         try {
             return ss.getSelectedValue(null, choices);
         } catch (InterruptedException e) {

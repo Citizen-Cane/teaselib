@@ -69,14 +69,56 @@ public abstract class TeaseScriptBase {
             TextToSpeechPlayer speechSynthesizer, ImageIterator dominantImages,
             String displayImage, String mood) {
         renderDeferred();
+        Message parsedMessage = new Message(message.actor);
+        for (Message.Part part : message.getParts()) {
+            if (part.type == Message.Type.Text) {
+                parsedMessage.add(part.type, replaceVariables(part.value));
+            } else {
+                parsedMessage.add(part);
+            }
+        }
         Set<String> hints = getHints(mood);
-        RenderMessage renderMessage = new RenderMessage(message,
+        RenderMessage renderMessage = new RenderMessage(parsedMessage,
                 speechSynthesizer, dominantImages, displayImage, hints);
         renderQueue.start(renderMessage, teaseLib);
         renderQueue.completeStarts();
     }
 
-    private Set<String> getHints(String mood) {
+    private String replaceVariables(String text) {
+        String parsedText = text;
+        for (Persistence.TextVariable name : Persistence.TextVariable.values()) {
+            parsedText = replaceTextVariable(parsedText, name);
+        }
+        return parsedText;
+    }
+
+    private String replaceTextVariable(String text, Persistence.TextVariable var) {
+        text = replaceTextVariable(text, var, "#" + var.toString());
+        text = replaceTextVariable(text, var, "#"
+                + var.toString().toLowerCase());
+        return text;
+    }
+
+    private String replaceTextVariable(String text,
+            Persistence.TextVariable var, String replace) {
+        if (text.contains(replace)) {
+            String value = getVariable(var);
+            text = text.replace(replace, value);
+        }
+        return text;
+    }
+
+    public String getVariable(Persistence.TextVariable variable) {
+        String value = teaseLib.persistence.getVariable(variable);
+        if (value != null) {
+            return value;
+        } else if (variable.fallback != null) {
+            return getVariable(variable.fallback);
+        }
+        return variable.toString();
+    }
+
+    private static Set<String> getHints(String mood) {
         Set<String> hints = new HashSet<String>();
         // Within messages, images might change fast, and changing
         // the camera position, image size or aspect would be too distracting
@@ -200,7 +242,7 @@ public abstract class TeaseScriptBase {
                 // buttons would appear too early
                 teaseLib.host.sleep(300);
             }
-            choiceIndex = teaseLib.host.choose(choices);
+            choiceIndex = teaseLib.host.reply(choices);
             if (scriptTask != null) {
                 // TODO Doesn't always work:
                 // The stop is sometimes applied only

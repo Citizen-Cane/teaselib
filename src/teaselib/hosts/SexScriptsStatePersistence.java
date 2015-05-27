@@ -88,4 +88,11 @@ public class SexScriptsStatePersistence implements Persistence {
         return new Item("clothes." + name.toLowerCase(), displayName, this);
     }
 
+    @Override
+    public String getVariable(TextVariable name) {
+        if (name == TextVariable.Slave) {
+            return get("intro.name");
+        }
+        return null;
+    }
 }

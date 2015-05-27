@@ -15,7 +15,6 @@ public class DummyPersistence implements Persistence {
     @Override
     public void set(String name, String value) {
         // TODO Auto-generated method stub
-
     }
 
     @Override
@@ -54,4 +53,8 @@ public class DummyPersistence implements Persistence {
         return null;
     }
 
+    @Override
+    public String getVariable(TextVariable name) {
+        return null;
+    }
 }

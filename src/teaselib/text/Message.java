@@ -14,6 +14,7 @@ public class Message {
     /**
      * Message types.
      */
+    @SuppressWarnings("hiding")
     public enum Type {
         Text, Image, Sound, DesktopItem, Mood, Keyword, Delay, Exec
     }
@@ -22,6 +23,22 @@ public class Message {
      * Usage: Delay n Insert a pause, n seconds long
      */
     public final static String Delay = "delay";
+
+    public final static String Delay2s = "delay 2";
+    public final static String Delay3s = "delay 3";
+    public final static String Delay5s = "delay 5";
+    public final static String Delay7s = "delay 7";
+    public final static String Delay10s = "delay 10";
+    public final static String Delay15s = "delay 15";
+    public final static String Delay20s = "delay 20";
+    public final static String Delay25s = "delay 25";
+    public final static String Delay30s = "delay 30";
+    public final static String Delay35s = "delay 35";
+    public final static String Delay40s = "delay 40";
+    public final static String Delay45s = "delay 45";
+    public final static String Delay50s = "delay 50";
+    public final static String Delay55s = "delay 55";
+    public final static String Delay60s = "delay 60";
 
     /**
      * Execute the desktop action
@@ -117,6 +134,15 @@ public class Message {
         parts.add(text);
     }
 
+    public void add(Part part) {
+        parts.add(part);
+    }
+
+    public void add(Type type, String value) {
+        parts.add(new Part(type, value));
+    }
+
+    @Override
     public String toString() {
         return buildString("\n\n", true);
     }

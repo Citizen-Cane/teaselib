@@ -130,6 +130,6 @@ public interface Host {
      * @return The index of the chosen item, or TeaseScript.TimeOut = -1 if no
      *         button was clicked
      */
-    int choose(List<String> choices);
+    int reply(List<String> choices);
 
 }

@@ -32,8 +32,6 @@ public class RenderMessage extends MediaRendererThread {
     private final static long DELAYBETWEENPARAGRAPHS = 500;
     private final static long DELAYATENDOFTEXT = 2000;
 
-    private static final String IMAGES = "images/";
-
     public RenderMessage(Message message, TextToSpeechPlayer speechSynthesizer,
             ImageIterator imageIterator, String displayImage,
             Collection<String> hints) {
@@ -263,7 +261,7 @@ public class RenderMessage extends MediaRendererThread {
                 // text part (usually when setting the image
                 // outside
                 // the message)
-                image = teaseLib.resources.image(IMAGES + displayImage);
+                image = teaseLib.resources.image(displayImage);
             }
         } catch (Exception e) {
             text = text + "\n\n" + e.getClass() + ": " + e.getMessage() + "\n";

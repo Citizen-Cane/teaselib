@@ -5,9 +5,6 @@ import teaselib.TeaseLib;
 import teaselib.userinterface.MediaRendererThread;
 
 public class RenderSound extends MediaRendererThread {
-
-    public static final String SOUNDS = "sounds/";
-
     private final String soundFile;
 
     public RenderSound(String soundFile) {
@@ -17,7 +14,7 @@ public class RenderSound extends MediaRendererThread {
     @Override
     public void render() throws InterruptedException {
         try {
-            String path = SOUNDS + soundFile;
+            String path = soundFile;
             TeaseLib.log(this.getClass().getSimpleName() + ": " + path);
             startCompleted();
             teaseLib.host.playSound(path, teaseLib.resources.getResource(path));

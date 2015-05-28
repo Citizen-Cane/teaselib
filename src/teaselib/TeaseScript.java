@@ -219,12 +219,30 @@ public abstract class TeaseScript extends TeaseScriptBase implements Runnable {
      *            corresponding index to false or true.
      * @return
      */
-    public List<Boolean> showCheckboxes(String caption, List<String> choices,
+    public List<Boolean> showItems(String caption, List<String> choices,
             List<Boolean> values, boolean allowCancel) {
         List<Boolean> results = teaseLib.host.showCheckboxes(caption, choices,
                 values, allowCancel);
         renderQueue.endAll();
         return results;
+    }
+
+    public boolean showItems(String caption, List<Item> items,
+            boolean allowCancel) {
+        List<String> choices = new ArrayList<String>(items.size());
+        List<Boolean> values = new ArrayList<Boolean>(items.size());
+        for (int i = 0; i < items.size(); i++) {
+            choices.add(items.get(i).displayName);
+            values.add(items.get(i).isAvailable());
+        }
+        List<Boolean> results = showItems(caption, choices, values, allowCancel);
+        if (results != null) {
+            for (int i = 0; i < items.size(); i++) {
+                items.get(i).setAvailable(results.get(i));
+            }
+            return true;
+        }
+        return false;
     }
 
     public Item get(Toys item) {
@@ -235,7 +253,7 @@ public abstract class TeaseScript extends TeaseScriptBase implements Runnable {
         return teaseLib.persistence.get(item);
     }
 
-    public boolean isAvailable(Toys... toys) {
+    public boolean isAnyAvailable(Toys... toys) {
         for (Toys toy : toys) {
             Item item = teaseLib.persistence.get(toy);
             if (item.isAvailable()) {
@@ -254,7 +272,7 @@ public abstract class TeaseScript extends TeaseScriptBase implements Runnable {
         return items;
     }
 
-    public boolean isAvailable(Clothing... clothes) {
+    public boolean isAnyAvailable(Clothing... clothes) {
         for (Clothing clothing : clothes) {
             Item item = teaseLib.persistence.get(clothing);
             if (item.isAvailable()) {
@@ -273,7 +291,7 @@ public abstract class TeaseScript extends TeaseScriptBase implements Runnable {
         return items;
     }
 
-    public boolean isAvailable(List<Item> items) {
+    public boolean isAnyAvailable(List<Item> items) {
         for (Item item : items) {
             if (item.isAvailable()) {
                 return true;
@@ -282,12 +300,103 @@ public abstract class TeaseScript extends TeaseScriptBase implements Runnable {
         return false;
     }
 
-    public boolean isAvailable(Item... items) {
+    public boolean isAnyAvailable(Item... items) {
         for (Item item : items) {
             if (item.isAvailable()) {
                 return true;
             }
         }
         return false;
+    }
+
+    protected class PersistentValue {
+        protected final String Name;
+        protected final String property;
+
+        public PersistentValue(String name) {
+            this.Name = name;
+            this.property = makeProperty(name);
+        }
+    }
+
+    /**
+     * @author someone
+     * 
+     *         A persistent boolean value, start value is false
+     */
+    public class PersistentFlag extends PersistentValue {
+        public PersistentFlag(String name) {
+            super(name);
+        }
+
+        public boolean get() {
+            return teaseLib.persistence.get(property) == "1";
+        }
+
+        public void set(boolean value) {
+            teaseLib.persistence.set(property, value);
+        }
+    }
+
+    /**
+     * @author someone
+     * 
+     *         A persistent integer value, start value is 0
+     */
+    public class PersistentNumber extends PersistentValue {
+        public PersistentNumber(String name) {
+            super(name);
+        }
+
+        public int get() {
+            try {
+                return Integer.parseInt(teaseLib.persistence.get(property));
+            } catch (NumberFormatException e) {
+                return 0;
+            }
+        }
+
+        public void set(int value) {
+            teaseLib.persistence.set(property, Integer.toString(value));
+        }
+    }
+
+    /**
+     * @author someone
+     * 
+     *         A persistent String value, start value is the empty string
+     */
+    public class PersistentString extends PersistentValue {
+        public PersistentString(String name) {
+            super(name);
+        }
+
+        public String get() {
+            return teaseLib.persistence.get(property);
+        }
+
+        public void set(String value) {
+            teaseLib.persistence.set(property, value);
+        }
+    }
+
+    private String makeProperty(String name) {
+        return namespace + "." + name;
+    }
+
+    public boolean flag(String name) {
+        return new PersistentFlag(name).get();
+    }
+
+    public void set(String name, boolean value) {
+        new PersistentFlag(name).set(value);
+    }
+
+    public void set(String name, int value) {
+        new PersistentNumber(name).set(value);
+    }
+
+    public void set(String name, String value) {
+        new PersistentString(name).set(value);
     }
 }

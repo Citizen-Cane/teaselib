@@ -89,10 +89,20 @@ public class SexScriptsStatePersistence implements Persistence {
     }
 
     @Override
-    public String getVariable(TextVariable name) {
+    public String get(TextVariable name) {
         if (name == TextVariable.Slave) {
             return get("intro.name");
         }
         return null;
+    }
+
+    @Override
+    public void set(TextVariable name, String value) {
+        // TODO Auto-generated method stub
+        if (name == TextVariable.Slave) {
+            set("intro.name", value);
+        } else {
+            set(name, value);
+        }
     }
 }

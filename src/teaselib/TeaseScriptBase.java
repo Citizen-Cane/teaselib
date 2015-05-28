@@ -11,6 +11,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.FutureTask;
 
+import teaselib.Persistence.TextVariable;
 import teaselib.image.ImageIterator;
 import teaselib.speechrecognition.SpeechRecognition;
 import teaselib.speechrecognition.SpeechRecognitionImplementation;
@@ -102,20 +103,24 @@ public abstract class TeaseScriptBase {
     private String replaceTextVariable(String text,
             Persistence.TextVariable var, String replace) {
         if (text.contains(replace)) {
-            String value = getVariable(var);
+            String value = get(var);
             text = text.replace(replace, value);
         }
         return text;
     }
 
-    public String getVariable(Persistence.TextVariable variable) {
-        String value = teaseLib.persistence.getVariable(variable);
+    public String get(Persistence.TextVariable variable) {
+        String value = teaseLib.persistence.get(variable);
         if (value != null) {
             return value;
         } else if (variable.fallback != null) {
-            return getVariable(variable.fallback);
+            return get(variable.fallback);
         }
         return variable.toString();
+    }
+
+    public void set(TextVariable var, String value) {
+        teaseLib.persistence.set(var, value);
     }
 
     private static Set<String> getHints(String mood) {
@@ -178,7 +183,7 @@ public abstract class TeaseScriptBase {
                                                 + choices.toString());
                             }
                         }
-                        return TeaseScript.Timeout;
+                        return Timeout;
                     }
                 });
         // Speech recognition

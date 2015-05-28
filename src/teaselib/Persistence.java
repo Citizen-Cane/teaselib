@@ -36,9 +36,9 @@ public interface Persistence {
 
     /**
      * Host-defined text variables. These are also auto-replaced in messages.
-     * The format is #name (just as in the good old CyberMistress.
-     * If the variable cannot be resolved, the default of the variable is inserted,
-     * which gives us reasonable values if the script contains english language.
+     * The format is #name (just as in the good old CyberMistress. If the
+     * variable cannot be resolved, the default for that variable is used, which
+     * gives us reasonable values if the script contains english language.
      */
     public enum TextVariable {
         Dom("Dom", null), Dominant("Dominant", null),
@@ -84,5 +84,7 @@ public interface Persistence {
      *            The name of the variable
      * @return The value of the variable or null
      */
-    String getVariable(TextVariable name);
+    String get(TextVariable name);
+
+    void set(TextVariable name, String value);
 }

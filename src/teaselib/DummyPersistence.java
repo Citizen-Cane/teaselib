@@ -54,7 +54,13 @@ public class DummyPersistence implements Persistence {
     }
 
     @Override
-    public String getVariable(TextVariable name) {
+    public String get(TextVariable name) {
         return null;
     }
+
+    @Override
+    public void set(TextVariable name, String value) {
+        // TODO Auto-generated method stub
+    }
+
 }

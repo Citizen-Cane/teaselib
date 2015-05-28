@@ -366,6 +366,8 @@ public class Message {
                 } else {
                     p.add(part);
                 }
+            } else {
+                p.add(part);
             }
         }
 

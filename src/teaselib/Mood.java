@@ -17,4 +17,15 @@ public class Mood {
      * Mood when reading, concentrated, speaks somewhat slower, a bit louder
      */
     public static final String Reading = "<mood=reading>";
+
+    public static final String Amused = "<mood=amused>";
+    public static final String Angry = "<mood=angry>";
+    public static final String Disappointed = "<mood=disappointed>";
+    public static final String Friendly = "<mood=friendly>";
+    public static final String Harsh = "<mood=harsh>";
+    public static final String Pleased = "<mood=pleased>";
+    public static final String Sceptic = "<mood=sceptic>";
+    public static final String Sorry = "<mood=sorry>";
+    public static final String Teasing = "<mood=tease>";
+
 }

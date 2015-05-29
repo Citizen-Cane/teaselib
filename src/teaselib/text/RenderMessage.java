@@ -13,7 +13,7 @@ import teaselib.ScriptInterruptedException;
 import teaselib.TeaseLib;
 import teaselib.TeaseScript;
 import teaselib.audio.RenderSound;
-import teaselib.image.ImageIterator;
+import teaselib.image.Images;
 import teaselib.text.Message.Part;
 import teaselib.texttospeech.TextToSpeech;
 import teaselib.texttospeech.TextToSpeechPlayer;
@@ -25,7 +25,7 @@ public class RenderMessage extends MediaRendererThread {
 
     private final Message message;
     private final TextToSpeechPlayer speechSynthesizer;
-    private final ImageIterator imageIterator;
+    private final Images imageIterator;
     private String displayImage;
     private final Set<String> hints = new HashSet<String>();
 
@@ -33,7 +33,7 @@ public class RenderMessage extends MediaRendererThread {
     private final static long DELAYATENDOFTEXT = 2000;
 
     public RenderMessage(Message message, TextToSpeechPlayer speechSynthesizer,
-            ImageIterator imageIterator, String displayImage,
+            Images imageIterator, String displayImage,
             Collection<String> hints) {
         if (message == null) {
             throw new NullPointerException();

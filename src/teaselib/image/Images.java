@@ -12,7 +12,7 @@ import java.io.IOException;
  * @author someone
  *
  */
-public interface ImageIterator {
+public interface Images {
 
 	public static final String SameCameraPosition = "<image SameCameraPosition/>";
 	public static final String SameResolution = "<image SameResolution/>";

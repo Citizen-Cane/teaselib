@@ -5,7 +5,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import teaselib.audio.RenderSound;
-import teaselib.image.ImageIterator;
+import teaselib.image.Images;
 import teaselib.persistence.Clothing;
 import teaselib.persistence.Item;
 import teaselib.persistence.Toys;
@@ -19,7 +19,9 @@ public abstract class TeaseScript extends TeaseScriptBase implements Runnable {
 
     public static final int NoTimeout = 0;
 
-    public ImageIterator dominantImages = null;
+    // todo move images to actor, remove images from renderMessage constructor
+    public Images dominantImages = null;
+
     public final static String NoImage = "NoImage";
     public final static String DominantImage = "DominantImage";
 

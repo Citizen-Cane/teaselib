@@ -12,7 +12,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.FutureTask;
 
 import teaselib.Persistence.TextVariable;
-import teaselib.image.ImageIterator;
+import teaselib.image.Images;
 import teaselib.speechrecognition.SpeechRecognition;
 import teaselib.speechrecognition.SpeechRecognitionImplementation;
 import teaselib.speechrecognition.SpeechRecognitionResult;
@@ -67,7 +67,7 @@ public abstract class TeaseScriptBase {
     }
 
     public void renderMessage(Message message,
-            TextToSpeechPlayer speechSynthesizer, ImageIterator dominantImages,
+            TextToSpeechPlayer speechSynthesizer, Images dominantImages,
             String displayImage, String mood) {
         renderDeferred();
         Message parsedMessage = new Message(message.actor);
@@ -127,8 +127,8 @@ public abstract class TeaseScriptBase {
         Set<String> hints = new HashSet<String>();
         // Within messages, images might change fast, and changing
         // the camera position, image size or aspect would be too distracting
-        hints.add(ImageIterator.SameCameraPosition);
-        hints.add(ImageIterator.SameResolution);
+        hints.add(Images.SameCameraPosition);
+        hints.add(Images.SameResolution);
         hints.add(mood);
         return hints;
     }

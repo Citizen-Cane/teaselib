@@ -5,7 +5,6 @@ import java.util.Arrays;
 import java.util.List;
 
 import teaselib.audio.RenderSound;
-import teaselib.image.Images;
 import teaselib.persistence.Clothing;
 import teaselib.persistence.Item;
 import teaselib.persistence.Toys;
@@ -20,7 +19,6 @@ public abstract class TeaseScript extends TeaseScriptBase implements Runnable {
     public static final int NoTimeout = 0;
 
     // todo move images to actor, remove images from renderMessage constructor
-    public Images dominantImages = null;
 
     public final static String NoImage = "NoImage";
     public final static String DominantImage = "DominantImage";
@@ -134,8 +132,7 @@ public abstract class TeaseScript extends TeaseScriptBase implements Runnable {
     protected void renderMessage(Message message,
             TextToSpeechPlayer speechSynthesizer) {
         try {
-            renderMessage(message, speechSynthesizer, dominantImages,
-                    displayImage, mood);
+            renderMessage(message, speechSynthesizer, displayImage, mood);
         } finally {
             displayImage = DominantImage;
             mood = Mood.Neutral;

@@ -67,8 +67,8 @@ public abstract class TeaseScriptBase {
     }
 
     public void renderMessage(Message message,
-            TextToSpeechPlayer speechSynthesizer, Images dominantImages,
-            String displayImage, String mood) {
+            TextToSpeechPlayer speechSynthesizer, String displayImage,
+            String mood) {
         renderDeferred();
         Message parsedMessage = new Message(message.actor);
         for (Message.Part part : message.getParts()) {
@@ -80,7 +80,7 @@ public abstract class TeaseScriptBase {
         }
         Set<String> hints = getHints(mood);
         RenderMessage renderMessage = new RenderMessage(parsedMessage,
-                speechSynthesizer, dominantImages, displayImage, hints);
+                speechSynthesizer, displayImage, hints);
         renderQueue.start(renderMessage, teaseLib);
         renderQueue.completeStarts();
     }

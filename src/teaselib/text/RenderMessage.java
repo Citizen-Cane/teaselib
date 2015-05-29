@@ -25,7 +25,6 @@ public class RenderMessage extends MediaRendererThread {
 
     private final Message message;
     private final TextToSpeechPlayer speechSynthesizer;
-    private final Images imageIterator;
     private String displayImage;
     private final Set<String> hints = new HashSet<String>();
 
@@ -33,14 +32,12 @@ public class RenderMessage extends MediaRendererThread {
     private final static long DELAYATENDOFTEXT = 2000;
 
     public RenderMessage(Message message, TextToSpeechPlayer speechSynthesizer,
-            Images imageIterator, String displayImage,
-            Collection<String> hints) {
+            String displayImage, Collection<String> hints) {
         if (message == null) {
             throw new NullPointerException();
         }
         this.message = message;
         this.speechSynthesizer = speechSynthesizer;
-        this.imageIterator = imageIterator;
         this.displayImage = displayImage;
         hints.addAll(hints);
     }
@@ -245,9 +242,10 @@ public class RenderMessage extends MediaRendererThread {
             if (displayImage == TeaseScript.DominantImage) {
                 String[] hintArray = new String[additionalHints.size()];
                 hintArray = additionalHints.toArray(hintArray);
-                if (imageIterator != null) {
-                    imageIterator.hint(hintArray);
-                    image = imageIterator.next();
+                Images images = message.actor.images;
+                if (images != null) {
+                    images.hint(hintArray);
+                    image = images.next();
                 } else {
                     image = null;
                     TeaseLib.log("Dominant images missing - please initialize");

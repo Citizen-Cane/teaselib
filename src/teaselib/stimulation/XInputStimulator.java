@@ -89,4 +89,9 @@ public class XInputStimulator implements Stimulator {
         }
     }
 
+    @Override
+    public String getDeviceName() {
+        return "XBox Gamepad " + sharedState.device.getPlayerNum() + " "
+                + (channel == 0 ? "Left" : "Right") + " channel";
+    }
 }

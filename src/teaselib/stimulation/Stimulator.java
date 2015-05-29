@@ -17,4 +17,6 @@ public interface Stimulator {
      *            The stimulation value from 0.0-1.0
      */
     void set(double value);
+
+    String getDeviceName();
 }

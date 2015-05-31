@@ -11,8 +11,8 @@ public enum Environment {
     Windows, OSX, Linux, Android, Other;
 
     public enum Arch {
-        x86, x64, Other
-    };
+        x86, x64, Unknown
+    }
 
     public final static Environment SYSTEM = getSystem();
     public final static Arch ARCH = getArch();

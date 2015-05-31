@@ -211,7 +211,7 @@ public class SexScriptsHost implements Host {
             } catch (InterruptedException e) {
                 throw new ScriptInterruptedException();
             }
-            ; // Loop until the user pressed OK -> != null
+            // Loop until the user pressed OK -> != null
         } while (results == null && !allowCancel);
         return results;
     }

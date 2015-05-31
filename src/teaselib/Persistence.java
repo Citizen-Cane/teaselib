@@ -6,6 +6,11 @@ import teaselib.persistence.Toys;
 
 public interface Persistence {
 
+    /**
+     * @param name
+     *            The name of the property
+     * @return The value of the property or null if not found
+     */
     String get(String name);
 
     void set(String name, String value);

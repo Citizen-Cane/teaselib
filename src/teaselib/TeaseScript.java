@@ -29,6 +29,10 @@ public abstract class TeaseScript extends TeaseScriptBase implements Runnable {
     private String mood = Mood.Neutral;
     private String displayImage = DominantImage;
 
+    public TeaseScript(TeaseScript teaseScript) {
+        this(teaseScript, teaseScript.actor);
+    }
+
     public TeaseScript(TeaseScript teaseScript, Actor actor) {
         super(teaseScript.teaseLib, actor.locale);
         this.actor = actor;
@@ -95,7 +99,7 @@ public abstract class TeaseScript extends TeaseScriptBase implements Runnable {
      * @param seconds
      *            How long to wait.
      */
-    public void delay(int seconds) {
+    public void setDuration(int seconds) {
         deferredRenderers.add(new RenderDelay(seconds));
     }
 
@@ -332,6 +336,14 @@ public abstract class TeaseScript extends TeaseScriptBase implements Runnable {
             return teaseLib.persistence.get(property) == "1";
         }
 
+        public void clear() {
+            set(false);
+        }
+
+        public void set() {
+            set(true);
+        }
+
         public void set(boolean value) {
             teaseLib.persistence.set(property, value);
         }
@@ -397,5 +409,17 @@ public abstract class TeaseScript extends TeaseScriptBase implements Runnable {
 
     public void set(String name, String value) {
         new PersistentString(name).set(value);
+    }
+
+    public int getInteger(String name) {
+        return new PersistentNumber(name).get();
+    }
+
+    public String getString(String name) {
+        return new PersistentString(name).get();
+    }
+
+    public List<String> list(String... strings) {
+        return Arrays.asList(strings);
     }
 }

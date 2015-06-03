@@ -1,7 +1,6 @@
 package teaselib.text;
 
 import java.awt.Image;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -114,8 +113,12 @@ public class RenderMessage extends MediaRendererThread {
                                 additionalHints);
                         // First message shown - start part completed
                         startCompleted();
-                        speechSynthesizer.setMood(mood, prerenderedSpeechItems);
-                        speak(prerenderedSpeechItems, text);
+                        if (speechSynthesizer != null) {
+                            speechSynthesizer.setMood(mood,
+                                    prerenderedSpeechItems);
+                            speechSynthesizer.speak(text,
+                                    prerenderedSpeechItems);
+                        }
                         // if (endThread) {
                         // break;
                         // }
@@ -189,17 +192,6 @@ public class RenderMessage extends MediaRendererThread {
             return "";
         } else {
             return part.value.substring(part.type.toString().length() + 1);
-        }
-    }
-
-    private void speak(final Iterator<String> prerenderedSpeechItems,
-            String text) throws IOException {
-        if (speechSynthesizer != null) {
-            speechSynthesizer.speak(text, prerenderedSpeechItems);
-        } else {
-            // Text is not meant to be spoken, just to be
-            // displayed
-            // -> don't wait
         }
     }
 

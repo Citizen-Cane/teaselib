@@ -102,7 +102,7 @@ public class ResourceLoader {
             method.invoke(classLoader, new Object[] { uri.toURL() });
             if (uri.getPath().endsWith(".zip") || file.isDirectory()) {
                 enumeratableClassPaths.add(uri);
-                TeaseLib.log("Using: " + uri.toString());
+                TeaseLib.log("Using resource location: " + uri.toString());
             }
         } else {
             // Just warn, since everybody should be able to unpack the archives

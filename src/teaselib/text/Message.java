@@ -251,7 +251,7 @@ public class Message {
         return false;
     }
 
-    public static Type determineType(String m) {
+    static Type determineType(String m) {
         if (m.isEmpty()) {
             return Type.Text;
         }
@@ -372,6 +372,7 @@ public class Message {
         }
 
         public void add(String text) {
+            text = text.trim();
             final Type type = determineType(text);
             if (type == Type.Keyword) {
                 text = keywordFrom(text);

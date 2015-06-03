@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import teaselib.audio.RenderBackgroundSound;
 import teaselib.audio.RenderSound;
 import teaselib.persistence.Clothing;
 import teaselib.persistence.Item;
@@ -89,6 +90,24 @@ public abstract class TeaseScript extends TeaseScriptBase implements Runnable {
         deferredRenderers.add(new RenderSound(path));
     }
 
+    /**
+     * Play a sound in the background. The sound starts when the next message is
+     * displayed, does not cause the script to wait for its completion. To stop
+     * the sound, stopBackgroundSound() can be called.
+     * 
+     * @param path
+     */
+    public Object playBackgroundSound(String path) {
+        RenderBackgroundSound renderBackgroundSound = new RenderBackgroundSound(
+                path);
+        deferredRenderers.add(renderBackgroundSound);
+        return renderBackgroundSound;
+    }
+
+    public void stopBackgroundSound(Object handle) {
+        teaseLib.host.stopSound(handle);
+    }
+
     void setMood(String mood) {
         this.mood = mood;
     }
@@ -129,7 +148,11 @@ public abstract class TeaseScript extends TeaseScriptBase implements Runnable {
      * @param message
      *            The text top be displayed
      */
-    public void show(String message) {
+    public void show(String text) {
+        renderMessage(new Message(actor, text), null);
+    }
+
+    public void show(String... message) {
         renderMessage(new Message(actor, message), null);
     }
 
@@ -264,6 +287,44 @@ public abstract class TeaseScript extends TeaseScriptBase implements Runnable {
             }
         }
         return false;
+    }
+
+    public Toys[] getAvailable(Toys... toys) {
+        List<Toys> available = new ArrayList<Toys>();
+        for (Toys toy : toys) {
+            if (isAnyAvailable(toy)) {
+                available.add(toy);
+            }
+        }
+        Toys[] t = new Toys[available.size()];
+        return available.toArray(t);
+    }
+
+    public Toys getOne(Toys... toys) {
+        if (toys.length == 0) {
+            return null;
+        } else {
+            return toys[random(0, toys.length - 1)];
+        }
+    }
+
+    public Clothing getOne(Clothing... clothes) {
+        if (clothes.length == 0) {
+            return null;
+        } else {
+            return clothes[random(0, clothes.length - 1)];
+        }
+    }
+
+    public Clothing[] getAvailable(Clothing... clothes) {
+        List<Clothing> available = new ArrayList<Clothing>();
+        for (Clothing clothing : clothes) {
+            if (isAnyAvailable(clothing)) {
+                available.add(clothing);
+            }
+        }
+        Clothing[] c = new Clothing[available.size()];
+        return available.toArray(c);
     }
 
     public List<Item> get(Toys... toys) {
@@ -419,7 +480,67 @@ public abstract class TeaseScript extends TeaseScriptBase implements Runnable {
         return new PersistentString(name).get();
     }
 
-    public List<String> list(String... strings) {
-        return Arrays.asList(strings);
+    public String[] list(String... text) {
+        if (text == null)
+            return null;
+        if (text.length == 0)
+            return null;
+        return (String[]) Arrays.asList(text).toArray();
+    }
+
+    public Message message(String... text) {
+        if (text == null)
+            return null;
+        if (text.length == 0)
+            return null;
+        return new Message(actor, text);
+    }
+
+    public List<Message> messages(Message... messages) {
+        if (messages == null)
+            return null;
+        if (messages.length == 0)
+            return null;
+        return Arrays.asList(messages);
+    }
+
+    public String random(String... text) {
+        if (text == null)
+            return null;
+        if (text.length == 0)
+            return null;
+        return text[random(0, text.length - 1)];
+    }
+
+    public Message random(Message... messages) {
+        if (messages == null)
+            return null;
+        if (messages.length == 0)
+            return null;
+        return messages[random(0, messages.length - 1)];
+    }
+
+    public Message random(List<Message> messages) {
+        if (messages == null)
+            return null;
+        if (messages.size() == 0)
+            return null;
+        return messages.get(random(0, messages.size() - 1));
+    }
+
+    public Toys random(Toys... toys) {
+        if (toys == null)
+            return null;
+        if (toys.length == 0)
+            return null;
+        return toys[random(0, toys.length - 1)];
+    }
+
+    public Clothing random(Clothing... clothing) {
+        if (clothing == null)
+            return null;
+        if (clothing.length == 0)
+            return null;
+        return clothing[random(0, clothing.length - 1)];
     }
 }

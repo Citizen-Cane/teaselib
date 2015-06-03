@@ -1,5 +1,7 @@
 package teaselib.audio;
 
+import java.io.InputStream;
+
 import teaselib.ScriptInterruptedException;
 import teaselib.TeaseLib;
 import teaselib.userinterface.MediaRendererThread;
@@ -14,16 +16,19 @@ public class RenderSound extends MediaRendererThread {
     @Override
     public void render() throws InterruptedException {
         try {
-            String path = soundFile;
-            TeaseLib.log(this.getClass().getSimpleName() + ": " + path);
+            TeaseLib.log(this.getClass().getSimpleName() + ": " + soundFile);
             startCompleted();
-            teaseLib.host.playSound(path, teaseLib.resources.getResource(path));
+            @SuppressWarnings("resource")
+            InputStream resource = teaseLib.resources.getResource(soundFile);
+            teaseLib.host.playSound(soundFile, resource);
         } catch (ScriptInterruptedException e) {
             // Expected
         } catch (Throwable e) {
             TeaseLib.log(this, e);
         } finally {
             mandatoryCompleted();
+            TeaseLib.log(this.getClass().getSimpleName() + ": " + soundFile
+                    + " completed");
         }
     }
 

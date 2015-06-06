@@ -23,8 +23,8 @@ import javax.imageio.ImageIO;
 
 public class ResourceLoader {
 
-    private final String basePath;
-    private final String assetRoot;
+    final String basePath;
+    final String assetRoot;
     private final ClassLoader classLoader = getClass().getClassLoader();
     private final Set<URI> enumeratableClassPaths = new HashSet<URI>();
 

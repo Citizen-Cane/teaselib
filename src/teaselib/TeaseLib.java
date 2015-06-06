@@ -24,6 +24,11 @@ public class TeaseLib {
 
     public final static boolean logDetails = false;
 
+    public TeaseLib(TeaseLib teaseLib, String assetRoot) {
+        this(teaseLib.host, teaseLib.persistence, teaseLib.resources.basePath,
+                assetRoot);
+    }
+
     public TeaseLib(Host host, Persistence persistence, String basePath,
             String assetRoot) {
         if (host == null || persistence == null || basePath == null

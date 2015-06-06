@@ -113,6 +113,7 @@ public class ResourceLoader {
 
     public InputStream getResource(String path) throws IOException {
         String resource = assetRoot + path;
+        TeaseLib.log("Resource: '" + resource + "'");
         InputStream inputStream = classLoader.getResourceAsStream(resource);
         if (inputStream == null) {
             throw new IOException(resource);

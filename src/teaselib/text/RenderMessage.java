@@ -76,6 +76,7 @@ public class RenderMessage extends MediaRendererThread {
                 // Process message paragraphs
                 RenderSound soundRenderer = null;
                 String mood = Mood.Neutral;
+                boolean appendToItem = false;
                 for (Iterator<Part> it = message.iterator(); it.hasNext();) {
                     Set<String> additionalHints = new HashSet<String>();
                     additionalHints.addAll(hints);
@@ -89,6 +90,7 @@ public class RenderMessage extends MediaRendererThread {
                         // Play sound, continue message execution
                         soundRenderer = new RenderSound(part.value);
                         soundRenderer.render(teaseLib);
+                        // use AwaitSoundCompletion to wait for sound completion
                     } else if (part.type == Message.Type.DesktopItem) {
                         new RenderDesktopItem(part.value).render(teaseLib);
                     } else if (part.type == Message.Type.Mood) {
@@ -99,6 +101,10 @@ public class RenderMessage extends MediaRendererThread {
                     } else if (part.type == Message.Type.Delay) {
                         // Pause
                         doPause(part);
+                    } else if (part.type == Message.Type.Item) {
+                        accumulatedText = accumulateText(accumulatedText, "°",
+                                false);
+                        appendToItem = true;
                     } else if (part.type == Message.Type.Exec) {
                         // Exec
                         doExec(part);
@@ -119,20 +125,19 @@ public class RenderMessage extends MediaRendererThread {
                             speechSynthesizer.speak(text,
                                     prerenderedSpeechItems);
                         }
-                        // if (endThread) {
-                        // break;
-                        // }
                         pauseAfterParagraph(it);
-                        // if (endThread) {
-                        // break;
-                        // }
                     }
                     if (endThread) {
                         break;
                     }
                     // Find out whether to append the next sentence to the same
                     // or a new line
-                    append = canAppend(part.value);
+                    if (appendToItem) {
+                        append = true;
+                        appendToItem = false;
+                    } else {
+                        append = canAppend(part.value);
+                    }
                 }
             }
         } catch (ScriptInterruptedException e) {

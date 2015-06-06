@@ -16,7 +16,7 @@ public class Message {
      */
     @SuppressWarnings("hiding")
     public enum Type {
-        Text, Image, Sound, DesktopItem, Mood, Keyword, Delay, Exec
+        Text, Image, Sound, DesktopItem, Mood, Keyword, Delay, Exec, Item
     }
 
     /**
@@ -55,9 +55,11 @@ public class Message {
 
     public final static String AwaitSoundCompletion = "awaitSoundCompletion";
 
+    public final static String Bullet = "°";
+
     public final static String[] Keywords = { Delay, Exec, ShowChoices,
             AwaitSoundCompletion, TeaseScript.DominantImage,
-            TeaseScript.NoImage };
+            TeaseScript.NoImage, Bullet };
 
     public final Actor actor;
 
@@ -132,6 +134,14 @@ public class Message {
         if (text == null)
             throw new IllegalArgumentException();
         parts.add(text);
+    }
+
+    public void add(String... text) {
+        if (text == null)
+            throw new IllegalArgumentException();
+        for (String t : text) {
+            parts.add(t);
+        }
     }
 
     public void add(Part part) {
@@ -265,6 +275,8 @@ public class Message {
                 return Type.Delay;
             } else if (mToLower.startsWith(Exec)) {
                 return Type.Exec;
+            } else if (mToLower.equals(Message.Bullet)) {
+                return Type.Item;
             } else {
                 return Type.Keyword;
             }
@@ -287,10 +299,17 @@ public class Message {
             if (s > 2 || endOf(m, endOfSentence) || endOf(m, endOfTextOther)) {
                 return Type.Text;
             } else {
-                // A bit harsh, but necessary to avoid keywords to be spoken
-                throw new IllegalArgumentException(
-                        "I Can't believe this is supposed to be a text message: "
-                                + m);
+                // A bit harsh, but necessary to avoid wrong typed keywords to
+                // be spoken in fully parsed text scripts as the PCMPlayer
+                // throw new IllegalArgumentException(
+                // "I Can't believe this is supposed to be a text message: "
+                // + m);
+                // However when writing scripts in java text is evaluated only
+                // when say() or show() is called(...),
+                // but we can access all keywords via static string constants,
+                // and not as plain text, and therefore we're safe to assume
+                // everything else is text
+                return Type.Text;
             }
         }
     }
@@ -377,7 +396,14 @@ public class Message {
             if (type == Type.Keyword) {
                 text = keywordFrom(text);
             }
-            boolean requiresSeparateLine = type != Type.Text;
+            final boolean isItem;
+            if (isEmpty()) {
+                isItem = false;
+            } else {
+                Part part = p.get(p.size() - 1);
+                isItem = part.type == Type.Keyword && part.type == Type.Item;
+            }
+            boolean requiresSeparateLine = type != Type.Text || isItem;
             boolean requiresNewParagraphBefore = requiresSeparateLine;
             boolean requiresNewParagraphAfter = requiresSeparateLine
                     || endOf(text, endOfSentence);
@@ -400,6 +426,10 @@ public class Message {
                 add(new Part(type, accumulatedText));
                 newParagraph = requiresNewParagraphAfter;
             }
+        }
+
+        int size() {
+            return parts.size();
         }
     }
 }

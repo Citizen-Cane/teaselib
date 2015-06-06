@@ -25,10 +25,14 @@ public class Mood {
     public static final String Amused = "<mood=amused>";
     public static final String Angry = "<mood=angry>";
     public static final String Disappointed = "<mood=disappointed>";
+    public static final String Enthusiastic = "<mood=enthusiastic>";
     public static final String Friendly = "<mood=friendly>";
+    public static final String Giggling = "<mood=giggling>";
     public static final String Happy = "<mood=happy>";
     public static final String Harsh = "<mood=harsh>";
+    public static final String Laughing = "<mood=laughing>";
     public static final String Mean = "<mood=mean>";
+    public static final String Persuading = "<mood=persuading>";
     public static final String Pleased = "<mood=pleased>";
     public static final String Sceptic = "<mood=sceptic>";
     public static final String Smiling = "<mood=smiling>";

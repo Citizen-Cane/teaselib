@@ -167,19 +167,19 @@ public class Message {
         } else if (parts.isEmpty()) {
             return "";
         } else {
-            Iterator<Part> i = parts.iterator();
-            StringBuilder format = new StringBuilder();
-            for (; i.hasNext();) {
+            StringBuilder messageString = new StringBuilder();
+            for (Iterator<Part> i = parts.iterator(); i.hasNext();) {
                 Part part = i.next();
-                boolean append = all || part.type == Type.Text;
-                if (append) {
-                    format.append(part.value);
-                    if (i.hasNext()) {
-                        format.append(newLine);
+                boolean appendPart = all || part.type == Type.Text
+                        || part.type == Type.Mood;
+                if (appendPart) {
+                    if (messageString.length() > 0) {
+                        messageString.append(newLine);
                     }
+                    messageString.append(part.value);
                 }
             }
-            return format.toString();
+            return messageString.toString();
         }
     }
 

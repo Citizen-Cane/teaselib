@@ -3,6 +3,7 @@ package teaselib.texttospeech;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -67,7 +68,7 @@ public class TextToSpeechRecorder {
         TeaseLib.log("Build start: " + new Date(buildStart).toString());
     }
 
-    private File createSubDir(File dir, String name) {
+    private static File createSubDir(File dir, String name) {
         File subDir = new File(dir, name);
         if (subDir.exists() == false) {
             TeaseLib.log("Creating directory " + subDir.getAbsolutePath());
@@ -82,78 +83,94 @@ public class TextToSpeechRecorder {
         TeaseLib.log("Scanning script '" + scanner.getScriptName() + "'");
         Set<String> created = new HashSet<String>();
         for (Message message : scanner) {
-            String hash = getHash(message);
             Actor actor = message.actor;
             File characterDir = createSubDir(speechDir, actor.name);
             // Process voices for each character
-            final Voice neutralVoice;
-            String voiceGuid = ttsPlayer.getAssignedVoiceFor(actor);
-            if (voiceGuid == null) {
-                neutralVoice = ttsPlayer.getVoiceFor(actor);
-            } else {
-                neutralVoice = voices.get(voiceGuid);
-            }
-            if (neutralVoice == null) {
-                throw new IllegalArgumentException("Voice for actor '" + actor
-                        + "' not found in " + VoicesProperties.VoicesFilename);
-            }
-            TeaseLib.log("Voice: " + neutralVoice.name);
-            textToSpeech.setVoice(neutralVoice);
-            File voiceDir = createSubDir(characterDir, neutralVoice.guid);
-            if (!actors.contains(actor.name)) {
-                // Create a tag file containing the actor voice properties, for
-                // information and because
-                // the resource loader can just load files, but not check for
-                // directories in the resource paths
-                actors.add(actor.name);
-                ActorVoice actorVoice = new ActorVoice(actor.name,
-                        neutralVoice.guid, resources);
-                actorVoice.clear();
-                actorVoice.put(actor.name, neutralVoice);
-                actorVoice.store(new File(new File(speechDir, actor.name),
-                        neutralVoice.guid));
-            }
-            File messageDir = new File(voiceDir, hash);
-            if (messageDir.exists()) {
-                long lastModified = messageDir.lastModified();
-                if (isUpToDate(message, messageDir)) {
-                    if (lastModified > buildStart) {
-                        TeaseLib.log(hash + " is reused");
-                        reusedDuplicates++;
-                    } else {
-                        TeaseLib.log(hash + " is up to date");
-                        upToDateEntries++;
-                    }
-                } else if (lastModified > buildStart) {
-                    // Collision
-                    TeaseLib.log(hash + " collision");
-                    throw new IllegalStateException("Collision");
-                } else {
-                    TeaseLib.log(hash + " has changed");
-                    // Change - delete old first
-                    for (String file : messageDir.list()) {
-                        new File(messageDir, file).delete();
-                    }
-                    create(message, messageDir, neutralVoice);
-                    changedEntries++;
-                }
-                // - check whether we have created this during the current
-                // scan
-                // -> collision
-                // - if created before the current build, then change
-
-            } else {
-                TeaseLib.log(hash + " is new");
-                // new
-                messageDir.mkdir();
-                create(message, messageDir, neutralVoice);
-                newEntries++;
-            }
+            final Voice voice;
+            voice = getVoice(actor);
+            TeaseLib.log("Voice: " + voice.name);
+            textToSpeech.setVoice(voice);
+            File voiceDir = createSubDir(characterDir, voice.guid);
+            createActorFile(actor, voice);
+            String hash = recordMessage(message, voice, voiceDir);
             // Unused directories will remain because an update changes the
             // checksum of the message
             // TODO clean up by checking unused
             created.add(hash);
         }
+    }
+
+    private String recordMessage(Message message, final Voice voice,
+            File voiceDir) throws IOException {
+        String hash = getHash(message);
+        File messageDir = new File(voiceDir, hash);
+        if (messageDir.exists()) {
+            long lastModified = messageDir.lastModified();
+            if (isUpToDate(message, messageDir)) {
+                if (lastModified > buildStart) {
+                    TeaseLib.log(hash + " is reused");
+                    reusedDuplicates++;
+                } else {
+                    TeaseLib.log(hash + " is up to date");
+                    upToDateEntries++;
+                }
+            } else if (lastModified > buildStart) {
+                // Collision
+                TeaseLib.log(hash + " collision");
+                throw new IllegalStateException("Collision");
+            } else {
+                TeaseLib.log(hash + " has changed");
+                // Change - delete old first
+                for (String file : messageDir.list()) {
+                    new File(messageDir, file).delete();
+                }
+                create(message, messageDir, voice);
+                changedEntries++;
+            }
+            // - check whether we have created this during the current
+            // scan
+            // -> collision
+            // - if created before the current build, then change
+        } else {
+            TeaseLib.log(hash + " is new");
+            // new
+            messageDir.mkdir();
+            create(message, messageDir, voice);
+            newEntries++;
+        }
+        return hash;
+    }
+
+    private void createActorFile(Actor actor, final Voice neutralVoice)
+            throws IOException {
+        if (!actors.contains(actor.name)) {
+            // Create a tag file containing the actor voice properties, for
+            // information and because
+            // the resource loader can just load files, but not check for
+            // directories in the resource paths
+            actors.add(actor.name);
+            ActorVoice actorVoice = new ActorVoice(actor.name,
+                    neutralVoice.guid, resources);
+            actorVoice.clear();
+            actorVoice.put(actor.name, neutralVoice);
+            actorVoice.store(new File(new File(speechDir, actor.name),
+                    neutralVoice.guid));
+        }
+    }
+
+    private Voice getVoice(Actor actor) {
+        final Voice neutralVoice;
+        String voiceGuid = ttsPlayer.getAssignedVoiceFor(actor);
+        if (voiceGuid == null) {
+            neutralVoice = ttsPlayer.getVoiceFor(actor);
+        } else {
+            neutralVoice = voices.get(voiceGuid);
+        }
+        if (neutralVoice == null) {
+            throw new IllegalArgumentException("Voice for actor '" + actor
+                    + "' not found in " + VoicesProperties.VoicesFilename);
+        }
+        return neutralVoice;
     }
 
     public void finish() {
@@ -162,28 +179,28 @@ public class TextToSpeechRecorder {
                 + " changed, " + newEntries + " new");
     }
 
-    private boolean isUpToDate(Message message, File messageDir)
+    private static boolean isUpToDate(Message message, File messageDir)
             throws IOException {
-        Message readIn = new Message(message.actor);
         File file = new File(messageDir, MessageFilename);
-        if (file.exists()) {
-            BufferedReader fileReader = new BufferedReader(new FileReader(file));
-            String line = null;
-            try {
+        Message readIn = readMessageFile(message.actor, file);
+        String messageHash = message.toHashString();
+        String readInHash = readIn.toHashString();
+        return messageHash.equals(readInHash);
+    }
 
-                while ((line = fileReader.readLine()) != null)
-                    readIn.add(line);
-            } finally {
-                if (fileReader != null) {
-                    fileReader.close();
-                }
-            }
-            String messageHash = message.toHashString();
-            String readInHash = readIn.toHashString();
-            return messageHash.equals(readInHash);
-        } else {
-            return false;
+    private static Message readMessageFile(Actor actor, File file)
+            throws FileNotFoundException, IOException {
+        Message readIn = new Message(actor);
+        BufferedReader fileReader = new BufferedReader(new FileReader(file));
+        String line = null;
+        try {
+
+            while ((line = fileReader.readLine()) != null)
+                readIn.add(line);
+        } finally {
+            fileReader.close();
         }
+        return readIn;
     }
 
     public void create(Message message, File messageDir, Voice neutralVoice)

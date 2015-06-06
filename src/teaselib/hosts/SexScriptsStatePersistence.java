@@ -74,7 +74,7 @@ public class SexScriptsStatePersistence implements Persistence {
 
     @Override
     public Item getToy(String name) {
-        if (name.equals(Toys.Ball_Gag.toString())) {
+        if (Toys.Ball_Gag.toString().equals(name)) {
             name = "Ballgag";
         }
         final String displayName = Value.createDisplayName(name);

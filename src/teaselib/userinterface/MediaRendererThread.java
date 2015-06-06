@@ -69,6 +69,7 @@ public abstract class MediaRendererThread implements Runnable, MediaRenderer,
         completedAll.countDown();
     }
 
+    @Override
     public void completeStart() {
         if (!endThread) {
             try {
@@ -82,6 +83,7 @@ public abstract class MediaRendererThread implements Runnable, MediaRenderer,
                 + String.format("%.2f seconds", getElapsedSeconds()));
     }
 
+    @Override
     public void completeMandatory() {
         if (!endThread) {
             try {
@@ -95,6 +97,7 @@ public abstract class MediaRendererThread implements Runnable, MediaRenderer,
                 + String.format("%.2f seconds", getElapsedSeconds()));
     }
 
+    @Override
     public void completeAll() {
         Thread thread = renderThread;
         if (!thread.isAlive())

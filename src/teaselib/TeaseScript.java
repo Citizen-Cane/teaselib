@@ -496,12 +496,12 @@ public abstract class TeaseScript extends TeaseScriptBase implements Runnable {
         return new Message(actor, text);
     }
 
-    public List<Message> messages(Message... messages) {
-        if (messages == null)
-            return null;
-        if (messages.length == 0)
-            return null;
-        return Arrays.asList(messages);
+    public Message[] messages(Message... messages) {
+        return messages;
+    }
+
+    public Message[][] messages(Message[]... messages) {
+        return messages;
     }
 
     public String random(String... text) {

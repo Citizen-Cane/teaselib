@@ -30,6 +30,11 @@
 			<location>W:/Extras/SexScripts/TeaseLib.log</location>
 		</link>
 		<link>
+			<name>errors.log</name>
+			<type>1</type>
+			<location>X:/Extras/SexScripts/errors.log</location>
+		</link>
+		<link>
 			<name>lib</name>
 			<type>2</type>
 			<location>X:/Projects/TeaseLib/lib</location>

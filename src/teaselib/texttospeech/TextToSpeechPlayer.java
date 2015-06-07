@@ -263,8 +263,7 @@ public class TextToSpeechPlayer {
             reactivateSpeechRecognition = false;
         }
         if (usePrerecorded) {
-            host.playSound(resources.getAssetPath(path).getAbsolutePath(),
-                    resources.getResource(path));
+            host.playSound(resources, path);
         } else if (useTTS) {
             try {
                 textToSpeech.speak(prompt);

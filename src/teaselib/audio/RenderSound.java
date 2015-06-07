@@ -1,7 +1,5 @@
 package teaselib.audio;
 
-import java.io.InputStream;
-
 import teaselib.ScriptInterruptedException;
 import teaselib.TeaseLib;
 import teaselib.userinterface.MediaRendererThread;
@@ -18,9 +16,7 @@ public class RenderSound extends MediaRendererThread {
         try {
             TeaseLib.log(this.getClass().getSimpleName() + ": " + soundFile);
             startCompleted();
-            @SuppressWarnings("resource")
-            InputStream resource = teaseLib.resources.getResource(soundFile);
-            teaseLib.host.playSound(soundFile, resource);
+            teaseLib.host.playSound(teaseLib.resources, soundFile);
         } catch (ScriptInterruptedException e) {
             // Expected
         } catch (Throwable e) {

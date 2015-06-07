@@ -1,7 +1,7 @@
 package teaselib;
 
 import java.awt.Image;
-import java.io.InputStream;
+import java.io.IOException;
 import java.util.List;
 
 import teaselib.util.Delegate;
@@ -27,13 +27,15 @@ public class DummyHost implements Host {
     }
 
     @Override
-    public void playSound(String path, InputStream inputStream) {
+    public void playSound(ResourceLoader resources, String path)
+            throws IOException {
         // TODO Auto-generated method stub
 
     }
 
     @Override
-    public Object playBackgroundSound(String path, InputStream inputStream) {
+    public Object playBackgroundSound(ResourceLoader resources, String path)
+            throws IOException {
         // TODO Auto-generated method stub
         return null;
     }

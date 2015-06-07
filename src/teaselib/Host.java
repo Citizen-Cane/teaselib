@@ -1,7 +1,7 @@
 package teaselib;
 
 import java.awt.Image;
-import java.io.InputStream;
+import java.io.IOException;
 import java.util.List;
 
 import teaselib.util.Delegate;
@@ -37,27 +37,24 @@ public interface Host {
      * Play the sound denoted by path and wait until it's finished. Sound stops
      * if the current thread is interrupted.
      * 
+     * @param resources
+     *            The resource loader to be used for loading the sound.
      * @param path
-     *            The path to the wav, mp3 or ogg sound. This is a helper and
-     *            should be removed, but so far SexScripts won't play from an
-     *            input stream.
-     * @param inputStream
-     *            The sound stream.
+     *            The resource path to the wav, mp3 or ogg sound.
      */
-    void playSound(String path, InputStream inputStream);
+    void playSound(ResourceLoader resources, String path) throws IOException;
 
     /**
      * Play the sound denoted by path. Return immediately.
      * 
+     * @param resources
+     *            The resource loader to be used for loading the sound.
      * @param path
-     *            The path to the wav, mp3 or ogg sound. This is a helper and
-     *            should be removed, but so far SexScripts won't play from an
-     *            input stream.
-     * @param inputStream
-     *            The sound stream.
+     *            The resource path to the wav, mp3 or ogg sound.
      * @return An opaque handle to the sound. Can be used to stop the sound.
      */
-    Object playBackgroundSound(String path, InputStream inputStream);
+    Object playBackgroundSound(ResourceLoader resources, String path)
+            throws IOException;
 
     /**
      * Stop any playing sounds

@@ -20,8 +20,8 @@ public class RenderBackgroundSound implements AutoCloseable, MediaRenderer {
             TeaseLib.log(this.getClass().getSimpleName() + ": " + path);
             // TODO Use the handle to allow stopping the sound
             // Implement when needed
-            handle = teaseLib.host.playBackgroundSound(path,
-                    teaseLib.resources.getResource(path));
+            handle = teaseLib.host
+                    .playBackgroundSound(teaseLib.resources, path);
         } catch (Throwable e) {
             TeaseLib.log(this, e);
         }

@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import teaselib.Host;
+import teaselib.ResourceLoader;
 import teaselib.ScriptInterruptedException;
 import teaselib.TeaseLib;
 import teaselib.util.Delegate;
@@ -78,11 +79,9 @@ public class SexScriptsHost implements Host {
     }
 
     @Override
-    public void playSound(String path, InputStream inputStream)
-            throws ScriptInterruptedException {
-        // SexScripts doesn't accept WAV input streams or sound objects,
-        // so we're going to cache them in the Sounds folder
-        File file = ensureFile(path, inputStream);
+    public void playSound(ResourceLoader resources, String path)
+            throws ScriptInterruptedException, IOException {
+        File file = cacheResource(resources, "sounds/", path);
         try {
             ss.playSound(file.getAbsolutePath());
         } catch (InterruptedException e) {
@@ -91,28 +90,42 @@ public class SexScriptsHost implements Host {
     }
 
     @Override
-    public Object playBackgroundSound(String path, InputStream inputStream) {
-        // SexScripts doesn't accept WAV input streams or sound objects,
-        // so we need to cache them in the Sounds folder
-        File file = ensureFile(path, inputStream);
+    public Object playBackgroundSound(ResourceLoader resources, String path)
+            throws IOException {
+        File file = cacheResource(resources, "sounds/", path);
         ss.playBackgroundSound(file.getAbsolutePath());
-        return inputStream;
+        return path;
     }
 
-    private File ensureFile(String path, InputStream sound) {
-        File file = new File(path);
-        if (!file.exists()) {
-            try {
-                file.getParentFile().mkdirs();
-                Files.copy(sound, Paths.get(file.toURI()));
-            } catch (IOException e) {
-                // ignore
-                if (e != null) {
-                    TeaseLib.log(this, e);
-                }
+    private static File cacheResource(ResourceLoader resources,
+            String cacheRootFolder, String path) throws IOException {
+        InputStream resource = null;
+        File cached = null;
+        try {
+            String cachedSound = trimCacheFilePath(resources, cacheRootFolder,
+                    path);
+            resource = resources.getResource(path);
+            cached = new File(cacheRootFolder + cachedSound);
+            if (!cached.exists()) {
+                cached.getParentFile().mkdirs();
+                Files.copy(resource, Paths.get(cached.toURI()));
+            }
+        } finally {
+            if (resource != null) {
+                resource.close();
             }
         }
-        return file;
+        return cached;
+    }
+
+    private static String trimCacheFilePath(ResourceLoader resources,
+            String cacheRootFolder, String path) {
+        String trimmedPath = path;
+        if (trimmedPath.toLowerCase().startsWith(cacheRootFolder)) {
+            trimmedPath = trimmedPath.substring(cacheRootFolder.length());
+        }
+        trimmedPath = resources.assetRoot + path;
+        return trimmedPath;
     }
 
     @Override

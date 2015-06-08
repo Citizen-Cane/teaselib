@@ -69,7 +69,7 @@ public abstract class TeaseScript extends TeaseScriptBase implements Runnable {
      * @param path
      *            The path to the image
      */
-    public void showImage(String path) {
+    public void setImage(String path) {
         if (path == null) {
             displayImage = NoImage;
         } else if (path.equalsIgnoreCase(DominantImage)) {
@@ -86,7 +86,7 @@ public abstract class TeaseScript extends TeaseScriptBase implements Runnable {
         deferredRenderers.add(desktopItem);
     }
 
-    public void playSound(String path) {
+    public void setSound(String path) {
         deferredRenderers.add(new RenderSound(path));
     }
 
@@ -154,6 +154,10 @@ public abstract class TeaseScript extends TeaseScriptBase implements Runnable {
 
     public void show(String... message) {
         renderMessage(new Message(actor, message), null);
+    }
+
+    public void show(Message message) {
+        renderMessage(message, null);
     }
 
     protected void renderMessage(Message message,

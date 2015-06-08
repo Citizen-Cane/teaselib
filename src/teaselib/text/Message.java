@@ -27,18 +27,27 @@ public class Message {
     public final static String Delay2s = "delay 2";
     public final static String Delay3s = "delay 3";
     public final static String Delay5s = "delay 5";
+    public final static String Delay5to10ss = "delay 5 10";
     public final static String Delay7s = "delay 7";
     public final static String Delay10s = "delay 10";
+    public final static String Delay10to15s = "delay 10 15";
+    public final static String Delay10to20s = "delay 10 20";
     public final static String Delay15s = "delay 15";
+    public final static String Delay15to30s = "delay 15 30";
     public final static String Delay20s = "delay 20";
     public final static String Delay25s = "delay 25";
     public final static String Delay30s = "delay 30";
+    public final static String Delay30to45s = "delay 30 45";
+    public final static String Delay30to50s = "delay 30 50";
+    public final static String Delay30to60s = "delay 30 60";
     public final static String Delay35s = "delay 35";
     public final static String Delay40s = "delay 40";
     public final static String Delay45s = "delay 45";
+    public final static String Delay45to60s = "delay 45 60";
     public final static String Delay50s = "delay 50";
     public final static String Delay55s = "delay 55";
     public final static String Delay60s = "delay 60";
+    public final static String Delay60to120s = "delay 60 120";
 
     /**
      * Execute the desktop action

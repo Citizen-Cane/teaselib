@@ -170,14 +170,22 @@ public class RenderMessage extends MediaRendererThread {
     }
 
     private void doPause(Part part) {
-        String arg = removeCommandNameFromValue(part);
-        if (arg.isEmpty()) {
+        String args = removeCommandNameFromValue(part);
+        if (args.isEmpty()) {
             // Fixed pause
             teaseLib.host.sleep(DELAYATENDOFTEXT);
         } else {
             try {
-                double delay = Double.parseDouble(arg) * 1000;
-                teaseLib.host.sleep((int) delay);
+                String[] argv = args.split(" ");
+                if (argv.length == 1) {
+                    double delay = Double.parseDouble(args) * 1000;
+                    teaseLib.host.sleep((int) delay);
+                } else {
+                    double delayFrom = Double.parseDouble(argv[0]) * 1000;
+                    double delayTo = Double.parseDouble(argv[1]) * 1000;
+                    teaseLib.host.sleep(teaseLib.host.getRandom(
+                            (int) delayFrom, (int) delayTo));
+                }
             } catch (NumberFormatException ignore) {
                 // Fixed pause
                 teaseLib.host.sleep(DELAYATENDOFTEXT);

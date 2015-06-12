@@ -237,6 +237,16 @@ public abstract class TeaseScript extends TeaseScriptBase implements Runnable {
                 new ArrayList<String>(Arrays.asList(choices)));
     }
 
+    public int replyIndex(String... choices) {
+        List<String> items = Arrays.asList(choices);
+        String answer = reply(items);
+        return items.indexOf(answer);
+    }
+
+    public boolean askYN(String yes, String no) {
+        return reply(yes, no) == yes;
+    }
+
     /**
      * Display an array of checkboxes to set or unset
      * 
@@ -546,5 +556,26 @@ public abstract class TeaseScript extends TeaseScriptBase implements Runnable {
         if (clothing.length == 0)
             return null;
         return clothing[random(0, clothing.length - 1)];
+    }
+
+    /**
+     * @author someone
+     * 
+     *         Handles elapsed seconds since object creation
+     */
+    public class Duration {
+        final long startSeconds;
+
+        public Duration() {
+            startSeconds = teaseLib.host.getTime();
+        }
+
+        public int elapsedSeconds() {
+            return (int) (teaseLib.host.getTime() - startSeconds);
+        }
+
+        public int elapsedMinutes() {
+            return (int) (teaseLib.host.getTime() - startSeconds) * 60;
+        }
     }
 }

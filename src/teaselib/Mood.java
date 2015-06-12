@@ -36,6 +36,7 @@ public class Mood {
     public static final String Mocking = "<mood=mocking>";
     public static final String Persuading = "<mood=persuading>";
     public static final String Pleased = "<mood=pleased>";
+    public static final String Relaxed = "<mood=relaxed>";
     public static final String Sceptic = "<mood=sceptic>";
     public static final String Smiling = "<mood=smiling>";
     public static final String Sorry = "<mood=sorry>";

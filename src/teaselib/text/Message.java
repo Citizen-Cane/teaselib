@@ -153,6 +153,14 @@ public class Message {
         }
     }
 
+    public void add(Message message) {
+        if (message == null)
+            throw new IllegalArgumentException();
+        for (Part part : message.getParts()) {
+            parts.add(part);
+        }
+    }
+
     public void add(Part part) {
         parts.add(part);
     }

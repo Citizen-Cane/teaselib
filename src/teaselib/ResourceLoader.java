@@ -161,15 +161,14 @@ public class ResourceLoader {
     }
 
     /**
-     * Retrieves all zip entries matching the path pattern
+     * Retrieves all resource entries matching the path pattern
      * 
      * @param pathPattern
      *            RegEx pattern for URL selection
      * @return List of URLs matching the pattern
-     * @throws IOException
      */
     public List<String> resources(String pathPattern) {
-        Pattern pattern = Pattern.compile("(.*)(" + pathPattern + ")$");
+        Pattern pattern = Pattern.compile(pathPattern);
         List<String> resources = new LinkedList<String>();
         int start = assetRoot.length();
         for (URI uri : enumeratableClassPaths) {

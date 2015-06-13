@@ -245,12 +245,12 @@ public class RenderMessage extends MediaRendererThread {
         Image image;
         try {
             if (displayImage == TeaseScript.DominantImage) {
-                String[] hintArray = new String[additionalHints.size()];
-                hintArray = additionalHints.toArray(hintArray);
                 Images images = message.actor.images;
                 if (images != null) {
+                    String[] hintArray = new String[additionalHints.size()];
+                    hintArray = additionalHints.toArray(hintArray);
                     images.hint(hintArray);
-                    image = images.next();
+                    image = teaseLib.resources.image(images.next());
                 } else {
                     image = null;
                     TeaseLib.log("Dominant images missing - please initialize");

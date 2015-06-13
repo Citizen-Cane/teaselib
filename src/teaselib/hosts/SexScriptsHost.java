@@ -222,6 +222,7 @@ public class SexScriptsHost implements Host {
     private void setBackgroundImage(Image image) {
         try {
             ss.desktop.MainFrame mainFrame = getMainFrame();
+            // bounds
             Rectangle bounds = mainFrame.getContentPane().getBounds();
             Insets insets = mainFrame.getInsets();
             int adjustment = -22;
@@ -229,31 +230,37 @@ public class SexScriptsHost implements Host {
             bounds.y += insets.top;
             bounds.width -= insets.left + insets.right;
             bounds.height -= insets.top + insets.bottom + adjustment;
-
-            BufferedImage bi = new BufferedImage(bounds.width, bounds.height,
-                    BufferedImage.TYPE_INT_ARGB);
-            Graphics2D g2d = (Graphics2D) bi.getGraphics();
-            // Draw original background image
-            g2d.drawImage(backgroundImage, 0, 0, bounds.width, bounds.height,
-                    null);
-            // todo scale image into bi
-            int width = image.getWidth(null);
-            int height = image.getHeight(null);
-            if (height > bounds.height) {
-                width = width * bounds.height / height;
-                height = bounds.height;
-            }
-            if (width > bounds.width) {
-                width = bounds.width;
-                height = height * bounds.width / width;
-            }
-            int left = 0;
-            int top = (bounds.height - height) / 2;
-            g2d.drawImage(image, left, top, width, height, null);
-            backgroundImageIcon.setImage(bi);
+            // Spacer to keep text at the right
             BufferedImage spacer = new BufferedImage(bounds.width, 16,
                     BufferedImage.TYPE_INT_ARGB);
             setImageInternal(spacer);
+            // actual image
+            if (image != null) {
+                BufferedImage bi = new BufferedImage(bounds.width,
+                        bounds.height, BufferedImage.TYPE_INT_ARGB);
+                Graphics2D g2d = (Graphics2D) bi.getGraphics();
+                // Draw original background image
+                g2d.drawImage(backgroundImage, 0, 0, bounds.width,
+                        bounds.height, null);
+                // todo scale image into bi
+                int width = image.getWidth(null);
+                int height = image.getHeight(null);
+                if (height > bounds.height) {
+                    width = width * bounds.height / height;
+                    height = bounds.height;
+                }
+                if (width > bounds.width) {
+                    width = bounds.width;
+                    height = height * bounds.width / width;
+                }
+                int left = 0;
+                int top = (bounds.height - height) / 2;
+                g2d.drawImage(image, left, top, width, height, null);
+                backgroundImageIcon.setImage(bi);
+            } else {
+                backgroundImageIcon.setImage(backgroundImage);
+            }
+            // Update
             mainFrame.repaint();
         } catch (NoSuchFieldException e) {
             TeaseLib.log(this, e);

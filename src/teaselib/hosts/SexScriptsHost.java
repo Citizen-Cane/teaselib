@@ -2,6 +2,8 @@ package teaselib.hosts;
 
 import java.awt.Graphics2D;
 import java.awt.Image;
+import java.awt.Insets;
+import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -14,6 +16,9 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.swing.ImageIcon;
+
+import ss.IScript;
 import teaselib.Host;
 import teaselib.ResourceLoader;
 import teaselib.ScriptInterruptedException;
@@ -36,19 +41,36 @@ import teaselib.util.Interval;
  */
 public class SexScriptsHost implements Host {
 
-    private ss.IScript ss;
+    private IScript ss;
 
     private BufferedWriter log = null;
     private final File path = new File("./TeaseLib.log");
 
+    private static final boolean renderBackgroundImage = true;
+
+    private final ImageIcon backgroundImageIcon;
+    private final Image backgroundImage;
+
     public SexScriptsHost(ss.IScript script) {
         this.ss = script;
+        String fieldName = "backgroundImage";
+        ImageIcon imageIcon = null;
+        try {
+            imageIcon = getImageIcon(getMainFrame(), fieldName);
+        } catch (NoSuchFieldException e) {
+            TeaseLib.log(this, e);
+            ss.showPopup("Field " + fieldName + " not found");
+        } catch (IllegalAccessException e) {
+            TeaseLib.log(this, e);
+            ss.showPopup("Field " + fieldName + " not accessible");
+        }
+        backgroundImageIcon = imageIcon;
+        if (imageIcon != null) {
+            backgroundImage = imageIcon.getImage();
+        } else {
+            backgroundImage = null;
+        }
     }
-
-    // @Override
-    // public boolean askYesNo(String yes, String no) {
-    // return ss.getBoolean(null, yes, no);
-    // }
 
     @Override
     public long getTime() {
@@ -149,27 +171,37 @@ public class SexScriptsHost implements Host {
 
     private void setImage(Image image) {
         if (image != null) {
-            int width = image.getWidth(null);
-            int height = image.getHeight(null);
-            boolean portrait = width < height;
-            if (portrait) {
-                // Enlarge the image with alpha pixels left and right to make
-                // the text area a bit smaller
-                // Improves readability on wide screen displays, as the text is
-                // laid out a bit more portrait (instead of landscape)
-                // TODO SS scales down when expanding too much
-                BufferedImage expanded = new BufferedImage(height, height,
-                        BufferedImage.TYPE_INT_ARGB);
-                Graphics2D g2d = (Graphics2D) expanded.getGraphics();
-                // g2d.drawRect(0, 0, expanded.getWidth() - 1,
-                // expanded.getHeight() -1);
-                g2d.drawImage(image, (expanded.getWidth() - width) / 2, 0, null);
-                setImageInternal(expanded);
+            if (renderBackgroundImage) {
+                setBackgroundImage(image);
             } else {
-                setImageInternal(image);
+                setImageAdjustedToMaximizeImageSize(image);
             }
         } else {
             setImageInternal(null);
+            setBackgroundImage(new BufferedImage(1, 1,
+                    BufferedImage.TYPE_INT_ARGB));
+        }
+    }
+
+    private void setImageAdjustedToMaximizeImageSize(Image image) {
+        int width = image.getWidth(null);
+        int height = image.getHeight(null);
+        boolean portrait = width < height;
+        if (portrait) {
+            // Enlarge the image with alpha pixels left and right to make
+            // the text area a bit smaller
+            // Improves readability on wide screen displays, as the text is
+            // laid out a bit more portrait (instead of landscape)
+            // TODO SS scales down when expanding too much
+            BufferedImage expanded = new BufferedImage(height, height,
+                    BufferedImage.TYPE_INT_ARGB);
+            Graphics2D g2d = (Graphics2D) expanded.getGraphics();
+            // g2d.drawRect(0, 0, expanded.getWidth() - 1,
+            // expanded.getHeight() -1);
+            g2d.drawImage(image, (expanded.getWidth() - width) / 2, 0, null);
+            setImageInternal(expanded);
+        } else {
+            setImageInternal(image);
         }
     }
 
@@ -177,6 +209,7 @@ public class SexScriptsHost implements Host {
             throws ScriptInterruptedException {
         if (image != null) {
             ((ss.desktop.Script) ss).setImage(image, false);
+
         } else {
             try {
                 ss.setImage(null);
@@ -186,12 +219,76 @@ public class SexScriptsHost implements Host {
         }
     }
 
+    private void setBackgroundImage(Image image) {
+        try {
+            ss.desktop.MainFrame mainFrame = getMainFrame();
+            Rectangle bounds = mainFrame.getContentPane().getBounds();
+            Insets insets = mainFrame.getInsets();
+            int adjustment = -22;
+            bounds.x += insets.left;
+            bounds.y += insets.top;
+            bounds.width -= insets.left + insets.right;
+            bounds.height -= insets.top + insets.bottom + adjustment;
+
+            BufferedImage bi = new BufferedImage(bounds.width, bounds.height,
+                    BufferedImage.TYPE_INT_ARGB);
+            Graphics2D g2d = (Graphics2D) bi.getGraphics();
+            // Draw original background image
+            g2d.drawImage(backgroundImage, 0, 0, bounds.width, bounds.height,
+                    null);
+            // todo scale image into bi
+            int width = image.getWidth(null);
+            int height = image.getHeight(null);
+            if (height > bounds.height) {
+                width = width * bounds.height / height;
+                height = bounds.height;
+            }
+            if (width > bounds.width) {
+                width = bounds.width;
+                height = height * bounds.width / width;
+            }
+            int left = 0;
+            int top = (bounds.height - height) / 2;
+            g2d.drawImage(image, left, top, width, height, null);
+            backgroundImageIcon.setImage(bi);
+            BufferedImage spacer = new BufferedImage(bounds.width, 16,
+                    BufferedImage.TYPE_INT_ARGB);
+            setImageInternal(spacer);
+            mainFrame.repaint();
+        } catch (NoSuchFieldException e) {
+            TeaseLib.log(this, e);
+        } catch (SecurityException e) {
+            TeaseLib.log(this, e);
+        } catch (IllegalArgumentException e) {
+            TeaseLib.log(this, e);
+        } catch (IllegalAccessException e) {
+            TeaseLib.log(this, e);
+        }
+    }
+
+    private static ImageIcon getImageIcon(ss.desktop.MainFrame mainFrame,
+            String fieldName) throws NoSuchFieldException,
+            IllegalAccessException {
+        // Get image icon
+        Class<?> mainFrameClass = mainFrame.getClass();
+        // Multiple choices are managed via an array of buttons,
+        // whereas a single choice is implemented as a single button
+        Field backgroundImageField = mainFrameClass.getDeclaredField(fieldName);
+        backgroundImageField.setAccessible(true);
+        return (ImageIcon) backgroundImageField.get(mainFrame);
+    }
+
+    private ss.desktop.MainFrame getMainFrame() throws NoSuchFieldException,
+            IllegalAccessException {
+        Class<?> scriptClass = ss.getClass().getSuperclass();
+        Field mainField = scriptClass.getDeclaredField("mainWindow");
+        mainField.setAccessible(true);
+        ss.desktop.MainFrame mainFrame = (ss.desktop.MainFrame) mainField
+                .get(ss);
+        return mainFrame;
+    }
+
     private void show(String message) {
-        // TODO Align text to top
-        // TODO Fix width of jlabel
-        // -> Text always starts at the same position, better anchor point for
-        // viewing
-        // PROBLEM: Text top right, buttons bottom right
         ss.show(message);
     }
 
@@ -207,11 +304,6 @@ public class SexScriptsHost implements Host {
         setImage(image);
         show(text);
     }
-
-    // @Override
-    // public void showButton(String message) {
-    // ss.showButton(message);
-    // }
 
     @Override
     public List<Boolean> showCheckboxes(String caption, List<String> texts,

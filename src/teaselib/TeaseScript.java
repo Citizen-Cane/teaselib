@@ -494,68 +494,54 @@ public abstract class TeaseScript extends TeaseScriptBase implements Runnable {
         return new PersistentString(name).get();
     }
 
-    public String[] list(String... text) {
-        if (text == null)
-            return null;
-        if (text.length == 0)
-            return null;
-        return (String[]) Arrays.asList(text).toArray();
-    }
-
     public Message message(String... text) {
         if (text == null)
             return null;
         if (text.length == 0)
+            return new Message(actor);
+        return new Message(actor, text);
+    }
+
+    public Message message(List<String> text) {
+        if (text == null)
             return null;
         return new Message(actor, text);
     }
 
-    public Message[] messages(Message... messages) {
-        return messages;
+    public <T> T random(T... items) {
+        if (items == null)
+            return null;
+        if (items.length == 0)
+            return null;
+        return items[random(0, items.length - 1)];
     }
 
-    public Message[][] messages(Message[]... messages) {
-        return messages;
+    public <T> T random(List<T> items) {
+        if (items == null)
+            return null;
+        if (items.size() == 0)
+            return null;
+        return items.get(random(0, items.size() - 1));
     }
 
-    public String random(String... text) {
-        if (text == null)
-            return null;
-        if (text.length == 0)
-            return null;
-        return text[random(0, text.length - 1)];
+    public <T> T[] items(T... items) {
+        return items;
     }
 
-    public Message random(Message... messages) {
-        if (messages == null)
-            return null;
-        if (messages.length == 0)
-            return null;
-        return messages[random(0, messages.length - 1)];
+    public <T> List<T> randomized(T[] items, int n) {
+        return randomized(null, items, n);
     }
 
-    public Message random(List<Message> messages) {
-        if (messages == null)
-            return null;
-        if (messages.size() == 0)
-            return null;
-        return messages.get(random(0, messages.size() - 1));
-    }
-
-    public Toys random(Toys... toys) {
-        if (toys == null)
-            return null;
-        if (toys.length == 0)
-            return null;
-        return toys[random(0, toys.length - 1)];
-    }
-
-    public Clothing random(Clothing... clothing) {
-        if (clothing == null)
-            return null;
-        if (clothing.length == 0)
-            return null;
-        return clothing[random(0, clothing.length - 1)];
+    public <T> List<T> randomized(T[] intro, T[] more, int n) {
+        List<T> out = new ArrayList<T>(n);
+        for (int i = 0; i < n; i++) {
+            if (intro != null && i < intro.length) {
+                out.add(intro[random(0, intro.length - 1)]);
+            } else {
+                out.add(more[random(0, more.length - 1)]);
+            }
+        }
+        return out;
     }
 
     /**

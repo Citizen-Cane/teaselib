@@ -1,9 +1,11 @@
 package teaselib.hosts;
 
+import java.awt.Container;
 import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.Insets;
 import java.awt.Rectangle;
+import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -19,6 +21,7 @@ import java.util.List;
 import javax.swing.ImageIcon;
 
 import ss.IScript;
+import ss.desktop.MainFrame;
 import teaselib.Host;
 import teaselib.ResourceLoader;
 import teaselib.ScriptInterruptedException;
@@ -56,7 +59,8 @@ public class SexScriptsHost implements Host {
         String fieldName = "backgroundImage";
         ImageIcon imageIcon = null;
         try {
-            imageIcon = getImageIcon(getMainFrame(), fieldName);
+            MainFrame mainFrame = getMainFrame();
+            imageIcon = getImageIcon(mainFrame, fieldName);
         } catch (NoSuchFieldException e) {
             TeaseLib.log(this, e);
             ss.showPopup("Field " + fieldName + " not found");
@@ -223,13 +227,13 @@ public class SexScriptsHost implements Host {
         try {
             ss.desktop.MainFrame mainFrame = getMainFrame();
             // bounds
-            Rectangle bounds = mainFrame.getContentPane().getBounds();
-            Insets insets = mainFrame.getInsets();
-            int adjustment = -22;
+            Container contentPane = mainFrame.getContentPane();
+            Rectangle bounds = contentPane.getBounds();
+            Insets insets = contentPane.getInsets();
             bounds.x += insets.left;
             bounds.y += insets.top;
             bounds.width -= insets.left + insets.right;
-            bounds.height -= insets.top + insets.bottom + adjustment;
+            bounds.height -= insets.top + insets.bottom;
             // Spacer to keep text at the right
             BufferedImage spacer = new BufferedImage(bounds.width, 16,
                     BufferedImage.TYPE_INT_ARGB);
@@ -239,6 +243,8 @@ public class SexScriptsHost implements Host {
                 BufferedImage bi = new BufferedImage(bounds.width,
                         bounds.height, BufferedImage.TYPE_INT_ARGB);
                 Graphics2D g2d = (Graphics2D) bi.getGraphics();
+                g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION,
+                        RenderingHints.VALUE_INTERPOLATION_BICUBIC);
                 // Draw original background image
                 g2d.drawImage(backgroundImage, 0, 0, bounds.width,
                         bounds.height, null);
@@ -250,8 +256,8 @@ public class SexScriptsHost implements Host {
                     height = bounds.height;
                 }
                 if (width > bounds.width) {
-                    width = bounds.width;
                     height = height * bounds.width / width;
+                    width = bounds.width;
                 }
                 int left = 0;
                 int top = (bounds.height - height) / 2;

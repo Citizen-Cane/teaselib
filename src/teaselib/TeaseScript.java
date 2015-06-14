@@ -2,6 +2,7 @@ package teaselib;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import teaselib.audio.RenderBackgroundSound;
@@ -532,14 +533,31 @@ public abstract class TeaseScript extends TeaseScriptBase implements Runnable {
         return randomized(null, items, n);
     }
 
-    public <T> List<T> randomized(T[] intro, T[] more, int n) {
+    /**
+     * Build a list with n randomized entries, starting with the shuffled items
+     * in introduction, followed by random items of repetitions.
+     * 
+     * @param introduction
+     * @param repeations
+     * @param n
+     *            Requested size of the resulting list, at least
+     *            introduction.size()
+     * @return The list starting with the shuffled items from the introduction,
+     *         followed by items from repetition. Repetitions are never added
+     *         twice in a row.
+     */
+    public <T> List<T> randomized(T[] introduction, T[] repetitions, int n) {
         List<T> out = new ArrayList<T>(n);
-        for (int i = 0; i < n; i++) {
-            if (intro != null && i < intro.length) {
-                out.add(intro[random(0, intro.length - 1)]);
-            } else {
-                out.add(more[random(0, more.length - 1)]);
+        out.addAll(Arrays.asList(introduction));
+        Collections.shuffle(out);
+        T last = out.get(out.size() - 1);
+        for (int i = out.size(); i < n; i++) {
+            T t = null;
+            // Don't add the same entry twice in a row
+            while (last == (t = repetitions[random(0, repetitions.length - 1)])) {
             }
+            out.add(t);
+            last = t;
         }
         return out;
     }

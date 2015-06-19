@@ -21,7 +21,7 @@ public class TextToSpeech {
 
     private String[] NoHints = null;
 
-    private void ttsEngineNotInitialized() {
+    private static void ttsEngineNotInitialized() {
         throw new IllegalStateException("TTS engine not initialized");
     }
 

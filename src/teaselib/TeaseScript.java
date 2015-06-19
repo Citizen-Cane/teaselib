@@ -575,11 +575,15 @@ public abstract class TeaseScript extends TeaseScriptBase implements Runnable {
         }
 
         public int elapsedSeconds() {
-            return (int) (teaseLib.host.getTime() - startSeconds);
+            long time = teaseLib.host.getTime();
+            long elapsedSeconds = time - startSeconds;
+            return (int) elapsedSeconds;
         }
 
         public int elapsedMinutes() {
-            return (int) (teaseLib.host.getTime() - startSeconds) * 60;
+            long time = teaseLib.host.getTime();
+            long elapsedSeconds = time - startSeconds;
+            return (int) elapsedSeconds * 60;
         }
     }
 }

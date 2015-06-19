@@ -23,7 +23,7 @@ public class StimulationController<StimulationType> {
 
     private int intensity;
 
-    StimulationController() {
+    public StimulationController() {
         clear();
     }
 

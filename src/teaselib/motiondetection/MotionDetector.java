@@ -301,4 +301,15 @@ public class MotionDetector {
         }
         return motionStopped;
     }
+
+    /**
+     * Webcam connected and processing is enabled
+     * 
+     * @return
+     */
+    public boolean active() {
+        // todo fallback and return false if no webcam connected
+        // todo listen to connection/disconnection events
+        return true;
+    }
 }

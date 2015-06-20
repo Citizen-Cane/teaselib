@@ -1,5 +1,7 @@
 package teaselib.text;
 
+import java.util.concurrent.TimeUnit;
+
 import teaselib.ScriptInterruptedException;
 import teaselib.TeaseLib;
 import teaselib.userinterface.MediaRendererThread;
@@ -19,13 +21,13 @@ public class RenderDelay extends MediaRendererThread {
 
     @Override
     public void render() throws InterruptedException {
-        int actual = teaseLib.host.getRandom(from, to);
+        int actual = teaseLib.random(from, to);
         startCompleted();
         try {
             if (actual > 0) {
                 TeaseLib.log(getClass().getSimpleName() + " " + toString()
                         + ": " + actual + " seconds");
-                teaseLib.host.sleep(actual * 1000);
+                teaseLib.sleep(actual, TimeUnit.SECONDS);
             } else {
                 TeaseLib.log(getClass().getSimpleName() + " " + toString()
                         + ": skipped sleeping " + actual + " seconds");

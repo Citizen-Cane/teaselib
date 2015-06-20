@@ -9,24 +9,6 @@ import teaselib.util.Delegate;
 public class DummyHost implements Host {
 
     @Override
-    public int getRandom(int min, int max) {
-        // TODO Auto-generated method stub
-        return 0;
-    }
-
-    @Override
-    public long getTime() {
-        // TODO Auto-generated method stub
-        return 0;
-    }
-
-    @Override
-    public void log(String line) {
-        System.out.println(line);
-
-    }
-
-    @Override
     public void playSound(ResourceLoader resources, String path)
             throws IOException {
         // TODO Auto-generated method stub
@@ -66,12 +48,6 @@ public class DummyHost implements Host {
     }
 
     @Override
-    public void sleep(long milliseconds) {
-        // TODO Auto-generated method stub
-
-    }
-
-    @Override
     public List<Delegate> getClickableChoices(List<String> choices) {
         // TODO Auto-generated method stub
         return null;
@@ -82,5 +58,4 @@ public class DummyHost implements Host {
         // TODO Auto-generated method stub
         return 0;
     }
-
 }

@@ -10,10 +10,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.Vector;
+import java.util.concurrent.TimeUnit;
 
 import teaselib.Actor;
-import teaselib.Host;
-import teaselib.ResourceLoader;
 import teaselib.ScriptInterruptedException;
 import teaselib.TeaseLib;
 import teaselib.speechrecognition.SpeechRecognition;
@@ -21,8 +20,7 @@ import teaselib.text.Message;
 
 public class TextToSpeechPlayer {
 
-    public final ResourceLoader resources;
-    public final Host host;
+    private final TeaseLib teaseLib;
     public final TextToSpeech textToSpeech;
     protected final SpeechRecognition speechRecognizer;
 
@@ -35,16 +33,14 @@ public class TextToSpeechPlayer {
     private final Set<String> usedVoices = new HashSet<String>();
     private Voice neutralVoice = null;
 
-    public TextToSpeechPlayer(ResourceLoader resources,
-            TextToSpeech textToSpeech) {
-        this(resources, null, textToSpeech, null);
+    public TextToSpeechPlayer(TeaseLib teaseLib, TextToSpeech textToSpeech) {
+        this(teaseLib, textToSpeech, null);
     }
 
-    public TextToSpeechPlayer(ResourceLoader resources, Host host,
-            TextToSpeech textToSpeech, SpeechRecognition speechRecognizer) {
+    public TextToSpeechPlayer(TeaseLib teaseLib, TextToSpeech textToSpeech,
+            SpeechRecognition speechRecognizer) {
         super();
-        this.resources = resources;
-        this.host = host;
+        this.teaseLib = teaseLib;
         this.textToSpeech = textToSpeech;
         this.speechRecognizer = speechRecognizer;
         // TTS might not be available
@@ -54,13 +50,13 @@ public class TextToSpeechPlayer {
             this.voices = new HashMap<String, Voice>();
         }
         // Read pre-recorded voices config
-        actorVoices = new VoicesProperties(resources);
+        actorVoices = new VoicesProperties(teaseLib.resources);
         for (Object value : actorVoices.keySet()) {
             // Available as a pre-recorded voice?
             String actorName = value.toString();
             String voiceGuid = actorVoices.getVoice(actorName);
             ActorVoice actorVoice = new ActorVoice(actorName, voiceGuid,
-                    resources);
+                    teaseLib.resources);
             boolean prerecorded = !actorVoice.empty();
             if (prerecorded) {
                 actor2PrerecordedVoice.put(actorName, voiceGuid);
@@ -183,7 +179,7 @@ public class TextToSpeechPlayer {
             List<String> speechResources = new Vector<String>();
             try {
                 reader = new BufferedReader(new InputStreamReader(
-                        resources.getResource(path
+                        teaseLib.resources.getResource(path
                                 + TextToSpeechRecorder.ResourcesFilename)));
                 String soundFile = null;
                 while ((soundFile = reader.readLine()) != null) {
@@ -263,7 +259,7 @@ public class TextToSpeechPlayer {
             reactivateSpeechRecognition = false;
         }
         if (usePrerecorded) {
-            host.playSound(resources, path);
+            teaseLib.host.playSound(teaseLib.resources, path);
         } else if (useTTS) {
             try {
                 textToSpeech.speak(prompt);
@@ -285,7 +281,7 @@ public class TextToSpeechPlayer {
     private void speakSilent(String prompt) {
         // Unable to speak, just display the estimated duration
         long duration = TextToSpeech.getEstimatedSpeechDuration(prompt);
-        host.sleep(duration);
+        teaseLib.sleep(duration, TimeUnit.MILLISECONDS);
     }
 
     public void stop() {

@@ -7,9 +7,7 @@ import java.awt.Insets;
 import java.awt.Rectangle;
 import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Field;
@@ -46,9 +44,6 @@ public class SexScriptsHost implements Host {
 
     private IScript ss;
 
-    private BufferedWriter log = null;
-    private final File path = new File("./TeaseLib.log");
-
     private static final boolean renderBackgroundImage = true;
 
     private final ImageIcon backgroundImageIcon;
@@ -74,34 +69,6 @@ public class SexScriptsHost implements Host {
         } else {
             backgroundImage = null;
         }
-    }
-
-    @Override
-    public long getTime() {
-        return ss.getTime();
-    }
-
-    @Override
-    public int getRandom(int min, int max) {
-        return min + ss.getRandom(max - min + 1);
-    }
-
-    @Override
-    public void log(String line) {
-        if (log == null) {
-            try {
-                log = new BufferedWriter(new FileWriter(path));
-            } catch (IOException e) {
-                ss.showPopup("Cannot open log file " + path.getAbsolutePath());
-            }
-        }
-        try {
-            log.write(line + "\n");
-            log.flush();
-        } catch (IOException e) {
-            ss.showPopup("Cannot write log file " + path.getAbsolutePath());
-        }
-        System.out.println(line);
     }
 
     @Override
@@ -332,17 +299,6 @@ public class SexScriptsHost implements Host {
             // Loop until the user pressed OK -> != null
         } while (results == null && !allowCancel);
         return results;
-    }
-
-    @Override
-    public void sleep(long milliseconds) {
-        try {
-            synchronized (this) {
-                wait(milliseconds);
-            }
-        } catch (InterruptedException e) {
-            throw new ScriptInterruptedException();
-        }
     }
 
     @Override

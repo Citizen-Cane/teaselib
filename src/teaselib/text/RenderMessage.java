@@ -6,6 +6,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import teaselib.Mood;
 import teaselib.ScriptInterruptedException;
@@ -173,22 +174,23 @@ public class RenderMessage extends MediaRendererThread {
         String args = removeCommandNameFromValue(part);
         if (args.isEmpty()) {
             // Fixed pause
-            teaseLib.host.sleep(DELAYATENDOFTEXT);
+            teaseLib.sleep(DELAYATENDOFTEXT, TimeUnit.MILLISECONDS);
         } else {
             try {
                 String[] argv = args.split(" ");
                 if (argv.length == 1) {
                     double delay = Double.parseDouble(args) * 1000;
-                    teaseLib.host.sleep((int) delay);
+                    teaseLib.sleep((int) delay, TimeUnit.MILLISECONDS);
                 } else {
                     double delayFrom = Double.parseDouble(argv[0]) * 1000;
                     double delayTo = Double.parseDouble(argv[1]) * 1000;
-                    teaseLib.host.sleep(teaseLib.host.getRandom(
-                            (int) delayFrom, (int) delayTo));
+                    teaseLib.sleep(
+                            teaseLib.random((int) delayFrom, (int) delayTo),
+                            TimeUnit.MILLISECONDS);
                 }
             } catch (NumberFormatException ignore) {
                 // Fixed pause
-                teaseLib.host.sleep(DELAYATENDOFTEXT);
+                teaseLib.sleep(DELAYATENDOFTEXT, TimeUnit.MILLISECONDS);
             }
         }
     }
@@ -227,11 +229,11 @@ public class RenderMessage extends MediaRendererThread {
         if (lastParagraph) {
             // Interaction should start before the final delay
             mandatoryCompleted();
-            teaseLib.host.sleep(DELAYATENDOFTEXT);
+            teaseLib.sleep(DELAYATENDOFTEXT, TimeUnit.MILLISECONDS);
             allCompleted();
             endThread = true;
         } else {
-            teaseLib.host.sleep(DELAYBETWEENPARAGRAPHS);
+            teaseLib.sleep(DELAYBETWEENPARAGRAPHS, TimeUnit.MILLISECONDS);
         }
     }
 

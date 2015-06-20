@@ -10,6 +10,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.FutureTask;
+import java.util.concurrent.TimeUnit;
 
 import teaselib.Persistence.TextVariable;
 import teaselib.image.Images;
@@ -41,8 +42,8 @@ public abstract class TeaseScriptBase {
     public TeaseScriptBase(TeaseLib teaseLib, String locale) {
         this.teaseLib = teaseLib;
         speechRecognizer = new SpeechRecognition(locale);
-        speechSynthesizer = new TextToSpeechPlayer(teaseLib.resources,
-                teaseLib.host, new TextToSpeech(), speechRecognizer);
+        speechSynthesizer = new TextToSpeechPlayer(teaseLib,
+                new TextToSpeech(), speechRecognizer);
     }
 
     /**
@@ -245,7 +246,7 @@ public abstract class TeaseScriptBase {
                 // wait for render threads that can be completed
                 // Workaround: A bit unsatisfying, but otherwise the choice
                 // buttons would appear too early
-                teaseLib.host.sleep(300);
+                teaseLib.sleep(300, TimeUnit.MILLISECONDS);
             }
             choiceIndex = teaseLib.host.reply(choices);
             if (scriptTask != null) {

@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import teaselib.audio.RenderBackgroundSound;
 import teaselib.audio.RenderSound;
@@ -59,7 +60,7 @@ public abstract class TeaseScript extends TeaseScriptBase implements Runnable {
      * @return A value in the interval [min, max]
      */
     public int random(int min, int max) {
-        return teaseLib.host.getRandom(min, max);
+        return teaseLib.random(min, max);
     }
 
     /**
@@ -197,7 +198,7 @@ public abstract class TeaseScript extends TeaseScriptBase implements Runnable {
         Runnable delayFunction = timeout > NoTimeout ? new Runnable() {
             @Override
             public void run() {
-                teaseLib.host.sleep(timeout * 1000);
+                teaseLib.sleep(timeout, TimeUnit.SECONDS);
             }
         } : null;
         return showChoices(delayFunction, choices);
@@ -571,19 +572,23 @@ public abstract class TeaseScript extends TeaseScriptBase implements Runnable {
         final long startSeconds;
 
         public Duration() {
-            startSeconds = teaseLib.host.getTime();
+            startSeconds = teaseLib.getTime();
         }
 
         public int elapsedSeconds() {
-            long time = teaseLib.host.getTime();
+            long time = teaseLib.getTime();
             long elapsedSeconds = time - startSeconds;
             return (int) elapsedSeconds;
         }
 
         public int elapsedMinutes() {
-            long time = teaseLib.host.getTime();
+            long time = teaseLib.getTime();
             long elapsedSeconds = time - startSeconds;
             return (int) elapsedSeconds * 60;
         }
+    }
+
+    public void sleep(long x, TimeUnit timeUnit) {
+        teaseLib.sleep(x, timeUnit);
     }
 }

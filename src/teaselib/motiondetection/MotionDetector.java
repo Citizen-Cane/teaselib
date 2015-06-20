@@ -207,7 +207,7 @@ public class MotionDetector {
                 motionEndLock.unlock();
             }
         }
-    };
+    }
 
     private static void print(String text) {
         TeaseLib.log(text);

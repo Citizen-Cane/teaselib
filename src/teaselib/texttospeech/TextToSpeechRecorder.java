@@ -19,7 +19,6 @@ import java.util.Vector;
 
 import teaselib.Actor;
 import teaselib.Mood;
-import teaselib.ResourceLoader;
 import teaselib.TeaseLib;
 import teaselib.text.Message;
 import teaselib.text.Message.Part;
@@ -29,7 +28,7 @@ public class TextToSpeechRecorder {
     public final static String MessageFilename = "message.txt";
     public final static String ResourcesFilename = "inventory.txt";
 
-    private final ResourceLoader resources;
+    private final TeaseLib teaseLib;
     private final TextToSpeech textToSpeech;
     private File speechDir = null;
     private final Map<String, Voice> voices;
@@ -43,26 +42,29 @@ public class TextToSpeechRecorder {
     int upToDateEntries = 0;
     int reusedDuplicates = 0;
 
-    public TextToSpeechRecorder(ResourceLoader resources) throws IOException {
-        this.resources = resources;
+    public TextToSpeechRecorder(TeaseLib teaseLib) throws IOException {
+        this.teaseLib = teaseLib;
         this.textToSpeech = new TextToSpeech();
         this.voices = textToSpeech.getVoices();
-        TextToSpeechPlayer ttsPlayer = new TextToSpeechPlayer(resources,
+        TextToSpeechPlayer ttsPlayer = new TextToSpeechPlayer(teaseLib,
                 textToSpeech);
-        File assetsDir = resources.getAssetPath("");
+        File assetsDir = teaseLib.resources.getAssetPath("");
         speechDir = createSubDir(assetsDir, SpeechDirName);
         AvailableVoicesProperties available = new AvailableVoicesProperties(
                 voices);
         available.store(assetsDir);
 
-        VoicesProperties voicesProperties = new VoicesProperties(resources);
+        VoicesProperties voicesProperties = new VoicesProperties(
+                teaseLib.resources);
         if (voicesProperties.empty()) {
             // Write default file
             // TODO Language and gender selection for voices
             String first = voices.keySet().iterator().next();
             voicesProperties.put(Actor.Dominant, voices.get(first));
             voicesProperties.store(assetsDir);
-            ttsPlayer = new TextToSpeechPlayer(resources, textToSpeech);
+            // reinitialize
+            // todo check for file and init once
+            ttsPlayer = new TextToSpeechPlayer(teaseLib, textToSpeech);
         }
         this.ttsPlayer = ttsPlayer;
         TeaseLib.log("Build start: " + new Date(buildStart).toString());
@@ -150,7 +152,7 @@ public class TextToSpeechRecorder {
             // directories in the resource paths
             actors.add(actor.name);
             ActorVoice actorVoice = new ActorVoice(actor.name,
-                    neutralVoice.guid, resources);
+                    neutralVoice.guid, teaseLib.resources);
             actorVoice.clear();
             actorVoice.put(actor.name, neutralVoice);
             actorVoice.store(new File(new File(speechDir, actor.name),

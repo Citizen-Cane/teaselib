@@ -16,24 +16,6 @@ import teaselib.util.Delegate;
  */
 public interface Host {
     /**
-     * Get a random number between min and max (included)
-     * 
-     * @param min
-     *            Minimum desired value
-     * @param max
-     *            Maximum desired value
-     * @return Random value from [min, max]
-     */
-    int getRandom(int min, int max);
-
-    /**
-     * @return Time in seconds starting from 1.1.1970
-     */
-    long getTime();
-
-    void log(String line);
-
-    /**
      * Play the sound denoted by path and wait until it's finished. Sound stops
      * if the current thread is interrupted.
      * 
@@ -95,19 +77,6 @@ public interface Host {
             List<Boolean> values, boolean allowCancel);
 
     /**
-     * Preferred method to wait, since it allows us to write a debug host with
-     * automated input. If interrupted, must throw a ScriptInterruptedException.
-     * It's a runtime exception so it doesn't have to be declared. This way
-     * simple scripts are safe, but script closures can be cancelled.
-     * 
-     * May also be called with Infinitely in order to stop execution.
-     * 
-     * @param milliseconds
-     *            The time to sleep.
-     */
-    void sleep(long milliseconds);
-
-    /**
      * Get a list of delegates, one for each user interaction. The index is the
      * same as for showInteraction.
      * 
@@ -128,5 +97,4 @@ public interface Host {
      *         button was clicked
      */
     int reply(List<String> choices);
-
 }

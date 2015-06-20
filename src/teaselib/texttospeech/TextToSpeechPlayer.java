@@ -31,7 +31,7 @@ public class TextToSpeechPlayer {
     private final Map<String, Voice> actor2TTSVoice = new HashMap<String, Voice>();
 
     private final Set<String> usedVoices = new HashSet<String>();
-    private Voice neutralVoice = null;
+    private Voice voice = null;
 
     public TextToSpeechPlayer(TeaseLib teaseLib, TextToSpeech textToSpeech) {
         this(teaseLib, textToSpeech, null);
@@ -207,22 +207,19 @@ public class TextToSpeechPlayer {
         final Iterator<String> prerenderedSpeech;
         if (prerenderedSpeechFiles != null) {
             prerenderedSpeech = prerenderedSpeechFiles.iterator();
-            return prerenderedSpeech;
+            voice = null;
         } else {
             prerenderedSpeech = null;
+            // Use TTS voice
+            if (textToSpeech.isReady()) {
+                voice = getVoiceFor(message.actor);
+                textToSpeech.setVoice(voice);
+            }
         }
-        // Use TTS voice
-        if (textToSpeech.isReady()) {
-            neutralVoice = getVoiceFor(message.actor);
-            textToSpeech.setVoice(neutralVoice);
-        }
-        return null;
+        return prerenderedSpeech;
     }
 
-    public void setMood(String mood, Iterator<String> prerecorded) {
-        if (prerecorded == null) {
-            textToSpeech.setHint(mood);
-        }
+    public void setMood(String mood) {
     }
 
     /**
@@ -235,21 +232,13 @@ public class TextToSpeechPlayer {
      * @param teaseLib
      *            instance to call sleep on
      */
-    public void speak(String prompt, Iterator<String> prerecorded)
-            throws IOException {
-        final String path;
-        if (prerecorded != null) {
-            path = prerecorded.hasNext() ? prerecorded.next() : null;
-        } else {
-            path = null;
-        }
-        boolean usePrerecorded = path != null;
-        boolean useTTS = textToSpeech.isReady();
+    public void speak(String prompt, String mood) throws IOException {
+        boolean useTTS = textToSpeech.isReady() && voice != null;
         final boolean reactivateSpeechRecognition;
         // Suspend speech recognition while speaking,
         // to avoid wrong recognitions
         // - and the mistress speech isn't to be interrupted anyway
-        if ((usePrerecorded || useTTS) && speechRecognizer != null) {
+        if (useTTS && speechRecognizer != null) {
             speechRecognizer.completeSpeechRecognitionInProgress();
             reactivateSpeechRecognition = speechRecognizer.isActive();
             if (reactivateSpeechRecognition) {
@@ -258,9 +247,8 @@ public class TextToSpeechPlayer {
         } else {
             reactivateSpeechRecognition = false;
         }
-        if (usePrerecorded) {
-            teaseLib.host.playSound(teaseLib.resources, path);
-        } else if (useTTS) {
+        if (useTTS) {
+            textToSpeech.setHint(mood);
             try {
                 textToSpeech.speak(prompt);
             } catch (ScriptInterruptedException e) {
@@ -278,6 +266,34 @@ public class TextToSpeechPlayer {
         }
     }
 
+    public void play(String prompt, Iterator<String> prerecorded)
+            throws IOException {
+        final String path = prerecorded.hasNext() ? prerecorded.next() : null;
+        boolean usePrerecorded = path != null;
+        final boolean reactivateSpeechRecognition;
+        // Suspend speech recognition while speaking,
+        // to avoid wrong recognitions
+        // - and the mistress speech isn't to be interrupted anyway
+        if (usePrerecorded && speechRecognizer != null) {
+            speechRecognizer.completeSpeechRecognitionInProgress();
+            reactivateSpeechRecognition = speechRecognizer.isActive();
+            if (reactivateSpeechRecognition) {
+                speechRecognizer.stopRecognition();
+            }
+        } else {
+            reactivateSpeechRecognition = false;
+        }
+        if (usePrerecorded) {
+            teaseLib.host.playSound(teaseLib.resources, path);
+        } else {
+            speakSilent(prompt);
+        }
+        // resume SR if necessary
+        if (reactivateSpeechRecognition) {
+            speechRecognizer.resumeRecognition();
+        }
+    }
+
     private void speakSilent(String prompt) {
         // Unable to speak, just display the estimated duration
         long duration = TextToSpeech.getEstimatedSpeechDuration(prompt);
@@ -285,7 +301,7 @@ public class TextToSpeechPlayer {
     }
 
     public void stop() {
-        if (textToSpeech != null) {
+        if (textToSpeech != null && voice != null) {
             textToSpeech.stop();
         }
     }

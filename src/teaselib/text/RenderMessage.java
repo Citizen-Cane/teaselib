@@ -1,7 +1,6 @@
 package teaselib.text;
 
 import java.awt.Image;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -72,7 +71,7 @@ public class RenderMessage extends MediaRendererThread {
                     prerenderedSpeechItems = speechSynthesizer
                             .selectVoice(message);
                 } else {
-                    prerenderedSpeechItems = new ArrayList<String>().iterator();
+                    prerenderedSpeechItems = null;
                 }
                 // Process message paragraphs
                 RenderSound soundRenderer = null;
@@ -111,9 +110,9 @@ public class RenderMessage extends MediaRendererThread {
                         doExec(part);
                     } else {
                         // Text detected
-                        String text = part.value;
-                        accumulatedText = accumulateText(accumulatedText, text,
-                                append);
+                        String prompt = part.value;
+                        accumulatedText = accumulateText(accumulatedText,
+                                prompt, append);
                         // Update text
                         additionalHints.add(mood);
                         showImageAndText(accumulatedText.toString(),
@@ -121,10 +120,12 @@ public class RenderMessage extends MediaRendererThread {
                         // First message shown - start part completed
                         startCompleted();
                         if (speechSynthesizer != null) {
-                            speechSynthesizer.setMood(mood,
-                                    prerenderedSpeechItems);
-                            speechSynthesizer.speak(text,
-                                    prerenderedSpeechItems);
+                            if (prerenderedSpeechItems != null) {
+                                speechSynthesizer.play(prompt,
+                                        prerenderedSpeechItems);
+                            } else {
+                                speechSynthesizer.speak(prompt, mood);
+                            }
                         }
                         pauseAfterParagraph(it);
                     }

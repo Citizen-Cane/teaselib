@@ -219,9 +219,6 @@ public class TextToSpeechPlayer {
         return prerenderedSpeech;
     }
 
-    public void setMood(String mood) {
-    }
-
     /**
      * Speak or wait the estimated duration it takes to speak the prompt
      * 
@@ -232,7 +229,7 @@ public class TextToSpeechPlayer {
      * @param teaseLib
      *            instance to call sleep on
      */
-    public void speak(String prompt, String mood) throws IOException {
+    public void speak(String prompt, String mood) {
         boolean useTTS = textToSpeech.isReady() && voice != null;
         final boolean reactivateSpeechRecognition;
         // Suspend speech recognition while speaking,

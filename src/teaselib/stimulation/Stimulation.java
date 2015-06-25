@@ -3,6 +3,8 @@
  */
 package teaselib.stimulation;
 
+import teaselib.TeaseLib;
+
 /**
  * @author someone
  *
@@ -42,6 +44,8 @@ public abstract class Stimulation implements Runnable {
         this.intensity = intensity;
         this.durationSeconds = durationSeconds;
         stim = new Thread(this);
+        TeaseLib.log(getClass().getSimpleName() + ": intensity=" + intensity
+                + " duration=" + durationSeconds);
         stim.start();
     }
 

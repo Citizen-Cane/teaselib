@@ -8,9 +8,13 @@ import java.util.Map;
 
 import teaselib.stimulation.Stimulation.BodyPart;
 import teaselib.stimulation.pattern.Attention;
+import teaselib.stimulation.pattern.Cum;
+import teaselib.stimulation.pattern.Punish;
 import teaselib.stimulation.pattern.Run;
+import teaselib.stimulation.pattern.Tease;
 import teaselib.stimulation.pattern.Trot;
 import teaselib.stimulation.pattern.Walk;
+import teaselib.stimulation.pattern.Whip;
 
 /**
  * @author someone
@@ -27,6 +31,10 @@ public class StimulationController<StimulationType> {
         clear();
     }
 
+    public static StimulationController<Stimulation.Type> dummy() {
+        return new StimulationController<Stimulation.Type>();
+    }
+
     public static StimulationController<Stimulation.Type> stimulateAnusAndBalls(
             Stimulator buttplug, Stimulator balls) {
         StimulationController<Stimulation.Type> stim = new StimulationController<Stimulation.Type>();
@@ -41,9 +49,9 @@ public class StimulationController<StimulationType> {
         stim.add(Stimulation.Type.Attention,
                 new Attention(stim.stimulator(Stimulation.BodyPart.Anus)));
         stim.add(Stimulation.Type.Whip,
-                new Walk(stim.stimulator(Stimulation.BodyPart.Balls)));
+                new Whip(stim.stimulator(Stimulation.BodyPart.Balls)));
         stim.add(Stimulation.Type.Punish,
-                new Walk(stim.stimulator(Stimulation.BodyPart.Balls)));
+                new Punish(stim.stimulator(Stimulation.BodyPart.Balls)));
         // There's no teasing involved in this configuration
         return stim;
     }
@@ -62,13 +70,13 @@ public class StimulationController<StimulationType> {
         stim.add(Stimulation.Type.Attention,
                 new Attention(stim.stimulator(Stimulation.BodyPart.Cock)));
         stim.add(Stimulation.Type.Whip,
-                new Walk(stim.stimulator(Stimulation.BodyPart.Balls)));
+                new Whip(stim.stimulator(Stimulation.BodyPart.Balls)));
         stim.add(Stimulation.Type.Punish,
-                new Walk(stim.stimulator(Stimulation.BodyPart.Balls)));
+                new Punish(stim.stimulator(Stimulation.BodyPart.Balls)));
         stim.add(Stimulation.Type.Tease,
-                new Walk(stim.stimulator(Stimulation.BodyPart.Cock)));
+                new Tease(stim.stimulator(Stimulation.BodyPart.Cock)));
         stim.add(Stimulation.Type.Cum,
-                new Walk(stim.stimulator(Stimulation.BodyPart.Cock)));
+                new Cum(stim.stimulator(Stimulation.BodyPart.Cock)));
         return stim;
     }
 
@@ -86,13 +94,13 @@ public class StimulationController<StimulationType> {
         stim.add(Stimulation.Type.Attention,
                 new Attention(stim.stimulator(Stimulation.BodyPart.Cock)));
         stim.add(Stimulation.Type.Whip,
-                new Walk(stim.stimulator(Stimulation.BodyPart.Cock)));
+                new Whip(stim.stimulator(Stimulation.BodyPart.Cock)));
         stim.add(Stimulation.Type.Punish,
-                new Walk(stim.stimulator(Stimulation.BodyPart.Anus)));
+                new Punish(stim.stimulator(Stimulation.BodyPart.Anus)));
         stim.add(Stimulation.Type.Tease,
-                new Walk(stim.stimulator(Stimulation.BodyPart.Cock)));
+                new Tease(stim.stimulator(Stimulation.BodyPart.Cock)));
         stim.add(Stimulation.Type.Cum,
-                new Walk(stim.stimulator(Stimulation.BodyPart.Cock)));
+                new Cum(stim.stimulator(Stimulation.BodyPart.Cock)));
         return stim;
     }
 
@@ -127,8 +135,9 @@ public class StimulationController<StimulationType> {
     public void stimulate(StimulationType type, double durationSeconds) {
         if (stimulations.containsKey(type)) {
             stimulations.get(type).play(intensity, durationSeconds);
+        } else {
+            throw new IllegalArgumentException("Stimulation type "
+                    + type.toString() + " not supported");
         }
-        throw new IllegalArgumentException("Stimulation type "
-                + type.toString() + " not supported");
     }
 }

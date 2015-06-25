@@ -26,7 +26,23 @@ public class DirectionIndicator {
         }
     }
 
-    public Direction getDirection(int frames, int threshold) {
+    /**
+     * Add the last value again to continue the stream of motion coordinates
+     * when motion has stopped. Otherwise the distance() and direction()
+     * functions would return wrong results.
+     */
+    public void addLastValueAgain() {
+        if (values.size() == 0) {
+            return;
+        } else {
+            values.addLast(values.getLast());
+            if (values.size() > Frames) {
+                values.removeFirst();
+            }
+        }
+    }
+
+    public Direction direct(int frames, int threshold) {
         if (values.isEmpty()) {
             return Direction.None;
         } else {

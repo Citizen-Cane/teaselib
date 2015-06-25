@@ -128,25 +128,27 @@ public class MotionDetector {
             int motionDetectedCounter = -1;
             while (true) {
                 boolean motionDetected = detector.isMotion();
-                if (motionDetected) {
-                    motionCog = detector.getMotionCog();
-                    xi.add(motionCog.x);
-                    yi.add(motionCog.y);
-                    motionArea = detector.getMotionArea();
-                } else {
-                    motionCog = null;
-                    motionArea = 0.0;
-                }
-                // Compute current direction
-                int frames = frames(MotionSeconds);
-                int threshold = 1; // MotionThreshold;
                 synchronized (MotionDetector.this) {
-                    currentHorizontalMotion = getHorizontalMotion(xi
-                            .getDirection(frames, threshold));
-                    currentVerticalMotion = getVerticalMotion(yi.getDirection(
+                    if (motionDetected) {
+                        motionCog = detector.getMotionCog();
+                        xi.add(motionCog.x);
+                        yi.add(motionCog.y);
+                        motionArea = detector.getMotionArea();
+                    } else {
+                        motionCog = null;
+                        motionArea = 0.0;
+                        xi.addLastValueAgain();
+                        yi.addLastValueAgain();
+                    }
+                    // Compute current direction
+                    int frames = frames(MotionSeconds);
+                    int threshold = 1; // MotionThreshold;
+                    currentHorizontalMotion = getHorizontalMotion(xi.direct(
                             frames, threshold));
+                    currentVerticalMotion = getVerticalMotion(yi.direct(frames,
+                            threshold));
                 }
-                // After setting current state, send any notifications
+                // After setting current state, send notifications
                 if (motionDetected) {
                     if (motionDetectedCounter < 0) {
                         // Motion just started
@@ -166,10 +168,9 @@ public class MotionDetector {
                         motionDetectedCounter--;
                     }
                 }
-
                 try {
-                    Thread.sleep(PollingInterval - 1); // must be smaller
-                                                       // than interval
+                    // sleep time must be smaller than interval
+                    Thread.sleep(PollingInterval - 1);
                 } catch (InterruptedException e) {
                     return;
                 }
@@ -177,14 +178,13 @@ public class MotionDetector {
         }
 
         private void printDebug() {
-            long now = System.currentTimeMillis();
             String debug = currentHorizontalMotion + " "
                     + currentVerticalMotion + " MotionArea=" + motionArea;
             if (motionCog != null) {
                 debug += " MotionCog=(" + motionCog.x + ", " + motionCog.y
                         + ")";
             }
-            TeaseLib.log(now + " " + debug);
+            TeaseLib.log(debug);
         }
 
         public void signalMotionStart() {
@@ -237,27 +237,34 @@ public class MotionDetector {
     }
 
     public void clearDirections() {
-        xi.clear();
-        yi.clear();
-        currentHorizontalMotion = HorizontalMotion.None;
-        currentVerticalMotion = VerticalMotion.None;
+        synchronized (this) {
+            xi.clear();
+            yi.clear();
+            currentHorizontalMotion = HorizontalMotion.None;
+            currentVerticalMotion = VerticalMotion.None;
+        }
     }
 
     public HorizontalMotion getCurrentHorizontalMotion() {
-        return currentHorizontalMotion;
+        synchronized (this) {
+            return currentHorizontalMotion;
+        }
     }
 
     public VerticalMotion getCurrentVerticalMotion() {
-        return currentVerticalMotion;
+        synchronized (this) {
+            return currentVerticalMotion;
+        }
     }
 
-    public synchronized HorizontalMotion getRecentHorizontalMotion(
-            double pastSeconds) {
-        HorizontalMotion horizontalMotion = getHorizontalMotion(xi
-                .getDirection(frames(pastSeconds), MotionThreshold));
-        TeaseLib.log("getRecentHorizontalMotion(" + pastSeconds + ") returned "
-                + horizontalMotion.toString());
-        return horizontalMotion;
+    public HorizontalMotion getRecentHorizontalMotion(double pastSeconds) {
+        synchronized (this) {
+            HorizontalMotion horizontalMotion = getHorizontalMotion(xi.direct(
+                    frames(pastSeconds), MotionThreshold));
+            TeaseLib.log("getRecentHorizontalMotion(" + pastSeconds
+                    + ") returned " + horizontalMotion.toString());
+            return horizontalMotion;
+        }
     }
 
     public Amount getAmountOfMotion(double pastSeconds) {
@@ -265,25 +272,28 @@ public class MotionDetector {
     }
 
     public Amount getAmountOfMotion(int pastFrames) {
-        int dx = Math.abs(xi.distance(pastFrames));
-        int dy = Math.abs(yi.distance(pastFrames));
-        Amount[] values = Amount.values();
-        for (Amount amount : values) {
-            if (dx <= amount.ScreenPercentage * size.width
-                    && dy <= amount.ScreenPercentage * size.height) {
-                return amount;
+        synchronized (this) {
+            int dx = Math.abs(xi.distance(pastFrames));
+            int dy = Math.abs(yi.distance(pastFrames));
+            Amount[] values = Amount.values();
+            for (Amount amount : values) {
+                if (dx <= amount.ScreenPercentage * size.width
+                        && dy <= amount.ScreenPercentage * size.height) {
+                    return amount;
+                }
             }
+            return Amount.None;
         }
-        return Amount.None;
     }
 
-    public synchronized VerticalMotion getRecentVerticalMotion(
-            double pastSeconds) {
-        VerticalMotion verticalMotion = getVerticalMotion(yi.getDirection(
-                frames(pastSeconds), MotionThreshold));
-        TeaseLib.log("getRecentVerticalMotion(" + pastSeconds + ") returned "
-                + verticalMotion.toString());
-        return verticalMotion;
+    public VerticalMotion getRecentVerticalMotion(double pastSeconds) {
+        synchronized (this) {
+            VerticalMotion verticalMotion = getVerticalMotion(yi.direct(
+                    frames(pastSeconds), MotionThreshold));
+            TeaseLib.log("getRecentVerticalMotion(" + pastSeconds
+                    + ") returned " + verticalMotion.toString());
+            return verticalMotion;
+        }
     }
 
     // todo set length of motion

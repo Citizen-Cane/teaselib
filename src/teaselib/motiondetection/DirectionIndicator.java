@@ -44,13 +44,17 @@ public class DirectionIndicator {
     public int distance(int frames) {
         final int first;
         int size = values.size();
-        if (size < frames) {
-            first = values.getFirst();
+        if (size == 0) {
+            return 0;
         } else {
-            first = values.get(size - frames);
+            if (size < frames) {
+                first = values.getFirst();
+            } else {
+                first = values.get(size - frames);
+            }
+            int last = values.getLast();
+            int distance = last - first;
+            return distance;
         }
-        int last = values.getLast();
-        int distance = last - first;
-        return distance;
     }
 }

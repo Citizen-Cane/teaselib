@@ -34,16 +34,49 @@ public abstract class TeaseScriptBase {
     protected final TextToSpeechPlayer speechSynthesizer;
     protected final SpeechRecognition speechRecognizer;
 
-    protected final MediaRendererQueue renderQueue = new MediaRendererQueue();
-    protected final Deque<MediaRenderer> deferredRenderers = new ArrayDeque<MediaRenderer>();
+    protected final MediaRendererQueue renderQueue;
+    protected final Deque<MediaRenderer> deferredRenderers;
 
     public static final String Timeout = "Timeout";
 
+    /**
+     * Construct a new script instance
+     * 
+     * @param teaseLib
+     * @param locale
+     */
     public TeaseScriptBase(TeaseLib teaseLib, String locale) {
         this.teaseLib = teaseLib;
         speechRecognizer = new SpeechRecognition(locale);
         speechSynthesizer = new TextToSpeechPlayer(teaseLib,
                 new TextToSpeech(), speechRecognizer);
+        renderQueue = new MediaRendererQueue();
+        deferredRenderers = new ArrayDeque<MediaRenderer>();
+    }
+
+    /**
+     * Construct a script instance with shared resources, with the same actor as
+     * the parent script
+     * 
+     * @param teaseScript
+     *            Script to share speech recognition and so on with
+     */
+    public TeaseScriptBase(TeaseScriptBase script) {
+        this.teaseLib = script.teaseLib;
+        speechRecognizer = script.speechRecognizer;
+        speechSynthesizer = script.speechSynthesizer;
+        renderQueue = script.renderQueue;
+        deferredRenderers = script.deferredRenderers;
+    }
+
+    public TeaseScriptBase(TeaseScriptBase script, Actor scriptActor,
+            Actor actor) {
+        this.teaseLib = script.teaseLib;
+        speechRecognizer = actor.locale.equalsIgnoreCase(scriptActor.locale) ? script.speechRecognizer
+                : new SpeechRecognition(actor.locale);
+        speechSynthesizer = script.speechSynthesizer;
+        renderQueue = script.renderQueue;
+        deferredRenderers = script.deferredRenderers;
     }
 
     /**

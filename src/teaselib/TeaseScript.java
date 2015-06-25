@@ -21,8 +21,6 @@ public abstract class TeaseScript extends TeaseScriptBase implements Runnable {
 
     public static final int NoTimeout = 0;
 
-    // todo move images to actor, remove images from renderMessage constructor
-
     public final static String NoImage = "NoImage";
     public final static String DominantImage = "DominantImage";
 
@@ -32,20 +30,51 @@ public abstract class TeaseScript extends TeaseScriptBase implements Runnable {
     private String mood = Mood.Neutral;
     private String displayImage = DominantImage;
 
-    public TeaseScript(TeaseScript teaseScript) {
-        this(teaseScript, teaseScript.actor);
+    /**
+     * Create a sub-script with the same actor as the parent.
+     * 
+     * @param script
+     *            The script to share resources with
+     */
+    public TeaseScript(TeaseScript script) {
+        super(script);
+        this.actor = script.actor;
+        this.namespace = script.namespace;
     }
 
-    public TeaseScript(TeaseScript teaseScript, Actor actor) {
-        super(teaseScript.teaseLib, actor.locale);
+    /**
+     * Create a sub-script with a different actor
+     * 
+     * @param script
+     *            The script to share resources with
+     * @param actor
+     *            If both script and actor have the same locale, the speech
+     *            recognizer is shared by both scripts
+     */
+    public TeaseScript(TeaseScript script, Actor actor) {
+        super(script, script.actor, actor);
         this.actor = actor;
-        this.namespace = teaseScript.namespace;
+        this.namespace = script.namespace;
     }
 
+    /**
+     * Create a new script
+     * 
+     * @param teaseLib
+     * @param locale
+     * @param namespace
+     */
     public TeaseScript(TeaseLib teaseLib, String locale, String namespace) {
         this(teaseLib, new Actor("Dominant", locale), namespace);
     }
 
+    /**
+     * Create a new script
+     * 
+     * @param teaseLib
+     * @param actor
+     * @param namespace
+     */
     public TeaseScript(TeaseLib teaseLib, Actor actor, String namespace) {
         super(teaseLib, actor.locale);
         this.actor = actor;

@@ -7,6 +7,8 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -181,5 +183,205 @@ public class TeaseLib {
     public int random(int min, int max) {
         double r = Math.random();
         return min + (int) (r * (max - min + 1));
+    }
+
+    /**
+     * @author someone
+     * 
+     *         Handles elapsed seconds since object creation
+     */
+    public class Duration {
+        public final long startSeconds;
+
+        public Duration() {
+            this.startSeconds = getTime();
+        }
+
+        public Duration(long startSeconds) {
+            this.startSeconds = startSeconds;
+        }
+
+        public int elapsedSeconds() {
+            long time = getTime();
+            long elapsedSeconds = time - startSeconds;
+            return (int) elapsedSeconds;
+        }
+
+        public int elapsedMinutes() {
+            long time = getTime();
+            long elapsedSeconds = time - startSeconds;
+            return (int) elapsedSeconds * 60;
+        }
+    }
+
+    protected class PersistentValue {
+        protected final String Name;
+        protected final String property;
+
+        public PersistentValue(String name) {
+            this.Name = name;
+            this.property = makePropertyName(name);
+        }
+    }
+
+    private static String makePropertyName(String name) {
+        return name;
+    }
+
+    /**
+     * @author someone
+     * 
+     *         A persistent boolean value, start value is false
+     */
+    public class PersistentFlag extends PersistentValue {
+        public PersistentFlag(String name) {
+            super(name);
+        }
+
+        public boolean get() {
+            return persistence.get(property) == "1";
+        }
+
+        public void clear() {
+            set(false);
+        }
+
+        public void set() {
+            set(true);
+        }
+
+        public void set(boolean value) {
+            persistence.set(property, value);
+        }
+    }
+
+    /**
+     * @author someone
+     * 
+     *         A persistent integer value, start value is 0
+     */
+    public class PersistentNumber extends PersistentValue {
+        public PersistentNumber(String name) {
+            super(name);
+        }
+
+        public int get() {
+            try {
+                return Integer.parseInt(persistence.get(property));
+            } catch (NumberFormatException e) {
+                return 0;
+            }
+        }
+
+        public void set(int value) {
+            persistence.set(property, Integer.toString(value));
+        }
+    }
+
+    /**
+     * @author someone
+     * 
+     *         A persistent String value, start value is the empty string
+     */
+    public class PersistentString extends PersistentValue {
+        public PersistentString(String name) {
+            super(name);
+        }
+
+        public String get() {
+            return persistence.get(property);
+        }
+
+        public void set(String value) {
+            persistence.set(property, value);
+        }
+    }
+
+    public class PersistentSequence<T extends Enum<T>> {
+        public final String name;
+        public final T[] values;
+        private T value;
+
+        public PersistentSequence(String name, T[] values) {
+            this.name = name;
+            this.values = values;
+            String persistedValue = getString(name);
+            this.value = values[0];
+            if (persistedValue != null) {
+                for (T v : values) {
+                    if (persistedValue.equals(v.name())) {
+                        value = v;
+                        break;
+                    }
+                }
+            }
+        }
+
+        public T advance() {
+            if (!completed()) {
+                for (int i = 0; i < values.length; i++) {
+                    if (value == values[i]) {
+                        set(values[i + 1]);
+                        break;
+                    }
+                }
+            }
+            return value;
+        }
+
+        public boolean completed() {
+            return value == values[values.length - 1];
+        }
+
+        public T reset() {
+            set(values[0]);
+            return value;
+        }
+
+        public T get() {
+            return value;
+        }
+
+        public void set(T value) {
+            this.value = value;
+            TeaseLib.this.set(name, value.toString());
+        }
+    }
+
+    public boolean flag(String name) {
+        return new PersistentFlag(name).get();
+    }
+
+    public void set(String name, boolean value) {
+        new PersistentFlag(name).set(value);
+    }
+
+    public void set(String name, int value) {
+        new PersistentNumber(name).set(value);
+    }
+
+    public void set(String name, String value) {
+        new PersistentString(name).set(value);
+    }
+
+    public int getInteger(String name) {
+        return new PersistentNumber(name).get();
+    }
+
+    public String getString(String name) {
+        return new PersistentString(name).get();
+    }
+
+    private Map<Object, State<? extends Enum<?>>> states = new HashMap<Object, State<? extends Enum<?>>>();
+
+    @SuppressWarnings("unchecked")
+    public <T extends Enum<T>> State<T> state(T[] values) {
+        if (states.containsKey(values)) {
+            return (State<T>) states.get(values);
+        } else {
+            State<T> t = new State<T>(this, values);
+            states.put(values, t);
+            return t;
+        }
     }
 }

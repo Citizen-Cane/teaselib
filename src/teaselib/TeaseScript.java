@@ -418,111 +418,32 @@ public abstract class TeaseScript extends TeaseScriptBase implements Runnable {
         return false;
     }
 
-    protected class PersistentValue {
-        protected final String Name;
-        protected final String property;
-
-        public PersistentValue(String name) {
-            this.Name = name;
-            this.property = makeProperty(name);
-        }
-    }
-
-    /**
-     * @author someone
-     * 
-     *         A persistent boolean value, start value is false
-     */
-    public class PersistentFlag extends PersistentValue {
-        public PersistentFlag(String name) {
-            super(name);
-        }
-
-        public boolean get() {
-            return teaseLib.persistence.get(property) == "1";
-        }
-
-        public void clear() {
-            set(false);
-        }
-
-        public void set() {
-            set(true);
-        }
-
-        public void set(boolean value) {
-            teaseLib.persistence.set(property, value);
-        }
-    }
-
-    /**
-     * @author someone
-     * 
-     *         A persistent integer value, start value is 0
-     */
-    public class PersistentNumber extends PersistentValue {
-        public PersistentNumber(String name) {
-            super(name);
-        }
-
-        public int get() {
-            try {
-                return Integer.parseInt(teaseLib.persistence.get(property));
-            } catch (NumberFormatException e) {
-                return 0;
-            }
-        }
-
-        public void set(int value) {
-            teaseLib.persistence.set(property, Integer.toString(value));
-        }
-    }
-
-    /**
-     * @author someone
-     * 
-     *         A persistent String value, start value is the empty string
-     */
-    public class PersistentString extends PersistentValue {
-        public PersistentString(String name) {
-            super(name);
-        }
-
-        public String get() {
-            return teaseLib.persistence.get(property);
-        }
-
-        public void set(String value) {
-            teaseLib.persistence.set(property, value);
-        }
-    }
-
-    private String makeProperty(String name) {
+    private String makePropertyName(String name) {
         return namespace + "." + name;
     }
 
     public boolean flag(String name) {
-        return new PersistentFlag(name).get();
+        return teaseLib.new PersistentFlag(makePropertyName(name)).get();
     }
 
     public void set(String name, boolean value) {
-        new PersistentFlag(name).set(value);
+        teaseLib.new PersistentFlag(makePropertyName(name)).set(value);
     }
 
     public void set(String name, int value) {
-        new PersistentNumber(name).set(value);
+        teaseLib.new PersistentNumber(makePropertyName(name)).set(value);
     }
 
     public void set(String name, String value) {
-        new PersistentString(name).set(value);
+        teaseLib.new PersistentString(makePropertyName(name)).set(value);
     }
 
     public int getInteger(String name) {
-        return new PersistentNumber(name).get();
+        return teaseLib.new PersistentNumber(makePropertyName(name)).get();
     }
 
     public String getString(String name) {
-        return new PersistentString(name).get();
+        return teaseLib.new PersistentString(makePropertyName(name)).get();
     }
 
     public Message message(String... text) {
@@ -592,29 +513,8 @@ public abstract class TeaseScript extends TeaseScriptBase implements Runnable {
         return out;
     }
 
-    /**
-     * @author someone
-     * 
-     *         Handles elapsed seconds since object creation
-     */
-    public class Duration {
-        final long startSeconds;
-
-        public Duration() {
-            startSeconds = teaseLib.getTime();
-        }
-
-        public int elapsedSeconds() {
-            long time = teaseLib.getTime();
-            long elapsedSeconds = time - startSeconds;
-            return (int) elapsedSeconds;
-        }
-
-        public int elapsedMinutes() {
-            long time = teaseLib.getTime();
-            long elapsedSeconds = time - startSeconds;
-            return (int) elapsedSeconds * 60;
-        }
+    public TeaseLib.Duration duration() {
+        return teaseLib.new Duration();
     }
 
     public void sleep(long x, TimeUnit timeUnit) {

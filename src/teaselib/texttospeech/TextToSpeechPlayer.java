@@ -78,14 +78,6 @@ public class TextToSpeechPlayer {
         }
     }
 
-    public boolean hasPrerecordedVoices() {
-        return actor2PrerecordedVoice.size() > 0;
-    }
-
-    public String getAssignedVoiceFor(Actor actor) {
-        return actor2PrerecordedVoice.get(actor.name);
-    }
-
     public Voice getVoiceFor(Actor actor) {
         if (actor2PrerecordedVoice.containsKey(actor.name)) {
             throw new IllegalStateException("Prerecorded voice available");
@@ -95,6 +87,10 @@ public class TextToSpeechPlayer {
         } else {
             return getMatchingOrBestVoiceFor(actor);
         }
+    }
+
+    public String getAssignedVoiceFor(Actor actor) {
+        return actor2PrerecordedVoice.get(actor.name);
     }
 
     private Voice getMatchingOrBestVoiceFor(Actor actor) {

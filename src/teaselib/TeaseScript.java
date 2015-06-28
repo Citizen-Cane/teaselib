@@ -1,5 +1,6 @@
 package teaselib;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -40,6 +41,7 @@ public abstract class TeaseScript extends TeaseScriptBase implements Runnable {
         super(script);
         this.actor = script.actor;
         this.namespace = script.namespace;
+        acquireVoice(actor);
     }
 
     /**
@@ -55,6 +57,7 @@ public abstract class TeaseScript extends TeaseScriptBase implements Runnable {
         super(script, script.actor, actor);
         this.actor = actor;
         this.namespace = script.namespace;
+        acquireVoice(actor);
     }
 
     /**
@@ -79,6 +82,15 @@ public abstract class TeaseScript extends TeaseScriptBase implements Runnable {
         super(teaseLib, actor.locale);
         this.actor = actor;
         this.namespace = namespace;
+        acquireVoice(actor);
+    }
+
+    private void acquireVoice(Actor actor) {
+        try {
+            speechSynthesizer.selectVoice(new Message(actor));
+        } catch (IOException e) {
+            TeaseLib.log(this, e);
+        }
     }
 
     /**

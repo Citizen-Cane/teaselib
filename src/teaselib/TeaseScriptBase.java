@@ -37,6 +37,9 @@ public abstract class TeaseScriptBase {
     protected final MediaRendererQueue renderQueue;
     protected final Deque<MediaRenderer> deferredRenderers;
 
+    ExecutorService choiceScriptFunctionExecutor = Executors
+            .newFixedThreadPool(1);
+
     public static final String Timeout = "Timeout";
 
     /**
@@ -128,17 +131,17 @@ public abstract class TeaseScriptBase {
     }
 
     private String replaceTextVariable(String text, Persistence.TextVariable var) {
-        text = replaceTextVariable(text, var, "#" + var.toString());
-        text = replaceTextVariable(text, var, "#"
-                + var.toString().toLowerCase());
+        final String value = var.toString();
+        text = replaceTextVariable(text, var, "#" + value);
+        text = replaceTextVariable(text, var, "#" + value.toLowerCase());
         return text;
     }
 
     private String replaceTextVariable(String text,
-            Persistence.TextVariable var, String replace) {
-        if (text.contains(replace)) {
+            Persistence.TextVariable var, String match) {
+        if (text.contains(match)) {
             String value = get(var);
-            text = text.replace(replace, value);
+            text = text.replace(match, value);
         }
         return text;
     }
@@ -178,14 +181,18 @@ public abstract class TeaseScriptBase {
     }
 
     public String showChoices(final Runnable scriptFunction,
-            final List<String> choices) {
-        // arguments check
+            List<String> choices) {
+        // argument checking and text variable replacement
+        final List<String> derivedChoices = new ArrayList<String>(
+                choices.size());
         for (String choice : choices) {
-            if (choice == null) {
+            if (choice != null) {
+                derivedChoices.add(replaceVariables(choice));
+            } else {
                 throw new IllegalArgumentException("Choice may not be null");
             }
         }
-        TeaseLib.log("choose: " + choices.toString());
+        TeaseLib.log("choose: " + derivedChoices.toString());
         // Script closure
         final TimeoutClick timeoutClick = new TimeoutClick();
         final FutureTask<String> scriptTask = scriptFunction == null ? null
@@ -203,7 +210,7 @@ public abstract class TeaseScriptBase {
                         // Script function finished, click any and return
                         // timeout
                         List<Delegate> clickables = teaseLib.host
-                                .getClickableChoices(choices);
+                                .getClickableChoices(derivedChoices);
                         if (!clickables.isEmpty()) {
                             Delegate clickable = clickables.get(0);
                             if (clickable != null) {
@@ -214,7 +221,7 @@ public abstract class TeaseScriptBase {
                                 // Host implementation is incomplete
                                 throw new IllegalStateException(
                                         "Host didn't return clickables for choices: "
-                                                + choices.toString());
+                                                + derivedChoices.toString());
                             }
                         }
                         return Timeout;
@@ -230,10 +237,10 @@ public abstract class TeaseScriptBase {
                         SpeechRecognizedEventArgs eventArgs) {
                     if (eventArgs.result.length == 1) {
                         List<Delegate> uiElements = teaseLib.host
-                                .getClickableChoices(choices);
+                                .getClickableChoices(derivedChoices);
                         // Find the button to click
                         SpeechRecognitionResult speechRecognitionResult = eventArgs.result[0];
-                        if (speechRecognitionResult.isChoice(choices)) {
+                        if (speechRecognitionResult.isChoice(derivedChoices)) {
                             // This assigns the result even if the buttons have
                             // unrealized
                             int choice = speechRecognitionResult.index;
@@ -264,7 +271,7 @@ public abstract class TeaseScriptBase {
             };
             speechRecognizer.events.recognitionCompleted
                     .add(speechRecognizedEvent);
-            speechRecognizer.startRecognition(choices);
+            speechRecognizer.startRecognition(derivedChoices);
         } else {
             speechRecognizedEvent = null;
         }
@@ -272,8 +279,7 @@ public abstract class TeaseScriptBase {
         int choiceIndex;
         try {
             if (scriptTask != null) {
-                ExecutorService executor = Executors.newFixedThreadPool(1);
-                executor.execute(scriptTask);
+                choiceScriptFunctionExecutor.execute(scriptTask);
                 renderQueue.completeStarts();
                 // TODO completeStarts() doesn't work because first we need to
                 // wait for render threads that can be completed
@@ -281,7 +287,7 @@ public abstract class TeaseScriptBase {
                 // buttons would appear too early
                 teaseLib.sleep(300, TimeUnit.MILLISECONDS);
             }
-            choiceIndex = teaseLib.host.reply(choices);
+            choiceIndex = teaseLib.host.reply(derivedChoices);
             if (scriptTask != null) {
                 // TODO Doesn't always work:
                 // The stop is sometimes applied only
@@ -301,8 +307,10 @@ public abstract class TeaseScriptBase {
                         .remove(speechRecognizedEvent);
             }
         }
-        // Assign result from speech recognition,
+        // Assign result from speech recognition
         // script task timeout or button click
+        // supporting object identity by
+        // returning an item of the original choices list
         String choice = null;
         if (!srChoiceIndices.isEmpty()) {
             // Use the first speech recognition result
@@ -310,12 +318,11 @@ public abstract class TeaseScriptBase {
             choice = choices.get(choiceIndex);
         } else if (timeoutClick.clicked) {
             choice = Timeout;
-        }
-        TeaseLib.logDetail("choose: ending render queue");
-        renderQueue.endAll();
-        if (choice == null) {
+        } else {
             choice = choices.get(choiceIndex);
         }
+        TeaseLib.logDetail("showChoices: ending render queue");
+        renderQueue.endAll();
         return choice;
     }
 }

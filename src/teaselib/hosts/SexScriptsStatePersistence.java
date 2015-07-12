@@ -93,7 +93,7 @@ public class SexScriptsStatePersistence implements Persistence {
         if (name == TextVariable.Slave) {
             return get("intro.name");
         }
-        return null;
+        return get(name.value);
     }
 
     @Override
@@ -102,7 +102,7 @@ public class SexScriptsStatePersistence implements Persistence {
         if (name == TextVariable.Slave) {
             set("intro.name", value);
         } else {
-            set(name, value);
+            set(name.name(), value);
         }
     }
 }

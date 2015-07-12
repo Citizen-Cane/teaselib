@@ -20,15 +20,22 @@ import com.github.sarxos.webcam.WebcamResolution;
 public class MotionDetector {
 
     public enum HorizontalMotion {
-        None, Left, Right
+        None,
+        Left,
+        Right
     }
 
     public enum VerticalMotion {
-        None, Up, Down
+        None,
+        Up,
+        Down
     }
 
     public enum Amount {
-        None(0), JustABit(0.1), SomeWhat(0.25), ALot(0.5);
+        None(0),
+        JustABit(0.1),
+        SomeWhat(0.25),
+        ALot(0.5);
 
         public final double ScreenPercentage;
 
@@ -62,7 +69,16 @@ public class MotionDetector {
     WebCamThread t;
     private Dimension size = WebcamResolution.VGA.getSize();
 
-    public MotionDetector() {
+    private static MotionDetector instance = null;
+
+    public static synchronized MotionDetector getDefault() {
+        if (instance == null) {
+            instance = new MotionDetector();
+        }
+        return instance;
+    }
+
+    private MotionDetector() {
         this(Webcam.getDefault());
     }
 

@@ -398,6 +398,7 @@ public class SexScriptsHost implements Host {
             throws NoSuchFieldException, IllegalAccessException {
         Field comboField = mainFrameClass.getDeclaredField("comboBox");
         comboField.setAccessible(true);
+        @SuppressWarnings("unchecked")
         final javax.swing.JComboBox<String> ssComboBox = (javax.swing.JComboBox<String>) comboField
                 .get(mainFrame);
         return ssComboBox;

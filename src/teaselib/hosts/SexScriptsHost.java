@@ -16,7 +16,10 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.swing.ComboBoxModel;
 import javax.swing.ImageIcon;
+import javax.swing.JComboBox;
+import javax.swing.SwingUtilities;
 
 import ss.IScript;
 import ss.desktop.MainFrame;
@@ -312,7 +315,8 @@ public class SexScriptsHost implements Host {
                     .get(ss);
             // Get buttons
             Class<?> mainFrameClass = mainFrame.getClass();
-            List<Delegate> result = new ArrayList<Delegate>(choices.size());
+            List<Delegate> clickableChoices = new ArrayList<Delegate>(
+                    choices.size());
             // Multiple choices are managed via an array of buttons,
             // whereas a single choice is implemented as a single button
             Field buttonsField = mainFrameClass.getDeclaredField("buttons");
@@ -329,14 +333,36 @@ public class SexScriptsHost implements Host {
             for (javax.swing.JButton button : ssButtons) {
                 buttons.add(button);
             }
-            // TODO Only for timeout button?
+            // TODO Only for ss timed button?
             buttons.add(ssButton);
-            // Check pretty buttons for corresponding text
+            // Combobox
+            final javax.swing.JComboBox<String> ssComboBox = getComboBox(
+                    mainFrame, mainFrameClass);
+            // Init all slots
             for (int index : new Interval(choices)) {
-                result.add(index, null);
+                clickableChoices.add(index, null);
             }
-            // There might be more buttons than expected, probably some kind of
-            // caching
+            // Combobox
+            final ComboBoxModel<String> model = ssComboBox.getModel();
+            for (int j = 0; j < model.getSize(); j++) {
+                final int comboboxIndex = j;
+                for (final int index : new Interval(choices)) {
+                    final String text = model.getElementAt(j);
+                    if (text.contains(choices.get(index))) {
+                        Delegate click = new Delegate() {
+                            @Override
+                            public void run() {
+                                // Selects but doesn't execute
+                                ssComboBox.setSelectedIndex(comboboxIndex);
+                            }
+                        };
+                        clickableChoices.set(index, click);
+                    }
+                }
+            }
+            // Check pretty buttons for corresponding text
+            // There might be more buttons than expected,
+            // probably some kind of caching
             for (final javax.swing.JButton button : buttons) {
                 for (int index : new Interval(choices)) {
                     String buttonText = button.getText();
@@ -347,13 +373,16 @@ public class SexScriptsHost implements Host {
                                 button.doClick();
                             }
                         };
-                        result.set(index, click);
+                        clickableChoices.set(index, click);
                     }
                 }
             }
+            // Assign clicks to combo box
+            // If there are too many choices, a combo box will be used
+
             // If a choice wasn't found, the element at the corresponding index
             // would be null
-            return result;
+            return clickableChoices;
         } catch (IllegalAccessException e) {
             TeaseLib.log(this, e);
         } catch (NoSuchFieldException e) {
@@ -364,9 +393,40 @@ public class SexScriptsHost implements Host {
         return new ArrayList<Delegate>();
     }
 
+    public javax.swing.JComboBox<String> getComboBox(
+            ss.desktop.MainFrame mainFrame, Class<?> mainFrameClass)
+            throws NoSuchFieldException, IllegalAccessException {
+        Field comboField = mainFrameClass.getDeclaredField("comboBox");
+        comboField.setAccessible(true);
+        final javax.swing.JComboBox<String> ssComboBox = (javax.swing.JComboBox<String>) comboField
+                .get(mainFrame);
+        return ssComboBox;
+    }
+
     @Override
     public int reply(List<String> choices) throws ScriptInterruptedException {
         try {
+            SwingUtilities.invokeLater(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        Thread.yield();
+                        Thread.sleep(200);
+                    } catch (InterruptedException e) {
+                        TeaseLib.log(this, e);
+                    }
+                    try {
+                        final JComboBox<String> comboBox = getComboBox(
+                                getMainFrame(), getMainFrame().getClass());
+                        comboBox.showPopup();
+                        // comboBox.setPopupVisible(true);
+                    } catch (NoSuchFieldException e) {
+                        TeaseLib.log(this, e);
+                    } catch (IllegalAccessException e) {
+                        TeaseLib.log(this, e);
+                    }
+                }
+            });
             return ss.getSelectedValue(null, choices);
         } catch (InterruptedException e) {
             throw new ScriptInterruptedException();

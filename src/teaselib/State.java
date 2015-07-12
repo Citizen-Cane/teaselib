@@ -5,6 +5,7 @@ package teaselib;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import teaselib.TeaseLib.Duration;
 
@@ -16,12 +17,14 @@ import teaselib.TeaseLib.Duration;
  */
 public class State<T extends Enum<T>> {
 
-    Map<T, Item> state = new HashMap<T, Item>();
+    final TeaseLib teaseLib;
+    final Map<T, Item> state = new HashMap<T, Item>();
 
-    public State(TeaseLib teaseLib, T[] values) {
+    public State(TeaseLib teaseLib, Class<Enum<?>> enumClass) {
         super();
-        for (T value : values) {
-            String args = teaseLib.getString(value.name());
+        this.teaseLib = teaseLib;
+        for (T value : values(enumClass)) {
+            String args = teaseLib.getString(getPropertyName(value));
             if (args != null) {
                 String[] argv = args.split(" ");
                 add(value, Long.parseLong(argv[0]), Long.parseLong(argv[1]));
@@ -29,58 +32,124 @@ public class State<T extends Enum<T>> {
         }
     }
 
-    public class Item {
-        final Object item;
-        final Duration duration;
-        final long howLong;
+    @SuppressWarnings({ "unchecked", "static-method" })
+    private T[] values(Class<Enum<?>> enumClass) {
+        return (T[]) enumClass.getEnumConstants();
+    }
 
+    public String getPropertyName(Enum<T> item) {
+        return item.getClass().getName() + "." + item.name();
+    }
+
+    public void save(T item, Duration duration, long time, TimeUnit unit) {
+        teaseLib.set(getPropertyName(item),
+                persisted(duration.start, unit.toSeconds(time)));
+    }
+
+    public class Item {
+        public final T item;
+        public final Duration duration;
+        public final long howLongSeconds;
+
+        /**
+         * Apply an item infinitely
+         * 
+         * @param item
+         */
         public Item(T item) {
-            this(item, null, 0);
+            this(item, Long.MAX_VALUE, TimeUnit.SECONDS);
         }
 
-        public Item(T item, TeaseLib teaseLib, long howLong) {
+        /**
+         * Apply an item for a specific duration
+         * 
+         * @param item
+         * @param time
+         *            , TimeUnit unit The number of seconds to apply the item,
+         *            or 0 to remove.
+         */
+        public Item(T item, long time, TimeUnit unit) {
             super();
             this.item = item;
-            if (teaseLib != null) {
-                this.duration = teaseLib.new Duration();
-                this.howLong = howLong;
-                teaseLib.set(item.getClass().getName() + "." + item.name(),
-                        persisted(duration.startSeconds, howLong));
-            } else {
-                this.duration = null;
-                this.howLong = 0;
+            this.duration = teaseLib.new Duration();
+            this.howLongSeconds = unit.toSeconds(time);
+            if (howLongSeconds > 0) {
+                save(item, duration, time, unit);
             }
         }
 
-        public Item(T item, long startSeconds, long howLong) {
+        /**
+         * Apply an item for a specific duration which has already begun.
+         *
+         * @param item
+         * @param startTimeSeconds
+         * @param howLongSeconds
+         */
+        private Item(T item, long startTimeSeconds, long howLongSeconds) {
             this.item = item;
-            this.duration = TeaseLib.instance().new Duration(startSeconds);
-            this.howLong = howLong;
+            this.duration = teaseLib.new Duration(startTimeSeconds);
+            this.howLongSeconds = howLongSeconds;
+        }
+
+        public boolean expired() {
+            return duration.elapsed(TimeUnit.SECONDS) > howLongSeconds;
+        }
+
+        public boolean applied() {
+            return howLongSeconds > 0;
+        }
+
+        public void remove() {
+            State.this.remove(item);
+        }
+
+        /**
+         * Clears the item.
+         * 
+         * Last usage including apply-duration is written to duration start, so
+         * duration denotes the time the item was taken off.
+         * 
+         * As a result, for an item that is not applied, the duration elapsed
+         * time is the duration the item hasn't been applied since the last
+         * usage
+         */
+        public void clear() {
+            teaseLib.set(
+                    getPropertyName(item),
+                    persisted(
+                            duration.start + duration.elapsed(TimeUnit.SECONDS),
+                            0));
         }
     }
 
-    private static String persisted(long when, long howLong) {
-        return when + " " + howLong;
+    private static String persisted(long when, long howLongSeconds) {
+        return when + " " + howLongSeconds;
     }
 
     public boolean has(T item) {
         return state.containsKey(item);
     }
 
-    public void add(T item) {
-        state.put(item, new Item(item));
+    public Item add(T item) {
+        final Item value = new Item(item);
+        state.put(item, value);
+        return value;
     }
 
-    public void add(T item, TeaseLib teaseLib, long howLong) {
-        state.put(item, new Item(item, teaseLib, howLong));
+    public Item add(T item, long time, TimeUnit unit) {
+        final Item value = new Item(item, time, unit);
+        state.put(item, value);
+        return value;
     }
 
-    private void add(T item, long startSeconds, long howLong) {
-        state.put(item, new Item(item, startSeconds, howLong));
+    Item add(T item, long startSeconds, long howLongSeconds) {
+        final Item value = new Item(item, startSeconds, howLongSeconds);
+        state.put(item, value);
+        return value;
     }
 
     public void remove(T item) {
-        state.remove(item);
+        state.remove(item).clear();
     }
 
     public Item get(T item) {
@@ -91,11 +160,8 @@ public class State<T extends Enum<T>> {
         Map<T, Item> items = new HashMap<T, Item>();
         for (Map.Entry<T, Item> entry : state.entrySet()) {
             State<T>.Item item = entry.getValue();
-            Duration duration = item.duration;
-            if (duration != null) {
-                if (duration.elapsedSeconds() >= item.howLong) {
-                    items.put(entry.getKey(), entry.getValue());
-                }
+            if (item.expired()) {
+                items.put(entry.getKey(), entry.getValue());
             }
         }
         return items;
@@ -105,11 +171,8 @@ public class State<T extends Enum<T>> {
         Map<T, Item> items = new HashMap<T, Item>();
         for (Map.Entry<T, Item> entry : state.entrySet()) {
             State<T>.Item item = entry.getValue();
-            Duration duration = item.duration;
-            if (duration != null) {
-                if (duration.elapsedSeconds() < item.howLong) {
-                    items.put(entry.getKey(), entry.getValue());
-                }
+            if (!item.expired()) {
+                items.put(entry.getKey(), entry.getValue());
             }
         }
         return items;

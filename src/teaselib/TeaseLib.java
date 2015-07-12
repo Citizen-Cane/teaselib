@@ -191,26 +191,36 @@ public class TeaseLib {
      *         Handles elapsed seconds since object creation
      */
     public class Duration {
-        public final long startSeconds;
+        public final long start;
 
         public Duration() {
-            this.startSeconds = getTime();
+            this.start = getTime();
         }
 
         public Duration(long startSeconds) {
-            this.startSeconds = startSeconds;
+            this.start = startSeconds;
         }
 
-        public int elapsedSeconds() {
-            long time = getTime();
-            long elapsedSeconds = time - startSeconds;
-            return (int) elapsedSeconds;
+        public long elapsed(TimeUnit unit) {
+            long now = getTime();
+            long elapsedSeconds = now - start;
+            return unit.convert(elapsedSeconds, TimeUnit.SECONDS);
         }
 
-        public int elapsedMinutes() {
-            long time = getTime();
-            long elapsedSeconds = time - startSeconds;
-            return (int) elapsedSeconds * 60;
+        public long elapsedSeconds() {
+            return elapsed(TimeUnit.SECONDS);
+        }
+
+        public long elapsedMinutes() {
+            return elapsed(TimeUnit.MINUTES);
+        }
+
+        public long elapsedHours() {
+            return elapsed(TimeUnit.HOURS);
+        }
+
+        public long elapsedDays() {
+            return elapsed(TimeUnit.DAYS);
         }
     }
 
@@ -372,16 +382,41 @@ public class TeaseLib {
         return new PersistentString(name).get();
     }
 
-    private Map<Object, State<? extends Enum<?>>> states = new HashMap<Object, State<? extends Enum<?>>>();
+    private Map<Class<?>, State<? extends Enum<?>>> states = new HashMap<Class<?>, State<? extends Enum<?>>>();
+
+    @SuppressWarnings("unchecked")
+    public <T extends Enum<T>> State<T>.Item state(T item) {
+        Class<Enum<?>> enumClass = (Class<Enum<?>>) item.getClass();
+        final State<T> state = state(enumClass);
+        final State<T>.Item stateItem;
+        if (state.has(item)) {
+            stateItem = state.get(item);
+        } else {
+            // If there is no entry, we can assume that the item hasn't been
+            // used yet, or that the apply durations doens't matter
+            // -> mark the item as not applied, and taken off a long time ago
+            // -> checks against elapsed() do always succeed in this case,
+            // allowing for simpler coding on the application layer
+            stateItem = state.add(item, 0, 0);
+        }
+        return stateItem;
+    }
 
     @SuppressWarnings("unchecked")
     public <T extends Enum<T>> State<T> state(T[] values) {
-        if (states.containsKey(values)) {
-            return (State<T>) states.get(values);
+        Class<Enum<?>> enumClass = (Class<Enum<?>>) values[0].getClass();
+        return state(enumClass);
+    }
+
+    @SuppressWarnings("unchecked")
+    public <T extends Enum<T>> State<T> state(Class<Enum<?>> enumClass) {
+        final State<T> state;
+        if (states.containsKey(enumClass)) {
+            state = (State<T>) states.get(enumClass);
         } else {
-            State<T> t = new State<T>(this, values);
-            states.put(values, t);
-            return t;
+            state = new State<T>(this, enumClass);
+            states.put(enumClass, state);
         }
+        return state;
     }
 }

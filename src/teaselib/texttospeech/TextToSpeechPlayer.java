@@ -123,8 +123,8 @@ public class TextToSpeechPlayer {
         }
         // Partial match: language only
         for (Voice voice : voices.values()) {
-            String voiceLanguage = voice.locale.substring(2);
-            String actorLanguage = voice.locale.substring(2);
+            String voiceLanguage = voice.locale.substring(0, 2);
+            String actorLanguage = actor.locale.substring(0, 2);
             if (voiceLanguage.compareToIgnoreCase(actorLanguage) == 0
                     && !usedVoices.contains(voice.guid)) {
                 TeaseLib.log("Using voice '" + voice.guid + "' with locale '"

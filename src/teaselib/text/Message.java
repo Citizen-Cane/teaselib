@@ -16,7 +16,15 @@ public class Message {
      */
     @SuppressWarnings("hiding")
     public enum Type {
-        Text, Image, Sound, DesktopItem, Mood, Keyword, Delay, Exec, Item
+        Text,
+        Image,
+        Sound,
+        DesktopItem,
+        Mood,
+        Keyword,
+        Delay,
+        Exec,
+        Item
     }
 
     /**
@@ -25,9 +33,10 @@ public class Message {
     public final static String Delay = "delay";
 
     public final static String Delay2s = "delay 2";
+    public final static String Delay2to5s = "delay 2 5";
     public final static String Delay3s = "delay 3";
     public final static String Delay5s = "delay 5";
-    public final static String Delay5to10ss = "delay 5 10";
+    public final static String Delay5to10s = "delay 5 10";
     public final static String Delay7s = "delay 7";
     public final static String Delay10s = "delay 10";
     public final static String Delay10to15s = "delay 10 15";

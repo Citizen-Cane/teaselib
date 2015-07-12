@@ -25,7 +25,7 @@ public class Tease extends Stimulation {
     }
 
     @Override
-    public void run() {
+    public void play() throws InterruptedException {
         double onTimeMillis = periodDurationSeconds * intensity / MaxIntensity;
         new BurstSquareWave(periodDurationSeconds * 1000, onTimeMillis * 1000,
                 burstOnOffSeconds * 1000).play(stimulator, durationSeconds,

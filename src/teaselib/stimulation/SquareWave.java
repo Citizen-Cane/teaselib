@@ -30,18 +30,15 @@ public class SquareWave extends WaveForm {
      * , int, double)
      */
     @Override
-    public void play(Stimulator stimumlator, double seconds, double strength) {
+    public void play(Stimulator stimumlator, double seconds, double strength)
+            throws InterruptedException {
         long startTime = System.currentTimeMillis();
         long durationMillis = (long) seconds * 1000;
-        try {
-            do {
-                stimumlator.set(strength);
-                Thread.sleep(onTimeMillis);
-                stimumlator.set(0.0);
-                Thread.sleep(periodTimeMillis - onTimeMillis);
-            } while (System.currentTimeMillis() - startTime < durationMillis);
-        } catch (InterruptedException e) {
-            // Stop
-        }
+        do {
+            stimumlator.set(strength);
+            Thread.sleep(onTimeMillis);
+            stimumlator.set(0.0);
+            Thread.sleep(periodTimeMillis - onTimeMillis);
+        } while (System.currentTimeMillis() - startTime < durationMillis);
     }
 }

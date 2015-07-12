@@ -43,26 +43,23 @@ public class BurstSquareWave extends WaveForm {
      * , int, double)
      */
     @Override
-    public void play(Stimulator stimumlator, double seconds, double strength) {
+    public void play(Stimulator stimumlator, double seconds, double strength)
+            throws InterruptedException {
         long startTime = System.currentTimeMillis();
         long durationMillis = (long) seconds * 1000;
-        try {
-            do {
-                long t = 0;
-                while (t <= onTimeMillis) {
-                    stimumlator.set(strength);
-                    Thread.sleep(burstOnMillis);
-                    t += burstOnMillis;
-                    stimumlator.set(0.0);
-                    Thread.sleep(burstOffMillis);
-                    t += burstOffMillis;
-                }
-                if (t < periodTimeMillis) {
-                    Thread.sleep(periodTimeMillis - t);
-                }
-            } while (System.currentTimeMillis() - startTime < durationMillis);
-        } catch (InterruptedException e) {
-            // Stop
-        }
+        do {
+            long t = 0;
+            while (t <= onTimeMillis) {
+                stimumlator.set(strength);
+                Thread.sleep(burstOnMillis);
+                t += burstOnMillis;
+                stimumlator.set(0.0);
+                Thread.sleep(burstOffMillis);
+                t += burstOffMillis;
+            }
+            if (t < periodTimeMillis) {
+                Thread.sleep(periodTimeMillis - t);
+            }
+        } while (System.currentTimeMillis() - startTime < durationMillis);
     }
 }

@@ -8,5 +8,6 @@ package teaselib.stimulation;
  *
  */
 public abstract class WaveForm {
-    abstract public void play(Stimulator stim, double seconds, double strength);
+    abstract public void play(Stimulator stim, double seconds, double strength)
+            throws InterruptedException;
 }

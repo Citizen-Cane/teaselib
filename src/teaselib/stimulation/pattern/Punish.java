@@ -18,7 +18,7 @@ public class Punish extends Stimulation {
     }
 
     @Override
-    public void run() {
+    public void play() throws InterruptedException {
         // Attention duration depends on intensity only
         double punishSeconds = Punish.getSeconds(intensity);
         // A constant signal

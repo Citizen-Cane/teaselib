@@ -18,7 +18,7 @@ public class Attention extends Stimulation {
     }
 
     @Override
-    public void run() {
+    public void play() throws InterruptedException {
         // Attention duration depends on intensity only
         double attentionSeconds = Attention.getSeconds(intensity);
         // A constant signal

@@ -27,6 +27,8 @@ public class StimulationController<StimulationType> {
 
     private int intensity;
 
+    private final Map<StimulationType, Stimulation> playing = new HashMap<StimulationType, Stimulation>();
+
     public StimulationController() {
         clear();
     }
@@ -134,10 +136,22 @@ public class StimulationController<StimulationType> {
 
     public void stimulate(StimulationType type, double durationSeconds) {
         if (stimulations.containsKey(type)) {
-            stimulations.get(type).play(intensity, durationSeconds);
+            if (playing.containsKey(type)) {
+                playing.get(type).stop();
+            }
+            final Stimulation stimulation = stimulations.get(type);
+            playing.put(type, stimulation);
+            stimulation.play(intensity, durationSeconds);
         } else {
             throw new IllegalArgumentException("Stimulation type "
                     + type.toString() + " not supported");
         }
+    }
+
+    public void stop() {
+        for (Stimulation stimulation : playing.values()) {
+            stimulation.stop();
+        }
+        playing.clear();
     }
 }

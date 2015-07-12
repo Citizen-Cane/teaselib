@@ -18,7 +18,7 @@ public class Cum extends Stimulation {
     }
 
     @Override
-    public void run() {
+    public void play() throws InterruptedException {
         double onTimeMillis = periodDurationSeconds * 0.9;
         double burstBase = 0.3;
         double onFactor = (double) intensity

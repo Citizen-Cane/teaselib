@@ -18,7 +18,7 @@ public class Whip extends Stimulation {
     }
 
     @Override
-    public void run() {
+    public void play() throws InterruptedException {
         // Attention duration depends on intensity only
         double whipSeconds = Whip.getSeconds(intensity);
         // A constant signal

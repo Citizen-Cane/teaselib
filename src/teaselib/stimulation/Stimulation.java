@@ -3,6 +3,7 @@
  */
 package teaselib.stimulation;
 
+import teaselib.ScriptInterruptedException;
 import teaselib.TeaseLib;
 
 /**
@@ -15,11 +16,23 @@ public abstract class Stimulation implements Runnable {
      *
      */
     enum BodyPart {
-        Anus, Balls, Buttocks, Cock, Thighs, Tits
+        Anus,
+        Balls,
+        Buttocks,
+        Cock,
+        Thighs,
+        Tits
     }
 
     public enum Type {
-        Walk, Trot, Run, Attention, Whip, Punish, Tease, Cum
+        Walk,
+        Trot,
+        Run,
+        Attention,
+        Whip,
+        Punish,
+        Tease,
+        Cum
     }
 
     protected final static int MaxIntensity = 10;
@@ -55,10 +68,30 @@ public abstract class Stimulation implements Runnable {
     }
 
     public void stop() {
-        stim.interrupt();
-        stim = null;
+        if (stim != null) {
+            stim.interrupt();
+            while (stim.isAlive()) {
+                try {
+                    stim.join();
+                } catch (InterruptedException e) {
+                    // Ignore
+                }
+            }
+            if (Thread.interrupted()) {
+                throw new ScriptInterruptedException();
+            }
+            stim = null;
+        }
     }
 
     @Override
-    public abstract void run();
+    public final void run() {
+        try {
+            play();
+        } catch (InterruptedException e) {
+            stimulator.set(0);
+        }
+    }
+
+    protected abstract void play() throws InterruptedException;
 }

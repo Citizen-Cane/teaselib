@@ -18,7 +18,7 @@ public class Gait extends Stimulation {
     }
 
     @Override
-    public void run() {
+    public void play() throws InterruptedException {
         double onTimeMillis = periodDurationSeconds * intensity / MaxIntensity
                 * 0.5;
         new SquareWave(periodDurationSeconds * 1000, onTimeMillis * 1000).play(

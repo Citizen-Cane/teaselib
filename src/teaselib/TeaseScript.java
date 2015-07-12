@@ -3,7 +3,9 @@ package teaselib;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -458,6 +460,12 @@ public abstract class TeaseScript extends TeaseScriptBase implements Runnable {
         return teaseLib.new PersistentString(makePropertyName(name)).get();
     }
 
+    public <T extends Enum<T>> TeaseLib.PersistentSequence<T> persistentSequence(
+            String name, T[] values) {
+        return teaseLib.new PersistentSequence<T>(makePropertyName(name),
+                values);
+    }
+
     public Message message(String... text) {
         if (text == null)
             return null;
@@ -488,12 +496,28 @@ public abstract class TeaseScript extends TeaseScriptBase implements Runnable {
         return items.get(random(0, items.size() - 1));
     }
 
+    public <T> T random(Collection<T> items) {
+        if (items == null)
+            return null;
+        if (items.size() == 0)
+            return null;
+        int s = random(0, items.size() - 1);
+        Iterator<T> iterator = items.iterator();
+        T item = null;
+        for (int i = 0; i < s; i++) {
+            iterator.next();
+        }
+        return item;
+    }
+
     public <T> T[] items(T... items) {
         return items;
     }
 
     public <T> List<T> randomized(T[] items, int n) {
-        return randomized(null, items, n);
+        @SuppressWarnings("unchecked")
+        T[] introduction = (T[]) new Object[0];
+        return randomized(introduction, items, n);
     }
 
     /**
@@ -511,9 +535,11 @@ public abstract class TeaseScript extends TeaseScriptBase implements Runnable {
      */
     public <T> List<T> randomized(T[] introduction, T[] repetitions, int n) {
         List<T> out = new ArrayList<T>(n);
-        out.addAll(Arrays.asList(introduction));
-        Collections.shuffle(out);
-        T last = out.get(out.size() - 1);
+        if (introduction != null) {
+            out.addAll(Arrays.asList(introduction));
+            Collections.shuffle(out);
+        }
+        T last = out.size() > 0 ? out.get(out.size() - 1) : null;
         for (int i = out.size(); i < n; i++) {
             T t = null;
             // Don't add the same entry twice in a row
@@ -529,7 +555,15 @@ public abstract class TeaseScript extends TeaseScriptBase implements Runnable {
         return teaseLib.new Duration();
     }
 
-    public void sleep(long x, TimeUnit timeUnit) {
-        teaseLib.sleep(x, timeUnit);
+    public void sleep(long duration, TimeUnit timeUnit) {
+        teaseLib.sleep(duration, timeUnit);
+    }
+
+    public <T extends Enum<T>> State<T>.Item state(T item) {
+        return teaseLib.state(item);
+    }
+
+    public <T extends Enum<T>> State<T> state(T[] values) {
+        return teaseLib.state(values);
     }
 }

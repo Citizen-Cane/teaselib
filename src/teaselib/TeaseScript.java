@@ -128,11 +128,11 @@ public abstract class TeaseScript extends TeaseScriptBase implements Runnable {
 
     public void showDesktopItem(String path) {
         MediaRenderer desktopItem = new RenderDesktopItem(path);
-        deferredRenderers.add(desktopItem);
+        addDeferred(desktopItem);
     }
 
     public void setSound(String path) {
-        deferredRenderers.add(new RenderSound(path));
+        addDeferred(new RenderSound(path));
     }
 
     /**
@@ -145,7 +145,7 @@ public abstract class TeaseScript extends TeaseScriptBase implements Runnable {
     public Object playBackgroundSound(String path) {
         RenderBackgroundSound renderBackgroundSound = new RenderBackgroundSound(
                 path);
-        deferredRenderers.add(renderBackgroundSound);
+        addDeferred(renderBackgroundSound);
         return renderBackgroundSound;
     }
 
@@ -164,7 +164,7 @@ public abstract class TeaseScript extends TeaseScriptBase implements Runnable {
      *            How long to wait.
      */
     public void setDuration(int seconds) {
-        deferredRenderers.add(new RenderDelay(seconds));
+        addDeferred(new RenderDelay(seconds));
     }
 
     public void say(String text) {
@@ -223,7 +223,7 @@ public abstract class TeaseScript extends TeaseScriptBase implements Runnable {
      * @param choices
      * @return
      */
-    public String reply(List<String> choices) {
+    public String reply(final List<String> choices) {
         return reply(NoTimeout, choices);
     }
 
@@ -255,37 +255,50 @@ public abstract class TeaseScript extends TeaseScriptBase implements Runnable {
      * @param scriptFunction
      * @return
      */
-    public String reply(Runnable scriptFunction, List<String> choices) {
+    public String reply(Runnable scriptFunction, final List<String> choices) {
         // To display buttons and to start scriptFunction at the same time,
         // completeAll() has to be called
         // in advance in order to finish all previous render commands,
         completeAll();
-        String choice = showChoices(scriptFunction, choices);
-        if (choice == Timeout) {
+        String chosen = showChoices(scriptFunction, choices);
+        if (chosen == Timeout) {
             renderQueue.completeAll();
         } else {
             renderQueue.endAll();
         }
-        return choice;
+        return chosen;
     }
 
-    public String reply(String... choices) {
-        return reply(NoTimeout, choices);
+    public String reply(String choice, String... more) {
+        return reply(NoTimeout, choice, more);
     }
 
-    public String reply(final int timeout, String... choices) {
-        return reply(timeout, new ArrayList<String>(Arrays.asList(choices)));
+    public String reply(final int timeout, String choice, String... more) {
+        List<String> choices = buildChoicesFromArray(choice, more);
+        return reply(timeout, choices);
     }
 
-    public String reply(Runnable scriptFunction, String... choices) {
-        return reply(scriptFunction,
-                new ArrayList<String>(Arrays.asList(choices)));
+    public String reply(Runnable scriptFunction, String choice, String... more) {
+        List<String> choices = buildChoicesFromArray(choice, more);
+        return reply(scriptFunction, choices);
     }
 
-    public int replyIndex(String... choices) {
-        List<String> items = Arrays.asList(choices);
-        String answer = reply(items);
-        return items.indexOf(answer);
+    public int replyIndex(String choice, String... more) {
+        List<String> choices = buildChoicesFromArray(choice, more);
+        return replyIndex(choices);
+    }
+
+    public int replyIndex(List<String> choices) {
+        String answer = reply(choices);
+        return choices.indexOf(answer);
+    }
+
+    private static List<String> buildChoicesFromArray(String choice,
+            String... more) {
+        List<String> choices = new ArrayList<String>(1 + more.length);
+        choices.add(choice);
+        choices.addAll(Arrays.asList(more));
+        return choices;
     }
 
     public boolean askYN(String yes, String no) {

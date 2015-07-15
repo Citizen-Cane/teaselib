@@ -35,7 +35,7 @@ public abstract class TeaseScriptBase {
     protected final SpeechRecognition speechRecognizer;
 
     protected final MediaRendererQueue renderQueue;
-    protected final Deque<MediaRenderer> deferredRenderers;
+    private final Deque<MediaRenderer> deferredRenderers;
 
     ExecutorService choiceScriptFunctionExecutor = Executors
             .newFixedThreadPool(1);
@@ -170,31 +170,55 @@ public abstract class TeaseScriptBase {
         return hints;
     }
 
+    protected void addDeferred(MediaRenderer renderer) {
+        synchronized (deferredRenderers) {
+            deferredRenderers.add(renderer);
+        }
+    }
+
+    private void clearDeferred() {
+        synchronized (deferredRenderers) {
+            deferredRenderers.clear();
+        }
+    }
+
     private void renderDeferred() {
-        completeAll();
-        renderQueue.start(deferredRenderers, teaseLib);
-        deferredRenderers.clear();
+        synchronized (deferredRenderers) {
+            completeAll();
+            renderQueue.start(deferredRenderers, teaseLib);
+            deferredRenderers.clear();
+        }
     }
 
-    private class TimeoutClick {
-        public boolean clicked = false;
-    }
-
+    /**
+     * @param scriptFunction
+     * @param choice
+     *            The first choice. This function doesn't make sense without
+     *            showing at least one item, so one choice is mandatory
+     * @param moreChoices
+     *            More choices
+     * @return
+     */
     public String showChoices(final Runnable scriptFunction,
             List<String> choices) {
         // argument checking and text variable replacement
         final List<String> derivedChoices = new ArrayList<String>(
                 choices.size());
-        for (String choice : choices) {
-            if (choice != null) {
-                derivedChoices.add(replaceVariables(choice));
+        for (String derivedChoice : choices) {
+            if (derivedChoice != null) {
+                derivedChoices.add(replaceVariables(derivedChoice));
             } else {
                 throw new IllegalArgumentException("Choice may not be null");
             }
         }
-        TeaseLib.log("choose: " + derivedChoices.toString());
-        // Script closure
+        TeaseLib.log("showChoices: " + derivedChoices.toString());
+        // The result of this future task is never queried for,
+        // instead a timeout is signaled via the TimeoutClick class
+        final class TimeoutClick {
+            public boolean clicked = false;
+        }
         final TimeoutClick timeoutClick = new TimeoutClick();
+        // Run the script function while displaying the button
         final FutureTask<String> scriptTask = scriptFunction == null ? null
                 : new FutureTask<String>(new Callable<String>() {
                     @Override
@@ -205,17 +229,22 @@ public abstract class TeaseScriptBase {
                             // the script function has finished rendering
                             completeAll();
                         } catch (ScriptInterruptedException e) {
+                            // At this point the script function may have added
+                            // deferred renderers to the queue.
+                            // Avoid executing these renderers with the next
+                            // call to renderMessage()
+                            clearDeferred();
                             return null;
                         }
-                        // Script function finished, click any and return
-                        // timeout
+                        // Script function finished
                         List<Delegate> clickables = teaseLib.host
                                 .getClickableChoices(derivedChoices);
                         if (!clickables.isEmpty()) {
                             Delegate clickable = clickables.get(0);
                             if (clickable != null) {
-                                // Flag timeout and click any button
+                                // Signal timeout and click any button
                                 timeoutClick.clicked = true;
+                                // Click any delegate
                                 clickables.get(0).run();
                             } else {
                                 // Host implementation is incomplete
@@ -224,7 +253,13 @@ public abstract class TeaseScriptBase {
                                                 + derivedChoices.toString());
                             }
                         }
-                        return Timeout;
+                        // Now if the script function is interrupted, there may
+                        // still be deferred renderers set for the next call to
+                        // renderMessage()
+                        // These must be cleared, or they will be run with the
+                        // next renderMessage() call in the main script thread
+
+                        return null;
                     }
                 });
         // Speech recognition
@@ -282,7 +317,8 @@ public abstract class TeaseScriptBase {
                 choiceScriptFunctionExecutor.execute(scriptTask);
                 renderQueue.completeStarts();
                 // TODO completeStarts() doesn't work because first we need to
-                // wait for render threads that can be completed
+                // wait for render threads that can be waited for completing
+                // their starts
                 // Workaround: A bit unsatisfying, but otherwise the choice
                 // buttons would appear too early
                 teaseLib.sleep(300, TimeUnit.MILLISECONDS);
@@ -311,18 +347,18 @@ public abstract class TeaseScriptBase {
         // script task timeout or button click
         // supporting object identity by
         // returning an item of the original choices list
-        String choice = null;
+        String chosen = null;
         if (!srChoiceIndices.isEmpty()) {
             // Use the first speech recognition result
             choiceIndex = srChoiceIndices.get(0);
-            choice = choices.get(choiceIndex);
+            chosen = choices.get(choiceIndex);
         } else if (timeoutClick.clicked) {
-            choice = Timeout;
+            chosen = Timeout;
         } else {
-            choice = choices.get(choiceIndex);
+            chosen = choices.get(choiceIndex);
         }
         TeaseLib.logDetail("showChoices: ending render queue");
         renderQueue.endAll();
-        return choice;
+        return chosen;
     }
 }

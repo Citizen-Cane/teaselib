@@ -419,7 +419,9 @@ public class SexScriptsHost implements Host {
                     try {
                         final JComboBox<String> comboBox = getComboBox(
                                 getMainFrame(), getMainFrame().getClass());
-                        comboBox.showPopup();
+                        if (comboBox.isVisible()) {
+                            comboBox.showPopup();
+                        }
                         // comboBox.setPopupVisible(true);
                     } catch (NoSuchFieldException e) {
                         TeaseLib.log(this, e);

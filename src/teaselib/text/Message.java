@@ -170,12 +170,18 @@ public class Message {
         }
     }
 
+    /**
+     * Use with caution, since parts are not concatenated to sentences, which
+     * may result in collisions when prerecording speech
+     * 
+     * @param part
+     */
     public void add(Part part) {
         parts.add(part);
     }
 
     public void add(Type type, String value) {
-        parts.add(new Part(type, value));
+        parts.add(type, value);
     }
 
     @Override
@@ -287,7 +293,7 @@ public class Message {
         return false;
     }
 
-    static Type determineType(String m) {
+    public static Type determineType(String m) {
         if (m.isEmpty()) {
             return Type.Text;
         }
@@ -417,10 +423,14 @@ public class Message {
         }
 
         public void add(String text) {
-            text = text.trim();
             final Type type = determineType(text);
+            add(type, text);
+        }
+
+        public void add(Type type, String value) {
+            value = value.trim();
             if (type == Type.Keyword) {
-                text = keywordFrom(text);
+                value = keywordFrom(value);
             }
             final boolean isItem;
             if (isEmpty()) {
@@ -432,22 +442,22 @@ public class Message {
             boolean requiresSeparateLine = type != Type.Text || isItem;
             boolean requiresNewParagraphBefore = requiresSeparateLine;
             boolean requiresNewParagraphAfter = requiresSeparateLine
-                    || endOf(text, endOfSentence);
+                    || endOf(value, endOfSentence);
             if (isEmpty()) {
                 // First
-                add(new Part(type, text));
+                add(new Part(type, value));
                 newParagraph = requiresNewParagraphAfter;
             } else if (requiresNewParagraphBefore) {
                 // File as new paragraph
-                add(new Part(type, text));
+                add(new Part(type, value));
                 newParagraph = true;
             } else if (newParagraph) {
-                add(new Part(type, text));
+                add(new Part(type, value));
                 newParagraph = requiresNewParagraphAfter;
             } else {
                 // Append
                 int i = p.size() - 1;
-                String accumulatedText = p.get(i).value + " " + text;
+                String accumulatedText = p.get(i).value + " " + value;
                 p.remove(i);
                 add(new Part(type, accumulatedText));
                 newParagraph = requiresNewParagraphAfter;

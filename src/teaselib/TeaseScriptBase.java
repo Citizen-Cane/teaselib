@@ -82,6 +82,14 @@ public abstract class TeaseScriptBase {
         deferredRenderers = script.deferredRenderers;
     }
 
+    public void completeStarts() {
+        renderQueue.completeStarts();
+    }
+
+    public void completeMandatory() {
+        renderQueue.completeMandatories();
+    }
+
     /**
      * Just wait for everything to be rendered (messages displayed, sounds
      * played, delay expired), and continue execution of the script. This won't
@@ -92,15 +100,10 @@ public abstract class TeaseScriptBase {
     }
 
     /**
-     * Workaround as of now because PCMPlayer must display the stop button
-     * immediately
+     * Stop rendering and end all render threads
      */
-    public void completeMandatory() {
-        renderQueue.completeMandatories();
-    }
-
-    public void completeStarts() {
-        renderQueue.completeStarts();
+    public void endAll() {
+        renderQueue.endAll();
     }
 
     public void renderMessage(Message message,
@@ -110,7 +113,8 @@ public abstract class TeaseScriptBase {
         Message parsedMessage = new Message(message.actor);
         for (Message.Part part : message.getParts()) {
             if (part.type == Message.Type.Text) {
-                parsedMessage.add(part.type, replaceVariables(part.value));
+                parsedMessage.add(parsedMessage.new Part(part.type,
+                        replaceVariables(part.value)));
             } else {
                 parsedMessage.add(part);
             }

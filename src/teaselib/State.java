@@ -99,6 +99,10 @@ public class State<T extends Enum<T>> {
             return howLongSeconds > 0;
         }
 
+        public boolean freeSince(long time, TimeUnit unit) {
+            return duration.elapsed(unit) >= time;
+        }
+
         public void remove() {
             State.this.remove(item);
         }

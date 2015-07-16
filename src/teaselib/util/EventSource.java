@@ -29,7 +29,11 @@ public class EventSource<S, T extends EventArgs> {
     }
 
     public synchronized void remove(Event<S, T> delegate) {
-        delegates.remove(delegate);
+        boolean removed = delegates.remove(delegate);
+        if (!removed) {
+            throw new IllegalArgumentException("Removing event "
+                    + delegate.toString() + "failed.");
+        }
     }
 
     public synchronized void run(S sender, T eventArgs) {

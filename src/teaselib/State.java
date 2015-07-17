@@ -95,6 +95,14 @@ public class State<T extends Enum<T>> {
             return duration.elapsed(TimeUnit.SECONDS) > howLongSeconds;
         }
 
+        public long remaining(TimeUnit unit) {
+            final long now = teaseLib.getTime(unit);
+            final long end = unit.convert(duration.elapsedSeconds()
+                    + duration.start + howLongSeconds, TimeUnit.SECONDS);
+            final long remaining = Math.max(0, end - now);
+            return remaining;
+        }
+
         public boolean applied() {
             return howLongSeconds > 0;
         }

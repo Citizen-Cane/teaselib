@@ -251,9 +251,11 @@ public abstract class TeaseScriptBase {
 
     class SpeechRecognitionHypothesisEventHandler {
         /**
-         * Hypothesis speech recognition is used for longer sentences
+         * Hypothesis speech recognition is used for longer sentences, as short
+         * sentences or single word recognitions are prone to error. In fact,
+         * for single word phrases, the recognizer may recognize anything.
          */
-        final static int HypothesisMinimumNumberOfWords = 2;
+        final static int HypothesisMinimumNumberOfWords = 3;
 
         /**
          * This adjusts the sensibility of the hypothesis rating. The better the
@@ -272,6 +274,7 @@ public abstract class TeaseScriptBase {
         private final Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs> recognitionCompleted;
 
         private double[] hypothesisAccumulatedWeights;
+        private int[] hypothesisDetected;
 
         public SpeechRecognitionHypothesisEventHandler(
                 final SpeechRecognition speechRecognizer,
@@ -299,10 +302,12 @@ public abstract class TeaseScriptBase {
                 @Override
                 public void run(SpeechRecognitionImplementation sender,
                         SpeechRecognitionStartedEventArgs eventArgs) {
-                    hypothesisAccumulatedWeights = new double[derivedChoices
-                            .size()];
+                    final int size = derivedChoices.size();
+                    hypothesisAccumulatedWeights = new double[size];
+                    hypothesisDetected = new int[size];
                     for (int i = 0; i < hypothesisAccumulatedWeights.length; i++) {
                         hypothesisAccumulatedWeights[i] = 0;
+                        hypothesisDetected[i] = 0;
                     }
                 }
             };
@@ -325,10 +330,12 @@ public abstract class TeaseScriptBase {
                         final SpeechRecognitionResult hypothesis = eventArgs.result[0];
                         String hypothesisText = hypothesis.text;
                         final double propabilityWeight = propabilityWeight(hypothesis);
-                        for (int i = 0; i < derivedChoices.size(); i++) {
-                            String choice = derivedChoices.get(i).toLowerCase();
+                        for (int index = 0; index < derivedChoices.size(); index++) {
+                            String choice = derivedChoices.get(index)
+                                    .toLowerCase();
                             if (choice.startsWith(hypothesisText.toLowerCase())) {
-                                hypothesisAccumulatedWeights[i] += propabilityWeight;
+                                hypothesisAccumulatedWeights[index] += propabilityWeight;
+                                hypothesisDetected[index] += 1;
                             }
                         }
                     } else {
@@ -336,7 +343,9 @@ public abstract class TeaseScriptBase {
                             // The first word(s) are usually incorrect,
                             // whereas later hypothesis usually match better
                             final double propabilityWeight = propabilityWeight(hypothesis);
-                            hypothesisAccumulatedWeights[hypothesis.index] += propabilityWeight;
+                            final int index = hypothesis.index;
+                            hypothesisAccumulatedWeights[index] += propabilityWeight;
+                            hypothesisDetected[index] += 1;
                         }
                     }
                 }
@@ -354,16 +363,7 @@ public abstract class TeaseScriptBase {
                 @Override
                 public void run(SpeechRecognitionImplementation sender,
                         SpeechRecognizedEventArgs eventArgs) {
-                    // Require completed recognition for short replies
-                    for (String choice : derivedChoices) {
-                        if (wordCount(choice) <= HypothesisMinimumNumberOfWords) {
-                            TeaseLib.log("Word count is too low to accept hypothesis-based recognition: "
-                                    + choice);
-                            return;
-                        }
-                    }
-                    // else choose the choice that has the highest hypothesis
-                    // rating
+                    // choose the choice with the highest hypothesis weight
                     double maxValue = 0;
                     int maxChoiceIndex = 0;
                     for (int i = 0; i < hypothesisAccumulatedWeights.length; i++) {
@@ -376,24 +376,56 @@ public abstract class TeaseScriptBase {
                             maxChoiceIndex = i;
                         }
                     }
-                    if (maxValue >= HypothesisMinimumAccumulatedWeight) {
-                        // sort out the case where a two or more recognition
-                        // results have the same rating.
-                        // This happens when they start all start with the same
-                        // text
-                        int numberOfCandidates = 0;
-                        for (double weight : hypothesisAccumulatedWeights) {
-                            if (weight == maxValue) {
-                                numberOfCandidates++;
-                            }
+                    // sort out the case where two or more recognition
+                    // results have the same weight.
+                    // This happens when they all start with the same text
+                    int numberOfCandidates = 0;
+                    for (double weight : hypothesisAccumulatedWeights) {
+                        if (weight == maxValue) {
+                            numberOfCandidates++;
                         }
-                        if (numberOfCandidates == 1) {
+                    }
+                    if (numberOfCandidates == 1) {
+                        final String choice = derivedChoices
+                                .get(maxChoiceIndex);
+                        int wordCount = wordCount(choice);
+                        // prompts with few words need a higher weight to be
+                        // accepted
+                        double hypothesisAccumulatedWeight = wordCount >= HypothesisMinimumNumberOfWords ? HypothesisMinimumAccumulatedWeight
+                                : HypothesisMinimumAccumulatedWeight
+                                        * (HypothesisMinimumNumberOfWords
+                                                - wordCount + 1);
+                        boolean choiceWeightAccepted = maxValue >= hypothesisAccumulatedWeight;
+                        int choiceDetected = hypothesisDetected[maxChoiceIndex];
+                        // Prompts with few words need more consistent speech
+                        // detection events (doesn't alternate between different
+                        // choices)
+                        boolean choiceDetectionCountAccepted = choiceDetected >= HypothesisMinimumNumberOfWords
+                                || choiceDetected >= wordCount;
+                        if (choiceWeightAccepted
+                                && choiceDetectionCountAccepted) {
                             clickChoiceElement(derivedChoices, srChoiceIndices,
-                                    maxChoiceIndex,
-                                    derivedChoices.get(maxChoiceIndex));
-                        } else {
-                            TeaseLib.log("Speech recognition hypothesis dropped - several recognition results share the same accumulated weight - can't decide");
+                                    maxChoiceIndex, choice);
                         }
+                        if (!choiceWeightAccepted) {
+                            TeaseLib.log("Phrase '"
+                                    + choice
+                                    + "' accumulated weight="
+                                    + maxValue
+                                    + " < "
+                                    + hypothesisAccumulatedWeight
+                                    + " is too low to accept hypothesis-based recognition");
+                        }
+                        if (!choiceDetectionCountAccepted) {
+                            TeaseLib.log("Phrase '"
+                                    + choice
+                                    + "' detectioon count="
+                                    + choiceDetected
+                                    + " < "
+                                    + " is too low to accept hypothesis-based recognition");
+                        }
+                    } else {
+                        TeaseLib.log("Speech recognition hypothesis dropped - several recognition results share the same accumulated weight - can't decide");
                     }
                 }
             };

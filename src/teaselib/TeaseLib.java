@@ -171,6 +171,10 @@ public class TeaseLib {
         return System.currentTimeMillis() / 1000;
     }
 
+    public long getTime(TimeUnit unit) {
+        return unit.convert(System.currentTimeMillis(), TimeUnit.MILLISECONDS);
+    }
+
     /**
      * Return a random number
      * 

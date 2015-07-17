@@ -13,6 +13,8 @@ import teaselib.TeaseLib;
 import teaselib.motiondetection.DirectionIndicator.Direction;
 
 import com.github.sarxos.webcam.Webcam;
+import com.github.sarxos.webcam.WebcamDiscoveryEvent;
+import com.github.sarxos.webcam.WebcamDiscoveryListener;
 import com.github.sarxos.webcam.WebcamMotionDetector;
 import com.github.sarxos.webcam.WebcamPanel;
 import com.github.sarxos.webcam.WebcamResolution;
@@ -59,17 +61,31 @@ public class MotionDetector {
     private final Lock motionEndLock = new ReentrantLock();
     private final Condition motionEnd = motionEndLock.newCondition();
 
-    final private DirectionIndicator xi = new DirectionIndicator();
-    final private DirectionIndicator yi = new DirectionIndicator();
+    private final DirectionIndicator xi = new DirectionIndicator();
+    private final DirectionIndicator yi = new DirectionIndicator();
 
-    HorizontalMotion currentHorizontalMotion = HorizontalMotion.None;
-    VerticalMotion currentVerticalMotion = VerticalMotion.None;
+    private HorizontalMotion currentHorizontalMotion = HorizontalMotion.None;
+    private VerticalMotion currentVerticalMotion = VerticalMotion.None;
 
     Webcam webcam = null;
-    WebCamThread t;
-    private Dimension size = WebcamResolution.VGA.getSize();
+    WebCamThread t = null;
+    private Dimension ViewSize = WebcamResolution.VGA.getSize();
 
     private static MotionDetector instance = null;
+
+    JFrame window = null;
+
+    private class DiscoveryListener implements WebcamDiscoveryListener {
+        @Override
+        public void webcamFound(WebcamDiscoveryEvent event) {
+            attachWebcam(event.getWebcam());
+        }
+
+        @Override
+        public void webcamGone(WebcamDiscoveryEvent event) {
+            detachWebcam(event.getWebcam());
+        }
+    }
 
     public static synchronized MotionDetector getDefault() {
         if (instance == null) {
@@ -80,6 +96,7 @@ public class MotionDetector {
 
     private MotionDetector() {
         this(Webcam.getDefault());
+        Webcam.addDiscoveryListener(new DiscoveryListener());
     }
 
     public MotionDetector(Webcam webcam) {
@@ -87,26 +104,43 @@ public class MotionDetector {
         if (webcam == null) {
             TeaseLib.log("No webcam detected");
         } else {
-            init(webcam);
+            attachWebcam(webcam);
         }
     }
 
-    public void init(Webcam webcam) {
-        TeaseLib.log(webcam.getName());
-        show(webcam);
+    private void attachWebcam(Webcam newWebcam) {
+        TeaseLib.log(newWebcam.getName() + " connected");
+        newWebcam.setViewSize(ViewSize);
+        newWebcam.open();
+        showWebcamWindow(newWebcam);
+        webcam = newWebcam;
         t = new WebCamThread();
         t.start();
     }
 
-    public void show(Webcam webcam) {
-        webcam.setViewSize(size);
+    private void detachWebcam(Webcam oldWebcam) {
+        TeaseLib.log(webcam.getName() + " disconnected");
+        t.interrupt();
+        hideWebcamWindow();
+        while (t.isAlive()) {
+            try {
+                t.join();
+            } catch (InterruptedException e) {
+            }
+        }
+        t = null;
+        oldWebcam.close();
+        webcam = null;
+    }
+
+    private void showWebcamWindow(Webcam webcam) {
         WebcamPanel panel = new WebcamPanel(webcam);
         panel.setFPSDisplayed(true);
         panel.setDisplayDebugInfo(true);
         panel.setImageSizeDisplayed(true);
         panel.setMirrored(true);
         panel.setPreferredSize(new Dimension(32, 64));
-        JFrame window = new JFrame("Test webcam panel");
+        window = new JFrame("Test webcam panel");
         window.add(panel);
         window.setResizable(true);
         window.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -114,7 +148,12 @@ public class MotionDetector {
         window.setVisible(true);
     }
 
-    class WebCamThread extends Thread {
+    private void hideWebcamWindow() {
+        window.setVisible(false);
+        window.dispose();
+    }
+
+    private class WebCamThread extends Thread {
         private final WebcamMotionDetector detector;
 
         private Point motionCog = null;
@@ -142,7 +181,7 @@ public class MotionDetector {
             detector.setPixelThreshold(PixelThreshold);
             detector.start();
             int motionDetectedCounter = -1;
-            while (true) {
+            while (!isInterrupted()) {
                 boolean motionDetected = detector.isMotion();
                 synchronized (MotionDetector.this) {
                     if (motionDetected) {
@@ -200,7 +239,7 @@ public class MotionDetector {
                 debug += " MotionCog=(" + motionCog.x + ", " + motionCog.y
                         + ")";
             }
-            TeaseLib.log(debug);
+            TeaseLib.logDetail(debug);
         }
 
         public void signalMotionStart() {
@@ -293,8 +332,8 @@ public class MotionDetector {
             int dy = Math.abs(yi.distance(pastFrames));
             Amount[] values = Amount.values();
             for (Amount amount : values) {
-                if (dx <= amount.ScreenPercentage * size.width
-                        && dy <= amount.ScreenPercentage * size.height) {
+                if (dx <= amount.ScreenPercentage * ViewSize.width
+                        && dy <= amount.ScreenPercentage * ViewSize.height) {
                     return amount;
                 }
             }

@@ -2,6 +2,7 @@ package teaselib.motiondetection;
 
 import java.awt.Dimension;
 import java.awt.Point;
+import java.awt.Rectangle;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
@@ -139,12 +140,16 @@ public class MotionDetector {
         panel.setDisplayDebugInfo(true);
         panel.setImageSizeDisplayed(true);
         panel.setMirrored(true);
-        panel.setPreferredSize(new Dimension(32, 64));
+        panel.setPreferredSize(new Dimension(320, 240));
         window = new JFrame("Test webcam panel");
         window.add(panel);
         window.setResizable(true);
         window.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         window.pack();
+        Rectangle r = window.getBounds();
+        r.x += 16;
+        r.y += 32;
+        window.setBounds(r);
         window.setVisible(true);
     }
 

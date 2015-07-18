@@ -336,6 +336,7 @@ public abstract class TeaseScriptBase {
                             if (choice.startsWith(hypothesisText.toLowerCase())) {
                                 hypothesisAccumulatedWeights[index] += propabilityWeight;
                                 hypothesisDetected[index] += 1;
+                                updateDetectionCount(hypothesisText, index);
                             }
                         }
                     } else {
@@ -345,8 +346,19 @@ public abstract class TeaseScriptBase {
                             final double propabilityWeight = propabilityWeight(hypothesis);
                             final int index = hypothesis.index;
                             hypothesisAccumulatedWeights[index] += propabilityWeight;
-                            hypothesisDetected[index] += 1;
+                            updateDetectionCount(hypothesis.text, index);
                         }
+                    }
+                }
+
+                private void updateDetectionCount(final String hypothesis,
+                        int index) {
+                    // Handle the case when the speech detection starts
+                    // with detection with multiple words of a prompt
+                    if (hypothesisDetected[index] == 0) {
+                        hypothesisDetected[index] += wordCount(hypothesis);
+                    } else {
+                        hypothesisDetected[index] += 1;
                     }
                 }
 
@@ -419,7 +431,7 @@ public abstract class TeaseScriptBase {
                         if (!choiceDetectionCountAccepted) {
                             TeaseLib.log("Phrase '"
                                     + choice
-                                    + "' detectioon count="
+                                    + "' detection count="
                                     + choiceDetected
                                     + " < "
                                     + " is too low to accept hypothesis-based recognition");

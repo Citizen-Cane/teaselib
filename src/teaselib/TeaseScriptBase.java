@@ -271,7 +271,7 @@ public abstract class TeaseScriptBase {
         private final Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs> recognitionCompleted;
 
         private double[] hypothesisAccumulatedWeights;
-        private int[] hypothesisDetected;
+        private String[] hypothesisProgress;
 
         public SpeechRecognitionHypothesisEventHandler(
                 final SpeechRecognition speechRecognizer,
@@ -301,10 +301,10 @@ public abstract class TeaseScriptBase {
                         SpeechRecognitionStartedEventArgs eventArgs) {
                     final int size = derivedChoices.size();
                     hypothesisAccumulatedWeights = new double[size];
-                    hypothesisDetected = new int[size];
+                    hypothesisProgress = new String[size];
                     for (int i = 0; i < hypothesisAccumulatedWeights.length; i++) {
                         hypothesisAccumulatedWeights[i] = 0;
-                        hypothesisDetected[i] = 0;
+                        hypothesisProgress[i] = "";
                     }
                 }
             };
@@ -321,39 +321,6 @@ public abstract class TeaseScriptBase {
                     // returned when hypothesizing a recognition result and
                     // multiple choices start with the same words
                     final SpeechRecognitionResult[] recognitionResults = eventArgs.result;
-                    // TODO Filter duplicates, as the sample below doubles the
-                    // weight, then clicks the button,
-                    // all while eating a sandwich and not having uttered
-                    // anything
-                    // 16:08:37.818: showChoices: [Finished, Miss]
-                    // 16:08:38.445: EventSource audioSignalProblemOccured, 0
-                    // listeners AudioSignalProblemOccuredEventArgs Problem =
-                    // TooQuiet
-                    // 16:08:42.632: EventSource audioSignalProblemOccured, 0
-                    // listeners AudioSignalProblemOccuredEventArgs Problem =
-                    // TooQuiet
-                    // 16:08:44.018: EventSource recognitionStarted, 1 listeners
-                    // SpeechRecognitionStartedEventArgs
-                    // 16:08:44.018: EventSource speechDetected, 1 listeners
-                    // SpeechRecognizedEventArgsResult = #0:
-                    // Finished,(%0.9453323483467102)-> confidence is high
-                    // 16:08:44.320: EventSource speechDetected, 1 listeners
-                    // SpeechRecognizedEventArgsResult = #0:
-                    // Finished,(%0.9460704326629639)-> confidence is high
-                    // 16:08:45.694: EventSource audioSignalProblemOccured, 0
-                    // listeners AudioSignalProblemOccuredEventArgs Problem =
-                    // TooQuiet
-                    // 16:08:45.709: Motion ended
-                    // 16:08:46.756: EventSource audioSignalProblemOccured, 0
-                    // listeners AudioSignalProblemOccuredEventArgs Problem =
-                    // Noise
-                    // 16:08:46.756: EventSource recognitionRejected, 1
-                    // listeners SpeechRecognizedEventArgsResult = <none>
-                    // 16:08:46.756: Result 0: 'Finished, Miss'
-                    // hypothesisCount=1.891402781009674
-                    // 16:08:46.802: Motion started
-                    // 16:08:46.836: Clicked delegate for 'Finished, Miss'
-                    // index=0
                     if (recognitionResults.length == 1) {
                         // Manually search for all choices that start with the
                         // hypothesis, and add the probability weight for each
@@ -364,9 +331,8 @@ public abstract class TeaseScriptBase {
                             String choice = derivedChoices.get(index)
                                     .toLowerCase();
                             if (choice.startsWith(hypothesisText.toLowerCase())) {
-                                hypothesisAccumulatedWeights[index] += propabilityWeight;
-                                hypothesisDetected[index] += 1;
-                                updateDetectionCount(hypothesisText, index);
+                                updateHypothesisProgress(index, hypothesisText,
+                                        propabilityWeight);
                             }
                         }
                     } else {
@@ -375,20 +341,21 @@ public abstract class TeaseScriptBase {
                             // whereas later hypothesis usually match better
                             final double propabilityWeight = propabilityWeight(hypothesis);
                             final int index = hypothesis.index;
-                            hypothesisAccumulatedWeights[index] += propabilityWeight;
-                            updateDetectionCount(hypothesis.text, index);
+                            updateHypothesisProgress(index, hypothesis.text,
+                                    propabilityWeight);
                         }
                     }
                 }
 
-                private void updateDetectionCount(final String hypothesis,
-                        int index) {
-                    // Handle the case when the speech detection starts
-                    // with detection with multiple words of a prompt
-                    if (hypothesisDetected[index] == 0) {
-                        hypothesisDetected[index] += wordCount(hypothesis);
-                    } else {
-                        hypothesisDetected[index] += 1;
+                private void updateHypothesisProgress(int index,
+                        final String hypothesisText, double propabilityWeight) {
+                    // Only update if the hypothesis is progressing,
+                    // e.g. sort out detection duplicates
+                    if (hypothesisText.startsWith(hypothesisProgress[index])
+                            && hypothesisText.length() > hypothesisProgress[index]
+                                    .length()) {
+                        hypothesisAccumulatedWeights[index] += propabilityWeight;
+                        hypothesisProgress[index] = hypothesisText;
                     }
                 }
 
@@ -438,12 +405,12 @@ public abstract class TeaseScriptBase {
                                         * (HypothesisMinimumNumberOfWords
                                                 - wordCount + 1);
                         boolean choiceWeightAccepted = maxValue >= hypothesisAccumulatedWeight;
-                        int choiceDetected = hypothesisDetected[maxChoiceIndex];
+                        int choiceHypothesisCount = wordCount(hypothesisProgress[maxChoiceIndex]);
                         // Prompts with few words need more consistent speech
                         // detection events (doesn't alternate between different
                         // choices)
-                        boolean choiceDetectionCountAccepted = choiceDetected >= HypothesisMinimumNumberOfWords
-                                || choiceDetected >= wordCount;
+                        boolean choiceDetectionCountAccepted = choiceHypothesisCount >= HypothesisMinimumNumberOfWords
+                                || choiceHypothesisCount >= wordCount;
                         if (choiceWeightAccepted
                                 && choiceDetectionCountAccepted) {
                             clickChoiceElement(derivedChoices, srChoiceIndices,
@@ -462,7 +429,7 @@ public abstract class TeaseScriptBase {
                             TeaseLib.log("Phrase '"
                                     + choice
                                     + "' detection count="
-                                    + choiceDetected
+                                    + choiceHypothesisCount
                                     + " < "
                                     + " is too low to accept hypothesis-based recognition");
                         }

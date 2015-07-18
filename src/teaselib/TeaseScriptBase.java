@@ -35,7 +35,7 @@ public abstract class TeaseScriptBase {
     protected final TextToSpeechPlayer speechSynthesizer;
     protected final SpeechRecognition speechRecognizer;
 
-    protected final MediaRendererQueue renderQueue;
+    protected static final MediaRendererQueue renderQueue = new MediaRendererQueue();
     private final Deque<MediaRenderer> deferredRenderers;
 
     ExecutorService choiceScriptFunctionExecutor = Executors
@@ -54,7 +54,6 @@ public abstract class TeaseScriptBase {
         speechRecognizer = new SpeechRecognition(locale);
         speechSynthesizer = new TextToSpeechPlayer(teaseLib,
                 new TextToSpeech(), speechRecognizer);
-        renderQueue = new MediaRendererQueue();
         deferredRenderers = new ArrayDeque<MediaRenderer>();
     }
 
@@ -69,7 +68,6 @@ public abstract class TeaseScriptBase {
         this.teaseLib = script.teaseLib;
         speechRecognizer = script.speechRecognizer;
         speechSynthesizer = script.speechSynthesizer;
-        renderQueue = script.renderQueue;
         deferredRenderers = script.deferredRenderers;
     }
 
@@ -79,7 +77,6 @@ public abstract class TeaseScriptBase {
         speechRecognizer = actor.locale.equalsIgnoreCase(scriptActor.locale) ? script.speechRecognizer
                 : new SpeechRecognition(actor.locale);
         speechSynthesizer = script.speechSynthesizer;
-        renderQueue = script.renderQueue;
         deferredRenderers = script.deferredRenderers;
     }
 
@@ -324,6 +321,39 @@ public abstract class TeaseScriptBase {
                     // returned when hypothesizing a recognition result and
                     // multiple choices start with the same words
                     final SpeechRecognitionResult[] recognitionResults = eventArgs.result;
+                    // TODO Filter duplicates, as the sample below doubles the
+                    // weight, then clicks the button,
+                    // all while eating a sandwich and not having uttered
+                    // anything
+                    // 16:08:37.818: showChoices: [Finished, Miss]
+                    // 16:08:38.445: EventSource audioSignalProblemOccured, 0
+                    // listeners AudioSignalProblemOccuredEventArgs Problem =
+                    // TooQuiet
+                    // 16:08:42.632: EventSource audioSignalProblemOccured, 0
+                    // listeners AudioSignalProblemOccuredEventArgs Problem =
+                    // TooQuiet
+                    // 16:08:44.018: EventSource recognitionStarted, 1 listeners
+                    // SpeechRecognitionStartedEventArgs
+                    // 16:08:44.018: EventSource speechDetected, 1 listeners
+                    // SpeechRecognizedEventArgsResult = #0:
+                    // Finished,(%0.9453323483467102)-> confidence is high
+                    // 16:08:44.320: EventSource speechDetected, 1 listeners
+                    // SpeechRecognizedEventArgsResult = #0:
+                    // Finished,(%0.9460704326629639)-> confidence is high
+                    // 16:08:45.694: EventSource audioSignalProblemOccured, 0
+                    // listeners AudioSignalProblemOccuredEventArgs Problem =
+                    // TooQuiet
+                    // 16:08:45.709: Motion ended
+                    // 16:08:46.756: EventSource audioSignalProblemOccured, 0
+                    // listeners AudioSignalProblemOccuredEventArgs Problem =
+                    // Noise
+                    // 16:08:46.756: EventSource recognitionRejected, 1
+                    // listeners SpeechRecognizedEventArgsResult = <none>
+                    // 16:08:46.756: Result 0: 'Finished, Miss'
+                    // hypothesisCount=1.891402781009674
+                    // 16:08:46.802: Motion started
+                    // 16:08:46.836: Clicked delegate for 'Finished, Miss'
+                    // index=0
                     if (recognitionResults.length == 1) {
                         // Manually search for all choices that start with the
                         // hypothesis, and add the probability weight for each

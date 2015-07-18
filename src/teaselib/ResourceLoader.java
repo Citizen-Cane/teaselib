@@ -54,7 +54,7 @@ public class ResourceLoader {
         addAsset(addURI, new File(basePath).toURI());
     }
 
-    public void addAssets(String[] paths) {
+    public void addAssets(String... paths) {
         try {
             addAssets(toURIs(basePath, paths));
         } catch (Throwable t) {
@@ -65,7 +65,14 @@ public class ResourceLoader {
     private static URI[] toURIs(String root, String[] paths) {
         URI[] uris = new URI[paths.length];
         for (int i = 0; i < paths.length; i++) {
-            uris[i] = new File(root + paths[i]).toURI();
+            File path = new File(paths[i]);
+            final File file;
+            if (path.isAbsolute()) {
+                file = path;
+            } else {
+                file = new File(root, paths[i]);
+            }
+            uris[i] = file.toURI();
         }
         return uris;
     }
@@ -187,7 +194,8 @@ public class ResourceLoader {
                 } else {
                     resources.add(match);
                 }
-
+                // TODO resource paths that contains white space cause IOExceptions later on
+                // TODO regex matches resources in sub folders - bug or feature?
             }
         }
         return resources;

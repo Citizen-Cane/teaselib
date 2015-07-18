@@ -230,7 +230,7 @@ public class Message {
             // Inline-files must have extensions with at least one alphanumeric
             // letter after the dot
             String extension = m.substring(i + 1, m.length());
-            if (extension.matches("[A-Za-z]+")) {
+            if (extension.matches("[A-Za-z0-9]+")) {
                 // This could certainly be done better than just assuming
                 // file extensions are non-space letters after a dot
                 return m.substring(i, s - 1).indexOf(" ") < 0;

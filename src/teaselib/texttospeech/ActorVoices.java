@@ -7,11 +7,11 @@ import java.io.InputStream;
 import teaselib.ResourceLoader;
 import teaselib.TeaseLib;
 
-public class VoicesProperties extends VoiceProperties {
+public class ActorVoices extends VoiceProperties {
 
-    public final static String VoicesFilename = "voices.properties";
+    public final static String VoicesFilename = "Actor Voices.properties";
 
-    public VoicesProperties(ResourceLoader resources) {
+    public ActorVoices(ResourceLoader resources) {
         InputStream recordedVoicesConfig = null;
         String path = VoicesFilename;
         try {
@@ -23,8 +23,9 @@ public class VoicesProperties extends VoiceProperties {
                     recordedVoicesConfig.close();
                 }
             }
-        } catch (IOException e1) {
-            TeaseLib.log("No assigned voices config: " + path);
+        } catch (IOException e) {
+            TeaseLib.log("No actor voices configuration found in '"
+                    + resources.getAssetPath(path) + "' - using defaults");
         }
     }
 

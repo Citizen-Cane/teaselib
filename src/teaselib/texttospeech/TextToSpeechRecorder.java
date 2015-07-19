@@ -50,12 +50,9 @@ public class TextToSpeechRecorder {
                 textToSpeech);
         File assetsDir = teaseLib.resources.getAssetPath("");
         speechDir = createSubDir(assetsDir, SpeechDirName);
-        AvailableVoicesProperties available = new AvailableVoicesProperties(
-                voices);
+        InstalledVoices available = new InstalledVoices(voices);
         available.store(assetsDir);
-
-        VoicesProperties voicesProperties = new VoicesProperties(
-                teaseLib.resources);
+        ActorVoices voicesProperties = new ActorVoices(teaseLib.resources);
         if (voicesProperties.empty()) {
             // Write default file
             // TODO Language and gender selection for voices
@@ -170,7 +167,7 @@ public class TextToSpeechRecorder {
         }
         if (neutralVoice == null) {
             throw new IllegalArgumentException("Voice for actor '" + actor
-                    + "' not found in " + VoicesProperties.VoicesFilename);
+                    + "' not found in " + ActorVoices.VoicesFilename);
         }
         return neutralVoice;
     }

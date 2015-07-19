@@ -27,7 +27,7 @@ public class VoiceProperties {
         properties.put(key + ".language", voice.language);
     }
 
-    public String getVoice(String key) {
+    public String getGuid(String key) {
         return (String) properties.get(key + ".guid");
     }
 
@@ -47,7 +47,7 @@ public class VoiceProperties {
         Set<String> keys = new HashSet<String>();
         for (Object k : properties.keySet()) {
             String key = (String) k;
-            int pos = key.indexOf(".");
+            int pos = key.lastIndexOf(".");
             {
                 if (pos < 0) {
                     keys.add(key);

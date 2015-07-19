@@ -25,7 +25,7 @@ public class ActorVoice extends VoiceProperties {
                 }
             }
         } catch (IOException e) {
-            TeaseLib.logDetail("No prerecorded voices config: " + path);
+            TeaseLib.log(this, e);
         }
     }
 

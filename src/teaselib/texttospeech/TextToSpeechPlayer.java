@@ -24,7 +24,7 @@ public class TextToSpeechPlayer {
     public final TextToSpeech textToSpeech;
     protected final SpeechRecognition speechRecognizer;
 
-    private final VoicesProperties actorVoices;
+    private final ActorVoices actorVoices;
 
     private final Map<String, Voice> voices;
     private final Map<String, String> actor2PrerecordedVoice = new HashMap<String, String>();
@@ -49,12 +49,19 @@ public class TextToSpeechPlayer {
         } else {
             this.voices = new HashMap<String, Voice>();
         }
-        // Read pre-recorded voices config
-        actorVoices = new VoicesProperties(teaseLib.resources);
+        // Write list of installed voices to log file in order to provide data
+        // for the ActorVoices properties file
+        final InstalledVoices installedVoices = new InstalledVoices(voices);
+        TeaseLib.log("Installed voices:");
+        for (String key : installedVoices.keySet()) {
+            TeaseLib.log(key + ".guid=" + installedVoices.getGuid(key));
+        }
+        // Read actor voices configuration to assign voices to actors
+        actorVoices = new ActorVoices(teaseLib.resources);
         for (Object value : actorVoices.keySet()) {
             // Available as a pre-recorded voice?
             String actorName = value.toString();
-            String voiceGuid = actorVoices.getVoice(actorName);
+            String voiceGuid = actorVoices.getGuid(actorName);
             ActorVoice actorVoice = new ActorVoice(actorName, voiceGuid,
                     teaseLib.resources);
             boolean prerecorded = !actorVoice.empty();

@@ -304,7 +304,7 @@ public class RenderMessage extends MediaRendererThread {
         // as well as any other sounds
         teaseLib.host.stopSounds();
         // TODO Only stop speech and sounds that
-        // have been stated by this message renderer
+        // have been started by this message renderer
         super.end();
     }
 }

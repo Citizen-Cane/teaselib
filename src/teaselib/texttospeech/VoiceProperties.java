@@ -25,6 +25,7 @@ public class VoiceProperties {
         properties.put(key + ".name", voice.name);
         properties.put(key + ".locale", voice.locale);
         properties.put(key + ".language", voice.language);
+        properties.put(key + ".gender", voice.gender.toString());
     }
 
     public String getGuid(String key) {

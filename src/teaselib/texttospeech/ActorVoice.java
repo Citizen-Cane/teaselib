@@ -25,7 +25,9 @@ public class ActorVoice extends VoiceProperties {
                 }
             }
         } catch (IOException e) {
-            TeaseLib.log(this, e);
+            // This is expected, as the script may not have pre-recorded voices
+            TeaseLib.logDetail("Prerecorded voice configuration file '" + path
+                    + "' not found");
         }
     }
 

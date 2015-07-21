@@ -27,7 +27,6 @@ public abstract class TeaseScript extends TeaseScriptBase implements Runnable {
     public final static String NoImage = "NoImage";
     public final static String DominantImage = "DominantImage";
 
-    public final Actor actor;
     public final String namespace;
 
     private String mood = Mood.Neutral;
@@ -41,7 +40,6 @@ public abstract class TeaseScript extends TeaseScriptBase implements Runnable {
      */
     public TeaseScript(TeaseScript script) {
         super(script);
-        this.actor = script.actor;
         this.namespace = script.namespace;
         acquireVoice(actor);
     }
@@ -56,8 +54,7 @@ public abstract class TeaseScript extends TeaseScriptBase implements Runnable {
      *            recognizer is shared by both scripts
      */
     public TeaseScript(TeaseScript script, Actor actor) {
-        super(script, script.actor, actor);
-        this.actor = actor;
+        super(script, actor);
         this.namespace = script.namespace;
         acquireVoice(actor);
     }
@@ -81,15 +78,14 @@ public abstract class TeaseScript extends TeaseScriptBase implements Runnable {
      * @param namespace
      */
     public TeaseScript(TeaseLib teaseLib, Actor actor, String namespace) {
-        super(teaseLib, actor.locale);
-        this.actor = actor;
+        super(teaseLib, actor);
         this.namespace = namespace;
         acquireVoice(actor);
     }
 
     private void acquireVoice(Actor actor) {
         try {
-            speechSynthesizer.selectVoice(new Message(actor));
+            teaseLib.speechSynthesizer.selectVoice(new Message(actor));
         } catch (IOException e) {
             TeaseLib.log(this, e);
         }
@@ -184,7 +180,7 @@ public abstract class TeaseScript extends TeaseScriptBase implements Runnable {
     }
 
     public void say(Message message) {
-        renderMessage(message, speechSynthesizer);
+        renderMessage(message, teaseLib.speechSynthesizer);
     }
 
     /**

@@ -21,7 +21,6 @@ import teaselib.speechrecognition.events.SpeechRecognitionStartedEventArgs;
 import teaselib.speechrecognition.events.SpeechRecognizedEventArgs;
 import teaselib.text.Message;
 import teaselib.text.RenderMessage;
-import teaselib.texttospeech.TextToSpeech;
 import teaselib.texttospeech.TextToSpeechPlayer;
 import teaselib.userinterface.MediaRenderer;
 import teaselib.userinterface.MediaRendererQueue;
@@ -32,14 +31,13 @@ public abstract class TeaseScriptBase {
 
     public final TeaseLib teaseLib;
 
-    protected final TextToSpeechPlayer speechSynthesizer;
-    protected final SpeechRecognition speechRecognizer;
-
     protected static final MediaRendererQueue renderQueue = new MediaRendererQueue();
-    private final Deque<MediaRenderer> deferredRenderers;
+    private final Deque<MediaRenderer> deferredRenderers = new ArrayDeque<MediaRenderer>();
 
     ExecutorService choiceScriptFunctionExecutor = Executors
             .newFixedThreadPool(1);
+
+    public final Actor actor;
 
     public static final String Timeout = "Timeout";
 
@@ -49,12 +47,9 @@ public abstract class TeaseScriptBase {
      * @param teaseLib
      * @param locale
      */
-    public TeaseScriptBase(TeaseLib teaseLib, String locale) {
+    public TeaseScriptBase(TeaseLib teaseLib, Actor actor) {
         this.teaseLib = teaseLib;
-        speechRecognizer = new SpeechRecognition(locale);
-        speechSynthesizer = new TextToSpeechPlayer(teaseLib,
-                new TextToSpeech(), speechRecognizer);
-        deferredRenderers = new ArrayDeque<MediaRenderer>();
+        this.actor = actor;
     }
 
     /**
@@ -66,18 +61,12 @@ public abstract class TeaseScriptBase {
      */
     public TeaseScriptBase(TeaseScriptBase script) {
         this.teaseLib = script.teaseLib;
-        speechRecognizer = script.speechRecognizer;
-        speechSynthesizer = script.speechSynthesizer;
-        deferredRenderers = script.deferredRenderers;
+        this.actor = script.actor;
     }
 
-    public TeaseScriptBase(TeaseScriptBase script, Actor scriptActor,
-            Actor actor) {
+    public TeaseScriptBase(TeaseScriptBase script, Actor actor) {
         this.teaseLib = script.teaseLib;
-        speechRecognizer = actor.locale.equalsIgnoreCase(scriptActor.locale) ? script.speechRecognizer
-                : new SpeechRecognition(actor.locale);
-        speechSynthesizer = script.speechSynthesizer;
-        deferredRenderers = script.deferredRenderers;
+        this.actor = actor;
     }
 
     public void completeStarts() {
@@ -107,21 +96,23 @@ public abstract class TeaseScriptBase {
     public void renderMessage(Message message,
             TextToSpeechPlayer speechSynthesizer, String displayImage,
             String mood) {
-        renderDeferred();
-        Message parsedMessage = new Message(message.actor);
-        for (Message.Part part : message.getParts()) {
-            if (part.type == Message.Type.Text) {
-                parsedMessage.add(parsedMessage.new Part(part.type,
-                        replaceVariables(part.value)));
-            } else {
-                parsedMessage.add(part);
+        synchronized (renderQueue) {
+            renderDeferred();
+            Message parsedMessage = new Message(message.actor);
+            for (Message.Part part : message.getParts()) {
+                if (part.type == Message.Type.Text) {
+                    parsedMessage.add(parsedMessage.new Part(part.type,
+                            replaceVariables(part.value)));
+                } else {
+                    parsedMessage.add(part);
+                }
             }
+            Set<String> hints = getHints(mood);
+            RenderMessage renderMessage = new RenderMessage(parsedMessage,
+                    speechSynthesizer, displayImage, hints);
+            renderQueue.start(renderMessage, teaseLib);
+            renderQueue.completeStarts();
         }
-        Set<String> hints = getHints(mood);
-        RenderMessage renderMessage = new RenderMessage(parsedMessage,
-                speechSynthesizer, displayImage, hints);
-        renderQueue.start(renderMessage, teaseLib);
-        renderQueue.completeStarts();
     }
 
     private String replaceVariables(String text) {
@@ -356,6 +347,10 @@ public abstract class TeaseScriptBase {
                                     .length()) {
                         hypothesisAccumulatedWeights[index] += propabilityWeight;
                         hypothesisProgress[index] = hypothesisText;
+                        TeaseLib.log("'" + hypothesisText + "' + "
+                                + propabilityWeight);
+                    } else {
+                        TeaseLib.log("Ignoring hypothesis '" + hypothesisText);
                     }
                 }
 
@@ -501,6 +496,8 @@ public abstract class TeaseScriptBase {
         }
 
         public void dispose() {
+            SpeechRecognition speechRecognizer = teaseLib.speechRecognizer
+                    .get(actor.locale);
             if (recognitionStarted != null)
                 speechRecognizer.events.recognitionStarted
                         .remove(recognitionStarted);
@@ -535,6 +532,8 @@ public abstract class TeaseScriptBase {
         // Speech recognition
         final List<Integer> srChoiceIndices = new ArrayList<Integer>(1);
         SpeechRecognitionHypothesisEventHandler eventHandler;
+        SpeechRecognition speechRecognizer = teaseLib.speechRecognizer
+                .get(actor.locale);
         final boolean recognizeSpeech = speechRecognizer.isReady();
         eventHandler = new SpeechRecognitionHypothesisEventHandler(
                 speechRecognizer, derivedChoices, srChoiceIndices);

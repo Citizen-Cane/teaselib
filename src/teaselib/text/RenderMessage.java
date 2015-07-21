@@ -121,10 +121,11 @@ public class RenderMessage extends MediaRendererThread {
                         startCompleted();
                         if (speechSynthesizer != null) {
                             if (prerenderedSpeechItems != null) {
-                                speechSynthesizer.play(prompt,
+                                speechSynthesizer.play(message.actor, prompt,
                                         prerenderedSpeechItems);
                             } else {
-                                speechSynthesizer.speak(prompt, mood);
+                                speechSynthesizer.speak(message.actor, prompt,
+                                        mood);
                             }
                         }
                         pauseAfterParagraph(it);

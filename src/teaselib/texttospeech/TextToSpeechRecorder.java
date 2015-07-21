@@ -29,7 +29,6 @@ public class TextToSpeechRecorder {
     public final static String ResourcesFilename = "inventory.txt";
 
     private final TeaseLib teaseLib;
-    private final TextToSpeech textToSpeech;
     private File speechDir = null;
     private final Map<String, Voice> voices;
     private final Set<String> actors = new HashSet<String>();
@@ -44,10 +43,8 @@ public class TextToSpeechRecorder {
 
     public TextToSpeechRecorder(TeaseLib teaseLib) throws IOException {
         this.teaseLib = teaseLib;
-        this.textToSpeech = new TextToSpeech();
-        this.voices = textToSpeech.getVoices();
-        TextToSpeechPlayer ttsPlayer = new TextToSpeechPlayer(teaseLib,
-                textToSpeech);
+        TextToSpeechPlayer ttsPlayer = new TextToSpeechPlayer(teaseLib);
+        this.voices = ttsPlayer.textToSpeech.getVoices();
         File assetsDir = teaseLib.resources.getAssetPath("");
         speechDir = createSubDir(assetsDir, SpeechDirName);
         InstalledVoices available = new InstalledVoices(voices);
@@ -61,7 +58,7 @@ public class TextToSpeechRecorder {
             voicesProperties.store(assetsDir);
             // reinitialize
             // todo check for file and init once
-            ttsPlayer = new TextToSpeechPlayer(teaseLib, textToSpeech);
+            ttsPlayer = new TextToSpeechPlayer(teaseLib);
         }
         this.ttsPlayer = ttsPlayer;
         TeaseLib.log("Build start: " + new Date(buildStart).toString());
@@ -88,7 +85,7 @@ public class TextToSpeechRecorder {
             final Voice voice;
             voice = getVoice(actor);
             TeaseLib.log("Voice: " + voice.name);
-            textToSpeech.setVoice(voice);
+            ttsPlayer.textToSpeech.setVoice(voice);
             File voiceDir = createSubDir(characterDir, voice.guid);
             createActorFile(actor, voice);
             String hash = recordMessage(message, voice, voiceDir);
@@ -218,10 +215,10 @@ public class TextToSpeechRecorder {
             } else if (part.type == Message.Type.Text) {
                 TeaseLib.log("Recording part " + index);
                 File soundFile = new File(messageDir, Integer.toString(index));
-                textToSpeech.setVoice(neutralVoice);
-                textToSpeech.setHint(mood);
-                String recordedSoundFile = textToSpeech.speak(part.value,
-                        soundFile.getAbsolutePath());
+                ttsPlayer.textToSpeech.setVoice(neutralVoice);
+                ttsPlayer.textToSpeech.setHint(mood);
+                String recordedSoundFile = ttsPlayer.textToSpeech.speak(
+                        part.value, soundFile.getAbsolutePath());
                 if (!recordedSoundFile.endsWith(".mp3")) {
                     String encodedSoundFile = recordedSoundFile.replace(".wav",
                             ".mp3");

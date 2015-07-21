@@ -11,6 +11,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+import teaselib.speechrecognition.SpeechRecognizer;
+import teaselib.texttospeech.TextToSpeechPlayer;
+
 /**
  * @author someone
  *
@@ -29,6 +32,9 @@ public class TeaseLib {
     public final Host host;
     public final ResourceLoader resources;
     public final Persistence persistence;
+
+    public final SpeechRecognizer speechRecognizer;
+    public final TextToSpeechPlayer speechSynthesizer;
 
     public final static boolean logDetails = false;
 
@@ -63,6 +69,9 @@ public class TeaseLib {
             log(this, t);
             throw new RuntimeException(t);
         }
+        speechRecognizer = new SpeechRecognizer();
+        speechSynthesizer = new TextToSpeechPlayer(this, speechRecognizer);
+
     }
 
     public static TeaseLib instance() {

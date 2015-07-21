@@ -16,13 +16,14 @@ import teaselib.Actor;
 import teaselib.ScriptInterruptedException;
 import teaselib.TeaseLib;
 import teaselib.speechrecognition.SpeechRecognition;
+import teaselib.speechrecognition.SpeechRecognizer;
 import teaselib.text.Message;
 
 public class TextToSpeechPlayer {
 
     private final TeaseLib teaseLib;
     public final TextToSpeech textToSpeech;
-    protected final SpeechRecognition speechRecognizer;
+    protected final SpeechRecognizer speechRecognizerCollection;
 
     private final ActorVoices actorVoices;
 
@@ -33,16 +34,16 @@ public class TextToSpeechPlayer {
     private final Set<String> usedVoices = new HashSet<String>();
     private Voice voice = null;
 
-    public TextToSpeechPlayer(TeaseLib teaseLib, TextToSpeech textToSpeech) {
-        this(teaseLib, textToSpeech, null);
+    public TextToSpeechPlayer(TeaseLib teaseLib) {
+        this(teaseLib, null);
     }
 
-    public TextToSpeechPlayer(TeaseLib teaseLib, TextToSpeech textToSpeech,
-            SpeechRecognition speechRecognizer) {
+    public TextToSpeechPlayer(TeaseLib teaseLib,
+            SpeechRecognizer speechRecognizerCollection) {
         super();
         this.teaseLib = teaseLib;
-        this.textToSpeech = textToSpeech;
-        this.speechRecognizer = speechRecognizer;
+        this.textToSpeech = new TextToSpeech();
+        this.speechRecognizerCollection = speechRecognizerCollection;
         // TTS might not be available
         if (textToSpeech.isReady()) {
             this.voices = textToSpeech.getVoices();
@@ -232,13 +233,15 @@ public class TextToSpeechPlayer {
      * @param teaseLib
      *            instance to call sleep on
      */
-    public void speak(String prompt, String mood) {
+    public void speak(Actor actor, String prompt, String mood) {
         boolean useTTS = textToSpeech.isReady() && voice != null;
         final boolean reactivateSpeechRecognition;
         // Suspend speech recognition while speaking,
         // to avoid wrong recognitions
         // - and the mistress speech isn't to be interrupted anyway
-        if (useTTS && speechRecognizer != null) {
+        if (useTTS && speechRecognizerCollection != null) {
+            SpeechRecognition speechRecognizer = speechRecognizerCollection
+                    .get(actor.locale);
             speechRecognizer.completeSpeechRecognitionInProgress();
             reactivateSpeechRecognition = speechRecognizer.isActive();
             if (reactivateSpeechRecognition) {
@@ -262,11 +265,13 @@ public class TextToSpeechPlayer {
         }
         // resume SR if necessary
         if (reactivateSpeechRecognition) {
+            SpeechRecognition speechRecognizer = speechRecognizerCollection
+                    .get(actor.locale);
             speechRecognizer.resumeRecognition();
         }
     }
 
-    public void play(String prompt, Iterator<String> prerecorded)
+    public void play(Actor actor, String prompt, Iterator<String> prerecorded)
             throws IOException {
         final String path = prerecorded.hasNext() ? prerecorded.next() : null;
         boolean usePrerecorded = path != null;
@@ -274,7 +279,9 @@ public class TextToSpeechPlayer {
         // Suspend speech recognition while speaking,
         // to avoid wrong recognitions
         // - and the mistress speech isn't to be interrupted anyway
-        if (usePrerecorded && speechRecognizer != null) {
+        if (usePrerecorded && speechRecognizerCollection != null) {
+            SpeechRecognition speechRecognizer = speechRecognizerCollection
+                    .get(actor.locale);
             speechRecognizer.completeSpeechRecognitionInProgress();
             reactivateSpeechRecognition = speechRecognizer.isActive();
             if (reactivateSpeechRecognition) {
@@ -290,6 +297,8 @@ public class TextToSpeechPlayer {
         }
         // resume SR if necessary
         if (reactivateSpeechRecognition) {
+            SpeechRecognition speechRecognizer = speechRecognizerCollection
+                    .get(actor.locale);
             speechRecognizer.resumeRecognition();
         }
     }

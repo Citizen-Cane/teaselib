@@ -20,6 +20,25 @@ import com.github.sarxos.webcam.WebcamMotionDetector;
 import com.github.sarxos.webcam.WebcamPanel;
 import com.github.sarxos.webcam.WebcamResolution;
 
+/**
+ * Uses webcams to detect motion.
+ * 
+ * In order to achieve a high frame rate, the camera live image resolution is
+ * set to VGA resolution.
+ * 
+ * However, in poor lighting conditions, the frame rate may drop because the
+ * camera automatically increases its exposure time in order to compensate the
+ * poor lighting. This typically results in a frame rate drop to below 10
+ * frames. The overall brightness of the live image may also alternate between
+ * dark and bright, if the camera can't decide between dark and bright. In this
+ * case, motion detection will fail.
+ * 
+ * As a result, good lighting is a must to be successful with motion detection.
+ * 
+ * 
+ * @author someone
+ *
+ */
 public class MotionDetector {
 
     public enum HorizontalMotion {

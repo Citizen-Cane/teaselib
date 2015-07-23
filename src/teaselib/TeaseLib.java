@@ -238,17 +238,11 @@ public class TeaseLib {
     }
 
     protected class PersistentValue {
-        protected final String Name;
-        protected final String property;
+        protected final String name;
 
         public PersistentValue(String name) {
-            this.Name = name;
-            this.property = makePropertyName(name);
+            this.name = name;
         }
-    }
-
-    private static String makePropertyName(String name) {
-        return name;
     }
 
     /**
@@ -262,7 +256,7 @@ public class TeaseLib {
         }
 
         public boolean get() {
-            return persistence.get(property) == "1";
+            return persistence.getBoolean(name);
         }
 
         public void clear() {
@@ -274,7 +268,7 @@ public class TeaseLib {
         }
 
         public void set(boolean value) {
-            persistence.set(property, value);
+            persistence.set(name, value);
         }
     }
 
@@ -290,14 +284,14 @@ public class TeaseLib {
 
         public int get() {
             try {
-                return Integer.parseInt(persistence.get(property));
+                return Integer.parseInt(persistence.get(name));
             } catch (NumberFormatException e) {
                 return 0;
             }
         }
 
         public void set(int value) {
-            persistence.set(property, Integer.toString(value));
+            persistence.set(name, Integer.toString(value));
         }
     }
 
@@ -312,11 +306,11 @@ public class TeaseLib {
         }
 
         public String get() {
-            return persistence.get(property);
+            return persistence.get(name);
         }
 
         public void set(String value) {
-            persistence.set(property, value);
+            persistence.set(name, value);
         }
     }
 

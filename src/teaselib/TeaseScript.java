@@ -404,6 +404,17 @@ public abstract class TeaseScript extends TeaseScriptBase implements Runnable {
         return items;
     }
 
+    public List<Item> get(Toys[]... toys) {
+        List<Item> items = new ArrayList<Item>();
+        for (Toys[] selection : toys) {
+            for (Toys toy : selection) {
+                Item item = teaseLib.persistence.get(toy);
+                items.add(item);
+            }
+        }
+        return items;
+    }
+
     public boolean isAnyAvailable(Clothing... clothes) {
         for (Clothing clothing : clothes) {
             Item item = teaseLib.persistence.get(clothing);

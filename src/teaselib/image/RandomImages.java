@@ -27,12 +27,11 @@ public class RandomImages implements Images {
      *            todo "path.jpg" won't be listed.
      */
     public RandomImages(ResourceLoader resources, String path) {
-        // todo document regex patterns, they're just to hard to remember
-        String filesWithImageExtension = path + ".+\\.jpg";
-        String pathsThatEndWithAnImageExtension = "(.*)("
-                + filesWithImageExtension + ")$";
-        images = resources.resources(pathsThatEndWithAnImageExtension);
-        if (images.size() == 0) {
+        images = resources.resources(path, "jpg");
+        if (images.size() > 0) {
+            TeaseLib.log(getClass().getSimpleName() + ": Path '" + path
+                    + "' contains " + images.size() + " images");
+        } else {
             TeaseLib.log(getClass().getSimpleName() + ": Path '" + path
                     + "' doesn't contain any images");
         }

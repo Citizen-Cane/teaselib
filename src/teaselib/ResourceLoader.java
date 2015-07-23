@@ -109,12 +109,12 @@ public class ResourceLoader {
             method.invoke(classLoader, new Object[] { uri.toURL() });
             if (uri.getPath().endsWith(".zip") || file.isDirectory()) {
                 enumeratableClassPaths.add(uri);
-                TeaseLib.log("Using resource location: " + uri.toString());
+                TeaseLib.log("Using resource location: " + uri.getPath());
             }
         } else {
             // Just warn, since everybody should be able to unpack the archives
             // and explore, and remove them to ensure folder resources are used
-            TeaseLib.log("Archive not available: " + uri.toString());
+            TeaseLib.log("Archive not available: " + uri.getPath());
         }
     }
 
@@ -168,11 +168,35 @@ public class ResourceLoader {
     }
 
     /**
-     * Retrieves all resource entries matching the path pattern
+     * Return all resource in a path that match the extension
+     * 
+     * @param path
+     *            The resource path to search for resources with the given
+     *            extension. The path may denote be a directory or package, or a
+     *            directory or package plus a partial base name.
+     * 
+     * @param extension
+     *            The extension to look for, without the dot (for instance 'mp3'
+     *            ,'jpg', 'txt')
+     * @return A list of resource paths containing all matching resources.
+     *         Please note that all resources matching the path are returned.
+     *         This includes resources in sub-directories of the specified path
+     *         as well.
+     */
+    public List<String> resources(String path, String extension) {
+        // todo document regex patterns, they're just to hard to remember
+        String filesWithExtension = path + ".+\\." + extension;
+        String pathsThatEndWithExtension = "(.*)(" + filesWithExtension + ")$";
+        return resources(pathsThatEndWithExtension);
+    }
+
+    /**
+     * Retrieves all resource entries matching the path pattern.
      * 
      * @param pathPattern
-     *            RegEx pattern for URL selection
-     * @return List of URLs matching the pattern
+     *            RegEx pattern for resource selection.
+     * @return List of resource paths matching the pattern. All resources in all
+     *         asset paths are enumerated, then matched against the pattern.
      */
     public List<String> resources(String pathPattern) {
         Pattern pattern = Pattern.compile(pathPattern);
@@ -186,7 +210,7 @@ public class ResourceLoader {
                 // the resource loader
                 // As a result, we don't have to mention it again in the script
                 // When unpacking a zip, all files are stored into a single
-                // folder (thew asset root folder) as well
+                // folder (the asset root folder) as well
                 // Now when enumerating zip entries, we can just search for the
                 // full path
                 if (match.startsWith(assetRoot)) {
@@ -194,8 +218,6 @@ public class ResourceLoader {
                 } else {
                     resources.add(match);
                 }
-                // TODO resource paths that contains white space cause IOExceptions later on
-                // TODO regex matches resources in sub folders - bug or feature?
             }
         }
         return resources;

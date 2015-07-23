@@ -81,7 +81,8 @@ public class ResourceList {
                 URI relative = base.relativize(absolute);
                 boolean accept = pattern.matcher(relative.toString()).matches();
                 if (accept) {
-                    retval.add(relative.toString());
+                    final String path = relative.getPath();
+                    retval.add(path);
                 }
             }
         }

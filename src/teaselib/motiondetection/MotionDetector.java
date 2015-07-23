@@ -180,6 +180,7 @@ public class MotionDetector {
     private void hideWebcamWindow() {
         window.setVisible(false);
         window.dispose();
+        window = null;
     }
 
     private class WebCamThread extends Thread {
@@ -211,6 +212,12 @@ public class MotionDetector {
             detector.start();
             int motionDetectedCounter = -1;
             while (!isInterrupted()) {
+                // The webcam may freeze (running in VMWare, then opening
+                // DirectX game on host), but we can reanimate
+                final boolean isDead = isDead(webcam);
+                if (isDead) {
+                    reanimate();
+                }
                 boolean motionDetected = detector.isMotion();
                 synchronized (MotionDetector.this) {
                     if (motionDetected) {
@@ -259,6 +266,28 @@ public class MotionDetector {
                     return;
                 }
             }
+        }
+
+        private boolean isDead(Webcam webcam) {
+            // This condition is weak, because the webcam has some averaging, so
+            // it takes a long time to detect a dead cam
+            // TODO FInd out faster detection for dead webcam
+            final double fps = webcam.getFPS();
+            final boolean isDead = fps > 0.0 && fps < 5.0;
+            return isDead;
+        }
+
+        private void reanimate() {
+            // This doesn't seem to trigger the detachWebcam event
+            webcam.close();
+            hideWebcamWindow();
+            Webcam.resetDriver();
+            // Just reopening doesn't do the trick, because either the
+            // fps member isn't reset or the webcam object just won't
+            // work anymore
+            webcam = Webcam.getDefault();
+            // This triggers the attachWebcam event, so we don't have to
+            // reopen the window manually
         }
 
         private void printDebug() {

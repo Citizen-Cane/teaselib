@@ -1,5 +1,17 @@
 package teaselib;
 
+/**
+ * @author someone
+ *
+ *         Messages can be annotated with mood hints, to set voice
+ *         characteristics or display appropriate images.
+ * 
+ *         A mood hint applies to the next message part only (exception:
+ *         Mood.Reading).
+ * 
+ *         The MoodImages class supports choosing images based on mood hints, so
+ *         for hinted text parts, a corresponding image will be displayed.
+ */
 public class Mood {
     public static String Prefix = "<mood=";
     public static String Suffix = ">";
@@ -18,7 +30,11 @@ public class Mood {
     public static final String Neutral = "<mood=neutral>";
 
     /**
-     * Mood when reading, concentrated, speaks somewhat slower, a bit louder
+     * Mood when reading, concentrated, speaks somewhat slower, a bit louder.
+     * 
+     * Injected automatically when a message text part starts with a quotation
+     * mark. Reset to Neutral when a message text part ends with a quotation
+     * mark.
      */
     public static final String Reading = "<mood=reading>";
 

@@ -149,7 +149,7 @@ public abstract class TeaseScript extends TeaseScriptBase implements Runnable {
         teaseLib.host.stopSound(handle);
     }
 
-    void setMood(String mood) {
+    public void setMood(String mood) {
         this.mood = mood;
     }
 

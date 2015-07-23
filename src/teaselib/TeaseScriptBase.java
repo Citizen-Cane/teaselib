@@ -107,7 +107,8 @@ public abstract class TeaseScriptBase {
                     parsedMessage.add(part);
                 }
             }
-            Set<String> hints = getHints(mood);
+            Set<String> hints = getHints();
+            hints.add(mood);
             RenderMessage renderMessage = new RenderMessage(parsedMessage,
                     speechSynthesizer, displayImage, hints);
             renderQueue.start(renderMessage, teaseLib);
@@ -153,13 +154,12 @@ public abstract class TeaseScriptBase {
         teaseLib.persistence.set(var, value);
     }
 
-    private static Set<String> getHints(String mood) {
+    private static Set<String> getHints() {
         Set<String> hints = new HashSet<String>();
         // Within messages, images might change fast, and changing
         // the camera position, image size or aspect would be too distracting
         hints.add(Images.SameCameraPosition);
         hints.add(Images.SameResolution);
-        hints.add(mood);
         return hints;
     }
 

@@ -26,6 +26,7 @@ public class RenderMessage extends MediaRendererThread {
     private final TextToSpeechPlayer speechSynthesizer;
     private String displayImage;
     private final Set<String> hints = new HashSet<String>();
+    private String defaultMood = Mood.Neutral;
 
     private final static long DELAYBETWEENPARAGRAPHS = 500;
     private final static long DELAYATENDOFTEXT = 2000;
@@ -39,6 +40,13 @@ public class RenderMessage extends MediaRendererThread {
         this.speechSynthesizer = speechSynthesizer;
         this.displayImage = displayImage;
         hints.addAll(hints);
+        // Default mood?
+        for (String hint : hints) {
+            if (Mood.isMood(hint)) {
+                defaultMood = hint;
+                break;
+            }
+        }
     }
 
     public Message getMessage() {
@@ -49,17 +57,7 @@ public class RenderMessage extends MediaRendererThread {
     public void render() throws InterruptedException {
         try {
             if (message.isEmpty()) {
-                // // Set image and no text
-                // if (displayImage == TeaseScript.NoImage) {
-                // teaseLib.host.show(null, null);
-                // } else if (displayImage != TeaseScript.DominantImage) {
-                // teaseLib.host.show(imageIterator.next(), null);
-                // } else {
-                // String[] hintArray = new String[hints.size()];
-                // hintArray = hints.toArray(hintArray);
-                // imageIterator.hint(hintArray);
-                // teaseLib.host.show(imageIterator.next(), null);
-                // }
+                // // Show image but no text
                 showImageAndText(null, hints);
             } else {
                 StringBuilder accumulatedText = null;
@@ -75,7 +73,7 @@ public class RenderMessage extends MediaRendererThread {
                 }
                 // Process message paragraphs
                 RenderSound soundRenderer = null;
-                String mood = Mood.Neutral;
+                String mood = defaultMood;
                 boolean appendToItem = false;
                 for (Iterator<Part> it = message.iterator(); it.hasNext();) {
                     Set<String> additionalHints = new HashSet<String>();
@@ -129,6 +127,10 @@ public class RenderMessage extends MediaRendererThread {
                             }
                         }
                         pauseAfterParagraph(it);
+                        // Reset mood after applying it once
+                        if (mood != Mood.Reading) {
+                            mood = defaultMood;
+                        }
                     }
                     if (endThread) {
                         break;

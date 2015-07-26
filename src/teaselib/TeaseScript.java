@@ -315,6 +315,7 @@ public abstract class TeaseScript extends TeaseScriptBase implements Runnable {
      */
     public List<Boolean> showItems(String caption, List<String> choices,
             List<Boolean> values, boolean allowCancel) {
+        completeMandatory();
         List<Boolean> results = teaseLib.host.showCheckboxes(caption, choices,
                 values, allowCancel);
         renderQueue.endAll();
@@ -368,22 +369,6 @@ public abstract class TeaseScript extends TeaseScriptBase implements Runnable {
         return available.toArray(t);
     }
 
-    public Toys getOne(Toys... toys) {
-        if (toys.length == 0) {
-            return null;
-        } else {
-            return toys[random(0, toys.length - 1)];
-        }
-    }
-
-    public Clothing getOne(Clothing... clothes) {
-        if (clothes.length == 0) {
-            return null;
-        } else {
-            return clothes[random(0, clothes.length - 1)];
-        }
-    }
-
     public Clothing[] getAvailable(Clothing... clothes) {
         List<Clothing> available = new ArrayList<Clothing>();
         for (Clothing clothing : clothes) {
@@ -413,6 +398,27 @@ public abstract class TeaseScript extends TeaseScriptBase implements Runnable {
             }
         }
         return items;
+    }
+
+    /**
+     * Get values for any enumeration. This is different from toys and clothing
+     * in that those are usually handled by the host.
+     * 
+     * @param values
+     * @return
+     */
+    public List<Item> get(Enum<? extends Enum<?>>... values) {
+        List<Item> items = new ArrayList<Item>(values.length);
+        for (Enum<?> v : values) {
+            items.add(new Item(namespace + "." + v.getClass().getName() + "."
+                    + v.name(), v.toString(), teaseLib.persistence));
+        }
+        return items;
+    }
+
+    public Item get(Enum<? extends Enum<?>> value) {
+        return new Item(namespace + "." + value.getClass().getName() + "."
+                + value.name(), value.toString(), teaseLib.persistence);
     }
 
     public boolean isAnyAvailable(Clothing... clothes) {

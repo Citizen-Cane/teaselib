@@ -11,6 +11,6 @@ import teaselib.stimulation.Stimulator;
  */
 public class Trot extends Gait {
     public Trot(Stimulator stimulator) {
-        super(stimulator, 0.8);
+        super(stimulator, 0.8, 0.2);
     }
 }

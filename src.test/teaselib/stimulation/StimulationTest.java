@@ -70,7 +70,7 @@ public class StimulationTest {
 
     @Test
     public void testGaits() {
-        Stimulator stimulator = getLeftStimulator();
+        Stimulator stimulator = getRightStimulator();
         testStimulation(new Walk(stimulator));
         testStimulation(new Trot(stimulator));
         testStimulation(new Run(stimulator));
@@ -132,12 +132,33 @@ public class StimulationTest {
 
     static private void testStimulation(Stimulation stimulation) {
         for (int i = 1; i <= Stimulation.MaxIntensity; i++) {
-            stimulation.play(i, 5.0 * stimulation.periodDurationSeconds);
+            final double durationSeconds = 5.0 * stimulation.periodDurationSeconds;
+            stimulation.play(i, durationSeconds);
             try {
-                Thread.sleep((long) (5 * 1000 * stimulation.periodDurationSeconds));
+                Thread.sleep((long) (durationSeconds * 1000));
             } catch (InterruptedException e) {
                 break;
             }
         }
     }
+
+    @Test
+    public void testAll() {
+        Stimulator a = getRightStimulator();
+        Stimulator c = getLeftStimulator();
+        final double durationSeconds = 10.0;
+        Stimulation[] r = { new Walk(a), new Trot(a), new Walk(a), new Run(a),
+                new Run(a), new Run(a), new Run(a) };
+        Stimulation[] l = { new Tease(c), new Cum(c), new Tease(c), new Cum(c),
+                new Cum(c), new Cum(c), new Cum(c) };
+        for (int j = 0; j < r.length; j++) {
+            for (int i = 1; i <= Stimulation.MaxIntensity; i++) {
+                r[j].play(i, durationSeconds);
+                l[j].play(i, durationSeconds);
+                r[j].complete();
+                l[j].complete();
+            }
+        }
+    }
+
 }

@@ -44,9 +44,9 @@ public class StimulationController<StimulationType> {
     }
 
     public static StimulationController<Stimulation.Type> stimulateAnusAndBalls(
-            Stimulator buttplug, Stimulator balls) {
+            Stimulator anus, Stimulator balls) {
         StimulationController<Stimulation.Type> stim = new StimulationController<Stimulation.Type>();
-        stim.addRegion(Stimulation.BodyPart.Anus, buttplug);
+        stim.addRegion(Stimulation.BodyPart.Anus, anus);
         stim.addRegion(Stimulation.BodyPart.Balls, balls);
         stim.add(Stimulation.Type.Walk,
                 new Walk(stim.stimulator(Stimulation.BodyPart.Anus)));

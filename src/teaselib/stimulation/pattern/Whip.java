@@ -17,17 +17,26 @@ public class Whip extends Stimulation {
         super(stimulator, 0.0);
     }
 
+    /**
+     * @param stimulator
+     * @param baseDuration
+     *            A longer base duration works better for anal stimulation
+     */
+    public Whip(Stimulator stimulator, double baseDuration) {
+        super(stimulator, baseDuration);
+    }
+
     @Override
     public void play() throws InterruptedException {
         // Attention duration depends on intensity only
-        double whipSeconds = Whip.getSeconds(intensity);
+        double whipSeconds = getSeconds(intensity);
         // A constant signal
-        new SquareWave(whipSeconds * 1000, whipSeconds * 1000).play(stimulator,
-                durationSeconds, Stimulation.maxStrength);
+        new SquareWave(whipSeconds * 1000.0, whipSeconds * 1000.0).play(
+                stimulator, durationSeconds, Stimulation.maxStrength);
     }
 
-    public static double getSeconds(int intensity) {
-        return 0.0 + 0.5 * intensity / MaxIntensity;
+    public double getSeconds(int intensity) {
+        return periodDurationSeconds + 0.5 * intensity / MaxIntensity;
     }
 
 }

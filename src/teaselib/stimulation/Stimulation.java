@@ -15,7 +15,7 @@ public abstract class Stimulation implements Runnable {
      * The body region the stimulator is applied to
      *
      */
-    enum BodyPart {
+    public enum BodyPart {
         Anus,
         Balls,
         Buttocks,
@@ -38,7 +38,7 @@ public abstract class Stimulation implements Runnable {
     protected final static int MaxIntensity = 10;
     protected final static double maxStrength = 1.0;
 
-    protected final Stimulator stimulator;
+    public final Stimulator stimulator;
     protected int intensity;
 
     // todo prevent change from thread
@@ -58,7 +58,8 @@ public abstract class Stimulation implements Runnable {
         this.durationSeconds = durationSeconds;
         stim = new Thread(this);
         TeaseLib.log(getClass().getSimpleName() + ": intensity=" + intensity
-                + " duration=" + durationSeconds);
+                + " duration=" + durationSeconds + " on "
+                + stimulator.getDeviceName() + ", " + stimulator.getLocation());
         stim.start();
     }
 
@@ -68,19 +69,23 @@ public abstract class Stimulation implements Runnable {
     }
 
     public void stop() {
-        if (stim != null) {
-            stim.interrupt();
-            while (stim.isAlive()) {
-                try {
-                    stim.join();
-                } catch (InterruptedException e) {
-                    // Ignore
-                }
+        stim.interrupt();
+        while (stim.isAlive()) {
+            try {
+                stim.join();
+            } catch (InterruptedException e) {
+                // Ignore
             }
-            if (Thread.interrupted()) {
+        }
+    }
+
+    public void complete() {
+        while (stim.isAlive()) {
+            try {
+                stim.join();
+            } catch (InterruptedException e) {
                 throw new ScriptInterruptedException();
             }
-            stim = null;
         }
     }
 

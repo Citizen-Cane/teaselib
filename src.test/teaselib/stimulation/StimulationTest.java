@@ -52,17 +52,25 @@ public class StimulationTest {
     public void tearDown() throws Exception {
     }
 
-    private static Stimulator getRoughStimulator() {
+    public static Stimulator getLeftStimulator() {
         return Stimulators.getAll().get(0);
     }
 
-    private static Stimulator getSmoothStimulator() {
+    public static Stimulator getRightStimulator() {
         return Stimulators.getAll().get(1);
     }
 
     @Test
+    public void testEnumerateStimulators() {
+        for (Stimulator stimulator : Stimulators.getAll()) {
+            System.out.println(stimulator.getDeviceName());
+
+        }
+    }
+
+    @Test
     public void testGaits() {
-        Stimulator stimulator = getRoughStimulator();
+        Stimulator stimulator = getLeftStimulator();
         testStimulation(new Walk(stimulator));
         testStimulation(new Trot(stimulator));
         testStimulation(new Run(stimulator));
@@ -70,13 +78,13 @@ public class StimulationTest {
 
     @Test
     public void testTease() {
-        Stimulator stimulator = getSmoothStimulator();
+        Stimulator stimulator = getRightStimulator();
         testStimulation(new Tease(stimulator));
     }
 
     @Test
     public void testAttention() {
-        Stimulator stimulator = getSmoothStimulator();
+        Stimulator stimulator = getRightStimulator();
         Stimulation stimulation = new Attention(stimulator);
         for (int i = 1; i <= Stimulation.MaxIntensity; i++) {
             stimulation.play(i, 0);
@@ -90,7 +98,7 @@ public class StimulationTest {
 
     @Test
     public void testPunish() {
-        Stimulator stimulator = getSmoothStimulator();
+        Stimulator stimulator = getLeftStimulator();
         Stimulation stimulation = new Punish(stimulator);
         for (int i = 1; i <= Stimulation.MaxIntensity; i++) {
             stimulation.play(i, 0);
@@ -104,12 +112,12 @@ public class StimulationTest {
 
     @Test
     public void testWhip() {
-        Stimulator stimulator = getRoughStimulator();
+        Stimulator stimulator = getLeftStimulator();
         Stimulation stimulation = new Whip(stimulator);
         for (int i = 1; i <= Stimulation.MaxIntensity; i++) {
             stimulation.play(i, 0);
             try {
-                Thread.sleep((long) (1000 * (1.0 + Whip.getSeconds(i))));
+                Thread.sleep(1000 * 3);
             } catch (InterruptedException e) {
                 break;
             }
@@ -118,7 +126,7 @@ public class StimulationTest {
 
     @Test
     public void testCum() {
-        Stimulator stimulator = getSmoothStimulator();
+        Stimulator stimulator = getRightStimulator();
         testStimulation(new Cum(stimulator));
     }
 
@@ -132,5 +140,4 @@ public class StimulationTest {
             }
         }
     }
-
 }

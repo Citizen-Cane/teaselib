@@ -31,6 +31,13 @@ import teaselib.stimulation.XInputStimulator.SharedState;
  */
 public class Stimulators {
 
+    /**
+     * Enumerates all stimulators. If a device contains multiple stimulators,
+     * the are enumerated in right to left sequence as located on the device
+     * (position on device as indicated by buttons, connectors, etc).
+     * 
+     * @return
+     */
     public static List<Stimulator> getAll() {
         Vector<Stimulator> all = new Vector<Stimulator>();
         XInputDevice[] devices = XInputDevice.getAllDevices();

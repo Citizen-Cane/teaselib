@@ -72,6 +72,8 @@ public class XInputStimulator implements Stimulator {
 
     final int channel;
 
+    public ChannelDependency channelDependency = ChannelDependency.Independent;
+
     public XInputStimulator(SharedState sharedState, int channel) {
         this.sharedState = sharedState;
         this.channel = channel;
@@ -94,4 +96,20 @@ public class XInputStimulator implements Stimulator {
         return "XBox Gamepad " + sharedState.device.getPlayerNum() + " "
                 + (channel == 0 ? "Left" : "Right") + " channel";
     }
+
+    @Override
+    public String getLocation() {
+        return channel == 0 ? "Left rumble motor" : "Right rumble motor";
+    }
+
+    @Override
+    public ChannelDependency channelDependency() {
+        return channelDependency;
+    }
+
+    @Override
+    public Object getDevice() {
+        return sharedState.device;
+    }
+
 }

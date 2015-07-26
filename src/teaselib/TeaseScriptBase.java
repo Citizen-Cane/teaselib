@@ -141,7 +141,7 @@ public abstract class TeaseScriptBase {
     }
 
     public String get(Persistence.TextVariable variable) {
-        String value = teaseLib.persistence.get(variable);
+        String value = teaseLib.persistence.get(variable, actor.locale);
         if (value != null) {
             return value;
         } else if (variable.fallback != null) {
@@ -151,7 +151,7 @@ public abstract class TeaseScriptBase {
     }
 
     public void set(TextVariable var, String value) {
-        teaseLib.persistence.set(var, value);
+        teaseLib.persistence.set(var, actor.locale, value);
     }
 
     private static Set<String> getHints() {
@@ -608,5 +608,5 @@ public abstract class TeaseScriptBase {
         }
         return derivedChoices;
     }
-    
+
 }

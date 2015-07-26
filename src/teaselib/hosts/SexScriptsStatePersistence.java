@@ -1,5 +1,7 @@
 package teaselib.hosts;
 
+import java.util.Locale;
+
 import ss.IScript;
 import teaselib.Persistence;
 import teaselib.persistence.Clothing;
@@ -89,20 +91,27 @@ public class SexScriptsStatePersistence implements Persistence {
     }
 
     @Override
-    public String get(TextVariable name) {
-        if (name == TextVariable.Slave) {
+    public String get(TextVariable name, String locale) {
+        if (name == TextVariable.Slave && defaultLanguageMatches(locale)) {
             return get("intro.name");
         }
-        return get(name.value);
+        return get(name.value + "." + locale);
     }
 
     @Override
-    public void set(TextVariable name, String value) {
-        // TODO Auto-generated method stub
-        if (name == TextVariable.Slave) {
+    public void set(TextVariable name, String locale, String value) {
+        if (name == TextVariable.Slave && defaultLanguageMatches(locale)) {
             set("intro.name", value);
         } else {
-            set(name.name(), value);
+            set(name.name() + "." + locale, value);
         }
+    }
+
+    private static boolean defaultLanguageMatches(String locale) {
+        final Locale defaultLocale = Locale.getDefault();
+        String defaultLanguage = defaultLocale.getLanguage();
+        final String localeLanguage = new Locale(locale).getLanguage();
+        final boolean languagesMatch = defaultLanguage.equals(localeLanguage);
+        return languagesMatch;
     }
 }

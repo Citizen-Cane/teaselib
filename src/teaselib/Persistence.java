@@ -46,7 +46,8 @@ public interface Persistence {
      * gives us reasonable values if the script contains english language.
      */
     public enum TextVariable {
-        Dom("Dom", null), Dominant("Dominant", null),
+        Dom("Dom", null),
+        Dominant("Dominant", null),
 
         /**
          * Short name of the default mistress
@@ -89,7 +90,7 @@ public interface Persistence {
      *            The name of the variable
      * @return The value of the variable or null
      */
-    String get(TextVariable name);
+    String get(TextVariable name, String locale);
 
-    void set(TextVariable name, String value);
+    void set(TextVariable name, String locale, String value);
 }

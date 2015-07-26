@@ -54,12 +54,12 @@ public class DummyPersistence implements Persistence {
     }
 
     @Override
-    public String get(TextVariable name) {
+    public String get(TextVariable name, String locale) {
         return null;
     }
 
     @Override
-    public void set(TextVariable name, String value) {
+    public void set(TextVariable name, String locale, String value) {
         // TODO Auto-generated method stub
     }
 

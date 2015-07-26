@@ -5,12 +5,15 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+import teaselib.persistence.Item;
 import teaselib.speechrecognition.SpeechRecognizer;
 import teaselib.texttospeech.TextToSpeechPlayer;
 
@@ -62,6 +65,18 @@ public class TeaseLib {
             host.show(null, "Cannot open log file " + logFile.getAbsolutePath());
             host.reply(Arrays.asList("Oh dear"));
         }
+        Runtime.getRuntime().addShutdownHook(new Thread() {
+            @Override
+            public void run() {
+                if (log != null) {
+                    try {
+                        log.flush();
+                        log.close();
+                    } catch (IOException ignored) {
+                    }
+                }
+            }
+        });
         // Now we can log errors
         try {
             this.resources = new ResourceLoader(basePath, assetRoot);
@@ -97,12 +112,11 @@ public class TeaseLib {
     public static synchronized void log(String text) {
         Date now = new Date(System.currentTimeMillis());
         SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm:ss.SSS");
-        String line = timeFormat.format(now) + ": " + text;
-
+        String line = timeFormat.format(now) + ": " + text + "\n";
         try {
-            log.write(line + "\n");
-            // todo move flush and close into jvm shutdown handler
-            log.flush();
+            if (log != null) {
+                log.write(line);
+            }
         } catch (IOException e) {
             host().show(null,
                     "Cannot write to log file " + logFile.getAbsolutePath());
@@ -425,5 +439,21 @@ public class TeaseLib {
             states.put(enumClass, state);
         }
         return state;
+    }
+
+    /**
+     * Get values for any enumeration. This is different from toys and clothing
+     * in that those are usually handled by the host.
+     * 
+     * @param values
+     * @return
+     */
+    public List<Item> get(Enum<? extends Enum<?>>... values) {
+        List<Item> items = new ArrayList<Item>(values.length);
+        for (Enum<?> v : values) {
+            items.add(new Item(v.getClass().getName() + "." + v.name(), v
+                    .toString(), persistence));
+        }
+        return items;
     }
 }

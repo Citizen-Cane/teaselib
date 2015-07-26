@@ -100,12 +100,20 @@ public class MotionDetector {
     private class DiscoveryListener implements WebcamDiscoveryListener {
         @Override
         public void webcamFound(WebcamDiscoveryEvent event) {
-            attachWebcam(event.getWebcam());
+            try {
+                attachWebcam(event.getWebcam());
+            } catch (Exception e) {
+                TeaseLib.log(this, e);
+            }
         }
 
         @Override
         public void webcamGone(WebcamDiscoveryEvent event) {
-            detachWebcam(event.getWebcam());
+            try {
+                detachWebcam(event.getWebcam());
+            } catch (Exception e) {
+                TeaseLib.log(this, e);
+            }
         }
     }
 

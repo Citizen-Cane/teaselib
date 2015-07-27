@@ -50,7 +50,8 @@ public abstract class Stimulation implements Runnable {
     public Stimulation(Stimulator stimulator, double periodDurationSeconds) {
         super();
         this.stimulator = stimulator;
-        this.periodDurationSeconds = periodDurationSeconds;
+        this.periodDurationSeconds = Math.max(periodDurationSeconds,
+                stimulator.minimalSignalDuration());
     }
 
     public void play(int intensity, double durationSeconds) {

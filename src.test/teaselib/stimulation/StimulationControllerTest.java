@@ -56,7 +56,7 @@ public class StimulationControllerTest {
     // }
 
     @Test
-    public void testAnusAndCock() {
+    public void testCockAndAnus() {
         Stimulator cock = StimulationTest.getRightStimulator();
         assertNotNull(cock);
         Stimulator balls = StimulationTest.getLeftStimulator();

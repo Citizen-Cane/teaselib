@@ -44,17 +44,65 @@ public interface Stimulator {
     }
 
     /**
+     * The physical result of the stimulation
+     * 
+     * @author someone
+     *
+     */
+    enum Output {
+        Vibration,
+        EStim
+    }
+
+    /**
+     * Stimulation strength, as of now analog for vibration, but digital for
+     * estim
      * 
      * @param value
      *            The stimulation value from 0.0-1.0
      */
     void set(double value);
 
+    /**
+     * The name of the device that provides the stimulation
+     * 
+     * @return
+     */
     String getDeviceName();
 
+    /**
+     * Location of the stimulator on the device
+     * 
+     * @return
+     */
     String getLocation();
 
+    /**
+     * The device that controls the stimulation output
+     * 
+     * @return
+     */
+    Object getDevice();
+
+    /**
+     * Whether the channel is independent from the other channels of the device
+     * 
+     * @return
+     */
     ChannelDependency channelDependency();
 
-    Object getDevice();
+    /**
+     * The kind of output this stimulator delivers
+     * 
+     * @return
+     */
+    Output output();
+
+    /**
+     * The duration the output value must be set to high in order to receive a
+     * noticeable output signal.
+     * 
+     * @return
+     */
+    double minimalSignalDuration();
 }

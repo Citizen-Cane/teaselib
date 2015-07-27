@@ -73,6 +73,7 @@ public class XInputStimulator implements Stimulator {
     final int channel;
 
     public ChannelDependency channelDependency = ChannelDependency.Independent;
+    public Output output = Output.Vibration;
 
     public XInputStimulator(SharedState sharedState, int channel) {
         this.sharedState = sharedState;
@@ -103,13 +104,23 @@ public class XInputStimulator implements Stimulator {
     }
 
     @Override
+    public Object getDevice() {
+        return sharedState.device;
+    }
+
+    @Override
     public ChannelDependency channelDependency() {
         return channelDependency;
     }
 
     @Override
-    public Object getDevice() {
-        return sharedState.device;
+    public Output output() {
+        return output;
+    }
+
+    @Override
+    public double minimalSignalDuration() {
+        return output == Output.Vibration ? 0.15 : 0.05;
     }
 
 }

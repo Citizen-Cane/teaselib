@@ -348,6 +348,11 @@ public abstract class TeaseScript extends TeaseScriptBase implements Runnable {
         return teaseLib.persistence.get(item);
     }
 
+    public boolean isAvailable(Toys toy) {
+        Item item = teaseLib.persistence.get(toy);
+        return item.isAvailable();
+    }
+
     public boolean isAnyAvailable(Toys... toys) {
         for (Toys toy : toys) {
             Item item = teaseLib.persistence.get(toy);

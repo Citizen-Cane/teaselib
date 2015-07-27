@@ -116,6 +116,7 @@ public class TeaseLib {
         try {
             if (log != null) {
                 log.write(line);
+                log.flush();
             }
         } catch (IOException e) {
             host().show(null,

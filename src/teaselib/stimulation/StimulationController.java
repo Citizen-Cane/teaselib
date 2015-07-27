@@ -124,6 +124,10 @@ public class StimulationController<StimulationType> {
         intensity++;
     }
 
+    public int intensity() {
+        return intensity;
+    }
+
     public void addRegion(BodyPart region, Stimulator stimulator) {
         stimulators.put(region, stimulator);
     }

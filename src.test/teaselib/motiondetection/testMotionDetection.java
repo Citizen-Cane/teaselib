@@ -18,7 +18,7 @@ public class testMotionDetection {
     public void test() {
         MotionDetector md = MotionDetector.getDefault();
         System.out.println("Move!");
-        while (!md.awaitMotionStart(1)) {
+        while (!md.awaitMotionStart(5)) {
             System.out.println("I said 'Move'!");
         }
 

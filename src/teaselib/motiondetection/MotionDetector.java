@@ -1,7 +1,6 @@
 package teaselib.motiondetection;
 
 import java.awt.Dimension;
-import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.Window.Type;
 import java.util.concurrent.TimeUnit;
@@ -13,7 +12,6 @@ import javax.swing.JFrame;
 import javax.swing.WindowConstants;
 
 import teaselib.TeaseLib;
-import teaselib.motiondetection.DirectionHistory.Direction;
 
 import com.github.sarxos.webcam.Webcam;
 import com.github.sarxos.webcam.WebcamDiscoveryEvent;
@@ -43,36 +41,8 @@ import com.github.sarxos.webcam.WebcamResolution;
  */
 public class MotionDetector {
 
-    public static final double InitialAreaTreshold = 10;
-    public static final int InitialPixelThreshold = 16;
-
-    public enum HorizontalMotion {
-        None,
-        Left,
-        Right
-    }
-
-    public enum VerticalMotion {
-        None,
-        Up,
-        Down
-    }
-
-    public enum DirectionAmount {
-        None(0),
-        JustABit(0.1),
-        SomeWhat(0.25),
-        ALot(0.5);
-
-        public final double ScreenPercentage;
-
-        DirectionAmount(double screenPercentage) {
-            this.ScreenPercentage = screenPercentage;
-        }
-    }
-
-    private static final int MotionThreshold = 20;
-    private static final int MotionSeconds = 1;
+    public static final double InitialAreaTreshold = 5;
+    public static final int InitialPixelTreshold = 16;
 
     private static final int PollingInterval = 100;
     private final static int MotionInertia = 4; // frames
@@ -83,16 +53,14 @@ public class MotionDetector {
     private final Lock motionEndLock = new ReentrantLock();
     private final Condition motionEnd = motionEndLock.newCondition();
 
-    private final DirectionHistory xi = new DirectionHistory(NumberOfPastFrames);
-    private final DirectionHistory yi = new DirectionHistory(NumberOfPastFrames);
     private final MotionHistory mi = new MotionHistory(NumberOfPastFrames);
-
-    private HorizontalMotion currentHorizontalMotion = HorizontalMotion.None;
-    private VerticalMotion currentVerticalMotion = VerticalMotion.None;
 
     private Webcam webcam = null;
     private WebCamThread t = null;
     private Dimension ViewSize = WebcamResolution.VGA.getSize();
+
+    private double areaTreshold = InitialAreaTreshold;
+    private int pixelTreshold = InitialPixelTreshold;
 
     private static MotionDetector instance = null;
 
@@ -146,6 +114,8 @@ public class MotionDetector {
         showWebcamWindow(newWebcam);
         webcam = newWebcam;
         t = new WebCamThread();
+        setAreaTreshold(areaTreshold);
+        setPixelTreshold(pixelTreshold);
         t.start();
     }
 
@@ -195,9 +165,6 @@ public class MotionDetector {
     private class WebCamThread extends Thread {
         private final WebcamMotionDetector detector;
 
-        private Point motionCog = null;
-        private double motionArea = 0.0;
-
         WebCamThread() {
             this.detector = new WebcamMotionDetector(webcam);
             setName("motion-detector");
@@ -224,12 +191,6 @@ public class MotionDetector {
             // Manage inertia manually, to avoid wrong isMotion reports
             // with the image center as the image c.o.g.
             detector.clearInertia();
-            // Percentage of the image that has to change in order to recognize
-            // changes it as motion
-            detector.setAreaThreshold(InitialAreaTreshold);
-            // Pixels are considered to have changed when they're above the
-            // pixel threshold
-            detector.setPixelThreshold(InitialPixelThreshold);
             detector.start();
             int motionDetectedCounter = -1;
             while (!isInterrupted()) {
@@ -242,25 +203,13 @@ public class MotionDetector {
                 synchronized (MotionDetector.this) {
                     boolean motionDetected = detector.isMotion();
                     // Build motion and direction frames history
+                    final double motionArea;
                     if (motionDetected) {
-                        motionCog = detector.getMotionCog();
-                        xi.add(motionCog.x);
-                        yi.add(motionCog.y);
                         motionArea = detector.getMotionArea();
                     } else {
-                        motionCog = null;
-                        xi.addLastValueAgain();
-                        yi.addLastValueAgain();
                         motionArea = 0.0;
                     }
                     mi.add(motionArea);
-                    // Compute current direction
-                    int frames = frames(MotionSeconds);
-                    int threshold = 1; // MotionThreshold;
-                    currentHorizontalMotion = getHorizontalMotion(xi.direction(
-                            frames, threshold));
-                    currentVerticalMotion = getVerticalMotion(yi.direction(
-                            frames, threshold));
                     // After setting current state, send notifications
                     if (motionDetected) {
                         if (motionDetectedCounter < 0) {
@@ -314,13 +263,7 @@ public class MotionDetector {
         }
 
         private void printDebug() {
-            String debug = currentHorizontalMotion + " "
-                    + currentVerticalMotion + " MotionArea=" + motionArea;
-            if (motionCog != null) {
-                debug += " MotionCog=(" + motionCog.x + ", " + motionCog.y
-                        + ")";
-            }
-            TeaseLib.logDetail(debug);
+            TeaseLib.logDetail("MotionArea=" + detector.getMotionArea());
         }
 
         public void signalMotionStart() {
@@ -352,92 +295,24 @@ public class MotionDetector {
         }
     }
 
-    public void clearDirectionHistory() {
-        synchronized (this) {
-            xi.clear();
-            yi.clear();
-            currentHorizontalMotion = HorizontalMotion.None;
-            currentVerticalMotion = VerticalMotion.None;
-        }
-    }
-
+    /**
+     * Percentage of the image that has to change in order to recognize changes
+     * it as motion
+     * 
+     * @param areaTreshold
+     */
     public void setAreaTreshold(double areaTreshold) {
         t.setAreaTreshold(areaTreshold);
     }
 
+    /**
+     * Pixels are considered to have changed when they're above the pixel
+     * threshold.
+     * 
+     * @param pixelTreshold
+     */
     public void setPixelTreshold(int pixelTreshold) {
         t.setPixelTreshold(pixelTreshold);
-    }
-
-    private static HorizontalMotion getHorizontalMotion(Direction dx) {
-        if (dx == Direction.Positive) {
-            return HorizontalMotion.Right;
-        } else if (dx == Direction.Negative) {
-            return HorizontalMotion.Left;
-        } else {
-            return HorizontalMotion.None;
-        }
-    }
-
-    private static VerticalMotion getVerticalMotion(Direction dy) {
-        if (dy == Direction.Positive) {
-            return VerticalMotion.Down;
-        } else if (dy == Direction.Negative) {
-            return VerticalMotion.Up;
-        } else {
-            return VerticalMotion.None;
-        }
-    }
-
-    public HorizontalMotion getCurrentHorizontalMotion() {
-        synchronized (this) {
-            return currentHorizontalMotion;
-        }
-    }
-
-    public VerticalMotion getCurrentVerticalMotion() {
-        synchronized (this) {
-            return currentVerticalMotion;
-        }
-    }
-
-    public HorizontalMotion getRecentHorizontalMotion(double pastSeconds) {
-        synchronized (this) {
-            HorizontalMotion horizontalMotion = getHorizontalMotion(xi
-                    .direction(frames(pastSeconds), MotionThreshold));
-            TeaseLib.log("getRecentHorizontalMotion(" + pastSeconds
-                    + ") returned " + horizontalMotion.toString());
-            return horizontalMotion;
-        }
-    }
-
-    public DirectionAmount getAmountOfDirection(double pastSeconds) {
-        return getAmountOfDirection(frames(pastSeconds));
-    }
-
-    public DirectionAmount getAmountOfDirection(int pastFrames) {
-        synchronized (this) {
-            int dx = Math.abs(xi.distance(pastFrames));
-            int dy = Math.abs(yi.distance(pastFrames));
-            DirectionAmount[] values = DirectionAmount.values();
-            for (DirectionAmount amount : values) {
-                if (dx <= amount.ScreenPercentage * ViewSize.width
-                        && dy <= amount.ScreenPercentage * ViewSize.height) {
-                    return amount;
-                }
-            }
-            return DirectionAmount.None;
-        }
-    }
-
-    public VerticalMotion getRecentVerticalMotion(double pastSeconds) {
-        synchronized (this) {
-            VerticalMotion verticalMotion = getVerticalMotion(yi.direction(
-                    frames(pastSeconds), MotionThreshold));
-            TeaseLib.log("getRecentVerticalMotion(" + pastSeconds
-                    + ") returned " + verticalMotion.toString());
-            return verticalMotion;
-        }
     }
 
     public void clearMotionHistory() {
@@ -446,11 +321,11 @@ public class MotionDetector {
         }
     }
 
-    public boolean isMotionDetected(double pastSeconds, DirectionAmount amount) {
-        return isMotionDetected(frames(pastSeconds), amount);
+    public boolean isMotionDetected(double pastSeconds) {
+        return isMotionDetected(frames(pastSeconds));
     }
 
-    public boolean isMotionDetected(int pastFrames, double areaTreshold) {
+    private boolean isMotionDetected(int pastFrames) {
         synchronized (this) {
             double dm = mi.getMotion(pastFrames);
             return dm > areaTreshold;
@@ -468,8 +343,7 @@ public class MotionDetector {
         motionStartLock.lock();
         try {
             t.setAreaTreshold(InitialAreaTreshold);
-            boolean motionDetected = isMotionDetected(MotionInertia,
-                    InitialAreaTreshold);
+            boolean motionDetected = isMotionDetected(MotionInertia);
             if (!motionDetected) {
                 motionDetected = motionStart.await(
                         (long) timeoutSeconds * 1000, TimeUnit.MILLISECONDS);
@@ -491,8 +365,7 @@ public class MotionDetector {
         motionEndLock.lock();
         try {
             t.setAreaTreshold(InitialAreaTreshold);
-            boolean motionStopped = !isMotionDetected(MotionInertia,
-                    InitialAreaTreshold);
+            boolean motionStopped = !isMotionDetected(MotionInertia);
             if (!motionStopped) {
                 motionStopped = motionEnd.await((long) timeoutSeconds * 1000,
                         TimeUnit.MILLISECONDS);

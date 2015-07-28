@@ -2,17 +2,20 @@ package teaselib.motiondetection;
 
 import java.util.LinkedList;
 
-public class DirectionIndicator {
+public class DirectionHistory {
 
-    private static final int Frames = 400;
+    private final int frames;
 
     private final LinkedList<Integer> values = new LinkedList<Integer>();
 
     public enum Direction {
-        None, Positive, Negative;
+        None,
+        Positive,
+        Negative;
     }
 
-    DirectionIndicator() {
+    DirectionHistory(int frames) {
+        this.frames = frames;
     }
 
     public void clear() {
@@ -21,7 +24,7 @@ public class DirectionIndicator {
 
     public void add(int value) {
         values.addLast(value);
-        if (values.size() > Frames) {
+        if (values.size() > frames) {
             values.removeFirst();
         }
     }
@@ -36,17 +39,17 @@ public class DirectionIndicator {
             return;
         } else {
             values.addLast(values.getLast());
-            if (values.size() > Frames) {
+            if (values.size() > frames) {
                 values.removeFirst();
             }
         }
     }
 
-    public Direction direct(int frames, int threshold) {
+    public Direction direction(int pastFrames, int threshold) {
         if (values.isEmpty()) {
             return Direction.None;
         } else {
-            int distance = distance(frames);
+            int distance = distance(pastFrames);
             if (distance > threshold) {
                 return Direction.Positive;
             } else if (distance < -threshold) {
@@ -57,16 +60,16 @@ public class DirectionIndicator {
         }
     }
 
-    public int distance(int frames) {
+    public int distance(int pastFrames) {
         final int first;
         int size = values.size();
         if (size == 0) {
             return 0;
         } else {
-            if (size < frames) {
+            if (size < pastFrames) {
                 first = values.getFirst();
             } else {
-                first = values.get(size - frames);
+                first = values.get(size - pastFrames);
             }
             int last = values.getLast();
             int distance = last - first;

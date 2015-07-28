@@ -11,6 +11,12 @@ public class Actor {
 
     public Images images = null;
 
+    public Actor(Actor actor) {
+        this.name = actor.name;
+        this.locale = actor.locale;
+        this.images = actor.images;
+    }
+
     public Actor(String name, String locale) {
         super();
         this.name = name;

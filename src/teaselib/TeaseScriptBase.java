@@ -98,7 +98,12 @@ public abstract class TeaseScriptBase {
             String mood) {
         synchronized (renderQueue) {
             renderDeferred();
-            Message parsedMessage = new Message(message.actor);
+            // Clone the actor to prevent the wrong actor image to be displayed
+            // when changing the actor images right after saying a message.
+            // Without cloning one of the new actor images would be displayed
+            // with the current message because the actor is shared between
+            // script and message
+            Message parsedMessage = new Message(new Actor(message.actor));
             for (Message.Part part : message.getParts()) {
                 if (part.type == Message.Type.Text) {
                     parsedMessage.add(parsedMessage.new Part(part.type,

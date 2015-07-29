@@ -1,36 +1,19 @@
 package teaselib;
 
-import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import teaselib.audio.RenderBackgroundSound;
 import teaselib.audio.RenderSound;
-import teaselib.persistence.Clothing;
 import teaselib.persistence.Item;
-import teaselib.persistence.Toys;
 import teaselib.text.Message;
 import teaselib.text.RenderDelay;
 import teaselib.texttospeech.TextToSpeechPlayer;
 import teaselib.userinterface.MediaRenderer;
 import teaselib.util.RenderDesktopItem;
 
-public abstract class TeaseScript extends TeaseScriptBase implements Runnable {
-
-    public static final int NoTimeout = 0;
-
-    public final static String NoImage = "NoImage";
-    public final static String DominantImage = "DominantImage";
-
-    public final String namespace;
-
-    private String mood = Mood.Neutral;
-    private String displayImage = DominantImage;
+public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
 
     /**
      * Create a sub-script with the same actor as the parent.
@@ -39,9 +22,7 @@ public abstract class TeaseScript extends TeaseScriptBase implements Runnable {
      *            The script to share resources with
      */
     public TeaseScript(TeaseScript script) {
-        super(script);
-        this.namespace = script.namespace;
-        acquireVoice(actor);
+        super(script, script.actor);
     }
 
     /**
@@ -55,8 +36,6 @@ public abstract class TeaseScript extends TeaseScriptBase implements Runnable {
      */
     public TeaseScript(TeaseScript script, Actor actor) {
         super(script, actor);
-        this.namespace = script.namespace;
-        acquireVoice(actor);
     }
 
     /**
@@ -78,28 +57,7 @@ public abstract class TeaseScript extends TeaseScriptBase implements Runnable {
      * @param namespace
      */
     public TeaseScript(TeaseLib teaseLib, Actor actor, String namespace) {
-        super(teaseLib, actor);
-        this.namespace = namespace;
-        acquireVoice(actor);
-    }
-
-    private void acquireVoice(Actor actor) {
-        try {
-            teaseLib.speechSynthesizer.selectVoice(new Message(actor));
-        } catch (IOException e) {
-            TeaseLib.log(this, e);
-        }
-    }
-
-    /**
-     * Return a random number
-     * 
-     * @param min
-     * @param max
-     * @return A value in the interval [min, max]
-     */
-    public int random(int min, int max) {
-        return teaseLib.random(min, max);
+        super(teaseLib, actor, namespace);
     }
 
     /**
@@ -112,11 +70,11 @@ public abstract class TeaseScript extends TeaseScriptBase implements Runnable {
      */
     public void setImage(String path) {
         if (path == null) {
-            displayImage = NoImage;
-        } else if (path.equalsIgnoreCase(DominantImage)) {
-            displayImage = DominantImage;
-        } else if (path.equalsIgnoreCase(NoImage)) {
-            displayImage = NoImage;
+            displayImage = Message.NoImage;
+        } else if (path.equalsIgnoreCase(Message.DominantImage)) {
+            displayImage = Message.DominantImage;
+        } else if (path.equalsIgnoreCase(Message.NoImage)) {
+            displayImage = Message.NoImage;
         } else {
             displayImage = path;
         }
@@ -184,17 +142,17 @@ public abstract class TeaseScript extends TeaseScriptBase implements Runnable {
     }
 
     /**
-     * Show instructional text, this is not spoken, just displayed
+     * Show instructional text, this is not spoken, just displayed.
      * 
      * @param message
-     *            The text top be displayed
+     *            The text to be displayed
      */
     public void show(String text) {
-        renderMessage(new Message(actor, text), null);
+        show(new Message(actor, text));
     }
 
     public void show(String... message) {
-        renderMessage(new Message(actor, message), null);
+        show(new Message(actor, message));
     }
 
     public void show(Message message) {
@@ -206,7 +164,7 @@ public abstract class TeaseScript extends TeaseScriptBase implements Runnable {
         try {
             renderMessage(message, speechSynthesizer, displayImage, mood);
         } finally {
-            displayImage = DominantImage;
+            displayImage = Message.DominantImage;
             mood = Mood.Neutral;
         }
     }
@@ -253,14 +211,14 @@ public abstract class TeaseScript extends TeaseScriptBase implements Runnable {
      */
     public String reply(Runnable scriptFunction, final List<String> choices) {
         // To display buttons and to start scriptFunction at the same time,
-        // completeAll() has to be called
-        // in advance in order to finish all previous render commands,
+        // completeAll() has to be called in order to finish all current
+        // renderers
         completeAll();
         String chosen = showChoices(scriptFunction, choices);
         if (chosen == Timeout) {
-            renderQueue.completeAll();
+            completeAll();
         } else {
-            renderQueue.endAll();
+            endAll();
         }
         return chosen;
     }
@@ -289,14 +247,6 @@ public abstract class TeaseScript extends TeaseScriptBase implements Runnable {
         return choices.indexOf(answer);
     }
 
-    private static List<String> buildChoicesFromArray(String choice,
-            String... more) {
-        List<String> choices = new ArrayList<String>(1 + more.length);
-        choices.add(choice);
-        choices.addAll(Arrays.asList(more));
-        return choices;
-    }
-
     public boolean askYN(String yes, String no) {
         return reply(yes, no) == yes;
     }
@@ -318,7 +268,7 @@ public abstract class TeaseScript extends TeaseScriptBase implements Runnable {
         completeMandatory();
         List<Boolean> results = teaseLib.host.showCheckboxes(caption, choices,
                 values, allowCancel);
-        renderQueue.endAll();
+        endAll();
         return results;
     }
 
@@ -338,263 +288,5 @@ public abstract class TeaseScript extends TeaseScriptBase implements Runnable {
             return true;
         }
         return false;
-    }
-
-    public Item get(Toys item) {
-        return teaseLib.persistence.get(item);
-    }
-
-    public Item get(Clothing item) {
-        return teaseLib.persistence.get(item);
-    }
-
-    public boolean isAvailable(Toys toy) {
-        Item item = teaseLib.persistence.get(toy);
-        return item.isAvailable();
-    }
-
-    public boolean isAnyAvailable(Toys... toys) {
-        for (Toys toy : toys) {
-            Item item = teaseLib.persistence.get(toy);
-            if (item.isAvailable()) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    public Toys[] getAvailable(Toys... toys) {
-        List<Toys> available = new ArrayList<Toys>();
-        for (Toys toy : toys) {
-            if (isAnyAvailable(toy)) {
-                available.add(toy);
-            }
-        }
-        Toys[] t = new Toys[available.size()];
-        return available.toArray(t);
-    }
-
-    public Clothing[] getAvailable(Clothing... clothes) {
-        List<Clothing> available = new ArrayList<Clothing>();
-        for (Clothing clothing : clothes) {
-            if (isAnyAvailable(clothing)) {
-                available.add(clothing);
-            }
-        }
-        Clothing[] c = new Clothing[available.size()];
-        return available.toArray(c);
-    }
-
-    public List<Item> get(Toys... toys) {
-        List<Item> items = new ArrayList<Item>();
-        for (Toys toy : toys) {
-            Item item = teaseLib.persistence.get(toy);
-            items.add(item);
-        }
-        return items;
-    }
-
-    public List<Item> get(Toys[]... toys) {
-        List<Item> items = new ArrayList<Item>();
-        for (Toys[] selection : toys) {
-            for (Toys toy : selection) {
-                Item item = teaseLib.persistence.get(toy);
-                items.add(item);
-            }
-        }
-        return items;
-    }
-
-    /**
-     * Get values for any enumeration. This is different from toys and clothing
-     * in that those are usually handled by the host.
-     * 
-     * @param values
-     * @return
-     */
-    public List<Item> get(Enum<? extends Enum<?>>... values) {
-        List<Item> items = new ArrayList<Item>(values.length);
-        for (Enum<?> v : values) {
-            items.add(new Item(namespace + "." + v.getClass().getName() + "."
-                    + v.name(), v.toString(), teaseLib.persistence));
-        }
-        return items;
-    }
-
-    public Item get(Enum<? extends Enum<?>> value) {
-        return new Item(namespace + "." + value.getClass().getName() + "."
-                + value.name(), value.toString(), teaseLib.persistence);
-    }
-
-    public boolean isAnyAvailable(Clothing... clothes) {
-        for (Clothing clothing : clothes) {
-            Item item = teaseLib.persistence.get(clothing);
-            if (item.isAvailable()) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    public List<Item> get(Clothing... clothes) {
-        List<Item> items = new ArrayList<Item>();
-        for (Clothing clothing : clothes) {
-            Item item = teaseLib.persistence.get(clothing);
-            items.add(item);
-        }
-        return items;
-    }
-
-    public boolean isAnyAvailable(List<Item> items) {
-        for (Item item : items) {
-            if (item.isAvailable()) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    public boolean isAnyAvailable(Item... items) {
-        for (Item item : items) {
-            if (item.isAvailable()) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private String makePropertyName(String name) {
-        return namespace + "." + name;
-    }
-
-    public boolean flag(String name) {
-        return teaseLib.new PersistentFlag(makePropertyName(name)).get();
-    }
-
-    public void set(String name, boolean value) {
-        teaseLib.new PersistentFlag(makePropertyName(name)).set(value);
-    }
-
-    public void set(String name, int value) {
-        teaseLib.new PersistentNumber(makePropertyName(name)).set(value);
-    }
-
-    public void set(String name, String value) {
-        teaseLib.new PersistentString(makePropertyName(name)).set(value);
-    }
-
-    public int getInteger(String name) {
-        return teaseLib.new PersistentNumber(makePropertyName(name)).get();
-    }
-
-    public String getString(String name) {
-        return teaseLib.new PersistentString(makePropertyName(name)).get();
-    }
-
-    public <T extends Enum<T>> TeaseLib.PersistentSequence<T> persistentSequence(
-            String name, T[] values) {
-        return teaseLib.new PersistentSequence<T>(makePropertyName(name),
-                values);
-    }
-
-    public Message message(String... text) {
-        if (text == null)
-            return null;
-        if (text.length == 0)
-            return new Message(actor);
-        return new Message(actor, text);
-    }
-
-    public Message message(List<String> text) {
-        if (text == null)
-            return null;
-        return new Message(actor, text);
-    }
-
-    public <T> T random(T... items) {
-        if (items == null)
-            return null;
-        if (items.length == 0)
-            return null;
-        return items[random(0, items.length - 1)];
-    }
-
-    public <T> T random(List<T> items) {
-        if (items == null)
-            return null;
-        if (items.size() == 0)
-            return null;
-        return items.get(random(0, items.size() - 1));
-    }
-
-    public <T> T random(Collection<T> items) {
-        if (items == null)
-            return null;
-        if (items.size() == 0)
-            return null;
-        int s = random(0, items.size() - 1);
-        Iterator<T> iterator = items.iterator();
-        T item = null;
-        for (int i = 0; i < s; i++) {
-            iterator.next();
-        }
-        return item;
-    }
-
-    public <T> T[] items(T... items) {
-        return items;
-    }
-
-    public <T> List<T> randomized(T[] items, int n) {
-        @SuppressWarnings("unchecked")
-        T[] introduction = (T[]) new Object[0];
-        return randomized(introduction, items, n);
-    }
-
-    /**
-     * Build a list with n randomized entries, starting with the shuffled items
-     * in introduction, followed by random items of repetitions.
-     * 
-     * @param introduction
-     * @param repeations
-     * @param n
-     *            Requested size of the resulting list, at least
-     *            introduction.size()
-     * @return The list starting with the shuffled items from the introduction,
-     *         followed by items from repetition. Repetitions are never added
-     *         twice in a row.
-     */
-    public <T> List<T> randomized(T[] introduction, T[] repetitions, int n) {
-        List<T> out = new ArrayList<T>(n);
-        if (introduction != null) {
-            out.addAll(Arrays.asList(introduction));
-            Collections.shuffle(out);
-        }
-        T last = out.size() > 0 ? out.get(out.size() - 1) : null;
-        for (int i = out.size(); i < n; i++) {
-            T t = null;
-            // Don't add the same entry twice in a row
-            while (last == (t = repetitions[random(0, repetitions.length - 1)])) {
-            }
-            out.add(t);
-            last = t;
-        }
-        return out;
-    }
-
-    public TeaseLib.Duration duration() {
-        return teaseLib.new Duration();
-    }
-
-    public void sleep(long duration, TimeUnit timeUnit) {
-        teaseLib.sleep(duration, timeUnit);
-    }
-
-    public <T extends Enum<T>> State<T>.Item state(T item) {
-        return teaseLib.state(item);
-    }
-
-    public <T extends Enum<T>> State<T> state(T[] values) {
-        return teaseLib.state(values);
     }
 }

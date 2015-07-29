@@ -1,7 +1,9 @@
 package teaselib;
 
+import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Deque;
 import java.util.HashSet;
 import java.util.List;
@@ -12,7 +14,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
 
-import teaselib.Persistence.TextVariable;
 import teaselib.image.Images;
 import teaselib.speechrecognition.SpeechRecognition;
 import teaselib.speechrecognition.SpeechRecognitionImplementation;
@@ -30,16 +31,20 @@ import teaselib.util.Event;
 public abstract class TeaseScriptBase {
 
     public final TeaseLib teaseLib;
-
-    protected static final MediaRendererQueue renderQueue = new MediaRendererQueue();
-    private final Deque<MediaRenderer> deferredRenderers = new ArrayDeque<MediaRenderer>();
-
-    ExecutorService choiceScriptFunctionExecutor = Executors
-            .newFixedThreadPool(1);
-
     public final Actor actor;
+    public final String namespace;
 
     public static final String Timeout = "Timeout";
+
+    protected String mood = Mood.Neutral;
+    protected String displayImage = Message.DominantImage;
+
+    protected static final int NoTimeout = 0;
+
+    private static final MediaRendererQueue renderQueue = new MediaRendererQueue();
+    private final Deque<MediaRenderer> deferredRenderers = new ArrayDeque<MediaRenderer>();
+    private ExecutorService choiceScriptFunctionExecutor = Executors
+            .newFixedThreadPool(1);
 
     /**
      * Construct a new script instance
@@ -47,26 +52,40 @@ public abstract class TeaseScriptBase {
      * @param teaseLib
      * @param locale
      */
-    public TeaseScriptBase(TeaseLib teaseLib, Actor actor) {
+    protected TeaseScriptBase(TeaseLib teaseLib, Actor actor, String namespace) {
         this.teaseLib = teaseLib;
         this.actor = actor;
+        this.namespace = namespace;
+        acquireVoice(actor);
     }
 
     /**
-     * Construct a script instance with shared resources, with the same actor as
-     * the parent script
+     * Construct a script with a different actor but with shared resources
      * 
-     * @param teaseScript
-     *            Script to share speech recognition and so on with
+     * @param script
+     * @param actor
      */
-    public TeaseScriptBase(TeaseScriptBase script) {
-        this.teaseLib = script.teaseLib;
-        this.actor = script.actor;
-    }
-
-    public TeaseScriptBase(TeaseScriptBase script, Actor actor) {
+    protected TeaseScriptBase(TeaseScriptBase script, Actor actor) {
         this.teaseLib = script.teaseLib;
         this.actor = actor;
+        this.namespace = script.namespace;
+        acquireVoice(actor);
+    }
+
+    private void acquireVoice(Actor actor) {
+        try {
+            teaseLib.speechSynthesizer.selectVoice(new Message(actor));
+        } catch (IOException e) {
+            TeaseLib.log(this, e);
+        }
+    }
+
+    protected static List<String> buildChoicesFromArray(String choice,
+            String... more) {
+        List<String> choices = new ArrayList<String>(1 + more.length);
+        choices.add(choice);
+        choices.addAll(Arrays.asList(more));
+        return choices;
     }
 
     public void completeStarts() {
@@ -93,7 +112,7 @@ public abstract class TeaseScriptBase {
         renderQueue.endAll();
     }
 
-    public void renderMessage(Message message,
+    protected void renderMessage(Message message,
             TextToSpeechPlayer speechSynthesizer, String displayImage,
             String mood) {
         synchronized (renderQueue) {
@@ -119,44 +138,6 @@ public abstract class TeaseScriptBase {
             renderQueue.start(renderMessage, teaseLib);
             renderQueue.completeStarts();
         }
-    }
-
-    private String replaceVariables(String text) {
-        String parsedText = text;
-        for (Persistence.TextVariable name : Persistence.TextVariable.values()) {
-            parsedText = replaceTextVariable(parsedText, name);
-        }
-        return parsedText;
-    }
-
-    private String replaceTextVariable(String text, Persistence.TextVariable var) {
-        final String value = var.toString();
-        text = replaceTextVariable(text, var, "#" + value);
-        text = replaceTextVariable(text, var, "#" + value.toLowerCase());
-        return text;
-    }
-
-    private String replaceTextVariable(String text,
-            Persistence.TextVariable var, String match) {
-        if (text.contains(match)) {
-            String value = get(var);
-            text = text.replace(match, value);
-        }
-        return text;
-    }
-
-    public String get(Persistence.TextVariable variable) {
-        String value = teaseLib.persistence.get(variable, actor.locale);
-        if (value != null) {
-            return value;
-        } else if (variable.fallback != null) {
-            return get(variable.fallback);
-        }
-        return variable.toString();
-    }
-
-    public void set(TextVariable var, String value) {
-        teaseLib.persistence.set(var, actor.locale, value);
     }
 
     private static Set<String> getHints() {
@@ -188,11 +169,11 @@ public abstract class TeaseScriptBase {
         }
     }
 
-    final class TimeoutClick {
+    private final class TimeoutClick {
         public boolean clicked = false;
     }
 
-    class ScriptFutureTask extends FutureTask<String> {
+    private class ScriptFutureTask extends FutureTask<String> {
         private final TimeoutClick timeout;
 
         public ScriptFutureTask(final Runnable scriptFunction,
@@ -242,7 +223,7 @@ public abstract class TeaseScriptBase {
         }
     }
 
-    class SpeechRecognitionHypothesisEventHandler {
+    private class SpeechRecognitionHypothesisEventHandler {
         /**
          * Hypothesis speech recognition is used for longer sentences, as short
          * sentences or single word recognitions are prone to error. In fact,
@@ -500,7 +481,7 @@ public abstract class TeaseScriptBase {
             }
         }
 
-        public void dispose() {
+        private void dispose() {
             SpeechRecognition speechRecognizer = teaseLib.speechRecognizer
                     .get(actor.locale);
             if (recognitionStarted != null)
@@ -526,7 +507,7 @@ public abstract class TeaseScriptBase {
      *            More choices
      * @return
      */
-    public String showChoices(final Runnable scriptFunction,
+    protected String showChoices(final Runnable scriptFunction,
             List<String> choices) {
         // argument checking and text variable replacement
         final List<String> derivedChoices = replaceTextVariables(choices);
@@ -601,6 +582,40 @@ public abstract class TeaseScriptBase {
         return chosen;
     }
 
+    protected String get(Persistence.TextVariable variable) {
+        String value = teaseLib.persistence.get(variable, actor.locale);
+        if (value != null) {
+            return value;
+        } else if (variable.fallback != null) {
+            return get(variable.fallback);
+        }
+        return variable.toString();
+    }
+
+    private String replaceVariables(String text) {
+        String parsedText = text;
+        for (Persistence.TextVariable name : Persistence.TextVariable.values()) {
+            parsedText = replaceTextVariable(parsedText, name);
+        }
+        return parsedText;
+    }
+
+    private String replaceTextVariable(String text, Persistence.TextVariable var) {
+        final String value = var.toString();
+        text = replaceTextVariable(text, var, "#" + value);
+        text = replaceTextVariable(text, var, "#" + value.toLowerCase());
+        return text;
+    }
+
+    private String replaceTextVariable(String text,
+            Persistence.TextVariable var, String match) {
+        if (text.contains(match)) {
+            String value = get(var);
+            text = text.replace(match, value);
+        }
+        return text;
+    }
+
     private List<String> replaceTextVariables(List<String> choices) {
         final List<String> derivedChoices = new ArrayList<String>(
                 choices.size());
@@ -613,5 +628,4 @@ public abstract class TeaseScriptBase {
         }
         return derivedChoices;
     }
-
 }

@@ -7,7 +7,6 @@ import java.util.Vector;
 
 import teaselib.Actor;
 import teaselib.Mood;
-import teaselib.TeaseScript;
 
 public class Message {
 
@@ -59,6 +58,16 @@ public class Message {
     public final static String Delay60to120s = "delay 60 120";
 
     /**
+     * Don't display an image
+     */
+    public final static String NoImage = "NoImage";
+
+    /**
+     * Display an image of the dominant, the actor that speaks the message
+     */
+    public final static String DominantImage = "DominantImage";
+
+    /**
      * Execute the desktop action
      */
     public final static String Exec = "exec";
@@ -76,8 +85,7 @@ public class Message {
     public final static String Bullet = "°";
 
     public final static String[] Keywords = { Delay, Exec, ShowChoices,
-            AwaitSoundCompletion, TeaseScript.DominantImage,
-            TeaseScript.NoImage, Bullet };
+            AwaitSoundCompletion, DominantImage, NoImage, Bullet };
 
     public final Actor actor;
 
@@ -90,8 +98,6 @@ public class Message {
         this.parts = new Parts();
         this.actor = actor;
     }
-
-    // TODO character type cannot be string
 
     /**
      * @param message

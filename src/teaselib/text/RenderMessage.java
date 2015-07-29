@@ -10,7 +10,6 @@ import java.util.concurrent.TimeUnit;
 import teaselib.Mood;
 import teaselib.ScriptInterruptedException;
 import teaselib.TeaseLib;
-import teaselib.TeaseScript;
 import teaselib.audio.RenderSound;
 import teaselib.image.Images;
 import teaselib.text.Message.Part;
@@ -155,12 +154,12 @@ public class RenderMessage extends MediaRendererThread {
 
     private void doKeyword(RenderSound soundRenderer, Part part) {
         String keyword = part.value;
-        if (keyword == TeaseScript.DominantImage) {
+        if (keyword == Message.DominantImage) {
             // Mistress image
-            displayImage = TeaseScript.DominantImage;
-        } else if (keyword == TeaseScript.NoImage) {
+            displayImage = Message.DominantImage;
+        } else if (keyword == Message.NoImage) {
             // No image
-            displayImage = TeaseScript.NoImage;
+            displayImage = Message.NoImage;
         } else if (keyword == Message.ShowChoices) {
             // Complete the mandatory part of the message
             mandatoryCompleted();
@@ -250,7 +249,7 @@ public class RenderMessage extends MediaRendererThread {
         // Apply image and text
         Image image;
         try {
-            if (displayImage == TeaseScript.DominantImage) {
+            if (displayImage == Message.DominantImage) {
                 Images images = message.actor.images;
                 if (images != null) {
                     String[] hintArray = new String[additionalHints.size()];
@@ -261,7 +260,7 @@ public class RenderMessage extends MediaRendererThread {
                     image = null;
                     TeaseLib.log("Dominant images missing - please initialize");
                 }
-            } else if (displayImage == TeaseScript.NoImage) {
+            } else if (displayImage == Message.NoImage) {
                 image = null;
             } else {
                 // TODO Cache image or detect reusage, since

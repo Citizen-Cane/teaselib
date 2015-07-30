@@ -3,7 +3,6 @@ package teaselib.util;
 import java.util.ArrayDeque;
 import java.util.Deque;
 
-import teaselib.ScriptInterruptedException;
 import teaselib.TeaseLib;
 
 public class DelegateThread extends Thread {

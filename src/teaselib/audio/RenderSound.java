@@ -1,8 +1,8 @@
 package teaselib.audio;
 
-import teaselib.ScriptInterruptedException;
 import teaselib.TeaseLib;
 import teaselib.userinterface.MediaRendererThread;
+import teaselib.util.ScriptInterruptedException;
 
 public class RenderSound extends MediaRendererThread {
     private final String soundFile;

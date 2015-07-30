@@ -14,6 +14,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
 
+import teaselib.hosts.Persistence;
 import teaselib.image.Images;
 import teaselib.speechrecognition.SpeechRecognition;
 import teaselib.speechrecognition.SpeechRecognitionImplementation;
@@ -27,6 +28,7 @@ import teaselib.userinterface.MediaRenderer;
 import teaselib.userinterface.MediaRendererQueue;
 import teaselib.util.Delegate;
 import teaselib.util.Event;
+import teaselib.util.ScriptInterruptedException;
 
 public abstract class TeaseScriptBase {
 
@@ -627,5 +629,9 @@ public abstract class TeaseScriptBase {
             }
         }
         return derivedChoices;
+    }
+
+    protected String makePropertyName(String name) {
+        return namespace + "." + name;
     }
 }

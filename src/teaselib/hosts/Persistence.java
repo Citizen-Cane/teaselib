@@ -1,4 +1,4 @@
-package teaselib;
+package teaselib.hosts;
 
 import teaselib.persistence.Clothing;
 import teaselib.persistence.Item;

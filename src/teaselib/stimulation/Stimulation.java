@@ -3,8 +3,8 @@
  */
 package teaselib.stimulation;
 
-import teaselib.ScriptInterruptedException;
 import teaselib.TeaseLib;
+import teaselib.util.ScriptInterruptedException;
 
 /**
  * @author someone

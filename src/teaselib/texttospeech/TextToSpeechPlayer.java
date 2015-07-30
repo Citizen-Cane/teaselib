@@ -13,11 +13,11 @@ import java.util.Vector;
 import java.util.concurrent.TimeUnit;
 
 import teaselib.Actor;
-import teaselib.ScriptInterruptedException;
 import teaselib.TeaseLib;
 import teaselib.speechrecognition.SpeechRecognition;
 import teaselib.speechrecognition.SpeechRecognizer;
 import teaselib.text.Message;
+import teaselib.util.ScriptInterruptedException;
 
 public class TextToSpeechPlayer {
 

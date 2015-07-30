@@ -8,7 +8,6 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import teaselib.Mood;
-import teaselib.ScriptInterruptedException;
 import teaselib.TeaseLib;
 import teaselib.audio.RenderSound;
 import teaselib.image.Images;
@@ -18,6 +17,7 @@ import teaselib.texttospeech.TextToSpeechPlayer;
 import teaselib.userinterface.MediaRenderer;
 import teaselib.userinterface.MediaRendererThread;
 import teaselib.util.RenderDesktopItem;
+import teaselib.util.ScriptInterruptedException;
 
 public class RenderMessage extends MediaRendererThread {
 

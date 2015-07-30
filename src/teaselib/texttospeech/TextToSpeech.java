@@ -7,11 +7,11 @@ import java.util.Set;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-import teaselib.ScriptInterruptedException;
 import teaselib.TeaseLib;
 import teaselib.texttospeech.implementation.TeaseLibTTS;
 import teaselib.util.Delegate;
 import teaselib.util.DelegateThread;
+import teaselib.util.ScriptInterruptedException;
 
 public class TextToSpeech {
 

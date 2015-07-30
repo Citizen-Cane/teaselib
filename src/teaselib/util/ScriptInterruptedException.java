@@ -1,4 +1,4 @@
-package teaselib;
+package teaselib.util;
 
 /**
  * @author someone

@@ -2,9 +2,9 @@ package teaselib.text;
 
 import java.util.concurrent.TimeUnit;
 
-import teaselib.ScriptInterruptedException;
 import teaselib.TeaseLib;
 import teaselib.userinterface.MediaRendererThread;
+import teaselib.util.ScriptInterruptedException;
 
 public class RenderDelay extends MediaRendererThread {
     public final int from;

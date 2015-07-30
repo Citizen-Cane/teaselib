@@ -23,12 +23,11 @@ import javax.swing.SwingUtilities;
 
 import ss.IScript;
 import ss.desktop.MainFrame;
-import teaselib.Host;
 import teaselib.ResourceLoader;
-import teaselib.ScriptInterruptedException;
 import teaselib.TeaseLib;
 import teaselib.util.Delegate;
 import teaselib.util.Interval;
+import teaselib.util.ScriptInterruptedException;
 
 /**
  * SexScripts renderer: Workarounds some of SS shortcomings (or it's just my

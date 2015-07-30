@@ -19,11 +19,11 @@ import teaselib.text.Message;
  */
 public class TeaseScriptMath extends TeaseScriptPersistence {
 
-    public TeaseScriptMath(TeaseLib teaseLib, Actor actor, String namespace) {
+    protected TeaseScriptMath(TeaseLib teaseLib, Actor actor, String namespace) {
         super(teaseLib, actor, namespace);
     }
 
-    public TeaseScriptMath(TeaseScriptBase script, Actor actor) {
+    protected TeaseScriptMath(TeaseScriptBase script, Actor actor) {
         super(script, actor);
     }
 

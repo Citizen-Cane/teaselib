@@ -6,7 +6,8 @@ package teaselib;
 import java.util.ArrayList;
 import java.util.List;
 
-import teaselib.Persistence.TextVariable;
+import teaselib.hosts.Persistence;
+import teaselib.hosts.Persistence.TextVariable;
 import teaselib.persistence.Clothing;
 import teaselib.persistence.Item;
 import teaselib.persistence.Toys;
@@ -147,10 +148,6 @@ public abstract class TeaseScriptPersistence extends TeaseScriptBase {
             }
         }
         return false;
-    }
-
-    private String makePropertyName(String name) {
-        return namespace + "." + name;
     }
 
     public void set(String name, boolean value) {

@@ -5,8 +5,8 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 
-import teaselib.ScriptInterruptedException;
 import teaselib.TeaseLib;
+import teaselib.util.ScriptInterruptedException;
 
 public class MediaRendererQueue {
 

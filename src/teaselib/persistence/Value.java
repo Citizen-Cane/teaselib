@@ -3,7 +3,7 @@
  */
 package teaselib.persistence;
 
-import teaselib.Persistence;
+import teaselib.hosts.Persistence;
 
 /**
  * @author someone

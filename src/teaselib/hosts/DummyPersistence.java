@@ -1,5 +1,6 @@
-package teaselib;
+package teaselib.hosts;
 
+import teaselib.hosts.Persistence.TextVariable;
 import teaselib.persistence.Clothing;
 import teaselib.persistence.Item;
 import teaselib.persistence.Toys;

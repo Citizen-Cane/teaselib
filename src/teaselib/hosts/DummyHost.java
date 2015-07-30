@@ -1,9 +1,10 @@
-package teaselib;
+package teaselib.hosts;
 
 import java.awt.Image;
 import java.io.IOException;
 import java.util.List;
 
+import teaselib.ResourceLoader;
 import teaselib.util.Delegate;
 
 public class DummyHost implements Host {

@@ -2,8 +2,8 @@ package teaselib.userinterface;
 
 import java.util.concurrent.CountDownLatch;
 
-import teaselib.ScriptInterruptedException;
 import teaselib.TeaseLib;
+import teaselib.util.ScriptInterruptedException;
 
 public abstract class MediaRendererThread implements Runnable, MediaRenderer,
         MediaRenderer.Threaded {

@@ -3,7 +3,6 @@ package teaselib.hosts;
 import java.util.Locale;
 
 import ss.IScript;
-import teaselib.Persistence;
 import teaselib.persistence.Clothing;
 import teaselib.persistence.Item;
 import teaselib.persistence.Toys;

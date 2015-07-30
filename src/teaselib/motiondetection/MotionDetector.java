@@ -95,6 +95,8 @@ public class MotionDetector {
 
     private MotionDetector() {
         this(Webcam.getDefault());
+        setAreaTreshold(InitialAreaTreshold);
+        setPixelTreshold(InitialPixelTreshold);
         Webcam.addDiscoveryListener(new DiscoveryListener());
     }
 
@@ -114,8 +116,8 @@ public class MotionDetector {
         showWebcamWindow(newWebcam);
         webcam = newWebcam;
         t = new WebCamThread();
-        setAreaTreshold(areaTreshold);
-        setPixelTreshold(pixelTreshold);
+        t.setAreaTreshold(areaTreshold);
+        t.setPixelTreshold(pixelTreshold);
         t.start();
     }
 
@@ -200,35 +202,35 @@ public class MotionDetector {
                 if (isDead) {
                     reanimate();
                 }
-                synchronized (MotionDetector.this) {
-                    boolean motionDetected = detector.isMotion();
-                    // Build motion and direction frames history
-                    final double motionArea;
-                    if (motionDetected) {
-                        motionArea = detector.getMotionArea();
-                    } else {
-                        motionArea = 0.0;
-                    }
+                boolean motionDetected = detector.isMotion();
+                // Build motion and direction frames history
+                final double motionArea;
+                if (motionDetected) {
+                    motionArea = detector.getMotionArea();
+                } else {
+                    motionArea = 0.0;
+                }
+                synchronized (mi) {
                     mi.add(motionArea);
-                    // After setting current state, send notifications
-                    if (motionDetected) {
-                        if (motionDetectedCounter < 0) {
-                            // Motion just started
-                            signalMotionStart();
-                            printDebug();
-                        } else {
-                            printDebug();
-                        }
-                        motionDetectedCounter = MotionInertia;
+                }
+                // After setting current state, send notifications
+                if (motionDetected) {
+                    if (motionDetectedCounter < 0) {
+                        // Motion just started
+                        signalMotionStart();
+                        printDebug();
                     } else {
-                        if (motionDetectedCounter == 0) {
-                            printDebug();
-                            signalMotionEnd();
-                            motionDetectedCounter = -1;
-                        } else if (motionDetectedCounter > 0) {
-                            // inertia
-                            motionDetectedCounter--;
-                        }
+                        printDebug();
+                    }
+                    motionDetectedCounter = MotionInertia;
+                } else {
+                    if (motionDetectedCounter == 0) {
+                        printDebug();
+                        signalMotionEnd();
+                        motionDetectedCounter = -1;
+                    } else if (motionDetectedCounter > 0) {
+                        // inertia
+                        motionDetectedCounter--;
                     }
                 }
                 try {
@@ -302,6 +304,7 @@ public class MotionDetector {
      * @param areaTreshold
      */
     public void setAreaTreshold(double areaTreshold) {
+        this.areaTreshold = areaTreshold;
         t.setAreaTreshold(areaTreshold);
     }
 
@@ -312,11 +315,12 @@ public class MotionDetector {
      * @param pixelTreshold
      */
     public void setPixelTreshold(int pixelTreshold) {
+        this.pixelTreshold = pixelTreshold;
         t.setPixelTreshold(pixelTreshold);
     }
 
     public void clearMotionHistory() {
-        synchronized (this) {
+        synchronized (mi) {
             mi.clear();
         }
     }
@@ -326,7 +330,7 @@ public class MotionDetector {
     }
 
     private boolean isMotionDetected(int pastFrames) {
-        synchronized (this) {
+        synchronized (mi) {
             double dm = mi.getMotion(pastFrames);
             return dm > areaTreshold;
         }
@@ -342,7 +346,6 @@ public class MotionDetector {
     public boolean awaitMotionStart(double timeoutSeconds) {
         motionStartLock.lock();
         try {
-            t.setAreaTreshold(InitialAreaTreshold);
             boolean motionDetected = isMotionDetected(MotionInertia);
             if (!motionDetected) {
                 motionDetected = motionStart.await(
@@ -364,7 +367,6 @@ public class MotionDetector {
     public boolean awaitMotionEnd(double timeoutSeconds) {
         motionEndLock.lock();
         try {
-            t.setAreaTreshold(InitialAreaTreshold);
             boolean motionStopped = !isMotionDetected(MotionInertia);
             if (!motionStopped) {
                 motionStopped = motionEnd.await((long) timeoutSeconds * 1000,

@@ -46,23 +46,19 @@ public class MotionDetector {
 
     private static final int PollingInterval = 100;
     private final static int MotionInertia = 4; // frames
-    private final static int NumberOfPastFrames = 400;
+    private final static int MaximumNumberOfPastFrames = 400;
 
-    private final Lock motionStartLock = new ReentrantLock();
-    private final Condition motionStart = motionStartLock.newCondition();
-    private final Lock motionEndLock = new ReentrantLock();
-    private final Condition motionEnd = motionEndLock.newCondition();
+    private final MotionHistory mi = new MotionHistory(
+            MaximumNumberOfPastFrames);
 
-    private final MotionHistory mi = new MotionHistory(NumberOfPastFrames);
-
+    private static MotionDetector instance = null;
+    private DetectionEvents detectionEvents = null;
     private Webcam webcam = null;
-    private WebCamThread t = null;
+
     private Dimension ViewSize = WebcamResolution.VGA.getSize();
 
     private double areaTreshold = InitialAreaTreshold;
     private int pixelTreshold = InitialPixelTreshold;
-
-    private static MotionDetector instance = null;
 
     JFrame window = null;
 
@@ -95,8 +91,13 @@ public class MotionDetector {
 
     private MotionDetector() {
         this(Webcam.getDefault());
-        setAreaTreshold(InitialAreaTreshold);
-        setPixelTreshold(InitialPixelTreshold);
+        // If we already have a webcam, we can init the properties now,
+        // otherwise we have to update them when a new webcam has been
+        // discovered
+        if (webcam != null) {
+            setAreaTreshold(InitialAreaTreshold);
+            setPixelTreshold(InitialPixelTreshold);
+        }
         Webcam.addDiscoveryListener(new DiscoveryListener());
     }
 
@@ -115,23 +116,24 @@ public class MotionDetector {
         newWebcam.open();
         showWebcamWindow(newWebcam);
         webcam = newWebcam;
-        t = new WebCamThread();
-        t.setAreaTreshold(areaTreshold);
-        t.setPixelTreshold(pixelTreshold);
-        t.start();
+        detectionEvents = new DetectionEvents();
+        // Update properties
+        detectionEvents.setAreaTreshold(areaTreshold);
+        detectionEvents.setPixelTreshold(pixelTreshold);
+        detectionEvents.start();
     }
 
     private void detachWebcam(Webcam oldWebcam) {
         TeaseLib.log(webcam.getName() + " disconnected");
-        t.interrupt();
+        detectionEvents.interrupt();
         hideWebcamWindow();
-        while (t.isAlive()) {
+        while (detectionEvents.isAlive()) {
             try {
-                t.join();
+                detectionEvents.join();
             } catch (InterruptedException e) {
             }
         }
-        t = null;
+        detectionEvents = null;
         oldWebcam.close();
         webcam = null;
     }
@@ -164,10 +166,15 @@ public class MotionDetector {
         window = null;
     }
 
-    private class WebCamThread extends Thread {
+    private class DetectionEvents extends Thread {
+        final Lock motionStartLock = new ReentrantLock();
+        final Condition motionStart = motionStartLock.newCondition();
+        final Lock motionEndLock = new ReentrantLock();
+        final Condition motionEnd = motionEndLock.newCondition();
+
         private final WebcamMotionDetector detector;
 
-        WebCamThread() {
+        DetectionEvents() {
             this.detector = new WebcamMotionDetector(webcam);
             setName("motion-detector");
             setDaemon(true);
@@ -290,11 +297,8 @@ public class MotionDetector {
     }
 
     private static int frames(double seconds) {
-        if (seconds > 7200.0) {
-            return Integer.MAX_VALUE;
-        } else {
-            return Math.max(1, (int) seconds * (1000 / PollingInterval));
-        }
+        final int frames = (int) seconds * (1000 / PollingInterval);
+        return Math.max(1, Math.min(frames, MaximumNumberOfPastFrames));
     }
 
     /**
@@ -305,7 +309,7 @@ public class MotionDetector {
      */
     public void setAreaTreshold(double areaTreshold) {
         this.areaTreshold = areaTreshold;
-        t.setAreaTreshold(areaTreshold);
+        detectionEvents.setAreaTreshold(areaTreshold);
     }
 
     /**
@@ -316,7 +320,7 @@ public class MotionDetector {
      */
     public void setPixelTreshold(int pixelTreshold) {
         this.pixelTreshold = pixelTreshold;
-        t.setPixelTreshold(pixelTreshold);
+        detectionEvents.setPixelTreshold(pixelTreshold);
     }
 
     public void clearMotionHistory() {
@@ -344,18 +348,18 @@ public class MotionDetector {
      *         was detected during the time period.
      */
     public boolean awaitMotionStart(double timeoutSeconds) {
-        motionStartLock.lock();
+        detectionEvents.motionStartLock.lock();
         try {
             boolean motionDetected = isMotionDetected(MotionInertia);
             if (!motionDetected) {
-                motionDetected = motionStart.await(
+                motionDetected = detectionEvents.motionStart.await(
                         (long) timeoutSeconds * 1000, TimeUnit.MILLISECONDS);
             }
             return motionDetected;
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         } finally {
-            motionStartLock.unlock();
+            detectionEvents.motionStartLock.unlock();
         }
     }
 
@@ -365,18 +369,18 @@ public class MotionDetector {
      *         still detected at the end of the time period.
      */
     public boolean awaitMotionEnd(double timeoutSeconds) {
-        motionEndLock.lock();
+        detectionEvents.motionEndLock.lock();
         try {
             boolean motionStopped = !isMotionDetected(MotionInertia);
             if (!motionStopped) {
-                motionStopped = motionEnd.await((long) timeoutSeconds * 1000,
-                        TimeUnit.MILLISECONDS);
+                motionStopped = detectionEvents.motionEnd.await(
+                        (long) timeoutSeconds * 1000, TimeUnit.MILLISECONDS);
             }
             return motionStopped;
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         } finally {
-            motionEndLock.unlock();
+            detectionEvents.motionEndLock.unlock();
         }
     }
 

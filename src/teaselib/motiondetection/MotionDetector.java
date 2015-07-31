@@ -53,7 +53,6 @@ public class MotionDetector {
 
     private static MotionDetector instance = null;
     private DetectionEvents detectionEvents = null;
-    private Webcam webcam = null;
 
     private Dimension ViewSize = WebcamResolution.VGA.getSize();
 
@@ -91,18 +90,11 @@ public class MotionDetector {
 
     private MotionDetector() {
         this(Webcam.getDefault());
-        // If we already have a webcam, we can init the properties now,
-        // otherwise we have to update them when a new webcam has been
-        // discovered
-        if (webcam != null) {
-            setAreaTreshold(InitialAreaTreshold);
-            setPixelTreshold(InitialPixelTreshold);
-        }
         Webcam.addDiscoveryListener(new DiscoveryListener());
     }
 
     public MotionDetector(Webcam webcam) {
-        this.webcam = webcam;
+        // this.webcam = webcam;
         if (webcam == null) {
             TeaseLib.log("No webcam detected");
         } else {
@@ -115,8 +107,7 @@ public class MotionDetector {
         newWebcam.setViewSize(ViewSize);
         newWebcam.open();
         showWebcamWindow(newWebcam);
-        webcam = newWebcam;
-        detectionEvents = new DetectionEvents();
+        detectionEvents = new DetectionEvents(newWebcam);
         // Update properties
         detectionEvents.setAreaTreshold(areaTreshold);
         detectionEvents.setPixelTreshold(pixelTreshold);
@@ -124,7 +115,7 @@ public class MotionDetector {
     }
 
     private void detachWebcam(Webcam oldWebcam) {
-        TeaseLib.log(webcam.getName() + " disconnected");
+        TeaseLib.log(oldWebcam.getName() + " disconnected");
         detectionEvents.interrupt();
         hideWebcamWindow();
         while (detectionEvents.isAlive()) {
@@ -135,7 +126,6 @@ public class MotionDetector {
         }
         detectionEvents = null;
         oldWebcam.close();
-        webcam = null;
     }
 
     private void showWebcamWindow(Webcam webcam) {
@@ -172,9 +162,11 @@ public class MotionDetector {
         final Lock motionEndLock = new ReentrantLock();
         final Condition motionEnd = motionEndLock.newCondition();
 
+        private final Webcam webcam;
         private final WebcamMotionDetector detector;
 
-        DetectionEvents() {
+        DetectionEvents(Webcam webcam) {
+            this.webcam = webcam;
             this.detector = new WebcamMotionDetector(webcam);
             setName("motion-detector");
             setDaemon(true);
@@ -207,7 +199,21 @@ public class MotionDetector {
                 // DirectX game on host), but we can reanimate
                 final boolean isDead = isDead(webcam);
                 if (isDead) {
-                    reanimate();
+                    cleanupResources();
+                    // The discovery listener's webcamGone() isn't called
+                    hideWebcamWindow();
+                    // Just reopening doesn't do the trick, because either the
+                    // fps member isn't reset or the webcam object just won't
+                    // work anymore
+                    Webcam.resetDriver();
+                    // Instead of re-initializing, a new thread is created
+                    // once the discovery lsitener has found a new webcam
+                    return;
+                    // Re-initialize
+                    // webcam = Webcam.getDefault();
+                    // detector = new WebcamMotionDetector(webcam);
+                    // attachWebcam event is triggered, resulting in a new
+                    // webcam window
                 }
                 boolean motionDetected = detector.isMotion();
                 // Build motion and direction frames history
@@ -244,9 +250,15 @@ public class MotionDetector {
                     // sleep time must be smaller than interval
                     Thread.sleep(PollingInterval - 1);
                 } catch (InterruptedException e) {
+                    cleanupResources();
                     return;
                 }
             }
+        }
+
+        private void cleanupResources() {
+            detector.stop();
+            webcam.close();
         }
 
         private boolean isDead(Webcam webcam) {
@@ -256,19 +268,6 @@ public class MotionDetector {
             final double fps = webcam.getFPS();
             final boolean isDead = fps > 0.0 && fps < 5.0;
             return isDead;
-        }
-
-        private void reanimate() {
-            // This doesn't seem to trigger the detachWebcam event
-            webcam.close();
-            hideWebcamWindow();
-            Webcam.resetDriver();
-            // Just reopening doesn't do the trick, because either the
-            // fps member isn't reset or the webcam object just won't
-            // work anymore
-            webcam = Webcam.getDefault();
-            // This triggers the attachWebcam event, so we don't have to
-            // reopen the window manually
         }
 
         private void printDebug() {
@@ -390,6 +389,6 @@ public class MotionDetector {
      * @return
      */
     public boolean active() {
-        return webcam != null;
+        return detectionEvents != null;
     }
 }

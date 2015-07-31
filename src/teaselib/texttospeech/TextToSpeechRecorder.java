@@ -18,10 +18,10 @@ import java.util.Set;
 import java.util.Vector;
 
 import teaselib.Actor;
+import teaselib.Message;
 import teaselib.Mood;
 import teaselib.TeaseLib;
-import teaselib.text.Message;
-import teaselib.text.Message.Part;
+import teaselib.Message.Part;
 
 public class TextToSpeechRecorder {
     public final static String SpeechDirName = "speech";

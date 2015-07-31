@@ -4,8 +4,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 
-import teaselib.ResourceLoader;
 import teaselib.TeaseLib;
+import teaselib.core.ResourceLoader;
 
 public class ActorVoice extends VoiceProperties {
     public final static String ActorPropertiesFilename = "actor.properties";

@@ -1,6 +1,6 @@
 package teaselib.speechrecognition.events;
 
-import teaselib.util.EventArgs;
+import teaselib.core.events.EventArgs;
 
 public class SpeechRecognitionEventArgs implements EventArgs
 {

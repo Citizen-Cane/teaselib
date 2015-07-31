@@ -9,6 +9,7 @@ import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 
 import teaselib.Actor;
+import teaselib.Message;
 
 /**
  * @author someone

@@ -8,10 +8,10 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 import teaselib.TeaseLib;
+import teaselib.core.ScriptInterruptedException;
+import teaselib.core.events.Delegate;
+import teaselib.core.events.DelegateThread;
 import teaselib.texttospeech.implementation.TeaseLibTTS;
-import teaselib.util.Delegate;
-import teaselib.util.DelegateThread;
-import teaselib.util.ScriptInterruptedException;
 
 public class TextToSpeech {
 

@@ -1,11 +1,11 @@
 package teaselib.speechrecognition;
 
+import teaselib.core.events.Event;
+import teaselib.core.events.EventSource;
 import teaselib.speechrecognition.events.AudioLevelUpdatedEventArgs;
 import teaselib.speechrecognition.events.AudioSignalProblemOccuredEventArgs;
 import teaselib.speechrecognition.events.SpeechRecognitionStartedEventArgs;
 import teaselib.speechrecognition.events.SpeechRecognizedEventArgs;
-import teaselib.util.Event;
-import teaselib.util.EventSource;
 
 public class SpeechRecognitionEvents<S> {
     public final EventSource<S, SpeechRecognitionStartedEventArgs> recognitionStarted;

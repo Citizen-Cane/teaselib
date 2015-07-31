@@ -4,14 +4,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import teaselib.audio.RenderBackgroundSound;
-import teaselib.audio.RenderSound;
-import teaselib.persistence.Item;
-import teaselib.text.Message;
-import teaselib.text.RenderDelay;
+import teaselib.core.MediaRenderer;
+import teaselib.core.RenderBackgroundSound;
+import teaselib.core.RenderDelay;
+import teaselib.core.RenderDesktopItem;
+import teaselib.core.RenderSound;
 import teaselib.texttospeech.TextToSpeechPlayer;
-import teaselib.userinterface.MediaRenderer;
-import teaselib.util.RenderDesktopItem;
+import teaselib.util.Item;
 
 public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
 

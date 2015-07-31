@@ -1,9 +1,10 @@
 package teaselib.hosts;
 
-import teaselib.hosts.Persistence.TextVariable;
-import teaselib.persistence.Clothing;
-import teaselib.persistence.Item;
-import teaselib.persistence.Toys;
+import teaselib.Clothing;
+import teaselib.Toys;
+import teaselib.core.Persistence;
+import teaselib.core.Persistence.TextVariable;
+import teaselib.util.Item;
 
 public class DummyPersistence implements Persistence {
 

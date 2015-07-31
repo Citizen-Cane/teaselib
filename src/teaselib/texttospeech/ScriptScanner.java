@@ -1,6 +1,6 @@
 package teaselib.texttospeech;
 
-import teaselib.text.Message;
+import teaselib.Message;
 
 public interface ScriptScanner extends Iterable<Message> {
 

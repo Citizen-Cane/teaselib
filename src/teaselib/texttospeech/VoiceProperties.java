@@ -7,7 +7,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import teaselib.TeaseLib;
-import teaselib.util.SortedProperties;
+import teaselib.core.util.SortedProperties;
 
 public class VoiceProperties {
     protected final SortedProperties properties = new SortedProperties();

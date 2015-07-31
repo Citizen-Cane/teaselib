@@ -4,8 +4,9 @@ import java.awt.Image;
 import java.io.IOException;
 import java.util.List;
 
-import teaselib.ResourceLoader;
-import teaselib.util.Delegate;
+import teaselib.core.Host;
+import teaselib.core.ResourceLoader;
+import teaselib.core.events.Delegate;
 
 public class DummyHost implements Host {
 

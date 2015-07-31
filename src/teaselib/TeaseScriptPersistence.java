@@ -6,11 +6,10 @@ package teaselib;
 import java.util.ArrayList;
 import java.util.List;
 
-import teaselib.hosts.Persistence;
-import teaselib.hosts.Persistence.TextVariable;
-import teaselib.persistence.Clothing;
-import teaselib.persistence.Item;
-import teaselib.persistence.Toys;
+import teaselib.core.Persistence;
+import teaselib.core.TeaseScriptBase;
+import teaselib.core.Persistence.TextVariable;
+import teaselib.util.Item;
 
 /**
  * @author someone

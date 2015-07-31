@@ -3,10 +3,11 @@ package teaselib.hosts;
 import java.util.Locale;
 
 import ss.IScript;
-import teaselib.persistence.Clothing;
-import teaselib.persistence.Item;
-import teaselib.persistence.Toys;
-import teaselib.persistence.Value;
+import teaselib.Clothing;
+import teaselib.Toys;
+import teaselib.core.Persistence;
+import teaselib.util.Item;
+import teaselib.util.Value;
 
 public class SexScriptsStatePersistence implements Persistence {
 

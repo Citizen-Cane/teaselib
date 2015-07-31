@@ -1,6 +1,6 @@
 package teaselib;
 
-import teaselib.image.Images;
+import teaselib.core.Images;
 
 public class Actor {
 

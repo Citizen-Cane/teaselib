@@ -10,7 +10,7 @@ public class TeaseLibTTS extends TextToSpeechImplementation {
     private long nativeObject;
 
     public TeaseLibTTS() throws UnsatisfiedLinkError {
-        teaselib.util.jni.LibraryLoader.load("TeaseLibTTS");
+        teaselib.core.jni.LibraryLoader.load("TeaseLibTTS");
     }
 
     public static native void getInstalledVoices(Map<String, Voice> voices);

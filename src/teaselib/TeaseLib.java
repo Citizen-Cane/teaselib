@@ -13,12 +13,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import teaselib.hosts.Host;
-import teaselib.hosts.Persistence;
-import teaselib.persistence.Item;
+import teaselib.core.Host;
+import teaselib.core.Persistence;
+import teaselib.core.ResourceLoader;
+import teaselib.core.ScriptInterruptedException;
 import teaselib.speechrecognition.SpeechRecognizer;
 import teaselib.texttospeech.TextToSpeechPlayer;
-import teaselib.util.ScriptInterruptedException;
+import teaselib.util.Item;
 
 /**
  * @author someone

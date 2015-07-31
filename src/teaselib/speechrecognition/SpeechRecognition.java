@@ -4,14 +4,14 @@ import java.util.List;
 import java.util.concurrent.locks.ReentrantLock;
 
 import teaselib.TeaseLib;
+import teaselib.core.ScriptInterruptedException;
+import teaselib.core.events.Delegate;
+import teaselib.core.events.DelegateThread;
+import teaselib.core.events.Event;
 import teaselib.speechrecognition.events.SpeechRecognitionStartedEventArgs;
 import teaselib.speechrecognition.events.SpeechRecognizedEventArgs;
 import teaselib.speechrecognition.implementation.TeaseLibSR;
 import teaselib.texttospeech.TextToSpeech;
-import teaselib.util.Delegate;
-import teaselib.util.DelegateThread;
-import teaselib.util.Event;
-import teaselib.util.ScriptInterruptedException;
 
 public class SpeechRecognition {
     private String locale;

@@ -14,7 +14,7 @@ public class TeaseLibSR extends SpeechRecognitionImplementation {
     private Throwable eventThreadException = null;
 
     public TeaseLibSR() throws UnsatisfiedLinkError {
-        teaselib.util.jni.LibraryLoader.load("TeaseLibSR");
+        teaselib.core.jni.LibraryLoader.load("TeaseLibSR");
     }
 
     @Override

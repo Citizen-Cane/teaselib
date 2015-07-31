@@ -4,7 +4,7 @@
 package teaselib.stimulation;
 
 import teaselib.TeaseLib;
-import teaselib.util.ScriptInterruptedException;
+import teaselib.core.ScriptInterruptedException;
 
 /**
  * @author someone

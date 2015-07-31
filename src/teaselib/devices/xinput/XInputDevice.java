@@ -5,7 +5,7 @@ import java.nio.ByteOrder;
 import java.util.LinkedList;
 import java.util.List;
 
-import teaselib.util.jni.LibraryLoader;
+import teaselib.core.jni.LibraryLoader;
 
 /**
  * Represents all XInput devices registered in the system. Use the

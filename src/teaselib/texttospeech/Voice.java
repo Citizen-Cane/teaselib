@@ -1,6 +1,6 @@
 package teaselib.texttospeech;
 
-import teaselib.util.jni.NativeObject;
+import teaselib.core.jni.NativeObject;
 
 // refactor -> change class name in native code
 

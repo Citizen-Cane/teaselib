@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Vector;
 
 import teaselib.devices.xinput.XInputDevice;
-import teaselib.stimulation.XInputStimulator.SharedState;
+import teaselib.devices.xinput.XInputStimulator;
 
 /**
  * @author someone
@@ -43,9 +43,7 @@ public class Stimulators {
         XInputDevice[] devices = XInputDevice.getAllDevices();
         for (XInputDevice device : devices) {
             if (device.isConnected()) {
-                SharedState sharedState = new SharedState(device);
-                all.add(new XInputStimulator(sharedState, 0));
-                all.add(new XInputStimulator(sharedState, 1));
+                all.addAll(XInputStimulator.getStimulators(device));
             }
         }
         return all;

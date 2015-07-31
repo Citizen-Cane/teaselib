@@ -19,7 +19,7 @@
 #include <NativeException.h>
 #include <NativeObject.h>
 
-#include <teaselib_texttospeech_implementation_TeaseLibTTS.h>
+#include <teaselib_core_texttospeech_implementation_TeaseLibTTS.h>
 
 #include "SpeechSynthesizer.h"
 #include "Voice.h"
@@ -31,7 +31,7 @@ extern "C"
     * Method:    getInstalledVoices
     * Signature: (Ljava/util/Map;)V
     */
-    JNIEXPORT void JNICALL Java_teaselib_texttospeech_implementation_TeaseLibTTS_getInstalledVoices
+    JNIEXPORT void JNICALL Java_teaselib_core_texttospeech_implementation_TeaseLibTTS_getInstalledVoices
     (JNIEnv *env, jclass, jobject voiceMap) {
         try {
             COMUser cu;
@@ -90,7 +90,7 @@ extern "C"
     * Method:    setVoice
     * Signature: (Lteaselib/texttospeech/Voice;)V
     */
-    JNIEXPORT void JNICALL Java_teaselib_texttospeech_implementation_TeaseLibTTS_setVoice
+    JNIEXPORT void JNICALL Java_teaselib_core_texttospeech_implementation_TeaseLibTTS_setVoice
     (JNIEnv *env, jobject jthis, jobject jvoice) {
         try {
             // Dispose existing
@@ -114,28 +114,27 @@ extern "C"
         }
     }
 
-	jobjectArray getHints(JNIEnv* env, jobject jthis)
-	{
-		jclass jclass = env->GetObjectClass(jthis);
-		jobjectArray hints = (jobjectArray) env->GetObjectField(jthis, env->GetFieldID(jclass, "hints", "[Ljava/lang/String;"));
-		if (env->ExceptionCheck()) {
-			throw new JNIException(env);
-		}
-		return hints;
-	}
+    jobjectArray getHints(JNIEnv* env, jobject jthis) {
+        jclass jclass = env->GetObjectClass(jthis);
+        jobjectArray hints = (jobjectArray) env->GetObjectField(jthis, env->GetFieldID(jclass, "hints", "[Ljava/lang/String;"));
+        if (env->ExceptionCheck()) {
+            throw new JNIException(env);
+        }
+        return hints;
+    }
 
     /*
     * Class:     teaselib_texttospeech_implementation_TeaseLibTTS
     * Method:    speak
     * Signature: (Ljava/lang/String;)V
     */
-    JNIEXPORT void JNICALL Java_teaselib_texttospeech_implementation_TeaseLibTTS_speak__Ljava_lang_String_2
+    JNIEXPORT void JNICALL Java_teaselib_core_texttospeech_implementation_TeaseLibTTS_speak__Ljava_lang_String_2
     (JNIEnv *env, jobject jthis, jstring prompt) {
         try {
             SpeechSynthesizer* speechSynthesizer = static_cast<SpeechSynthesizer*>(NativeObject::get(env, jthis));
             NativeObject::checkInitializedOrThrow(speechSynthesizer);
-			speechSynthesizer->applyHints(JNIUtilities::stringArray(env, getHints(env, jthis)));
-			speechSynthesizer->speak(JNIString(env, prompt));
+            speechSynthesizer->applyHints(JNIUtilities::stringArray(env, getHints(env, jthis)));
+            speechSynthesizer->speak(JNIString(env, prompt));
         } catch (NativeException *e) {
             JNIException::throwNew(env, e);
         } catch (JNIException /**e*/) {
@@ -148,14 +147,14 @@ extern "C"
     * Method:    speak
     * Signature: (Ljava/lang/String;Ljava/lang/String;)V
     */
-    JNIEXPORT jstring JNICALL Java_teaselib_texttospeech_implementation_TeaseLibTTS_speak__Ljava_lang_String_2Ljava_lang_String_2
+    JNIEXPORT jstring JNICALL Java_teaselib_core_texttospeech_implementation_TeaseLibTTS_speak__Ljava_lang_String_2Ljava_lang_String_2
     (JNIEnv *env, jobject jthis, jstring prompt, jstring path) {
         jstring actualPath = NULL;
         try {
             SpeechSynthesizer* speechSynthesizer = static_cast<SpeechSynthesizer*>(NativeObject::get(env, jthis));
             NativeObject::checkInitializedOrThrow(speechSynthesizer);
-			speechSynthesizer->applyHints(JNIUtilities::stringArray(env, getHints(env, jthis)));
-			std::wstring soundFile = speechSynthesizer->speak(JNIString(env, prompt), JNIString(env, path));
+            speechSynthesizer->applyHints(JNIUtilities::stringArray(env, getHints(env, jthis)));
+            std::wstring soundFile = speechSynthesizer->speak(JNIString(env, prompt), JNIString(env, path));
             actualPath = JNIString(env, soundFile.c_str()).detach();
         } catch (NativeException *e) {
             JNIException::throwNew(env, e);
@@ -171,7 +170,7 @@ extern "C"
     * Method:    stop
     * Signature: ()V
     */
-    JNIEXPORT void JNICALL Java_teaselib_texttospeech_implementation_TeaseLibTTS_stop
+    JNIEXPORT void JNICALL Java_teaselib_core_texttospeech_implementation_TeaseLibTTS_stop
     (JNIEnv * env, jobject jthis)
     try {
         SpeechSynthesizer* speechSynthesizer = static_cast<SpeechSynthesizer*>(NativeObject::get(env, jthis));
@@ -188,23 +187,10 @@ extern "C"
     * Method:    dispose
     * Signature: ()V
     */
-    JNIEXPORT void JNICALL Java_teaselib_texttospeech_implementation_TeaseLibTTS_dispose
+    JNIEXPORT void JNICALL Java_teaselib_core_texttospeech_implementation_TeaseLibTTS_dispose
     (JNIEnv *env, jobject jthis) {
         SpeechSynthesizer* speechSynthesizer = static_cast<SpeechSynthesizer*>(NativeObject::get(env, jthis));
         NativeObject::checkInitializedOrThrow(speechSynthesizer);
         delete speechSynthesizer;
-        //NativeObject::dispose(env, jthis);
-        //try
-        //{
-        //  delete SpeechSynthesizer::get(jthis);
-        //}
-        //catch (NativeException *e)
-        //{
-        //  JNIException::throwNew(env, e);
-        //}
-        //catch (JNIException *e)
-        //{
-        //  // Forwarded automatically
-        //}
     }
 }

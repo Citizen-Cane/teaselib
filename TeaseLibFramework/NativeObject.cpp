@@ -5,7 +5,7 @@
 #include <jni.h>
 
 #include "NativeObject.h"
-#include "teaselib_util_jni_NativeObject.h"
+#include "teaselib_core_jni_NativeObject.h"
 
 // TODO Should be compiled into the framework, but I couldn't find out
 // how to make it publically accessible in the actual libraries
@@ -13,14 +13,13 @@
 
 extern "C"
 {
-	/*
-	* Class:     teaselib_util_jni_NativeObject
-	* Method:    disposeNativeObject
-	* Signature: ()V
-	*/
-	JNIEXPORT void JNICALL Java_teaselib_util_jni_NativeObject_disposeNativeObject
-		(JNIEnv *env, jobject jthis)
-	{
-		NativeObject::dispose(env, jthis);
-	}
+    /*
+    * Class:     teaselib_util_jni_NativeObject
+    * Method:    disposeNativeObject
+    * Signature: ()V
+    */
+    JNIEXPORT void JNICALL Java_teaselib_core_jni_NativeObject_disposeNativeObject
+    (JNIEnv *env, jobject jthis) {
+        NativeObject::dispose(env, jthis);
+    }
 }

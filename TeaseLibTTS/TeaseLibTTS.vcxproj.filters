@@ -27,9 +27,6 @@
     <ClInclude Include="Voice.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\teaselib_texttospeech_implementation_TeaseLibTTS.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">

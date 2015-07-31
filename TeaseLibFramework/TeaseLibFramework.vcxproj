@@ -171,7 +171,6 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="..\include\teaselib_util_jni_NativeObject.h" />
     <ClInclude Include="COMUser.h" />
     <ClInclude Include="Event.h" />
     <ClInclude Include="JNIClass.h" />

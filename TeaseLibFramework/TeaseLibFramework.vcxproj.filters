@@ -51,9 +51,6 @@
     <ClInclude Include="JNIClass.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\teaselib_util_jni_NativeObject.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="JNIUtilities.h">
       <Filter>Header Files</Filter>
     </ClInclude>

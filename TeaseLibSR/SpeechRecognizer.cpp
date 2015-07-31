@@ -81,11 +81,6 @@ void SpeechRecognizer::speechRecognitionEventHandlerThread(JNIEnv* threadEnv) {
 }
 
 HRESULT SpeechRecognizer::speechRecognitionInitContext() {
-    //std::wstring id = getLOCALE_ILANGUAGE(langID);
-    //if (id.empty())
-    //{
-    //  throw new NativeException(E_INVALIDARG, L"Unsupported language or region");
-    //}
     TCHAR languageID[MAX_PATH];
     int size = GetLocaleInfoEx(locale.c_str(), LOCALE_ILANGUAGE, languageID, MAX_PATH);
     const wchar_t* langIDWithoutTrailingZeros = languageID;
@@ -188,7 +183,7 @@ void SpeechRecognizer::speechRecognitionEventHandlerLoop(HANDLE* rghEvents) {
                         recognizerStatus = pResult->GetText(SP_GETWHOLEPHRASE, SP_GETWHOLEPHRASE, false, &pszCoMemResultText, NULL);
                         if (SUCCEEDED(recognizerStatus)) {
                             // TODO No alternate phrases, but may produce the correct text -> create event with a single result object
-                            wprintf(L"Hypothesis event received, text=\"%s\"\r\n", pszCoMemResultText);
+                            // wprintf(L"Hypothesis event received, text=\"%s\"\r\n", pszCoMemResultText);
                             SpeechRecognizedEvent(threadEnv, gjthis, gjevents, "speechDetected").fire(pResult);
                         }
                         if (NULL != pszCoMemResultText) {
@@ -202,7 +197,7 @@ void SpeechRecognizer::speechRecognitionEventHandlerLoop(HANDLE* rghEvents) {
                         LPWSTR pszCoMemResultText = NULL;
                         recognizerStatus = pResult->GetText(SP_GETWHOLEPHRASE, SP_GETWHOLEPHRASE, false, &pszCoMemResultText, NULL);
                         if (SUCCEEDED(recognizerStatus)) {
-                            wprintf(L"False Recognition event received, text=\"%s\"\r\n", pszCoMemResultText);
+                            // wprintf(L"False Recognition event received, text=\"%s\"\r\n", pszCoMemResultText);
                             SpeechRecognizedEvent(threadEnv, gjthis, gjevents, "recognitionRejected").fire(pResult);
                         }
                         if (NULL != pszCoMemResultText) {
@@ -235,12 +230,11 @@ void SpeechRecognizer::speechRecognitionEventHandlerLoop(HANDLE* rghEvents) {
                     }
                     }
                 } catch (NativeException *e) {
-                    // TODO log in teaselib
-                    // JNIException::throwNew(env, e);
+                    // TODO log in teaselib via JNIException::throwNew(env, e) and restart on java side
                     assert(false);
                     wprintf(L"Native exception 0x%x: %s\n", e->errorCode, e->message.c_str());
                 } catch (JNIException *e) {
-                    // TODO log in teaselib
+                    // TODO log in teaselib via JNIException::throwNew(env, e) and restart on java side
                     JNIString message = e->getMessage();
                     assert(false);
                     wprintf(L"JNI exception: %s\n", message.operator LPCWSTR());

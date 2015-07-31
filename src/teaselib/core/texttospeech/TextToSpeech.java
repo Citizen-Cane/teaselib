@@ -17,7 +17,8 @@ public class TextToSpeech {
 
     private TextToSpeechImplementation tts;
 
-    private DelegateThread delegateThread = new DelegateThread();
+    private DelegateThread delegateThread = new DelegateThread(
+            "Speech Recognition dispatcher thread");
 
     private String[] NoHints = null;
 

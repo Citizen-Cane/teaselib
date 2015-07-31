@@ -42,6 +42,7 @@ public class TeaseLibSR extends SpeechRecognitionImplementation {
             }
         });
         synchronized (eventThread) {
+            eventThread.setName("Speech Recognition event thread");
             eventThread.start();
             try {
                 eventThread.wait();

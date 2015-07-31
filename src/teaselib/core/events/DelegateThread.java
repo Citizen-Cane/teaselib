@@ -11,7 +11,8 @@ public class DelegateThread extends Thread {
     private final Deque<Delegate> queue = new ArrayDeque<Delegate>();
     private boolean endThread = false;
 
-    public DelegateThread() {
+    public DelegateThread(String name) {
+        setName(name);
         start();
     }
 

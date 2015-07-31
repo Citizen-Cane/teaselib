@@ -16,14 +16,21 @@ import teaselib.core.texttospeech.TextToSpeech;
 public class SpeechRecognition {
     private String locale;
     private SpeechRecognitionImplementation sr;
-    private DelegateThread delegateThread = new DelegateThread();
+    private DelegateThread delegateThread = new DelegateThread(
+            "Text-To-Speech dispatcher thread");
 
     private static void recognizerNotInitialized() {
         throw new IllegalStateException("Recognizer not initialized");
     }
 
     public enum AudioSignalProblem {
-        None, Noise, NoSignal, TooLoud, TooQuiet, TooFast, TooSlow
+        None,
+        Noise,
+        NoSignal,
+        TooLoud,
+        TooQuiet,
+        TooFast,
+        TooSlow
     }
 
     private final ReentrantLock SpeechRecognitionInProgress = new ReentrantLock();

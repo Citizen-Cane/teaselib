@@ -47,6 +47,7 @@ public abstract class MediaRendererThread implements Runnable, MediaRenderer,
         renderThread = new Thread(this);
         synchronized (renderThread) {
             start = System.currentTimeMillis();
+            renderThread.setName(getClass().getName());
             renderThread.start();
             try {
                 renderThread.wait();

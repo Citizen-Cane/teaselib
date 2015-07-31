@@ -168,7 +168,7 @@ public class MotionDetector {
         DetectionEvents(Webcam webcam) {
             this.webcam = webcam;
             this.detector = new WebcamMotionDetector(webcam);
-            setName("motion-detector");
+            setName("motion detector events");
             setDaemon(true);
         }
 

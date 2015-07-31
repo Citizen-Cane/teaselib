@@ -10,6 +10,11 @@ import teaselib.core.events.Delegate;
 
 public class DummyHost implements Host {
 
+    public DummyHost() {
+        super();
+        Thread.currentThread().setName(getClass().getSimpleName() + " Script");
+    }
+
     @Override
     public void playSound(ResourceLoader resources, String path)
             throws IOException {

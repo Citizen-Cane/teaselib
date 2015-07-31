@@ -54,6 +54,9 @@ public class SexScriptsHost implements Host {
 
     public SexScriptsHost(ss.IScript script) {
         this.ss = script;
+        // Should be set by the host, but SexScript doesn't, so we do
+        Thread.currentThread().setName("TeaseScript main thread");
+        // Initialize rendering via background image
         String fieldName = "backgroundImage";
         ImageIcon imageIcon = null;
         try {

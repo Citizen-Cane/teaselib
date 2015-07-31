@@ -11,8 +11,8 @@ import teaselib.Message;
 import teaselib.Mood;
 import teaselib.TeaseLib;
 import teaselib.Message.Part;
-import teaselib.texttospeech.TextToSpeech;
-import teaselib.texttospeech.TextToSpeechPlayer;
+import teaselib.core.texttospeech.TextToSpeech;
+import teaselib.core.texttospeech.TextToSpeechPlayer;
 
 public class RenderMessage extends MediaRendererThread {
 

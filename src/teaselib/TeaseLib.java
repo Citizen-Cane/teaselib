@@ -17,8 +17,8 @@ import teaselib.core.Host;
 import teaselib.core.Persistence;
 import teaselib.core.ResourceLoader;
 import teaselib.core.ScriptInterruptedException;
-import teaselib.speechrecognition.SpeechRecognizer;
-import teaselib.texttospeech.TextToSpeechPlayer;
+import teaselib.core.speechrecognition.SpeechRecognizer;
+import teaselib.core.texttospeech.TextToSpeechPlayer;
 import teaselib.util.Item;
 
 /**

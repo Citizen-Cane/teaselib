@@ -20,12 +20,12 @@ import teaselib.Mood;
 import teaselib.TeaseLib;
 import teaselib.core.events.Delegate;
 import teaselib.core.events.Event;
-import teaselib.speechrecognition.SpeechRecognition;
-import teaselib.speechrecognition.SpeechRecognitionImplementation;
-import teaselib.speechrecognition.SpeechRecognitionResult;
-import teaselib.speechrecognition.events.SpeechRecognitionStartedEventArgs;
-import teaselib.speechrecognition.events.SpeechRecognizedEventArgs;
-import teaselib.texttospeech.TextToSpeechPlayer;
+import teaselib.core.speechrecognition.SpeechRecognition;
+import teaselib.core.speechrecognition.SpeechRecognitionImplementation;
+import teaselib.core.speechrecognition.SpeechRecognitionResult;
+import teaselib.core.speechrecognition.events.SpeechRecognitionStartedEventArgs;
+import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
+import teaselib.core.texttospeech.TextToSpeechPlayer;
 
 public abstract class TeaseScriptBase {
 

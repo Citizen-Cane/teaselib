@@ -6,8 +6,8 @@ package teaselib.stimulation;
 import java.util.List;
 import java.util.Vector;
 
-import teaselib.devices.xinput.XInputDevice;
-import teaselib.devices.xinput.XInputStimulator;
+import teaselib.core.devices.xinput.XInputDevice;
+import teaselib.core.devices.xinput.XInputStimulator;
 
 /**
  * @author someone

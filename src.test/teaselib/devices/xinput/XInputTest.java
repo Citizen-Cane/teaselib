@@ -6,6 +6,8 @@ package teaselib.devices.xinput;
 import org.junit.Assert;
 import org.junit.Test;
 
+import teaselib.core.devices.xinput.XInputDevice;
+
 /**
  * @author someone
  *

@@ -9,7 +9,7 @@ import teaselib.core.RenderBackgroundSound;
 import teaselib.core.RenderDelay;
 import teaselib.core.RenderDesktopItem;
 import teaselib.core.RenderSound;
-import teaselib.texttospeech.TextToSpeechPlayer;
+import teaselib.core.texttospeech.TextToSpeechPlayer;
 import teaselib.util.Item;
 
 public abstract class TeaseScript extends TeaseScriptMath implements Runnable {

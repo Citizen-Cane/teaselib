@@ -7,21 +7,21 @@ import java.io.InputStream;
 import teaselib.TeaseLib;
 import teaselib.core.ResourceLoader;
 
-public class ActorVoice extends VoiceProperties {
-    public final static String ActorPropertiesFilename = "actor.properties";
+public class PreRecordedVoice extends VoiceProperties {
+    public final static String ActorPropertiesFilename = "voice.properties";
 
-    public ActorVoice(String actorName, String voiceGuid,
+    public PreRecordedVoice(String actorName, String voiceGuid,
             ResourceLoader resources) {
-        InputStream recordedVoicesConfig = null;
+        InputStream prerecordedVoiceConfig = null;
         String path = TextToSpeechRecorder.SpeechDirName + "/" + actorName
                 + "/" + voiceGuid + "/" + ActorPropertiesFilename;
         try {
             try {
-                recordedVoicesConfig = resources.getResource(path);
-                properties.load(recordedVoicesConfig);
+                prerecordedVoiceConfig = resources.getResource(path);
+                properties.load(prerecordedVoiceConfig);
             } finally {
-                if (recordedVoicesConfig != null) {
-                    recordedVoicesConfig.close();
+                if (prerecordedVoiceConfig != null) {
+                    prerecordedVoiceConfig.close();
                 }
             }
         } catch (IOException e) {
@@ -29,6 +29,10 @@ public class ActorVoice extends VoiceProperties {
             TeaseLib.logDetail("Prerecorded voice configuration file '" + path
                     + "' not found");
         }
+    }
+
+    public boolean available() {
+        return !empty();
     }
 
     public void store(File path) throws IOException {

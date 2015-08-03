@@ -4,23 +4,24 @@ import teaselib.TeaseLib;
 
 public class RenderBackgroundSound implements AutoCloseable, MediaRenderer {
 
+    private final ResourceLoader resources;
     private final String soundFile;
     private TeaseLib teaseLib;
+
     private Object handle = null;
 
-    public RenderBackgroundSound(String soundFile) {
+    public RenderBackgroundSound(ResourceLoader resources, String soundFile) {
+        this.resources = resources;
         this.soundFile = soundFile;
     }
 
     @Override
     public void render(TeaseLib teaseLib) {
         try {
-            String path = soundFile;
-            TeaseLib.log(this.getClass().getSimpleName() + ": " + path);
+            TeaseLib.log(this.getClass().getSimpleName() + ": " + soundFile);
             // TODO Use the handle to allow stopping the sound
             // Implement when needed
-            handle = teaseLib.host
-                    .playBackgroundSound(teaseLib.resources, path);
+            handle = teaseLib.host.playBackgroundSound(resources, soundFile);
         } catch (Throwable e) {
             TeaseLib.log(this, e);
         }

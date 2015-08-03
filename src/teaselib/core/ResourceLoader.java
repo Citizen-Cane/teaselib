@@ -8,6 +8,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.Collection;
@@ -26,6 +27,7 @@ public class ResourceLoader {
     public final String basePath;
     public final String assetRoot;
     private final ClassLoader classLoader = getClass().getClassLoader();
+    private final Method addURL;
     private final Set<URI> enumeratableClassPaths = new HashSet<URI>();
 
     /**
@@ -40,25 +42,38 @@ public class ResourceLoader {
      * @throws IllegalAccessException
      * @throws MalformedURLException
      */
-    public ResourceLoader(String basePath, String assetRoot)
-            throws NoSuchMethodException, InvocationTargetException,
-            IllegalAccessException, MalformedURLException {
+    public ResourceLoader(String basePath, String assetRoot) {
         this.basePath = basePath.endsWith("/") ? basePath : basePath + "/";
         if (assetRoot.contains("/") || assetRoot.contains("\\"))
             throw new IllegalArgumentException(
                     "No slashes '/' or backlashes '\\' for resource loader root please");
         this.assetRoot = assetRoot + "/";
-        Method addURI = addURLMethod();
-        // Add the base path to allow unpacking resource archives or to or to
-        // deploy directories
-        addAsset(addURI, new File(basePath).toURI());
+        try {
+            addURL = addURLMethod();
+            // Add the base path to allow unpacking resource archives or to
+            // deploy directories
+            addAsset(new File(basePath).toURI());
+        } catch (Exception e) {
+            TeaseLib.log(this, e);
+            throw new IllegalArgumentException(basePath + assetRoot);
+        }
+    }
+
+    private static Method addURLMethod() throws NoSuchMethodException {
+        Class<URLClassLoader> classLoaderClass = URLClassLoader.class;
+        @SuppressWarnings("rawtypes")
+        final Class[] parameters = new Class[] { URL.class };
+        Method addURI = classLoaderClass
+                .getDeclaredMethod("addURL", parameters);
+        addURI.setAccessible(true);
+        return addURI;
     }
 
     public void addAssets(String... paths) {
         try {
             addAssets(toURIs(basePath, paths));
-        } catch (Throwable t) {
-            throw new IllegalArgumentException("Cannot add assets:" + t);
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Cannot add assets:" + e);
         }
     }
 
@@ -78,35 +93,17 @@ public class ResourceLoader {
     }
 
     private void addAssets(URI[] assets) throws IllegalAccessException,
-            InvocationTargetException, MalformedURLException,
-            NoSuchMethodException {
-        addAssets(assets, addURLMethod());
-    }
-
-    private void addAssets(URI[] assets, Method addURI)
-            throws IllegalAccessException, InvocationTargetException,
-            MalformedURLException {
+            InvocationTargetException, MalformedURLException {
         for (URI uri : assets) {
-            addAsset(addURI, uri);
+            addAsset(uri);
         }
     }
 
-    private static Method addURLMethod() throws NoSuchMethodException {
-        Class<URLClassLoader> classLoaderClass = URLClassLoader.class;
-        @SuppressWarnings("rawtypes")
-        final Class[] parameters = new Class[] { URL.class };
-        Method addURI = classLoaderClass
-                .getDeclaredMethod("addURL", parameters);
-        addURI.setAccessible(true);
-        return addURI;
-    }
-
-    private void addAsset(Method method, URI uri)
-            throws IllegalAccessException, InvocationTargetException,
-            MalformedURLException {
+    private void addAsset(URI uri) throws IllegalAccessException,
+            InvocationTargetException, MalformedURLException {
         File file = new File(uri);
         if (file.exists()) {
-            method.invoke(classLoader, new Object[] { uri.toURL() });
+            addURL.invoke(classLoader, new Object[] { uri.toURL() });
             if (uri.getPath().endsWith(".zip") || file.isDirectory()) {
                 enumeratableClassPaths.add(uri);
                 TeaseLib.log("Using resource location: " + uri.getPath());
@@ -209,8 +206,26 @@ public class ResourceLoader {
         return resources;
     }
 
-    public URL path(String path) {
-        return classLoader.getResource(assetRoot + path);
+    public URL url(String path) {
+        final String absolutePath = assetRoot + path;
+        final URL resource = classLoader.getResource(absolutePath);
+        if (resource == null) {
+            TeaseLib.log("Resource '" + absolutePath + "' not found");
+        }
+        return resource;
+    }
+
+    public URI uri(String path) {
+        URI uri = null;
+        URL url = url(path);
+        if (url != null) {
+            try {
+                uri = url.toURI();
+            } catch (URISyntaxException e) {
+                TeaseLib.log(this, e);
+            }
+        }
+        return uri;
     }
 
     /**

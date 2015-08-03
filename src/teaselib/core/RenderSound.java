@@ -3,9 +3,11 @@ package teaselib.core;
 import teaselib.TeaseLib;
 
 public class RenderSound extends MediaRendererThread {
+    private final ResourceLoader resources;
     private final String soundFile;
 
-    public RenderSound(String soundFile) {
+    public RenderSound(ResourceLoader resources, String soundFile) {
+        this.resources = resources;
         this.soundFile = soundFile;
     }
 
@@ -14,7 +16,7 @@ public class RenderSound extends MediaRendererThread {
         try {
             TeaseLib.log(this.getClass().getSimpleName() + ": " + soundFile);
             startCompleted();
-            teaseLib.host.playSound(teaseLib.resources, soundFile);
+            teaseLib.host.playSound(resources, soundFile);
         } catch (ScriptInterruptedException e) {
             // Expected
         } catch (Throwable e) {

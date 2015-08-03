@@ -15,6 +15,7 @@ import java.util.concurrent.TimeUnit;
 import teaselib.Actor;
 import teaselib.Message;
 import teaselib.TeaseLib;
+import teaselib.core.ResourceLoader;
 import teaselib.core.ScriptInterruptedException;
 import teaselib.core.speechrecognition.SpeechRecognition;
 import teaselib.core.speechrecognition.SpeechRecognizer;
@@ -24,8 +25,7 @@ public class TextToSpeechPlayer {
     private final TeaseLib teaseLib;
     public final TextToSpeech textToSpeech;
     protected final SpeechRecognizer speechRecognizerCollection;
-
-    private final ActorVoices actorVoices;
+    private final Set<ResourceLoader> processedVoiceActorVoices = new HashSet<ResourceLoader>();
 
     private final Map<String, Voice> voices;
     private final Map<String, String> actor2PrerecordedVoice = new HashMap<String, String>();
@@ -51,22 +51,33 @@ public class TextToSpeechPlayer {
             this.voices = new HashMap<String, Voice>();
         }
         // Write list of installed voices to log file in order to provide data
-        // for the ActorVoices properties file
+        // for the Actor to Voices mapping properties file
         final InstalledVoices installedVoices = new InstalledVoices(voices);
         TeaseLib.log("Installed voices:");
         for (String key : installedVoices.keySet()) {
             TeaseLib.log(key + ".guid=" + installedVoices.getGuid(key));
         }
-        // Read actor voices configuration to assign voices to actors
-        actorVoices = new ActorVoices(teaseLib.resources);
-        for (Object value : actorVoices.keySet()) {
+    }
+
+    /**
+     * Actors may have preferred voices or pre-recorded voices. These are stored
+     * in the resources of the script of the actor.
+     * 
+     * As a result, this has to be called for each resource instance.
+     * 
+     * @param resources
+     *            The resource object that contains the assignments and/or
+     *            pre-recorded speech.
+     */
+    private void getActorVoices(ResourceLoader resources) {
+        // Get the list of actor to voice assignments
+        ActorVoices actorVoices = new ActorVoices(resources);
+        for (String actorName : actorVoices.keySet()) {
             // Available as a pre-recorded voice?
-            String actorName = value.toString();
             String voiceGuid = actorVoices.getGuid(actorName);
-            ActorVoice actorVoice = new ActorVoice(actorName, voiceGuid,
-                    teaseLib.resources);
-            boolean prerecorded = !actorVoice.empty();
-            if (prerecorded) {
+            PreRecordedVoice preRecordedVoice = new PreRecordedVoice(actorName,
+                    voiceGuid, resources);
+            if (preRecordedVoice.available()) {
                 actor2PrerecordedVoice.put(actorName, voiceGuid);
                 usedVoices.add(voiceGuid);
                 TeaseLib.log("Actor " + actorName
@@ -86,7 +97,7 @@ public class TextToSpeechPlayer {
         }
     }
 
-    public Voice getVoiceFor(Actor actor) {
+    Voice getVoiceFor(Actor actor) {
         if (actor2PrerecordedVoice.containsKey(actor.name)) {
             throw new IllegalStateException("Prerecorded voice available");
         }
@@ -97,7 +108,7 @@ public class TextToSpeechPlayer {
         }
     }
 
-    public String getAssignedVoiceFor(Actor actor) {
+    String getAssignedVoiceFor(Actor actor) {
         return actor2PrerecordedVoice.get(actor.name);
     }
 
@@ -170,7 +181,8 @@ public class TextToSpeechPlayer {
      * @return
      * @throws IOException
      */
-    private List<String> getSpeechResources(Message message) throws IOException {
+    private List<String> getSpeechResources(ResourceLoader resources,
+            Message message) throws IOException {
         String actorName = message.actor.name;
         String voice = actor2PrerecordedVoice.get(actorName);
         if (voice == null) {
@@ -183,7 +195,7 @@ public class TextToSpeechPlayer {
             List<String> speechResources = new Vector<String>();
             try {
                 reader = new BufferedReader(new InputStreamReader(
-                        teaseLib.resources.getResource(path
+                        resources.getResource(path
                                 + TextToSpeechRecorder.ResourcesFilename)));
                 String soundFile = null;
                 while ((soundFile = reader.readLine()) != null) {
@@ -205,9 +217,17 @@ public class TextToSpeechPlayer {
      * @return
      * @throws IOException
      */
-    public Iterator<String> selectVoice(Message message) throws IOException {
-        // Do we have a prerecorded voice?
-        List<String> prerenderedSpeechFiles = getSpeechResources(message);
+    public Iterator<String> selectVoice(ResourceLoader resources,
+            Message message) throws IOException {
+        // Have we read any voice-related configuration files from this resource
+        // loader yet?
+        if (!processedVoiceActorVoices.contains(resources)) {
+            getActorVoices(resources);
+            processedVoiceActorVoices.add(resources);
+        }
+        // Do we have a pre-recorded voice?
+        List<String> prerenderedSpeechFiles = getSpeechResources(resources,
+                message);
         final Iterator<String> prerenderedSpeech;
         if (prerenderedSpeechFiles != null) {
             prerenderedSpeech = prerenderedSpeechFiles.iterator();
@@ -236,70 +256,74 @@ public class TextToSpeechPlayer {
     public void speak(Actor actor, String prompt, String mood) {
         boolean useTTS = textToSpeech.isReady() && voice != null;
         final boolean reactivateSpeechRecognition;
+        SpeechRecognition speechRecognizer;
         // Suspend speech recognition while speaking,
         // to avoid wrong recognitions
         // - and the mistress speech isn't to be interrupted anyway
         if (useTTS && speechRecognizerCollection != null) {
-            SpeechRecognition speechRecognizer = speechRecognizerCollection
-                    .get(actor.locale);
+            speechRecognizer = speechRecognizerCollection.get(actor.locale);
             speechRecognizer.completeSpeechRecognitionInProgress();
             reactivateSpeechRecognition = speechRecognizer.isActive();
-            if (reactivateSpeechRecognition) {
-                speechRecognizer.stopRecognition();
-            }
         } else {
             reactivateSpeechRecognition = false;
+            speechRecognizer = null;
         }
-        if (useTTS) {
-            textToSpeech.setHint(mood);
-            try {
-                textToSpeech.speak(prompt);
-            } catch (ScriptInterruptedException e) {
-                throw e;
-            } catch (Throwable t) {
-                TeaseLib.log(this, t);
+        try {
+            if (reactivateSpeechRecognition && speechRecognizer != null) {
+                speechRecognizer.stopRecognition();
+            }
+            if (useTTS) {
+                textToSpeech.setHint(mood);
+                try {
+                    textToSpeech.speak(prompt);
+                } catch (ScriptInterruptedException e) {
+                    throw e;
+                } catch (Throwable t) {
+                    TeaseLib.log(this, t);
+                    speakSilent(prompt);
+                }
+            } else {
                 speakSilent(prompt);
             }
-        } else {
-            speakSilent(prompt);
-        }
-        // resume SR if necessary
-        if (reactivateSpeechRecognition) {
-            SpeechRecognition speechRecognizer = speechRecognizerCollection
-                    .get(actor.locale);
-            speechRecognizer.resumeRecognition();
+        } finally {
+            // resume SR if necessary
+            if (reactivateSpeechRecognition && speechRecognizer != null) {
+                speechRecognizer.resumeRecognition();
+            }
         }
     }
 
-    public void play(Actor actor, String prompt, Iterator<String> prerecorded)
-            throws IOException {
+    public void play(ResourceLoader resources, Actor actor, String prompt,
+            Iterator<String> prerecorded) throws IOException {
         final String path = prerecorded.hasNext() ? prerecorded.next() : null;
         boolean usePrerecorded = path != null;
         final boolean reactivateSpeechRecognition;
+        final SpeechRecognition speechRecognizer;
         // Suspend speech recognition while speaking,
         // to avoid wrong recognitions
         // - and the mistress speech isn't to be interrupted anyway
         if (usePrerecorded && speechRecognizerCollection != null) {
-            SpeechRecognition speechRecognizer = speechRecognizerCollection
-                    .get(actor.locale);
+            speechRecognizer = speechRecognizerCollection.get(actor.locale);
             speechRecognizer.completeSpeechRecognitionInProgress();
             reactivateSpeechRecognition = speechRecognizer.isActive();
-            if (reactivateSpeechRecognition) {
-                speechRecognizer.stopRecognition();
-            }
         } else {
             reactivateSpeechRecognition = false;
+            speechRecognizer = null;
         }
-        if (usePrerecorded) {
-            teaseLib.host.playSound(teaseLib.resources, path);
-        } else {
-            speakSilent(prompt);
-        }
-        // resume SR if necessary
-        if (reactivateSpeechRecognition) {
-            SpeechRecognition speechRecognizer = speechRecognizerCollection
-                    .get(actor.locale);
-            speechRecognizer.resumeRecognition();
+        try {
+            if (reactivateSpeechRecognition && speechRecognizer != null) {
+                speechRecognizer.stopRecognition();
+            }
+            if (usePrerecorded) {
+                teaseLib.host.playSound(resources, path);
+            } else {
+                speakSilent(prompt);
+            }
+        } finally {
+            // resume SR if necessary
+            if (reactivateSpeechRecognition && speechRecognizer != null) {
+                speechRecognizer.resumeRecognition();
+            }
         }
     }
 

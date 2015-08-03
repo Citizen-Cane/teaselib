@@ -19,16 +19,17 @@ import java.util.Vector;
 
 import teaselib.Actor;
 import teaselib.Message;
+import teaselib.Message.Part;
 import teaselib.Mood;
 import teaselib.TeaseLib;
-import teaselib.Message.Part;
+import teaselib.core.ResourceLoader;
 
 public class TextToSpeechRecorder {
     public final static String SpeechDirName = "speech";
     public final static String MessageFilename = "message.txt";
     public final static String ResourcesFilename = "inventory.txt";
 
-    private final TeaseLib teaseLib;
+    private final ResourceLoader resources;
     private File speechDir = null;
     private final Map<String, Voice> voices;
     private final Set<String> actors = new HashSet<String>();
@@ -41,15 +42,17 @@ public class TextToSpeechRecorder {
     int upToDateEntries = 0;
     int reusedDuplicates = 0;
 
-    public TextToSpeechRecorder(TeaseLib teaseLib) throws IOException {
-        this.teaseLib = teaseLib;
+    public TextToSpeechRecorder(TeaseLib teaseLib, ResourceLoader resources)
+            throws IOException {
+        this.resources = resources;
+        // TODO TextToSpeechPlayer is already global in TeaseLib
         TextToSpeechPlayer ttsPlayer = new TextToSpeechPlayer(teaseLib);
         this.voices = ttsPlayer.textToSpeech.getVoices();
-        File assetsDir = teaseLib.resources.getAssetPath("");
+        File assetsDir = resources.getAssetPath("");
         speechDir = createSubDir(assetsDir, SpeechDirName);
         InstalledVoices available = new InstalledVoices(voices);
         available.store(assetsDir);
-        ActorVoices voicesProperties = new ActorVoices(teaseLib.resources);
+        ActorVoices voicesProperties = new ActorVoices(resources);
         if (voicesProperties.empty()) {
             // Write default file
             // TODO Language and gender selection for voices
@@ -145,8 +148,8 @@ public class TextToSpeechRecorder {
             // the resource loader can just load files, but not check for
             // directories in the resource paths
             actors.add(actor.name);
-            ActorVoice actorVoice = new ActorVoice(actor.name,
-                    neutralVoice.guid, teaseLib.resources);
+            PreRecordedVoice actorVoice = new PreRecordedVoice(actor.name,
+                    neutralVoice.guid, resources);
             actorVoice.clear();
             actorVoice.put(actor.name, neutralVoice);
             actorVoice.store(new File(new File(speechDir, actor.name),

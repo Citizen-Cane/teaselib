@@ -15,7 +15,6 @@ import java.util.concurrent.TimeUnit;
 
 import teaselib.core.Host;
 import teaselib.core.Persistence;
-import teaselib.core.ResourceLoader;
 import teaselib.core.ScriptInterruptedException;
 import teaselib.core.speechrecognition.SpeechRecognizer;
 import teaselib.core.texttospeech.TextToSpeechPlayer;
@@ -37,7 +36,6 @@ public class TeaseLib {
     private static TeaseLib instance;
 
     public final Host host;
-    public final ResourceLoader resources;
     public final Persistence persistence;
 
     public final SpeechRecognizer speechRecognizer;
@@ -48,15 +46,8 @@ public class TeaseLib {
     private static BufferedWriter log = null;
     private final static File logFile = new File("./TeaseLib.log");
 
-    public TeaseLib(TeaseLib teaseLib, String assetRoot) {
-        this(teaseLib.host, teaseLib.persistence, teaseLib.resources.basePath,
-                assetRoot);
-    }
-
-    public TeaseLib(Host host, Persistence persistence, String basePath,
-            String assetRoot) {
-        if (host == null || persistence == null || basePath == null
-                || assetRoot == null) {
+    public TeaseLib(Host host, Persistence persistence) {
+        if (host == null || persistence == null) {
             throw new IllegalArgumentException();
         }
         this.host = host;
@@ -81,13 +72,6 @@ public class TeaseLib {
                 }
             }
         });
-        // Now we can log errors
-        try {
-            this.resources = new ResourceLoader(basePath, assetRoot);
-        } catch (Throwable t) {
-            log(this, t);
-            throw new RuntimeException(t);
-        }
         speechRecognizer = new SpeechRecognizer();
         speechSynthesizer = new TextToSpeechPlayer(this, speechRecognizer);
 
@@ -103,10 +87,6 @@ public class TeaseLib {
 
     public static Host host() {
         return instance().host;
-    }
-
-    public static ResourceLoader resources() {
-        return instance().resources;
     }
 
     public static Persistence persistence() {
@@ -164,10 +144,6 @@ public class TeaseLib {
         for (StackTraceElement ste : e.getStackTrace()) {
             log("\t" + ste.toString());
         }
-    }
-
-    public void addAssets(String... assets) {
-        resources.addAssets(assets);
     }
 
     /**

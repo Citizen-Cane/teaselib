@@ -12,9 +12,9 @@ public class ActorVoices extends VoiceProperties {
     public final static String VoicesFilename = "Actor Voices.properties";
 
     public ActorVoices(ResourceLoader resources) {
-        InputStream recordedVoicesConfig = null;
         String path = VoicesFilename;
         try {
+            InputStream recordedVoicesConfig = null;
             try {
                 recordedVoicesConfig = resources.getResource(path);
                 properties.load(recordedVoicesConfig);

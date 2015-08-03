@@ -30,6 +30,8 @@ import teaselib.core.texttospeech.TextToSpeechPlayer;
 public abstract class TeaseScriptBase {
 
     public final TeaseLib teaseLib;
+    public final ResourceLoader resources;
+
     public final Actor actor;
     public final String namespace;
 
@@ -51,8 +53,10 @@ public abstract class TeaseScriptBase {
      * @param teaseLib
      * @param locale
      */
-    protected TeaseScriptBase(TeaseLib teaseLib, Actor actor, String namespace) {
+    protected TeaseScriptBase(TeaseLib teaseLib, ResourceLoader resources,
+            Actor actor, String namespace) {
         this.teaseLib = teaseLib;
+        this.resources = resources;
         this.actor = actor;
         this.namespace = namespace;
         acquireVoice(actor);
@@ -66,6 +70,7 @@ public abstract class TeaseScriptBase {
      */
     protected TeaseScriptBase(TeaseScriptBase script, Actor actor) {
         this.teaseLib = script.teaseLib;
+        this.resources = script.resources;
         this.actor = actor;
         this.namespace = script.namespace;
         acquireVoice(actor);
@@ -73,7 +78,8 @@ public abstract class TeaseScriptBase {
 
     private void acquireVoice(Actor actor) {
         try {
-            teaseLib.speechSynthesizer.selectVoice(new Message(actor));
+            teaseLib.speechSynthesizer.selectVoice(resources,
+                    new Message(actor));
         } catch (IOException e) {
             TeaseLib.log(this, e);
         }
@@ -132,8 +138,8 @@ public abstract class TeaseScriptBase {
             }
             Set<String> hints = getHints();
             hints.add(mood);
-            RenderMessage renderMessage = new RenderMessage(parsedMessage,
-                    speechSynthesizer, displayImage, hints);
+            RenderMessage renderMessage = new RenderMessage(resources,
+                    parsedMessage, speechSynthesizer, displayImage, hints);
             renderQueue.start(renderMessage, teaseLib);
             renderQueue.completeStarts();
         }

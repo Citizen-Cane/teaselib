@@ -1,5 +1,8 @@
 package teaselib;
 
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -9,6 +12,7 @@ import teaselib.core.RenderBackgroundSound;
 import teaselib.core.RenderDelay;
 import teaselib.core.RenderDesktopItem;
 import teaselib.core.RenderSound;
+import teaselib.core.ResourceLoader;
 import teaselib.core.texttospeech.TextToSpeechPlayer;
 import teaselib.util.Item;
 
@@ -44,8 +48,9 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
      * @param locale
      * @param namespace
      */
-    public TeaseScript(TeaseLib teaseLib, String locale, String namespace) {
-        this(teaseLib, new Actor("Dominant", locale), namespace);
+    public TeaseScript(TeaseLib teaseLib, ResourceLoader resources,
+            String locale, String namespace) {
+        this(teaseLib, resources, new Actor("Dominant", locale), namespace);
     }
 
     /**
@@ -55,8 +60,9 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
      * @param actor
      * @param namespace
      */
-    public TeaseScript(TeaseLib teaseLib, Actor actor, String namespace) {
-        super(teaseLib, actor, namespace);
+    public TeaseScript(TeaseLib teaseLib, ResourceLoader resources,
+            Actor actor, String namespace) {
+        super(teaseLib, resources, actor, namespace);
     }
 
     /**
@@ -80,12 +86,21 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
     }
 
     public void showDesktopItem(String path) {
-        MediaRenderer desktopItem = new RenderDesktopItem(path);
-        addDeferred(desktopItem);
+        URL url = resources.url(path);
+        if (url != null) {
+            URI uri = null;
+            try {
+                uri = url.toURI();
+            } catch (URISyntaxException e) {
+                TeaseLib.log(this, e);
+            }
+            MediaRenderer desktopItem = new RenderDesktopItem(uri);
+            addDeferred(desktopItem);
+        }
     }
 
     public void setSound(String path) {
-        addDeferred(new RenderSound(path));
+        addDeferred(new RenderSound(resources, path));
     }
 
     /**
@@ -97,7 +112,7 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
      */
     public Object playBackgroundSound(String path) {
         RenderBackgroundSound renderBackgroundSound = new RenderBackgroundSound(
-                path);
+                resources, path);
         addDeferred(renderBackgroundSound);
         return renderBackgroundSound;
     }

@@ -3,7 +3,6 @@ package teaselib.hosts;
 import teaselib.Clothing;
 import teaselib.Toys;
 import teaselib.core.Persistence;
-import teaselib.core.Persistence.TextVariable;
 import teaselib.util.Item;
 
 public class DummyPersistence implements Persistence {

@@ -1,6 +1,7 @@
 package teaselib.core;
 
 import java.awt.Image;
+import java.net.URI;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -8,14 +9,14 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import teaselib.Message;
+import teaselib.Message.Part;
 import teaselib.Mood;
 import teaselib.TeaseLib;
-import teaselib.Message.Part;
 import teaselib.core.texttospeech.TextToSpeech;
 import teaselib.core.texttospeech.TextToSpeechPlayer;
 
 public class RenderMessage extends MediaRendererThread {
-
+    private final ResourceLoader resources;
     private final Message message;
     private final TextToSpeechPlayer speechSynthesizer;
     private String displayImage;
@@ -25,11 +26,13 @@ public class RenderMessage extends MediaRendererThread {
     private final static long DELAYBETWEENPARAGRAPHS = 500;
     private final static long DELAYATENDOFTEXT = 2000;
 
-    public RenderMessage(Message message, TextToSpeechPlayer speechSynthesizer,
-            String displayImage, Collection<String> hints) {
+    public RenderMessage(ResourceLoader resources, Message message,
+            TextToSpeechPlayer speechSynthesizer, String displayImage,
+            Collection<String> hints) {
         if (message == null) {
             throw new NullPointerException();
         }
+        this.resources = resources;
         this.message = message;
         this.speechSynthesizer = speechSynthesizer;
         this.displayImage = displayImage;
@@ -60,8 +63,8 @@ public class RenderMessage extends MediaRendererThread {
                 // with TTS later
                 final Iterator<String> prerenderedSpeechItems;
                 if (speechSynthesizer != null) {
-                    prerenderedSpeechItems = speechSynthesizer
-                            .selectVoice(message);
+                    prerenderedSpeechItems = speechSynthesizer.selectVoice(
+                            resources, message);
                 } else {
                     prerenderedSpeechItems = null;
                 }
@@ -80,11 +83,14 @@ public class RenderMessage extends MediaRendererThread {
                         displayImage = part.value;
                     } else if (part.type == Message.Type.Sound) {
                         // Play sound, continue message execution
-                        soundRenderer = new RenderSound(part.value);
+                        soundRenderer = new RenderSound(resources, part.value);
                         soundRenderer.render(teaseLib);
                         // use AwaitSoundCompletion to wait for sound completion
                     } else if (part.type == Message.Type.DesktopItem) {
-                        new RenderDesktopItem(part.value).render(teaseLib);
+                        final URI uri = resources.uri(part.value);
+                        if (uri != null) {
+                            new RenderDesktopItem(uri).render(teaseLib);
+                        }
                     } else if (part.type == Message.Type.Mood) {
                         // Mood
                         mood = part.value;
@@ -113,7 +119,8 @@ public class RenderMessage extends MediaRendererThread {
                         startCompleted();
                         if (speechSynthesizer != null) {
                             if (prerenderedSpeechItems != null) {
-                                speechSynthesizer.play(message.actor, prompt,
+                                speechSynthesizer.play(resources,
+                                        message.actor, prompt,
                                         prerenderedSpeechItems);
                             } else {
                                 speechSynthesizer.speak(message.actor, prompt,
@@ -195,8 +202,11 @@ public class RenderMessage extends MediaRendererThread {
 
     private void doExec(Part part) {
         String path = removeCommandNameFromValue(part);
-        MediaRenderer desktopItem = new RenderDesktopItem(path);
-        desktopItem.render(teaseLib);
+        URI uri = resources.uri(path);
+        if (uri != null) {
+            MediaRenderer desktopItem = new RenderDesktopItem(uri);
+            desktopItem.render(teaseLib);
+        }
     }
 
     private static String removeCommandNameFromValue(Part part) {
@@ -250,7 +260,7 @@ public class RenderMessage extends MediaRendererThread {
                     String[] hintArray = new String[additionalHints.size()];
                     hintArray = additionalHints.toArray(hintArray);
                     images.hint(hintArray);
-                    image = teaseLib.resources.image(images.next());
+                    image = resources.image(images.next());
                 } else {
                     image = null;
                     TeaseLib.log("Dominant images missing - please initialize");
@@ -264,7 +274,7 @@ public class RenderMessage extends MediaRendererThread {
                 // text part (usually when setting the image
                 // outside
                 // the message)
-                image = teaseLib.resources.image(displayImage);
+                image = resources.image(displayImage);
             }
         } catch (Exception e) {
             text = text + "\n\n" + e.getClass() + ": " + e.getMessage() + "\n";

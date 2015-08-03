@@ -7,8 +7,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import teaselib.core.Persistence;
-import teaselib.core.TeaseScriptBase;
 import teaselib.core.Persistence.TextVariable;
+import teaselib.core.ResourceLoader;
+import teaselib.core.TeaseScriptBase;
 import teaselib.util.Item;
 
 /**
@@ -17,9 +18,9 @@ import teaselib.util.Item;
  */
 public abstract class TeaseScriptPersistence extends TeaseScriptBase {
 
-    protected TeaseScriptPersistence(TeaseLib teaseLib, Actor actor,
-            String namespace) {
-        super(teaseLib, actor, namespace);
+    protected TeaseScriptPersistence(TeaseLib teaseLib,
+            ResourceLoader resources, Actor actor, String namespace) {
+        super(teaseLib, resources, actor, namespace);
     }
 
     protected TeaseScriptPersistence(TeaseScriptBase script, Actor actor) {

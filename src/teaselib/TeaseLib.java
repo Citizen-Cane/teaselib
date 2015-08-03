@@ -106,11 +106,11 @@ public class TeaseLib {
             host().show(null,
                     "Cannot write to log file " + logFile.getAbsolutePath());
         }
-        System.out.println(line);
+        System.out.print(line);
     }
 
     /**
-     * Log details interesting for teaselib devs
+     * Log details that might be interesting for developers
      * 
      * @param line
      *            Log output

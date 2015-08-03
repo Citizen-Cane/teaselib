@@ -20,6 +20,10 @@ public class VoiceProperties {
         return properties.size() == 0;
     }
 
+    public void putGuid(String key, Voice voice) {
+        properties.put(key + ".guid", voice.guid);
+    }
+
     public void put(String key, Voice voice) {
         properties.put(key + ".guid", voice.guid);
         properties.put(key + ".name", voice.name);

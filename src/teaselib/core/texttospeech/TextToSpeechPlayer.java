@@ -70,52 +70,61 @@ public class TextToSpeechPlayer {
      *            pre-recorded speech.
      */
     private void getActorVoices(ResourceLoader resources) {
-        // Get the list of actor to voice assignments
-        ActorVoices actorVoices = new ActorVoices(resources);
-        for (String actorName : actorVoices.keySet()) {
-            // Available as a pre-recorded voice?
-            String voiceGuid = actorVoices.getGuid(actorName);
-            PreRecordedVoice preRecordedVoice = new PreRecordedVoice(actorName,
-                    voiceGuid, resources);
-            if (preRecordedVoice.available()) {
-                actor2PrerecordedVoice.put(actorName, voiceGuid);
-                usedVoices.add(voiceGuid);
-                TeaseLib.log("Actor " + actorName
-                        + ": using prerecorded voice '" + voiceGuid + "'");
-            } else {
-                TeaseLib.log("Actor " + actorName
-                        + ": prerecorded voice not available");
-                Voice voice = voices.get(voiceGuid);
-                if (voice != null) {
-                    TeaseLib.log("Actor " + actorName + ": using TTS voice");
-                    actor2TTSVoice.put(actorName, voice);
+        // Have we read any voice-related configuration files from this resource
+        // loader yet?
+        if (!processedVoiceActorVoices.contains(resources)) {
+            processedVoiceActorVoices.add(resources);
+            // Get the list of actor to voice assignments
+            ActorVoices actorVoices = new ActorVoices(resources);
+            for (String actorName : actorVoices.keySet()) {
+                // Available as a pre-recorded voice?
+                String voiceGuid = actorVoices.getGuid(actorName);
+                PreRecordedVoice preRecordedVoice = new PreRecordedVoice(
+                        actorName, voiceGuid, resources);
+                if (preRecordedVoice.available()) {
+                    actor2PrerecordedVoice.put(actorName, voiceGuid);
                     usedVoices.add(voiceGuid);
+                    TeaseLib.log("Actor " + actorName
+                            + ": using prerecorded voice '" + voiceGuid + "'");
                 } else {
-                    TeaseLib.log("Actor " + actorName + ": voice not available");
+                    TeaseLib.log("Actor " + actorName
+                            + ": prerecorded voice not available");
+                    Voice voice = voices.get(voiceGuid);
+                    if (voice != null) {
+                        TeaseLib.log("Actor " + actorName + ": using TTS voice");
+                        actor2TTSVoice.put(actorName, voice);
+                        usedVoices.add(voiceGuid);
+                    } else {
+                        TeaseLib.log("Actor " + actorName
+                                + ": voice not available");
+                    }
                 }
             }
         }
     }
 
-    Voice getVoiceFor(Actor actor) {
+    Voice getVoiceFor(Actor actor, ResourceLoader resources) {
+        getActorVoices(resources);
         if (actor2PrerecordedVoice.containsKey(actor.name)) {
             throw new IllegalStateException("Prerecorded voice available");
         }
         if (actor2TTSVoice.containsKey(actor.name)) {
             return actor2TTSVoice.get(actor.name);
         } else {
-            return getMatchingOrBestVoiceFor(actor);
+            return getMatchingOrBestVoiceFor(actor, resources);
         }
     }
 
-    String getAssignedVoiceFor(Actor actor) {
+    String getAssignedVoiceFor(Actor actor, ResourceLoader resources) {
+        getActorVoices(resources);
         return actor2PrerecordedVoice.get(actor.name);
     }
 
-    private Voice getMatchingOrBestVoiceFor(Actor actor) {
+    private Voice getMatchingOrBestVoiceFor(Actor actor,
+            ResourceLoader resources) {
         Map<String, Voice> voices = textToSpeech.getVoices();
         Voice voice = null;
-        String guid = getAssignedVoiceFor(actor);
+        String guid = getAssignedVoiceFor(actor, resources);
         if (guid != null) {
             voice = voices.get(guid);
         }
@@ -219,12 +228,7 @@ public class TextToSpeechPlayer {
      */
     public Iterator<String> selectVoice(ResourceLoader resources,
             Message message) throws IOException {
-        // Have we read any voice-related configuration files from this resource
-        // loader yet?
-        if (!processedVoiceActorVoices.contains(resources)) {
-            getActorVoices(resources);
-            processedVoiceActorVoices.add(resources);
-        }
+        getActorVoices(resources);
         // Do we have a pre-recorded voice?
         List<String> prerenderedSpeechFiles = getSpeechResources(resources,
                 message);
@@ -236,7 +240,7 @@ public class TextToSpeechPlayer {
             prerenderedSpeech = null;
             // Use TTS voice
             if (textToSpeech.isReady()) {
-                voice = getVoiceFor(message.actor);
+                voice = getVoiceFor(message.actor, resources);
                 textToSpeech.setVoice(voice);
             }
         }

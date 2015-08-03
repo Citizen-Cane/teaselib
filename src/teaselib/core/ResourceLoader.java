@@ -150,15 +150,7 @@ public class ResourceLoader {
     }
 
     public Image image(URL path) throws IOException {
-        InputStream inputStream = null;
-        try {
-            inputStream = getResource(path);
-            return ImageIO.read(inputStream);
-        } finally {
-            if (inputStream != null) {
-                inputStream.close();
-            }
-        }
+        return ImageIO.read(path);
     }
 
     /**
@@ -222,24 +214,13 @@ public class ResourceLoader {
     }
 
     /**
-     * Copy the whole directory from the resources zip into a directory and
-     * return the path to it. Useful if a resource has to ber opened on the
-     * desktop and more than a single file is needed
-     * 
-     * @param path
-     *            Path to resources directory
-     * @return Path to actual directory
-     * @throws IOException
-     */
-
-    /**
      * Get the absolute path of a resource. Good for creating a File or URL
      * object. The path denotes a directory or file in the file system, not in a
      * jar or zip.
      * 
      * @param resourcePath
-     *            relative path to resource
-     * @return The absolute path of the resource item
+     *            The path to the resource relative to the asset root directory.
+     * @return The absolute path to the resource item.
      * @throws IOException
      */
     public File getAssetPath(String resourcePath) {

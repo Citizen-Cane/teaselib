@@ -32,17 +32,15 @@ import teaselib.util.Item;
  *         All static methods refer to the shared instance
  */
 public class TeaseLib {
-
-    private static TeaseLib instance;
-
     public final Host host;
     public final Persistence persistence;
 
     public final SpeechRecognizer speechRecognizer;
     public final TextToSpeechPlayer speechSynthesizer;
 
-    public final static boolean logDetails = false;
+    public static boolean logDetails = false;
 
+    private static TeaseLib instance;
     private static BufferedWriter log = null;
     private final static File logFile = new File("./TeaseLib.log");
 
@@ -238,6 +236,10 @@ public class TeaseLib {
         public PersistentValue(String name) {
             this.name = name;
         }
+
+        public void clear() {
+            set(name, null);
+        }
     }
 
     /**
@@ -245,8 +247,8 @@ public class TeaseLib {
      * 
      *         A persistent boolean value, start value is false
      */
-    public class PersistentFlag extends PersistentValue {
-        public PersistentFlag(String name) {
+    public class PersistentBoolean extends PersistentValue {
+        public PersistentBoolean(String name) {
             super(name);
         }
 
@@ -254,8 +256,9 @@ public class TeaseLib {
             return persistence.getBoolean(name);
         }
 
+        @Override
         public void clear() {
-            set(false);
+            super.clear();
         }
 
         public void set() {
@@ -272,8 +275,8 @@ public class TeaseLib {
      * 
      *         A persistent integer value, start value is 0
      */
-    public class PersistentNumber extends PersistentValue {
-        public PersistentNumber(String name) {
+    public class PersistentInteger extends PersistentValue {
+        public PersistentInteger(String name) {
             super(name);
         }
 
@@ -287,6 +290,29 @@ public class TeaseLib {
 
         public void set(int value) {
             persistence.set(name, Integer.toString(value));
+        }
+    }
+
+    /**
+     * @author someone
+     * 
+     *         A persistent float value, start value is 0.0
+     */
+    public class PersistentFloat extends PersistentValue {
+        public PersistentFloat(String name) {
+            super(name);
+        }
+
+        public double get() {
+            try {
+                return Double.parseDouble(persistence.get(name));
+            } catch (NumberFormatException e) {
+                return 0.0;
+            }
+        }
+
+        public void set(double value) {
+            persistence.set(name, Double.toString(value));
         }
     }
 
@@ -307,6 +333,38 @@ public class TeaseLib {
         public void set(String value) {
             persistence.set(name, value);
         }
+    }
+
+    public void set(String name, boolean value) {
+        new PersistentBoolean(name).set(value);
+    }
+
+    public void set(String name, int value) {
+        new PersistentInteger(name).set(value);
+    }
+
+    public void set(String name, double value) {
+        new PersistentFloat(name).set(value);
+    }
+
+    public void set(String name, String value) {
+        new PersistentString(name).set(value);
+    }
+
+    public boolean getBoolean(String name) {
+        return new PersistentBoolean(name).get();
+    }
+
+    public double getFloat(String name) {
+        return new PersistentFloat(name).get();
+    }
+
+    public int getInteger(String name) {
+        return new PersistentInteger(name).get();
+    }
+
+    public String getString(String name) {
+        return new PersistentString(name).get();
     }
 
     public class PersistentSequence<T extends Enum<T>> {
@@ -358,30 +416,6 @@ public class TeaseLib {
             this.value = value;
             TeaseLib.this.set(name, value.toString());
         }
-    }
-
-    public boolean flag(String name) {
-        return new PersistentFlag(name).get();
-    }
-
-    public void set(String name, boolean value) {
-        new PersistentFlag(name).set(value);
-    }
-
-    public void set(String name, int value) {
-        new PersistentNumber(name).set(value);
-    }
-
-    public void set(String name, String value) {
-        new PersistentString(name).set(value);
-    }
-
-    public int getInteger(String name) {
-        return new PersistentNumber(name).get();
-    }
-
-    public String getString(String name) {
-        return new PersistentString(name).get();
     }
 
     private Map<Class<?>, State<? extends Enum<?>>> states = new HashMap<Class<?>, State<? extends Enum<?>>>();

@@ -31,6 +31,12 @@ public class DummyPersistence implements Persistence {
     }
 
     @Override
+    public void clear(String name) {
+        // TODO Auto-generated method stub
+
+    }
+
+    @Override
     public Item get(Toys toy) {
         // TODO Auto-generated method stub
         return null;

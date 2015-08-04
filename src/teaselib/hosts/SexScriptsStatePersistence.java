@@ -46,23 +46,10 @@ public class SexScriptsStatePersistence implements Persistence {
         set(name, value ? TRUE : FALSE);
     }
 
-    // @Override
-    // public void write(String name, int value) {
-    // host.save(root + "." + name, new Integer(value));
-    // }
-
-    // @Override
-    // public int read(String name, int defaultValue) {
-    // Float value = host.loadFloat(root + "." + name);
-    // if (value != 0)
-    // {
-    // return value.intValue();
-    // }
-    // else
-    // {
-    // return defaultValue;
-    // }
-    // }
+    @Override
+    public void clear(String name) {
+        host.save(name, null);
+    }
 
     @Override
     public Item get(Toys item) {

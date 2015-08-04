@@ -151,27 +151,51 @@ public abstract class TeaseScriptPersistence extends TeaseScriptBase {
     }
 
     public void set(String name, boolean value) {
-        teaseLib.new PersistentFlag(makePropertyName(name)).set(value);
+        teaseLib.set(makePropertyName(name), value);
     }
 
     public void set(String name, int value) {
-        teaseLib.new PersistentNumber(makePropertyName(name)).set(value);
+        teaseLib.set(makePropertyName(name), value);
+    }
+
+    public void set(String name, double value) {
+        teaseLib.set(makePropertyName(name), value);
     }
 
     public void set(String name, String value) {
-        teaseLib.new PersistentString(makePropertyName(name)).set(value);
+        teaseLib.set(makePropertyName(name), value);
     }
 
     public boolean getBoolean(String name) {
-        return teaseLib.new PersistentFlag(makePropertyName(name)).get();
+        return teaseLib.getBoolean(makePropertyName(name));
     }
 
     public int getInteger(String name) {
-        return teaseLib.new PersistentNumber(makePropertyName(name)).get();
+        return teaseLib.getInteger(makePropertyName(name));
+    }
+
+    public double getFloat(String name) {
+        return teaseLib.getFloat(makePropertyName(name));
     }
 
     public String getString(String name) {
-        return teaseLib.new PersistentString(makePropertyName(name)).get();
+        return teaseLib.getString(makePropertyName(name));
+    }
+
+    public TeaseLib.PersistentBoolean persistentBoolean(String name) {
+        return teaseLib.new PersistentBoolean(makePropertyName(name));
+    }
+
+    public TeaseLib.PersistentInteger persistentInteger(String name) {
+        return teaseLib.new PersistentInteger(makePropertyName(name));
+    }
+
+    public TeaseLib.PersistentFloat persistentFloat(String name) {
+        return teaseLib.new PersistentFloat(makePropertyName(name));
+    }
+
+    public TeaseLib.PersistentString persistentString(String name) {
+        return teaseLib.new PersistentString(makePropertyName(name));
     }
 
     public <T extends Enum<T>> TeaseLib.PersistentSequence<T> persistentSequence(
@@ -196,5 +220,4 @@ public abstract class TeaseScriptPersistence extends TeaseScriptBase {
     public <T extends Enum<T>> State<T> state(T[] values) {
         return teaseLib.state(values);
     }
-
 }

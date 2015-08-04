@@ -19,6 +19,8 @@ public interface Persistence {
 
     void set(String name, boolean value);
 
+    void clear(String name);
+
     /**
      * Return the corresponding persistent toy object
      * 

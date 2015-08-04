@@ -10,7 +10,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
 
@@ -26,6 +25,7 @@ import teaselib.core.speechrecognition.SpeechRecognitionResult;
 import teaselib.core.speechrecognition.events.SpeechRecognitionStartedEventArgs;
 import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
 import teaselib.core.texttospeech.TextToSpeechPlayer;
+import teaselib.core.util.NamedExecutorService;
 
 public abstract class TeaseScriptBase {
 
@@ -44,8 +44,10 @@ public abstract class TeaseScriptBase {
 
     private static final MediaRendererQueue renderQueue = new MediaRendererQueue();
     private final Deque<MediaRenderer> deferredRenderers = new ArrayDeque<MediaRenderer>();
-    private ExecutorService choiceScriptFunctionExecutor = Executors
-            .newFixedThreadPool(1);
+
+    private ExecutorService choiceScriptFunctionExecutor = NamedExecutorService
+            .newFixedThreadPool(1, getClass().getName() + " Script Function",
+                    1, TimeUnit.SECONDS);
 
     /**
      * Construct a new script instance

@@ -1,6 +1,7 @@
 package teaselib.core;
 
 import java.awt.Image;
+import java.io.IOException;
 import java.net.URI;
 import java.util.Collection;
 import java.util.HashSet;
@@ -57,7 +58,7 @@ public class RenderMessage extends MediaRendererThread {
                 // // Show image but no text
                 showImageAndText(null, hints);
             } else {
-                StringBuilder accumulatedText = null;
+                StringBuilder accumulatedText = new StringBuilder();
                 boolean append = false;
                 // Start speaking a message, replay prerecorded items or speak
                 // with TTS later
@@ -90,6 +91,20 @@ public class RenderMessage extends MediaRendererThread {
                         final URI uri = resources.uri(part.value);
                         if (uri != null) {
                             new RenderDesktopItem(uri).render(teaseLib);
+                        } else {
+                            // text might be treated as a desktop item,
+                            // because our file detection code is too lax
+                            // (should check whether a file with that name
+                            // exists, but that might be too strict)
+                            // -> if the url to the desktop item cannot be
+                            // retrieved (the desktop item doesn't exist),
+                            // we'll just display the part as text,
+                            // which is the most right thing in this case
+                            doText(accumulatedText, part, append,
+                                    prerenderedSpeechItems, mood,
+                                    additionalHints);
+                            pauseAfterParagraph(it);
+                            mood = resetMood(mood);
                         }
                     } else if (part.type == Message.Type.Mood) {
                         // Mood
@@ -100,38 +115,18 @@ public class RenderMessage extends MediaRendererThread {
                         // Pause
                         doPause(part);
                     } else if (part.type == Message.Type.Item) {
-                        accumulatedText = accumulateText(accumulatedText, "°",
-                                false);
+                        accumulateText(accumulatedText, "°", false);
                         appendToItem = true;
+                        mood = resetMood(mood);
                     } else if (part.type == Message.Type.Exec) {
                         // Exec
                         doExec(part);
                     } else {
                         // Text detected
-                        String prompt = part.value;
-                        accumulatedText = accumulateText(accumulatedText,
-                                prompt, append);
-                        // Update text
-                        additionalHints.add(mood);
-                        showImageAndText(accumulatedText.toString(),
-                                additionalHints);
-                        // First message shown - start part completed
-                        startCompleted();
-                        if (speechSynthesizer != null) {
-                            if (prerenderedSpeechItems != null) {
-                                speechSynthesizer.play(resources,
-                                        message.actor, prompt,
-                                        prerenderedSpeechItems);
-                            } else {
-                                speechSynthesizer.speak(message.actor, prompt,
-                                        mood);
-                            }
-                        }
+                        doText(accumulatedText, part, append,
+                                prerenderedSpeechItems, mood, additionalHints);
                         pauseAfterParagraph(it);
-                        // Reset mood after applying it once
-                        if (mood != Mood.Reading) {
-                            mood = defaultMood;
-                        }
+                        mood = resetMood(mood);
                     }
                     if (endThread) {
                         break;
@@ -152,6 +147,34 @@ public class RenderMessage extends MediaRendererThread {
             TeaseLib.log(this, t);
             teaseLib.host.show(null, t.getMessage());
         }
+    }
+
+    private void doText(StringBuilder accumulatedText, Part part,
+            boolean append, final Iterator<String> prerenderedSpeechItems,
+            String mood, Set<String> additionalHints) throws IOException {
+        String prompt = part.value;
+        accumulateText(accumulatedText, prompt, append);
+        // Update text
+        additionalHints.add(mood);
+        showImageAndText(accumulatedText.toString(), additionalHints);
+        // First message shown - start part completed
+        startCompleted();
+        if (speechSynthesizer != null) {
+            if (prerenderedSpeechItems != null) {
+                speechSynthesizer.play(resources, message.actor, prompt,
+                        prerenderedSpeechItems);
+            } else {
+                speechSynthesizer.speak(message.actor, prompt, mood);
+            }
+        }
+    }
+
+    private String resetMood(String mood) {
+        // Reset mood after applying it once
+        if (mood != Mood.Reading) {
+            mood = defaultMood;
+        }
+        return mood;
     }
 
     private void doKeyword(RenderSound soundRenderer, Part part) {
@@ -218,10 +241,10 @@ public class RenderMessage extends MediaRendererThread {
         }
     }
 
-    private static StringBuilder accumulateText(StringBuilder accumulatedText,
+    private static void accumulateText(StringBuilder accumulatedText,
             String text, boolean concatenate) {
-        if (accumulatedText == null) {
-            accumulatedText = new StringBuilder(text);
+        if (accumulatedText.length() == 0) {
+            accumulatedText.append(text);
         } else if (concatenate) {
             accumulatedText.append(" ");
             accumulatedText.append(text);
@@ -229,7 +252,6 @@ public class RenderMessage extends MediaRendererThread {
             accumulatedText.append("\n\n");
             accumulatedText.append(text);
         }
-        return accumulatedText;
     }
 
     private void pauseAfterParagraph(Iterator<Message.Part> it) {

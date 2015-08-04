@@ -21,6 +21,11 @@ public class SexScriptsStatePersistence implements Persistence {
     }
 
     @Override
+    public boolean has(String name) {
+        return host.loadString(name) != null;
+    }
+
+    @Override
     public String get(String name) {
         String value = host.loadString(name);
         return value;

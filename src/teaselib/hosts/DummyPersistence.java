@@ -8,6 +8,12 @@ import teaselib.util.Item;
 public class DummyPersistence implements Persistence {
 
     @Override
+    public boolean has(String name) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override
     public String get(String name) {
         // TODO Auto-generated method stub
         return null;

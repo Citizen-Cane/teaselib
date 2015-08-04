@@ -238,7 +238,11 @@ public class TeaseLib {
         }
 
         public void clear() {
-            set(name, null);
+            persistence.set(name, null);
+        }
+
+        public boolean available() {
+            return persistence.has(name);
         }
     }
 
@@ -336,7 +340,7 @@ public class TeaseLib {
     }
 
     public void set(String name, boolean value) {
-        new PersistentBoolean(name).set(value);
+        persistence.set(name, value);
     }
 
     public void set(String name, int value) {
@@ -348,11 +352,11 @@ public class TeaseLib {
     }
 
     public void set(String name, String value) {
-        new PersistentString(name).set(value);
+        persistence.set(name, value);
     }
 
     public boolean getBoolean(String name) {
-        return new PersistentBoolean(name).get();
+        return persistence.getBoolean(name);
     }
 
     public double getFloat(String name) {
@@ -364,7 +368,7 @@ public class TeaseLib {
     }
 
     public String getString(String name) {
-        return new PersistentString(name).get();
+        return persistence.get(name);
     }
 
     public class PersistentSequence<T extends Enum<T>> {

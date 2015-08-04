@@ -6,6 +6,8 @@ import teaselib.util.Item;
 
 public interface Persistence {
 
+    boolean has(String name);
+
     /**
      * @param name
      *            The name of the property

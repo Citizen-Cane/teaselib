@@ -152,7 +152,7 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
     }
 
     public void say(Message message) {
-        renderMessage(message, teaseLib.speechSynthesizer);
+        renderMessage(message, TextToSpeechPlayer.instance());
     }
 
     /**
@@ -171,16 +171,6 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
 
     public void show(Message message) {
         renderMessage(message, null);
-    }
-
-    protected void renderMessage(Message message,
-            TextToSpeechPlayer speechSynthesizer) {
-        try {
-            renderMessage(message, speechSynthesizer, displayImage, mood);
-        } finally {
-            displayImage = Message.DominantImage;
-            mood = Mood.Neutral;
-        }
     }
 
     /**

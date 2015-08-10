@@ -16,8 +16,6 @@ import java.util.concurrent.TimeUnit;
 import teaselib.core.Host;
 import teaselib.core.Persistence;
 import teaselib.core.ScriptInterruptedException;
-import teaselib.core.speechrecognition.SpeechRecognizer;
-import teaselib.core.texttospeech.TextToSpeechPlayer;
 import teaselib.util.Item;
 
 /**
@@ -35,22 +33,44 @@ public class TeaseLib {
     public final Host host;
     public final Persistence persistence;
 
-    public final SpeechRecognizer speechRecognizer;
-    public final TextToSpeechPlayer speechSynthesizer;
-
     public static boolean logDetails = false;
 
     private static TeaseLib instance;
     private static BufferedWriter log = null;
     private final static File logFile = new File("./TeaseLib.log");
+    private final static SimpleDateFormat timeFormat = new SimpleDateFormat(
+            "HH:mm:ss.SSS");
 
-    public TeaseLib(Host host, Persistence persistence) {
+    /**
+     * Call this function from the host in order to initialize TeaseLib
+     * 
+     * @param host
+     * @param persistence
+     * @return The teaselib instance created during the initialization
+     */
+    public static TeaseLib init(Host host, Persistence persistence) {
+        synchronized (TeaseLib.class) {
+            if (instance == null) {
+                instance = new TeaseLib(host, persistence);
+            }
+        }
+        return instance;
+    }
+
+    public static TeaseLib instance() {
+        if (instance == null) {
+            throw new IllegalStateException(
+                    "Please create a TeaseLib instance first");
+        }
+        return instance;
+    }
+
+    private TeaseLib(Host host, Persistence persistence) {
         if (host == null || persistence == null) {
             throw new IllegalArgumentException();
         }
         this.host = host;
         this.persistence = persistence;
-        TeaseLib.instance = this;
         // Init log
         try {
             log = new BufferedWriter(new FileWriter(logFile));
@@ -70,30 +90,10 @@ public class TeaseLib {
                 }
             }
         });
-        speechRecognizer = new SpeechRecognizer();
-        speechSynthesizer = new TextToSpeechPlayer(this, speechRecognizer);
-
-    }
-
-    public static TeaseLib instance() {
-        if (instance == null) {
-            throw new IllegalStateException(
-                    "Please create a TeaseLib instance first");
-        }
-        return instance;
-    }
-
-    public static Host host() {
-        return instance().host;
-    }
-
-    public static Persistence persistence() {
-        return instance().persistence;
     }
 
     public static synchronized void log(String text) {
         Date now = new Date(System.currentTimeMillis());
-        SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm:ss.SSS");
         String line = timeFormat.format(now) + ": " + text + "\n";
         try {
             if (log != null) {
@@ -101,7 +101,7 @@ public class TeaseLib {
                 log.flush();
             }
         } catch (IOException e) {
-            host().show(null,
+            instance.host.show(null,
                     "Cannot write to log file " + logFile.getAbsolutePath());
         }
         System.out.print(line);

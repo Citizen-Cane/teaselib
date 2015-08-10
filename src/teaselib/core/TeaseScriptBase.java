@@ -22,6 +22,7 @@ import teaselib.core.events.Event;
 import teaselib.core.speechrecognition.SpeechRecognition;
 import teaselib.core.speechrecognition.SpeechRecognitionImplementation;
 import teaselib.core.speechrecognition.SpeechRecognitionResult;
+import teaselib.core.speechrecognition.SpeechRecognizer;
 import teaselib.core.speechrecognition.events.SpeechRecognitionStartedEventArgs;
 import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
 import teaselib.core.texttospeech.TextToSpeechPlayer;
@@ -80,7 +81,7 @@ public abstract class TeaseScriptBase {
 
     private void acquireVoice(Actor actor) {
         try {
-            teaseLib.speechSynthesizer.selectVoice(resources,
+            TextToSpeechPlayer.instance().selectVoice(resources,
                     new Message(actor));
         } catch (IOException e) {
             TeaseLib.log(this, e);
@@ -117,6 +118,16 @@ public abstract class TeaseScriptBase {
      */
     public void endAll() {
         renderQueue.endAll();
+    }
+
+    protected void renderMessage(Message message,
+            TextToSpeechPlayer speechSynthesizer) {
+        try {
+            renderMessage(message, speechSynthesizer, displayImage, mood);
+        } finally {
+            displayImage = Message.DominantImage;
+            mood = Mood.Neutral;
+        }
     }
 
     protected void renderMessage(Message message,
@@ -489,7 +500,7 @@ public abstract class TeaseScriptBase {
         }
 
         private void dispose() {
-            SpeechRecognition speechRecognizer = teaseLib.speechRecognizer
+            SpeechRecognition speechRecognizer = SpeechRecognizer.instance
                     .get(actor.locale);
             if (recognitionStarted != null)
                 speechRecognizer.events.recognitionStarted
@@ -525,7 +536,7 @@ public abstract class TeaseScriptBase {
         // Speech recognition
         final List<Integer> srChoiceIndices = new ArrayList<Integer>(1);
         SpeechRecognitionHypothesisEventHandler eventHandler;
-        SpeechRecognition speechRecognizer = teaseLib.speechRecognizer
+        SpeechRecognition speechRecognizer = SpeechRecognizer.instance
                 .get(actor.locale);
         final boolean recognizeSpeech = speechRecognizer.isReady();
         eventHandler = new SpeechRecognitionHypothesisEventHandler(

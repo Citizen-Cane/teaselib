@@ -35,20 +35,15 @@ public class TextToSpeechRecorder {
     private final Set<String> actors = new HashSet<String>();
     private final ActorVoices actorVoices;
 
-    private final TextToSpeechPlayer speechSynthesizer;
-
     private final long buildStart = System.currentTimeMillis();
     int newEntries = 0;
     int changedEntries = 0;
     int upToDateEntries = 0;
     int reusedDuplicates = 0;
 
-    public TextToSpeechRecorder(TeaseLib teaseLib, ResourceLoader resources)
-            throws IOException {
+    public TextToSpeechRecorder(ResourceLoader resources) throws IOException {
         this.resources = resources;
-        // TODO TextToSpeechPlayer is already global in TeaseLib
-        this.speechSynthesizer = teaseLib.speechSynthesizer;
-        this.voices = teaseLib.speechSynthesizer.textToSpeech.getVoices();
+        this.voices = TextToSpeechPlayer.instance().textToSpeech.getVoices();
         File assetsDir = resources.getAssetPath("");
         speechDir = createSubDir(assetsDir, SpeechDirName);
         InstalledVoices available = new InstalledVoices(voices);
@@ -78,7 +73,7 @@ public class TextToSpeechRecorder {
             final Voice voice;
             voice = getVoice(actor);
             TeaseLib.log("Voice: " + voice.name);
-            speechSynthesizer.textToSpeech.setVoice(voice);
+            TextToSpeechPlayer.instance().textToSpeech.setVoice(voice);
             File voiceDir = createSubDir(characterDir, voice.guid);
             createActorFile(actor, voice);
             String hash = recordMessage(message, voice, voiceDir);
@@ -162,10 +157,10 @@ public class TextToSpeechRecorder {
 
     private Voice getVoice(Actor actor) {
         final Voice neutralVoice;
-        String voiceGuid = speechSynthesizer.getAssignedVoiceFor(actor,
-                resources);
+        final TextToSpeechPlayer ttsPlayer = TextToSpeechPlayer.instance();
+        String voiceGuid = ttsPlayer.getAssignedVoiceFor(actor, resources);
         if (voiceGuid == null) {
-            neutralVoice = speechSynthesizer.getVoiceFor(actor, resources);
+            neutralVoice = ttsPlayer.getVoiceFor(actor,resources);
         } else {
             neutralVoice = voices.get(voiceGuid);
         }
@@ -217,10 +212,11 @@ public class TextToSpeechRecorder {
             } else if (part.type == Message.Type.Text) {
                 TeaseLib.log("Recording part " + index);
                 File soundFile = new File(messageDir, Integer.toString(index));
-                speechSynthesizer.textToSpeech.setVoice(neutralVoice);
-                speechSynthesizer.textToSpeech.setHint(mood);
-                String recordedSoundFile = speechSynthesizer.textToSpeech
-                        .speak(part.value, soundFile.getAbsolutePath());
+                final TextToSpeech textToSpeech = TextToSpeechPlayer.instance().textToSpeech;
+                textToSpeech.setVoice(neutralVoice);
+                textToSpeech.setHint(mood);
+                String recordedSoundFile = textToSpeech.speak(part.value,
+                        soundFile.getAbsolutePath());
                 if (!recordedSoundFile.endsWith(".mp3")) {
                     String encodedSoundFile = recordedSoundFile.replace(".wav",
                             ".mp3");

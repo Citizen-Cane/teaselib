@@ -12,10 +12,11 @@ import java.util.Map;
  */
 public class SpeechRecognizer {
 
+    public static SpeechRecognizer instance = new SpeechRecognizer();
+
     private final Map<String, SpeechRecognition> speechRecognitionInstances = new HashMap<String, SpeechRecognition>();
 
-    public SpeechRecognizer() {
-
+    private SpeechRecognizer() {
     }
 
     public SpeechRecognition get(String locale) {

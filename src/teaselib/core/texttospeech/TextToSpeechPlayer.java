@@ -22,28 +22,32 @@ import teaselib.core.speechrecognition.SpeechRecognizer;
 
 public class TextToSpeechPlayer {
 
-    private final TeaseLib teaseLib;
     public final TextToSpeech textToSpeech;
-    protected final SpeechRecognizer speechRecognizerCollection;
-    private final Set<ResourceLoader> processedVoiceActorVoices = new HashSet<ResourceLoader>();
 
+    private final TeaseLib teaseLib;
+    private final Set<ResourceLoader> processedVoiceActorVoices = new HashSet<ResourceLoader>();
     private final Map<String, Voice> voices;
     private final Map<String, String> actor2PrerecordedVoice = new HashMap<String, String>();
     private final Map<String, Voice> actor2TTSVoice = new HashMap<String, Voice>();
-
     private final Set<String> usedVoices = new HashSet<String>();
+
     private Voice voice = null;
 
-    public TextToSpeechPlayer(TeaseLib teaseLib) {
-        this(teaseLib, null);
+    private static TextToSpeechPlayer instance = null;
+
+    public static TextToSpeechPlayer instance() {
+        synchronized (TextToSpeechPlayer.class) {
+            if (instance == null) {
+                instance = new TextToSpeechPlayer();
+            }
+            return instance;
+        }
     }
 
-    public TextToSpeechPlayer(TeaseLib teaseLib,
-            SpeechRecognizer speechRecognizerCollection) {
+    private TextToSpeechPlayer() {
         super();
-        this.teaseLib = teaseLib;
+        this.teaseLib = TeaseLib.instance();
         this.textToSpeech = new TextToSpeech();
-        this.speechRecognizerCollection = speechRecognizerCollection;
         // TTS might not be available
         if (textToSpeech.isReady()) {
             this.voices = textToSpeech.getVoices();
@@ -260,17 +264,16 @@ public class TextToSpeechPlayer {
     public void speak(Actor actor, String prompt, String mood) {
         boolean useTTS = textToSpeech.isReady() && voice != null;
         final boolean reactivateSpeechRecognition;
-        SpeechRecognition speechRecognizer;
+        final SpeechRecognition speechRecognizer = SpeechRecognizer.instance
+                .get(actor.locale);
         // Suspend speech recognition while speaking,
         // to avoid wrong recognitions
         // - and the mistress speech isn't to be interrupted anyway
-        if (useTTS && speechRecognizerCollection != null) {
-            speechRecognizer = speechRecognizerCollection.get(actor.locale);
+        if (useTTS && speechRecognizer != null) {
             speechRecognizer.completeSpeechRecognitionInProgress();
             reactivateSpeechRecognition = speechRecognizer.isActive();
         } else {
             reactivateSpeechRecognition = false;
-            speechRecognizer = null;
         }
         try {
             if (reactivateSpeechRecognition && speechRecognizer != null) {
@@ -302,17 +305,16 @@ public class TextToSpeechPlayer {
         final String path = prerecorded.hasNext() ? prerecorded.next() : null;
         boolean usePrerecorded = path != null;
         final boolean reactivateSpeechRecognition;
-        final SpeechRecognition speechRecognizer;
+        final SpeechRecognition speechRecognizer = SpeechRecognizer.instance
+                .get(actor.locale);
         // Suspend speech recognition while speaking,
         // to avoid wrong recognitions
         // - and the mistress speech isn't to be interrupted anyway
-        if (usePrerecorded && speechRecognizerCollection != null) {
-            speechRecognizer = speechRecognizerCollection.get(actor.locale);
+        if (usePrerecorded && speechRecognizer != null) {
             speechRecognizer.completeSpeechRecognitionInProgress();
             reactivateSpeechRecognition = speechRecognizer.isActive();
         } else {
             reactivateSpeechRecognition = false;
-            speechRecognizer = null;
         }
         try {
             if (reactivateSpeechRecognition && speechRecognizer != null) {

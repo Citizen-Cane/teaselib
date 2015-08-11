@@ -20,8 +20,8 @@ public class Value {
         this.persistence = persistence;
     }
 
-    public static String createDisplayName(String name) {
-        String displayName = name.replace("_", " ");
+    public static String createDisplayName(Object name) {
+        String displayName = name.toString().replace("_", " ");
         return displayName;
     }
 

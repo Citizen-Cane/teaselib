@@ -4,6 +4,7 @@
 package teaselib;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import teaselib.core.Persistence;
@@ -28,21 +29,21 @@ public abstract class TeaseScriptPersistence extends TeaseScriptBase {
     }
 
     public Item get(Toys item) {
-        return teaseLib.persistence.get(item);
+        return teaseLib.get(item);
     }
 
     public Item get(Clothing item) {
-        return teaseLib.persistence.get(item);
+        return teaseLib.get(item);
     }
 
     public boolean isAvailable(Toys toy) {
-        Item item = teaseLib.persistence.get(toy);
+        Item item = teaseLib.get(toy);
         return item.isAvailable();
     }
 
     public boolean isAnyAvailable(Toys... toys) {
         for (Toys toy : toys) {
-            Item item = teaseLib.persistence.get(toy);
+            Item item = teaseLib.get(toy);
             if (item.isAvailable()) {
                 return true;
             }
@@ -75,7 +76,7 @@ public abstract class TeaseScriptPersistence extends TeaseScriptBase {
     public List<Item> get(Toys... toys) {
         List<Item> items = new ArrayList<Item>();
         for (Toys toy : toys) {
-            Item item = teaseLib.persistence.get(toy);
+            Item item = teaseLib.get(toy);
             items.add(item);
         }
         return items;
@@ -85,7 +86,7 @@ public abstract class TeaseScriptPersistence extends TeaseScriptBase {
         List<Item> items = new ArrayList<Item>();
         for (Toys[] selection : toys) {
             for (Toys toy : selection) {
-                Item item = teaseLib.persistence.get(toy);
+                Item item = teaseLib.get(toy);
                 items.add(item);
             }
         }
@@ -93,29 +94,39 @@ public abstract class TeaseScriptPersistence extends TeaseScriptBase {
     }
 
     /**
-     * Get values for any enumeration. This is different from toys and clothing
-     * in that those are usually handled by the host.
+     * Get items from a enumeration. This is different from toys and clothing in
+     * that toys and clothing is usually handled by the host, whereas
+     * script-related enumerations are handled by the script.
      * 
      * @param values
-     * @return
+     * @return A list of items whose names are based on the enumeration members
      */
     public List<Item> get(Enum<? extends Enum<?>>... values) {
-        List<Item> items = new ArrayList<Item>(values.length);
-        for (Enum<?> v : values) {
-            items.add(new Item(namespace + "." + v.getClass().getName() + "."
-                    + v.name(), v.toString(), teaseLib.persistence));
+        if (values.length > 0) {
+            final String namespace = this.namespace + "."
+                    + values[0].getClass().getSimpleName();
+            return teaseLib.get(namespace, values);
+        } else {
+            return Collections.emptyList();
         }
-        return items;
     }
 
+    /**
+     * Get the item from an enumeration member
+     * 
+     * @param value
+     *            The enumeration value to get the item for
+     * @return The item of the enumeration member
+     */
     public Item get(Enum<? extends Enum<?>> value) {
-        return new Item(namespace + "." + value.getClass().getName() + "."
-                + value.name(), value.toString(), teaseLib.persistence);
+        final String namespace = this.namespace + "."
+                + value.getClass().getSimpleName();
+        return teaseLib.get(namespace, value);
     }
 
     public boolean isAnyAvailable(Clothing... clothes) {
         for (Clothing clothing : clothes) {
-            Item item = teaseLib.persistence.get(clothing);
+            Item item = teaseLib.get(clothing);
             if (item.isAvailable()) {
                 return true;
             }
@@ -126,7 +137,7 @@ public abstract class TeaseScriptPersistence extends TeaseScriptBase {
     public List<Item> get(Clothing... clothes) {
         List<Item> items = new ArrayList<Item>();
         for (Clothing clothing : clothes) {
-            Item item = teaseLib.persistence.get(clothing);
+            Item item = teaseLib.get(clothing);
             items.add(item);
         }
         return items;
@@ -151,66 +162,64 @@ public abstract class TeaseScriptPersistence extends TeaseScriptBase {
     }
 
     public void set(String name, boolean value) {
-        teaseLib.set(makePropertyName(name), value);
+        teaseLib.set(namespace, name, value);
     }
 
     public void set(String name, int value) {
-        teaseLib.set(makePropertyName(name), value);
+        teaseLib.set(namespace, name, value);
     }
 
     public void set(String name, double value) {
-        teaseLib.set(makePropertyName(name), value);
+        teaseLib.set(namespace, name, value);
     }
 
     public void set(String name, String value) {
-        teaseLib.set(makePropertyName(name), value);
+        teaseLib.set(namespace, name, value);
     }
 
     public boolean getBoolean(String name) {
-        return teaseLib.getBoolean(makePropertyName(name));
+        return teaseLib.getBoolean(namespace, name);
     }
 
     public int getInteger(String name) {
-        return teaseLib.getInteger(makePropertyName(name));
+        return teaseLib.getInteger(namespace, name);
     }
 
     public double getFloat(String name) {
-        return teaseLib.getFloat(makePropertyName(name));
+        return teaseLib.getFloat(namespace, name);
     }
 
     public String getString(String name) {
-        return teaseLib.getString(makePropertyName(name));
+        return teaseLib.getString(namespace, name);
     }
 
     public TeaseLib.PersistentBoolean persistentBoolean(String name) {
-        return teaseLib.new PersistentBoolean(makePropertyName(name));
+        return teaseLib.new PersistentBoolean(namespace, name);
     }
 
     public TeaseLib.PersistentInteger persistentInteger(String name) {
-        return teaseLib.new PersistentInteger(makePropertyName(name));
+        return teaseLib.new PersistentInteger(namespace, name);
     }
 
     public TeaseLib.PersistentFloat persistentFloat(String name) {
-        return teaseLib.new PersistentFloat(makePropertyName(name));
+        return teaseLib.new PersistentFloat(namespace, name);
     }
 
     public TeaseLib.PersistentString persistentString(String name) {
-        return teaseLib.new PersistentString(makePropertyName(name));
+        return teaseLib.new PersistentString(namespace, name);
     }
 
     public <T extends Enum<T>> TeaseLib.PersistentSequence<T> persistentSequence(
             String name, T[] values) {
-        return teaseLib.new PersistentSequence<T>(makePropertyName(name),
-                values);
+        return teaseLib.new PersistentSequence<T>(namespace, name, values);
     }
 
-    @Override
     public String get(Persistence.TextVariable variable) {
-        return super.get(variable);
+        return teaseLib.get(variable, actor.locale);
     }
 
     public void set(TextVariable var, String value) {
-        teaseLib.persistence.set(var, actor.locale, value);
+        teaseLib.set(var, actor.locale, value);
     }
 
     public <T extends Enum<T>> State<T>.Item state(T item) {

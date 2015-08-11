@@ -58,28 +58,27 @@ public class SexScriptsStatePersistence implements Persistence {
 
     @Override
     public Item get(Toys item) {
-        return getToy(item.toString());
+        return getToy(item.name());
     }
 
     @Override
     public Item get(Clothing item) {
-        return getClothingItem(item.toString());
+        return getClothingItem(item.name());
     }
 
     @Override
     public Item getToy(String name) {
-        if (Toys.Ball_Gag.toString().equals(name)) {
+        final String displayName = Value.createDisplayName(name);
+        if (Toys.Ball_Gag.name().equals(name)) {
             name = "Ballgag";
         }
-        final String displayName = Value.createDisplayName(name);
         return new Item("toys." + name.toLowerCase(), displayName, this);
     }
 
     @Override
     public Item getClothingItem(String item) {
-        final String name = item.toString();
-        final String displayName = Value.createDisplayName(item.toString());
-        return new Item("clothes." + name.toLowerCase(), displayName, this);
+        final String displayName = Value.createDisplayName(item);
+        return new Item("clothes." + item.toLowerCase(), displayName, this);
     }
 
     @Override

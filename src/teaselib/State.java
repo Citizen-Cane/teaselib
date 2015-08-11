@@ -24,7 +24,7 @@ public class State<T extends Enum<T>> {
         super();
         this.teaseLib = teaseLib;
         for (T value : values(enumClass)) {
-            String args = teaseLib.getString(getPropertyName(value));
+            String args = teaseLib.getString(namespaceOf(value), nameOf(value));
             if (args != null) {
                 String[] argv = args.split(" ");
                 add(value, Long.parseLong(argv[0]), Long.parseLong(argv[1]));
@@ -37,12 +37,16 @@ public class State<T extends Enum<T>> {
         return (T[]) enumClass.getEnumConstants();
     }
 
-    public String getPropertyName(Enum<T> item) {
-        return item.getClass().getName() + "." + item.name();
+    private String namespaceOf(Enum<T> item) {
+        return item.getClass().getName();
     }
 
-    public void save(T item, Duration duration, long time, TimeUnit unit) {
-        teaseLib.set(getPropertyName(item),
+    private String nameOf(Enum<T> item) {
+        return item.name();
+    }
+
+    private void save(T item, Duration duration, long time, TimeUnit unit) {
+        teaseLib.set(namespaceOf(item), nameOf(item),
                 persisted(duration.start, unit.toSeconds(time)));
     }
 
@@ -56,7 +60,7 @@ public class State<T extends Enum<T>> {
          * 
          * @param item
          */
-        public Item(T item) {
+        Item(T item) {
             this(item, Long.MAX_VALUE, TimeUnit.SECONDS);
         }
 
@@ -68,7 +72,7 @@ public class State<T extends Enum<T>> {
          *            , TimeUnit unit The number of seconds to apply the item,
          *            or 0 to remove.
          */
-        public Item(T item, long time, TimeUnit unit) {
+        Item(T item, long time, TimeUnit unit) {
             super();
             this.item = item;
             this.duration = teaseLib.new Duration();
@@ -127,7 +131,8 @@ public class State<T extends Enum<T>> {
          */
         public void clear() {
             teaseLib.set(
-                    getPropertyName(item),
+                    namespaceOf(item),
+                    nameOf(item),
                     persisted(
                             duration.start + duration.elapsed(TimeUnit.SECONDS),
                             0));

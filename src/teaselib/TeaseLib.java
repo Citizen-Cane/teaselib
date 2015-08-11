@@ -15,8 +15,10 @@ import java.util.concurrent.TimeUnit;
 
 import teaselib.core.Host;
 import teaselib.core.Persistence;
+import teaselib.core.Persistence.TextVariable;
 import teaselib.core.ScriptInterruptedException;
 import teaselib.util.Item;
+import teaselib.util.Value;
 
 /**
  * @author someone
@@ -31,11 +33,12 @@ import teaselib.util.Item;
  */
 public class TeaseLib {
     public final Host host;
-    public final Persistence persistence;
-
-    public static boolean logDetails = false;
+    private final Persistence persistence;
 
     private static TeaseLib instance;
+    private Map<Class<?>, State<? extends Enum<?>>> states = new HashMap<Class<?>, State<? extends Enum<?>>>();
+
+    public static boolean logDetails = false;
     private static BufferedWriter log = null;
     private final static File logFile = new File("./TeaseLib.log");
     private final static SimpleDateFormat timeFormat = new SimpleDateFormat(
@@ -233,8 +236,8 @@ public class TeaseLib {
     protected class PersistentValue {
         protected final String name;
 
-        public PersistentValue(String name) {
-            this.name = name;
+        protected PersistentValue(String namespace, String name) {
+            this.name = makePropertyName(namespace, name);
         }
 
         public void clear() {
@@ -252,8 +255,8 @@ public class TeaseLib {
      *         A persistent boolean value, start value is false
      */
     public class PersistentBoolean extends PersistentValue {
-        public PersistentBoolean(String name) {
-            super(name);
+        public PersistentBoolean(String namespace, String name) {
+            super(namespace, name);
         }
 
         public boolean get() {
@@ -280,8 +283,8 @@ public class TeaseLib {
      *         A persistent integer value, start value is 0
      */
     public class PersistentInteger extends PersistentValue {
-        public PersistentInteger(String name) {
-            super(name);
+        public PersistentInteger(String namespace, String name) {
+            super(namespace, name);
         }
 
         public int get() {
@@ -303,8 +306,8 @@ public class TeaseLib {
      *         A persistent float value, start value is 0.0
      */
     public class PersistentFloat extends PersistentValue {
-        public PersistentFloat(String name) {
-            super(name);
+        public PersistentFloat(String namespace, String name) {
+            super(namespace, name);
         }
 
         public double get() {
@@ -326,8 +329,8 @@ public class TeaseLib {
      *         A persistent String value, start value is the empty string
      */
     public class PersistentString extends PersistentValue {
-        public PersistentString(String name) {
-            super(name);
+        public PersistentString(String namespace, String name) {
+            super(namespace, name);
         }
 
         public String get() {
@@ -339,47 +342,73 @@ public class TeaseLib {
         }
     }
 
-    public void set(String name, boolean value) {
-        persistence.set(name, value);
+    public void set(String namespace, String name, boolean value) {
+        persistence.set(makePropertyName(namespace, name), value);
     }
 
-    public void set(String name, int value) {
-        new PersistentInteger(name).set(value);
+    public void set(String namespace, String name, int value) {
+        new PersistentInteger(namespace, name).set(value);
     }
 
-    public void set(String name, double value) {
-        new PersistentFloat(name).set(value);
+    public void set(String namespace, String name, double value) {
+        new PersistentFloat(namespace, name).set(value);
     }
 
-    public void set(String name, String value) {
-        persistence.set(name, value);
+    public void set(String namespace, String name, String value) {
+        persistence.set(makePropertyName(namespace, name), value);
     }
 
-    public boolean getBoolean(String name) {
-        return persistence.getBoolean(name);
+    public boolean getBoolean(String namespace, String name) {
+        return persistence.getBoolean(makePropertyName(namespace, name));
     }
 
-    public double getFloat(String name) {
-        return new PersistentFloat(name).get();
+    public double getFloat(String namespace, String name) {
+        return new PersistentFloat(namespace, name).get();
     }
 
-    public int getInteger(String name) {
-        return new PersistentInteger(name).get();
+    public int getInteger(String namespace, String name) {
+        return new PersistentInteger(namespace, name).get();
     }
 
-    public String getString(String name) {
-        return persistence.get(name);
+    public String getString(String namespace, String name) {
+        return persistence.get(makePropertyName(namespace, name));
+    }
+
+    protected String makePropertyName(String namespace, String name) {
+        return namespace + "." + name;
+    }
+
+    Item get(Toys toy) {
+        return persistence.get(toy);
+    }
+
+    Item get(Clothing item) {
+        return persistence.get(item);
+    }
+
+    public String get(TextVariable name, String locale) {
+        String value = persistence.get(name, locale);
+        if (value != null) {
+            return value;
+        } else if (name.fallback != null) {
+            return get(name.fallback, locale);
+        }
+        return name.toString();
+    }
+
+    public void set(TextVariable name, String locale, String value) {
+        persistence.set(name, locale, value);
     }
 
     public class PersistentSequence<T extends Enum<T>> {
-        public final String name;
+        public final PersistentString valueName;
         public final T[] values;
         private T value;
 
-        public PersistentSequence(String name, T[] values) {
-            this.name = name;
+        public PersistentSequence(String namespace, String name, T[] values) {
+            this.valueName = new PersistentString(namespace, name);
             this.values = values;
-            String persistedValue = getString(name);
+            String persistedValue = valueName.get();
             this.value = values[0];
             if (persistedValue != null) {
                 for (T v : values) {
@@ -418,12 +447,17 @@ public class TeaseLib {
 
         public void set(T value) {
             this.value = value;
-            TeaseLib.this.set(name, value.toString());
+            valueName.set(value.name());
         }
     }
 
-    private Map<Class<?>, State<? extends Enum<?>>> states = new HashMap<Class<?>, State<? extends Enum<?>>>();
-
+    /**
+     * Return the state of an enumeration member
+     * 
+     * @param item
+     *            The enumeration member to return the state for
+     * @return The item state.
+     */
     @SuppressWarnings("unchecked")
     public <T extends Enum<T>> State<T>.Item state(T item) {
         Class<Enum<?>> enumClass = (Class<Enum<?>>) item.getClass();
@@ -442,12 +476,28 @@ public class TeaseLib {
         return stateItem;
     }
 
+    /**
+     * Return the state for all or a subset of members of an enumeration.
+     * 
+     * @param values
+     *            The values to retrieve the state for. This should be
+     *            {@code Enum.values()}, as the state will only contain the
+     *            state items for the listed values.
+     * @return The state of all members of the {@code values} parameter
+     */
     @SuppressWarnings("unchecked")
     public <T extends Enum<T>> State<T> state(T[] values) {
         Class<Enum<?>> enumClass = (Class<Enum<?>>) values[0].getClass();
         return state(enumClass);
     }
 
+    /**
+     * Return the state for all members of an enumeration.
+     * 
+     * @param enumClass
+     *            The class of the enumeration.
+     * @return The state of all members of the enumeration.
+     */
     @SuppressWarnings("unchecked")
     public <T extends Enum<T>> State<T> state(Class<Enum<?>> enumClass) {
         final State<T> state;
@@ -461,18 +511,35 @@ public class TeaseLib {
     }
 
     /**
-     * Get values for any enumeration. This is different from toys and clothing
-     * in that those are usually handled by the host.
+     * Get items from a enumeration. This is different from toys and clothing in
+     * that toys and clothing is usually handled by the host, whereas
+     * script-related enumerations are handled by the script.
      * 
+     * @param namespace
+     *            The global namespace for the items, either the script name
+     *            space or class name of the enumeration.
      * @param values
-     * @return
+     * @return A list of items whose names are based on the enumeration members
      */
-    public List<Item> get(Enum<? extends Enum<?>>... values) {
+    public List<Item> get(String namespace, Enum<? extends Enum<?>>... values) {
         List<Item> items = new ArrayList<Item>(values.length);
         for (Enum<?> v : values) {
-            items.add(new Item(v.getClass().getName() + "." + v.name(), v
-                    .toString(), persistence));
+            items.add(get(namespace, v));
         }
         return items;
+    }
+
+    /**
+     * Get the item from an enumeration member
+     * 
+     * @param namespace
+     *            The namespace of the item
+     * @param value
+     *            The enumeration value to get the item for
+     * @return The item of the enumeration member
+     */
+    public Item get(String namespace, Enum<? extends Enum<?>> value) {
+        return new Item(namespace + "." + value.name(),
+                Value.createDisplayName(value), persistence);
     }
 }

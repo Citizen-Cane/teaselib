@@ -600,16 +600,6 @@ public abstract class TeaseScriptBase {
         return chosen;
     }
 
-    protected String get(Persistence.TextVariable variable) {
-        String value = teaseLib.persistence.get(variable, actor.locale);
-        if (value != null) {
-            return value;
-        } else if (variable.fallback != null) {
-            return get(variable.fallback);
-        }
-        return variable.toString();
-    }
-
     private String replaceVariables(String text) {
         String parsedText = text;
         for (Persistence.TextVariable name : Persistence.TextVariable.values()) {
@@ -628,7 +618,7 @@ public abstract class TeaseScriptBase {
     private String replaceTextVariable(String text,
             Persistence.TextVariable var, String match) {
         if (text.contains(match)) {
-            String value = get(var);
+            String value = teaseLib.get(var, actor.locale);
             text = text.replace(match, value);
         }
         return text;
@@ -645,9 +635,5 @@ public abstract class TeaseScriptBase {
             }
         }
         return derivedChoices;
-    }
-
-    protected String makePropertyName(String name) {
-        return namespace + "." + name;
     }
 }

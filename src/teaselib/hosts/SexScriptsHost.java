@@ -15,11 +15,13 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.FutureTask;
+import java.util.concurrent.TimeUnit;
 
 import javax.swing.ComboBoxModel;
 import javax.swing.ImageIcon;
 import javax.swing.JComboBox;
-import javax.swing.SwingUtilities;
 
 import ss.IScript;
 import ss.desktop.MainFrame;
@@ -28,6 +30,7 @@ import teaselib.core.Host;
 import teaselib.core.ResourceLoader;
 import teaselib.core.ScriptInterruptedException;
 import teaselib.core.events.Delegate;
+import teaselib.core.util.NamedExecutorService;
 import teaselib.util.Interval;
 
 /**
@@ -51,6 +54,9 @@ public class SexScriptsHost implements Host {
 
     private final ImageIcon backgroundImageIcon;
     private final Image backgroundImage;
+
+    private final NamedExecutorService threadPool = new NamedExecutorService(0,
+            1, 0, TimeUnit.SECONDS, "Show-Popup");
 
     public SexScriptsHost(ss.IScript script) {
         this.ss = script;
@@ -410,29 +416,36 @@ public class SexScriptsHost implements Host {
     @Override
     public int reply(List<String> choices) throws ScriptInterruptedException {
         try {
-            SwingUtilities.invokeLater(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        Thread.yield();
-                        Thread.sleep(200);
-                    } catch (InterruptedException e) {
-                        TeaseLib.log(this, e);
-                    }
-                    try {
-                        final JComboBox<String> comboBox = getComboBox(
-                                getMainFrame(), getMainFrame().getClass());
-                        if (comboBox.isVisible()) {
-                            comboBox.showPopup();
-                        }
-                        // comboBox.setPopupVisible(true);
-                    } catch (NoSuchFieldException e) {
-                        TeaseLib.log(this, e);
-                    } catch (IllegalAccessException e) {
-                        TeaseLib.log(this, e);
-                    }
-                }
-            });
+            // if necessary open the combobox popup in order to let the user
+            // speak a prompt without mouse/touch interaction
+            if (choices.size() > 1) {
+                FutureTask<Boolean> showPopup = new FutureTask<Boolean>(
+                        new Callable<Boolean>() {
+                            @Override
+                            public Boolean call() throws Exception {
+                                try {
+                                    final MainFrame mainFrame = getMainFrame();
+                                    JComboBox<String> comboBox = getComboBox(
+                                            mainFrame, mainFrame.getClass());
+                                    // Poll for one second
+                                    int pollIntervalMillis = 100;
+                                    for (int i = 1; i < 10; i++) {
+                                        if (comboBox.isVisible()) {
+                                            comboBox.showPopup();
+                                            return true;
+                                        }
+                                        Thread.sleep(pollIntervalMillis);
+                                    }
+                                } catch (NoSuchFieldException e) {
+                                    TeaseLib.log(this, e);
+                                } catch (IllegalAccessException e) {
+                                    TeaseLib.log(this, e);
+                                }
+                                return false;
+                            }
+                        });
+                threadPool.execute(showPopup);
+            }
             return ss.getSelectedValue(null, choices);
         } catch (InterruptedException e) {
             throw new ScriptInterruptedException();

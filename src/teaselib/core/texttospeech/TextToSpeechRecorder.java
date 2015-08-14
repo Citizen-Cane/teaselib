@@ -68,7 +68,7 @@ public class TextToSpeechRecorder {
         Set<String> created = new HashSet<String>();
         for (Message message : scanner) {
             Actor actor = message.actor;
-            File characterDir = createSubDir(speechDir, actor.name);
+            File characterDir = createSubDir(speechDir, actor.key);
             // Process voices for each character
             final Voice voice;
             voice = getVoice(actor);
@@ -134,20 +134,20 @@ public class TextToSpeechRecorder {
 
     private void createActorFile(Actor actor, final Voice voice)
             throws IOException {
-        if (!actors.contains(actor.name)) {
+        if (!actors.contains(actor.key)) {
             // Create a tag file containing the actor voice properties, for
             // information and because
             // the resource loader can just load files, but not check for
             // directories in the resource paths
-            actors.add(actor.name);
-            PreRecordedVoice actorVoice = new PreRecordedVoice(actor.name,
+            actors.add(actor.key);
+            PreRecordedVoice actorVoice = new PreRecordedVoice(actor.key,
                     voice.guid, resources);
             actorVoice.clear();
-            actorVoice.put(actor.name, voice);
-            actorVoice.store(new File(new File(speechDir, actor.name),
+            actorVoice.put(actor.key, voice);
+            actorVoice.store(new File(new File(speechDir, actor.key),
                     voice.guid));
             // update actor voices property file
-            actorVoices.putGuid(actor.name, voice);
+            actorVoices.putGuid(actor.key, voice);
             actorVoices.store(resources.getAssetPath(""));
             // reserve voice for this actor
             // speechSynthesizer.selectVoice(resources, new Message(new Actor(
@@ -160,7 +160,7 @@ public class TextToSpeechRecorder {
         final TextToSpeechPlayer ttsPlayer = TextToSpeechPlayer.instance();
         String voiceGuid = ttsPlayer.getAssignedVoiceFor(actor, resources);
         if (voiceGuid == null) {
-            neutralVoice = ttsPlayer.getVoiceFor(actor,resources);
+            neutralVoice = ttsPlayer.getVoiceFor(actor, resources);
         } else {
             neutralVoice = voices.get(voiceGuid);
         }

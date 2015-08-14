@@ -109,11 +109,11 @@ public class TextToSpeechPlayer {
 
     Voice getVoiceFor(Actor actor, ResourceLoader resources) {
         getActorVoices(resources);
-        if (actor2PrerecordedVoice.containsKey(actor.name)) {
+        if (actor2PrerecordedVoice.containsKey(actor.key)) {
             throw new IllegalStateException("Prerecorded voice available");
         }
-        if (actor2TTSVoice.containsKey(actor.name)) {
-            return actor2TTSVoice.get(actor.name);
+        if (actor2TTSVoice.containsKey(actor.key)) {
+            return actor2TTSVoice.get(actor.key);
         } else {
             return getMatchingOrBestVoiceFor(actor, resources);
         }
@@ -121,7 +121,7 @@ public class TextToSpeechPlayer {
 
     String getAssignedVoiceFor(Actor actor, ResourceLoader resources) {
         getActorVoices(resources);
-        return actor2PrerecordedVoice.get(actor.name);
+        return actor2PrerecordedVoice.get(actor.key);
     }
 
     private Voice getMatchingOrBestVoiceFor(Actor actor,
@@ -135,7 +135,7 @@ public class TextToSpeechPlayer {
         if (voice == null && voices.size() > 0) {
             voice = getMatchingVoiceFor(actor, voices);
             if (voice != null) {
-                actor2TTSVoice.put(actor.name, voice);
+                actor2TTSVoice.put(actor.key, voice);
                 usedVoices.add(voice.guid);
             }
         }
@@ -149,7 +149,7 @@ public class TextToSpeechPlayer {
             if (locale.compareToIgnoreCase(actor.locale) == 0
                     && !usedVoices.contains(voice.guid)) {
                 TeaseLib.log("Using voice '" + voice.guid + "' with locale '"
-                        + voice.locale + "' for actor '" + actor.name + "'");
+                        + voice.locale + "' for actor '" + actor.key + "'");
                 return voice;
             }
         }
@@ -160,7 +160,7 @@ public class TextToSpeechPlayer {
             if (voiceLanguage.compareToIgnoreCase(actorLanguage) == 0
                     && !usedVoices.contains(voice.guid)) {
                 TeaseLib.log("Using voice '" + voice.guid + "' with locale '"
-                        + voice.locale + "' for actor '" + actor.name + "'");
+                        + voice.locale + "' for actor '" + actor.key + "'");
                 return voice;
             }
         }
@@ -170,7 +170,7 @@ public class TextToSpeechPlayer {
                 Voice voice = actor2TTSVoice.get(actorName);
                 TeaseLib.log("Reusing voice of actor '" + actorName + "': '"
                         + voice.guid + "' with locale '" + voice.locale
-                        + "' for actor '" + actor.name + "'");
+                        + "' for actor '" + actor.key + "'");
                 return voice;
             }
         }
@@ -179,11 +179,11 @@ public class TextToSpeechPlayer {
             Voice voice = actor2TTSVoice.get(Actor.Dominant);
             TeaseLib.log("Reusing voice of dominant actor ': " + voice.guid
                     + "' with locale '" + voice.locale + "' for actor '"
-                    + actor.name + "'");
+                    + actor.key + "'");
             return voice;
         }
         // No voice
-        TeaseLib.log("No voice defined for actor '" + actor.name + "'");
+        TeaseLib.log("No voice defined for actor '" + actor.key + "'");
         return null;
     }
 
@@ -196,12 +196,12 @@ public class TextToSpeechPlayer {
      */
     private List<String> getSpeechResources(ResourceLoader resources,
             Message message) throws IOException {
-        String actorName = message.actor.name;
-        String voice = actor2PrerecordedVoice.get(actorName);
+        String actorKey = message.actor.key;
+        String voice = actor2PrerecordedVoice.get(actorKey);
         if (voice == null) {
             return null;
         } else {
-            String path = TextToSpeechRecorder.SpeechDirName + "/" + actorName
+            String path = TextToSpeechRecorder.SpeechDirName + "/" + actorKey
                     + "/" + voice + "/" + TextToSpeechRecorder.getHash(message)
                     + "/";
             BufferedReader reader = null;

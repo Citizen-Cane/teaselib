@@ -77,8 +77,11 @@ public abstract class Stimulation implements Runnable {
             try {
                 stim.join();
             } catch (InterruptedException e) {
-                // Ignore
+                Thread.currentThread().interrupt();
             }
+        }
+        if (Thread.interrupted()) {
+            throw new ScriptInterruptedException();
         }
     }
 
@@ -87,6 +90,7 @@ public abstract class Stimulation implements Runnable {
             try {
                 stim.join();
             } catch (InterruptedException e) {
+                stop();
                 throw new ScriptInterruptedException();
             }
         }

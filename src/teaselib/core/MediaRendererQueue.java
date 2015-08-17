@@ -39,7 +39,9 @@ public class MediaRendererQueue {
      * @param teaseScript
      */
     public void start(MediaRenderer mediaMenderer, TeaseLib teaseLib) {
-        if (Thread.currentThread().isInterrupted()) {
+        // Always call {@code Thread.interrupted()} before throwing a {@ScriptInterruptedException} 
+        // in order to clear the interrupted state of the thread
+        if (Thread.interrupted()) {
             throw new ScriptInterruptedException();
         }
         if (mediaMenderer instanceof MediaRenderer.Threaded) {

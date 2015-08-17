@@ -65,4 +65,10 @@ public class DummyHost implements Host {
         // TODO Auto-generated method stub
         return 0;
     }
+
+    @Override
+    public void setQuitHandler(Runnable onQuit) {
+        // TODO Auto-generated method stub
+
+    }
 }

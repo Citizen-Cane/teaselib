@@ -95,6 +95,23 @@ public interface Host {
      *            automatically
      * @return The index of the chosen item, or TeaseScript.TimeOut = -1 if no
      *         button was clicked
+     * @exception ScriptInterruptedException
+     *                If the thread is interrupted.
      */
     int reply(List<String> choices);
+
+    /**
+     * Install a handler being executed when the user quits the application or
+     * the main script is otherwise interrupted. The quit handler should be
+     * short, as the closing process cannot be cancelled. A final message and
+     * setting a flag to punish next time should be sufficient.
+     * 
+     * The script is just executed once, to prevent repeated execution, and to
+     * allow the application finally to quit. It is a wise idea to set flags
+     * immediately, just in case.
+     * 
+     * @param onQuitHandler
+     *            The script to execute when the slave quits the application.
+     */
+    void setQuitHandler(Runnable onQuitHandler);
 }

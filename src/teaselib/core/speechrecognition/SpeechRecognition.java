@@ -131,6 +131,8 @@ public class SpeechRecognition {
             };
             try {
                 delegateThread.run(delegate);
+            } catch (ScriptInterruptedException e) {
+                throw e;
             } catch (Throwable t) {
                 SpeechRecognition.this.speechRecognitionActive = false;
                 TeaseLib.log(this, t);

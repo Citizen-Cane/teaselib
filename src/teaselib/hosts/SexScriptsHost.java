@@ -6,6 +6,8 @@ import java.awt.Image;
 import java.awt.Insets;
 import java.awt.Rectangle;
 import java.awt.RenderingHints;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -23,6 +25,7 @@ import java.util.concurrent.TimeUnit;
 import javax.swing.ComboBoxModel;
 import javax.swing.ImageIcon;
 import javax.swing.JComboBox;
+import javax.swing.WindowConstants;
 
 import ss.IScript;
 import ss.desktop.MainFrame;
@@ -53,13 +56,19 @@ public class SexScriptsHost implements Host {
 
     private static final boolean renderBackgroundImage = true;
 
+    MainFrame mainFrame = null;
     private final ImageIcon backgroundImageIcon;
     private final Image backgroundImage;
 
-    private final NamedExecutorService threadPool = new NamedExecutorService(0,
-            1, 0, TimeUnit.SECONDS, "Show-Popup");
+    private final NamedExecutorService showPopupThreadPool = new NamedExecutorService(
+            0, 1, 0, TimeUnit.SECONDS, "Show-Popup");
+
+    private final NamedExecutorService showChoicesThreadPool = new NamedExecutorService(
+            0, 1, 0, TimeUnit.SECONDS, "Show-Popup");
 
     private final ShowPopup showPopup;
+
+    private Runnable onQuitHandler = null;
 
     public SexScriptsHost(ss.IScript script) {
         this.ss = script;
@@ -69,8 +78,8 @@ public class SexScriptsHost implements Host {
         String fieldName = "backgroundImage";
         ImageIcon imageIcon = null;
         try {
-            MainFrame mainFrame = getMainFrame();
-            imageIcon = getImageIcon(mainFrame, fieldName);
+            mainFrame = getMainFrame();
+            imageIcon = getImageIcon(fieldName);
         } catch (NoSuchFieldException e) {
             TeaseLib.log(this, e);
             ss.showPopup("Field " + fieldName + " not found");
@@ -86,6 +95,49 @@ public class SexScriptsHost implements Host {
         }
         // automatically show popup
         showPopup = new ShowPopup();
+        final int originalDefaultCloseoperation = mainFrame
+                .getDefaultCloseOperation();
+        mainFrame.addWindowListener(new WindowListener() {
+
+            @Override
+            public void windowOpened(WindowEvent e) {
+            }
+
+            @Override
+            public void windowIconified(WindowEvent e) {
+            }
+
+            @Override
+            public void windowDeiconified(WindowEvent e) {
+            }
+
+            @Override
+            public void windowDeactivated(WindowEvent e) {
+            }
+
+            @Override
+            public void windowClosing(WindowEvent e) {
+                if (onQuitHandler != null) {
+                    mainFrame
+                            .setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
+                    Runnable runnable = onQuitHandler;
+                    // Execute each quit handler just once
+                    onQuitHandler = null;
+                    runnable.run();
+                } else {
+                    mainFrame
+                            .setDefaultCloseOperation(originalDefaultCloseoperation);
+                }
+            }
+
+            @Override
+            public void windowClosed(WindowEvent e) {
+            }
+
+            @Override
+            public void windowActivated(WindowEvent e) {
+            }
+        });
     }
 
     @Override
@@ -263,9 +315,8 @@ public class SexScriptsHost implements Host {
         }
     }
 
-    private static ImageIcon getImageIcon(ss.desktop.MainFrame mainFrame,
-            String fieldName) throws NoSuchFieldException,
-            IllegalAccessException {
+    private ImageIcon getImageIcon(String fieldName)
+            throws NoSuchFieldException, IllegalAccessException {
         // Get image icon
         Class<?> mainFrameClass = mainFrame.getClass();
         // Multiple choices are managed via an array of buttons,
@@ -280,9 +331,7 @@ public class SexScriptsHost implements Host {
         Class<?> scriptClass = ss.getClass().getSuperclass();
         Field mainField = scriptClass.getDeclaredField("mainWindow");
         mainField.setAccessible(true);
-        ss.desktop.MainFrame mainFrame = (ss.desktop.MainFrame) mainField
-                .get(ss);
-        return mainFrame;
+        return (ss.desktop.MainFrame) mainField.get(ss);
     }
 
     private void show(String message) {
@@ -321,12 +370,6 @@ public class SexScriptsHost implements Host {
     @Override
     public List<Delegate> getClickableChoices(List<String> choices) {
         try {
-            // Get main frame
-            Class<?> scriptClass = ss.getClass().getSuperclass();
-            Field mainField = scriptClass.getDeclaredField("mainWindow");
-            mainField.setAccessible(true);
-            ss.desktop.MainFrame mainFrame = (ss.desktop.MainFrame) mainField
-                    .get(ss);
             // Get buttons
             Class<?> mainFrameClass = mainFrame.getClass();
             List<Delegate> clickableChoices = new ArrayList<Delegate>(
@@ -350,8 +393,7 @@ public class SexScriptsHost implements Host {
             // TODO Only for ss timed button?
             buttons.add(ssButton);
             // Combobox
-            final javax.swing.JComboBox<String> ssComboBox = getComboBox(
-                    mainFrame, mainFrameClass);
+            final javax.swing.JComboBox<String> ssComboBox = getComboBox();
             // Init all slots
             for (int index : new Interval(choices)) {
                 clickableChoices.add(index, null);
@@ -407,10 +449,9 @@ public class SexScriptsHost implements Host {
         return new ArrayList<Delegate>();
     }
 
-    public javax.swing.JComboBox<String> getComboBox(
-            ss.desktop.MainFrame mainFrame, Class<?> mainFrameClass)
+    public javax.swing.JComboBox<String> getComboBox()
             throws NoSuchFieldException, IllegalAccessException {
-        Field comboField = mainFrameClass.getDeclaredField("comboBox");
+        Field comboField = mainFrame.getClass().getDeclaredField("comboBox");
         comboField.setAccessible(true);
         @SuppressWarnings("unchecked")
         final javax.swing.JComboBox<String> ssComboBox = (javax.swing.JComboBox<String>) comboField
@@ -419,14 +460,12 @@ public class SexScriptsHost implements Host {
     }
 
     class ShowPopup {
-        MainFrame mainFrame = null;
         JComboBox<String> comboBox = null;
         final FutureTask<Boolean> task;
 
         public ShowPopup() {
             try {
-                mainFrame = getMainFrame();
-                comboBox = getComboBox(mainFrame, mainFrame.getClass());
+                comboBox = getComboBox();
             } catch (NoSuchFieldException e) {
                 TeaseLib.log(this, e);
             } catch (IllegalAccessException e) {
@@ -451,18 +490,37 @@ public class SexScriptsHost implements Host {
     }
 
     @Override
-    public int reply(List<String> choices) throws ScriptInterruptedException {
+    public int reply(final List<String> choices)
+            throws ScriptInterruptedException {
+        if (Thread.interrupted()) {
+            throw new ScriptInterruptedException();
+        }
+        // if necessary open the combobox popup in order to let the user
+        // speak a prompt without mouse/touch interaction
+        final boolean tryShowPopup = choices.size() > 1;
+        if (tryShowPopup) {
+            showPopupThreadPool.execute(showPopup.task);
+        }
+        // TODO getSelectedValue() won't throw InterruptedException, and won't
+        // clean up buttons
+        // Workaround: Execute it in a separate thread, cancel the same way as
+        // for speech recognition -> bingo
+        final FutureTask<Integer> showChoices = new FutureTask<Integer>(
+                new Callable<Integer>() {
+                    @Override
+                    public Integer call() throws Exception {
+                        return ss.getSelectedValue(null, choices);
+                    }
+                });
+        int result;
+        showChoicesThreadPool.execute(showChoices);
         try {
-            // if necessary open the combobox popup in order to let the user
-            // speak a prompt without mouse/touch interaction
-            final boolean tryShowPopup = choices.size() > 1;
-            if (tryShowPopup) {
-                threadPool.execute(showPopup.task);
-            }
-            final int result = ss.getSelectedValue(null, choices);
+            result = showChoices.get();
             if (tryShowPopup) {
                 try {
                     // Fix visible popup after clicking a choice
+                    // TODO Doesn't work with two combos in a row (in Mine debug
+                    // menus we don't speak)
                     if (showPopup.task.get()) {
                         showPopup.comboBox.setPopupVisible(false);
                     }
@@ -470,9 +528,23 @@ public class SexScriptsHost implements Host {
                     TeaseLib.log(this, e);
                 }
             }
-            return result;
         } catch (InterruptedException e) {
+            final List<Delegate> clickableChoices = getClickableChoices(choices);
+            if (!clickableChoices.isEmpty()) {
+                // Click any button
+                final Delegate delegate = clickableChoices.get(0);
+                delegate.run();
+            }
             throw new ScriptInterruptedException();
+        } catch (Exception e1) {
+            result = -1;
         }
+        return result;
     }
+
+    @Override
+    public void setQuitHandler(Runnable onQuitHandler) {
+        this.onQuitHandler = onQuitHandler;
+    }
+
 }

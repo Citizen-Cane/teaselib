@@ -198,14 +198,12 @@ public abstract class TeaseScriptBase {
         // instead a timeout is signaled via the TimeoutClick class
         // Run the script function while displaying the button
         // Speech recognition
-        final List<Integer> srChoiceIndices = new ArrayList<Integer>(1);
-        SpeechRecognitionHypothesisEventHandler eventHandler;
         SpeechRecognition speechRecognizer = SpeechRecognizer.instance
                 .get(actor.locale);
         final boolean recognizeSpeech = speechRecognizer.isReady();
-        eventHandler = new SpeechRecognitionHypothesisEventHandler(
-                this.teaseLib, speechRecognizer, derivedChoices,
-                srChoiceIndices);
+        SpeechRecognitionHypothesisEventHandler eventHandler = new SpeechRecognitionHypothesisEventHandler(
+                this.teaseLib, speechRecognizer);
+        eventHandler.setChoices(derivedChoices);
         if (recognizeSpeech) {
             speechRecognizer.startRecognition(derivedChoices);
         }
@@ -249,10 +247,10 @@ public abstract class TeaseScriptBase {
         // supporting object identity by
         // returning an item of the original choices list
         String chosen = null;
-        if (!srChoiceIndices.isEmpty()) {
+        int srChoiceIndex = eventHandler.getChoiceIndex();
+        if (srChoiceIndex >= 0) {
             // Use the first speech recognition result
-            choiceIndex = srChoiceIndices.get(0);
-            chosen = choices.get(choiceIndex);
+            chosen = choices.get(srChoiceIndex);
         } else if (scriptTask != null && scriptTask.timeout.clicked) {
             chosen = Timeout;
         } else {

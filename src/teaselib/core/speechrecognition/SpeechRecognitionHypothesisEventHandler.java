@@ -3,6 +3,7 @@
  */
 package teaselib.core.speechrecognition;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import teaselib.TeaseLib;
@@ -44,16 +45,14 @@ public class SpeechRecognitionHypothesisEventHandler {
     private double[] hypothesisAccumulatedWeights;
     private String[] hypothesisProgress;
 
-    final List<String> derivedChoices;
+    List<String> derivedChoices;
     final List<Integer> srChoiceIndices;
 
     public SpeechRecognitionHypothesisEventHandler(TeaseLib teaseLib,
-            SpeechRecognition speechRecognizer, List<String> derivedChoices,
-            List<Integer> srChoiceIndices) {
+            SpeechRecognition speechRecognizer) {
         super();
         this.teaseLib = teaseLib;
         this.speechRecognizer = speechRecognizer;
-        // this.speechRecognizer = speechRecognizer;
         this.recognitionStarted = recognitionStarted();
         this.speechDetected = speechDetected();
         this.recognitionRejected = recognitionRejected();
@@ -62,8 +61,20 @@ public class SpeechRecognitionHypothesisEventHandler {
         speechRecognizer.events.speechDetected.add(speechDetected);
         speechRecognizer.events.recognitionRejected.add(recognitionRejected);
         speechRecognizer.events.recognitionCompleted.add(recognitionCompleted);
+        this.srChoiceIndices = new ArrayList<Integer>(1);
+    }
+
+    public void setChoices(List<String> derivedChoices) {
         this.derivedChoices = derivedChoices;
-        this.srChoiceIndices = srChoiceIndices;
+        srChoiceIndices.clear();
+    }
+
+    public int getChoiceIndex() {
+        if (srChoiceIndices.isEmpty()) {
+            return -1;
+        } else {
+            return srChoiceIndices.get(0);
+        }
     }
 
     private Event<SpeechRecognitionImplementation, SpeechRecognitionStartedEventArgs> recognitionStarted() {
@@ -182,8 +193,8 @@ public class SpeechRecognitionHypothesisEventHandler {
                     boolean choiceDetectionCountAccepted = choiceHypothesisCount >= HypothesisMinimumNumberOfWords
                             || choiceHypothesisCount >= wordCount;
                     if (choiceWeightAccepted && choiceDetectionCountAccepted) {
-                        clickChoiceElement(derivedChoices, srChoiceIndices,
-                                maxChoiceIndex, choice);
+                        clickChoiceElement(derivedChoices, maxChoiceIndex,
+                                choice);
                     }
                     if (!choiceWeightAccepted) {
                         TeaseLib.log("Phrase '"
@@ -230,7 +241,7 @@ public class SpeechRecognitionHypothesisEventHandler {
                         throw new IllegalArgumentException(
                                 speechRecognitionResult.toString());
                     }
-                    clickChoiceElement(derivedChoices, srChoiceIndices,
+                    clickChoiceElement(derivedChoices,
                             speechRecognitionResult.index,
                             speechRecognitionResult.text);
                 } else {
@@ -243,7 +254,7 @@ public class SpeechRecognitionHypothesisEventHandler {
     }
 
     private void clickChoiceElement(final List<String> derivedChoices,
-            final List<Integer> srChoiceIndices, int choice, String text) {
+            int choice, String text) {
         // Assign the result even if the buttons have been unrealized
         srChoiceIndices.add(choice);
         List<Delegate> uiElements = teaseLib.host

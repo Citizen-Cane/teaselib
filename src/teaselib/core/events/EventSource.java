@@ -44,6 +44,9 @@ public class EventSource<S, T extends EventArgs> {
         }
         for (Event<S, T> delegate : delegates) {
             runDelegate(sender, eventArgs, delegate);
+            if (eventArgs.consumed) {
+                break;
+            }
         }
         if (completing != null) {
             runDelegate(sender, eventArgs, completing);

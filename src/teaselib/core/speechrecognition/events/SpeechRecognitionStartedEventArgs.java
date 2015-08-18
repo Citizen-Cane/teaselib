@@ -1,5 +1,6 @@
 package teaselib.core.speechrecognition.events;
 
+
 public class SpeechRecognitionStartedEventArgs extends SpeechRecognitionEventArgs {
 
 	public SpeechRecognitionStartedEventArgs() {

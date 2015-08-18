@@ -10,6 +10,7 @@ import teaselib.TeaseLib;
 import teaselib.core.ScriptFutureTask;
 import teaselib.core.events.Delegate;
 import teaselib.core.events.Event;
+import teaselib.core.speechrecognition.SpeechRecognitionResult.Confidence;
 import teaselib.core.speechrecognition.events.SpeechRecognitionStartedEventArgs;
 import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
 
@@ -157,14 +158,14 @@ public class SpeechRecognitionHypothesisEventHandler {
                     SpeechRecognizedEventArgs eventArgs) {
                 // choose the choice with the highest hypothesis weight
                 double maxValue = 0;
-                int maxChoiceIndex = 0;
+                int choiceWithMaxProbabilityIndex = 0;
                 for (int i = 0; i < hypothesisAccumulatedWeights.length; i++) {
                     double value = hypothesisAccumulatedWeights[i];
                     TeaseLib.log("Result " + i + ": '" + derivedChoices.get(i)
                             + "' hypothesisCount=" + value);
                     if (value > maxValue) {
                         maxValue = value;
-                        maxChoiceIndex = i;
+                        choiceWithMaxProbabilityIndex = i;
                     }
                 }
                 // sort out the case where two or more recognition
@@ -177,7 +178,8 @@ public class SpeechRecognitionHypothesisEventHandler {
                     }
                 }
                 if (numberOfCandidates == 1) {
-                    final String choice = derivedChoices.get(maxChoiceIndex);
+                    final String choice = derivedChoices
+                            .get(choiceWithMaxProbabilityIndex);
                     int wordCount = wordCount(choice);
                     // prompts with few words need a higher weight to be
                     // accepted
@@ -186,15 +188,23 @@ public class SpeechRecognitionHypothesisEventHandler {
                                     * (HypothesisMinimumNumberOfWords
                                             - wordCount + 1);
                     boolean choiceWeightAccepted = maxValue >= hypothesisAccumulatedWeight;
-                    int choiceHypothesisCount = wordCount(hypothesisProgress[maxChoiceIndex]);
+                    int choiceHypothesisCount = wordCount(hypothesisProgress[choiceWithMaxProbabilityIndex]);
                     // Prompts with few words need more consistent speech
                     // detection events (doesn't alternate between different
                     // choices)
                     boolean choiceDetectionCountAccepted = choiceHypothesisCount >= HypothesisMinimumNumberOfWords
                             || choiceHypothesisCount >= wordCount;
                     if (choiceWeightAccepted && choiceDetectionCountAccepted) {
-                        clickChoiceElement(derivedChoices, maxChoiceIndex,
-                                choice);
+                        // Consume the recognitionRejected event and
+                        // fire a RecognitionCompleted-event instead
+                        eventArgs.consumed = true;
+                        SpeechRecognitionResult[] results = { new SpeechRecognitionResult(
+                                choiceWithMaxProbabilityIndex, choice, 1.0,
+                                Confidence.High) };
+                        SpeechRecognizedEventArgs recognitionCompletedEventArgs = new SpeechRecognizedEventArgs(
+                                results);
+                        speechRecognizer.events.recognitionCompleted.run(
+                                sender, recognitionCompletedEventArgs);
                     }
                     if (!choiceWeightAccepted) {
                         TeaseLib.log("Phrase '"

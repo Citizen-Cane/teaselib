@@ -3,12 +3,9 @@
  */
 package teaselib.core.speechrecognition;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import teaselib.TeaseLib;
-import teaselib.core.ScriptFutureTask;
-import teaselib.core.events.Delegate;
 import teaselib.core.events.Event;
 import teaselib.core.speechrecognition.SpeechRecognitionResult.Confidence;
 import teaselib.core.speechrecognition.events.SpeechRecognitionStartedEventArgs;
@@ -34,48 +31,30 @@ public class SpeechRecognitionHypothesisEventHandler {
      */
     final static double HypothesisMinimumAccumulatedWeight = 0.5;
 
-    public final TeaseLib teaseLib;
-    public ScriptFutureTask scriptTask = null;
-
     private final SpeechRecognition speechRecognizer;
     private final Event<SpeechRecognitionImplementation, SpeechRecognitionStartedEventArgs> recognitionStarted;
     private final Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs> speechDetected;
     private final Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs> recognitionRejected;
-    private final Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs> recognitionCompleted;
 
     private double[] hypothesisAccumulatedWeights;
     private String[] hypothesisProgress;
 
-    List<String> derivedChoices;
-    final List<Integer> srChoiceIndices;
+    List<String> choices;
 
-    public SpeechRecognitionHypothesisEventHandler(TeaseLib teaseLib,
+    public SpeechRecognitionHypothesisEventHandler(
             SpeechRecognition speechRecognizer) {
         super();
-        this.teaseLib = teaseLib;
         this.speechRecognizer = speechRecognizer;
         this.recognitionStarted = recognitionStarted();
         this.speechDetected = speechDetected();
         this.recognitionRejected = recognitionRejected();
-        this.recognitionCompleted = recognitionCompleted();
         speechRecognizer.events.recognitionStarted.add(recognitionStarted);
         speechRecognizer.events.speechDetected.add(speechDetected);
         speechRecognizer.events.recognitionRejected.add(recognitionRejected);
-        speechRecognizer.events.recognitionCompleted.add(recognitionCompleted);
-        this.srChoiceIndices = new ArrayList<Integer>(1);
     }
 
-    public void setChoices(List<String> derivedChoices) {
-        this.derivedChoices = derivedChoices;
-        srChoiceIndices.clear();
-    }
-
-    public int getChoiceIndex() {
-        if (srChoiceIndices.isEmpty()) {
-            return -1;
-        } else {
-            return srChoiceIndices.get(0);
-        }
+    public void setChoices(List<String> choices) {
+        this.choices = choices;
     }
 
     private Event<SpeechRecognitionImplementation, SpeechRecognitionStartedEventArgs> recognitionStarted() {
@@ -83,7 +62,7 @@ public class SpeechRecognitionHypothesisEventHandler {
             @Override
             public void run(SpeechRecognitionImplementation sender,
                     SpeechRecognitionStartedEventArgs eventArgs) {
-                final int size = derivedChoices.size();
+                final int size = choices.size();
                 hypothesisAccumulatedWeights = new double[size];
                 hypothesisProgress = new String[size];
                 for (int i = 0; i < hypothesisAccumulatedWeights.length; i++) {
@@ -110,8 +89,8 @@ public class SpeechRecognitionHypothesisEventHandler {
                     final SpeechRecognitionResult hypothesis = eventArgs.result[0];
                     String hypothesisText = hypothesis.text;
                     final double propabilityWeight = propabilityWeight(hypothesis);
-                    for (int index = 0; index < derivedChoices.size(); index++) {
-                        String choice = derivedChoices.get(index).toLowerCase();
+                    for (int index = 0; index < choices.size(); index++) {
+                        String choice = choices.get(index).toLowerCase();
                         if (choice.startsWith(hypothesisText.toLowerCase())) {
                             updateHypothesisProgress(index, hypothesisText,
                                     propabilityWeight);
@@ -161,7 +140,7 @@ public class SpeechRecognitionHypothesisEventHandler {
                 int choiceWithMaxProbabilityIndex = 0;
                 for (int i = 0; i < hypothesisAccumulatedWeights.length; i++) {
                     double value = hypothesisAccumulatedWeights[i];
-                    TeaseLib.log("Result " + i + ": '" + derivedChoices.get(i)
+                    TeaseLib.log("Result " + i + ": '" + choices.get(i)
                             + "' hypothesisCount=" + value);
                     if (value > maxValue) {
                         maxValue = value;
@@ -178,7 +157,7 @@ public class SpeechRecognitionHypothesisEventHandler {
                     }
                 }
                 if (numberOfCandidates == 1) {
-                    final String choice = derivedChoices
+                    final String choice = choices
                             .get(choiceWithMaxProbabilityIndex);
                     int wordCount = wordCount(choice);
                     // prompts with few words need a higher weight to be
@@ -239,54 +218,6 @@ public class SpeechRecognitionHypothesisEventHandler {
         return preparatedText.split(" ").length;
     }
 
-    private Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs> recognitionCompleted() {
-        return new Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs>() {
-            @Override
-            public void run(SpeechRecognitionImplementation sender,
-                    SpeechRecognizedEventArgs eventArgs) {
-                if (eventArgs.result.length == 1) {
-                    // Find the button to click
-                    SpeechRecognitionResult speechRecognitionResult = eventArgs.result[0];
-                    if (!speechRecognitionResult.isChoice(derivedChoices)) {
-                        throw new IllegalArgumentException(
-                                speechRecognitionResult.toString());
-                    }
-                    clickChoiceElement(derivedChoices,
-                            speechRecognitionResult.index,
-                            speechRecognitionResult.text);
-                } else {
-                    // none or more than one result means incorrect
-                    // recognition
-                }
-            }
-
-        };
-    }
-
-    private void clickChoiceElement(final List<String> derivedChoices,
-            int choice, String text) {
-        // Assign the result even if the buttons have been unrealized
-        srChoiceIndices.add(choice);
-        List<Delegate> uiElements = teaseLib.host
-                .getClickableChoices(derivedChoices);
-        try {
-            Delegate delegate = uiElements.get(choice);
-            if (delegate != null) {
-                if (scriptTask != null) {
-                    scriptTask.cancel(true);
-                }
-                // Click the button
-                delegate.run();
-                TeaseLib.log("Clicked delegate for '" + text + "' index="
-                        + choice);
-            } else {
-                TeaseLib.log("Button gone for choice " + choice + ": " + text);
-            }
-        } catch (Throwable t) {
-            TeaseLib.log(this, t);
-        }
-    }
-
     /**
      * Must be called in order to remove events.
      */
@@ -299,8 +230,5 @@ public class SpeechRecognitionHypothesisEventHandler {
         if (recognitionRejected != null)
             speechRecognizer.events.recognitionRejected
                     .remove(recognitionRejected);
-        if (recognitionCompleted != null)
-            speechRecognizer.events.recognitionCompleted
-                    .remove(recognitionCompleted);
     }
 }

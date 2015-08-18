@@ -14,14 +14,6 @@ import teaselib.core.speechrecognition.implementation.TeaseLibSR;
 import teaselib.core.texttospeech.TextToSpeech;
 
 public class SpeechRecognition {
-    private String locale;
-    private SpeechRecognitionImplementation sr;
-    private DelegateThread delegateThread = new DelegateThread(
-            "Text-To-Speech dispatcher thread");
-
-    private static void recognizerNotInitialized() {
-        throw new IllegalStateException("Recognizer not initialized");
-    }
 
     public enum AudioSignalProblem {
         None,
@@ -33,8 +25,14 @@ public class SpeechRecognition {
         TooSlow
     }
 
-    private final ReentrantLock SpeechRecognitionInProgress = new ReentrantLock();
+    public final SpeechRecognitionEvents<SpeechRecognitionImplementation> events;
 
+    private final String locale;
+    private SpeechRecognitionImplementation sr;
+    private final DelegateThread delegateThread = new DelegateThread(
+            "Text-To-Speech dispatcher thread");
+
+    private final ReentrantLock SpeechRecognitionInProgress = new ReentrantLock();
     private boolean speechRecognitionActive = false;
 
     // Allow other threads to wait while speech recognition is action
@@ -81,10 +79,14 @@ public class SpeechRecognition {
         }
     };
 
-    public final SpeechRecognitionEvents<SpeechRecognitionImplementation> events = new SpeechRecognitionEvents<SpeechRecognitionImplementation>(
-            lockSpeechRecognitionInProgress, unlockSpeechRecognitionInProgress);
+    private final SpeechRecognitionHypothesisEventHandler hypothesisEventHandler;
 
     public SpeechRecognition(String locale) {
+        // First add the progress events, because we don't want to get events
+        // consumed before setting the in-progress state
+        this.events = new SpeechRecognitionEvents<SpeechRecognitionImplementation>(
+                lockSpeechRecognitionInProgress,
+                unlockSpeechRecognitionInProgress);
         this.locale = locale.toLowerCase();
         try {
             Delegate delegate = new Delegate() {
@@ -106,6 +108,10 @@ public class SpeechRecognition {
         } catch (Throwable t) {
             TeaseLib.log(this, t);
         }
+        // Last add the hypothesis handler, as it may consume the
+        // RecognitionRejected-event
+        this.hypothesisEventHandler = new SpeechRecognitionHypothesisEventHandler(
+                this);
     }
 
     /**
@@ -116,6 +122,7 @@ public class SpeechRecognition {
     }
 
     public void startRecognition(final List<String> choices) {
+        hypothesisEventHandler.setChoices(choices);
         if (sr != null) {
             Delegate delegate = new Delegate() {
                 @Override
@@ -192,6 +199,10 @@ public class SpeechRecognition {
         } else {
             recognizerNotInitialized();
         }
+    }
+
+    private static void recognizerNotInitialized() {
+        throw new IllegalStateException("Recognizer not initialized");
     }
 
     public void completeSpeechRecognitionInProgress() {

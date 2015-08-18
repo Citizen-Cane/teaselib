@@ -15,9 +15,13 @@ import teaselib.Actor;
 import teaselib.Message;
 import teaselib.Mood;
 import teaselib.TeaseLib;
+import teaselib.core.events.Delegate;
+import teaselib.core.events.Event;
 import teaselib.core.speechrecognition.SpeechRecognition;
-import teaselib.core.speechrecognition.SpeechRecognitionHypothesisEventHandler;
+import teaselib.core.speechrecognition.SpeechRecognitionImplementation;
+import teaselib.core.speechrecognition.SpeechRecognitionResult;
 import teaselib.core.speechrecognition.SpeechRecognizer;
+import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
 import teaselib.core.texttospeech.TextToSpeechPlayer;
 import teaselib.core.util.NamedExecutorService;
 
@@ -201,12 +205,6 @@ public abstract class TeaseScriptBase {
         SpeechRecognition speechRecognizer = SpeechRecognizer.instance
                 .get(actor.locale);
         final boolean recognizeSpeech = speechRecognizer.isReady();
-        SpeechRecognitionHypothesisEventHandler eventHandler = new SpeechRecognitionHypothesisEventHandler(
-                this.teaseLib, speechRecognizer);
-        eventHandler.setChoices(derivedChoices);
-        if (recognizeSpeech) {
-            speechRecognizer.startRecognition(derivedChoices);
-        }
         final ScriptFutureTask scriptTask;
         if (scriptFunction != null) {
             scriptTask = new ScriptFutureTask(this, scriptFunction,
@@ -214,7 +212,13 @@ public abstract class TeaseScriptBase {
         } else {
             scriptTask = null;
         }
-        eventHandler.scriptTask = scriptTask;
+        final List<Integer> srChoiceIndices = new ArrayList<Integer>(1);
+        Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs> recognitionCompleted = recognitionCompletedEvent(
+                derivedChoices, scriptTask, srChoiceIndices);
+        speechRecognizer.events.recognitionCompleted.add(recognitionCompleted);
+        if (recognizeSpeech) {
+            speechRecognizer.startRecognition(derivedChoices);
+        }
         // Get the user's choice
         int choiceIndex;
         try {
@@ -240,17 +244,17 @@ public abstract class TeaseScriptBase {
         } finally {
             TeaseLib.logDetail("choose: stopping speech recognition");
             speechRecognizer.stopRecognition();
-            eventHandler.dispose();
+            speechRecognizer.events.recognitionCompleted
+                    .remove(recognitionCompleted);
         }
         // Assign result from speech recognition
         // script task timeout or button click
         // supporting object identity by
         // returning an item of the original choices list
         String chosen = null;
-        int srChoiceIndex = eventHandler.getChoiceIndex();
-        if (srChoiceIndex >= 0) {
+        if (!srChoiceIndices.isEmpty()) {
             // Use the first speech recognition result
-            chosen = choices.get(srChoiceIndex);
+            chosen = choices.get(srChoiceIndices.get(0));
         } else if (scriptTask != null && scriptTask.timeout.clicked) {
             chosen = Timeout;
         } else {
@@ -259,6 +263,62 @@ public abstract class TeaseScriptBase {
         TeaseLib.logDetail("showChoices: ending render queue");
         renderQueue.endAll();
         return chosen;
+    }
+
+    private Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs> recognitionCompletedEvent(
+            final List<String> derivedChoices,
+            final ScriptFutureTask scriptTask,
+            final List<Integer> srChoiceIndices) {
+        Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs> recognitionCompleted = new Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs>() {
+            @Override
+            public void run(SpeechRecognitionImplementation sender,
+                    SpeechRecognizedEventArgs eventArgs) {
+                if (eventArgs.result.length == 1) {
+                    // Find the button to click
+                    SpeechRecognitionResult speechRecognitionResult = eventArgs.result[0];
+                    if (!speechRecognitionResult.isChoice(derivedChoices)) {
+                        throw new IllegalArgumentException(
+                                speechRecognitionResult.toString());
+                    }
+                    // Assign the result even if the buttons have been
+                    // unrealized
+                    srChoiceIndices.add(speechRecognitionResult.index);
+                    clickChoice(derivedChoices, scriptTask,
+                            speechRecognitionResult);
+                } else {
+                    // none or more than one result means incorrect
+                    // recognition
+                }
+            }
+
+            private void clickChoice(final List<String> derivedChoices,
+                    final ScriptFutureTask scriptTask,
+                    SpeechRecognitionResult speechRecognitionResult) {
+                List<Delegate> uiElements = teaseLib.host
+                        .getClickableChoices(derivedChoices);
+                try {
+                    Delegate delegate = uiElements
+                            .get(speechRecognitionResult.index);
+                    if (delegate != null) {
+                        if (scriptTask != null) {
+                            scriptTask.cancel(true);
+                        }
+                        // Click the button
+                        delegate.run();
+                        TeaseLib.log("Clicked delegate for '"
+                                + speechRecognitionResult.text + "' index="
+                                + speechRecognitionResult.index);
+                    } else {
+                        TeaseLib.log("Button gone for choice "
+                                + speechRecognitionResult.index + ": "
+                                + speechRecognitionResult.text);
+                    }
+                } catch (Throwable t) {
+                    TeaseLib.log(this, t);
+                }
+            }
+        };
+        return recognitionCompleted;
     }
 
     private String replaceVariables(String text) {

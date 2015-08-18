@@ -203,8 +203,9 @@ public abstract class TeaseScriptBase {
         SpeechRecognition speechRecognizer = SpeechRecognizer.instance
                 .get(actor.locale);
         final boolean recognizeSpeech = speechRecognizer.isReady();
-        eventHandler = new SpeechRecognitionHypothesisEventHandler(this,
-                speechRecognizer, derivedChoices, srChoiceIndices);
+        eventHandler = new SpeechRecognitionHypothesisEventHandler(
+                this.teaseLib, speechRecognizer, derivedChoices,
+                srChoiceIndices);
         if (recognizeSpeech) {
             speechRecognizer.startRecognition(derivedChoices);
         }

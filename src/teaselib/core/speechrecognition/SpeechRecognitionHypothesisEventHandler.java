@@ -7,7 +7,6 @@ import java.util.List;
 
 import teaselib.TeaseLib;
 import teaselib.core.ScriptFutureTask;
-import teaselib.core.TeaseScriptBase;
 import teaselib.core.events.Delegate;
 import teaselib.core.events.Event;
 import teaselib.core.speechrecognition.events.SpeechRecognitionStartedEventArgs;
@@ -33,7 +32,7 @@ public class SpeechRecognitionHypothesisEventHandler {
      */
     final static double HypothesisMinimumAccumulatedWeight = 0.5;
 
-    public final TeaseScriptBase script;
+    public final TeaseLib teaseLib;
     public ScriptFutureTask scriptTask = null;
 
     private final SpeechRecognition speechRecognizer;
@@ -45,27 +44,29 @@ public class SpeechRecognitionHypothesisEventHandler {
     private double[] hypothesisAccumulatedWeights;
     private String[] hypothesisProgress;
 
-    public SpeechRecognitionHypothesisEventHandler(TeaseScriptBase script,
+    final List<String> derivedChoices;
+    final List<Integer> srChoiceIndices;
+
+    public SpeechRecognitionHypothesisEventHandler(TeaseLib teaseLib,
             SpeechRecognition speechRecognizer, List<String> derivedChoices,
             List<Integer> srChoiceIndices) {
         super();
-        this.script = script;
+        this.teaseLib = teaseLib;
         this.speechRecognizer = speechRecognizer;
         // this.speechRecognizer = speechRecognizer;
-        this.recognitionStarted = recognitionStarted(derivedChoices);
-        this.speechDetected = speechDetected(derivedChoices);
-        this.recognitionRejected = recognitionRejected(derivedChoices,
-                srChoiceIndices);
-        this.recognitionCompleted = recognitionCompleted(derivedChoices,
-                srChoiceIndices);
+        this.recognitionStarted = recognitionStarted();
+        this.speechDetected = speechDetected();
+        this.recognitionRejected = recognitionRejected();
+        this.recognitionCompleted = recognitionCompleted();
         speechRecognizer.events.recognitionStarted.add(recognitionStarted);
         speechRecognizer.events.speechDetected.add(speechDetected);
         speechRecognizer.events.recognitionRejected.add(recognitionRejected);
         speechRecognizer.events.recognitionCompleted.add(recognitionCompleted);
+        this.derivedChoices = derivedChoices;
+        this.srChoiceIndices = srChoiceIndices;
     }
 
-    private Event<SpeechRecognitionImplementation, SpeechRecognitionStartedEventArgs> recognitionStarted(
-            final List<String> derivedChoices) {
+    private Event<SpeechRecognitionImplementation, SpeechRecognitionStartedEventArgs> recognitionStarted() {
         return new Event<SpeechRecognitionImplementation, SpeechRecognitionStartedEventArgs>() {
             @Override
             public void run(SpeechRecognitionImplementation sender,
@@ -81,8 +82,7 @@ public class SpeechRecognitionHypothesisEventHandler {
         };
     }
 
-    private Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs> speechDetected(
-            final List<String> derivedChoices) {
+    private Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs> speechDetected() {
         return new Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs>() {
             @Override
             public void run(SpeechRecognitionImplementation sender,
@@ -139,9 +139,7 @@ public class SpeechRecognitionHypothesisEventHandler {
         };
     }
 
-    private Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs> recognitionRejected(
-            final List<String> derivedChoices,
-            final List<Integer> srChoiceIndices) {
+    private Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs> recognitionRejected() {
         return new Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs>() {
             @Override
             public void run(SpeechRecognitionImplementation sender,
@@ -220,9 +218,7 @@ public class SpeechRecognitionHypothesisEventHandler {
         return preparatedText.split(" ").length;
     }
 
-    private Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs> recognitionCompleted(
-            final List<String> derivedChoices,
-            final List<Integer> srChoiceIndices) {
+    private Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs> recognitionCompleted() {
         return new Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs>() {
             @Override
             public void run(SpeechRecognitionImplementation sender,
@@ -250,7 +246,7 @@ public class SpeechRecognitionHypothesisEventHandler {
             final List<Integer> srChoiceIndices, int choice, String text) {
         // Assign the result even if the buttons have been unrealized
         srChoiceIndices.add(choice);
-        List<Delegate> uiElements = script.teaseLib.host
+        List<Delegate> uiElements = teaseLib.host
                 .getClickableChoices(derivedChoices);
         try {
             Delegate delegate = uiElements.get(choice);

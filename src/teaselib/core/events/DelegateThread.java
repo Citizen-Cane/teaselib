@@ -78,13 +78,4 @@ public class DelegateThread extends Thread {
             throw t;
         }
     }
-
-    void end() {
-        endThread = true;
-        try {
-            join();
-        } catch (InterruptedException e) {
-            // Ignore
-        }
-    }
 }

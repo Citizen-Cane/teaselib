@@ -1,10 +1,20 @@
 package teaselib.core;
 
+import teaselib.TeaseLib;
+
 /**
  * @author someone
  *
- * Implements script interruption. Must be thrown if a script gets interrupted. Used to cancel script closures upon choice.
+ *         Implements script interruption. Must be thrown if a script gets
+ *         interrupted. Used to cancel script closures upon choice.
  */
 public class ScriptInterruptedException extends RuntimeException {
-	private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
+
+    public ScriptInterruptedException() {
+        TeaseLib.log("Script interrupted at");
+        for (StackTraceElement ste : getStackTrace()) {
+            TeaseLib.log("\t" + ste.toString());
+        }
+    }
 }

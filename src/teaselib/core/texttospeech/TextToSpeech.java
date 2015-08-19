@@ -202,6 +202,8 @@ public class TextToSpeech {
             };
             try {
                 delegateThread.run(delegate);
+            } catch (ScriptInterruptedException e) {
+                throw e;
             } catch (RuntimeException e) {
                 throw e;
             } catch (Throwable t) {

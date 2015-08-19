@@ -74,6 +74,8 @@ public class SpeechRecognition {
         };
         try {
             delegateThread.run(delegate);
+        } catch (ScriptInterruptedException e) {
+            throw e;
         } catch (Throwable t) {
             TeaseLib.log(this, t);
         }
@@ -91,6 +93,8 @@ public class SpeechRecognition {
                     if (SpeechRecognitionInProgress.isHeldByCurrentThread()) {
                         SpeechRecognitionInProgress.unlock();
                     }
+                } catch (ScriptInterruptedException e) {
+                    throw e;
                 } catch (Throwable t) {
                     TeaseLib.log(this, t);
                 }
@@ -98,6 +102,8 @@ public class SpeechRecognition {
         };
         try {
             delegateThread.run(delegate);
+        } catch (ScriptInterruptedException e) {
+            throw e;
         } catch (Throwable t) {
             TeaseLib.log(this, t);
         }
@@ -129,6 +135,8 @@ public class SpeechRecognition {
                 }
             };
             delegateThread.run(delegate);
+        } catch (ScriptInterruptedException e) {
+            throw e;
         } catch (Throwable t) {
             TeaseLib.log(this, t);
         }
@@ -188,6 +196,8 @@ public class SpeechRecognition {
             };
             try {
                 delegateThread.run(delegate);
+            } catch (ScriptInterruptedException e) {
+                throw e;
             } catch (Throwable t) {
                 SpeechRecognition.this.speechRecognitionActive = false;
                 TeaseLib.log(this, t);
@@ -213,6 +223,8 @@ public class SpeechRecognition {
             };
             try {
                 delegateThread.run(delegate);
+            } catch (ScriptInterruptedException e) {
+                throw e;
             } catch (Throwable t) {
                 TeaseLib.log(this, t);
             }

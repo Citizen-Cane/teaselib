@@ -32,52 +32,76 @@ public class SpeechRecognition {
     private final DelegateThread delegateThread = new DelegateThread(
             "Text-To-Speech dispatcher thread");
 
+    /**
+     * Locked if a recognition is in progress, e.g. a start event has been
+     * fired, but the the recognition has neither been rejected or completed
+     */
     private final ReentrantLock SpeechRecognitionInProgress = new ReentrantLock();
+
+    /**
+     * Speech recognition has been started or resumed and is listening for voice
+     * input
+     */
     private boolean speechRecognitionActive = false;
 
-    // Allow other threads to wait while speech recognition is action
+    // Allow other threads to wait for speech recognition to complete
     private Event<SpeechRecognitionImplementation, SpeechRecognitionStartedEventArgs> lockSpeechRecognitionInProgress = new Event<SpeechRecognitionImplementation, SpeechRecognitionStartedEventArgs>() {
         @Override
         public void run(SpeechRecognitionImplementation sender,
                 SpeechRecognitionStartedEventArgs args) {
-            Delegate delegate = new Delegate() {
-                @Override
-                public void run() {
-                    try {
-                        SpeechRecognitionInProgress.lock();
-                    } catch (Throwable t) {
-                        TeaseLib.log(this, t);
-                    }
-                }
-            };
-            try {
-                delegateThread.run(delegate);
-            } catch (Throwable t) {
-                TeaseLib.log(this, t);
-            }
+            lockSpeechRecognitionInProgressSyncObject();
         }
     };
+
     private Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs> unlockSpeechRecognitionInProgress = new Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs>() {
         @Override
         public void run(SpeechRecognitionImplementation sender,
                 SpeechRecognizedEventArgs args) {
-            Delegate delegate = new Delegate() {
-                @Override
-                public void run() {
-                    try {
-                        SpeechRecognitionInProgress.unlock();
-                    } catch (Throwable t) {
-                        TeaseLib.log(this, t);
-                    }
-                }
-            };
-            try {
-                delegateThread.run(delegate);
-            } catch (Throwable t) {
-                TeaseLib.log(this, t);
-            }
+            unlockSpeechRecognitionInProgressSyncObject();
         }
     };
+
+    private void lockSpeechRecognitionInProgressSyncObject() {
+        Delegate delegate = new Delegate() {
+            @Override
+            public void run() {
+                try {
+                    SpeechRecognitionInProgress.lock();
+                } catch (Throwable t) {
+                    TeaseLib.log(this, t);
+                }
+            }
+        };
+        try {
+            delegateThread.run(delegate);
+        } catch (Throwable t) {
+            TeaseLib.log(this, t);
+        }
+    }
+
+    private void unlockSpeechRecognitionInProgressSyncObject() {
+        Delegate delegate = new Delegate() {
+            @Override
+            public void run() {
+                try {
+                    // Check because this is called as a completion event by the
+                    // event source, and might be called twice because the
+                    // hypothesis
+                    // event handler may generate a Completion event
+                    if (SpeechRecognitionInProgress.isHeldByCurrentThread()) {
+                        SpeechRecognitionInProgress.unlock();
+                    }
+                } catch (Throwable t) {
+                    TeaseLib.log(this, t);
+                }
+            }
+        };
+        try {
+            delegateThread.run(delegate);
+        } catch (Throwable t) {
+            TeaseLib.log(this, t);
+        }
+    }
 
     private final SpeechRecognitionHypothesisEventHandler hypothesisEventHandler;
 
@@ -127,12 +151,12 @@ public class SpeechRecognition {
             Delegate delegate = new Delegate() {
                 @Override
                 public void run() {
+                    SpeechRecognition.this.speechRecognitionActive = true;
                     sr.setChoices(choices);
                     // Don't try to recognize speech during speech synthesis or
                     // other speech related audio output
                     synchronized (TextToSpeech.AudioOutput) {
                         sr.startRecognition();
-                        SpeechRecognition.this.speechRecognitionActive = true;
                     }
                 }
             };
@@ -154,11 +178,11 @@ public class SpeechRecognition {
             Delegate delegate = new Delegate() {
                 @Override
                 public void run() {
+                    SpeechRecognition.this.speechRecognitionActive = true;
                     // Don't try to recognize speech during speech synthesis or
                     // other speech related audio output
                     synchronized (TextToSpeech.AudioOutput) {
                         sr.startRecognition();
-                        SpeechRecognition.this.speechRecognitionActive = true;
                     }
                 }
             };
@@ -181,12 +205,8 @@ public class SpeechRecognition {
                     try {
                         sr.stopRecognition();
                     } finally {
-                        SpeechRecognition.this.speechRecognitionActive = false;
-                        // This unlock is optional
-                        if (SpeechRecognitionInProgress.tryLock()) {
-                            SpeechRecognitionInProgress.unlock();
-                        } else {
-                            throw new IllegalStateException();
+                        if (SpeechRecognition.this.speechRecognitionActive) {
+                            SpeechRecognition.this.speechRecognitionActive = false;
                         }
                     }
                 }
@@ -196,6 +216,7 @@ public class SpeechRecognition {
             } catch (Throwable t) {
                 TeaseLib.log(this, t);
             }
+            unlockSpeechRecognitionInProgressSyncObject();
         } else {
             recognizerNotInitialized();
         }
@@ -207,22 +228,15 @@ public class SpeechRecognition {
 
     public void completeSpeechRecognitionInProgress() {
         if (sr != null) {
-            Delegate delegate = new Delegate() {
-                @Override
-                public void run() {
-                    try {
-                        SpeechRecognitionInProgress.lockInterruptibly();
-                    } catch (InterruptedException e) {
-                        throw new ScriptInterruptedException();
-                    } finally {
-                        SpeechRecognitionInProgress.unlock();
-                    }
+            if (SpeechRecognitionInProgress.isLocked()) {
+                TeaseLib.log("Waiting for speech recognition to complete");
+                try {
+                    SpeechRecognitionInProgress.lockInterruptibly();
+                } catch (InterruptedException e) {
+                    throw new ScriptInterruptedException();
+                } finally {
+                    SpeechRecognitionInProgress.unlock();
                 }
-            };
-            try {
-                delegateThread.run(delegate);
-            } catch (Throwable t) {
-                TeaseLib.log(this, t);
             }
         }
     }

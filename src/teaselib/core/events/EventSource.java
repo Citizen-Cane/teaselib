@@ -8,7 +8,6 @@ import teaselib.TeaseLib;
 public class EventSource<S, T extends EventArgs> {
     private final String name;
     private final List<Event<S, T>> delegates = new ArrayList<Event<S, T>>();
-
     final Event<S, T> initial;
     final Event<S, T> completing;
 
@@ -45,6 +44,7 @@ public class EventSource<S, T extends EventArgs> {
         for (Event<S, T> delegate : delegates) {
             runDelegate(sender, eventArgs, delegate);
             if (eventArgs.consumed) {
+                TeaseLib.log("Event " + eventArgs.toString() + " consumed");
                 break;
             }
         }

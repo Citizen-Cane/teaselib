@@ -3,11 +3,8 @@ package teaselib.hosts;
 import java.util.Locale;
 
 import ss.IScript;
-import teaselib.Clothing;
 import teaselib.Toys;
 import teaselib.core.Persistence;
-import teaselib.util.Item;
-import teaselib.util.Value;
 
 public class SexScriptsStatePersistence implements Persistence {
 
@@ -22,18 +19,8 @@ public class SexScriptsStatePersistence implements Persistence {
 
     @Override
     public boolean has(String name) {
+        name = mapName(name);
         return host.loadString(name) != null;
-    }
-
-    @Override
-    public String get(String name) {
-        String value = host.loadString(name);
-        return value;
-    }
-
-    @Override
-    public void set(String name, String value) {
-        host.save(name, value);
     }
 
     @Override
@@ -47,38 +34,42 @@ public class SexScriptsStatePersistence implements Persistence {
     }
 
     @Override
+    public String get(String name) {
+        name = mapName(name);
+        String value = host.loadString(name);
+        return value;
+    }
+
+    @Override
+    public void set(String name, String value) {
+        name = mapName(name);
+        host.save(name, value);
+    }
+
+    @Override
     public void set(String name, boolean value) {
+        name = mapName(name);
         set(name, value ? TRUE : FALSE);
     }
 
     @Override
     public void clear(String name) {
+        name = mapName(name);
         host.save(name, null);
     }
 
-    @Override
-    public Item get(Toys item) {
-        return getToy(item.name());
-    }
-
-    @Override
-    public Item get(Clothing item) {
-        return getClothingItem(item.name());
-    }
-
-    @Override
-    public Item getToy(String name) {
-        final String displayName = Value.createDisplayName(name);
-        if (Toys.Ball_Gag.name().equals(name)) {
-            name = "Ballgag";
+    /**
+     * TeaseLib uses a lot of standard properties instead of just plain strings,
+     * 
+     * @param name
+     *            The name of a property
+     * @return The actual property name or the original name
+     */
+    private static String mapName(String name) {
+        if (("toys." + Toys.Ball_Gag.name()).equalsIgnoreCase(name)) {
+            name = "toys.ballgag";
         }
-        return new Item("toys." + name.toLowerCase(), displayName, this);
-    }
-
-    @Override
-    public Item getClothingItem(String item) {
-        final String displayName = Value.createDisplayName(item);
-        return new Item("clothes." + item.toLowerCase(), displayName, this);
+        return name;
     }
 
     @Override

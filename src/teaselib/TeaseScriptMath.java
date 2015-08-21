@@ -29,10 +29,6 @@ public class TeaseScriptMath extends TeaseScriptPersistence {
         super(script, actor);
     }
 
-    public <T> T[] items(T... items) {
-        return items;
-    }
-
     public Message message(String... text) {
         if (text == null)
             return null;

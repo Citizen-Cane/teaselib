@@ -5,11 +5,9 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -18,7 +16,7 @@ import teaselib.core.Persistence;
 import teaselib.core.Persistence.TextVariable;
 import teaselib.core.ScriptInterruptedException;
 import teaselib.util.Item;
-import teaselib.util.Value;
+import teaselib.util.Items;
 
 /**
  * @author someone
@@ -234,14 +232,14 @@ public class TeaseLib {
     }
 
     protected class PersistentValue {
-        protected final String name;
+        public final String name;
 
         protected PersistentValue(String namespace, String name) {
             this.name = makePropertyName(namespace, name);
         }
 
         public void clear() {
-            persistence.set(name, null);
+            persistence.clear(name);
         }
 
         public boolean available() {
@@ -378,12 +376,12 @@ public class TeaseLib {
         return namespace + "." + name;
     }
 
-    Item get(Toys toy) {
-        return persistence.get(toy);
+    public <T> Item<T> getToy(T toy) {
+        return get("toys", toy);
     }
 
-    Item get(Clothing item) {
-        return persistence.get(item);
+    public <T> Item<T> getClothing(T item) {
+        return get("clothes", item);
     }
 
     public String get(TextVariable name, String locale) {
@@ -521,10 +519,10 @@ public class TeaseLib {
      * @param values
      * @return A list of items whose names are based on the enumeration members
      */
-    public List<Item> get(String namespace, Enum<? extends Enum<?>>... values) {
-        List<Item> items = new ArrayList<Item>(values.length);
-        for (Enum<?> v : values) {
-            items.add(get(namespace, v));
+    public <T extends Enum<?>> Items<T> item(String namespace, T... values) {
+        Items<T> items = new Items<T>(values.length);
+        for (T v : values) {
+            items.add(item(namespace, v));
         }
         return items;
     }
@@ -536,10 +534,25 @@ public class TeaseLib {
      *            The namespace of the item
      * @param value
      *            The enumeration value to get the item for
-     * @return The item of the enumeration member
+     * @return The item that corresponds to the enumeration member
      */
-    public Item get(String namespace, Enum<? extends Enum<?>> value) {
-        return new Item(namespace + "." + value.name(),
-                Value.createDisplayName(value), persistence);
+    public <T extends Enum<?>> Item<T> item(String namespace, T value) {
+        return new Item<T>(value,
+                new PersistentBoolean(namespace, value.name()),
+                Item.createDisplayName(value));
+    }
+
+    /**
+     * Get the item for any object.
+     * 
+     * @param namespace
+     *            The namespace of the item
+     * @param value
+     *            The value to get the item for
+     * @return The item that corresponds to the object
+     */
+    public <T> Item<T> get(String namespace, T value) {
+        return new Item<T>(value, new PersistentBoolean(namespace,
+                value.toString()), Item.createDisplayName(value));
     }
 }

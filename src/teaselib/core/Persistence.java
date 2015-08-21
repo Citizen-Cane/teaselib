@@ -1,9 +1,5 @@
 package teaselib.core;
 
-import teaselib.Clothing;
-import teaselib.Toys;
-import teaselib.util.Item;
-
 public interface Persistence {
 
     boolean has(String name);
@@ -22,26 +18,6 @@ public interface Persistence {
     void set(String name, boolean value);
 
     void clear(String name);
-
-    /**
-     * Return the corresponding persistent toy object
-     * 
-     * @param toy
-     * @return
-     */
-    Item get(Toys toy);
-
-    /**
-     * Return the corresponding persistent clothes item
-     * 
-     * @param item
-     * @return
-     */
-    Item get(Clothing item);
-
-    Item getToy(String item);
-
-    Item getClothingItem(String item);
 
     /**
      * Host-defined text variables. These are also auto-replaced in messages.

@@ -14,7 +14,7 @@ import teaselib.core.RenderDesktopItem;
 import teaselib.core.RenderSound;
 import teaselib.core.ResourceLoader;
 import teaselib.core.texttospeech.TextToSpeechPlayer;
-import teaselib.util.Item;
+import teaselib.util.Items;
 
 public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
 
@@ -276,8 +276,7 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
         return results;
     }
 
-    public boolean showItems(String caption, List<Item> items,
-            boolean allowCancel) {
+    public boolean showItems(String caption, Items<?> items, boolean allowCancel) {
         List<String> choices = new ArrayList<String>(items.size());
         List<Boolean> values = new ArrayList<Boolean>(items.size());
         for (int i = 0; i < items.size(); i++) {

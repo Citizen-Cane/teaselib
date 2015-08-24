@@ -196,12 +196,13 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
      */
     public String reply(final int timeout, final List<String> choices) {
         completeMandatory();
-        Runnable delayFunction = timeout > NoTimeout ? new Runnable() {
+        ScriptFunction delayFunction = timeout > NoTimeout ? new ScriptFunction() {
             @Override
             public void run() {
                 teaseLib.sleep(timeout, TimeUnit.SECONDS);
             }
-        } : null;
+        }
+                : null;
         return showChoices(delayFunction, choices);
     }
 
@@ -213,7 +214,8 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
      * @param scriptFunction
      * @return
      */
-    public String reply(Runnable scriptFunction, final List<String> choices) {
+    public String reply(ScriptFunction scriptFunction,
+            final List<String> choices) {
         // To display buttons and to start scriptFunction at the same time,
         // completeAll() has to be called in order to finish all current
         // renderers
@@ -236,7 +238,8 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
         return reply(timeout, choices);
     }
 
-    public String reply(Runnable scriptFunction, String choice, String... more) {
+    public String reply(ScriptFunction scriptFunction, String choice,
+            String... more) {
         List<String> choices = buildChoicesFromArray(choice, more);
         return reply(scriptFunction, choices);
     }

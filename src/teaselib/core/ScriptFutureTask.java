@@ -7,18 +7,19 @@ import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.FutureTask;
 
+import teaselib.ScriptFunction;
 import teaselib.core.events.Delegate;
 
 public class ScriptFutureTask extends FutureTask<String> {
-    public final static class TimeoutClick {
+    public static class TimeoutClick {
         public boolean clicked = false;
     }
 
-    public final TimeoutClick timeout;
+    private final TimeoutClick timeout;
 
     public ScriptFutureTask(final TeaseScriptBase script,
-            final Runnable scriptFunction, final List<String> derivedChoices,
-            final TimeoutClick timeout) {
+            final ScriptFunction scriptFunction,
+            final List<String> derivedChoices, final TimeoutClick timeout) {
         super(new Callable<String>() {
             @Override
             public String call() throws Exception {
@@ -33,8 +34,20 @@ public class ScriptFutureTask extends FutureTask<String> {
                     // Avoid executing these renderers with the next
                     // call to renderMessage()
                     script.clearDeferred();
-                    return null;
+                    script.endAll();
                 }
+                finish(script, derivedChoices, timeout);
+                // Now if the script function is interrupted, there may
+                // still be deferred renderers set for the next call to
+                // renderMessage()
+                // These must be cleared, or they will be run with the
+                // next renderMessage() call in the main script thread
+                return null;
+            }
+
+            private void finish(final TeaseScriptBase script,
+                    final List<String> derivedChoices,
+                    final TimeoutClick timeout) {
                 // Script function finished
                 List<Delegate> clickables = script.teaseLib.host
                         .getClickableChoices(derivedChoices);
@@ -52,14 +65,12 @@ public class ScriptFutureTask extends FutureTask<String> {
                                         + derivedChoices.toString());
                     }
                 }
-                // Now if the script function is interrupted, there may
-                // still be deferred renderers set for the next call to
-                // renderMessage()
-                // These must be cleared, or they will be run with the
-                // next renderMessage() call in the main script thread
-                return null;
             }
         });
         this.timeout = timeout;
+    }
+
+    public boolean timedOut() {
+        return timeout.clicked;
     }
 }

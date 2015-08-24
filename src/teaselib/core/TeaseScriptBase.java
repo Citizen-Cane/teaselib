@@ -14,6 +14,7 @@ import java.util.concurrent.TimeUnit;
 import teaselib.Actor;
 import teaselib.Message;
 import teaselib.Mood;
+import teaselib.ScriptFunction;
 import teaselib.TeaseLib;
 import teaselib.core.events.Delegate;
 import teaselib.core.events.Event;
@@ -193,7 +194,7 @@ public abstract class TeaseScriptBase {
      *            More choices
      * @return
      */
-    protected String showChoices(final Runnable scriptFunction,
+    protected String showChoices(final ScriptFunction scriptFunction,
             List<String> choices) {
         // argument checking and text variable replacement
         final List<String> derivedChoices = replaceTextVariables(choices);
@@ -234,8 +235,12 @@ public abstract class TeaseScriptBase {
             }
             choiceIndex = teaseLib.host.reply(derivedChoices);
             if (scriptTask != null) {
-                TeaseLib.logDetail("choose: Cancelling script task");
-                scriptTask.cancel(true);
+                if (scriptTask.isDone()) {
+                    TeaseLib.logDetail("choose: script task finished");
+                } else {
+                    TeaseLib.logDetail("choose: Cancelling script task");
+                    scriptTask.cancel(true);
+                }
             }
             if (recognizeSpeech) {
                 TeaseLib.logDetail("choose: completing speech recognition");
@@ -247,21 +252,26 @@ public abstract class TeaseScriptBase {
             speechRecognizer.events.recognitionCompleted
                     .remove(recognitionCompleted);
         }
-        // Assign result from speech recognition
-        // script task timeout or button click
-        // supporting object identity by
-        // returning an item of the original choices list
-        String chosen = null;
-        if (!srChoiceIndices.isEmpty()) {
-            // Use the first speech recognition result
-            chosen = choices.get(srChoiceIndices.get(0));
-        } else if (scriptTask != null && scriptTask.timeout.clicked) {
-            chosen = Timeout;
-        } else {
-            chosen = choices.get(choiceIndex);
+        // The script function may override any result from button clicks or
+        // speech recognition
+        String chosen = scriptFunction != null ? scriptFunction.result : null;
+        if (chosen == null) {
+            // Assign result from speech recognition
+            // script task timeout or button click
+            // supporting object identity by
+            // returning an item of the original choices list
+            if (!srChoiceIndices.isEmpty()) {
+                // Use the first speech recognition result
+                chosen = choices.get(srChoiceIndices.get(0));
+            } else if (scriptTask != null && scriptTask.timedOut()) {
+                chosen = Timeout;
+            } else {
+                chosen = choices.get(choiceIndex);
+            }
         }
-        TeaseLib.logDetail("showChoices: ending render queue");
-        renderQueue.endAll();
+        // Done in script task
+        // TeaseLib.logDetail("showChoices: ending render queue");
+        // renderQueue.endAll();
         return chosen;
     }
 
@@ -269,7 +279,8 @@ public abstract class TeaseScriptBase {
             final List<String> derivedChoices,
             final ScriptFutureTask scriptTask,
             final List<Integer> srChoiceIndices) {
-        Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs> recognitionCompleted = new Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs>() {
+        Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs> recognitionCompleted;
+        recognitionCompleted = new Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs>() {
             @Override
             public void run(SpeechRecognitionImplementation sender,
                     SpeechRecognizedEventArgs eventArgs) {

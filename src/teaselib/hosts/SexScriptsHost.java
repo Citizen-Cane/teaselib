@@ -123,6 +123,8 @@ public class SexScriptsHost implements Host {
                     Runnable runnable = onQuitHandler;
                     // Execute each quit handler just once
                     onQuitHandler = null;
+                    TeaseLib.log("Running quit handler "
+                            + runnable.getClass().getName());
                     runnable.run();
                 } else {
                     mainFrame

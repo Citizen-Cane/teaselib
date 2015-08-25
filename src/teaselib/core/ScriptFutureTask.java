@@ -27,13 +27,15 @@ public class ScriptFutureTask extends FutureTask<String> {
                     scriptFunction.run();
                     // Keep choices available until the last part of
                     // the script function has finished rendering
+                    if (Thread.interrupted()) {
+                        throw new ScriptInterruptedException();
+                    }
                     script.completeAll();
                 } catch (ScriptInterruptedException e) {
                     // At this point the script function may have added
                     // deferred renderers to the queue.
                     // Avoid executing these renderers with the next
                     // call to renderMessage()
-                    script.clearDeferred();
                     script.endAll();
                 }
                 finish(script, derivedChoices, timeout);

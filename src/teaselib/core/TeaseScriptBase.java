@@ -117,6 +117,7 @@ public abstract class TeaseScriptBase {
      */
     public void endAll() {
         renderQueue.endAll();
+        clearDeferred();
     }
 
     protected void renderMessage(Message message,
@@ -172,7 +173,7 @@ public abstract class TeaseScriptBase {
         }
     }
 
-    void clearDeferred() {
+    private void clearDeferred() {
         synchronized (deferredRenderers) {
             deferredRenderers.clear();
         }

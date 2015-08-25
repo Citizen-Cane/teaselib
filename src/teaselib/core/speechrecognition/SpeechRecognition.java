@@ -227,8 +227,11 @@ public class SpeechRecognition {
                 throw e;
             } catch (Throwable t) {
                 TeaseLib.log(this, t);
+            } finally {
+                // Unlock explicitly since after stopping we won't receive
+                // events anymore
+                unlockSpeechRecognitionInProgressSyncObject();
             }
-            unlockSpeechRecognitionInProgressSyncObject();
         } else {
             recognizerNotInitialized();
         }

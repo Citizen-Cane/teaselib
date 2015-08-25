@@ -35,6 +35,7 @@ public abstract class TeaseScriptBase {
     public final String namespace;
 
     public static final String Timeout = "Timeout";
+    public static final long Infinite = Long.MAX_VALUE;
 
     protected String mood = Mood.Neutral;
     protected String displayImage = Message.DominantImage;
@@ -244,7 +245,7 @@ public abstract class TeaseScriptBase {
             }
             if (recognizeSpeech) {
                 TeaseLib.logDetail("choose: completing speech recognition");
-                speechRecognizer.completeSpeechRecognitionInProgress();
+                SpeechRecognition.completeSpeechRecognitionInProgress();
             }
         } finally {
             TeaseLib.logDetail("choose: stopping speech recognition");

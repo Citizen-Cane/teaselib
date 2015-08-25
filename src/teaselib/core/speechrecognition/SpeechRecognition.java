@@ -36,7 +36,7 @@ public class SpeechRecognition {
      * Locked if a recognition is in progress, e.g. a start event has been
      * fired, but the the recognition has neither been rejected or completed
      */
-    private final ReentrantLock SpeechRecognitionInProgress = new ReentrantLock();
+    private static final ReentrantLock SpeechRecognitionInProgress = new ReentrantLock();
 
     /**
      * Speech recognition has been started or resumed and is listening for voice
@@ -238,15 +238,15 @@ public class SpeechRecognition {
         throw new IllegalStateException("Recognizer not initialized");
     }
 
-    public void completeSpeechRecognitionInProgress() {
-        if (sr != null) {
-            if (SpeechRecognitionInProgress.isLocked()) {
-                TeaseLib.log("Waiting for speech recognition to complete");
-                try {
-                    SpeechRecognitionInProgress.lockInterruptibly();
-                } catch (InterruptedException e) {
-                    throw new ScriptInterruptedException();
-                } finally {
+    public static void completeSpeechRecognitionInProgress() {
+        if (SpeechRecognitionInProgress.isLocked()) {
+            TeaseLib.log("Waiting for speech recognition to complete");
+            try {
+                SpeechRecognitionInProgress.lockInterruptibly();
+            } catch (InterruptedException e) {
+                throw new ScriptInterruptedException();
+            } finally {
+                if (SpeechRecognitionInProgress.isHeldByCurrentThread()) {
                     SpeechRecognitionInProgress.unlock();
                 }
             }

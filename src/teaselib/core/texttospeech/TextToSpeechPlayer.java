@@ -269,8 +269,8 @@ public class TextToSpeechPlayer {
         // Suspend speech recognition while speaking,
         // to avoid wrong recognitions
         // - and the mistress speech isn't to be interrupted anyway
-        if (useTTS && speechRecognizer != null) {
-            speechRecognizer.completeSpeechRecognitionInProgress();
+        if (useTTS) {
+            SpeechRecognition.completeSpeechRecognitionInProgress();
             reactivateSpeechRecognition = speechRecognizer.isActive();
         } else {
             reactivateSpeechRecognition = false;
@@ -310,8 +310,8 @@ public class TextToSpeechPlayer {
         // Suspend speech recognition while speaking,
         // to avoid wrong recognitions
         // - and the mistress speech isn't to be interrupted anyway
-        if (usePrerecorded && speechRecognizer != null) {
-            speechRecognizer.completeSpeechRecognitionInProgress();
+        if (usePrerecorded) {
+            SpeechRecognition.completeSpeechRecognitionInProgress();
             reactivateSpeechRecognition = speechRecognizer.isActive();
         } else {
             reactivateSpeechRecognition = false;

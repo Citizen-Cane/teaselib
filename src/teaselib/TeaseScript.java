@@ -13,6 +13,7 @@ import teaselib.core.RenderDelay;
 import teaselib.core.RenderDesktopItem;
 import teaselib.core.RenderSound;
 import teaselib.core.ResourceLoader;
+import teaselib.core.speechrecognition.SpeechRecognition;
 import teaselib.core.texttospeech.TextToSpeechPlayer;
 import teaselib.util.Items;
 
@@ -196,14 +197,30 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
      */
     public String reply(final int timeout, final List<String> choices) {
         completeMandatory();
-        ScriptFunction delayFunction = timeout > NoTimeout ? new ScriptFunction() {
-            @Override
-            public void run() {
-                teaseLib.sleep(timeout, TimeUnit.SECONDS);
-            }
-        }
+        ScriptFunction delayFunction = timeout > NoTimeout ? timeout(timeout)
                 : null;
         return showChoices(delayFunction, choices);
+    }
+
+    public ScriptFunction timeout(final int seconds) {
+        return new ScriptFunction() {
+            @Override
+            public void run() {
+                teaseLib.sleep(seconds, TimeUnit.SECONDS);
+            }
+        };
+    }
+
+    public ScriptFunction timeoutWithConfirmation(final int seconds) {
+        return new ScriptFunction() {
+            @Override
+            public void run() {
+                teaseLib.sleep(seconds, TimeUnit.SECONDS);
+                SpeechRecognition.completeSpeechRecognitionInProgress();
+                result = Timeout;
+                sleep(Infinite, TimeUnit.SECONDS);
+            }
+        };
     }
 
     /**

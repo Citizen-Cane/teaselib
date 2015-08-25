@@ -238,11 +238,6 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
         // renderers
         completeAll();
         String chosen = showChoices(scriptFunction, choices);
-        if (chosen == Timeout) {
-            completeAll();
-        } else {
-            endAll();
-        }
         return chosen;
     }
 

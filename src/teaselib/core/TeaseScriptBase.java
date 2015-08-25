@@ -235,6 +235,7 @@ public abstract class TeaseScriptBase {
                 teaseLib.sleep(300, TimeUnit.MILLISECONDS);
             }
             choiceIndex = teaseLib.host.reply(derivedChoices);
+        } finally {
             if (scriptTask != null) {
                 if (scriptTask.isDone()) {
                     TeaseLib.logDetail("choose: script task finished");
@@ -243,15 +244,10 @@ public abstract class TeaseScriptBase {
                     scriptTask.cancel(true);
                 }
             }
-            if (recognizeSpeech) {
-                TeaseLib.logDetail("choose: completing speech recognition");
-                SpeechRecognition.completeSpeechRecognitionInProgress();
-            }
-        } finally {
             TeaseLib.logDetail("choose: stopping speech recognition");
-            speechRecognizer.stopRecognition();
             speechRecognizer.events.recognitionCompleted
                     .remove(recognitionCompleted);
+            speechRecognizer.stopRecognition();
         }
         // The script function may override any result from button clicks or
         // speech recognition

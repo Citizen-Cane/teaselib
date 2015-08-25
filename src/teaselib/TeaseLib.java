@@ -201,7 +201,7 @@ public class TeaseLib {
         public final long start;
 
         public Duration() {
-            this.start = getTime();
+            this.start = getTime(TimeUnit.SECONDS);
         }
 
         public Duration(long startSeconds) {
@@ -209,7 +209,7 @@ public class TeaseLib {
         }
 
         public long elapsed(TimeUnit unit) {
-            long now = getTime();
+            long now = getTime(TimeUnit.SECONDS);
             long elapsedSeconds = now - start;
             return unit.convert(elapsedSeconds, TimeUnit.SECONDS);
         }

@@ -79,6 +79,7 @@ public class RenderMessage extends MediaRendererThread {
                     // Handle message commands
                     Part part;
                     part = it.next();
+                    final boolean lastParagraph = !it.hasNext();
                     TeaseLib.log(part.type.toString() + ": " + part.value);
                     if (part.type == Message.Type.Image) {
                         displayImage = part.value;
@@ -100,11 +101,9 @@ public class RenderMessage extends MediaRendererThread {
                             // retrieved (the desktop item doesn't exist),
                             // we'll just display the part as text,
                             // which is the most right thing in this case
-                            doText(accumulatedText, part, append,
+                            mood = doTextAndPause(accumulatedText, append,
                                     prerenderedSpeechItems, mood,
-                                    additionalHints);
-                            pauseAfterParagraph(it);
-                            mood = resetMood(mood);
+                                    lastParagraph, additionalHints, part);
                         }
                     } else if (part.type == Message.Type.Mood) {
                         // Mood
@@ -113,7 +112,7 @@ public class RenderMessage extends MediaRendererThread {
                         doKeyword(soundRenderer, part);
                     } else if (part.type == Message.Type.Delay) {
                         // Pause
-                        doPause(part);
+                        doDelay(part);
                     } else if (part.type == Message.Type.Item) {
                         accumulateText(accumulatedText, "°", false);
                         appendToItem = true;
@@ -122,11 +121,9 @@ public class RenderMessage extends MediaRendererThread {
                         // Exec
                         doExec(part);
                     } else {
-                        // Text detected
-                        doText(accumulatedText, part, append,
-                                prerenderedSpeechItems, mood, additionalHints);
-                        pauseAfterParagraph(it);
-                        mood = resetMood(mood);
+                        mood = doTextAndPause(accumulatedText, append,
+                                prerenderedSpeechItems, mood, lastParagraph,
+                                additionalHints, part);
                     }
                     if (endThread) {
                         break;
@@ -149,6 +146,17 @@ public class RenderMessage extends MediaRendererThread {
         }
     }
 
+    private String doTextAndPause(StringBuilder accumulatedText,
+            boolean append, final Iterator<String> prerenderedSpeechItems,
+            String mood, boolean lastParagraph, Set<String> additionalHints,
+            Part part) throws IOException {
+        doText(accumulatedText, part, append, prerenderedSpeechItems, mood,
+                additionalHints);
+        pauseAfterParagraph(lastParagraph);
+        mood = resetMood(mood);
+        return mood;
+    }
+
     private void doText(StringBuilder accumulatedText, Part part,
             boolean append, final Iterator<String> prerenderedSpeechItems,
             String mood, Set<String> additionalHints) throws IOException {
@@ -165,6 +173,23 @@ public class RenderMessage extends MediaRendererThread {
                         prerenderedSpeechItems);
             } else {
                 speechSynthesizer.speak(message.actor, prompt, mood);
+            }
+        }
+    }
+
+    private void pauseAfterParagraph(boolean lastParagraph) {
+        final boolean spokenMessage = speechSynthesizer != null;
+        if (lastParagraph) {
+            if (spokenMessage) {
+                // Interaction should start before the final delay
+                mandatoryCompleted();
+                teaseLib.sleep(DELAYATENDOFTEXT, TimeUnit.MILLISECONDS);
+            }
+            allCompleted();
+            endThread = true;
+        } else {
+            if (spokenMessage) {
+                teaseLib.sleep(DELAYBETWEENPARAGRAPHS, TimeUnit.MILLISECONDS);
             }
         }
     }
@@ -198,7 +223,7 @@ public class RenderMessage extends MediaRendererThread {
         }
     }
 
-    private void doPause(Part part) {
+    private void doDelay(Part part) {
         String args = removeCommandNameFromValue(part);
         if (args.isEmpty()) {
             // Fixed pause
@@ -251,19 +276,6 @@ public class RenderMessage extends MediaRendererThread {
         } else {
             accumulatedText.append("\n\n");
             accumulatedText.append(text);
-        }
-    }
-
-    private void pauseAfterParagraph(Iterator<Message.Part> it) {
-        final boolean lastParagraph = !it.hasNext();
-        if (lastParagraph) {
-            // Interaction should start before the final delay
-            mandatoryCompleted();
-            teaseLib.sleep(DELAYATENDOFTEXT, TimeUnit.MILLISECONDS);
-            allCompleted();
-            endThread = true;
-        } else {
-            teaseLib.sleep(DELAYBETWEENPARAGRAPHS, TimeUnit.MILLISECONDS);
         }
     }
 

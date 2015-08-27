@@ -234,7 +234,7 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
      *            The timeout duration
      * @return A script function that accomplishes the described behavior.
      */
-    public ScriptFunction timeout(final int seconds) {
+    public ScriptFunction timeout(final long seconds) {
         return new ScriptFunction() {
             @Override
             public void run() {
@@ -261,13 +261,14 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
      *            The timeout duration
      * @return A script function that accomplishes the described behavior.
      */
-    public ScriptFunction timeoutWithConfirmation(final int seconds) {
+    public ScriptFunction timeoutWithConfirmation(final long seconds) {
         return new ScriptFunction() {
             @Override
             public void run() {
                 teaseLib.sleep(seconds, TimeUnit.SECONDS);
                 SpeechRecognition.completeSpeechRecognitionInProgress();
                 result = Timeout;
+                TeaseLib.log("Choices timed out");
                 sleep(Infinite, TimeUnit.SECONDS);
             }
         };

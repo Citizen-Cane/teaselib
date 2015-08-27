@@ -34,8 +34,6 @@ public abstract class TeaseScriptBase {
     public final Actor actor;
     public final String namespace;
 
-    public static final String Timeout = ScriptFunction.Timeout;
-
     protected String mood = Mood.Neutral;
     protected String displayImage = Message.DominantImage;
 
@@ -262,7 +260,7 @@ public abstract class TeaseScriptBase {
                 // Use the first speech recognition result
                 choice = choices.get(srChoiceIndices.get(0));
             } else if (scriptTask != null && scriptTask.timedOut()) {
-                choice = Timeout;
+                choice = ScriptFunction.Timeout;
             } else {
                 choice = choices.get(choiceIndex);
             }

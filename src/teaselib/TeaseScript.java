@@ -20,6 +20,11 @@ import teaselib.util.Items;
 public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
 
     /**
+     * see {@link teaselib.ScriptFunction#Timeout}
+     */
+    public static final String Timeout = ScriptFunction.Timeout;
+
+    /**
      * Create a sub-script with the same actor as the parent.
      * 
      * @param script
@@ -183,46 +188,12 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
      * @return
      */
     public String reply(final List<String> choices) {
-        return reply(NoTimeout, choices);
+        return showChoices(null, choices);
     }
 
-    /**
-     * Display choices. Won't wait for mandatory parts to complete.
-     * 
-     * @param choices
-     * @param timeout
-     *            The timeout for the button set in seconds, or 0 if no timeout
-     *            is desired
-     * @return The button index, or TeaseLib.None if the buttons timed out
-     */
-    public String reply(final int timeout, final List<String> choices) {
-        completeMandatory();
-        ScriptFunction delayFunction = timeout > NoTimeout ? timeout(timeout)
-                : null;
-        return showChoices(delayFunction, choices);
-    }
-
-    public ScriptFunction timeout(final int seconds) {
-        return new ScriptFunction() {
-            @Override
-            public void run() {
-                teaseLib.sleep(seconds, TimeUnit.SECONDS);
-                SpeechRecognition.completeSpeechRecognitionInProgress();
-                result = Timeout;
-            }
-        };
-    }
-
-    public ScriptFunction timeoutWithConfirmation(final int seconds) {
-        return new ScriptFunction() {
-            @Override
-            public void run() {
-                teaseLib.sleep(seconds, TimeUnit.SECONDS);
-                SpeechRecognition.completeSpeechRecognitionInProgress();
-                result = Timeout;
-                sleep(Infinite, TimeUnit.SECONDS);
-            }
-        };
+    public String reply(String choice, String... more) {
+        List<String> choices = buildChoicesFromArray(choice, more);
+        return showChoices(null, choices);
     }
 
     /**
@@ -243,19 +214,63 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
         return chosen;
     }
 
-    public String reply(String choice, String... more) {
-        return reply(NoTimeout, choice, more);
-    }
-
-    public String reply(final int timeout, String choice, String... more) {
-        List<String> choices = buildChoicesFromArray(choice, more);
-        return reply(timeout, choices);
-    }
-
     public String reply(ScriptFunction scriptFunction, String choice,
             String... more) {
         List<String> choices = buildChoicesFromArray(choice, more);
         return reply(scriptFunction, choices);
+    }
+
+    /**
+     * Wait until the timeout duration has elapsed, wait for ongoing speech
+     * recognition to complete, dismiss the buttons and return
+     * {@link teaselib.ScriptFunction#Timeout} instead of a choice
+     * 
+     * The function waits until speech recognition is completed before marking
+     * the choice as "Timed out", because the user has usually completed the
+     * requested action before uttering a choice, and because speaking takes
+     * more time than pressing a button.
+     * 
+     * @param seconds
+     *            The timeout duration
+     * @return A script function that accomplishes the described behavior.
+     */
+    public ScriptFunction timeout(final int seconds) {
+        return new ScriptFunction() {
+            @Override
+            public void run() {
+                teaseLib.sleep(seconds, TimeUnit.SECONDS);
+                SpeechRecognition.completeSpeechRecognitionInProgress();
+                result = Timeout;
+            }
+        };
+    }
+
+    /**
+     * Wait until the timeout duration has elapsed, wait for ongoing speech
+     * recognition to complete, then wait until the user makes a choice and
+     * return {@link teaselib.ScriptFunction#Timeout} instead of the users'
+     * choice.
+     * 
+     * While this behavior can be implemented with a standard button, the
+     * function waits until speech recognition is completed before marking the
+     * choice as "Timed out", because the user has usually completed the
+     * requested action before uttering a choice, and because speaking takes
+     * more time than pressing a button.
+     * 
+     * @param seconds
+     *            The timeout duration
+     * @return A script function that accomplishes the described behavior.
+     */
+    public ScriptFunction timeoutWithConfirmation(final int seconds) {
+        return new ScriptFunction() {
+            @Override
+            public void run() {
+                teaseLib.sleep(seconds, TimeUnit.SECONDS);
+                SpeechRecognition.completeSpeechRecognitionInProgress();
+                result = Timeout;
+                sleep(Infinite, TimeUnit.SECONDS);
+            }
+        };
     }
 
     public int replyIndex(String choice, String... more) {

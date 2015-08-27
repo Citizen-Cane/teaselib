@@ -34,8 +34,7 @@ public abstract class TeaseScriptBase {
     public final Actor actor;
     public final String namespace;
 
-    public static final String Timeout = "Timeout";
-    public static final long Infinite = Long.MAX_VALUE;
+    public static final String Timeout = ScriptFunction.Timeout;
 
     protected String mood = Mood.Neutral;
     protected String displayImage = Message.DominantImage;
@@ -252,25 +251,26 @@ public abstract class TeaseScriptBase {
         }
         // The script function may override any result from button clicks or
         // speech recognition
-        String chosen = scriptFunction != null ? scriptFunction.result : null;
-        if (chosen == null) {
+        String choice = scriptFunction != null ? scriptFunction.result
+                : ScriptFunction.Finished;
+        if (choice == ScriptFunction.Finished) {
             // Assign result from speech recognition
             // script task timeout or button click
             // supporting object identity by
             // returning an item of the original choices list
             if (!srChoiceIndices.isEmpty()) {
                 // Use the first speech recognition result
-                chosen = choices.get(srChoiceIndices.get(0));
+                choice = choices.get(srChoiceIndices.get(0));
             } else if (scriptTask != null && scriptTask.timedOut()) {
-                chosen = Timeout;
+                choice = Timeout;
             } else {
-                chosen = choices.get(choiceIndex);
+                choice = choices.get(choiceIndex);
             }
         }
         // Done in script task
         // TeaseLib.logDetail("showChoices: ending render queue");
         // renderQueue.endAll();
-        return chosen;
+        return choice;
     }
 
     private Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs> recognitionCompletedEvent(

@@ -66,6 +66,7 @@ public class SpeechRecognition {
             @Override
             public void run() {
                 try {
+                    TeaseLib.logDetail("Locking speech recognition sync object");
                     SpeechRecognitionInProgress.lock();
                 } catch (Throwable t) {
                     TeaseLib.log(this, t);
@@ -91,6 +92,7 @@ public class SpeechRecognition {
                     // hypothesis
                     // event handler may generate a Completion event
                     if (SpeechRecognitionInProgress.isHeldByCurrentThread()) {
+                        TeaseLib.logDetail("Unlocking speech recognition sync object");
                         SpeechRecognitionInProgress.unlock();
                     }
                 } catch (ScriptInterruptedException e) {
@@ -253,6 +255,8 @@ public class SpeechRecognition {
                     SpeechRecognitionInProgress.unlock();
                 }
             }
+        } else {
+            TeaseLib.logDetail("Speech recognition sync object not locked");
         }
     }
 

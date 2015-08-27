@@ -207,6 +207,8 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
             @Override
             public void run() {
                 teaseLib.sleep(seconds, TimeUnit.SECONDS);
+                SpeechRecognition.completeSpeechRecognitionInProgress();
+                result = Timeout;
             }
         };
     }

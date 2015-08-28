@@ -95,7 +95,8 @@ public class TeaseLib {
 
     public static synchronized void log(String text) {
         Date now = new Date(System.currentTimeMillis());
-        String line = timeFormat.format(now) + ": " + text + "\n";
+        String line = timeFormat.format(now) + " -"
+                + Thread.currentThread().getName() + " - : " + text + "\n";
         try {
             if (log != null) {
                 log.write(line);

@@ -257,27 +257,32 @@ public abstract class TeaseScriptBase {
                     .remove(recognitionCompleted);
             speechRecognizer.stopRecognition();
         }
-        // The script function may override any result from button clicks or
-        // speech recognition
+        // Wait for the script task to end
+        if (scriptTask != null) {
+            scriptTask.join();
+        }
+        // The result of the script function may override any result
+        // from button clicks or speech recognition
         String choice = scriptFunction != null ? scriptFunction.result
                 : ScriptFunction.Finished;
         if (choice == ScriptFunction.Finished) {
-            // Assign result from speech recognition
+            // Assign result from speech recognition,
             // script task timeout or button click
-            // supporting object identity by
-            // returning an item of the original choices list
             if (!srChoiceIndices.isEmpty()) {
-                // Use the first speech recognition result
+                // Use first speech recognition result
                 choice = choices.get(srChoiceIndices.get(0));
             } else if (scriptTask != null && scriptTask.timedOut()) {
+                // Timeout
                 choice = ScriptFunction.Timeout;
             } else {
+                // If the script function didn't timeout and there is no speech
+                // recognition result, then it's a simple button click
                 choice = choices.get(choiceIndex);
             }
         }
-        // Done in script task
-        // TeaseLib.logDetail("showChoices: ending render queue");
-        // renderQueue.endAll();
+        TeaseLib.logDetail("Reply finished");
+        // Object identity is supported by
+        // returning an item of the original choices list
         return choice;
     }
 

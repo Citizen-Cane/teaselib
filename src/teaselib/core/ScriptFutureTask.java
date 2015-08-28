@@ -8,6 +8,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.FutureTask;
 
 import teaselib.ScriptFunction;
+import teaselib.TeaseLib;
 import teaselib.core.events.Delegate;
 
 public class ScriptFutureTask extends FutureTask<String> {
@@ -15,6 +16,7 @@ public class ScriptFutureTask extends FutureTask<String> {
         public boolean clicked = false;
     }
 
+    private final ScriptFunction scriptFunction;
     private final TimeoutClick timeout;
 
     public ScriptFutureTask(final TeaseScriptBase script,
@@ -23,31 +25,26 @@ public class ScriptFutureTask extends FutureTask<String> {
         super(new Callable<String>() {
             @Override
             public String call() throws Exception {
-                try {
-                    scriptFunction.run();
-                    // Keep choices available until the last part of
-                    // the script function has finished rendering
-                    if (Thread.interrupted()) {
-                        throw new ScriptInterruptedException();
+                synchronized (scriptFunction) {
+                    try {
+                        scriptFunction.run();
+                        // Keep choices available until the last part of
+                        // the script function has finished rendering
+                        if (Thread.interrupted()) {
+                            throw new ScriptInterruptedException();
+                        }
+                        script.completeAll();
+                        // Click a button to continue the main thread
+                        clickToFinishFunction(script, derivedChoices, timeout);
+                        return null;
+                    } catch (ScriptInterruptedException e) {
+                        script.endAll();
+                        throw e;
                     }
-                    script.completeAll();
-                } catch (ScriptInterruptedException e) {
-                    // At this point the script function may have added
-                    // deferred renderers to the queue.
-                    // Avoid executing these renderers with the next
-                    // call to renderMessage()
-                    script.endAll();
                 }
-                finish(script, derivedChoices, timeout);
-                // Now if the script function is interrupted, there may
-                // still be deferred renderers set for the next call to
-                // renderMessage()
-                // These must be cleared, or they will be run with the
-                // next renderMessage() call in the main script thread
-                return null;
             }
 
-            private void finish(final TeaseScriptBase script,
+            private void clickToFinishFunction(final TeaseScriptBase script,
                     final List<String> derivedChoices,
                     final TimeoutClick timeout) {
                 // Script function finished
@@ -58,6 +55,7 @@ public class ScriptFutureTask extends FutureTask<String> {
                     if (clickable != null) {
                         // Signal timeout and click any button
                         timeout.clicked = true;
+                        TeaseLib.log("Script function finished click");
                         // Click any delegate
                         clickables.get(0).run();
                     } else {
@@ -69,7 +67,15 @@ public class ScriptFutureTask extends FutureTask<String> {
                 }
             }
         });
+        this.scriptFunction = scriptFunction;
         this.timeout = timeout;
+    }
+
+    public void join() {
+        synchronized (scriptFunction) {
+            // Intentionally left blank,
+            // we just have to be able to enter the synchronized block
+        }
     }
 
     public boolean timedOut() {

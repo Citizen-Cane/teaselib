@@ -72,6 +72,7 @@ public class MediaRendererQueue {
     public void completeMandatories() {
         synchronized (threadedMediaRenderers) {
             if (threadedMediaRenderers.size() > 0) {
+                TeaseLib.logDetail("Completing all threaded renderers mandatory part");
                 for (MediaRenderer.Threaded renderer : threadedMediaRenderers
                         .values()) {
                     renderer.completeMandatory();
@@ -91,6 +92,7 @@ public class MediaRendererQueue {
     public void completeAll() {
         synchronized (threadedMediaRenderers) {
             if (threadedMediaRenderers.size() > 0) {
+                TeaseLib.logDetail("Completing all threaded renderers");
                 try {
                     for (MediaRenderer.Threaded renderer : threadedMediaRenderers
                             .values()) {
@@ -112,6 +114,7 @@ public class MediaRendererQueue {
     public void endAll() {
         synchronized (threadedMediaRenderers) {
             if (threadedMediaRenderers.size() > 0) {
+                TeaseLib.logDetail("Ending all threaded renderers");
                 try {
                     for (MediaRenderer.Threaded renderer : threadedMediaRenderers
                             .values()) {

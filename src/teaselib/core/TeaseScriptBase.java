@@ -185,7 +185,13 @@ public abstract class TeaseScriptBase {
     }
 
     /**
+     * Shows choices.
+     * 
      * @param scriptFunction
+     *            The script function to executed while waiting for the user
+     *            input. This parameter may be null, in this case the choices
+     *            are only shown after all renderers have completed their
+     *            mandatory parts
      * @param choice
      *            The first choice. This function doesn't make sense without
      *            showing at least one item, so one choice is mandatory
@@ -209,8 +215,12 @@ public abstract class TeaseScriptBase {
         if (scriptFunction != null) {
             scriptTask = new ScriptFutureTask(this, scriptFunction,
                     derivedChoices, new ScriptFutureTask.TimeoutClick());
+            // Start the script task right away
         } else {
+            // If we don't have a script function, then the mandatory part of
+            // the renderers must be completed before displaying the ui choices
             scriptTask = null;
+            completeMandatory();
         }
         final List<Integer> srChoiceIndices = new ArrayList<Integer>(1);
         Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs> recognitionCompleted = recognitionCompletedEvent(

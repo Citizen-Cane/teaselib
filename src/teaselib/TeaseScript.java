@@ -193,7 +193,7 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
 
     public String reply(String choice, String... more) {
         List<String> choices = buildChoicesFromArray(choice, more);
-        return showChoices(null, choices);
+        return reply(choices);
     }
 
     /**
@@ -209,7 +209,6 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
         // To display buttons and to start scriptFunction at the same time,
         // completeAll() has to be called in order to finish all current
         // renderers
-        completeAll();
         String chosen = showChoices(scriptFunction, choices);
         return chosen;
     }
@@ -262,6 +261,9 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
      * @return A script function that accomplishes the described behavior.
      */
     public ScriptFunction timeoutWithConfirmation(final long seconds) {
+        // Need to complete mandatories beforehand, because a timed button with
+        // confirmation should appear as a normal button
+        completeMandatory();
         return new ScriptFunction() {
             @Override
             public void run() {

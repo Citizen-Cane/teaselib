@@ -101,12 +101,12 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
                 TeaseLib.log(this, e);
             }
             MediaRenderer desktopItem = new RenderDesktopItem(uri);
-            addDeferred(desktopItem);
+            queueRenderer(desktopItem);
         }
     }
 
     public void setSound(String path) {
-        addDeferred(new RenderSound(resources, path));
+        queueRenderer(new RenderSound(resources, path));
     }
 
     /**
@@ -119,7 +119,7 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
     public Object playBackgroundSound(String path) {
         RenderBackgroundSound renderBackgroundSound = new RenderBackgroundSound(
                 resources, path);
-        addDeferred(renderBackgroundSound);
+        queueRenderer(renderBackgroundSound);
         return renderBackgroundSound;
     }
 
@@ -138,7 +138,7 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
      *            How long to wait.
      */
     public void setDuration(int seconds) {
-        addDeferred(new RenderDelay(seconds));
+        queueRenderer(new RenderDelay(seconds));
     }
 
     public void say(String text) {

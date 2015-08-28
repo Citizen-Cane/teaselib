@@ -40,7 +40,7 @@ public abstract class TeaseScriptBase {
     protected static final int NoTimeout = 0;
 
     private static final MediaRendererQueue renderQueue = new MediaRendererQueue();
-    private final Deque<MediaRenderer> deferredRenderers = new ArrayDeque<MediaRenderer>();
+    private final Deque<MediaRenderer> queuedRenderers = new ArrayDeque<MediaRenderer>();
 
     private ExecutorService choiceScriptFunctionExecutor = NamedExecutorService
             .newFixedThreadPool(1, getClass().getName() + " Script Function",
@@ -114,7 +114,7 @@ public abstract class TeaseScriptBase {
      */
     public void endAll() {
         renderQueue.endAll();
-        clearDeferred();
+        clearQueuedRenderers();
     }
 
     protected void renderMessage(Message message,
@@ -131,13 +131,13 @@ public abstract class TeaseScriptBase {
             TextToSpeechPlayer speechSynthesizer, String displayImage,
             String mood) {
         synchronized (renderQueue) {
-            renderDeferred();
             // Clone the actor to prevent the wrong actor image to be displayed
             // when changing the actor images right after saying a message.
             // Without cloning one of the new actor images would be displayed
             // with the current message because the actor is shared between
             // script and message
             Message parsedMessage = new Message(new Actor(message.actor));
+            // Replace text variables
             for (Message.Part part : message.getParts()) {
                 if (part.type == Message.Type.Text) {
                     parsedMessage.add(parsedMessage.new Part(part.type,
@@ -150,7 +150,8 @@ public abstract class TeaseScriptBase {
             hints.add(mood);
             RenderMessage renderMessage = new RenderMessage(resources,
                     parsedMessage, speechSynthesizer, displayImage, hints);
-            renderQueue.start(renderMessage, teaseLib);
+            queueRenderer(renderMessage);
+            startQueuedRenderers();
             renderQueue.completeStarts();
         }
     }
@@ -164,23 +165,22 @@ public abstract class TeaseScriptBase {
         return hints;
     }
 
-    protected void addDeferred(MediaRenderer renderer) {
-        synchronized (deferredRenderers) {
-            deferredRenderers.add(renderer);
+    protected void queueRenderer(MediaRenderer renderer) {
+        synchronized (queuedRenderers) {
+            queuedRenderers.add(renderer);
         }
     }
 
-    private void clearDeferred() {
-        synchronized (deferredRenderers) {
-            deferredRenderers.clear();
+    private void startQueuedRenderers() {
+        synchronized (queuedRenderers) {
+            renderQueue.start(queuedRenderers, teaseLib);
+            queuedRenderers.clear();
         }
     }
 
-    private void renderDeferred() {
-        synchronized (deferredRenderers) {
-            completeAll();
-            renderQueue.start(deferredRenderers, teaseLib);
-            deferredRenderers.clear();
+    private void clearQueuedRenderers() {
+        synchronized (queuedRenderers) {
+            queuedRenderers.clear();
         }
     }
 

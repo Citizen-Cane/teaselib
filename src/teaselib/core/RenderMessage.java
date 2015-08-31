@@ -336,7 +336,7 @@ public class RenderMessage extends MediaRendererThread {
     }
 
     @Override
-    public void end() {
+    public void join() {
         // Cancel ongoing TTS speech
         if (speechSynthesizer != null) {
             speechSynthesizer.stop();
@@ -346,6 +346,6 @@ public class RenderMessage extends MediaRendererThread {
         teaseLib.host.stopSounds();
         // TODO Only stop speech and sounds that
         // have been started by this message renderer
-        super.end();
+        super.join();
     }
 }

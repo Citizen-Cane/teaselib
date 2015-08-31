@@ -34,11 +34,11 @@ public class RenderSound extends MediaRendererThread {
     }
 
     @Override
-    public void end() {
+    public void join() {
         teaseLib.host.stopSounds();
         // TODO Only stop speech and sounds that
         // have been stated by this sound renderer
-        super.end();
+        super.join();
     }
 
 }

@@ -110,14 +110,17 @@ public class MediaRendererQueue {
         synchronized (threadedMediaRenderers) {
             if (threadedMediaRenderers.size() > 0) {
                 TeaseLib.logDetail("Ending all threaded renderers");
-                try {
-                    for (MediaRenderer.Threaded renderer : threadedMediaRenderers
-                            .values()) {
-                        renderer.end();
-                    }
-                } finally {
-                    threadedMediaRenderers.clear();
+                // Interrupt them all
+                for (MediaRenderer.Threaded renderer : threadedMediaRenderers
+                        .values()) {
+                    renderer.interrupt();
                 }
+                // then wait for them to complete
+                for (MediaRenderer.Threaded renderer : threadedMediaRenderers
+                        .values()) {
+                    renderer.join();
+                }
+                threadedMediaRenderers.clear();
             } else {
                 TeaseLib.logDetail("Threaded Renderers queue: empty");
             }

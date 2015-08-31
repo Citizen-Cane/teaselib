@@ -4,6 +4,10 @@ import java.util.concurrent.CountDownLatch;
 
 import teaselib.TeaseLib;
 
+/**
+ * @author someone
+ *
+ */
 public abstract class MediaRendererThread implements Runnable, MediaRenderer,
         MediaRenderer.Threaded {
 
@@ -104,7 +108,7 @@ public abstract class MediaRendererThread implements Runnable, MediaRenderer,
             return;
         if (!endThread) {
             try {
-                completedMandatory.await();
+                completedAll.await();
             } catch (InterruptedException e) {
                 throw new ScriptInterruptedException();
             }
@@ -116,36 +120,37 @@ public abstract class MediaRendererThread implements Runnable, MediaRenderer,
                         + " completed all after "
                         + String.format("%.2f", getElapsedSeconds()));
             } catch (InterruptedException e) {
-                end();
                 throw new ScriptInterruptedException();
             }
         }
     }
 
-    private double getElapsedSeconds() {
-        return (System.currentTimeMillis() - start) / 1000;
-    }
-
     @Override
-    public void end() {
+    public void interrupt() {
         Thread thread = renderThread;
         if (!thread.isAlive())
             endThread = true;
         thread.interrupt();
         TeaseLib.logDetail(getClass().getSimpleName() + " interrupted after "
                 + String.format("%.2f", getElapsedSeconds()));
+    }
+
+    @Override
+    public void join() {
         // Almost like complete, but avoid recursion
-        try {
-            while (thread.isAlive()) {
-                try {
-                    thread.join();
-                } catch (InterruptedException e) {
-                    throw new ScriptInterruptedException();
-                }
+        Thread thread = renderThread;
+        while (thread.isAlive()) {
+            try {
+                thread.join();
+            } catch (InterruptedException e) {
+                throw new ScriptInterruptedException();
             }
-        } finally {
-            TeaseLib.logDetail(getClass().getSimpleName() + " ended after "
-                    + String.format("%.2f", getElapsedSeconds()));
         }
+        TeaseLib.logDetail(getClass().getSimpleName() + " ended after "
+                + String.format("%.2f", getElapsedSeconds()));
+    }
+
+    private double getElapsedSeconds() {
+        return (System.currentTimeMillis() - start) / 1000;
     }
 }

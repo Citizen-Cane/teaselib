@@ -86,21 +86,16 @@ public class MediaRendererQueue {
     /**
      * Completes rendering of all currently running renderers. Returns after all
      * renderers that running at the start of this method have been finished.
-     * The method is not synchronized, so other threads may start new renderers
-     * during the completion of the current batch.
      */
     public void completeAll() {
         synchronized (threadedMediaRenderers) {
             if (threadedMediaRenderers.size() > 0) {
                 TeaseLib.logDetail("Completing all threaded renderers");
-                try {
-                    for (MediaRenderer.Threaded renderer : threadedMediaRenderers
-                            .values()) {
-                        renderer.completeAll();
-                    }
-                } finally {
-                    threadedMediaRenderers.clear();
+                for (MediaRenderer.Threaded renderer : threadedMediaRenderers
+                        .values()) {
+                    renderer.completeAll();
                 }
+                threadedMediaRenderers.clear();
             } else {
                 TeaseLib.logDetail("Threaded Renderers queue: empty");
             }
@@ -108,8 +103,8 @@ public class MediaRendererQueue {
     }
 
     /**
-     * Ends rendering of all currently running renderers. The renderer thread is
-     * interrupted and should end as soon as possible.
+     * Ends rendering of all currently running renderers. Each renderer thread
+     * is interrupted and should end as soon as possible.
      */
     public void endAll() {
         synchronized (threadedMediaRenderers) {

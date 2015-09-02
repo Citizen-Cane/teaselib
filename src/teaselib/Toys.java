@@ -78,7 +78,7 @@ public enum Toys {
     Penis_Pump,
     Plants,
     Posture_Collar,
-    Princess_Crown,
+    Princess_Tiara,
     Pussy_Clamps,
     Ring_Gag,
     Rope,

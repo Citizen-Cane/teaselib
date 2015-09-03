@@ -25,12 +25,37 @@ public abstract class TeaseScriptPersistence extends TeaseScriptBase {
         super(script, actor);
     }
 
+    public <T extends Enum<?>> Item<T> toy(T item) {
+        return teaseLib.getToy(item);
+    }
+
+    public <C extends Enum<?>> Item<C> clothing(C item) {
+        return teaseLib.getClothing(item);
+    }
+
     public <T> Item<T> toy(T item) {
         return teaseLib.getToy(item);
     }
 
     public <C> Item<C> clothing(C item) {
         return teaseLib.getClothing(item);
+    }
+
+    public <T extends Enum<?>> Items<T> toys(T... toys) {
+        Items<T> items = new Items<T>();
+        for (T toy : toys) {
+            Item<T> item = teaseLib.getToy(toy);
+            items.add(item);
+        }
+        return items;
+    }
+
+    public <T extends Enum<?>> Items<T> toys(T[]... toys) {
+        Items<T> items = new Items<T>();
+        for (T[] selection : toys) {
+            items.addAll(toys(selection));
+        }
+        return items;
     }
 
     public <T> Items<T> toys(T... toys) {
@@ -46,6 +71,23 @@ public abstract class TeaseScriptPersistence extends TeaseScriptBase {
         Items<T> items = new Items<T>();
         for (T[] selection : toys) {
             items.addAll(toys(selection));
+        }
+        return items;
+    }
+
+    public <C extends Enum<C>> Items<C> clothes(C... clothes) {
+        Items<C> items = new Items<C>();
+        for (C clothing : clothes) {
+            Item<C> item = teaseLib.getClothing(clothing);
+            items.add(item);
+        }
+        return items;
+    }
+
+    public <C extends Enum<C>> Items<C> clothes(C[]... clothing) {
+        Items<C> items = new Items<C>();
+        for (C[] selection : clothing) {
+            items.addAll(clothes(selection));
         }
         return items;
     }
@@ -79,7 +121,7 @@ public abstract class TeaseScriptPersistence extends TeaseScriptBase {
         if (values.length > 0) {
             final String namespace = this.namespace + "."
                     + values[0].getClass().getSimpleName();
-            return teaseLib.item(namespace, values);
+            return teaseLib.items(namespace, values);
         } else {
             return new Items<T>();
         }
@@ -89,12 +131,25 @@ public abstract class TeaseScriptPersistence extends TeaseScriptBase {
      * Get the item from an enumeration member
      * 
      * @param value
-     *            The enumeration value to get the item for
+     *            The enumeration value to get the item for. The item is stored
+     *            in the namespace of the script under its simple class name.
      * @return The item of the enumeration member
      */
     public <T extends Enum<?>> Item<T> item(T value) {
         final String namespace = this.namespace + "."
                 + value.getClass().getSimpleName();
+        return teaseLib.item(namespace, value);
+    }
+
+    /**
+     * Retrieves an item in the namespace of the script.
+     * 
+     * @param value
+     *            The item to retrieve.
+     * @return The item that corresponds to the value.
+     */
+    public <T> Item<T> item(T value) {
+        final String namespace = this.namespace;
         return teaseLib.item(namespace, value);
     }
 

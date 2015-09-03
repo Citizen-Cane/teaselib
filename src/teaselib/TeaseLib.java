@@ -377,12 +377,20 @@ public class TeaseLib {
         return namespace + "." + name;
     }
 
+    public <T extends Enum<?>> Item<T> getToy(T toy) {
+        return item("toys", toy);
+    }
+
+    public <T extends Enum<?>> Item<T> getClothing(T item) {
+        return item("clothes", item);
+    }
+
     public <T> Item<T> getToy(T toy) {
-        return get("toys", toy);
+        return item("toys", toy);
     }
 
     public <T> Item<T> getClothing(T item) {
-        return get("clothes", item);
+        return item("clothes", item);
     }
 
     public String get(TextVariable name, String locale) {
@@ -520,7 +528,7 @@ public class TeaseLib {
      * @param values
      * @return A list of items whose names are based on the enumeration members
      */
-    public <T extends Enum<?>> Items<T> item(String namespace, T... values) {
+    public <T extends Enum<?>> Items<T> items(String namespace, T... values) {
         Items<T> items = new Items<T>(values.length);
         for (T v : values) {
             items.add(item(namespace, v));
@@ -547,12 +555,12 @@ public class TeaseLib {
      * Get the item for any object.
      * 
      * @param namespace
-     *            The namespace of the item
+     *            The namespace of the item.
      * @param value
-     *            The value to get the item for
-     * @return The item that corresponds to the object
+     *            The value to get the item for.
+     * @return The item that corresponds to the value.
      */
-    public <T> Item<T> get(String namespace, T value) {
+    public <T> Item<T> item(String namespace, T value) {
         return new Item<T>(value, new PersistentBoolean(namespace,
                 value.toString()), Item.createDisplayName(value));
     }

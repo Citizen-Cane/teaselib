@@ -8,6 +8,7 @@ import java.util.Deque;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.Stack;
 
 import teaselib.Actor;
 import teaselib.Message;
@@ -28,6 +29,8 @@ public abstract class TeaseScriptBase {
     protected String displayImage = Message.DominantImage;
 
     protected static final int NoTimeout = 0;
+
+    private static final Stack<ShowChoices> choicesStack = new Stack<ShowChoices>();
 
     private static final MediaRendererQueue renderQueue = new MediaRendererQueue();
     private final Deque<MediaRenderer> queuedRenderers = new ArrayDeque<MediaRenderer>();
@@ -195,13 +198,60 @@ public abstract class TeaseScriptBase {
             // then the mandatory part of the renderers
             // must be completed before displaying the ui choices
             completeMandatory();
+        } else {
+            if (scriptFunction.relation == ScriptFunction.Relation.Confirmation) {
+                // A confirmation must appears like a normal button,
+                // in a way it is concatenated to the last messagee
+                completeMandatory();
+            } else {
+                // An autonomous script function does not relate to the current
+                // message, therefore we'll wait until all of the last message
+                // has been completed
+                completeAll();
+            }
         }
         final ShowChoices showChoices = new ShowChoices(this, choices,
                 derivedChoices, scriptFunction);
-        String choice = showChoices.show();
+        String choice = showChoices(showChoices);
         TeaseLib.logDetail("Reply finished");
         // Object identity is supported by
         // returning an item of the original choices list
+        return choice;
+    }
+
+    private static String showChoices(ShowChoices showChoices) {
+        String choice = null;
+        ShowChoices previous = null;
+        synchronized (choicesStack) {
+            if (!choicesStack.empty()) {
+                previous = choicesStack.peek();
+            }
+            choicesStack.push(showChoices);
+            if (previous != null) {
+                previous.pause();
+            }
+        }
+        while (true) {
+            choice = showChoices.show();
+            synchronized (choicesStack) {
+                if (choice == ShowChoices.Paused) {
+                    // Someone dismissed our set of buttons in order to to show
+                    // a different set, so we have to wait to restore
+                    try {
+                        choicesStack.wait();
+                    } catch (InterruptedException e) {
+                        throw new ScriptInterruptedException();
+                    }
+                    continue;
+                } else {
+                    choicesStack.pop();
+                    if (!choicesStack.empty()) {
+                        choicesStack.notifyAll();
+                    }
+                    break;
+                }
+            }
+        }
         return choice;
     }
 

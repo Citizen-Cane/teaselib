@@ -86,6 +86,14 @@ public interface Host {
     List<Delegate> getClickableChoices(List<String> choices);
 
     /**
+     * Removes the current set of buttons and causes reply() to return
+     * {@code null}.
+     * 
+     * @return true if the choices have been dismissed.
+     */
+    boolean dismissChoices(List<String> choices);
+
+    /**
      * Choose one from a list of choices
      * 
      * @param choices

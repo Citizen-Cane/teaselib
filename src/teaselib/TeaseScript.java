@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import teaselib.ScriptFunction.Relation;
 import teaselib.core.MediaRenderer;
 import teaselib.core.RenderBackgroundSound;
 import teaselib.core.RenderDelay;
@@ -202,18 +203,12 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
     }
 
     /**
-     * @param choices
-     * @param timeout
-     *            The timeout for the button set in seconds, or
-     *            TeaseScript.NoTimeout if no timeout is desired
      * @param scriptFunction
+     * @param choices
      * @return
      */
     public String reply(ScriptFunction scriptFunction,
             final List<String> choices) {
-        // To display buttons and to start scriptFunction at the same time,
-        // completeAll() has to be called in order to finish all current
-        // renderers
         String chosen = showChoices(scriptFunction, choices);
         return chosen;
     }
@@ -232,8 +227,9 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
         boolean inDubioMitius = false;
 
         public SpeechRecognitionAwareTimeoutScriptFunction(final long seconds,
-                final SpeechRecognition.TimeoutBehavior timoutBehavior) {
-            super();
+                final SpeechRecognition.TimeoutBehavior timoutBehavior,
+                Relation relation) {
+            super(relation);
             this.seconds = seconds;
             this.timeoutBehavior = timoutBehavior;
         }
@@ -300,7 +296,7 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
     public ScriptFunction timeout(final long seconds,
             final SpeechRecognition.TimeoutBehavior timoutBehavior) {
         return new SpeechRecognitionAwareTimeoutScriptFunction(seconds,
-                timoutBehavior) {
+                timoutBehavior, Relation.Autonomous) {
             @Override
             public void run() {
                 waitAndJudge();
@@ -326,12 +322,13 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
      */
     public ScriptFunction timeoutWithConfirmation(final long seconds,
             final SpeechRecognition.TimeoutBehavior timoutBehavior) {
-        // Need to complete mandatories beforehand, because a timed button with
-        // confirmation should appear as a normal button, instead of when the
-        // message starts displaying
-        completeMandatory();
+        // // Need to complete mandatories beforehand, because a timed button
+        // with
+        // // confirmation should appear as a normal button, instead of when the
+        // // message starts displaying
+        // completeMandatory();
         return new SpeechRecognitionAwareTimeoutScriptFunction(seconds,
-                timoutBehavior) {
+                timoutBehavior, Relation.Confirmation) {
             @Override
             public void run() {
                 waitAndJudge();

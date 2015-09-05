@@ -35,6 +35,10 @@ public class EventSource<S, T extends EventArgs> {
         }
     }
 
+    public synchronized boolean contains(Event<S, T> delegate) {
+        return delegates.contains(delegate);
+    }
+
     public synchronized void run(S sender, T eventArgs) {
         TeaseLib.log(getClass().getSimpleName() + " " + name + ", "
                 + delegates.size() + " listeners " + eventArgs.toString());

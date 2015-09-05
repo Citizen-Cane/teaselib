@@ -451,6 +451,21 @@ public class SexScriptsHost implements Host {
         return new ArrayList<Delegate>();
     }
 
+    @Override
+    public boolean dismissChoices(List<String> choices) {
+        // Just click any choice
+        final List<Delegate> clickableChoices = getClickableChoices(choices);
+        if (clickableChoices != null) {
+            final Delegate delegate = clickableChoices.get(0);
+            if (delegate != null) {
+                delegate.run();
+                return true;
+            }
+        }
+        return false;
+        // TODO Doesn't make showChoices to return null, but good enough for now
+    }
+
     public javax.swing.JComboBox<String> getComboBox()
             throws NoSuchFieldException, IllegalAccessException {
         Field comboField = mainFrame.getClass().getDeclaredField("comboBox");

@@ -61,10 +61,13 @@ public class MediaRendererQueue {
     public void completeStarts() {
         synchronized (threadedMediaRenderers) {
             if (threadedMediaRenderers.size() > 0) {
+                TeaseLib.logDetail("Completing all threaded renderers starts");
                 for (MediaRenderer.Threaded renderer : threadedMediaRenderers
                         .values()) {
                     renderer.completeStart();
                 }
+            } else {
+                TeaseLib.logDetail("Threaded Renderers completeStarts : queue empty");
             }
         }
     }
@@ -78,7 +81,7 @@ public class MediaRendererQueue {
                     renderer.completeMandatory();
                 }
             } else {
-                TeaseLib.logDetail("Threaded Renderers queue: empty");
+                TeaseLib.logDetail("Threaded Renderers completeMandatories : queue empty");
             }
         }
     }
@@ -97,7 +100,7 @@ public class MediaRendererQueue {
                 }
                 threadedMediaRenderers.clear();
             } else {
-                TeaseLib.logDetail("Threaded Renderers queue: empty");
+                TeaseLib.logDetail("Threaded Renderers completeAll: queue empty");
             }
         }
     }
@@ -122,7 +125,7 @@ public class MediaRendererQueue {
                 }
                 threadedMediaRenderers.clear();
             } else {
-                TeaseLib.logDetail("Threaded Renderers queue: empty");
+                TeaseLib.logDetail("Threaded Renderers endAll: queue empty");
             }
         }
     }

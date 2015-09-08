@@ -18,6 +18,7 @@ import teaselib.core.events.Event;
 import teaselib.core.speechrecognition.SpeechRecognition;
 import teaselib.core.speechrecognition.SpeechRecognition.TimeoutBehavior;
 import teaselib.core.speechrecognition.SpeechRecognitionImplementation;
+import teaselib.core.speechrecognition.SpeechRecognitionResult.Confidence;
 import teaselib.core.speechrecognition.SpeechRecognizer;
 import teaselib.core.speechrecognition.events.SpeechRecognitionStartedEventArgs;
 import teaselib.core.texttospeech.TextToSpeechPlayer;
@@ -349,6 +350,31 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
 
     public boolean askYN(String yes, String no) {
         return reply(yes, no) == yes;
+    }
+
+    /**
+     * If the reply should be non-blocking, e.g. not interrupt the flow of the
+     * script, the recognition accuracy might be lowered to become less picky.
+     * 
+     * Best used for replies that can be easily dismissed without consequences,
+     * like in conversations.
+     * 
+     * Or in situations that involve timing, where a quick reply is necessary,
+     * but the actual words don't matter.
+     * 
+     * @param choice
+     * @param recognitionConfidence
+     * @return
+     */
+    public String reply(String choice, Confidence recognitionConfidence) {
+        List<String> choices = buildChoicesFromArray(choice);
+        return showChoices(null, choices, recognitionConfidence);
+    }
+
+    public String reply(ScriptFunction scriptFunction, String choice,
+            Confidence recognitionConfidence) {
+        List<String> choices = buildChoicesFromArray(choice);
+        return showChoices(scriptFunction, choices, recognitionConfidence);
     }
 
     /**

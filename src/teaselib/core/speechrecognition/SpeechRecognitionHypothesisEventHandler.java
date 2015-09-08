@@ -3,6 +3,8 @@
  */
 package teaselib.core.speechrecognition;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import teaselib.TeaseLib;
@@ -39,7 +41,8 @@ public class SpeechRecognitionHypothesisEventHandler {
     private double[] hypothesisAccumulatedWeights;
     private String[] hypothesisProgress;
 
-    List<String> choices;
+    private List<String> choices;
+    private Confidence recognitionConfidence = Confidence.Default;
 
     public SpeechRecognitionHypothesisEventHandler(
             SpeechRecognition speechRecognizer) {
@@ -55,6 +58,10 @@ public class SpeechRecognitionHypothesisEventHandler {
 
     public void setChoices(List<String> choices) {
         this.choices = choices;
+    }
+
+    public void setConfidence(Confidence recognitionConfidence) {
+        this.recognitionConfidence = recognitionConfidence;
     }
 
     private Event<SpeechRecognitionImplementation, SpeechRecognitionStartedEventArgs> recognitionStarted() {
@@ -130,77 +137,120 @@ public class SpeechRecognitionHypothesisEventHandler {
         };
     }
 
+    class HypothesisResult {
+        private final double maxValue;
+        private final int choiceWithMaxProbabilityIndex;
+        final List<String> acceptedChoices = new ArrayList<String>();
+
+        HypothesisResult(double[] hypothesisAccumulatedWeights) {
+            double maxValue = 0;
+            int choiceWithMaxProbabilityIndex = 0;
+            for (int i = 0; i < hypothesisAccumulatedWeights.length; i++) {
+                double value = hypothesisAccumulatedWeights[i];
+                TeaseLib.log("Result " + i + ": '" + choices.get(i)
+                        + "' hypothesisCount=" + value);
+                if (value > maxValue) {
+                    maxValue = value;
+                    choiceWithMaxProbabilityIndex = i;
+                }
+            }
+            this.maxValue = maxValue;
+            this.choiceWithMaxProbabilityIndex = choiceWithMaxProbabilityIndex;
+            // sort out the case where two or more recognition
+            // results have the same weight.
+            // This happens when they all start with the same text
+            double weight = 0;
+            for (int i = 0; i < hypothesisAccumulatedWeights.length; i++) {
+                if (weight == maxValue) {
+                    acceptedChoices.add(choices.get(i));
+                }
+            }
+        }
+
+        boolean recognizedAs(String choice, Confidence confidence) {
+            final List<Confidence> confidences = Arrays.asList(Confidence.High,
+                    Confidence.Normal, Confidence.Low);
+            int wordCount = wordCount(choice);
+            for (Confidence desiredConfidence : confidences) {
+                int confidenceBonus = confidences.indexOf(desiredConfidence);
+                if (isRecognizedAs(choice, desiredConfidence, confidenceBonus,
+                        wordCount)) {
+                    return true;
+                }
+                if (desiredConfidence == confidence) {
+                    // Don't test against a lower confidence than requested
+                    break;
+                }
+            }
+            return false;
+        }
+
+        private boolean isRecognizedAs(String choice, Confidence confidence,
+                int confidenceBonus, int wordCount) {
+            int minimumNumberOfWordsForHypothesisRecognition = HypothesisMinimumNumberOfWords
+                    - confidenceBonus;
+            // prompts with few words need a higher weight to be
+            // accepted
+            double hypothesisAccumulatedWeight = wordCount >= minimumNumberOfWordsForHypothesisRecognition ? HypothesisMinimumAccumulatedWeight
+                    : HypothesisMinimumAccumulatedWeight
+                            * (minimumNumberOfWordsForHypothesisRecognition
+                                    - wordCount + 1);
+            boolean choiceWeightAccepted = maxValue >= hypothesisAccumulatedWeight
+                    * confidence.propability;
+            // Prompts with few words need more consistent speech
+            // detection events (doesn't alternate between different
+            // choices)
+            int choiceHypothesisCount = wordCount(hypothesisProgress[choiceWithMaxProbabilityIndex]);
+            boolean choiceDetectionCountAccepted = choiceHypothesisCount >= minimumNumberOfWordsForHypothesisRecognition
+                    || choiceHypothesisCount >= minimumNumberOfWordsForHypothesisRecognition;
+            boolean choiceAccepted = choiceWeightAccepted
+                    && choiceDetectionCountAccepted;
+            if (!choiceWeightAccepted) {
+                TeaseLib.log("Phrase '"
+                        + choice
+                        + "' accumulated weight="
+                        + maxValue
+                        + " < "
+                        + hypothesisAccumulatedWeight
+                        + " is too low to accept hypothesis-based recognition for confidence "
+                        + confidence.toString());
+            }
+            if (!choiceDetectionCountAccepted) {
+                TeaseLib.log("Phrase '"
+                        + choice
+                        + "' detection count="
+                        + choiceHypothesisCount
+                        + " < "
+                        + " is too low to accept hypothesis-based recognition for confidence "
+                        + confidence.toString());
+            }
+            return choiceAccepted;
+        }
+    }
+
     private Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs> recognitionRejected() {
         return new Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs>() {
             @Override
             public void run(SpeechRecognitionImplementation sender,
                     SpeechRecognizedEventArgs eventArgs) {
                 // choose the choice with the highest hypothesis weight
-                double maxValue = 0;
-                int choiceWithMaxProbabilityIndex = 0;
-                for (int i = 0; i < hypothesisAccumulatedWeights.length; i++) {
-                    double value = hypothesisAccumulatedWeights[i];
-                    TeaseLib.log("Result " + i + ": '" + choices.get(i)
-                            + "' hypothesisCount=" + value);
-                    if (value > maxValue) {
-                        maxValue = value;
-                        choiceWithMaxProbabilityIndex = i;
-                    }
-                }
-                // sort out the case where two or more recognition
-                // results have the same weight.
-                // This happens when they all start with the same text
-                int numberOfCandidates = 0;
-                for (double weight : hypothesisAccumulatedWeights) {
-                    if (weight == maxValue) {
-                        numberOfCandidates++;
-                    }
-                }
-                if (numberOfCandidates == 1) {
-                    final String choice = choices
-                            .get(choiceWithMaxProbabilityIndex);
-                    int wordCount = wordCount(choice);
-                    // prompts with few words need a higher weight to be
-                    // accepted
-                    double hypothesisAccumulatedWeight = wordCount >= HypothesisMinimumNumberOfWords ? HypothesisMinimumAccumulatedWeight
-                            : HypothesisMinimumAccumulatedWeight
-                                    * (HypothesisMinimumNumberOfWords
-                                            - wordCount + 1);
-                    boolean choiceWeightAccepted = maxValue >= hypothesisAccumulatedWeight;
-                    int choiceHypothesisCount = wordCount(hypothesisProgress[choiceWithMaxProbabilityIndex]);
-                    // Prompts with few words need more consistent speech
-                    // detection events (doesn't alternate between different
-                    // choices)
-                    boolean choiceDetectionCountAccepted = choiceHypothesisCount >= HypothesisMinimumNumberOfWords
-                            || choiceHypothesisCount >= wordCount;
-                    if (choiceWeightAccepted && choiceDetectionCountAccepted) {
+                HypothesisResult hypothesisResult = new HypothesisResult(
+                        hypothesisAccumulatedWeights);
+                if (hypothesisResult.acceptedChoices.size() == 1) {
+                    String choice = hypothesisResult.acceptedChoices.get(0);
+                    if (hypothesisResult.recognizedAs(choice,
+                            recognitionConfidence)) {
                         // Consume the recognitionRejected event and
                         // fire a RecognitionCompleted-event instead
                         eventArgs.consumed = true;
                         SpeechRecognitionResult[] results = { new SpeechRecognitionResult(
-                                choiceWithMaxProbabilityIndex, choice, 1.0,
-                                Confidence.High) };
+                                hypothesisResult.choiceWithMaxProbabilityIndex,
+                                choice, recognitionConfidence.propability,
+                                recognitionConfidence) };
                         SpeechRecognizedEventArgs recognitionCompletedEventArgs = new SpeechRecognizedEventArgs(
                                 results);
                         speechRecognizer.events.recognitionCompleted.run(
                                 sender, recognitionCompletedEventArgs);
-                    }
-                    if (!choiceWeightAccepted) {
-                        TeaseLib.log("Phrase '"
-                                + choice
-                                + "' accumulated weight="
-                                + maxValue
-                                + " < "
-                                + hypothesisAccumulatedWeight
-                                + " is too low to accept hypothesis-based recognition");
-                    }
-                    if (!choiceDetectionCountAccepted) {
-                        TeaseLib.log("Phrase '"
-                                + choice
-                                + "' detection count="
-                                + choiceHypothesisCount
-                                + " < "
-                                + " is too low to accept hypothesis-based recognition");
                     }
                 } else {
                     TeaseLib.log("Speech recognition hypothesis dropped - several recognition results share the same accumulated weight - can't decide");

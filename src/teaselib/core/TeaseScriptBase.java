@@ -15,6 +15,7 @@ import teaselib.Message;
 import teaselib.Mood;
 import teaselib.ScriptFunction;
 import teaselib.TeaseLib;
+import teaselib.core.speechrecognition.SpeechRecognitionResult.Confidence;
 import teaselib.core.texttospeech.TextToSpeechPlayer;
 
 public abstract class TeaseScriptBase {
@@ -173,6 +174,11 @@ public abstract class TeaseScriptBase {
         }
     }
 
+    protected String showChoices(final ScriptFunction scriptFunction,
+            List<String> choices) {
+        return showChoices(scriptFunction, choices, Confidence.Default);
+    }
+
     /**
      * Shows choices.
      * 
@@ -184,12 +190,12 @@ public abstract class TeaseScriptBase {
      * @param choice
      *            The first choice. This function doesn't make sense without
      *            showing at least one item, so one choice is mandatory
-     * @param moreChoices
-     *            More choices
+     * @param recognitionConfidence
+     *            The confidence threshold used for speech recognitions
      * @return
      */
     protected String showChoices(final ScriptFunction scriptFunction,
-            List<String> choices) {
+            List<String> choices, Confidence recognitionConfidence) {
         // argument checking and text variable replacement
         final List<String> derivedChoices = replaceTextVariables(choices);
         TeaseLib.log("showChoices: " + derivedChoices.toString());
@@ -211,7 +217,7 @@ public abstract class TeaseScriptBase {
             }
         }
         final ShowChoices showChoices = new ShowChoices(this, choices,
-                derivedChoices, scriptFunction);
+                derivedChoices, scriptFunction, recognitionConfidence);
         String choice = showChoices(showChoices);
         TeaseLib.logDetail("Reply finished");
         // Object identity is supported by

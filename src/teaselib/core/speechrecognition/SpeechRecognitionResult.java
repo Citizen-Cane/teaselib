@@ -3,8 +3,23 @@ package teaselib.core.speechrecognition;
 import java.util.List;
 
 public class SpeechRecognitionResult {
+    /**
+     * Defines the confidence the result was recognized with. Each confidence
+     * enum value comes with a predefined default probability.
+     *
+     */
     public enum Confidence {
-        Low, Normal, High
+        Low(0.5),
+        Normal(0.75),
+        High(1.0);
+
+        public static Confidence Default = High;
+
+        public final double propability;
+
+        Confidence(double propability) {
+            this.propability = propability;
+        }
     }
 
     public final static int UNKNOWN_PHRASE_INDEX = -1;

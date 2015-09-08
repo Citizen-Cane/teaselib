@@ -15,6 +15,7 @@ import teaselib.core.events.Event;
 import teaselib.core.speechrecognition.SpeechRecognition;
 import teaselib.core.speechrecognition.SpeechRecognitionImplementation;
 import teaselib.core.speechrecognition.SpeechRecognitionResult;
+import teaselib.core.speechrecognition.SpeechRecognitionResult.Confidence;
 import teaselib.core.speechrecognition.SpeechRecognizer;
 import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
 import teaselib.core.util.NamedExecutorService;
@@ -31,7 +32,7 @@ class ShowChoices {
 
     private final TeaseLib teaseLib;
     private final SpeechRecognition speechRecognizer;
-
+    private final Confidence recognitionConfidence;
     private final ScriptFutureTask scriptTask;
     private final List<Integer> srChoiceIndices;
     private final boolean recognizeSpeech;
@@ -44,7 +45,8 @@ class ShowChoices {
     private boolean paused = false;
 
     public ShowChoices(TeaseScriptBase script, List<String> choices,
-            List<String> derivedChoices, ScriptFunction scriptFunction) {
+            List<String> derivedChoices, ScriptFunction scriptFunction,
+            Confidence recognitionConfidence) {
         super();
         this.choices = choices;
         this.derivedChoices = derivedChoices;
@@ -52,6 +54,7 @@ class ShowChoices {
         this.teaseLib = script.teaseLib;
         this.speechRecognizer = SpeechRecognizer.instance
                 .get(script.actor.locale);
+        this.recognitionConfidence = recognitionConfidence;
         if (scriptFunction != null) {
             // The result of this future task is never queried for,
             // instead a timeout is signaled via the TimeoutClick class
@@ -142,7 +145,8 @@ class ShowChoices {
 
     private void enableSpeechRecognition() {
         speechRecognizer.events.recognitionCompleted.add(recognitionCompleted);
-        speechRecognizer.startRecognition(derivedChoices);
+        speechRecognizer
+                .startRecognition(derivedChoices, recognitionConfidence);
     }
 
     private void disableSpeechRecognition() {

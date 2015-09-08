@@ -8,6 +8,7 @@ import teaselib.core.ScriptInterruptedException;
 import teaselib.core.events.Delegate;
 import teaselib.core.events.DelegateThread;
 import teaselib.core.events.Event;
+import teaselib.core.speechrecognition.SpeechRecognitionResult.Confidence;
 import teaselib.core.speechrecognition.events.SpeechRecognitionStartedEventArgs;
 import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
 import teaselib.core.speechrecognition.implementation.TeaseLibSR;
@@ -193,7 +194,13 @@ public class SpeechRecognition {
     }
 
     public void startRecognition(final List<String> choices) {
+        startRecognition(choices, Confidence.Default);
+    }
+
+    public void startRecognition(final List<String> choices,
+            Confidence recognitionConfidence) {
         hypothesisEventHandler.setChoices(choices);
+        hypothesisEventHandler.setConfidence(recognitionConfidence);
         if (sr != null) {
             Delegate delegate = new Delegate() {
                 @Override

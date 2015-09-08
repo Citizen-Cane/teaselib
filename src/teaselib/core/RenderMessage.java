@@ -297,7 +297,8 @@ public class RenderMessage extends MediaRendererThread {
                     image = resources.image(images.next());
                 } else {
                     image = null;
-                    TeaseLib.log("Dominant images missing - please initialize");
+                    TeaseLib.log("Actor '" + message.actor.name
+                            + "': images missing - please initialize");
                 }
             } else if (displayImage == Message.NoImage) {
                 image = null;

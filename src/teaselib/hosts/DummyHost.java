@@ -1,6 +1,5 @@
 package teaselib.hosts;
 
-import java.awt.Image;
 import java.io.IOException;
 import java.util.List;
 
@@ -42,7 +41,7 @@ public class DummyHost implements Host {
     }
 
     @Override
-    public void show(Image image, String text) {
+    public void show(byte[] imageBytes, String text) {
         // TODO Auto-generated method stub
 
     }

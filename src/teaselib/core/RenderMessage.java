@@ -1,7 +1,8 @@
 package teaselib.core;
 
-import java.awt.Image;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.util.Collection;
 import java.util.HashSet;
@@ -286,7 +287,7 @@ public class RenderMessage extends MediaRendererThread {
 
     private void showImageAndText(String text, Set<String> additionalHints) {
         // Apply image and text
-        Image image;
+        byte[] imageBytes;
         try {
             if (displayImage == Message.DominantImage) {
                 Images images = message.actor.images;
@@ -294,14 +295,15 @@ public class RenderMessage extends MediaRendererThread {
                     String[] hintArray = new String[additionalHints.size()];
                     hintArray = additionalHints.toArray(hintArray);
                     images.hint(hintArray);
-                    image = resources.image(images.next());
+                    imageBytes = convertInputStreamToByte(resources
+                            .getResource(images.next()));
                 } else {
-                    image = null;
+                    imageBytes = null;
                     TeaseLib.log("Actor '" + message.actor.name
                             + "': images missing - please initialize");
                 }
             } else if (displayImage == Message.NoImage) {
-                image = null;
+                imageBytes = null;
             } else {
                 // TODO Cache image or detect reusage, since
                 // currently the same image is reloaded for
@@ -309,14 +311,26 @@ public class RenderMessage extends MediaRendererThread {
                 // text part (usually when setting the image
                 // outside
                 // the message)
-                image = resources.image(displayImage);
+                imageBytes = convertInputStreamToByte(resources
+                        .getResource(displayImage));
             }
         } catch (Exception e) {
             text = text + "\n\n" + e.getClass() + ": " + e.getMessage() + "\n";
-            image = null;
+            imageBytes = null;
             TeaseLib.log(this, e);
         }
-        teaseLib.host.show(image, text);
+        teaseLib.host.show(imageBytes, text);
+    }
+
+    private static byte[] convertInputStreamToByte(InputStream is)
+            throws IOException {
+        byte[] buffer = new byte[8192];
+        int bytesRead;
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        while ((bytesRead = is.read(buffer)) != -1) {
+            output.write(buffer, 0, bytesRead);
+        }
+        return output.toByteArray();
     }
 
     @Override

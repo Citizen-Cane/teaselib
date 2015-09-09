@@ -1,6 +1,5 @@
 package teaselib.core;
 
-import java.awt.Image;
 import java.io.IOException;
 import java.util.List;
 
@@ -58,7 +57,7 @@ public interface Host {
      * @param image
      * @param text
      */
-    void show(Image image, String text);
+    void show(byte[] imageBytes, String text);
 
     // @Deprecated
     // void showButton(String message);

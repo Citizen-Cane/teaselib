@@ -9,6 +9,7 @@ import java.awt.RenderingHints;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -22,6 +23,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
 
+import javax.imageio.ImageIO;
 import javax.swing.ComboBoxModel;
 import javax.swing.ImageIcon;
 import javax.swing.JComboBox;
@@ -54,7 +56,7 @@ public class SexScriptsHost implements Host {
 
     private IScript ss;
 
-    private static final boolean renderBackgroundImage = true;
+    private static final boolean renderBackgroundImage = false;
 
     MainFrame mainFrame = null;
     private final ImageIcon backgroundImageIcon;
@@ -211,7 +213,15 @@ public class SexScriptsHost implements Host {
         }
     }
 
-    private void setImage(Image image) {
+    private void setImage(byte[] imageBytes) {
+        Image image = null;
+        if (imageBytes != null) {
+            try {
+                image = ImageIO.read(new ByteArrayInputStream(imageBytes));
+            } catch (IOException e) {
+                TeaseLib.log(this, e);
+            }
+        }
         if (image != null) {
             if (renderBackgroundImage) {
                 setBackgroundImage(image);
@@ -345,11 +355,13 @@ public class SexScriptsHost implements Host {
      * 
      * @see teaselib.Host#show(java.awt.Image, java.lang.String)
      */
-    // TODO Set at once to overcome layout glitches (mostly the delay between
-    // displaying the new image and then displaying the text
     @Override
-    public void show(Image image, String text) {
-        setImage(image);
+    public void show(byte[] imageBytes, String text) {
+        // TODO
+        // Set image and text at once to overcome layout glitches
+        // (mostly the delay between displaying the new image
+        // and then displaying the text)
+        setImage(imageBytes);
         show(text);
     }
 

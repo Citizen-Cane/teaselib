@@ -1,6 +1,5 @@
 package teaselib.core;
 
-import java.awt.Image;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -17,8 +16,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
-
-import javax.imageio.ImageIO;
 
 import teaselib.TeaseLib;
 
@@ -132,22 +129,6 @@ public class ResourceLoader {
             throw new IOException("No input stream: " + resource);
         }
         return inputStream;
-    }
-
-    public Image image(String path) throws IOException {
-        InputStream inputStream = null;
-        try {
-            inputStream = getResource(path);
-            return ImageIO.read(inputStream);
-        } finally {
-            if (inputStream != null) {
-                inputStream.close();
-            }
-        }
-    }
-
-    public Image image(URL path) throws IOException {
-        return ImageIO.read(path);
     }
 
     /**

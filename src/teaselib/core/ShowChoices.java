@@ -43,6 +43,7 @@ class ShowChoices {
                     + " Script Function", 1, TimeUnit.HOURS);
 
     private boolean paused = false;
+    private String reason = null;
 
     public ShowChoices(TeaseScriptBase script, List<String> choices,
             List<String> derivedChoices, ScriptFunction scriptFunction,
@@ -113,7 +114,7 @@ class ShowChoices {
             synchronized (this) {
                 notifyAll();
             }
-            return Paused;
+            return reason;
         } else {
             // Wait for the script task to end
             if (scriptTask != null) {
@@ -159,9 +160,10 @@ class ShowChoices {
     /**
      * Dismiss clickables but keep script function running
      */
-    public void pause() {
+    public void pause(String reason) {
         synchronized (this) {
-            paused = true;
+            this.paused = true;
+            this.reason = reason;
             // Must wait until there is something to pause:
             // The main script thread starts the script function,
             // the script function runs to here and tries to pause

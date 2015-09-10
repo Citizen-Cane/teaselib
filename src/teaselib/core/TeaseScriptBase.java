@@ -234,7 +234,7 @@ public abstract class TeaseScriptBase {
             }
             choicesStack.push(showChoices);
             if (previous != null) {
-                previous.pause();
+                previous.pause(ShowChoices.Paused);
             }
         }
         while (true) {

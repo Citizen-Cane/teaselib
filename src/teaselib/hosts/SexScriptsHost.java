@@ -56,7 +56,7 @@ public class SexScriptsHost implements Host {
 
     private IScript ss;
 
-    private static final boolean renderBackgroundImage = false;
+    private static final boolean renderBackgroundImage = true;
 
     MainFrame mainFrame = null;
     private final ImageIcon backgroundImageIcon;

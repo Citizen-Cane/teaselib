@@ -93,20 +93,24 @@ public class TeaseLib {
         });
     }
 
-    public static synchronized void log(String text) {
-        Date now = new Date(System.currentTimeMillis());
-        String line = timeFormat.format(now) + " -"
-                + Thread.currentThread().getName() + " - : " + text + "\n";
-        try {
-            if (log != null) {
-                log.write(line);
-                log.flush();
+    public static void log(String text) {
+        synchronized (log) {
+            Date now = new Date(System.currentTimeMillis());
+            String line = timeFormat.format(now) + " -"
+                    + Thread.currentThread().getName() + " - : " + text + "\n";
+            try {
+                if (log != null) {
+                    log.write(line);
+                    log.flush();
+                }
+            } catch (IOException e) {
+                instance.host
+                        .show(null,
+                                "Cannot write to log file "
+                                        + logFile.getAbsolutePath());
             }
-        } catch (IOException e) {
-            instance.host.show(null,
-                    "Cannot write to log file " + logFile.getAbsolutePath());
+            System.out.print(line);
         }
-        System.out.print(line);
     }
 
     /**

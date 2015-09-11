@@ -5,8 +5,10 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Deque;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
 
@@ -15,8 +17,14 @@ import teaselib.Message;
 import teaselib.Mood;
 import teaselib.ScriptFunction;
 import teaselib.TeaseLib;
+import teaselib.core.events.Event;
+import teaselib.core.speechrecognition.SpeechRecognition;
+import teaselib.core.speechrecognition.SpeechRecognitionImplementation;
 import teaselib.core.speechrecognition.SpeechRecognitionResult.Confidence;
+import teaselib.core.speechrecognition.SpeechRecognizer;
+import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
 import teaselib.core.texttospeech.TextToSpeechPlayer;
+import teaselib.util.SpeechRecognitionRejectedScript;
 
 public abstract class TeaseScriptBase {
 
@@ -218,14 +226,60 @@ public abstract class TeaseScriptBase {
         }
         final ShowChoices showChoices = new ShowChoices(this, choices,
                 derivedChoices, scriptFunction, recognitionConfidence);
-        String choice = showChoices(showChoices);
+        Map<String, Runnable> pauseHandlers = new HashMap<String, Runnable>();
+        pauseHandlers.put(ShowChoices.Paused, new Runnable() {
+            @Override
+            public void run() {
+                // Someone dismissed our set of buttons in order to to show
+                // a different set, so we have to wait until we may restore
+                try {
+                    // only the top-most element may resume
+                    while (choicesStack.peek() != showChoices) {
+                        choicesStack.wait();
+                    }
+                } catch (InterruptedException e) {
+                    throw new ScriptInterruptedException();
+                }
+            }
+        });
+        // Comment speech recognition rejections if we aren't doing this already
+        final SpeechRecognition speechRecognition = SpeechRecognizer.instance
+                .get(actor.locale);
+        boolean handleRecognitionRejected = actor.speechRecognitionRejectedHandler != null
+                && !(this instanceof SpeechRecognitionRejectedScript)
+                && speechRecognition.isReady();
+        Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs> recognitionRejected = new Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs>() {
+            @Override
+            public void run(SpeechRecognitionImplementation sender,
+                    SpeechRecognizedEventArgs eventArgs) {
+                showChoices.pause(ShowChoices.RecognitionRejected);
+                teaseLib.host.dismissChoices(derivedChoices);
+            }
+        };
+        if (handleRecognitionRejected) {
+            pauseHandlers.put(ShowChoices.RecognitionRejected,
+                    actor.speechRecognitionRejectedHandler);
+            speechRecognition.events.recognitionRejected
+                    .add(recognitionRejected);
+        }
+        // Show the choices
+        final String choice;
+        try {
+            choice = showChoices(showChoices, pauseHandlers);
+        } finally {
+            if (handleRecognitionRejected) {
+                speechRecognition.events.recognitionRejected
+                        .remove(recognitionRejected);
+            }
+        }
         TeaseLib.logDetail("Reply finished");
         // Object identity is supported by
         // returning an item of the original choices list
         return choice;
     }
 
-    private static String showChoices(ShowChoices showChoices) {
+    private static String showChoices(ShowChoices showChoices,
+            Map<String, Runnable> pauseHandlers) {
         String choice = null;
         ShowChoices previous = null;
         synchronized (choicesStack) {
@@ -240,14 +294,8 @@ public abstract class TeaseScriptBase {
         while (true) {
             choice = showChoices.show();
             synchronized (choicesStack) {
-                if (choice == ShowChoices.Paused) {
-                    // Someone dismissed our set of buttons in order to to show
-                    // a different set, so we have to wait to restore
-                    try {
-                        choicesStack.wait();
-                    } catch (InterruptedException e) {
-                        throw new ScriptInterruptedException();
-                    }
+                if (pauseHandlers.containsKey(choice)) {
+                    pauseHandlers.get(choice).run();
                     continue;
                 } else {
                     choicesStack.pop();

@@ -25,6 +25,7 @@ import teaselib.core.util.NamedExecutorService;
  */
 class ShowChoices {
     public final static String Paused = "Paused";
+    public final static String RecognitionRejected = "Recognition Rejected";
 
     private final List<String> choices;
     private final List<String> derivedChoices;
@@ -94,6 +95,8 @@ class ShowChoices {
         // Get the user's choice
         int choiceIndex;
         try {
+            // We can just set pause to false here
+            paused = false;
             choiceIndex = teaseLib.host.reply(derivedChoices);
         } finally {
             if (!paused) {
@@ -162,29 +165,33 @@ class ShowChoices {
      */
     public void pause(String reason) {
         synchronized (this) {
-            this.paused = true;
-            this.reason = reason;
-            // Must wait until there is something to pause:
-            // The main script thread starts the script function,
-            // the script function runs to here and tries to pause
-            // before the main script has realized the buttons
-            // - the main thread waits 300ms for script function renderers to
-            // complete their starts
-            // - even when resolving this, we still don't have a synchronization
-            // object that fires after realizing the buttons
-            try {
-                while (!teaseLib.host.dismissChoices(derivedChoices)) {
-                    teaseLib.sleep(100, TimeUnit.MILLISECONDS);
+            if (!paused) {
+                this.paused = true;
+                this.reason = reason;
+                // Must wait until there is something to pause, because
+                // the buttons are realized by the host, and therefore
+                // we don't have a synchronization object that defines a
+                // before-after relationship for that situation.
+                // The main script thread starts the script function,
+                // and the script function may run to here trying to pause the
+                // main thread before the main script has realized any buttons.
+                try {
+                    while (!teaseLib.host.dismissChoices(derivedChoices)) {
+                        teaseLib.sleep(100, TimeUnit.MILLISECONDS);
+                    }
+                } catch (ScriptInterruptedException e) {
+                    throw new ScriptInterruptedException();
+                } catch (Exception e) {
+                    TeaseLib.logDetail(this, e);
                 }
-            } catch (Exception e) {
-                TeaseLib.logDetail(this, e);
-            }
-            try {
-                wait();
-            } catch (InterruptedException e) {
-                throw new ScriptInterruptedException();
-            } finally {
-                paused = false;
+                try {
+                    wait();
+                } catch (InterruptedException e) {
+                    throw new ScriptInterruptedException();
+                } finally {
+                    // Keep the pause status until the choices are about to be
+                    // realized again in the user interface
+                }
             }
         }
     }

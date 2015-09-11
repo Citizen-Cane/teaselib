@@ -187,7 +187,7 @@ public class SpeechRecognition {
     }
 
     /**
-     * @return Whether SpeechRecognition is ready to render speech
+     * @return Whether SpeechRecognition is ready to recognize speech
      */
     public boolean isReady() {
         return sr != null;

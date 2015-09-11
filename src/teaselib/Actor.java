@@ -1,6 +1,7 @@
 package teaselib;
 
 import teaselib.core.Images;
+import teaselib.util.SpeechRecognitionRejectedScript;
 
 public class Actor {
 
@@ -12,6 +13,7 @@ public class Actor {
     public final String key;
 
     public Images images = null;
+    public SpeechRecognitionRejectedScript speechRecognitionRejectedHandler = null;
 
     public Actor(Actor actor) {
         this.name = actor.name;

@@ -156,12 +156,12 @@ public class SpeechRecognitionHypothesisEventHandler {
             }
             this.maxValue = maxValue;
             this.choiceWithMaxProbabilityIndex = choiceWithMaxProbabilityIndex;
-            // sort out the case where two or more recognition
-            // results have the same weight.
-            // This happens when they all start with the same text
-            double weight = 0;
+            // sort out the case where two or more recognition results have the
+            // same weight. This happens when they all start with the same text,
+            // or (although unlikely) when the weighted sums add up to the same
+            // value.
             for (int i = 0; i < hypothesisAccumulatedWeights.length; i++) {
-                if (weight == maxValue) {
+                if (hypothesisAccumulatedWeights[i] == maxValue) {
                     acceptedChoices.add(choices.get(i));
                 }
             }
@@ -201,16 +201,15 @@ public class SpeechRecognitionHypothesisEventHandler {
             // detection events (doesn't alternate between different
             // choices)
             int choiceHypothesisCount = wordCount(hypothesisProgress[choiceWithMaxProbabilityIndex]);
-            boolean choiceDetectionCountAccepted = choiceHypothesisCount >= minimumNumberOfWordsForHypothesisRecognition
-                    || choiceHypothesisCount >= minimumNumberOfWordsForHypothesisRecognition;
+            boolean choiceDetectionCountAccepted = choiceHypothesisCount >= minimumNumberOfWordsForHypothesisRecognition;
             boolean choiceAccepted = choiceWeightAccepted
                     && choiceDetectionCountAccepted;
             if (!choiceWeightAccepted) {
                 TeaseLib.log("Phrase '"
                         + choice
-                        + "' accumulated weight="
+                        + "' hypothesis accumulated weight="
                         + maxValue
-                        + " < "
+                        + " < threshold="
                         + hypothesisAccumulatedWeight
                         + " is too low to accept hypothesis-based recognition for confidence "
                         + confidence.toString());
@@ -218,9 +217,10 @@ public class SpeechRecognitionHypothesisEventHandler {
             if (!choiceDetectionCountAccepted) {
                 TeaseLib.log("Phrase '"
                         + choice
-                        + "' detection count="
+                        + "' word detection count="
                         + choiceHypothesisCount
-                        + " < "
+                        + " < threshold="
+                        + minimumNumberOfWordsForHypothesisRecognition
                         + " is too low to accept hypothesis-based recognition for confidence "
                         + confidence.toString());
             }
@@ -236,7 +236,8 @@ public class SpeechRecognitionHypothesisEventHandler {
                 // choose the choice with the highest hypothesis weight
                 HypothesisResult hypothesisResult = new HypothesisResult(
                         hypothesisAccumulatedWeights);
-                if (hypothesisResult.acceptedChoices.size() == 1) {
+                final int size = hypothesisResult.acceptedChoices.size();
+                if (size == 1) {
                     String choice = hypothesisResult.acceptedChoices.get(0);
                     if (hypothesisResult.recognizedAs(choice,
                             recognitionConfidence)) {
@@ -253,7 +254,9 @@ public class SpeechRecognitionHypothesisEventHandler {
                                 sender, recognitionCompletedEventArgs);
                     }
                 } else {
-                    TeaseLib.log("Speech recognition hypothesis dropped - several recognition results share the same accumulated weight - can't decide");
+                    TeaseLib.log("Speech recognition hypothesis dropped - "
+                            + size
+                            + " recognition results share the same accumulated weight - can't decide");
                 }
             }
         };

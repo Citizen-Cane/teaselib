@@ -81,4 +81,8 @@ public class ScriptFutureTask extends FutureTask<String> {
     public boolean timedOut() {
         return timeout.clicked;
     }
+
+    public String getScriptFunctionResult() {
+        return scriptFunction.result;
+    }
 }

@@ -224,8 +224,11 @@ public abstract class TeaseScriptBase {
                 completeAll();
             }
         }
+        ScriptFutureTask scriptTask = scriptFunction != null ? new ScriptFutureTask(
+                this, scriptFunction, derivedChoices,
+                new ScriptFutureTask.TimeoutClick()) : null;
         final ShowChoices showChoices = new ShowChoices(this, choices,
-                derivedChoices, scriptFunction, recognitionConfidence);
+                derivedChoices, scriptTask, recognitionConfidence);
         Map<String, Runnable> pauseHandlers = new HashMap<String, Runnable>();
         pauseHandlers.put(ShowChoices.Paused, new Runnable() {
             @Override

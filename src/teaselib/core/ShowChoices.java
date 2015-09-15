@@ -29,12 +29,11 @@ class ShowChoices {
 
     private final List<String> choices;
     private final List<String> derivedChoices;
-    private final ScriptFunction scriptFunction;
+    private final ScriptFutureTask scriptTask;
 
     private final TeaseLib teaseLib;
     private final SpeechRecognition speechRecognizer;
     private final Confidence recognitionConfidence;
-    private final ScriptFutureTask scriptTask;
     private final List<Integer> srChoiceIndices;
     private final boolean recognizeSpeech;
     private final Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs> recognitionCompleted;
@@ -43,54 +42,47 @@ class ShowChoices {
             .newFixedThreadPool(Integer.MAX_VALUE, ShowChoices.class.getName()
                     + " Script Function", 1, TimeUnit.HOURS);
 
+    private boolean scriptTaskStarted = false;
     private boolean paused = false;
     private String reason = null;
 
     public ShowChoices(TeaseScriptBase script, List<String> choices,
-            List<String> derivedChoices, ScriptFunction scriptFunction,
+            List<String> derivedChoices, ScriptFutureTask scriptTask,
             Confidence recognitionConfidence) {
         super();
         this.choices = choices;
         this.derivedChoices = derivedChoices;
-        this.scriptFunction = scriptFunction;
+        this.scriptTask = scriptTask;
         this.teaseLib = script.teaseLib;
         this.speechRecognizer = SpeechRecognizer.instance
                 .get(script.actor.locale);
         this.recognitionConfidence = recognitionConfidence;
-        if (scriptFunction != null) {
-            // The result of this future task is never queried for,
-            // instead a timeout is signaled via the TimeoutClick class
-            scriptTask = new ScriptFutureTask(script, scriptFunction,
-                    derivedChoices, new ScriptFutureTask.TimeoutClick());
-        } else {
-            scriptTask = null;
-        }
-        // Start SR first, otherwise there would be a race condition between
-        // this thread and the script function when displaying/speaking a
-        // message in the script function, causing the display of the choices to
-        // be delayed, as starting SR waits for TTS to complete
         recognizeSpeech = speechRecognizer.isReady();
         if (recognizeSpeech) {
             srChoiceIndices = new ArrayList<Integer>(1);
             recognitionCompleted = recognitionCompletedEvent(derivedChoices,
                     scriptTask, srChoiceIndices);
-            enableSpeechRecognition();
         } else {
             srChoiceIndices = null;
             recognitionCompleted = null;
         }
-        // Now we can start the script task
-        if (scriptTask != null) {
-            // Start the script task right away
-            choiceScriptFunctionExecutor.execute(scriptTask);
-        }
     }
 
     public String show() {
-        if (recognizeSpeech
-                && !speechRecognizer.events.recognitionCompleted
-                        .contains(recognitionCompleted)) {
+        // Start SR first, otherwise there would be a race condition between
+        // this thread and the script function when displaying/speaking a
+        // message in the script function, causing the display of the choices to
+        // be delayed, as starting SR waits for TTS to complete
+        if (recognizeSpeech) {
             enableSpeechRecognition();
+        }
+        // Now we can start the script task
+        if (scriptTask != null && !scriptTaskStarted) {
+            // The result of this future task is never queried for,
+            // instead a timeout is signaled via the TimeoutClick class,
+            // or the script function can return a specific result
+            choiceScriptFunctionExecutor.execute(scriptTask);
+            scriptTaskStarted = true;
         }
         // Get the user's choice
         int choiceIndex;
@@ -126,7 +118,7 @@ class ShowChoices {
         }
         // The result of the script function may override any result
         // from button clicks or speech recognition
-        String choice = scriptFunction != null ? scriptFunction.result
+        String choice = scriptTask != null ? scriptTask.getScriptFunctionResult()
                 : ScriptFunction.Finished;
         if (choice == ScriptFunction.Finished) {
             // Assign result from speech recognition,
@@ -139,8 +131,7 @@ class ShowChoices {
                 choice = ScriptFunction.Timeout;
             } else {
                 // If the script function didn't timeout and there is no
-                // speech
-                // recognition result, then it's a simple button click
+                // speech recognition result, then it's a simple button click
                 choice = choices.get(choiceIndex);
             }
         }

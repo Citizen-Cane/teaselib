@@ -7,6 +7,7 @@ import java.net.URI;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -14,29 +15,31 @@ import teaselib.Message;
 import teaselib.Message.Part;
 import teaselib.Mood;
 import teaselib.TeaseLib;
+import teaselib.core.MediaRenderer.Replay;
 import teaselib.core.texttospeech.TextToSpeech;
 import teaselib.core.texttospeech.TextToSpeechPlayer;
 
-public class RenderMessage extends MediaRendererThread {
-    private final ResourceLoader resources;
-    private final Message message;
-    private final TextToSpeechPlayer speechSynthesizer;
-    private String displayImage;
-    private final Set<String> hints = new HashSet<String>();
-    private String defaultMood = Mood.Neutral;
-
+public class RenderMessage extends MediaRendererThread implements Replay {
     private final static long DELAYBETWEENPARAGRAPHS = 500;
     private final static long DELAYATENDOFTEXT = 2000;
 
+    private final ResourceLoader resources;
+    private final Message message;
+    private final TextToSpeechPlayer ttsPlayer;
+    private final Set<String> hints = new HashSet<String>();
+
+    private String displayImage;
+    private String defaultMood = Mood.Neutral;
+
     public RenderMessage(ResourceLoader resources, Message message,
-            TextToSpeechPlayer speechSynthesizer, String displayImage,
+            TextToSpeechPlayer ttsPlayer, String displayImage,
             Collection<String> hints) {
         if (message == null) {
             throw new NullPointerException();
         }
         this.resources = resources;
         this.message = message;
-        this.speechSynthesizer = speechSynthesizer;
+        this.ttsPlayer = ttsPlayer;
         this.displayImage = displayImage;
         hints.addAll(hints);
         // Default mood?
@@ -55,88 +58,14 @@ public class RenderMessage extends MediaRendererThread {
     @Override
     public void render() throws InterruptedException {
         try {
-            if (message.isEmpty()) {
-                // // Show image but no text
-                showImageAndText(null, hints);
+            if (replayPosition == Position.FromStart) {
+                renderMessage(message, ttsPlayer);
             } else {
-                StringBuilder accumulatedText = new StringBuilder();
-                boolean append = false;
-                // Start speaking a message, replay prerecorded items or speak
-                // with TTS later
-                final Iterator<String> prerenderedSpeechItems;
-                if (speechSynthesizer != null) {
-                    prerenderedSpeechItems = speechSynthesizer.selectVoice(
-                            resources, message);
+                Message lastSection = getLastSection(message);
+                if (replayPosition == Position.FromMandatory) {
+                    renderMessage(lastSection, ttsPlayer);
                 } else {
-                    prerenderedSpeechItems = null;
-                }
-                // Process message paragraphs
-                RenderSound soundRenderer = null;
-                String mood = defaultMood;
-                boolean appendToItem = false;
-                for (Iterator<Part> it = message.iterator(); it.hasNext();) {
-                    Set<String> additionalHints = new HashSet<String>();
-                    additionalHints.addAll(hints);
-                    // Handle message commands
-                    Part part;
-                    part = it.next();
-                    final boolean lastParagraph = !it.hasNext();
-                    TeaseLib.log(part.type.toString() + ": " + part.value);
-                    if (part.type == Message.Type.Image) {
-                        displayImage = part.value;
-                    } else if (part.type == Message.Type.Sound) {
-                        // Play sound, continue message execution
-                        soundRenderer = new RenderSound(resources, part.value);
-                        soundRenderer.render(teaseLib);
-                        // use AwaitSoundCompletion to wait for sound completion
-                    } else if (part.type == Message.Type.DesktopItem) {
-                        final URI uri = resources.uri(part.value);
-                        if (uri != null) {
-                            new RenderDesktopItem(uri).render(teaseLib);
-                        } else {
-                            // text might be treated as a desktop item,
-                            // because our file detection code is too lax
-                            // (should check whether a file with that name
-                            // exists, but that might be too strict)
-                            // -> if the url to the desktop item cannot be
-                            // retrieved (the desktop item doesn't exist),
-                            // we'll just display the part as text,
-                            // which is the most right thing in this case
-                            mood = doTextAndPause(accumulatedText, append,
-                                    prerenderedSpeechItems, mood,
-                                    lastParagraph, additionalHints, part);
-                        }
-                    } else if (part.type == Message.Type.Mood) {
-                        // Mood
-                        mood = part.value;
-                    } else if (part.type == Message.Type.Keyword) {
-                        doKeyword(soundRenderer, part);
-                    } else if (part.type == Message.Type.Delay) {
-                        // Pause
-                        doDelay(part);
-                    } else if (part.type == Message.Type.Item) {
-                        accumulateText(accumulatedText, "°", false);
-                        appendToItem = true;
-                        mood = resetMood(mood);
-                    } else if (part.type == Message.Type.Exec) {
-                        // Exec
-                        doExec(part);
-                    } else {
-                        mood = doTextAndPause(accumulatedText, append,
-                                prerenderedSpeechItems, mood, lastParagraph,
-                                additionalHints, part);
-                    }
-                    if (endThread) {
-                        break;
-                    }
-                    // Find out whether to append the next sentence to the same
-                    // or a new line
-                    if (appendToItem) {
-                        append = true;
-                        appendToItem = false;
-                    } else {
-                        append = canAppend(part.value);
-                    }
+                    renderMessage(lastSection, null);
                 }
             }
         } catch (ScriptInterruptedException e) {
@@ -147,20 +76,154 @@ public class RenderMessage extends MediaRendererThread {
         }
     }
 
+    private static Message getLastSection(Message message) {
+        Message lastSection = new Message(message.actor);
+        final List<Part> parts = message.getParts();
+        int index = parts.size();
+        while (index-- > 0) {
+            if (parts.get(index).type == Message.Type.Text) {
+                break;
+            }
+        }
+        // No text
+        if (index < 0) {
+            return message;
+        }
+        // Get the modifiers for this text part (image, sound, mood, ...)
+        while (index-- > 0) {
+            if (parts.get(index).type == Message.Type.Text) {
+                // Start the last section after the second last text part
+                index++;
+                break;
+            }
+        }
+        // One text element -> whole message
+        if (index < 0) {
+            index = 0;
+        }
+        // Copy message header (all but skip desktop items and delay before the
+        // text)
+        boolean afterText = false;
+        for (int i = index; i < parts.size(); i++) {
+            Message.Part part = parts.get(i);
+            if (part.type == Message.Type.DesktopItem) {
+                // skip
+            } else if (part.type == Message.Type.Delay && !afterText) {
+                // skip
+            } else {
+                lastSection.add(message.new Part(part.type, part.value));
+            }
+            if (part.type == Message.Type.Text) {
+                afterText = true;
+            }
+        }
+        return lastSection;
+    }
+
+    private void renderMessage(Message message,
+            TextToSpeechPlayer speechSynthesizer) throws IOException {
+        if (message.isEmpty()) {
+            // // Show image but no text
+            showImageAndText(null, hints);
+        } else {
+            StringBuilder accumulatedText = new StringBuilder();
+            boolean append = false;
+            // Start speaking a message, replay prerecorded items or speak
+            // with TTS later
+            final Iterator<String> prerenderedSpeechItems;
+            if (speechSynthesizer != null) {
+                prerenderedSpeechItems = speechSynthesizer.selectVoice(
+                        resources, message);
+            } else {
+                prerenderedSpeechItems = null;
+            }
+            // Process message paragraphs
+            RenderSound soundRenderer = null;
+            String mood = defaultMood;
+            boolean appendToItem = false;
+            for (Iterator<Part> it = message.iterator(); it.hasNext();) {
+                Set<String> additionalHints = new HashSet<String>();
+                additionalHints.addAll(hints);
+                // Handle message commands
+                Part part;
+                part = it.next();
+                final boolean lastParagraph = !it.hasNext();
+                TeaseLib.log(part.type.toString() + ": " + part.value);
+                if (part.type == Message.Type.Image) {
+                    displayImage = part.value;
+                } else if (part.type == Message.Type.Sound) {
+                    // Play sound, continue message execution
+                    soundRenderer = new RenderSound(resources, part.value);
+                    soundRenderer.render(teaseLib);
+                    // use AwaitSoundCompletion to wait for sound completion
+                } else if (part.type == Message.Type.DesktopItem) {
+                    final URI uri = resources.uri(part.value);
+                    if (uri != null) {
+                        new RenderDesktopItem(uri).render(teaseLib);
+                    } else {
+                        // text might be treated as a desktop item,
+                        // because our file detection code is too lax
+                        // (should check whether a file with that name
+                        // exists, but that might be too strict)
+                        // -> if the url to the desktop item cannot be
+                        // retrieved (the desktop item doesn't exist),
+                        // we'll just display the part as text,
+                        // which is the most right thing in this case
+                        mood = doTextAndPause(accumulatedText, append,
+                                speechSynthesizer, prerenderedSpeechItems,
+                                mood, lastParagraph, additionalHints, part);
+                    }
+                } else if (part.type == Message.Type.Mood) {
+                    // Mood
+                    mood = part.value;
+                } else if (part.type == Message.Type.Keyword) {
+                    doKeyword(soundRenderer, part);
+                } else if (part.type == Message.Type.Delay) {
+                    // Pause
+                    doDelay(part);
+                } else if (part.type == Message.Type.Item) {
+                    accumulateText(accumulatedText, "°", false);
+                    appendToItem = true;
+                    mood = resetMood(mood);
+                } else if (part.type == Message.Type.Exec) {
+                    // Exec
+                    doExec(part);
+                } else {
+                    mood = doTextAndPause(accumulatedText, append,
+                            speechSynthesizer, prerenderedSpeechItems, mood,
+                            lastParagraph, additionalHints, part);
+                }
+                if (endThread) {
+                    break;
+                }
+                // Find out whether to append the next sentence to the same
+                // or a new line
+                if (appendToItem) {
+                    append = true;
+                    appendToItem = false;
+                } else {
+                    append = canAppend(part.value);
+                }
+            }
+        }
+    }
+
     private String doTextAndPause(StringBuilder accumulatedText,
-            boolean append, final Iterator<String> prerenderedSpeechItems,
-            String mood, boolean lastParagraph, Set<String> additionalHints,
-            Part part) throws IOException {
-        doText(accumulatedText, part, append, prerenderedSpeechItems, mood,
-                additionalHints);
-        pauseAfterParagraph(lastParagraph);
+            boolean append, TextToSpeechPlayer speechSynthesizer,
+            final Iterator<String> prerenderedSpeechItems, String mood,
+            boolean lastParagraph, Set<String> additionalHints, Part part)
+            throws IOException {
+        doText(accumulatedText, part, append, speechSynthesizer,
+                prerenderedSpeechItems, mood, additionalHints);
+        pauseAfterParagraph(lastParagraph, speechSynthesizer);
         mood = resetMood(mood);
         return mood;
     }
 
     private void doText(StringBuilder accumulatedText, Part part,
-            boolean append, final Iterator<String> prerenderedSpeechItems,
-            String mood, Set<String> additionalHints) throws IOException {
+            boolean append, TextToSpeechPlayer speechSynthesizer,
+            final Iterator<String> prerenderedSpeechItems, String mood,
+            Set<String> additionalHints) throws IOException {
         String prompt = part.value;
         accumulateText(accumulatedText, prompt, append);
         // Update text
@@ -178,7 +241,8 @@ public class RenderMessage extends MediaRendererThread {
         }
     }
 
-    private void pauseAfterParagraph(boolean lastParagraph) {
+    private void pauseAfterParagraph(boolean lastParagraph,
+            TextToSpeechPlayer speechSynthesizer) {
         final boolean spokenMessage = speechSynthesizer != null;
         if (lastParagraph) {
             if (spokenMessage) {
@@ -353,8 +417,8 @@ public class RenderMessage extends MediaRendererThread {
     @Override
     public void join() {
         // Cancel ongoing TTS speech
-        if (speechSynthesizer != null) {
-            speechSynthesizer.stop();
+        if (ttsPlayer != null) {
+            ttsPlayer.stop();
         }
         // Cancel prerecorded TTS speech
         // as well as any other sounds

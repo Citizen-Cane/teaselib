@@ -1,10 +1,8 @@
 package teaselib.core;
 
 import java.io.IOException;
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -17,6 +15,7 @@ import teaselib.Message;
 import teaselib.Mood;
 import teaselib.ScriptFunction;
 import teaselib.TeaseLib;
+import teaselib.core.MediaRenderer.Replay.Position;
 import teaselib.core.events.Event;
 import teaselib.core.speechrecognition.SpeechRecognition;
 import teaselib.core.speechrecognition.SpeechRecognitionImplementation;
@@ -42,7 +41,9 @@ public abstract class TeaseScriptBase {
     private static final Stack<ShowChoices> choicesStack = new Stack<ShowChoices>();
 
     private static final MediaRendererQueue renderQueue = new MediaRendererQueue();
-    private final Deque<MediaRenderer> queuedRenderers = new ArrayDeque<MediaRenderer>();
+    private final List<MediaRenderer> queuedRenderers = new ArrayList<MediaRenderer>();
+
+    private List<MediaRenderer> playedRenderers = null;
 
     /**
      * Construct a new script instance
@@ -149,6 +150,9 @@ public abstract class TeaseScriptBase {
             RenderMessage renderMessage = new RenderMessage(resources,
                     parsedMessage, speechSynthesizer, displayImage, hints);
             queueRenderer(renderMessage);
+            // Copy renderers for this script in order to be able to play them
+            // again
+            playedRenderers = new ArrayList<MediaRenderer>(queuedRenderers);
             startQueuedRenderers();
             renderQueue.completeStarts();
         }
@@ -161,6 +165,12 @@ public abstract class TeaseScriptBase {
         hints.add(Images.SameCameraPosition);
         hints.add(Images.SameResolution);
         return hints;
+    }
+
+    protected void queueRenderers(List<MediaRenderer> renderers) {
+        synchronized (queuedRenderers) {
+            queuedRenderers.addAll(renderers);
+        }
     }
 
     protected void queueRenderer(MediaRenderer renderer) {
@@ -178,6 +188,16 @@ public abstract class TeaseScriptBase {
 
     private void clearQueuedRenderers() {
         synchronized (queuedRenderers) {
+            queuedRenderers.clear();
+        }
+    }
+
+    private void replay(Position replayPosition) {
+        // Ensure all current renderers have been played before restarting
+        completeAll();
+        queueRenderers(playedRenderers);
+        synchronized (queuedRenderers) {
+            renderQueue.replay(queuedRenderers, teaseLib, replayPosition);
             queuedRenderers.clear();
         }
     }
@@ -260,8 +280,13 @@ public abstract class TeaseScriptBase {
             }
         };
         if (handleRecognitionRejected) {
-            pauseHandlers.put(ShowChoices.RecognitionRejected,
-                    actor.speechRecognitionRejectedHandler);
+            pauseHandlers.put(ShowChoices.RecognitionRejected, new Runnable() {
+                @Override
+                public void run() {
+                    actor.speechRecognitionRejectedHandler.run();
+                    TeaseScriptBase.this.replay(Position.End);
+                }
+            });
             speechRecognition.events.recognitionRejected
                     .add(recognitionRejected);
         }

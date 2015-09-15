@@ -211,6 +211,7 @@ public class SpeechRecognition {
                     // other speech related audio output
                     synchronized (TextToSpeech.AudioOutput) {
                         sr.startRecognition();
+                        TeaseLib.log("Speech recognition started");
                     }
                 }
             };
@@ -237,6 +238,7 @@ public class SpeechRecognition {
                     // other speech related audio output
                     synchronized (TextToSpeech.AudioOutput) {
                         sr.startRecognition();
+                        TeaseLib.log("Speech recognition resumed");
                     }
                 }
             };
@@ -264,6 +266,7 @@ public class SpeechRecognition {
                         if (SpeechRecognition.this.speechRecognitionActive) {
                             SpeechRecognition.this.speechRecognitionActive = false;
                         }
+                        TeaseLib.log("Speech recognition stopped");
                     }
                 }
             };

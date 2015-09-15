@@ -4,6 +4,7 @@ import java.util.Collection;
 import java.util.HashMap;
 
 import teaselib.TeaseLib;
+import teaselib.core.MediaRenderer.Replay.Position;
 
 public class MediaRendererQueue {
 
@@ -55,6 +56,23 @@ public class MediaRendererQueue {
         } else {
             // Render immediately
             mediaMenderer.render(teaseLib);
+        }
+    }
+
+    public void replay(Collection<MediaRenderer> renderers, TeaseLib teaseLib,
+            Position replayPosition) {
+        synchronized (threadedMediaRenderers) {
+            for (MediaRenderer mediaMenderer : renderers) {
+                // Play or replay?
+                if (mediaMenderer instanceof MediaRenderer.Replay) {
+                    if (mediaMenderer instanceof MediaRenderer.Threaded) {
+                        threadedMediaRenderers.put(mediaMenderer.getClass(),
+                                (MediaRenderer.Threaded) mediaMenderer);
+                    }
+                    ((MediaRenderer.Replay) mediaMenderer).replay(replayPosition,
+                            teaseLib);
+                }
+            }
         }
     }
 

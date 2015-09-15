@@ -8,16 +8,17 @@ import teaselib.TeaseLib;
  * @author someone
  *
  */
-public abstract class MediaRendererThread implements Runnable, MediaRenderer,
-        MediaRenderer.Threaded {
+public abstract class MediaRendererThread implements Runnable,
+        MediaRenderer.Threaded, MediaRenderer.Replay {
 
     protected Thread renderThread = null;
     protected boolean endThread = false;
     protected TeaseLib teaseLib = null;
+    protected Position replayPosition = Position.FromStart;
 
-    protected final CountDownLatch completedStart = new CountDownLatch(1);
-    protected final CountDownLatch completedMandatory = new CountDownLatch(1);
-    protected final CountDownLatch completedAll = new CountDownLatch(1);
+    protected CountDownLatch completedStart = new CountDownLatch(1);
+    protected CountDownLatch completedMandatory = new CountDownLatch(1);
+    protected CountDownLatch completedAll = new CountDownLatch(1);
 
     private long start = 0;
 
@@ -59,6 +60,21 @@ public abstract class MediaRendererThread implements Runnable, MediaRenderer,
                 throw new ScriptInterruptedException();
             }
         }
+    }
+
+    @Override
+    public void replay(Position replayPosition, TeaseLib teaseLib) {
+        this.replayPosition = replayPosition;
+        if (replayPosition == Position.FromStart) {
+            // Skip
+        } else if (replayPosition == Position.FromStart) {
+            completedStart = new CountDownLatch(1);
+        } else {
+            completedStart = new CountDownLatch(1);
+            completedMandatory = new CountDownLatch(1);
+        }
+        TeaseLib.log("Replay " + replayPosition.toString());
+        render(teaseLib);
     }
 
     protected void startCompleted() {

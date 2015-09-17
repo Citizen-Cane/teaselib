@@ -20,12 +20,15 @@ public class SpeechRecognizer {
     }
 
     public SpeechRecognition get(String locale) {
-        if (speechRecognitionInstances.containsKey(locale)) {
-            return speechRecognitionInstances.get(locale);
-        } else {
-            SpeechRecognition speechRecognition = new SpeechRecognition(locale);
-            speechRecognitionInstances.put(locale, speechRecognition);
-            return speechRecognition;
+        synchronized (instance) {
+            if (speechRecognitionInstances.containsKey(locale)) {
+                return speechRecognitionInstances.get(locale);
+            } else {
+                SpeechRecognition speechRecognition = new SpeechRecognition(
+                        locale);
+                speechRecognitionInstances.put(locale, speechRecognition);
+                return speechRecognition;
+            }
         }
     }
 

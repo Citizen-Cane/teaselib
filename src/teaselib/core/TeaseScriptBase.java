@@ -45,6 +45,25 @@ public abstract class TeaseScriptBase {
 
     private List<MediaRenderer> playedRenderers = null;
 
+    public class Replay {
+        final List<MediaRenderer> renderers;
+
+        public Replay(List<MediaRenderer> renderers) {
+            super();
+            this.renderers = new ArrayList<MediaRenderer>(renderers);
+        }
+
+        public void replay(Position replayPosition) {
+            // Ensure all current renderers have been played before restarting
+            synchronized (queuedRenderers) {
+                completeAll();
+                queueRenderers(renderers);
+                renderQueue.replay(queuedRenderers, teaseLib, replayPosition);
+                queuedRenderers.clear();
+            }
+        }
+    }
+
     /**
      * Construct a new script instance
      * 
@@ -192,16 +211,6 @@ public abstract class TeaseScriptBase {
         }
     }
 
-    private void replay(Position replayPosition) {
-        // Ensure all current renderers have been played before restarting
-        completeAll();
-        queueRenderers(playedRenderers);
-        synchronized (queuedRenderers) {
-            renderQueue.replay(queuedRenderers, teaseLib, replayPosition);
-            queuedRenderers.clear();
-        }
-    }
-
     protected String showChoices(final ScriptFunction scriptFunction,
             List<String> choices) {
         return showChoices(scriptFunction, choices, Confidence.Default);
@@ -300,27 +309,37 @@ public abstract class TeaseScriptBase {
     private Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs> addRecognitionRejectedHandler(
             final ShowChoices showChoices, Map<String, Runnable> pauseHandlers,
             final SpeechRecognition speechRecognition) {
-        final Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs> recognitionRejected;
-        recognitionRejected = new Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs>() {
+        Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs> recognitionRejected = new Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs>() {
             @Override
             public void run(SpeechRecognitionImplementation sender,
                     SpeechRecognizedEventArgs eventArgs) {
                 showChoices.pause(ShowChoices.RecognitionRejected);
             }
         };
-        // The recognitionRejected handler may not trigger immediately when
-        // a script function renders messages, because it must wait until
+        // The recognitionRejected handler won'ttrigger immediately when
+        // a script function renders messages, because it will wait until
         // the render queue is empty, and this includes message delays.
         // Script functions are not supported, but the message may still
         // render comments while the choices are shown.
         pauseHandlers.put(ShowChoices.RecognitionRejected, new Runnable() {
             @Override
             public void run() {
-                if (renderQueue.hasCompletedMandatory()) {
-                    actor.speechRecognitionRejectedHandler.run();
-                    TeaseScriptBase.this.replay(Position.End);
+                SpeechRecognitionRejectedScript speechRecognitionRejectedHandler = actor.speechRecognitionRejectedHandler;
+                // Test before pause to avoid button flicker
+                if (speechRecognitionRejectedHandler.canRun()) {
+                    if (renderQueue.hasCompletedMandatory()) {
+                        Replay beforeSpeechRecognitionRejectedHandler = new Replay(
+                                playedRenderers);
+                        TeaseLib.log("Running RecognitionRejected-handler "
+                                + speechRecognitionRejectedHandler.toString());
+                        speechRecognitionRejectedHandler.run();
+                        beforeSpeechRecognitionRejectedHandler
+                                .replay(Position.End);
+                    } else {
+                        TeaseLib.log("Skipping RecognitionRejected-handler while rendering message");
+                    }
                 } else {
-                    TeaseLib.log("Skipping RecognitionRejected-handler while rendering message");
+                    TeaseLib.log("Skipping RecognitionRejected-handler");
                 }
             }
         });

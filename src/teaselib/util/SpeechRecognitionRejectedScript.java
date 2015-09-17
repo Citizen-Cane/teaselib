@@ -22,6 +22,16 @@ public abstract class SpeechRecognitionRejectedScript extends TeaseScript {
         confidence = Confidence.Low;
     }
 
+    /**
+     * Override to determine when the script should run. This could be done
+     * inside the script by just returning without doing anything at all, but
+     * would result in flickering in the ui, because the buttons get unrealized,
+     * the immediately realized again.
+     * 
+     * @return Whether to run the script.
+     */
+    public abstract boolean canRun();
+
     @Override
     final protected String showChoices(ScriptFunction scriptFunction,
             List<String> choices, Confidence recognitionConfidence) {

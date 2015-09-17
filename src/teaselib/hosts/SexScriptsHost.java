@@ -436,10 +436,12 @@ public class SexScriptsHost implements Host {
             for (final javax.swing.JButton button : buttons) {
                 for (int index : new Interval(choices)) {
                     String buttonText = button.getText();
-                    if (buttonText.contains(choices.get(index))) {
+                    final String choice = choices.get(index);
+                    if (buttonText.contains(choice)) {
                         Delegate click = new Delegate() {
                             @Override
                             public void run() {
+                                TeaseLib.log("Clicking on " + choice);
                                 button.doClick();
                             }
                         };

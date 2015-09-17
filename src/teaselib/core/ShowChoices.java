@@ -27,8 +27,8 @@ class ShowChoices {
     public final static String Paused = "Paused";
     public final static String RecognitionRejected = "Recognition Rejected";
 
-    private final List<String> choices;
-    private final List<String> derivedChoices;
+    public final List<String> choices;
+    public final List<String> derivedChoices;
     private final ScriptFutureTask scriptTask;
 
     private final TeaseLib teaseLib;
@@ -69,6 +69,7 @@ class ShowChoices {
     }
 
     public String show() {
+        TeaseLib.log("Showing " + derivedChoices.toString());
         // Start SR first, otherwise there would be a race condition between
         // this thread and the script function when displaying/speaking a
         // message in the script function, causing the display of the choices to
@@ -118,8 +119,8 @@ class ShowChoices {
         }
         // The result of the script function may override any result
         // from button clicks or speech recognition
-        String choice = scriptTask != null ? scriptTask.getScriptFunctionResult()
-                : ScriptFunction.Finished;
+        String choice = scriptTask != null ? scriptTask
+                .getScriptFunctionResult() : ScriptFunction.Finished;
         if (choice == ScriptFunction.Finished) {
             // Assign result from speech recognition,
             // script task timeout or button click
@@ -159,6 +160,7 @@ class ShowChoices {
             if (!paused) {
                 this.paused = true;
                 this.reason = reason;
+                TeaseLib.log("Pausing " + derivedChoices.toString());
                 // Must wait until there is something to pause, because
                 // the buttons are realized by the host, and therefore
                 // we don't have a synchronization object that defines a
@@ -176,6 +178,8 @@ class ShowChoices {
                     TeaseLib.logDetail(this, e);
                 }
                 try {
+                    // Wait until the reply() of the other instance notified us
+                    // that it exited with a pause reason.
                     wait();
                 } catch (InterruptedException e) {
                     throw new ScriptInterruptedException();
@@ -183,6 +187,8 @@ class ShowChoices {
                     // Keep the pause status until the choices are about to be
                     // realized again in the user interface
                 }
+            } else {
+                TeaseLib.log("Paused aready " + derivedChoices.toString());
             }
         }
     }

@@ -27,6 +27,21 @@ public interface MediaRenderer {
         public void completeAll();
 
         /**
+         * Determine whether the renderer has completed its start.
+         */
+        public boolean hasCompletedStart();
+
+        /**
+         * Determine whether the renderer has completed its mandatory part.
+         */
+        public boolean hasCompletedMandatory();
+
+        /**
+         * Determine whether the renderer has completed all.
+         */
+        public boolean hasCompletedAll();
+
+        /**
          * End the render thread.
          */
         public void interrupt();

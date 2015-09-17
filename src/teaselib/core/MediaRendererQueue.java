@@ -69,8 +69,8 @@ public class MediaRendererQueue {
                         threadedMediaRenderers.put(mediaMenderer.getClass(),
                                 (MediaRenderer.Threaded) mediaMenderer);
                     }
-                    ((MediaRenderer.Replay) mediaMenderer).replay(replayPosition,
-                            teaseLib);
+                    ((MediaRenderer.Replay) mediaMenderer).replay(
+                            replayPosition, teaseLib);
                 }
             }
         }
@@ -78,7 +78,7 @@ public class MediaRendererQueue {
 
     public void completeStarts() {
         synchronized (threadedMediaRenderers) {
-            if (threadedMediaRenderers.size() > 0) {
+            if (!threadedMediaRenderers.isEmpty()) {
                 TeaseLib.logDetail("Completing all threaded renderers starts");
                 for (MediaRenderer.Threaded renderer : threadedMediaRenderers
                         .values()) {
@@ -92,7 +92,7 @@ public class MediaRendererQueue {
 
     public void completeMandatories() {
         synchronized (threadedMediaRenderers) {
-            if (threadedMediaRenderers.size() > 0) {
+            if (!threadedMediaRenderers.isEmpty()) {
                 TeaseLib.logDetail("Completing all threaded renderers mandatory part");
                 for (MediaRenderer.Threaded renderer : threadedMediaRenderers
                         .values()) {
@@ -110,7 +110,7 @@ public class MediaRendererQueue {
      */
     public void completeAll() {
         synchronized (threadedMediaRenderers) {
-            if (threadedMediaRenderers.size() > 0) {
+            if (!threadedMediaRenderers.isEmpty()) {
                 TeaseLib.logDetail("Completing all threaded renderers");
                 for (MediaRenderer.Threaded renderer : threadedMediaRenderers
                         .values()) {
@@ -129,7 +129,7 @@ public class MediaRendererQueue {
      */
     public void endAll() {
         synchronized (threadedMediaRenderers) {
-            if (threadedMediaRenderers.size() > 0) {
+            if (!threadedMediaRenderers.isEmpty()) {
                 TeaseLib.logDetail("Ending all threaded renderers");
                 // Interrupt them all
                 for (MediaRenderer.Threaded renderer : threadedMediaRenderers
@@ -146,5 +146,41 @@ public class MediaRendererQueue {
                 TeaseLib.logDetail("Threaded Renderers endAll: queue empty");
             }
         }
+    }
+
+    public boolean hasCompletedStarts() {
+        synchronized (threadedMediaRenderers) {
+            for (MediaRenderer.Threaded renderer : threadedMediaRenderers
+                    .values()) {
+                if (!renderer.hasCompletedStart()) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    public boolean hasCompletedMandatory() {
+        synchronized (threadedMediaRenderers) {
+            for (MediaRenderer.Threaded renderer : threadedMediaRenderers
+                    .values()) {
+                if (!renderer.hasCompletedMandatory()) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    public boolean hasCompletedAll() {
+        synchronized (threadedMediaRenderers) {
+            for (MediaRenderer.Threaded renderer : threadedMediaRenderers
+                    .values()) {
+                if (!renderer.hasCompletedAll()) {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 }

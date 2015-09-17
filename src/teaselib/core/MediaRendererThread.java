@@ -142,6 +142,21 @@ public abstract class MediaRendererThread implements Runnable,
     }
 
     @Override
+    public boolean hasCompletedStart() {
+        return completedStart.getCount() == 0;
+    }
+
+    @Override
+    public boolean hasCompletedMandatory() {
+        return completedMandatory.getCount() == 0;
+    }
+
+    @Override
+    public boolean hasCompletedAll() {
+        return completedAll.getCount() == 0;
+    }
+
+    @Override
     public void interrupt() {
         Thread thread = renderThread;
         if (!thread.isAlive())

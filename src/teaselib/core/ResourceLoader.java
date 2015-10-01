@@ -29,11 +29,11 @@ public class ResourceLoader {
 
     /**
      * @param basePath
-     *            The base path under which to find the resource zips, jars and
-     *            directories
+     *            The base path under which to find the resources. Either a zip,
+     *            a jar, or a folder
      * @param assetRoot
      *            The root folder for all resources - either a directory in the
-     *            base folder or the single root entry in a zip or jar
+     *            base folder or a root folderin a zip or jar
      * @throws NoSuchMethodException
      * @throws InvocationTargetException
      * @throws IllegalAccessException

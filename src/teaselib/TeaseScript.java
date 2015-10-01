@@ -78,6 +78,17 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
         super(teaseLib, resources, actor, namespace);
     }
 
+    String resource(String path) {
+        String folder = getClass().getPackage().getName().replace(".", "/")
+                + "/";
+        boolean isRelative = !path.startsWith(folder);
+        if (isRelative) {
+            return folder + path;
+        } else {
+            return path;
+        }
+    }
+
     /**
      * Renders the image denoted by the path. The image will not be displayed
      * immediately but during the next message rendering. This is because if no

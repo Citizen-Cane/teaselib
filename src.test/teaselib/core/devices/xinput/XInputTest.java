@@ -1,7 +1,7 @@
 /**
  * 
  */
-package teaselib.devices.xinput;
+package teaselib.core.devices.xinput;
 
 import org.junit.Assert;
 import org.junit.Test;

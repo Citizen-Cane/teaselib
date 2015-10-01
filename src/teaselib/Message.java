@@ -334,16 +334,18 @@ public class Message {
             if (s > 2 || endOf(m, endOfSentence) || endOf(m, endOfTextOther)) {
                 return Type.Text;
             } else {
-                // A bit harsh, but necessary to avoid wrong typed keywords to
-                // be spoken in fully parsed text scripts as the PCMPlayer
+                // Throwing an exception here to avoid speaking keywords in
+                // PCMPlayer is a bit harsh, because it's a script issue.
+                // However in the future we might need to make this configurable
+                // if a script language needs this feature.
                 // throw new IllegalArgumentException(
                 // "I Can't believe this is supposed to be a text message: "
                 // + m);
                 // However when writing scripts in java text is evaluated only
                 // when say() or show() is called(...),
-                // but we can access all keywords via static string constants,
-                // and not as plain text, and therefore we're safe to assume
-                // everything else is text
+                // so we can reference keywords via static string constants,
+                // instead of using plain text, and therefore we're safe to
+                // assume that if it's not a keyword, then it's text
                 return Type.Text;
             }
         }

@@ -1,15 +1,11 @@
 /**
  * 
  */
-package teaselib.text;
+package teaselib;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import org.junit.Test;
-
-import teaselib.Actor;
-import teaselib.Message;
 
 /**
  * @author someone
@@ -22,7 +18,7 @@ public class MessageTest {
         assertTrue(Message.determineType("Understood, #slave?") == Message.Type.Text);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void unexpectedSpacesAtEnd() {
         // Trailing white space before is bad
         Message.determineType("Understood, #slave? ");

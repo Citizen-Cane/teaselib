@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
+import teaselib.Config;
 import teaselib.Message;
 import teaselib.Message.Part;
 import teaselib.Mood;
@@ -351,32 +352,44 @@ public class RenderMessage extends MediaRendererThread implements Replay {
 
     private void showImageAndText(String text, Set<String> additionalHints) {
         // Apply image and text
-        byte[] imageBytes;
+        byte[] imageBytes = null;
         try {
-            if (displayImage == Message.DominantImage) {
-                Images images = message.actor.images;
-                if (images != null) {
-                    String[] hintArray = new String[additionalHints.size()];
-                    hintArray = additionalHints.toArray(hintArray);
-                    images.hint(hintArray);
-                    imageBytes = convertInputStreamToByte(resources
-                            .getResource(images.next()));
-                } else {
+            try {
+                if (displayImage == Message.DominantImage) {
+                    Images images = message.actor.images;
+                    if (images != null) {
+                        String[] hintArray = new String[additionalHints.size()];
+                        hintArray = additionalHints.toArray(hintArray);
+                        images.hint(hintArray);
+                        imageBytes = convertInputStreamToByte(resources
+                                .getResource(images.next()));
+                    } else {
+                        imageBytes = null;
+                        TeaseLib.log("Actor '" + message.actor.name
+                                + "': images missing - please initialize");
+                    }
+                } else if (displayImage == Message.NoImage) {
                     imageBytes = null;
-                    TeaseLib.log("Actor '" + message.actor.name
-                            + "': images missing - please initialize");
+                } else {
+                    // TODO Cache image or detect reusage, since
+                    // currently the same image is reloaded for
+                    // each
+                    // text part (usually when setting the image
+                    // outside
+                    // the message)
+                    final InputStream resource = resources
+                            .getResource(displayImage);
+                    try {
+                        imageBytes = convertInputStreamToByte(resource);
+                    } finally {
+                        resource.close();
+                    }
                 }
-            } else if (displayImage == Message.NoImage) {
-                imageBytes = null;
-            } else {
-                // TODO Cache image or detect reusage, since
-                // currently the same image is reloaded for
-                // each
-                // text part (usually when setting the image
-                // outside
-                // the message)
-                imageBytes = convertInputStreamToByte(resources
-                        .getResource(displayImage));
+            } catch (IOException e) {
+                if (!teaseLib.getBoolean(Config.Namespace,
+                        Config.Debug.IgnoreMissingResources)) {
+                    throw e;
+                }
             }
         } catch (Exception e) {
             text = text + "\n\n" + e.getClass() + ": " + e.getMessage() + "\n";

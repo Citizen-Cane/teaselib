@@ -1,5 +1,8 @@
 package teaselib.core;
 
+import java.io.IOException;
+
+import teaselib.Config;
 import teaselib.TeaseLib;
 
 public class RenderSound extends MediaRendererThread {
@@ -16,7 +19,14 @@ public class RenderSound extends MediaRendererThread {
         try {
             TeaseLib.log(this.getClass().getSimpleName() + ": " + soundFile);
             startCompleted();
-            teaseLib.host.playSound(resources, soundFile);
+            try {
+                teaseLib.host.playSound(resources, soundFile);
+            } catch (IOException e) {
+                if (!teaseLib.getBoolean(Config.Namespace,
+                        Config.Debug.IgnoreMissingResources)) {
+                    throw e;
+                }
+            }
         } catch (ScriptInterruptedException e) {
             // Expected
         } catch (Throwable e) {

@@ -36,7 +36,7 @@ public class TeaseLib {
     private static TeaseLib instance;
     private Map<Class<?>, State<? extends Enum<?>>> states = new HashMap<Class<?>, State<? extends Enum<?>>>();
 
-    public static boolean logDetails = false;
+    private final boolean logDetails;
     private static BufferedWriter log = null;
     private final static File logFile = new File("./TeaseLib.log");
     private final static SimpleDateFormat timeFormat = new SimpleDateFormat(
@@ -91,6 +91,7 @@ public class TeaseLib {
                 }
             }
         });
+        logDetails = getBoolean(Config.Namespace, Config.Debug.LogDetails);
     }
 
     public static void log(String text) {
@@ -120,13 +121,13 @@ public class TeaseLib {
      *            Log output
      */
     public static void logDetail(String line) {
-        if (logDetails) {
+        if (instance().logDetails) {
             log(line);
         }
     }
 
     public static void logDetail(Object instance, Throwable e) {
-        if (logDetails) {
+        if (instance().logDetails) {
             log(instance, e);
         }
     }
@@ -243,6 +244,10 @@ public class TeaseLib {
             this.name = makePropertyName(namespace, name);
         }
 
+        protected PersistentValue(String namespace, Enum<?> name) {
+            this.name = makePropertyName(namespace, name);
+        }
+
         public void clear() {
             persistence.clear(name);
         }
@@ -259,6 +264,10 @@ public class TeaseLib {
      */
     public class PersistentBoolean extends PersistentValue {
         public PersistentBoolean(String namespace, String name) {
+            super(namespace, name);
+        }
+
+        public PersistentBoolean(String namespace, Enum<?> name) {
             super(namespace, name);
         }
 
@@ -290,6 +299,10 @@ public class TeaseLib {
             super(namespace, name);
         }
 
+        public PersistentInteger(String namespace, Enum<?> name) {
+            super(namespace, name);
+        }
+
         public int get() {
             try {
                 return Integer.parseInt(persistence.get(name));
@@ -310,6 +323,10 @@ public class TeaseLib {
      */
     public class PersistentFloat extends PersistentValue {
         public PersistentFloat(String namespace, String name) {
+            super(namespace, name);
+        }
+
+        public PersistentFloat(String namespace, Enum<?> name) {
             super(namespace, name);
         }
 
@@ -336,6 +353,10 @@ public class TeaseLib {
             super(namespace, name);
         }
 
+        public PersistentString(String namespace, Enum<?> name) {
+            super(namespace, name);
+        }
+
         public String get() {
             return persistence.get(name);
         }
@@ -343,6 +364,22 @@ public class TeaseLib {
         public void set(String value) {
             persistence.set(name, value);
         }
+    }
+
+    public void set(String namespace, Enum<?> name, boolean value) {
+        persistence.set(makePropertyName(namespace, name), value);
+    }
+
+    public void set(String namespace, Enum<?> name, int value) {
+        new PersistentInteger(namespace, name).set(value);
+    }
+
+    public void set(String namespace, Enum<?> name, double value) {
+        new PersistentFloat(namespace, name).set(value);
+    }
+
+    public void set(String namespace, Enum<?> name, String value) {
+        persistence.set(makePropertyName(namespace, name), value);
     }
 
     public void set(String namespace, String name, boolean value) {
@@ -377,8 +414,29 @@ public class TeaseLib {
         return persistence.get(makePropertyName(namespace, name));
     }
 
-    protected String makePropertyName(String namespace, String name) {
+    public boolean getBoolean(String namespace, Enum<?> name) {
+        return persistence.getBoolean(makePropertyName(namespace, name));
+    }
+
+    public double getFloat(String namespace, Enum<?> name) {
+        return new PersistentFloat(namespace, name).get();
+    }
+
+    public int getInteger(String namespace, Enum<?> name) {
+        return new PersistentInteger(namespace, name).get();
+    }
+
+    public String getString(String namespace, Enum<?> name) {
+        return persistence.get(makePropertyName(namespace, name));
+    }
+
+    private static String makePropertyName(String namespace, String name) {
         return namespace + "." + name;
+    }
+
+    private static String makePropertyName(String namespace, Enum<?> name) {
+        return namespace + "." + name.getClass().getSimpleName() + "."
+                + name.name();
     }
 
     public <T extends Enum<?>> Item<T> getToy(T toy) {
@@ -550,8 +608,7 @@ public class TeaseLib {
      * @return The item that corresponds to the enumeration member
      */
     public <T extends Enum<?>> Item<T> item(String namespace, T value) {
-        return new Item<T>(value,
-                new PersistentBoolean(namespace, value.name()),
+        return new Item<T>(value, new PersistentBoolean(namespace, value),
                 Item.createDisplayName(value));
     }
 

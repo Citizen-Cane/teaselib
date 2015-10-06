@@ -1,5 +1,8 @@
 package teaselib.core;
 
+import java.io.IOException;
+
+import teaselib.Config;
 import teaselib.TeaseLib;
 
 public class RenderBackgroundSound implements AutoCloseable, MediaRenderer {
@@ -21,7 +24,15 @@ public class RenderBackgroundSound implements AutoCloseable, MediaRenderer {
             TeaseLib.log(this.getClass().getSimpleName() + ": " + soundFile);
             // TODO Use the handle to allow stopping the sound
             // Implement when needed
-            handle = teaseLib.host.playBackgroundSound(resources, soundFile);
+            try {
+                handle = teaseLib.host
+                        .playBackgroundSound(resources, soundFile);
+            } catch (IOException e) {
+                if (!teaseLib.getBoolean(Config.Namespace,
+                        Config.Debug.IgnoreMissingResources)) {
+                    throw e;
+                }
+            }
         } catch (Throwable e) {
             TeaseLib.log(this, e);
         }

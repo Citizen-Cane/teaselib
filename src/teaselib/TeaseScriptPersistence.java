@@ -136,8 +136,7 @@ public abstract class TeaseScriptPersistence extends TeaseScriptBase {
      * @return The item of the enumeration member
      */
     public <T extends Enum<?>> Item<T> item(T value) {
-        final String namespace = this.namespace + "."
-                + value.getClass().getSimpleName();
+        final String namespace = this.namespace;
         return teaseLib.item(namespace, value);
     }
 
@@ -151,6 +150,22 @@ public abstract class TeaseScriptPersistence extends TeaseScriptBase {
     public <T> Item<T> item(T value) {
         final String namespace = this.namespace;
         return teaseLib.item(namespace, value);
+    }
+
+    public void set(Enum<?> name, boolean value) {
+        teaseLib.set(namespace, name, value);
+    }
+
+    public void set(Enum<?> name, int value) {
+        teaseLib.set(namespace, name, value);
+    }
+
+    public void set(Enum<?> name, double value) {
+        teaseLib.set(namespace, name, value);
+    }
+
+    public void set(Enum<?> name, String value) {
+        teaseLib.set(namespace, name, value);
     }
 
     public void set(String name, boolean value) {
@@ -182,6 +197,22 @@ public abstract class TeaseScriptPersistence extends TeaseScriptBase {
     }
 
     public String getString(String name) {
+        return teaseLib.getString(namespace, name);
+    }
+
+    public boolean getBoolean(Enum<?> name) {
+        return teaseLib.getBoolean(namespace, name);
+    }
+
+    public int getInteger(Enum<?> name) {
+        return teaseLib.getInteger(namespace, name);
+    }
+
+    public double getFloat(Enum<?> name) {
+        return teaseLib.getFloat(namespace, name);
+    }
+
+    public String getString(Enum<?> name) {
         return teaseLib.getString(namespace, name);
     }
 

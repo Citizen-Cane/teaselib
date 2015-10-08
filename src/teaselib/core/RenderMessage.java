@@ -16,11 +16,10 @@ import teaselib.Message;
 import teaselib.Message.Part;
 import teaselib.Mood;
 import teaselib.TeaseLib;
-import teaselib.core.MediaRenderer.Replay;
 import teaselib.core.texttospeech.TextToSpeech;
 import teaselib.core.texttospeech.TextToSpeechPlayer;
 
-public class RenderMessage extends MediaRendererThread implements Replay {
+public class RenderMessage extends MediaRendererThread {
     private final static long DELAYBETWEENPARAGRAPHS = 500;
     private final static long DELAYATENDOFTEXT = 2000;
 
@@ -352,49 +351,59 @@ public class RenderMessage extends MediaRendererThread implements Replay {
 
     private void showImageAndText(String text, Set<String> additionalHints) {
         // Apply image and text
+        final String path;
+        if (displayImage == Message.DominantImage) {
+            Images images = message.actor.images;
+            if (images != null) {
+                String[] hintArray = new String[additionalHints.size()];
+                hintArray = additionalHints.toArray(hintArray);
+                images.hint(hintArray);
+                path = images.next();
+                if (path == null
+                        && !teaseLib.getBoolean(Config.Namespace,
+                                Config.Debug.IgnoreMissingResources)) {
+                    TeaseLib.log("Actor '" + message.actor.name
+                            + "': images missing - please initialize");
+                }
+            } else if (!teaseLib.getBoolean(Config.Namespace,
+                    Config.Debug.IgnoreMissingResources)) {
+                TeaseLib.log("Actor '" + message.actor.name
+                        + "': images missing - please initialize");
+                path = null;
+            } else {
+                path = null;
+            }
+        } else if (displayImage == Message.NoImage) {
+            path = null;
+        } else {
+            // TODO Cache image or detect reusage, since
+            // currently the same image is reloaded again for
+            // each text part
+            // (usually when setting the image outside the message)
+            path = displayImage;
+        }
         byte[] imageBytes = null;
-        try {
+        if (path != null) {
             try {
-                if (displayImage == Message.DominantImage) {
-                    Images images = message.actor.images;
-                    if (images != null) {
-                        String[] hintArray = new String[additionalHints.size()];
-                        hintArray = additionalHints.toArray(hintArray);
-                        images.hint(hintArray);
-                        imageBytes = convertInputStreamToByte(resources
-                                .getResource(images.next()));
-                    } else {
-                        imageBytes = null;
-                        TeaseLib.log("Actor '" + message.actor.name
-                                + "': images missing - please initialize");
+                InputStream resource = null;
+                try {
+                    resource = resources.getResource(path);
+                    imageBytes = convertInputStreamToByte(resource);
+                } catch (IOException e) {
+                    if (!teaseLib.getBoolean(Config.Namespace,
+                            Config.Debug.IgnoreMissingResources)) {
+                        throw e;
                     }
-                } else if (displayImage == Message.NoImage) {
-                    imageBytes = null;
-                } else {
-                    // TODO Cache image or detect reusage, since
-                    // currently the same image is reloaded for
-                    // each
-                    // text part (usually when setting the image
-                    // outside
-                    // the message)
-                    final InputStream resource = resources
-                            .getResource(displayImage);
-                    try {
-                        imageBytes = convertInputStreamToByte(resource);
-                    } finally {
+                } finally {
+                    if (resource != null) {
                         resource.close();
                     }
                 }
-            } catch (IOException e) {
-                if (!teaseLib.getBoolean(Config.Namespace,
-                        Config.Debug.IgnoreMissingResources)) {
-                    throw e;
-                }
+            } catch (Exception e) {
+                text = text + "\n\n" + e.getClass() + ": " + e.getMessage()
+                        + "\n";
+                TeaseLib.log(this, e);
             }
-        } catch (Exception e) {
-            text = text + "\n\n" + e.getClass() + ": " + e.getMessage() + "\n";
-            imageBytes = null;
-            TeaseLib.log(this, e);
         }
         teaseLib.host.show(imageBytes, text);
     }

@@ -313,7 +313,14 @@ public abstract class TeaseScriptBase {
             @Override
             public void run(SpeechRecognitionImplementation sender,
                     SpeechRecognizedEventArgs eventArgs) {
-                showChoices.pause(ShowChoices.RecognitionRejected);
+                SpeechRecognitionRejectedScript speechRecognitionRejectedHandler = actor.speechRecognitionRejectedHandler;
+                if (speechRecognitionRejectedHandler.canRun()) {
+                    showChoices.pause(ShowChoices.RecognitionRejected);
+                } else {
+                    TeaseLib.log("RecognitionRejected-handler "
+                            + speechRecognitionRejectedHandler.toString()
+                            + " canRun() returned false - Skipping");
+                }
             }
         };
         // The recognitionRejected handler won't trigger immediately when
@@ -327,20 +334,17 @@ public abstract class TeaseScriptBase {
             public void run() {
                 SpeechRecognitionRejectedScript speechRecognitionRejectedHandler = actor.speechRecognitionRejectedHandler;
                 // Test before pause to avoid button flicker
-                if (speechRecognitionRejectedHandler.canRun()) {
-                    if (renderQueue.hasCompletedMandatory()) {
-                        Replay beforeSpeechRecognitionRejectedHandler = new Replay(
-                                playedRenderers);
-                        TeaseLib.log("Running RecognitionRejected-handler "
-                                + speechRecognitionRejectedHandler.toString());
-                        speechRecognitionRejectedHandler.run();
-                        beforeSpeechRecognitionRejectedHandler
-                                .replay(Position.End);
-                    } else {
-                        TeaseLib.log("Skipping RecognitionRejected-handler while rendering message");
-                    }
+                if (renderQueue.hasCompletedMandatory()) {
+                    Replay beforeSpeechRecognitionRejectedHandler = new Replay(
+                            playedRenderers);
+                    TeaseLib.log("Running RecognitionRejected-handler "
+                            + speechRecognitionRejectedHandler.toString());
+                    speechRecognitionRejectedHandler.run();
+                    beforeSpeechRecognitionRejectedHandler.replay(Position.End);
                 } else {
-                    TeaseLib.log("Skipping RecognitionRejected-handler");
+                    TeaseLib.log("Skipping RecognitionRejected-handler  "
+                            + speechRecognitionRejectedHandler.toString()
+                            + " while rendering message");
                 }
             }
         });

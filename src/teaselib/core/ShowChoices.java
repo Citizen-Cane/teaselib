@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.ReentrantLock;
 
 import teaselib.ScriptFunction;
 import teaselib.TeaseLib;
@@ -43,6 +44,7 @@ class ShowChoices {
                     + " Script Function", 1, TimeUnit.HOURS);
 
     private boolean scriptTaskStarted = false;
+    private final ReentrantLock pauseSync = new ReentrantLock();
     private volatile boolean paused = false;
     private volatile String reason = null;
 
@@ -108,12 +110,15 @@ class ShowChoices {
                 // Wait for the script task to end
                 scriptTask.join();
             }
-            if (paused) {
-                synchronized (this) {
+            // Sync on the pause state set by pause()
+            pauseSync.lock();
+            try {
+                if (paused) {
                     TeaseLib.log("Entering pause state with reason " + reason);
-                    notifyAll();
+                    return reason;
                 }
-                return reason;
+            } finally {
+                pauseSync.unlock();
             }
         }
         // The result of the script function may override any result
@@ -163,8 +168,9 @@ class ShowChoices {
     // This issue needs to be observed (Mine has a SR Rejected script handler)
 
     public void pause(String reason) {
-        synchronized (this) {
-            if (!paused) {
+        if (!paused) {
+            pauseSync.lock();
+            try {
                 this.paused = true;
                 this.reason = reason;
                 TeaseLib.log("Pausing " + derivedChoices.toString());
@@ -184,19 +190,13 @@ class ShowChoices {
                 } catch (Exception e) {
                     TeaseLib.logDetail(this, e);
                 }
-                try {
-                    // Wait until the reply() of the other instance notified us
-                    // that it exited with a pause reason.
-                    wait();
-                } catch (InterruptedException e) {
-                    throw new ScriptInterruptedException();
-                } finally {
-                    // Keep the pause status until the choices are about to be
-                    // realized again in the user interface
-                }
-            } else {
-                TeaseLib.log("Paused aready " + derivedChoices.toString());
+            } finally {
+                pauseSync.unlock();
             }
+            // Keep the pause status until the choices are about to be
+            // realized again in the user interface
+        } else {
+            TeaseLib.log("Paused aready " + derivedChoices.toString());
         }
     }
 

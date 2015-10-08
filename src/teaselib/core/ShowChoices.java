@@ -43,8 +43,8 @@ class ShowChoices {
                     + " Script Function", 1, TimeUnit.HOURS);
 
     private boolean scriptTaskStarted = false;
-    private boolean paused = false;
-    private String reason = null;
+    private volatile boolean paused = false;
+    private volatile String reason = null;
 
     public ShowChoices(TeaseScriptBase script, List<String> choices,
             List<String> derivedChoices, ScriptFutureTask scriptTask,
@@ -92,29 +92,28 @@ class ShowChoices {
             paused = false;
             choiceIndex = teaseLib.host.reply(derivedChoices);
         } finally {
-            if (!paused) {
-                if (scriptTask != null) {
-                    if (scriptTask.isDone()) {
-                        TeaseLib.logDetail("choose: script task finished");
-                    } else {
-                        TeaseLib.logDetail("choose: Cancelling script task");
-                        scriptTask.cancel(true);
-                    }
+            boolean stopScriptTask = !paused && scriptTask != null;
+            if (stopScriptTask) {
+                if (scriptTask.isDone()) {
+                    TeaseLib.logDetail("choose: script task finished");
+                } else {
+                    TeaseLib.logDetail("choose: Cancelling script task");
+                    scriptTask.cancel(true);
                 }
             }
             if (recognizeSpeech) {
                 disableSpeechRecognition();
             }
-        }
-        if (paused) {
-            synchronized (this) {
-                notifyAll();
-            }
-            return reason;
-        } else {
-            // Wait for the script task to end
-            if (scriptTask != null) {
+            if (stopScriptTask) {
+                // Wait for the script task to end
                 scriptTask.join();
+            }
+            if (paused) {
+                synchronized (this) {
+                    TeaseLib.log("Entering pause state with reason " + reason);
+                    notifyAll();
+                }
+                return reason;
             }
         }
         // The result of the script function may override any result
@@ -155,6 +154,14 @@ class ShowChoices {
     /**
      * Dismiss clickables but keep script function running
      */
+
+    // TODO Avoid deadlock pause() in speech-rejected-script-handler waiting for
+    // a notify, while showChoices wants to remove its rejected-handler
+    // - both sync on the EventSource for SR-Rejected-Events
+    // It seems that the choice was somehow considered as a valid choice,
+    // instead of a pause -> using volatile for signaling
+    // This issue needs to be observed (Mine has a SR Rejected script handler)
+
     public void pause(String reason) {
         synchronized (this) {
             if (!paused) {

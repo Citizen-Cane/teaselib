@@ -316,11 +316,12 @@ public abstract class TeaseScriptBase {
                 showChoices.pause(ShowChoices.RecognitionRejected);
             }
         };
-        // The recognitionRejected handler won'ttrigger immediately when
+        // The recognitionRejected handler won't trigger immediately when
         // a script function renders messages, because it will wait until
         // the render queue is empty, and this includes message delays.
-        // Script functions are not supported, but the message may still
-        // render comments while the choices are shown.
+        // Therefore script functions are not supported, because the script
+        // function would still render messages while the choices are shown.
+        // However rendering messages while showing choices should be fine.
         pauseHandlers.put(ShowChoices.RecognitionRejected, new Runnable() {
             @Override
             public void run() {

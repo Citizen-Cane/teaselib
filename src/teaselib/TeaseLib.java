@@ -263,6 +263,10 @@ public class TeaseLib {
      *         A persistent boolean value, start value is false
      */
     public class PersistentBoolean extends PersistentValue {
+        public final static boolean DefaultValue = false;
+
+        private boolean defaultValue = DefaultValue;
+
         public PersistentBoolean(String namespace, String name) {
             super(namespace, name);
         }
@@ -271,8 +275,17 @@ public class TeaseLib {
             super(namespace, name);
         }
 
+        public PersistentBoolean defaultValue(boolean defaultValue) {
+            this.defaultValue = defaultValue;
+            return this;
+        }
+
         public boolean get() {
-            return persistence.getBoolean(name);
+            if (persistence.has(name)) {
+                return persistence.getBoolean(name);
+            } else {
+                return defaultValue;
+            }
         }
 
         @Override
@@ -295,6 +308,10 @@ public class TeaseLib {
      *         A persistent integer value, start value is 0
      */
     public class PersistentInteger extends PersistentValue {
+        public final static int DefaultValue = 0;
+
+        private int defaultValue = DefaultValue;
+
         public PersistentInteger(String namespace, String name) {
             super(namespace, name);
         }
@@ -303,11 +320,21 @@ public class TeaseLib {
             super(namespace, name);
         }
 
+        public PersistentInteger defaultValue(int defaultValue) {
+            this.defaultValue = defaultValue;
+            return this;
+        }
+
         public int get() {
-            try {
-                return Integer.parseInt(persistence.get(name));
-            } catch (NumberFormatException e) {
-                return 0;
+            final String value = persistence.get(name);
+            if (value == null) {
+                return defaultValue;
+            } else {
+                try {
+                    return Integer.parseInt(value);
+                } catch (NumberFormatException e) {
+                    return 0;
+                }
             }
         }
 
@@ -322,6 +349,10 @@ public class TeaseLib {
      *         A persistent float value, start value is 0.0
      */
     public class PersistentFloat extends PersistentValue {
+        public final static double DefaultValue = 0.0;
+
+        private double defaultValue = DefaultValue;
+
         public PersistentFloat(String namespace, String name) {
             super(namespace, name);
         }
@@ -330,11 +361,21 @@ public class TeaseLib {
             super(namespace, name);
         }
 
+        public PersistentFloat defaultValue(double defaultValue) {
+            this.defaultValue = defaultValue;
+            return this;
+        }
+
         public double get() {
-            try {
-                return Double.parseDouble(persistence.get(name));
-            } catch (NumberFormatException e) {
-                return 0.0;
+            final String value = persistence.get(name);
+            if (value == null) {
+                return defaultValue;
+            } else {
+                try {
+                    return Double.parseDouble(value);
+                } catch (NumberFormatException e) {
+                    return defaultValue;
+                }
             }
         }
 
@@ -349,6 +390,10 @@ public class TeaseLib {
      *         A persistent String value, start value is the empty string
      */
     public class PersistentString extends PersistentValue {
+        public final static String DefaultValue = "";
+
+        private String defaultValue = DefaultValue;
+
         public PersistentString(String namespace, String name) {
             super(namespace, name);
         }
@@ -357,13 +402,31 @@ public class TeaseLib {
             super(namespace, name);
         }
 
+        public PersistentString defaultValue(String defaultValue) {
+            this.defaultValue = defaultValue;
+            return this;
+        }
+
         public String get() {
-            return persistence.get(name);
+            final String value = persistence.get(name);
+            if (value == null) {
+                return defaultValue;
+            } else {
+                return value;
+            }
         }
 
         public void set(String value) {
             persistence.set(name, value);
         }
+    }
+
+    public void clear(String namespace, String name) {
+        persistence.clear(makePropertyName(namespace, name));
+    }
+
+    public void clear(String namespace, Enum<?> name) {
+        persistence.clear(makePropertyName(namespace, name));
     }
 
     public void set(String namespace, Enum<?> name, boolean value) {

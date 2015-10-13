@@ -1,50 +1,60 @@
 package teaselib.hosts;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import teaselib.core.Persistence;
 
 public class DummyPersistence implements Persistence {
 
+    public final static String True = "true";
+    public final static String False = "false";
+
+    public final Map<String, String> storage = new HashMap<String, String>();
+
     @Override
     public boolean has(String name) {
-        // TODO Auto-generated method stub
-        return false;
+        return storage.containsKey(name);
     }
 
     @Override
     public String get(String name) {
-        // TODO Auto-generated method stub
-        return null;
+        return storage.get(name);
     }
 
     @Override
     public void set(String name, String value) {
-        // TODO Auto-generated method stub
+        storage.put(name, value);
     }
 
     @Override
     public boolean getBoolean(String name) {
-        // TODO Auto-generated method stub
-        return false;
+        String value = get(name);
+        if (value == null) {
+            return false;
+        } else {
+            return value.equals(True);
+        }
     }
 
     @Override
     public void set(String name, boolean value) {
-        // TODO Auto-generated method stub
+        set(name, value ? True : False);
     }
 
     @Override
     public void clear(String name) {
-        // TODO Auto-generated method stub
+        storage.remove(name);
     }
 
     @Override
     public String get(TextVariable name, String locale) {
-        return null;
+        throw new UnsupportedOperationException(name.name());
     }
 
     @Override
     public void set(TextVariable name, String locale, String value) {
-        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException(name.name());
     }
 
 }

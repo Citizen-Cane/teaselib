@@ -9,7 +9,8 @@ package teaselib;
  * The default value is always {@code false}, and chosen to maximize the user
  * experience.
  * <P>
- * Values are written via the TeaseLib {@code getXXX(...)/set(...)} methods, as a result the TeaseLib settings are maintained by the host.
+ * Values are written via the TeaseLib {@code getXXX(...)/set(...)} methods, as
+ * a result the TeaseLib settings are maintained by the host.
  * <P>
  * Examples:
  * <P>
@@ -26,12 +27,12 @@ public enum Config {
 
     public enum Debug {
         /**
-         * TeaseLib.Config.Debug.IgnoreMissingResources=false
+         * TeaseLib.Config.Debug.IgnoreMissingResources=true
          */
         IgnoreMissingResources,
 
         /**
-         * TeaseLib.Config.Debug.LogDetails=false
+         * TeaseLib.Config.Debug.LogDetails=true
          */
         LogDetails;
     }

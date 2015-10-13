@@ -152,6 +152,14 @@ public abstract class TeaseScriptPersistence extends TeaseScriptBase {
         return teaseLib.item(namespace, value);
     }
 
+    public void clear(String name) {
+        teaseLib.clear(namespace, name);
+    }
+
+    public void clear(Enum<?> name) {
+        teaseLib.clear(namespace, name);
+    }
+
     public void set(Enum<?> name, boolean value) {
         teaseLib.set(namespace, name, value);
     }

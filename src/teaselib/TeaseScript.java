@@ -205,11 +205,11 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
      * @param choices
      * @return
      */
-    public String reply(final List<String> choices) {
+    public final String reply(final List<String> choices) {
         return showChoices(null, choices);
     }
 
-    public String reply(String choice, String... more) {
+    public final String reply(String choice, String... more) {
         List<String> choices = buildChoicesFromArray(choice, more);
         return reply(choices);
     }
@@ -219,13 +219,13 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
      * @param choices
      * @return
      */
-    public String reply(ScriptFunction scriptFunction,
+    public final String reply(ScriptFunction scriptFunction,
             final List<String> choices) {
         String chosen = showChoices(scriptFunction, choices);
         return chosen;
     }
 
-    public String reply(ScriptFunction scriptFunction, String choice,
+    public final String reply(ScriptFunction scriptFunction, String choice,
             String... more) {
         List<String> choices = buildChoicesFromArray(choice, more);
         return reply(scriptFunction, choices);
@@ -349,17 +349,17 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
         };
     }
 
-    public int replyIndex(String choice, String... more) {
+    public final int replyIndex(String choice, String... more) {
         List<String> choices = buildChoicesFromArray(choice, more);
         return replyIndex(choices);
     }
 
-    public int replyIndex(List<String> choices) {
+    public final int replyIndex(List<String> choices) {
         String answer = reply(choices);
         return choices.indexOf(answer);
     }
 
-    public boolean askYN(String yes, String no) {
+    public final boolean askYN(String yes, String no) {
         return reply(yes, no) == yes;
     }
 
@@ -377,12 +377,12 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
      * @param recognitionConfidence
      * @return
      */
-    public String reply(String choice, Confidence recognitionConfidence) {
+    public final String reply(String choice, Confidence recognitionConfidence) {
         List<String> choices = buildChoicesFromArray(choice);
         return showChoices(null, choices, recognitionConfidence);
     }
 
-    public String reply(ScriptFunction scriptFunction, String choice,
+    public final String reply(ScriptFunction scriptFunction, String choice,
             Confidence recognitionConfidence) {
         List<String> choices = buildChoicesFromArray(choice);
         return showChoices(scriptFunction, choices, recognitionConfidence);

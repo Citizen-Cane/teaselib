@@ -211,7 +211,7 @@ public abstract class TeaseScriptBase {
         }
     }
 
-    protected String showChoices(final ScriptFunction scriptFunction,
+    protected final String showChoices(final ScriptFunction scriptFunction,
             List<String> choices) {
         return showChoices(scriptFunction, choices, Confidence.Default);
     }

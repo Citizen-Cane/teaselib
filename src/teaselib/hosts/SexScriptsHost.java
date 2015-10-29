@@ -564,7 +564,12 @@ public class SexScriptsHost implements Host {
             if (!clickableChoices.isEmpty()) {
                 // Click any button
                 final Delegate delegate = clickableChoices.get(0);
-                delegate.run();
+                while (!showChoices.isDone()) {
+                    // Stupid trick to be able to actually click a combo item
+                    showPopup.comboBox.setPopupVisible(true);
+                    delegate.run();
+                    TeaseLib.instance().sleep(100, TimeUnit.MILLISECONDS);
+                }
             }
             throw new ScriptInterruptedException();
         } catch (Exception e1) {

@@ -532,10 +532,10 @@ public class SexScriptsHost implements Host {
         if (tryShowPopup) {
             showPopupThreadPool.execute(showPopup.task);
         }
-        // TODO getSelectedValue() won't throw InterruptedException, and won't
-        // clean up buttons
-        // Workaround: Execute it in a separate thread, cancel the same way as
-        // for speech recognition -> bingo
+        // TODO getSelectedValue() won't throw InterruptedException,
+        // and won't clean up buttons
+        // Workaround: Execute it in a separate thread,
+        // cancel the same way as speech recognition -> bingo
         final FutureTask<Integer> showChoices = new FutureTask<Integer>(
                 new Callable<Integer>() {
                     @Override
@@ -549,11 +549,13 @@ public class SexScriptsHost implements Host {
             result = showChoices.get();
             if (tryShowPopup) {
                 try {
-                    // Fix visible popup after clicking a choice
-                    // TODO Doesn't work with two combos in a row (in Mine debug
-                    // menus we don't speak)
+                    // Fix visible popup not disappearing
+                    // after clicking a choice
                     if (showPopup.task.get()) {
                         showPopup.comboBox.setPopupVisible(false);
+                        // Doesn't work with two combos in a row
+                        // - there's no delay between combos in Mine debug menus
+                        // because the debug texts are not spoken
                     }
                 } catch (ExecutionException e) {
                     TeaseLib.log(this, e);

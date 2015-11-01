@@ -159,14 +159,6 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
         queueRenderer(new RenderDelay(seconds));
     }
 
-    public void say(String text) {
-        Message message = new Message(actor);
-        if (text != null) {
-            message.add(text);
-        }
-        say(message);
-    }
-
     public void say(String... message) {
         say(new Message(actor, message));
     }

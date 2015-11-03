@@ -98,18 +98,6 @@ public class Message {
 
     /**
      * @param message
-     *            The message to render, or null to display no message
-     */
-    public Message(Actor actor, String message) {
-        parts = new Parts();
-        if (message != null) {
-            parts.add(message);
-        }
-        this.actor = actor;
-    }
-
-    /**
-     * @param message
      *            The message to render, or null or an empty vector to display
      *            no message
      */

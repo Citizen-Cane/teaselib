@@ -175,10 +175,16 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
      * Show instructional text, this is not spoken, just displayed.
      * 
      * @param message
-     *            The text to be displayed
+     *            The text to be displayed, or null to display no message at all
      */
     public void show(String text) {
-        show(new Message(actor, text));
+        final Message message;
+        if (text != null) {
+            message = new Message(actor, text);
+        } else {
+            message = new Message(actor);
+        }
+        show(message);
     }
 
     public void show(String... message) {

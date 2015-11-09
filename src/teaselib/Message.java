@@ -416,7 +416,8 @@ public class Message {
         }
 
         public void add(String text) {
-            final Type type = determineType(text);
+            if (text == null) throw new IllegalArgumentException(text);
+            Type type = determineType(text);
             add(type, text);
         }
 

@@ -124,8 +124,8 @@ class ShowChoices {
         // The result of the script function may override any result
         // from button clicks or speech recognition
         String choice = scriptTask != null ? scriptTask
-                .getScriptFunctionResult() : ScriptFunction.Finished;
-        if (choice == ScriptFunction.Finished) {
+                .getScriptFunctionResult() : null;
+        if (choice == null) {
             // Assign result from speech recognition,
             // script task timeout or button click
             if (!srChoiceIndices.isEmpty()) {

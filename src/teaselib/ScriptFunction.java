@@ -8,14 +8,8 @@ package teaselib;
  *
  */
 public abstract class ScriptFunction implements Runnable {
-
     /**
-     * Return value to state that the script function has finished normally.
-     */
-    public static final String Finished = "Finished";
-
-    /**
-     * Return value to state that the script function timed out.
+     * Return value to state that the script function has timed out.
      */
     public static final String Timeout = "Timeout";
 
@@ -25,7 +19,7 @@ public abstract class ScriptFunction implements Runnable {
     public static final long Infinite = Long.MAX_VALUE;
 
     /**
-     * Defines the relation between the script function and the last message
+     * Defines the relation between the script function and the last message.
      *
      */
     public enum Relation {
@@ -47,9 +41,10 @@ public abstract class ScriptFunction implements Runnable {
 
     /**
      * The result of the script function. Initialized with the default value to
-     * state that the function just ended.
+     * state that the function just ended. Setting the result causes that value
+     * to be returned by {@link TeaseScript#reply}.
      */
-    public String result = Finished;
+    public String result = null;
 
     public ScriptFunction() {
         this.relation = Relation.Autonomous;

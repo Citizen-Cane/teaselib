@@ -211,7 +211,12 @@ public abstract class TeaseScriptBase {
         }
     }
 
-    protected final String showChoices(final ScriptFunction scriptFunction,
+    /**
+     * {@code recognitionConfidence} defaults to {@link Confidence#Default}
+     * 
+     * @see TeaseScriptBase#showChoices(ScriptFunction, List, Confidence)
+     */
+    protected final String showChoices(ScriptFunction scriptFunction,
             List<String> choices) {
         return showChoices(scriptFunction, choices, Confidence.Default);
     }
@@ -228,10 +233,12 @@ public abstract class TeaseScriptBase {
      *            The first choice. This function doesn't make sense without
      *            showing at least one item, so one choice is mandatory
      * @param recognitionConfidence
-     *            The confidence threshold used for speech recognitions
-     * @return
+     *            The confidence threshold used for speech recognition.
+     * @return The choice made by the user, {@link ScriptFunction#Timeout} if
+     *         the function has ended, or a custom result value set by the
+     *         script function.
      */
-    protected String showChoices(final ScriptFunction scriptFunction,
+    protected String showChoices(ScriptFunction scriptFunction,
             List<String> choices, Confidence recognitionConfidence) {
         // argument checking and text variable replacement
         final List<String> derivedChoices = replaceTextVariables(choices);

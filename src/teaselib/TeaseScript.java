@@ -201,28 +201,57 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
      * all text has been displayed and spoken.
      * 
      * @param choices
-     * @return
+     *            The prompts to be displayed in the user interface
+     * @return The choice object that has been selected by the user.
      */
     public final String reply(final List<String> choices) {
-        return showChoices(null, choices);
+        return super.showChoices(null, choices);
     }
 
+    /**
+     * Displays the requested choices in the user interface after the mandatory
+     * parts of all renderers have been completed. This means especially that
+     * all text has been displayed and spoken.
+     * 
+     * @param choice
+     *            The first prompt to be displayed by the user interface.
+     * @param more
+     *            More prompts to be displayed by the user interface
+     * @return The choice object that has been selected by the user.
+     */
     public final String reply(String choice, String... more) {
         List<String> choices = buildChoicesFromArray(choice, more);
         return reply(choices);
     }
 
     /**
-     * @param scriptFunction
+     * Displays the requested choices in the user interface after the mandatory
+     * parts of all renderers have been completed. This means especially that
+     * all text has been displayed and spoken.
+     * 
      * @param choices
-     * @return
+     *            The prompts to be displayed in the user interface
+     * @return The choice object that has been selected by the user, or
+     *         {@link TeaseScript#Timeout} if the script function completes.
      */
     public final String reply(ScriptFunction scriptFunction,
             final List<String> choices) {
-        String chosen = showChoices(scriptFunction, choices);
+        String chosen = super.showChoices(scriptFunction, choices);
         return chosen;
     }
 
+    /**
+     * Displays the requested choices in the user interface after the mandatory
+     * parts of all renderers have been completed. This means especially that
+     * all text has been displayed and spoken.
+     * 
+     * @param choice
+     *            The first prompt to be displayed by the user interface.
+     * @param more
+     *            More prompts to be displayed by the user interface
+     * @return The choice object that has been selected by the user, or
+     *         {@link TeaseScript#Timeout} if the script function completes.
+     */
     public final String reply(ScriptFunction scriptFunction, String choice,
             String... more) {
         List<String> choices = buildChoicesFromArray(choice, more);
@@ -301,6 +330,9 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
      * 
      * @param seconds
      *            The timeout duration
+     * @param timoutBehavior
+     *            How speech recognition is handled when the timeout has been
+     *            reached
      * @return A script function that accomplishes the described behavior.
      */
     public ScriptFunction timeout(final long seconds,
@@ -328,15 +360,13 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
      * 
      * @param seconds
      *            The timeout duration
+     * @param timoutBehavior
+     *            How speech recognition is handled when the timeout has been
+     *            reached
      * @return A script function that accomplishes the described behavior.
      */
     public ScriptFunction timeoutWithConfirmation(final long seconds,
             final SpeechRecognition.TimeoutBehavior timoutBehavior) {
-        // // Need to complete mandatories beforehand, because a timed button
-        // with
-        // // confirmation should appear as a normal button, instead of when the
-        // // message starts displaying
-        // completeMandatory();
         return new SpeechRecognitionAwareTimeoutScriptFunction(seconds,
                 timoutBehavior, Relation.Confirmation) {
             @Override
@@ -347,16 +377,50 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
         };
     }
 
+    /**
+     * Displays the requested choices in the user interface after the mandatory
+     * parts of all renderers have been completed. This means especially that
+     * all text has been displayed and spoken.
+     * 
+     * @param choice
+     *            The first prompt to be displayed by the user interface.
+     * @param more
+     *            More prompts to be displayed by the user interface
+     * @return The index of the choice object in the argument list that has been
+     *         selected by the user.
+     */
     public final int replyIndex(String choice, String... more) {
         List<String> choices = buildChoicesFromArray(choice, more);
         return replyIndex(choices);
     }
 
+    /**
+     * Displays the requested choices in the user interface after the mandatory
+     * parts of all renderers have been completed. This means especially that
+     * all text has been displayed and spoken.
+     * 
+     * @param choices
+     *            The prompts to be displayed in the user interface
+     * @return The index of the choice object in the {@code choices} list that
+     *         has been selected by the user.
+     */
     public final int replyIndex(List<String> choices) {
         String answer = reply(choices);
         return choices.indexOf(answer);
     }
 
+    /**
+     * Displays the requested choices in the user interface after the mandatory
+     * parts of all renderers have been completed. This means especially that
+     * all text has been displayed and spoken.
+     * 
+     * @param yes
+     *            The first prompt.
+     * @param no
+     *            The second prompt.
+     * @return True if {@code yes} has been selected, false if {@code no} has
+     *         been selected.
+     */
     public final boolean askYN(String yes, String no) {
         return reply(yes, no) == yes;
     }
@@ -372,14 +436,30 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
      * but the actual words don't matter.
      * 
      * @param choice
+     *            The prompt to be displayed by the user interface.
      * @param recognitionConfidence
-     * @return
+     *            The confidence threshold used for speech recognition.
+     * @return The choice object that has been selected by the user.
      */
     public final String reply(String choice, Confidence recognitionConfidence) {
         List<String> choices = buildChoicesFromArray(choice);
         return showChoices(null, choices, recognitionConfidence);
     }
 
+    /**
+     * Displays the requested choices in the user interface after the mandatory
+     * parts of all renderers have been completed. This means especially that
+     * all text has been displayed and spoken.
+     * 
+     * @param choice
+     *            The first prompt to be displayed by the user interface.
+     * @param more
+     *            More prompts to be displayed by the user interface
+     * @param recognitionConfidence
+     *            The confidence threshold used for speech recognition.
+     * @return The choice object that has been selected by the user, or
+     *         {@link TeaseScript#Timeout} if the script function completes.
+     */
     public final String reply(ScriptFunction scriptFunction, String choice,
             Confidence recognitionConfidence) {
         List<String> choices = buildChoicesFromArray(choice);

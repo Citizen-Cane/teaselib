@@ -568,7 +568,9 @@ public class SexScriptsHost implements Host {
                 final Delegate delegate = clickableChoices.get(0);
                 while (!showChoices.isDone()) {
                     // Stupid trick to be able to actually click a combo item
-                    showPopup.comboBox.setPopupVisible(true);
+                    if (showPopup.comboBox.isVisible()) {
+                        showPopup.comboBox.setPopupVisible(true);
+                    }
                     delegate.run();
                     TeaseLib.instance().sleep(100, TimeUnit.MILLISECONDS);
                 }

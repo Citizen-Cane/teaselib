@@ -38,7 +38,12 @@ public class ScriptFutureTask extends FutureTask<String> {
                         clickToFinishFunction(script, derivedChoices, timeout);
                         return null;
                     } catch (ScriptInterruptedException e) {
-                        script.endAll();
+                        // TODO Remove completely because this should be
+                        // obsolete:
+                        // renderers are cancelled in
+                        // TeaseScriptBase.showChoices
+                        // but let's better test it for a while...
+                        // script.endAll();
                         throw e;
                     }
                 }

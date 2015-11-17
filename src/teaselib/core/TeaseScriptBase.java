@@ -382,7 +382,7 @@ public abstract class TeaseScriptBase {
 
     private static final Object showChoicesSyncObject = new Object();
 
-    private static String showChoices(ShowChoices showChoices,
+    private String showChoices(ShowChoices showChoices,
             Map<String, Runnable> pauseHandlers) {
         String choice = null;
         ShowChoices previous = null;
@@ -399,6 +399,11 @@ public abstract class TeaseScriptBase {
             // Ensure only one thread at a time can realize ui elements
             synchronized (showChoicesSyncObject) {
                 choice = showChoices.show();
+                // End the current set of renderers
+                // in order to dismiss the message
+                // This also affects script functions,
+                // as well as {@link Message#ShowChoices}
+                endAll();
             }
             synchronized (choicesStack) {
                 if (pauseHandlers.containsKey(choice)) {

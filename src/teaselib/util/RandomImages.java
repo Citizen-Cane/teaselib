@@ -30,11 +30,11 @@ public class RandomImages implements Images {
     public RandomImages(ResourceLoader resources, String path) {
         images = resources.resources(path, "jpg");
         if (images.size() > 0) {
-            TeaseLib.log(getClass().getSimpleName() + ": Path '" + path
-                    + "' contains " + images.size() + " images");
+            TeaseLib.instance().log.info(getClass().getSimpleName() + ": Path '"
+                    + path + "' contains " + images.size() + " images");
         } else {
-            TeaseLib.log(getClass().getSimpleName() + ": Path '" + path
-                    + "' doesn't contain any images");
+            TeaseLib.instance().log.info(getClass().getSimpleName() + ": Path '"
+                    + path + "' doesn't contain any images");
         }
     }
 

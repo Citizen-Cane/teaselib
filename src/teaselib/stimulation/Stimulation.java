@@ -59,9 +59,9 @@ public abstract class Stimulation implements Runnable {
         this.durationSeconds = durationSeconds;
         stim = new Thread(this);
         final String simpleName = getClass().getSimpleName();
-        TeaseLib.log(simpleName + ": intensity=" + intensity + " duration="
-                + durationSeconds + " on " + stimulator.getDeviceName() + ", "
-                + stimulator.getLocation());
+        TeaseLib.instance().log.info(simpleName + ": intensity=" + intensity
+                + " duration=" + durationSeconds + " on "
+                + stimulator.getDeviceName() + ", " + stimulator.getLocation());
         stim.setName(simpleName);
         stim.start();
     }

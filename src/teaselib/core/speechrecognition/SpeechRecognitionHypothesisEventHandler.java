@@ -124,10 +124,11 @@ public class SpeechRecognitionHypothesisEventHandler {
                                 .length()) {
                     hypothesisAccumulatedWeights[index] += propabilityWeight;
                     hypothesisProgress[index] = hypothesisText;
-                    TeaseLib.log("'" + hypothesisText + "' + "
+                    TeaseLib.instance().log.info("'" + hypothesisText + "' + "
                             + propabilityWeight);
                 } else {
-                    TeaseLib.log("Ignoring hypothesis '" + hypothesisText);
+                    TeaseLib.instance().log.info("Ignoring hypothesis '"
+                            + hypothesisText);
                 }
             }
 
@@ -147,8 +148,8 @@ public class SpeechRecognitionHypothesisEventHandler {
             int choiceWithMaxProbabilityIndex = 0;
             for (int i = 0; i < hypothesisAccumulatedWeights.length; i++) {
                 double value = hypothesisAccumulatedWeights[i];
-                TeaseLib.log("Result " + i + ": '" + choices.get(i)
-                        + "' hypothesisCount=" + value);
+                TeaseLib.instance().log.info("Result " + i + ": '"
+                        + choices.get(i) + "' hypothesisCount=" + value);
                 if (value > maxValue) {
                     maxValue = value;
                     choiceWithMaxProbabilityIndex = i;
@@ -205,24 +206,26 @@ public class SpeechRecognitionHypothesisEventHandler {
             boolean choiceAccepted = choiceWeightAccepted
                     && choiceDetectionCountAccepted;
             if (!choiceWeightAccepted) {
-                TeaseLib.log("Phrase '"
-                        + choice
-                        + "' hypothesis accumulated weight="
-                        + maxValue
-                        + " < threshold="
-                        + hypothesisAccumulatedWeight
-                        + " is too low to accept hypothesis-based recognition for confidence "
-                        + confidence.toString());
+                TeaseLib.instance().log
+                        .info("Phrase '"
+                                + choice
+                                + "' hypothesis accumulated weight="
+                                + maxValue
+                                + " < threshold="
+                                + hypothesisAccumulatedWeight
+                                + " is too low to accept hypothesis-based recognition for confidence "
+                                + confidence.toString());
             }
             if (!choiceDetectionCountAccepted) {
-                TeaseLib.log("Phrase '"
-                        + choice
-                        + "' word detection count="
-                        + choiceHypothesisCount
-                        + " < threshold="
-                        + minimumNumberOfWordsForHypothesisRecognition
-                        + " is too low to accept hypothesis-based recognition for confidence "
-                        + confidence.toString());
+                TeaseLib.instance().log
+                        .info("Phrase '"
+                                + choice
+                                + "' word detection count="
+                                + choiceHypothesisCount
+                                + " < threshold="
+                                + minimumNumberOfWordsForHypothesisRecognition
+                                + " is too low to accept hypothesis-based recognition for confidence "
+                                + confidence.toString());
             }
             return choiceAccepted;
         }
@@ -254,9 +257,10 @@ public class SpeechRecognitionHypothesisEventHandler {
                                 sender, recognitionCompletedEventArgs);
                     }
                 } else {
-                    TeaseLib.log("Speech recognition hypothesis dropped - "
-                            + size
-                            + " recognition results share the same accumulated weight - can't decide");
+                    TeaseLib.instance().log
+                            .info("Speech recognition hypothesis dropped - "
+                                    + size
+                                    + " recognition results share the same accumulated weight - can't decide");
                 }
             }
         };

@@ -71,7 +71,7 @@ class ShowChoices {
     }
 
     public String show() {
-        TeaseLib.log("Showing " + derivedChoices.toString());
+        teaseLib.log.info("Showing " + derivedChoices.toString());
         // Start SR first, otherwise there would be a race condition between
         // this thread and the script function when displaying/speaking a
         // message in the script function, causing the display of the choices to
@@ -97,9 +97,11 @@ class ShowChoices {
             boolean stopScriptTask = !paused && scriptTask != null;
             if (stopScriptTask) {
                 if (scriptTask.isDone()) {
-                    TeaseLib.logDetail("choose: script task finished");
+                    teaseLib.log
+                            .debug("choose: script task finished");
                 } else {
-                    TeaseLib.logDetail("choose: Cancelling script task");
+                    teaseLib.log
+                            .debug("choose: Cancelling script task");
                     scriptTask.cancel(true);
                 }
             }
@@ -114,7 +116,8 @@ class ShowChoices {
             pauseSync.lock();
             try {
                 if (paused) {
-                    TeaseLib.log("Entering pause state with reason " + reason);
+                    teaseLib.log
+                            .info("Entering pause state with reason " + reason);
                     return reason;
                 }
             } finally {
@@ -150,7 +153,7 @@ class ShowChoices {
     }
 
     private void disableSpeechRecognition() {
-        TeaseLib.logDetail("Stopping speech recognition");
+        teaseLib.log.debug("Stopping speech recognition");
         speechRecognizer.events.recognitionCompleted
                 .remove(recognitionCompleted);
         speechRecognizer.stopRecognition();
@@ -173,7 +176,8 @@ class ShowChoices {
             try {
                 this.paused = true;
                 this.reason = reason;
-                TeaseLib.log("Pausing " + derivedChoices.toString());
+                teaseLib.log.info("Pausing "
+                        + derivedChoices.toString());
                 // Must wait until there is something to pause, because
                 // the buttons are realized by the host, and therefore
                 // we don't have a synchronization object that defines a
@@ -188,7 +192,7 @@ class ShowChoices {
                 } catch (ScriptInterruptedException e) {
                     throw new ScriptInterruptedException();
                 } catch (Exception e) {
-                    TeaseLib.logDetail(this, e);
+                    teaseLib.log.debug(this, e);
                 }
             } finally {
                 pauseSync.unlock();
@@ -196,7 +200,8 @@ class ShowChoices {
             // Keep the pause status until the choices are about to be
             // realized again in the user interface
         } else {
-            TeaseLib.log("Paused aready " + derivedChoices.toString());
+            teaseLib.log.info("Paused aready "
+                    + derivedChoices.toString());
         }
     }
 
@@ -241,16 +246,16 @@ class ShowChoices {
                         }
                         // Click the button
                         delegate.run();
-                        TeaseLib.log("Clicked delegate for '"
+                        teaseLib.log.info("Clicked delegate for '"
                                 + speechRecognitionResult.text + "' index="
                                 + speechRecognitionResult.index);
                     } else {
-                        TeaseLib.log("Button gone for choice "
+                        teaseLib.log.info("Button gone for choice "
                                 + speechRecognitionResult.index + ": "
                                 + speechRecognitionResult.text);
                     }
                 } catch (Throwable t) {
-                    TeaseLib.log(this, t);
+                    teaseLib.log.error(this, t);
                 }
             }
         };

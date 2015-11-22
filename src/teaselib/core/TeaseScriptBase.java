@@ -98,7 +98,7 @@ public abstract class TeaseScriptBase {
             TextToSpeechPlayer.instance().selectVoice(resources,
                     new Message(actor));
         } catch (IOException e) {
-            TeaseLib.log(this, e);
+            teaseLib.log.error(this, e);
         }
     }
 
@@ -275,7 +275,7 @@ public abstract class TeaseScriptBase {
             recognitionRejected = null;
         }
         waitToStartScriptFunction(scriptFunction);
-        TeaseLib.log("showChoices: " + derivedChoices.toString());
+        teaseLib.log.info("showChoices: " + derivedChoices.toString());
         // Show the choices
         final String choice;
         try {
@@ -286,13 +286,14 @@ public abstract class TeaseScriptBase {
                         .remove(recognitionRejected);
             }
         }
-        TeaseLib.logDetail("Reply finished");
+        teaseLib.log.debug("Reply finished");
         // Object identity is supported by
         // returning an item of the original choices list
+        teaseLib.transcript.info("< " + choice);
         return choice;
     }
 
-    private static void addPauseHandler(Map<String, Runnable> pauseHandlers,
+    private void addPauseHandler(Map<String, Runnable> pauseHandlers,
             final ShowChoices showChoices) {
         pauseHandlers.put(ShowChoices.Paused, new Runnable() {
             @Override
@@ -304,7 +305,7 @@ public abstract class TeaseScriptBase {
                     while (choicesStack.peek() != showChoices) {
                         choicesStack.wait();
                     }
-                    TeaseLib.log("Resuming choices "
+                    teaseLib.log.info("Resuming choices "
                             + showChoices.derivedChoices);
                 } catch (InterruptedException e) {
                     throw new ScriptInterruptedException();
@@ -324,7 +325,7 @@ public abstract class TeaseScriptBase {
                 if (speechRecognitionRejectedHandler.canRun()) {
                     showChoices.pause(ShowChoices.RecognitionRejected);
                 } else {
-                    TeaseLib.log("RecognitionRejected-handler "
+                    teaseLib.log.info("RecognitionRejected-handler "
                             + speechRecognitionRejectedHandler.toString()
                             + " canRun() returned false - Skipping");
                 }
@@ -344,12 +345,12 @@ public abstract class TeaseScriptBase {
                 if (renderQueue.hasCompletedMandatory()) {
                     Replay beforeSpeechRecognitionRejectedHandler = new Replay(
                             playedRenderers);
-                    TeaseLib.log("Running RecognitionRejected-handler "
+                    teaseLib.log.info("Running RecognitionRejected-handler "
                             + speechRecognitionRejectedHandler.toString());
                     speechRecognitionRejectedHandler.run();
                     beforeSpeechRecognitionRejectedHandler.replay(Position.End);
                 } else {
-                    TeaseLib.log("Skipping RecognitionRejected-handler  "
+                    teaseLib.log.info("Skipping RecognitionRejected-handler  "
                             + speechRecognitionRejectedHandler.toString()
                             + " while rendering message");
                 }
@@ -407,7 +408,7 @@ public abstract class TeaseScriptBase {
             }
             synchronized (choicesStack) {
                 if (pauseHandlers.containsKey(choice)) {
-                    TeaseLib.log("Invoking choices handler for choices="
+                    teaseLib.log.info("Invoking choices handler for choices="
                             + showChoices.derivedChoices.toString()
                             + " reason=" + choice.toString());
                     pauseHandlers.get(choice).run();

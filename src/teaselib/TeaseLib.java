@@ -1,12 +1,8 @@
 package teaselib;
 
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.text.SimpleDateFormat;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -17,6 +13,7 @@ import teaselib.core.Persistence.TextVariable;
 import teaselib.core.ScriptInterruptedException;
 import teaselib.util.Item;
 import teaselib.util.Items;
+import teaselib.util.Logger;
 
 /**
  * @author someone
@@ -36,11 +33,12 @@ public class TeaseLib {
     private static TeaseLib instance;
     private Map<Class<?>, State<? extends Enum<?>>> states = new HashMap<Class<?>, State<? extends Enum<?>>>();
 
-    private final boolean logDetails;
-    private static BufferedWriter log = null;
-    private final static File logFile = new File("./TeaseLib.log");
-    private final static SimpleDateFormat timeFormat = new SimpleDateFormat(
-            "HH:mm:ss.SSS");
+    public final Logger log;
+    public final Logger transcript;
+
+    private static final File techLogFile = new File("./TeaseLib.log");
+    private static final File transcriptLogFile = new File(
+            "./TeaseLib session transcript.log");
 
     /**
      * Call this function from the host in order to initialize TeaseLib
@@ -72,83 +70,34 @@ public class TeaseLib {
         }
         this.host = host;
         this.persistence = persistence;
-        // Init log
+        Logger techLogger = null;
+        Logger transcriptLogger = null;
         try {
-            log = new BufferedWriter(new FileWriter(logFile));
+            techLogger = new Logger(techLogFile, getBoolean(Config.Namespace,
+                    Config.Debug.LogDetails) ? Logger.Level.Debug
+                    : Logger.Level.Info).showTime(true).showThread(true);
         } catch (IOException e) {
-            host.show(null, "Cannot open log file " + logFile.getAbsolutePath());
+            host.show(null,
+                    "Cannot open log file " + techLogFile.getAbsolutePath());
             host.reply(Arrays.asList("Oh dear"));
+            techLogger = Logger.getConsoleLogger();
         }
-        Runtime.getRuntime().addShutdownHook(new Thread() {
-            @Override
-            public void run() {
-                if (log != null) {
-                    try {
-                        log.flush();
-                        log.close();
-                    } catch (IOException ignored) {
-                    }
-                }
-            }
-        });
-        logDetails = getBoolean(Config.Namespace, Config.Debug.LogDetails);
-    }
-
-    public static void log(String text) {
-        synchronized (log) {
-            Date now = new Date(System.currentTimeMillis());
-            String line = timeFormat.format(now) + " -"
-                    + Thread.currentThread().getName() + " - : " + text + "\n";
-            try {
-                if (log != null) {
-                    log.write(line);
-                    log.flush();
-                }
-            } catch (IOException e) {
-                instance.host
-                        .show(null,
-                                "Cannot write to log file "
-                                        + logFile.getAbsolutePath());
-            }
-            System.out.print(line);
+        try {
+            transcriptLogger = new Logger(
+                    transcriptLogFile,
+                    getBoolean(Config.Namespace, Config.Debug.LogDetails) ? Logger.Level.Debug
+                            : Logger.Level.Info).showTime(false).showThread(
+                    false);
+        } catch (IOException e) {
+            host.show(
+                    null,
+                    "Cannot open log file "
+                            + transcriptLogFile.getAbsolutePath());
+            host.reply(Arrays.asList("Oh dear"));
+            transcriptLogger = Logger.getDummyLogger();
         }
-    }
-
-    /**
-     * Log details that might be interesting for developers
-     * 
-     * @param line
-     *            Log output
-     */
-    public static void logDetail(String line) {
-        if (instance().logDetails) {
-            log(line);
-        }
-    }
-
-    public static void logDetail(Object instance, Throwable e) {
-        if (instance().logDetails) {
-            log(instance, e);
-        }
-    }
-
-    public static void log(Object instance, Throwable e) {
-        String message = e.getMessage();
-        log(e.getClass().getSimpleName() + ": "
-                + (message != null ? message : ""));
-        log(instance.getClass().getName() + ":" + instance.toString());
-        logStackTrace(e);
-        Throwable cause = e.getCause();
-        if (cause != null) {
-            log("Caused by");
-            logStackTrace(cause);
-        }
-    }
-
-    private static void logStackTrace(Throwable e) {
-        for (StackTraceElement ste : e.getStackTrace()) {
-            log("\t" + ste.toString());
-        }
+        this.log = techLogger;
+        this.transcript = transcriptLogger;
     }
 
     /**

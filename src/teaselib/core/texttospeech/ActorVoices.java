@@ -24,8 +24,10 @@ public class ActorVoices extends VoiceProperties {
                 }
             }
         } catch (IOException e) {
-            TeaseLib.log("No actor voices configuration found in '"
-                    + resources.getAssetPath(path) + "' - using defaults");
+            TeaseLib.instance().log
+                    .info("No actor voices configuration found in '"
+                            + resources.getAssetPath(path)
+                            + "' - using defaults");
         }
     }
 

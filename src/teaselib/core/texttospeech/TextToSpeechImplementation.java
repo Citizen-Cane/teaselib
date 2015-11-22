@@ -35,7 +35,7 @@ public abstract class TextToSpeechImplementation {
         try {
             dispose();
         } catch (Throwable t) {
-            TeaseLib.log(this, t);
+            TeaseLib.instance().log.error(this, t);
         }
         super.finalize();
     }

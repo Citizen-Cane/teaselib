@@ -31,13 +31,13 @@ public class TeaseLibSR extends SpeechRecognitionImplementation {
                             // Never ends
                             initSREventThread(eventThread);
                         } catch (Throwable t) {
-                            TeaseLib.log(this, t);
+                            TeaseLib.instance().log.error(this, t);
                             eventThreadException = t;
                         }
                         eventThread.notifyAll();
                     }
                 } catch (IllegalMonitorStateException e) {
-                    TeaseLib.log(this, e);
+                    TeaseLib.instance().log.error(this, e);
                 }
             }
         });
@@ -47,7 +47,7 @@ public class TeaseLibSR extends SpeechRecognitionImplementation {
             try {
                 eventThread.wait();
             } catch (InterruptedException e) {
-                TeaseLib.logDetail(this, e);
+                TeaseLib.instance().log.debug(this, e);
             }
             if (eventThreadException != null) {
                 throw eventThreadException;
@@ -95,7 +95,7 @@ public class TeaseLibSR extends SpeechRecognitionImplementation {
         try {
             dispose();
         } catch (Throwable t) {
-            TeaseLib.log(this, t);
+            TeaseLib.instance().log.error(this, t);
         }
         super.finalize();
     }

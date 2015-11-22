@@ -75,7 +75,7 @@ public class TextToSpeech {
         } catch (ScriptInterruptedException e) {
             throw e;
         } catch (Throwable t) {
-            TeaseLib.log(this, t);
+            TeaseLib.instance().log.error(this, t);
         }
     }
 
@@ -100,7 +100,7 @@ public class TextToSpeech {
             } catch (ScriptInterruptedException e) {
                 throw e;
             } catch (Throwable t) {
-                TeaseLib.log(this, t);
+                TeaseLib.instance().log.error(this, t);
             }
         } else {
             ttsEngineNotInitialized();
@@ -126,7 +126,7 @@ public class TextToSpeech {
             } catch (ScriptInterruptedException e) {
                 throw e;
             } catch (Throwable t) {
-                TeaseLib.log(this, t);
+                TeaseLib.instance().log.error(this, t);
             }
         } else {
             ttsEngineNotInitialized();
@@ -153,7 +153,7 @@ public class TextToSpeech {
             } catch (ScriptInterruptedException e) {
                 throw e;
             } catch (Throwable t) {
-                TeaseLib.log(this, t);
+                TeaseLib.instance().log.error(this, t);
             }
         } else {
             ttsEngineNotInitialized();
@@ -179,7 +179,7 @@ public class TextToSpeech {
             } catch (ScriptInterruptedException e) {
                 throw e;
             } catch (Throwable t) {
-                TeaseLib.log(this, t);
+                TeaseLib.instance().log.error(this, t);
             }
         } else {
             ttsEngineNotInitialized();

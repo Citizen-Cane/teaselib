@@ -43,7 +43,7 @@ public class DelegateThread extends Thread {
                     delegate.notifyAll();
                 }
             } catch (Throwable t) {
-                TeaseLib.log(this, t);
+                TeaseLib.instance().log.error(this, t);
             }
             if (endThread) {
                 break;

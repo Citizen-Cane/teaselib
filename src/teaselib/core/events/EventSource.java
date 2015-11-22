@@ -40,15 +40,17 @@ public class EventSource<S, T extends EventArgs> {
     }
 
     public synchronized void run(S sender, T eventArgs) {
-        TeaseLib.log(getClass().getSimpleName() + " " + name + ", "
-                + delegates.size() + " listeners " + eventArgs.toString());
+        TeaseLib.instance().log.info(getClass().getSimpleName() + " " + name
+                + ", " + delegates.size() + " listeners "
+                + eventArgs.toString());
         if (initial != null) {
             runDelegate(sender, eventArgs, initial);
         }
         for (Event<S, T> delegate : delegates) {
             runDelegate(sender, eventArgs, delegate);
             if (eventArgs.consumed) {
-                TeaseLib.log("Event " + eventArgs.toString() + " consumed");
+                TeaseLib.instance().log.info("Event " + eventArgs.toString()
+                        + " consumed");
                 break;
             }
         }
@@ -61,7 +63,7 @@ public class EventSource<S, T extends EventArgs> {
         try {
             delegate.run(sender, eventArgs);
         } catch (Throwable t) {
-            TeaseLib.log(this, t);
+            TeaseLib.instance().log.error(this, t);
         }
     }
 

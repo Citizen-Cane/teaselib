@@ -15,9 +15,11 @@ public class RenderSound extends MediaRendererThread {
     }
 
     @Override
-    public void render() throws InterruptedException {
+    public void render() throws IOException {
         try {
-            TeaseLib.log(this.getClass().getSimpleName() + ": " + soundFile);
+            teaseLib.transcript.info("Message sound = " + soundFile);
+            teaseLib.log.info(this.getClass().getSimpleName() + ": "
+                    + soundFile);
             startCompleted();
             try {
                 teaseLib.host.playSound(resources, soundFile);
@@ -29,12 +31,10 @@ public class RenderSound extends MediaRendererThread {
             }
         } catch (ScriptInterruptedException e) {
             // Expected
-        } catch (Throwable e) {
-            TeaseLib.log(this, e);
         } finally {
             mandatoryCompleted();
-            TeaseLib.log(this.getClass().getSimpleName() + ": " + soundFile
-                    + " completed");
+            teaseLib.log.info(this.getClass().getSimpleName() + ": "
+                    + soundFile + " completed");
         }
     }
 

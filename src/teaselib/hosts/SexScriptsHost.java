@@ -83,10 +83,10 @@ public class SexScriptsHost implements Host {
             mainFrame = getMainFrame();
             imageIcon = getImageIcon(fieldName);
         } catch (NoSuchFieldException e) {
-            TeaseLib.log(this, e);
+            TeaseLib.instance().log.error(this, e);
             ss.showPopup("Field " + fieldName + " not found");
         } catch (IllegalAccessException e) {
-            TeaseLib.log(this, e);
+            TeaseLib.instance().log.error(this, e);
             ss.showPopup("Field " + fieldName + " not accessible");
         }
         backgroundImageIcon = imageIcon;
@@ -125,7 +125,7 @@ public class SexScriptsHost implements Host {
                     Runnable runnable = onQuitHandler;
                     // Execute each quit handler just once
                     onQuitHandler = null;
-                    TeaseLib.log("Running quit handler "
+                    TeaseLib.instance().log.info("Running quit handler "
                             + runnable.getClass().getName());
                     runnable.run();
                 } else {
@@ -199,7 +199,7 @@ public class SexScriptsHost implements Host {
         try {
             ((ss.desktop.Script) ss).stopSoundThreads();
         } catch (Exception e) {
-            TeaseLib.log(this, e);
+            TeaseLib.instance().log.error(this, e);
         }
     }
 
@@ -209,7 +209,7 @@ public class SexScriptsHost implements Host {
         try {
             ((ss.desktop.Script) ss).stopSoundThreads();
         } catch (Exception e) {
-            TeaseLib.log(this, e);
+            TeaseLib.instance().log.error(this, e);
         }
     }
 
@@ -219,7 +219,7 @@ public class SexScriptsHost implements Host {
             try {
                 image = ImageIO.read(new ByteArrayInputStream(imageBytes));
             } catch (IOException e) {
-                TeaseLib.log(this, e);
+                TeaseLib.instance().log.error(this, e);
             }
         }
         if (image != null) {
@@ -317,13 +317,13 @@ public class SexScriptsHost implements Host {
             // Update
             mainFrame.repaint();
         } catch (NoSuchFieldException e) {
-            TeaseLib.log(this, e);
+            TeaseLib.instance().log.error(this, e);
         } catch (SecurityException e) {
-            TeaseLib.log(this, e);
+            TeaseLib.instance().log.error(this, e);
         } catch (IllegalArgumentException e) {
-            TeaseLib.log(this, e);
+            TeaseLib.instance().log.error(this, e);
         } catch (IllegalAccessException e) {
-            TeaseLib.log(this, e);
+            TeaseLib.instance().log.error(this, e);
         }
     }
 
@@ -441,7 +441,8 @@ public class SexScriptsHost implements Host {
                         Delegate click = new Delegate() {
                             @Override
                             public void run() {
-                                TeaseLib.log("Clicking on " + choice);
+                                TeaseLib.instance().log.info("Clicking on "
+                                        + choice);
                                 button.doClick();
                             }
                         };
@@ -456,11 +457,11 @@ public class SexScriptsHost implements Host {
             // would be null
             return clickableChoices;
         } catch (IllegalAccessException e) {
-            TeaseLib.log(this, e);
+            TeaseLib.instance().log.error(this, e);
         } catch (NoSuchFieldException e) {
-            TeaseLib.log(this, e);
+            TeaseLib.instance().log.error(this, e);
         } catch (SecurityException e) {
-            TeaseLib.log(this, e);
+            TeaseLib.instance().log.error(this, e);
         }
         return new ArrayList<Delegate>();
     }
@@ -498,9 +499,9 @@ public class SexScriptsHost implements Host {
             try {
                 comboBox = getComboBox();
             } catch (NoSuchFieldException e) {
-                TeaseLib.log(this, e);
+                TeaseLib.instance().log.error(this, e);
             } catch (IllegalAccessException e) {
-                TeaseLib.log(this, e);
+                TeaseLib.instance().log.error(this, e);
             }
             task = new FutureTask<Boolean>(new Callable<Boolean>() {
                 @Override
@@ -558,7 +559,7 @@ public class SexScriptsHost implements Host {
                         // because the debug texts are not spoken
                     }
                 } catch (ExecutionException e) {
-                    TeaseLib.log(this, e);
+                    TeaseLib.instance().log.error(this, e);
                 }
             }
         } catch (InterruptedException e) {

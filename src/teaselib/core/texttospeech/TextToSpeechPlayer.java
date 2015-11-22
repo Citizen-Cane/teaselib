@@ -57,9 +57,9 @@ public class TextToSpeechPlayer {
         // Write list of installed voices to log file in order to provide data
         // for the Actor to Voices mapping properties file
         final InstalledVoices installedVoices = new InstalledVoices(voices);
-        TeaseLib.log("Installed voices:");
+        teaseLib.log.info("Installed voices:");
         for (String key : installedVoices.keySet()) {
-            TeaseLib.log(key + ".guid=" + installedVoices.getGuid(key));
+            teaseLib.log.info(key + ".guid=" + installedVoices.getGuid(key));
         }
     }
 
@@ -88,18 +88,19 @@ public class TextToSpeechPlayer {
                 if (preRecordedVoice.available()) {
                     actor2PrerecordedVoice.put(actorName, voiceGuid);
                     usedVoices.add(voiceGuid);
-                    TeaseLib.log("Actor " + actorName
+                    teaseLib.log.info("Actor " + actorName
                             + ": using prerecorded voice '" + voiceGuid + "'");
                 } else {
-                    TeaseLib.log("Actor " + actorName
+                    teaseLib.log.info("Actor " + actorName
                             + ": prerecorded voice not available");
                     Voice voice = voices.get(voiceGuid);
                     if (voice != null) {
-                        TeaseLib.log("Actor " + actorName + ": using TTS voice");
+                        teaseLib.log.info("Actor " + actorName
+                                + ": using TTS voice");
                         actor2TTSVoice.put(actorName, voice);
                         usedVoices.add(voiceGuid);
                     } else {
-                        TeaseLib.log("Actor " + actorName
+                        teaseLib.log.info("Actor " + actorName
                                 + ": voice not available");
                     }
                 }
@@ -148,8 +149,9 @@ public class TextToSpeechPlayer {
             String locale = voice.locale;
             if (locale.compareToIgnoreCase(actor.locale) == 0
                     && !usedVoices.contains(voice.guid)) {
-                TeaseLib.log("Using voice '" + voice.guid + "' with locale '"
-                        + voice.locale + "' for actor '" + actor.key + "'");
+                teaseLib.log.info("Using voice '" + voice.guid
+                        + "' with locale '" + voice.locale + "' for actor '"
+                        + actor.key + "'");
                 return voice;
             }
         }
@@ -159,8 +161,9 @@ public class TextToSpeechPlayer {
             String actorLanguage = actor.locale.substring(0, 2);
             if (voiceLanguage.compareToIgnoreCase(actorLanguage) == 0
                     && !usedVoices.contains(voice.guid)) {
-                TeaseLib.log("Using voice '" + voice.guid + "' with locale '"
-                        + voice.locale + "' for actor '" + actor.key + "'");
+                teaseLib.log.info("Using voice '" + voice.guid
+                        + "' with locale '" + voice.locale + "' for actor '"
+                        + actor.key + "'");
                 return voice;
             }
         }
@@ -168,22 +171,22 @@ public class TextToSpeechPlayer {
         for (String actorName : actor2TTSVoice.keySet()) {
             if (actorName.compareToIgnoreCase(Actor.Dominant) != 0) {
                 Voice voice = actor2TTSVoice.get(actorName);
-                TeaseLib.log("Reusing voice of actor '" + actorName + "': '"
-                        + voice.guid + "' with locale '" + voice.locale
-                        + "' for actor '" + actor.key + "'");
+                teaseLib.log.info("Reusing voice of actor '" + actorName
+                        + "': '" + voice.guid + "' with locale '"
+                        + voice.locale + "' for actor '" + actor.key + "'");
                 return voice;
             }
         }
         // voice of Dominant actor
         if (actor2TTSVoice.containsKey(Actor.Dominant)) {
             Voice voice = actor2TTSVoice.get(Actor.Dominant);
-            TeaseLib.log("Reusing voice of dominant actor ': " + voice.guid
+            teaseLib.log.info("Reusing voice of dominant actor ': " + voice.guid
                     + "' with locale '" + voice.locale + "' for actor '"
                     + actor.key + "'");
             return voice;
         }
         // No voice
-        TeaseLib.log("No voice defined for actor '" + actor.key + "'");
+        teaseLib.log.info("No voice defined for actor '" + actor.key + "'");
         return null;
     }
 
@@ -286,7 +289,7 @@ public class TextToSpeechPlayer {
                 } catch (ScriptInterruptedException e) {
                     throw e;
                 } catch (Throwable t) {
-                    TeaseLib.log(this, t);
+                    teaseLib.log.error(this, t);
                     speakSilent(prompt);
                 }
             } else {

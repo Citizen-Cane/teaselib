@@ -14,6 +14,7 @@ import java.util.concurrent.TimeUnit;
 import teaselib.Config;
 import teaselib.Message;
 import teaselib.Message.Part;
+import teaselib.Message.Type;
 import teaselib.Mood;
 import teaselib.TeaseLib;
 import teaselib.core.texttospeech.TextToSpeech;
@@ -71,7 +72,7 @@ public class RenderMessage extends MediaRendererThread {
         } catch (ScriptInterruptedException e) {
             // Expected
         } catch (Throwable t) {
-            TeaseLib.log(this, t);
+            teaseLib.log.error(this, t);
             teaseLib.host.show(null, t.getMessage());
         }
     }
@@ -142,13 +143,16 @@ public class RenderMessage extends MediaRendererThread {
             String mood = defaultMood;
             boolean appendToItem = false;
             for (Iterator<Part> it = message.iterator(); it.hasNext();) {
+                Part part = it.next();
+                if (part.type != Type.Text && part.type != Type.Image) {
+                    teaseLib.transcript.info("" + part.type.name() + " = "
+                            + part.value);
+                }
+                teaseLib.log.info(part.type.toString() + ": " + part.value);
+                // Handle message commands
                 Set<String> additionalHints = new HashSet<String>();
                 additionalHints.addAll(hints);
-                // Handle message commands
-                Part part;
-                part = it.next();
                 final boolean lastParagraph = !it.hasNext();
-                TeaseLib.log(part.type.toString() + ": " + part.value);
                 if (part.type == Message.Type.Image) {
                     displayImage = part.value;
                 } else if (part.type == Message.Type.Sound) {
@@ -228,7 +232,11 @@ public class RenderMessage extends MediaRendererThread {
         accumulateText(accumulatedText, prompt, append);
         // Update text
         additionalHints.add(mood);
+        if ((displayImage == Message.DominantImage && mood != defaultMood)) {
+            teaseLib.transcript.info("mood = " + mood);
+        }
         showImageAndText(accumulatedText.toString(), additionalHints);
+        teaseLib.transcript.info(">> " + part.value);
         // First message shown - start part completed
         startCompleted();
         if (speechSynthesizer != null) {
@@ -318,7 +326,11 @@ public class RenderMessage extends MediaRendererThread {
         URI uri = resources.uri(path);
         if (uri != null) {
             MediaRenderer desktopItem = new RenderDesktopItem(uri);
-            desktopItem.render(teaseLib);
+            try {
+                desktopItem.render(teaseLib);
+            } catch (IOException e) {
+                teaseLib.log.error(this, e);
+            }
         }
     }
 
@@ -362,12 +374,12 @@ public class RenderMessage extends MediaRendererThread {
                 if (path == null
                         && !teaseLib.getBoolean(Config.Namespace,
                                 Config.Debug.IgnoreMissingResources)) {
-                    TeaseLib.log("Actor '" + message.actor.name
+                    teaseLib.log.info("Actor '" + message.actor.name
                             + "': images missing - please initialize");
                 }
             } else if (!teaseLib.getBoolean(Config.Namespace,
                     Config.Debug.IgnoreMissingResources)) {
-                TeaseLib.log("Actor '" + message.actor.name
+                teaseLib.log.info("Actor '" + message.actor.name
                         + "': images missing - please initialize");
                 path = null;
             } else {
@@ -381,6 +393,16 @@ public class RenderMessage extends MediaRendererThread {
             // each text part
             // (usually when setting the image outside the message)
             path = displayImage;
+        }
+        if (path == null) {
+            teaseLib.transcript.info(Message.NoImage);
+        } else {
+            if (displayImage == Message.DominantImage) {
+                teaseLib.transcript.debug("image = '" + path + "'");
+            } else {
+                teaseLib.transcript.info("image = '" + path + "'");
+            }
+
         }
         byte[] imageBytes = null;
         if (path != null) {
@@ -402,7 +424,7 @@ public class RenderMessage extends MediaRendererThread {
             } catch (Exception e) {
                 text = text + "\n\n" + e.getClass() + ": " + e.getMessage()
                         + "\n";
-                TeaseLib.log(this, e);
+                teaseLib.log.error(this, e);
             }
         }
         teaseLib.host.show(imageBytes, text);

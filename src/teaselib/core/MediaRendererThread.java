@@ -1,5 +1,6 @@
 package teaselib.core;
 
+import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 
 import teaselib.TeaseLib;
@@ -25,7 +26,7 @@ public abstract class MediaRendererThread implements Runnable,
     /**
      * The render method executed by the render thread
      */
-    protected abstract void render() throws InterruptedException;
+    protected abstract void render() throws InterruptedException, IOException;
 
     @Override
     public final void run() {
@@ -35,9 +36,9 @@ public abstract class MediaRendererThread implements Runnable,
             }
             render();
         } catch (InterruptedException e) {
-            TeaseLib.logDetail(this, e);
+            teaseLib.log.debug(this, e);
         } catch (Throwable t) {
-            TeaseLib.log(this, t);
+            teaseLib.log.error(this, t);
         }
         endThread = true;
         startCompleted();
@@ -73,7 +74,7 @@ public abstract class MediaRendererThread implements Runnable,
             completedStart = new CountDownLatch(1);
             completedMandatory = new CountDownLatch(1);
         }
-        TeaseLib.log("Replay " + replayPosition.toString());
+        teaseLib.log.info("Replay " + replayPosition.toString());
         render(teaseLib);
     }
 
@@ -98,7 +99,7 @@ public abstract class MediaRendererThread implements Runnable,
                 throw new ScriptInterruptedException();
             }
         }
-        TeaseLib.logDetail(getClass().getSimpleName()
+        teaseLib.log.debug(getClass().getSimpleName()
                 + " completed start after "
                 + String.format("%.2f seconds", getElapsedSeconds()));
     }
@@ -112,7 +113,7 @@ public abstract class MediaRendererThread implements Runnable,
                 throw new ScriptInterruptedException();
             }
         }
-        TeaseLib.logDetail(getClass().getSimpleName()
+        teaseLib.log.debug(getClass().getSimpleName()
                 + " completed mandatory after "
                 + String.format("%.2f seconds", getElapsedSeconds()));
     }
@@ -132,7 +133,7 @@ public abstract class MediaRendererThread implements Runnable,
         while (thread.isAlive()) {
             try {
                 thread.join();
-                TeaseLib.logDetail(getClass().getSimpleName()
+                teaseLib.log.debug(getClass().getSimpleName()
                         + " completed all after "
                         + String.format("%.2f", getElapsedSeconds()));
             } catch (InterruptedException e) {
@@ -162,7 +163,7 @@ public abstract class MediaRendererThread implements Runnable,
         if (!thread.isAlive())
             endThread = true;
         thread.interrupt();
-        TeaseLib.logDetail(getClass().getSimpleName() + " interrupted after "
+        teaseLib.log.debug(getClass().getSimpleName() + " interrupted after "
                 + String.format("%.2f", getElapsedSeconds()));
     }
 
@@ -177,7 +178,7 @@ public abstract class MediaRendererThread implements Runnable,
                 throw new ScriptInterruptedException();
             }
         }
-        TeaseLib.logDetail(getClass().getSimpleName() + " ended after "
+        teaseLib.log.debug(getClass().getSimpleName() + " ended after "
                 + String.format("%.2f", getElapsedSeconds()));
     }
 

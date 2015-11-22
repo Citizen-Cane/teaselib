@@ -60,7 +60,8 @@ public class ScriptFutureTask extends FutureTask<String> {
                     if (clickable != null) {
                         // Signal timeout and click any button
                         timeout.clicked = true;
-                        TeaseLib.log("Script function finished click");
+                        TeaseLib.instance().log
+                                .info("Script function finished click");
                         // Click any delegate
                         clickables.get(0).run();
                     } else {

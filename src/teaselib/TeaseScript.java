@@ -116,7 +116,7 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
             try {
                 uri = url.toURI();
             } catch (URISyntaxException e) {
-                TeaseLib.log(this, e);
+                teaseLib.log.error(this, e);
             }
             MediaRenderer desktopItem = new RenderDesktopItem(uri);
             queueRenderer(desktopItem);
@@ -283,7 +283,7 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
                     @Override
                     public void run(SpeechRecognitionImplementation sender,
                             SpeechRecognitionStartedEventArgs eventArgs) {
-                        TeaseLib.log("-" + scriptFunctionThread.getName()
+                        teaseLib.log.info("-" + scriptFunctionThread.getName()
                                 + " - : Disabling timeout "
                                 + timeoutBehavior.toString().toLowerCase());
                         inDubioMitius = true;
@@ -298,7 +298,7 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
                 teaseLib.sleep(seconds, TimeUnit.SECONDS);
                 if (timeoutBehavior != TimeoutBehavior.InDubioContraReum
                         && SpeechRecognition.isSpeechRecognitionInProgress()) {
-                    TeaseLib.log("Completing speech recognition "
+                    teaseLib.log.info("Completing speech recognition "
                             + timeoutBehavior.toString().toLowerCase());
                     SpeechRecognition.completeSpeechRecognitionInProgress();
                 }
@@ -310,9 +310,9 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
             }
             if (!inDubioMitius) {
                 result = Timeout;
-                TeaseLib.log("Script function timeout triggered");
+                teaseLib.log.info("Script function timeout triggered");
             } else {
-                TeaseLib.log("Timeout ignored "
+                teaseLib.log.info("Timeout ignored "
                         + timeoutBehavior.toString().toLowerCase());
             }
         }

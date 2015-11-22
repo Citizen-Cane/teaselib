@@ -5,30 +5,25 @@ import java.util.concurrent.TimeUnit;
 import teaselib.TeaseLib;
 
 public class RenderDelay extends MediaRendererThread {
-    public final int from;
-    public final int to;
+    public final int seconds;
 
-    public RenderDelay(int delay) {
-        from = to = delay;
-    }
-
-    public RenderDelay(int from, int to) {
-        this.from = from;
-        this.to = to;
+    public RenderDelay(int seconds) {
+        this.seconds = seconds;
     }
 
     @Override
     public void render() throws InterruptedException {
-        int actual = teaseLib.random(from, to);
+        teaseLib.transcript.info("Message delay = " + seconds + " seconds");
         startCompleted();
         try {
-            if (actual > 0) {
-                TeaseLib.log(getClass().getSimpleName() + " " + toString()
-                        + ": " + actual + " seconds");
-                teaseLib.sleep(actual, TimeUnit.SECONDS);
+            if (seconds > 0) {
+                teaseLib.log.info(getClass().getSimpleName() + " "
+                        + toString() + ": " + seconds + " seconds");
+                teaseLib.sleep(seconds, TimeUnit.SECONDS);
             } else {
-                TeaseLib.log(getClass().getSimpleName() + " " + toString()
-                        + ": skipped sleeping " + actual + " seconds");
+                teaseLib.log.info(getClass().getSimpleName() + " "
+                        + toString() + ": skipped sleeping " + seconds
+                        + " seconds");
             }
         } catch (ScriptInterruptedException e) {
             // Expected
@@ -39,6 +34,6 @@ public class RenderDelay extends MediaRendererThread {
 
     @Override
     public String toString() {
-        return from + "-" + to;
+        return Integer.toString(seconds);
     }
 }

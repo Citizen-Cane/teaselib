@@ -26,8 +26,9 @@ public class PreRecordedVoice extends VoiceProperties {
             }
         } catch (IOException e) {
             // This is expected, as the script may not have pre-recorded voices
-            TeaseLib.logDetail("Prerecorded voice configuration file '" + path
-                    + "' not found");
+            TeaseLib.instance().log
+                    .debug("Prerecorded voice configuration file '" + path
+                            + "' not found");
         }
     }
 

@@ -67,7 +67,7 @@ public class MotionDetector {
             try {
                 attachWebcam(event.getWebcam());
             } catch (Exception e) {
-                TeaseLib.log(this, e);
+                TeaseLib.instance().log.error(this, e);
             }
         }
 
@@ -76,7 +76,7 @@ public class MotionDetector {
             try {
                 detachWebcam(event.getWebcam());
             } catch (Exception e) {
-                TeaseLib.log(this, e);
+                TeaseLib.instance().log.error(this, e);
             }
         }
     }
@@ -96,14 +96,14 @@ public class MotionDetector {
     public MotionDetector(Webcam webcam) {
         // this.webcam = webcam;
         if (webcam == null) {
-            TeaseLib.log("No webcam detected");
+            TeaseLib.instance().log.info("No webcam detected");
         } else {
             attachWebcam(webcam);
         }
     }
 
     private void attachWebcam(Webcam newWebcam) {
-        TeaseLib.log(newWebcam.getName() + " connected");
+        TeaseLib.instance().log.info(newWebcam.getName() + " connected");
         newWebcam.setViewSize(ViewSize);
         newWebcam.open();
         showWebcamWindow(newWebcam);
@@ -115,7 +115,7 @@ public class MotionDetector {
     }
 
     private void detachWebcam(Webcam oldWebcam) {
-        TeaseLib.log(oldWebcam.getName() + " disconnected");
+        TeaseLib.instance().log.info(oldWebcam.getName() + " disconnected");
         detectionEvents.interrupt();
         hideWebcamWindow();
         while (detectionEvents.isAlive()) {
@@ -271,13 +271,14 @@ public class MotionDetector {
         }
 
         private void printDebug() {
-            TeaseLib.logDetail("MotionArea=" + detector.getMotionArea());
+            TeaseLib.instance().log.debug("MotionArea="
+                    + detector.getMotionArea());
         }
 
         public void signalMotionStart() {
             motionStartLock.lock();
             try {
-                TeaseLib.log("Motion started");
+                TeaseLib.instance().log.info("Motion started");
                 motionStart.signalAll();
             } finally {
                 motionStartLock.unlock();
@@ -287,7 +288,7 @@ public class MotionDetector {
         public void signalMotionEnd() {
             motionEndLock.lock();
             try {
-                TeaseLib.log("Motion ended");
+                TeaseLib.instance().log.info("Motion ended");
                 motionEnd.signalAll();
             } finally {
                 motionEndLock.unlock();

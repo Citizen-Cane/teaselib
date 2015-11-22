@@ -51,7 +51,7 @@ public class ResourceLoader {
             // deploy directories
             addAsset(new File(basePath).toURI());
         } catch (Exception e) {
-            TeaseLib.log(this, e);
+            TeaseLib.instance().log.error(this, e);
             throw new IllegalArgumentException(basePath + assetRoot);
         }
     }
@@ -103,18 +103,20 @@ public class ResourceLoader {
             addURL.invoke(classLoader, new Object[] { uri.toURL() });
             if (uri.getPath().endsWith(".zip") || file.isDirectory()) {
                 enumeratableClassPaths.add(uri);
-                TeaseLib.log("Using resource location: " + uri.getPath());
+                TeaseLib.instance().log.info("Using resource location: "
+                        + uri.getPath());
             }
         } else {
             // Just warn, since everybody should be able to unpack the archives
             // and explore, and remove them to ensure folder resources are used
-            TeaseLib.log("Archive not available: " + uri.getPath());
+            TeaseLib.instance().log.info("Archive not available: "
+                    + uri.getPath());
         }
     }
 
     public InputStream getResource(String path) throws IOException {
         String resource = assetRoot + path;
-        TeaseLib.log("Resource: '" + resource + "'");
+        TeaseLib.instance().log.info("Resource: '" + resource + "'");
         InputStream inputStream = classLoader.getResourceAsStream(resource);
         if (inputStream == null) {
             throw new IOException(resource);
@@ -191,7 +193,8 @@ public class ResourceLoader {
         final String absolutePath = assetRoot + path;
         final URL resource = classLoader.getResource(absolutePath);
         if (resource == null) {
-            TeaseLib.log("Resource '" + absolutePath + "' not found");
+            TeaseLib.instance().log.info("Resource '" + absolutePath
+                    + "' not found");
         }
         return resource;
     }
@@ -203,7 +206,7 @@ public class ResourceLoader {
             try {
                 uri = url.toURI();
             } catch (URISyntaxException e) {
-                TeaseLib.log(this, e);
+                TeaseLib.instance().log.error(this, e);
             }
         }
         return uri;

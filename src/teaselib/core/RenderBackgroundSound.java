@@ -19,22 +19,17 @@ public class RenderBackgroundSound implements AutoCloseable, MediaRenderer {
     }
 
     @Override
-    public void render(TeaseLib teaseLib) {
+    public void render(TeaseLib teaseLib) throws IOException {
+        teaseLib.transcript.info("Background sound = " + soundFile);
+        teaseLib.log.info(this.getClass().getSimpleName() + ": " + soundFile);
+        // TODO Use the handle to allow stopping the sound
         try {
-            TeaseLib.log(this.getClass().getSimpleName() + ": " + soundFile);
-            // TODO Use the handle to allow stopping the sound
-            // Implement when needed
-            try {
-                handle = teaseLib.host
-                        .playBackgroundSound(resources, soundFile);
-            } catch (IOException e) {
-                if (!teaseLib.getBoolean(Config.Namespace,
-                        Config.Debug.IgnoreMissingResources)) {
-                    throw e;
-                }
+            handle = teaseLib.host.playBackgroundSound(resources, soundFile);
+        } catch (IOException e) {
+            if (!teaseLib.getBoolean(Config.Namespace,
+                    Config.Debug.IgnoreMissingResources)) {
+                throw e;
             }
-        } catch (Throwable e) {
-            TeaseLib.log(this, e);
         }
     }
 

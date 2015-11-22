@@ -12,9 +12,9 @@ public class ScriptInterruptedException extends RuntimeException {
     private static final long serialVersionUID = 1L;
 
     public ScriptInterruptedException() {
-        TeaseLib.log("Script interrupted at");
+        TeaseLib.instance().log.info("Script interrupted at");
         for (StackTraceElement ste : getStackTrace()) {
-            TeaseLib.log("\t" + ste.toString());
+            TeaseLib.instance().log.info("\t" + ste.toString());
         }
     }
 }

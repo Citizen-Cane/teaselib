@@ -23,14 +23,11 @@ public class RenderDesktopItem implements MediaRenderer {
     }
 
     @Override
-    public void render(TeaseLib teaseLib) {
+    public void render(TeaseLib teaseLib) throws IOException {
         // TODO Perform in Separate task to avoid delay
-        try {
-            String absolutePath = new File(uri).getPath();
-            Desktop.getDesktop().open(new File(absolutePath));
-        } catch (IOException e) {
-            TeaseLib.log(this, e);
-        }
+        teaseLib.transcript.info("Desktop Item = " + uri.toString());
+        String absolutePath = new File(uri).getPath();
+        Desktop.getDesktop().open(new File(absolutePath));
     }
 
     @Override

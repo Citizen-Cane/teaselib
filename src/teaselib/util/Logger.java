@@ -20,6 +20,7 @@ public class Logger {
 
     private boolean showTime = false;
     private boolean showThread = false;
+    private boolean logToConsole = false;
 
     private final static SimpleDateFormat timeFormat = new SimpleDateFormat(
             "HH:mm:ss.SSS");
@@ -31,7 +32,7 @@ public class Logger {
     }
 
     public static Logger getConsoleLogger() {
-        return new Logger(Level.Info);
+        return new Logger(Level.Info).logToConsole(true);
     }
 
     public static Logger getDummyLogger() {
@@ -76,6 +77,11 @@ public class Logger {
         return this;
     }
 
+    public Logger logToConsole(boolean enable) {
+        logToConsole = enable;
+        return this;
+    }
+
     private void log(String text) {
         if (log != null) {
             synchronized (log) {
@@ -86,7 +92,8 @@ public class Logger {
                     // Ignore
                 }
             }
-        } else {
+        }
+        if (logToConsole) {
             System.out.print(format(text));
         }
     }

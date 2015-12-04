@@ -75,7 +75,8 @@ public class TeaseLib {
         try {
             techLogger = new Logger(techLogFile, getBoolean(Config.Namespace,
                     Config.Debug.LogDetails) ? Logger.Level.Debug
-                    : Logger.Level.Info).showTime(true).showThread(true);
+                    : Logger.Level.Info).showTime(true).showThread(true)
+                    .logToConsole(true);
         } catch (IOException e) {
             host.show(null,
                     "Cannot open log file " + techLogFile.getAbsolutePath());

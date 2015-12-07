@@ -4,7 +4,7 @@
 package teaselib.core.util;
 
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -31,7 +31,7 @@ public class NamedExecutorService extends ThreadPoolExecutor {
     public NamedExecutorService(int corePoolSize, int maximumPoolSize,
             long keepAliveTime, final TimeUnit unit, final String namePrefix) {
         super(corePoolSize, maximumPoolSize, keepAliveTime, unit,
-                new LinkedBlockingQueue<Runnable>(), new ThreadFactory() {
+                new SynchronousQueue<Runnable>(), new ThreadFactory() {
 
                     private final AtomicInteger counter = new AtomicInteger();
 

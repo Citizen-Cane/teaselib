@@ -97,11 +97,9 @@ class ShowChoices {
             boolean stopScriptTask = !paused && scriptTask != null;
             if (stopScriptTask) {
                 if (scriptTask.isDone()) {
-                    teaseLib.log
-                            .debug("choose: script task finished");
+                    teaseLib.log.debug("choose: script task finished");
                 } else {
-                    teaseLib.log
-                            .debug("choose: Cancelling script task");
+                    teaseLib.log.debug("choose: Cancelling script task");
                     scriptTask.cancel(true);
                 }
             }
@@ -116,8 +114,8 @@ class ShowChoices {
             pauseSync.lock();
             try {
                 if (paused) {
-                    teaseLib.log
-                            .info("Entering pause state with reason " + reason);
+                    teaseLib.log.info("Entering pause state with reason "
+                            + reason);
                     return reason;
                 }
             } finally {
@@ -176,8 +174,7 @@ class ShowChoices {
             try {
                 this.paused = true;
                 this.reason = reason;
-                teaseLib.log.info("Pausing "
-                        + derivedChoices.toString());
+                teaseLib.log.info("Pausing " + derivedChoices.toString());
                 // Must wait until there is something to pause, because
                 // the buttons are realized by the host, and therefore
                 // we don't have a synchronization object that defines a
@@ -200,8 +197,7 @@ class ShowChoices {
             // Keep the pause status until the choices are about to be
             // realized again in the user interface
         } else {
-            teaseLib.log.info("Paused aready "
-                    + derivedChoices.toString());
+            teaseLib.log.info("Paused already " + derivedChoices.toString());
         }
     }
 

@@ -16,7 +16,6 @@ import teaselib.Message;
 import teaselib.Message.Part;
 import teaselib.Message.Type;
 import teaselib.Mood;
-import teaselib.TeaseLib;
 import teaselib.core.texttospeech.TextToSpeech;
 import teaselib.core.texttospeech.TextToSpeechPlayer;
 

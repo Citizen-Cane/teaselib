@@ -3,7 +3,6 @@ package teaselib.core;
 import java.io.IOException;
 
 import teaselib.Config;
-import teaselib.TeaseLib;
 
 public class RenderSound extends MediaRendererThread {
     private final ResourceLoader resources;

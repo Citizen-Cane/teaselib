@@ -2,8 +2,6 @@ package teaselib.core;
 
 import java.util.concurrent.TimeUnit;
 
-import teaselib.TeaseLib;
-
 public class RenderDelay extends MediaRendererThread {
     public final int seconds;
 
@@ -17,13 +15,12 @@ public class RenderDelay extends MediaRendererThread {
         startCompleted();
         try {
             if (seconds > 0) {
-                teaseLib.log.info(getClass().getSimpleName() + " "
-                        + toString() + ": " + seconds + " seconds");
+                teaseLib.log.info(getClass().getSimpleName() + " " + toString()
+                        + ": " + seconds + " seconds");
                 teaseLib.sleep(seconds, TimeUnit.SECONDS);
             } else {
-                teaseLib.log.info(getClass().getSimpleName() + " "
-                        + toString() + ": skipped sleeping " + seconds
-                        + " seconds");
+                teaseLib.log.info(getClass().getSimpleName() + " " + toString()
+                        + ": skipped sleeping " + seconds + " seconds");
             }
         } catch (ScriptInterruptedException e) {
             // Expected

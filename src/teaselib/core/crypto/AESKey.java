@@ -21,7 +21,7 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
-public class AESKey {
+class AESKey {
     /**
      * The asymetric public key algorithm used to encrypt the data symetric
      * encryption key.

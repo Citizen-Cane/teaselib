@@ -43,10 +43,15 @@ public class Decoder extends CipherUtility {
             throws IOException, NoSuchAlgorithmException,
             InvalidKeySpecException, InvalidKeyException,
             NoSuchPaddingException {
-        // read private key to be used to decrypt the AES key
-        byte[] encodedKey = readKey(privateKeyInputStream);
+        byte[] privateKey = readKey(privateKeyInputStream);
+        loadAESKey(is, privateKey);
+    }
+
+    public void loadAESKey(InputStream is, byte[] privateKey)
+            throws NoSuchAlgorithmException, InvalidKeySpecException,
+            InvalidKeyException, IOException, NoSuchPaddingException {
         // create private key
-        PKCS8EncodedKeySpec privateKeySpec = new PKCS8EncodedKeySpec(encodedKey);
+        PKCS8EncodedKeySpec privateKeySpec = new PKCS8EncodedKeySpec(privateKey);
         KeyFactory kf = KeyFactory.getInstance(PublicKeyEncryptionAlgorithm);
         PrivateKey pk = kf.generatePrivate(privateKeySpec);
         pkCipher.init(Cipher.DECRYPT_MODE, pk);
@@ -69,5 +74,4 @@ public class Decoder extends CipherUtility {
         long size = dis.readLong();
         Stream.copy(cis, os, size);
     }
-
 }

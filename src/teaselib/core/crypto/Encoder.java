@@ -40,8 +40,14 @@ public class Encoder extends CipherUtility {
             InvalidKeyException {
         // read public key to be used to encrypt the AES key
         byte[] encodedKey = readKey(publicKeyInputStream);
+        saveAESKey(encryptedKeyOutputStream, encodedKey);
+    }
+
+    public void saveAESKey(OutputStream encryptedKeyOutputStream,
+            byte[] publicKey) throws NoSuchAlgorithmException,
+            InvalidKeySpecException, InvalidKeyException, IOException {
         // create public key
-        X509EncodedKeySpec publicKeySpec = new X509EncodedKeySpec(encodedKey);
+        X509EncodedKeySpec publicKeySpec = new X509EncodedKeySpec(publicKey);
         KeyFactory kf = KeyFactory.getInstance(PublicKeyEncryptionAlgorithm);
         PublicKey pk = kf.generatePublic(publicKeySpec);
         // write AES key
@@ -68,5 +74,4 @@ public class Encoder extends CipherUtility {
         dos.close();
         cos.close();
     }
-
 }

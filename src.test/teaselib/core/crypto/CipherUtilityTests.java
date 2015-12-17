@@ -10,7 +10,6 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URL;
 import java.security.GeneralSecurityException;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
@@ -34,10 +33,10 @@ import org.junit.Test;
  * Encryption tests.
  */
 public class CipherUtilityTests {
-
-    URL currentDir = CipherUtilityTests.class
-            .getResource(CipherUtilityTests.class.getSimpleName() + ".class");
-    File resources = new File(currentDir.getPath()).getParentFile();
+    File currentDir = new File(getClass().getResource(
+            getClass().getSimpleName() + ".class").getPath()).getParentFile();
+    File resources = new File(currentDir, getClass().getSimpleName()
+            + " resources");
     File encryptedKeyFile = new File(resources, "encryptedKey.key");
     File[] testFiles;
 
@@ -107,8 +106,8 @@ public class CipherUtilityTests {
             // to encrypt a file
             FileOutputStream encryptedKey = new FileOutputStream(
                     encryptedKeyFile);
-            encoder.saveAESKey(encryptedKey,
-                    CipherUtility.getKey(CipherUtility.TeaseLib.PublicKey));
+            encoder.saveAESKey(encryptedKey, CipherUtility
+                    .getKey(CipherUtility.KeyStore.TeaseLibGeneralPublicKey));
             encryptedKey.close();
             encoder.encrypt(fileToEncrypt, encryptedFile);
         }
@@ -117,8 +116,8 @@ public class CipherUtilityTests {
             FileDecoder decoder = new FileDecoder();
             final FileInputStream encryptedKey = new FileInputStream(
                     encryptedKeyFile);
-            decoder.loadAESKey(encryptedKey,
-                    CipherUtility.getKey(CipherUtility.TeaseLib.PrivateKey));
+            decoder.loadAESKey(encryptedKey, CipherUtility
+                    .getKey(CipherUtility.KeyStore.TeaseLibGeneralPrivateKey));
             encryptedKey.close();
             decoder.decrypt(encryptedFile, unencryptedFile);
         }
@@ -161,8 +160,8 @@ public class CipherUtilityTests {
         ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(zipFile));
         ZipEntry encodedKey = new ZipEntry("encodedKey");
         zos.putNextEntry(encodedKey);
-        encoder.saveAESKey(zos,
-                CipherUtility.getKey(CipherUtility.TeaseLib.PublicKey));
+        encoder.saveAESKey(zos, CipherUtility
+                .getKey(CipherUtility.KeyStore.TeaseLibGeneralPublicKey));
         ZipEntry encodedData = new ZipEntry("encodedData");
         zos.putNextEntry(encodedData);
         FileInputStream is = new FileInputStream(fileToEncrypt);
@@ -184,7 +183,7 @@ public class CipherUtilityTests {
             // The sequence is important
             if (entry.getName().equals("encodedKey")) {
                 InputStream privateKey = CipherUtility
-                        .getKey(CipherUtility.TeaseLib.PrivateKey);
+                        .getKey(CipherUtility.KeyStore.TeaseLibGeneralPrivateKey);
                 decoder.loadAESKey(zis, privateKey);
                 privateKey.close();
             } else if (entry.getName().equals("encodedData")) {

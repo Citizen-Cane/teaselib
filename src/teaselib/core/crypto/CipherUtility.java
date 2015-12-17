@@ -21,11 +21,18 @@ public class CipherUtility {
     /**
      * The symetric algorithm used to encrypt the data.
      */
-    public static final String PublicKeyEncryptionAlgorithm = "RSA";
+    protected static final String PublicKeyEncryptionAlgorithm = "RSA";
 
-    static class TeaseLib {
-        final static String PublicKey = "RSA_TeaseLibPublic2048.der";
-        final static String PrivateKey = "RSA_TeaseLibPrivate2048.der";
+    public static class KeyStore {
+        /**
+         * The public key for general purposes.
+         */
+        public final static String TeaseLibGeneralPublicKey = "RSA_TeaseLibPublic2048.der";
+
+        /**
+         * The private key for general purposes.
+         */
+        public final static String TeaseLibGeneralPrivateKey = "RSA_TeaseLibPrivate2048.der";
     }
 
     public static InputStream getKey(String key) {
@@ -40,8 +47,7 @@ public class CipherUtility {
         pkCipher = Cipher.getInstance(PublicKeyEncryptionAlgorithm);
     }
 
-    protected static byte[] readKey(InputStream keyInputStream)
-            throws IOException {
+    public static byte[] readKey(InputStream keyInputStream) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         Stream.copy(keyInputStream, baos);
         byte[] encodedKey = baos.toByteArray();

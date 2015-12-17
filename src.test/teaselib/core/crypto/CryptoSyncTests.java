@@ -101,25 +101,32 @@ public class CryptoSyncTests {
     }
 
     @Test
+    public void testEncryptedTestDataIsComplete()
+            throws GeneralSecurityException, IOException {
+        final File noFiles = temporaryFolder.newFolder();
+        assertEquals(6, new CryptoSync(noFiles, encryptedTestData).size());
+    }
+
+    @Test
     public void testFileFilter() throws GeneralSecurityException, IOException {
         assertEquals(2, new CryptoSync(decryptedTestData, encryptedTestData,
-                FileUtilites.getFilter("jpg")).size());
+                FileUtilites.getFileFilter("jpg")).size());
         assertEquals(4, new CryptoSync(decryptedTestData, encryptedTestData,
-                FileUtilites.getFilter("png")).size());
+                FileUtilites.getFileFilter("png")).size());
         assertEquals(6, new CryptoSync(decryptedTestData, encryptedTestData,
-                FileUtilites.getFilter("jpg", "png")).size());
+                FileUtilites.getFileFilter("jpg", "png")).size());
         final File noFiles = temporaryFolder.newFolder();
         assertEquals(
                 2,
                 new CryptoSync(noFiles, encryptedTestData, FileUtilites
-                        .getFilter("jpg")).size());
+                        .getFileFilter("jpg")).size());
         assertEquals(
                 4,
                 new CryptoSync(noFiles, encryptedTestData, FileUtilites
-                        .getFilter("png")).size());
+                        .getFileFilter("png")).size());
         assertEquals(
                 6,
                 new CryptoSync(noFiles, encryptedTestData, FileUtilites
-                        .getFilter("jpg", "png")).size());
+                        .getFileFilter("jpg", "png")).size());
     }
 }

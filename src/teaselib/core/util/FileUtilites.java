@@ -23,15 +23,30 @@ public class FileUtilites {
         return sameContent;
     }
 
-    public static FileFilter getFilter(String... extensions) {
-        final String[] exts = extensions;
+    /**
+     * Accepts all files that match one of the {@code extensions}. Directories
+     * are not accepted.
+     * 
+     * @param extensions
+     * @return
+     */
+    public static FileFilter getFileFilter(String... extensions) {
+        if (extensions.length < 1) {
+            throw new IllegalArgumentException();
+        }
+        final String[] exts = new String[extensions.length];
+        for (int i = 0; i < extensions.length; i++) {
+            exts[i] = extensions[i].toLowerCase();
+        }
         return new FileFilter() {
             @Override
             public boolean accept(File pathname) {
-                String name = pathname.getName().toLowerCase();
-                for (String ext : exts) {
-                    if (name.endsWith(ext)) {
-                        return true;
+                if (!pathname.isDirectory()) {
+                    String name = pathname.getName().toLowerCase();
+                    for (String ext : exts) {
+                        if (name.endsWith(ext)) {
+                            return true;
+                        }
                     }
                 }
                 return false;

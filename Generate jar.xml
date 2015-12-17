@@ -10,4 +10,12 @@
             <fileset dir="../TeaseLib/bin"/>
         </jar>
     </target>
+    <target name="create_tests_jar">
+        <jar destfile="lib/TeaseLib_tests.jar">
+            <manifest>
+                <attribute name="Class-Path" value="lib/TeaseLib.jar"/>
+            </manifest>
+            <fileset dir="../TeaseLib/bin.test"/>
+        </jar>
+    </target>
 </project>

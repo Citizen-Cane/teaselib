@@ -30,7 +30,7 @@ public class TeaseScriptTest {
     private static TeaseScript createTestScript() {
         TeaseScript script = new TeaseScript(TeaseLib.init(new DummyHost(),
                 new DummyPersistence()), new ResourceLoader(
-                "x:/projects/teaseLib/", "bin"), "en-us", "test") {
+                "x:/projects/teaseLib/", "bin.test"), "en-us", "test") {
             @Override
             public void run() {
             }

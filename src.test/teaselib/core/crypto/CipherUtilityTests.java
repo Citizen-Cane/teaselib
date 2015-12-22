@@ -14,11 +14,7 @@ import java.security.GeneralSecurityException;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
-import java.security.Provider;
-import java.security.Security;
 import java.security.spec.InvalidKeySpecException;
-import java.util.SortedSet;
-import java.util.TreeSet;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
@@ -43,15 +39,15 @@ public class CipherUtilityTests {
     @BeforeClass
     public static void setUpBeforeClass() throws Exception {
         // Installed ciphers
-        for (Provider provider : Security.getProviders()) {
-            System.out.println(provider.getName());
-            SortedSet<String> sorted = new TreeSet<String>(
-                    provider.stringPropertyNames());
-            for (String key : sorted) {
-                System.out.println("\t" + key + "\t"
-                        + provider.getProperty(key));
-            }
-        }
+        // for (Provider provider : Security.getProviders()) {
+        // System.out.println(provider.getName());
+        // SortedSet<String> sorted = new TreeSet<String>(
+        // provider.stringPropertyNames());
+        // for (String key : sorted) {
+        // System.out.println("\t" + key + "\t"
+        // + provider.getProperty(key));
+        // }
+        // }
     }
 
     @Before

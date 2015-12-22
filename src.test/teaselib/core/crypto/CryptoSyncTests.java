@@ -31,8 +31,8 @@ public class CryptoSyncTests {
     File encryptedTestData = new File(resources, "encrypted assets");
 
     final static List<String> testFiles = Arrays.asList("test (1).png",
-            "test (2).png", "test (3).png", "test (4).png", "marquis1.jpg",
-            "marquis2.jpg");
+            "test (2).png", "more/test (3).png", "more/test (4).png",
+            "marquis1.jpg", "more/marquis2.jpg");
 
     @Before
     public void setUp() throws Exception {
@@ -41,7 +41,7 @@ public class CryptoSyncTests {
     @Test
     public void testFileNaming() throws Exception {
         CryptoSync cryptoSync = new CryptoSync(decryptedTestData,
-                encryptedTestData, testFiles);
+                encryptedTestData);
         assertEquals(testFiles.get(0),
                 cryptoSync.getDecryptedFile(testFiles.get(0)).getName());
     }
@@ -61,7 +61,7 @@ public class CryptoSyncTests {
     public void createEncryptedTestData() throws IOException,
             GeneralSecurityException {
         CryptoSync cryptoSync = new CryptoSync(decryptedTestData,
-                encryptedTestData, testFiles);
+                encryptedTestData);
         cryptoSync.sync();
     }
 
@@ -69,14 +69,17 @@ public class CryptoSyncTests {
     public void testFileSync() throws IOException, GeneralSecurityException {
         final File encryptedFiles = temporaryFolder.newFolder();
         CryptoSync cryptoSync = new CryptoSync(decryptedTestData,
-                encryptedFiles, testFiles);
+                encryptedFiles);
         cryptoSync.sync();
         final File decryptedCopies = temporaryFolder.newFolder();
         CryptoSync cryptoSyncCopy = new CryptoSync(decryptedCopies,
-                encryptedFiles, testFiles);
+                encryptedFiles);
         cryptoSyncCopy.sync();
         for (String name : testFiles) {
+            assertTrue(cryptoSync.getDecryptedFile(name).exists());
             assertTrue(cryptoSync.getEncryptedFile(name).exists());
+            assertTrue(cryptoSyncCopy.getDecryptedFile(name).exists());
+            assertTrue(cryptoSyncCopy.getEncryptedFile(name).exists());
             assertTrue(FileUtilites.sameContent(
                     cryptoSync.getDecryptedFile(name),
                     cryptoSyncCopy.getDecryptedFile(name)));
@@ -88,12 +91,15 @@ public class CryptoSyncTests {
             GeneralSecurityException {
         final File decryptedFiles = temporaryFolder.newFolder();
         CryptoSync cryptoSync = new CryptoSync(decryptedFiles,
-                encryptedTestData, testFiles);
+                encryptedTestData);
         CryptoSync cryptoSyncOriginal = new CryptoSync(decryptedTestData,
-                encryptedTestData, testFiles);
+                encryptedTestData);
         cryptoSync.sync();
         for (String name : testFiles) {
+            assertTrue(cryptoSync.getDecryptedFile(name).exists());
             assertTrue(cryptoSync.getEncryptedFile(name).exists());
+            assertTrue(cryptoSyncOriginal.getDecryptedFile(name).exists());
+            assertTrue(cryptoSyncOriginal.getEncryptedFile(name).exists());
             assertTrue(FileUtilites.sameContent(
                     cryptoSync.getDecryptedFile(name),
                     cryptoSyncOriginal.getDecryptedFile(name)));

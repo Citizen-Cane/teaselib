@@ -40,6 +40,16 @@ import teaselib.core.util.FileUtilites;
 public class CryptoSync extends CipherUtility {
 
     /**
+     * Consider files in all folders.
+     */
+    private static final String RECURSIVE = "--recursive";
+
+    /**
+     * Consider files in base folder only
+     */
+    private static final String FLAT = "--flat";
+
+    /**
      * 
      */
     private static final String ENCODED_DATA = "encodedData";
@@ -55,22 +65,33 @@ public class CryptoSync extends CipherUtility {
             throw new IllegalArgumentException(CryptoSync.class.getSimpleName()
                     + ": decryptedDir encryptedDir extensions...");
         }
-        File decryptedFiles = new File(argv[0]);
-        File encryptedFiles = new File(argv[1]);
+        int argi = 0;
+        File decryptedFiles = new File(argv[argi++]);
+        File encryptedFiles = new File(argv[argi++]);
         System.out.println("Decrypted files: " + decryptedFiles);
         System.out.println("Encrypted files: " + encryptedFiles);
         final CryptoSync sync;
-        if (argv.length > 2) {
-            String[] extensions = Arrays.copyOfRange(argv, 2, argv.length);
+        Set<String> availableOptions = new HashSet<String>(Arrays.asList(
+                RECURSIVE, FLAT));
+        Set<String> options = new HashSet<String>();
+        while (availableOptions.contains(argv[argi].toLowerCase())) {
+            options.add(argv[argi++].toLowerCase());
+        }
+        EnumerationMode mode = options.contains(RECURSIVE) ? EnumerationMode.Recursive
+                : EnumerationMode.Flat;
+        System.out.print("Scan mode = " + mode.toString());
+        if (argv.length > argi) {
+            String[] extensions = Arrays.copyOfRange(argv, argi, argv.length);
             sync = new CryptoSync(decryptedFiles, encryptedFiles,
-                    FileUtilites.getFileFilter(extensions));
-            System.out.print(extensions.length + " extensions:");
+                    FileUtilites.getFileFilter(extensions), mode);
+            System.out.print(", " + extensions.length + " extensions (");
             for (String extension : extensions) {
-                System.out.print(" " + extension);
+                System.out.print((extension == extensions[0] ? "" : ",")
+                        + extension);
             }
-            System.out.print(", resulting in ");
+            System.out.print("), resulting in ");
         } else {
-            sync = new CryptoSync(decryptedFiles, encryptedFiles);
+            sync = new CryptoSync(decryptedFiles, encryptedFiles, mode);
         }
         System.out.println(sync.size() + " items");
         sync.sync();
@@ -80,20 +101,23 @@ public class CryptoSync extends CipherUtility {
 
     private final File decryptedDir;
     private final File encryptedDir;
+    private final FileFilter filter;
+    private final EnumerationMode mode;
     private final Collection<String> files;
+
     private final byte[] publicKey = CipherUtility
             .readKey(getKey(KeyStore.TeaseLibGeneralPublicKey));
     private final byte[] privateKey = CipherUtility
             .readKey(getKey(KeyStore.TeaseLibGeneralPrivateKey));
 
-    public CryptoSync(File decryptedDir, File encryptedDir,
-            Collection<String> files) throws IOException,
+    public CryptoSync(File decryptedDir, File encryptedDir, FileFilter filter)
+            throws IOException, GeneralSecurityException {
+        this(decryptedDir, encryptedDir, filter, EnumerationMode.Recursive);
+    }
+
+    public CryptoSync(File decryptedDir, File encryptedDir) throws IOException,
             GeneralSecurityException {
-        checkValidOrThrow(decryptedDir);
-        checkValidOrThrow(encryptedDir);
-        this.decryptedDir = decryptedDir;
-        this.encryptedDir = encryptedDir;
-        this.files = files;
+        this(decryptedDir, encryptedDir, EnumerationMode.Recursive);
     }
 
     /**
@@ -105,16 +129,31 @@ public class CryptoSync extends CipherUtility {
      * @throws IOException
      * @throws GeneralSecurityException
      */
-    public CryptoSync(File decryptedDir, File encryptedDir, FileFilter filter)
-            throws IOException, GeneralSecurityException {
-        this(checkValidOrThrow(decryptedDir), checkValidOrThrow(encryptedDir),
-                fromFilter(decryptedDir, encryptedDir, filter));
+    public CryptoSync(File decryptedDir, File encryptedDir, FileFilter filter,
+            EnumerationMode mode) throws IOException, GeneralSecurityException {
+        checkValidOrThrow(decryptedDir);
+        checkValidOrThrow(encryptedDir);
+        this.decryptedDir = decryptedDir;
+        this.encryptedDir = encryptedDir;
+        this.mode = mode;
+        this.filter = filter;
+        this.files = fromFilter(decryptedDir, encryptedDir);
     }
 
-    public CryptoSync(File decryptedDir, File encryptedDir) throws IOException,
-            GeneralSecurityException {
-        this(checkValidOrThrow(decryptedDir), checkValidOrThrow(encryptedDir),
-                allFiles(decryptedDir, encryptedDir));
+    public CryptoSync(File decryptedDir, File encryptedDir, EnumerationMode mode)
+            throws IOException, GeneralSecurityException {
+        checkValidOrThrow(decryptedDir);
+        checkValidOrThrow(encryptedDir);
+        this.decryptedDir = decryptedDir;
+        this.encryptedDir = encryptedDir;
+        this.mode = mode;
+        this.filter = new FileFilter() {
+            @Override
+            public boolean accept(File file) {
+                return true;
+            }
+        };
+        this.files = fromFilter(decryptedDir, encryptedDir);
     }
 
     private static File checkValidOrThrow(File path)
@@ -126,31 +165,36 @@ public class CryptoSync extends CipherUtility {
         return path;
     }
 
-    private static Set<String> allFiles(File decryptedDir, File encryptedDir) {
+    enum EnumerationMode {
+        Flat,
+        Recursive;
+    }
+
+    private Set<String> fromFilter(File decryptedDir, File encryptedDir) {
         Set<String> files = new HashSet<String>();
-        for (File file : decryptedDir.listFiles()) {
-            if (!file.isDirectory()) {
-                files.add(file.getName());
-            }
-        }
-        for (File file : encryptedDir.listFiles()) {
-            if (!file.isDirectory()) {
-                files.add(getDecryptedName(file));
-            }
-        }
+        files.addAll(enumFiles(decryptedDir, ""));
+        files.addAll(enumFiles(encryptedDir, ""));
         return files;
     }
 
-    private static Set<String> fromFilter(File decryptedDir, File encryptedDir,
-            FileFilter filter) {
+    private Set<String> enumFiles(File root, String path) {
         Set<String> files = new HashSet<String>();
-        for (File file : decryptedDir.listFiles(filter)) {
-            files.add(file.getName());
-        }
-        for (File file : encryptedDir.listFiles()) {
-            final String name = getDecryptedName(file);
-            if (filter.accept(new File(name))) {
-                files.add(name);
+        for (File file : new File(root, path).listFiles()) {
+            final String element = (path.isEmpty() ? "" : path + File.separator)
+                    + file.getName();
+            if (file.isDirectory()) {
+                if (mode == EnumerationMode.Recursive) {
+                    files.addAll(enumFiles(root, element));
+                }
+            } else {
+                File decryptedSubDir = new File(decryptedDir, element);
+                File encryptedSubDir = new File(encryptedDir, element);
+                if (!decryptedSubDir.equals(encryptedDir)
+                        && !encryptedSubDir.equals(decryptedDir)
+                        && filter.accept(new File(root,
+                                getDecryptedName(element)))) {
+                    files.add(getDecryptedName(element));
+                }
             }
         }
         return files;
@@ -204,26 +248,28 @@ public class CryptoSync extends CipherUtility {
     private void decrypt(Collection<String> filesToDecrypt)
             throws GeneralSecurityException, IOException {
         if (filesToDecrypt.size() > 0) {
-            System.out
-                    .println("Decrypting " + filesToDecrypt.size() + " items");
+            System.out.println("Decrypting " + filesToDecrypt.size()
+                    + " items to " + decryptedDir);
             for (String name : filesToDecrypt) {
                 decrypt(name);
             }
         } else {
-            System.out.println("Decrypted files are up to date");
+            System.out.println("Decrypted files in " + decryptedDir
+                    + " are up to date");
         }
     }
 
     private void encrypt(Collection<String> filesToEncrypt)
             throws GeneralSecurityException, IOException {
         if (filesToEncrypt.size() > 0) {
-            System.out
-                    .println("Encrypting " + filesToEncrypt.size() + " items");
+            System.out.println("Encrypting " + filesToEncrypt.size()
+                    + " items to " + encryptedDir);
             for (String name : filesToEncrypt) {
                 encrypt(name);
             }
         } else {
-            System.out.println("Encrypted files are up to date");
+            System.out.println("Encrypted files in " + encryptedDir
+                    + "  are up to date");
         }
     }
 
@@ -239,6 +285,7 @@ public class CryptoSync extends CipherUtility {
             if (entry.getName().equals(ENCODED_KEY)) {
                 decoder.loadAESKey(zis, privateKey);
             } else if (entry.getName().equals(ENCODED_DATA)) {
+                decryptedFile.getParentFile().mkdirs();
                 FileOutputStream os = new FileOutputStream(decryptedFile);
                 decoder.decrypt(zis, os);
                 os.close();
@@ -253,6 +300,7 @@ public class CryptoSync extends CipherUtility {
         System.out.println(">> " + name);
         Encoder encoder = new Encoder();
         File zipFile = getEncryptedFile(name);
+        zipFile.getParentFile().mkdirs();
         ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(zipFile));
         ZipEntry encodedKey = new ZipEntry(ENCODED_KEY);
         zos.putNextEntry(encodedKey);
@@ -281,8 +329,7 @@ public class CryptoSync extends CipherUtility {
         return new File(decryptedDir, name);
     }
 
-    private static String getDecryptedName(File file) {
-        String name = file.getName();
+    private static String getDecryptedName(String name) {
         if (name.endsWith(EncryptedFileExtension)) {
             return name.substring(0,
                     name.length() - EncryptedFileExtension.length() - 1);

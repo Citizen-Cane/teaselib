@@ -265,8 +265,8 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
 
         boolean inDubioMitius = false;
 
-        public SpeechRecognitionAwareTimeoutScriptFunction(final long seconds,
-                final SpeechRecognition.TimeoutBehavior timoutBehavior,
+        public SpeechRecognitionAwareTimeoutScriptFunction(long seconds,
+                SpeechRecognition.TimeoutBehavior timoutBehavior,
                 Relation relation) {
             super(relation);
             this.seconds = seconds;

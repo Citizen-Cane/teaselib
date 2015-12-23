@@ -369,8 +369,9 @@ public abstract class TeaseScriptBase {
             completeMandatory();
         } else {
             if (scriptFunction.relation == ScriptFunction.Relation.Confirmation) {
-                // A confirmation must appears like a normal button,
-                // in a way it is concatenated to the last messagee
+                // A confirmation relates to the current message,
+                // and must appears like a normal button,
+                // so in a way it is concatenated to the current message
                 completeMandatory();
             } else {
                 // An autonomous script function does not relate to the current

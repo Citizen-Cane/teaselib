@@ -1,6 +1,5 @@
 package teaselib;
 
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Vector;
@@ -139,16 +138,12 @@ public class Message {
      * 
      * @param text
      */
-    public void add(String text) {
-        if (text == null)
-            throw new IllegalArgumentException();
-        parts.add(text);
-    }
-
     public void add(String... text) {
         if (text == null)
             throw new IllegalArgumentException();
         for (String t : text) {
+            if (t == null)
+                throw new IllegalArgumentException();
             parts.add(t);
         }
     }
@@ -206,12 +201,8 @@ public class Message {
         }
     }
 
-    public List<Part> getParts() {
-        List<Part> p = new ArrayList<Part>();
-        for (Part s : parts) {
-            p.add(s);
-        }
-        return p;
+    public Parts getParts() {
+        return parts;
     }
 
     public static boolean isFile(String m) {
@@ -355,16 +346,23 @@ public class Message {
         public boolean isFile() {
             return Message.isFile(type);
         }
+
+        @Override
+        public String toString() {
+            return type.name() + "=" + value;
+        }
     }
 
-    class Parts implements Iterable<Part> {
+    public class Parts implements Iterable<Part> {
 
         private final List<Part> p = new Vector<Part>();
 
-        private boolean newParagraph = false;
-
         public boolean isEmpty() {
             return p.isEmpty();
+        }
+
+        public void clear() {
+            p.clear();
         }
 
         public void addAll(List<String> paragraphs) {
@@ -379,6 +377,12 @@ public class Message {
             }
         }
 
+        public void addAll(Parts parts) {
+            for (Part part : parts) {
+                add(part);
+            }
+        }
+
         @Override
         public Iterator<Part> iterator() {
             return p.iterator();
@@ -386,23 +390,12 @@ public class Message {
 
         private void add(Part part) {
             if (part.type == Type.Text) {
-                // Quoted paragraph? -> read aloud, change mood
-                String text = part.value;
-                boolean readAloudStart = text.startsWith("\"");
-                boolean readAloudEnd = text.endsWith("\"")
-                        || text.endsWith("\"."); // todo generalize
-                if (readAloudStart) {
-                    add(new Part(Type.Mood, Mood.Reading));
-                }
                 p.add(part);
-                if (readAloudEnd) {
-                    add(new Part(Type.Mood, Mood.Neutral));
-                }
             } else if (part.type == Type.Mood) {
                 if (!p.isEmpty()) {
                     int i = p.size() - 1;
-                    Part last = p.get(i);
-                    if (last.type == Type.Mood) {
+                    Part previous = p.get(i);
+                    if (previous.type == Type.Mood) {
                         p.set(i, part);
                     } else {
                         p.add(part);
@@ -416,7 +409,8 @@ public class Message {
         }
 
         public void add(String text) {
-            if (text == null) throw new IllegalArgumentException(text);
+            if (text == null)
+                throw new IllegalArgumentException(text);
             Type type = determineType(text);
             add(type, text);
         }
@@ -426,40 +420,82 @@ public class Message {
             if (type == Type.Keyword) {
                 value = keywordFrom(value);
             }
-            final boolean isItem;
-            if (isEmpty()) {
-                isItem = false;
-            } else {
-                Part part = p.get(p.size() - 1);
-                isItem = part.type == Type.Keyword && part.type == Type.Item;
-            }
-            boolean requiresSeparateLine = type != Type.Text || isItem;
-            boolean requiresNewParagraphBefore = requiresSeparateLine;
-            boolean requiresNewParagraphAfter = requiresSeparateLine
-                    || endOf(value, endOfSentence);
-            if (isEmpty()) {
-                // First
-                add(new Part(type, value));
-                newParagraph = requiresNewParagraphAfter;
-            } else if (requiresNewParagraphBefore) {
-                // File as new paragraph
-                add(new Part(type, value));
-                newParagraph = true;
-            } else if (newParagraph) {
-                add(new Part(type, value));
-                newParagraph = requiresNewParagraphAfter;
-            } else {
-                // Append
-                int i = p.size() - 1;
-                String accumulatedText = p.get(i).value + " " + value;
-                p.remove(i);
-                add(new Part(type, accumulatedText));
-                newParagraph = requiresNewParagraphAfter;
-            }
+            add(new Part(type, value));
         }
 
-        int size() {
-            return parts.size();
+        public int size() {
+            return p.size();
         }
+
+        public Part get(int index) {
+            return p.get(index);
+        }
+
+        @Override
+        public String toString() {
+            return "size=" + size() + ", " + p.toString();
+        }
+    }
+
+    public Message joinSentences() {
+        Parts newParts = new Parts();
+        Iterator<Part> parts = this.parts.iterator();
+        Part sentence = null;
+        while (parts.hasNext()) {
+            Part part = parts.next();
+            if (part.type == Type.Text) {
+                if (!endOf(part.value, endOfSentence)) {
+                    if (sentence == null) {
+                        sentence = part;
+                    } else {
+                        sentence = new Part(Type.Text, sentence.value + " "
+                                + part.value);
+                    }
+                } else {
+                    if (sentence != null) {
+                        newParts.add(Type.Text, sentence.value + " "
+                                + part.value);
+                        sentence = null;
+                    } else {
+                        newParts.add(part);
+                    }
+                }
+            } else {
+                newParts.add(part);
+            }
+        }
+        this.parts.clear();
+        this.parts.addAll(newParts);
+        return this;
+    }
+
+    public Message readAloud() {
+        Parts newParts = new Parts();
+        Iterator<Part> parts = this.parts.iterator();
+        boolean readAloud = false;
+        while (parts.hasNext()) {
+            Part part = parts.next();
+            if (part.type == Type.Text) {
+                String text = part.value;
+                boolean readAloudStart = text.startsWith("\"");
+                boolean readAloudEnd = text.endsWith("\"")
+                        || text.endsWith("\"."); // todo
+                                                 // generalize
+                if (readAloudStart && !readAloud) {
+                    newParts.add(new Part(Type.Mood, Mood.Reading));
+                    readAloud = true;
+                }
+                newParts.add(part);
+                if (readAloudEnd && readAloud) {
+                    newParts.add(new Part(Type.Mood, Mood.Neutral));
+                    readAloud = false;
+                }
+            } else {
+                newParts.add(part);
+            }
+        }
+        this.parts.clear();
+        this.parts.addAll(newParts);
+        return this;
     }
 }

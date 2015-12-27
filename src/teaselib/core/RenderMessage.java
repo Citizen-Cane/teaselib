@@ -7,7 +7,6 @@ import java.net.URI;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -78,7 +77,7 @@ public class RenderMessage extends MediaRendererThread {
 
     private static Message getLastSection(Message message) {
         Message lastSection = new Message(message.actor);
-        final List<Part> parts = message.getParts();
+        Message.Parts parts = message.getParts();
         int index = parts.size();
         while (index-- > 0) {
             if (parts.get(index).type == Message.Type.Text) {
@@ -443,7 +442,7 @@ public class RenderMessage extends MediaRendererThread {
     @Override
     public String toString() {
         long delay = 0;
-        Collection<Part> paragraphs = message.getParts();
+        Message.Parts paragraphs = message.getParts();
         for (Iterator<Part> it = paragraphs.iterator(); it.hasNext();) {
             Part paragraph = it.next();
             delay += TextToSpeech.getEstimatedSpeechDuration(paragraph.value);

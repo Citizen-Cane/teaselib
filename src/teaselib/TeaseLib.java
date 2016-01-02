@@ -125,11 +125,14 @@ public class TeaseLib {
     /**
      * @return Seconds since midnight 1.1.1970 UTC
      */
+    @Deprecated
     public long getTime() {
-        // todo change to millis
         return System.currentTimeMillis() / 1000;
     }
 
+    /**
+     * @return time since midnight 1.1.1970 UTC
+     */
     public long getTime(TimeUnit unit) {
         return unit.convert(System.currentTimeMillis(), TimeUnit.MILLISECONDS);
     }

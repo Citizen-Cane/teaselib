@@ -12,10 +12,11 @@
 		</buildCommand>
 		<buildCommand>
 			<name>org.eclipse.ui.externaltools.ExternalToolBuilder</name>
+			<triggers>full,incremental,</triggers>
 			<arguments>
 				<dictionary>
 					<key>LaunchConfigHandle</key>
-					<value>&lt;project&gt;/.externalToolBuilders/Deploy TeaseLib.launch</value>
+					<value>&lt;project&gt;/.externalToolBuilders/Deploy.launch</value>
 				</dictionary>
 			</arguments>
 		</buildCommand>
@@ -33,11 +34,6 @@
 			<name>errors.log</name>
 			<type>1</type>
 			<location>X:/Extras/SexScripts/errors.log</location>
-		</link>
-		<link>
-			<name>lib</name>
-			<type>2</type>
-			<location>X:/Projects/TeaseLib/lib</location>
 		</link>
 	</linkedResources>
 </projectDescription>

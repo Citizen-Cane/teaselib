@@ -4,12 +4,9 @@
 	<classpathentry kind="src" output="bin.test" path="src.test"/>
 	<classpathentry kind="src" path="src.test.interactive"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
-	<classpathentry kind="lib" path="X:/Projects/teaselib/lib/jinput.jar"/>
-	<classpathentry kind="lib" path="X:/Projects/teaselib/lib/jump3r-1.0.3.jar"/>
-	<classpathentry kind="lib" path="X:/Projects/teaselib/lib/bridj-0.6.2.jar"/>
-	<classpathentry kind="lib" path="X:/Projects/teaselib/lib/slf4j-api-1.7.2.jar"/>
-	<classpathentry kind="lib" path="X:/Projects/teaselib/lib/webcam-capture-0.3.10.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/4"/>
-	<classpathentry kind="lib" path="X:/Extras/SexScripts/sexscripts.jar"/>
+	<classpathentry kind="lib" path="lib/jump3r-1.0.3.jar"/>
+	<classpathentry kind="lib" path="lib/webcam-capture-0.3.10.jar"/>
+	<classpathentry kind="lib" path="/SexScripts/sexscripts.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

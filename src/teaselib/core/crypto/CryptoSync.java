@@ -82,6 +82,7 @@ public class CryptoSync extends CipherUtility {
         System.out.print("Scan mode = " + mode.toString());
         if (argv.length > argi) {
             String[] extensions = Arrays.copyOfRange(argv, argi, argv.length);
+            decryptedFiles.mkdirs();
             sync = new CryptoSync(decryptedFiles, encryptedFiles,
                     FileUtilites.getFileFilter(extensions), mode);
             System.out.print(", " + extensions.length + " extensions (");

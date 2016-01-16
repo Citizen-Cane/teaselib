@@ -20,6 +20,7 @@ import teaselib.core.speechrecognition.SpeechRecognitionResult.Confidence;
 import teaselib.core.speechrecognition.SpeechRecognizer;
 import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
 import teaselib.core.util.NamedExecutorService;
+import teaselib.util.SpeechRecognitionRejectedScript;
 
 /**
  *
@@ -37,20 +38,22 @@ class ShowChoices {
     private final Confidence recognitionConfidence;
     private final List<Integer> srChoiceIndices;
     private final boolean recognizeSpeech;
+    private final Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs> recognitionRejected;
     private final Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs> recognitionCompleted;
 
     private final static ExecutorService choiceScriptFunctionExecutor = NamedExecutorService
-            .newFixedThreadPool(Integer.MAX_VALUE, ShowChoices.class.getName()
-                    + " Script Function", 1, TimeUnit.HOURS);
+            .newFixedThreadPool(Integer.MAX_VALUE,
+                    ShowChoices.class.getName() + " Script Function", 1,
+                    TimeUnit.HOURS);
 
     private boolean scriptTaskStarted = false;
     private final ReentrantLock pauseSync = new ReentrantLock();
-    private volatile boolean paused = false;
-    private volatile String reason = null;
+    private volatile String pauseState = null;
 
     public ShowChoices(TeaseScriptBase script, List<String> choices,
             List<String> derivedChoices, ScriptFutureTask scriptTask,
-            Confidence recognitionConfidence) {
+            Confidence recognitionConfidence,
+            boolean choicesStackContainsSRRejectedState) {
         super();
         this.choices = choices;
         this.derivedChoices = derivedChoices;
@@ -59,13 +62,29 @@ class ShowChoices {
         this.speechRecognizer = SpeechRecognizer.instance
                 .get(script.actor.locale);
         this.recognitionConfidence = recognitionConfidence;
-        recognizeSpeech = speechRecognizer.isReady();
+        this.recognizeSpeech = speechRecognizer.isReady();
         if (recognizeSpeech) {
+            recognitionRejected = new Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs>() {
+                @Override
+                public void run(SpeechRecognitionImplementation sender,
+                        SpeechRecognizedEventArgs eventArgs) {
+                    SpeechRecognitionRejectedScript speechRecognitionRejectedHandler = script.actor.speechRecognitionRejectedScript;
+                    if (!choicesStackContainsSRRejectedState
+                            && speechRecognitionRejectedHandler.canRun()) {
+                        pause(ShowChoices.RecognitionRejected);
+                    } else {
+                        teaseLib.log.info("RecognitionRejected-handler "
+                                + speechRecognitionRejectedHandler.toString()
+                                + " canRun() returned false - Skipping");
+                    }
+                }
+            };
             srChoiceIndices = new ArrayList<Integer>(1);
             recognitionCompleted = recognitionCompletedEvent(derivedChoices,
                     scriptTask, srChoiceIndices);
         } else {
             srChoiceIndices = null;
+            recognitionRejected = null;
             recognitionCompleted = null;
         }
     }
@@ -90,11 +109,11 @@ class ShowChoices {
         // Get the user's choice
         int choiceIndex;
         try {
-            // We can just set pause to false here
-            paused = false;
+            // We can just reset trhe pause state here
+            pauseState = null;
             choiceIndex = teaseLib.host.reply(derivedChoices);
         } finally {
-            boolean stopScriptTask = !paused && scriptTask != null;
+            boolean stopScriptTask = !isPaused() && scriptTask != null;
             if (stopScriptTask) {
                 if (scriptTask.isDone()) {
                     teaseLib.log.debug("choose: script task finished");
@@ -113,10 +132,10 @@ class ShowChoices {
             // Sync on the pause state set by pause()
             pauseSync.lock();
             try {
-                if (paused) {
-                    teaseLib.log.info("Entering pause state with reason "
-                            + reason);
-                    return reason;
+                if (isPaused()) {
+                    teaseLib.log.info(
+                            "Entering pause state with reason " + pauseState);
+                    return pauseState;
                 }
             } finally {
                 pauseSync.unlock();
@@ -124,8 +143,8 @@ class ShowChoices {
         }
         // The result of the script function may override any result
         // from button clicks or speech recognition
-        String choice = scriptTask != null ? scriptTask
-                .getScriptFunctionResult() : null;
+        String choice = scriptTask != null
+                ? scriptTask.getScriptFunctionResult() : null;
         if (choice == null) {
             // Assign result from speech recognition,
             // script task timeout or button click
@@ -145,13 +164,15 @@ class ShowChoices {
     }
 
     private void enableSpeechRecognition() {
+        speechRecognizer.events.recognitionRejected.add(recognitionRejected);
         speechRecognizer.events.recognitionCompleted.add(recognitionCompleted);
-        speechRecognizer
-                .startRecognition(derivedChoices, recognitionConfidence);
+        speechRecognizer.startRecognition(derivedChoices,
+                recognitionConfidence);
     }
 
     private void disableSpeechRecognition() {
         teaseLib.log.debug("Stopping speech recognition");
+        speechRecognizer.events.recognitionRejected.remove(recognitionRejected);
         speechRecognizer.events.recognitionCompleted
                 .remove(recognitionCompleted);
         speechRecognizer.stopRecognition();
@@ -168,12 +189,11 @@ class ShowChoices {
     // instead of a pause -> using volatile for signaling
     // This issue needs to be observed (Mine has a SR Rejected script handler)
 
-    public void pause(String reason) {
-        if (!paused) {
+    public void pause(String pauseState) {
+        if (!isPaused()) {
             pauseSync.lock();
             try {
-                this.paused = true;
-                this.reason = reason;
+                this.pauseState = pauseState;
                 teaseLib.log.info("Pausing " + derivedChoices.toString());
                 // Must wait until there is something to pause, because
                 // the buttons are realized by the host, and therefore
@@ -199,6 +219,14 @@ class ShowChoices {
         } else {
             teaseLib.log.info("Paused already " + derivedChoices.toString());
         }
+    }
+
+    boolean isPaused() {
+        return pauseState != null;
+    }
+
+    public String getPauseState() {
+        return pauseState;
     }
 
     private Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs> recognitionCompletedEvent(

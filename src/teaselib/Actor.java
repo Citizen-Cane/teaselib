@@ -13,7 +13,7 @@ public class Actor {
     public final String key;
 
     public Images images = null;
-    public SpeechRecognitionRejectedScript speechRecognitionRejectedHandler = null;
+    public SpeechRecognitionRejectedScript speechRecognitionRejectedScript = null;
 
     public Actor(Actor actor) {
         this.name = actor.name;

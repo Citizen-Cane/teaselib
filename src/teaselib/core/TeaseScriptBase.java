@@ -8,7 +8,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.Stack;
 
 import teaselib.Actor;
 import teaselib.Message;
@@ -16,12 +15,7 @@ import teaselib.Mood;
 import teaselib.ScriptFunction;
 import teaselib.TeaseLib;
 import teaselib.core.MediaRenderer.Replay.Position;
-import teaselib.core.events.Event;
-import teaselib.core.speechrecognition.SpeechRecognition;
-import teaselib.core.speechrecognition.SpeechRecognitionImplementation;
 import teaselib.core.speechrecognition.SpeechRecognitionResult.Confidence;
-import teaselib.core.speechrecognition.SpeechRecognizer;
-import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
 import teaselib.core.texttospeech.TextToSpeechPlayer;
 import teaselib.util.SpeechRecognitionRejectedScript;
 
@@ -38,8 +32,7 @@ public abstract class TeaseScriptBase {
 
     protected static final int NoTimeout = 0;
 
-    private static final Stack<ShowChoices> choicesStack = new Stack<ShowChoices>();
-
+    private static final ChoicesStack choicesStack = new ChoicesStack();
     private static final MediaRendererQueue renderQueue = new MediaRendererQueue();
     private final List<MediaRenderer> queuedRenderers = new ArrayList<MediaRenderer>();
 
@@ -50,16 +43,20 @@ public abstract class TeaseScriptBase {
 
         public Replay(List<MediaRenderer> renderers) {
             super();
+            teaseLib.log.info("Remembering renderers in replay " + this);
             this.renderers = new ArrayList<MediaRenderer>(renderers);
         }
 
         public void replay(Position replayPosition) {
-            // Ensure all current renderers have been played before restarting
             synchronized (queuedRenderers) {
-                completeAll();
+                // Ensure all current renderers have been played before
+                // restarting
+                // Don't wait for all since the message is just redisplayed
+                completeMandatory();
+                teaseLib.log.info("Replaying renderers from replay " + this);
                 queueRenderers(renderers);
                 renderQueue.replay(queuedRenderers, teaseLib, replayPosition);
-                queuedRenderers.clear();
+                playedRenderers = new ArrayList<MediaRenderer>(queuedRenderers);
             }
         }
     }
@@ -242,60 +239,32 @@ public abstract class TeaseScriptBase {
             List<String> choices, Confidence recognitionConfidence) {
         // argument checking and text variable replacement
         final List<String> derivedChoices = replaceTextVariables(choices);
-        ScriptFutureTask scriptTask = scriptFunction != null ? new ScriptFutureTask(
-                this, scriptFunction, derivedChoices,
-                new ScriptFutureTask.TimeoutClick()) : null;
+        ScriptFutureTask scriptTask = scriptFunction != null
+                ? new ScriptFutureTask(this, scriptFunction, derivedChoices,
+                        new ScriptFutureTask.TimeoutClick())
+                : null;
+        final boolean choicesStackContainsSRRejectedState = choicesStack
+                .containsPauseState(ShowChoices.RecognitionRejected);
         final ShowChoices showChoices = new ShowChoices(this, choices,
-                derivedChoices, scriptTask, recognitionConfidence);
+                derivedChoices, scriptTask, recognitionConfidence,
+                choicesStackContainsSRRejectedState);
         Map<String, Runnable> pauseHandlers = new HashMap<String, Runnable>();
-        addPauseHandler(pauseHandlers, showChoices);
-        // Comment speech recognition rejections if we aren't doing this already
-        final SpeechRecognition speechRecognition = SpeechRecognizer.instance
-                .get(actor.locale);
-        // The RecognitionRejectedEvent-handler doesn't work in replies that run
-        // script functions but it works inside script functions. Reason are:
-        // - The event handler would have to wait until messages rendered by the
-        // script function are completed
-        // -> delay in response
-        // - script functions may include timing which would be messed up by
-        // pausing them
-        // - Script functions may invoke other script functions, but the handler
-        // management is neither multi-threading-aware nor synchronized
-        // - The current code is unable to recover to the choice on top of the
-        // choices stack after a recognition-rejected pause event
-        boolean handleRecognitionRejectedEvents = scriptFunction == null
-                && actor.speechRecognitionRejectedHandler != null
-                && !(this instanceof SpeechRecognitionRejectedScript)
-                && speechRecognition.isReady();
-        final Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs> recognitionRejected;
-        if (handleRecognitionRejectedEvents) {
-            recognitionRejected = addRecognitionRejectedHandler(showChoices,
-                    pauseHandlers, speechRecognition);
-        } else {
-            recognitionRejected = null;
-        }
+        // The pause handler resumes displaying choices
+        // when the choice object becomes the top-element of the choices stack
+        // again
+        pauseHandlers.put(ShowChoices.Paused, pauseHandler(showChoices));
+        pauseHandlers.put(ShowChoices.RecognitionRejected,
+                recognitionRejectedPauseHandler(showChoices));
         waitToStartScriptFunction(scriptFunction);
         teaseLib.log.info("showChoices: " + derivedChoices.toString());
-        // Show the choices
-        final String choice;
-        try {
-            choice = showChoices(showChoices, pauseHandlers);
-        } finally {
-            if (handleRecognitionRejectedEvents) {
-                speechRecognition.events.recognitionRejected
-                        .remove(recognitionRejected);
-            }
-        }
+        String choice = choicesStack.show(this, showChoices, pauseHandlers);
         teaseLib.log.debug("Reply finished");
-        // Object identity is supported by
-        // returning an item of the original choices list
         teaseLib.transcript.info("< " + choice);
         return choice;
     }
 
-    private void addPauseHandler(Map<String, Runnable> pauseHandlers,
-            final ShowChoices showChoices) {
-        pauseHandlers.put(ShowChoices.Paused, new Runnable() {
+    private Runnable pauseHandler(final ShowChoices showChoices) {
+        return new Runnable() {
             @Override
             public void run() {
                 // Someone dismissed our set of buttons in order to to show
@@ -303,64 +272,63 @@ public abstract class TeaseScriptBase {
                 try {
                     // only the top-most element may resume
                     while (choicesStack.peek() != showChoices) {
-                        choicesStack.wait();
+                        wait();
                     }
-                    teaseLib.log.info("Resuming choices "
-                            + showChoices.derivedChoices);
+                    teaseLib.log.info(
+                            "Resuming choices " + showChoices.derivedChoices);
                 } catch (InterruptedException e) {
                     throw new ScriptInterruptedException();
                 }
             }
-        });
+        };
     }
 
-    private Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs> addRecognitionRejectedHandler(
-            final ShowChoices showChoices, Map<String, Runnable> pauseHandlers,
-            final SpeechRecognition speechRecognition) {
-        Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs> recognitionRejected = new Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs>() {
-            @Override
-            public void run(SpeechRecognitionImplementation sender,
-                    SpeechRecognizedEventArgs eventArgs) {
-                SpeechRecognitionRejectedScript speechRecognitionRejectedHandler = actor.speechRecognitionRejectedHandler;
-                if (speechRecognitionRejectedHandler.canRun()) {
-                    showChoices.pause(ShowChoices.RecognitionRejected);
-                } else {
-                    teaseLib.log.info("RecognitionRejected-handler "
-                            + speechRecognitionRejectedHandler.toString()
-                            + " canRun() returned false - Skipping");
-                }
-            }
-        };
+    private Runnable recognitionRejectedPauseHandler(
+            final ShowChoices showChoices) {
+        // Handling speech recognition rejected events:
+        // RecognitionRejectedEvent-scripts doesn't work in reply-calls that
+        // invoke
+        // script functions but they work inside script functions.
+        // Reason are:
+        // - The event handler would have to wait until messages rendered by the
+        // script function are completed -> delay in response
+        // - script functions may include timing which would be messed up by
+        // pausing them
+        // - Script functions may invoke other script functions, but the handler
+        // management is neither multi-threading-aware nor synchronized
+        // - The current code is unable to recover to the choice on top of the
+        // choices stack after a recognition-rejected pause event
+
         // The recognitionRejected handler won't trigger immediately when
         // a script function renders messages, because it will wait until
         // the render queue is empty, and this includes message delays.
         // Therefore script functions are not supported, because the script
         // function would still render messages while the choices are shown.
         // However rendering messages while showing choices should be fine.
-        pauseHandlers.put(ShowChoices.RecognitionRejected, new Runnable() {
+        return new Runnable() {
             @Override
             public void run() {
-                SpeechRecognitionRejectedScript speechRecognitionRejectedHandler = actor.speechRecognitionRejectedHandler;
+                SpeechRecognitionRejectedScript speechRecognitionRejectedScript = actor.speechRecognitionRejectedScript;
                 // Test before pause to avoid button flicker
-                if (renderQueue.hasCompletedMandatory()) {
-                    Replay beforeSpeechRecognitionRejectedHandler = new Replay(
+                if (speechRecognitionRejectedScript != null
+                        && renderQueue.hasCompletedMandatory()) {
+                    Replay beforeSpeechRecognitionRejected = new Replay(
                             playedRenderers);
-                    teaseLib.log.info("Running RecognitionRejected-handler "
-                            + speechRecognitionRejectedHandler.toString());
-                    speechRecognitionRejectedHandler.run();
-                    beforeSpeechRecognitionRejectedHandler.replay(Position.End);
+                    teaseLib.log.info("Running SpeechRecognitionRejectedScript "
+                            + speechRecognitionRejectedScript.toString());
+                    speechRecognitionRejectedScript.run();
+                    beforeSpeechRecognitionRejected.replay(Position.End);
                 } else {
                     teaseLib.log.info("Skipping RecognitionRejected-handler  "
-                            + speechRecognitionRejectedHandler.toString()
+                            + speechRecognitionRejectedScript.toString()
                             + " while rendering message");
                 }
             }
-        });
-        speechRecognition.events.recognitionRejected.add(recognitionRejected);
-        return recognitionRejected;
+        };
     }
 
-    private void waitToStartScriptFunction(final ScriptFunction scriptFunction) {
+    private void waitToStartScriptFunction(
+            final ScriptFunction scriptFunction) {
         // Wait for previous message to complete
         if (scriptFunction == null) {
             // If we don't have a script function,
@@ -382,59 +350,17 @@ public abstract class TeaseScriptBase {
         }
     }
 
-    private static final Object showChoicesSyncObject = new Object();
-
-    private String showChoices(ShowChoices showChoices,
-            Map<String, Runnable> pauseHandlers) {
-        String choice = null;
-        ShowChoices previous = null;
-        synchronized (choicesStack) {
-            if (!choicesStack.empty()) {
-                previous = choicesStack.peek();
-            }
-            choicesStack.push(showChoices);
-            if (previous != null) {
-                previous.pause(ShowChoices.Paused);
-            }
-        }
-        while (true) {
-            // Ensure only one thread at a time can realize ui elements
-            synchronized (showChoicesSyncObject) {
-                choice = showChoices.show();
-                // End the current set of renderers
-                // in order to dismiss the message
-                // This also affects script functions,
-                // as well as {@link Message#ShowChoices}
-                endAll();
-            }
-            synchronized (choicesStack) {
-                if (pauseHandlers.containsKey(choice)) {
-                    teaseLib.log.info("Invoking choices handler for choices="
-                            + showChoices.derivedChoices.toString()
-                            + " reason=" + choice.toString());
-                    pauseHandlers.get(choice).run();
-                    continue;
-                } else {
-                    choicesStack.pop();
-                    if (!choicesStack.empty()) {
-                        choicesStack.notifyAll();
-                    }
-                    break;
-                }
-            }
-        }
-        return choice;
-    }
-
     private String replaceVariables(String text) {
         String parsedText = text;
-        for (Persistence.TextVariable name : Persistence.TextVariable.values()) {
+        for (Persistence.TextVariable name : Persistence.TextVariable
+                .values()) {
             parsedText = replaceTextVariable(parsedText, name);
         }
         return parsedText;
     }
 
-    private String replaceTextVariable(String text, Persistence.TextVariable var) {
+    private String replaceTextVariable(String text,
+            Persistence.TextVariable var) {
         final String value = var.toString();
         text = replaceTextVariable(text, var, "#" + value);
         text = replaceTextVariable(text, var, "#" + value.toLowerCase());

@@ -33,7 +33,7 @@ public abstract class TeaseScriptBase {
     protected static final int NoTimeout = 0;
 
     private static final ChoicesStack choicesStack = new ChoicesStack();
-    private static final MediaRendererQueue renderQueue = new MediaRendererQueue();
+    static final MediaRendererQueue renderQueue = new MediaRendererQueue();
     private final List<MediaRenderer> queuedRenderers = new ArrayList<MediaRenderer>();
 
     private List<MediaRenderer> playedRenderers = null;
@@ -249,12 +249,11 @@ public abstract class TeaseScriptBase {
                 derivedChoices, scriptTask, recognitionConfidence,
                 choicesStackContainsSRRejectedState);
         Map<String, Runnable> pauseHandlers = new HashMap<String, Runnable>();
-        // The pause handler resumes displaying choices
-        // when the choice object becomes the top-element of the choices stack
-        // again
+        // The pause handler resumes displaying choices when the choice object
+        // becomes the top-element of the choices stack again
         pauseHandlers.put(ShowChoices.Paused, pauseHandler(showChoices));
         pauseHandlers.put(ShowChoices.RecognitionRejected,
-                recognitionRejectedPauseHandler(showChoices));
+                recognitionRejectedPauseHandler());
         waitToStartScriptFunction(scriptFunction);
         teaseLib.log.info("showChoices: " + derivedChoices.toString());
         String choice = choicesStack.show(this, showChoices, pauseHandlers);
@@ -283,46 +282,17 @@ public abstract class TeaseScriptBase {
         };
     }
 
-    private Runnable recognitionRejectedPauseHandler(
-            final ShowChoices showChoices) {
-        // Handling speech recognition rejected events:
-        // RecognitionRejectedEvent-scripts doesn't work in reply-calls that
-        // invoke
-        // script functions but they work inside script functions.
-        // Reason are:
-        // - The event handler would have to wait until messages rendered by the
-        // script function are completed -> delay in response
-        // - script functions may include timing which would be messed up by
-        // pausing them
-        // - Script functions may invoke other script functions, but the handler
-        // management is neither multi-threading-aware nor synchronized
-        // - The current code is unable to recover to the choice on top of the
-        // choices stack after a recognition-rejected pause event
-
-        // The recognitionRejected handler won't trigger immediately when
-        // a script function renders messages, because it will wait until
-        // the render queue is empty, and this includes message delays.
-        // Therefore script functions are not supported, because the script
-        // function would still render messages while the choices are shown.
-        // However rendering messages while showing choices should be fine.
+    private Runnable recognitionRejectedPauseHandler() {
         return new Runnable() {
             @Override
             public void run() {
                 SpeechRecognitionRejectedScript speechRecognitionRejectedScript = actor.speechRecognitionRejectedScript;
-                // Test before pause to avoid button flicker
-                if (speechRecognitionRejectedScript != null
-                        && renderQueue.hasCompletedMandatory()) {
-                    Replay beforeSpeechRecognitionRejected = new Replay(
-                            playedRenderers);
-                    teaseLib.log.info("Running SpeechRecognitionRejectedScript "
-                            + speechRecognitionRejectedScript.toString());
-                    speechRecognitionRejectedScript.run();
-                    beforeSpeechRecognitionRejected.replay(Position.End);
-                } else {
-                    teaseLib.log.info("Skipping RecognitionRejected-handler  "
-                            + speechRecognitionRejectedScript.toString()
-                            + " while rendering message");
-                }
+                Replay beforeSpeechRecognitionRejected = new Replay(
+                        playedRenderers);
+                teaseLib.log.info("Running SpeechRecognitionRejectedScript "
+                        + speechRecognitionRejectedScript.toString());
+                speechRecognitionRejectedScript.run();
+                beforeSpeechRecognitionRejected.replay(Position.End);
             }
         };
     }

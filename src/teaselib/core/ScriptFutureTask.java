@@ -5,11 +5,14 @@ package teaselib.core;
 
 import java.util.List;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.FutureTask;
+import java.util.concurrent.TimeUnit;
 
 import teaselib.ScriptFunction;
 import teaselib.TeaseLib;
 import teaselib.core.events.Delegate;
+import teaselib.core.util.NamedExecutorService;
 
 public class ScriptFutureTask extends FutureTask<String> {
     public static class TimeoutClick {
@@ -18,6 +21,11 @@ public class ScriptFutureTask extends FutureTask<String> {
 
     private final ScriptFunction scriptFunction;
     private final TimeoutClick timeout;
+
+    private final static ExecutorService Executor = NamedExecutorService
+            .newFixedThreadPool(Integer.MAX_VALUE,
+                    ShowChoices.class.getName() + " Script Function", 1,
+                    TimeUnit.HOURS);
 
     public ScriptFutureTask(final TeaseScriptBase script,
             final ScriptFunction scriptFunction,
@@ -38,10 +46,8 @@ public class ScriptFutureTask extends FutureTask<String> {
                         clickToFinishFunction(script, derivedChoices, timeout);
                         return null;
                     } catch (ScriptInterruptedException e) {
-                        // TODO Remove completely because this should be
-                        // obsolete:
-                        // renderers are cancelled in
-                        // TeaseScriptBase.showChoices
+                        // TODO Remove completely because this should be obsolete:
+                        // renderers are cancelled in TeaseScriptBase.showChoices
                         // but let's better test it for a while...
                         // script.endAll();
                         throw e;
@@ -77,6 +83,10 @@ public class ScriptFutureTask extends FutureTask<String> {
         this.timeout = timeout;
     }
 
+    public void execute() {
+        Executor.execute(this);
+    }
+
     public void join() {
         synchronized (scriptFunction) {
             // Intentionally left blank,
@@ -86,6 +96,10 @@ public class ScriptFutureTask extends FutureTask<String> {
 
     public boolean timedOut() {
         return timeout.clicked;
+    }
+
+    public ScriptFunction.Relation getRelation() {
+        return scriptFunction.relation;
     }
 
     public String getScriptFunctionResult() {

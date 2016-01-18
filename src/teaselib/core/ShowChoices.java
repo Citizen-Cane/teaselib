@@ -5,7 +5,6 @@ package teaselib.core;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -19,14 +18,21 @@ import teaselib.core.speechrecognition.SpeechRecognitionResult;
 import teaselib.core.speechrecognition.SpeechRecognitionResult.Confidence;
 import teaselib.core.speechrecognition.SpeechRecognizer;
 import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
-import teaselib.core.util.NamedExecutorService;
 import teaselib.util.SpeechRecognitionRejectedScript;
 
 /**
  *
  */
 class ShowChoices {
+    /**
+     * The choices instance is paused in order to display a different set of
+     * choices
+     */
     public final static String Paused = "Paused";
+    /**
+     * The choices instance hss been paused to call a SpeechRecognitionRejected
+     * script
+     */
     public final static String RecognitionRejected = "Recognition Rejected";
 
     public final List<String> choices;
@@ -41,19 +47,19 @@ class ShowChoices {
     private final Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs> recognitionRejected;
     private final Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs> recognitionCompleted;
 
-    private final static ExecutorService choiceScriptFunctionExecutor = NamedExecutorService
-            .newFixedThreadPool(Integer.MAX_VALUE,
-                    ShowChoices.class.getName() + " Script Function", 1,
-                    TimeUnit.HOURS);
-
     private boolean scriptTaskStarted = false;
     private final ReentrantLock pauseSync = new ReentrantLock();
     private volatile String pauseState = null;
 
-    public ShowChoices(TeaseScriptBase script, List<String> choices,
-            List<String> derivedChoices, ScriptFutureTask scriptTask,
+    /**
+     * @param choicesStackContainsSRRejectedState
+     *            Whether the stack of choices contains an element with pause
+     *            state {@link ShowChoices#RecognitionRejected}
+     */
+    public ShowChoices(final TeaseScriptBase script, List<String> choices,
+            List<String> derivedChoices, final ScriptFutureTask scriptTask,
             Confidence recognitionConfidence,
-            boolean choicesStackContainsSRRejectedState) {
+            final boolean choicesStackContainsSRRejectedState) {
         super();
         this.choices = choices;
         this.derivedChoices = derivedChoices;
@@ -64,18 +70,68 @@ class ShowChoices {
         this.recognitionConfidence = recognitionConfidence;
         this.recognizeSpeech = speechRecognizer.isReady();
         if (recognizeSpeech) {
+            // Handling speech recognition rejected events:
+            // RecognitionRejectedEvent-scripts doesn't work in reply-calls that
+            // invoke script functions but they work inside script functions.
+            //
+            // Reason are:
+            // - The event handler would have to wait until messages rendered by
+            // the script function are completed -> delay in response
+            // - script functions may include timing which would be messed up by
+            // pausing them
+            // - Script functions may invoke other script functions, but the
+            // handler management is neither multi-threading-aware nor
+            // synchronized
+            // - The current code is unable to recover to the choice on top of
+            // the choices stack after a recognition-rejected pause event
+            //
+            // The recognitionRejected handler won't trigger immediately when
+            // a script function renders messages, because it will wait until
+            // the render queue is empty, and this includes message delays.
+            // Therefore script functions are not supported, because the script
+            // function would still render messages while the choices are shown.
+            // However rendering messages while showing choices should be fine.
             recognitionRejected = new Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs>() {
                 @Override
                 public void run(SpeechRecognitionImplementation sender,
                         SpeechRecognizedEventArgs eventArgs) {
-                    SpeechRecognitionRejectedScript speechRecognitionRejectedHandler = script.actor.speechRecognitionRejectedScript;
-                    if (!choicesStackContainsSRRejectedState
-                            && speechRecognitionRejectedHandler.canRun()) {
-                        pause(ShowChoices.RecognitionRejected);
-                    } else {
-                        teaseLib.log.info("RecognitionRejected-handler "
-                                + speechRecognitionRejectedHandler.toString()
-                                + " canRun() returned false - Skipping");
+                    SpeechRecognitionRejectedScript speechRecognitionRejectedScript = script.actor.speechRecognitionRejectedScript;
+                    // run speech recognition rejected script?
+                    if (speechRecognitionRejectedScript != null) {
+                        if (choicesStackContainsSRRejectedState == true) {
+                            teaseLib.log
+                                    .info("The choices stack contains already another SR rejection script"
+                                            + " - skipping RecognitionRejectedScript "
+                                            + speechRecognitionRejectedScript
+                                                    .toString());
+                        } else if (scriptTask != null) {
+                            // This would work for the built-in confirmative
+                            // timeout script functions
+                            // TimeoutBehavior.InDubioMitius and maybe also for
+                            // TimeoutBehavior.TimeoutBehavior.InDubioMitius
+                            teaseLib.log
+                                    .info(scriptTask.getRelation().toString()
+                                            + " script functions running"
+                                            + " - skipping RecognitionRejectedScript "
+                                            + speechRecognitionRejectedScript
+                                                    .toString());
+                        } else if (!script.renderQueue.hasCompletedAll()) {
+                            // must complete all to avoid parallel rendering
+                            // see {@link Message#ShowChoices}
+                            teaseLib.log
+                                    .info(" message rendering still in progress"
+                                            + " - skipping RecognitionRejectedScript "
+                                            + speechRecognitionRejectedScript
+                                                    .toString());
+                        } else if (speechRecognitionRejectedScript
+                                .canRun() == false) {
+                            teaseLib.log.info("RecognitionRejectedScript "
+                                    + speechRecognitionRejectedScript.toString()
+                                    + ".canRun() returned false - skipping");
+                        } else {
+                            // all negative conditions sorted out
+                            pause(ShowChoices.RecognitionRejected);
+                        }
                     }
                 }
             };
@@ -103,13 +159,13 @@ class ShowChoices {
             // The result of this future task is never queried for,
             // instead a timeout is signaled via the TimeoutClick class,
             // or the script function can return a specific result
-            choiceScriptFunctionExecutor.execute(scriptTask);
+            scriptTask.execute();
             scriptTaskStarted = true;
         }
         // Get the user's choice
         int choiceIndex;
         try {
-            // We can just reset trhe pause state here
+            // We can just reset the pause state here
             pauseState = null;
             choiceIndex = teaseLib.host.reply(derivedChoices);
         } finally {
@@ -133,8 +189,7 @@ class ShowChoices {
             pauseSync.lock();
             try {
                 if (isPaused()) {
-                    teaseLib.log.info(
-                            "Entering pause state with reason " + pauseState);
+                    teaseLib.log.info("Entering pause state " + pauseState);
                     return pauseState;
                 }
             } finally {

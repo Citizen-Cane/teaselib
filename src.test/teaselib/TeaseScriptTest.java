@@ -3,7 +3,7 @@
  */
 package teaselib;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -13,6 +13,7 @@ import java.io.InputStreamReader;
 import org.junit.Test;
 
 import teaselib.core.ResourceLoader;
+import teaselib.core.texttospeech.Voice;
 import teaselib.hosts.DummyHost;
 import teaselib.hosts.DummyPersistence;
 
@@ -28,9 +29,11 @@ public class TeaseScriptTest {
     private static final String RESOURCE_1 = "resource1.txt";
 
     private static TeaseScript createTestScript() {
-        TeaseScript script = new TeaseScript(TeaseLib.init(new DummyHost(),
-                new DummyPersistence()), new ResourceLoader(
-                ".", "bin.test"), "en-us", "test") {
+        TeaseScript script = new TeaseScript(
+                TeaseLib.init(new DummyHost(), new DummyPersistence()),
+                new ResourceLoader(".", "bin.test"),
+                new Actor(Actor.Dominant, Voice.Gender.Female, "en-us"),
+                "test") {
             @Override
             public void run() {
             }
@@ -43,8 +46,7 @@ public class TeaseScriptTest {
         TeaseScript script = createTestScript();
         final String name = "dummy";
         final String path = script.getClass().getPackage().getName()
-                .replace(".", "/")
-                + "/";
+                .replace(".", "/") + "/";
         final String expected = path + name;
         final String actual = script.resource(name);
         assertEquals(expected, actual);

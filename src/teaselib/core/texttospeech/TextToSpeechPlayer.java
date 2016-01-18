@@ -6,6 +6,7 @@ import java.io.InputStreamReader;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -95,13 +96,13 @@ public class TextToSpeechPlayer {
                             + ": prerecorded voice not available");
                     Voice voice = voices.get(voiceGuid);
                     if (voice != null) {
-                        teaseLib.log.info("Actor " + actorName
-                                + ": using TTS voice");
+                        teaseLib.log.info(
+                                "Actor " + actorName + ": using TTS voice");
                         actor2TTSVoice.put(actorName, voice);
                         usedVoices.add(voiceGuid);
                     } else {
-                        teaseLib.log.info("Actor " + actorName
-                                + ": voice not available");
+                        teaseLib.log.info(
+                                "Actor " + actorName + ": voice not available");
                     }
                 }
             }
@@ -144,8 +145,15 @@ public class TextToSpeechPlayer {
     }
 
     private Voice getMatchingVoiceFor(Actor actor, Map<String, Voice> voices) {
-        // Full match: language and region
+        // Filter the actor's gender
+        Set<Voice> genderFilteredVoices = new LinkedHashSet<Voice>();
         for (Voice voice : voices.values()) {
+            if (actor.gender == voice.gender) {
+                genderFilteredVoices.add(voice);
+            }
+        }
+        // Full match: language and region
+        for (Voice voice : genderFilteredVoices) {
             String locale = voice.locale;
             if (locale.compareToIgnoreCase(actor.locale) == 0
                     && !usedVoices.contains(voice.guid)) {
@@ -156,7 +164,7 @@ public class TextToSpeechPlayer {
             }
         }
         // Partial match: language only
-        for (Voice voice : voices.values()) {
+        for (Voice voice : genderFilteredVoices) {
             String voiceLanguage = voice.locale.substring(0, 2);
             String actorLanguage = actor.locale.substring(0, 2);
             if (voiceLanguage.compareToIgnoreCase(actorLanguage) == 0
@@ -169,24 +177,28 @@ public class TextToSpeechPlayer {
         }
         // Reuse voice of first non-dominant actor
         for (String actorName : actor2TTSVoice.keySet()) {
-            if (actorName.compareToIgnoreCase(Actor.Dominant) != 0) {
+            if (actorName.compareToIgnoreCase(Actor.Dominant) != 0
+                    && actor2TTSVoice.get(actorName).gender == actor.gender) {
                 Voice voice = actor2TTSVoice.get(actorName);
                 teaseLib.log.info("Reusing voice of actor '" + actorName
-                        + "': '" + voice.guid + "' with locale '"
-                        + voice.locale + "' for actor '" + actor.key + "'");
+                        + "': '" + voice.guid + "' with locale '" + voice.locale
+                        + "' for actor '" + actor.key + "'");
                 return voice;
             }
         }
-        // voice of Dominant actor
-        if (actor2TTSVoice.containsKey(Actor.Dominant)) {
-            Voice voice = actor2TTSVoice.get(Actor.Dominant);
-            teaseLib.log.info("Reusing voice of dominant actor ': " + voice.guid
-                    + "' with locale '" + voice.locale + "' for actor '"
-                    + actor.key + "'");
-            return voice;
+        // voice of default dominant actor
+        for (String actorName : actor2TTSVoice.keySet()) {
+            if (actorName.compareToIgnoreCase(Actor.Dominant) == 0
+                    && actor2TTSVoice.get(actorName).gender == actor.gender) {
+                Voice voice = actor2TTSVoice.get(actorName);
+                teaseLib.log.info("Reusing voice of actor '" + actorName
+                        + "': '" + voice.guid + "' with locale '" + voice.locale
+                        + "' for actor '" + actor.key + "'");
+                return voice;
+            }
         }
         // No voice
-        teaseLib.log.info("No voice defined for actor '" + actor.key + "'");
+        teaseLib.log.info("No voice available for actor '" + actor.key + "'");
         return null;
     }
 
@@ -199,19 +211,18 @@ public class TextToSpeechPlayer {
      */
     private List<String> getSpeechResources(ResourceLoader resources,
             Message message) throws IOException {
-        String actorKey = message.actor.key;
-        String voice = actor2PrerecordedVoice.get(actorKey);
+        String key = message.actor.key;
+        String voice = actor2PrerecordedVoice.get(key);
         if (voice == null) {
             return null;
         } else {
-            String path = TextToSpeechRecorder.SpeechDirName + "/" + actorKey
-                    + "/" + voice + "/" + TextToSpeechRecorder.getHash(message)
-                    + "/";
+            String path = TextToSpeechRecorder.SpeechDirName + "/" + key + "/"
+                    + voice + "/" + TextToSpeechRecorder.getHash(message) + "/";
             BufferedReader reader = null;
             List<String> speechResources = new Vector<String>();
             try {
-                reader = new BufferedReader(new InputStreamReader(
-                        resources.getResource(path
+                reader = new BufferedReader(
+                        new InputStreamReader(resources.getResource(path
                                 + TextToSpeechRecorder.ResourcesFilename)));
                 String soundFile = null;
                 while ((soundFile = reader.readLine()) != null) {

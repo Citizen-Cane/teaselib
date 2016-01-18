@@ -3,9 +3,12 @@
  */
 package teaselib;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
+
+import teaselib.core.texttospeech.Voice;
 
 /**
  * @author someone
@@ -13,11 +16,13 @@ import org.junit.Test;
  */
 public class MessageTest {
 
-    private static final Actor actor = new Actor(Actor.Dominant, "en-us");
+    private static final Actor actor = new Actor(Actor.Dominant,
+            Voice.Gender.Female, "en-us");
 
     @Test
     public void determineType() {
-        assertTrue(Message.determineType("Understood, #slave?") == Message.Type.Text);
+        assertTrue(Message
+                .determineType("Understood, #slave?") == Message.Type.Text);
     }
 
     @Test
@@ -118,8 +123,7 @@ public class MessageTest {
     @Test
     public void testJoinSentencesBuilderFunction() {
         // Leading and trailing white space before is okay
-        Message message = new Message(
-                actor,
+        Message message = new Message(actor,
                 "The idea that we came up with was simple.",
                 "We would tie ourselves up out in the guest room using our locking wrist cuffs",
                 "and put the keys in different locations throughout the yard, garage and house.",

@@ -55,26 +55,14 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
     }
 
     /**
-     * Create a new script
-     * 
-     * @param teaseLib
-     * @param locale
-     * @param namespace
-     */
-    public TeaseScript(TeaseLib teaseLib, ResourceLoader resources,
-            String locale, String namespace) {
-        this(teaseLib, resources, new Actor("Dominant", locale), namespace);
-    }
-
-    /**
-     * Create a new script
+     * Create a new script, with a distinct actor
      * 
      * @param teaseLib
      * @param actor
      * @param namespace
      */
-    public TeaseScript(TeaseLib teaseLib, ResourceLoader resources,
-            Actor actor, String namespace) {
+    public TeaseScript(TeaseLib teaseLib, ResourceLoader resources, Actor actor,
+            String namespace) {
         super(teaseLib, resources, actor, namespace);
     }
 
@@ -90,12 +78,13 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
     }
 
     /**
-     * Renders the image denoted by the path. The image will not be displayed
-     * immediately but during the next message rendering. This is because if no
-     * image is specified, an image of the dominant character will be used.
+     * Renders the image denoted by the resource path. The image will not be
+     * displayed immediately but during the next message rendering. This is
+     * because if no image is specified, an image of the dominant character will
+     * be used.
      * 
      * @param path
-     *            The path to the image
+     *            The resource path to the image
      */
     public void setImage(String path) {
         if (path == null) {
@@ -258,8 +247,8 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
         return reply(scriptFunction, choices);
     }
 
-    protected abstract class SpeechRecognitionAwareTimeoutScriptFunction extends
-            ScriptFunction {
+    protected abstract class SpeechRecognitionAwareTimeoutScriptFunction
+            extends ScriptFunction {
         final long seconds;
         final SpeechRecognition.TimeoutBehavior timeoutBehavior;
 
@@ -289,8 +278,9 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
                         inDubioMitius = true;
                     }
                 };
-                SpeechRecognizer.instance.get(actor.locale).events.recognitionStarted
-                        .add(recognitionStarted);
+                SpeechRecognizer.instance
+                        .get(actor.locale).events.recognitionStarted
+                                .add(recognitionStarted);
             } else {
                 recognitionStarted = null;
             }
@@ -304,8 +294,9 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
                 }
             } finally {
                 if (recognitionStarted != null) {
-                    SpeechRecognizer.instance.get(actor.locale).events.recognitionStarted
-                            .remove(recognitionStarted);
+                    SpeechRecognizer.instance
+                            .get(actor.locale).events.recognitionStarted
+                                    .remove(recognitionStarted);
                 }
             }
             if (!inDubioMitius) {
@@ -487,14 +478,16 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
         return results;
     }
 
-    public boolean showItems(String caption, Items<?> items, boolean allowCancel) {
+    public boolean showItems(String caption, Items<?> items,
+            boolean allowCancel) {
         List<String> choices = new ArrayList<String>(items.size());
         List<Boolean> values = new ArrayList<Boolean>(items.size());
         for (int i = 0; i < items.size(); i++) {
             choices.add(items.get(i).displayName);
             values.add(items.get(i).isAvailable());
         }
-        List<Boolean> results = showItems(caption, choices, values, allowCancel);
+        List<Boolean> results = showItems(caption, choices, values,
+                allowCancel);
         if (results != null) {
             for (int i = 0; i < items.size(); i++) {
                 items.get(i).setAvailable(results.get(i));

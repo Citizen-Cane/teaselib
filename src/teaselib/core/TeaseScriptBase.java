@@ -1,6 +1,5 @@
 package teaselib.core;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -73,7 +72,9 @@ public abstract class TeaseScriptBase {
         this.resources = resources;
         this.actor = actor;
         this.namespace = namespace;
-        acquireVoice(actor);
+        TextToSpeechPlayer ttsPlayer = TextToSpeechPlayer.instance();
+        ttsPlayer.loadActorVoices(resources);
+        ttsPlayer.acquireVoice(actor);
     }
 
     /**
@@ -87,16 +88,8 @@ public abstract class TeaseScriptBase {
         this.resources = script.resources;
         this.actor = actor;
         this.namespace = script.namespace;
-        acquireVoice(actor);
-    }
-
-    private void acquireVoice(Actor actor) {
-        try {
-            TextToSpeechPlayer.instance().selectVoice(resources,
-                    new Message(actor));
-        } catch (IOException e) {
-            teaseLib.log.error(this, e);
-        }
+        TextToSpeechPlayer ttsPlayer = TextToSpeechPlayer.instance();
+        ttsPlayer.acquireVoice(actor);
     }
 
     protected static List<String> buildChoicesFromArray(String choice,

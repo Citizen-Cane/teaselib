@@ -15,6 +15,8 @@ import teaselib.Message;
 import teaselib.Message.Part;
 import teaselib.Message.Type;
 import teaselib.Mood;
+import teaselib.core.speechrecognition.SpeechRecognition;
+import teaselib.core.speechrecognition.SpeechRecognizer;
 import teaselib.core.texttospeech.TextToSpeech;
 import teaselib.core.texttospeech.TextToSpeechPlayer;
 
@@ -120,7 +122,7 @@ public class RenderMessage extends MediaRendererThread {
     }
 
     private void renderMessage(Message message,
-            TextToSpeechPlayer speechSynthesizer) throws IOException {
+            TextToSpeechPlayer ttsPlayer) throws IOException {
         if (message.isEmpty()) {
             // // Show image but no text
             showImageAndText(null, hints);
@@ -129,12 +131,18 @@ public class RenderMessage extends MediaRendererThread {
             boolean append = false;
             // Start speaking a message, replay prerecorded items or speak
             // with TTS later
-            final Iterator<String> prerenderedSpeechItems;
-            if (speechSynthesizer != null) {
-                prerenderedSpeechItems = speechSynthesizer.selectVoice(
-                        resources, message);
+            final boolean prerenderedSpeechAvailable;
+            if (ttsPlayer != null) {
+                if (ttsPlayer
+                        .prerenderedSpeechAvailable(message.actor)) {
+                    message = ttsPlayer.getPrerenderedMessage(message,
+                            resources);
+                    prerenderedSpeechAvailable = true;
+                } else {
+                    prerenderedSpeechAvailable = false;
+                }
             } else {
-                prerenderedSpeechItems = null;
+                prerenderedSpeechAvailable = false;
             }
             // Process message paragraphs
             RenderSound soundRenderer = null;
@@ -143,8 +151,8 @@ public class RenderMessage extends MediaRendererThread {
             for (Iterator<Part> it = message.iterator(); it.hasNext();) {
                 Part part = it.next();
                 if (part.type != Type.Text && part.type != Type.Image) {
-                    teaseLib.transcript.info("" + part.type.name() + " = "
-                            + part.value);
+                    teaseLib.transcript
+                            .info("" + part.type.name() + " = " + part.value);
                 }
                 teaseLib.log.info(part.type.toString() + ": " + part.value);
                 // Handle message commands
@@ -153,11 +161,45 @@ public class RenderMessage extends MediaRendererThread {
                 final boolean lastParagraph = !it.hasNext();
                 if (part.type == Message.Type.Image) {
                     displayImage = part.value;
-                } else if (part.type == Message.Type.Sound) {
+                } else if (part.type == Message.Type.BackgroundSound) {
                     // Play sound, continue message execution
                     soundRenderer = new RenderSound(resources, part.value);
                     soundRenderer.render(teaseLib);
-                    // use AwaitSoundCompletion to wait for sound completion
+                    // use awaitSoundCompletion to wait for sound completion
+                } else if (part.type == Message.Type.Sound) {
+                    // Play sound, wait until finished
+                    RenderSound audio = new RenderSound(resources, part.value);
+                    audio.render(teaseLib);
+                    audio.completeAll();
+                } else if (part.type == Message.Type.Speech) {
+                    // Disable speech recognition
+                    final SpeechRecognition speechRecognizer = SpeechRecognizer.instance
+                            .get(message.actor.locale);
+                    // Suspend speech recognition while speaking,
+                    // to avoid wrong recognitions
+                    // - and the mistress speech isn't to be interrupted anyway
+                    SpeechRecognition.completeSpeechRecognitionInProgress();
+                    boolean reactivateSpeechRecognition = speechRecognizer != null
+                            && speechRecognizer.isActive();
+                    try {
+                        if (reactivateSpeechRecognition) {
+                            if (speechRecognizer != null) {
+                                speechRecognizer.stopRecognition();
+                            }
+                        }
+                        // Play sound, wait until finished
+                        RenderSound audio = new RenderSound(resources,
+                                part.value);
+                        audio.render(teaseLib);
+                        audio.completeAll();
+                    } finally {
+                        // resume SR if necessary
+                        if (reactivateSpeechRecognition) {
+                            if (speechRecognizer != null) {
+                                speechRecognizer.resumeRecognition();
+                            }
+                        }
+                    }
                 } else if (part.type == Message.Type.DesktopItem) {
                     final URI uri = resources.uri(part.value);
                     if (uri != null) {
@@ -171,9 +213,16 @@ public class RenderMessage extends MediaRendererThread {
                         // retrieved (the desktop item doesn't exist),
                         // we'll just display the part as text,
                         // which is the most right thing in this case
-                        mood = doTextAndPause(accumulatedText, append,
-                                speechSynthesizer, prerenderedSpeechItems,
-                                mood, lastParagraph, additionalHints, part);
+                        String prompt = part.value;
+                        doTextAndPause(accumulatedText, append, mood,
+                                additionalHints, prompt);
+                        if (ttsPlayer != null
+                                && !prerenderedSpeechAvailable) {
+                            ttsPlayer.speak(message.actor, prompt,
+                                    mood);
+                        }
+                        mood = pauseAfterText(mood, lastParagraph,
+                                ttsPlayer);
                     }
                 } else if (part.type == Message.Type.Mood) {
                     // Mood
@@ -191,9 +240,15 @@ public class RenderMessage extends MediaRendererThread {
                     // Exec
                     doExec(part);
                 } else {
-                    mood = doTextAndPause(accumulatedText, append,
-                            speechSynthesizer, prerenderedSpeechItems, mood,
-                            lastParagraph, additionalHints, part);
+                    String prompt = part.value;
+                    doTextAndPause(accumulatedText, append, mood,
+                            additionalHints, prompt);
+                    if (ttsPlayer != null
+                            && !prerenderedSpeechAvailable) {
+                        ttsPlayer.speak(message.actor, prompt, mood);
+                    }
+                    mood = pauseAfterText(mood, lastParagraph,
+                            ttsPlayer);
                 }
                 if (endThread) {
                     break;
@@ -210,23 +265,8 @@ public class RenderMessage extends MediaRendererThread {
         }
     }
 
-    private String doTextAndPause(StringBuilder accumulatedText,
-            boolean append, TextToSpeechPlayer speechSynthesizer,
-            final Iterator<String> prerenderedSpeechItems, String mood,
-            boolean lastParagraph, Set<String> additionalHints, Part part)
-            throws IOException {
-        doText(accumulatedText, part, append, speechSynthesizer,
-                prerenderedSpeechItems, mood, additionalHints);
-        pauseAfterParagraph(lastParagraph, speechSynthesizer);
-        mood = resetMood(mood);
-        return mood;
-    }
-
-    private void doText(StringBuilder accumulatedText, Part part,
-            boolean append, TextToSpeechPlayer speechSynthesizer,
-            final Iterator<String> prerenderedSpeechItems, String mood,
-            Set<String> additionalHints) throws IOException {
-        String prompt = part.value;
+    private void doTextAndPause(StringBuilder accumulatedText, boolean append,
+            String mood, Set<String> additionalHints, String prompt) {
         accumulateText(accumulatedText, prompt, append);
         // Update text
         additionalHints.add(mood);
@@ -234,17 +274,16 @@ public class RenderMessage extends MediaRendererThread {
             teaseLib.transcript.info("mood = " + mood);
         }
         showImageAndText(accumulatedText.toString(), additionalHints);
-        teaseLib.transcript.info(">> " + part.value);
+        teaseLib.transcript.info(">> " + prompt);
         // First message shown - start part completed
         startCompleted();
-        if (speechSynthesizer != null) {
-            if (prerenderedSpeechItems != null) {
-                speechSynthesizer.play(resources, message.actor, prompt,
-                        prerenderedSpeechItems);
-            } else {
-                speechSynthesizer.speak(message.actor, prompt, mood);
-            }
-        }
+    }
+
+    private String pauseAfterText(String mood, boolean lastParagraph,
+            TextToSpeechPlayer speechSynthesizer) {
+        pauseAfterParagraph(lastParagraph, speechSynthesizer);
+        mood = resetMood(mood);
+        return mood;
     }
 
     private void pauseAfterParagraph(boolean lastParagraph,
@@ -289,8 +328,8 @@ public class RenderMessage extends MediaRendererThread {
             soundRenderer.completeMandatory();
         } else {
             // Unimplemented keyword
-            throw new IllegalArgumentException("Unimplemented keyword: "
-                    + keyword);
+            throw new IllegalArgumentException(
+                    "Unimplemented keyword: " + keyword);
         }
     }
 
@@ -369,9 +408,8 @@ public class RenderMessage extends MediaRendererThread {
                 hintArray = additionalHints.toArray(hintArray);
                 images.hint(hintArray);
                 path = images.next();
-                if (path == null
-                        && !teaseLib.getBoolean(Config.Namespace,
-                                Config.Debug.IgnoreMissingResources)) {
+                if (path == null && !teaseLib.getBoolean(Config.Namespace,
+                        Config.Debug.IgnoreMissingResources)) {
                     teaseLib.log.info("Actor '" + message.actor.name
                             + "': images missing - please initialize");
                 }
@@ -458,15 +496,16 @@ public class RenderMessage extends MediaRendererThread {
 
     @Override
     public void join() {
-        // Cancel ongoing TTS speech
-        if (ttsPlayer != null) {
-            ttsPlayer.stop();
+        // Cancel TTS speech
+        if (!hasCompletedMandatory()) {
+            if (ttsPlayer != null) {
+                ttsPlayer.stop();
+            }
         }
-        // Cancel prerecorded TTS speech
-        // as well as any other sounds
+        // TODO Sounds should be cancelled by each sound renderer
+        // -> Need to track sounds renderers and interrupt them here
+        // Interrupt sound renderes by overwriting interrupt()
         teaseLib.host.stopSounds();
-        // TODO Only stop speech and sounds that
-        // have been started by this message renderer
         super.join();
     }
 }

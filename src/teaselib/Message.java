@@ -11,14 +11,52 @@ public class Message {
      */
     @SuppressWarnings("hiding")
     public enum Type {
+        /**
+         * Text
+         */
         Text,
+        /**
+         * An image
+         */
         Image,
+        /**
+         * Background audio, the message continues to render.
+         */
+        BackgroundSound,
+        /**
+         * Foreground audio, message rendering is paused until the sound
+         * completes.
+         */
         Sound,
+        /**
+         * Similar to {@link Type#Sound} but speech recognition is paused in
+         * order to avoid wrong recognitions.
+         */
+        Speech,
+        /**
+         * Opens a desktop item in the system explorer.
+         */
         DesktopItem,
+        /**
+         * Sets the mood for the following text & image
+         */
         Mood,
+        /**
+         * A special keyword as listed in {@link Message#Keywords}.
+         */
         Keyword,
+        /**
+         * Waits the specified duration before resuming message rendering.
+         */
         Delay,
+        /**
+         * Executes a desktop item. TODO Leftover from PCMPlayer, should be
+         * removed.
+         */
         Exec,
+        /**
+         * Renders text with a leading bullet, useful for enumerations
+         */
         Item
     }
 
@@ -225,7 +263,8 @@ public class Message {
     }
 
     public static boolean isFile(Type t) {
-        return t == Type.Image || t == Type.Sound || t == Type.DesktopItem;
+        return t == Type.Image || t == Type.BackgroundSound
+                || t == Type.DesktopItem;
     }
 
     public static boolean isImage(String m) {
@@ -300,7 +339,7 @@ public class Message {
             if (isImage(mToLower)) {
                 return Type.Image;
             } else if (isSound(mToLower)) {
-                return Type.Sound;
+                return Type.BackgroundSound;
             } else {
                 return Type.DesktopItem;
             }
@@ -448,13 +487,13 @@ public class Message {
                     if (sentence == null) {
                         sentence = part;
                     } else {
-                        sentence = new Part(Type.Text, sentence.value + " "
-                                + part.value);
+                        sentence = new Part(Type.Text,
+                                sentence.value + " " + part.value);
                     }
                 } else {
                     if (sentence != null) {
-                        newParts.add(Type.Text, sentence.value + " "
-                                + part.value);
+                        newParts.add(Type.Text,
+                                sentence.value + " " + part.value);
                         sentence = null;
                     } else {
                         newParts.add(part);

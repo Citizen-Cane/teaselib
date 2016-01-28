@@ -34,6 +34,7 @@ public class TextToSpeechRecorder {
     private final Map<String, Voice> voices;
     private final Set<String> actors = new HashSet<String>();
     private final ActorVoices actorVoices;
+    final TextToSpeechPlayer ttsPlayer;
 
     private final long buildStart = System.currentTimeMillis();
     int newEntries = 0;
@@ -43,32 +44,33 @@ public class TextToSpeechRecorder {
 
     public TextToSpeechRecorder(ResourceLoader resources) throws IOException {
         this.resources = resources;
-        this.voices = TextToSpeechPlayer.instance().textToSpeech.getVoices();
+        ttsPlayer = TextToSpeechPlayer.instance();
+        voices = ttsPlayer.textToSpeech.getVoices();
         File assetsDir = resources.getAssetPath("");
         speechDir = createSubDir(assetsDir, SpeechDirName);
         InstalledVoices available = new InstalledVoices(voices);
         available.store(assetsDir);
         actorVoices = new ActorVoices(resources);
-        TeaseLib.instance().log.info("Build start: "
-                + new Date(buildStart).toString());
+        TeaseLib.instance().log
+                .info("Build start: " + new Date(buildStart).toString());
     }
 
     private static File createSubDir(File dir, String name) {
         File subDir = new File(dir, name);
         if (subDir.exists() == false) {
-            TeaseLib.instance().log.info("Creating directory "
-                    + subDir.getAbsolutePath());
+            TeaseLib.instance().log
+                    .info("Creating directory " + subDir.getAbsolutePath());
             subDir.mkdirs();
         } else {
-            TeaseLib.instance().log.info("Using directory "
-                    + subDir.getAbsolutePath());
+            TeaseLib.instance().log
+                    .info("Using directory " + subDir.getAbsolutePath());
         }
         return subDir;
     }
 
     public void create(ScriptScanner scanner) throws IOException {
-        TeaseLib.instance().log.info("Scanning script '"
-                + scanner.getScriptName() + "'");
+        TeaseLib.instance().log
+                .info("Scanning script '" + scanner.getScriptName() + "'");
         Set<String> created = new HashSet<String>();
         for (Message message : scanner) {
             Actor actor = message.actor;
@@ -77,7 +79,7 @@ public class TextToSpeechRecorder {
             final Voice voice;
             voice = getVoice(actor);
             TeaseLib.instance().log.info("Voice: " + voice.name);
-            TextToSpeechPlayer.instance().textToSpeech.setVoice(voice);
+            ttsPlayer.textToSpeech.setVoice(voice);
             File voiceDir = createSubDir(characterDir, voice.guid);
             createActorFile(actor, voice);
             String hash = recordMessage(message, voice, voiceDir);
@@ -148,23 +150,19 @@ public class TextToSpeechRecorder {
                     voice.guid, resources);
             actorVoice.clear();
             actorVoice.put(actor.key, voice);
-            actorVoice.store(new File(new File(speechDir, actor.key),
-                    voice.guid));
+            actorVoice.store(
+                    new File(new File(speechDir, actor.key), voice.guid));
             // update actor voices property file
             actorVoices.putGuid(actor.key, voice);
             actorVoices.store(resources.getAssetPath(""));
-            // reserve voice for this actor
-            // speechSynthesizer.selectVoice(resources, new Message(new Actor(
-            // Actor.Dominant, neutralVoice.locale)));
         }
     }
 
     private Voice getVoice(Actor actor) {
         final Voice neutralVoice;
-        final TextToSpeechPlayer ttsPlayer = TextToSpeechPlayer.instance();
-        String voiceGuid = ttsPlayer.getAssignedVoiceFor(actor, resources);
+        String voiceGuid = ttsPlayer.getAssignedVoiceFor(actor);
         if (voiceGuid == null) {
-            neutralVoice = ttsPlayer.getVoiceFor(actor, resources);
+            neutralVoice = ttsPlayer.getVoiceFor(actor);
         } else {
             neutralVoice = voices.get(voiceGuid);
         }
@@ -181,8 +179,8 @@ public class TextToSpeechRecorder {
                 + changedEntries + " changed, " + newEntries + " new");
     }
 
-    private static String readMessage(File file) throws FileNotFoundException,
-            IOException {
+    private static String readMessage(File file)
+            throws FileNotFoundException, IOException {
         StringBuilder message = new StringBuilder();
         BufferedReader fileReader = new BufferedReader(new FileReader(file));
         String line = null;
@@ -199,7 +197,7 @@ public class TextToSpeechRecorder {
         return message.toString();
     }
 
-    public void create(Message message, File messageDir, Voice neutralVoice)
+    public void create(Message message, File messageDir, Voice voice)
             throws IOException {
         final String messageHash = message.toHashString();
         TeaseLib.instance().log.info("Recording message:\n" + messageHash);
@@ -216,8 +214,8 @@ public class TextToSpeechRecorder {
             } else if (part.type == Message.Type.Text) {
                 TeaseLib.instance().log.info("Recording part " + index);
                 File soundFile = new File(messageDir, Integer.toString(index));
-                final TextToSpeech textToSpeech = TextToSpeechPlayer.instance().textToSpeech;
-                textToSpeech.setVoice(neutralVoice);
+                final TextToSpeech textToSpeech = ttsPlayer.textToSpeech;
+                textToSpeech.setVoice(voice);
                 textToSpeech.setHint(mood);
                 String recordedSoundFile = textToSpeech.speak(part.value,
                         soundFile.getAbsolutePath());
@@ -289,5 +287,4 @@ public class TextToSpeechRecorder {
         }
         return hexString.toString();
     }
-
 }

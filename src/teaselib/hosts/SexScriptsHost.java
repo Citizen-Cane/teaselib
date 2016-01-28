@@ -120,8 +120,8 @@ public class SexScriptsHost implements Host {
             @Override
             public void windowClosing(WindowEvent e) {
                 if (onQuitHandler != null) {
-                    mainFrame
-                            .setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
+                    mainFrame.setDefaultCloseOperation(
+                            WindowConstants.DO_NOTHING_ON_CLOSE);
                     Runnable runnable = onQuitHandler;
                     // Execute each quit handler just once
                     onQuitHandler = null;
@@ -129,8 +129,8 @@ public class SexScriptsHost implements Host {
                             + runnable.getClass().getName());
                     runnable.run();
                 } else {
-                    mainFrame
-                            .setDefaultCloseOperation(originalDefaultCloseoperation);
+                    mainFrame.setDefaultCloseOperation(
+                            originalDefaultCloseoperation);
                 }
             }
 
@@ -146,7 +146,7 @@ public class SexScriptsHost implements Host {
 
     @Override
     public void playSound(ResourceLoader resources, String path)
-            throws ScriptInterruptedException, IOException {
+            throws IOException, ScriptInterruptedException {
         File file = cacheResource(resources, "sounds/", path);
         try {
             ss.playSound(file.getAbsolutePath());
@@ -195,19 +195,11 @@ public class SexScriptsHost implements Host {
     }
 
     @Override
-    public void stopSounds() {
-        try {
-            ((ss.desktop.Script) ss).stopSoundThreads();
-        } catch (Exception e) {
-            TeaseLib.instance().log.error(this, e);
-        }
-    }
-
-    @Override
+    // TODO Just stop the sound denoted by the handle
     public void stopSound(Object handle) {
-        // Just stop all sounds for now
         try {
-            ((ss.desktop.Script) ss).stopSoundThreads();
+            // Just stop all sounds for now
+            ss.stopSoundThreads();
         } catch (Exception e) {
             TeaseLib.instance().log.error(this, e);
         }
@@ -230,8 +222,8 @@ public class SexScriptsHost implements Host {
             }
         } else {
             setImageInternal(null);
-            setBackgroundImage(new BufferedImage(1, 1,
-                    BufferedImage.TYPE_INT_ARGB));
+            setBackgroundImage(
+                    new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB));
         }
     }
 
@@ -338,8 +330,8 @@ public class SexScriptsHost implements Host {
         return (ImageIcon) backgroundImageField.get(mainFrame);
     }
 
-    private ss.desktop.MainFrame getMainFrame() throws NoSuchFieldException,
-            IllegalAccessException {
+    private ss.desktop.MainFrame getMainFrame()
+            throws NoSuchFieldException, IllegalAccessException {
         Class<?> scriptClass = ss.getClass().getSuperclass();
         Field mainField = scriptClass.getDeclaredField("mainWindow");
         mainField.setAccessible(true);
@@ -368,7 +360,7 @@ public class SexScriptsHost implements Host {
     @Override
     public List<Boolean> showCheckboxes(String caption, List<String> texts,
             List<Boolean> values, boolean allowCancel)
-            throws ScriptInterruptedException {
+                    throws ScriptInterruptedException {
         List<Boolean> results;
         do {
             try {
@@ -441,8 +433,8 @@ public class SexScriptsHost implements Host {
                         Delegate click = new Delegate() {
                             @Override
                             public void run() {
-                                TeaseLib.instance().log.info("Clicking on "
-                                        + choice);
+                                TeaseLib.instance().log
+                                        .info("Clicking on " + choice);
                                 button.doClick();
                             }
                         };
@@ -563,7 +555,8 @@ public class SexScriptsHost implements Host {
                 }
             }
         } catch (InterruptedException e) {
-            final List<Delegate> clickableChoices = getClickableChoices(choices);
+            final List<Delegate> clickableChoices = getClickableChoices(
+                    choices);
             if (!clickableChoices.isEmpty()) {
                 // Click any button
                 final Delegate delegate = clickableChoices.get(0);

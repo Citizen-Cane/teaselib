@@ -26,7 +26,7 @@ public interface Host {
     void playSound(ResourceLoader resources, String path) throws IOException;
 
     /**
-     * Play the sound denoted by path. Return immediately.
+     * Play the sound denoted by the resource path. Return immediately.
      * 
      * @param resources
      *            The resource loader to be used for loading the sound.
@@ -38,15 +38,10 @@ public interface Host {
             throws IOException;
 
     /**
-     * Stop any playing sounds
-     */
-    void stopSounds();
-
-    /**
-     * Stop the background sound denoted by the handle.
+     * Stop the sound denoted by the resource path.
      * 
-     * @param handle
-     *            A handle obtained by playBackgroundSound(...)
+     * @param path
+     *            The path to the sound resource.
      */
     void stopSound(Object handle);
 

@@ -9,9 +9,9 @@ public class RenderBackgroundSound implements AutoCloseable, MediaRenderer {
 
     private final ResourceLoader resources;
     private final String soundFile;
-    private TeaseLib teaseLib;
+    private TeaseLib teaseLib = null;
 
-    private Object handle = null;
+    private Object audioHandle = null;
 
     public RenderBackgroundSound(ResourceLoader resources, String soundFile) {
         this.resources = resources;
@@ -20,11 +20,13 @@ public class RenderBackgroundSound implements AutoCloseable, MediaRenderer {
 
     @Override
     public void render(TeaseLib teaseLib) throws IOException {
+        this.teaseLib = teaseLib;
         teaseLib.transcript.info("Background sound = " + soundFile);
         teaseLib.log.info(this.getClass().getSimpleName() + ": " + soundFile);
         // TODO Use the handle to allow stopping the sound
         try {
-            handle = teaseLib.host.playBackgroundSound(resources, soundFile);
+            teaseLib.host.playBackgroundSound(resources, soundFile);
+            audioHandle = soundFile;
         } catch (IOException e) {
             if (!teaseLib.getBoolean(Config.Namespace,
                     Config.Debug.IgnoreMissingResources)) {
@@ -34,13 +36,13 @@ public class RenderBackgroundSound implements AutoCloseable, MediaRenderer {
     }
 
     public void stop() {
-        if (teaseLib != null && handle != null) {
-            teaseLib.host.stopSound(handle);
+        if (teaseLib != null && audioHandle != null) {
+            teaseLib.host.stopSound(audioHandle);
         }
     }
 
     @Override
-    public void close() throws Exception {
+    public void close() {
         stop();
     }
 

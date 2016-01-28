@@ -32,6 +32,8 @@ public class RenderMessage extends MediaRendererThread {
     private String displayImage;
     private String defaultMood = Mood.Neutral;
 
+    private final Set<MediaRendererThread> audio = new HashSet<MediaRendererThread>();
+
     public RenderMessage(ResourceLoader resources, Message message,
             TextToSpeechPlayer ttsPlayer, String displayImage,
             Collection<String> hints) {
@@ -121,8 +123,8 @@ public class RenderMessage extends MediaRendererThread {
         return lastSection;
     }
 
-    private void renderMessage(Message message,
-            TextToSpeechPlayer ttsPlayer) throws IOException {
+    private void renderMessage(Message message, TextToSpeechPlayer ttsPlayer)
+            throws IOException {
         if (message.isEmpty()) {
             // // Show image but no text
             showImageAndText(null, hints);
@@ -133,8 +135,7 @@ public class RenderMessage extends MediaRendererThread {
             // with TTS later
             final boolean prerenderedSpeechAvailable;
             if (ttsPlayer != null) {
-                if (ttsPlayer
-                        .prerenderedSpeechAvailable(message.actor)) {
+                if (ttsPlayer.prerenderedSpeechAvailable(message.actor)) {
                     message = ttsPlayer.getPrerenderedMessage(message,
                             resources);
                     prerenderedSpeechAvailable = true;
@@ -163,14 +164,24 @@ public class RenderMessage extends MediaRendererThread {
                     displayImage = part.value;
                 } else if (part.type == Message.Type.BackgroundSound) {
                     // Play sound, continue message execution
-                    soundRenderer = new RenderSound(resources, part.value);
-                    soundRenderer.render(teaseLib);
-                    // use awaitSoundCompletion to wait for sound completion
+                    synchronized (audio) {
+                        soundRenderer = new RenderSound(resources, part.value);
+                        soundRenderer.render(teaseLib);
+                        audio.add(soundRenderer);
+                    }
+                    // use awaitSoundCompletion keyword to wait for sound
+                    // completion
                 } else if (part.type == Message.Type.Sound) {
                     // Play sound, wait until finished
-                    RenderSound audio = new RenderSound(resources, part.value);
-                    audio.render(teaseLib);
-                    audio.completeAll();
+                    RenderSound sound = new RenderSound(resources, part.value);
+                    synchronized (audio) {
+                        sound.render(teaseLib);
+                        audio.add(sound);
+                    }
+                    sound.completeAll();
+                    synchronized (audio) {
+                        audio.remove(sound);
+                    }
                 } else if (part.type == Message.Type.Speech) {
                     // Disable speech recognition
                     final SpeechRecognition speechRecognizer = SpeechRecognizer.instance
@@ -188,10 +199,16 @@ public class RenderMessage extends MediaRendererThread {
                             }
                         }
                         // Play sound, wait until finished
-                        RenderSound audio = new RenderSound(resources,
+                        RenderSound speech = new RenderSound(resources,
                                 part.value);
-                        audio.render(teaseLib);
-                        audio.completeAll();
+                        synchronized (audio) {
+                            speech.render(teaseLib);
+                            audio.add(speech);
+                        }
+                        speech.completeAll();
+                        synchronized (audio) {
+                            audio.remove(speech);
+                        }
                     } finally {
                         // resume SR if necessary
                         if (reactivateSpeechRecognition) {
@@ -216,13 +233,10 @@ public class RenderMessage extends MediaRendererThread {
                         String prompt = part.value;
                         doTextAndPause(accumulatedText, append, mood,
                                 additionalHints, prompt);
-                        if (ttsPlayer != null
-                                && !prerenderedSpeechAvailable) {
-                            ttsPlayer.speak(message.actor, prompt,
-                                    mood);
+                        if (ttsPlayer != null && !prerenderedSpeechAvailable) {
+                            ttsPlayer.speak(message.actor, prompt, mood);
                         }
-                        mood = pauseAfterText(mood, lastParagraph,
-                                ttsPlayer);
+                        mood = pauseAfterText(mood, lastParagraph, ttsPlayer);
                     }
                 } else if (part.type == Message.Type.Mood) {
                     // Mood
@@ -243,12 +257,10 @@ public class RenderMessage extends MediaRendererThread {
                     String prompt = part.value;
                     doTextAndPause(accumulatedText, append, mood,
                             additionalHints, prompt);
-                    if (ttsPlayer != null
-                            && !prerenderedSpeechAvailable) {
+                    if (ttsPlayer != null && !prerenderedSpeechAvailable) {
                         ttsPlayer.speak(message.actor, prompt, mood);
                     }
-                    mood = pauseAfterText(mood, lastParagraph,
-                            ttsPlayer);
+                    mood = pauseAfterText(mood, lastParagraph, ttsPlayer);
                 }
                 if (endThread) {
                     break;
@@ -326,6 +338,9 @@ public class RenderMessage extends MediaRendererThread {
         } else if (keyword == Message.AwaitSoundCompletion) {
             // Complete the mandatory part of the message
             soundRenderer.completeMandatory();
+            synchronized (audio) {
+                audio.remove(soundRenderer);
+            }
         } else {
             // Unimplemented keyword
             throw new IllegalArgumentException(
@@ -495,17 +510,18 @@ public class RenderMessage extends MediaRendererThread {
     }
 
     @Override
-    public void join() {
+    public void interrupt() {
         // Cancel TTS speech
         if (!hasCompletedMandatory()) {
             if (ttsPlayer != null) {
                 ttsPlayer.stop();
             }
         }
-        // TODO Sounds should be cancelled by each sound renderer
-        // -> Need to track sounds renderers and interrupt them here
-        // Interrupt sound renderes by overwriting interrupt()
-        teaseLib.host.stopSounds();
-        super.join();
+        synchronized (audio) {
+            for (MediaRendererThread sound : audio) {
+                sound.interrupt();
+            }
+        }
+        super.interrupt();
     }
 }

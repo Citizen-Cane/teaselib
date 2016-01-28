@@ -17,8 +17,6 @@ public class DummyHost implements Host {
     @Override
     public void playSound(ResourceLoader resources, String path)
             throws IOException {
-        // TODO Auto-generated method stub
-
     }
 
     @Override
@@ -26,12 +24,6 @@ public class DummyHost implements Host {
             throws IOException {
         // TODO Auto-generated method stub
         return null;
-    }
-
-    @Override
-    public void stopSounds() {
-        // TODO Auto-generated method stub
-
     }
 
     @Override

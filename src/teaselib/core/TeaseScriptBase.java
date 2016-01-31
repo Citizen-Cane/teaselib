@@ -1,5 +1,6 @@
 package teaselib.core;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -34,6 +35,7 @@ public abstract class TeaseScriptBase {
     private static final ChoicesStack choicesStack = new ChoicesStack();
     static final MediaRendererQueue renderQueue = new MediaRendererQueue();
     private final List<MediaRenderer> queuedRenderers = new ArrayList<MediaRenderer>();
+    private final List<MediaRenderer.Threaded> backgroundRenderers = new ArrayList<MediaRenderer.Threaded>();
 
     private List<MediaRenderer> playedRenderers = null;
 
@@ -122,7 +124,9 @@ public abstract class TeaseScriptBase {
      */
     public void endAll() {
         renderQueue.endAll();
-        clearQueuedRenderers();
+        // todo Test and remove, since queued renderers are cleared at start
+        // clearQueuedRenderers();
+        stopBackgroundRenderers();
     }
 
     protected void renderMessage(Message message,
@@ -162,6 +166,7 @@ public abstract class TeaseScriptBase {
             // Remember renderers in order to be able to replay them
             playedRenderers = new ArrayList<MediaRenderer>(queuedRenderers);
             startQueuedRenderers();
+            startBackgroundRenderers();
             renderQueue.completeStarts();
         }
     }
@@ -195,9 +200,39 @@ public abstract class TeaseScriptBase {
         }
     }
 
-    private void clearQueuedRenderers() {
-        synchronized (queuedRenderers) {
-            queuedRenderers.clear();
+    // todo Test and remove, since queued renderers are cleared at start
+    // private void clearQueuedRenderers() {
+    // synchronized (queuedRenderers) {
+    // queuedRenderers.clear();
+    // }
+    // }
+
+    protected void queueBackgropundRenderer(MediaRenderer.Threaded renderer) {
+        synchronized (backgroundRenderers) {
+            backgroundRenderers.add(renderer);
+        }
+    }
+
+    private void startBackgroundRenderers() {
+        synchronized (backgroundRenderers) {
+            for (MediaRenderer.Threaded renderer : backgroundRenderers) {
+                if (!renderer.hasCompletedStart()) {
+                    try {
+                        renderer.render(teaseLib);
+                    } catch (IOException e) {
+                        teaseLib.log.error(renderer, e);
+                    }
+                }
+            }
+        }
+    }
+
+    private void stopBackgroundRenderers() {
+        synchronized (backgroundRenderers) {
+            for (MediaRenderer.Threaded renderer : backgroundRenderers) {
+                renderer.interrupt();
+            }
+            backgroundRenderers.clear();
         }
     }
 
@@ -232,10 +267,9 @@ public abstract class TeaseScriptBase {
             List<String> choices, Confidence recognitionConfidence) {
         // argument checking and text variable replacement
         final List<String> derivedChoices = replaceTextVariables(choices);
-        ScriptFutureTask scriptTask = scriptFunction != null
-                ? new ScriptFutureTask(this, scriptFunction, derivedChoices,
-                        new ScriptFutureTask.TimeoutClick())
-                : null;
+        ScriptFutureTask scriptTask = scriptFunction != null ? new ScriptFutureTask(
+                this, scriptFunction, derivedChoices,
+                new ScriptFutureTask.TimeoutClick()) : null;
         final boolean choicesStackContainsSRRejectedState = choicesStack
                 .containsPauseState(ShowChoices.RecognitionRejected);
         final ShowChoices showChoices = new ShowChoices(this, choices,
@@ -248,6 +282,11 @@ public abstract class TeaseScriptBase {
         pauseHandlers.put(ShowChoices.RecognitionRejected,
                 recognitionRejectedPauseHandler());
         waitToStartScriptFunction(scriptFunction);
+        if (scriptFunction == null) {
+            stopBackgroundRenderers();
+        } else if (scriptFunction.relation != ScriptFunction.Relation.Autonomous) {
+            stopBackgroundRenderers();
+        }
         teaseLib.log.info("showChoices: " + derivedChoices.toString());
         String choice = choicesStack.show(this, showChoices, pauseHandlers);
         teaseLib.log.debug("Reply finished");
@@ -266,8 +305,8 @@ public abstract class TeaseScriptBase {
                     while (choicesStack.peek() != showChoices) {
                         wait();
                     }
-                    teaseLib.log.info(
-                            "Resuming choices " + showChoices.derivedChoices);
+                    teaseLib.log.info("Resuming choices "
+                            + showChoices.derivedChoices);
                 } catch (InterruptedException e) {
                     throw new ScriptInterruptedException();
                 }
@@ -290,8 +329,7 @@ public abstract class TeaseScriptBase {
         };
     }
 
-    private void waitToStartScriptFunction(
-            final ScriptFunction scriptFunction) {
+    private void waitToStartScriptFunction(final ScriptFunction scriptFunction) {
         // Wait for previous message to complete
         if (scriptFunction == null) {
             // If we don't have a script function,
@@ -315,15 +353,13 @@ public abstract class TeaseScriptBase {
 
     private String replaceVariables(String text) {
         String parsedText = text;
-        for (Persistence.TextVariable name : Persistence.TextVariable
-                .values()) {
+        for (Persistence.TextVariable name : Persistence.TextVariable.values()) {
             parsedText = replaceTextVariable(parsedText, name);
         }
         return parsedText;
     }
 
-    private String replaceTextVariable(String text,
-            Persistence.TextVariable var) {
+    private String replaceTextVariable(String text, Persistence.TextVariable var) {
         final String value = var.toString();
         text = replaceTextVariable(text, var, "#" + value);
         text = replaceTextVariable(text, var, "#" + value.toLowerCase());

@@ -12,6 +12,7 @@ import teaselib.core.MediaRenderer;
 import teaselib.core.RenderBackgroundSound;
 import teaselib.core.RenderDelay;
 import teaselib.core.RenderDesktopItem;
+import teaselib.core.RenderSound;
 import teaselib.core.ResourceLoader;
 import teaselib.core.events.Event;
 import teaselib.core.speechrecognition.SpeechRecognition;
@@ -111,8 +112,12 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
         }
     }
 
+    public void setBackgroundSound(String path) {
+        queueBackgropundRenderer(new RenderBackgroundSound(resources, path));
+    }
+
     public void setSound(String path) {
-        queueRenderer(new RenderBackgroundSound(resources, path));
+        queueRenderer(new RenderSound(resources, path));
     }
 
     /**

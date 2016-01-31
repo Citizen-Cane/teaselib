@@ -21,4 +21,5 @@ public:
 
 private:
     ISpVoice *pVoice;
+	volatile bool cancelSpeech;
 };

@@ -31,7 +31,7 @@ using namespace std;
 #endif
 
 SpeechSynthesizer::SpeechSynthesizer(JNIEnv *env, jobject jthis, Voice *voice)
-    : NativeObject(env, jthis) {
+    : NativeObject(env, jthis), cancelSpeech(false) {
     HRESULT hr = CoCreateInstance(CLSID_SpVoice, NULL, CLSCTX_ALL, IID_ISpVoice, (void **)&pVoice);
     assert(SUCCEEDED(hr));
     if (FAILED(hr)) {
@@ -115,10 +115,19 @@ wstring createPromptWitthHints(const wchar_t * prompt)
 }
 
 void SpeechSynthesizer::speak(const wchar_t *prompt) {
+	cancelSpeech = false;
 	HRESULT hr = pVoice->Speak(createPromptWitthHints(prompt).c_str(), SPF_ASYNC | SPF_PURGEBEFORESPEAK, NULL);
     assert(SUCCEEDED(hr));
     if (SUCCEEDED(hr)) {
-        pVoice->WaitUntilDone(INFINITE);
+		while(pVoice->WaitUntilDone(100) == S_FALSE) {
+			if (cancelSpeech) {
+				// Purge speech in progress to stop
+				hr = pVoice->Speak(L"", SPF_ASYNC | SPF_PURGEBEFORESPEAK, NULL);
+				assert(SUCCEEDED(hr));
+				cancelSpeech = false;
+				break;
+			}
+		}
     }
     if (FAILED(hr)) {
         throw new COMException(hr);
@@ -169,10 +178,6 @@ std::wstring SpeechSynthesizer::speak(const wchar_t *prompt, const wchar_t* path
 }
 
 void SpeechSynthesizer::stop() {
-    // Purge any ongoing speech, then speak nothing
-    HRESULT hr = pVoice->Speak(L"", SPF_ASYNC | SPF_PURGEBEFORESPEAK, NULL);
-    assert(SUCCEEDED(hr));
-    if (FAILED(hr)) {
-        throw new COMException(hr);
-    }
+	// This can be called from any thread
+	cancelSpeech = true;
 }

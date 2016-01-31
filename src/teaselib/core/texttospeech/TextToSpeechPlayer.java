@@ -33,11 +33,6 @@ public class TextToSpeechPlayer {
     private final Map<String, Voice> voices;
 
     /**
-     * voices that has been used recently. Needed to stop speech.
-     */
-    private Set<Voice> speaking = new HashSet<Voice>();
-
-    /**
      * Actor key to prerecorded voice guid
      */
     private final Map<String, String> actorKey2PrerecordedVoiceGuid = new HashMap<String, String>();
@@ -260,20 +255,15 @@ public class TextToSpeechPlayer {
             if (useTTS) {
                 Voice voice = getVoiceFor(actor);
                 // Synchronize speaking, only one actor can speak at a time
-                synchronized (speaking) {
-                    speaking.add(voice);
-                    textToSpeech.setVoice(voice);
-                    textToSpeech.setHint(mood);
-                    try {
-                        textToSpeech.speak(prompt);
-                    } catch (ScriptInterruptedException e) {
-                        throw e;
-                    } catch (Throwable t) {
-                        teaseLib.log.error(this, t);
-                        speakSilent(prompt);
-                    } finally {
-                        speaking.remove(voice);
-                    }
+                textToSpeech.setVoice(voice);
+                textToSpeech.setHint(mood);
+                try {
+                    textToSpeech.speak(prompt);
+                } catch (ScriptInterruptedException e) {
+                    throw e;
+                } catch (Throwable t) {
+                    teaseLib.log.error(this, t);
+                    speakSilent(prompt);
                 }
             } else {
                 speakSilent(prompt);
@@ -287,12 +277,7 @@ public class TextToSpeechPlayer {
     }
 
     public void stop() {
-        synchronized (speaking) {
-            for (Voice voice : speaking) {
-                textToSpeech.setVoice(voice);
-                textToSpeech.stop();
-            }
-        }
+        textToSpeech.stop();
     }
 
     private void speakSilent(String prompt) {

@@ -5,7 +5,7 @@ import java.io.IOException;
 import teaselib.Config;
 import teaselib.TeaseLib;
 
-public class RenderBackgroundSound implements AutoCloseable, MediaRenderer {
+public class RenderBackgroundSound implements MediaRenderer.Threaded {
 
     private final ResourceLoader resources;
     private final String soundFile;
@@ -23,10 +23,9 @@ public class RenderBackgroundSound implements AutoCloseable, MediaRenderer {
         this.teaseLib = teaseLib;
         teaseLib.transcript.info("Background sound = " + soundFile);
         teaseLib.log.info(this.getClass().getSimpleName() + ": " + soundFile);
-        // TODO Use the handle to allow stopping the sound
         try {
-            teaseLib.host.playBackgroundSound(resources, soundFile);
-            audioHandle = soundFile;
+            audioHandle = teaseLib.host.playBackgroundSound(resources,
+                    soundFile);
         } catch (IOException e) {
             if (!teaseLib.getBoolean(Config.Namespace,
                     Config.Debug.IgnoreMissingResources)) {
@@ -42,12 +41,46 @@ public class RenderBackgroundSound implements AutoCloseable, MediaRenderer {
     }
 
     @Override
-    public void close() {
+    public String toString() {
+        return soundFile;
+    }
+
+    @Override
+    public void completeStart() {
+    }
+
+    @Override
+    public void completeMandatory() {
+    }
+
+    @Override
+    public void completeAll() {
+    }
+
+    @Override
+    public boolean hasCompletedStart() {
+        // TODO Auto-generated method stub
+        return true;
+    }
+
+    @Override
+    public boolean hasCompletedMandatory() {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override
+    public boolean hasCompletedAll() {
+        return false;
+    }
+
+    @Override
+    public void interrupt() {
         stop();
     }
 
     @Override
-    public String toString() {
-        return soundFile;
+    public void join() {
     }
+
 }

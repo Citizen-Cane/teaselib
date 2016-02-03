@@ -218,11 +218,16 @@ public class RenderMessage extends MediaRendererThread {
                         }
                     }
                 } else if (part.type == Message.Type.DesktopItem) {
-                    final URI uri = resources.uri(part.value);
+                    // Remove optional keyword
+                    String path = part.value.toLowerCase()
+                            .startsWith(Message.ShowOnDesktop) ? part.value
+                                    .substring(Message.ShowOnDesktop.length())
+                                    .trim() : part.value;
+                    URI uri = resources.uri(path);
                     if (uri != null) {
                         new RenderDesktopItem(uri).render(teaseLib);
                     } else {
-                        // text might be treated as a desktop item,
+                        // Text might be treated as a desktop item,
                         // because our file detection code is too lax
                         // (should check whether a file with that name
                         // exists, but that might be too strict)
@@ -250,9 +255,6 @@ public class RenderMessage extends MediaRendererThread {
                     accumulateText(accumulatedText, "°", false);
                     appendToItem = true;
                     mood = resetMood(mood);
-                } else if (part.type == Message.Type.Exec) {
-                    // Exec
-                    doExec(part);
                 } else {
                     String prompt = part.value;
                     doTextAndPause(accumulatedText, append, mood,
@@ -369,19 +371,6 @@ public class RenderMessage extends MediaRendererThread {
             } catch (NumberFormatException ignore) {
                 // Fixed pause
                 teaseLib.sleep(DELAYATENDOFTEXT, TimeUnit.MILLISECONDS);
-            }
-        }
-    }
-
-    private void doExec(Part part) {
-        String path = removeCommandNameFromValue(part);
-        URI uri = resources.uri(path);
-        if (uri != null) {
-            MediaRenderer desktopItem = new RenderDesktopItem(uri);
-            try {
-                desktopItem.render(teaseLib);
-            } catch (IOException e) {
-                teaseLib.log.error(this, e);
             }
         }
     }

@@ -34,7 +34,7 @@ public class Message {
          */
         Speech,
         /**
-         * Opens a desktop item in the system explorer.
+         * Show item on the desktop.
          */
         DesktopItem,
         /**
@@ -49,11 +49,6 @@ public class Message {
          * Waits the specified duration before resuming message rendering.
          */
         Delay,
-        /**
-         * Executes a desktop item. TODO Leftover from PCMPlayer, should be
-         * removed.
-         */
-        Exec,
         /**
          * Renders text with a leading bullet, useful for enumerations
          */
@@ -104,7 +99,7 @@ public class Message {
     /**
      * Execute the desktop action
      */
-    public final static String Exec = "exec";
+    public final static String ShowOnDesktop = "showondesktop";
 
     /**
      * Declare he mandatory part of the message to be completed. If the message
@@ -118,7 +113,7 @@ public class Message {
 
     public final static String Bullet = "°";
 
-    public final static String[] Keywords = { Delay, Exec, ShowChoices,
+    public final static String[] Keywords = { Delay, ShowOnDesktop, ShowChoices,
             AwaitSoundCompletion, DominantImage, NoImage, Bullet };
 
     public final Actor actor;
@@ -326,8 +321,8 @@ public class Message {
             // and the parameters as the text
             if (mToLower.startsWith(Delay)) {
                 return Type.Delay;
-            } else if (mToLower.startsWith(Exec)) {
-                return Type.Exec;
+            } else if (mToLower.startsWith(ShowOnDesktop)) {
+                return Type.DesktopItem;
             } else if (mToLower.equals(Message.Bullet)) {
                 return Type.Item;
             } else {

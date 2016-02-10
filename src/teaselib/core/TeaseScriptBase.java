@@ -56,7 +56,7 @@ public abstract class TeaseScriptBase {
                 completeMandatory();
                 teaseLib.log.info("Replaying renderers from replay " + this);
                 queueRenderers(renderers);
-                renderQueue.replay(queuedRenderers, teaseLib, replayPosition);
+                renderQueue.replay(queuedRenderers, replayPosition);
                 playedRenderers = new ArrayList<MediaRenderer>(queuedRenderers);
             }
         }
@@ -161,7 +161,8 @@ public abstract class TeaseScriptBase {
             Set<String> hints = getHints();
             hints.add(mood);
             RenderMessage renderMessage = new RenderMessage(resources,
-                    parsedMessage, speechSynthesizer, displayImage, hints);
+                    parsedMessage, speechSynthesizer, displayImage, hints,
+                    teaseLib);
             queueRenderer(renderMessage);
             // Remember renderers in order to be able to replay them
             playedRenderers = new ArrayList<MediaRenderer>(queuedRenderers);
@@ -195,17 +196,10 @@ public abstract class TeaseScriptBase {
 
     private void startQueuedRenderers() {
         synchronized (queuedRenderers) {
-            renderQueue.start(queuedRenderers, teaseLib);
+            renderQueue.start(queuedRenderers);
             queuedRenderers.clear();
         }
     }
-
-    // todo Test and remove, since queued renderers are cleared at start
-    // private void clearQueuedRenderers() {
-    // synchronized (queuedRenderers) {
-    // queuedRenderers.clear();
-    // }
-    // }
 
     protected void queueBackgropundRenderer(MediaRenderer.Threaded renderer) {
         synchronized (backgroundRenderers) {
@@ -218,7 +212,7 @@ public abstract class TeaseScriptBase {
             for (MediaRenderer.Threaded renderer : backgroundRenderers) {
                 if (!renderer.hasCompletedStart()) {
                     try {
-                        renderer.render(teaseLib);
+                        renderer.render();
                     } catch (IOException e) {
                         teaseLib.log.error(renderer, e);
                     }
@@ -267,9 +261,10 @@ public abstract class TeaseScriptBase {
             List<String> choices, Confidence recognitionConfidence) {
         // argument checking and text variable replacement
         final List<String> derivedChoices = replaceTextVariables(choices);
-        ScriptFutureTask scriptTask = scriptFunction != null ? new ScriptFutureTask(
-                this, scriptFunction, derivedChoices,
-                new ScriptFutureTask.TimeoutClick()) : null;
+        ScriptFutureTask scriptTask = scriptFunction != null
+                ? new ScriptFutureTask(this, scriptFunction, derivedChoices,
+                        new ScriptFutureTask.TimeoutClick())
+                : null;
         final boolean choicesStackContainsSRRejectedState = choicesStack
                 .containsPauseState(ShowChoices.RecognitionRejected);
         final ShowChoices showChoices = new ShowChoices(this, choices,
@@ -305,8 +300,8 @@ public abstract class TeaseScriptBase {
                     while (choicesStack.peek() != showChoices) {
                         wait();
                     }
-                    teaseLib.log.info("Resuming choices "
-                            + showChoices.derivedChoices);
+                    teaseLib.log.info(
+                            "Resuming choices " + showChoices.derivedChoices);
                 } catch (InterruptedException e) {
                     throw new ScriptInterruptedException();
                 }
@@ -329,7 +324,8 @@ public abstract class TeaseScriptBase {
         };
     }
 
-    private void waitToStartScriptFunction(final ScriptFunction scriptFunction) {
+    private void waitToStartScriptFunction(
+            final ScriptFunction scriptFunction) {
         // Wait for previous message to complete
         if (scriptFunction == null) {
             // If we don't have a script function,
@@ -353,13 +349,15 @@ public abstract class TeaseScriptBase {
 
     private String replaceVariables(String text) {
         String parsedText = text;
-        for (Persistence.TextVariable name : Persistence.TextVariable.values()) {
+        for (Persistence.TextVariable name : Persistence.TextVariable
+                .values()) {
             parsedText = replaceTextVariable(parsedText, name);
         }
         return parsedText;
     }
 
-    private String replaceTextVariable(String text, Persistence.TextVariable var) {
+    private String replaceTextVariable(String text,
+            Persistence.TextVariable var) {
         final String value = var.toString();
         text = replaceTextVariable(text, var, "#" + value);
         text = replaceTextVariable(text, var, "#" + value.toLowerCase());

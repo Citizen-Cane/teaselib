@@ -9,12 +9,12 @@ import teaselib.TeaseLib;
  * @author someone
  *
  */
-public abstract class MediaRendererThread implements Runnable,
-        MediaRenderer.Threaded, MediaRenderer.Replay {
+public abstract class MediaRendererThread
+        implements Runnable, MediaRenderer.Threaded, MediaRenderer.Replay {
+    protected final TeaseLib teaseLib;
 
     protected Thread renderThread = null;
     protected boolean endThread = false;
-    protected TeaseLib teaseLib = null;
     protected Position replayPosition = Position.FromStart;
 
     protected CountDownLatch completedStart = new CountDownLatch(1);
@@ -23,10 +23,15 @@ public abstract class MediaRendererThread implements Runnable,
 
     private long start = 0;
 
+    public MediaRendererThread(TeaseLib teaseLib) {
+        this.teaseLib = teaseLib;
+    }
+
     /**
      * The render method executed by the render thread
      */
-    protected abstract void render() throws InterruptedException, IOException;
+    protected abstract void renderMedia()
+            throws InterruptedException, IOException;
 
     @Override
     public final void run() {
@@ -34,7 +39,7 @@ public abstract class MediaRendererThread implements Runnable,
             synchronized (renderThread) {
                 renderThread.notifyAll();
             }
-            render();
+            renderMedia();
         } catch (InterruptedException e) {
             teaseLib.log.debug(this, e);
         } catch (Throwable t) {
@@ -47,8 +52,7 @@ public abstract class MediaRendererThread implements Runnable,
     }
 
     @Override
-    public void render(TeaseLib teaseLib) {
-        this.teaseLib = teaseLib;
+    public final void render() {
         endThread = false;
         renderThread = new Thread(this);
         synchronized (renderThread) {
@@ -64,7 +68,7 @@ public abstract class MediaRendererThread implements Runnable,
     }
 
     @Override
-    public void replay(Position replayPosition, TeaseLib teaseLib) {
+    public void replay(Position replayPosition) {
         this.replayPosition = replayPosition;
         if (replayPosition == Position.FromStart) {
             // Skip
@@ -75,7 +79,7 @@ public abstract class MediaRendererThread implements Runnable,
             completedMandatory = new CountDownLatch(1);
         }
         teaseLib.log.info("Replay " + replayPosition.toString());
-        render(teaseLib);
+        render();
     }
 
     protected void startCompleted() {
@@ -99,9 +103,9 @@ public abstract class MediaRendererThread implements Runnable,
                 throw new ScriptInterruptedException();
             }
         }
-        teaseLib.log.debug(getClass().getSimpleName()
-                + " completed start after "
-                + String.format("%.2f seconds", getElapsedSeconds()));
+        teaseLib.log
+                .debug(getClass().getSimpleName() + " completed start after "
+                        + String.format("%.2f seconds", getElapsedSeconds()));
     }
 
     @Override
@@ -113,9 +117,9 @@ public abstract class MediaRendererThread implements Runnable,
                 throw new ScriptInterruptedException();
             }
         }
-        teaseLib.log.debug(getClass().getSimpleName()
-                + " completed mandatory after "
-                + String.format("%.2f seconds", getElapsedSeconds()));
+        teaseLib.log.debug(
+                getClass().getSimpleName() + " completed mandatory after "
+                        + String.format("%.2f seconds", getElapsedSeconds()));
     }
 
     @Override
@@ -133,9 +137,9 @@ public abstract class MediaRendererThread implements Runnable,
         while (thread.isAlive()) {
             try {
                 thread.join();
-                teaseLib.log.debug(getClass().getSimpleName()
-                        + " completed all after "
-                        + String.format("%.2f", getElapsedSeconds()));
+                teaseLib.log.debug(
+                        getClass().getSimpleName() + " completed all after "
+                                + String.format("%.2f", getElapsedSeconds()));
             } catch (InterruptedException e) {
                 throw new ScriptInterruptedException();
             }

@@ -2,12 +2,8 @@ package teaselib.core;
 
 import java.io.IOException;
 
-import teaselib.TeaseLib;
-
-// TODO Only TeaseLib, since this is called from TeaseScript only
-
 public interface MediaRenderer {
-    public void render(TeaseLib teaseLib) throws IOException;
+    public void render() throws IOException;
 
     public interface Threaded extends MediaRenderer {
 
@@ -81,6 +77,6 @@ public interface MediaRenderer {
             End
         }
 
-        void replay(Position replayPosition, TeaseLib teaseLib);
+        void replay(Position replayPosition);
     }
 }

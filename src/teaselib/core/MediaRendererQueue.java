@@ -27,27 +27,27 @@ public class MediaRendererQueue {
      *            The renderers to start.
      * @param teaseLib
      */
-    public void start(Collection<MediaRenderer> renderers, TeaseLib teaseLib) {
+    public void start(Collection<MediaRenderer> renderers) {
         synchronized (threadedMediaRenderers) {
             completeAll();
             threadedMediaRenderers.clear();
             // Start a new message in the log
-            teaseLib.transcript.info("");
+            TeaseLib.instance().transcript.info("");
             for (MediaRenderer r : renderers) {
                 if (r instanceof MediaRenderer.Threaded) {
                     threadedMediaRenderers.put(r.getClass(),
                             (MediaRenderer.Threaded) r);
                 }
                 try {
-                    r.render(teaseLib);
+                    r.render();
                 } catch (Exception e) {
-                    teaseLib.log.error(this, e);
+                    TeaseLib.instance().log.error(this, e);
                 }
             }
         }
     }
 
-    public void replay(Collection<MediaRenderer> renderers, TeaseLib teaseLib,
+    public void replay(Collection<MediaRenderer> renderers,
             Position replayPosition) {
         synchronized (threadedMediaRenderers) {
             completeAll();
@@ -59,8 +59,8 @@ public class MediaRendererQueue {
                         threadedMediaRenderers.put(mediaMenderer.getClass(),
                                 (MediaRenderer.Threaded) mediaMenderer);
                     }
-                    ((MediaRenderer.Replay) mediaMenderer).replay(
-                            replayPosition, teaseLib);
+                    ((MediaRenderer.Replay) mediaMenderer)
+                            .replay(replayPosition);
                 }
             }
         }
@@ -95,8 +95,8 @@ public class MediaRendererQueue {
                 renderer.completeMandatory();
             }
         } else {
-            TeaseLib.instance().log
-                    .debug("Threaded Renderers completeMandatories : queue empty");
+            TeaseLib.instance().log.debug(
+                    "Threaded Renderers completeMandatories : queue empty");
         }
     }
 

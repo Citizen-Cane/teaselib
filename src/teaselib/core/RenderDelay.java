@@ -2,15 +2,18 @@ package teaselib.core;
 
 import java.util.concurrent.TimeUnit;
 
+import teaselib.TeaseLib;
+
 public class RenderDelay extends MediaRendererThread {
     public final int seconds;
 
-    public RenderDelay(int seconds) {
+    public RenderDelay(int seconds, TeaseLib teaseLib) {
+        super(teaseLib);
         this.seconds = seconds;
     }
 
     @Override
-    public void render() throws InterruptedException {
+    public void renderMedia() throws InterruptedException {
         teaseLib.transcript.info("Message delay = " + seconds + " seconds");
         startCompleted();
         try {

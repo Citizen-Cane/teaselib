@@ -61,8 +61,8 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
      * @param actor
      * @param namespace
      */
-    public TeaseScript(TeaseLib teaseLib, ResourceLoader resources,
-            Actor actor, String namespace) {
+    public TeaseScript(TeaseLib teaseLib, ResourceLoader resources, Actor actor,
+            String namespace) {
         super(teaseLib, resources, actor, namespace);
     }
 
@@ -107,17 +107,18 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
             } catch (URISyntaxException e) {
                 teaseLib.log.error(this, e);
             }
-            MediaRenderer desktopItem = new RenderDesktopItem(uri);
+            MediaRenderer desktopItem = new RenderDesktopItem(uri, teaseLib);
             queueRenderer(desktopItem);
         }
     }
 
     public void setBackgroundSound(String path) {
-        queueBackgropundRenderer(new RenderBackgroundSound(resources, path));
+        queueBackgropundRenderer(
+                new RenderBackgroundSound(resources, path, teaseLib));
     }
 
     public void setSound(String path) {
-        queueRenderer(new RenderSound(resources, path));
+        queueRenderer(new RenderSound(resources, path, teaseLib));
     }
 
     /**
@@ -129,7 +130,7 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
      */
     public Object playBackgroundSound(String path) {
         RenderBackgroundSound renderBackgroundSound = new RenderBackgroundSound(
-                resources, path);
+                resources, path, teaseLib);
         queueRenderer(renderBackgroundSound);
         return renderBackgroundSound;
     }
@@ -149,7 +150,7 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
      *            How long to wait.
      */
     public void setDuration(int seconds) {
-        queueRenderer(new RenderDelay(seconds));
+        queueRenderer(new RenderDelay(seconds, teaseLib));
     }
 
     public void say(String... message) {
@@ -251,8 +252,8 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
         return reply(scriptFunction, choices);
     }
 
-    protected abstract class SpeechRecognitionAwareTimeoutScriptFunction extends
-            ScriptFunction {
+    protected abstract class SpeechRecognitionAwareTimeoutScriptFunction
+            extends ScriptFunction {
         final long seconds;
         final SpeechRecognition.TimeoutBehavior timeoutBehavior;
 
@@ -282,8 +283,9 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
                         inDubioMitius = true;
                     }
                 };
-                SpeechRecognizer.instance.get(actor.locale).events.recognitionStarted
-                        .add(recognitionStarted);
+                SpeechRecognizer.instance
+                        .get(actor.locale).events.recognitionStarted
+                                .add(recognitionStarted);
             } else {
                 recognitionStarted = null;
             }
@@ -297,8 +299,9 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
                 }
             } finally {
                 if (recognitionStarted != null) {
-                    SpeechRecognizer.instance.get(actor.locale).events.recognitionStarted
-                            .remove(recognitionStarted);
+                    SpeechRecognizer.instance
+                            .get(actor.locale).events.recognitionStarted
+                                    .remove(recognitionStarted);
                 }
             }
             if (!inDubioMitius) {
@@ -480,14 +483,16 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
         return results;
     }
 
-    public boolean showItems(String caption, Items<?> items, boolean allowCancel) {
+    public boolean showItems(String caption, Items<?> items,
+            boolean allowCancel) {
         List<String> choices = new ArrayList<String>(items.size());
         List<Boolean> values = new ArrayList<Boolean>(items.size());
         for (int i = 0; i < items.size(); i++) {
             choices.add(items.get(i).displayName);
             values.add(items.get(i).isAvailable());
         }
-        List<Boolean> results = showItems(caption, choices, values, allowCancel);
+        List<Boolean> results = showItems(caption, choices, values,
+                allowCancel);
         if (results != null) {
             for (int i = 0; i < items.size(); i++) {
                 items.get(i).setAvailable(results.get(i));

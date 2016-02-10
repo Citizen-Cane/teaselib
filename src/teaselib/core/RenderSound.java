@@ -3,6 +3,7 @@ package teaselib.core;
 import java.io.IOException;
 
 import teaselib.Config;
+import teaselib.TeaseLib;
 
 public class RenderSound extends MediaRendererThread {
     private final ResourceLoader resources;
@@ -10,13 +11,15 @@ public class RenderSound extends MediaRendererThread {
 
     private Object audioHandle = null;
 
-    public RenderSound(ResourceLoader resources, String soundFile) {
+    public RenderSound(ResourceLoader resources, String soundFile,
+            TeaseLib teaseLib) {
+        super(teaseLib);
         this.resources = resources;
         this.soundFile = soundFile;
     }
 
     @Override
-    public void render() throws IOException {
+    public void renderMedia() throws IOException {
         try {
             teaseLib.transcript.info("Message sound = " + soundFile);
             teaseLib.log

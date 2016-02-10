@@ -15,6 +15,7 @@ import teaselib.Message;
 import teaselib.Message.Part;
 import teaselib.Message.Type;
 import teaselib.Mood;
+import teaselib.TeaseLib;
 import teaselib.core.speechrecognition.SpeechRecognition;
 import teaselib.core.speechrecognition.SpeechRecognizer;
 import teaselib.core.texttospeech.TextToSpeech;
@@ -36,7 +37,8 @@ public class RenderMessage extends MediaRendererThread {
 
     public RenderMessage(ResourceLoader resources, Message message,
             TextToSpeechPlayer ttsPlayer, String displayImage,
-            Collection<String> hints) {
+            Collection<String> hints, TeaseLib teaseLib) {
+        super(teaseLib);
         if (message == null) {
             throw new NullPointerException();
         }
@@ -59,7 +61,7 @@ public class RenderMessage extends MediaRendererThread {
     }
 
     @Override
-    public void render() throws InterruptedException {
+    public void renderMedia() throws InterruptedException {
         try {
             if (replayPosition == Position.FromStart) {
                 renderMessage(message, ttsPlayer);
@@ -165,17 +167,19 @@ public class RenderMessage extends MediaRendererThread {
                 } else if (part.type == Message.Type.BackgroundSound) {
                     // Play sound, continue message execution
                     synchronized (audio) {
-                        soundRenderer = new RenderSound(resources, part.value);
-                        soundRenderer.render(teaseLib);
+                        soundRenderer = new RenderSound(resources, part.value,
+                                teaseLib);
+                        soundRenderer.render();
                         audio.add(soundRenderer);
                     }
                     // use awaitSoundCompletion keyword to wait for sound
                     // completion
                 } else if (part.type == Message.Type.Sound) {
                     // Play sound, wait until finished
-                    RenderSound sound = new RenderSound(resources, part.value);
+                    RenderSound sound = new RenderSound(resources, part.value,
+                            teaseLib);
                     synchronized (audio) {
-                        sound.render(teaseLib);
+                        sound.render();
                         audio.add(sound);
                     }
                     sound.completeAll();
@@ -200,9 +204,9 @@ public class RenderMessage extends MediaRendererThread {
                         }
                         // Play sound, wait until finished
                         RenderSound speech = new RenderSound(resources,
-                                part.value);
+                                part.value, teaseLib);
                         synchronized (audio) {
-                            speech.render(teaseLib);
+                            speech.render();
                             audio.add(speech);
                         }
                         speech.completeAll();
@@ -225,7 +229,7 @@ public class RenderMessage extends MediaRendererThread {
                                     .trim() : part.value;
                     URI uri = resources.uri(path);
                     if (uri != null) {
-                        new RenderDesktopItem(uri).render(teaseLib);
+                        new RenderDesktopItem(uri, teaseLib).render();
                     } else {
                         // Text might be treated as a desktop item,
                         // because our file detection code is too lax

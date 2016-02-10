@@ -18,12 +18,15 @@ public class RenderDesktopItem implements MediaRenderer {
 
     private final URI uri;
 
-    public RenderDesktopItem(URI uri) {
+    private final TeaseLib teaseLib;
+
+    public RenderDesktopItem(URI uri, TeaseLib teaseLib) {
         this.uri = uri;
+        this.teaseLib = teaseLib;
     }
 
     @Override
-    public void render(TeaseLib teaseLib) throws IOException {
+    public void render() throws IOException {
         // TODO Perform in Separate task to avoid delay
         teaseLib.transcript.info("Desktop Item = " + uri.toString());
         String absolutePath = new File(uri).getPath();

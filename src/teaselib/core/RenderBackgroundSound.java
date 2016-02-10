@@ -9,19 +9,20 @@ public class RenderBackgroundSound implements MediaRenderer.Threaded {
 
     private final ResourceLoader resources;
     private final String soundFile;
-    private TeaseLib teaseLib = null;
+    private final TeaseLib teaseLib;
 
     private Object audioHandle = null;
     private boolean stopped = false;
 
-    public RenderBackgroundSound(ResourceLoader resources, String soundFile) {
+    public RenderBackgroundSound(ResourceLoader resources, String soundFile,
+            TeaseLib teaseLLib) {
         this.resources = resources;
         this.soundFile = soundFile;
+        this.teaseLib = teaseLLib;
     }
 
     @Override
-    public void render(TeaseLib teaseLib) throws IOException {
-        this.teaseLib = teaseLib;
+    public void render() throws IOException {
         teaseLib.transcript.info("Background sound = " + soundFile);
         teaseLib.log.info(this.getClass().getSimpleName() + ": " + soundFile);
         try {

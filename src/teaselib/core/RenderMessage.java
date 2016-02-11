@@ -411,25 +411,7 @@ public class RenderMessage extends MediaRendererThread {
         // Apply image and text
         final String path;
         if (displayImage == Message.DominantImage) {
-            Images images = message.actor.images;
-            if (images != null) {
-                String[] hintArray = new String[additionalHints.size()];
-                hintArray = additionalHints.toArray(hintArray);
-                images.hint(hintArray);
-                path = images.next();
-                if (path == null && !teaseLib.getBoolean(Config.Namespace,
-                        Config.Debug.IgnoreMissingResources)) {
-                    teaseLib.log.info("Actor '" + message.actor.name
-                            + "': images missing - please initialize");
-                }
-            } else if (!teaseLib.getBoolean(Config.Namespace,
-                    Config.Debug.IgnoreMissingResources)) {
-                teaseLib.log.info("Actor '" + message.actor.name
-                        + "': images missing - please initialize");
-                path = null;
-            } else {
-                path = null;
-            }
+            path = getActorImage(additionalHints);
         } else if (displayImage == Message.NoImage) {
             path = null;
         } else {
@@ -473,6 +455,30 @@ public class RenderMessage extends MediaRendererThread {
             }
         }
         teaseLib.host.show(imageBytes, text);
+    }
+
+    private String getActorImage(Set<String> imageHints) {
+        final String path;
+        Images images = message.actor.images;
+        if (images != null) {
+            String[] hintArray = new String[imageHints.size()];
+            hintArray = imageHints.toArray(hintArray);
+            images.hint(hintArray);
+            path = images.next();
+            if (path == null && !teaseLib.getBoolean(Config.Namespace,
+                    Config.Debug.IgnoreMissingResources)) {
+                teaseLib.log.info("Actor '" + message.actor.name
+                        + "': images missing - please initialize");
+            }
+        } else if (!teaseLib.getBoolean(Config.Namespace,
+                Config.Debug.IgnoreMissingResources)) {
+            teaseLib.log.info("Actor '" + message.actor.name
+                    + "': images missing - please initialize");
+            path = null;
+        } else {
+            path = null;
+        }
+        return path;
     }
 
     private static byte[] convertInputStreamToByte(InputStream is)

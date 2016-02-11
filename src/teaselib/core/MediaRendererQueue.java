@@ -29,7 +29,6 @@ public class MediaRendererQueue {
      */
     public void start(Collection<MediaRenderer> renderers) {
         synchronized (threadedMediaRenderers) {
-            completeAll();
             threadedMediaRenderers.clear();
             // Start a new message in the log
             TeaseLib.instance().transcript.info("");
@@ -126,12 +125,27 @@ public class MediaRendererQueue {
         if (!renderers.isEmpty()) {
             TeaseLib.instance().log.debug("Ending all threaded renderers");
             // Interrupt them all
+            RuntimeException exception = null;
             for (MediaRenderer.Threaded renderer : renderers.values()) {
-                renderer.interrupt();
+                try {
+                    renderer.interrupt();
+                } catch (RuntimeException e) {
+                    exception = e;
+                }
             }
-            // then wait for them to complete
-            for (MediaRenderer.Threaded renderer : renderers.values()) {
-                renderer.join();
+            if (exception != null) {
+                throw exception;
+            }
+            try {
+                // then wait for them to complete
+                for (MediaRenderer.Threaded renderer : renderers.values()) {
+                    renderer.join();
+                }
+            } catch (RuntimeException e) {
+                exception = e;
+            }
+            if (exception != null) {
+                throw exception;
             }
         } else {
             TeaseLib.instance().log

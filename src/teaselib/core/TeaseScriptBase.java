@@ -163,12 +163,25 @@ public abstract class TeaseScriptBase {
             RenderMessage renderMessage = new RenderMessage(resources,
                     parsedMessage, speechSynthesizer, displayImage, hints,
                     teaseLib);
-            queueRenderer(renderMessage);
-            // Remember renderers in order to be able to replay them
-            playedRenderers = new ArrayList<MediaRenderer>(queuedRenderers);
-            startQueuedRenderers();
-            startBackgroundRenderers();
-            renderQueue.completeStarts();
+            synchronized (queuedRenderers) {
+                queueRenderer(renderMessage);
+                // Remember this set for replay
+                playedRenderers = new ArrayList<MediaRenderer>(queuedRenderers);
+                // Remember in order to clear queued before completing previous
+                // set
+                List<MediaRenderer> nextSet = new ArrayList<MediaRenderer>(
+                        queuedRenderers);
+                // Must clear queue for next set before completing current,
+                // because if the current set is cancelled,
+                // the next set must be discarded
+                queuedRenderers.clear();
+                // Now the current set can be completed, and canceling the
+                // current set will result in an empty next set
+                completeAll();
+                renderQueue.start(nextSet);
+                startBackgroundRenderers();
+                renderQueue.completeStarts();
+            }
         }
     }
 
@@ -191,13 +204,6 @@ public abstract class TeaseScriptBase {
     protected void queueRenderer(MediaRenderer renderer) {
         synchronized (queuedRenderers) {
             queuedRenderers.add(renderer);
-        }
-    }
-
-    private void startQueuedRenderers() {
-        synchronized (queuedRenderers) {
-            renderQueue.start(queuedRenderers);
-            queuedRenderers.clear();
         }
     }
 

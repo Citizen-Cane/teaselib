@@ -77,7 +77,6 @@ public class RenderMessage extends MediaRendererThread {
             // Expected
         } catch (Throwable t) {
             teaseLib.log.error(this, t);
-            teaseLib.host.show(null, t.getMessage());
         }
     }
 
@@ -268,7 +267,10 @@ public class RenderMessage extends MediaRendererThread {
                     }
                     mood = pauseAfterText(mood, lastParagraph, ttsPlayer);
                 }
-                if (endThread) {
+                if (task.isCancelled()) {
+                    break;
+                }
+                if (lastParagraph) {
                     break;
                 }
                 // Find out whether to append the next sentence to the same
@@ -314,7 +316,6 @@ public class RenderMessage extends MediaRendererThread {
                 teaseLib.sleep(DELAYATENDOFTEXT, TimeUnit.MILLISECONDS);
             }
             allCompleted();
-            endThread = true;
         } else {
             if (spokenMessage) {
                 teaseLib.sleep(DELAYBETWEENPARAGRAPHS, TimeUnit.MILLISECONDS);
@@ -498,8 +499,12 @@ public class RenderMessage extends MediaRendererThread {
                 delay += DELAYATENDOFTEXT;
             }
         }
+        String messageText = message.toString();
+        int length = 30;
         return "Estimated delay = "
-                + String.format("%.2f", (double) delay / 1000);
+                + String.format("%.2f", (double) delay / 1000) + " Message = "
+                + (messageText.length() > length
+                        ? messageText.substring(0, length) : messageText);
     }
 
     @Override

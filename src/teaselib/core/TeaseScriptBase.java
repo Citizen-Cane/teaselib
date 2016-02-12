@@ -4,10 +4,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import teaselib.Actor;
 import teaselib.Message;
@@ -132,68 +130,119 @@ public abstract class TeaseScriptBase {
     protected void renderMessage(Message message,
             TextToSpeechPlayer speechSynthesizer) {
         try {
-            renderMessage(message, speechSynthesizer, displayImage, mood);
+            synchronized (renderQueue) {
+                // Clone the actor to prevent the wrong actor image to be
+                // displayed
+                // when changing the actor images right after saying a message.
+                // Without cloning one of the new actor images would be
+                // displayed
+                // with the current message because the actor is shared between
+                // script and message
+                Message parsedMessage = preprocessMessage(message);
+                // Collect hints
+                RenderMessage renderMessage = new RenderMessage(resources,
+                        parsedMessage, speechSynthesizer, teaseLib);
+                synchronized (queuedRenderers) {
+                    queueRenderer(renderMessage);
+                    // Remember this set for replay
+                    playedRenderers = new ArrayList<MediaRenderer>(
+                            queuedRenderers);
+                    // Remember in order to clear queued before completing
+                    // previous set
+                    List<MediaRenderer> nextSet = new ArrayList<MediaRenderer>(
+                            queuedRenderers);
+                    // Must clear queue for next set before completing current,
+                    // because if the current set is cancelled,
+                    // the next set must be discarded
+                    queuedRenderers.clear();
+                    // Now the current set can be completed, and canceling the
+                    // current set will result in an empty next set
+                    completeAll();
+                    renderQueue.start(nextSet);
+                    startBackgroundRenderers();
+                    renderQueue.completeStarts();
+                }
+            }
         } finally {
             displayImage = Message.DominantImage;
             mood = Mood.Neutral;
         }
     }
 
-    protected void renderMessage(Message message,
-            TextToSpeechPlayer speechSynthesizer, String displayImage,
-            String mood) {
-        synchronized (renderQueue) {
-            // Clone the actor to prevent the wrong actor image to be displayed
-            // when changing the actor images right after saying a message.
-            // Without cloning one of the new actor images would be displayed
-            // with the current message because the actor is shared between
-            // script and message
-            Message parsedMessage = new Message(new Actor(message.actor));
-            // Replace text variables
-            for (Message.Part part : message.getParts()) {
-                if (part.type == Message.Type.Text) {
-                    parsedMessage.add(parsedMessage.new Part(part.type,
-                            replaceVariables(part.value)));
-                } else {
-                    parsedMessage.add(part);
+    private Message preprocessMessage(Message message) {
+        Message parsedMessage = new Message(new Actor(message.actor));
+        // Preprocess message
+        boolean selectFirstImage = true;
+        String selectedImage = "";
+        String nextImage = displayImage;
+        String selectedMood = mood;
+        String nextMood = null;
+        for (Message.Part part : message.getParts()) {
+            if (part.type == Message.Type.Image) {
+                nextImage = part.value;
+            } else if (part.type == Message.Type.Mood) {
+                nextMood = part.value;
+            } else if (part.type == Message.Type.Text) {
+                // Resolve actor image
+                if (nextImage == Message.DominantImage) {
+                    // TODO handle empty actor image collection
+                    if (selectFirstImage) {
+                        // TODO hint aspect
+                        // TODO hint camera position
+                        // TODO hint posture
+                        // TODO hint mood
+                        nextImage = actor.images.next();
+                        selectFirstImage = false;
+                    } else {
+                        nextImage = actor.images.next();
+                    }
                 }
-            }
-            Set<String> hints = getHints();
-            hints.add(mood);
-            RenderMessage renderMessage = new RenderMessage(resources,
-                    parsedMessage, speechSynthesizer, displayImage, hints,
-                    teaseLib);
-            synchronized (queuedRenderers) {
-                queueRenderer(renderMessage);
-                // Remember this set for replay
-                playedRenderers = new ArrayList<MediaRenderer>(queuedRenderers);
-                // Remember in order to clear queued before completing previous
-                // set
-                List<MediaRenderer> nextSet = new ArrayList<MediaRenderer>(
-                        queuedRenderers);
-                // Must clear queue for next set before completing current,
-                // because if the current set is cancelled,
-                // the next set must be discarded
-                queuedRenderers.clear();
-                // Now the current set can be completed, and canceling the
-                // current set will result in an empty next set
-                completeAll();
-                renderQueue.start(nextSet);
-                startBackgroundRenderers();
-                renderQueue.completeStarts();
+                // Update image if changed
+                if (!nextImage.equalsIgnoreCase(selectedImage)) {
+                    parsedMessage.add(Message.Type.Image, nextImage);
+                    selectedImage = nextImage;
+                }
+                // set mood if not done already
+                if (nextMood == null) {
+                    parsedMessage.add(Message.Type.Mood, selectedMood);
+                } else {
+                    // Reset mood after each text part
+                    nextMood = null;
+                }
+                // Replace text variables
+                parsedMessage.add(parsedMessage.new Part(part.type,
+                        replaceVariables(part.value)));
+            } else {
+                parsedMessage.add(part);
             }
         }
+        return parsedMessage;
     }
 
-    private static Set<String> getHints() {
-        Set<String> hints = new HashSet<String>();
-        // Within messages, images might change fast, and changing
-        // the camera position, image size or aspect would be too distracting,
-        // and an aspect change might even change the text position
-        hints.add(Images.SameCameraPosition);
-        hints.add(Images.SameResolution);
-        return hints;
-    }
+    // // TODO must be part of preprocessMessage
+    // private String getActorImage(Set<String> imageHints) {
+    // final String path;
+    // Images images = message.actor.images;
+    // if (images != null) {
+    // String[] hintArray = new String[imageHints.size()];
+    // hintArray = imageHints.toArray(hintArray);
+    // images.hint(hintArray);
+    // path = images.next();
+    // if (path == null && !teaseLib.getBoolean(Config.Namespace,
+    // Config.Debug.IgnoreMissingResources)) {
+    // teaseLib.log.info("Actor '" + message.actor.name
+    // + "': images missing - please initialize");
+    // }
+    // } else if (!teaseLib.getBoolean(Config.Namespace,
+    // Config.Debug.IgnoreMissingResources)) {
+    // teaseLib.log.info("Actor '" + message.actor.name
+    // + "': images missing - please initialize");
+    // path = null;
+    // } else {
+    // path = null;
+    // }
+    // return path;
+    // }
 
     protected void queueRenderers(List<MediaRenderer> renderers) {
         synchronized (queuedRenderers) {

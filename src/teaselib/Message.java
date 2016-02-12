@@ -518,6 +518,9 @@ public class Message {
                 if (readAloudStart && !readAloud) {
                     newParts.add(new Part(Type.Mood, Mood.Reading));
                     readAloud = true;
+                } else if (readAloud) {
+                    // Repeat for each text part
+                    newParts.add(new Part(Type.Mood, Mood.Reading));
                 }
                 newParts.add(part);
                 if (readAloudEnd && readAloud) {

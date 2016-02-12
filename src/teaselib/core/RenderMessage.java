@@ -4,7 +4,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
@@ -28,16 +27,13 @@ public class RenderMessage extends MediaRendererThread {
     private final ResourceLoader resources;
     private final Message message;
     private final TextToSpeechPlayer ttsPlayer;
-    private final Set<String> hints = new HashSet<String>();
 
-    private String displayImage;
-    private String defaultMood = Mood.Neutral;
+    private String displayImage = null;
 
     private final Set<MediaRendererThread> audio = new HashSet<MediaRendererThread>();
 
     public RenderMessage(ResourceLoader resources, Message message,
-            TextToSpeechPlayer ttsPlayer, String displayImage,
-            Collection<String> hints, TeaseLib teaseLib) {
+            TextToSpeechPlayer ttsPlayer, TeaseLib teaseLib) {
         super(teaseLib);
         if (message == null) {
             throw new NullPointerException();
@@ -45,15 +41,6 @@ public class RenderMessage extends MediaRendererThread {
         this.resources = resources;
         this.message = message;
         this.ttsPlayer = ttsPlayer;
-        this.displayImage = displayImage;
-        hints.addAll(hints);
-        // Default mood?
-        for (String hint : hints) {
-            if (Mood.isMood(hint)) {
-                defaultMood = hint;
-                break;
-            }
-        }
     }
 
     public Message getMessage() {
@@ -128,7 +115,7 @@ public class RenderMessage extends MediaRendererThread {
             throws IOException {
         if (message.isEmpty()) {
             // // Show image but no text
-            showImageAndText(null, hints);
+            showImageAndText(null);
         } else {
             StringBuilder accumulatedText = new StringBuilder();
             boolean append = false;
@@ -148,7 +135,7 @@ public class RenderMessage extends MediaRendererThread {
             }
             // Process message paragraphs
             RenderSound soundRenderer = null;
-            String mood = defaultMood;
+            String mood = Mood.Neutral;
             boolean appendToItem = false;
             for (Iterator<Part> it = message.iterator(); it.hasNext();) {
                 Part part = it.next();
@@ -158,8 +145,6 @@ public class RenderMessage extends MediaRendererThread {
                 }
                 teaseLib.log.info(part.type.toString() + ": " + part.value);
                 // Handle message commands
-                Set<String> additionalHints = new HashSet<String>();
-                additionalHints.addAll(hints);
                 final boolean lastParagraph = !it.hasNext();
                 if (part.type == Message.Type.Image) {
                     displayImage = part.value;
@@ -239,12 +224,11 @@ public class RenderMessage extends MediaRendererThread {
                         // we'll just display the part as text,
                         // which is the most right thing in this case
                         String prompt = part.value;
-                        doTextAndPause(accumulatedText, append, mood,
-                                additionalHints, prompt);
+                        doText(accumulatedText, append, mood, prompt);
                         if (ttsPlayer != null && !prerenderedSpeechAvailable) {
                             ttsPlayer.speak(message.actor, prompt, mood);
                         }
-                        mood = pauseAfterText(mood, lastParagraph, ttsPlayer);
+                        pauseAfterParagraph(lastParagraph, ttsPlayer);
                     }
                 } else if (part.type == Message.Type.Mood) {
                     // Mood
@@ -257,15 +241,13 @@ public class RenderMessage extends MediaRendererThread {
                 } else if (part.type == Message.Type.Item) {
                     accumulateText(accumulatedText, "°", false);
                     appendToItem = true;
-                    mood = resetMood(mood);
                 } else {
                     String prompt = part.value;
-                    doTextAndPause(accumulatedText, append, mood,
-                            additionalHints, prompt);
+                    doText(accumulatedText, append, mood, prompt);
                     if (ttsPlayer != null && !prerenderedSpeechAvailable) {
                         ttsPlayer.speak(message.actor, prompt, mood);
                     }
-                    mood = pauseAfterText(mood, lastParagraph, ttsPlayer);
+                    pauseAfterParagraph(lastParagraph, ttsPlayer);
                 }
                 if (task.isCancelled()) {
                     break;
@@ -285,25 +267,17 @@ public class RenderMessage extends MediaRendererThread {
         }
     }
 
-    private void doTextAndPause(StringBuilder accumulatedText, boolean append,
-            String mood, Set<String> additionalHints, String prompt) {
+    private void doText(StringBuilder accumulatedText, boolean append,
+            String mood, String prompt) {
         accumulateText(accumulatedText, prompt, append);
-        // Update text
-        additionalHints.add(mood);
-        if ((displayImage == Message.DominantImage && mood != defaultMood)) {
+        // TODO Won't log anymore
+        if ((displayImage == Message.DominantImage && mood != Mood.Neutral)) {
             teaseLib.transcript.info("mood = " + mood);
         }
-        showImageAndText(accumulatedText.toString(), additionalHints);
+        showImageAndText(accumulatedText.toString());
         teaseLib.transcript.info(">> " + prompt);
         // First message shown - start part completed
         startCompleted();
-    }
-
-    private String pauseAfterText(String mood, boolean lastParagraph,
-            TextToSpeechPlayer speechSynthesizer) {
-        pauseAfterParagraph(lastParagraph, speechSynthesizer);
-        mood = resetMood(mood);
-        return mood;
     }
 
     private void pauseAfterParagraph(boolean lastParagraph,
@@ -323,19 +297,12 @@ public class RenderMessage extends MediaRendererThread {
         }
     }
 
-    private String resetMood(String mood) {
-        // Reset mood after applying it once
-        if (mood != Mood.Reading) {
-            mood = defaultMood;
-        }
-        return mood;
-    }
-
     private void doKeyword(RenderSound soundRenderer, Part part) {
         String keyword = part.value;
         if (keyword == Message.DominantImage) {
             // Mistress image
             displayImage = Message.DominantImage;
+            throw new IllegalStateException(displayImage);
         } else if (keyword == Message.NoImage) {
             // No image
             displayImage = Message.NoImage;
@@ -407,29 +374,22 @@ public class RenderMessage extends MediaRendererThread {
         return ending == ',' || ending == ';';
     }
 
-    private void showImageAndText(String text, Set<String> additionalHints) {
-        // Apply image and text
-        final String path;
-        if (displayImage == Message.DominantImage) {
-            path = getActorImage(additionalHints);
-        } else if (displayImage == Message.NoImage) {
+    private void showImageAndText(String text) {
+        String path;
+        if (displayImage == Message.NoImage) {
             path = null;
         } else {
-            // TODO Cache image or detect reusage, since
-            // currently the same image is reloaded again for
-            // each text part
-            // (usually when setting the image outside the message)
             path = displayImage;
         }
         if (path == null) {
             teaseLib.transcript.info(Message.NoImage);
         } else {
+            // TODO Can't log mistress images here
             if (displayImage == Message.DominantImage) {
                 teaseLib.transcript.debug("image = '" + path + "'");
             } else {
                 teaseLib.transcript.info("image = '" + path + "'");
             }
-
         }
         byte[] imageBytes = null;
         if (path != null) {
@@ -455,30 +415,6 @@ public class RenderMessage extends MediaRendererThread {
             }
         }
         teaseLib.host.show(imageBytes, text);
-    }
-
-    private String getActorImage(Set<String> imageHints) {
-        final String path;
-        Images images = message.actor.images;
-        if (images != null) {
-            String[] hintArray = new String[imageHints.size()];
-            hintArray = imageHints.toArray(hintArray);
-            images.hint(hintArray);
-            path = images.next();
-            if (path == null && !teaseLib.getBoolean(Config.Namespace,
-                    Config.Debug.IgnoreMissingResources)) {
-                teaseLib.log.info("Actor '" + message.actor.name
-                        + "': images missing - please initialize");
-            }
-        } else if (!teaseLib.getBoolean(Config.Namespace,
-                Config.Debug.IgnoreMissingResources)) {
-            teaseLib.log.info("Actor '" + message.actor.name
-                    + "': images missing - please initialize");
-            path = null;
-        } else {
-            path = null;
-        }
-        return path;
     }
 
     private static byte[] convertInputStreamToByte(InputStream is)

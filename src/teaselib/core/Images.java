@@ -1,5 +1,6 @@
 package teaselib.core;
 
+import java.util.Iterator;
 
 /**
  * Interface for iterating over a set of images. Frees script writers from
@@ -10,17 +11,10 @@ package teaselib.core;
  * @author someone
  *
  */
-public interface Images {
+public interface Images extends Iterator<String> {
 
     public static final String SameCameraPosition = "<image SameCameraPosition/>";
     public static final String SameResolution = "<image SameResolution/>";
-
-    /**
-     * Returns the next image in the sequence
-     * 
-     * @return Resource path to the next image
-     */
-    String next();
 
     /**
      * Hint the image iterator to choose an appropriate image

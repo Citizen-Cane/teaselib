@@ -39,6 +39,11 @@ public class RandomImages implements Images {
     }
 
     @Override
+    public boolean hasNext() {
+        return !images.isEmpty();
+    }
+
+    @Override
     public String next() {
         return getRandomResource(images);
     }

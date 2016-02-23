@@ -441,12 +441,13 @@ public class RenderMessage extends MediaRendererThread {
                 delay += DELAYATENDOFTEXT;
             }
         }
-        String messageText = message.toString();
-        int length = 30;
+        String messageText = message.toHashString().replace("\n", " ");
+        int length = 40;
         return "Estimated delay = "
                 + String.format("%.2f", (double) delay / 1000) + " Message = "
                 + (messageText.length() > length
-                        ? messageText.substring(0, length) : messageText);
+                        ? messageText.substring(0, length) + "..."
+                        : messageText);
     }
 
     @Override

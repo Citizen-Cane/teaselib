@@ -104,9 +104,9 @@ public class Logger {
 
     private String format(String text) {
         Date now = new Date(System.currentTimeMillis());
-        String line = (showTime ? (timeFormat.format(now) + " -") : "")
-                + (showThread ? (Thread.currentThread().getName() + " - : ")
-                        : "") + text + "\n";
+        String line = (showTime ? (timeFormat.format(now) + " [") : "")
+                + (showThread ? (Thread.currentThread().getName() + "] ") : "")
+                + text + "\n";
         return line;
     }
 

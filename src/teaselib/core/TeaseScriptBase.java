@@ -178,7 +178,8 @@ public abstract class TeaseScriptBase {
         String nextMood = null;
         for (Message.Part part : message.getParts()) {
             if (part.type == Message.Type.Image) {
-                // Remember what image to load before the next text element
+                // Remember what type of image to display
+                // with the next text element
                 if (part.value == Message.DominantImage) {
                     imageType = part.value;
                 } else if (part.value == Message.NoImage) {
@@ -191,7 +192,6 @@ public abstract class TeaseScriptBase {
             } else if (part.type == Message.Type.Text) {
                 // Resolve actor image
                 if (imageType == Message.DominantImage) {
-                    // TODO handle empty actor image collection
                     if (actor.images.hasNext()) {
                         if (selectFirstImage) {
                             // TODO hint aspect

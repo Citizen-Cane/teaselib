@@ -12,6 +12,7 @@ import teaselib.Message;
 import teaselib.Mood;
 import teaselib.ScriptFunction;
 import teaselib.TeaseLib;
+import teaselib.Message.Part;
 import teaselib.core.MediaRenderer.Replay.Position;
 import teaselib.core.speechrecognition.SpeechRecognitionResult.Confidence;
 import teaselib.core.texttospeech.TextToSpeechPlayer;
@@ -55,6 +56,7 @@ public abstract class TeaseScriptBase {
                 // as soon as possible
                 endAll();
                 renderQueue.replay(renderers, replayPosition);
+                playedRenderers = renderers;
             }
         }
     }

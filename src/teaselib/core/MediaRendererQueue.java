@@ -51,14 +51,14 @@ public class MediaRendererQueue {
         synchronized (threadedMediaRenderers) {
             completeAll();
             threadedMediaRenderers.clear();
-            for (MediaRenderer mediaMenderer : renderers) {
+            for (MediaRenderer r : renderers) {
                 // Play or replay?
-                if (mediaMenderer instanceof MediaRenderer.Replay) {
-                    if (mediaMenderer instanceof MediaRenderer.Threaded) {
-                        threadedMediaRenderers.put(mediaMenderer.getClass(),
-                                (MediaRenderer.Threaded) mediaMenderer);
+                if (r instanceof MediaRenderer.Replay) {
+                    if (r instanceof MediaRenderer.Threaded) {
+                        threadedMediaRenderers.put(r.getClass(),
+                                (MediaRenderer.Threaded) r);
                     }
-                    ((MediaRenderer.Replay) mediaMenderer)
+                    ((MediaRenderer.Replay) r)
                             .replay(replayPosition);
                 }
             }

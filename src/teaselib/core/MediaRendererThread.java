@@ -1,7 +1,6 @@
 package teaselib.core;
 
 import java.io.IOException;
-import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
@@ -20,12 +19,12 @@ public abstract class MediaRendererThread
         implements MediaRenderer.Threaded, MediaRenderer.Replay {
     protected final TeaseLib teaseLib;
 
+    private final static String RenderTaskBaseName = "RenderTask ";
     private final static ExecutorService Executor = NamedExecutorService
-            .newFixedThreadPool(Integer.MAX_VALUE,
-                    MediaRendererThread.class.getName() + " Render Task", 1,
+            .newFixedThreadPool(Integer.MAX_VALUE, RenderTaskBaseName, 1,
                     TimeUnit.HOURS);
 
-    protected Future<String> task = null;
+    protected Future<?> task = null;
     protected Position replayPosition = Position.FromStart;
 
     protected CountDownLatch completedStart = new CountDownLatch(1);
@@ -38,14 +37,27 @@ public abstract class MediaRendererThread
         this.teaseLib = teaseLib;
     }
 
+    private String nameForActiveThread() {
+        return this.getClass().getSimpleName();
+    }
+
+    private static String nameForSleepingThread() {
+        return RenderTaskBaseName + "pool thread";
+    }
+
+    private static void setThreadName(String name) {
+        Thread.currentThread().setName(name);
+    }
+
     @Override
     public final void render() {
         synchronized (this) {
             startMillis = System.currentTimeMillis();
             // renderThread.setName(getClass().getName());
-            task = Executor.submit(new Callable<String>() {
+            task = Executor.submit(new Runnable() {
                 @Override
-                public final String call() {
+                public void run() {
+                    setThreadName(nameForActiveThread());
                     try {
                         synchronized (MediaRendererThread.this) {
                             MediaRendererThread.this.notifyAll();
@@ -55,11 +67,12 @@ public abstract class MediaRendererThread
                         teaseLib.log.debug(this, e);
                     } catch (Throwable t) {
                         teaseLib.log.error(this, t);
+                    } finally {
+                        startCompleted();
+                        mandatoryCompleted();
+                        allCompleted();
+                        setThreadName(nameForSleepingThread());
                     }
-                    startCompleted();
-                    mandatoryCompleted();
-                    allCompleted();
-                    return null;
                 }
             });
             try {
@@ -95,8 +108,8 @@ public abstract class MediaRendererThread
     protected void startCompleted() {
         completedStart.countDown();
         teaseLib.log
-        .debug(getClass().getSimpleName() + " completed start after "
-                + String.format("%.2f seconds", getElapsedSeconds()));
+                .debug(getClass().getSimpleName() + " completed start after "
+                        + String.format("%.2f seconds", getElapsedSeconds()));
     }
 
     protected void mandatoryCompleted() {
@@ -136,7 +149,7 @@ public abstract class MediaRendererThread
 
     @Override
     public void completeAll() {
-        Future<String> f = task;
+        Future<?> f = task;
         if (f.isDone())
             return;
         try {
@@ -172,7 +185,7 @@ public abstract class MediaRendererThread
 
     @Override
     public void interrupt() {
-        Future<String> f = task;
+        Future<?> f = task;
         if (!f.isCancelled()) {
             f.cancel(true);
         }
@@ -183,7 +196,7 @@ public abstract class MediaRendererThread
     @Override
     public void join() {
         try {
-            Future<String> f = task;
+            Future<?> f = task;
             f.get();
         } catch (CancellationException e) {
             // Expected

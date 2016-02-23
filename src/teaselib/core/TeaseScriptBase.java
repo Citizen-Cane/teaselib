@@ -48,14 +48,13 @@ public abstract class TeaseScriptBase {
 
         public void replay(Position replayPosition) {
             synchronized (queuedRenderers) {
-                // Ensure all current renderers have been played before
-                // restarting
-                // Don't wait for all since the message is just redisplayed
-                completeMandatory();
                 teaseLib.log.info("Replaying renderers from replay " + this);
-                queueRenderers(renderers);
-                renderQueue.replay(queuedRenderers, replayPosition);
-                playedRenderers = new ArrayList<MediaRenderer>(queuedRenderers);
+                // Finish current set before replaying
+                completeMandatory();
+                // Restore the prompt that caused running the SR-rejected script
+                // as soon as possible
+                endAll();
+                renderQueue.replay(renderers, replayPosition);
             }
         }
     }
@@ -173,28 +172,39 @@ public abstract class TeaseScriptBase {
         Message parsedMessage = new Message(new Actor(message.actor));
         // Preprocess message
         boolean selectFirstImage = true;
+        String imageType = displayImage;
         String selectedImage = "";
         String nextImage = displayImage;
-        String selectedMood = mood;
         String nextMood = null;
         for (Message.Part part : message.getParts()) {
             if (part.type == Message.Type.Image) {
-                nextImage = part.value;
+                // Remember what image to load before the next text element
+                if (part.value == Message.DominantImage) {
+                    imageType = part.value;
+                } else if (part.value == Message.NoImage) {
+                    imageType = part.value;
+                } else {
+                    nextImage = part.value;
+                }
             } else if (part.type == Message.Type.Mood) {
                 nextMood = part.value;
             } else if (part.type == Message.Type.Text) {
                 // Resolve actor image
-                if (nextImage == Message.DominantImage) {
+                if (imageType == Message.DominantImage) {
                     // TODO handle empty actor image collection
-                    if (selectFirstImage) {
-                        // TODO hint aspect
-                        // TODO hint camera position
-                        // TODO hint posture
-                        // TODO hint mood
-                        nextImage = actor.images.next();
-                        selectFirstImage = false;
+                    if (actor.images.hasNext()) {
+                        if (selectFirstImage) {
+                            // TODO hint aspect
+                            // TODO hint camera position
+                            // TODO hint posture
+                            // TODO hint mood
+                            nextImage = actor.images.next();
+                            selectFirstImage = false;
+                        } else {
+                            nextImage = actor.images.next();
+                        }
                     } else {
-                        nextImage = actor.images.next();
+                        nextImage = Message.NoImage;
                     }
                 }
                 // Update image if changed
@@ -204,7 +214,7 @@ public abstract class TeaseScriptBase {
                 }
                 // set mood if not done already
                 if (nextMood == null) {
-                    parsedMessage.add(Message.Type.Mood, selectedMood);
+                    parsedMessage.add(Message.Type.Mood, mood);
                 } else {
                     // Reset mood after each text part
                     nextMood = null;
@@ -368,13 +378,15 @@ public abstract class TeaseScriptBase {
         return new Runnable() {
             @Override
             public void run() {
-                SpeechRecognitionRejectedScript speechRecognitionRejectedScript = actor.speechRecognitionRejectedScript;
-                Replay beforeSpeechRecognitionRejected = new Replay(
-                        playedRenderers);
-                teaseLib.log.info("Running SpeechRecognitionRejectedScript "
-                        + speechRecognitionRejectedScript.toString());
-                speechRecognitionRejectedScript.run();
-                beforeSpeechRecognitionRejected.replay(Position.End);
+                if (playedRenderers != null) {
+                    SpeechRecognitionRejectedScript speechRecognitionRejectedScript = actor.speechRecognitionRejectedScript;
+                    teaseLib.log.info("Running SpeechRecognitionRejectedScript "
+                            + speechRecognitionRejectedScript.toString());
+                    Replay beforeSpeechRecognitionRejected = new Replay(
+                            playedRenderers);
+                    speechRecognitionRejectedScript.run();
+                    beforeSpeechRecognitionRejected.replay(Position.End);
+                }
             }
         };
     }

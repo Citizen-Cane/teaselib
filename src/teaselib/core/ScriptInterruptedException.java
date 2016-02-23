@@ -12,9 +12,16 @@ public class ScriptInterruptedException extends RuntimeException {
     private static final long serialVersionUID = 1L;
 
     public ScriptInterruptedException() {
-        TeaseLib.instance().log.info("Script interrupted at");
-        for (StackTraceElement ste : getStackTrace()) {
-            TeaseLib.instance().log.info("\t" + ste.toString());
+        final StackTraceElement[] stackTrace = getStackTrace();
+        if (stackTrace.length > 0) {
+            final StackTraceElement firstElement = stackTrace[0];
+            TeaseLib.instance().log
+                    .info("interrupted at " + firstElement.toString());
+            for (StackTraceElement element : stackTrace) {
+                if (element != firstElement) {
+                    TeaseLib.instance().log.debug("\t" + element.toString());
+                }
+            }
         }
     }
 }

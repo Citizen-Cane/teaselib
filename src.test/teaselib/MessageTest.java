@@ -3,8 +3,7 @@
  */
 package teaselib;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import org.junit.Test;
 
@@ -157,5 +156,28 @@ public class MessageTest {
         assertEquals(Mood.Neutral, message.getParts().get(5).value);
         assertEquals(Message.Type.Text, message.getParts().get(6).type);
         assertTrue(!message.getParts().get(6).value.startsWith(Mood.Neutral));
+    }
+
+    @Test
+    public void testSubordinateClauseConcatenationComma() {
+        // concat == true
+        Message message = new Message(actor,
+                "Care must be taken to not make the ties too strong,",
+                "in order to keep the blood flowing through the tied up limbs.")
+                        .joinSentences();
+        assertEquals(2, message.getParts().size());
+        assertEquals(Message.Type.Text, message.getParts().get(0).type);
+        assertEquals(Message.Type.Text, message.getParts().get(1).type);
+    }
+
+    @Test
+    public void testSubordinateClauseConcatenationDash() {
+        // concat == true
+        Message message = new Message(actor,
+                "I want you to put the gag in, to begin with -",
+                "you'll be wearing it throughout the session.").joinSentences();
+        assertEquals(2, message.getParts().size());
+        assertEquals(Message.Type.Text, message.getParts().get(0).type);
+        assertEquals(Message.Type.Text, message.getParts().get(1).type);
     }
 }

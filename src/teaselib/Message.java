@@ -1,7 +1,11 @@
 package teaselib;
 
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 import java.util.Vector;
 
 public class Message {
@@ -118,8 +122,10 @@ public class Message {
 
     public final Actor actor;
 
-    private static String[] endOfSentence = { ":", ".", ";", "!", "?" };
-    private static String[] endOfTextOther = { "\"", ">", "," };
+    public static Set<String> EndOfSentenceCharacters = new HashSet<String>(
+            Arrays.asList(":", ".", "!", "?"));
+    public static Set<String> MainClauseAppendableCharacters = new HashSet<String>(
+            Arrays.asList("\"", ">", ",", ";", "-"));
 
     private final Parts parts;
 
@@ -275,7 +281,7 @@ public class Message {
     }
 
     public static boolean isKeyword(String m) {
-        return !endOf(m, endOfSentence) && keywordFrom(m) != null;
+        return !endOf(m, EndOfSentenceCharacters) && keywordFrom(m) != null;
     }
 
     public static String keywordFrom(String m) {
@@ -294,7 +300,7 @@ public class Message {
         return null;
     }
 
-    public static boolean endOf(String line, String[] endOf) {
+    public static boolean endOf(String line, Collection<String> endOf) {
         for (String s : endOf) {
             if (line.endsWith(s))
                 return true;
@@ -344,7 +350,8 @@ public class Message {
             // characters
             int s = words(m).length;
             // s == 2 also catches misspelled delay commands
-            if (s > 2 || endOf(m, endOfSentence) || endOf(m, endOfTextOther)) {
+            if (s > 2 || endOf(m, EndOfSentenceCharacters)
+                    || endOf(m, MainClauseAppendableCharacters)) {
                 return Type.Text;
             } else {
                 // Throwing an exception here to avoid speaking keywords in
@@ -478,7 +485,8 @@ public class Message {
         while (parts.hasNext()) {
             Part part = parts.next();
             if (part.type == Type.Text) {
-                if (!endOf(part.value, endOfSentence)) {
+                if (!endOf(part.value, EndOfSentenceCharacters)
+                        && !endOf(part.value, MainClauseAppendableCharacters)) {
                     if (sentence == null) {
                         sentence = part;
                     } else {

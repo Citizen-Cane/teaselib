@@ -264,7 +264,7 @@ public class RenderMessage extends MediaRendererThread {
                 if (appendToItem) {
                     append = true;
                     appendToItem = false;
-                } else {
+                } else if (part.type == Message.Type.Text) {
                     append = canAppend(part.value);
                 }
             }
@@ -374,8 +374,9 @@ public class RenderMessage extends MediaRendererThread {
     }
 
     private static boolean canAppend(String s) {
-        char ending = s.isEmpty() ? ' ' : s.charAt(s.length() - 1);
-        return ending == ',' || ending == ';';
+        String ending = s.isEmpty() ? " "
+                : s.substring(s.length() - 1, s.length());
+        return Message.MainClauseAppendableCharacters.contains(ending);
     }
 
     private void showImageAndText(String text) {

@@ -16,6 +16,8 @@ public interface Images extends Iterator<String> {
     public static final String SameCameraPosition = "<image SameCameraPosition/>";
     public static final String SameResolution = "<image SameResolution/>";
 
+    public boolean contains(String resource);
+
     /**
      * Hint the image iterator to choose an appropriate image
      * 

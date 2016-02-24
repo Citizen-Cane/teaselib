@@ -4,6 +4,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
@@ -12,7 +13,6 @@ import java.util.concurrent.TimeUnit;
 import teaselib.Config;
 import teaselib.Message;
 import teaselib.Message.Part;
-import teaselib.Message.Type;
 import teaselib.Mood;
 import teaselib.TeaseLib;
 import teaselib.core.speechrecognition.SpeechRecognition;
@@ -23,6 +23,10 @@ import teaselib.core.texttospeech.TextToSpeechPlayer;
 public class RenderMessage extends MediaRendererThread {
     private final static long DELAYBETWEENPARAGRAPHS = 500;
     private final static long DELAYATENDOFTEXT = 2000;
+
+    static final Set<Message.Type> logSpecialMessageTypes = new HashSet<Message.Type>(
+            Arrays.asList(Message.Type.Text, Message.Type.Image,
+                    Message.Type.Mood));
 
     private final ResourceLoader resources;
     private final Message message;
@@ -139,7 +143,7 @@ public class RenderMessage extends MediaRendererThread {
             boolean appendToItem = false;
             for (Iterator<Part> it = message.iterator(); it.hasNext();) {
                 Part part = it.next();
-                if (part.type != Type.Text && part.type != Type.Image) {
+                if (!logSpecialMessageTypes.contains(part.type)) {
                     teaseLib.transcript
                             .info("" + part.type.name() + " = " + part.value);
                 }
@@ -270,8 +274,8 @@ public class RenderMessage extends MediaRendererThread {
     private void doText(StringBuilder accumulatedText, boolean append,
             String mood, String prompt) {
         accumulateText(accumulatedText, prompt, append);
-        // TODO Won't log anymore
-        if ((displayImage == Message.DominantImage && mood != Mood.Neutral)) {
+        if (message.actor.images.contains(displayImage)
+                && mood != Mood.Neutral) {
             teaseLib.transcript.info("mood = " + mood);
         }
         showImageAndText(accumulatedText.toString());
@@ -384,8 +388,7 @@ public class RenderMessage extends MediaRendererThread {
         if (path == null) {
             teaseLib.transcript.info(Message.NoImage);
         } else {
-            // TODO Can't log mistress images here
-            if (displayImage == Message.DominantImage) {
+            if (message.actor.images.contains(displayImage)) {
                 teaseLib.transcript.debug("image = '" + path + "'");
             } else {
                 teaseLib.transcript.info("image = '" + path + "'");

@@ -39,6 +39,11 @@ public class RandomImages implements Images {
     }
 
     @Override
+    public boolean contains(String resource) {
+        return images.contains(resource);
+    }
+
+    @Override
     public boolean hasNext() {
         return !images.isEmpty();
     }

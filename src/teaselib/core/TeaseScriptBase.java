@@ -12,7 +12,6 @@ import teaselib.Message;
 import teaselib.Mood;
 import teaselib.ScriptFunction;
 import teaselib.TeaseLib;
-import teaselib.Message.Part;
 import teaselib.core.MediaRenderer.Replay.Position;
 import teaselib.core.speechrecognition.SpeechRecognitionResult.Confidence;
 import teaselib.core.texttospeech.TextToSpeechPlayer;
@@ -187,7 +186,7 @@ public abstract class TeaseScriptBase {
                 } else if (part.value == Message.NoImage) {
                     imageType = part.value;
                 } else {
-                    nextImage = part.value;
+                    imageType = nextImage = part.value;
                 }
             } else if (part.type == Message.Type.Mood) {
                 nextMood = part.value;

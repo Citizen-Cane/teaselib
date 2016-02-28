@@ -5,6 +5,7 @@ import java.util.Locale;
 import ss.IScript;
 import teaselib.Toys;
 import teaselib.core.Persistence;
+import teaselib.util.TextVariables;
 
 public class SexScriptsStatePersistence implements Persistence {
 
@@ -73,19 +74,18 @@ public class SexScriptsStatePersistence implements Persistence {
     }
 
     @Override
-    public String get(TextVariable name, String locale) {
-        if (name == TextVariable.Slave && defaultLanguageMatches(locale)) {
-            return get("intro.name");
-        }
-        return get(name.value + "." + locale);
+    public TextVariables getTextVariables(String locale) {
+        TextVariables variables = new TextVariables();
+        variables.put(TextVariables.Names.Slave,
+                getLocalized("intro.name", locale));
+        return variables;
     }
 
-    @Override
-    public void set(TextVariable name, String locale, String value) {
-        if (name == TextVariable.Slave && defaultLanguageMatches(locale)) {
-            set("intro.name", value);
+    private String getLocalized(String name, String locale) {
+        if (defaultLanguageMatches(locale)) {
+            return get(name);
         } else {
-            set(name.name() + "." + locale, value);
+            return get(name + "." + locale);
         }
     }
 

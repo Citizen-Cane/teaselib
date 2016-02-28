@@ -16,6 +16,7 @@ import teaselib.core.MediaRenderer.Replay.Position;
 import teaselib.core.speechrecognition.SpeechRecognitionResult.Confidence;
 import teaselib.core.texttospeech.TextToSpeechPlayer;
 import teaselib.util.SpeechRecognitionRejectedScript;
+import teaselib.util.TextVariables;
 
 public abstract class TeaseScriptBase {
 
@@ -222,7 +223,7 @@ public abstract class TeaseScriptBase {
                 }
                 // Replace text variables
                 parsedMessage.add(parsedMessage.new Part(part.type,
-                        replaceVariables(part.value)));
+                        expandTextVariables(part.value)));
             } else {
                 parsedMessage.add(part);
             }
@@ -326,7 +327,7 @@ public abstract class TeaseScriptBase {
     protected String showChoices(ScriptFunction scriptFunction,
             List<String> choices, Confidence recognitionConfidence) {
         // argument checking and text variable replacement
-        final List<String> derivedChoices = replaceTextVariables(choices);
+        final List<String> derivedChoices = expandTextVariables(choices);
         ScriptFutureTask scriptTask = scriptFunction != null
                 ? new ScriptFutureTask(this, scriptFunction, derivedChoices,
                         new ScriptFutureTask.TimeoutClick())
@@ -415,42 +416,16 @@ public abstract class TeaseScriptBase {
         }
     }
 
-    private String replaceVariables(String text) {
-        String parsedText = text;
-        for (Persistence.TextVariable name : Persistence.TextVariable
-                .values()) {
-            parsedText = replaceTextVariable(parsedText, name);
-        }
-        return parsedText;
+    private List<String> expandTextVariables(List<String> prompts) {
+        return allTextVariables().expand(prompts);
     }
 
-    private String replaceTextVariable(String text,
-            Persistence.TextVariable var) {
-        final String value = var.toString();
-        text = replaceTextVariable(text, var, "#" + value);
-        text = replaceTextVariable(text, var, "#" + value.toLowerCase());
-        return text;
+    private String expandTextVariables(String s) {
+        return allTextVariables().expand(s);
     }
 
-    private String replaceTextVariable(String text,
-            Persistence.TextVariable var, String match) {
-        if (text.contains(match)) {
-            String value = teaseLib.get(var, actor.locale);
-            text = text.replace(match, value);
-        }
-        return text;
-    }
-
-    private List<String> replaceTextVariables(List<String> choices) {
-        final List<String> derivedChoices = new ArrayList<String>(
-                choices.size());
-        for (String derivedChoice : choices) {
-            if (derivedChoice != null) {
-                derivedChoices.add(replaceVariables(derivedChoice));
-            } else {
-                throw new IllegalArgumentException("Choice may not be null");
-            }
-        }
-        return derivedChoices;
+    private TextVariables allTextVariables() {
+        return new TextVariables(TextVariables.Defaults,
+                teaseLib.getTextVariables(actor.locale), actor.textVariables);
     }
 }

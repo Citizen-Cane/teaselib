@@ -3,8 +3,6 @@
  */
 package teaselib;
 
-import teaselib.core.Persistence;
-import teaselib.core.Persistence.TextVariable;
 import teaselib.core.ResourceLoader;
 import teaselib.core.TeaseScriptBase;
 import teaselib.util.Item;
@@ -243,14 +241,6 @@ public abstract class TeaseScriptPersistence extends TeaseScriptBase {
     public <T extends Enum<T>> TeaseLib.PersistentSequence<T> persistentSequence(
             String name, T[] values) {
         return teaseLib.new PersistentSequence<T>(namespace, name, values);
-    }
-
-    public String get(Persistence.TextVariable variable) {
-        return teaseLib.get(variable, actor.locale);
-    }
-
-    public void set(TextVariable var, String value) {
-        teaseLib.set(var, actor.locale, value);
     }
 
     public <T extends Enum<T>> State<T>.Item state(T item) {

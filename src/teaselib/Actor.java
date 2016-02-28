@@ -3,10 +3,16 @@ package teaselib;
 import teaselib.core.Images;
 import teaselib.core.texttospeech.Voice;
 import teaselib.util.SpeechRecognitionRejectedScript;
+import teaselib.util.TextVariables;
 
 public class Actor {
 
     public final static String Dominant = "Dominant";
+
+    public enum Names {
+        Name,
+        FullName
+    }
 
     /**
      * The name of the actor
@@ -33,6 +39,8 @@ public class Actor {
      */
     public final String key;
 
+    public final TextVariables textVariables;
+
     public Images images = null;
     public SpeechRecognitionRejectedScript speechRecognitionRejectedScript = null;
 
@@ -42,6 +50,7 @@ public class Actor {
         this.language = actor.language;
         this.gender = actor.gender;
         this.key = actor.key;
+        this.textVariables = actor.textVariables;
         this.images = actor.images;
     }
 
@@ -51,12 +60,20 @@ public class Actor {
 
     public Actor(String name, Voice.Gender gender, String locale,
             Images images) {
+        this(name, name, gender, locale, images);
+    }
+
+    public Actor(String name, String fullName, Voice.Gender gender,
+            String locale, Images images) {
         super();
         this.name = name;
         this.locale = locale;
         this.language = language(locale);
         this.gender = gender;
         this.key = key();
+        this.textVariables = new TextVariables();
+        textVariables.put(Names.Name, name);
+        textVariables.put(Names.FullName, fullName);
         this.images = images;
     }
 

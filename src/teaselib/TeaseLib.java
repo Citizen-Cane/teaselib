@@ -9,11 +9,11 @@ import java.util.concurrent.TimeUnit;
 
 import teaselib.core.Host;
 import teaselib.core.Persistence;
-import teaselib.core.Persistence.TextVariable;
 import teaselib.core.ScriptInterruptedException;
 import teaselib.util.Item;
 import teaselib.util.Items;
 import teaselib.util.Logger;
+import teaselib.util.TextVariables;
 
 /**
  * @author someone
@@ -73,10 +73,11 @@ public class TeaseLib {
         Logger techLogger = null;
         Logger transcriptLogger = null;
         try {
-            techLogger = new Logger(techLogFile, getBoolean(Config.Namespace,
-                    Config.Debug.LogDetails) ? Logger.Level.Debug
-                    : Logger.Level.Info).showTime(true).showThread(true)
-                    .logToConsole(true);
+            techLogger = new Logger(techLogFile,
+                    getBoolean(Config.Namespace, Config.Debug.LogDetails)
+                            ? Logger.Level.Debug : Logger.Level.Info)
+                                    .showTime(true).showThread(true)
+                                    .logToConsole(true);
         } catch (IOException e) {
             host.show(null,
                     "Cannot open log file " + techLogFile.getAbsolutePath());
@@ -84,16 +85,13 @@ public class TeaseLib {
             techLogger = Logger.getConsoleLogger();
         }
         try {
-            transcriptLogger = new Logger(
-                    transcriptLogFile,
-                    getBoolean(Config.Namespace, Config.Debug.LogDetails) ? Logger.Level.Debug
-                            : Logger.Level.Info).showTime(false).showThread(
-                    false);
+            transcriptLogger = new Logger(transcriptLogFile,
+                    getBoolean(Config.Namespace, Config.Debug.LogDetails)
+                            ? Logger.Level.Debug : Logger.Level.Info)
+                                    .showTime(false).showThread(false);
         } catch (IOException e) {
-            host.show(
-                    null,
-                    "Cannot open log file "
-                            + transcriptLogFile.getAbsolutePath());
+            host.show(null, "Cannot open log file "
+                    + transcriptLogFile.getAbsolutePath());
             host.reply(Arrays.asList("Oh dear"));
             transcriptLogger = Logger.getDummyLogger();
         }
@@ -471,18 +469,8 @@ public class TeaseLib {
         return item("clothes", item);
     }
 
-    public String get(TextVariable name, String locale) {
-        String value = persistence.get(name, locale);
-        if (value != null) {
-            return value;
-        } else if (name.fallback != null) {
-            return get(name.fallback, locale);
-        }
-        return name.toString();
-    }
-
-    public void set(TextVariable name, String locale, String value) {
-        persistence.set(name, locale, value);
+    public TextVariables getTextVariables(String locale) {
+        return persistence.getTextVariables(locale);
     }
 
     public class PersistentSequence<T extends Enum<T>> {
@@ -638,7 +626,8 @@ public class TeaseLib {
      * @return The item that corresponds to the value.
      */
     public <T> Item<T> item(String namespace, T value) {
-        return new Item<T>(value, new PersistentBoolean(namespace,
-                value.toString()), Item.createDisplayName(value));
+        return new Item<T>(value,
+                new PersistentBoolean(namespace, value.toString()),
+                Item.createDisplayName(value));
     }
 }

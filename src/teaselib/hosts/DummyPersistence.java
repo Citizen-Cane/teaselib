@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import teaselib.core.Persistence;
+import teaselib.util.TextVariables;
 
 public class DummyPersistence implements Persistence {
 
@@ -48,13 +49,7 @@ public class DummyPersistence implements Persistence {
     }
 
     @Override
-    public String get(TextVariable name, String locale) {
-        throw new UnsupportedOperationException(name.name());
+    public TextVariables getTextVariables(String locale) {
+        return new TextVariables();
     }
-
-    @Override
-    public void set(TextVariable name, String locale, String value) {
-        throw new UnsupportedOperationException(name.name());
-    }
-
 }

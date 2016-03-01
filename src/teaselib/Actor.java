@@ -9,15 +9,20 @@ public class Actor {
 
     public final static String Dominant = "Dominant";
 
-    public enum Names {
+    /**
+     * How to address the actor.
+     *
+     */
+    public enum FormOfAddress {
+        /**
+         * The actor's surname, title or honorific.
+         */
         Name,
+        /**
+         * The actor's full or family name, prefixed by the title or honorific.
+         */
         FullName
     }
-
-    /**
-     * The name of the actor
-     */
-    public final String name;
 
     /**
      * The locale of the actor (e.g. "en-us", "en-gb")
@@ -45,7 +50,6 @@ public class Actor {
     public SpeechRecognitionRejectedScript speechRecognitionRejectedScript = null;
 
     public Actor(Actor actor) {
-        this.name = actor.name;
         this.locale = actor.locale;
         this.language = actor.language;
         this.gender = actor.gender;
@@ -54,26 +58,25 @@ public class Actor {
         this.images = actor.images;
     }
 
-    public Actor(String name, Voice.Gender gender, String locale) {
-        this(name, gender, locale, null);
+    public Actor(String fullName, Voice.Gender gender, String locale) {
+        this(fullName, gender, locale, null);
     }
 
-    public Actor(String name, Voice.Gender gender, String locale,
+    public Actor(String fullName, Voice.Gender gender, String locale,
             Images images) {
-        this(name, name, gender, locale, images);
+        this(fullName, fullName, gender, locale, images);
     }
 
-    public Actor(String name, String fullName, Voice.Gender gender,
+    public Actor(String fullName, String name, Voice.Gender gender,
             String locale, Images images) {
         super();
-        this.name = name;
         this.locale = locale;
         this.language = language(locale);
         this.gender = gender;
-        this.key = key();
         this.textVariables = new TextVariables();
-        textVariables.put(Names.Name, name);
-        textVariables.put(Names.FullName, fullName);
+        textVariables.put(FormOfAddress.Name, name);
+        textVariables.put(FormOfAddress.FullName, fullName);
+        this.key = key();
         this.images = images;
     }
 
@@ -82,6 +85,16 @@ public class Actor {
     }
 
     private String key() {
-        return name + "." + gender + "." + language;
+        return get(FormOfAddress.FullName) + "." + gender + "." + language;
     }
+
+    public String get(Enum<?> formOfAddress) {
+        return textVariables.get(formOfAddress);
+    }
+
+    @Override
+    public String toString() {
+        return get(FormOfAddress.FullName) + ": " + locale + " " + gender;
+    }
+
 }

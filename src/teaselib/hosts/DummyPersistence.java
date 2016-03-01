@@ -3,7 +3,9 @@ package teaselib.hosts;
 import java.util.HashMap;
 import java.util.Map;
 
+import teaselib.Actor;
 import teaselib.core.Persistence;
+import teaselib.core.texttospeech.Voice;
 import teaselib.util.TextVariables;
 
 public class DummyPersistence implements Persistence {
@@ -51,5 +53,23 @@ public class DummyPersistence implements Persistence {
     @Override
     public TextVariables getTextVariables(String locale) {
         return new TextVariables();
+    }
+
+    @Override
+    public Actor getDominant(String locale) {
+        return getDominant(Voice.Gender.Female, locale);
+    }
+
+    @Override
+    public Actor getDominant(Voice.Gender gender, String locale) {
+        switch (gender) {
+        case Female:
+            return new Actor("Mistress", "Miss", Voice.Gender.Female, locale,
+                    null);
+        case Male:
+            return new Actor("Master", "Sir", Voice.Gender.Male, locale, null);
+        default:
+            throw new IllegalArgumentException(gender.toString());
+        }
     }
 }

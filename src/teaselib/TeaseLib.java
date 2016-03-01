@@ -10,6 +10,7 @@ import java.util.concurrent.TimeUnit;
 import teaselib.core.Host;
 import teaselib.core.Persistence;
 import teaselib.core.ScriptInterruptedException;
+import teaselib.core.texttospeech.Voice;
 import teaselib.util.Item;
 import teaselib.util.Items;
 import teaselib.util.Logger;
@@ -630,4 +631,13 @@ public class TeaseLib {
                 new PersistentBoolean(namespace, value.toString()),
                 Item.createDisplayName(value));
     }
+
+    public Actor getDominant(String locale) {
+        return persistence.getDominant(locale);
+    }
+
+    public Actor getDominant(Voice.Gender gender, String locale) {
+        return persistence.getDominant(gender, locale);
+    }
+
 }

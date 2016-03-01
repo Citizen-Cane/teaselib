@@ -15,6 +15,20 @@ public class TextVariablesTests {
     private static final Actor actor = new Actor(Actor.Dominant,
             Voice.Gender.Female, "en-us");
 
+    enum Names {
+        First,
+        Second,
+        Third
+    }
+
+    private TextVariables createTestData() {
+        TextVariables testData = new TextVariables();
+        testData.put(Names.First, "Peter");
+        testData.put(Names.Second, "Paul");
+        testData.put(Names.Third, "Mary");
+        return testData;
+    }
+
     @Test
     public void testDefaultMatching() {
         String expected = "You're My slave.";
@@ -25,26 +39,46 @@ public class TextVariablesTests {
 
     @Test
     public void testMatching() {
-        assertEquals("You can call me Mistress Allison.",
-                TextVariables.Defaults
-                        .expand("You can call me #"
-                                + TextVariables.Defaults
-                                        .get(TextVariables.Names.Mistress)
-                                + " Allison."));
+        TextVariables testData = createTestData();
+        assertEquals("My name is Peter.", testData
+                .expand("My name is #" + testData.get(Names.First) + "."));
     }
 
     @Test
     public void testMatchingMultipleStringsAtOnce() {
-        List<String> expected = Arrays.asList("Yes, Miss", "No, Miss");
-        List<String> actual = Arrays.asList("Yes, #miss", "No, #miss");
-        assertEquals(expected, TextVariables.Defaults.expand(actual));
+        TextVariables testData = createTestData();
+        List<String> expected = Arrays.asList("First name: Peter.",
+                "Second name: Paul.");
+        List<String> actual = Arrays.asList("First name: #first.",
+                "Second name: #second.");
+        assertEquals(expected, testData.expand(actual));
     }
 
     @Test
     public void testMatchingMultipleStringsAtOnceUpperLower() {
-        List<String> expected = Arrays.asList("Yes, Miss", "No, Miss");
-        List<String> actual = Arrays.asList("Yes, #mISs", "No, #MIss");
+        TextVariables testData = createTestData();
+        List<String> expected = Arrays.asList("First name: Peter.",
+                "Second name: Paul.");
+        List<String> actual = Arrays.asList("First name: #First.",
+                "Second name: #sECond.");
+        assertEquals(expected, testData.expand(actual));
+    }
+
+    @Test
+    public void testNonExisting() {
+        List<String> expected = Arrays.asList("Yes, AAaa", "No, aAAa");
+        List<String> actual = Arrays.asList("Yes, #AAaa", "No, #aAAa");
         assertEquals(expected, TextVariables.Defaults.expand(actual));
     }
 
+    @Test
+    public void testActor() {
+        Actor actor = new Actor("Miss Mary", "Ma'am", Voice.Gender.Female,
+                "en-uk", null);
+        List<String> expected = Arrays.asList(
+                "Yes, " + actor.textVariables.get(Actor.FormOfAddress.Name),
+                "No, " + actor.textVariables.get(Actor.FormOfAddress.FullName));
+        List<String> actual = Arrays.asList("Yes, #name", "No, #FullName");
+        assertEquals(expected, actor.textVariables.expand(actual));
+    }
 }

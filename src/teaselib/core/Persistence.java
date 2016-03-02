@@ -1,5 +1,7 @@
 package teaselib.core;
 
+import teaselib.Actor;
+import teaselib.core.texttospeech.Voice;
 import teaselib.util.TextVariables;
 
 public interface Persistence {
@@ -30,4 +32,8 @@ public interface Persistence {
      * @return
      */
     TextVariables getTextVariables(String locale);
+
+    public Actor getDominant(String locale);
+
+    public Actor getDominant(Voice.Gender gender, String locale);
 }

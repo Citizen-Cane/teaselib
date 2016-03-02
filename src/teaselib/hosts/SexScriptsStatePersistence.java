@@ -3,8 +3,10 @@ package teaselib.hosts;
 import java.util.Locale;
 
 import ss.IScript;
+import teaselib.Actor;
 import teaselib.Toys;
 import teaselib.core.Persistence;
+import teaselib.core.texttospeech.Voice;
 import teaselib.util.TextVariables;
 
 public class SexScriptsStatePersistence implements Persistence {
@@ -95,5 +97,23 @@ public class SexScriptsStatePersistence implements Persistence {
         final String localeLanguage = new Locale(locale).getLanguage();
         final boolean languagesMatch = defaultLanguage.equals(localeLanguage);
         return languagesMatch;
+    }
+
+    @Override
+    public Actor getDominant(String locale) {
+        return getDominant(Voice.Gender.Female, locale);
+    }
+
+    @Override
+    public Actor getDominant(Voice.Gender gender, String locale) {
+        switch (gender) {
+        case Female:
+            return new Actor("Mistress", "Miss", Voice.Gender.Female, locale,
+                    null);
+        case Male:
+            return new Actor("Master", "Sir", Voice.Gender.Male, locale, null);
+        default:
+            throw new IllegalArgumentException(gender.toString());
+        }
     }
 }

@@ -189,6 +189,12 @@ public abstract class TeaseScriptBase {
                 } else {
                     imageType = nextImage = part.value;
                 }
+            } else if (part.type == Message.Type.Keyword) {
+                if (part.value == Message.DominantImage) {
+                    imageType = part.value;
+                } else if (part.value == Message.NoImage) {
+                    imageType = part.value;
+                }
             } else if (part.type == Message.Type.Mood) {
                 nextMood = part.value;
             } else if (part.type == Message.Type.Text) {
@@ -224,11 +230,15 @@ public abstract class TeaseScriptBase {
                 // Replace text variables
                 parsedMessage.add(parsedMessage.new Part(part.type,
                         expandTextVariables(part.value)));
-            } else {
+            } else
+
+            {
                 parsedMessage.add(part);
             }
+
         }
         return parsedMessage;
+
     }
 
     // // TODO must be part of preprocessMessage

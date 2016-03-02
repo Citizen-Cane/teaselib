@@ -33,8 +33,8 @@ public class Message {
          */
         Sound,
         /**
-         * Similar to {@link Type#Sound} but speech recognition is paused in
-         * order to avoid wrong recognitions.
+         * Similar to {@link Type#BackgroundSoundSound} but disables speech
+         * recognition to avoid wrong recognitions.
          */
         Speech,
         /**
@@ -264,8 +264,8 @@ public class Message {
     }
 
     public static boolean isFile(Type t) {
-        return t == Type.Image || t == Type.BackgroundSound
-                || t == Type.DesktopItem;
+        return t == Type.Image || t == Type.BackgroundSound || t == Type.Sound
+                || t == Type.Speech || t == Type.DesktopItem;
     }
 
     public static boolean isImage(String m) {
@@ -334,8 +334,8 @@ public class Message {
             } else {
                 return Type.Keyword;
             }
-            // keywords and commands must be processed before files, since
-            // commands may contain file arguments
+            // keywords and commands must be processed before files,
+            // since commands may contain file arguments
         } else if (isFile(mToLower)) {
             if (isImage(mToLower)) {
                 return Type.Image;

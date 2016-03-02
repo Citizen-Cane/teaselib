@@ -15,8 +15,6 @@ import teaselib.Message;
 import teaselib.Message.Part;
 import teaselib.Mood;
 import teaselib.TeaseLib;
-import teaselib.core.speechrecognition.SpeechRecognition;
-import teaselib.core.speechrecognition.SpeechRecognizer;
 import teaselib.core.texttospeech.TextToSpeech;
 import teaselib.core.texttospeech.TextToSpeechPlayer;
 
@@ -31,10 +29,13 @@ public class RenderMessage extends MediaRendererThread {
     private final ResourceLoader resources;
     private final Message message;
     private final TextToSpeechPlayer ttsPlayer;
+    MediaRendererThread speechRenderer = null;
+    MediaRendererThread speechRendererInProgress = null;
+    RenderSound soundRenderer = null;
 
     private String displayImage = null;
 
-    private final Set<MediaRendererThread> audio = new HashSet<MediaRendererThread>();
+    private final Set<MediaRendererThread> interuptableAudio = new HashSet<MediaRendererThread>();
 
     public RenderMessage(ResourceLoader resources, Message message,
             TextToSpeechPlayer ttsPlayer, TeaseLib teaseLib) {
@@ -119,7 +120,7 @@ public class RenderMessage extends MediaRendererThread {
             throws IOException {
         if (message.isEmpty()) {
             // // Show image but no text
-            showImageAndText(null);
+            doText(null, false, null, Mood.Neutral, true);
         } else {
             StringBuilder accumulatedText = new StringBuilder();
             boolean append = false;
@@ -137,10 +138,9 @@ public class RenderMessage extends MediaRendererThread {
             } else {
                 prerenderedSpeechAvailable = false;
             }
-            // Process message paragraphs
-            RenderSound soundRenderer = null;
             String mood = Mood.Neutral;
             boolean appendToItem = false;
+            // Process message parts
             for (Iterator<Part> it = message.iterator(); it.hasNext();) {
                 Part part = it.next();
                 if (!logSpecialMessageTypes.contains(part.type)) {
@@ -148,17 +148,18 @@ public class RenderMessage extends MediaRendererThread {
                             .info("" + part.type.name() + " = " + part.value);
                 }
                 teaseLib.log.info(part.type.toString() + ": " + part.value);
-                // Handle message commands
+                // TODO Works only if the last part is a text part
                 final boolean lastParagraph = !it.hasNext();
+                // Handle message commands
                 if (part.type == Message.Type.Image) {
                     displayImage = part.value;
                 } else if (part.type == Message.Type.BackgroundSound) {
                     // Play sound, continue message execution
-                    synchronized (audio) {
+                    synchronized (interuptableAudio) {
                         soundRenderer = new RenderSound(resources, part.value,
                                 teaseLib);
                         soundRenderer.render();
-                        audio.add(soundRenderer);
+                        interuptableAudio.add(soundRenderer);
                     }
                     // use awaitSoundCompletion keyword to wait for sound
                     // completion
@@ -166,49 +167,18 @@ public class RenderMessage extends MediaRendererThread {
                     // Play sound, wait until finished
                     RenderSound sound = new RenderSound(resources, part.value,
                             teaseLib);
-                    synchronized (audio) {
+                    synchronized (interuptableAudio) {
                         sound.render();
-                        audio.add(sound);
+                        interuptableAudio.add(sound);
                     }
                     sound.completeAll();
-                    synchronized (audio) {
-                        audio.remove(sound);
+                    synchronized (interuptableAudio) {
+                        interuptableAudio.remove(sound);
                     }
                 } else if (part.type == Message.Type.Speech) {
-                    // Disable speech recognition
-                    final SpeechRecognition speechRecognizer = SpeechRecognizer.instance
-                            .get(message.actor.locale);
-                    // Suspend speech recognition while speaking,
-                    // to avoid wrong recognitions
-                    // - and the mistress speech isn't to be interrupted anyway
-                    SpeechRecognition.completeSpeechRecognitionInProgress();
-                    boolean reactivateSpeechRecognition = speechRecognizer != null
-                            && speechRecognizer.isActive();
-                    try {
-                        if (reactivateSpeechRecognition) {
-                            if (speechRecognizer != null) {
-                                speechRecognizer.stopRecognition();
-                            }
-                        }
-                        // Play sound, wait until finished
-                        RenderSound speech = new RenderSound(resources,
-                                part.value, teaseLib);
-                        synchronized (audio) {
-                            speech.render();
-                            audio.add(speech);
-                        }
-                        speech.completeAll();
-                        synchronized (audio) {
-                            audio.remove(speech);
-                        }
-                    } finally {
-                        // resume SR if necessary
-                        if (reactivateSpeechRecognition) {
-                            if (speechRecognizer != null) {
-                                speechRecognizer.resumeRecognition();
-                            }
-                        }
-                    }
+                    speechRenderer = new RenderPrerecordedSpeech(message.actor,
+                            part.value, getParagraphPause(lastParagraph),
+                            resources, teaseLib);
                 } else if (part.type == Message.Type.DesktopItem) {
                     // Remove optional keyword
                     String path = part.value.toLowerCase()
@@ -227,31 +197,50 @@ public class RenderMessage extends MediaRendererThread {
                         // retrieved (the desktop item doesn't exist),
                         // we'll just display the part as text,
                         // which is the most right thing in this case
-                        String prompt = part.value;
-                        doText(accumulatedText, append, mood, prompt);
-                        if (ttsPlayer != null && !prerenderedSpeechAvailable) {
-                            ttsPlayer.speak(message.actor, prompt, mood);
-                        }
-                        pauseAfterParagraph(lastParagraph, ttsPlayer);
+
+                        throw new IllegalStateException();
+                        // String prompt = part.value;
+                        // doText(accumulatedText, append, mood, prompt);
+                        // if (ttsPlayer != null && !prerenderedSpeechAvailable)
+                        // {
+                        // ttsPlayer.speak(message.actor, prompt, mood);
+                        // }
+                        // pauseAfterParagraph(lastParagraph, ttsPlayer);
                     }
                 } else if (part.type == Message.Type.Mood) {
                     // Mood
                     mood = part.value;
                 } else if (part.type == Message.Type.Keyword) {
-                    doKeyword(soundRenderer, part);
+                    doKeyword(part);
                 } else if (part.type == Message.Type.Delay) {
                     // Pause
                     doDelay(part);
                 } else if (part.type == Message.Type.Item) {
                     accumulateText(accumulatedText, "°", false);
                     appendToItem = true;
-                } else {
+                } else { // (part.type == Message.Type.Text)
                     String prompt = part.value;
-                    doText(accumulatedText, append, mood, prompt);
+
+                    doText(accumulatedText, append, prompt, mood,
+                            lastParagraph);
+
                     if (ttsPlayer != null && !prerenderedSpeechAvailable) {
-                        ttsPlayer.speak(message.actor, prompt, mood);
+                        speechRenderer = new RenderTTSSpeech(ttsPlayer,
+                                message.actor, prompt, mood,
+                                getParagraphPause(lastParagraph), teaseLib);
                     }
-                    pauseAfterParagraph(lastParagraph, ttsPlayer);
+
+                    // Start next
+                    if (speechRenderer != null) {
+                        synchronized (interuptableAudio) {
+                            // Play sound, wait until finished
+                            speechRenderer.render();
+                            // Automatically interrupt
+                            interuptableAudio.add(speechRenderer);
+                        }
+                        speechRendererInProgress = speechRenderer;
+                        speechRenderer = null;
+                    }
                 }
                 if (task.isCancelled()) {
                     break;
@@ -268,45 +257,77 @@ public class RenderMessage extends MediaRendererThread {
                     append = canAppend(part.value);
                 }
             }
+            // Finished all parts
+            completeSpeech(true);
+            allCompleted();
+
+        }
+    }
+
+    private void completeSpeech(final boolean lastParagraph) {
+        if (speechRendererInProgress != null) {
+            speechRendererInProgress.completeMandatory();
+        }
+        if (lastParagraph) {
+            mandatoryCompleted();
+        }
+        if (speechRendererInProgress != null) {
+            speechRendererInProgress.completeAll();
+            synchronized (interuptableAudio) {
+                interuptableAudio.remove(speechRendererInProgress);
+            }
+            speechRendererInProgress = null;
         }
     }
 
     private void doText(StringBuilder accumulatedText, boolean append,
-            String mood, String prompt) {
+            String prompt, String mood, boolean lastParagraph) {
         accumulateText(accumulatedText, prompt, append);
         if (message.actor.images.contains(displayImage)
                 && mood != Mood.Neutral) {
             teaseLib.transcript.info("mood = " + mood);
         }
-        showImageAndText(accumulatedText.toString());
+
+        String path = displayImage == Message.NoImage ? null : displayImage;
+        // log image to transcript if not an actor's image
+        if (path == null) {
+            teaseLib.transcript.info(Message.NoImage);
+        } else {
+            if (message.actor.images.contains(displayImage)) {
+                teaseLib.transcript.debug("image = '" + path + "'");
+            } else {
+                teaseLib.transcript.info("image = '" + path + "'");
+            }
+        }
+        // Fetch the image bytes
+        byte[] imageBytes = null;
+        String text = accumulatedText.toString();
+        if (path != null) {
+            try {
+                imageBytes = getImageBytes(path);
+            } catch (Exception e) {
+                text = text + "\n\n" + e.getClass() + ": " + e.getMessage()
+                        + "\n";
+                teaseLib.log.error(this, e);
+            }
+        }
+        // speech in progress never refers to the last paragraph
+        completeSpeech(false);
+        teaseLib.host.show(imageBytes, text);
         teaseLib.transcript.info(">> " + prompt);
         // First message shown - start part completed
         startCompleted();
     }
 
-    private void pauseAfterParagraph(boolean lastParagraph,
-            TextToSpeechPlayer speechSynthesizer) {
-        final boolean spokenMessage = speechSynthesizer != null;
-        if (lastParagraph) {
-            if (spokenMessage) {
-                // Interaction should start before the final delay
-                mandatoryCompleted();
-                teaseLib.sleep(DELAYATENDOFTEXT, TimeUnit.MILLISECONDS);
-            }
-            allCompleted();
-        } else {
-            if (spokenMessage) {
-                teaseLib.sleep(DELAYBETWEENPARAGRAPHS, TimeUnit.MILLISECONDS);
-            }
-        }
+    private static long getParagraphPause(boolean lastParagraph) {
+        return lastParagraph ? DELAYATENDOFTEXT : DELAYBETWEENPARAGRAPHS;
     }
 
-    private void doKeyword(RenderSound soundRenderer, Part part) {
+    private void doKeyword(Part part) {
         String keyword = part.value;
         if (keyword == Message.DominantImage) {
-            // Mistress image
-            displayImage = Message.DominantImage;
-            throw new IllegalStateException(displayImage);
+            // Image has to be resolved in preprocessMessage
+            throw new IllegalStateException(keyword);
         } else if (keyword == Message.NoImage) {
             // No image
             displayImage = Message.NoImage;
@@ -315,9 +336,10 @@ public class RenderMessage extends MediaRendererThread {
             mandatoryCompleted();
         } else if (keyword == Message.AwaitSoundCompletion) {
             // Complete the mandatory part of the message
+            // TODO Complete all audio but speech
             soundRenderer.completeMandatory();
-            synchronized (audio) {
-                audio.remove(soundRenderer);
+            synchronized (interuptableAudio) {
+                interuptableAudio.remove(soundRenderer);
             }
         } else {
             // Unimplemented keyword
@@ -379,46 +401,23 @@ public class RenderMessage extends MediaRendererThread {
         return Message.MainClauseAppendableCharacters.contains(ending);
     }
 
-    private void showImageAndText(String text) {
-        String path;
-        if (displayImage == Message.NoImage) {
-            path = null;
-        } else {
-            path = displayImage;
-        }
-        if (path == null) {
-            teaseLib.transcript.info(Message.NoImage);
-        } else {
-            if (message.actor.images.contains(displayImage)) {
-                teaseLib.transcript.debug("image = '" + path + "'");
-            } else {
-                teaseLib.transcript.info("image = '" + path + "'");
-            }
-        }
+    private byte[] getImageBytes(String path) throws IOException {
+        InputStream resource = null;
         byte[] imageBytes = null;
-        if (path != null) {
-            try {
-                InputStream resource = null;
-                try {
-                    resource = resources.getResource(path);
-                    imageBytes = convertInputStreamToByte(resource);
-                } catch (IOException e) {
-                    if (!teaseLib.getBoolean(Config.Namespace,
-                            Config.Debug.IgnoreMissingResources)) {
-                        throw e;
-                    }
-                } finally {
-                    if (resource != null) {
-                        resource.close();
-                    }
-                }
-            } catch (Exception e) {
-                text = text + "\n\n" + e.getClass() + ": " + e.getMessage()
-                        + "\n";
-                teaseLib.log.error(this, e);
+        try {
+            resource = resources.getResource(path);
+            imageBytes = convertInputStreamToByte(resource);
+        } catch (IOException e) {
+            if (!teaseLib.getBoolean(Config.Namespace,
+                    Config.Debug.IgnoreMissingResources)) {
+                throw e;
+            }
+        } finally {
+            if (resource != null) {
+                resource.close();
             }
         }
-        teaseLib.host.show(imageBytes, text);
+        return imageBytes;
     }
 
     private static byte[] convertInputStreamToByte(InputStream is)
@@ -462,8 +461,8 @@ public class RenderMessage extends MediaRendererThread {
                 ttsPlayer.stop();
             }
         }
-        synchronized (audio) {
-            for (MediaRendererThread sound : audio) {
+        synchronized (interuptableAudio) {
+            for (MediaRendererThread sound : interuptableAudio) {
                 sound.interrupt();
             }
         }

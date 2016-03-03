@@ -19,8 +19,6 @@ import teaselib.Message.Part;
 import teaselib.TeaseLib;
 import teaselib.core.ResourceLoader;
 import teaselib.core.ScriptInterruptedException;
-import teaselib.core.speechrecognition.SpeechRecognition;
-import teaselib.core.speechrecognition.SpeechRecognizer;
 
 public class TextToSpeechPlayer {
     public final TextToSpeech textToSpeech;
@@ -236,43 +234,21 @@ public class TextToSpeechPlayer {
      */
     public void speak(Actor actor, String prompt, String mood) {
         boolean useTTS = textToSpeech.isReady();
-        final boolean reactivateSpeechRecognition;
-        final SpeechRecognition speechRecognizer = SpeechRecognizer.instance
-                .get(actor.locale);
-        // Suspend speech recognition while speaking,
-        // to avoid accidental recognitions
-        // - and the mistress speech isn't to be interrupted anyway
         if (useTTS) {
-            SpeechRecognition.completeSpeechRecognitionInProgress();
-            reactivateSpeechRecognition = speechRecognizer.isActive();
-        } else {
-            reactivateSpeechRecognition = false;
-        }
-        try {
-            if (reactivateSpeechRecognition && speechRecognizer != null) {
-                speechRecognizer.stopRecognition();
-            }
-            if (useTTS) {
-                Voice voice = getVoiceFor(actor);
-                // Synchronize speaking, only one actor can speak at a time
-                textToSpeech.setVoice(voice);
-                textToSpeech.setHint(mood);
-                try {
-                    textToSpeech.speak(prompt);
-                } catch (ScriptInterruptedException e) {
-                    throw e;
-                } catch (Throwable t) {
-                    teaseLib.log.error(this, t);
-                    speakSilent(prompt);
-                }
-            } else {
+            Voice voice = getVoiceFor(actor);
+            // Synchronize speaking, only one actor can speak at a time
+            textToSpeech.setVoice(voice);
+            textToSpeech.setHint(mood);
+            try {
+                textToSpeech.speak(prompt);
+            } catch (ScriptInterruptedException e) {
+                throw e;
+            } catch (Throwable t) {
+                teaseLib.log.error(this, t);
                 speakSilent(prompt);
             }
-        } finally {
-            // resume SR if necessary
-            if (reactivateSpeechRecognition && speechRecognizer != null) {
-                speechRecognizer.resumeRecognition();
-            }
+        } else {
+            speakSilent(prompt);
         }
     }
 
@@ -291,21 +267,41 @@ public class TextToSpeechPlayer {
     }
 
     public Message getPrerenderedMessage(Message message,
-            ResourceLoader resources) throws IOException {
+            ResourceLoader resources) {
         // Do we have a pre-recorded voice?
-        Iterator<String> prerenderedSpeechFiles = getSpeechResources(message,
-                resources).iterator();
-        Message preRenderedSpeechMessage = new Message(message.actor);
-        for (Part part : message.getParts()) {
-            if (part.type == Message.Type.Text) {
-                preRenderedSpeechMessage.add(part);
-                preRenderedSpeechMessage.add(Message.Type.Speech,
-                        prerenderedSpeechFiles.next());
-            } else {
-                preRenderedSpeechMessage.add(part);
+        try {
+            Iterator<String> prerenderedSpeechFiles = getSpeechResources(
+                    message, resources).iterator();
+            // REnder pre-recorded speech as sound
+            Message preRenderedSpeechMessage = new Message(message.actor);
+            for (Part part : message.getParts()) {
+                if (part.type == Message.Type.Text) {
+                    preRenderedSpeechMessage.add(part);
+                    preRenderedSpeechMessage.add(Message.Type.Speech,
+                            prerenderedSpeechFiles.next());
+                } else {
+                    preRenderedSpeechMessage.add(part);
+                }
             }
+            return preRenderedSpeechMessage;
+        } catch (IOException e) {
+            teaseLib.log.error(message, e);
+            // Render pre-recorded speech as delay
+            Message preRenderedSpeechMessage = new Message(message.actor);
+            for (Part part : message.getParts()) {
+                if (part.type == Message.Type.Text) {
+                    preRenderedSpeechMessage.add(part);
+                    int durationSeconds = Math.toIntExact(
+                            TextToSpeech.getEstimatedSpeechDuration(part.value)
+                                    / 1000);
+                    preRenderedSpeechMessage.add(Message.Type.Delay,
+                            Integer.toString(durationSeconds));
+                } else {
+                    preRenderedSpeechMessage.add(part);
+                }
+            }
+            return preRenderedSpeechMessage;
         }
-        return preRenderedSpeechMessage;
     }
 
     /**

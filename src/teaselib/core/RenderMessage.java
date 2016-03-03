@@ -29,6 +29,7 @@ public class RenderMessage extends MediaRendererThread {
     private final ResourceLoader resources;
     private final Message message;
     private final TextToSpeechPlayer ttsPlayer;
+    private final boolean speak;
     MediaRendererThread speechRenderer = null;
     MediaRendererThread speechRendererInProgress = null;
     RenderSound soundRenderer = null;
@@ -44,8 +45,16 @@ public class RenderMessage extends MediaRendererThread {
             throw new NullPointerException();
         }
         this.resources = resources;
+        // replay pre-recorded speech or use TTS
+        if (ttsPlayer != null) {
+            if (ttsPlayer.prerenderedSpeechAvailable(message.actor)) {
+                // Don't use TTS, even if pre-recorded speech is missing
+                message = ttsPlayer.getPrerenderedMessage(message, resources);
+            }
+        }
         this.message = message;
         this.ttsPlayer = ttsPlayer;
+        this.speak = ttsPlayer != null;
     }
 
     public Message getMessage() {
@@ -56,13 +65,13 @@ public class RenderMessage extends MediaRendererThread {
     public void renderMedia() throws InterruptedException {
         try {
             if (replayPosition == Position.FromStart) {
-                renderMessage(message, ttsPlayer);
+                renderMessage(message, true);
             } else {
                 Message lastSection = getLastSection(message);
                 if (replayPosition == Position.FromMandatory) {
-                    renderMessage(lastSection, ttsPlayer);
+                    renderMessage(lastSection, true);
                 } else {
-                    renderMessage(lastSection, null);
+                    renderMessage(lastSection, false);
                 }
             }
         } catch (ScriptInterruptedException e) {
@@ -116,28 +125,14 @@ public class RenderMessage extends MediaRendererThread {
         return lastSection;
     }
 
-    private void renderMessage(Message message, TextToSpeechPlayer ttsPlayer)
+    private void renderMessage(Message message, boolean speakText)
             throws IOException {
         if (message.isEmpty()) {
             // // Show image but no text
-            doText(null, false, null, Mood.Neutral, true);
+            doText(null, false, null, Mood.Neutral);
         } else {
             StringBuilder accumulatedText = new StringBuilder();
             boolean append = false;
-            // Start speaking a message, replay prerecorded items or speak
-            // with TTS later
-            final boolean prerenderedSpeechAvailable;
-            if (ttsPlayer != null) {
-                if (ttsPlayer.prerenderedSpeechAvailable(message.actor)) {
-                    message = ttsPlayer.getPrerenderedMessage(message,
-                            resources);
-                    prerenderedSpeechAvailable = true;
-                } else {
-                    prerenderedSpeechAvailable = false;
-                }
-            } else {
-                prerenderedSpeechAvailable = false;
-            }
             String mood = Mood.Neutral;
             boolean appendToItem = false;
             // Process message parts
@@ -176,9 +171,11 @@ public class RenderMessage extends MediaRendererThread {
                         interuptableAudio.remove(sound);
                     }
                 } else if (part.type == Message.Type.Speech) {
-                    speechRenderer = new RenderPrerecordedSpeech(message.actor,
-                            part.value, getParagraphPause(lastParagraph),
-                            resources, teaseLib);
+                    if (speakText) {
+                        speechRenderer = new RenderPrerecordedSpeech(part.value,
+                                getParagraphPause(lastParagraph), resources,
+                                teaseLib);
+                    }
                 } else if (part.type == Message.Type.DesktopItem) {
                     // Remove optional keyword
                     String path = part.value.toLowerCase()
@@ -220,27 +217,8 @@ public class RenderMessage extends MediaRendererThread {
                     appendToItem = true;
                 } else { // (part.type == Message.Type.Text)
                     String prompt = part.value;
-
-                    doText(accumulatedText, append, prompt, mood,
-                            lastParagraph);
-
-                    if (ttsPlayer != null && !prerenderedSpeechAvailable) {
-                        speechRenderer = new RenderTTSSpeech(ttsPlayer,
-                                message.actor, prompt, mood,
-                                getParagraphPause(lastParagraph), teaseLib);
-                    }
-
-                    // Start next
-                    if (speechRenderer != null) {
-                        synchronized (interuptableAudio) {
-                            // Play sound, wait until finished
-                            speechRenderer.render();
-                            // Automatically interrupt
-                            interuptableAudio.add(speechRenderer);
-                        }
-                        speechRendererInProgress = speechRenderer;
-                        speechRenderer = null;
-                    }
+                    doTextAndSpeech(accumulatedText, prompt, append, mood,
+                            lastParagraph, speakText);
                 }
                 if (task.isCancelled()) {
                     break;
@@ -264,6 +242,31 @@ public class RenderMessage extends MediaRendererThread {
         }
     }
 
+    private void doTextAndSpeech(StringBuilder accumulatedText, String prompt,
+            boolean append, String mood, final boolean lastParagraph,
+            boolean speakText) {
+        doText(accumulatedText, append, prompt, mood);
+        if (ttsPlayer != null && speechRenderer == null) {
+            if (speakText) {
+                speechRenderer = new RenderTTSSpeech(ttsPlayer, message.actor,
+                        prompt, mood, getParagraphPause(lastParagraph),
+                        teaseLib);
+            }
+        }
+        // Start next
+        if (speechRenderer != null) {
+            synchronized (interuptableAudio) {
+                // Play sound, wait until finished
+                speechRenderer.render();
+                // Automatically interrupt
+                interuptableAudio.add(speechRenderer);
+            }
+            speechRendererInProgress = speechRenderer;
+            speechRenderer = null;
+        }
+
+    }
+
     private void completeSpeech(final boolean lastParagraph) {
         if (speechRendererInProgress != null) {
             speechRendererInProgress.completeMandatory();
@@ -281,7 +284,7 @@ public class RenderMessage extends MediaRendererThread {
     }
 
     private void doText(StringBuilder accumulatedText, boolean append,
-            String prompt, String mood, boolean lastParagraph) {
+            String prompt, String mood) {
         accumulateText(accumulatedText, prompt, append);
         if (message.actor.images.contains(displayImage)
                 && mood != Mood.Neutral) {

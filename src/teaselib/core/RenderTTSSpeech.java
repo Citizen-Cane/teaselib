@@ -8,13 +8,15 @@ import teaselib.core.texttospeech.TextToSpeechPlayer;
 
 public class RenderTTSSpeech extends RenderSpeech {
     private final TextToSpeechPlayer ttsPlayer;
+    protected final Actor actor;
     private final String prompt;
     private final String mood;
 
     public RenderTTSSpeech(TextToSpeechPlayer ttsPlayer, Actor actor,
             String prompt, String mood, long pauseMillis, TeaseLib teaseLib) {
-        super(actor, pauseMillis, teaseLib);
+        super(pauseMillis, teaseLib);
         this.ttsPlayer = ttsPlayer;
+        this.actor = actor;
         this.prompt = prompt;
         this.mood = mood;
     }

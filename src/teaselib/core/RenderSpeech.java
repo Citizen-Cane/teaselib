@@ -3,19 +3,16 @@ package teaselib.core;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
-import teaselib.Actor;
 import teaselib.Config;
 import teaselib.TeaseLib;
 import teaselib.core.speechrecognition.SpeechRecognition;
 import teaselib.core.speechrecognition.SpeechRecognizer;
 
 public abstract class RenderSpeech extends MediaRendererThread {
-    protected final Actor actor;
     private final long pauseMillis;
 
-    public RenderSpeech(Actor actor, long pauseMillis, TeaseLib teaseLib) {
+    public RenderSpeech(long pauseMillis, TeaseLib teaseLib) {
         super(teaseLib);
-        this.actor = actor;
         this.pauseMillis = pauseMillis;
     }
 
@@ -25,18 +22,9 @@ public abstract class RenderSpeech extends MediaRendererThread {
         // Suspend speech recognition while speaking,
         // to avoid wrong recognitions
         // - and the mistress speech isn't to be interrupted anyway
-        // TODO Pause any recognition, not necessarily the one with the
-        // actor's locale
-        final SpeechRecognition speechRecognizer = SpeechRecognizer.instance
-                .get(actor.locale);
         SpeechRecognition.completeSpeechRecognitionInProgress();
-        boolean reactivateSpeechRecognition = speechRecognizer != null
-                && speechRecognizer.isActive();
-        if (reactivateSpeechRecognition) {
-            if (speechRecognizer != null) {
-                speechRecognizer.stopRecognition();
-            }
-        }
+        Runnable resumeSpeechRecognition = SpeechRecognizer.instance
+                .pauseRecognition();
         startCompleted();
         try {
             renderSpeech();
@@ -50,12 +38,7 @@ public abstract class RenderSpeech extends MediaRendererThread {
             }
         } finally {
             allCompleted();
-            // resume SR if necessary
-            if (reactivateSpeechRecognition) {
-                if (speechRecognizer != null) {
-                    speechRecognizer.resumeRecognition();
-                }
-            }
+            resumeSpeechRecognition.run();
         }
         String text = toString();
         teaseLib.log.info(

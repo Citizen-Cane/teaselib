@@ -3,7 +3,9 @@
  */
 package teaselib.core.speechrecognition;
 
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 
 /**
@@ -20,7 +22,7 @@ public class SpeechRecognizer {
     }
 
     public SpeechRecognition get(String locale) {
-        synchronized (instance) {
+        synchronized (speechRecognitionInstances) {
             if (speechRecognitionInstances.containsKey(locale)) {
                 return speechRecognitionInstances.get(locale);
             } else {
@@ -29,6 +31,32 @@ public class SpeechRecognizer {
                 speechRecognitionInstances.put(locale, speechRecognition);
                 return speechRecognition;
             }
+        }
+    }
+
+    /**
+     * Disables all running speech recognition instances (if any).
+     * 
+     * @return A runnable for resuming speech recognition.
+     */
+    public Runnable pauseRecognition() {
+        synchronized (speechRecognitionInstances) {
+            final Collection<SpeechRecognition> toStop = new HashSet<SpeechRecognition>();
+            for (SpeechRecognition sR : speechRecognitionInstances.values()) {
+                if (sR.isActive()) {
+                    sR.stopRecognition();
+                    toStop.add(sR);
+                }
+            }
+            return new Runnable() {
+                @Override
+                public void run() {
+                    for (SpeechRecognition sR : speechRecognitionInstances
+                            .values()) {
+                        sR.resumeRecognition();
+                    }
+                }
+            };
         }
     }
 

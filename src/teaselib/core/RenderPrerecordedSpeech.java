@@ -2,7 +2,6 @@ package teaselib.core;
 
 import java.io.IOException;
 
-import teaselib.Actor;
 import teaselib.TeaseLib;
 
 public class RenderPrerecordedSpeech extends RenderSpeech {
@@ -11,9 +10,9 @@ public class RenderPrerecordedSpeech extends RenderSpeech {
 
     private Object audioHandle = null;
 
-    public RenderPrerecordedSpeech(Actor actor, String speechSoundFile,
-            long pauseMillis, ResourceLoader resources, TeaseLib teaseLib) {
-        super(actor, pauseMillis, teaseLib);
+    public RenderPrerecordedSpeech(String speechSoundFile, long pauseMillis,
+            ResourceLoader resources, TeaseLib teaseLib) {
+        super(pauseMillis, teaseLib);
         this.resources = resources;
         this.speechSoundFile = speechSoundFile;
     }

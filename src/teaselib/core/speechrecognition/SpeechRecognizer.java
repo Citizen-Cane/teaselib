@@ -41,18 +41,17 @@ public class SpeechRecognizer {
      */
     public Runnable pauseRecognition() {
         synchronized (speechRecognitionInstances) {
-            final Collection<SpeechRecognition> toStop = new HashSet<SpeechRecognition>();
+            final Collection<SpeechRecognition> stoppedInstances = new HashSet<SpeechRecognition>();
             for (SpeechRecognition sR : speechRecognitionInstances.values()) {
                 if (sR.isActive()) {
                     sR.stopRecognition();
-                    toStop.add(sR);
+                    stoppedInstances.add(sR);
                 }
             }
             return new Runnable() {
                 @Override
                 public void run() {
-                    for (SpeechRecognition sR : speechRecognitionInstances
-                            .values()) {
+                    for (SpeechRecognition sR : stoppedInstances) {
                         sR.resumeRecognition();
                     }
                 }

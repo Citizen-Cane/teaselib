@@ -129,20 +129,22 @@ public abstract class TeaseScriptBase {
     }
 
     protected void renderMessage(Message message,
-            TextToSpeechPlayer speechSynthesizer) {
+            TextToSpeechPlayer ttsPlayer) {
         try {
             synchronized (renderQueue) {
-                // Clone the actor to prevent the wrong actor image to be
-                // displayed
-                // when changing the actor images right after saying a message.
-                // Without cloning one of the new actor images would be
-                // displayed
-                // with the current message because the actor is shared between
-                // script and message
+                // inject speech parts to replay pre-recorded speech or use TTS
+                // This has to be done first as subsequent parse steps
+                // inject moods and thus change the message hash
+                if (ttsPlayer != null) {
+                    if (ttsPlayer.prerenderedSpeechAvailable(message.actor)) {
+                        // Don't use TTS, even if pre-recorded speech is missing
+                        message = ttsPlayer.getPrerenderedMessage(message,
+                                resources);
+                    }
+                }
                 Message parsedMessage = preprocessMessage(message);
-                // Collect hints
                 RenderMessage renderMessage = new RenderMessage(resources,
-                        parsedMessage, speechSynthesizer, teaseLib);
+                        parsedMessage, ttsPlayer, teaseLib);
                 synchronized (queuedRenderers) {
                     queueRenderer(renderMessage);
                     // Remember this set for replay
@@ -171,6 +173,11 @@ public abstract class TeaseScriptBase {
     }
 
     private Message preprocessMessage(Message message) {
+        // Clone the actor to prevent the wrong actor image to be displayed
+        // when changing the actor images right after saying a message.
+        // Without cloning one of the new actor images would be displayed
+        // with the current message because the actor is shared between
+        // script and message
         Message parsedMessage = new Message(new Actor(message.actor));
         // Preprocess message
         boolean selectFirstImage = true;

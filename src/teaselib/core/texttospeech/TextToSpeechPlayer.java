@@ -272,7 +272,7 @@ public class TextToSpeechPlayer {
         try {
             Iterator<String> prerenderedSpeechFiles = getSpeechResources(
                     message, resources).iterator();
-            // REnder pre-recorded speech as sound
+            // Render pre-recorded speech as sound
             Message preRenderedSpeechMessage = new Message(message.actor);
             for (Part part : message.getParts()) {
                 if (part.type == Message.Type.Text) {

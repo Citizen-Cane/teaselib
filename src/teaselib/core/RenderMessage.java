@@ -45,13 +45,6 @@ public class RenderMessage extends MediaRendererThread {
             throw new NullPointerException();
         }
         this.resources = resources;
-        // replay pre-recorded speech or use TTS
-        if (ttsPlayer != null) {
-            if (ttsPlayer.prerenderedSpeechAvailable(message.actor)) {
-                // Don't use TTS, even if pre-recorded speech is missing
-                message = ttsPlayer.getPrerenderedMessage(message, resources);
-            }
-        }
         this.message = message;
         this.ttsPlayer = ttsPlayer;
         this.speak = ttsPlayer != null;

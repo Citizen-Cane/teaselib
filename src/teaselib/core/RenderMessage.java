@@ -8,6 +8,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
+import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
 import teaselib.Config;
@@ -29,12 +30,12 @@ public class RenderMessage extends MediaRendererThread {
     private final ResourceLoader resources;
     private final Message message;
     private final TextToSpeechPlayer ttsPlayer;
-    private final boolean speak;
     MediaRendererThread speechRenderer = null;
     MediaRendererThread speechRendererInProgress = null;
     RenderSound soundRenderer = null;
 
     private String displayImage = null;
+    private final Prefetcher<byte[]> imageFetcher = new Prefetcher<byte[]>();
 
     private final Set<MediaRendererThread> interuptableAudio = new HashSet<MediaRendererThread>();
 
@@ -47,7 +48,53 @@ public class RenderMessage extends MediaRendererThread {
         this.resources = resources;
         this.message = message;
         this.ttsPlayer = ttsPlayer;
-        this.speak = ttsPlayer != null;
+        // pre-fetch images
+        for (Part part : message.getParts()) {
+            if (part.type == Message.Type.Image) {
+                final String resourcePath = part.value;
+                imageFetcher.add(resourcePath, new Callable<byte[]>() {
+
+                    @Override
+                    public byte[] call() throws Exception {
+                        return getImageBytes(resourcePath);
+                    }
+
+                    private byte[] getImageBytes(String path)
+                            throws IOException {
+                        InputStream resource = null;
+                        byte[] imageBytes = null;
+                        try {
+                            resource = RenderMessage.this.resources
+                                    .getResource(path);
+                            imageBytes = convertInputStreamToByte(resource);
+                        } catch (IOException e) {
+                            if (!RenderMessage.this.teaseLib.getBoolean(
+                                    Config.Namespace,
+                                    Config.Debug.IgnoreMissingResources)) {
+                                throw e;
+                            }
+                        } finally {
+                            if (resource != null) {
+                                resource.close();
+                            }
+                        }
+                        return imageBytes;
+                    }
+
+                    private byte[] convertInputStreamToByte(InputStream is)
+                            throws IOException {
+                        byte[] buffer = new byte[8192];
+                        int bytesRead;
+                        ByteArrayOutputStream output = new ByteArrayOutputStream();
+                        while ((bytesRead = is.read(buffer)) != -1) {
+                            output.write(buffer, 0, bytesRead);
+                        }
+                        return output.toByteArray();
+                    }
+                });
+            }
+        }
+        imageFetcher.fetch();
     }
 
     public Message getMessage() {
@@ -300,11 +347,17 @@ public class RenderMessage extends MediaRendererThread {
         String text = accumulatedText.toString();
         if (path != null) {
             try {
-                imageBytes = getImageBytes(path);
+                imageBytes = imageFetcher.get(path);
             } catch (Exception e) {
                 text = text + "\n\n" + e.getClass() + ": " + e.getMessage()
                         + "\n";
                 teaseLib.log.error(this, e);
+            } finally {
+                synchronized (imageFetcher) {
+                    if (!imageFetcher.isEmpty()) {
+                        imageFetcher.fetch();
+                    }
+                }
             }
         }
         // speech in progress never refers to the last paragraph
@@ -395,36 +448,6 @@ public class RenderMessage extends MediaRendererThread {
         String ending = s.isEmpty() ? " "
                 : s.substring(s.length() - 1, s.length());
         return Message.MainClauseAppendableCharacters.contains(ending);
-    }
-
-    private byte[] getImageBytes(String path) throws IOException {
-        InputStream resource = null;
-        byte[] imageBytes = null;
-        try {
-            resource = resources.getResource(path);
-            imageBytes = convertInputStreamToByte(resource);
-        } catch (IOException e) {
-            if (!teaseLib.getBoolean(Config.Namespace,
-                    Config.Debug.IgnoreMissingResources)) {
-                throw e;
-            }
-        } finally {
-            if (resource != null) {
-                resource.close();
-            }
-        }
-        return imageBytes;
-    }
-
-    private static byte[] convertInputStreamToByte(InputStream is)
-            throws IOException {
-        byte[] buffer = new byte[8192];
-        int bytesRead;
-        ByteArrayOutputStream output = new ByteArrayOutputStream();
-        while ((bytesRead = is.read(buffer)) != -1) {
-            output.write(buffer, 0, bytesRead);
-        }
-        return output.toByteArray();
     }
 
     @Override

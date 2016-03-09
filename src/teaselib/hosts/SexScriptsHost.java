@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
 
@@ -62,11 +63,11 @@ public class SexScriptsHost implements Host {
     private final ImageIcon backgroundImageIcon;
     private final Image backgroundImage;
 
-    private final NamedExecutorService showPopupThreadPool = new NamedExecutorService(
-            0, 1, 0, TimeUnit.SECONDS, "Show-Popup");
+    private final ExecutorService showPopupThreadPool = NamedExecutorService
+            .newFixedThreadPool(1, "Show-Choices", 1, TimeUnit.SECONDS);
 
-    private final NamedExecutorService showChoicesThreadPool = new NamedExecutorService(
-            0, 1, 0, TimeUnit.SECONDS, "Show-Popup");
+    private final ExecutorService showChoicesThreadPool = NamedExecutorService
+            .newFixedThreadPool(1, "Show-Popup", 1, TimeUnit.HOURS);
 
     private final ShowPopup showPopup;
 
@@ -431,6 +432,7 @@ public class SexScriptsHost implements Host {
                     final String choice = choices.get(index);
                     if (buttonText.contains(choice)) {
                         Delegate click = new Delegate() {
+
                             @Override
                             public void run() {
                                 TeaseLib.instance().log
@@ -448,14 +450,27 @@ public class SexScriptsHost implements Host {
             // If a choice wasn't found, the element at the corresponding index
             // would be null
             return clickableChoices;
-        } catch (IllegalAccessException e) {
+        } catch (
+
+        IllegalAccessException e)
+
+        {
             TeaseLib.instance().log.error(this, e);
-        } catch (NoSuchFieldException e) {
+        } catch (
+
+        NoSuchFieldException e)
+
+        {
             TeaseLib.instance().log.error(this, e);
-        } catch (SecurityException e) {
+        } catch (
+
+        SecurityException e)
+
+        {
             TeaseLib.instance().log.error(this, e);
         }
         return new ArrayList<Delegate>();
+
     }
 
     @Override

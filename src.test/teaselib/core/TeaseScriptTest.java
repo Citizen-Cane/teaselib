@@ -1,7 +1,7 @@
 /**
  * 
  */
-package teaselib;
+package teaselib.core;
 
 import static org.junit.Assert.assertEquals;
 
@@ -12,6 +12,9 @@ import java.io.InputStreamReader;
 
 import org.junit.Test;
 
+import teaselib.Actor;
+import teaselib.TeaseLib;
+import teaselib.TeaseScript;
 import teaselib.core.ResourceLoader;
 import teaselib.core.texttospeech.Voice;
 import teaselib.hosts.DummyHost;
@@ -48,7 +51,7 @@ public class TeaseScriptTest {
         final String path = script.getClass().getPackage().getName()
                 .replace(".", "/") + "/";
         final String expected = path + name;
-        final String actual = script.resource(name);
+        final String actual = script.absoluteResource(name);
         assertEquals(expected, actual);
     }
 
@@ -56,7 +59,7 @@ public class TeaseScriptTest {
     public void testResourceLoading() throws IOException {
         TeaseScript script = createTestScript();
         final String name = RESOURCE_1;
-        final String path = script.resource(name);
+        final String path = script.absoluteResource(name);
         InputStream res1 = script.resources.getResource(path);
         String resource1 = null;
         BufferedReader reader = new BufferedReader(new InputStreamReader(res1));

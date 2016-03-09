@@ -248,6 +248,17 @@ public abstract class TeaseScriptBase {
 
     }
 
+    public String absoluteResource(String path) {
+        String folder = getClass().getPackage().getName().replace(".", "/")
+                + "/";
+        boolean isRelative = !path.startsWith(folder);
+        if (isRelative) {
+            return folder + path;
+        } else {
+            return path;
+        }
+    }
+
     // // TODO must be part of preprocessMessage
     // private String getActorImage(Set<String> imageHints) {
     // final String path;

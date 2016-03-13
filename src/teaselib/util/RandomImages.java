@@ -2,9 +2,7 @@ package teaselib.util;
 
 import java.util.List;
 
-import teaselib.TeaseLib;
 import teaselib.core.Images;
-import teaselib.core.ResourceLoader;
 
 /**
  * Handles image iteration over a set of resources
@@ -27,15 +25,8 @@ public class RandomImages implements Images {
      * 
      *            todo "path.jpg" won't be listed.
      */
-    public RandomImages(ResourceLoader resources, String path) {
-        images = resources.resources(path, "jpg");
-        if (images.size() > 0) {
-            TeaseLib.instance().log.info(getClass().getSimpleName() + ": Path '"
-                    + path + "' contains " + images.size() + " images");
-        } else {
-            TeaseLib.instance().log.info(getClass().getSimpleName() + ": Path '"
-                    + path + "' doesn't contain any images");
-        }
+    public RandomImages(List<String> resourcePaths) {
+        images = resourcePaths;
     }
 
     @Override
@@ -68,5 +59,4 @@ public class RandomImages implements Images {
     @Override
     public void hint(String... hint) {
     }
-
 }

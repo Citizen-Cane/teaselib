@@ -169,13 +169,18 @@ public class ResourceLoader {
      */
     public List<String> resources(String path, String extension) {
         // todo document regex patterns, they're just to hard to remember
+        if (path.startsWith("/")) {
+            // Class loader and resource enumerator work without leading slash
+            // - they're considered absolute already
+            path = path.substring(1);
+        }
         String filesWithExtension = path + ".+\\." + extension;
         String pathsThatEndWithExtension = "(.*)(" + filesWithExtension + ")$";
         return resources(pathsThatEndWithExtension);
     }
 
     /**
-     * Retrieves all resource entries matching the path pattern.
+     * Retrieves all resource entries matching the given path pattern.
      * 
      * @param pathPattern
      *            RegEx pattern for resource selection.
@@ -189,14 +194,6 @@ public class ResourceLoader {
             Collection<String> matches = ResourceList.getResources(uri,
                     pattern);
             for (String match : matches) {
-                // assets are stored in the folder specified when instanciating
-                // the resource loader
-                // As a result, we don't have to mention it again in the script
-                // When unpacking a zip, all files are stored into a single
-                // folder (the asset root folder) as well
-                // Now when enumerating zip entries, we can just search for the
-                // full path
-                // resources.add("/" + match);
                 resources.add(match);
             }
         }

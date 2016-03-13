@@ -4,7 +4,6 @@ import java.util.List;
 import java.util.Vector;
 
 import teaselib.Mood;
-import teaselib.core.ResourceLoader;
 
 /**
  * Handles image iteration over a set of resources
@@ -15,8 +14,8 @@ public class MoodImages extends RandomImages {
 
     String[] hints = null;
 
-    public MoodImages(ResourceLoader resources, String path) {
-        super(resources, path);
+    public MoodImages(List<String> imageResources) {
+        super(imageResources);
     }
 
     @Override

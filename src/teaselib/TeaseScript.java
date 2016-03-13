@@ -493,4 +493,23 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
         }
         return false;
     }
+
+    // TODO turn prototype into production code
+    // - resolve pattern matching issues
+    // - Extend to any resource type, not just images
+    // - support more image types
+    // - add regex pattern generic version
+    public List<String> imageResources(String partialMatch) {
+        List<String> imageResources = resources
+                .resources(absoluteResource(partialMatch), "jpg");
+        final int size = imageResources.size();
+        if (size > 0) {
+            TeaseLib.instance().log.info(getClass().getSimpleName() + ": Path '"
+                    + partialMatch + "' contains " + size + " images");
+        } else {
+            TeaseLib.instance().log.info(getClass().getSimpleName() + ": Path '"
+                    + partialMatch + "' doesn't contain any images");
+        }
+        return imageResources;
+    }
 }

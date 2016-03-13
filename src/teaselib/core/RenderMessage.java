@@ -52,46 +52,47 @@ public class RenderMessage extends MediaRendererThread {
         for (Part part : message.getParts()) {
             if (part.type == Message.Type.Image) {
                 final String resourcePath = part.value;
-                imageFetcher.add(resourcePath, new Callable<byte[]>() {
-
-                    @Override
-                    public byte[] call() throws Exception {
-                        return getImageBytes(resourcePath);
-                    }
-
-                    private byte[] getImageBytes(String path)
-                            throws IOException {
-                        InputStream resource = null;
-                        byte[] imageBytes = null;
-                        try {
-                            resource = RenderMessage.this.resources
-                                    .getResource(path);
-                            imageBytes = convertInputStreamToByte(resource);
-                        } catch (IOException e) {
-                            if (!RenderMessage.this.teaseLib.getBoolean(
-                                    Config.Namespace,
-                                    Config.Debug.IgnoreMissingResources)) {
-                                throw e;
-                            }
-                        } finally {
-                            if (resource != null) {
-                                resource.close();
-                            }
+                if (part.value != Message.NoImage) {
+                    imageFetcher.add(resourcePath, new Callable<byte[]>() {
+                        @Override
+                        public byte[] call() throws Exception {
+                            return getImageBytes(resourcePath);
                         }
-                        return imageBytes;
-                    }
 
-                    private byte[] convertInputStreamToByte(InputStream is)
-                            throws IOException {
-                        byte[] buffer = new byte[8192];
-                        int bytesRead;
-                        ByteArrayOutputStream output = new ByteArrayOutputStream();
-                        while ((bytesRead = is.read(buffer)) != -1) {
-                            output.write(buffer, 0, bytesRead);
+                        private byte[] getImageBytes(String path)
+                                throws IOException {
+                            InputStream resource = null;
+                            byte[] imageBytes = null;
+                            try {
+                                resource = RenderMessage.this.resources
+                                        .getResource(path);
+                                imageBytes = convertInputStreamToByte(resource);
+                            } catch (IOException e) {
+                                if (!RenderMessage.this.teaseLib
+                                        .getConfigSetting(
+                                                Config.Debug.IgnoreMissingResources)) {
+                                    throw e;
+                                }
+                            } finally {
+                                if (resource != null) {
+                                    resource.close();
+                                }
+                            }
+                            return imageBytes;
                         }
-                        return output.toByteArray();
-                    }
-                });
+
+                        private byte[] convertInputStreamToByte(InputStream is)
+                                throws IOException {
+                            byte[] buffer = new byte[8192];
+                            int bytesRead;
+                            ByteArrayOutputStream output = new ByteArrayOutputStream();
+                            while ((bytesRead = is.read(buffer)) != -1) {
+                                output.write(buffer, 0, bytesRead);
+                            }
+                            return output.toByteArray();
+                        }
+                    });
+                }
             }
         }
         imageFetcher.fetch();

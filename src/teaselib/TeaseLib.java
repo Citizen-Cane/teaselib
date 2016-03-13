@@ -75,7 +75,7 @@ public class TeaseLib {
         Logger transcriptLogger = null;
         try {
             techLogger = new Logger(techLogFile,
-                    getBoolean(Config.Namespace, Config.Debug.LogDetails)
+                    getConfigSetting(Config.Debug.LogDetails)
                             ? Logger.Level.Debug : Logger.Level.Info)
                                     .showTime(true).showThread(true)
                                     .logToConsole(true);
@@ -87,7 +87,7 @@ public class TeaseLib {
         }
         try {
             transcriptLogger = new Logger(transcriptLogFile,
-                    getBoolean(Config.Namespace, Config.Debug.LogDetails)
+                    getConfigSetting(Config.Debug.LogDetails)
                             ? Logger.Level.Debug : Logger.Level.Info)
                                     .showTime(false).showThread(false);
         } catch (IOException e) {
@@ -640,4 +640,24 @@ public class TeaseLib {
         return persistence.getDominant(gender, locale);
     }
 
+    public boolean getConfigSetting(Enum<?> name) {
+        String systemProperty = System.getProperty(
+                Config.Namespace + "." + name.toString().toLowerCase(),
+                "false");
+        boolean teaseLibProperty = getBoolean(Config.Namespace, name);
+        boolean ignoreMissingResources = teaseLibProperty
+                && systemProperty != "false";
+        return ignoreMissingResources;
+    }
+
+    public String getConfigString(Enum<?> name) {
+        String teaseLibProperty = getString(Config.Namespace, name.toString());
+        if (teaseLibProperty.isEmpty()) {
+            String systemProperty = System.getProperty(
+                    Config.Namespace + "." + name.toString().toLowerCase(),
+                    "");
+            return systemProperty;
+        }
+        return teaseLibProperty;
+    }
 }

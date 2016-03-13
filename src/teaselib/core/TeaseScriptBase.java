@@ -74,7 +74,12 @@ public abstract class TeaseScriptBase {
         this.actor = actor;
         this.namespace = namespace;
         TextToSpeechPlayer ttsPlayer = TextToSpeechPlayer.instance();
-        ttsPlayer.loadActorVoices(resources);
+        // This hardwires sound resources to a sub folder %namespace% in the
+        // root directory
+        // TODO be able to store class relative and relative to script class
+        // - don't reference resource loader basedir, to make resource loader a
+        // singleton
+        ttsPlayer.loadActorVoices(resources, "/" + namespace);
         ttsPlayer.acquireVoice(actor);
     }
 
@@ -194,8 +199,10 @@ public abstract class TeaseScriptBase {
                 } else if (part.value == Message.NoImage) {
                     imageType = part.value;
                 } else {
-                    imageType = nextImage = part.value;
+                    imageType = nextImage = absoluteResource(part.value);
                 }
+            } else if (Message.Type.FileTypes.contains(part.type)) {
+                parsedMessage.add(part.type, absoluteResource(part.value));
             } else if (part.type == Message.Type.Keyword) {
                 if (part.value == Message.DominantImage) {
                     imageType = part.value;
@@ -237,9 +244,7 @@ public abstract class TeaseScriptBase {
                 // Replace text variables
                 parsedMessage.add(parsedMessage.new Part(part.type,
                         expandTextVariables(part.value)));
-            } else
-
-            {
+            } else {
                 parsedMessage.add(part);
             }
 
@@ -249,13 +254,16 @@ public abstract class TeaseScriptBase {
     }
 
     public String absoluteResource(String path) {
-        String folder = getClass().getPackage().getName().replace(".", "/")
-                + "/";
-        boolean isRelative = !path.startsWith(folder);
-        if (isRelative) {
-            return folder + path;
-        } else {
+        if (path.startsWith("/")) {
             return path;
+        } else {
+            String name = getClass().getPackage().getName();
+            String folder = name.replace(".", "/") + "/";
+            if (!path.startsWith(folder)) {
+                return folder + path;
+            } else {
+                return path;
+            }
         }
     }
 

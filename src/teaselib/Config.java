@@ -19,7 +19,11 @@ package teaselib;
  * {@code teaseLib.set(Config.Namespace, Config.Debug.IgnoreMissingResources, ignoreMissing);}
  */
 public enum Config {
-    ;
+    /**
+     * Path to a directory containing assets
+     */
+    Assets;
+
     /**
      * The namespace for all TeaseLib configuration properties.
      */

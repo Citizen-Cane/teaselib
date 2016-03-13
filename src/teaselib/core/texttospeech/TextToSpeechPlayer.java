@@ -34,6 +34,12 @@ public class TextToSpeechPlayer {
      * Actor key to prerecorded voice guid
      */
     private final Map<String, String> actorKey2PrerecordedVoiceGuid = new HashMap<String, String>();
+
+    /**
+     * Actor key to speech resources location
+     */
+    private final Map<String, String> actorKey2SpeechResourcesLocation = new HashMap<String, String>();
+
     /**
      * Actor key to TTS voice
      */
@@ -85,24 +91,32 @@ public class TextToSpeechPlayer {
      *            The resource object that contains the assignments and/or
      *            pre-recorded speech.
      */
-    public void loadActorVoices(ResourceLoader resources) {
+    public void loadActorVoices(ResourceLoader resources,
+            String speechResourcesLocation) {
         // Have we read any voice-related configuration files from this resource
         // loader yet?
         if (!processedVoiceActorVoices.contains(resources)) {
             processedVoiceActorVoices.add(resources);
             // Get the list of actor to voice assignments
-            ActorVoices actorVoices = new ActorVoices(resources);
+            ActorVoices actorVoices = new ActorVoices(resources,
+                    speechResourcesLocation);
             for (String actorKey : actorVoices.keySet()) {
                 // Available as a pre-recorded voice?
                 String voiceGuid = actorVoices.getGuid(actorKey);
                 PreRecordedVoice preRecordedVoice = new PreRecordedVoice(
-                        actorKey, voiceGuid, resources);
+                        actorKey, voiceGuid, resources,
+                        speechResourcesLocation);
                 // Only if actor isn't assigned yet - when called from other
                 // script
                 if (!actorKey2TTSVoice.containsKey(actorKey)
                         && preRecordedVoice.available()) {
                     actorKey2PrerecordedVoiceGuid.put(actorKey, voiceGuid);
                     usedVoices.add(voiceGuid);
+                    String speechResources = speechResourcesLocation + "/"
+                            + TextToSpeechRecorder.SpeechDirName + "/"
+                            + actorKey + "/" + voiceGuid + "/";
+                    actorKey2SpeechResourcesLocation.put(actorKey,
+                            speechResources);
                     teaseLib.log.info("Actor " + actorKey
                             + ": using prerecorded voice '" + voiceGuid + "'");
                 } else {
@@ -276,9 +290,9 @@ public class TextToSpeechPlayer {
             Message preRenderedSpeechMessage = new Message(message.actor);
             for (Part part : message.getParts()) {
                 if (part.type == Message.Type.Text) {
-                    preRenderedSpeechMessage.add(part);
                     preRenderedSpeechMessage.add(Message.Type.Speech,
                             prerenderedSpeechFiles.next());
+                    preRenderedSpeechMessage.add(part);
                 } else {
                     preRenderedSpeechMessage.add(part);
                 }
@@ -318,8 +332,11 @@ public class TextToSpeechPlayer {
         if (voice == null) {
             return null;
         } else {
-            String path = TextToSpeechRecorder.SpeechDirName + "/" + key + "/"
-                    + voice + "/" + TextToSpeechRecorder.getHash(message) + "/";
+            // TODO main script name missing for loading resources
+            // getAssetPath doesn't do the trick because
+            // it just denotes the parent directory for resource jars/zips
+            String path = actorKey2SpeechResourcesLocation.get(key) + "/"
+                    + TextToSpeechRecorder.getHash(message) + "/";
             BufferedReader reader = null;
             List<String> speechResources = new Vector<String>();
             try {

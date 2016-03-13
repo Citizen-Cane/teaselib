@@ -148,9 +148,9 @@ public class SexScriptsHost implements Host {
     @Override
     public void playSound(ResourceLoader resources, String path)
             throws IOException, ScriptInterruptedException {
-        File file = cacheResource(resources, "sounds/", path);
+        String file = cacheResource(resources, path);
         try {
-            ss.playSound(file.getAbsolutePath());
+            ss.playSound(file);
         } catch (InterruptedException e) {
             throw new ScriptInterruptedException();
         }
@@ -159,20 +159,28 @@ public class SexScriptsHost implements Host {
     @Override
     public Object playBackgroundSound(ResourceLoader resources, String path)
             throws IOException {
-        File file = cacheResource(resources, "sounds/", path);
-        ss.playBackgroundSound(file.getAbsolutePath());
+        String file = cacheResource(resources, path);
+        ss.playBackgroundSound(file);
         return path;
     }
 
-    private static File cacheResource(ResourceLoader resources,
-            String cacheRootFolder, String path) throws IOException {
+    private static String cacheResource(ResourceLoader resources, String path)
+            throws IOException {
+        // Sounds are cached in the Mine resources folder
+        // (as if unpacking the resource archive)
+        String soundResourceFilePath = resources.getAssetPath(path);
+        // Using an absolute path here to
+        // prevent SexScripts from searching the sound file in its sound folder
+        File file = new File(soundResourceFilePath);
+        if (file.exists()) {
+            return file.getAbsolutePath();
+        }
         InputStream resource = null;
         File cached = null;
         try {
-            String cachedSound = trimCacheFilePath(resources, cacheRootFolder,
-                    path);
+            // TODO Fix sound-file caching
             resource = resources.getResource(path);
-            cached = new File(cacheRootFolder + cachedSound);
+            cached = new File(soundResourceFilePath);
             if (!cached.exists()) {
                 cached.getParentFile().mkdirs();
                 Files.copy(resource, Paths.get(cached.toURI()));
@@ -182,17 +190,7 @@ public class SexScriptsHost implements Host {
                 resource.close();
             }
         }
-        return cached;
-    }
-
-    private static String trimCacheFilePath(ResourceLoader resources,
-            String cacheRootFolder, String path) {
-        String trimmedPath = path;
-        if (trimmedPath.toLowerCase().startsWith(cacheRootFolder)) {
-            trimmedPath = trimmedPath.substring(cacheRootFolder.length());
-        }
-        trimmedPath = resources.assetRoot + path;
-        return trimmedPath;
+        return cached.getAbsolutePath();
     }
 
     @Override

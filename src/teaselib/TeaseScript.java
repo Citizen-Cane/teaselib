@@ -83,12 +83,12 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
         } else if (path.equalsIgnoreCase(Message.NoImage)) {
             displayImage = Message.NoImage;
         } else {
-            displayImage = path;
+            displayImage = absoluteResource(path);
         }
     }
 
     public void showDesktopItem(String path) {
-        URL url = resources.url(path);
+        URL url = resources.url(absoluteResource(path));
         if (url != null) {
             URI uri = null;
             try {
@@ -102,29 +102,32 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
     }
 
     public void setBackgroundSound(String path) {
-        queueBackgropundRenderer(
-                new RenderBackgroundSound(resources, path, teaseLib));
+        queueBackgropundRenderer(new RenderBackgroundSound(resources,
+                absoluteResource(path), teaseLib));
     }
 
     public void setSound(String path) {
-        queueRenderer(new RenderSound(resources, path, teaseLib));
+        queueRenderer(
+                new RenderSound(resources, absoluteResource(path), teaseLib));
     }
 
-    /**
-     * Play a sound in the background. The sound starts when the next message is
-     * displayed, does not cause the script to wait for its completion. To stop
-     * the sound, stopBackgroundSound() can be called.
-     * 
-     * @param path
-     */
-    public Object playBackgroundSound(String path) {
-        RenderBackgroundSound renderBackgroundSound = new RenderBackgroundSound(
-                resources, path, teaseLib);
-        queueRenderer(renderBackgroundSound);
-        return renderBackgroundSound;
-    }
+    // /**
+    // * Play a sound in the background. The sound starts when the next message
+    // is
+    // * displayed, does not cause the script to wait for its completion. To
+    // stop
+    // * the sound, stopBackgroundSound() can be called.
+    // *
+    // * @param path
+    // */
+    // public Object playBackgroundSound(String path) {
+    // RenderBackgroundSound renderBackgroundSound = new RenderBackgroundSound(
+    // resources, path, teaseLib);
+    // queueRenderer(renderBackgroundSound);
+    // return renderBackgroundSound;
+    // }
 
-    public void stopBackgroundSound(Object handle) {
+    public void stopSound(Object handle) {
         teaseLib.host.stopSound(handle);
     }
 

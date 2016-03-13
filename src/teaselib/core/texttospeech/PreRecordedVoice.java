@@ -11,13 +11,14 @@ public class PreRecordedVoice extends VoiceProperties {
     public final static String ActorPropertiesFilename = "voice.properties";
 
     public PreRecordedVoice(String actorName, String voiceGuid,
-            ResourceLoader resources) {
+            ResourceLoader resources, String speechResourcesLocation) {
         InputStream prerecordedVoiceConfig = null;
-        String path = TextToSpeechRecorder.SpeechDirName + "/" + actorName
-                + "/" + voiceGuid + "/" + ActorPropertiesFilename;
+        String actorProperties = speechResourcesLocation + "/"
+                + TextToSpeechRecorder.SpeechDirName + "/" + actorName + "/"
+                + voiceGuid + "/" + ActorPropertiesFilename;
         try {
             try {
-                prerecordedVoiceConfig = resources.getResource(path);
+                prerecordedVoiceConfig = resources.getResource(actorProperties);
                 properties.load(prerecordedVoiceConfig);
             } finally {
                 if (prerecordedVoiceConfig != null) {
@@ -27,8 +28,8 @@ public class PreRecordedVoice extends VoiceProperties {
         } catch (IOException e) {
             // This is expected, as the script may not have pre-recorded voices
             TeaseLib.instance().log
-                    .debug("Prerecorded voice configuration file '" + path
-                            + "' not found");
+                    .debug("Prerecorded voice configuration file '"
+                            + actorProperties + "' not found");
         }
     }
 

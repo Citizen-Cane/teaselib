@@ -17,15 +17,16 @@ import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+import teaselib.Config;
 import teaselib.TeaseLib;
 
 public class ResourceLoader {
 
-    public final String basePath;
-    public final String assetRoot;
     private final ClassLoader classLoader = getClass().getClassLoader();
     private final Method addURL;
     private final Set<URI> enumeratableClassPaths = new HashSet<URI>();
+
+    private final File basePath;
 
     /**
      * @param basePath
@@ -39,20 +40,40 @@ public class ResourceLoader {
      * @throws IllegalAccessException
      * @throws MalformedURLException
      */
-    public ResourceLoader(String basePath, String assetRoot) {
-        this.basePath = basePath.endsWith("/") ? basePath : basePath + "/";
-        if (assetRoot.contains("/") || assetRoot.contains("\\"))
-            throw new IllegalArgumentException(
-                    "No slashes '/' or backlashes '\\' for resource loader root please");
-        this.assetRoot = assetRoot + "/";
+    public ResourceLoader(Class<?> mainScript) {
+        String systemProperty = System.getProperty(
+                Config.Namespace + "." + Config.Assets.toString(), "");
+        if (systemProperty.isEmpty()) {
+            basePath = getClassPath(mainScript);
+        } else {
+            basePath = new File(systemProperty);
+        }
         try {
             addURL = addURLMethod();
-            // Add the base path to allow unpacking resource archives or to
-            // deploy directories
-            addAsset(new File(basePath).toURI());
-        } catch (Exception e) {
-            TeaseLib.instance().log.error(this, e);
-            throw new IllegalArgumentException(basePath + assetRoot);
+        } catch (NoSuchMethodException e) {
+            throw new IllegalArgumentException(e.getMessage(), e);
+        }
+        addAssets(basePath.getAbsolutePath());
+    }
+
+    public static File getClassPath(Class<?> mainScript) {
+        String classFile = "/" + mainScript.getName().replace(".", "/")
+                + ".class";
+        URL base = mainScript.getResource(classFile);
+        String protocol = base.getProtocol().toLowerCase();
+        if (protocol.equals("file")) {
+            String path = base.getPath();
+            int classOffset = classFile.length();
+            return new File(path.substring(0, path.length() - classOffset));
+        } else if (protocol.equals("jar")) {
+            String path = base.getPath();
+            int startOffset = new String("File:/").length();
+            int jarOffset = path.indexOf(".jar!");
+            return new File(path.substring(startOffset, jarOffset))
+                    .getParentFile();
+        } else {
+            throw new IllegalArgumentException(
+                    "Unsupported protocol: " + base.toString());
         }
     }
 
@@ -60,21 +81,21 @@ public class ResourceLoader {
         Class<URLClassLoader> classLoaderClass = URLClassLoader.class;
         @SuppressWarnings("rawtypes")
         final Class[] parameters = new Class[] { URL.class };
-        Method addURI = classLoaderClass
-                .getDeclaredMethod("addURL", parameters);
+        Method addURI = classLoaderClass.getDeclaredMethod("addURL",
+                parameters);
         addURI.setAccessible(true);
         return addURI;
     }
 
     public void addAssets(String... paths) {
         try {
-            addAssets(toURIs(basePath, paths));
+            addAssets(toURIs(paths));
         } catch (Exception e) {
             throw new IllegalArgumentException("Cannot add assets:" + e);
         }
     }
 
-    private static URI[] toURIs(String root, String[] paths) {
+    private URI[] toURIs(String[] paths) {
         URI[] uris = new URI[paths.length];
         for (int i = 0; i < paths.length; i++) {
             File path = new File(paths[i]);
@@ -82,7 +103,8 @@ public class ResourceLoader {
             if (path.isAbsolute()) {
                 file = path;
             } else {
-                file = new File(root, paths[i]);
+                // throw new IllegalArgumentException(path.getPath());
+                file = new File(basePath, paths[i]);
             }
             uris[i] = file.toURI();
         }
@@ -103,38 +125,30 @@ public class ResourceLoader {
             addURL.invoke(classLoader, new Object[] { uri.toURL() });
             if (uri.getPath().endsWith(".zip") || file.isDirectory()) {
                 enumeratableClassPaths.add(uri);
-                TeaseLib.instance().log.info("Using resource location: "
-                        + uri.getPath());
+                TeaseLib.instance().log
+                        .info("Using resource location: " + uri.getPath());
             }
         } else {
             // Just warn, since everybody should be able to unpack the archives
-            // and explore, and remove them to ensure folder resources are used
-            TeaseLib.instance().log.info("Archive not available: "
-                    + uri.getPath());
+            // to explore or change the contents,
+            // and to remove them to ensure the unpacked resources are used
+            TeaseLib.instance().log
+                    .info("Archive not available: " + uri.getPath());
         }
     }
 
-    public InputStream getResource(String path) throws IOException {
-        String resource = assetRoot + path;
+    public InputStream getResource(String resource) throws IOException {
         TeaseLib.instance().log.info("Resource: '" + resource + "'");
-        InputStream inputStream = classLoader.getResourceAsStream(resource);
+        InputStream inputStream = classLoader
+                .getResourceAsStream(classLoaderAbsolutePath(resource));
         if (inputStream == null) {
             throw new IOException(resource);
         }
         return inputStream;
     }
 
-    public InputStream getResource(URL url) throws IOException {
-        String resource = url.toString();
-        InputStream inputStream = classLoader.getResourceAsStream(resource);
-        if (inputStream == null) {
-            throw new IOException("No input stream: " + resource);
-        }
-        return inputStream;
-    }
-
     /**
-     * Return all resource in a path that match the extension
+     * Return all resources in a path that match the extension
      * 
      * @param path
      *            The resource path to search for resources with the given
@@ -167,10 +181,9 @@ public class ResourceLoader {
     public List<String> resources(String pathPattern) {
         Pattern pattern = Pattern.compile(pathPattern);
         List<String> resources = new LinkedList<String>();
-        int start = assetRoot.length();
         for (URI uri : enumeratableClassPaths) {
-            Collection<String> matches = ResourceList
-                    .getResources(uri, pattern);
+            Collection<String> matches = ResourceList.getResources(uri,
+                    pattern);
             for (String match : matches) {
                 // assets are stored in the folder specified when instanciating
                 // the resource loader
@@ -179,24 +192,21 @@ public class ResourceLoader {
                 // folder (the asset root folder) as well
                 // Now when enumerating zip entries, we can just search for the
                 // full path
-                if (match.startsWith(assetRoot)) {
-                    resources.add(match.substring(start));
-                } else {
-                    resources.add(match);
-                }
+                // resources.add("/" + match);
+                resources.add(match);
             }
         }
         return resources;
     }
 
-    public URL url(String path) {
-        final String absolutePath = assetRoot + path;
-        final URL resource = classLoader.getResource(absolutePath);
-        if (resource == null) {
-            TeaseLib.instance().log.info("Resource '" + absolutePath
-                    + "' not found");
+    public URL url(String resource) {
+        final URL url = classLoader
+                .getResource(classLoaderAbsolutePath(resource));
+        if (url == null) {
+            TeaseLib.instance().log
+                    .info("Resource '" + resource + "' not found");
         }
-        return resource;
+        return url;
     }
 
     public URI uri(String path) {
@@ -212,6 +222,14 @@ public class ResourceLoader {
         return uri;
     }
 
+    private static String classLoaderAbsolutePath(String path) {
+        if (path.startsWith("/")) {
+            return path.substring(1);
+        } else {
+            return path;
+        }
+    }
+
     /**
      * Get the absolute path of a resource. Good for creating a File or URL
      * object. The path denotes a directory or file in the file system, not in a
@@ -219,10 +237,10 @@ public class ResourceLoader {
      * 
      * @param resourcePath
      *            The path to the resource relative to the asset root directory.
-     * @return The absolute path to the resource item.
+     * @return The absolute file system path to the resource item.
      * @throws IOException
      */
-    public File getAssetPath(String resourcePath) {
-        return new File(basePath + assetRoot, resourcePath);
+    public String getAssetPath(String resourcePath) {
+        return basePath + "/" + resourcePath;
     }
 }

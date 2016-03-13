@@ -8,6 +8,8 @@ import java.util.Iterator;
  * of the dominant, where the exact image doesn't matter. However there may
  * maybe some sort of order on the images, such as undoing clothing
  * 
+ * Image paths must be absolute paths.
+ * 
  * @author someone
  *
  */

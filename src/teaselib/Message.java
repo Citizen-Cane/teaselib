@@ -57,6 +57,15 @@ public class Message {
          * Renders text with a leading bullet, useful for enumerations
          */
         Item
+
+        ;
+        public final static Set<Message.Type> AudioTypes = new HashSet<Message.Type>(
+                Arrays.asList(Message.Type.Sound, Message.Type.BackgroundSound,
+                        Message.Type.Speech));
+
+        public final static Set<Type> FileTypes = new HashSet<Type>(
+                Arrays.asList(Type.BackgroundSound, Type.Sound, Type.Speech,
+                        Type.Image, Type.DesktopItem));
     }
 
     /**
@@ -122,9 +131,9 @@ public class Message {
 
     public final Actor actor;
 
-    public static Set<String> EndOfSentenceCharacters = new HashSet<String>(
+    public final static Set<String> EndOfSentenceCharacters = new HashSet<String>(
             Arrays.asList(":", ".", "!", "?"));
-    public static Set<String> MainClauseAppendableCharacters = new HashSet<String>(
+    public final static Set<String> MainClauseAppendableCharacters = new HashSet<String>(
             Arrays.asList("\"", ">", ",", ";", "-"));
 
     private final Parts parts;

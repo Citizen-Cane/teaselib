@@ -30,11 +30,12 @@ public class TextToSpeechRecorder {
     public final static String ResourcesFilename = "inventory.txt";
 
     private final ResourceLoader resources;
+    private final String speechResourcesPath;
     private File speechDir = null;
     private final Map<String, Voice> voices;
     private final Set<String> actors = new HashSet<String>();
     private final ActorVoices actorVoices;
-    final TextToSpeechPlayer ttsPlayer;
+    private final TextToSpeechPlayer ttsPlayer;
 
     private final long buildStart = System.currentTimeMillis();
     int newEntries = 0;
@@ -42,15 +43,17 @@ public class TextToSpeechRecorder {
     int upToDateEntries = 0;
     int reusedDuplicates = 0;
 
-    public TextToSpeechRecorder(ResourceLoader resources) throws IOException {
+    public TextToSpeechRecorder(ResourceLoader resources,
+            String speechResourcesPath) throws IOException {
         this.resources = resources;
-        ttsPlayer = TextToSpeechPlayer.instance();
-        voices = ttsPlayer.textToSpeech.getVoices();
-        File assetsDir = resources.getAssetPath("");
-        speechDir = createSubDir(assetsDir, SpeechDirName);
+        this.speechResourcesPath = speechResourcesPath;
+        this.ttsPlayer = TextToSpeechPlayer.instance();
+        this.voices = ttsPlayer.textToSpeech.getVoices();
+        File assetsDir = new File(resources.getAssetPath(speechResourcesPath));
+        this.speechDir = createSubDir(assetsDir, SpeechDirName);
         InstalledVoices available = new InstalledVoices(voices);
         available.store(assetsDir);
-        actorVoices = new ActorVoices(resources);
+        actorVoices = new ActorVoices(resources, speechResourcesPath);
         TeaseLib.instance().log
                 .info("Build start: " + new Date(buildStart).toString());
     }
@@ -147,14 +150,15 @@ public class TextToSpeechRecorder {
             // directories in the resource paths
             actors.add(actor.key);
             PreRecordedVoice actorVoice = new PreRecordedVoice(actor.key,
-                    voice.guid, resources);
+                    voice.guid, resources, speechResourcesPath);
             actorVoice.clear();
             actorVoice.put(actor.key, voice);
             actorVoice.store(
                     new File(new File(speechDir, actor.key), voice.guid));
             // update actor voices property file
             actorVoices.putGuid(actor.key, voice);
-            actorVoices.store(resources.getAssetPath(""));
+            actorVoices.store(
+                    new File(resources.getAssetPath(speechResourcesPath)));
         }
     }
 

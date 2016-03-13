@@ -22,7 +22,7 @@ public class PersistenceTest {
     final static TeaseLib teaseLib = TeaseLib.init(new DummyHost(),
             new DummyPersistence());
     final static TeaseScript script = new TeaseScript(teaseLib,
-            new ResourceLoader("x:/projects/teaseLib/", "bin"),
+            new ResourceLoader(PersistenceTest.class),
             new Actor(Actor.Dominant, Voice.Gender.Female, "en-us"),
             namespace) {
         @Override

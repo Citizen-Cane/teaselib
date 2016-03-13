@@ -11,12 +11,12 @@ public class ActorVoices extends VoiceProperties {
 
     public final static String VoicesFilename = "Actor Voices.properties";
 
-    public ActorVoices(ResourceLoader resources) {
-        String path = VoicesFilename;
+    public ActorVoices(ResourceLoader resources, String speechResourcesPath) {
+        String resource = speechResourcesPath + "/" + VoicesFilename;
         try {
             InputStream recordedVoicesConfig = null;
             try {
-                recordedVoicesConfig = resources.getResource(path);
+                recordedVoicesConfig = resources.getResource(resource);
                 properties.load(recordedVoicesConfig);
             } finally {
                 if (recordedVoicesConfig != null) {
@@ -25,8 +25,7 @@ public class ActorVoices extends VoiceProperties {
             }
         } catch (IOException e) {
             TeaseLib.instance().log
-                    .info("No actor voices configuration found in '"
-                            + resources.getAssetPath(path)
+                    .info("No actor voices configuration found in '" + resource
                             + "' - using defaults");
         }
     }

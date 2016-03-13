@@ -15,7 +15,6 @@ import org.junit.Test;
 import teaselib.Actor;
 import teaselib.TeaseLib;
 import teaselib.TeaseScript;
-import teaselib.core.ResourceLoader;
 import teaselib.core.texttospeech.Voice;
 import teaselib.hosts.DummyHost;
 import teaselib.hosts.DummyPersistence;
@@ -34,7 +33,7 @@ public class TeaseScriptTest {
     private static TeaseScript createTestScript() {
         TeaseScript script = new TeaseScript(
                 TeaseLib.init(new DummyHost(), new DummyPersistence()),
-                new ResourceLoader(".", "bin.test"),
+                new ResourceLoader(TeaseScriptTest.class),
                 new Actor(Actor.Dominant, Voice.Gender.Female, "en-us"),
                 "test") {
             @Override

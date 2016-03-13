@@ -11,17 +11,13 @@ import teaselib.core.texttospeech.Voice;
 import teaselib.util.TextVariables;
 
 public class TextVariablesTests {
-
-    private static final Actor actor = new Actor(Actor.Dominant,
-            Voice.Gender.Female, "en-us");
-
     enum Names {
         First,
         Second,
         Third
     }
 
-    private TextVariables createTestData() {
+    private static TextVariables createTestData() {
         TextVariables testData = new TextVariables();
         testData.put(Names.First, "Peter");
         testData.put(Names.Second, "Paul");

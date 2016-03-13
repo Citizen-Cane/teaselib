@@ -59,22 +59,26 @@ public class ResourceLoader {
     public static File getClassPath(Class<?> mainScript) {
         String classFile = "/" + mainScript.getName().replace(".", "/")
                 + ".class";
-        URL base = mainScript.getResource(classFile);
-        String protocol = base.getProtocol().toLowerCase();
+        URL url = mainScript.getResource(classFile);
+        String protocol = url.getProtocol().toLowerCase();
         if (protocol.equals("file")) {
-            String path = base.getPath();
+            String path = undecoratedPath(url);
             int classOffset = classFile.length();
             return new File(path.substring(0, path.length() - classOffset));
         } else if (protocol.equals("jar")) {
-            String path = base.getPath();
+            String path = undecoratedPath(url);
             int startOffset = new String("File:/").length();
             int jarOffset = path.indexOf(".jar!");
             return new File(path.substring(startOffset, jarOffset))
                     .getParentFile();
         } else {
             throw new IllegalArgumentException(
-                    "Unsupported protocol: " + base.toString());
+                    "Unsupported protocol: " + url.toString());
         }
+    }
+
+    private static String undecoratedPath(URL url) {
+        return url.getPath().replace("%20", " ");
     }
 
     private static Method addURLMethod() throws NoSuchMethodException {

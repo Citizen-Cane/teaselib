@@ -15,6 +15,7 @@ import teaselib.core.RenderDesktopItem;
 import teaselib.core.RenderSound;
 import teaselib.core.ResourceLoader;
 import teaselib.core.events.Event;
+import teaselib.core.events.EventSource;
 import teaselib.core.speechrecognition.SpeechRecognition;
 import teaselib.core.speechrecognition.SpeechRecognition.TimeoutBehavior;
 import teaselib.core.speechrecognition.SpeechRecognitionImplementation;
@@ -247,20 +248,20 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
     protected abstract class SpeechRecognitionAwareTimeoutScriptFunction
             extends ScriptFunction {
         final long seconds;
-        final SpeechRecognition.TimeoutBehavior timeoutBehavior;
 
         boolean inDubioMitius = false;
 
         public SpeechRecognitionAwareTimeoutScriptFunction(long seconds,
-                SpeechRecognition.TimeoutBehavior timoutBehavior,
                 Relation relation) {
             super(relation);
             this.seconds = seconds;
-            this.timeoutBehavior = timoutBehavior;
         }
 
-        protected void waitAndJudge() {
+        protected void awaitTimeout(
+                final SpeechRecognition.TimeoutBehavior timeoutBehavior) {
             final Event<SpeechRecognitionImplementation, SpeechRecognitionStartedEventArgs> recognitionStarted;
+            final EventSource<SpeechRecognitionImplementation, SpeechRecognitionStartedEventArgs> recognitionStartedEvents = SpeechRecognizer.instance
+                    .get(actor.locale).events.recognitionStarted;
             if (timeoutBehavior == TimeoutBehavior.InDubioMitius) {
                 // disable timeout on first speech recognition event
                 // (non-audio)
@@ -275,9 +276,7 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
                         inDubioMitius = true;
                     }
                 };
-                SpeechRecognizer.instance
-                        .get(actor.locale).events.recognitionStarted
-                                .add(recognitionStarted);
+                recognitionStartedEvents.add(recognitionStarted);
             } else {
                 recognitionStarted = null;
             }
@@ -291,9 +290,7 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
                 }
             } finally {
                 if (recognitionStarted != null) {
-                    SpeechRecognizer.instance
-                            .get(actor.locale).events.recognitionStarted
-                                    .remove(recognitionStarted);
+                    recognitionStartedEvents.remove(recognitionStarted);
                 }
             }
             if (!inDubioMitius) {
@@ -326,10 +323,10 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
     public ScriptFunction timeout(final long seconds,
             final SpeechRecognition.TimeoutBehavior timoutBehavior) {
         return new SpeechRecognitionAwareTimeoutScriptFunction(seconds,
-                timoutBehavior, Relation.Autonomous) {
+                Relation.Autonomous) {
             @Override
             public void run() {
-                waitAndJudge();
+                awaitTimeout(timoutBehavior);
             }
         };
     }
@@ -339,7 +336,7 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
      * recognition to complete, then wait until the user makes a choice and
      * return {@link teaselib.ScriptFunction#Timeout} instead of the users'
      * choice.
-     * 
+     * <p>
      * While this behavior can be implemented with a standard button, the
      * function waits until speech recognition is completed before marking the
      * choice as "Timed out", because the user has usually completed the
@@ -356,11 +353,39 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
     public ScriptFunction timeoutWithConfirmation(final long seconds,
             final SpeechRecognition.TimeoutBehavior timoutBehavior) {
         return new SpeechRecognitionAwareTimeoutScriptFunction(seconds,
-                timoutBehavior, Relation.Confirmation) {
+                Relation.Confirmation) {
             @Override
             public void run() {
-                waitAndJudge();
+                awaitTimeout(timoutBehavior);
                 sleep(Infinite, TimeUnit.SECONDS);
+            }
+        };
+    }
+
+    /**
+     * Wait until the timeout duration has elapsed, and wait for ongoing speech
+     * recognition to complete. If the duration elapses, return
+     * {@link teaselib.ScriptFunction#Timeout} instead of waiting for user
+     * input.
+     * <p>
+     * 
+     * The function behaves like a normal prompt, but the buttons are
+     * automatically dismissed when the duration expires.
+     * 
+     * @param seconds
+     *            The timeout duration
+     * @param timoutBehavior
+     *            How speech recognition is handled when the timeout has been
+     *            reached
+     * @return A script function that accomplishes the described behavior.
+     */
+    public ScriptFunction timeoutWithAutoConfirmation(final long seconds,
+            final SpeechRecognition.TimeoutBehavior timoutBehavior) {
+        return new SpeechRecognitionAwareTimeoutScriptFunction(seconds,
+                Relation.Confirmation) {
+            @Override
+            public void run() {
+                awaitTimeout(timoutBehavior);
             }
         };
     }

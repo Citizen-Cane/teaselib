@@ -383,10 +383,12 @@ public class RenderMessage extends MediaRendererThread {
             displayImage = Message.NoImage;
         } else if (keyword == Message.ShowChoices) {
             // Complete the mandatory part of the message
+            if (speechRendererInProgress != null) {
+                // Finish speech first
+                speechRendererInProgress.completeMandatory();
+            }
             mandatoryCompleted();
         } else if (keyword == Message.AwaitSoundCompletion) {
-            // Complete the mandatory part of the message
-            // TODO Complete all audio but speech
             soundRenderer.completeMandatory();
             synchronized (interuptableAudio) {
                 interuptableAudio.remove(soundRenderer);

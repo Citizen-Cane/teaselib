@@ -49,7 +49,7 @@ public class TextToSpeechRecorder {
         this.speechResourcesPath = speechResourcesPath;
         this.ttsPlayer = TextToSpeechPlayer.instance();
         this.voices = ttsPlayer.textToSpeech.getVoices();
-        File assetsDir = new File(resources.getAssetPath(speechResourcesPath));
+        File assetsDir = resources.getAssetPath(speechResourcesPath);
         this.speechDir = createSubDir(assetsDir, SpeechDirName);
         InstalledVoices available = new InstalledVoices(voices);
         available.store(assetsDir);
@@ -157,8 +157,7 @@ public class TextToSpeechRecorder {
                     new File(new File(speechDir, actor.key), voice.guid));
             // update actor voices property file
             actorVoices.putGuid(actor.key, voice);
-            actorVoices.store(
-                    new File(resources.getAssetPath(speechResourcesPath)));
+            actorVoices.store(resources.getAssetPath(speechResourcesPath));
         }
     }
 

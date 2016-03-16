@@ -235,15 +235,8 @@ public class RenderMessage extends MediaRendererThread {
                         // retrieved (the desktop item doesn't exist),
                         // we'll just display the part as text,
                         // which is the most right thing in this case
-
-                        throw new IllegalStateException();
-                        // String prompt = part.value;
-                        // doText(accumulatedText, append, mood, prompt);
-                        // if (ttsPlayer != null && !prerenderedSpeechAvailable)
-                        // {
-                        // ttsPlayer.speak(message.actor, prompt, mood);
-                        // }
-                        // pauseAfterParagraph(lastParagraph, ttsPlayer);
+                        doTextAndSpeech(accumulatedText, part.value, append,
+                                mood, lastParagraph, false);
                     }
                 } else if (part.type == Message.Type.Mood) {
                     // Mood
@@ -257,8 +250,7 @@ public class RenderMessage extends MediaRendererThread {
                     accumulateText(accumulatedText, "°", false);
                     appendToItem = true;
                 } else { // (part.type == Message.Type.Text)
-                    String prompt = part.value;
-                    doTextAndSpeech(accumulatedText, prompt, append, mood,
+                    doTextAndSpeech(accumulatedText, part.value, append, mood,
                             lastParagraph, speakText);
                 }
                 if (task.isCancelled()) {

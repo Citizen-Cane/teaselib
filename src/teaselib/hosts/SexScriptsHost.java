@@ -10,12 +10,8 @@ import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
-import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.lang.reflect.Field;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -148,9 +144,8 @@ public class SexScriptsHost implements Host {
     @Override
     public void playSound(ResourceLoader resources, String path)
             throws IOException, ScriptInterruptedException {
-        String file = cacheResource(resources, path);
         try {
-            ss.playSound(file);
+            ss.playSound(resources.unpackToFile(path).getAbsolutePath());
         } catch (InterruptedException e) {
             throw new ScriptInterruptedException();
         }
@@ -159,38 +154,8 @@ public class SexScriptsHost implements Host {
     @Override
     public Object playBackgroundSound(ResourceLoader resources, String path)
             throws IOException {
-        String file = cacheResource(resources, path);
-        ss.playBackgroundSound(file);
+        ss.playBackgroundSound(resources.unpackToFile(path).getAbsolutePath());
         return path;
-    }
-
-    private static String cacheResource(ResourceLoader resources, String path)
-            throws IOException {
-        // Sounds are cached in the Mine resources folder
-        // (as if unpacking the resource archive)
-        String soundResourceFilePath = resources.getAssetPath(path);
-        // Using an absolute path here to
-        // prevent SexScripts from searching the sound file in its sound folder
-        File file = new File(soundResourceFilePath);
-        if (file.exists()) {
-            return file.getAbsolutePath();
-        }
-        InputStream resource = null;
-        File cached = null;
-        try {
-            // TODO Fix sound-file caching
-            resource = resources.getResource(path);
-            cached = new File(soundResourceFilePath);
-            if (!cached.exists()) {
-                cached.getParentFile().mkdirs();
-                Files.copy(resource, Paths.get(cached.toURI()));
-            }
-        } finally {
-            if (resource != null) {
-                resource.close();
-            }
-        }
-        return cached.getAbsolutePath();
     }
 
     @Override

@@ -27,7 +27,10 @@ public class RenderDesktopItem implements MediaRenderer {
 
     @Override
     public void render() throws IOException {
-        // TODO Perform in Separate task to avoid delay
+        // TODO Perform in separate task to avoid delay
+        // TODO Determine if directory or file in resource archive
+        // TODO unpack folder containing the file
+        // TODO execute in unpacked folder
         teaseLib.transcript.info("Desktop Item = " + uri.toString());
         String absolutePath = new File(uri).getPath();
         Desktop.getDesktop().open(new File(absolutePath));

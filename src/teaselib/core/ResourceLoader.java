@@ -10,6 +10,8 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -25,7 +27,6 @@ public class ResourceLoader {
     private final ClassLoader classLoader = getClass().getClassLoader();
     private final Method addURL;
     private final Set<URI> enumeratableClassPaths = new HashSet<URI>();
-
     private final File basePath;
 
     /**
@@ -241,7 +242,37 @@ public class ResourceLoader {
      * @return The absolute file system path to the resource item.
      * @throws IOException
      */
-    public String getAssetPath(String resourcePath) {
-        return basePath + "/" + resourcePath;
+    public File getAssetPath(String resourcePath) {
+        return new File(basePath, resourcePath);
+    }
+
+    /**
+     * Unpacks a resource into the file system. If the resource is accessable as
+     * a file already, nothing is done, and the method just returns the absolute
+     * file path.
+     * 
+     * @param path
+     *            A resource path.
+     * @return Absolute file path to the resource denoted by the {@code path}
+     *         parameter.
+     * @throws IOException
+     */
+    public File unpackToFile(String path) throws IOException {
+        File file = getAssetPath(path);
+        if (!file.exists()) {
+            InputStream resource = null;
+            try {
+                resource = getResource(path);
+                if (!file.exists()) {
+                    file.getParentFile().mkdirs();
+                    Files.copy(resource, Paths.get(file.toURI()));
+                }
+            } finally {
+                if (resource != null) {
+                    resource.close();
+                }
+            }
+        }
+        return file;
     }
 }

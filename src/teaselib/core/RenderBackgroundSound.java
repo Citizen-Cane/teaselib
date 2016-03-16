@@ -12,7 +12,7 @@ public class RenderBackgroundSound implements MediaRenderer.Threaded {
     private final TeaseLib teaseLib;
 
     private Object audioHandle = null;
-    private boolean stopped = false;
+    private boolean completedAll = false;
 
     public RenderBackgroundSound(ResourceLoader resources, String soundFile,
             TeaseLib teaseLLib) {
@@ -26,10 +26,11 @@ public class RenderBackgroundSound implements MediaRenderer.Threaded {
         teaseLib.transcript.info("Background sound = " + soundFile);
         teaseLib.log.info(this.getClass().getSimpleName() + ": " + soundFile);
         try {
-            stopped = false;
+            completedAll = false;
             audioHandle = teaseLib.host.playBackgroundSound(resources,
                     soundFile);
         } catch (IOException e) {
+            completedAll = true;
             if (!teaseLib.getBoolean(Config.Namespace,
                     Config.Debug.IgnoreMissingResources)) {
                 throw e;
@@ -40,7 +41,7 @@ public class RenderBackgroundSound implements MediaRenderer.Threaded {
     public void stop() {
         if (teaseLib != null && audioHandle != null) {
             teaseLib.host.stopSound(audioHandle);
-            stopped = true;
+            completedAll = true;
         }
     }
 
@@ -63,17 +64,17 @@ public class RenderBackgroundSound implements MediaRenderer.Threaded {
 
     @Override
     public boolean hasCompletedStart() {
-        return audioHandle != null;
+        return completedAll || audioHandle != null;
     }
 
     @Override
     public boolean hasCompletedMandatory() {
-        return audioHandle != null;
+        return completedAll || audioHandle != null;
     }
 
     @Override
     public boolean hasCompletedAll() {
-        return stopped;
+        return completedAll;
     }
 
     @Override

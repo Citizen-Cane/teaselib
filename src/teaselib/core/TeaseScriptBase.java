@@ -208,6 +208,8 @@ public abstract class TeaseScriptBase {
                     imageType = part.value;
                 } else if (part.value == Message.NoImage) {
                     imageType = part.value;
+                } else {
+                    parsedMessage.add(part);
                 }
             } else if (part.type == Message.Type.Mood) {
                 nextMood = part.value;

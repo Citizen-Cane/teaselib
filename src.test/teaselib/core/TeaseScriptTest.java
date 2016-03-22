@@ -3,7 +3,7 @@
  */
 package teaselib.core;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -55,7 +55,7 @@ public class TeaseScriptTest {
     }
 
     @Test
-    public void testResourceLoading() throws IOException {
+    public void testAbsoluteResourceLoading() throws IOException {
         TeaseScript script = createTestScript();
         final String name = RESOURCE_1;
         final String path = script.absoluteResource(name);
@@ -69,5 +69,4 @@ public class TeaseScriptTest {
         }
         assertEquals("1", resource1);
     }
-
 }

@@ -244,7 +244,7 @@ public abstract class TeaseScriptBase {
                     nextMood = null;
                 }
                 // Replace text variables
-                parsedMessage.add(parsedMessage.new Part(part.type,
+                parsedMessage.add(new Message.Part(part.type,
                         expandTextVariables(part.value)));
             } else {
                 parsedMessage.add(part);

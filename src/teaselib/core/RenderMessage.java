@@ -157,7 +157,7 @@ public class RenderMessage extends MediaRendererThread {
             } else if (part.type == Message.Type.Delay && !afterText) {
                 // skip
             } else {
-                lastSection.add(message.new Part(part.type, part.value));
+                lastSection.add(new Message.Part(part.type, part.value));
             }
             if (part.type == Message.Type.Text) {
                 afterText = true;
@@ -218,22 +218,17 @@ public class RenderMessage extends MediaRendererThread {
                                 teaseLib);
                     }
                 } else if (part.type == Message.Type.DesktopItem) {
-                    // Remove optional keyword
-                    String path = part.value.toLowerCase()
-                            .startsWith(Message.ShowOnDesktop) ? part.value
-                                    .substring(Message.ShowOnDesktop.length())
-                                    .trim() : part.value;
-                    URI uri = resources.uri(path);
+                    // Finish the current text part
+                    if (speechRendererInProgress != null) {
+                        speechRendererInProgress.completeAll();
+                    }
+                    URI uri = resources.uri(part.value);
                     if (uri != null) {
                         new RenderDesktopItem(uri, teaseLib).render();
                     } else {
-                        // Text might be treated as a desktop item,
-                        // because our file detection code is too lax
-                        // (should check whether a file with that name
-                        // exists, but that might be too strict)
-                        // -> if the url to the desktop item cannot be
-                        // retrieved (the desktop item doesn't exist),
-                        // we'll just display the part as text,
+                        // if the resource url cannot be retrieved
+                        // (doesn't exist, part not recognized as file),
+                        // just display the part as text,
                         // which is the most right thing in this case
                         doTextAndSpeech(accumulatedText, part.value, append,
                                 mood, lastParagraph, false);

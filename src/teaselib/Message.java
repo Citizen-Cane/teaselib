@@ -334,11 +334,12 @@ public class Message {
         } else if (isKeyword(mToLower)) {
             // For commands with parameters, the command is stored in the type,
             // and the parameters as the text
-            if (mToLower.startsWith(Delay)) {
+            String keyword = keywordFrom(m);
+            if (keyword == Delay) {
                 return Type.Delay;
-            } else if (mToLower.startsWith(ShowOnDesktop)) {
+            } else if (keyword == ShowOnDesktop) {
                 return Type.DesktopItem;
-            } else if (mToLower.equals(Message.Bullet)) {
+            } else if (keyword == Message.Bullet) {
                 return Type.Item;
             } else {
                 return Type.Keyword;
@@ -384,13 +385,30 @@ public class Message {
         return m.split(" |\t");
     }
 
-    public class Part {
+    public static class Part {
         public final Type type;
         public final String value;
 
-        public Part(Type type, String value) {
-            this.value = value;
+        public Part(String text) {
+            Type type = determineType(text);
+            text = text.trim();
+            if (type == Type.Keyword) {
+                text = keywordFrom(text);
+            } else if (type == Type.DesktopItem) {
+                // The keyword is optional,
+                // it's just needed to show an image on the desktop
+                if (text.toLowerCase().startsWith(ShowOnDesktop.toString())) {
+                    text = text.substring(ShowOnDesktop.toString().length())
+                            .trim();
+                }
+            }
             this.type = type;
+            this.value = text;
+        }
+
+        public Part(Type type, String value) {
+            this.type = type;
+            this.value = value;
         }
 
         public boolean isFile() {
@@ -461,15 +479,11 @@ public class Message {
         public void add(String text) {
             if (text == null)
                 throw new IllegalArgumentException(text);
-            Type type = determineType(text);
-            add(type, text);
+            Part part = new Part(text);
+            add(part);
         }
 
         public void add(Type type, String value) {
-            value = value.trim();
-            if (type == Type.Keyword) {
-                value = keywordFrom(value);
-            }
             add(new Part(type, value));
         }
 

@@ -8,6 +8,12 @@ import java.util.regex.Pattern;
 /**
  * A simple pattern matching strings. The wildcard characters are "*" to match
  * any number of characters, and the "?" to match exactly one character.
+ * <p>
+ * 
+ * @See Based on code examples from <a href=
+ *      "http://stackoverflow.com/questions/10664434/escaping-special-characters-in-java-regular-expressions">
+ *      stackoverflow.com/questions/escaping-special-characters-in-java-regular-
+ *      expressions</a>
  */
 public class WildcardPattern {
 

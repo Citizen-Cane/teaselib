@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -23,6 +22,11 @@ import java.util.zip.ZipFile;
 public class ResourceList {
 
     /**
+     * 
+     */
+    private static final String PathSeparator = "/";
+
+    /**
      * for all elements of java.class.path get a Collection of resources Pattern
      * pattern = Pattern.compile(".*"); gets all resources
      * 
@@ -30,21 +34,21 @@ public class ResourceList {
      *            the pattern to match
      * @return the resources in the order they are found
      */
-    public static List<String> getResources(final URI path,
+    public static List<String> getResources(final URI basePath,
             final Pattern pattern) {
         final ArrayList<String> retval = new ArrayList<String>();
-        final File element = new File(path.getPath());
-        if (element.isDirectory()) {
-            retval.addAll(getResourcesFromDirectory(path, element, pattern));
+        final File file = new File(basePath.getPath());
+        if (file.isDirectory()) {
+            retval.addAll(getResourcesFromDirectory(basePath, file, pattern));
         } else {
-            retval.addAll(getResourcesFromJarFile(element, pattern));
+            retval.addAll(getResourcesFromJarFile(file, pattern));
         }
         return retval;
     }
 
-    private static Collection<String> getResourcesFromJarFile(final File file,
-            final Pattern pattern) {
-        final ArrayList<String> retval = new ArrayList<String>();
+    private static List<String> getResourcesFromJarFile(File file,
+            Pattern pattern) {
+        ArrayList<String> retval = new ArrayList<String>();
         ZipFile zf;
         try {
             zf = new ZipFile(file);
@@ -53,14 +57,10 @@ public class ResourceList {
         } catch (final IOException e) {
             throw new Error(e);
         }
-        final Enumeration<? extends ZipEntry> e = zf.entries();
+        Enumeration<? extends ZipEntry> e = zf.entries();
         while (e.hasMoreElements()) {
-            final ZipEntry ze = e.nextElement();
-            final String fileName = ze.getName();
-            final boolean accept = pattern.matcher(fileName).matches();
-            if (accept) {
-                retval.add(fileName);
-            }
+            ZipEntry ze = e.nextElement();
+            addMatchingEntry(pattern, retval, ze.getName());
         }
         try {
             zf.close();
@@ -70,23 +70,31 @@ public class ResourceList {
         return retval;
     }
 
-    private static Collection<String> getResourcesFromDirectory(final URI base,
-            final File directory, final Pattern pattern) {
-        final ArrayList<String> retval = new ArrayList<String>();
-        final File[] fileList = directory.listFiles();
+    private static List<String> getResourcesFromDirectory(URI basePath,
+            File directory, Pattern pattern) {
+        ArrayList<String> retval = new ArrayList<String>();
+        File[] fileList = directory.listFiles();
         for (final File file : fileList) {
             if (file.isDirectory()) {
-                retval.addAll(getResourcesFromDirectory(base, file, pattern));
+                retval.addAll(
+                        getResourcesFromDirectory(basePath, file, pattern));
             } else {
                 URI absolute = file.toURI();
-                URI relative = base.relativize(absolute);
-                boolean accept = pattern.matcher(relative.toString()).matches();
-                if (accept) {
-                    final String path = relative.getPath();
-                    retval.add(path);
-                }
+                URI relative = basePath.relativize(absolute);
+                String resourcePath = relative.toString();
+                addMatchingEntry(pattern, retval, resourcePath);
             }
         }
         return retval;
+    }
+
+    private static void addMatchingEntry(Pattern pattern,
+            ArrayList<String> retval, String resourcePath) {
+        String absoluteResourcePath = resourcePath.startsWith(PathSeparator)
+                ? resourcePath : PathSeparator + resourcePath;
+        boolean accept = pattern.matcher(absoluteResourcePath).matches();
+        if (accept) {
+            retval.add(absoluteResourcePath);
+        }
     }
 }

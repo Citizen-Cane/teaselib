@@ -65,6 +65,8 @@ public abstract class MediaRendererThread
                         renderMedia();
                     } catch (InterruptedException e) {
                         teaseLib.log.debug(this, e);
+                    } catch (ScriptInterruptedException e) {
+                        // Expected
                     } catch (Throwable t) {
                         teaseLib.log.error(this, t);
                     } finally {

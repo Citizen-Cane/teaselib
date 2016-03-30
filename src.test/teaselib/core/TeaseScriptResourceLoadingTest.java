@@ -50,7 +50,7 @@ public class TeaseScriptResourceLoadingTest {
         final String name = "dummy";
         final String path = script.getClass().getPackage().getName()
                 .replace(".", "/") + "/";
-        final String expected = path + name;
+        final String expected = "/" + path + name;
         final String actual = script.absoluteResource(name);
         assertEquals(expected, actual);
     }
@@ -74,34 +74,34 @@ public class TeaseScriptResourceLoadingTest {
     @Test
     public void testResourceLoadingWithWildcards() {
         TeaseScript script = createTestScript();
-        assertEquals(1, script.enumerateResources("util/Foo.txt").size());
-        assertEquals(2, script.enumerateResources("util/Foo?.txt").size());
-        assertEquals(3, script.enumerateResources("util/Foo*.txt").size());
+        assertEquals(1, script.resources("util/Foo.txt").size());
+        assertEquals(2, script.resources("util/Foo?.txt").size());
+        assertEquals(3, script.resources("util/Foo*.txt").size());
     }
 
     @Test
     public void testResourceLoadingWithWildcardsAbsolutePaths() {
         TeaseScript script = createTestScript();
-        assertEquals(1,
-                script.enumerateResources("teaselib/core/util/Foo.txt").size());
-        assertEquals(2, script.enumerateResources("teaselib/core/util/Foo?.txt")
+        assertEquals(1, script.resources("/teaselib/core/util/Foo.txt")
                 .size());
-        assertEquals(3, script.enumerateResources("teaselib/core/util/Foo*.txt")
-                .size());
+        assertEquals(2, script
+                .resources("/teaselib/core/util/Foo?.txt").size());
+        assertEquals(3, script
+                .resources("/teaselib/core/util/Foo*.txt").size());
         List<String> items = script
-                .enumerateResources("teaselib/core/util/Foo*.txt");
+                .resources("/teaselib/core/util/Foo*.txt");
         assertEquals(3, items.size());
     }
 
     @Test
     public void testResourceLoadingCase() {
         TeaseScript script = createTestScript();
-        assertEquals(1, script.enumerateResources("util/bar.txt").size());
-        assertEquals(3, script.enumerateResources("util/bar?.txt").size());
-        assertEquals(4, script.enumerateResources("util/bar*.txt").size());
-        assertEquals(0, script.enumerateResources("util/Bar.txt").size());
-        assertEquals(2, script.enumerateResources("util/Bar?.txt").size());
-        assertEquals(2, script.enumerateResources("util/Bar*.txt").size());
+        assertEquals(1, script.resources("util/bar.txt").size());
+        assertEquals(3, script.resources("util/bar?.txt").size());
+        assertEquals(4, script.resources("util/bar*.txt").size());
+        assertEquals(0, script.resources("util/Bar.txt").size());
+        assertEquals(2, script.resources("util/Bar?.txt").size());
+        assertEquals(2, script.resources("util/Bar*.txt").size());
     }
 
 }

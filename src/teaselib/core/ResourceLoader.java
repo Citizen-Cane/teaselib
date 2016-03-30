@@ -7,12 +7,10 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -153,58 +151,8 @@ public class ResourceLoader {
     }
 
     /**
-     * Return all resources in a path that match the extension
-     * 
-     * @param path
-     *            The resource path to search for resources with the given
-     *            extension. The path may denote be a directory or package, or a
-     *            directory or package plus a partial base name.
-     * 
-     * @param extension
-     *            The extension to look for, without the dot (for instance 'mp3'
-     *            ,'jpg', 'txt')
-     * @return A list of resource paths containing all matching resources.
-     *         Please note that all resources matching the path are returned.
-     *         This includes resources in sub-directories of the specified path
-     *         as well.
-     */
-    @Deprecated
-    public List<String> resources(String path, String extension) {
-        // todo document regex patterns, they're just to hard to remember
-        if (path.startsWith("/")) {
-            // Class loader and resource enumerator work without leading slash
-            // - they're considered absolute already
-            path = path.substring(1);
-        }
-        String filesWithExtension = path + ".+\\." + extension;
-        String pathsThatEndWithExtension = "(.*)(" + filesWithExtension + ")$";
-        return resources(pathsThatEndWithExtension);
-    }
-
-    /**
-     * Retrieves all resource entries matching the given path pattern.
-     * 
-     * @param pathPattern
-     *            RegEx pattern for resource selection.
-     * @return List of resource paths matching the pattern. All resources in all
-     *         asset paths are enumerated, then matched against the pattern.
-     */
-    @Deprecated
-    public List<String> resources(String pathPattern) {
-        Pattern pattern = Pattern.compile(pathPattern);
-        List<String> resources = new LinkedList<String>();
-        for (URI uri : enumeratableClassPaths) {
-            Collection<String> matches = ResourceList.getResources(uri,
-                    pattern);
-            for (String match : matches) {
-                resources.add(match);
-            }
-        }
-        return resources;
-    }
-
-    /**
      * Retrieves all resource entries matching the given pattern.
+     * <p>
      * 
      * @param pattern
      *            RegEx pattern for resource selection.
@@ -213,34 +161,12 @@ public class ResourceLoader {
      */
     public List<String> resources(Pattern pattern) {
         List<String> resources = new LinkedList<String>();
-        for (URI uri : enumeratableClassPaths) {
-            List<String> matches = ResourceList.getResources(uri, pattern);
+        for (URI classsPathEntry : enumeratableClassPaths) {
+            List<String> matches = ResourceList.getResources(classsPathEntry,
+                    pattern);
             resources.addAll(matches);
         }
         return resources;
-    }
-
-    public URL url(String resource) {
-        final URL url = classLoader
-                .getResource(classLoaderAbsolutePath(resource));
-        if (url == null) {
-            TeaseLib.instance().log
-                    .info("Resource '" + resource + "' not found");
-        }
-        return url;
-    }
-
-    public URI uri(String path) {
-        URI uri = null;
-        URL url = url(path);
-        if (url != null) {
-            try {
-                uri = url.toURI();
-            } catch (URISyntaxException e) {
-                TeaseLib.instance().log.error(this, e);
-            }
-        }
-        return uri;
     }
 
     private static String classLoaderAbsolutePath(String path) {

@@ -10,37 +10,11 @@ import java.util.regex.Pattern;
 
 import org.junit.Test;
 
-import teaselib.Actor;
-import teaselib.TeaseLib;
-import teaselib.TeaseScript;
-import teaselib.core.ResourceLoader;
-import teaselib.core.texttospeech.Voice;
-import teaselib.hosts.DummyHost;
-import teaselib.hosts.DummyPersistence;
-
 /**
  * @author someone
  *
  */
 public class WildcardPatternTest {
-
-    /**
-     * 
-     */
-    private static final String RESOURCE_1 = "resource1.txt";
-
-    private static TeaseScript createTestScript() {
-        TeaseScript script = new TeaseScript(
-                TeaseLib.init(new DummyHost(), new DummyPersistence()),
-                new ResourceLoader(WildcardPatternTest.class),
-                new Actor(Actor.Dominant, Voice.Gender.Female, "en-us"),
-                "test") {
-            @Override
-            public void run() {
-            }
-        };
-        return script;
-    }
 
     // http://stackoverflow.com/questions/10664434/escaping-special-characters-in-java-regular-expressions
 

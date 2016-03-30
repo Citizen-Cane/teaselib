@@ -3,7 +3,6 @@ package teaselib.core;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URI;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -104,21 +103,15 @@ public class RenderMessage extends MediaRendererThread {
 
     @Override
     public void renderMedia() throws InterruptedException {
-        try {
-            if (replayPosition == Position.FromStart) {
-                renderMessage(message, true);
+        if (replayPosition == Position.FromStart) {
+            renderMessage(message, true);
+        } else {
+            Message lastSection = getLastSection(message);
+            if (replayPosition == Position.FromMandatory) {
+                renderMessage(lastSection, true);
             } else {
-                Message lastSection = getLastSection(message);
-                if (replayPosition == Position.FromMandatory) {
-                    renderMessage(lastSection, true);
-                } else {
-                    renderMessage(lastSection, false);
-                }
+                renderMessage(lastSection, false);
             }
-        } catch (ScriptInterruptedException e) {
-            // Expected
-        } catch (Throwable t) {
-            teaseLib.log.error(this, t);
         }
     }
 
@@ -166,8 +159,7 @@ public class RenderMessage extends MediaRendererThread {
         return lastSection;
     }
 
-    private void renderMessage(Message message, boolean speakText)
-            throws IOException {
+    private void renderMessage(Message message, boolean speakText) {
         if (message.isEmpty()) {
             // // Show image but no text
             doText(null, false, null, Mood.Neutral);
@@ -221,17 +213,15 @@ public class RenderMessage extends MediaRendererThread {
                     // Finish the current text part
                     if (speechRendererInProgress != null) {
                         speechRendererInProgress.completeAll();
-                    }
-                    URI uri = resources.uri(part.value);
-                    if (uri != null) {
-                        new RenderDesktopItem(uri, teaseLib).render();
-                    } else {
-                        // if the resource url cannot be retrieved
-                        // (doesn't exist, part not recognized as file),
-                        // just display the part as text,
-                        // which is the most right thing in this case
-                        doTextAndSpeech(accumulatedText, part.value, append,
-                                mood, lastParagraph, false);
+                        try {
+                            new RenderDesktopItem(
+                                    resources.unpackToFile(part.value),
+                                    teaseLib).render();
+                        } catch (IOException e) {
+                            teaseLib.log.error(this, e);
+                            doTextAndSpeech(accumulatedText, part.value, append,
+                                    mood, lastParagraph, false);
+                        }
                     }
                 } else if (part.type == Message.Type.Mood) {
                     // Mood
@@ -268,6 +258,7 @@ public class RenderMessage extends MediaRendererThread {
             allCompleted();
 
         }
+
     }
 
     private void doTextAndSpeech(StringBuilder accumulatedText, String prompt,

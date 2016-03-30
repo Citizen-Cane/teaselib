@@ -1,8 +1,6 @@
 package teaselib;
 
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -91,16 +89,13 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
     }
 
     public void showDesktopItem(String path) {
-        URL url = resources.url(absoluteResource(path));
-        if (url != null) {
-            URI uri = null;
-            try {
-                uri = url.toURI();
-            } catch (URISyntaxException e) {
-                teaseLib.log.error(this, e);
-            }
-            MediaRenderer desktopItem = new RenderDesktopItem(uri, teaseLib);
+        MediaRenderer desktopItem;
+        try {
+            desktopItem = new RenderDesktopItem(resources.unpackToFile(path),
+                    teaseLib);
             queueRenderer(desktopItem);
+        } catch (IOException e) {
+            teaseLib.log.error(this, e);
         }
     }
 
@@ -521,39 +516,19 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
         return false;
     }
 
-    // TODO turn prototype into production code
-    // - resolve pattern matching issues
-    // - Extend to any resource type, not just images
-    // - support more image types
-    // - add regex pattern generic version
-    @Deprecated
-    public List<String> imageResources(String partialMatch) {
-        List<String> imageResources = resources
-                .resources(absoluteResource(partialMatch), "jpg");
-        final int size = imageResources.size();
-        if (size > 0) {
-            TeaseLib.instance().log.info(getClass().getSimpleName() + ": Path '"
-                    + partialMatch + "' contains " + size + " images");
-        } else {
-            TeaseLib.instance().log.info(getClass().getSimpleName() + ": Path '"
-                    + partialMatch + "' doesn't contain any images");
-        }
-        return imageResources;
-    }
-
-    public List<String> enumerateResources(String wildcardPattern) {
+    public List<String> resources(String wildcardPattern) {
         Pattern pattern = WildcardPattern
                 .compile(absoluteResource(wildcardPattern));
-        List<String> imageResources = resources.resources(pattern);
-        final int size = imageResources.size();
+        List<String> items = resources.resources(pattern);
+        final int size = items.size();
         if (size > 0) {
-            TeaseLib.instance().log.info(getClass().getSimpleName() + ": Path '"
-                    + wildcardPattern + "' contains " + size + " images");
+            TeaseLib.instance().log.info(getClass().getSimpleName() + ": '"
+                    + wildcardPattern + "' yields " + size + " resources");
         } else {
-            TeaseLib.instance().log.info(getClass().getSimpleName() + ": Path '"
-                    + wildcardPattern + "' doesn't contain any images");
+            TeaseLib.instance().log.info(getClass().getSimpleName() + ": '"
+                    + wildcardPattern + "' doesn't yield any resources");
         }
-        return imageResources;
+        return items;
     }
 
 }

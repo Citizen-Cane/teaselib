@@ -255,16 +255,24 @@ public abstract class TeaseScriptBase {
 
     }
 
+    /**
+     * Return the absolute resource path of an resource. If the path is absolute
+     * already, {@code path} is returned.
+     * 
+     * @param path
+     *            The path to return the absolute resource path for.
+     * @return The absolute resource path.
+     */
     public String absoluteResource(String path) {
         if (path.startsWith("/")) {
             return path;
         } else {
-            String name = getClass().getPackage().getName();
-            String folder = name.replace(".", "/") + "/";
-            if (!path.startsWith(folder)) {
-                return folder + path;
-            } else {
+            String folder = getClass().getPackage().getName().replace(".", "/")
+                    + "/";
+            if (path.startsWith(folder)) {
                 return path;
+            } else {
+                return "/" + folder + path;
             }
         }
     }

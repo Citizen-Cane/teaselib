@@ -6,6 +6,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 
 import teaselib.ScriptFunction.Relation;
 import teaselib.core.MediaRenderer;
@@ -23,6 +24,7 @@ import teaselib.core.speechrecognition.SpeechRecognitionResult.Confidence;
 import teaselib.core.speechrecognition.SpeechRecognizer;
 import teaselib.core.speechrecognition.events.SpeechRecognitionStartedEventArgs;
 import teaselib.core.texttospeech.TextToSpeechPlayer;
+import teaselib.core.util.WildcardPattern;
 import teaselib.util.Items;
 
 public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
@@ -524,6 +526,7 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
     // - Extend to any resource type, not just images
     // - support more image types
     // - add regex pattern generic version
+    @Deprecated
     public List<String> imageResources(String partialMatch) {
         List<String> imageResources = resources
                 .resources(absoluteResource(partialMatch), "jpg");
@@ -537,4 +540,20 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
         }
         return imageResources;
     }
+
+    public List<String> enumerateResources(String wildcardPattern) {
+        Pattern pattern = WildcardPattern
+                .compile(absoluteResource(wildcardPattern));
+        List<String> imageResources = resources.resources(pattern);
+        final int size = imageResources.size();
+        if (size > 0) {
+            TeaseLib.instance().log.info(getClass().getSimpleName() + ": Path '"
+                    + wildcardPattern + "' contains " + size + " images");
+        } else {
+            TeaseLib.instance().log.info(getClass().getSimpleName() + ": Path '"
+                    + wildcardPattern + "' doesn't contain any images");
+        }
+        return imageResources;
+    }
+
 }

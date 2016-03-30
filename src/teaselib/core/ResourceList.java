@@ -6,6 +6,7 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Enumeration;
+import java.util.List;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
@@ -29,7 +30,7 @@ public class ResourceList {
      *            the pattern to match
      * @return the resources in the order they are found
      */
-    public static Collection<String> getResources(final URI path,
+    public static List<String> getResources(final URI path,
             final Pattern pattern) {
         final ArrayList<String> retval = new ArrayList<String>();
         final File element = new File(path.getPath());

@@ -168,6 +168,7 @@ public class ResourceLoader {
      *         This includes resources in sub-directories of the specified path
      *         as well.
      */
+    @Deprecated
     public List<String> resources(String path, String extension) {
         // todo document regex patterns, they're just to hard to remember
         if (path.startsWith("/")) {
@@ -188,6 +189,7 @@ public class ResourceLoader {
      * @return List of resource paths matching the pattern. All resources in all
      *         asset paths are enumerated, then matched against the pattern.
      */
+    @Deprecated
     public List<String> resources(String pathPattern) {
         Pattern pattern = Pattern.compile(pathPattern);
         List<String> resources = new LinkedList<String>();
@@ -197,6 +199,23 @@ public class ResourceLoader {
             for (String match : matches) {
                 resources.add(match);
             }
+        }
+        return resources;
+    }
+
+    /**
+     * Retrieves all resource entries matching the given pattern.
+     * 
+     * @param pattern
+     *            RegEx pattern for resource selection.
+     * @return List of resource paths matching the pattern. All resources in all
+     *         asset paths are enumerated, then matched against the pattern.
+     */
+    public List<String> resources(Pattern pattern) {
+        List<String> resources = new LinkedList<String>();
+        for (URI uri : enumeratableClassPaths) {
+            List<String> matches = ResourceList.getResources(uri, pattern);
+            resources.addAll(matches);
         }
         return resources;
     }

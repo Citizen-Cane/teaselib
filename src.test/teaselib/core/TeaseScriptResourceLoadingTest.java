@@ -9,6 +9,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.List;
 
 import org.junit.Test;
 
@@ -23,7 +24,7 @@ import teaselib.hosts.DummyPersistence;
  * @author someone
  *
  */
-public class TeaseScriptTest {
+public class TeaseScriptResourceLoadingTest {
 
     /**
      * 
@@ -33,7 +34,7 @@ public class TeaseScriptTest {
     private static TeaseScript createTestScript() {
         TeaseScript script = new TeaseScript(
                 TeaseLib.init(new DummyHost(), new DummyPersistence()),
-                new ResourceLoader(TeaseScriptTest.class),
+                new ResourceLoader(TeaseScriptResourceLoadingTest.class),
                 new Actor(Actor.Dominant, Voice.Gender.Female, "en-us"),
                 "test") {
             @Override
@@ -69,4 +70,38 @@ public class TeaseScriptTest {
         }
         assertEquals("1", resource1);
     }
+
+    @Test
+    public void testResourceLoadingWithWildcards() {
+        TeaseScript script = createTestScript();
+        assertEquals(1, script.enumerateResources("util/Foo.txt").size());
+        assertEquals(2, script.enumerateResources("util/Foo?.txt").size());
+        assertEquals(3, script.enumerateResources("util/Foo*.txt").size());
+    }
+
+    @Test
+    public void testResourceLoadingWithWildcardsAbsolutePaths() {
+        TeaseScript script = createTestScript();
+        assertEquals(1,
+                script.enumerateResources("teaselib/core/util/Foo.txt").size());
+        assertEquals(2, script.enumerateResources("teaselib/core/util/Foo?.txt")
+                .size());
+        assertEquals(3, script.enumerateResources("teaselib/core/util/Foo*.txt")
+                .size());
+        List<String> items = script
+                .enumerateResources("teaselib/core/util/Foo*.txt");
+        assertEquals(3, items.size());
+    }
+
+    @Test
+    public void testResourceLoadingCase() {
+        TeaseScript script = createTestScript();
+        assertEquals(1, script.enumerateResources("util/bar.txt").size());
+        assertEquals(3, script.enumerateResources("util/bar?.txt").size());
+        assertEquals(4, script.enumerateResources("util/bar*.txt").size());
+        assertEquals(0, script.enumerateResources("util/Bar.txt").size());
+        assertEquals(2, script.enumerateResources("util/Bar?.txt").size());
+        assertEquals(2, script.enumerateResources("util/Bar*.txt").size());
+    }
+
 }

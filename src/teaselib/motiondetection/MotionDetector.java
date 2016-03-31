@@ -11,14 +11,15 @@ import java.util.concurrent.locks.ReentrantLock;
 import javax.swing.JFrame;
 import javax.swing.WindowConstants;
 
-import teaselib.TeaseLib;
-
 import com.github.sarxos.webcam.Webcam;
 import com.github.sarxos.webcam.WebcamDiscoveryEvent;
 import com.github.sarxos.webcam.WebcamDiscoveryListener;
+import com.github.sarxos.webcam.WebcamException;
 import com.github.sarxos.webcam.WebcamMotionDetector;
 import com.github.sarxos.webcam.WebcamPanel;
 import com.github.sarxos.webcam.WebcamResolution;
+
+import teaselib.TeaseLib;
 
 /**
  * Uses webcams to detect motion.
@@ -89,8 +90,17 @@ public class MotionDetector {
     }
 
     private MotionDetector() {
-        this(Webcam.getDefault());
+        this(getDefaultWebcam());
         Webcam.addDiscoveryListener(new DiscoveryListener());
+    }
+
+    private static Webcam getDefaultWebcam() {
+        try {
+            return Webcam.getDefault();
+        } catch (WebcamException e) {
+            TeaseLib.instance().log.error(Webcam.class, e);
+            return null;
+        }
     }
 
     public MotionDetector(Webcam webcam) {
@@ -271,8 +281,8 @@ public class MotionDetector {
         }
 
         private void printDebug() {
-            TeaseLib.instance().log.debug("MotionArea="
-                    + detector.getMotionArea());
+            TeaseLib.instance().log
+                    .debug("MotionArea=" + detector.getMotionArea());
         }
 
         public void signalMotionStart() {

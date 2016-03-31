@@ -2,6 +2,7 @@ package teaselib;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
@@ -91,42 +92,35 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
     public void showDesktopItem(String path) {
         MediaRenderer desktopItem;
         try {
-            desktopItem = new RenderDesktopItem(resources.unpackToFile(path),
-                    teaseLib);
+            desktopItem = new RenderDesktopItem(
+                    resources.unpackEnclosingFolder(path), teaseLib);
             queueRenderer(desktopItem);
         } catch (IOException e) {
             teaseLib.log.error(this, e);
         }
     }
 
-    public void setBackgroundSound(String path) {
-        queueBackgropundRenderer(new RenderBackgroundSound(resources,
-                absoluteResource(path), teaseLib));
+    public Object setBackgroundSound(String path) {
+        RenderBackgroundSound audioHandle = new RenderBackgroundSound(resources,
+                absoluteResource(path), teaseLib);
+        queueBackgropundRenderer(audioHandle);
+        return audioHandle;
     }
 
-    public void setSound(String path) {
-        queueRenderer(
-                new RenderSound(resources, absoluteResource(path), teaseLib));
+    public Object setSound(String path) {
+        RenderSound soundRenderer = new RenderSound(resources,
+                absoluteResource(path), teaseLib);
+        queueRenderer(soundRenderer);
+        Object audioHandle = soundRenderer;
+        return audioHandle;
     }
 
-    // /**
-    // * Play a sound in the background. The sound starts when the next message
-    // is
-    // * displayed, does not cause the script to wait for its completion. To
-    // stop
-    // * the sound, stopBackgroundSound() can be called.
-    // *
-    // * @param path
-    // */
-    // public Object playBackgroundSound(String path) {
-    // RenderBackgroundSound renderBackgroundSound = new RenderBackgroundSound(
-    // resources, path, teaseLib);
-    // queueRenderer(renderBackgroundSound);
-    // return renderBackgroundSound;
-    // }
-
-    public void stopSound(Object handle) {
-        teaseLib.host.stopSound(handle);
+    public void stopSound(Object audioHandle) {
+        if (audioHandle instanceof MediaRenderer.Threaded) {
+            ((MediaRenderer.Threaded) audioHandle).interrupt();
+        } else {
+            teaseLib.host.stopSound(audioHandle);
+        }
     }
 
     public void setMood(String mood) {
@@ -519,7 +513,7 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
     public List<String> resources(String wildcardPattern) {
         Pattern pattern = WildcardPattern
                 .compile(absoluteResource(wildcardPattern));
-        List<String> items = resources.resources(pattern);
+        Collection<String> items = resources.resources(pattern);
         final int size = items.size();
         if (size > 0) {
             TeaseLib.instance().log.info(getClass().getSimpleName() + ": '"
@@ -528,7 +522,7 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
             TeaseLib.instance().log.info(getClass().getSimpleName() + ": '"
                     + wildcardPattern + "' doesn't yield any resources");
         }
-        return items;
+        return new ArrayList<String>(items);
     }
 
 }

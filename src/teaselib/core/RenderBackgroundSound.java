@@ -38,13 +38,6 @@ public class RenderBackgroundSound implements MediaRenderer.Threaded {
         }
     }
 
-    public void stop() {
-        if (teaseLib != null && audioHandle != null) {
-            teaseLib.host.stopSound(audioHandle);
-            completedAll = true;
-        }
-    }
-
     @Override
     public String toString() {
         return soundFile;
@@ -79,7 +72,10 @@ public class RenderBackgroundSound implements MediaRenderer.Threaded {
 
     @Override
     public void interrupt() {
-        stop();
+        if (teaseLib != null && audioHandle != null) {
+            teaseLib.host.stopSound(audioHandle);
+            completedAll = true;
+        }
     }
 
     @Override

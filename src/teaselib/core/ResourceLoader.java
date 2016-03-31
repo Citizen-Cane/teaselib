@@ -11,9 +11,9 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Collection;
 import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -61,11 +61,11 @@ public class ResourceLoader {
         URL url = mainScript.getResource(classFile);
         String protocol = url.getProtocol().toLowerCase();
         if (protocol.equals("file")) {
-            String path = undecoratedPath(url);
+            String path = getUndecoratedPath(url);
             int classOffset = classFile.length();
             return new File(path.substring(0, path.length() - classOffset));
         } else if (protocol.equals("jar")) {
-            String path = undecoratedPath(url);
+            String path = getUndecoratedPath(url);
             int startOffset = new String("File:/").length();
             int jarOffset = path.indexOf(".jar!");
             return new File(path.substring(startOffset, jarOffset))
@@ -76,8 +76,17 @@ public class ResourceLoader {
         }
     }
 
-    private static String undecoratedPath(URL url) {
-        return url.getPath().replace("%20", " ");
+    /**
+     * {@link java.net.URL} paths have white space is escaped ({@code %20}), so
+     * to work with resources, these decorations must be removed.
+     * 
+     * @param url
+     *            The url to retrieve the undecorated path from.
+     * @return A string containing the undecorated path part of the URL.
+     */
+    private static String getUndecoratedPath(URL url) {
+        final String path = url.getPath();
+        return path.replace("%20", " ");
     }
 
     private static Method addURLMethod() throws NoSuchMethodException {
@@ -159,11 +168,11 @@ public class ResourceLoader {
      * @return List of resource paths matching the pattern. All resources in all
      *         asset paths are enumerated, then matched against the pattern.
      */
-    public List<String> resources(Pattern pattern) {
-        List<String> resources = new LinkedList<String>();
+    public Collection<String> resources(Pattern pattern) {
+        Collection<String> resources = new LinkedHashSet<String>();
         for (URI classsPathEntry : enumeratableClassPaths) {
-            List<String> matches = ResourceList.getResources(classsPathEntry,
-                    pattern);
+            Collection<String> matches = ResourceList
+                    .getResources(classsPathEntry, pattern);
             resources.addAll(matches);
         }
         return resources;
@@ -189,6 +198,29 @@ public class ResourceLoader {
      */
     public File getAssetPath(String resourcePath) {
         return new File(basePath, resourcePath);
+    }
+
+    /**
+     * Unpacks the enclosing folder of the requested resource, including all
+     * other resources and all sub folders.
+     * 
+     * @param path
+     *            The path to the requested resource
+     * @return The requested resource file.
+     * @throws IOException
+     */
+    public File unpackEnclosingFolder(String path) throws IOException {
+        File match = null;
+        String parentPath = path.substring(0, path.lastIndexOf("/"));
+        Collection<String> folder = resources(
+                Pattern.compile(parentPath + "/.*"));
+        for (String file : folder) {
+            File unpacked = unpackToFile(file);
+            if (match == null && file.equals(path)) {
+                match = unpacked;
+            }
+        }
+        return match;
     }
 
     /**

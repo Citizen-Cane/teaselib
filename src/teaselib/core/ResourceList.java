@@ -4,8 +4,8 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Enumeration;
-import java.util.List;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
@@ -34,7 +34,7 @@ public class ResourceList {
      *            the pattern to match
      * @return the resources in the order they are found
      */
-    public static List<String> getResources(final URI basePath,
+    public static Collection<String> getResources(final URI basePath,
             final Pattern pattern) {
         final ArrayList<String> retval = new ArrayList<String>();
         final File file = new File(basePath.getPath());
@@ -46,7 +46,7 @@ public class ResourceList {
         return retval;
     }
 
-    private static List<String> getResourcesFromJarFile(File file,
+    private static Collection<String> getResourcesFromJarFile(File file,
             Pattern pattern) {
         ArrayList<String> retval = new ArrayList<String>();
         ZipFile zf;
@@ -60,7 +60,9 @@ public class ResourceList {
         Enumeration<? extends ZipEntry> e = zf.entries();
         while (e.hasMoreElements()) {
             ZipEntry ze = e.nextElement();
-            addMatchingEntry(pattern, retval, ze.getName());
+            if (!ze.isDirectory()) {
+                addMatchingEntry(pattern, retval, ze.getName());
+            }
         }
         try {
             zf.close();
@@ -70,7 +72,7 @@ public class ResourceList {
         return retval;
     }
 
-    private static List<String> getResourcesFromDirectory(URI basePath,
+    private static Collection<String> getResourcesFromDirectory(URI basePath,
             File directory, Pattern pattern) {
         ArrayList<String> retval = new ArrayList<String>();
         File[] fileList = directory.listFiles();
@@ -81,7 +83,7 @@ public class ResourceList {
             } else {
                 URI absolute = file.toURI();
                 URI relative = basePath.relativize(absolute);
-                String resourcePath = relative.toString();
+                String resourcePath = relative.getPath();
                 addMatchingEntry(pattern, retval, resourcePath);
             }
         }
@@ -89,7 +91,7 @@ public class ResourceList {
     }
 
     private static void addMatchingEntry(Pattern pattern,
-            ArrayList<String> retval, String resourcePath) {
+            Collection<String> retval, String resourcePath) {
         String absoluteResourcePath = resourcePath.startsWith(PathSeparator)
                 ? resourcePath : PathSeparator + resourcePath;
         boolean accept = pattern.matcher(absoluteResourcePath).matches();

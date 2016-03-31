@@ -211,17 +211,16 @@ public class RenderMessage extends MediaRendererThread {
                     }
                 } else if (part.type == Message.Type.DesktopItem) {
                     // Finish the current text part
-                    if (speechRendererInProgress != null) {
-                        speechRendererInProgress.completeAll();
-                        try {
-                            new RenderDesktopItem(
-                                    resources.unpackToFile(part.value),
-                                    teaseLib).render();
-                        } catch (IOException e) {
-                            teaseLib.log.error(this, e);
-                            doTextAndSpeech(accumulatedText, part.value, append,
-                                    mood, lastParagraph, false);
-                        }
+                    try {
+                        final RenderDesktopItem renderDesktopItem = new RenderDesktopItem(
+                                resources.unpackEnclosingFolder(part.value),
+                                teaseLib);
+                        completeSpeech(lastParagraph);
+                        renderDesktopItem.render();
+                    } catch (IOException e) {
+                        teaseLib.log.error(this, e);
+                        doTextAndSpeech(accumulatedText, part.value, append,
+                                mood, lastParagraph, false);
                     }
                 } else if (part.type == Message.Type.Mood) {
                     // Mood

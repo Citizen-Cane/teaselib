@@ -1,9 +1,10 @@
-/**
- * 
- */
 package teaselib.motiondetection;
 
 import org.junit.Test;
+
+import teaselib.TeaseLib;
+import teaselib.hosts.DummyHost;
+import teaselib.hosts.DummyPersistence;
 
 /**
  * @author someone
@@ -16,7 +17,9 @@ public class testMotionDetection {
      */
     @Test
     public void test() {
-        MotionDetector md = MotionDetector.getDefault();
+        TeaseLib.init(new DummyHost(), new DummyPersistence());
+
+        MotionDetector md = MotionDetectorFactory.getDefaultMotionDetector();
         System.out.println("Move!");
         while (!md.awaitMotionStart(5)) {
             System.out.println("I said 'Move'!");

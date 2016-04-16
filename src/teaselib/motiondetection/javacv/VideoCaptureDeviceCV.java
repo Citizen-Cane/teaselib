@@ -5,7 +5,9 @@ import static org.bytedeco.javacpp.opencv_videoio.CAP_PROP_FRAME_WIDTH;
 
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.bytedeco.javacpp.opencv_core.Mat;
 import org.bytedeco.javacpp.opencv_core.Size;
@@ -13,9 +15,10 @@ import org.bytedeco.javacpp.opencv_videoio;
 import org.bytedeco.javacpp.opencv_videoio.VideoCapture;
 
 import teaselib.TeaseLib;
-import teaselib.motiondetection.MotionDetectorFactory;
+import teaselib.motiondetection.DeviceCache;
 
-public class VideoCaptureDeviceCV implements Iterable<Mat>, VideoCaptureDevice {
+public class VideoCaptureDeviceCV implements VideoCaptureDevice {
+    public static final String DeviceClassName = "VideoCaptureDeviceJavaCV";
     final int device;
     final VideoCapture videoCapture;
     final Mat mat = new Mat();
@@ -30,7 +33,18 @@ public class VideoCaptureDeviceCV implements Iterable<Mat>, VideoCaptureDevice {
 
     private static List<VideoCapture> devices = new ArrayList<>();
 
-    static List<VideoCapture> getDevices() {
+    public static Set<String> getDevicesPaths() {
+        int i = 0;
+        Set<String> devicePaths = new LinkedHashSet<>();
+        for (VideoCapture videoCapture : getCaptureDevices()) {
+            devicePaths.add(DeviceCache.createDevicePath(
+                    VideoCaptureDeviceCV.DeviceClassName,
+                    Integer.toString(i++)));
+        }
+        return devicePaths;
+    }
+
+    static List<VideoCapture> getCaptureDevices() {
         int i = 0;
         while (true) {
             // Only add new devices, because we want them to be singletons
@@ -70,9 +84,13 @@ public class VideoCaptureDeviceCV implements Iterable<Mat>, VideoCaptureDevice {
 
     }
 
+    public static VideoCaptureDeviceCV get(String name) {
+        return get(Integer.parseInt(name));
+    }
+
     public static VideoCaptureDeviceCV get(int n) {
         if (n >= devices.size()) {
-            getDevices();
+            getCaptureDevices();
             if (n >= devices.size()) {
                 // default to previous device if camera has been removed
                 n = devices.size() - 1;
@@ -82,7 +100,7 @@ public class VideoCaptureDeviceCV implements Iterable<Mat>, VideoCaptureDevice {
     }
 
     private VideoCaptureDeviceCV(String id) throws Exception {
-        this(Integer.parseInt(MotionDetectorFactory.getName(id)));
+        this(Integer.parseInt(DeviceCache.getDeviceName(id)));
     }
 
     private VideoCaptureDeviceCV(int device) {
@@ -121,14 +139,19 @@ public class VideoCaptureDeviceCV implements Iterable<Mat>, VideoCaptureDevice {
         }
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see teaselib.motiondetection.javacv.VideoCaptureDevice#size()
-     */
     @Override
     public Size size() {
         return size;
+    }
+
+    @Override
+    public Size captureSize() {
+        return captureSize;
+    }
+
+    @Override
+    public double fps() {
+        return fps;
     }
 
     private Mat read() {

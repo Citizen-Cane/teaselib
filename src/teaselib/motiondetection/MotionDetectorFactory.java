@@ -1,57 +1,36 @@
 package teaselib.motiondetection;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedHashSet;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 import teaselib.motiondetection.javacv.MotionDetectorJavaCV;
 
+/**
+ * Motion detectors have a 1:1 relationship to video capture devices.
+ */
 public class MotionDetectorFactory {
+    public static final DeviceCache<MotionDetector> Instance = new DeviceCache<>(
+            MotionDetectorJavaCV.DeviceClassName,
+            new DeviceCache.DeviceFactory<MotionDetector>() {
+                @Override
+                public List<String> getDevices() {
+                    List<String> deviceNames = new ArrayList<>();
+                    Set<String> videoCaptureDevicePaths = VideoCaptureDeviceFactory.Instance
+                            .getDevices();
+                    for (String videoCaptureDevicePath : videoCaptureDevicePaths) {
+                        deviceNames.add(DeviceCache.createDevicePath(
+                                MotionDetectorJavaCV.DeviceClassName,
+                                videoCaptureDevicePath));
+                    }
+                    return deviceNames;
+                }
 
-    private static Map<String, MotionDetector> runningMotionDetectors = new HashMap<>();
-
-    public static MotionDetector getDefaultMotionDetector() {
-        String defaultId = getLast(getDevices());
-        MotionDetector motionDetector = getMotionDetector(defaultId);
-        return motionDetector;
-    }
-
-    public static MotionDetector getMotionDetector(String id) {
-        if (runningMotionDetectors.containsKey(id)) {
-            return runningMotionDetectors.get(id);
-        } else {
-            // TODO refect to create motion detector based on id
-            // return getDefaultMotionDetector();
-            MotionDetectorJavaCV motionDetector = new MotionDetectorJavaCV(id);
-            runningMotionDetectors.put(id, motionDetector);
-            return motionDetector;
-        }
-    }
-
-    public static Set<String> getDevices() {
-        Set<String> devices = new LinkedHashSet<>();
-        devices.addAll(MotionDetectorSarxos.getDevices());
-        devices.addAll(MotionDetectorJavaCV.getDevices());
-        return devices;
-    }
-
-    private static String getLast(Collection<String> collection) {
-        String s = null;
-        Iterator<String> it = collection.iterator();
-        while (it.hasNext()) {
-            s = it.next();
-        }
-        return s;
-    }
-
-    public static String makeId(Class<?> clazz, String name) {
-        return clazz.getName() + ":" + name;
-    }
-
-    public static String getName(String id) {
-        return id.substring(id.indexOf(":") + 1);
-    }
+                @Override
+                public MotionDetector getDevice(String devicePath) {
+                    return new MotionDetectorJavaCV(
+                            VideoCaptureDeviceFactory.Instance.getDevice(
+                                    DeviceCache.getDeviceName(devicePath)));
+                }
+            });
 }

@@ -1,4 +1,3 @@
-
 package teaselib.motiondetection;
 
 import java.awt.Dimension;
@@ -38,7 +37,9 @@ import teaselib.TeaseLib;
  * As a result, good lighting is a must to be successful with motion detection.
  */
 public class MotionDetectorSarxos extends BasicMotionDetector {
-    private static final EnumSet<Feature> Features = EnumSet.of(Feature.Motion);
+    public static final String DeviceClassName = "MotionDetectorSarxos";
+
+    public static final EnumSet<Feature> Features = EnumSet.of(Feature.Motion);
 
     static final double InitialAreaTreshold = 5;
     static final int InitialPixelTreshold = 16;
@@ -54,7 +55,7 @@ public class MotionDetectorSarxos extends BasicMotionDetector {
         try {
             List<Webcam> webcams = Webcam.getWebcams();
             for (Webcam webcam : webcams) {
-                devices.add(MotionDetectorFactory.makeId(Webcam.class,
+                devices.add(DeviceCache.createDevicePath(DeviceClassName,
                         webcam.getName()));
             }
         } catch (Exception e) {
@@ -102,7 +103,7 @@ public class MotionDetectorSarxos extends BasicMotionDetector {
     }
 
     public MotionDetectorSarxos(String id) {
-        this(findWebcam(MotionDetectorFactory.getName(id)));
+        this(findWebcam(DeviceCache.getDeviceName(id)));
     }
 
     private static Webcam findWebcam(String name) {
@@ -328,5 +329,4 @@ public class MotionDetectorSarxos extends BasicMotionDetector {
     public EnumSet<Presence> getPresence() {
         return EnumSet.noneOf(Presence.class);
     }
-
 }

@@ -12,7 +12,6 @@ import static teaselib.motiondetection.javacv.util.Gui.positionWindows;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -21,15 +20,16 @@ import org.bytedeco.javacpp.opencv_core.Point;
 import org.bytedeco.javacpp.opencv_core.Rect;
 import org.bytedeco.javacpp.opencv_core.Scalar;
 import org.bytedeco.javacpp.opencv_core.Size;
-import org.bytedeco.javacpp.opencv_videoio.VideoCapture;
 
 import teaselib.TeaseLib;
 import teaselib.motiondetection.BasicMotionDetector;
-import teaselib.motiondetection.MotionDetectorFactory;
+import teaselib.motiondetection.DeviceCache;
 import teaselib.motiondetection.javacv.util.FramesPerSecond;
 
 public class MotionDetectorJavaCV extends BasicMotionDetector {
-    private static final EnumSet<Feature> Features = EnumSet.of(Feature.Motion,
+    public static final String DeviceClassName = "MotionDetectorJavaCV";
+
+    public static final EnumSet<Feature> Features = EnumSet.of(Feature.Motion,
             Feature.Presence);
 
     private static final Scalar Red = new Scalar(0, 0, 255, 0);
@@ -52,33 +52,15 @@ public class MotionDetectorJavaCV extends BasicMotionDetector {
         return map;
     }
 
-    public static Set<String> getDevices() {
-        int i = 0;
-        Set<String> devices = new LinkedHashSet<>();
-        for (VideoCapture videoCapture : VideoCaptureDeviceCV.getDevices()) {
-            devices.add(MotionDetectorFactory.makeId(MotionDetectorJavaCV.class,
-                    Integer.toString(i++)));
-        }
-        return devices;
-    }
+    private final VideoCaptureDevice videoCaptureDevice;
 
-    public MotionDetectorJavaCV(String id) {
-        super(MotionDetectorFactory.getName(id));
-        detectionEvents = new DetectionEventsJavaCV(id);
+    public MotionDetectorJavaCV(VideoCaptureDevice videoCaptureDevice) {
+        // TODO Remove id altogether
+        super(DeviceCache.getDeviceName("test"));
+        this.videoCaptureDevice = videoCaptureDevice;
+        detectionEvents = new DetectionEventsJavaCV();
         setSensitivity(MotionSensitivity.Normal);
         detectionEvents.start();
-    }
-
-    private static VideoCaptureDeviceCV findVideoCaptureDevice(String id) {
-        int n = Integer.parseInt(MotionDetectorFactory.getName(id));
-        // KNN and findContours are quite expensive,
-        // and I think it's better to achieve a high frame rate
-        // then to have a high resolution
-        // TODO adjust this to the exact frame rate of the camera
-        // (usually 30fps?)
-        // Larger width settings produce a lot of load
-        // on portable devices (as of 2016)
-        return VideoCaptureDeviceCV.get(n);
     }
 
     @Override
@@ -139,7 +121,6 @@ public class MotionDetectorJavaCV extends BasicMotionDetector {
 
         private static final int cornerSize = 32;
 
-        private final VideoCaptureDeviceCV videoCaptureDevice;
         private final MotionProcessor motionDetector;
         private final Map<Presence, Rect> presenceIndicators;
         private int motionDetectedCounter = -1;
@@ -148,14 +129,13 @@ public class MotionDetectorJavaCV extends BasicMotionDetector {
 
         boolean debug = true;
 
-        DetectionEventsJavaCV(String id) {
+        DetectionEventsJavaCV() {
             super();
             setDaemon(true);
-            videoCaptureDevice = findVideoCaptureDevice(id);
             videoCaptureDevice.open(new Size(320, 240));
-            Size size = videoCaptureDevice.size;
+            Size size = videoCaptureDevice.size();
             motionDetector = new MotionProcessor(
-                    videoCaptureDevice.captureSize.width(), size.width());
+                    videoCaptureDevice.captureSize().width(), size.width());
             presenceIndicators = buildPresenceIndicatorMap(size);
         }
 
@@ -323,10 +303,11 @@ public class MotionDetectorJavaCV extends BasicMotionDetector {
             }
         }
 
-        private int getDesiredFPS(VideoCaptureDeviceCV videoCaptureDevice,
+        // TODO fps is double
+        private int getDesiredFPS(VideoCaptureDevice videoCaptureDevice,
                 int minimalFps) {
             final int desiredFPS;
-            int vcfps = (int) videoCaptureDevice.fps;
+            int vcfps = (int) videoCaptureDevice.fps();
             if (vcfps > minimalFps * 2) {
                 int div = Math.floorDiv(vcfps, minimalFps * 2) + 1;
                 desiredFPS = vcfps / div;

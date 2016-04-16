@@ -19,7 +19,7 @@ public class testMotionDetection {
     public void test() {
         TeaseLib.init(new DummyHost(), new DummyPersistence());
 
-        MotionDetector md = MotionDetectorFactory.getDefaultMotionDetector();
+        MotionDetector md = MotionDetectorFactory.Instance.getDefaultDevice();
         System.out.println("Move!");
         while (!md.awaitMotionStart(5)) {
             System.out.println("I said 'Move'!");

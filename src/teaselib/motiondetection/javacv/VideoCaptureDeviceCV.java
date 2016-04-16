@@ -109,6 +109,12 @@ public class VideoCaptureDeviceCV implements VideoCaptureDevice {
     }
 
     @Override
+    public String getDevicePath() {
+        return DeviceCache.createDevicePath(DeviceClassName,
+                Integer.toString(device));
+    }
+
+    @Override
     public void open(Size size) {
         if (!videoCapture.isOpened()) {
             videoCapture.open(device);

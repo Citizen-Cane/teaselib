@@ -55,12 +55,17 @@ public class MotionDetectorJavaCV extends BasicMotionDetector {
     private final VideoCaptureDevice videoCaptureDevice;
 
     public MotionDetectorJavaCV(VideoCaptureDevice videoCaptureDevice) {
-        // TODO Remove id altogether
-        super(DeviceCache.getDeviceName("test"));
+        super();
         this.videoCaptureDevice = videoCaptureDevice;
         detectionEvents = new DetectionEventsJavaCV();
         setSensitivity(MotionSensitivity.Normal);
         detectionEvents.start();
+    }
+
+    @Override
+    public String getDevicePath() {
+        return DeviceCache.createDevicePath(DeviceClassName,
+                videoCaptureDevice.getDevicePath());
     }
 
     @Override

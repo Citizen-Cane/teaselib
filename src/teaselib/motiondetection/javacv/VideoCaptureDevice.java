@@ -5,7 +5,9 @@ import java.util.Iterator;
 import org.bytedeco.javacpp.opencv_core.Mat;
 import org.bytedeco.javacpp.opencv_core.Size;
 
-public interface VideoCaptureDevice extends Iterable<Mat> {
+import teaselib.motiondetection.Device;
+
+public interface VideoCaptureDevice extends Iterable<Mat>, Device {
 
     void open(Size size);
 

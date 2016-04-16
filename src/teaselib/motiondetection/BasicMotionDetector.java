@@ -13,19 +13,12 @@ public abstract class BasicMotionDetector implements MotionDetector {
     protected static final int MaximumNumberOfPastFrames = 400;
     protected static final int PollingInterval = 100;
 
-    protected final String name;
-
     protected final MotionHistory mi = new MotionHistory(
             MaximumNumberOfPastFrames);
     protected DetectionEvents detectionEvents = null;
 
-    public BasicMotionDetector(String name) {
-        this.name = name;
+    public BasicMotionDetector() {
         this.detectionEvents = null;
-    }
-
-    public String getName() {
-        return name;
     }
 
     protected abstract class DetectionEvents extends Thread {

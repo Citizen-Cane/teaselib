@@ -9,11 +9,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public class DeviceCache<T> {
+public class DeviceCache<T extends Device> {
 
     private static final String PathSeparator = "/";
 
-    public interface DeviceFactory<T> {
+    public interface DeviceFactory<T extends Device> {
         List<String> getDevices();
 
         T getDevice(String path);

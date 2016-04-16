@@ -123,8 +123,14 @@ public class MotionDetectorSarxos extends BasicMotionDetector {
     }
 
     public MotionDetectorSarxos(Webcam webcam) {
-        super(webcam.getName());
+        super();
         attachWebcam(webcam);
+    }
+
+    @Override
+    public String getDevicePath() {
+        return DeviceCache.createDevicePath(DeviceClassName,
+                ((DetectionEventsSarxos) detectionEvents).webcam.getName());
     }
 
     private void attachWebcam(Webcam newWebcam) {
@@ -183,8 +189,8 @@ public class MotionDetectorSarxos extends BasicMotionDetector {
     }
 
     private class DetectionEventsSarxos extends DetectionEvents {
-        private final Webcam webcam;
-        private final WebcamMotionDetector detector;
+        final Webcam webcam;
+        final WebcamMotionDetector detector;
 
         DetectionEventsSarxos(Webcam webcam) {
             this.webcam = webcam;

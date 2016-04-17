@@ -123,16 +123,27 @@ public class VideoCaptureDeviceCV implements VideoCaptureDevice {
             throw new IllegalArgumentException("Camera not opened: "
                     + getClass().getName() + ":" + device);
         }
-        // OpenCV just provides the native resolution,
-        // but not the list of all available
-        // Therefore we use a default resolution and resize afterwards
-        if (size.width() > 0) {
-            // TODO search for resolution tht matches width
-            videoCapture.set(CAP_PROP_FRAME_WIDTH, 640);
-            videoCapture.set(CAP_PROP_FRAME_HEIGHT, 480);
-        }
+        // OpenCV just provides the actual resolution,
+        // but not the list of all available resolutions.
+        // Therefore we have to try to set the resolution,
+        // but we don't know whether the capture device supports it
+        // If it doesn't, the capture device frames are resized
+        // to match the requested resolution as close as possible
         int captureWidth = (int) videoCapture.get(CAP_PROP_FRAME_WIDTH);
         int captureHeight = (int) videoCapture.get(CAP_PROP_FRAME_HEIGHT);
+        if (size.width() > 0 && size.width() != captureWidth) {
+            // derive aspect from capture width:
+            // Might not be 100% since although a capture device
+            // features a 4:3 sensor it may report a 16:9 resolution
+            // in order to support Full HD resolutions
+            double aspect = (double) (captureHeight) / (double) (captureWidth);
+            videoCapture.set(CAP_PROP_FRAME_WIDTH, size.width());
+            videoCapture.set(CAP_PROP_FRAME_HEIGHT, size.width() * aspect);
+            // update because the capture device
+            // may or may not support the requested resolution
+            captureWidth = (int) videoCapture.get(CAP_PROP_FRAME_WIDTH);
+            captureHeight = (int) videoCapture.get(CAP_PROP_FRAME_HEIGHT);
+        }
         this.captureSize = new Size(captureWidth, captureHeight);
         int resizeFactor = Math.max(1, captureWidth / size.width());
         this.size = new Size(captureWidth / resizeFactor,

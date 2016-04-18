@@ -1,4 +1,4 @@
-package teaselib.core;
+package teaselib;
 
 import java.util.Iterator;
 

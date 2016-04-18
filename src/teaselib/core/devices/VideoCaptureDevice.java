@@ -1,4 +1,4 @@
-package teaselib.motiondetection.javacv;
+package teaselib.core.devices;
 
 import java.util.Iterator;
 

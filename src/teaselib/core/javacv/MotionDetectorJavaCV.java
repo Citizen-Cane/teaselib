@@ -1,13 +1,13 @@
-package teaselib.motiondetection.javacv;
+package teaselib.core.javacv;
 
 import static org.bytedeco.javacpp.opencv_core.FONT_HERSHEY_PLAIN;
 import static org.bytedeco.javacpp.opencv_imgproc.circle;
 import static org.bytedeco.javacpp.opencv_imgproc.putText;
 import static org.bytedeco.javacpp.opencv_imgproc.rectangle;
-import static teaselib.motiondetection.javacv.util.Geom.center;
-import static teaselib.motiondetection.javacv.util.Geom.intersects;
-import static teaselib.motiondetection.javacv.util.Gui.drawRect;
-import static teaselib.motiondetection.javacv.util.Gui.positionWindows;
+import static teaselib.core.javacv.util.Geom.center;
+import static teaselib.core.javacv.util.Geom.intersects;
+import static teaselib.core.javacv.util.Gui.drawRect;
+import static teaselib.core.javacv.util.Gui.positionWindows;
 
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -22,9 +22,10 @@ import org.bytedeco.javacpp.opencv_core.Scalar;
 import org.bytedeco.javacpp.opencv_core.Size;
 
 import teaselib.TeaseLib;
+import teaselib.core.devices.VideoCaptureDevice;
+import teaselib.core.javacv.util.FramesPerSecond;
 import teaselib.motiondetection.BasicMotionDetector;
 import teaselib.motiondetection.DeviceCache;
-import teaselib.motiondetection.javacv.util.FramesPerSecond;
 
 public class MotionDetectorJavaCV extends BasicMotionDetector {
     public static final String DeviceClassName = "MotionDetectorJavaCV";

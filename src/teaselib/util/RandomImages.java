@@ -2,7 +2,7 @@ package teaselib.util;
 
 import java.util.List;
 
-import teaselib.core.Images;
+import teaselib.Images;
 
 /**
  * Handles image iteration over a set of resources

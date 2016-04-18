@@ -1,4 +1,4 @@
-package teaselib.core;
+package teaselib.core.media;
 
 import java.awt.Desktop;
 import java.io.File;

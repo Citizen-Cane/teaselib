@@ -1,9 +1,10 @@
-package teaselib.core;
+package teaselib.core.media;
 
 import java.io.IOException;
 
 import teaselib.Config;
 import teaselib.TeaseLib;
+import teaselib.core.ResourceLoader;
 
 public class RenderBackgroundSound implements MediaRenderer.Threaded {
 

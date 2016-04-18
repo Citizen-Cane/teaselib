@@ -1,4 +1,4 @@
-package teaselib.motiondetection.javacv.util;
+package teaselib.util.math;
 
 import java.util.List;
 

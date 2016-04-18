@@ -1,12 +1,12 @@
-package teaselib.core;
+package teaselib.core.media;
 
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
 import teaselib.TeaseLib;
-import teaselib.core.MediaRenderer.Replay.Position;
-import teaselib.core.MediaRenderer.Threaded;
+import teaselib.core.media.MediaRenderer.Threaded;
+import teaselib.core.media.MediaRenderer.Replay.Position;
 
 public class MediaRendererQueue {
 

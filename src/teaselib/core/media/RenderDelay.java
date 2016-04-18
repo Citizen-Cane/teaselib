@@ -1,8 +1,9 @@
-package teaselib.core;
+package teaselib.core.media;
 
 import java.util.concurrent.TimeUnit;
 
 import teaselib.TeaseLib;
+import teaselib.core.ScriptInterruptedException;
 
 public class RenderDelay extends MediaRendererThread {
     public final int seconds;

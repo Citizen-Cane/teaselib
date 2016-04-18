@@ -1,4 +1,4 @@
-package teaselib.motiondetection.javacv;
+package teaselib.core.javacv;
 
 import org.bytedeco.javacpp.opencv_core;
 import org.bytedeco.javacpp.opencv_core.Mat;

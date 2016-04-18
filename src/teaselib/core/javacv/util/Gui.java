@@ -1,4 +1,4 @@
-package teaselib.motiondetection.javacv.util;
+package teaselib.core.javacv.util;
 
 import static org.bytedeco.javacpp.opencv_core.FONT_HERSHEY_PLAIN;
 import static org.bytedeco.javacpp.opencv_imgproc.approxPolyDP;

@@ -1,7 +1,7 @@
-package teaselib.motiondetection.javacv;
+package teaselib.core.javacv;
 
-import static teaselib.motiondetection.javacv.util.Geom.join;
-import static teaselib.motiondetection.javacv.util.Gui.rectangles;
+import static teaselib.core.javacv.util.Geom.join;
+import static teaselib.core.javacv.util.Gui.rectangles;
 
 import java.util.List;
 import java.util.Vector;

@@ -1,4 +1,4 @@
-package teaselib.motiondetection.javacv;
+package teaselib.core.javacv;
 
 import static org.bytedeco.javacpp.opencv_imgproc.resize;
 
@@ -10,7 +10,7 @@ public class Resize {
 
     public Mat output = new Mat();
 
-    Resize(int resize) {
+    public Resize(int resize) {
         this.factor = resize;
     }
 

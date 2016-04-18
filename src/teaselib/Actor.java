@@ -1,6 +1,5 @@
 package teaselib;
 
-import teaselib.core.Images;
 import teaselib.core.texttospeech.Voice;
 import teaselib.util.SpeechRecognitionRejectedScript;
 import teaselib.util.TextVariables;

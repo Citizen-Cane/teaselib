@@ -1,10 +1,12 @@
-package teaselib.motiondetection.javacv.util;
+package teaselib.core.javacv.util;
 
 import java.util.Comparator;
 import java.util.List;
 
 import org.bytedeco.javacpp.opencv_core.Point;
 import org.bytedeco.javacpp.opencv_core.Rect;
+
+import teaselib.util.math.Partition;
 
 public class Geom {
     public static List<Partition<Rect>.Group> partition(List<Rect> rectangles,

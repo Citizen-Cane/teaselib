@@ -1,4 +1,4 @@
-package teaselib.core;
+package teaselib.core.media;
 
 import java.io.IOException;
 import java.util.concurrent.CancellationException;
@@ -9,6 +9,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import teaselib.TeaseLib;
+import teaselib.core.ScriptInterruptedException;
 import teaselib.core.util.NamedExecutorService;
 
 /**

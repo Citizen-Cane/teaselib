@@ -1,4 +1,4 @@
-package teaselib.core.javacv;
+package teaselib.core.devices.motiondetection;
 
 import static teaselib.core.javacv.util.Geom.join;
 import static teaselib.core.javacv.util.Gui.rectangles;
@@ -9,7 +9,10 @@ import java.util.Vector;
 import org.bytedeco.javacpp.opencv_core.Mat;
 import org.bytedeco.javacpp.opencv_core.Rect;
 
-public class MotionProcessor {
+import teaselib.core.javacv.BackgroundSubtraction;
+import teaselib.core.javacv.Contours;
+
+public class MotionProcessorJavaCV {
     BackgroundSubtraction motion;
     Contours motionContours = new Contours();
 
@@ -28,7 +31,7 @@ public class MotionProcessor {
      * @param captureWidth
      * @param renderWidth
      */
-    MotionProcessor(int captureWidth, int renderWidth) {
+    MotionProcessorJavaCV(int captureWidth, int renderWidth) {
         this.captureWidth = captureWidth;
         this.renderWidth = renderWidth;
         motion = new BackgroundSubtraction(1, 600.0, 0.2);

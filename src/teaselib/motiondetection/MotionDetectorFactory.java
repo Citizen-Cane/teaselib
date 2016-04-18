@@ -4,8 +4,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-import teaselib.core.devices.VideoCaptureDeviceFactory;
-import teaselib.core.javacv.MotionDetectorJavaCV;
+import teaselib.core.devices.DeviceCache;
+import teaselib.core.devices.motiondetection.MotionDetectorJavaCV;
+import teaselib.video.VideoCaptureDeviceFactory;
 
 /**
  * Motion detectors have a 1:1 relationship to video capture devices.

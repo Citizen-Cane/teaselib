@@ -1,7 +1,7 @@
 /**
  * 
  */
-package teaselib.motiondetection;
+package teaselib.core.devices.motiondetection;
 
 import java.util.LinkedList;
 

@@ -1,4 +1,4 @@
-package teaselib.motiondetection;
+package teaselib.core.devices.motiondetection;
 
 import java.awt.Dimension;
 import java.awt.Rectangle;
@@ -20,6 +20,12 @@ import com.github.sarxos.webcam.WebcamPanel;
 import com.github.sarxos.webcam.WebcamResolution;
 
 import teaselib.TeaseLib;
+import teaselib.core.devices.DeviceCache;
+import teaselib.core.devices.motiondetection.BasicMotionDetector.DetectionEvents;
+import teaselib.motiondetection.MotionDetector;
+import teaselib.motiondetection.MotionDetector.Feature;
+import teaselib.motiondetection.MotionDetector.MotionSensitivity;
+import teaselib.motiondetection.MotionDetector.Presence;
 
 /**
  * Uses webcam to detect motion.

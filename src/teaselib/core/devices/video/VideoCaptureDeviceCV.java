@@ -1,4 +1,4 @@
-package teaselib.core.devices;
+package teaselib.core.devices.video;
 
 import static org.bytedeco.javacpp.opencv_videoio.CAP_PROP_FRAME_HEIGHT;
 import static org.bytedeco.javacpp.opencv_videoio.CAP_PROP_FRAME_WIDTH;
@@ -15,8 +15,9 @@ import org.bytedeco.javacpp.opencv_videoio;
 import org.bytedeco.javacpp.opencv_videoio.VideoCapture;
 
 import teaselib.TeaseLib;
+import teaselib.core.devices.DeviceCache;
 import teaselib.core.javacv.Resize;
-import teaselib.motiondetection.DeviceCache;
+import teaselib.video.VideoCaptureDevice;
 
 public class VideoCaptureDeviceCV implements VideoCaptureDevice {
     public static final String DeviceClassName = "VideoCaptureDeviceJavaCV";

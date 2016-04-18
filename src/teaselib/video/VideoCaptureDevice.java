@@ -1,11 +1,11 @@
-package teaselib.core.devices;
+package teaselib.video;
 
 import java.util.Iterator;
 
 import org.bytedeco.javacpp.opencv_core.Mat;
 import org.bytedeco.javacpp.opencv_core.Size;
 
-import teaselib.motiondetection.Device;
+import teaselib.core.devices.Device;
 
 public interface VideoCaptureDevice extends Iterable<Mat>, Device {
 
@@ -17,6 +17,7 @@ public interface VideoCaptureDevice extends Iterable<Mat>, Device {
 
     double fps();
 
+    @Override
     Iterator<Mat> iterator();
 
     void close();

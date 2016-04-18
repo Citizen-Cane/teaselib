@@ -1,10 +1,11 @@
-package teaselib.core.devices;
+package teaselib.video;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import teaselib.motiondetection.DeviceCache;
-import teaselib.motiondetection.DeviceCache.DeviceFactory;
+import teaselib.core.devices.DeviceCache;
+import teaselib.core.devices.DeviceCache.DeviceFactory;
+import teaselib.core.devices.video.VideoCaptureDeviceCV;
 
 public class VideoCaptureDeviceFactory {
     public static final DeviceCache<VideoCaptureDevice> Instance = new DeviceCache<>(

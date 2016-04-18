@@ -2,6 +2,8 @@ package teaselib.motiondetection;
 
 import java.util.EnumSet;
 
+import teaselib.core.devices.Device;
+
 public interface MotionDetector extends Device {
 
     enum Feature {

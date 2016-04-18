@@ -1,4 +1,4 @@
-package teaselib.motiondetection;
+package teaselib.core.devices;
 
 import java.util.Collection;
 import java.util.HashMap;

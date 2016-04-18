@@ -7,10 +7,10 @@ import java.util.Set;
 import org.junit.Test;
 
 import teaselib.TeaseLib;
-import teaselib.core.javacv.MotionDetectorJavaCV;
+import teaselib.core.devices.DeviceCache;
+import teaselib.core.devices.motiondetection.MotionDetectorJavaCV;
 import teaselib.hosts.DummyHost;
 import teaselib.hosts.DummyPersistence;
-import teaselib.motiondetection.DeviceCache;
 import teaselib.motiondetection.MotionDetectorFactory;
 
 public class MotionDetectionTests {

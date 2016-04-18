@@ -1,4 +1,4 @@
-package teaselib.core.javacv;
+package teaselib.core.devices.motiondetection;
 
 import static org.bytedeco.javacpp.opencv_core.FONT_HERSHEY_PLAIN;
 import static org.bytedeco.javacpp.opencv_imgproc.circle;
@@ -22,10 +22,20 @@ import org.bytedeco.javacpp.opencv_core.Scalar;
 import org.bytedeco.javacpp.opencv_core.Size;
 
 import teaselib.TeaseLib;
-import teaselib.core.devices.VideoCaptureDevice;
+import teaselib.core.devices.DeviceCache;
+import teaselib.core.devices.motiondetection.BasicMotionDetector.DetectionEvents;
 import teaselib.core.javacv.util.FramesPerSecond;
-import teaselib.motiondetection.BasicMotionDetector;
-import teaselib.motiondetection.DeviceCache;
+import teaselib.motiondetection.MotionDetector;
+import teaselib.motiondetection.MotionDetector.Feature;
+import teaselib.motiondetection.MotionDetector.MotionSensitivity;
+import teaselib.motiondetection.MotionDetector.Presence;
+import teaselib.video.VideoCaptureDevice;
+
+// TODO Define criteria for each sensitivity level
+// TODO Resize corresponding structuring element to match motion sensitivity criteria
+// TODO Deal with blinking eyes - resolve issue for normal and low sensitivity
+// TODO Explore additional measures like using a motion bounding box
+// TODO Identify and implement motion detector building blocks on applicastion level
 
 public class MotionDetectorJavaCV extends BasicMotionDetector {
     public static final String DeviceClassName = "MotionDetectorJavaCV";
@@ -127,7 +137,7 @@ public class MotionDetectorJavaCV extends BasicMotionDetector {
 
         private static final int cornerSize = 32;
 
-        private final MotionProcessor motionDetector;
+        private final MotionProcessorJavaCV motionDetector;
         private final Map<Presence, Rect> presenceIndicators;
         private int motionDetectedCounter = -1;
 
@@ -140,7 +150,7 @@ public class MotionDetectorJavaCV extends BasicMotionDetector {
             setDaemon(true);
             videoCaptureDevice.open(new Size(320, 240));
             Size size = videoCaptureDevice.size();
-            motionDetector = new MotionProcessor(
+            motionDetector = new MotionProcessorJavaCV(
                     videoCaptureDevice.captureSize().width(), size.width());
             presenceIndicators = buildPresenceIndicatorMap(size);
         }
@@ -169,7 +179,7 @@ public class MotionDetectorJavaCV extends BasicMotionDetector {
             long desiredFrameTime = 1000 / desiredFPS;
             FramesPerSecond fps = new FramesPerSecond(desiredFPS);
             debug = true;
-            motionRegion = MotionProcessor.None;
+            motionRegion = MotionProcessorJavaCV.None;
             if (debug) {
                 String windows[] = { INPUT, MOTION };
                 Size windowSize = videoCaptureDevice.size();
@@ -252,7 +262,7 @@ public class MotionDetectorJavaCV extends BasicMotionDetector {
 
         private void renderDebugInfo(double fps, final Mat videoImage,
                 Rect rM) {
-            if (rM != MotionProcessor.None) {
+            if (rM != MotionProcessorJavaCV.None) {
                 if (debug) {
                     Rect r = motionDetector.motionRect();
                     EnumSet<Presence> indicators = getPresence(r);

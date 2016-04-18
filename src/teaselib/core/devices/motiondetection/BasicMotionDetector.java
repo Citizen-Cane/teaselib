@@ -1,4 +1,4 @@
-package teaselib.motiondetection;
+package teaselib.core.devices.motiondetection;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
@@ -6,6 +6,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 import teaselib.TeaseLib;
+import teaselib.motiondetection.MotionDetector;
 
 public abstract class BasicMotionDetector implements MotionDetector {
 

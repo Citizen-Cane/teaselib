@@ -33,6 +33,10 @@ public class MotionRegionHistory {
         }
     }
 
+    public int size() {
+        return history.size();
+    }
+
     public Rect tail() {
         return history.getLast();
     }

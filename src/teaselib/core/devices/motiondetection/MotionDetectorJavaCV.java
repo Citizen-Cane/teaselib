@@ -140,8 +140,13 @@ public class MotionDetectorJavaCV extends BasicMotionDetector {
         // To make this work only the current movement region must be
         // considered, as the region history usually covers a larger area.
         // TODO Reality check with full body movement
-        Rect r = ((DetectionEventsJavaCV) detectionEvents).regionHistory.tail();
-        return getPresence(r);
+        MotionRegionHistory regionHistory = ((DetectionEventsJavaCV) detectionEvents).regionHistory;
+        if (regionHistory.size() > 0) {
+            Rect r = regionHistory.tail();
+            return getPresence(r);
+        } else {
+            return EnumSet.noneOf(Presence.class);
+        }
     }
 
     private EnumSet<Presence> getPresence(Rect r) {
@@ -267,8 +272,16 @@ public class MotionDetectorJavaCV extends BasicMotionDetector {
 
         private void updateMotionState() {
             // Contour motion
-            contourMotionDetected = motionDetector.motionContours.contours
-                    .size() > 0;
+            List<Rect> regions = rectangles(
+                    motionDetector.motionContours.contours);
+            // Remove potential blinking eyes
+            if (regions.size() <= 2) {
+                // TODO inspect region attributes to sort out blinking eyes
+                // remove circle shaped regions?
+                regions.clear();
+            }
+            regionHistory.add(regions);
+            contourMotionDetected = regions.size() > 0;
             // Tracker motion
             int distanceThreshold2 = motionDetector.structuringElementSize
                     * motionDetector.structuringElementSize;
@@ -280,15 +293,6 @@ public class MotionDetectorJavaCV extends BasicMotionDetector {
             // Build motion and direction frames history
             final int motionArea;
             final double motionDistance;
-            // Remove potential blinking eyes
-            List<Rect> regions = rectangles(
-                    motionDetector.motionContours.contours);
-            if (regions.size() <= 2) {
-                // TODO inspect region attributes to sort out blinking eyes
-                // remove circle shaped regions?
-                regions.clear();
-            }
-            regionHistory.add(regions);
             if (motionDetected) {
                 motionArea = regionHistory.tail().area();
                 motionDistance = distance2 > distanceThreshold2

@@ -21,11 +21,7 @@ import com.github.sarxos.webcam.WebcamResolution;
 
 import teaselib.TeaseLib;
 import teaselib.core.devices.DeviceCache;
-import teaselib.core.devices.motiondetection.BasicMotionDetector.DetectionEvents;
 import teaselib.motiondetection.MotionDetector;
-import teaselib.motiondetection.MotionDetector.Feature;
-import teaselib.motiondetection.MotionDetector.MotionSensitivity;
-import teaselib.motiondetection.MotionDetector.Presence;
 
 /**
  * Uses webcam to detect motion.
@@ -49,6 +45,7 @@ public class MotionDetectorSarxos extends BasicMotionDetector {
 
     static final double InitialAreaTreshold = 5;
     static final int InitialPixelTreshold = 16;
+    protected static final int PollingInterval = 100;
 
     protected double areaTreshold = InitialAreaTreshold;
     protected int pixelTreshold = InitialPixelTreshold;
@@ -340,5 +337,10 @@ public class MotionDetectorSarxos extends BasicMotionDetector {
     @Override
     public EnumSet<Presence> getPresence() {
         return EnumSet.noneOf(Presence.class);
+    }
+
+    @Override
+    protected int fps() {
+        return 1000 / PollingInterval;
     }
 }

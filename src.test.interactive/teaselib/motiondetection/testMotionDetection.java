@@ -5,6 +5,7 @@ import org.junit.Test;
 import teaselib.TeaseLib;
 import teaselib.hosts.DummyHost;
 import teaselib.hosts.DummyPersistence;
+import teaselib.motiondetection.MotionDetector.MotionSensitivity;
 
 /**
  * @author someone
@@ -20,6 +21,8 @@ public class testMotionDetection {
         TeaseLib.init(new DummyHost(), new DummyPersistence());
 
         MotionDetector md = MotionDetectorFactory.Instance.getDefaultDevice();
+        md.setSensitivity(MotionSensitivity.Normal);
+        
         System.out.println("Move!");
         while (!md.awaitMotionStart(5)) {
             System.out.println("I said 'Move'!");

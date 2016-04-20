@@ -6,12 +6,14 @@ import static org.bytedeco.javacpp.opencv_imgproc.putText;
 import static org.bytedeco.javacpp.opencv_imgproc.rectangle;
 import static teaselib.core.javacv.util.Geom.center;
 import static teaselib.core.javacv.util.Geom.intersects;
+import static teaselib.core.javacv.util.Geom.rectangles;
 import static teaselib.core.javacv.util.Gui.drawRect;
 import static teaselib.core.javacv.util.Gui.positionWindows;
 
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -23,20 +25,31 @@ import org.bytedeco.javacpp.opencv_core.Size;
 
 import teaselib.TeaseLib;
 import teaselib.core.devices.DeviceCache;
-import teaselib.core.devices.motiondetection.BasicMotionDetector.DetectionEvents;
 import teaselib.core.javacv.util.FramesPerSecond;
-import teaselib.motiondetection.MotionDetector;
-import teaselib.motiondetection.MotionDetector.Feature;
-import teaselib.motiondetection.MotionDetector.MotionSensitivity;
-import teaselib.motiondetection.MotionDetector.Presence;
 import teaselib.video.VideoCaptureDevice;
 
-// TODO Define criteria for each sensitivity level
-// TODO Resize corresponding structuring element to match motion sensitivity criteria
 // TODO Deal with blinking eyes - resolve issue for normal and low sensitivity
 // TODO Explore additional measures like using a motion bounding box
-// TODO Identify and implement motion detector building blocks on applicastion level
+// TODO Identify and implement motion detector building blocks on application level
 
+/**
+ * @author Citizen-Cane
+ * 
+ *         Bullet-Proof motion detector:
+ *         <p>
+ *         Motion is detected via motion contours from background subtraction.
+ *         Sensitivity is implemented by applying a structuring element to the
+ *         motion contours.
+ *         <p>
+ *         Absence of motion is detected by measuring the distance of tracking
+ *         points from positions set when motion last stopped.
+ *         <p>
+ *         Motion start is immediately signaled, whereas motion end is signaled
+ *         after a few frames delay in order to catch short breaks.
+ *         <p>
+ *         Blinking eyes are detected by removing small circular motion contours
+ *         before calculating the motion region.
+ */
 public class MotionDetectorJavaCV extends BasicMotionDetector {
     public static final String DeviceClassName = "MotionDetectorJavaCV";
 
@@ -57,20 +70,39 @@ public class MotionDetectorJavaCV extends BasicMotionDetector {
 
     private static Map<MotionSensitivity, Integer> initStructuringElementSizes() {
         Map<MotionSensitivity, Integer> map = new HashMap<>();
-        map.put(MotionSensitivity.High, 6);
-        map.put(MotionSensitivity.Normal, 18);
+        map.put(MotionSensitivity.High, 12);
+        map.put(MotionSensitivity.Normal, 24);
         map.put(MotionSensitivity.Low, 36);
         return map;
     }
 
+    private static final int MinimalFps = 15;
     private final VideoCaptureDevice videoCaptureDevice;
+    private final int desiredFPS;
 
     public MotionDetectorJavaCV(VideoCaptureDevice videoCaptureDevice) {
         super();
         this.videoCaptureDevice = videoCaptureDevice;
+        this.desiredFPS = getDesiredFPS(videoCaptureDevice, MinimalFps);
         detectionEvents = new DetectionEventsJavaCV();
         setSensitivity(MotionSensitivity.Normal);
         detectionEvents.start();
+    }
+
+    // TODO fps is double
+    private static int getDesiredFPS(VideoCaptureDevice videoCaptureDevice,
+            int minimalFps) {
+        final int desiredFPS;
+        int vcfps = (int) videoCaptureDevice.fps();
+        if (vcfps > minimalFps * 2) {
+            int div = Math.floorDiv(vcfps, minimalFps * 2) + 1;
+            desiredFPS = vcfps / div;
+        } else if (vcfps > minimalFps) {
+            desiredFPS = vcfps;
+        } else {
+            desiredFPS = minimalFps;
+        }
+        return desiredFPS;
     }
 
     @Override
@@ -103,7 +135,12 @@ public class MotionDetectorJavaCV extends BasicMotionDetector {
 
     @Override
     public EnumSet<Presence> getPresence() {
-        Rect r = ((DetectionEventsJavaCV) detectionEvents).motionRegion;
+        // Presence / absence is checked by detecting movement in the border
+        // regions without movement in the presence/center region
+        // To make this work only the current movement region must be
+        // considered, as the region history usually covers a larger area.
+        // TODO Reality check with full body movement
+        Rect r = ((DetectionEventsJavaCV) detectionEvents).regionHistory.tail();
         return getPresence(r);
     }
 
@@ -142,8 +179,12 @@ public class MotionDetectorJavaCV extends BasicMotionDetector {
         private int motionDetectedCounter = -1;
 
         private Rect motionRegion;
+        private boolean contourMotionDetected = false;
+        private boolean trackerMotionDetected = false;
+        private boolean motionDetected = false;
 
         boolean debug = true;
+        boolean logDetails = false;
 
         DetectionEventsJavaCV() {
             super();
@@ -168,17 +209,17 @@ public class MotionDetectorJavaCV extends BasicMotionDetector {
             return map;
         }
 
+        MotionDistanceTracker distanceTracker = new MotionDistanceTracker(
+                Green);
+        MotionRegionHistory regionHistory = new MotionRegionHistory(desiredFPS);
+
         @Override
         public void run() {
             // TODO Auto-adjust until frame rate is stable
             // - KNN/findContours use less cpu without motion
             // -> adjust to < 50% processing time per frame
-            int minimalFps = 15;
-            final int desiredFPS = getDesiredFPS(videoCaptureDevice,
-                    minimalFps);
             long desiredFrameTime = 1000 / desiredFPS;
             FramesPerSecond fps = new FramesPerSecond(desiredFPS);
-            debug = true;
             motionRegion = MotionProcessorJavaCV.None;
             if (debug) {
                 String windows[] = { INPUT, MOTION };
@@ -199,13 +240,17 @@ public class MotionDetectorJavaCV extends BasicMotionDetector {
                 } catch (InterruptedException e1) {
                     break;
                 }
+                // update shared items
                 detectionEvents.lockStartStop.lock();
                 motionDetector.update(videoImage);
                 lockStartStop.unlock();
                 // Resulting bounding boxes
-                motionRegion = motionDetector.region();
-                updateMotionState(motionRegion);
-                renderDebugInfo(fps.value(), videoImage, motionRegion);
+                updateMotionState();
+                motionRegion = regionHistory.region();
+                distanceTracker.update(videoImage, contourMotionDetected,
+                        motionDetector.trackFeatures);
+                renderDebugInfo(videoImage, motionRegion, contourMotionDetected,
+                        trackerMotionDetected, fps.value());
                 long now = System.currentTimeMillis();
                 long timeLeft = fps.timeMillisLeft(desiredFrameTime, now);
                 if (timeLeft > 0) {
@@ -220,21 +265,44 @@ public class MotionDetectorJavaCV extends BasicMotionDetector {
             cleanupResources();
         }
 
-        private void updateMotionState(Rect rM) {
-            boolean motionDetected = motionDetector.motionContours.contours
+        private void updateMotionState() {
+            // Contour motion
+            contourMotionDetected = motionDetector.motionContours.contours
                     .size() > 0;
+            // Tracker motion
+            int distanceThreshold2 = motionDetector.structuringElementSize
+                    * motionDetector.structuringElementSize;
+            double distance2 = distanceTracker
+                    .distance2(motionDetector.trackFeatures.keyPoints());
+            trackerMotionDetected = distance2 > distanceThreshold2;
+            // All together combined
+            motionDetected = contourMotionDetected || trackerMotionDetected;
             // Build motion and direction frames history
             final int motionArea;
+            final double motionDistance;
+            // Remove potential blinking eyes
+            List<Rect> regions = rectangles(
+                    motionDetector.motionContours.contours);
+            if (regions.size() <= 2) {
+                // TODO inspect region attributes to sort out blinking eyes
+                // remove circle shaped regions?
+                regions.clear();
+            }
+            regionHistory.add(regions);
             if (motionDetected) {
-                motionArea = rM.area();
+                motionArea = regionHistory.tail().area();
+                motionDistance = distance2 > distanceThreshold2
+                        ? Math.sqrt(distance2) : 0.0;
             } else {
                 motionArea = 0;
+                motionDistance = 0.0;
             }
             synchronized (mi) {
-                mi.add(motionArea);
+                mi.add(Math.max(motionArea, motionDistance));
             }
             // After setting current state, send notifications
             if (motionDetected) {
+                // TODO signals MotionStart immediately without delay
                 if (motionDetectedCounter < 0) {
                     // Motion just started
                     signalMotionStart();
@@ -260,79 +328,104 @@ public class MotionDetectorJavaCV extends BasicMotionDetector {
             }
         }
 
-        private void renderDebugInfo(double fps, final Mat videoImage,
-                Rect rM) {
-            if (rM != MotionProcessorJavaCV.None) {
+        private void renderDebugInfo(final Mat videoImage, Rect r,
+                boolean contourMotionDetected, boolean trackerMotionDetected,
+                double fps) {
+            if (r != MotionProcessorJavaCV.None) {
                 if (debug) {
-                    Rect r = motionDetector.motionRect();
-                    EnumSet<Presence> indicators = getPresence(r);
+                    EnumSet<Presence> indicators = getPresence();
+                    if (logDetails) {
+                        logMotionState(indicators, contourMotionDetected,
+                                trackerMotionDetected);
+                    }
                     boolean present = indicators.contains(Presence.Present);
-                    // present = motionDetector.motionContours.contours.size() >
-                    // 1;
                     // Motion
                     if (indicators.contains(Presence.Shake)) {
                         Rect presenceRect = presenceIndicators
                                 .get(Presence.Present);
                         rectangle(videoImage, presenceRect,
                                 present ? MidBlue : DarkBlue, 15, 8, 0);
-                        putText(videoImage, "?", center(presenceRect),
-                                FONT_HERSHEY_PLAIN, 10, White);
                     } else {
-                        motionDetector.motionContours.render(videoImage,
-                                DarkRed, -1);
-                        drawRect(videoImage, rM,
-                                Integer.toString(
-                                        motionDetector.motionContours.pixels())
-                                + ": " + rM.area() + "p2",
-                                present ? Green : Blue);
-                        circle(videoImage, center(rM), 15,
-                                present ? Green : Blue, 12, 8, 0);
-                        // Presence indicators
-                        for (Map.Entry<Presence, Rect> entry : presenceIndicators
-                                .entrySet()) {
-                            if (indicators.contains(entry.getKey())) {
-                                if (entry.getKey() == Presence.Present) {
-                                    circle(videoImage, center(rM), 8,
-                                            present ? Green : Blue,
-                                            videoCaptureDevice.size().height()
-                                                    / 2,
-                                            4, 0);
-                                } else {
-                                    rectangle(videoImage, entry.getValue(),
-                                            present ? Red : Blue, 4, 8, 0);
-                                }
-                            }
+                        renderMotionRegion(videoImage, r, present);
+                        renderPresenceIndicators(videoImage, r, indicators,
+                                present);
+                        motionDetector.trackFeatures.render(videoImage);
+                        // tracker distance
+                        if (contourMotionDetected && !trackerMotionDetected) {
+                            renderContourMotionRegion(videoImage, r);
+                        } else if (trackerMotionDetected) {
+                            renderDistanceTrackerPoints(videoImage);
                         }
                     }
-                    // fps
-                    String fpsFormatted = String.format("%1$.2f", fps);
-                    putText(videoImage, fpsFormatted + "fps", new Point(0, 40),
-                            FONT_HERSHEY_PLAIN, 2.75, White);
-                    org.bytedeco.javacpp.opencv_highgui.imshow(INPUT,
-                            videoImage);
-                    org.bytedeco.javacpp.opencv_highgui.imshow(MOTION,
-                            motionDetector.motion.output);
-                    if (org.bytedeco.javacpp.opencv_highgui.waitKey(30) >= 0) {
-                        // break;
-                    }
+                    renderFPS(fps, videoImage);
+                    updateWindows(videoImage);
                 }
             }
         }
 
-        // TODO fps is double
-        private int getDesiredFPS(VideoCaptureDevice videoCaptureDevice,
-                int minimalFps) {
-            final int desiredFPS;
-            int vcfps = (int) videoCaptureDevice.fps();
-            if (vcfps > minimalFps * 2) {
-                int div = Math.floorDiv(vcfps, minimalFps * 2) + 1;
-                desiredFPS = vcfps / div;
-            } else if (vcfps > minimalFps) {
-                desiredFPS = vcfps;
-            } else {
-                desiredFPS = minimalFps;
+        private void logMotionState(EnumSet<Presence> indicators,
+                boolean contourMotionDetected, boolean trackerMotionDetected) {
+            // Log state
+            TeaseLib.instance().log.info(indicators.toString());
+            TeaseLib.instance().log.info("contourMotionDetected="
+                    + contourMotionDetected + "  trackerMotionDetected="
+                    + trackerMotionDetected + "(distance=" + distanceTracker
+                            .distance2(motionDetector.trackFeatures.keyPoints())
+                    + ")");
+        }
+
+        private void renderMotionRegion(final Mat videoImage, Rect r,
+                boolean present) {
+            drawRect(videoImage, r, "", present ? Green : Blue);
+            circle(videoImage, center(r), 2, present ? Green : Blue, 2, 8, 0);
+        }
+
+        private void renderContourMotionRegion(final Mat videoImage, Rect rM) {
+            motionDetector.motionContours.render(videoImage, DarkRed, -1);
+            putText(videoImage, rM.area() + "p2",
+                    new Point(videoImage.cols() - 40, videoImage.cols() - 20),
+                    FONT_HERSHEY_PLAIN, 2.75, White);
+        }
+
+        private void renderDistanceTrackerPoints(final Mat videoImage) {
+            if (motionDetector.trackFeatures.haveFeatures()) {
+                distanceTracker.renderDebug(videoImage,
+                        motionDetector.trackFeatures.keyPoints());
             }
-            return desiredFPS;
+        }
+
+        private void updateWindows(final Mat videoImage) {
+            org.bytedeco.javacpp.opencv_highgui.imshow(INPUT, videoImage);
+            org.bytedeco.javacpp.opencv_highgui.imshow(MOTION,
+                    motionDetector.motion.output);
+            if (org.bytedeco.javacpp.opencv_highgui.waitKey(30) >= 0) {
+                // break;
+            }
+        }
+
+        private void renderFPS(double fps, final Mat videoImage) {
+            // fps
+            String fpsFormatted = String.format("%1$.2f", fps);
+            putText(videoImage, fpsFormatted + "fps", new Point(0, 40),
+                    FONT_HERSHEY_PLAIN, 2.75, White);
+        }
+
+        private void renderPresenceIndicators(final Mat videoImage, Rect rM,
+                EnumSet<Presence> indicators, boolean present) {
+            // Presence indicators
+            for (Map.Entry<Presence, Rect> entry : presenceIndicators
+                    .entrySet()) {
+                if (indicators.contains(entry.getKey())) {
+                    if (entry.getKey() == Presence.Present) {
+                        circle(videoImage, center(rM),
+                                videoCaptureDevice.size().height() / 4,
+                                present ? Green : Blue, 4, 4, 0);
+                    } else {
+                        rectangle(videoImage, entry.getValue(),
+                                present ? Red : Blue, 4, 8, 0);
+                    }
+                }
+            }
         }
 
         private void cleanupResources() {
@@ -342,5 +435,10 @@ public class MotionDetectorJavaCV extends BasicMotionDetector {
             TeaseLib.instance().log.debug("MotionArea="
                     + ((DetectionEventsJavaCV) detectionEvents).motionRegion);
         }
+    }
+
+    @Override
+    protected int fps() {
+        return desiredFPS;
     }
 }

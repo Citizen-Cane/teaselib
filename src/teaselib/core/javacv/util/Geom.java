@@ -1,8 +1,16 @@
 package teaselib.core.javacv.util;
 
+import static org.bytedeco.javacpp.opencv_imgproc.approxPolyDP;
+import static org.bytedeco.javacpp.opencv_imgproc.boundingRect;
+
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
+import java.util.Iterator;
 import java.util.List;
 
+import org.bytedeco.javacpp.opencv_core.Mat;
+import org.bytedeco.javacpp.opencv_core.MatVector;
 import org.bytedeco.javacpp.opencv_core.Point;
 import org.bytedeco.javacpp.opencv_core.Rect;
 
@@ -64,18 +72,15 @@ public class Geom {
                 || r2.contains(r1.tl()) || r2.contains(r1.br());
     }
 
-    public static Rect join(List<Rect> rectangles) {
+    public static Rect join(Collection<Rect> rectangles) {
         long size = rectangles.size();
         if (size == 0) {
             return new Rect();
         } else {
-            Rect r = new Rect(rectangles.get(0));
-            if (size == 1) {
-                return r;
-            } else {
-                for (int i = 1; i < size; i++) {
-                    join(r, rectangles.get(i), r);
-                }
+            Iterator<Rect> iterator = rectangles.iterator();
+            Rect r = new Rect(iterator.next());
+            for (; iterator.hasNext();) {
+                join(r, iterator.next(), r);
             }
             return r;
         }
@@ -90,6 +95,21 @@ public class Geom {
         r.y(top);
         r.width(right - left);
         r.height(bottom - top);
+    }
+
+    public static List<Rect> rectangles(MatVector contours) {
+        int size = (int) contours.size();
+        List<Rect> rectangles = new ArrayList<Rect>(size);
+        for (int i = 0; i < size; i++) {
+            // TODO Remove approxPolyDP?
+            Mat p = new Mat();
+            approxPolyDP(contours.get(i), p, 3, true);
+            Rect r = boundingRect(p);
+            // Rect r = opencv_imgproc.boundingRect(contours.get(i));
+            if (r != null)
+                rectangles.add(r);
+        }
+        return rectangles;
     }
 
 }

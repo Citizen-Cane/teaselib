@@ -13,8 +13,19 @@ public interface MotionDetector extends Device {
     }
 
     enum MotionSensitivity {
+        /**
+         * Ignores short movements
+         */
         Low,
+
+        /**
+         * Default sensitivity.
+         */
         Normal,
+
+        /**
+         * Detects also eye-blinking.
+         */
         High
     }
 

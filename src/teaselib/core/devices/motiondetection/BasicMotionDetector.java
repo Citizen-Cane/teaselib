@@ -12,7 +12,6 @@ public abstract class BasicMotionDetector implements MotionDetector {
 
     protected static final int MotionInertia = 4; // frames
     protected static final int MaximumNumberOfPastFrames = 400;
-    protected static final int PollingInterval = 100;
 
     protected final MotionHistory mi = new MotionHistory(
             MaximumNumberOfPastFrames);
@@ -55,10 +54,12 @@ public abstract class BasicMotionDetector implements MotionDetector {
         }
     }
 
-    protected static int frames(double seconds) {
-        final int frames = (int) seconds * (1000 / PollingInterval);
-        return Math.max(1, Math.min(frames, MaximumNumberOfPastFrames));
+    protected int frames(double seconds) {
+        return Math.max(1,
+                Math.min((int) (fps() * seconds), MaximumNumberOfPastFrames));
     }
+
+    protected abstract int fps();
 
     @Override
     public void clearMotionHistory() {

@@ -51,12 +51,16 @@ public class VideoCaptureDeviceCV implements VideoCaptureDevice {
         while (true) {
             // Only add new devices, because we want them to be singletons
             if (i >= devices.size())
+                // Detect new devices
                 try {
                     VideoCapture videoCapture = new VideoCapture();
                     videoCapture.open(i);
                     if (videoCapture.isOpened()) {
+                        // TODO release crashes my system
+                        //videoCapture.release();
                         devices.add(videoCapture);
                     } else {
+                        videoCapture.release();
                         // videoCapture.close();
                         break;
                     }
@@ -66,17 +70,25 @@ public class VideoCaptureDeviceCV implements VideoCaptureDevice {
                     break;
                 }
             else {
-                // Devices are never closed...
-                VideoCapture videoCapture = devices.get(i);
-                if (!videoCapture.isOpened()) {
-                    // ... but on surprise removal
-                    try {
-                        videoCapture.close();
-                    } catch (Exception e) {
-                        // Ignore
-                        TeaseLib.instance().log.error(devices, e);
+                // Remove removed devices
+                while (i < devices.size()) {
+                    VideoCapture videoCapture = devices.get(i);
+                    if (!videoCapture.isOpened()) {
+                        // ... but on surprise removal
+                        devices.remove(i);
+                        try {
+                            // TODO release crashes my system
+                            // videoCapture.release();
+                            // videoCapture.close();
+                        } catch (Exception e) {
+                            // Ignore
+                            TeaseLib.instance().log.error(devices, e);
+                        }
+                        // After removing an entry from the list,
+                        // Repeat without incrementing the index
+                        continue;
                     }
-                    devices.remove(i);
+                    // End device enumeration
                     break;
                 }
             }
@@ -229,15 +241,9 @@ public class VideoCaptureDeviceCV implements VideoCaptureDevice {
         }
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see teaselib.motiondetection.javacv.VideoCaptureDevice#close()
-     */
-    @Override
-    public void close() {
+    public void release() {
         try {
-            videoCapture.close();
+            videoCapture.release();
         } catch (Exception e) {
             TeaseLib.instance().log.error(this, e);
         }

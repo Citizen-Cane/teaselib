@@ -142,6 +142,8 @@ public class MotionDetectorSarxos extends BasicMotionDetector {
         newWebcam.open();
         showWebcamWindow(newWebcam);
         detectionEvents = new DetectionEventsSarxos(newWebcam);
+        detectionEvents.setName("Motion detector events");
+        detectionEvents.setDaemon(true);
         // Update properties
         ((DetectionEventsSarxos) detectionEvents).setAreaTreshold(areaTreshold);
         ((DetectionEventsSarxos) detectionEvents)
@@ -198,8 +200,6 @@ public class MotionDetectorSarxos extends BasicMotionDetector {
         DetectionEventsSarxos(Webcam webcam) {
             this.webcam = webcam;
             this.detector = new WebcamMotionDetector(webcam);
-            setName("motion detector events");
-            setDaemon(true);
         }
 
         public void setAreaTreshold(double areaTreshold) {

@@ -122,4 +122,14 @@ public abstract class BasicMotionDetector implements MotionDetector {
         detectionEvents.lockStartStop.unlock();
     }
 
+    @Override
+    public void release() {
+        detectionEvents.interrupt();
+        try {
+            detectionEvents.join();
+        } catch (InterruptedException e) {
+            // Ignore
+        }
+    }
+
 }

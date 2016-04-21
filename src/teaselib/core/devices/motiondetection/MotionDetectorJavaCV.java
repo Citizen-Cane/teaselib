@@ -86,6 +86,14 @@ public class MotionDetectorJavaCV extends BasicMotionDetector {
         this.desiredFPS = getDesiredFPS(videoCaptureDevice, MinimalFps);
         detectionEvents = new DetectionEventsJavaCV();
         setSensitivity(MotionSensitivity.Normal);
+        Thread detectionEventsShutdownHook = new Thread() {
+            @Override
+            public void run() {
+                release();
+            }
+        };
+        Runtime.getRuntime().addShutdownHook(detectionEventsShutdownHook);
+        detectionEvents.setDaemon(false);
         detectionEvents.start();
     }
 
@@ -193,7 +201,6 @@ public class MotionDetectorJavaCV extends BasicMotionDetector {
 
         DetectionEventsJavaCV() {
             super();
-            setDaemon(true);
             videoCaptureDevice.open(new Size(320, 240));
             Size size = videoCaptureDevice.size();
             motionDetector = new MotionProcessorJavaCV(
@@ -267,7 +274,7 @@ public class MotionDetectorJavaCV extends BasicMotionDetector {
                 }
                 fps.updateFrame(now + timeLeft);
             }
-            cleanupResources();
+            videoCaptureDevice.release();
         }
 
         private void updateMotionState() {
@@ -278,7 +285,11 @@ public class MotionDetectorJavaCV extends BasicMotionDetector {
             if (regions.size() <= 2) {
                 // TODO inspect region attributes to sort out blinking eyes
                 // remove circle shaped regions?
-                regions.clear();
+                // TODO Just clearing breaks Absence detection
+                // regions.clear();
+                // only clear if in presence region
+                // tracking points with non null distance in presence region
+                // indicate presence
             }
             regionHistory.add(regions);
             contourMotionDetected = regions.size() > 0;
@@ -430,9 +441,6 @@ public class MotionDetectorJavaCV extends BasicMotionDetector {
                     }
                 }
             }
-        }
-
-        private void cleanupResources() {
         }
 
         private void printDebug() {

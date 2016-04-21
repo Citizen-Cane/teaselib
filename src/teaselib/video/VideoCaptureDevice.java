@@ -20,5 +20,6 @@ public interface VideoCaptureDevice extends Iterable<Mat>, Device {
     @Override
     Iterator<Mat> iterator();
 
-    void close();
+    @Override
+    void release();
 }

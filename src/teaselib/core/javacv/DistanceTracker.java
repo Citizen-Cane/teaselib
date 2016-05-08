@@ -1,7 +1,7 @@
-package teaselib.core.devices.motiondetection;
+package teaselib.core.javacv;
 
-import static org.bytedeco.javacpp.opencv_core.FONT_HERSHEY_PLAIN;
-import static org.bytedeco.javacpp.opencv_imgproc.putText;
+import static org.bytedeco.javacpp.opencv_core.*;
+import static org.bytedeco.javacpp.opencv_imgproc.*;
 
 import org.bytedeco.javacpp.opencv_core.Mat;
 import org.bytedeco.javacpp.opencv_core.Point;
@@ -9,19 +9,17 @@ import org.bytedeco.javacpp.opencv_core.Scalar;
 import org.bytedeco.javacpp.opencv_imgproc;
 import org.bytedeco.javacpp.indexer.FloatIndexer;
 
-import teaselib.core.javacv.TrackFeatures;
-
-class MotionDistanceTracker {
+public class DistanceTracker {
     private final Mat keyPoints = new Mat();
     private final Scalar color;
 
     private boolean resetTrackFeatures = false;
 
-    MotionDistanceTracker(Scalar color) {
+    public DistanceTracker(Scalar color) {
         this.color = color;
     }
 
-    void update(Mat videoImage, boolean motionDetected,
+    public void update(Mat videoImage, boolean motionDetected,
             TrackFeatures trackFeatures) {
         if (motionDetected) {
             resetTrackFeatures = true;

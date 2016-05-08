@@ -9,6 +9,7 @@ import java.util.List;
 import org.bytedeco.javacpp.opencv_core.MatVector;
 import org.bytedeco.javacpp.opencv_core.Rect;
 
+@Deprecated
 public class RegionHistory {
     private final LinkedList<Rect> history;
     private final int capacity;

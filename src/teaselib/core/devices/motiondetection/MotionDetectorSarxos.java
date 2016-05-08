@@ -7,6 +7,10 @@ import java.util.Collection;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Vector;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import javax.swing.JFrame;
 import javax.swing.WindowConstants;
@@ -38,6 +42,8 @@ import teaselib.motiondetection.MotionDetector;
  * 
  * As a result, good lighting is a must to be successful with motion detection.
  */
+
+@Deprecated
 public class MotionDetectorSarxos extends BasicMotionDetector {
     public static final String DeviceClassName = "MotionDetectorSarxos";
 
@@ -52,6 +58,8 @@ public class MotionDetectorSarxos extends BasicMotionDetector {
 
     protected final MotionAreaHistory mi = new MotionAreaHistory(
             MaximumNumberOfPastFrames);
+
+    protected DetectionEventsSarxos detectionEvents = null;
 
     private Dimension ViewSize = WebcamResolution.VGA.getSize();
     JFrame window = null;
@@ -200,9 +208,35 @@ public class MotionDetectorSarxos extends BasicMotionDetector {
         final Webcam webcam;
         final WebcamMotionDetector detector;
 
+        final Lock motionStartLock = new ReentrantLock();
+        final Condition motionStart = motionStartLock.newCondition();
+        final Lock motionEndLock = new ReentrantLock();
+        final Condition motionEnd = motionEndLock.newCondition();
+
+        protected void signalMotionStart() {
+            motionStartLock.lock();
+            try {
+                TeaseLib.instance().log.info("Motion started");
+                motionStart.signalAll();
+            } finally {
+                motionStartLock.unlock();
+            }
+        }
+
+        protected void signalMotionEnd() {
+            motionEndLock.lock();
+            try {
+                TeaseLib.instance().log.info("Motion ended");
+                motionEnd.signalAll();
+            } finally {
+                motionEndLock.unlock();
+            }
+        }
+
         DetectionEventsSarxos(Webcam webcam) {
             this.webcam = webcam;
             this.detector = new WebcamMotionDetector(webcam);
+            setName("Webcam Motion events");
         }
 
         public void setAreaTreshold(double areaTreshold) {
@@ -272,7 +306,7 @@ public class MotionDetectorSarxos extends BasicMotionDetector {
                     // detector - inertia may add up this way,
                     // and the javacv implementation will just rely on the basic
                     // implementation
-                    motionDetectedCounter = MotionInertia;
+                    motionDetectedCounter = frames(MotionInertiaSeconds);
                 } else {
                     if (motionDetectedCounter == 0) {
                         printDebug();
@@ -325,6 +359,10 @@ public class MotionDetectorSarxos extends BasicMotionDetector {
     }
 
     @Override
+    public boolean isMotionDetected(double pastSeconds) {
+        return isMotionDetected(frames(pastSeconds));
+    }
+
     protected boolean isMotionDetected(int pastFrames) {
         synchronized (mi) {
             double dm = mi.getMotion(pastFrames);
@@ -343,14 +381,79 @@ public class MotionDetectorSarxos extends BasicMotionDetector {
     }
 
     @Override
-    protected int fps() {
-        return 1000 / PollingInterval;
+    public boolean awaitChange(final double timeoutSeconds,
+            final Presence change) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    protected double fps() {
+        return 1000.0 / PollingInterval;
     }
 
     @Override
     public void clearMotionHistory() {
         synchronized (mi) {
             mi.clear();
+        }
+    }
+
+    @Override
+    public boolean awaitMotionStart(double timeoutSeconds) {
+        detectionEvents.motionStartLock.lock();
+        try {
+            boolean motionDetected = isMotionDetected(MotionInertiaSeconds);
+            if (!motionDetected) {
+                motionDetected = detectionEvents.motionStart.await(
+                        (long) timeoutSeconds * 1000, TimeUnit.MILLISECONDS);
+            }
+            return motionDetected;
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        } finally {
+            detectionEvents.motionStartLock.unlock();
+        }
+    }
+
+    @Override
+    public boolean awaitMotionEnd(double timeoutSeconds) {
+        detectionEvents.motionEndLock.lock();
+        try {
+            boolean motionStopped = !isMotionDetected(MotionInertiaSeconds);
+            if (!motionStopped) {
+                motionStopped = detectionEvents.motionEnd.await(
+                        (long) timeoutSeconds * 1000, TimeUnit.MILLISECONDS);
+            }
+            return motionStopped;
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        } finally {
+            detectionEvents.motionEndLock.unlock();
+        }
+    }
+
+    @Override
+    public boolean active() {
+        return detectionEvents != null;
+    }
+
+    @Override
+    public void pause() {
+        detectionEvents.lockStartStop.lock();
+    }
+
+    @Override
+    public void resume() {
+        detectionEvents.lockStartStop.unlock();
+    }
+
+    @Override
+    public void release() {
+        detectionEvents.interrupt();
+        try {
+            detectionEvents.join();
+        } catch (InterruptedException e) {
+            // Ignore
         }
     }
 }

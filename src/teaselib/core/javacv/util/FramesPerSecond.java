@@ -10,6 +10,26 @@ public class FramesPerSecond {
     double fps = 0.0;
     long frameStartTime = 0;
 
+    /**
+     * Find the number closest to the desired frames per second.
+     * 
+     * @param capableFps
+     * @param desiredFps
+     * @return
+     */
+    public static double getFps(double capableFps, double desiredFps) {
+        final double desiredFPS;
+        if (capableFps >= desiredFps * 2) {
+            double div = Math.floorDiv((int) capableFps, (int) desiredFps);
+            desiredFPS = capableFps / div;
+        } else if (capableFps > desiredFps) {
+            desiredFPS = capableFps;
+        } else {
+            desiredFPS = desiredFps;
+        }
+        return desiredFPS;
+    }
+
     public FramesPerSecond(int capacity) {
         this.capacity = capacity;
         frameTimes = new Vector<>(capacity);

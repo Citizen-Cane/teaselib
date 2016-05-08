@@ -1,11 +1,14 @@
 package teaselib.core.devices.motiondetection;
 
+import static teaselib.core.javacv.Color.*;
+
 import org.bytedeco.javacpp.opencv_core.Mat;
 import org.bytedeco.javacpp.opencv_core.Rect;
 
 import teaselib.core.javacv.BackgroundSubtraction;
 import teaselib.core.javacv.Contours;
 import teaselib.core.javacv.TrackFeatures;
+import teaselib.core.javacv.DistanceTracker;
 
 public class MotionProcessorJavaCV {
     public final static Rect None = new Rect(Integer.MAX_VALUE,
@@ -21,6 +24,7 @@ public class MotionProcessorJavaCV {
     BackgroundSubtraction motion;
     Contours motionContours = new Contours();
     TrackFeatures trackFeatures = new TrackFeatures();
+    DistanceTracker distanceTracker = new DistanceTracker(Green);
 
     /**
      * @param captureWidth

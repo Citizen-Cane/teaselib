@@ -9,6 +9,8 @@ import java.util.LinkedList;
  * @author someone
  *
  */
+
+@Deprecated
 public class MotionAreaHistory {
     private final int frames;
 

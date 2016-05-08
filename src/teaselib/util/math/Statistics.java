@@ -55,4 +55,24 @@ public class Statistics {
             return data[size / 2].doubleValue();
         }
     }
+
+    public double min() {
+        double min = Double.MAX_VALUE;
+        for (Number a : data) {
+            if (a.doubleValue() < min) {
+                min = a.doubleValue();
+            }
+        }
+        return min;
+    }
+
+    public double max() {
+        double max = Double.MIN_VALUE;
+        for (Number a : data) {
+            if (a.doubleValue() > max) {
+                max = a.doubleValue();
+            }
+        }
+        return max;
+    }
 }

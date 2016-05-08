@@ -11,8 +11,8 @@ import java.util.concurrent.TimeUnit;
 
 import teaselib.ScriptFunction;
 import teaselib.TeaseLib;
+import teaselib.core.concurrency.NamedExecutorService;
 import teaselib.core.events.Delegate;
-import teaselib.core.util.NamedExecutorService;
 
 public class ScriptFutureTask extends FutureTask<String> {
     public static class TimeoutClick {

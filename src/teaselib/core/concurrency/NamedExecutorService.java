@@ -1,7 +1,7 @@
 /**
  * 
  */
-package teaselib.core.util;
+package teaselib.core.concurrency;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;

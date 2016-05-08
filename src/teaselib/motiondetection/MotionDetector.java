@@ -30,13 +30,67 @@ public interface MotionDetector extends Device {
     }
 
     enum Presence {
-        Shake,
-        Absent,
-        Present,
+        /**
+         * The center of the view, intersection of
+         * {@link Presence#CenterHorizontal} and {@link Presence#CenterVertical}
+         */
+        Center,
+        /**
+         * Region in the middle, from left to right
+         */
+        CenterHorizontal,
+
+        /**
+         * Region in the middle, from top to bottom (minus the borders)
+         */
+        CenterVertical,
+        /**
+         * Left region
+         */
         Left,
+        /**
+         * Right region
+         */
         Right,
+        /**
+         * Top region
+         */
         Top,
-        Bottom
+        /**
+         * Bottom region
+         */
+        Bottom,
+        /**
+         * The left border of the capture view
+         */
+        LeftBorder,
+        RightBorder,
+        TopBorder,
+        BottomBorder,
+        /**
+         * Calculated from capture input to indicate that there is ongoing
+         * motion
+         */
+        Motion,
+        /**
+         * Calculated from capture input to indicate that there is no ongoing
+         * motion
+         */
+        NoMotion,
+        /**
+         * Calculated from capture input to indicate that the user touches the
+         * presence region
+         */
+        Present,
+        /**
+         * Calculated from capture input to indicate that the user doesn't touch
+         * the presence region
+         */
+        Away,
+        /**
+         * Calculated from capture input to indicate camera shaking
+         */
+        Shake,
     }
 
     void setSensitivity(MotionSensitivity motionSensivity);
@@ -48,6 +102,8 @@ public interface MotionDetector extends Device {
     EnumSet<Presence> getPresence();
 
     EnumSet<Feature> getFeatures();
+
+    public boolean awaitChange(double timeoutSeconds, Presence change);
 
     /**
      * Waits the specified period for motion.
@@ -73,5 +129,11 @@ public interface MotionDetector extends Device {
      * @return
      */
     boolean active();
+
+    public void pause();
+
+    public void resume();
+
+    public void release();
 
 }

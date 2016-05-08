@@ -10,7 +10,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
-import teaselib.core.util.NamedExecutorService;
+import teaselib.core.concurrency.NamedExecutorService;
 
 public class Prefetcher<T> {
 

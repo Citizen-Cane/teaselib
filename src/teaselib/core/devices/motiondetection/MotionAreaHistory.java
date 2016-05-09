@@ -9,12 +9,12 @@ import java.util.LinkedList;
  * @author someone
  *
  */
-public class MotionHistory {
+public class MotionAreaHistory {
     private final int frames;
 
     private final LinkedList<Double> values = new LinkedList<Double>();
 
-    public MotionHistory(int frames) {
+    public MotionAreaHistory(int frames) {
         super();
         this.frames = frames;
     }

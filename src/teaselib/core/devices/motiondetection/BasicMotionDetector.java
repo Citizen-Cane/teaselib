@@ -13,8 +13,6 @@ public abstract class BasicMotionDetector implements MotionDetector {
     protected static final int MotionInertia = 4; // frames
     protected static final int MaximumNumberOfPastFrames = 400;
 
-    protected final MotionHistory mi = new MotionHistory(
-            MaximumNumberOfPastFrames);
     protected DetectionEvents detectionEvents = null;
 
     public BasicMotionDetector() {
@@ -60,13 +58,6 @@ public abstract class BasicMotionDetector implements MotionDetector {
     }
 
     protected abstract int fps();
-
-    @Override
-    public void clearMotionHistory() {
-        synchronized (mi) {
-            mi.clear();
-        }
-    }
 
     @Override
     public boolean isMotionDetected(double pastSeconds) {
@@ -131,5 +122,4 @@ public abstract class BasicMotionDetector implements MotionDetector {
             // Ignore
         }
     }
-
 }

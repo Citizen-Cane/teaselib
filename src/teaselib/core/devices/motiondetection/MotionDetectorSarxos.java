@@ -50,6 +50,9 @@ public class MotionDetectorSarxos extends BasicMotionDetector {
     protected double areaTreshold = InitialAreaTreshold;
     protected int pixelTreshold = InitialPixelTreshold;
 
+    protected final MotionAreaHistory mi = new MotionAreaHistory(
+            MaximumNumberOfPastFrames);
+
     private Dimension ViewSize = WebcamResolution.VGA.getSize();
     JFrame window = null;
 
@@ -342,5 +345,12 @@ public class MotionDetectorSarxos extends BasicMotionDetector {
     @Override
     protected int fps() {
         return 1000 / PollingInterval;
+    }
+
+    @Override
+    public void clearMotionHistory() {
+        synchronized (mi) {
+            mi.clear();
+        }
     }
 }

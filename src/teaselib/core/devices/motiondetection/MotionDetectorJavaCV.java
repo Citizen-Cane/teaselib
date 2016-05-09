@@ -12,8 +12,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.Vector;
 
 import org.bytedeco.javacpp.opencv_core.Mat;
+import org.bytedeco.javacpp.opencv_core.MatVector;
 import org.bytedeco.javacpp.opencv_core.Point;
 import org.bytedeco.javacpp.opencv_core.Rect;
 import org.bytedeco.javacpp.opencv_core.Size;
@@ -22,10 +24,6 @@ import teaselib.TeaseLib;
 import teaselib.core.devices.DeviceCache;
 import teaselib.core.javacv.util.FramesPerSecond;
 import teaselib.video.VideoCaptureDevice;
-
-// TODO Deal with blinking eyes - resolve issue for normal and low sensitivity
-// TODO Explore additional measures like using a motion bounding box
-// TODO Identify and implement motion detector building blocks on application level
 
 /**
  * @author Citizen-Cane
@@ -64,6 +62,7 @@ public class MotionDetectorJavaCV extends BasicMotionDetector {
     private static final int MinimalFps = 15;
     private final VideoCaptureDevice videoCaptureDevice;
     private final int desiredFPS;
+    int distanceThreshold2;
 
     public MotionDetectorJavaCV(VideoCaptureDevice videoCaptureDevice) {
         super();
@@ -107,9 +106,11 @@ public class MotionDetectorJavaCV extends BasicMotionDetector {
     @Override
     public void setSensitivity(MotionSensitivity motionSensivity) {
         pause();
-        ((DetectionEventsJavaCV) detectionEvents).motionDetector
-                .setStructuringElementSize(
-                        motionSensitivities.get(motionSensivity));
+        MotionProcessorJavaCV motionDetector = ((DetectionEventsJavaCV) detectionEvents).motionDetector;
+        motionDetector.setStructuringElementSize(
+                motionSensitivities.get(motionSensivity));
+        int s = motionDetector.structuringElementSize;
+        distanceThreshold2 = s * s;
         resume();
     }
 
@@ -120,8 +121,10 @@ public class MotionDetectorJavaCV extends BasicMotionDetector {
 
     @Override
     protected boolean isMotionDetected(int pastFrames) {
-        synchronized (mi) {
-            double dm = mi.getMotion(pastFrames);
+        DetectionEventsJavaCV detectionEventsJavaCV = (DetectionEventsJavaCV) detectionEvents;
+        final MotionAreaHistory motionAreaHistory = detectionEventsJavaCV.motionAreaHistory;
+        synchronized (motionAreaHistory) {
+            double dm = motionAreaHistory.getMotion(pastFrames);
             return dm > 0.0;
         }
     }
@@ -133,7 +136,7 @@ public class MotionDetectorJavaCV extends BasicMotionDetector {
         // To make this work only the current movement region must be
         // considered, as the region history usually covers a larger area.
         // TODO Reality check with full body movement
-        MotionRegionHistory regionHistory = ((DetectionEventsJavaCV) detectionEvents).regionHistory;
+        RegionHistory regionHistory = ((DetectionEventsJavaCV) detectionEvents).motionHistory;
         if (regionHistory.size() > 0) {
             Rect r = regionHistory.tail();
             return getPresence(r);
@@ -176,7 +179,18 @@ public class MotionDetectorJavaCV extends BasicMotionDetector {
         private final Map<Presence, Rect> presenceIndicators;
         private int motionDetectedCounter = -1;
 
-        private Rect motionRegion;
+        long desiredFrameTime = 1000 / desiredFPS;
+        FramesPerSecond fps = new FramesPerSecond(desiredFPS);
+        private Rect motionRegion = MotionProcessorJavaCV.None;
+        private Rect presenceRegion = MotionProcessorJavaCV.None;
+
+        MotionDistanceTracker distanceTracker = new MotionDistanceTracker(
+                Green);
+        RegionHistory motionHistory = new RegionHistory(desiredFPS);
+        RegionHistory presenceHistory = new RegionHistory(desiredFPS);
+        MotionAreaHistory motionAreaHistory = new MotionAreaHistory(
+                BasicMotionDetector.MaximumNumberOfPastFrames);
+
         private boolean contourMotionDetected = false;
         private boolean trackerMotionDetected = false;
         private boolean motionDetected = false;
@@ -186,11 +200,13 @@ public class MotionDetectorJavaCV extends BasicMotionDetector {
 
         DetectionEventsJavaCV() {
             super();
-            videoCaptureDevice.open(new Size(320, 240));
-            Size size = videoCaptureDevice.size();
+            final Size size = new Size(320, 240);
+            videoCaptureDevice.open(size);
+            Size actualSize = videoCaptureDevice.size();
             motionDetector = new MotionProcessorJavaCV(
-                    videoCaptureDevice.captureSize().width(), size.width());
-            presenceIndicators = buildPresenceIndicatorMap(size);
+                    videoCaptureDevice.captureSize().width(),
+                    actualSize.width());
+            presenceIndicators = buildPresenceIndicatorMap(actualSize);
         }
 
         private Map<Presence, Rect> buildPresenceIndicatorMap(Size s) {
@@ -206,18 +222,11 @@ public class MotionDetectorJavaCV extends BasicMotionDetector {
             return map;
         }
 
-        MotionDistanceTracker distanceTracker = new MotionDistanceTracker(
-                Green);
-        MotionRegionHistory regionHistory = new MotionRegionHistory(desiredFPS);
-
         @Override
         public void run() {
             // TODO Auto-adjust until frame rate is stable
             // - KNN/findContours use less cpu without motion
             // -> adjust to < 50% processing time per frame
-            long desiredFrameTime = 1000 / desiredFPS;
-            FramesPerSecond fps = new FramesPerSecond(desiredFPS);
-            motionRegion = MotionProcessorJavaCV.None;
             if (debug) {
                 String windows[] = { INPUT, MOTION };
                 Size windowSize = videoCaptureDevice.size();
@@ -242,12 +251,7 @@ public class MotionDetectorJavaCV extends BasicMotionDetector {
                 motionDetector.update(videoImage);
                 lockStartStop.unlock();
                 // Resulting bounding boxes
-                updateMotionState();
-                motionRegion = regionHistory.region();
-                distanceTracker.update(videoImage, contourMotionDetected,
-                        motionDetector.trackFeatures);
-                renderDebugInfo(videoImage, motionRegion, contourMotionDetected,
-                        trackerMotionDetected, fps.value());
+                updateMotionState(videoImage);
                 long now = System.currentTimeMillis();
                 long timeLeft = fps.timeMillisLeft(desiredFrameTime, now);
                 if (timeLeft > 0) {
@@ -262,43 +266,56 @@ public class MotionDetectorJavaCV extends BasicMotionDetector {
             videoCaptureDevice.release();
         }
 
-        private void updateMotionState() {
-            // Contour motion
-            List<Rect> regions = motionDetector.motionContours.regions();
-            // Remove potential blinking eyes
-            if (regions.size() <= 2) {
-                // TODO inspect region attributes to sort out blinking eyes
-                // remove circle shaped regions?
-                // TODO Just clearing breaks Absence detection
-                // regions.clear();
-                // only clear if in presence region
-                // tracking points with non null distance in presence region
-                // indicate presence
+        private void updateMotionState(Mat videoImage) {
+            updateMotionAndPresence();
+            updateMotionArea();
+            distanceTracker.update(videoImage, contourMotionDetected,
+                    motionDetector.trackFeatures);
+            renderDebugInfo(videoImage, motionRegion, contourMotionDetected,
+                    trackerMotionDetected, fps.value());
+            sendMotionNotifications();
+        }
+
+        private void updateMotionAndPresence() {
+            // Motion history
+            List<Rect> presenceRegions = motionDetector.motionContours
+                    .regions();
+            presenceHistory.add(presenceRegions);
+            presenceRegion = motionHistory.region();
+            // Remove potential blinking eyes from motion region history
+            List<Rect> motionRegions = new Vector<Rect>();
+            MatVector contours = motionDetector.motionContours.contours;
+            for (int i = 0; i < motionRegions.size(); i++) {
+                if (!isCircular(contours.get(i), 4)) {
+                    motionRegions.add(presenceRegions.get(i));
+                }
             }
-            regionHistory.add(regions);
-            contourMotionDetected = regions.size() > 0;
+            motionHistory.add(motionRegions);
+            motionRegion = motionHistory.region();
+            // Contour motion
+            contourMotionDetected = motionRegions.size() > 0;
             // Tracker motion
-            int distanceThreshold2 = motionDetector.structuringElementSize
-                    * motionDetector.structuringElementSize;
             double distance2 = distanceTracker
                     .distance2(motionDetector.trackFeatures.keyPoints());
             trackerMotionDetected = distance2 > distanceThreshold2;
             // All together combined
             motionDetected = contourMotionDetected || trackerMotionDetected;
-            // Build motion and direction frames history
+        }
+
+        private void updateMotionArea() {
             final int motionArea;
-            final double motionDistance;
             if (motionDetected) {
-                motionArea = regionHistory.tail().area();
-                motionDistance = distance2 > distanceThreshold2
-                        ? Math.sqrt(distance2) : 0.0;
+                motionArea = motionHistory.tail().area();
             } else {
                 motionArea = 0;
-                motionDistance = 0.0;
             }
-            synchronized (mi) {
-                mi.add(Math.max(motionArea, motionDistance));
+            synchronized (motionAreaHistory) {
+                motionAreaHistory.add(motionArea);
             }
+        }
+
+        @Deprecated
+        private void sendMotionNotifications() {
             // After setting current state, send notifications
             if (motionDetected) {
                 // TODO signals MotionStart immediately without delay
@@ -430,11 +447,20 @@ public class MotionDetectorJavaCV extends BasicMotionDetector {
         private void printDebug() {
             TeaseLib.instance().log.debug("MotionArea="
                     + ((DetectionEventsJavaCV) detectionEvents).motionRegion);
+            TeaseLib.instance().log.debug("PresenceArea="
+                    + ((DetectionEventsJavaCV) detectionEvents).presenceRegion);
         }
     }
 
     @Override
     protected int fps() {
         return desiredFPS;
+    }
+
+    @Override
+    public void clearMotionHistory() {
+        DetectionEventsJavaCV detectionEventsJavaCV = (DetectionEventsJavaCV) detectionEvents;
+        detectionEventsJavaCV.motionHistory.clear();
+        detectionEventsJavaCV.presenceHistory.clear();
     }
 }

@@ -1,6 +1,6 @@
 package teaselib.core.devices.motiondetection;
 
-import static teaselib.core.javacv.util.Geom.join;
+import static teaselib.core.javacv.util.Geom.*;
 import static teaselib.core.javacv.util.Gui.rectangles;
 
 import java.util.LinkedList;
@@ -9,13 +9,17 @@ import java.util.List;
 import org.bytedeco.javacpp.opencv_core.MatVector;
 import org.bytedeco.javacpp.opencv_core.Rect;
 
-public class MotionRegionHistory {
+public class RegionHistory {
     private final LinkedList<Rect> history;
     private final int capacity;
 
-    public MotionRegionHistory(int capacity) {
+    public RegionHistory(int capacity) {
         this.history = new LinkedList<>();
         this.capacity = capacity;
+    }
+
+    public void clear() {
+        history.clear();
     }
 
     public void add(MatVector contours) {
@@ -24,7 +28,8 @@ public class MotionRegionHistory {
 
     public void add(List<Rect> contours) {
         if (contours.size() == 0) {
-            // No motion - no history
+            // No motion - no update
+            history.add(tail());
         } else {
             if (history.size() == capacity) {
                 history.poll();

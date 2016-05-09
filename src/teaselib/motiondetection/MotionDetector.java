@@ -56,6 +56,7 @@ public interface MotionDetector extends Device {
      * @return True if motion started within the time period. False if no motion
      *         was detected during the time period.
      */
+    @Deprecated
     boolean awaitMotionStart(double timeoutSeconds);
 
     /**
@@ -63,6 +64,7 @@ public interface MotionDetector extends Device {
      * @return True if motion stopped within the time period. False if motion is
      *         still detected at the end of the time period.
      */
+    @Deprecated
     boolean awaitMotionEnd(double timeoutSeconds);
 
     /**

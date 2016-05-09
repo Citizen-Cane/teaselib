@@ -2,6 +2,7 @@ package teaselib.core.devices.motiondetection;
 
 import static org.bytedeco.javacpp.opencv_core.*;
 import static org.bytedeco.javacpp.opencv_imgproc.*;
+import static teaselib.core.javacv.Color.*;
 import static teaselib.core.javacv.util.Geom.*;
 import static teaselib.core.javacv.util.Gui.*;
 
@@ -15,7 +16,6 @@ import java.util.Set;
 import org.bytedeco.javacpp.opencv_core.Mat;
 import org.bytedeco.javacpp.opencv_core.Point;
 import org.bytedeco.javacpp.opencv_core.Rect;
-import org.bytedeco.javacpp.opencv_core.Scalar;
 import org.bytedeco.javacpp.opencv_core.Size;
 
 import teaselib.TeaseLib;
@@ -50,16 +50,6 @@ public class MotionDetectorJavaCV extends BasicMotionDetector {
 
     public static final EnumSet<Feature> Features = EnumSet.of(Feature.Motion,
             Feature.Presence);
-
-    private static final Scalar Red = new Scalar(0, 0, 255, 0);
-    private static final Scalar Green = new Scalar(0, 255, 0, 0);
-    private static final Scalar Blue = new Scalar(255, 0, 0, 0);
-    private static final Scalar White = new Scalar(255, 255, 255, 0);
-    private static final Scalar MidBlue = new Scalar(128, 0, 0, 0);
-    private static final Scalar DarkRed = new Scalar(0, 0, 64, 0);
-    private static final Scalar DarkGreen = new Scalar(0, 64, 0, 0);
-    private static final Scalar DarkBlue = new Scalar(64, 0, 0, 0);
-
     private static final Map<MotionSensitivity, Integer> motionSensitivities = new HashMap<>(
             initStructuringElementSizes());
 

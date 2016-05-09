@@ -1,14 +1,9 @@
 package teaselib.core.devices.motiondetection;
 
-import static org.bytedeco.javacpp.opencv_core.FONT_HERSHEY_PLAIN;
-import static org.bytedeco.javacpp.opencv_imgproc.circle;
-import static org.bytedeco.javacpp.opencv_imgproc.putText;
-import static org.bytedeco.javacpp.opencv_imgproc.rectangle;
-import static teaselib.core.javacv.util.Geom.center;
-import static teaselib.core.javacv.util.Geom.intersects;
-import static teaselib.core.javacv.util.Geom.rectangles;
-import static teaselib.core.javacv.util.Gui.drawRect;
-import static teaselib.core.javacv.util.Gui.positionWindows;
+import static org.bytedeco.javacpp.opencv_core.*;
+import static org.bytedeco.javacpp.opencv_imgproc.*;
+import static teaselib.core.javacv.util.Geom.*;
+import static teaselib.core.javacv.util.Gui.*;
 
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -279,8 +274,7 @@ public class MotionDetectorJavaCV extends BasicMotionDetector {
 
         private void updateMotionState() {
             // Contour motion
-            List<Rect> regions = rectangles(
-                    motionDetector.motionContours.contours);
+            List<Rect> regions = motionDetector.motionContours.regions();
             // Remove potential blinking eyes
             if (regions.size() <= 2) {
                 // TODO inspect region attributes to sort out blinking eyes
@@ -364,7 +358,7 @@ public class MotionDetectorJavaCV extends BasicMotionDetector {
                         renderMotionRegion(videoImage, r, present);
                         renderPresenceIndicators(videoImage, r, indicators,
                                 present);
-                        motionDetector.trackFeatures.render(videoImage);
+                        motionDetector.trackFeatures.render(videoImage, Green);
                         // tracker distance
                         if (contourMotionDetected && !trackerMotionDetected) {
                             renderContourMotionRegion(videoImage, r);

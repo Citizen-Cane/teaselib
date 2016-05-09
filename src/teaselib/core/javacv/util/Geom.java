@@ -1,20 +1,23 @@
 package teaselib.core.javacv.util;
 
-import static org.bytedeco.javacpp.opencv_imgproc.approxPolyDP;
-import static org.bytedeco.javacpp.opencv_imgproc.boundingRect;
+import static org.bytedeco.javacpp.opencv_imgproc.*;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 
+import org.bytedeco.javacpp.opencv_core;
 import org.bytedeco.javacpp.opencv_core.Mat;
 import org.bytedeco.javacpp.opencv_core.MatVector;
 import org.bytedeco.javacpp.opencv_core.Point;
 import org.bytedeco.javacpp.opencv_core.Rect;
+import org.bytedeco.javacpp.indexer.IntIndexer;
 
 import teaselib.util.math.Partition;
+import teaselib.util.math.Statistics;
 
 public class Geom {
     public static List<Partition<Rect>.Group> partition(List<Rect> rectangles,
@@ -101,15 +104,50 @@ public class Geom {
         int size = (int) contours.size();
         List<Rect> rectangles = new ArrayList<Rect>(size);
         for (int i = 0; i < size; i++) {
-            // TODO Remove approxPolyDP?
             Mat p = new Mat();
             approxPolyDP(contours.get(i), p, 3, true);
             Rect r = boundingRect(p);
-            // Rect r = opencv_imgproc.boundingRect(contours.get(i));
-            if (r != null)
+            if (r != null) {
                 rectangles.add(r);
+            }
         }
         return rectangles;
     }
 
+    public static boolean isCircular(Mat contour, double circularity) {
+        return isCircular(distance2Center(contour), circularity);
+    }
+
+    public static boolean isCircular(List<Integer> distance2Center,
+            double circularity) {
+        Collections.sort(distance2Center);
+        Statistics statistics = new Statistics(distance2Center);
+        int max = distance2Center.get(distance2Center.size() - 1);
+        double mean = statistics.mean();
+        double contourCircularity = max / mean;
+        return contourCircularity <= circularity * circularity;
+    }
+
+    @SuppressWarnings("resource")
+    private static List<Integer> distance2Center(Mat contour) {
+        IntIndexer points = contour.createIndexer();
+        int cx = 0;
+        int cy = 0;
+        final int s = points.rows();
+        for (int i = 0; i < s; i++) {
+            cx += points.get(i, 0);
+            cy += points.get(i, 1);
+        }
+        cx /= s;
+        cy /= s;
+        Point center = new Point(cx, cy);
+        List<Integer> distance2Center = new ArrayList<Integer>(s);
+        for (int i = 0; i < s; i++) {
+            opencv_core.Point p = new Point(points.get(i, 0), points.get(i, 1));
+            distance2Center.add(distance2(center, p));
+        }
+        // center.release();
+        points.release();
+        return distance2Center;
+    }
 }

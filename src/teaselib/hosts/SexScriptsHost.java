@@ -32,8 +32,8 @@ import teaselib.TeaseLib;
 import teaselib.core.Host;
 import teaselib.core.ResourceLoader;
 import teaselib.core.ScriptInterruptedException;
+import teaselib.core.concurrency.NamedExecutorService;
 import teaselib.core.events.Delegate;
-import teaselib.core.util.NamedExecutorService;
 import teaselib.util.Interval;
 
 /**

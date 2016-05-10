@@ -1,14 +1,12 @@
 package teaselib.core.javacv;
 
-import static org.bytedeco.javacpp.opencv_core.CV_8UC1;
-import static org.bytedeco.javacpp.opencv_imgproc.COLOR_BGRA2GRAY;
-import static org.bytedeco.javacpp.opencv_imgproc.circle;
-import static org.bytedeco.javacpp.opencv_imgproc.cvtColor;
-import static org.bytedeco.javacpp.opencv_imgproc.goodFeaturesToTrack;
-import static org.bytedeco.javacpp.opencv_video.calcOpticalFlowPyrLK;
+import static org.bytedeco.javacpp.opencv_core.*;
+import static org.bytedeco.javacpp.opencv_imgproc.*;
+import static org.bytedeco.javacpp.opencv_video.*;
 
 import org.bytedeco.javacpp.opencv_core;
 import org.bytedeco.javacpp.opencv_core.Mat;
+import org.bytedeco.javacpp.opencv_core.Scalar;
 import org.bytedeco.javacpp.opencv_core.Size;
 import org.bytedeco.javacpp.indexer.FloatIndexer;
 
@@ -73,10 +71,9 @@ public class TrackFeatures {
         return keyPoints;
     }
 
-    public void render(Mat input) {
+    public void render(Mat input, Scalar color) {
         if (haveFeatures()) {
             FloatIndexer points = keyPoints.createIndexer();
-            opencv_core.Scalar color = new opencv_core.Scalar(0, 255, 0, 0);
             for (int i = 0; i < points.rows(); i++) {
                 opencv_core.Point p = new opencv_core.Point(
                         (int) points.get(i, 0), (int) points.get(i, 1));

@@ -10,7 +10,7 @@ import java.util.concurrent.TimeUnit;
 
 import teaselib.TeaseLib;
 import teaselib.core.ScriptInterruptedException;
-import teaselib.core.util.NamedExecutorService;
+import teaselib.core.concurrency.NamedExecutorService;
 
 /**
  * @author someone

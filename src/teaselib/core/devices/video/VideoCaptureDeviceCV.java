@@ -1,7 +1,6 @@
 package teaselib.core.devices.video;
 
-import static org.bytedeco.javacpp.opencv_videoio.CAP_PROP_FRAME_HEIGHT;
-import static org.bytedeco.javacpp.opencv_videoio.CAP_PROP_FRAME_WIDTH;
+import static org.bytedeco.javacpp.opencv_videoio.*;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -56,12 +55,11 @@ public class VideoCaptureDeviceCV implements VideoCaptureDevice {
                     VideoCapture videoCapture = new VideoCapture();
                     videoCapture.open(i);
                     if (videoCapture.isOpened()) {
-                        // TODO release crashes my system
-                        //videoCapture.release();
+                        videoCapture.release();
                         devices.add(videoCapture);
                     } else {
                         videoCapture.release();
-                        // videoCapture.close();
+                        videoCapture.close();
                         break;
                     }
                 } catch (Exception e) {
@@ -77,9 +75,8 @@ public class VideoCaptureDeviceCV implements VideoCaptureDevice {
                         // ... but on surprise removal
                         devices.remove(i);
                         try {
-                            // TODO release crashes my system
-                            // videoCapture.release();
-                            // videoCapture.close();
+                            videoCapture.release();
+                            videoCapture.close();
                         } catch (Exception e) {
                             // Ignore
                             TeaseLib.instance().log.error(devices, e);
@@ -95,7 +92,6 @@ public class VideoCaptureDeviceCV implements VideoCaptureDevice {
             i++;
         }
         return devices;
-
     }
 
     public static VideoCaptureDeviceCV get(String name) {
@@ -187,15 +183,12 @@ public class VideoCaptureDeviceCV implements VideoCaptureDevice {
 
     private Mat read() {
         videoCapture.grab();
+        // hangs here on surprise removal
+        // but interrupting the thread still works
         videoCapture.retrieve(mat);
         return mat;
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see teaselib.motiondetection.javacv.VideoCaptureDevice#iterator()
-     */
     @Override
     public Iterator<Mat> iterator() {
         return new FrameIterator();
@@ -209,6 +202,8 @@ public class VideoCaptureDeviceCV implements VideoCaptureDevice {
                 f = read();
                 if (f != null) {
                     break;
+                } else {
+                    continue;
                 }
             }
             if (resize.factor > 1) {
@@ -220,6 +215,9 @@ public class VideoCaptureDeviceCV implements VideoCaptureDevice {
 
         @Override
         public boolean hasNext() {
+            if (!videoCapture.isOpened() || videoCapture.isNull()) {
+                return false;
+            }
             f = getMat();
             return mat != null;
         }
@@ -241,6 +239,7 @@ public class VideoCaptureDeviceCV implements VideoCaptureDevice {
         }
     }
 
+    @Override
     public void release() {
         try {
             videoCapture.release();

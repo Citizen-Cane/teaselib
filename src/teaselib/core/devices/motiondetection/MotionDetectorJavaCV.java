@@ -1,6 +1,6 @@
 package teaselib.core.devices.motiondetection;
 
-import static teaselib.core.javacv.util.Geom.intersects;
+import static teaselib.core.javacv.util.Geom.*;
 
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -166,7 +166,8 @@ public class MotionDetectorJavaCV extends BasicMotionDetector {
         boolean motionDetected = isMotionDetected(1);
         Map<Presence, Rect> m = detectionEvents.presenceIndicators;
         Rect presence = m.get(Presence.Present);
-        if (r.contains(presence.tl()) && r.contains(presence.br())) {
+        if (r == null
+                || r.contains(presence.tl()) && r.contains(presence.br())) {
             // TODO keep last state, to minimize wrong application behavior
             // caused by small shakes
             return EnumSet.of(Presence.Shake);
@@ -205,8 +206,8 @@ public class MotionDetectorJavaCV extends BasicMotionDetector {
 
         long desiredFrameTimeMillis = (long) (1000.0 / desiredFPS);
         FramesPerSecond fps = new FramesPerSecond((int) desiredFPS);
-        private Rect motionRegion = MotionProcessorJavaCV.None;
-        private Rect presenceRegion = MotionProcessorJavaCV.None;
+        private Rect motionRegion = null;
+        private Rect presenceRegion = null;
 
         TimeLine<Rect> motionRegionHistory = new TimeLine<Rect>();
         TimeLine<Rect> presenceRegionHistory = new TimeLine<Rect>();
@@ -338,7 +339,12 @@ public class MotionDetectorJavaCV extends BasicMotionDetector {
             // Motion history
             List<Rect> presenceRegions = motionProcessor.motionContours
                     .regions();
-            presenceRegionHistory.add(Geom.join(presenceRegions), timeStamp);
+            if (presenceRegions.isEmpty()) {
+                presenceRegionHistory.add(timeStamp);
+            } else {
+                presenceRegionHistory.add(Geom.join(presenceRegions),
+                        timeStamp);
+            }
             presenceRegion = Geom.join(
                     presenceRegionHistory.tail(PresenceRegionJoinTimespan));
             // Remove potential blinking eyes from motion region history
@@ -349,7 +355,11 @@ public class MotionDetectorJavaCV extends BasicMotionDetector {
                     motionRegions.add(presenceRegions.get(i));
                 }
             }
-            motionRegionHistory.add(Geom.join(motionRegions), timeStamp);
+            if (motionRegions.isEmpty()) {
+                motionRegionHistory.add(timeStamp);
+            } else {
+                motionRegionHistory.add(Geom.join(motionRegions), timeStamp);
+            }
             motionRegion = Geom
                     .join(motionRegionHistory.tail(MotionRegionJoinTimespan));
             // Contour motion

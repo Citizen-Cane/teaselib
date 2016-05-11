@@ -46,7 +46,7 @@ public class TimeLineTests {
     @Test
     public void testCapacityOverflowTimeSpan() {
         TimeLine<String> timeLine = new TimeLine<String>(10.0);
-        timeLine.setCapacity(1000, 3.0);
+        timeLine.setCapacity(1000, 3 * 1000);
         assertTrue(timeLine.add("start 1.0", 11.0));
         assertTrue(timeLine.add("start 2.0", 12.0));
         assertTrue(timeLine.add("start 4.0", 14.0));
@@ -66,6 +66,13 @@ public class TimeLineTests {
         assertEquals(1, timeLine.tail(0.5).size());
         assertEquals(3, timeLine.tail(4.0).size());
         assertEquals(3, timeLine.tail(60.0).size());
+    }
+
+    @Test
+    public void testAtLeastOneElement() {
+        TimeLine<String> timeLine = new TimeLine<String>(10.0);
+        assertTrue(timeLine.add("start 1.0", 14.0));
+        assertEquals(1, timeLine.tail(1.0).size());
     }
 
 }

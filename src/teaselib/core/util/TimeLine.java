@@ -17,20 +17,23 @@ import java.util.Vector;
  */
 public class TimeLine<T> {
     private final LinkedList<T> items = new LinkedList<T>();
-    private final LinkedList<Double> timeSpans = new LinkedList<Double>();
-
+    private final LinkedList<Long> timeSpans = new LinkedList<Long>();
     private int maxItems = 1000;
-    private double maxTimeSpanSeconds = 60.0;
+    private long maxTimeSpanMillis = 60 * 1000;
 
     private T last = null;
-    private double tailTime;
+    private long tailTimeMillis;
 
     public TimeLine() {
-        tailTime = System.currentTimeMillis() / 1000.0;
+        tailTimeMillis = System.currentTimeMillis();
     }
 
-    public TimeLine(double startTime) {
-        tailTime = startTime;
+    public TimeLine(long startTimeMillis) {
+        tailTimeMillis = startTimeMillis;
+    }
+
+    public TimeLine(double startTimeSeconds) {
+        tailTimeMillis = (long) (startTimeSeconds * 1000);
     }
 
     public void clear() {
@@ -40,23 +43,38 @@ public class TimeLine<T> {
 
     public void setCapacity(int items, double timeSpanSeconds) {
         maxItems = items;
-        maxTimeSpanSeconds = timeSpanSeconds;
+        maxTimeSpanMillis = (long) (timeSpanSeconds * 1000);
     }
 
-    public boolean add(T item, double timeStamp) {
-        boolean different = (last == null && item != null)
-                || !item.equals(last);
+    public void setCapacity(int items, long timeSpanMillis) {
+        maxItems = items;
+        maxTimeSpanMillis = timeSpanMillis;
+    }
+
+    public boolean add(double timeStamp) {
+        add(last, timeStamp);
+        return false;
+    }
+
+    public boolean add(T item, double timeSpanSeconds) {
+        return add(item, (long) (tailTimeMillis + timeSpanSeconds * 1000));
+    }
+
+    public boolean add(T item, long timeStamp) {
+        boolean different = last == null && item == null ? false
+                : (last == null && item != null)
+                        || (last != null && item == null) || !item.equals(last);
         if (different) {
             items.add(item);
-            timeSpans.add(timeStamp - tailTime);
-            tailTime = timeStamp;
+            timeSpans.add(timeStamp - tailTimeMillis);
+            tailTimeMillis = timeStamp;
             ensureCapacity();
         } else {
             final int size = timeSpans.size();
             if (size == 0) {
-                timeSpans.add(timeStamp - tailTime);
+                timeSpans.add(timeStamp - tailTimeMillis);
             } else {
-                timeSpans.set(size - 1, timeStamp - tailTime);
+                timeSpans.set(size - 1, timeStamp - tailTimeMillis);
             }
             // Capacity doesn't change
         }
@@ -66,17 +84,17 @@ public class TimeLine<T> {
 
     private void ensureCapacity() {
         // TODO store timestamps instead of delta - saves summing up
-        double sum = sum(timeSpans);
-        if (sum > maxTimeSpanSeconds) {
-            removeFirstSeconds(sum - maxTimeSpanSeconds);
+        long sum = sum(timeSpans);
+        if (sum > maxTimeSpanMillis) {
+            removeFirstMillis(sum - maxTimeSpanMillis);
         } else if (timeSpans.size() > maxItems) {
             removeFirstN(timeSpans.size() - maxItems);
         }
     }
 
-    private static double sum(List<Double> values) {
-        double sum = 0.0;
-        for (double d : values) {
+    private static long sum(List<Long> values) {
+        long sum = 0;
+        for (long d : values) {
             sum += d;
         }
         return sum;
@@ -89,10 +107,10 @@ public class TimeLine<T> {
         }
     }
 
-    private void removeFirstSeconds(double timeSpanSeconds) {
-        for (double i = 0; i < timeSpanSeconds && i < items.size();) {
+    private void removeFirstMillis(long timeSpanMillis) {
+        for (long i = 0; i < timeSpanMillis && i < items.size();) {
             items.removeFirst();
-            double d = timeSpans.removeFirst();
+            long d = timeSpans.removeFirst();
             i += d;
         }
     }
@@ -108,12 +126,13 @@ public class TimeLine<T> {
     public List<T> tail(double timeSpanSeconds) {
         List<T> tail = new Vector<T>(10);
         Iterator<T> item = items.descendingIterator();
-        Iterator<Double> timeSpan = timeSpans.descendingIterator();
+        Iterator<Long> timeSpan = timeSpans.descendingIterator();
+        long timeSpanMillis = (long) (timeSpanSeconds * 1000);
         while (item.hasNext()) {
             tail.add(item.next());
             double t = timeSpan.next();
-            if (t < timeSpanSeconds) {
-                timeSpanSeconds -= t;
+            if (t < timeSpanMillis) {
+                timeSpanMillis -= t;
             } else {
                 break;
             }

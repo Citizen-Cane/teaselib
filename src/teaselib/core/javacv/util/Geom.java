@@ -78,7 +78,7 @@ public class Geom {
     public static Rect join(Collection<Rect> rectangles) {
         long size = rectangles.size();
         if (size == 0) {
-            return new Rect();
+            return null;
         } else {
             Iterator<Rect> iterator = rectangles.iterator();
             Rect r = new Rect(iterator.next());
@@ -90,14 +90,32 @@ public class Geom {
     }
 
     public static void join(Rect a, Rect b, Rect r) {
-        int left = Math.min(a.x(), b.x());
-        int top = Math.min(a.y(), b.y());
-        int right = Math.max(a.x() + a.width(), b.x() + b.width());
-        int bottom = Math.max(a.y() + a.height(), b.y() + b.height());
-        r.x(left);
-        r.y(top);
-        r.width(right - left);
-        r.height(bottom - top);
+        if (r != null) {
+            if (a != null && b != null) {
+                int x = Math.min(a.x(), b.x());
+                int y = Math.min(a.y(), b.y());
+                int width = Math.max(a.x() + a.width(), b.x() + b.width()) - x;
+                int height = Math.max(a.y() + a.height(), b.y() + b.height())
+                        - y;
+                r.x(x);
+                r.y(y);
+                r.width(width);
+                r.height(height);
+            } else if (a != null && b == null) {
+                r.x(a.x());
+                r.y(a.y());
+                r.width(a.width());
+                r.height(a.height());
+            } else if (a == null && b != null) {
+                r.x(b.x());
+                r.y(b.y());
+                r.width(b.width());
+                r.height(b.height());
+            } else {
+                throw new IllegalArgumentException();
+            }
+        } else
+            throw new IllegalArgumentException();
     }
 
     public static List<Rect> rectangles(MatVector contours) {

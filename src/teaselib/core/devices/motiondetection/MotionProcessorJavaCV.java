@@ -7,8 +7,8 @@ import org.bytedeco.javacpp.opencv_core.Rect;
 
 import teaselib.core.javacv.BackgroundSubtraction;
 import teaselib.core.javacv.Contours;
-import teaselib.core.javacv.TrackFeatures;
 import teaselib.core.javacv.DistanceTracker;
+import teaselib.core.javacv.TrackFeatures;
 
 public class MotionProcessorJavaCV {
     public final static Rect None = new Rect(Integer.MAX_VALUE,

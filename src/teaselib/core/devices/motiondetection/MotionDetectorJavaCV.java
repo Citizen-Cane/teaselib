@@ -1,6 +1,6 @@
 package teaselib.core.devices.motiondetection;
 
-import static teaselib.core.javacv.util.Geom.*;
+import static teaselib.core.javacv.util.Geom.intersects;
 
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -107,6 +107,7 @@ public class MotionDetectorJavaCV extends BasicMotionDetector {
     }
 
     @Override
+    // TODO rewrite
     public boolean isMotionDetected(double seconds) {
         TimeLine<Integer> motionAreaHistory = detectionEvents.motionAreaHistory;
         synchronized (motionAreaHistory) {
@@ -212,13 +213,12 @@ public class MotionDetectorJavaCV extends BasicMotionDetector {
         TimeLine<Integer> motionAreaHistory = new TimeLine<Integer>();
         TimeLine<Set<Presence>> indicatorHistory = new TimeLine<Set<Presence>>();
 
-        final MotionDetectorJavaCVDebugRenderer debugInfo;
-
         private boolean contourMotionDetected = false;
         private boolean trackerMotionDetected = false;
         private boolean motionDetected = false;
 
         boolean debug = true;
+        MotionDetectorJavaCVDebugRenderer debugInfo = null;
         boolean logDetails = false;
 
         DetectionEventsJavaCV(VideoCaptureDevice videoCaptureDevice) {
@@ -230,8 +230,6 @@ public class MotionDetectorJavaCV extends BasicMotionDetector {
             motionProcessor = new MotionProcessorJavaCV(
                     videoCaptureDevice.captureSize().width(),
                     actualSize.width());
-            debugInfo = new MotionDetectorJavaCVDebugRenderer(motionProcessor,
-                    actualSize);
             presenceIndicators = buildPresenceIndicatorMap(actualSize);
         }
 
@@ -276,24 +274,39 @@ public class MotionDetectorJavaCV extends BasicMotionDetector {
             // -> adjust to < 50% processing time per frame
             motionDetectedCounter = -1;
             fps.startFrame();
+            debugInfo = new MotionDetectorJavaCVDebugRenderer(motionProcessor,
+                    videoCaptureDevice.size());
             for (final Mat videoImage : videoCaptureDevice) {
                 // TODO handle camera surprise removal and reconnect
                 // -> in VideoCaptureDevice?
                 if (isInterrupted()) {
                     break;
                 }
+                // handle setting sensitivity via structuring element size
+                // TODO it's just setting a member, maybe we can ignore
+                // concurrency
                 try {
                     lockStartStop.lockInterruptibly();
+                    // update shared items
+                    motionProcessor.update(videoImage);
                 } catch (InterruptedException e1) {
                     break;
+                } finally {
+                    lockStartStop.unlock();
                 }
-                // update shared items
-                detectionEvents.lockStartStop.lock();
-                motionProcessor.update(videoImage);
-                lockStartStop.unlock();
                 // Resulting bounding boxes
-                long now = System.currentTimeMillis();
-                updateMotionState(videoImage, now);
+                final long now = System.currentTimeMillis();
+                try {
+                    presenceChanged.doLocked(new Callable<Boolean>() {
+                        @Override
+                        public Boolean call() throws Exception {
+                            updateMotionState(videoImage, now);
+                            return true;
+                        }
+                    });
+                } catch (Exception e) {
+                    TeaseLib.instance().log.error(this, e);
+                }
                 long timeLeft = fps.timeMillisLeft(desiredFrameTimeMillis, now);
                 if (timeLeft > 0) {
                     try {
@@ -332,7 +345,7 @@ public class MotionDetectorJavaCV extends BasicMotionDetector {
             List<Rect> motionRegions = new Vector<Rect>();
             MatVector contours = motionProcessor.motionContours.contours;
             for (int i = 0; i < motionRegions.size(); i++) {
-                if (!isCircular(contours.get(i), 4)) {
+                if (!Geom.isCircular(contours.get(i), 4)) {
                     motionRegions.add(presenceRegions.get(i));
                 }
             }

@@ -3,12 +3,20 @@
  */
 package teaselib.core.devices.motiondetection;
 
-import static org.bytedeco.javacpp.opencv_core.*;
-import static org.bytedeco.javacpp.opencv_imgproc.*;
-import static teaselib.core.javacv.Color.*;
-import static teaselib.core.javacv.util.Geom.*;
-import static teaselib.core.javacv.util.Gui.*;
+import static org.bytedeco.javacpp.opencv_core.FONT_HERSHEY_PLAIN;
+import static org.bytedeco.javacpp.opencv_imgproc.circle;
+import static org.bytedeco.javacpp.opencv_imgproc.putText;
+import static org.bytedeco.javacpp.opencv_imgproc.rectangle;
+import static teaselib.core.javacv.Color.Blue;
+import static teaselib.core.javacv.Color.DarkRed;
+import static teaselib.core.javacv.Color.Green;
+import static teaselib.core.javacv.Color.Red;
+import static teaselib.core.javacv.Color.White;
+import static teaselib.core.javacv.util.Geom.center;
+import static teaselib.core.javacv.util.Gui.drawRect;
+import static teaselib.core.javacv.util.Gui.positionWindows;
 
+import java.util.ConcurrentModificationException;
 import java.util.EnumSet;
 import java.util.Map;
 
@@ -17,8 +25,13 @@ import org.bytedeco.javacpp.opencv_core.Point;
 import org.bytedeco.javacpp.opencv_core.Rect;
 import org.bytedeco.javacpp.opencv_core.Size;
 
+import teaselib.core.javacv.Color;
 import teaselib.motiondetection.MotionDetector.Presence;
 
+/**
+ * OpenCV imshow(...) isn't thread safe, it may hang (at least on windows) if
+ * called from several threads.
+ */
 public class MotionDetectorJavaCVDebugRenderer {
     private static final String INPUT = "Input";
     private static final String MOTION = "Motion";
@@ -26,10 +39,14 @@ public class MotionDetectorJavaCVDebugRenderer {
     final private MotionProcessorJavaCV motionProcessor;
     final private Size size;
 
+    final Thread owner;
+
     public MotionDetectorJavaCVDebugRenderer(
             MotionProcessorJavaCV motionProcessor, Size windowSize) {
         this.motionProcessor = motionProcessor;
         this.size = windowSize;
+        this.owner = Thread.currentThread();
+
         String windows[] = { INPUT, MOTION };
         positionWindows(windowSize.width(), windowSize.height(), windows);
     }
@@ -38,13 +55,17 @@ public class MotionDetectorJavaCVDebugRenderer {
             Map<Presence, Rect> presenceIndicators,
             EnumSet<Presence> indicators, boolean contourMotionDetected,
             boolean trackerMotionDetected, double fps) {
+        if (Thread.currentThread() != owner) {
+            throw new ConcurrentModificationException(owner.toString() + "!="
+                    + Thread.currentThread().toString());
+        }
         if (r != MotionProcessorJavaCV.None) {
             boolean present = indicators.contains(Presence.Present);
             // Motion
             if (indicators.contains(Presence.Shake)) {
                 Rect presenceRect = presenceIndicators.get(Presence.Present);
                 rectangle(videoImage, presenceRect,
-                        present ? MidBlue : DarkBlue, 15, 8, 0);
+                        present ? Color.MidBlue : Color.DarkBlue, 15, 8, 0);
             } else {
                 renderMotionRegion(videoImage, r, present);
                 renderPresenceIndicators(videoImage, r, presenceIndicators,
@@ -83,7 +104,7 @@ public class MotionDetectorJavaCVDebugRenderer {
     }
 
     private void updateWindows(Mat videoImage) {
-        // org.bytedeco.javacpp.opencv_highgui.imshow(INPUT, videoImage);
+        org.bytedeco.javacpp.opencv_highgui.imshow(INPUT, videoImage);
         org.bytedeco.javacpp.opencv_highgui.imshow(MOTION,
                 motionProcessor.motion.output);
         if (org.bytedeco.javacpp.opencv_highgui.waitKey(30) >= 0) {
@@ -114,5 +135,4 @@ public class MotionDetectorJavaCVDebugRenderer {
             }
         }
     }
-
 }

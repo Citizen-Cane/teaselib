@@ -3,6 +3,7 @@
  */
 package teaselib.core.util;
 
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -56,8 +57,8 @@ public class TimeLine<T> {
         return false;
     }
 
-    public boolean add(T item, double timeSpanSeconds) {
-        return add(item, (long) (tailTimeMillis + timeSpanSeconds * 1000));
+    public boolean add(T item, double timeStampSeconds) {
+        return add(item, (long) (timeStampSeconds * 1000));
     }
 
     public boolean add(T item, long timeStamp) {
@@ -123,14 +124,14 @@ public class TimeLine<T> {
         return items.getLast();
     }
 
-    public List<T> tail(double timeSpanSeconds) {
+    public List<T> getTimeSpan(double timeSpanSeconds) {
         List<T> tail = new Vector<T>(10);
         Iterator<T> item = items.descendingIterator();
         Iterator<Long> timeSpan = timeSpans.descendingIterator();
         long timeSpanMillis = (long) (timeSpanSeconds * 1000);
         while (item.hasNext()) {
             tail.add(item.next());
-            double t = timeSpan.next();
+            long t = timeSpan.next();
             if (t < timeSpanMillis) {
                 timeSpanMillis -= t;
             } else {
@@ -138,5 +139,13 @@ public class TimeLine<T> {
             }
         }
         return tail;
+    }
+
+    public List<T> last(int n) {
+        int size = items.size();
+        if (size == 0)
+            return Collections.EMPTY_LIST;
+        else
+            return items.subList(Math.max(0, size - n), size);
     }
 }

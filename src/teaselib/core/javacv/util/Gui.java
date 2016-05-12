@@ -1,7 +1,10 @@
 package teaselib.core.javacv.util;
 
-import static org.bytedeco.javacpp.opencv_core.*;
-import static org.bytedeco.javacpp.opencv_imgproc.*;
+import static org.bytedeco.javacpp.opencv_core.FONT_HERSHEY_PLAIN;
+import static org.bytedeco.javacpp.opencv_imgproc.approxPolyDP;
+import static org.bytedeco.javacpp.opencv_imgproc.boundingRect;
+import static org.bytedeco.javacpp.opencv_imgproc.putText;
+import static org.bytedeco.javacpp.opencv_imgproc.rectangle;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -44,15 +47,16 @@ public class Gui {
 
     public static void drawRect(Mat mat, Rect r, String name, Scalar color) {
         drawRect(mat, r, color);
-        // Create the text we will annotate the box with:
-        String box_text = "<" + name + ">";
-        // Calculate the position for annotated text (make sure we don't
-        // put illegal values in there):
-        int pos_x = Math.max(r.tl().x() + 10, 0);
-        int pos_y = Math.max(r.tl().y() + 10, 0);
-        // And now put it into the image:
-        putText(mat, box_text, new Point(pos_x, pos_y), FONT_HERSHEY_PLAIN,
-                1.75, color);
+        if (name != null && name != "") {
+            // Create the text we will annotate the box with:
+            // Calculate the position for annotated text (make sure we don't
+            // put illegal values in there):
+            int pos_x = Math.max(r.tl().x() + 10, 0);
+            int pos_y = Math.max(r.tl().y() + 10, 0);
+            String box_text = "<" + name + ">";
+            putText(mat, box_text, new Point(pos_x, pos_y), FONT_HERSHEY_PLAIN,
+                    1.75, color);
+        }
     }
 
     /**

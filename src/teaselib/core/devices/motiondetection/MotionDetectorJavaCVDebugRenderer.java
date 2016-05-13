@@ -17,8 +17,8 @@ import static teaselib.core.javacv.util.Gui.drawRect;
 import static teaselib.core.javacv.util.Gui.positionWindows;
 
 import java.util.ConcurrentModificationException;
-import java.util.EnumSet;
 import java.util.Map;
+import java.util.Set;
 
 import org.bytedeco.javacpp.opencv_core.Mat;
 import org.bytedeco.javacpp.opencv_core.Point;
@@ -52,35 +52,35 @@ public class MotionDetectorJavaCVDebugRenderer {
     }
 
     public void render(Mat videoImage, Rect r,
-            Map<Presence, Rect> presenceIndicators,
-            EnumSet<Presence> indicators, boolean contourMotionDetected,
-            boolean trackerMotionDetected, double fps) {
+            Map<Presence, Rect> presenceIndicators, Set<Presence> indicators,
+            boolean contourMotionDetected, boolean trackerMotionDetected,
+            double fps) {
         if (Thread.currentThread() != owner) {
             throw new ConcurrentModificationException(owner.toString() + "!="
                     + Thread.currentThread().toString());
         }
-        if (r != MotionProcessorJavaCV.None) {
-            boolean present = indicators.contains(Presence.Present);
-            // Motion
-            if (indicators.contains(Presence.Shake)) {
-                Rect presenceRect = presenceIndicators.get(Presence.Present);
-                rectangle(videoImage, presenceRect,
-                        present ? Color.MidBlue : Color.DarkBlue, 15, 8, 0);
-            } else {
+        boolean present = indicators.contains(Presence.Present);
+        // Motion
+        if (indicators.contains(Presence.Shake)) {
+            Rect presenceRect = presenceIndicators.get(Presence.Present);
+            rectangle(videoImage, presenceRect,
+                    present ? Color.MidBlue : Color.DarkBlue, 15, 8, 0);
+        } else {
+            if (r != null) {
                 renderMotionRegion(videoImage, r, present);
-                renderPresenceIndicators(videoImage, r, presenceIndicators,
-                        indicators, present);
-                motionProcessor.trackFeatures.render(videoImage, Green);
-                // tracker distance
-                if (contourMotionDetected && !trackerMotionDetected) {
-                    renderContourMotionRegion(videoImage, r);
-                } else if (trackerMotionDetected) {
-                    renderDistanceTrackerPoints(videoImage);
-                }
             }
-            renderFPS(fps, videoImage);
-            updateWindows(videoImage);
+            renderPresenceIndicators(videoImage, r, presenceIndicators,
+                    indicators, present);
+            motionProcessor.trackFeatures.render(videoImage, Green);
+            // tracker distance
+            if (contourMotionDetected && !trackerMotionDetected) {
+                renderContourMotionRegion(videoImage, r);
+            } else if (trackerMotionDetected) {
+                renderDistanceTrackerPoints(videoImage);
+            }
         }
+        renderFPS(fps, videoImage);
+        updateWindows(videoImage);
     }
 
     private static void renderMotionRegion(Mat videoImage, Rect r,
@@ -91,9 +91,11 @@ public class MotionDetectorJavaCVDebugRenderer {
 
     private void renderContourMotionRegion(Mat videoImage, Rect rM) {
         motionProcessor.motionContours.render(videoImage, DarkRed, -1);
-        putText(videoImage, rM.area() + "p2",
-                new Point(videoImage.cols() - 40, videoImage.cols() - 20),
-                FONT_HERSHEY_PLAIN, 2.75, White);
+        if (rM != null) {
+            putText(videoImage, rM.area() + "p2",
+                    new Point(videoImage.cols() - 40, videoImage.cols() - 20),
+                    FONT_HERSHEY_PLAIN, 2.75, White);
+        }
     }
 
     private void renderDistanceTrackerPoints(Mat videoImage) {
@@ -120,8 +122,8 @@ public class MotionDetectorJavaCVDebugRenderer {
     }
 
     private void renderPresenceIndicators(Mat videoImage, Rect rM,
-            Map<Presence, Rect> presenceIndicators,
-            EnumSet<Presence> indicators, boolean present) {
+            Map<Presence, Rect> presenceIndicators, Set<Presence> indicators,
+            boolean present) {
         // Presence indicators
         for (Map.Entry<Presence, Rect> entry : presenceIndicators.entrySet()) {
             if (indicators.contains(entry.getKey())) {

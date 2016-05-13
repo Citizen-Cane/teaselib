@@ -67,7 +67,7 @@ public class Statistics {
     }
 
     public double max() {
-        double max = Double.MIN_VALUE;
+        double max = -Double.MAX_VALUE;
         for (Number a : data) {
             if (a.doubleValue() > max) {
                 max = a.doubleValue();

@@ -1,6 +1,7 @@
 package teaselib.core.devices.video;
 
-import static org.bytedeco.javacpp.opencv_videoio.*;
+import static org.bytedeco.javacpp.opencv_videoio.CAP_PROP_FRAME_HEIGHT;
+import static org.bytedeco.javacpp.opencv_videoio.CAP_PROP_FRAME_WIDTH;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -53,7 +54,7 @@ public class VideoCaptureDeviceCV implements VideoCaptureDevice {
                 // Detect new devices
                 try {
                     VideoCapture videoCapture = new VideoCapture();
-                    videoCapture.open(i);
+                    openDevice(videoCapture, i);
                     if (videoCapture.isOpened()) {
                         videoCapture.release();
                         devices.add(videoCapture);
@@ -92,6 +93,11 @@ public class VideoCaptureDeviceCV implements VideoCaptureDevice {
             i++;
         }
         return devices;
+    }
+
+    private static void openDevice(VideoCapture videoCapture, int i) {
+        // videoCapture.open(opencv_videoio.CV_CAP_MSMF + i);
+        videoCapture.open(i);
     }
 
     public static VideoCaptureDeviceCV get(String name) {

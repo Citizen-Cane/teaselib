@@ -14,6 +14,13 @@ public class testMotionDetectionNew {
     public void testMotionStartStop() {
         TeaseLib.init(new DummyHost(), new DummyPersistence());
 
+        // String devicePath = VideoCaptureDeviceFactory.Instance
+        // .createDevicePath(VideoCaptureDeviceCV.DeviceClassName, "0");
+        // VideoCaptureDevice videoCaptureDevice =
+        // VideoCaptureDeviceFactory.Instance
+        // .getDevice(devicePath);
+        // MotionDetector md = new MotionDetectorJavaCV(videoCaptureDevice);
+
         MotionDetector md = MotionDetectorFactory.Instance.getDefaultDevice();
         md.setSensitivity(MotionSensitivity.Normal);
 

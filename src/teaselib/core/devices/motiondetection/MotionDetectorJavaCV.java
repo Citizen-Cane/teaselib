@@ -1,6 +1,6 @@
 package teaselib.core.devices.motiondetection;
 
-import static teaselib.core.javacv.util.Geom.*;
+import static teaselib.core.javacv.util.Geom.intersects;
 
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -35,14 +35,22 @@ import teaselib.video.VideoCaptureDevice;
  *         Sensitivity is implemented by applying a structuring element to the
  *         motion contours.
  *         <p>
- *         Absence of motion is detected by measuring the distance of tracking
- *         points from positions set when motion last stopped.
+ *         Absence of motion is measured by measuring the distance of tracking
+ *         points from positions set when motion last stopped. Motion is
+ *         detected when the tracking points move too far away from their start
+ *         points.
  *         <p>
- *         Motion start is immediately signaled, whereas motion end is signaled
- *         after a few frames delay in order to catch short breaks.
+ *         TODO Motion start end end are measure how? Immediately or with delay.
+ *         Which?
  *         <p>
  *         Blinking eyes are detected by removing small circular motion contours
  *         before calculating the motion region.
+ *         <p>
+ *         The detector is stable, but still can be cheated/misled. Avoid:
+ *         <p>
+ *         pets <b> audience within the field of view
+ *         <p>
+ *         light sources from moving cars or traffic lights
  */
 public class MotionDetectorJavaCV extends BasicMotionDetector {
     public static final String DeviceClassName = "MotionDetectorJavaCV";
@@ -107,12 +115,12 @@ public class MotionDetectorJavaCV extends BasicMotionDetector {
     }
 
     @Override
-    // TODO rewrite
+    // TODO forward to detection events
     public boolean isMotionDetected(double seconds) {
         TimeLine<Integer> motionAreaHistory = detectionEvents.motionAreaHistory;
         synchronized (motionAreaHistory) {
             Statistics statistics = new Statistics(
-                    motionAreaHistory.tail(seconds));
+                    motionAreaHistory.getTimeSpan(seconds));
             double motion = statistics.max();
             return motion > 0.0;
         }
@@ -146,12 +154,8 @@ public class MotionDetectorJavaCV extends BasicMotionDetector {
                         @Override
                         public Boolean call() throws Exception {
                             final TimeLine<Set<Presence>> indicatorHistory = detectionEvents.indicatorHistory;
-                            if (indicatorHistory.size() > 0) {
-                                Set<Presence> current = indicatorHistory.tail();
-                                return current.contains(change);
-                            } else {
-                                return false;
-                            }
+                            Set<Presence> current = indicatorHistory.tail();
+                            return current.contains(change);
                         }
                     }));
         } catch (InterruptedException e) {
@@ -160,38 +164,6 @@ public class MotionDetectorJavaCV extends BasicMotionDetector {
             TeaseLib.instance().log.error(this, e);
         }
         return false;
-    }
-
-    private EnumSet<Presence> getPresence(Rect r) {
-        boolean motionDetected = isMotionDetected(1);
-        Map<Presence, Rect> m = detectionEvents.presenceIndicators;
-        Rect presence = m.get(Presence.Present);
-        if (r == null
-                || r.contains(presence.tl()) && r.contains(presence.br())) {
-            // TODO keep last state, to minimize wrong application behavior
-            // caused by small shakes
-            return EnumSet.of(Presence.Shake);
-        } else {
-            Presence presenceState = motionDetected
-                    || intersects(r, m.get(Presence.Present)) ? Presence.Present
-                            : Presence.Away;
-            Set<Presence> directions = new HashSet<>();
-            for (Map.Entry<Presence, Rect> e : m.entrySet()) {
-                if (e.getKey() != Presence.Present) {
-                    if (intersects(e.getValue(), r)) {
-                        directions.add(e.getKey());
-                    }
-                }
-            }
-            if (motionDetected) {
-                directions.add(Presence.Motion);
-            } else {
-                directions.add(Presence.NoMotion);
-            }
-            Presence[] directionsArray = new Presence[directions.size()];
-            directionsArray = directions.toArray(directionsArray);
-            return EnumSet.of(presenceState, directionsArray);
-        }
     }
 
     private class DetectionEventsJavaCV extends DetectionEvents {
@@ -232,6 +204,24 @@ public class MotionDetectorJavaCV extends BasicMotionDetector {
                     videoCaptureDevice.captureSize().width(),
                     actualSize.width());
             presenceIndicators = buildPresenceIndicatorMap(actualSize);
+            initHistoryLists();
+        }
+
+        void initHistoryLists() {
+            motionRegionHistory.clear();
+            presenceRegionHistory.clear();
+            motionAreaHistory.clear();
+            indicatorHistory.clear();
+            // Set start values,
+            // instead of testing for empty lists later on
+            Size size = videoCaptureDevice.size();
+            long timeStamp = 0;
+            Rect all = new Rect(0, 0, size.width(), size.height());
+            motionRegionHistory.add(all, timeStamp);
+            presenceRegionHistory.add(all, timeStamp);
+            motionAreaHistory.add(0, timeStamp);
+            indicatorHistory.add(getPresence(all, all), timeStamp);
+
         }
 
         private Map<Presence, Rect> buildPresenceIndicatorMap(Size s) {
@@ -266,6 +256,49 @@ public class MotionDetectorJavaCV extends BasicMotionDetector {
             map.put(Presence.Bottom,
                     new Rect(0, cb, s.width(), s.height() - cb));
             return map;
+        }
+
+        private EnumSet<Presence> getPresence(Rect motionRegion,
+                Rect presenceRegion) {
+            boolean motionDetected = isMotionDetected(MotionRegionJoinTimespan);
+            Rect presenceRect = presenceIndicators.get(Presence.Present);
+            if (motionRegion == null
+                    || (motionRegion.contains(presenceRect.tl())
+                            && motionRegion.contains(presenceRect.br()))) {
+                // TODO keep last state, to minimize wrong application behavior
+                // caused by small shakes
+                return EnumSet.of(Presence.Shake);
+            } else {
+                boolean presenceInsidePresenceRect = intersects(presenceRegion,
+                        presenceRect);
+                Presence presenceState = motionDetected
+                        || presenceInsidePresenceRect ? Presence.Present
+                                : Presence.Away;
+                Set<Presence> directions = new HashSet<>();
+                for (Map.Entry<Presence, Rect> e : presenceIndicators
+                        .entrySet()) {
+                    if (e.getKey() != Presence.Present) {
+                        if (intersects(e.getValue(), motionRegion)) {
+                            directions.add(e.getKey());
+                        }
+                    }
+                }
+                if (motionDetected) {
+                    directions.add(Presence.Motion);
+                } else {
+                    directions.add(Presence.NoMotion);
+                }
+                Presence[] directionsArray = new Presence[directions.size()];
+                directionsArray = directions.toArray(directionsArray);
+                return EnumSet.of(presenceState, directionsArray);
+            }
+        }
+
+        boolean isMotionDetected(double seconds) {
+            Statistics statistics = new Statistics(
+                    motionAreaHistory.getTimeSpan(seconds));
+            double motion = statistics.max();
+            return motion > 0.0;
         }
 
         @Override
@@ -325,7 +358,7 @@ public class MotionDetectorJavaCV extends BasicMotionDetector {
             updateMotionAndPresence(videoImage, timeStamp);
             updateMotionTimeLine(timeStamp);
             updateIndicatorTimeLine(timeStamp);
-            EnumSet<Presence> indicators = getPresence(presenceRegion);
+            Set<Presence> indicators = indicatorHistory.last(1).get(0);
             debugInfo.render(videoImage, presenceRegion, presenceIndicators,
                     indicators, contourMotionDetected, trackerMotionDetected,
                     fps.value());
@@ -337,31 +370,49 @@ public class MotionDetectorJavaCV extends BasicMotionDetector {
 
         private void updateMotionAndPresence(Mat videoImage, long timeStamp) {
             // Motion history
+            // TODO filter out Shakes (actual shakes, light changes)
+            // TODO cluster motion an presence regions by time
+            // so that we don't have to use a fixed time span
             List<Rect> presenceRegions = motionProcessor.motionContours
                     .regions();
             if (presenceRegions.isEmpty()) {
+                // Even just adding the time stamp
+                // makes our motion region fade away
                 presenceRegionHistory.add(timeStamp);
             } else {
                 presenceRegionHistory.add(Geom.join(presenceRegions),
                         timeStamp);
             }
-            presenceRegion = Geom.join(
-                    presenceRegionHistory.tail(PresenceRegionJoinTimespan));
+            // moving forward in time changes the presence region, so
+            // eventually it collapses on the current presence region
+            // however we just want presence, no more,
+            // and blinking eyes in the border regions
+            // should count as "Away" anyway
+            // -> no memory for presence needed
+            presenceRegion = Geom.join(presenceRegionHistory
+                    .getTimeSpan(PresenceRegionJoinTimespan));
             // Remove potential blinking eyes from motion region history
             List<Rect> motionRegions = new Vector<Rect>();
             MatVector contours = motionProcessor.motionContours.contours;
-            for (int i = 0; i < motionRegions.size(); i++) {
-                if (!Geom.isCircular(contours.get(i), 4)) {
+            for (int i = 0; i < presenceRegions.size(); i++) {
+                // TODO exactly define Circularity and its calculation
+                double circularityVariance = 1.1;
+                if (!Geom.isCircular(contours.get(i), circularityVariance)) {
                     motionRegions.add(presenceRegions.get(i));
                 }
             }
             if (motionRegions.isEmpty()) {
+                // Even just adding the time stamp
+                // makes our motion region fade away
                 motionRegionHistory.add(timeStamp);
+                //
             } else {
                 motionRegionHistory.add(Geom.join(motionRegions), timeStamp);
             }
-            motionRegion = Geom
-                    .join(motionRegionHistory.tail(MotionRegionJoinTimespan));
+            // moving forward in time changes the motion region, so
+            // eventually the motion region collapses on the last motion region
+            motionRegion = Geom.join(
+                    motionRegionHistory.getTimeSpan(MotionRegionJoinTimespan));
             // Contour motion
             contourMotionDetected = motionRegions.size() > 0;
             // Tracker motion
@@ -387,14 +438,15 @@ public class MotionDetectorJavaCV extends BasicMotionDetector {
         }
 
         private void updateIndicatorTimeLine(long timeStamp) {
-            EnumSet<Presence> indicators = getPresence(presenceRegion);
+            Set<Presence> indicators = getPresence(motionRegion,
+                    presenceRegion);
             boolean hasChanged = indicatorHistory.add(indicators, timeStamp);
             if (hasChanged) {
                 presenceChanged.signal();
             }
         }
 
-        private void logMotionState(EnumSet<Presence> indicators,
+        private void logMotionState(Set<Presence> indicators,
                 boolean contourMotionDetected, boolean trackerMotionDetected) {
             // Log state
             TeaseLib.instance().log.info(indicators.toString());
@@ -415,9 +467,7 @@ public class MotionDetectorJavaCV extends BasicMotionDetector {
 
     @Override
     public void clearMotionHistory() {
-        detectionEvents.motionRegionHistory.clear();
-        detectionEvents.presenceRegionHistory.clear();
-        detectionEvents.indicatorHistory.clear();
+        detectionEvents.initHistoryLists();
     }
 
     @Override

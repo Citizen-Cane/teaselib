@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import teaselib.core.devices.DeviceCache;
-import teaselib.core.devices.DeviceCache.DeviceFactory;
 import teaselib.core.devices.video.VideoCaptureDeviceCV;
 
 public class VideoCaptureDeviceFactory {

@@ -1,6 +1,7 @@
 package teaselib.core.javacv.util;
 
-import static org.bytedeco.javacpp.opencv_imgproc.*;
+import static org.bytedeco.javacpp.opencv_imgproc.approxPolyDP;
+import static org.bytedeco.javacpp.opencv_imgproc.boundingRect;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -143,7 +144,7 @@ public class Geom {
         int max = distance2Center.get(distance2Center.size() - 1);
         double mean = statistics.mean();
         double contourCircularity = max / mean;
-        return contourCircularity <= circularity * circularity;
+        return contourCircularity <= circularity;
     }
 
     @SuppressWarnings("resource")
@@ -161,8 +162,10 @@ public class Geom {
         Point center = new Point(cx, cy);
         List<Integer> distance2Center = new ArrayList<Integer>(s);
         for (int i = 0; i < s; i++) {
-            opencv_core.Point p = new Point(points.get(i, 0), points.get(i, 1));
-            distance2Center.add(distance2(center, p));
+            int x = points.get(i, 0);
+            int y = points.get(i, 1);
+            opencv_core.Point p = new Point(x, y);
+            distance2Center.add((int) Math.sqrt(distance2(center, p)));
         }
         // center.release();
         points.release();

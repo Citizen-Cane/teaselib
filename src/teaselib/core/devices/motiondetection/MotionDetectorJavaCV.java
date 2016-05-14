@@ -89,6 +89,7 @@ public class MotionDetectorJavaCV extends BasicMotionDetector {
         };
         Runtime.getRuntime().addShutdownHook(detectionEventsShutdownHook);
         detectionEvents.setDaemon(false);
+        detectionEvents.setName(getDevicePath());
         detectionEvents.start();
     }
 
@@ -170,6 +171,8 @@ public class MotionDetectorJavaCV extends BasicMotionDetector {
         private static final int cornerSize = 32;
         private static final double MotionRegionJoinTimespan = 1.0;
         private static final double PresenceRegionJoinTimespan = 1.0;
+        // TODO exactly define Circularity and its calculation
+        private static final double CircularityVariance = 1.3;   // 1.3 seems to be necessary to detect blinking eye balls
 
         private final VideoCaptureDevice videoCaptureDevice;
         private final MotionProcessorJavaCV motionProcessor;
@@ -395,9 +398,7 @@ public class MotionDetectorJavaCV extends BasicMotionDetector {
             List<Rect> motionRegions = new Vector<Rect>();
             MatVector contours = motionProcessor.motionContours.contours;
             for (int i = 0; i < presenceRegions.size(); i++) {
-                // TODO exactly define Circularity and its calculation
-                double circularityVariance = 1.1;
-                if (!Geom.isCircular(contours.get(i), circularityVariance)) {
+                if (!Geom.isCircular(contours.get(i), CircularityVariance)) {
                     motionRegions.add(presenceRegions.get(i));
                 }
             }

@@ -1,7 +1,7 @@
 package teaselib.core.javacv;
 
-import static org.bytedeco.javacpp.opencv_core.*;
-import static org.bytedeco.javacpp.opencv_imgproc.*;
+import static org.bytedeco.javacpp.opencv_core.FONT_HERSHEY_PLAIN;
+import static org.bytedeco.javacpp.opencv_imgproc.putText;
 
 import org.bytedeco.javacpp.opencv_core.Mat;
 import org.bytedeco.javacpp.opencv_core.Point;
@@ -24,10 +24,18 @@ public class DistanceTracker {
         if (motionDetected) {
             resetTrackFeatures = true;
         } else if (resetTrackFeatures == true) {
-            trackFeatures.reset(videoImage, null);
-            resetTrackFeatures = false;
-            trackFeatures.keyPoints().copyTo(keyPoints);
+            resetDistance(videoImage, trackFeatures);
         }
+    }
+
+    private void resetDistance(Mat videoImage, TrackFeatures trackFeatures) {
+        trackFeatures.reset(videoImage, null);
+        resetTrackFeatures = false;
+        trackFeatures.keyPoints().copyTo(keyPoints);
+    }
+
+    public void reset() {
+        resetTrackFeatures = true;
     }
 
     public double distance2(Mat currentKeyPoints) {

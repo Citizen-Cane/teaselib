@@ -172,7 +172,11 @@ public class MotionDetectorJavaCV extends BasicMotionDetector {
         private static final double MotionRegionJoinTimespan = 1.0;
         private static final double PresenceRegionJoinTimespan = 1.0;
         // TODO exactly define Circularity and its calculation
-        private static final double CircularityVariance = 1.3;   // 1.3 seems to be necessary to detect blinking eye balls
+        private static final double CircularityVariance = 1.3; // 1.3 seems to
+                                                               // be necessary
+                                                               // to detect
+                                                               // blinking eye
+                                                               // balls
 
         private final VideoCaptureDevice videoCaptureDevice;
         private final MotionProcessorJavaCV motionProcessor;
@@ -428,8 +432,11 @@ public class MotionDetectorJavaCV extends BasicMotionDetector {
 
         private void updateMotionTimeLine(long timeStamp) {
             final int motionArea;
-            if (motionDetected) {
+            if (contourMotionDetected) {
                 motionArea = motionRegionHistory.tail().area();
+            } else if (trackerMotionDetected) {
+                motionArea = distanceThreshold2 * distanceThreshold2;
+                motionProcessor.distanceTracker.reset();
             } else {
                 motionArea = 0;
             }

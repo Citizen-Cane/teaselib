@@ -53,19 +53,24 @@ public class Signal {
             }
 
             private boolean poll() throws InterruptedException, Exception {
-                boolean changed;
+                boolean inTime;
                 long start = System.currentTimeMillis();
                 long elapsed = 0;
                 long timeoutMillis = (long) (timeoutSeconds) * 1000;
                 do {
-                    changed = condition.await(timeoutMillis - elapsed,
+                    inTime = condition.await(timeoutMillis - elapsed,
                             TimeUnit.MILLISECONDS);
-                    if (changed && !hasChangedPredicate.call()) {
-                        elapsed = System.currentTimeMillis() - start;
-                        continue;
+                    if (inTime) {
+                        if (hasChangedPredicate.call()) {
+                            break;
+                        } else {
+                            elapsed = System.currentTimeMillis() - start;
+                        }
+                    } else {
+                        break;
                     }
                 } while (timeoutMillis > elapsed);
-                return changed;
+                return inTime;
             }
         });
     }

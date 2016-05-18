@@ -1,19 +1,16 @@
 package teaselib.core.devices.motiondetection;
 
-import static teaselib.core.javacv.util.Geom.intersects;
-
 import java.util.EnumSet;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.Vector;
 import java.util.concurrent.Callable;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import org.bytedeco.javacpp.opencv_core.Mat;
-import org.bytedeco.javacpp.opencv_core.MatVector;
-import org.bytedeco.javacpp.opencv_core.Rect;
 import org.bytedeco.javacpp.opencv_core.Size;
 
 import teaselib.TeaseLib;
@@ -21,8 +18,8 @@ import teaselib.core.ScriptInterruptedException;
 import teaselib.core.concurrency.Signal;
 import teaselib.core.devices.DeviceCache;
 import teaselib.core.javacv.util.FramesPerSecond;
-import teaselib.core.javacv.util.Geom;
 import teaselib.core.util.TimeLine;
+import teaselib.motiondetection.MotionDetector;
 import teaselib.util.math.Statistics;
 import teaselib.video.VideoCaptureDevice;
 
@@ -52,12 +49,13 @@ import teaselib.video.VideoCaptureDevice;
  *         <p>
  *         light sources from moving cars or traffic lights
  */
-public class MotionDetectorJavaCV extends BasicMotionDetector {
+public class MotionDetectorJavaCV implements MotionDetector {
     public static final String DeviceClassName = "MotionDetectorJavaCV";
-    private static final int DesiredFps = 15;
 
     public static final EnumSet<Feature> Features = EnumSet.of(Feature.Motion,
             Feature.Presence);
+
+    private static final int DesiredFps = 15;
     private static final Map<MotionSensitivity, Integer> motionSensitivities = new HashMap<>(
             initStructuringElementSizes());
 
@@ -69,17 +67,12 @@ public class MotionDetectorJavaCV extends BasicMotionDetector {
         return map;
     }
 
-    protected DetectionEventsJavaCV detectionEvents;
-    Signal presenceChanged = new Signal();
-
-    private final double desiredFPS;
-    int distanceThreshold2;
+    private VideoCaptureThread videoCaptureThread;
+    private final Signal presenceChanged = new Signal();
 
     public MotionDetectorJavaCV(VideoCaptureDevice videoCaptureDevice) {
         super();
-        desiredFPS = FramesPerSecond.getFps(videoCaptureDevice.fps(),
-                DesiredFps);
-        detectionEvents = new DetectionEventsJavaCV(videoCaptureDevice);
+        videoCaptureThread = new VideoCaptureThread(videoCaptureDevice);
         setSensitivity(MotionSensitivity.Normal);
         Thread detectionEventsShutdownHook = new Thread() {
             @Override
@@ -88,25 +81,23 @@ public class MotionDetectorJavaCV extends BasicMotionDetector {
             }
         };
         Runtime.getRuntime().addShutdownHook(detectionEventsShutdownHook);
-        detectionEvents.setDaemon(false);
-        detectionEvents.setName(getDevicePath());
-        detectionEvents.start();
+        videoCaptureThread.setDaemon(false);
+        videoCaptureThread.setName(getDevicePath());
+        videoCaptureThread.start();
     }
 
     @Override
     public String getDevicePath() {
         return DeviceCache.createDevicePath(DeviceClassName,
-                detectionEvents.videoCaptureDevice.getDevicePath());
+                videoCaptureThread.videoCaptureDevice.getDevicePath());
     }
 
     @Override
     public void setSensitivity(MotionSensitivity motionSensivity) {
         pause();
-        MotionProcessorJavaCV motionDetector = detectionEvents.motionProcessor;
+        MotionProcessorJavaCV motionDetector = videoCaptureThread.motionProcessor;
         motionDetector.setStructuringElementSize(
                 motionSensitivities.get(motionSensivity));
-        int s = motionDetector.structuringElementSize;
-        distanceThreshold2 = s * s;
         resume();
     }
 
@@ -116,25 +107,38 @@ public class MotionDetectorJavaCV extends BasicMotionDetector {
     }
 
     @Override
-    // TODO forward to detection events
-    public boolean isMotionDetected(double seconds) {
-        TimeLine<Integer> motionAreaHistory = detectionEvents.motionAreaHistory;
-        synchronized (motionAreaHistory) {
-            Statistics statistics = new Statistics(
-                    motionAreaHistory.getTimeSpan(seconds));
-            double motion = statistics.max();
-            return motion > 0.0;
+    public boolean isMotionDetected(final double seconds) {
+        final List<Integer> values = new Vector<Integer>();
+        try {
+            presenceChanged.doLocked(new Callable<Boolean>() {
+                @Override
+                public Boolean call() throws Exception {
+                    values.addAll(
+                            videoCaptureThread.detectionResults.motionAreaHistory
+                                    .getTimeSpan(seconds));
+                    return true;
+                }
+            });
+        } catch (InterruptedException e) {
+            throw new ScriptInterruptedException();
+        } catch (Exception e) {
+            TeaseLib.instance().log.error(this, e);
         }
+        Statistics statistics = new Statistics(values);
+        double motion = statistics.max();
+        return motion > 0.0;
     }
 
     @Override
-    public EnumSet<Presence> getPresence() {
+    public Set<Presence> getPresence() {
         final EnumSet<Presence> presence = EnumSet.noneOf(Presence.class);
         try {
             presenceChanged.doLocked(new Callable<Boolean>() {
                 @Override
                 public Boolean call() throws Exception {
-                    presence.addAll(detectionEvents.indicatorHistory.tail());
+                    presence.addAll(
+                            videoCaptureThread.detectionResults.indicatorHistory
+                                    .tail());
                     return true;
                 }
             });
@@ -154,7 +158,7 @@ public class MotionDetectorJavaCV extends BasicMotionDetector {
                     (new Callable<Boolean>() {
                         @Override
                         public Boolean call() throws Exception {
-                            final TimeLine<Set<Presence>> indicatorHistory = detectionEvents.indicatorHistory;
+                            final TimeLine<Set<Presence>> indicatorHistory = videoCaptureThread.detectionResults.indicatorHistory;
                             Set<Presence> current = indicatorHistory.tail();
                             return current.contains(change);
                         }
@@ -167,145 +171,38 @@ public class MotionDetectorJavaCV extends BasicMotionDetector {
         return false;
     }
 
-    private class DetectionEventsJavaCV extends DetectionEvents {
-        private static final int cornerSize = 32;
-        private static final double MotionRegionJoinTimespan = 1.0;
-        private static final double PresenceRegionJoinTimespan = 1.0;
-        // TODO exactly define Circularity and its calculation
-        private static final double CircularityVariance = 1.3; // 1.3 seems to
-                                                               // be necessary
-                                                               // to detect
-                                                               // blinking eye
-                                                               // balls
+    private class VideoCaptureThread extends Thread {
 
         private final VideoCaptureDevice videoCaptureDevice;
         private final MotionProcessorJavaCV motionProcessor;
-        private final Map<Presence, Rect> presenceIndicators;
-        private int motionDetectedCounter = -1;
 
-        long desiredFrameTimeMillis = (long) (1000.0 / desiredFPS);
-        FramesPerSecond fps = new FramesPerSecond((int) desiredFPS);
-        private Rect motionRegion = null;
-        private Rect presenceRegion = null;
+        final double fps;
+        private final FramesPerSecond fpsStatistics;
+        private final long desiredFrameTimeMillis;
 
-        TimeLine<Rect> motionRegionHistory = new TimeLine<Rect>();
-        TimeLine<Rect> presenceRegionHistory = new TimeLine<Rect>();
-        TimeLine<Integer> motionAreaHistory = new TimeLine<Integer>();
-        TimeLine<Set<Presence>> indicatorHistory = new TimeLine<Set<Presence>>();
+        final MotionDetectionResults detectionResults;
 
-        private boolean contourMotionDetected = false;
-        private boolean trackerMotionDetected = false;
-        private boolean motionDetected = false;
-
-        boolean debug = true;
         MotionDetectorJavaCVDebugRenderer debugInfo = null;
         boolean logDetails = false;
 
-        DetectionEventsJavaCV(VideoCaptureDevice videoCaptureDevice) {
+        public final Lock lockStartStop = new ReentrantLock();
+
+        VideoCaptureThread(VideoCaptureDevice videoCaptureDevice) {
             super();
             this.videoCaptureDevice = videoCaptureDevice;
+            this.fps = FramesPerSecond.getFps(videoCaptureDevice.fps(),
+                    DesiredFps);
+            this.fpsStatistics = new FramesPerSecond((int) fps);
+            this.desiredFrameTimeMillis = (long) (1000.0 / fps);
+
             final Size size = new Size(320, 240);
             videoCaptureDevice.open(size);
             Size actualSize = videoCaptureDevice.size();
             motionProcessor = new MotionProcessorJavaCV(
                     videoCaptureDevice.captureSize().width(),
                     actualSize.width());
-            presenceIndicators = buildPresenceIndicatorMap(actualSize);
-            initHistoryLists();
-        }
+            detectionResults = new MotionDetectionResults(actualSize);
 
-        void initHistoryLists() {
-            motionRegionHistory.clear();
-            presenceRegionHistory.clear();
-            motionAreaHistory.clear();
-            indicatorHistory.clear();
-            // Set start values,
-            // instead of testing for empty lists later on
-            Size size = videoCaptureDevice.size();
-            long timeStamp = 0;
-            Rect all = new Rect(0, 0, size.width(), size.height());
-            motionRegionHistory.add(all, timeStamp);
-            presenceRegionHistory.add(all, timeStamp);
-            motionAreaHistory.add(0, timeStamp);
-            indicatorHistory.add(getPresence(all, all), timeStamp);
-
-        }
-
-        private Map<Presence, Rect> buildPresenceIndicatorMap(Size s) {
-            Map<Presence, Rect> map = new HashMap<>();
-            map.put(Presence.Present, new Rect(cornerSize, cornerSize,
-                    s.width() - 2 * cornerSize, s.height() - 2 * cornerSize));
-            // Borders
-            map.put(Presence.LeftBorder,
-                    new Rect(0, 0, cornerSize, s.height()));
-            map.put(Presence.RightBorder, new Rect(s.width() - cornerSize, 0,
-                    cornerSize, s.height()));
-            map.put(Presence.TopBorder, new Rect(0, 0, s.width(), cornerSize));
-            map.put(Presence.BottomBorder, new Rect(0, s.height() - cornerSize,
-                    s.width(), cornerSize));
-            // Define a center rectangle half the width
-            // and third the height of the capture size
-            int cl = s.width() / 2 - s.width() / 4;
-            int ct = s.height() / 2 - s.width() / 6;
-            int cr = s.width() / 2 + s.width() / 4;
-            int cb = s.height() / 2 + s.width() / 6;
-            // Center
-            map.put(Presence.Center, new Rect(cl, ct, cr - cl, cb - ct));
-            map.put(Presence.CenterHorizontal,
-                    new Rect(0, ct, s.width(), cb - ct));
-            map.put(Presence.CenterVertical,
-                    new Rect(cl, 0, cr - cl, s.height()));
-            // Sides
-            map.put(Presence.Left, new Rect(0, 0, cl, s.height()));
-            map.put(Presence.Top, new Rect(0, 0, s.width(), ct));
-            map.put(Presence.Right,
-                    new Rect(cr, 0, s.width() - cr, s.height()));
-            map.put(Presence.Bottom,
-                    new Rect(0, cb, s.width(), s.height() - cb));
-            return map;
-        }
-
-        private EnumSet<Presence> getPresence(Rect motionRegion,
-                Rect presenceRegion) {
-            boolean motionDetected = isMotionDetected(MotionRegionJoinTimespan);
-            Rect presenceRect = presenceIndicators.get(Presence.Present);
-            if (motionRegion == null
-                    || (motionRegion.contains(presenceRect.tl())
-                            && motionRegion.contains(presenceRect.br()))) {
-                // TODO keep last state, to minimize wrong application behavior
-                // caused by small shakes
-                return EnumSet.of(Presence.Shake);
-            } else {
-                boolean presenceInsidePresenceRect = intersects(presenceRegion,
-                        presenceRect);
-                Presence presenceState = motionDetected
-                        || presenceInsidePresenceRect ? Presence.Present
-                                : Presence.Away;
-                Set<Presence> directions = new HashSet<>();
-                for (Map.Entry<Presence, Rect> e : presenceIndicators
-                        .entrySet()) {
-                    if (e.getKey() != Presence.Present) {
-                        if (intersects(e.getValue(), motionRegion)) {
-                            directions.add(e.getKey());
-                        }
-                    }
-                }
-                if (motionDetected) {
-                    directions.add(Presence.Motion);
-                } else {
-                    directions.add(Presence.NoMotion);
-                }
-                Presence[] directionsArray = new Presence[directions.size()];
-                directionsArray = directions.toArray(directionsArray);
-                return EnumSet.of(presenceState, directionsArray);
-            }
-        }
-
-        boolean isMotionDetected(double seconds) {
-            Statistics statistics = new Statistics(
-                    motionAreaHistory.getTimeSpan(seconds));
-            double motion = statistics.max();
-            return motion > 0.0;
         }
 
         @Override
@@ -313,8 +210,7 @@ public class MotionDetectorJavaCV extends BasicMotionDetector {
             // TODO Auto-adjust until frame rate is stable
             // - KNN/findContours use less cpu without motion
             // -> adjust to < 50% processing time per frame
-            motionDetectedCounter = -1;
-            fps.startFrame();
+            fpsStatistics.startFrame();
             debugInfo = new MotionDetectorJavaCVDebugRenderer(motionProcessor,
                     videoCaptureDevice.size());
             for (final Mat videoImage : videoCaptureDevice) {
@@ -341,14 +237,21 @@ public class MotionDetectorJavaCV extends BasicMotionDetector {
                     presenceChanged.doLocked(new Callable<Boolean>() {
                         @Override
                         public Boolean call() throws Exception {
-                            updateMotionState(videoImage, now);
+                            boolean hasChanged = detectionResults
+                                    .updateMotionState(videoImage,
+                                            motionProcessor, now);
+                            if (hasChanged) {
+                                presenceChanged.signal();
+                            }
+                            updateWindow(videoImage, debugInfo);
                             return true;
                         }
                     });
                 } catch (Exception e) {
                     TeaseLib.instance().log.error(this, e);
                 }
-                long timeLeft = fps.timeMillisLeft(desiredFrameTimeMillis, now);
+                long timeLeft = fpsStatistics
+                        .timeMillisLeft(desiredFrameTimeMillis, now);
                 if (timeLeft > 0) {
                     try {
                         Thread.sleep(timeLeft);
@@ -356,105 +259,29 @@ public class MotionDetectorJavaCV extends BasicMotionDetector {
                         break;
                     }
                 }
-                fps.updateFrame(now + timeLeft);
+                fpsStatistics.updateFrame(now + timeLeft);
             }
             videoCaptureDevice.release();
         }
 
-        private void updateMotionState(Mat videoImage, long timeStamp) {
-            updateMotionAndPresence(videoImage, timeStamp);
-            updateMotionTimeLine(timeStamp);
-            updateIndicatorTimeLine(timeStamp);
-            Set<Presence> indicators = indicatorHistory.last(1).get(0);
-            debugInfo.render(videoImage, presenceRegion, presenceIndicators,
-                    indicators, contourMotionDetected, trackerMotionDetected,
-                    fps.value());
+        private void updateWindow(Mat videoImage,
+                MotionDetectorJavaCVDebugRenderer debugInfo) {
+            Set<Presence> indicators = detectionResults.indicatorHistory.last(1)
+                    .get(0);
+            debugInfo.render(videoImage, detectionResults.presenceRegion,
+                    detectionResults.presenceIndicators, indicators,
+                    detectionResults.contourMotionDetected,
+                    detectionResults.trackerMotionDetected,
+                    fpsStatistics.value());
             if (logDetails) {
-                logMotionState(indicators, contourMotionDetected,
-                        trackerMotionDetected);
-            }
-        }
-
-        private void updateMotionAndPresence(Mat videoImage, long timeStamp) {
-            // Motion history
-            // TODO filter out Shakes (actual shakes, light changes)
-            // TODO cluster motion an presence regions by time
-            // so that we don't have to use a fixed time span
-            List<Rect> presenceRegions = motionProcessor.motionContours
-                    .regions();
-            if (presenceRegions.isEmpty()) {
-                // Even just adding the time stamp
-                // makes our motion region fade away
-                presenceRegionHistory.add(timeStamp);
-            } else {
-                presenceRegionHistory.add(Geom.join(presenceRegions),
-                        timeStamp);
-            }
-            // moving forward in time changes the presence region, so
-            // eventually it collapses on the current presence region
-            // however we just want presence, no more,
-            // and blinking eyes in the border regions
-            // should count as "Away" anyway
-            // -> no memory for presence needed
-            presenceRegion = Geom.join(presenceRegionHistory
-                    .getTimeSpan(PresenceRegionJoinTimespan));
-            // Remove potential blinking eyes from motion region history
-            List<Rect> motionRegions = new Vector<Rect>();
-            MatVector contours = motionProcessor.motionContours.contours;
-            for (int i = 0; i < presenceRegions.size(); i++) {
-                if (!Geom.isCircular(contours.get(i), CircularityVariance)) {
-                    motionRegions.add(presenceRegions.get(i));
-                }
-            }
-            if (motionRegions.isEmpty()) {
-                // Even just adding the time stamp
-                // makes our motion region fade away
-                motionRegionHistory.add(timeStamp);
-                //
-            } else {
-                motionRegionHistory.add(Geom.join(motionRegions), timeStamp);
-            }
-            // moving forward in time changes the motion region, so
-            // eventually the motion region collapses on the last motion region
-            motionRegion = Geom.join(
-                    motionRegionHistory.getTimeSpan(MotionRegionJoinTimespan));
-            // Contour motion
-            contourMotionDetected = motionRegions.size() > 0;
-            // Tracker motion
-            motionProcessor.distanceTracker.update(videoImage,
-                    contourMotionDetected, motionProcessor.trackFeatures);
-            double distance2 = motionProcessor.distanceTracker
-                    .distance2(motionProcessor.trackFeatures.keyPoints());
-            trackerMotionDetected = distance2 > distanceThreshold2;
-            // All together combined
-            motionDetected = contourMotionDetected || trackerMotionDetected;
-        }
-
-        private void updateMotionTimeLine(long timeStamp) {
-            final int motionArea;
-            if (contourMotionDetected) {
-                motionArea = motionRegionHistory.tail().area();
-            } else if (trackerMotionDetected) {
-                motionArea = distanceThreshold2 * distanceThreshold2;
-                motionProcessor.distanceTracker.reset();
-            } else {
-                motionArea = 0;
-            }
-            synchronized (motionAreaHistory) {
-                motionAreaHistory.add(motionArea, timeStamp);
-            }
-        }
-
-        private void updateIndicatorTimeLine(long timeStamp) {
-            Set<Presence> indicators = getPresence(motionRegion,
-                    presenceRegion);
-            boolean hasChanged = indicatorHistory.add(indicators, timeStamp);
-            if (hasChanged) {
-                presenceChanged.signal();
+                logMotionState(indicators, motionProcessor,
+                        detectionResults.contourMotionDetected,
+                        detectionResults.trackerMotionDetected);
             }
         }
 
         private void logMotionState(Set<Presence> indicators,
+                MotionProcessorJavaCV motionProcessor,
                 boolean contourMotionDetected, boolean trackerMotionDetected) {
             // Log state
             TeaseLib.instance().log.info(indicators.toString());
@@ -466,16 +293,31 @@ public class MotionDetectorJavaCV extends BasicMotionDetector {
                                     motionProcessor.trackFeatures.keyPoints())
                     + ")");
         }
+
+        public void clearMotionHistory() {
+            detectionResults.clear(videoCaptureDevice.size());
+        }
     }
 
-    @Override
     protected double fps() {
-        return desiredFPS;
+        return videoCaptureThread.fps;
     }
 
     @Override
     public void clearMotionHistory() {
-        detectionEvents.initHistoryLists();
+        try {
+            presenceChanged.doLocked(new Callable<Boolean>() {
+                @Override
+                public Boolean call() throws Exception {
+                    videoCaptureThread.clearMotionHistory();
+                    return true;
+                }
+            });
+        } catch (InterruptedException e) {
+            throw new ScriptInterruptedException();
+        } catch (Exception e) {
+            TeaseLib.instance().log.error(this, e);
+        }
     }
 
     @Override
@@ -490,24 +332,24 @@ public class MotionDetectorJavaCV extends BasicMotionDetector {
 
     @Override
     public boolean active() {
-        return detectionEvents != null;
+        return videoCaptureThread != null;
     }
 
     @Override
     public void pause() {
-        detectionEvents.lockStartStop.lock();
+        videoCaptureThread.lockStartStop.lock();
     }
 
     @Override
     public void resume() {
-        detectionEvents.lockStartStop.unlock();
+        videoCaptureThread.lockStartStop.unlock();
     }
 
     @Override
     public void release() {
-        detectionEvents.interrupt();
+        videoCaptureThread.interrupt();
         try {
-            detectionEvents.join();
+            videoCaptureThread.join();
         } catch (InterruptedException e) {
             // Ignore
         }

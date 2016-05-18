@@ -20,6 +20,7 @@ public class MotionProcessorJavaCV {
     private final int renderWidth;
 
     public int structuringElementSize = 0;
+    public int distanceThreshold2 = 0;
 
     BackgroundSubtraction motion;
     Contours motionContours = new Contours();
@@ -52,6 +53,7 @@ public class MotionProcessorJavaCV {
         structuringElementSize = Math.max(2,
                 (int) (nominalSizeAtBaseResolutionWidth * sizeFactor));
         motion.setStructuringElementSize(structuringElementSize);
+        distanceThreshold2 = structuringElementSize * structuringElementSize;
     }
 
     public void update(Mat input) {

@@ -44,10 +44,13 @@ import teaselib.motiondetection.MotionDetector;
  */
 
 @Deprecated
-public class MotionDetectorSarxos extends BasicMotionDetector {
+public class MotionDetectorSarxos implements MotionDetector {
     public static final String DeviceClassName = "MotionDetectorSarxos";
 
     public static final EnumSet<Feature> Features = EnumSet.of(Feature.Motion);
+
+    private static final double MotionInertiaSeconds = 0.5;
+    private static final int MaximumNumberOfPastFrames = 400;
 
     static final double InitialAreaTreshold = 5;
     static final int InitialPixelTreshold = 16;
@@ -144,7 +147,7 @@ public class MotionDetectorSarxos extends BasicMotionDetector {
     @Override
     public String getDevicePath() {
         return DeviceCache.createDevicePath(DeviceClassName,
-                ((DetectionEventsSarxos) detectionEvents).webcam.getName());
+                detectionEvents.webcam.getName());
     }
 
     private void attachWebcam(Webcam newWebcam) {
@@ -156,9 +159,8 @@ public class MotionDetectorSarxos extends BasicMotionDetector {
         detectionEvents.setName("Motion detector events");
         detectionEvents.setDaemon(true);
         // Update properties
-        ((DetectionEventsSarxos) detectionEvents).setAreaTreshold(areaTreshold);
-        ((DetectionEventsSarxos) detectionEvents)
-                .setPixelTreshold(pixelTreshold);
+        detectionEvents.setAreaTreshold(areaTreshold);
+        detectionEvents.setPixelTreshold(pixelTreshold);
         detectionEvents.start();
     }
 
@@ -204,7 +206,10 @@ public class MotionDetectorSarxos extends BasicMotionDetector {
         window = null;
     }
 
-    private class DetectionEventsSarxos extends DetectionEvents {
+    protected abstract class DetectionEvents extends Thread {
+    }
+
+    private class DetectionEventsSarxos extends Thread {
         final Webcam webcam;
         final WebcamMotionDetector detector;
 
@@ -212,6 +217,8 @@ public class MotionDetectorSarxos extends BasicMotionDetector {
         final Condition motionStart = motionStartLock.newCondition();
         final Lock motionEndLock = new ReentrantLock();
         final Condition motionEnd = motionEndLock.newCondition();
+
+        public final Lock lockStartStop = new ReentrantLock();
 
         protected void signalMotionStart() {
             motionStartLock.lock();
@@ -352,10 +359,9 @@ public class MotionDetectorSarxos extends BasicMotionDetector {
     @Override
     public void setSensitivity(MotionSensitivity motionSensivity) {
         this.areaTreshold = InitialAreaTreshold;
-        ((DetectionEventsSarxos) detectionEvents).setAreaTreshold(areaTreshold);
+        detectionEvents.setAreaTreshold(areaTreshold);
         this.pixelTreshold = InitialPixelTreshold;
-        ((DetectionEventsSarxos) detectionEvents)
-                .setPixelTreshold(pixelTreshold);
+        detectionEvents.setPixelTreshold(pixelTreshold);
     }
 
     @Override
@@ -386,7 +392,6 @@ public class MotionDetectorSarxos extends BasicMotionDetector {
         throw new UnsupportedOperationException();
     }
 
-    @Override
     protected double fps() {
         return 1000.0 / PollingInterval;
     }
@@ -430,6 +435,11 @@ public class MotionDetectorSarxos extends BasicMotionDetector {
         } finally {
             detectionEvents.motionEndLock.unlock();
         }
+    }
+
+    protected int frames(double seconds) {
+        return Math.max(1,
+                Math.min((int) (fps() * seconds), MaximumNumberOfPastFrames));
     }
 
     @Override

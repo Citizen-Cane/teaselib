@@ -18,16 +18,16 @@ public class FramesPerSecond {
      * @return
      */
     public static double getFps(double capableFps, double desiredFps) {
-        final double desiredFPS;
+        final double fps;
         if (capableFps >= desiredFps * 2) {
             double div = Math.floorDiv((int) capableFps, (int) desiredFps);
-            desiredFPS = capableFps / div;
+            fps = capableFps / div;
         } else if (capableFps > desiredFps) {
-            desiredFPS = capableFps;
+            fps = capableFps;
         } else {
-            desiredFPS = desiredFps;
+            fps = desiredFps;
         }
-        return desiredFPS;
+        return fps;
     }
 
     public FramesPerSecond(int capacity) {

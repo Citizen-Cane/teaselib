@@ -1,6 +1,6 @@
 package teaselib.motiondetection;
 
-import java.util.EnumSet;
+import java.util.Set;
 
 import teaselib.core.devices.Device;
 
@@ -99,9 +99,9 @@ public interface MotionDetector extends Device {
 
     boolean isMotionDetected(double pastSeconds);
 
-    EnumSet<Presence> getPresence();
+    Set<Presence> getPresence();
 
-    EnumSet<Feature> getFeatures();
+    Set<Feature> getFeatures();
 
     public boolean awaitChange(double timeoutSeconds, Presence change);
 

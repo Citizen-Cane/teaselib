@@ -1,7 +1,7 @@
 package teaselib.core.javacv;
 
-import static org.bytedeco.javacpp.opencv_core.FONT_HERSHEY_PLAIN;
-import static org.bytedeco.javacpp.opencv_imgproc.putText;
+import static org.bytedeco.javacpp.opencv_core.*;
+import static org.bytedeco.javacpp.opencv_imgproc.*;
 
 import org.bytedeco.javacpp.opencv_core.Mat;
 import org.bytedeco.javacpp.opencv_core.Point;
@@ -43,7 +43,7 @@ public class DistanceTracker {
         if (size(currentKeyPoints) > 0) {
             FloatIndexer from = keyPoints.createIndexer();
             FloatIndexer to = currentKeyPoints.createIndexer();
-            int n = Math.min(from.rows(), to.rows());
+            long n = Math.min(from.rows(), to.rows());
             for (int i = 0; i < n; i++) {
                 distance2 = Math.max(distance2,
                         teaselib.core.javacv.util.Geom.distance2(
@@ -63,7 +63,7 @@ public class DistanceTracker {
     public void renderDebug(Mat output, Mat currentKeyPoints) {
         FloatIndexer from = keyPoints.createIndexer();
         FloatIndexer to = currentKeyPoints.createIndexer();
-        int n = Math.min(from.rows(), to.rows());
+        long n = Math.min(from.rows(), to.rows());
         for (int i = 0; i < n; i++) {
             opencv_imgproc.line(output,
                     new Point((int) from.get(i, 0), (int) from.get(i, 1)),

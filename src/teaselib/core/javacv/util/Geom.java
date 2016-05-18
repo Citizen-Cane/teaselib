@@ -1,7 +1,6 @@
 package teaselib.core.javacv.util;
 
-import static org.bytedeco.javacpp.opencv_imgproc.approxPolyDP;
-import static org.bytedeco.javacpp.opencv_imgproc.boundingRect;
+import static org.bytedeco.javacpp.opencv_imgproc.*;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -152,7 +151,7 @@ public class Geom {
         IntIndexer points = contour.createIndexer();
         int cx = 0;
         int cy = 0;
-        final int s = points.rows();
+        final int s = (int) points.rows();
         for (int i = 0; i < s; i++) {
             cx += points.get(i, 0);
             cy += points.get(i, 1);

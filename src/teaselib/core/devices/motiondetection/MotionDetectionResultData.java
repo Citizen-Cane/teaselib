@@ -17,7 +17,8 @@ import teaselib.motiondetection.MotionDetector.Presence;
  * The data set for the motion detection results
  *
  */
-public abstract class MotionDetectionResultData {
+public abstract class MotionDetectionResultData
+        implements MotionDetectionResult {
     static final int cornerSize = 32;
 
     protected boolean contourMotionDetected = false;
@@ -31,26 +32,15 @@ public abstract class MotionDetectionResultData {
     protected final TimeLine<Integer> motionAreaHistory = new TimeLine<Integer>();
     protected final TimeLine<Set<Presence>> indicatorHistory = new TimeLine<Set<Presence>>();
 
+    private final Rect all;
+
     protected MotionDetectionResultData(Size size) {
         presenceIndicators = buildPresenceIndicatorMap(size);
+        all = new Rect(0, 0, size.width(), size.height());
+        clear();
     }
 
-    protected void clear(Size size) {
-        motionRegionHistory.clear();
-        presenceRegionHistory.clear();
-        motionAreaHistory.clear();
-        indicatorHistory.clear();
-        // Set start values
-        // instead of testing for empty lists later on
-        long timeStamp = 0;
-        Rect all = new Rect(0, 0, size.width(), size.height());
-        motionRegionHistory.add(all, timeStamp);
-        presenceRegionHistory.add(all, timeStamp);
-        motionAreaHistory.add(0, timeStamp);
-        indicatorHistory.add(getPresence(all, all), timeStamp);
-
-    }
-
+    @SuppressWarnings("resource")
     protected Map<Presence, Rect> buildPresenceIndicatorMap(Size s) {
         Map<Presence, Rect> map = new HashMap<>();
         map.put(Presence.Present, new Rect(cornerSize, cornerSize,
@@ -80,7 +70,18 @@ public abstract class MotionDetectionResultData {
         return map;
     }
 
-    abstract Set<Presence> getPresence(Rect motionRegion, Rect presenceRegion);
+    protected void clear() {
+        motionRegionHistory.clear();
+        presenceRegionHistory.clear();
+        motionAreaHistory.clear();
+        indicatorHistory.clear();
+        // Set start values
+        // instead of testing for empty lists later on
+        long timeStamp = 0;
+        motionRegionHistory.add(all, timeStamp);
+        presenceRegionHistory.add(all, timeStamp);
+        motionAreaHistory.add(0, timeStamp);
+        indicatorHistory.add(getPresence(all, all), timeStamp);
+    }
 
-    abstract boolean isMotionDetected(double seconds);
 }

@@ -17,11 +17,15 @@ import org.bytedeco.javacpp.opencv_core.MatVector;
 import org.bytedeco.javacpp.opencv_core.Rect;
 import org.bytedeco.javacpp.opencv_core.Size;
 
+import teaselib.TeaseLib;
+import teaselib.core.ScriptInterruptedException;
+import teaselib.core.concurrency.Signal;
 import teaselib.core.javacv.util.Geom;
 import teaselib.motiondetection.MotionDetector.Presence;
 import teaselib.util.math.Statistics;
 
-public class MotionDetectionResults extends MotionDetectionResultData {
+public class MotionDetectionResultImplementation
+        extends MotionDetectionResultData {
 
     private static final double MotionRegionJoinTimespan = 1.0;
     private static final double PresenceRegionJoinTimespan = 1.0;
@@ -32,51 +36,8 @@ public class MotionDetectionResults extends MotionDetectionResultData {
                                                            // blinking eye
                                                            // balls
 
-    MotionDetectionResults(Size size) {
+    MotionDetectionResultImplementation(Size size) {
         super(size);
-    }
-
-    @SuppressWarnings("resource")
-    @Override
-    Set<Presence> getPresence(Rect motionRegion, Rect presenceRegion) {
-        boolean motionDetected = isMotionDetected(MotionRegionJoinTimespan);
-        Rect presenceRect = presenceIndicators.get(Presence.Present);
-        if (motionRegion == null || (motionRegion.contains(presenceRect.tl())
-                && motionRegion.contains(presenceRect.br()))) {
-            // TODO keep last state, to minimize wrong application behavior
-            // caused by small shakes
-            return EnumSet.of(Presence.Shake);
-        } else {
-            boolean presenceInsidePresenceRect = intersects(presenceRegion,
-                    presenceRect);
-            Presence presenceState = motionDetected
-                    || presenceInsidePresenceRect ? Presence.Present
-                            : Presence.Away;
-            Set<Presence> directions = new HashSet<>();
-            for (Map.Entry<Presence, Rect> e : presenceIndicators.entrySet()) {
-                if (e.getKey() != Presence.Present) {
-                    if (intersects(e.getValue(), motionRegion)) {
-                        directions.add(e.getKey());
-                    }
-                }
-            }
-            if (motionDetected) {
-                directions.add(Presence.Motion);
-            } else {
-                directions.add(Presence.NoMotion);
-            }
-            Presence[] directionsArray = new Presence[directions.size()];
-            directionsArray = directions.toArray(directionsArray);
-            return EnumSet.of(presenceState, directionsArray);
-        }
-    }
-
-    @Override
-    boolean isMotionDetected(double seconds) {
-        Statistics statistics = new Statistics(
-                motionAreaHistory.getTimeSpan(seconds));
-        double motion = statistics.max();
-        return motion > 0.0;
     }
 
     /**
@@ -85,7 +46,8 @@ public class MotionDetectionResults extends MotionDetectionResultData {
      * @param timeStamp
      * @return True if the indicator state has changed
      */
-    boolean updateMotionState(Mat videoImage,
+    @Override
+    public boolean updateMotionState(Mat videoImage,
             MotionProcessorJavaCV motionProcessor, long timeStamp) {
         updateMotionAndPresence(videoImage, motionProcessor, timeStamp);
         updateMotionTimeLine(timeStamp, motionProcessor);
@@ -169,4 +131,69 @@ public class MotionDetectionResults extends MotionDetectionResultData {
         return hasChanged;
     }
 
+    @Override
+    public boolean awaitChange(Signal signal, final double timeoutSeconds,
+            final Presence change) {
+        try {
+            return signal.awaitChange(timeoutSeconds,
+                    (new Signal.HasChangedPredicate() {
+                        @Override
+                        public Boolean call() throws Exception {
+                            Set<Presence> current = getPresence();
+                            return current.contains(change);
+                        }
+                    }));
+        } catch (InterruptedException e) {
+            throw new ScriptInterruptedException();
+        } catch (Exception e) {
+            TeaseLib.instance().log.error(this, e);
+        }
+        return false;
+    }
+
+    public Set<Presence> getPresence() {
+        return indicatorHistory.tail();
+    }
+
+    @SuppressWarnings("resource")
+    @Override
+    public Set<Presence> getPresence(Rect motionRegion, Rect presenceRegion) {
+        boolean motionDetected = isMotionDetected(MotionRegionJoinTimespan);
+        Rect presenceRect = presenceIndicators.get(Presence.Present);
+        if (motionRegion == null || (motionRegion.contains(presenceRect.tl())
+                && motionRegion.contains(presenceRect.br()))) {
+            // TODO keep last state, to minimize wrong application behavior
+            // caused by small shakes
+            return EnumSet.of(Presence.Shake);
+        } else {
+            boolean presenceInsidePresenceRect = intersects(presenceRegion,
+                    presenceRect);
+            Presence presenceState = motionDetected
+                    || presenceInsidePresenceRect ? Presence.Present
+                            : Presence.Away;
+            Set<Presence> directions = new HashSet<>();
+            for (Map.Entry<Presence, Rect> e : presenceIndicators.entrySet()) {
+                if (e.getKey() != Presence.Present) {
+                    if (intersects(e.getValue(), motionRegion)) {
+                        directions.add(e.getKey());
+                    }
+                }
+            }
+            if (motionDetected) {
+                directions.add(Presence.Motion);
+            } else {
+                directions.add(Presence.NoMotion);
+            }
+            Presence[] directionsArray = new Presence[directions.size()];
+            directionsArray = directions.toArray(directionsArray);
+            return EnumSet.of(presenceState, directionsArray);
+        }
+    }
+
+    private boolean isMotionDetected(final double seconds) {
+        Statistics statistics = new Statistics(
+                motionAreaHistory.getTimeSpan(seconds));
+        double motion = statistics.max();
+        return motion > 0.0;
+    }
 }

@@ -97,9 +97,9 @@ public interface MotionDetector extends Device {
 
     void clearMotionHistory();
 
-    boolean isMotionDetected(double pastSeconds);
+    // boolean isMotionDetected(double pastSeconds);
 
-    Set<Presence> getPresence();
+    // Set<Presence> getPresence();
 
     Set<Feature> getFeatures();
 
@@ -133,7 +133,4 @@ public interface MotionDetector extends Device {
     public void pause();
 
     public void resume();
-
-    public void release();
-
 }

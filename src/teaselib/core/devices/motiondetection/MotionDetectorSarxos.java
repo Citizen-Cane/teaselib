@@ -364,7 +364,7 @@ public class MotionDetectorSarxos implements MotionDetector {
         detectionEvents.setPixelTreshold(pixelTreshold);
     }
 
-    @Override
+    // @Override
     public boolean isMotionDetected(double pastSeconds) {
         return isMotionDetected(frames(pastSeconds));
     }
@@ -381,7 +381,7 @@ public class MotionDetectorSarxos implements MotionDetector {
         return Features;
     }
 
-    @Override
+    // @Override
     public EnumSet<Presence> getPresence() {
         return EnumSet.noneOf(Presence.class);
     }

@@ -10,10 +10,23 @@ public class Signal {
     final Lock lock = new ReentrantLock();
     final Condition condition = lock.newCondition();
 
+    public static abstract class HasChangedPredicate
+            implements Callable<Boolean> {
+    }
+
     public void signal() {
         lock.lock();
         try {
             condition.signalAll();
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    public void doLocked(Runnable runnable) {
+        lock.lock();
+        try {
+            runnable.run();
         } finally {
             lock.unlock();
         }
@@ -40,7 +53,7 @@ public class Signal {
     }
 
     public boolean awaitChange(final double timeoutSeconds,
-            final Callable<Boolean> hasChangedPredicate)
+            final HasChangedPredicate hasChangedPredicate)
                     throws InterruptedException, Exception {
         return doLocked(new Callable<Boolean>() {
             @Override

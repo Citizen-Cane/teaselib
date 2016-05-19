@@ -2,11 +2,8 @@ package teaselib.core.devices.motiondetection;
 
 import java.util.EnumSet;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.Vector;
-import java.util.concurrent.Callable;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -14,13 +11,10 @@ import org.bytedeco.javacpp.opencv_core.Mat;
 import org.bytedeco.javacpp.opencv_core.Size;
 
 import teaselib.TeaseLib;
-import teaselib.core.ScriptInterruptedException;
 import teaselib.core.concurrency.Signal;
 import teaselib.core.devices.DeviceCache;
 import teaselib.core.javacv.util.FramesPerSecond;
-import teaselib.core.util.TimeLine;
 import teaselib.motiondetection.MotionDetector;
-import teaselib.util.math.Statistics;
 import teaselib.video.VideoCaptureDevice;
 
 /**
@@ -55,7 +49,11 @@ public class MotionDetectorJavaCV implements MotionDetector {
     public static final EnumSet<Feature> Features = EnumSet.of(Feature.Motion,
             Feature.Presence);
 
-    private static final int DesiredFps = 15;
+    private static final double DesiredFps = 15;
+
+    private final CaptureThread eventThread;
+    final Signal presenceChanged = new Signal();
+
     private static final Map<MotionSensitivity, Integer> motionSensitivities = new HashMap<>(
             initStructuringElementSizes());
 
@@ -67,12 +65,9 @@ public class MotionDetectorJavaCV implements MotionDetector {
         return map;
     }
 
-    private VideoCaptureThread videoCaptureThread;
-    private final Signal presenceChanged = new Signal();
-
     public MotionDetectorJavaCV(VideoCaptureDevice videoCaptureDevice) {
         super();
-        videoCaptureThread = new VideoCaptureThread(videoCaptureDevice);
+        eventThread = new CaptureThread(videoCaptureDevice, DesiredFps);
         setSensitivity(MotionSensitivity.Normal);
         Thread detectionEventsShutdownHook = new Thread() {
             @Override
@@ -81,117 +76,30 @@ public class MotionDetectorJavaCV implements MotionDetector {
             }
         };
         Runtime.getRuntime().addShutdownHook(detectionEventsShutdownHook);
-        videoCaptureThread.setDaemon(false);
-        videoCaptureThread.setName(getDevicePath());
-        videoCaptureThread.start();
+        eventThread.setDaemon(false);
+        eventThread.setName(getDevicePath());
+        eventThread.start();
     }
 
-    @Override
-    public String getDevicePath() {
-        return DeviceCache.createDevicePath(DeviceClassName,
-                videoCaptureThread.videoCaptureDevice.getDevicePath());
-    }
+    MotionDetectorJavaCVDebugRenderer debugInfo = null;
+    boolean logDetails = false;
 
-    @Override
-    public void setSensitivity(MotionSensitivity motionSensivity) {
-        pause();
-        MotionProcessorJavaCV motionDetector = videoCaptureThread.motionProcessor;
-        motionDetector.setStructuringElementSize(
-                motionSensitivities.get(motionSensivity));
-        resume();
-    }
+    public final Lock lockStartStop = new ReentrantLock();
 
-    @Override
-    public EnumSet<Feature> getFeatures() {
-        return Features;
-    }
-
-    @Override
-    public boolean isMotionDetected(final double seconds) {
-        final List<Integer> values = new Vector<Integer>();
-        try {
-            presenceChanged.doLocked(new Callable<Boolean>() {
-                @Override
-                public Boolean call() throws Exception {
-                    values.addAll(
-                            videoCaptureThread.detectionResults.motionAreaHistory
-                                    .getTimeSpan(seconds));
-                    return true;
-                }
-            });
-        } catch (InterruptedException e) {
-            throw new ScriptInterruptedException();
-        } catch (Exception e) {
-            TeaseLib.instance().log.error(this, e);
-        }
-        Statistics statistics = new Statistics(values);
-        double motion = statistics.max();
-        return motion > 0.0;
-    }
-
-    @Override
-    public Set<Presence> getPresence() {
-        final EnumSet<Presence> presence = EnumSet.noneOf(Presence.class);
-        try {
-            presenceChanged.doLocked(new Callable<Boolean>() {
-                @Override
-                public Boolean call() throws Exception {
-                    presence.addAll(
-                            videoCaptureThread.detectionResults.indicatorHistory
-                                    .tail());
-                    return true;
-                }
-            });
-        } catch (InterruptedException e) {
-            throw new ScriptInterruptedException();
-        } catch (Exception e) {
-            TeaseLib.instance().log.error(this, e);
-        }
-        return presence;
-    }
-
-    @Override
-    public boolean awaitChange(final double timeoutSeconds,
-            final Presence change) {
-        try {
-            return presenceChanged.awaitChange(timeoutSeconds,
-                    (new Callable<Boolean>() {
-                        @Override
-                        public Boolean call() throws Exception {
-                            final TimeLine<Set<Presence>> indicatorHistory = videoCaptureThread.detectionResults.indicatorHistory;
-                            Set<Presence> current = indicatorHistory.tail();
-                            return current.contains(change);
-                        }
-                    }));
-        } catch (InterruptedException e) {
-            throw new ScriptInterruptedException();
-        } catch (Exception e) {
-            TeaseLib.instance().log.error(this, e);
-        }
-        return false;
-    }
-
-    private class VideoCaptureThread extends Thread {
-
+    class CaptureThread extends Thread {
         private final VideoCaptureDevice videoCaptureDevice;
         private final MotionProcessorJavaCV motionProcessor;
-
-        final double fps;
+        final MotionDetectionResultImplementation detectionResult;
+        private final double fps;
         private final FramesPerSecond fpsStatistics;
         private final long desiredFrameTimeMillis;
 
-        final MotionDetectionResults detectionResults;
-
-        MotionDetectorJavaCVDebugRenderer debugInfo = null;
-        boolean logDetails = false;
-
-        public final Lock lockStartStop = new ReentrantLock();
-
-        VideoCaptureThread(VideoCaptureDevice videoCaptureDevice) {
+        CaptureThread(VideoCaptureDevice videoCaptureDevice,
+                double desiredFps) {
             super();
             this.videoCaptureDevice = videoCaptureDevice;
             this.fps = FramesPerSecond.getFps(videoCaptureDevice.fps(),
-                    DesiredFps);
+                    desiredFps);
             this.fpsStatistics = new FramesPerSecond((int) fps);
             this.desiredFrameTimeMillis = (long) (1000.0 / fps);
 
@@ -201,82 +109,83 @@ public class MotionDetectorJavaCV implements MotionDetector {
             motionProcessor = new MotionProcessorJavaCV(
                     videoCaptureDevice.captureSize().width(),
                     actualSize.width());
-            detectionResults = new MotionDetectionResults(actualSize);
+            detectionResult = new MotionDetectionResultImplementation(
+                    actualSize);
 
         }
 
         @Override
         public void run() {
-            // TODO Auto-adjust until frame rate is stable
-            // - KNN/findContours use less cpu without motion
-            // -> adjust to < 50% processing time per frame
-            fpsStatistics.startFrame();
-            debugInfo = new MotionDetectorJavaCVDebugRenderer(motionProcessor,
-                    videoCaptureDevice.size());
-            for (final Mat videoImage : videoCaptureDevice) {
-                // TODO handle camera surprise removal and reconnect
-                // -> in VideoCaptureDevice?
-                if (isInterrupted()) {
-                    break;
-                }
-                // handle setting sensitivity via structuring element size
-                // TODO it's just setting a member, maybe we can ignore
-                // concurrency
-                try {
-                    lockStartStop.lockInterruptibly();
-                    // update shared items
-                    motionProcessor.update(videoImage);
-                } catch (InterruptedException e1) {
-                    break;
-                } finally {
-                    lockStartStop.unlock();
-                }
-                // Resulting bounding boxes
-                final long now = System.currentTimeMillis();
-                try {
-                    presenceChanged.doLocked(new Callable<Boolean>() {
+            try {
+                // TODO Auto-adjust until frame rate is stable
+                // - KNN/findContours use less cpu without motion
+                // -> adjust to < 50% processing time per frame
+                fpsStatistics.startFrame();
+                debugInfo = new MotionDetectorJavaCVDebugRenderer(
+                        motionProcessor, videoCaptureDevice.size());
+                for (final Mat videoImage : videoCaptureDevice) {
+                    // TODO handle camera surprise removal and reconnect
+                    // -> in VideoCaptureDevice?
+                    if (isInterrupted()) {
+                        break;
+                    }
+                    // handle setting sensitivity via structuring element size
+                    // TODO it's just setting a member, maybe we can ignore
+                    // concurrency
+                    try {
+                        lockStartStop.lockInterruptibly();
+                        // update shared items
+                        motionProcessor.update(videoImage);
+                    } catch (InterruptedException e1) {
+                        break;
+                    } finally {
+                        lockStartStop.unlock();
+                    }
+                    // Resulting bounding boxes
+                    final long now = System.currentTimeMillis();
+                    presenceChanged.doLocked(new Runnable() {
                         @Override
-                        public Boolean call() throws Exception {
-                            boolean hasChanged = detectionResults
+                        public void run() {
+                            boolean hasChanged = detectionResult
                                     .updateMotionState(videoImage,
                                             motionProcessor, now);
                             if (hasChanged) {
                                 presenceChanged.signal();
                             }
                             updateWindow(videoImage, debugInfo);
-                            return true;
                         }
                     });
-                } catch (Exception e) {
-                    TeaseLib.instance().log.error(this, e);
-                }
-                long timeLeft = fpsStatistics
-                        .timeMillisLeft(desiredFrameTimeMillis, now);
-                if (timeLeft > 0) {
-                    try {
-                        Thread.sleep(timeLeft);
-                    } catch (InterruptedException e) {
-                        break;
+                    long timeLeft = fpsStatistics
+                            .timeMillisLeft(desiredFrameTimeMillis, now);
+                    if (timeLeft > 0) {
+                        try {
+                            Thread.sleep(timeLeft);
+                        } catch (InterruptedException e) {
+                            break;
+                        }
                     }
+                    fpsStatistics.updateFrame(now + timeLeft);
                 }
-                fpsStatistics.updateFrame(now + timeLeft);
+            } catch (Exception e) {
+                TeaseLib.instance().log.error(this, e);
+            } finally {
+                videoCaptureDevice.release();
             }
-            videoCaptureDevice.release();
         }
 
         private void updateWindow(Mat videoImage,
                 MotionDetectorJavaCVDebugRenderer debugInfo) {
-            Set<Presence> indicators = detectionResults.indicatorHistory.last(1)
+            Set<Presence> indicators = detectionResult.indicatorHistory.last(1)
                     .get(0);
-            debugInfo.render(videoImage, detectionResults.presenceRegion,
-                    detectionResults.presenceIndicators, indicators,
-                    detectionResults.contourMotionDetected,
-                    detectionResults.trackerMotionDetected,
+            debugInfo.render(videoImage, detectionResult.presenceRegion,
+                    detectionResult.presenceIndicators, indicators,
+                    detectionResult.contourMotionDetected,
+                    detectionResult.trackerMotionDetected,
                     fpsStatistics.value());
             if (logDetails) {
                 logMotionState(indicators, motionProcessor,
-                        detectionResults.contourMotionDetected,
-                        detectionResults.trackerMotionDetected);
+                        detectionResult.contourMotionDetected,
+                        detectionResult.trackerMotionDetected);
             }
         }
 
@@ -295,29 +204,81 @@ public class MotionDetectorJavaCV implements MotionDetector {
         }
 
         public void clearMotionHistory() {
-            detectionResults.clear(videoCaptureDevice.size());
+            presenceChanged.doLocked(new Runnable() {
+                @Override
+                public void run() {
+                    detectionResult.clear();
+                }
+            });
+        }
+
+        public double fps() {
+            return fps;
         }
     }
 
+    @Override
+    public String getDevicePath() {
+        return DeviceCache.createDevicePath(DeviceClassName,
+                eventThread.videoCaptureDevice.getDevicePath());
+    }
+
+    @Override
+    public void setSensitivity(MotionSensitivity motionSensivity) {
+        pause();
+        eventThread.motionProcessor.setStructuringElementSize(
+                motionSensitivities.get(motionSensivity));
+        resume();
+    }
+
+    @Override
+    public EnumSet<Feature> getFeatures() {
+        return Features;
+    }
+
+    // @Override
+    // public boolean isMotionDetected(final double seconds) {
+    // try {
+    // return presenceChanged
+    // .doLocked(new Callable<Boolean>() {
+    // @Override
+    // public Boolean call() throws Exception {
+    // return eventThread.detectionResult
+    // .isMotionDetected(seconds);
+    // }
+    // });
+    // } catch (Exception e) {
+    // TeaseLib.instance().log.error(this, e);
+    // return false;
+    // }
+    // }
+    //
+    // @Override
+    // public Set<Presence> getPresence() {
+    // final Set<Presence> presence = EnumSet.noneOf(Presence.class);
+    // presenceChanged.doLocked(new Runnable() {
+    // @Override
+    // public void run() {
+    // presence.addAll(eventThread.detectionResult.getPresence());
+    // }
+    // });
+    // return presence;
+    // }
+
+    @Override
+    public boolean awaitChange(final double timeoutSeconds,
+            final Presence change) {
+        return eventThread.detectionResult.awaitChange(presenceChanged,
+                timeoutSeconds, change);
+    }
+
     protected double fps() {
-        return videoCaptureThread.fps;
+        return eventThread.fps();
     }
 
     @Override
     public void clearMotionHistory() {
-        try {
-            presenceChanged.doLocked(new Callable<Boolean>() {
-                @Override
-                public Boolean call() throws Exception {
-                    videoCaptureThread.clearMotionHistory();
-                    return true;
-                }
-            });
-        } catch (InterruptedException e) {
-            throw new ScriptInterruptedException();
-        } catch (Exception e) {
-            TeaseLib.instance().log.error(this, e);
-        }
+        eventThread.clearMotionHistory();
     }
 
     @Override
@@ -332,24 +293,24 @@ public class MotionDetectorJavaCV implements MotionDetector {
 
     @Override
     public boolean active() {
-        return videoCaptureThread != null;
+        return eventThread != null;
     }
 
     @Override
     public void pause() {
-        videoCaptureThread.lockStartStop.lock();
+        lockStartStop.lock();
     }
 
     @Override
     public void resume() {
-        videoCaptureThread.lockStartStop.unlock();
+        lockStartStop.unlock();
     }
 
     @Override
     public void release() {
-        videoCaptureThread.interrupt();
+        eventThread.interrupt();
         try {
-            videoCaptureThread.join();
+            eventThread.join();
         } catch (InterruptedException e) {
             // Ignore
         }

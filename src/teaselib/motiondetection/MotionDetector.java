@@ -93,6 +93,9 @@ public interface MotionDetector extends Device {
         Shake,
     }
 
+    static final double MotionRegionDefaultTimespan = 1.0;
+    static final double PresenceRegionDefaultTimespan = 1.0;
+
     void setSensitivity(MotionSensitivity motionSensivity);
 
     void clearMotionHistory();
@@ -103,7 +106,10 @@ public interface MotionDetector extends Device {
 
     Set<Feature> getFeatures();
 
-    public boolean awaitChange(double timeoutSeconds, Presence change);
+    // public boolean awaitChange(double timeoutSeconds, Presence change);
+
+    public boolean awaitChange(double amount, Presence change,
+            double timeSpanSeconds, double timeoutSeconds);
 
     /**
      * Waits the specified period for motion.

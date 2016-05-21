@@ -25,37 +25,39 @@ public class testMotionDetectionNew {
         md.setSensitivity(MotionSensitivity.Normal);
 
         System.out.println("Move!");
-        while (!md.awaitChange(5, Presence.Motion)) {
+        final double amount = 1.0;
+        while (!md.awaitChange(amount, Presence.Motion, 1.0, 5.0)) {
             System.out.println("I said 'Move'!");
         }
 
         System.out.println("Keep moving!");
         while (true) {
-            if (md.awaitChange(5, Presence.NoMotion)) {
+            // Triggers after not moving for one second
+            if (md.awaitChange(amount, Presence.NoMotion, 1.0, 10.0)) {
                 System.out.println("I said 'Keep moving'!");
                 // use the timeout to avoid repeating the message too fast
-                md.awaitChange(5, Presence.Motion);
+                md.awaitChange(amount, Presence.Motion, 1.0, 5.0);
             } else {
                 break;
             }
         }
 
         System.out.println("Stop!");
-        while (!md.awaitChange(5, Presence.NoMotion)) {
+        while (!md.awaitChange(amount, Presence.NoMotion, 1.0, 5.0)) {
             System.out.println("I said 'Stop'!");
         }
 
         System.out.println("Now stay still.");
         // use the timeout to avoid repeating the message too fast
         while (true) {
-            if (md.awaitChange(10, Presence.Motion)) {
+            if (md.awaitChange(amount, Presence.Motion, 1.0, 5.0)) {
                 System.out.println("I said 'Stay still'!");
-                md.awaitChange(2, Presence.NoMotion);
+                md.awaitChange(amount, Presence.NoMotion, 1.0, 2.0);
             } else {
                 break;
             }
         }
         System.out.println("Very good.");
-        md.awaitChange(Double.MAX_VALUE, Presence.Motion);
+        md.awaitChange(amount, Presence.Motion, 1.0, Double.MAX_VALUE);
     }
 }

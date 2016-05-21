@@ -19,8 +19,13 @@ interface MotionDetectionResult {
     boolean updateMotionState(Mat videoImage,
             MotionProcessorJavaCV motionProcessor, long timeStamp);
 
-    boolean awaitChange(Signal signal, final double timeoutSeconds,
-            final Presence change);
+    Rect getPresenceRegion(double seconds);
+
+    Rect getMotionRegion(double seconds);
+
+    public boolean awaitChange(Signal signal, final double amount,
+            final Presence change, final double timeSpanSeconds,
+            final double timeoutSeconds);
 
     Set<Presence> getPresence(Rect motionRegion, Rect presenceRegion);
 }

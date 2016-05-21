@@ -2,6 +2,8 @@ package teaselib.core.devices.motiondetection;
 
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.locks.Lock;
@@ -53,6 +55,8 @@ public class MotionDetectorJavaCV implements MotionDetector {
 
     private final CaptureThread eventThread;
     final Signal presenceChanged = new Signal();
+
+    private volatile double debugWindowTimeSpan = PresenceRegionDefaultTimespan;
 
     private static final Map<MotionSensitivity, Integer> motionSensitivities = new HashMap<>(
             initStructuringElementSizes());
@@ -175,9 +179,12 @@ public class MotionDetectorJavaCV implements MotionDetector {
 
         private void updateWindow(Mat videoImage,
                 MotionDetectorJavaCVDebugRenderer debugInfo) {
-            Set<Presence> indicators = detectionResult.indicatorHistory.last(1)
-                    .get(0);
-            debugInfo.render(videoImage, detectionResult.presenceRegion,
+            // Set<Presence> indicators =
+            // detectionResult.indicatorHistory.last(1).get(0);
+            // TODO Join
+            Set<Presence> indicators = getIndicatorHistory(debugWindowTimeSpan);
+            debugInfo.render(videoImage,
+                    detectionResult.getPresenceRegion(debugWindowTimeSpan),
                     detectionResult.presenceIndicators, indicators,
                     detectionResult.contourMotionDetected,
                     detectionResult.trackerMotionDetected,
@@ -189,18 +196,26 @@ public class MotionDetectorJavaCV implements MotionDetector {
             }
         }
 
+        private Set<Presence> getIndicatorHistory(double timeSpan) {
+            List<Set<Presence>> indicatorHistory = detectionResult.indicatorHistory
+                    .getTimeSpan(timeSpan);
+            Set<Presence> indicators = new HashSet<Presence>();
+            for (Set<Presence> set : indicatorHistory) {
+                indicators.addAll(set);
+            }
+            return indicators;
+        }
+
         private void logMotionState(Set<Presence> indicators,
                 MotionProcessorJavaCV motionProcessor,
                 boolean contourMotionDetected, boolean trackerMotionDetected) {
             // Log state
-            TeaseLib.instance().log.info(indicators.toString());
-            TeaseLib.instance().log
-                    .info("contourMotionDetected=" + contourMotionDetected
-                            + "  trackerMotionDetected=" + trackerMotionDetected
-                            + "(distance="
-                            + motionProcessor.distanceTracker.distance2(
-                                    motionProcessor.trackFeatures.keyPoints())
-                    + ")");
+            TeaseLib.instance().log.info("contourMotionDetected="
+                    + contourMotionDetected + "  trackerMotionDetected="
+                    + trackerMotionDetected + "(distance="
+                    + motionProcessor.distanceTracker.distance2(
+                            motionProcessor.trackFeatures.keyPoints())
+                    + "), " + indicators.toString());
         }
 
         public void clearMotionHistory() {
@@ -237,39 +252,22 @@ public class MotionDetectorJavaCV implements MotionDetector {
     }
 
     // @Override
-    // public boolean isMotionDetected(final double seconds) {
-    // try {
-    // return presenceChanged
-    // .doLocked(new Callable<Boolean>() {
-    // @Override
-    // public Boolean call() throws Exception {
-    // return eventThread.detectionResult
-    // .isMotionDetected(seconds);
-    // }
-    // });
-    // } catch (Exception e) {
-    // TeaseLib.instance().log.error(this, e);
-    // return false;
-    // }
-    // }
-    //
-    // @Override
-    // public Set<Presence> getPresence() {
-    // final Set<Presence> presence = EnumSet.noneOf(Presence.class);
-    // presenceChanged.doLocked(new Runnable() {
-    // @Override
-    // public void run() {
-    // presence.addAll(eventThread.detectionResult.getPresence());
-    // }
-    // });
-    // return presence;
+    // public boolean awaitChange(final double timeoutSeconds,
+    // final Presence change) {
+    // return awaitChange(1.0, change, MotionRegionDefaultTimespan,
+    // timeoutSeconds);
     // }
 
     @Override
-    public boolean awaitChange(final double timeoutSeconds,
-            final Presence change) {
-        return eventThread.detectionResult.awaitChange(presenceChanged,
-                timeoutSeconds, change);
+    public boolean awaitChange(double amount, Presence change,
+            double timeSpanSeconds, double timeoutSeconds) {
+        debugWindowTimeSpan = timeSpanSeconds;
+        try {
+            return eventThread.detectionResult.awaitChange(presenceChanged,
+                    amount, change, timeSpanSeconds, timeoutSeconds);
+        } finally {
+            debugWindowTimeSpan = MotionRegionDefaultTimespan;
+        }
     }
 
     protected double fps() {
@@ -283,12 +281,14 @@ public class MotionDetectorJavaCV implements MotionDetector {
 
     @Override
     public boolean awaitMotionStart(double timeoutSeconds) {
-        return awaitChange(timeoutSeconds, Presence.Motion);
+        return awaitChange(1.0, Presence.Motion, MotionRegionDefaultTimespan,
+                timeoutSeconds);
     }
 
     @Override
     public boolean awaitMotionEnd(double timeoutSeconds) {
-        return awaitChange(timeoutSeconds, Presence.NoMotion);
+        return awaitChange(1.0, Presence.NoMotion, MotionRegionDefaultTimespan,
+                timeoutSeconds);
     }
 
     @Override

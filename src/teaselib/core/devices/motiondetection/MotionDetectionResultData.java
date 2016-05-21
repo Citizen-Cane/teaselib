@@ -24,8 +24,6 @@ public abstract class MotionDetectionResultData
     protected boolean contourMotionDetected = false;
     protected boolean trackerMotionDetected = false;
     protected boolean motionDetected = false;
-    protected Rect motionRegion = null;
-    protected Rect presenceRegion = null;
     protected final Map<Presence, Rect> presenceIndicators;
     protected final TimeLine<Rect> motionRegionHistory = new TimeLine<Rect>();
     protected final TimeLine<Rect> presenceRegionHistory = new TimeLine<Rect>();
@@ -84,4 +82,10 @@ public abstract class MotionDetectionResultData
         indicatorHistory.add(getPresence(all, all), timeStamp);
     }
 
+    // @Override
+    // public boolean awaitChange(Signal signal, final Presence change,
+    // final double timeoutSeconds) {
+    // return awaitChange(signal, 1.0, change,
+    // MotionDetector.PresenceRegionDefaultTimespan, timeoutSeconds);
+    // }
 }

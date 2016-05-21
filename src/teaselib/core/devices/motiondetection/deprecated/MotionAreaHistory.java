@@ -1,7 +1,7 @@
 /**
  * 
  */
-package teaselib.core.devices.motiondetection;
+package teaselib.core.devices.motiondetection.deprecated;
 
 import java.util.LinkedList;
 

@@ -1,4 +1,4 @@
-package teaselib.core.devices.motiondetection;
+package teaselib.core.devices.motiondetection.deprecated;
 
 import java.awt.Dimension;
 import java.awt.Rectangle;
@@ -386,9 +386,15 @@ public class MotionDetectorSarxos implements MotionDetector {
         return EnumSet.noneOf(Presence.class);
     }
 
+    // @Override
+    // public boolean awaitChange(final double timeoutSeconds,
+    // final Presence change) {
+    // throw new UnsupportedOperationException();
+    // }
+
     @Override
-    public boolean awaitChange(final double timeoutSeconds,
-            final Presence change) {
+    public boolean awaitChange(double amount, Presence change,
+            double timeSpanSeconds, double timeoutSeconds) {
         throw new UnsupportedOperationException();
     }
 

@@ -6,8 +6,8 @@ import java.util.List;
 import teaselib.core.devices.DeviceCache;
 import teaselib.core.devices.video.VideoCaptureDeviceCV;
 
-public class VideoCaptureDeviceFactory {
-    public static final DeviceCache<VideoCaptureDevice> Instance = new DeviceCache<>(
+public class VideoCaptureDevices extends DeviceCache<VideoCaptureDevice> {
+    public static final DeviceCache<VideoCaptureDevice> Instance = new VideoCaptureDevices(
             VideoCaptureDeviceCV.DeviceClassName,
             new DeviceCache.DeviceFactory<VideoCaptureDevice>() {
 
@@ -24,4 +24,17 @@ public class VideoCaptureDeviceFactory {
                             .get(DeviceCache.getDeviceName(devicePath));
                 }
             });
+
+    public VideoCaptureDevices(String deviceClassName,
+            teaselib.core.devices.DeviceCache.DeviceFactory<VideoCaptureDevice> factory) {
+        super(deviceClassName, factory);
+    }
+
+    @Override
+    public VideoCaptureDevice getDefaultDevice() {
+        // Get the front camera
+        String defaultId = getLast(getDevices());
+        return getDevice(defaultId);
+    }
+
 }

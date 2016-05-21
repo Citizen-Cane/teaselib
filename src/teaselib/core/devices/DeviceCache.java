@@ -34,8 +34,12 @@ public class DeviceCache<T extends Device> {
     private Map<String, T> devices = new LinkedHashMap<>();
 
     public T getDefaultDevice() {
-        String defaultId = getLast(getDevices());
+        String defaultId = getFirst(getDevices());
         return getDevice(defaultId);
+    }
+
+    public static String getFirst(Collection<String> collection) {
+        return collection.iterator().next();
     }
 
     public static String getLast(Collection<String> collection) {

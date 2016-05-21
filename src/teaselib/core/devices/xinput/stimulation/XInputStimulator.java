@@ -1,11 +1,13 @@
 /**
  * 
  */
-package teaselib.core.devices.xinput;
+package teaselib.core.devices.xinput.stimulation;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import teaselib.core.devices.xinput.XInputDevice;
+import teaselib.stimulation.StimulationDevice;
 import teaselib.stimulation.Stimulator;
 
 /* @author someone
@@ -71,8 +73,8 @@ public class XInputStimulator implements Stimulator {
         }
     }
 
+    final StimulationDevice device;
     final SharedState sharedState;
-
     final int channel;
 
     public ChannelDependency channelDependency = ChannelDependency.Independent;
@@ -86,7 +88,8 @@ public class XInputStimulator implements Stimulator {
      * @return The stimulators share the device, because the outputs can only be
      *         set simultaneously
      */
-    public static List<XInputStimulator> getStimulators(XInputDevice device) {
+    public static List<XInputStimulator> getStimulators(
+            XInputStimulationDevice device) {
         List<XInputStimulator> stimulators = new ArrayList<XInputStimulator>(2);
         XInputStimulator channel0 = new XInputStimulator(device, 0);
         stimulators.add(channel0);
@@ -94,12 +97,14 @@ public class XInputStimulator implements Stimulator {
         return stimulators;
     }
 
-    XInputStimulator(XInputDevice device, int channel) {
-        this.sharedState = new SharedState(device);
+    XInputStimulator(XInputStimulationDevice device, int channel) {
+        this.device = device;
+        this.sharedState = new SharedState(device.getXInputDevice());
         this.channel = channel;
     }
 
     XInputStimulator(XInputStimulator sibling, int channel) {
+        this.device = sibling.device;
         this.sharedState = sibling.sharedState;
         this.channel = channel;
     }
@@ -128,8 +133,8 @@ public class XInputStimulator implements Stimulator {
     }
 
     @Override
-    public Object getDevice() {
-        return sharedState.device;
+    public StimulationDevice getDevice() {
+        return device;
     }
 
     @Override

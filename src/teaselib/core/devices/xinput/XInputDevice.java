@@ -2,9 +2,12 @@ package teaselib.core.devices.xinput;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
+import teaselib.core.devices.Device;
+import teaselib.core.devices.DeviceCache;
 import teaselib.core.jni.LibraryLoader;
 
 /**
@@ -16,7 +19,9 @@ import teaselib.core.jni.LibraryLoader;
  * @see XInputComponents
  * @see XInputComponentsDelta
  */
-public class XInputDevice {
+public class XInputDevice implements Device {
+    public static final String DeviceClassName = "XInput360GameController";
+
     private final int playerNum;
     private final ByteBuffer buffer; // Contains the XINPUT_STATE struct
     private final XInputComponents lastComponents;
@@ -42,10 +47,30 @@ public class XInputDevice {
         lastComponents = new XInputComponents();
         components = new XInputComponents();
         delta = new XInputComponentsDelta(lastComponents, components);
-
         listeners = new LinkedList<XInputDeviceListener>();
-
         poll();
+    }
+
+    public static List<String> getDevicePaths() {
+        List<String> devicePaths = new ArrayList<String>(4);
+        if (!libLoaded) {
+            LibraryLoader.load("TeaseLibx360c");
+            for (int i = 0; i < MAX_PLAYERS; i++) {
+                devicePaths.add(DeviceCache.createDevicePath(DeviceClassName,
+                        Integer.toString(i)));
+            }
+        }
+        return devicePaths;
+    }
+
+    @Override
+    public String getDevicePath() {
+        return DeviceCache.createDevicePath(DeviceClassName,
+                Integer.toString(playerNum));
+    }
+
+    @Override
+    public void release() {
     }
 
     /**
@@ -70,11 +95,11 @@ public class XInputDevice {
      *            the player number
      * @return the XInput device for the specified player
      */
-    public static XInputDevice getDeviceFor(final int playerNum) {
+    public static XInputDevice getDeviceFor(int playerNum) {
         if (playerNum < 0 || playerNum >= MAX_PLAYERS) {
-            throw new IllegalArgumentException("Invalid player number: "
-                    + playerNum + ". Must be between 0 and "
-                    + (MAX_PLAYERS - 1));
+            throw new IllegalArgumentException(
+                    "Invalid player number: " + playerNum
+                            + ". Must be between 0 and " + (MAX_PLAYERS - 1));
         }
         return DEVICES[playerNum];
     }
@@ -223,7 +248,8 @@ public class XInputDevice {
      * @return <code>false</code> if the device was not connected
      */
     public boolean setVibration(final short leftMotor, final short rightMotor) {
-        return setVibration(playerNum, leftMotor, rightMotor) != ERROR_DEVICE_NOT_CONNECTED;
+        return setVibration(playerNum, leftMotor,
+                rightMotor) != ERROR_DEVICE_NOT_CONNECTED;
     }
 
     /**

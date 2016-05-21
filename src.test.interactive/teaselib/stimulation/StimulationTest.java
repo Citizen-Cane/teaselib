@@ -53,18 +53,18 @@ public class StimulationTest {
     }
 
     public static Stimulator getLeftStimulator() {
-        return Stimulators.getAll().get(0);
+        return StimulationDevices.Instance.getDefaultDevice().stimulators().get(0);
     }
 
     public static Stimulator getRightStimulator() {
-        return Stimulators.getAll().get(1);
+        return StimulationDevices.Instance.getDefaultDevice().stimulators().get(1);
     }
 
     @Test
     public void testEnumerateStimulators() {
-        for (Stimulator stimulator : Stimulators.getAll()) {
+        for (Stimulator stimulator : StimulationDevices.Instance.getDefaultDevice()
+                .stimulators()) {
             System.out.println(stimulator.getDeviceName());
-
         }
     }
 
@@ -132,7 +132,8 @@ public class StimulationTest {
 
     static private void testStimulation(Stimulation stimulation) {
         for (int i = 1; i <= Stimulation.MaxIntensity; i++) {
-            final double durationSeconds = 5.0 * stimulation.periodDurationSeconds;
+            final double durationSeconds = 5.0
+                    * stimulation.periodDurationSeconds;
             stimulation.play(i, durationSeconds);
             try {
                 Thread.sleep((long) (durationSeconds * 1000));

@@ -6,7 +6,7 @@ import java.util.Set;
 
 import teaselib.core.devices.DeviceCache;
 import teaselib.core.devices.motiondetection.MotionDetectorJavaCV;
-import teaselib.video.VideoCaptureDeviceFactory;
+import teaselib.video.VideoCaptureDevices;
 
 /**
  * Motion detectors have a 1:1 relationship to video capture devices.
@@ -18,7 +18,7 @@ public class MotionDetectorFactory {
                 @Override
                 public List<String> getDevices() {
                     List<String> deviceNames = new ArrayList<>();
-                    Set<String> videoCaptureDevicePaths = VideoCaptureDeviceFactory.Instance
+                    Set<String> videoCaptureDevicePaths = VideoCaptureDevices.Instance
                             .getDevices();
                     for (String videoCaptureDevicePath : videoCaptureDevicePaths) {
                         deviceNames.add(DeviceCache.createDevicePath(
@@ -31,7 +31,7 @@ public class MotionDetectorFactory {
                 @Override
                 public MotionDetector getDevice(String devicePath) {
                     return new MotionDetectorJavaCV(
-                            VideoCaptureDeviceFactory.Instance.getDevice(
+                            VideoCaptureDevices.Instance.getDevice(
                                     DeviceCache.getDeviceName(devicePath)));
                 }
             });

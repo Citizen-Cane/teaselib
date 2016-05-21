@@ -14,7 +14,7 @@ public class VideoCaptureTests {
     @Test
     public void testVideoCapture() {
         TeaseLib.init(new DummyHost(), new DummyPersistence());
-        VideoCaptureDevice vc = VideoCaptureDeviceFactory.Instance
+        VideoCaptureDevice vc = VideoCaptureDevices.Instance
                 .getDefaultDevice();
         vc.open(new Size(320, 240));
         for (Mat mat : vc) {

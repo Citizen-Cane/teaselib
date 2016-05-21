@@ -82,7 +82,7 @@ public interface Stimulator {
      * 
      * @return
      */
-    Object getDevice();
+    StimulationDevice getDevice();
 
     /**
      * Whether the channel is independent from the other channels of the device

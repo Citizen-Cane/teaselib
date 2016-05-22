@@ -42,11 +42,15 @@ public class StimulationDevices extends DeviceCache<StimulationDevice> {
                     @Override
                     public List<String> getDevices() {
                         List<String> deviceNames = new ArrayList<>(4);
-                        for (XInputDevice device : XInputDevice
-                                .getAllDevices()) {
-                            deviceNames.add(createDevicePath(
-                                    XInputStimulationDevice.DeviceClassName,
-                                    device.getDevicePath()));
+                        for (String devicePath : XInputDevice
+                                .getDevicePaths()) {
+                            XInputDevice device = XInputDevices.Instance
+                                    .getDevice(devicePath);
+                            if (device.isConnected()) {
+                                deviceNames.add(createDevicePath(
+                                        XInputStimulationDevice.DeviceClassName,
+                                        device.getDevicePath()));
+                            }
                         }
                         return deviceNames;
                     }
@@ -63,7 +67,10 @@ public class StimulationDevices extends DeviceCache<StimulationDevice> {
 
     @Override
     public StimulationDevice getDefaultDevice() {
-        return getDevice(getFirst(getDevices()));
+        // Prefer wireless devices
+        // (wireless XInput devices are numbered higher
+        // since they usually aren't connected at boot time)
+        return getDevice(getLast(getDevices()));
     }
 
     @Override

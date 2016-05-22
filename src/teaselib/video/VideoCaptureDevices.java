@@ -13,7 +13,7 @@ public class VideoCaptureDevices extends DeviceCache<VideoCaptureDevice> {
 
                 @Override
                 public List<String> getDevices() {
-                    List<String> deviceNames = new ArrayList<>();
+                    List<String> deviceNames = new ArrayList<String>();
                     deviceNames.addAll(VideoCaptureDeviceCV.getDevicesPaths());
                     return deviceNames;
                 }

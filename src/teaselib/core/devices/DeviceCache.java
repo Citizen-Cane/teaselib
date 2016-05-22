@@ -19,7 +19,7 @@ public class DeviceCache<T extends Device> {
         T getDevice(String path);
     }
 
-    private final Map<String, DeviceFactory<T>> factories = new HashMap<>();
+    private final Map<String, DeviceFactory<T>> factories = new HashMap<String, DeviceFactory<T>>();
 
     // public DeviceCache(Map.Entry<String, CreateDevice<T>>... creators) {
     // for (Map.Entry<String, CreateDevice<T>> entry : creators) {
@@ -31,7 +31,7 @@ public class DeviceCache<T extends Device> {
         factories.put(deviceClassName, factory);
     }
 
-    private Map<String, T> devices = new LinkedHashMap<>();
+    private Map<String, T> devices = new LinkedHashMap<String, T>();
 
     public T getDefaultDevice() {
         String defaultId = getFirst(getDevices());
@@ -75,7 +75,7 @@ public class DeviceCache<T extends Device> {
     }
 
     public Set<String> getDevices() {
-        Set<String> devicePaths = new LinkedHashSet<>();
+        Set<String> devicePaths = new LinkedHashSet<String>();
         for (Map.Entry<String, DeviceFactory<T>> entry : factories.entrySet())
             devicePaths.addAll(entry.getValue().getDevices());
         return devicePaths;

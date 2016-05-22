@@ -12,12 +12,12 @@ import teaselib.video.VideoCaptureDevices;
  * Motion detectors have a 1:1 relationship to video capture devices.
  */
 public class MotionDetectorFactory {
-    public static final DeviceCache<MotionDetector> Instance = new DeviceCache<>(
+    public static final DeviceCache<MotionDetector> Instance = new DeviceCache<MotionDetector>(
             MotionDetectorJavaCV.DeviceClassName,
             new DeviceCache.DeviceFactory<MotionDetector>() {
                 @Override
                 public List<String> getDevices() {
-                    List<String> deviceNames = new ArrayList<>();
+                    List<String> deviceNames = new ArrayList<String>();
                     Set<String> videoCaptureDevicePaths = VideoCaptureDevices.Instance
                             .getDevices();
                     for (String videoCaptureDevicePath : videoCaptureDevicePaths) {
@@ -30,9 +30,8 @@ public class MotionDetectorFactory {
 
                 @Override
                 public MotionDetector getDevice(String devicePath) {
-                    return new MotionDetectorJavaCV(
-                            VideoCaptureDevices.Instance.getDevice(
-                                    DeviceCache.getDeviceName(devicePath)));
+                    return new MotionDetectorJavaCV(VideoCaptureDevices.Instance
+                            .getDevice(DeviceCache.getDeviceName(devicePath)));
                 }
             });
 }

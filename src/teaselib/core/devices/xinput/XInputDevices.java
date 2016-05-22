@@ -17,7 +17,7 @@ public class XInputDevices extends DeviceCache<XInputDevice> {
             XInputDevice.DeviceClassName, new DeviceFactory<XInputDevice>() {
                 @Override
                 public List<String> getDevices() {
-                    List<String> deviceNames = new ArrayList<>();
+                    List<String> deviceNames = new ArrayList<String>();
                     deviceNames.addAll(XInputDevice.getDevicePaths());
                     return deviceNames;
                 }

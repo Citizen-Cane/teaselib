@@ -40,7 +40,7 @@ public abstract class MotionDetectionResultData
 
     @SuppressWarnings("resource")
     protected Map<Presence, Rect> buildPresenceIndicatorMap(Size s) {
-        Map<Presence, Rect> map = new HashMap<>();
+        Map<Presence, Rect> map = new HashMap<Presence, Rect>();
         map.put(Presence.Present, new Rect(cornerSize, cornerSize,
                 s.width() - 2 * cornerSize, s.height() - 2 * cornerSize));
         // Borders

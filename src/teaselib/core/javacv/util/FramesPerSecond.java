@@ -32,7 +32,7 @@ public class FramesPerSecond {
 
     public FramesPerSecond(int capacity) {
         this.capacity = capacity;
-        frameTimes = new Vector<>(capacity);
+        frameTimes = new Vector<Long>(capacity);
     }
 
     public void startFrame() {

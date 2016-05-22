@@ -41,7 +41,7 @@ public class StimulationDevices extends DeviceCache<StimulationDevice> {
                 new DeviceCache.DeviceFactory<StimulationDevice>() {
                     @Override
                     public List<String> getDevices() {
-                        List<String> deviceNames = new ArrayList<>(4);
+                        List<String> deviceNames = new ArrayList<String>(4);
                         for (String devicePath : XInputDevice
                                 .getDevicePaths()) {
                             XInputDevice device = XInputDevices.Instance

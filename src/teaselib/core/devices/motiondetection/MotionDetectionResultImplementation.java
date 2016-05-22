@@ -199,7 +199,7 @@ public class MotionDetectionResultImplementation
             Presence presenceState = motionDetected
                     || presenceInsidePresenceRect ? Presence.Present
                             : Presence.Away;
-            Set<Presence> directions = new HashSet<>();
+            Set<Presence> directions = new HashSet<Presence>();
             for (Map.Entry<Presence, Rect> e : presenceIndicators.entrySet()) {
                 if (e.getKey() != Presence.Present) {
                     if (intersects(e.getValue(), presenceRegion)) {

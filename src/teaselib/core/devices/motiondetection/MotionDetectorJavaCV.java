@@ -58,11 +58,11 @@ public class MotionDetectorJavaCV implements MotionDetector {
 
     private volatile double debugWindowTimeSpan = PresenceRegionDefaultTimespan;
 
-    private static final Map<MotionSensitivity, Integer> motionSensitivities = new HashMap<>(
+    private static final Map<MotionSensitivity, Integer> motionSensitivities = new HashMap<MotionSensitivity, Integer>(
             initStructuringElementSizes());
 
     private static Map<MotionSensitivity, Integer> initStructuringElementSizes() {
-        Map<MotionSensitivity, Integer> map = new HashMap<>();
+        Map<MotionSensitivity, Integer> map = new HashMap<MotionSensitivity, Integer>();
         map.put(MotionSensitivity.High, 12);
         map.put(MotionSensitivity.Normal, 24);
         map.put(MotionSensitivity.Low, 36);

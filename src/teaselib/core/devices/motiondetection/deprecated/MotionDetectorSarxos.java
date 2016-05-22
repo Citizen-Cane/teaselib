@@ -68,7 +68,7 @@ public class MotionDetectorSarxos implements MotionDetector {
     JFrame window = null;
 
     public static Collection<String> getDevices() {
-        Collection<String> devices = new Vector<>();
+        Collection<String> devices = new Vector<String>();
         try {
             List<Webcam> webcams = Webcam.getWebcams();
             for (Webcam webcam : webcams) {

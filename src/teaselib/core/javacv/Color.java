@@ -14,8 +14,13 @@ public class Color {
     public static final Scalar Green = new Scalar(0, 255, 0, 0);
     public static final Scalar Blue = new Scalar(255, 0, 0, 0);
     public static final Scalar White = new Scalar(255, 255, 255, 0);
-    public static final Scalar MidBlue = new Scalar(128, 0, 0, 0);
-    public static final Scalar DarkRed = new Scalar(0, 0, 64, 0);
-    public static final Scalar DarkGreen = new Scalar(0, 64, 0, 0);
-    public static final Scalar DarkBlue = new Scalar(64, 0, 0, 0);
+    public static final Scalar MidRed = new Scalar(0, 0, 192, 0);
+    public static final Scalar MidGreen = new Scalar(0, 192, 0, 0);
+    public static final Scalar MidBlue = new Scalar(192, 0, 0, 0);
+    public static final Scalar DarkRed = new Scalar(0, 0, 128, 0);
+    public static final Scalar DarkGreen = new Scalar(0, 128, 0, 0);
+    public static final Scalar DarkBlue = new Scalar(128, 0, 0, 0);
+    public static final Scalar VeryDarkRed = new Scalar(0, 0, 64, 0);
+    public static final Scalar VeryDarkGreen = new Scalar(0, 64, 0, 0);
+    public static final Scalar VeryDarkBlue = new Scalar(64, 0, 0, 0);
 }

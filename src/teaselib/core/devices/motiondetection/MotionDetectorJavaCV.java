@@ -107,7 +107,8 @@ public class MotionDetectorJavaCV implements MotionDetector {
             this.fpsStatistics = new FramesPerSecond((int) fps);
             this.desiredFrameTimeMillis = (long) (1000.0 / fps);
 
-            final Size size = new Size(320, 240);
+            Size size = new Size(320, 240);
+            // Size size = new Size(640, 480);
             videoCaptureDevice.open(size);
             Size actualSize = videoCaptureDevice.size();
             motionProcessor = new MotionProcessorJavaCV(
@@ -179,9 +180,6 @@ public class MotionDetectorJavaCV implements MotionDetector {
 
         private void updateWindow(Mat videoImage,
                 MotionDetectorJavaCVDebugRenderer debugInfo) {
-            // Set<Presence> indicators =
-            // detectionResult.indicatorHistory.last(1).get(0);
-            // TODO Join
             Set<Presence> indicators = getIndicatorHistory(debugWindowTimeSpan);
             debugInfo.render(videoImage,
                     detectionResult.getPresenceRegion(debugWindowTimeSpan),

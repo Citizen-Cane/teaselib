@@ -3,7 +3,7 @@
  */
 package teaselib.core.devices.motiondetection;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -25,6 +25,8 @@ public abstract class MotionDetectionResultData
     protected boolean trackerMotionDetected = false;
     protected boolean motionDetected = false;
     protected final Map<Presence, Rect> presenceIndicators;
+    protected final Map<Presence, Presence> negatedRegions;
+
     protected final TimeLine<Rect> motionRegionHistory = new TimeLine<Rect>();
     protected final TimeLine<Rect> presenceRegionHistory = new TimeLine<Rect>();
     protected final TimeLine<Integer> motionAreaHistory = new TimeLine<Integer>();
@@ -34,13 +36,14 @@ public abstract class MotionDetectionResultData
 
     protected MotionDetectionResultData(Size size) {
         presenceIndicators = buildPresenceIndicatorMap(size);
+        negatedRegions = buildNegatedRegions();
         all = new Rect(0, 0, size.width(), size.height());
         clear();
     }
 
     @SuppressWarnings("resource")
     protected Map<Presence, Rect> buildPresenceIndicatorMap(Size s) {
-        Map<Presence, Rect> map = new HashMap<Presence, Rect>();
+        Map<Presence, Rect> map = new LinkedHashMap<Presence, Rect>();
         map.put(Presence.Present, new Rect(cornerSize, cornerSize,
                 s.width() - 2 * cornerSize, s.height() - 2 * cornerSize));
         // Borders
@@ -68,24 +71,29 @@ public abstract class MotionDetectionResultData
         return map;
     }
 
+    Map<Presence, Presence> buildNegatedRegions() {
+        Map<Presence, Presence> negatedRegions = new LinkedHashMap<Presence, Presence>();
+        negatedRegions.put(Presence.Left, Presence.NoLeft);
+        negatedRegions.put(Presence.Right, Presence.NoRight);
+        negatedRegions.put(Presence.Top, Presence.NoTop);
+        negatedRegions.put(Presence.Bottom, Presence.NoBottom);
+        negatedRegions.put(Presence.LeftBorder, Presence.NoLeftBorder);
+        negatedRegions.put(Presence.RightBorder, Presence.NoRightBorder);
+        negatedRegions.put(Presence.TopBorder, Presence.NoTopBorder);
+        negatedRegions.put(Presence.BottomBorder, Presence.NoBottomBorder);
+        return negatedRegions;
+    }
+
     protected void clear() {
         motionRegionHistory.clear();
         presenceRegionHistory.clear();
         motionAreaHistory.clear();
         indicatorHistory.clear();
-        // Set start values
-        // instead of testing for empty lists later on
+        // Set start values instead of testing for empty lists later on
         long timeStamp = 0;
         motionRegionHistory.add(all, timeStamp);
         presenceRegionHistory.add(all, timeStamp);
         motionAreaHistory.add(0, timeStamp);
         indicatorHistory.add(getPresence(all, all), timeStamp);
     }
-
-    // @Override
-    // public boolean awaitChange(Signal signal, final Presence change,
-    // final double timeoutSeconds) {
-    // return awaitChange(signal, 1.0, change,
-    // MotionDetector.PresenceRegionDefaultTimespan, timeoutSeconds);
-    // }
 }

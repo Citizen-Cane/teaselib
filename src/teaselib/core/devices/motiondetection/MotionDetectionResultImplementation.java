@@ -3,10 +3,10 @@
  */
 package teaselib.core.devices.motiondetection;
 
-import static teaselib.core.javacv.util.Geom.*;
+import static teaselib.core.javacv.util.Geom.intersects;
 
 import java.util.EnumSet;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -60,9 +60,14 @@ public class MotionDetectionResultImplementation
             MotionProcessorJavaCV motionProcessor, long timeStamp) {
         // Motion history
         // TODO filter out Shakes (actual shakes, light changes)
-        // TODO cluster motion an presence regions by time
         // so that we don't have to use a fixed time span
         List<Rect> presenceRegions = motionProcessor.motionContours.regions();
+        // moving forward in time changes the presence and motion regions,
+        // so eventually it collapses to the latest presence region
+        // TODO partition motion an presence regions by timespan and
+        // include the group that intersects the requested timespan
+        // -> then it's possible to join the whole motion region group
+        // again, or the latest n members of the group.
         if (presenceRegions.isEmpty()) {
             // Even just adding the time stamp
             // makes our motion region fade away
@@ -70,15 +75,7 @@ public class MotionDetectionResultImplementation
         } else {
             presenceRegionHistory.add(Geom.join(presenceRegions), timeStamp);
         }
-        // moving forward in time changes the presence region, so
-        // eventually it collapses on the current presence region
-        // however we just want presence, no more,
-        // and blinking eyes in the border regions
-        // should count as "Away" anyway
-        // -> no memory for presence needed
-        // presenceRegion = Geom.join(presenceRegionHistory
-        // .getTimeSpan(PresenceRegionDefaultTimespan));
-        // Remove potential blinking eyes from motion region history
+        // Remove blinking eyes from motion region history
         List<Rect> motionRegions = new Vector<Rect>();
         MatVector contours = motionProcessor.motionContours.contours;
         for (int i = 0; i < presenceRegions.size(); i++) {
@@ -94,10 +91,6 @@ public class MotionDetectionResultImplementation
         } else {
             motionRegionHistory.add(Geom.join(motionRegions), timeStamp);
         }
-        // moving forward in time changes the motion region, so
-        // eventually the motion region collapses on the last motion region
-        // motionRegion = Geom.join(
-        // motionRegionHistory.getTimeSpan(MotionRegionDefaultTimespan));
         // Contour motion
         contourMotionDetected = motionRegions.size() > 0;
         // Tracker motion
@@ -189,9 +182,11 @@ public class MotionDetectionResultImplementation
         Rect presenceRect = presenceIndicators.get(Presence.Present);
         if (motionRegion == null || (motionRegion.contains(presenceRect.tl())
                 && motionRegion.contains(presenceRect.br()))) {
-            // TODO also keep last state, because changes can't be detected
-            // to minimize wrong application behavior caused by small shakes
-            return EnumSet.of(Presence.Shake);
+            // Keep last state, to avoid signaling changes during shakes
+            Set<Presence> last = new LinkedHashSet<Presence>(
+                    indicatorHistory.tail());
+            last.add(Presence.Shake);
+            return last;
         } else {
             boolean presenceInsidePresenceRect = intersects(presenceRegion,
                     presenceRect);
@@ -199,11 +194,18 @@ public class MotionDetectionResultImplementation
             Presence presenceState = motionDetected
                     || presenceInsidePresenceRect ? Presence.Present
                             : Presence.Away;
-            Set<Presence> directions = new HashSet<Presence>();
+            Set<Presence> directions = new LinkedHashSet<Presence>();
+            directions.add(Presence.NoShake);
+            // Presence regions
             for (Map.Entry<Presence, Rect> e : presenceIndicators.entrySet()) {
-                if (e.getKey() != Presence.Present) {
+                Presence key = e.getKey();
+                if (key != Presence.Present) {
                     if (intersects(e.getValue(), presenceRegion)) {
-                        directions.add(e.getKey());
+                        // Intersects region
+                        directions.add(key);
+                    } else if (negatedRegions.containsKey(key)) {
+                        // Doesn't intersect region
+                        directions.add(negatedRegions.get(key));
                     }
                 }
             }

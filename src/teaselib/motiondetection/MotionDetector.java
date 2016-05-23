@@ -48,25 +48,42 @@ public interface MotionDetector extends Device {
          * Left region
          */
         Left,
+        NoLeft,
         /**
          * Right region
          */
         Right,
+        NoRight,
         /**
          * Top region
          */
         Top,
+        NoTop,
         /**
          * Bottom region
          */
         Bottom,
+        NoBottom,
         /**
          * The left border of the capture view
          */
         LeftBorder,
+        NoLeftBorder,
+        /**
+         * The right border of the capture view
+         */
         RightBorder,
+        NoRightBorder,
+        /**
+         * The top border of the capture view
+         */
         TopBorder,
+        NoTopBorder,
+        /**
+         * The bottom border of the capture view
+         */
         BottomBorder,
+        NoBottomBorder,
         /**
          * Calculated from capture input to indicate that there is ongoing
          * motion
@@ -91,6 +108,7 @@ public interface MotionDetector extends Device {
          * Calculated from capture input to indicate camera shaking
          */
         Shake,
+        NoShake
     }
 
     static final double MotionRegionDefaultTimespan = 1.0;
@@ -100,13 +118,7 @@ public interface MotionDetector extends Device {
 
     void clearMotionHistory();
 
-    // boolean isMotionDetected(double pastSeconds);
-
-    // Set<Presence> getPresence();
-
     Set<Feature> getFeatures();
-
-    // public boolean awaitChange(double timeoutSeconds, Presence change);
 
     public boolean awaitChange(double amount, Presence change,
             double timeSpanSeconds, double timeoutSeconds);

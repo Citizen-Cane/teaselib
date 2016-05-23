@@ -3,7 +3,7 @@
  */
 package teaselib.core.devices.motiondetection;
 
-import static teaselib.core.javacv.util.Geom.*;
+import static teaselib.core.javacv.util.Geom.intersects;
 
 import java.util.EnumSet;
 import java.util.HashSet;
@@ -187,6 +187,7 @@ public class MotionDetectionResultImplementationFixedTimespan
                     || presenceInsidePresenceRect ? Presence.Present
                             : Presence.Away;
             Set<Presence> directions = new HashSet<Presence>();
+            directions.add(Presence.NoShake);
             for (Map.Entry<Presence, Rect> e : presenceIndicators.entrySet()) {
                 if (e.getKey() != Presence.Present) {
                     if (intersects(e.getValue(), motionRegion)) {

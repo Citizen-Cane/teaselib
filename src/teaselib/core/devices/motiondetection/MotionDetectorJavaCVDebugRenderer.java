@@ -8,9 +8,12 @@ import static org.bytedeco.javacpp.opencv_imgproc.circle;
 import static org.bytedeco.javacpp.opencv_imgproc.putText;
 import static org.bytedeco.javacpp.opencv_imgproc.rectangle;
 import static teaselib.core.javacv.Color.Blue;
+import static teaselib.core.javacv.Color.DarkBlue;
+import static teaselib.core.javacv.Color.DarkGreen;
 import static teaselib.core.javacv.Color.DarkRed;
 import static teaselib.core.javacv.Color.Green;
-import static teaselib.core.javacv.Color.Red;
+import static teaselib.core.javacv.Color.MidBlue;
+import static teaselib.core.javacv.Color.MidGreen;
 import static teaselib.core.javacv.Color.White;
 import static teaselib.core.javacv.util.Geom.center;
 import static teaselib.core.javacv.util.Gui.drawRect;
@@ -79,6 +82,7 @@ public class MotionDetectorJavaCVDebugRenderer {
                 renderDistanceTrackerPoints(videoImage);
             }
         }
+        renderRegionList(indicators, videoImage);
         renderFPS(fps, videoImage);
         updateWindows(videoImage);
     }
@@ -114,11 +118,23 @@ public class MotionDetectorJavaCVDebugRenderer {
         }
     }
 
+    private void renderRegionList(Set<Presence> indicators, Mat videoImage) {
+        StringBuilder sb = new StringBuilder();
+        int n = 0;
+        int s = 12;
+        for (Presence indicator : indicators) {
+            putText(videoImage, indicator.toString(), new Point(0, n),
+                    FONT_HERSHEY_PLAIN, 1.25, White);
+            n += s;
+        }
+    }
+
     private void renderFPS(double fps, Mat videoImage) {
         // fps
         String fpsFormatted = String.format("%1$.2f", fps);
-        putText(videoImage, fpsFormatted + "fps", new Point(0, 40),
-                FONT_HERSHEY_PLAIN, 2.75, White);
+        putText(videoImage, fpsFormatted + "fps",
+                new Point(0, videoImage.rows() - 10), FONT_HERSHEY_PLAIN, 1.75,
+                White);
     }
 
     private void renderPresenceIndicators(Mat videoImage, Rect rM,
@@ -129,10 +145,10 @@ public class MotionDetectorJavaCVDebugRenderer {
             if (indicators.contains(entry.getKey())) {
                 if (entry.getKey() == Presence.Present) {
                     circle(videoImage, center(rM), size.height() / 4,
-                            present ? Green : Blue, 4, 4, 0);
+                            present ? MidGreen : MidBlue, 4, 4, 0);
                 } else {
                     rectangle(videoImage, entry.getValue(),
-                            present ? Red : Blue, 4, 8, 0);
+                            present ? DarkGreen : DarkBlue, 4, 8, 0);
                 }
             }
         }

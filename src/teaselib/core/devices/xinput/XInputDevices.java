@@ -7,13 +7,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 import teaselib.core.devices.DeviceCache;
+import teaselib.core.devices.DeviceCache.DeviceFactory;
 
 /**
  * @author someone
  *
  */
-public class XInputDevices extends DeviceCache<XInputDevice> {
-    public static final DeviceCache<XInputDevice> Instance = new XInputDevices(
+public class XInputDevices {
+    public static final DeviceCache<XInputDevice> Instance = new DeviceCache<XInputDevice>(
             XInputDevice.DeviceClassName, new DeviceFactory<XInputDevice>() {
                 @Override
                 public List<String> getDevices() {
@@ -25,13 +26,7 @@ public class XInputDevices extends DeviceCache<XInputDevice> {
                 @Override
                 public XInputDevice getDevice(String path) {
                     return XInputDevice.getDeviceFor(
-                            Integer.parseInt(getDeviceName(path)));
+                            Integer.parseInt(DeviceCache.getDeviceName(path)));
                 }
             });
-
-    public XInputDevices(String deviceClassName,
-            teaselib.core.devices.DeviceCache.DeviceFactory<XInputDevice> factory) {
-        super(deviceClassName, factory);
-    }
-
 }

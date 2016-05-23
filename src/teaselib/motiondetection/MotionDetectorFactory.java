@@ -33,5 +33,11 @@ public class MotionDetectorFactory {
                     return new MotionDetectorJavaCV(VideoCaptureDevices.Instance
                             .getDevice(DeviceCache.getDeviceName(devicePath)));
                 }
-            });
+            }) {
+        @Override
+        public MotionDetector getDefaultDevice() {
+            String defaultId = getLast(getDevices());
+            return getDevice(defaultId);
+        }
+    };
 }

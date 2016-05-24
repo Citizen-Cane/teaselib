@@ -48,13 +48,6 @@ public abstract class MotionDetectionResultData
         Map<Presence, Rect> map = new LinkedHashMap<Presence, Rect>();
         map.put(Presence.Present, new Rect(cornerSize, cornerSize,
                 s.width() - 2 * cornerSize, s.height() - 2 * cornerSize));
-        // Borders
-        map.put(Presence.LeftBorder, new Rect(0, 0, cornerSize, s.height()));
-        map.put(Presence.RightBorder,
-                new Rect(s.width() - cornerSize, 0, cornerSize, s.height()));
-        map.put(Presence.TopBorder, new Rect(0, 0, s.width(), cornerSize));
-        map.put(Presence.BottomBorder,
-                new Rect(0, s.height() - cornerSize, s.width(), cornerSize));
         // Define a center rectangle half the width
         // and third the height of the capture size
         int cl = s.width() / 2 - s.width() / 4;
@@ -70,6 +63,13 @@ public abstract class MotionDetectionResultData
         map.put(Presence.Top, new Rect(0, 0, s.width(), ct));
         map.put(Presence.Right, new Rect(cr, 0, s.width() - cr, s.height()));
         map.put(Presence.Bottom, new Rect(0, cb, s.width(), s.height() - cb));
+        // Borders
+        map.put(Presence.LeftBorder, new Rect(0, 0, cornerSize, s.height()));
+        map.put(Presence.RightBorder,
+                new Rect(s.width() - cornerSize, 0, cornerSize, s.height()));
+        map.put(Presence.TopBorder, new Rect(0, 0, s.width(), cornerSize));
+        map.put(Presence.BottomBorder,
+                new Rect(0, s.height() - cornerSize, s.width(), cornerSize));
         return map;
     }
 

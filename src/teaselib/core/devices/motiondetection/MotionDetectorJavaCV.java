@@ -2,7 +2,7 @@ package teaselib.core.devices.motiondetection;
 
 import java.util.EnumSet;
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -108,7 +108,6 @@ public class MotionDetectorJavaCV implements MotionDetector {
             this.desiredFrameTimeMillis = (long) (1000.0 / fps);
 
             Size size = new Size(320, 240);
-            // Size size = new Size(640, 480);
             videoCaptureDevice.open(size);
             Size actualSize = videoCaptureDevice.size();
             motionProcessor = new MotionProcessorJavaCV(
@@ -123,7 +122,7 @@ public class MotionDetectorJavaCV implements MotionDetector {
         public void run() {
             try {
                 // TODO Auto-adjust until frame rate is stable
-                // - KNN/findContours use less cpu without motion
+                // - KNN/findContours uses less cpu without motion
                 // -> adjust to < 50% processing time per frame
                 fpsStatistics.startFrame();
                 debugInfo = new MotionDetectorJavaCVDebugRenderer(
@@ -197,9 +196,25 @@ public class MotionDetectorJavaCV implements MotionDetector {
         private Set<Presence> getIndicatorHistory(double timeSpan) {
             List<Set<Presence>> indicatorHistory = detectionResult.indicatorHistory
                     .getTimeSpan(timeSpan);
-            Set<Presence> indicators = new HashSet<Presence>();
+            LinkedHashSet<Presence> indicators = new LinkedHashSet<Presence>();
             for (Set<Presence> set : indicatorHistory) {
-                indicators.addAll(set);
+                for (Presence item : set) {
+                    // Add non-existing elements only
+                    // if not there already to keep the sequence
+                    // addAll wouldn't keep the sequence, because
+                    // it would add existing elements at the end
+                    if (!indicators.contains(item)) {
+                        indicators.add(item);
+                    }
+                }
+            }
+            // remove negated indicators in the result set
+            for (Map.Entry<Presence, Presence> entry : detectionResult.negatedRegions
+                    .entrySet()) {
+                if (indicators.contains(entry.getKey())
+                        && indicators.contains(entry.getValue())) {
+                    indicators.remove(entry.getValue());
+                }
             }
             return indicators;
         }

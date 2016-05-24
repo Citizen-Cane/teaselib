@@ -3,9 +3,8 @@
  */
 package teaselib.core.devices.motiondetection;
 
-import static teaselib.core.javacv.util.Geom.intersects;
+import static teaselib.core.javacv.util.Geom.*;
 
-import java.util.EnumSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -185,6 +184,7 @@ public class MotionDetectionResultImplementation
             // Keep last state, to avoid signaling changes during shakes
             Set<Presence> last = new LinkedHashSet<Presence>(
                     indicatorHistory.tail());
+            last.remove(Presence.NoShake);
             last.add(Presence.Shake);
             return last;
         } else {
@@ -196,6 +196,7 @@ public class MotionDetectionResultImplementation
                             : Presence.Away;
             Set<Presence> directions = new LinkedHashSet<Presence>();
             directions.add(Presence.NoShake);
+            directions.add(presenceState);
             // Presence regions
             for (Map.Entry<Presence, Rect> e : presenceIndicators.entrySet()) {
                 Presence key = e.getKey();
@@ -214,9 +215,7 @@ public class MotionDetectionResultImplementation
             } else {
                 directions.add(Presence.NoMotion);
             }
-            Presence[] directionsArray = new Presence[directions.size()];
-            directionsArray = directions.toArray(directionsArray);
-            return EnumSet.of(presenceState, directionsArray);
+            return directions;
         }
     }
 }

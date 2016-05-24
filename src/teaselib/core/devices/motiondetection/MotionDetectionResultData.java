@@ -3,6 +3,8 @@
  */
 package teaselib.core.devices.motiondetection;
 
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
@@ -94,6 +96,8 @@ public abstract class MotionDetectionResultData
         motionRegionHistory.add(all, timeStamp);
         presenceRegionHistory.add(all, timeStamp);
         motionAreaHistory.add(0, timeStamp);
-        indicatorHistory.add(getPresence(all, all), timeStamp);
+        indicatorHistory.add(
+                new HashSet<Presence>(Arrays.asList(Presence.Shake)),
+                timeStamp);
     }
 }

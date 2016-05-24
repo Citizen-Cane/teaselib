@@ -15,7 +15,7 @@ import org.bytedeco.javacpp.opencv_videoio.VideoCapture;
 
 import teaselib.TeaseLib;
 import teaselib.core.devices.DeviceCache;
-import teaselib.core.javacv.Resize;
+import teaselib.core.javacv.ScaleDown;
 import teaselib.video.VideoCaptureDevice;
 
 public class VideoCaptureDeviceCV implements VideoCaptureDevice {
@@ -26,7 +26,7 @@ public class VideoCaptureDeviceCV implements VideoCaptureDevice {
 
     Size captureSize;
     Size size;
-    Resize resize;
+    ScaleDown resize;
 
     double fps;
 
@@ -163,7 +163,7 @@ public class VideoCaptureDeviceCV implements VideoCaptureDevice {
         int resizeFactor = Math.max(1, captureWidth / size.width());
         this.size = new Size(captureWidth / resizeFactor,
                 captureHeight / resizeFactor);
-        resize = new Resize(resizeFactor);
+        resize = new ScaleDown(resizeFactor);
         fps = videoCapture.get(opencv_videoio.CAP_PROP_FPS);
         if (fps > 0.0) {
             // Try to set a fixed fps, better than frame rate drops

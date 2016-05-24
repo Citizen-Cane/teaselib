@@ -1,16 +1,15 @@
 package teaselib.core.javacv;
 
-import static org.bytedeco.javacpp.opencv_imgproc.resize;
+import static org.bytedeco.javacpp.opencv_imgproc.*;
 
 import org.bytedeco.javacpp.opencv_core;
 import org.bytedeco.javacpp.opencv_core.Mat;
 
-public class Resize {
+public class ScaleDown {
     public final int factor;
+    public final Mat output = new Mat();
 
-    public Mat output = new Mat();
-
-    public Resize(int resize) {
+    public ScaleDown(int resize) {
         this.factor = resize;
     }
 

@@ -11,11 +11,9 @@ import teaselib.core.devices.DeviceCache;
 import teaselib.core.jni.LibraryLoader;
 
 /**
- * Represents all XInput devices registered in the system. Use the
- * {@link #getAllDevices()} or {@link #getDeviceFor(int)} methods to start using
- * the devices.
+ * Represents all XInput devices registered in the system.
  *
- * @author Ivan "StrikerX3" Oliveira
+ * @author Citizen-Cane, Based on work by Ivan "StrikerX3" Oliveira
  * @see XInputComponents
  * @see XInputComponentsDelta
  */
@@ -28,16 +26,50 @@ public class XInputDevice implements Device {
     private final XInputComponents components;
     private final XInputComponentsDelta delta;
 
-    public static final int MAX_PLAYERS = 4;
-
     private boolean lastConnected;
     private boolean connected;
 
     private final List<XInputDeviceListener> listeners;
 
     private static boolean libLoaded = false;
-
+    public static final int MAX_PLAYERS = 4;
     private static final XInputDevice[] DEVICES = new XInputDevice[MAX_PLAYERS];
+
+    /**
+     * @return All connected devices
+     */
+    public static List<String> getDevicePaths() {
+        List<String> devicePaths = new ArrayList<String>(4);
+        for (int i = 0; i < XInputDevice.MAX_PLAYERS; i++) {
+            if (XInputDevice.getDeviceFor(i).isConnected()) {
+                devicePaths.add(DeviceCache.createDevicePath(
+                        XInputDevice.DeviceClassName, Integer.toString(i)));
+            }
+        }
+        return devicePaths;
+    }
+
+    /**
+     * Returns the XInput device for the specified player.
+     *
+     * @param playerNum
+     *            the player number
+     * @return the XInput device for the specified player
+     */
+    static XInputDevice getDeviceFor(int playerNum) {
+        if (playerNum < 0 || playerNum >= MAX_PLAYERS) {
+            throw new IllegalArgumentException(
+                    "Invalid player number: " + playerNum
+                            + ". Must be between 0 and " + (MAX_PLAYERS - 1));
+        }
+        if (!libLoaded) {
+            LibraryLoader.load("TeaseLibx360c");
+            for (int i = 0; i < MAX_PLAYERS; i++) {
+                DEVICES[i] = new XInputDevice(i);
+            }
+        }
+        return DEVICES[playerNum];
+    }
 
     private XInputDevice(final int playerNum) {
         this.playerNum = playerNum;
@@ -51,15 +83,6 @@ public class XInputDevice implements Device {
         poll();
     }
 
-    public static List<String> getDevicePaths() {
-        List<String> devicePaths = new ArrayList<String>(4);
-        for (int i = 0; i < MAX_PLAYERS; i++) {
-            devicePaths.add(DeviceCache.createDevicePath(DeviceClassName,
-                    Integer.toString(i)));
-        }
-        return devicePaths;
-    }
-
     @Override
     public String getDevicePath() {
         return DeviceCache.createDevicePath(DeviceClassName,
@@ -68,28 +91,6 @@ public class XInputDevice implements Device {
 
     @Override
     public void release() {
-    }
-
-    /**
-     * Returns the XInput device for the specified player.
-     *
-     * @param playerNum
-     *            the player number
-     * @return the XInput device for the specified player
-     */
-    public static XInputDevice getDeviceFor(int playerNum) {
-        if (playerNum < 0 || playerNum >= MAX_PLAYERS) {
-            throw new IllegalArgumentException(
-                    "Invalid player number: " + playerNum
-                            + ". Must be between 0 and " + (MAX_PLAYERS - 1));
-        }
-        if (!libLoaded) {
-            LibraryLoader.load("TeaseLibx360c");
-            for (int i = 0; i < MAX_PLAYERS; i++) {
-                DEVICES[i] = new XInputDevice(i);
-            }
-        }
-        return DEVICES[playerNum];
     }
 
     /**

@@ -36,9 +36,9 @@ public class XInputTest {
     @Test
     public void testEnumXInputDevices() {
         List<XInputDevice> xinputDevices = getXInputDevices();
-        assertEquals(4, xinputDevices.size());
         for (XInputDevice xinputDevice : xinputDevices) {
             assertNotEquals(null, xinputDevice);
+            assertEquals(true, xinputDevice.isConnected());
             System.out.println("Device " + xinputDevice.getDevicePath() + ": "
                     + (xinputDevice.isConnected() ? "connected"
                             : "not connected"));
@@ -48,9 +48,9 @@ public class XInputTest {
     @Test
     public void testEnumStimulationDevices() {
         List<XInputDevice> xinputDevices = getXInputDevices();
-        assertEquals(4, xinputDevices.size());
         int n = 0;
         for (XInputDevice xinputDevice : xinputDevices) {
+            assertEquals(true, xinputDevice.isConnected());
             if (xinputDevice.isConnected()) {
                 n++;
             }

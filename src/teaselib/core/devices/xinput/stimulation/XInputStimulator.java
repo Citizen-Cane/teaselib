@@ -49,6 +49,7 @@ import teaselib.stimulation.Stimulator;
  *         
  *          When using relays, the shortest time the xinput driver allows seems to be around 50-100ms
  *           
+ *           TODO explain timeout hack
  */
 public class XInputStimulator implements Stimulator {
 

@@ -28,5 +28,12 @@ public class XInputDevices {
                     return XInputDevice.getDeviceFor(
                             Integer.parseInt(DeviceCache.getDeviceName(path)));
                 }
-            });
+            }) {
+
+        @Override
+        public XInputDevice getDefaultDevice() {
+            String defaultId = getLast(getDevices());
+            return getDevice(defaultId);
+        }
+    };
 }

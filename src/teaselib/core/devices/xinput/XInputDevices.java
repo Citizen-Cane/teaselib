@@ -32,7 +32,7 @@ public class XInputDevices {
 
         @Override
         public XInputDevice getDefaultDevice() {
-            String defaultId = getLast(getDevices());
+            String defaultId = getLast(getDevicePaths());
             return getDevice(defaultId);
         }
     };

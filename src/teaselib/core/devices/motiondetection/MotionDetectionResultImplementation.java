@@ -152,9 +152,8 @@ public class MotionDetectionResultImplementation
                             // calculate the occurrence percentage
                             int n = numberOfOccurences(change,
                                     timeSpanIndicatorHistory);
-                            double actualAmount = ((double) n)
-                                    / (timeSpanIndicatorHistory.size());
-                            return actualAmount >= amount;
+                            int s = timeSpanIndicatorHistory.size();
+                            return ((double) n) / s >= amount;
                         }
                     }));
         } catch (InterruptedException e) {

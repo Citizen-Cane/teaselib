@@ -1,10 +1,7 @@
 package teaselib.core.javacv.util;
 
-import static org.bytedeco.javacpp.opencv_core.FONT_HERSHEY_PLAIN;
-import static org.bytedeco.javacpp.opencv_imgproc.approxPolyDP;
-import static org.bytedeco.javacpp.opencv_imgproc.boundingRect;
-import static org.bytedeco.javacpp.opencv_imgproc.putText;
-import static org.bytedeco.javacpp.opencv_imgproc.rectangle;
+import static org.bytedeco.javacpp.opencv_core.*;
+import static org.bytedeco.javacpp.opencv_imgproc.*;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -51,11 +48,11 @@ public class Gui {
             // Create the text we will annotate the box with:
             // Calculate the position for annotated text (make sure we don't
             // put illegal values in there):
-            int pos_x = Math.max(r.tl().x() + 10, 0);
-            int pos_y = Math.max(r.tl().y() + 10, 0);
             String box_text = "<" + name + ">";
-            putText(mat, box_text, new Point(pos_x, pos_y), FONT_HERSHEY_PLAIN,
-                    1.75, color);
+            @SuppressWarnings("resource")
+            final Point p = new Point(Math.max(r.tl().x() + 10, 0),
+                    Math.max(r.tl().y() + 10, 0));
+            putText(mat, box_text, p, FONT_HERSHEY_PLAIN, 1.75, color);
         }
     }
 
@@ -72,12 +69,13 @@ public class Gui {
     }
 
     public static List<Rect> rectangles(MatVector contours) {
+        Mat p = new Mat();
         int size = (int) contours.size();
         List<Rect> rectangles = new ArrayList<Rect>(size);
         for (int i = 0; i < size; i++) {
             // TODO Remove approxPolyDP?
-            Mat p = new Mat();
             approxPolyDP(contours.get(i), p, 3, true);
+            @SuppressWarnings("resource")
             Rect r = boundingRect(p);
             // Rect r = opencv_imgproc.boundingRect(contours.get(i));
             if (r != null)

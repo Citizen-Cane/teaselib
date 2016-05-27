@@ -26,15 +26,14 @@ public class TrackFeatures {
     public void reset(Mat input, Mat mask) {
         cvtColor(input, videoMatGray, COLOR_BGRA2GRAY);
         cvtColor(input, videoMatGrayPrevious, COLOR_BGRA2GRAY);
-        keyPoints = new Mat(new Size(maxPoints * 2, 2), opencv_core.CV_8UC4);
+        Size size = new Size(maxPoints * 2, 2);
+        keyPoints = new Mat(size, opencv_core.CV_8UC4);
         if (mask != null) {
-            keyPointsPrevious = new Mat(new Size(maxPoints * 2, 2),
-                    opencv_core.CV_8UC4);
+            keyPointsPrevious = new Mat(size, opencv_core.CV_8UC4);
             goodFeaturesToTrack(videoMatGray, keyPoints, maxPoints, 0.5, 8.0,
                     mask, 3, false, 0.04);
         } else {
-            keyPointsPrevious = new Mat(new Size(maxPoints * 2, 2),
-                    opencv_core.CV_8UC4);
+            keyPointsPrevious = new Mat(size, opencv_core.CV_8UC4);
             goodFeaturesToTrack(videoMatGray, keyPoints, maxPoints, 0.5, 8.0);
         }
         keyPoints.copyTo(keyPointsPrevious);

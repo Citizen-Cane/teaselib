@@ -28,9 +28,10 @@ public class BackgroundSubtraction {
     }
 
     public void setStructuringElementSize(int size) {
+        opencv_core.Size s = new opencv_core.Size(size, size);
+        opencv_core.Point p = new opencv_core.Point(1, 1);
         element = opencv_imgproc.getStructuringElement(
-                org.bytedeco.javacpp.opencv_imgproc.MORPH_RECT,
-                new opencv_core.Size(size, size), new opencv_core.Point(1, 1));
+                org.bytedeco.javacpp.opencv_imgproc.MORPH_RECT, s, p);
     }
 
     private void init(int history, double dist2Threshold,

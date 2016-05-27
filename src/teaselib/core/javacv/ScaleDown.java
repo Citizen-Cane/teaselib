@@ -14,8 +14,9 @@ public class ScaleDown {
     }
 
     public Mat update(Mat input) {
-        resize(input, output, new opencv_core.Size(
-                input.size().width() / factor, input.size().height() / factor));
+        opencv_core.Size size = new opencv_core.Size(
+                input.size().width() / factor, input.size().height() / factor);
+        resize(input, output, size);
         return output;
     }
 }

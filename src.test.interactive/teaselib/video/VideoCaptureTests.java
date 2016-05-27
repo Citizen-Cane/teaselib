@@ -16,7 +16,8 @@ public class VideoCaptureTests {
         TeaseLib.init(new DummyHost(), new DummyPersistence());
         VideoCaptureDevice vc = VideoCaptureDevices.Instance
                 .getDefaultDevice();
-        vc.open(new Size(320, 240));
+        final Size size = new Size(320, 240);
+        vc.open(size);
         for (Mat mat : vc) {
             opencv_highgui.imshow("Test", mat);
             if (org.bytedeco.javacpp.opencv_highgui.waitKey(30) >= 0) {

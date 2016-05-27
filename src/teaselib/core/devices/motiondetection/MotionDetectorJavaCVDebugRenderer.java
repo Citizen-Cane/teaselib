@@ -93,9 +93,10 @@ public class MotionDetectorJavaCVDebugRenderer {
     private void renderContourMotionRegion(Mat debugOutput, Rect rM) {
         motionProcessor.motionContours.render(debugOutput, DarkRed, -1);
         if (rM != null) {
-            putText(debugOutput, rM.area() + "p2",
-                    new Point(debugOutput.cols() - 40, debugOutput.cols() - 20),
-                    FONT_HERSHEY_PLAIN, 2.75, White);
+            Point p = new Point(debugOutput.cols() - 40,
+                    debugOutput.cols() - 20);
+            putText(debugOutput, rM.area() + "p2", p, FONT_HERSHEY_PLAIN, 2.75,
+                    White);
         }
     }
 
@@ -115,22 +116,23 @@ public class MotionDetectorJavaCVDebugRenderer {
         }
     }
 
-    private void renderRegionList(Mat debugOutput, Set<Presence> indicators) {
-        StringBuilder sb = new StringBuilder();
+    private static void renderRegionList(Mat debugOutput,
+            Set<Presence> indicators) {
         int n = 0;
         int s = 14;
         for (Presence indicator : indicators) {
-            putText(debugOutput, indicator.toString(), new Point(0, n),
-                    FONT_HERSHEY_PLAIN, 1.25, White);
+            Point p = new Point(0, n);
+            putText(debugOutput, indicator.toString(), p, FONT_HERSHEY_PLAIN,
+                    1.25, White);
             n += s;
         }
     }
 
-    private void renderFPS(Mat debugOutput, double fps) {
+    private static void renderFPS(Mat debugOutput, double fps) {
         // fps
         String fpsFormatted = String.format("%1$.2f", fps);
-        putText(debugOutput, fpsFormatted + "fps",
-                new Point(0, debugOutput.rows() - 10), FONT_HERSHEY_PLAIN, 1.75,
+        Point p = new Point(0, debugOutput.rows() - 10);
+        putText(debugOutput, fpsFormatted + "fps", p, FONT_HERSHEY_PLAIN, 1.75,
                 White);
     }
 

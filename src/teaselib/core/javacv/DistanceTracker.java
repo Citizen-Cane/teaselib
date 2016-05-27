@@ -65,13 +65,13 @@ public class DistanceTracker {
         FloatIndexer to = currentKeyPoints.createIndexer();
         long n = Math.min(from.rows(), to.rows());
         for (int i = 0; i < n; i++) {
-            opencv_imgproc.line(output,
-                    new Point((int) from.get(i, 0), (int) from.get(i, 1)),
-                    new Point((int) to.get(i, 0), (int) to.get(i, 1)), color);
+            Point p1 = new Point((int) from.get(i, 0), (int) from.get(i, 1));
+            Point p2 = new Point((int) to.get(i, 0), (int) to.get(i, 1));
+            opencv_imgproc.line(output, p1, p2, color);
         }
         int distance = (int) Math.sqrt(distance2(currentKeyPoints));
-        putText(output, Integer.toString(distance),
-                new Point(0, output.rows() - 20), FONT_HERSHEY_PLAIN, 1.75,
+        Point p = new Point(0, output.rows() - 20);
+        putText(output, Integer.toString(distance), p, FONT_HERSHEY_PLAIN, 1.75,
                 color);
     }
 }

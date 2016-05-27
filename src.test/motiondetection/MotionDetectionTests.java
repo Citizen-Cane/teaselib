@@ -11,7 +11,7 @@ import teaselib.core.devices.DeviceCache;
 import teaselib.core.devices.motiondetection.MotionDetectorJavaCV;
 import teaselib.hosts.DummyHost;
 import teaselib.hosts.DummyPersistence;
-import teaselib.motiondetection.MotionDetectorFactory;
+import teaselib.motiondetection.MotionDetection;
 
 public class MotionDetectionTests {
 
@@ -27,7 +27,7 @@ public class MotionDetectionTests {
     public void testVideoCaptureDeviceEnumeration() {
         TeaseLib teaseLib = TeaseLib.init(new DummyHost(),
                 new DummyPersistence());
-        Set<String> devices = MotionDetectorFactory.Instance.getDevicePaths();
+        Set<String> devices = MotionDetection.Instance.getDevicePaths();
         for (String id : devices) {
             teaseLib.log.info(id);
         }

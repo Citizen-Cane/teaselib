@@ -21,7 +21,7 @@ public class testMotionDetectionNew {
         // .getDevice(devicePath);
         // MotionDetector md = new MotionDetectorJavaCV(videoCaptureDevice);
 
-        MotionDetector md = MotionDetectorFactory.Instance.getDefaultDevice();
+        MotionDetector md = MotionDetection.Instance.getDefaultDevice();
         md.setSensitivity(MotionSensitivity.Normal);
 
         System.out.println("Move!");

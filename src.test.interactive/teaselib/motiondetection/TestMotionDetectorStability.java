@@ -29,7 +29,7 @@ public class TestMotionDetectorStability {
     public void testPauseResume() {
         TeaseLib.init(new DummyHost(), new DummyPersistence());
 
-        MotionDetector md = MotionDetectorFactory.Instance.getDefaultDevice();
+        MotionDetector md = MotionDetection.Instance.getDefaultDevice();
         md.setSensitivity(MotionSensitivity.Normal);
 
         int durationMillis = 10 * 1000;

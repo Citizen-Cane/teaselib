@@ -16,6 +16,7 @@ import teaselib.TeaseLib;
 import teaselib.core.concurrency.Signal;
 import teaselib.core.devices.DeviceCache;
 import teaselib.core.javacv.util.FramesPerSecond;
+import teaselib.motiondetection.MotionDetection;
 import teaselib.motiondetection.MotionDetector;
 import teaselib.video.VideoCaptureDevice;
 
@@ -54,9 +55,6 @@ public class MotionDetectorJavaCV implements MotionDetector {
     private static final double DesiredFps = 15;
 
     private final CaptureThread eventThread;
-    final Signal presenceChanged = new Signal();
-
-    private volatile double debugWindowTimeSpan = PresenceRegionDefaultTimespan;
 
     private static final Map<MotionSensitivity, Integer> motionSensitivities = new HashMap<MotionSensitivity, Integer>(
             initStructuringElementSizes());
@@ -85,18 +83,22 @@ public class MotionDetectorJavaCV implements MotionDetector {
         eventThread.start();
     }
 
-    MotionDetectorJavaCVDebugRenderer debugInfo = null;
-    boolean logDetails = false;
+    static class CaptureThread extends Thread {
+        private static final Size DesiredProcessingSize = new Size(320, 240);
 
-    public final Lock lockStartStop = new ReentrantLock();
-
-    class CaptureThread extends Thread {
         private final VideoCaptureDevice videoCaptureDevice;
         private final MotionProcessorJavaCV motionProcessor;
         final MotionDetectionResultImplementation detectionResult;
         private final double fps;
         private final FramesPerSecond fpsStatistics;
         private final long desiredFrameTimeMillis;
+
+        volatile double debugWindowTimeSpan = PresenceRegionDefaultTimespan;
+        final Lock lockStartStop = new ReentrantLock();
+        final Signal presenceChanged = new Signal();
+
+        MotionDetectorJavaCVDebugRenderer debugInfo = null;
+        boolean logDetails = false;
 
         CaptureThread(VideoCaptureDevice videoCaptureDevice,
                 double desiredFps) {
@@ -107,8 +109,8 @@ public class MotionDetectorJavaCV implements MotionDetector {
             this.fpsStatistics = new FramesPerSecond((int) fps);
             this.desiredFrameTimeMillis = (long) (1000.0 / fps);
 
-            Size size = new Size(320, 240);
-            videoCaptureDevice.open(size);
+            videoCaptureDevice.open(DesiredProcessingSize);
+            @SuppressWarnings("resource")
             Size actualSize = videoCaptureDevice.size();
             motionProcessor = new MotionProcessorJavaCV(
                     videoCaptureDevice.captureSize().width(),
@@ -219,7 +221,7 @@ public class MotionDetectorJavaCV implements MotionDetector {
             return indicators;
         }
 
-        private void logMotionState(Set<Presence> indicators,
+        private static void logMotionState(Set<Presence> indicators,
                 MotionProcessorJavaCV motionProcessor,
                 boolean contourMotionDetected, boolean trackerMotionDetected) {
             // Log state
@@ -274,12 +276,13 @@ public class MotionDetectorJavaCV implements MotionDetector {
     @Override
     public boolean awaitChange(double amount, Presence change,
             double timeSpanSeconds, double timeoutSeconds) {
-        debugWindowTimeSpan = timeSpanSeconds;
+        eventThread.debugWindowTimeSpan = timeSpanSeconds;
         try {
-            return eventThread.detectionResult.awaitChange(presenceChanged,
-                    amount, change, timeSpanSeconds, timeoutSeconds);
+            return eventThread.detectionResult.awaitChange(
+                    eventThread.presenceChanged, amount, change,
+                    timeSpanSeconds, timeoutSeconds);
         } finally {
-            debugWindowTimeSpan = MotionRegionDefaultTimespan;
+            eventThread.debugWindowTimeSpan = MotionRegionDefaultTimespan;
         }
     }
 
@@ -294,29 +297,27 @@ public class MotionDetectorJavaCV implements MotionDetector {
 
     @Override
     public boolean awaitMotionStart(double timeoutSeconds) {
-        return awaitChange(1.0, Presence.Motion, MotionRegionDefaultTimespan,
-                timeoutSeconds);
+        return MotionDetection.movement(this).startedWithin(timeoutSeconds);
     }
 
     @Override
     public boolean awaitMotionEnd(double timeoutSeconds) {
-        return awaitChange(1.0, Presence.NoMotion, MotionRegionDefaultTimespan,
-                timeoutSeconds);
+        return MotionDetection.movement(this).stoppedWithin(timeoutSeconds);
     }
 
     @Override
     public boolean active() {
-        return eventThread != null;
+        return eventThread.videoCaptureDevice.active();
     }
 
     @Override
     public void pause() {
-        lockStartStop.lock();
+        eventThread.lockStartStop.lock();
     }
 
     @Override
     public void resume() {
-        lockStartStop.unlock();
+        eventThread.lockStartStop.unlock();
     }
 
     @Override

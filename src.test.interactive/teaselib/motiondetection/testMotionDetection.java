@@ -20,7 +20,7 @@ public class testMotionDetection {
     public void test() {
         TeaseLib.init(new DummyHost(), new DummyPersistence());
 
-        MotionDetector md = MotionDetectorFactory.Instance.getDefaultDevice();
+        MotionDetector md = MotionDetection.Instance.getDefaultDevice();
         md.setSensitivity(MotionSensitivity.Normal);
 
         System.out.println("Move!");

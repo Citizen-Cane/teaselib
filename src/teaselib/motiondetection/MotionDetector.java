@@ -141,13 +141,6 @@ public interface MotionDetector extends Device {
     @Deprecated
     boolean awaitMotionEnd(double timeoutSeconds);
 
-    /**
-     * Webcam connected and processing is enabled
-     * 
-     * @return
-     */
-    boolean active();
-
     public void pause();
 
     public void resume();

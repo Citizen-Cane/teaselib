@@ -23,7 +23,7 @@ import teaselib.stimulation.StimulationDevices;
 public class XInputTest {
 
     private List<XInputDevice> getXInputDevices() {
-        Collection<String> devicePaths = XInputDevices.Instance.getDevices();
+        Collection<String> devicePaths = XInputDevices.Instance.getDevicePaths();
         List<XInputDevice> devices = new ArrayList<XInputDevice>(4);
         for (String devicePath : devicePaths) {
             XInputDevice xinputDevice = XInputDevices.Instance
@@ -56,7 +56,7 @@ public class XInputTest {
             }
         }
         Collection<String> devicePaths = StimulationDevices.Instance
-                .getDevices();
+                .getDevicePaths();
         List<StimulationDevice> stimulationDevices = new Vector<StimulationDevice>();
         for (String devicePath : devicePaths) {
             StimulationDevice stimulationDevice = StimulationDevices.Instance

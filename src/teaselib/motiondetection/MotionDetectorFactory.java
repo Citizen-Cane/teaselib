@@ -19,7 +19,7 @@ public class MotionDetectorFactory {
                 public List<String> getDevices() {
                     List<String> deviceNames = new ArrayList<String>();
                     Set<String> videoCaptureDevicePaths = VideoCaptureDevices.Instance
-                            .getDevices();
+                            .getDevicePaths();
                     for (String videoCaptureDevicePath : videoCaptureDevicePaths) {
                         deviceNames.add(DeviceCache.createDevicePath(
                                 MotionDetectorJavaCV.DeviceClassName,
@@ -36,7 +36,7 @@ public class MotionDetectorFactory {
             }) {
         @Override
         public MotionDetector getDefaultDevice() {
-            String defaultId = getLast(getDevices());
+            String defaultId = getLast(getDevicePaths());
             return getDevice(defaultId);
         }
     };

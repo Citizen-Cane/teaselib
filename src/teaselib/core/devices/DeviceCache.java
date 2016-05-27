@@ -34,7 +34,7 @@ public class DeviceCache<T extends Device> {
     private Map<String, T> devices = new LinkedHashMap<String, T>();
 
     public T getDefaultDevice() {
-        String defaultId = getFirst(getDevices());
+        String defaultId = getFirst(getDevicePaths());
         return getDevice(defaultId);
     }
 
@@ -74,7 +74,7 @@ public class DeviceCache<T extends Device> {
         }
     }
 
-    public Set<String> getDevices() {
+    public Set<String> getDevicePaths() {
         Set<String> devicePaths = new LinkedHashSet<String>();
         for (Map.Entry<String, DeviceFactory<T>> entry : factories.entrySet())
             devicePaths.addAll(entry.getValue().getDevices());

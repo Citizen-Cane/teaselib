@@ -63,7 +63,7 @@ public class StimulationDevices {
             // Prefer wireless devices
             // (wireless XInput devices are numbered higher
             // since they usually aren't connected at boot time)
-            return getDevice(getLast(getDevices()));
+            return getDevice(getLast(getDevicePaths()));
         }
     };
 }

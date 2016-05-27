@@ -27,7 +27,7 @@ public class MotionDetectionTests {
     public void testVideoCaptureDeviceEnumeration() {
         TeaseLib teaseLib = TeaseLib.init(new DummyHost(),
                 new DummyPersistence());
-        Set<String> devices = MotionDetectorFactory.Instance.getDevices();
+        Set<String> devices = MotionDetectorFactory.Instance.getDevicePaths();
         for (String id : devices) {
             teaseLib.log.info(id);
         }

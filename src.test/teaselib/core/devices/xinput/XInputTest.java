@@ -22,8 +22,9 @@ import teaselib.stimulation.StimulationDevices;
  */
 public class XInputTest {
 
-    private List<XInputDevice> getXInputDevices() {
-        Collection<String> devicePaths = XInputDevices.Instance.getDevicePaths();
+    private static List<XInputDevice> getXInputDevices() {
+        Collection<String> devicePaths = XInputDevices.Instance
+                .getDevicePaths();
         List<XInputDevice> devices = new ArrayList<XInputDevice>(4);
         for (String devicePath : devicePaths) {
             XInputDevice xinputDevice = XInputDevices.Instance
@@ -38,10 +39,9 @@ public class XInputTest {
         List<XInputDevice> xinputDevices = getXInputDevices();
         for (XInputDevice xinputDevice : xinputDevices) {
             assertNotEquals(null, xinputDevice);
-            assertEquals(true, xinputDevice.isConnected());
+            assertEquals(true, xinputDevice.active());
             System.out.println("Device " + xinputDevice.getDevicePath() + ": "
-                    + (xinputDevice.isConnected() ? "connected"
-                            : "not connected"));
+                    + (xinputDevice.active() ? "connected" : "not connected"));
         }
     }
 
@@ -50,8 +50,8 @@ public class XInputTest {
         List<XInputDevice> xinputDevices = getXInputDevices();
         int n = 0;
         for (XInputDevice xinputDevice : xinputDevices) {
-            assertEquals(true, xinputDevice.isConnected());
-            if (xinputDevice.isConnected()) {
+            assertEquals(true, xinputDevice.active());
+            if (xinputDevice.active()) {
                 n++;
             }
         }
@@ -72,7 +72,7 @@ public class XInputTest {
                 assertNotEquals(null, stimulationDevice);
                 System.out.println(
                         "Device " + xinputStimulationDevice.getDevicePath()
-                                + ": " + (xinputStimulationDevice.isConnected()
+                                + ": " + (xinputStimulationDevice.active()
                                         ? "connected" : "not connected"));
             }
         }

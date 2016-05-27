@@ -28,6 +28,11 @@ public class XInputStimulationDevice implements StimulationDevice {
     }
 
     @Override
+    public boolean active() {
+        return device.active();
+    }
+
+    @Override
     public void release() {
     }
 
@@ -38,9 +43,5 @@ public class XInputStimulationDevice implements StimulationDevice {
 
     XInputDevice getXInputDevice() {
         return device;
-    }
-
-    public boolean isConnected() {
-        return device.isConnected();
     }
 }

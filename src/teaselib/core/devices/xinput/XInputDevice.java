@@ -41,7 +41,7 @@ public class XInputDevice implements Device {
     public static List<String> getDevicePaths() {
         List<String> devicePaths = new ArrayList<String>(4);
         for (int i = 0; i < XInputDevice.MAX_PLAYERS; i++) {
-            if (XInputDevice.getDeviceFor(i).isConnected()) {
+            if (XInputDevice.getDeviceFor(i).active()) {
                 devicePaths.add(DeviceCache.createDevicePath(
                         XInputDevice.DeviceClassName, Integer.toString(i)));
             }
@@ -87,6 +87,17 @@ public class XInputDevice implements Device {
     public String getDevicePath() {
         return DeviceCache.createDevicePath(DeviceClassName,
                 Integer.toString(playerNum));
+    }
+
+    /**
+     * Returns a boolean indicating whether this device is connected.
+     *
+     * @return <code>true</code> if the device is connected, <code>false</code>
+     *         otherwise
+     */
+    @Override
+    public boolean active() {
+        return connected;
     }
 
     @Override
@@ -270,16 +281,6 @@ public class XInputDevice implements Device {
      */
     public XInputComponentsDelta getDelta() {
         return delta;
-    }
-
-    /**
-     * Returns a boolean indicating whether this device is connected.
-     *
-     * @return <code>true</code> if the device is connected, <code>false</code>
-     *         otherwise
-     */
-    public boolean isConnected() {
-        return connected;
     }
 
     /**

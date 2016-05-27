@@ -42,7 +42,7 @@ public class StimulationDevices {
                     for (String devicePath : XInputDevice.getDevicePaths()) {
                         XInputDevice device = XInputDevices.Instance
                                 .getDevice(devicePath);
-                        if (device.isConnected()) {
+                        if (device.active()) {
                             deviceNames.add(DeviceCache.createDevicePath(
                                     XInputStimulationDevice.DeviceClassName,
                                     device.getDevicePath()));

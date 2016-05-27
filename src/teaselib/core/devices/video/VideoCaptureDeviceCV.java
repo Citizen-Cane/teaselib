@@ -52,6 +52,7 @@ public class VideoCaptureDeviceCV implements VideoCaptureDevice {
             if (i >= devices.size())
                 // Detect new devices
                 try {
+                    @SuppressWarnings("resource")
                     VideoCapture videoCapture = new VideoCapture();
                     openDevice(videoCapture, i);
                     if (videoCapture.isOpened()) {
@@ -169,6 +170,11 @@ public class VideoCaptureDeviceCV implements VideoCaptureDevice {
             // Try to set a fixed fps, better than frame rate drops
             videoCapture.set(opencv_videoio.CAP_PROP_EXPOSURE, 1.0 / fps);
         }
+    }
+
+    @Override
+    public boolean active() {
+        return videoCapture.isOpened();
     }
 
     @Override

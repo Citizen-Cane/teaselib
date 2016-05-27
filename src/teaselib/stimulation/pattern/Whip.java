@@ -6,6 +6,7 @@ package teaselib.stimulation.pattern;
 import teaselib.stimulation.SquareWave;
 import teaselib.stimulation.Stimulation;
 import teaselib.stimulation.Stimulator;
+import teaselib.stimulation.WaveForm;
 
 /**
  * @author someone
@@ -27,15 +28,13 @@ public class Whip extends Stimulation {
     }
 
     @Override
-    public void play() throws InterruptedException {
-        // Attention duration depends on intensity only
+    public WaveForm waveform(int intensity) {
         double whipSeconds = getSeconds(intensity);
         // A constant signal
-        new SquareWave(whipSeconds * 1000.0, whipSeconds * 1000.0).play(
-                stimulator, durationSeconds, Stimulation.maxStrength);
+        return new SquareWave(whipSeconds * 1000.0, whipSeconds * 1000.0);
     }
 
-    public double getSeconds(int intensity) {
+    private double getSeconds(int intensity) {
         return periodDurationSeconds + 0.5 * intensity / MaxIntensity;
     }
 

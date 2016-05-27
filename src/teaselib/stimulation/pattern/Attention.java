@@ -6,6 +6,7 @@ package teaselib.stimulation.pattern;
 import teaselib.stimulation.SquareWave;
 import teaselib.stimulation.Stimulation;
 import teaselib.stimulation.Stimulator;
+import teaselib.stimulation.WaveForm;
 
 /**
  * @author someone
@@ -18,12 +19,11 @@ public class Attention extends Stimulation {
     }
 
     @Override
-    public void play() throws InterruptedException {
+    public WaveForm waveform(int intensity) {
         // Attention duration depends on intensity only
         double attentionSeconds = Attention.getSeconds(intensity);
         // A constant signal
-        new SquareWave(attentionSeconds * 1000, attentionSeconds * 1000).play(
-                stimulator, durationSeconds, Stimulation.maxStrength);
+        return new SquareWave(attentionSeconds * 1000, attentionSeconds * 1000);
     }
 
     public static double getSeconds(int intensity) {

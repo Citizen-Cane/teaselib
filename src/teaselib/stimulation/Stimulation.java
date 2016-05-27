@@ -7,10 +7,12 @@ import teaselib.TeaseLib;
 import teaselib.core.ScriptInterruptedException;
 
 /**
+ * Assign a specific stimulation to a stimulator.
+ * 
  * @author someone
  *
  */
-public abstract class Stimulation implements Runnable {
+public abstract class Stimulation {
     /**
      * The body region the stimulator is applied to
      *
@@ -38,11 +40,7 @@ public abstract class Stimulation implements Runnable {
     protected final static int MaxIntensity = 10;
     protected final static double maxStrength = 1.0;
 
-    public final Stimulator stimulator;
-    protected int intensity;
-
-    // todo prevent change from thread
-    protected double durationSeconds;
+    final Stimulator stimulator;
 
     private Thread stim = null;
     public final double periodDurationSeconds;
@@ -54,21 +52,25 @@ public abstract class Stimulation implements Runnable {
                 stimulator.minimalSignalDuration());
     }
 
-    public void play(int intensity, double durationSeconds) {
-        this.intensity = intensity;
-        this.durationSeconds = durationSeconds;
-        stim = new Thread(this);
+    public void play(final int intensity, final double durationSeconds) {
+        // TODO Thread pool, Future
+        stim = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    waveform(intensity).play(stimulator, durationSeconds,
+                            Stimulation.maxStrength);
+                } catch (InterruptedException e) {
+                    stimulator.set(0);
+                }
+            }
+        });
         final String simpleName = getClass().getSimpleName();
         TeaseLib.instance().log.info(simpleName + ": intensity=" + intensity
                 + " duration=" + durationSeconds + " on "
                 + stimulator.getDeviceName() + ", " + stimulator.getLocation());
         stim.setName(simpleName);
         stim.start();
-    }
-
-    public void extend(double additionalSeconds) {
-        // todo lock or atomic
-        durationSeconds += additionalSeconds;
     }
 
     public void stop() {
@@ -96,14 +98,5 @@ public abstract class Stimulation implements Runnable {
         }
     }
 
-    @Override
-    public final void run() {
-        try {
-            play();
-        } catch (InterruptedException e) {
-            stimulator.set(0);
-        }
-    }
-
-    protected abstract void play() throws InterruptedException;
+    protected abstract WaveForm waveform(int intensity);
 }

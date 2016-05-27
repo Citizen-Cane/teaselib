@@ -6,6 +6,7 @@ package teaselib.stimulation.pattern;
 import teaselib.stimulation.BurstSquareWave;
 import teaselib.stimulation.Stimulation;
 import teaselib.stimulation.Stimulator;
+import teaselib.stimulation.WaveForm;
 
 /**
  * @author someone
@@ -18,16 +19,16 @@ public class Cum extends Stimulation {
     }
 
     @Override
-    public void play() throws InterruptedException {
+    public WaveForm waveform(int intensity) {
         double onTimeMillis = periodDurationSeconds * 0.9;
         double burstBase = 0.3;
         double onFactor = (double) intensity
                 / (double) Stimulation.MaxIntensity;
         double burstOnSeconds = burstBase * onFactor;
         double burstOffSeconds = burstBase * (1.0 - onFactor);
-        new BurstSquareWave(periodDurationSeconds * 1000, onTimeMillis * 1000,
-                burstOnSeconds * 1000, burstOffSeconds * 1000).play(stimulator,
-                durationSeconds, Stimulation.maxStrength);
+        return new BurstSquareWave(periodDurationSeconds * 1000,
+                onTimeMillis * 1000, burstOnSeconds * 1000,
+                burstOffSeconds * 1000);
     }
 
 }

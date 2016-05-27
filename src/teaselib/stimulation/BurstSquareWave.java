@@ -38,15 +38,14 @@ public class BurstSquareWave extends WaveForm {
     /*
      * (non-Javadoc)
      * 
-     * @see
-     * teaselib.stimulation.StimulationPattern#play(teaselib.stimulation.Stimulator
-     * , int, double)
+     * @see teaselib.stimulation.StimulationPattern#play(teaselib.stimulation.
+     * Stimulator , int, double)
      */
     @Override
     public void play(Stimulator stimumlator, double seconds, double strength)
             throws InterruptedException {
         long startTime = System.currentTimeMillis();
-        long durationMillis = (long) seconds * 1000;
+        durationMillis.set((long) (seconds * 1000));
         do {
             long t = 0;
             while (t <= onTimeMillis) {
@@ -60,6 +59,6 @@ public class BurstSquareWave extends WaveForm {
             if (t < periodTimeMillis) {
                 Thread.sleep(periodTimeMillis - t);
             }
-        } while (System.currentTimeMillis() - startTime < durationMillis);
+        } while (System.currentTimeMillis() - startTime < durationMillis.get());
     }
 }

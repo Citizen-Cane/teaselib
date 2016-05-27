@@ -53,17 +53,19 @@ public class StimulationTest {
     }
 
     public static Stimulator getLeftStimulator() {
-        return StimulationDevices.Instance.getDefaultDevice().stimulators().get(0);
+        return StimulationDevices.Instance.getDefaultDevice().stimulators()
+                .get(0);
     }
 
     public static Stimulator getRightStimulator() {
-        return StimulationDevices.Instance.getDefaultDevice().stimulators().get(1);
+        return StimulationDevices.Instance.getDefaultDevice().stimulators()
+                .get(1);
     }
 
     @Test
     public void testEnumerateStimulators() {
-        for (Stimulator stimulator : StimulationDevices.Instance.getDefaultDevice()
-                .stimulators()) {
+        for (Stimulator stimulator : StimulationDevices.Instance
+                .getDefaultDevice().stimulators()) {
             System.out.println(stimulator.getDeviceName());
         }
     }
@@ -154,10 +156,13 @@ public class StimulationTest {
                 new Cum(c), new Cum(c), new Cum(c) };
         for (int j = 0; j < r.length; j++) {
             for (int i = 1; i <= Stimulation.MaxIntensity; i++) {
-                r[j].play(i, durationSeconds);
-                l[j].play(i, durationSeconds);
-                r[j].complete();
-                l[j].complete();
+                Stimulation left = l[j];
+                Stimulation right = r[j];
+                System.out.println(left.toString() + " " + right.toString());
+                right.play(i, durationSeconds);
+                left.play(i, durationSeconds);
+                right.complete();
+                left.complete();
             }
         }
     }

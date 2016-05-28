@@ -88,4 +88,9 @@ public class XInputButtonsDelta {
         }
         return false;
     }
+
+    @Override
+    public String toString() {
+        return buttons.toString() + " <- " + lastButtons.toString();
+    }
 }

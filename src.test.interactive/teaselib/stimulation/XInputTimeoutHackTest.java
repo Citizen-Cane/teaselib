@@ -5,12 +5,12 @@ package teaselib.stimulation;
 
 import static org.junit.Assert.*;
 
-import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import teaselib.core.devices.xinput.XInputButtons;
-import teaselib.core.devices.xinput.XInputComponents;
+import teaselib.core.devices.xinput.XInputButton;
+import teaselib.core.devices.xinput.XInputButtonsDelta;
+import teaselib.core.devices.xinput.XInputComponentsDelta;
 import teaselib.core.devices.xinput.XInputDevice;
 import teaselib.core.devices.xinput.XInputDevices;
 
@@ -20,53 +20,24 @@ import teaselib.core.devices.xinput.XInputDevices;
  */
 public class XInputTimeoutHackTest {
 
-    /**
-     * @throws java.lang.Exception
-     */
-    @BeforeClass
-    public static void setUpBeforeClass() throws Exception {
-    }
-
-    public static Stimulator getLeftStimulator() {
-        return StimulationDevices.Instance.getDefaultDevice().stimulators()
-                .get(0);
-    }
-
-    public static Stimulator getRightStimulator() {
-        return StimulationDevices.Instance.getDefaultDevice().stimulators()
-                .get(1);
-    }
-
     @Test
     public void testTimeoutHack_feedback() throws InterruptedException {
         XInputDevice xid = XInputDevices.Instance.getDefaultDevice();
         System.out.println(xid.getDevicePath());
         xid.setVibration((short) 0, (short) 0);
-        XInputComponents xic;
-        XInputButtons xib;
+        XInputButtonsDelta xib;
         try {
-            Thread.sleep(1000);
-            xid.poll();
-            xic = xid.getComponents();
-            xib = xic.getButtons();
-            assertEquals(false, xib.lThumb);
-            assertEquals(false, xib.rThumb);
+            xib = poll(xid);
+            assertEquals(false, xib.isPressed(XInputButton.lShoulder));
+            assertEquals(false, xib.isPressed(XInputButton.rShoulder));
             xid.setVibration(Short.MAX_VALUE, Short.MAX_VALUE);
-            Thread.sleep(1000);
-            xid.poll();
-            xic = xid.getComponents();
-            xib = xic.getButtons();
-            // assertEquals(true, xib.lShoulder);
-            // assertEquals(true, xib.rShoulder);
-            assertEquals(true, xib.rThumb);
-            assertEquals(true, xib.lThumb);
+            xib = poll(xid);
+            assertEquals(true, xib.isPressed(XInputButton.lShoulder));
+            assertEquals(true, xib.isPressed(XInputButton.rShoulder));
             xid.setVibration((short) 0, (short) 0);
-            Thread.sleep(1000);
-            xid.poll();
-            xic = xid.getComponents();
-            xib = xic.getButtons();
-            assertEquals(false, xib.lThumb);
-            assertEquals(false, xib.rThumb);
+            xib = poll(xid);
+            assertEquals(false, xib.isPressed(XInputButton.lShoulder));
+            assertEquals(false, xib.isPressed(XInputButton.rShoulder));
         } finally {
             xid.setVibration((short) 0, (short) 0);
         }
@@ -79,27 +50,43 @@ public class XInputTimeoutHackTest {
         System.out.println(xid.getDevicePath());
         for (int i = 0; i < 360; i++) {
             xid.setVibration((short) 0, (short) 0);
-            XInputComponents xic;
-            XInputButtons xib;
+            XInputButtonsDelta xib;
             try {
                 xid.poll();
-                xic = xid.getComponents();
-                xib = xic.getButtons();
-                xid.setVibration(Short.MAX_VALUE, Short.MAX_VALUE);
-                Thread.sleep(1000);
-                xic = xid.getComponents();
-                xib = xic.getButtons();
-                xid.setVibration((short) 0, (short) 0);
-                Thread.sleep(1000);
-                xid.poll();
-                xic = xid.getComponents();
-                xib = xic.getButtons();
-                assertEquals(false, xib.lThumb);
-                assertEquals(false, xib.rThumb);
-                Thread.sleep(8000);
+                xid.setVibration(XInputDevice.VIBRATION_MAX_VALUE,
+                        XInputDevice.VIBRATION_MAX_VALUE);
+                xib = poll(xid);
+                assertEquals(true, xib.isPressed(XInputButton.lShoulder));
+                assertEquals(true, xib.isPressed(XInputButton.rShoulder));
+                xid.setVibration(XInputDevice.VIBRATION_MAX_VALUE,
+                        XInputDevice.VIBRATION_MIN_VALUE);
+                xib = poll(xid);
+                assertEquals(true, xib.isPressed(XInputButton.lShoulder));
+                assertEquals(false, xib.isPressed(XInputButton.rShoulder));
+                xid.setVibration(XInputDevice.VIBRATION_MIN_VALUE,
+                        XInputDevice.VIBRATION_MAX_VALUE);
+                xib = poll(xid);
+                assertEquals(false, xib.isPressed(XInputButton.lShoulder));
+                assertEquals(true, xib.isPressed(XInputButton.rShoulder));
+                xid.setVibration(XInputDevice.VIBRATION_MIN_VALUE,
+                        XInputDevice.VIBRATION_MIN_VALUE);
+                xib = poll(xid);
+                assertEquals(false, xib.isPressed(XInputButton.lShoulder));
+                assertEquals(false, xib.isPressed(XInputButton.rShoulder));
             } finally {
-                xid.setVibration((short) 0, (short) 0);
+                xid.setVibration(XInputDevice.VIBRATION_MIN_VALUE,
+                        XInputDevice.VIBRATION_MIN_VALUE);
             }
         }
+    }
+
+    private static XInputButtonsDelta poll(XInputDevice xid)
+            throws InterruptedException {
+        Thread.sleep(100);
+        xid.poll();
+        XInputComponentsDelta xic = xid.getDelta();
+        XInputButtonsDelta xib = xic.getButtons();
+        System.out.println(xib);
+        return xib;
     }
 }

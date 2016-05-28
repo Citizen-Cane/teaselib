@@ -31,8 +31,11 @@ public class XInputDevice implements Device {
 
     private final List<XInputDeviceListener> listeners;
 
-    private static boolean libLoaded = false;
     public static final int MAX_PLAYERS = 4;
+    public static final int VIBRATION_MIN_VALUE = 0;
+    public static final int VIBRATION_MAX_VALUE = 65535;
+
+    private static boolean libLoaded = false;
     private static final XInputDevice[] DEVICES = new XInputDevice[MAX_PLAYERS];
 
     /**
@@ -252,9 +255,18 @@ public class XInputDevice implements Device {
      *            the right motor speed
      * @return <code>false</code> if the device was not connected
      */
-    public boolean setVibration(final short leftMotor, final short rightMotor) {
-        return setVibration(playerNum, leftMotor,
-                rightMotor) != ERROR_DEVICE_NOT_CONNECTED;
+    public boolean setVibration(int leftMotor, int rightMotor) {
+        return setVibration(playerNum, clampVibrationValue(leftMotor),
+                clampVibrationValue(rightMotor)) != ERROR_DEVICE_NOT_CONNECTED;
+    }
+
+    private static short clampVibrationValue(int value) {
+        if (value < VIBRATION_MIN_VALUE)
+            return (short) VIBRATION_MIN_VALUE;
+        else if (value > VIBRATION_MAX_VALUE)
+            return (short) VIBRATION_MAX_VALUE;
+        else
+            return (short) value;
     }
 
     /**

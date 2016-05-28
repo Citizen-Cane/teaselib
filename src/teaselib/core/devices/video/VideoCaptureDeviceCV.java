@@ -131,6 +131,11 @@ public class VideoCaptureDeviceCV implements VideoCaptureDevice {
     }
 
     @Override
+    public String getName() {
+        return "OpenCV Video Capture #" + this.device;
+    }
+
+    @Override
     public void open(Size size) {
         if (!videoCapture.isOpened()) {
             videoCapture.open(device);

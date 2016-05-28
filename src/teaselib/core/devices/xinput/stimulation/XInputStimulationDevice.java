@@ -28,6 +28,11 @@ public class XInputStimulationDevice implements StimulationDevice {
     }
 
     @Override
+    public String getName() {
+        return "XInput stimulator";
+    }
+
+    @Override
     public boolean active() {
         return device.active();
     }

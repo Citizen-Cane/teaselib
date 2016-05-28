@@ -254,6 +254,11 @@ public class MotionDetectorJavaCV implements MotionDetector {
     }
 
     @Override
+    public String getName() {
+        return "Motion Detector";
+    }
+
+    @Override
     public void setSensitivity(MotionSensitivity motionSensivity) {
         pause();
         eventThread.motionProcessor.setStructuringElementSize(

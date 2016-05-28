@@ -89,6 +89,11 @@ public class XInputDevice implements Device {
                 Integer.toString(playerNum));
     }
 
+    @Override
+    public String getName() {
+        return "XInput Game Controller #" + getPlayerNum();
+    }
+
     /**
      * Returns a boolean indicating whether this device is connected.
      *

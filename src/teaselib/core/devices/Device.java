@@ -10,6 +10,13 @@ public interface Device {
     String getDevicePath();
 
     /**
+     * The name of the device.
+     * 
+     * @return A human-readable device name that identifies the device.
+     */
+    String getName();
+
+    /**
      * Test whether the device is connected, available, and active.
      */
     boolean active();

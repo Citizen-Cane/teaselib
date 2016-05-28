@@ -150,6 +150,11 @@ public class MotionDetectorSarxos implements MotionDetector {
                 detectionEvents.webcam.getName());
     }
 
+    @Override
+    public String getName() {
+        return "Motion Detector";
+    }
+
     private void attachWebcam(Webcam newWebcam) {
         TeaseLib.instance().log.info(newWebcam.getName() + " connected");
         newWebcam.setViewSize(ViewSize);

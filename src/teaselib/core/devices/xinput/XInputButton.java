@@ -6,9 +6,19 @@ package teaselib.core.devices.xinput;
  * @author Ivan "StrikerX3" Oliveira
  */
 public enum XInputButton {
-	a, b, x, y,
-	back, start,
-	lShoulder, rShoulder,
-	lThumb, rThumb,
-	up, down, left, right;
+    a,
+    b,
+    x,
+    y,
+    back,
+    start,
+    guide,
+    lShoulder,
+    rShoulder,
+    lThumb,
+    rThumb,
+    up,
+    down,
+    left,
+    right;
 }

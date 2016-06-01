@@ -39,7 +39,7 @@ public class XInputTimeoutHackTest {
             assertEquals(false, xib.isPressed(XInputButton.lShoulder));
             assertEquals(false, xib.isPressed(XInputButton.rShoulder));
         } finally {
-            xid.setVibration((short) 0, (short) 0);
+            assertTrue(xid.shutdown());
         }
     }
 
@@ -74,8 +74,7 @@ public class XInputTimeoutHackTest {
                 assertEquals(false, xib.isPressed(XInputButton.lShoulder));
                 assertEquals(false, xib.isPressed(XInputButton.rShoulder));
             } finally {
-                xid.setVibration(XInputDevice.VIBRATION_MIN_VALUE,
-                        XInputDevice.VIBRATION_MIN_VALUE);
+                assertTrue(xid.shutdown());
             }
         }
     }

@@ -9,6 +9,10 @@ extern "C" {
 #endif
 #undef teaselib_core_devices_xinput_XInputDevice_MAX_PLAYERS
 #define teaselib_core_devices_xinput_XInputDevice_MAX_PLAYERS 4L
+#undef teaselib_core_devices_xinput_XInputDevice_VIBRATION_MIN_VALUE
+#define teaselib_core_devices_xinput_XInputDevice_VIBRATION_MIN_VALUE 0L
+#undef teaselib_core_devices_xinput_XInputDevice_VIBRATION_MAX_VALUE
+#define teaselib_core_devices_xinput_XInputDevice_VIBRATION_MAX_VALUE 65535L
 #undef teaselib_core_devices_xinput_XInputDevice_XINPUT_GAMEPAD_DPAD_UP
 #define teaselib_core_devices_xinput_XInputDevice_XINPUT_GAMEPAD_DPAD_UP 1L
 #undef teaselib_core_devices_xinput_XInputDevice_XINPUT_GAMEPAD_DPAD_DOWN
@@ -29,6 +33,8 @@ extern "C" {
 #define teaselib_core_devices_xinput_XInputDevice_XINPUT_GAMEPAD_LEFT_SHOULDER 256L
 #undef teaselib_core_devices_xinput_XInputDevice_XINPUT_GAMEPAD_RIGHT_SHOULDER
 #define teaselib_core_devices_xinput_XInputDevice_XINPUT_GAMEPAD_RIGHT_SHOULDER 512L
+#undef teaselib_core_devices_xinput_XInputDevice_XINPUT_GAMEPAD_GUIDE
+#define teaselib_core_devices_xinput_XInputDevice_XINPUT_GAMEPAD_GUIDE 1024L
 #undef teaselib_core_devices_xinput_XInputDevice_XINPUT_GAMEPAD_A
 #define teaselib_core_devices_xinput_XInputDevice_XINPUT_GAMEPAD_A 4096L
 #undef teaselib_core_devices_xinput_XInputDevice_XINPUT_GAMEPAD_B
@@ -52,10 +58,18 @@ JNIEXPORT jint JNICALL Java_teaselib_core_devices_xinput_XInputDevice_pollDevice
 /*
  * Class:     teaselib_core_devices_xinput_XInputDevice
  * Method:    setVibration
- * Signature: (ISS)I
+ * Signature: (III)I
  */
 JNIEXPORT jint JNICALL Java_teaselib_core_devices_xinput_XInputDevice_setVibration
-  (JNIEnv *, jclass, jint, jshort, jshort);
+  (JNIEnv *, jclass, jint, jint, jint);
+
+/*
+ * Class:     teaselib_core_devices_xinput_XInputDevice
+ * Method:    shutdownDevice
+ * Signature: (I)Z
+ */
+JNIEXPORT jboolean JNICALL Java_teaselib_core_devices_xinput_XInputDevice_shutdownDevice
+  (JNIEnv *, jclass, jint);
 
 #ifdef __cplusplus
 }

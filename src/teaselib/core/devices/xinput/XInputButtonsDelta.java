@@ -69,6 +69,8 @@ public class XInputButtonsDelta {
             return !from.back && to.back;
         case start:
             return !from.start && to.start;
+        case guide:
+            return !from.guide && to.guide;
         case lShoulder:
             return !from.lShoulder && to.lShoulder;
         case rShoulder:

@@ -7,7 +7,7 @@ package teaselib.core.devices.xinput;
  */
 public class XInputButtons {
     public boolean a, b, x, y;
-    public boolean back, start;
+    public boolean back, start, guide;
     public boolean lShoulder, rShoulder;
     public boolean lThumb, rThumb;
     public boolean up, down, left, right;
@@ -21,7 +21,7 @@ public class XInputButtons {
      */
     protected void reset() {
         a = b = x = y = false;
-        back = start = false;
+        back = start = guide = false;
         lShoulder = rShoulder = false;
         lThumb = rThumb = false;
         up = down = left = right = false;
@@ -41,6 +41,7 @@ public class XInputButtons {
 
         back = buttons.back;
         start = buttons.start;
+        guide = buttons.guide;
 
         lShoulder = buttons.lShoulder;
         rShoulder = buttons.rShoulder;
@@ -57,9 +58,9 @@ public class XInputButtons {
     @Override
     public String toString() {
         return "a=" + a + ", b=" + b + ", x=" + x + ", y=" + y + ", back="
-                + back + ", start=" + start + ", lShoulder=" + lShoulder
-                + ", rShoulder=" + rShoulder + ", lThumb=" + lThumb
-                + ", rThumb=" + rThumb + ", up=" + up + ", down=" + down
-                + ", left=" + left + ", right=" + right;
+                + back + ", start=" + start + ", guide=" + guide
+                + ", lShoulder=" + lShoulder + ", rShoulder=" + rShoulder
+                + ", lThumb=" + lThumb + ", rThumb=" + rThumb + ", up=" + up
+                + ", down=" + down + ", left=" + left + ", right=" + right;
     }
 }

@@ -199,6 +199,7 @@ public class XInputDevice implements Device {
         buttons.y = (btns & XINPUT_GAMEPAD_Y) != 0;
         buttons.back = (btns & XINPUT_GAMEPAD_BACK) != 0;
         buttons.start = (btns & XINPUT_GAMEPAD_START) != 0;
+        buttons.guide = (btns & XINPUT_GAMEPAD_GUIDE) != 0;
         buttons.lShoulder = (btns & XINPUT_GAMEPAD_LEFT_SHOULDER) != 0;
         buttons.rShoulder = (btns & XINPUT_GAMEPAD_RIGHT_SHOULDER) != 0;
         buttons.lThumb = (btns & XINPUT_GAMEPAD_LEFT_THUMB) != 0;
@@ -270,6 +271,16 @@ public class XInputDevice implements Device {
     }
 
     /**
+     * Shutdown the device completely. First turn off vibration, then shutdown
+     * wireless device to save battery power.
+     * 
+     * @return Whether shutting down the device was successful.
+     */
+    public boolean shutdown() {
+        return shutdownDevice(playerNum);
+    }
+
+    /**
      * Returns the state of the Xbox 360 controller components before the last
      * poll.
      *
@@ -311,8 +322,10 @@ public class XInputDevice implements Device {
 
     private static native int pollDevice(int playerNum, ByteBuffer data);
 
-    private static native int setVibration(int playerNum, short leftMotor,
-            short rightMotor);
+    private static native int setVibration(int playerNum, int leftMotor,
+            int rightMotor);
+
+    private static native boolean shutdownDevice(int playerNum);
 
     // Xbox 360 controller button masks
     private static final short XINPUT_GAMEPAD_DPAD_UP = 0x0001;
@@ -325,6 +338,7 @@ public class XInputDevice implements Device {
     private static final short XINPUT_GAMEPAD_RIGHT_THUMB = 0x0080;
     private static final short XINPUT_GAMEPAD_LEFT_SHOULDER = 0x0100;
     private static final short XINPUT_GAMEPAD_RIGHT_SHOULDER = 0x0200;
+    private static final short XINPUT_GAMEPAD_GUIDE = 0x0400;
     private static final short XINPUT_GAMEPAD_A = 0x1000;
     private static final short XINPUT_GAMEPAD_B = 0x2000;
     private static final short XINPUT_GAMEPAD_X = 0x4000;

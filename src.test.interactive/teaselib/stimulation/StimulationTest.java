@@ -9,6 +9,9 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import teaselib.TeaseLib;
+import teaselib.hosts.DummyHost;
+import teaselib.hosts.DummyPersistence;
 import teaselib.stimulation.pattern.Attention;
 import teaselib.stimulation.pattern.Cum;
 import teaselib.stimulation.pattern.Punish;
@@ -64,6 +67,7 @@ public class StimulationTest {
 
     @Test
     public void testEnumerateStimulators() {
+        TeaseLib.init(new DummyHost(), new DummyPersistence());
         for (Stimulator stimulator : StimulationDevices.Instance
                 .getDefaultDevice().stimulators()) {
             System.out.println(stimulator.getDeviceName());
@@ -72,6 +76,7 @@ public class StimulationTest {
 
     @Test
     public void testGaits() {
+        TeaseLib.init(new DummyHost(), new DummyPersistence());
         Stimulator stimulator = getRightStimulator();
         testStimulation(new Walk(stimulator));
         testStimulation(new Trot(stimulator));
@@ -80,12 +85,14 @@ public class StimulationTest {
 
     @Test
     public void testTease() {
+        TeaseLib.init(new DummyHost(), new DummyPersistence());
         Stimulator stimulator = getRightStimulator();
         testStimulation(new Tease(stimulator));
     }
 
     @Test
     public void testAttention() {
+        TeaseLib.init(new DummyHost(), new DummyPersistence());
         Stimulator stimulator = getRightStimulator();
         Stimulation stimulation = new Attention(stimulator);
         for (int i = 1; i <= Stimulation.MaxIntensity; i++) {
@@ -100,6 +107,7 @@ public class StimulationTest {
 
     @Test
     public void testPunish() {
+        TeaseLib.init(new DummyHost(), new DummyPersistence());
         Stimulator stimulator = getLeftStimulator();
         Stimulation stimulation = new Punish(stimulator);
         for (int i = 1; i <= Stimulation.MaxIntensity; i++) {
@@ -114,6 +122,7 @@ public class StimulationTest {
 
     @Test
     public void testWhip() {
+        TeaseLib.init(new DummyHost(), new DummyPersistence());
         Stimulator stimulator = getLeftStimulator();
         Stimulation stimulation = new Whip(stimulator);
         for (int i = 1; i <= Stimulation.MaxIntensity; i++) {
@@ -128,6 +137,7 @@ public class StimulationTest {
 
     @Test
     public void testCum() {
+        TeaseLib.init(new DummyHost(), new DummyPersistence());
         Stimulator stimulator = getRightStimulator();
         testStimulation(new Cum(stimulator));
     }
@@ -147,8 +157,9 @@ public class StimulationTest {
 
     @Test
     public void testAll() {
-        Stimulator a = getRightStimulator();
-        Stimulator c = getLeftStimulator();
+        TeaseLib.init(new DummyHost(), new DummyPersistence());
+        Stimulator a = getLeftStimulator();
+        Stimulator c = getRightStimulator();
         final double durationSeconds = 10.0;
         Stimulation[] r = { new Walk(a), new Trot(a), new Walk(a), new Run(a),
                 new Run(a), new Run(a), new Run(a) };

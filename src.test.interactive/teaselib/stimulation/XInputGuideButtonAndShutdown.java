@@ -45,6 +45,8 @@ public class XInputGuideButtonAndShutdown {
                 break;
             }
             // Wait until guide button is released
+            xid.setVibration(XInputDevice.VIBRATION_MAX_VALUE,
+                    XInputDevice.VIBRATION_MAX_VALUE);
             while (true) {
                 xid.poll();
                 XInputComponentsDelta xic = xid.getDelta();

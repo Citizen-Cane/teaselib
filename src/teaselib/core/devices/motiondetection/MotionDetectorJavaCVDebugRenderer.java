@@ -31,7 +31,6 @@ public class MotionDetectorJavaCVDebugRenderer {
 
     final private MotionProcessorJavaCV motionProcessor;
     final private Size windowSize;
-    final private Mat debugOutput = new Mat();
 
     final Thread owner;
 
@@ -45,7 +44,7 @@ public class MotionDetectorJavaCVDebugRenderer {
         positionWindows(windowSize.width(), windowSize.height(), windows);
     }
 
-    public void render(Mat input, Rect r,
+    public void render(Mat debugOutput, Rect r,
             Map<Presence, Rect> presenceIndicators, Set<Presence> indicators,
             boolean contourMotionDetected, boolean trackerMotionDetected,
             double fps) {
@@ -53,11 +52,6 @@ public class MotionDetectorJavaCVDebugRenderer {
             throw new ConcurrentModificationException(owner.toString() + "!="
                     + Thread.currentThread().toString());
         }
-        // Copy source mat because when the video capture device
-        // framerate drops below the motion detection frame rate,
-        // the debug renderer would mess up motion detection
-        // when rendering into the source mat
-        input.copyTo(debugOutput);
         boolean present = indicators.contains(Presence.Present);
         // Motion
         if (indicators.contains(Presence.Shake)) {

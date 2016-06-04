@@ -1,5 +1,7 @@
 package teaselib.core.devices.motiondetection;
 
+import static org.bytedeco.javacpp.opencv_core.*;
+
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
@@ -34,17 +36,19 @@ import teaselib.video.VideoCaptureDevice;
  *         detected when the tracking points move too far away from their start
  *         points.
  *         <p>
- *         TODO Motion start end end are measure how? Immediately or with delay.
- *         Which?
- *         <p>
  *         Blinking eyes are detected by removing small circular motion contours
  *         before calculating the motion region.
  *         <p>
- *         The detector is stable, but still can be cheated/misled. Avoid:
+ *         The camera should be placed on top of the monitor with no tilt.
  *         <p>
- *         pets <b> audience within the field of view
+ *         The detector is stable, but still can be cheated/misled. Av oid:
  *         <p>
- *         light sources from moving cars or traffic lights
+ *         pets.
+ *         <p>
+ *         audience within the field of view-
+ *         <p>
+ *         light sources from moving cars or traffic lights.
+ * 
  */
 public class MotionDetectorJavaCV implements MotionDetector {
     public static final String DeviceClassName = "MotionDetectorJavaCV";
@@ -85,17 +89,19 @@ public class MotionDetectorJavaCV implements MotionDetector {
 
     static class CaptureThread extends Thread {
         private static final Size DesiredProcessingSize = new Size(320, 240);
+        private static final boolean mirror = true;
 
         private final VideoCaptureDevice videoCaptureDevice;
         private final MotionProcessorJavaCV motionProcessor;
-        final MotionDetectionResultImplementation detectionResult;
+        private final Mat input = new Mat();
+        private final MotionDetectionResultImplementation detectionResult;
         private final double fps;
         private final FramesPerSecond fpsStatistics;
         private final long desiredFrameTimeMillis;
 
         volatile double debugWindowTimeSpan = PresenceRegionDefaultTimespan;
-        final Lock lockStartStop = new ReentrantLock();
-        final Signal presenceChanged = new Signal();
+        private final Lock lockStartStop = new ReentrantLock();
+        private final Signal presenceChanged = new Signal();
 
         MotionDetectorJavaCVDebugRenderer debugInfo = null;
         boolean logDetails = false;
@@ -129,7 +135,7 @@ public class MotionDetectorJavaCV implements MotionDetector {
                 fpsStatistics.startFrame();
                 debugInfo = new MotionDetectorJavaCVDebugRenderer(
                         motionProcessor, videoCaptureDevice.size());
-                for (final Mat videoImage : videoCaptureDevice) {
+                for (final Mat frame : videoCaptureDevice) {
                     // TODO handle camera surprise removal and reconnect
                     // -> in VideoCaptureDevice?
                     if (isInterrupted()) {
@@ -138,10 +144,19 @@ public class MotionDetectorJavaCV implements MotionDetector {
                     // handle setting sensitivity via structuring element size
                     // TODO it's just setting a member, maybe we can ignore
                     // concurrency
+                    if (mirror) {
+                        flip(frame, input, 1);
+                    } else {
+                        // Copy source mat because when the video capture device
+                        // frame rate drops below the desired frame rate,
+                        // the debug renderer would mess up motion detection
+                        // when rendering into the source mat
+                        frame.copyTo(input);
+                    }
                     try {
                         lockStartStop.lockInterruptibly();
                         // update shared items
-                        motionProcessor.update(videoImage);
+                        motionProcessor.update(input);
                     } catch (InterruptedException e1) {
                         break;
                     } finally {
@@ -153,12 +168,12 @@ public class MotionDetectorJavaCV implements MotionDetector {
                         @Override
                         public void run() {
                             boolean hasChanged = detectionResult
-                                    .updateMotionState(videoImage,
-                                            motionProcessor, now);
+                                    .updateMotionState(input, motionProcessor,
+                                            now);
                             if (hasChanged) {
                                 presenceChanged.signal();
                             }
-                            updateWindow(videoImage, debugInfo);
+                            updateDisplay(input, debugInfo);
                         }
                     });
                     long timeLeft = fpsStatistics
@@ -179,10 +194,10 @@ public class MotionDetectorJavaCV implements MotionDetector {
             }
         }
 
-        private void updateWindow(Mat videoImage,
+        private void updateDisplay(Mat image,
                 MotionDetectorJavaCVDebugRenderer debugInfo) {
             Set<Presence> indicators = getIndicatorHistory(debugWindowTimeSpan);
-            debugInfo.render(videoImage,
+            debugInfo.render(image,
                     detectionResult.getPresenceRegion(debugWindowTimeSpan),
                     detectionResult.presenceIndicators, indicators,
                     detectionResult.contourMotionDetected,

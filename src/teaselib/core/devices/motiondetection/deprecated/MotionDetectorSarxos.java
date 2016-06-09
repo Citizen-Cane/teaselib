@@ -414,7 +414,6 @@ public class MotionDetectorSarxos implements MotionDetector {
         }
     }
 
-    @Override
     public boolean awaitMotionStart(double timeoutSeconds) {
         detectionEvents.motionStartLock.lock();
         try {
@@ -431,7 +430,6 @@ public class MotionDetectorSarxos implements MotionDetector {
         }
     }
 
-    @Override
     public boolean awaitMotionEnd(double timeoutSeconds) {
         detectionEvents.motionEndLock.lock();
         try {

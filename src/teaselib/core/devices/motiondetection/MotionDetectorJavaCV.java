@@ -18,7 +18,6 @@ import teaselib.TeaseLib;
 import teaselib.core.concurrency.Signal;
 import teaselib.core.devices.DeviceCache;
 import teaselib.core.javacv.util.FramesPerSecond;
-import teaselib.motiondetection.MotionDetection;
 import teaselib.motiondetection.MotionDetector;
 import teaselib.video.VideoCaptureDevice;
 
@@ -313,16 +312,6 @@ public class MotionDetectorJavaCV implements MotionDetector {
     @Override
     public void clearMotionHistory() {
         eventThread.clearMotionHistory();
-    }
-
-    @Override
-    public boolean awaitMotionStart(double timeoutSeconds) {
-        return MotionDetection.movement(this).startedWithin(timeoutSeconds);
-    }
-
-    @Override
-    public boolean awaitMotionEnd(double timeoutSeconds) {
-        return MotionDetection.movement(this).stoppedWithin(timeoutSeconds);
     }
 
     @Override

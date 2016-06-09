@@ -26,8 +26,8 @@ public class Contours {
                 Null);
     }
 
-    public void render(Mat mat, Scalar color, int size) {
-        opencv_imgproc.drawContours(mat, contours, size, color);
+    public void render(Mat mat, int index, Scalar color) {
+        opencv_imgproc.drawContours(mat, contours, index, color);
     }
 
     public int pixels() {

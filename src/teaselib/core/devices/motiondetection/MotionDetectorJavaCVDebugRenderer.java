@@ -85,7 +85,7 @@ public class MotionDetectorJavaCVDebugRenderer {
     }
 
     private void renderContourMotionRegion(Mat debugOutput, Rect rM) {
-        motionProcessor.motionContours.render(debugOutput, DarkRed, -1);
+        motionProcessor.motionContours.render(debugOutput, -1, DarkRed);
         if (rM != null) {
             Point p = new Point(debugOutput.cols() - 40,
                     debugOutput.cols() - 20);

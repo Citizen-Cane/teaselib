@@ -5,6 +5,7 @@ import java.util.List;
 
 import teaselib.core.devices.DeviceCache;
 import teaselib.core.devices.xinput.XInputDevice;
+import teaselib.core.devices.xinput.XInputDevices;
 import teaselib.stimulation.StimulationDevice;
 import teaselib.stimulation.Stimulator;
 
@@ -99,7 +100,35 @@ import teaselib.stimulation.Stimulator;
  * time a stimulation is issued.
  */
 public class XInputStimulationDevice implements StimulationDevice {
-    public static final String DeviceClassName = "XInputStimulationDevice";
+    private static final String DeviceClassName = "XInputStimulationDevice";
+
+    public static final DeviceCache.Factory<StimulationDevice> Factory = new DeviceCache.Factory<StimulationDevice>() {
+        @Override
+        public String getDeviceClass() {
+            return XInputStimulationDevice.DeviceClassName;
+        }
+
+        @Override
+        public List<String> getDevices() {
+            List<String> deviceNames = new ArrayList<String>(4);
+            for (String devicePath : XInputDevice.getDevicePaths()) {
+                XInputDevice device = XInputDevices.Instance
+                        .getDevice(devicePath);
+                if (device.active()) {
+                    deviceNames.add(DeviceCache.createDevicePath(
+                            XInputStimulationDevice.DeviceClassName,
+                            device.getDevicePath()));
+                }
+            }
+            return deviceNames;
+        }
+
+        @Override
+        public XInputStimulationDevice getDevice(String devicePath) {
+            return new XInputStimulationDevice(XInputDevices.Instance
+                    .getDevice(DeviceCache.getDeviceName(devicePath)));
+        }
+    };
 
     private final XInputDevice device;
     private final List<Stimulator> stimulators;

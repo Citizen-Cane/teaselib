@@ -2,6 +2,7 @@ package teaselib.core.devices.motiondetection;
 
 import static org.bytedeco.javacpp.opencv_core.*;
 
+import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
@@ -20,6 +21,7 @@ import teaselib.core.devices.DeviceCache;
 import teaselib.core.javacv.util.FramesPerSecond;
 import teaselib.motiondetection.MotionDetector;
 import teaselib.video.VideoCaptureDevice;
+import teaselib.video.VideoCaptureDevices;
 
 /**
  * @author Citizen-Cane
@@ -50,7 +52,33 @@ import teaselib.video.VideoCaptureDevice;
  * 
  */
 public class MotionDetectorJavaCV implements MotionDetector {
-    public static final String DeviceClassName = "MotionDetectorJavaCV";
+    private static final String DeviceClassName = "MotionDetectorJavaCV";
+
+    public static final DeviceCache.Factory<MotionDetector> Factory = new DeviceCache.Factory<MotionDetector>() {
+        @Override
+        public String getDeviceClass() {
+            return MotionDetectorJavaCV.DeviceClassName;
+        }
+
+        @Override
+        public List<String> getDevices() {
+            List<String> deviceNames = new ArrayList<String>();
+            Set<String> videoCaptureDevicePaths = VideoCaptureDevices.Instance
+                    .getDevicePaths();
+            for (String videoCaptureDevicePath : videoCaptureDevicePaths) {
+                deviceNames.add(DeviceCache.createDevicePath(
+                        MotionDetectorJavaCV.DeviceClassName,
+                        videoCaptureDevicePath));
+            }
+            return deviceNames;
+        }
+
+        @Override
+        public MotionDetector getDevice(String devicePath) {
+            return new MotionDetectorJavaCV(VideoCaptureDevices.Instance
+                    .getDevice(DeviceCache.getDeviceName(devicePath)));
+        }
+    };
 
     public static final EnumSet<Feature> Features = EnumSet.of(Feature.Motion,
             Feature.Presence);

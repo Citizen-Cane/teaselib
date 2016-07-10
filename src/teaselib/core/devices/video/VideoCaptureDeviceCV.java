@@ -19,7 +19,28 @@ import teaselib.core.javacv.ScaleDown;
 import teaselib.video.VideoCaptureDevice;
 
 public class VideoCaptureDeviceCV implements VideoCaptureDevice {
-    public static final String DeviceClassName = "VideoCaptureDeviceJavaCV";
+    private static final String DeviceClassName = "VideoCaptureDeviceJavaCV";
+
+    public static final DeviceCache.Factory<VideoCaptureDevice> Factory = new DeviceCache.Factory<VideoCaptureDevice>() {
+        @Override
+        public String getDeviceClass() {
+            return VideoCaptureDeviceCV.DeviceClassName;
+        }
+
+        @Override
+        public List<String> getDevices() {
+            List<String> deviceNames = new ArrayList<String>();
+            deviceNames.addAll(VideoCaptureDeviceCV.getDevicesPaths());
+            return deviceNames;
+        }
+
+        @Override
+        public VideoCaptureDevice getDevice(String devicePath) {
+            return VideoCaptureDeviceCV
+                    .get(DeviceCache.getDeviceName(devicePath));
+        }
+    };
+
     final int device;
     final VideoCapture videoCapture;
     final Mat mat = new Mat();
@@ -52,21 +73,21 @@ public class VideoCaptureDeviceCV implements VideoCaptureDevice {
             if (i >= devices.size())
                 // Detect new devices
                 try {
-                    @SuppressWarnings("resource")
-                    VideoCapture videoCapture = new VideoCapture();
-                    openDevice(videoCapture, i);
-                    if (videoCapture.isOpened()) {
-                        videoCapture.release();
-                        devices.add(videoCapture);
-                    } else {
-                        videoCapture.release();
-                        videoCapture.close();
-                        break;
-                    }
+                @SuppressWarnings("resource")
+                VideoCapture videoCapture = new VideoCapture();
+                openDevice(videoCapture, i);
+                if (videoCapture.isOpened()) {
+                videoCapture.release();
+                devices.add(videoCapture);
+                } else {
+                videoCapture.release();
+                videoCapture.close();
+                break;
+                }
                 } catch (Exception e) {
-                    // Ignore
-                    TeaseLib.instance().log.error(devices, e);
-                    break;
+                // Ignore
+                TeaseLib.instance().log.error(devices, e);
+                break;
                 }
             else {
                 // Remove removed devices

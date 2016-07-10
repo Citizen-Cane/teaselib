@@ -13,22 +13,22 @@ public class DeviceCache<T extends Device> {
 
     private static final String PathSeparator = "/";
 
-    public interface DeviceFactory<T extends Device> {
+    public interface Factory<T extends Device> {
+        String getDeviceClass();
+
         List<String> getDevices();
 
         T getDevice(String path);
     }
 
-    private final Map<String, DeviceFactory<T>> factories = new HashMap<String, DeviceFactory<T>>();
+    private final Map<String, Factory<T>> factories = new HashMap<String, Factory<T>>();
 
-    // public DeviceCache(Map.Entry<String, CreateDevice<T>>... creators) {
-    // for (Map.Entry<String, CreateDevice<T>> entry : creators) {
-    // this.creators.put(entry.getKey(), entry.getValue());
-    // }
-    // }
+    public DeviceCache() {
+    }
 
-    public DeviceCache(String deviceClassName, DeviceFactory<T> factory) {
-        factories.put(deviceClassName, factory);
+    public DeviceCache<T> addFactory(DeviceCache.Factory<T> factory) {
+        factories.put(factory.getDeviceClass(), factory);
+        return this;
     }
 
     private Map<String, T> devices = new LinkedHashMap<String, T>();
@@ -76,7 +76,7 @@ public class DeviceCache<T extends Device> {
 
     public Set<String> getDevicePaths() {
         Set<String> devicePaths = new LinkedHashSet<String>();
-        for (Map.Entry<String, DeviceFactory<T>> entry : factories.entrySet())
+        for (Map.Entry<String, Factory<T>> entry : factories.entrySet())
             devicePaths.addAll(entry.getValue().getDevices());
         return devicePaths;
     }

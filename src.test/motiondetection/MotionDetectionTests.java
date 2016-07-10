@@ -1,6 +1,6 @@
 package motiondetection;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 import java.util.Set;
 
@@ -8,7 +8,6 @@ import org.junit.Test;
 
 import teaselib.TeaseLib;
 import teaselib.core.devices.DeviceCache;
-import teaselib.core.devices.motiondetection.MotionDetectorJavaCV;
 import teaselib.hosts.DummyHost;
 import teaselib.hosts.DummyPersistence;
 import teaselib.motiondetection.MotionDetection;
@@ -17,8 +16,7 @@ public class MotionDetectionTests {
 
     @Test
     public void testNaming() {
-        String id = DeviceCache
-                .createDevicePath(MotionDetectorJavaCV.DeviceClassName, "test");
+        String id = DeviceCache.createDevicePath("SomeDevice", "test");
         String name = DeviceCache.getDeviceName(id);
         assertEquals("test", name);
     }

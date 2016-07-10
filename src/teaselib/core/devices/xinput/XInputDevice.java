@@ -8,6 +8,7 @@ import java.util.List;
 
 import teaselib.core.devices.Device;
 import teaselib.core.devices.DeviceCache;
+import teaselib.core.devices.DeviceCache.Factory;
 import teaselib.core.jni.LibraryLoader;
 
 /**
@@ -18,7 +19,27 @@ import teaselib.core.jni.LibraryLoader;
  * @see XInputComponentsDelta
  */
 public class XInputDevice implements Device {
-    public static final String DeviceClassName = "XInput360GameController";
+    private static final String DeviceClassName = "XInput360GameController";
+
+    static final DeviceCache.Factory<XInputDevice> Factory = new Factory<XInputDevice>() {
+        @Override
+        public String getDeviceClass() {
+            return XInputDevice.DeviceClassName;
+        }
+
+        @Override
+        public List<String> getDevices() {
+            List<String> deviceNames = new ArrayList<String>();
+            deviceNames.addAll(XInputDevice.getDevicePaths());
+            return deviceNames;
+        }
+
+        @Override
+        public XInputDevice getDevice(String path) {
+            return XInputDevice.getDeviceFor(
+                    Integer.parseInt(DeviceCache.getDeviceName(path)));
+        }
+    };
 
     private final int playerNum;
     private final ByteBuffer buffer; // Contains the XINPUT_STATE struct

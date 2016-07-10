@@ -45,7 +45,14 @@ public class Actor {
 
     public final TextVariables textVariables;
 
-    public Images images = null;
+    /**
+     * The actor's images.
+     */
+    public Images images = Images.None;
+
+    /**
+     * Optional script to execute when speech is not recognized.
+     */
     public SpeechRecognitionRejectedScript speechRecognitionRejectedScript = null;
 
     public Actor(Actor actor) {
@@ -58,7 +65,7 @@ public class Actor {
     }
 
     public Actor(String fullName, Voice.Gender gender, String locale) {
-        this(fullName, gender, locale, null);
+        this(fullName, gender, locale, Images.None);
     }
 
     public Actor(String fullName, Voice.Gender gender, String locale,

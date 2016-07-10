@@ -1,6 +1,7 @@
 package teaselib;
 
 import java.util.Iterator;
+import java.util.NoSuchElementException;
 
 /**
  * Interface for iterating over a set of images. Frees script writers from
@@ -15,6 +16,31 @@ import java.util.Iterator;
  */
 public interface Images extends Iterator<String> {
 
+    public static final Images None = new Images() {
+        @Override
+        public boolean contains(String resource) {
+            return false;
+        }
+
+        @Override
+        public void hint(String... hint) {
+        }
+
+        @Override
+        public boolean hasNext() {
+            return false;
+        }
+
+        @Override
+        public String next() {
+            throw new NoSuchElementException();
+        }
+
+        @Override
+        public String toString() {
+            return "[]";
+        }
+    };
     public static final String SameCameraPosition = "<image SameCameraPosition/>";
     public static final String SameResolution = "<image SameResolution/>";
 

@@ -1,7 +1,5 @@
 package teaselib.core.devices.motiondetection;
 
-import static org.bytedeco.javacpp.opencv_core.*;
-
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -18,6 +16,8 @@ import org.bytedeco.javacpp.opencv_core.Size;
 import teaselib.TeaseLib;
 import teaselib.core.concurrency.Signal;
 import teaselib.core.devices.DeviceCache;
+import teaselib.core.javacv.ScaleDown;
+import teaselib.core.javacv.ScaleDownAndMirror;
 import teaselib.core.javacv.util.FramesPerSecond;
 import teaselib.motiondetection.MotionDetector;
 import teaselib.video.VideoCaptureDevice;
@@ -119,6 +119,8 @@ public class MotionDetectorJavaCV implements MotionDetector {
         private static final boolean mirror = true;
 
         private final VideoCaptureDevice videoCaptureDevice;
+        private final ScaleDown scaleDown;
+        private final ScaleDownAndMirror scaleDownAndMirror;
         private final MotionProcessorJavaCV motionProcessor;
         private final Mat input = new Mat();
         private final MotionDetectionResultImplementation detectionResult;
@@ -143,6 +145,12 @@ public class MotionDetectorJavaCV implements MotionDetector {
             this.desiredFrameTimeMillis = (long) (1000.0 / fps);
 
             videoCaptureDevice.open(DesiredProcessingSize);
+            // TODO introducec image processor interface
+            this.scaleDown = new ScaleDown(videoCaptureDevice.captureSize(),
+                    DesiredProcessingSize, input);
+            this.scaleDownAndMirror = new ScaleDownAndMirror(
+                    videoCaptureDevice.captureSize(), DesiredProcessingSize,
+                    input);
             @SuppressWarnings("resource")
             Size actualSize = videoCaptureDevice.size();
             motionProcessor = new MotionProcessorJavaCV(
@@ -172,12 +180,17 @@ public class MotionDetectorJavaCV implements MotionDetector {
                     // TODO it's just setting a member, maybe we can ignore
                     // concurrency
                     if (mirror) {
-                        flip(frame, input, 1);
+                        // Renders to input
+                        scaleDownAndMirror.update(frame);
+                    } else if (scaleDown.factor > 1) {
+                        // Renders to input
+                        scaleDown.update(frame);
                     } else {
                         // Copy source mat because when the video capture device
                         // frame rate drops below the desired frame rate,
                         // the debug renderer would mess up motion detection
-                        // when rendering into the source mat
+                        // when rendering into the source mat - at least for
+                        // javacv
                         frame.copyTo(input);
                     }
                     try {
@@ -214,7 +227,9 @@ public class MotionDetectorJavaCV implements MotionDetector {
                     }
                     fpsStatistics.updateFrame(now + timeLeft);
                 }
-            } catch (Exception e) {
+            } catch (
+
+            Exception e) {
                 TeaseLib.instance().log.error(this, e);
             } finally {
                 videoCaptureDevice.release();
@@ -287,6 +302,7 @@ public class MotionDetectorJavaCV implements MotionDetector {
         public double fps() {
             return fps;
         }
+
     }
 
     @Override

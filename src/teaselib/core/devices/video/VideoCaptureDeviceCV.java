@@ -3,6 +3,7 @@ package teaselib.core.devices.video;
 import static org.bytedeco.javacpp.opencv_videoio.*;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -15,11 +16,10 @@ import org.bytedeco.javacpp.opencv_videoio.VideoCapture;
 
 import teaselib.TeaseLib;
 import teaselib.core.devices.DeviceCache;
-import teaselib.core.javacv.ScaleDown;
 import teaselib.video.VideoCaptureDevice;
 
 public class VideoCaptureDeviceCV implements VideoCaptureDevice {
-    private static final String DeviceClassName = "VideoCaptureDeviceJavaCV";
+    private static final String DeviceClassName = "JavaCVVideoCapture";
 
     public static final DeviceCache.Factory<VideoCaptureDevice> Factory = new DeviceCache.Factory<VideoCaptureDevice>() {
         @Override
@@ -47,7 +47,6 @@ public class VideoCaptureDeviceCV implements VideoCaptureDevice {
 
     Size captureSize;
     Size size;
-    ScaleDown resize;
 
     double fps;
 
@@ -58,7 +57,9 @@ public class VideoCaptureDeviceCV implements VideoCaptureDevice {
     public static Set<String> getDevicesPaths() {
         int i = 0;
         Set<String> devicePaths = new LinkedHashSet<String>();
-        for (VideoCapture videoCapture : getCaptureDevices()) {
+        for (@SuppressWarnings("unused")
+        // TODO Enumerate to device map, to have devices available
+        VideoCapture videoCapture : getCaptureDevices()) {
             devicePaths.add(DeviceCache.createDevicePath(
                     VideoCaptureDeviceCV.DeviceClassName,
                     Integer.toString(i++)));
@@ -165,37 +166,7 @@ public class VideoCaptureDeviceCV implements VideoCaptureDevice {
             throw new IllegalArgumentException("Camera not opened: "
                     + getClass().getName() + ":" + device);
         }
-        // OpenCV just provides the actual resolution,
-        // but not the list of all available resolutions.
-        // Therefore we have to try to set the resolution,
-        // but we don't know whether the capture device supports it
-        // If it doesn't, the capture device frames are resized
-        // to match the requested resolution as close as possible
-        int captureWidth = (int) videoCapture.get(CAP_PROP_FRAME_WIDTH);
-        int captureHeight = (int) videoCapture.get(CAP_PROP_FRAME_HEIGHT);
-        if (size.width() > 0 && size.width() != captureWidth) {
-            // derive aspect from capture width:
-            // Might not be 100% since although a capture device
-            // features a 4:3 sensor it may report a 16:9 resolution
-            // in order to support Full HD resolutions
-            double aspect = (double) (captureHeight) / (double) (captureWidth);
-            videoCapture.set(CAP_PROP_FRAME_WIDTH, size.width());
-            videoCapture.set(CAP_PROP_FRAME_HEIGHT, size.width() * aspect);
-            // update because the capture device
-            // may or may not support the requested resolution
-            captureWidth = (int) videoCapture.get(CAP_PROP_FRAME_WIDTH);
-            captureHeight = (int) videoCapture.get(CAP_PROP_FRAME_HEIGHT);
-        }
-        this.captureSize = new Size(captureWidth, captureHeight);
-        int resizeFactor = Math.max(1, captureWidth / size.width());
-        this.size = new Size(captureWidth / resizeFactor,
-                captureHeight / resizeFactor);
-        resize = new ScaleDown(resizeFactor);
-        fps = videoCapture.get(opencv_videoio.CAP_PROP_FPS);
-        if (fps > 0.0) {
-            // Try to set a fixed fps, better than frame rate drops
-            videoCapture.set(opencv_videoio.CAP_PROP_EXPOSURE, 1.0 / fps);
-        }
+        setResolution(getResolutions().get(0));
     }
 
     @Override
@@ -211,6 +182,22 @@ public class VideoCaptureDeviceCV implements VideoCaptureDevice {
     @Override
     public Size captureSize() {
         return captureSize;
+    }
+
+    @Override
+    public List<Size> getResolutions() {
+        return Arrays.asList(captureSize);
+    }
+
+    @Override
+    public void setResolution(Size size) {
+        videoCapture.set(CAP_PROP_FRAME_WIDTH, size.width());
+        videoCapture.set(CAP_PROP_FRAME_HEIGHT, size.width());
+        fps = videoCapture.get(opencv_videoio.CAP_PROP_FPS);
+        if (fps > 0.0) {
+            // Try to set a fixed fps, better than frame rate drops
+            videoCapture.set(opencv_videoio.CAP_PROP_EXPOSURE, 1.0 / fps);
+        }
     }
 
     @Override
@@ -243,11 +230,7 @@ public class VideoCaptureDeviceCV implements VideoCaptureDevice {
                     continue;
                 }
             }
-            if (resize.factor > 1) {
-                return resize.update(f);
-            } else {
-                return f;
-            }
+            return f;
         }
 
         @Override

@@ -17,8 +17,9 @@ public class GeomTest {
         assertFalse(Geom.isCircular(Arrays.asList(1, 1, 1), 0.0));
         assertTrue(Geom.isCircular(Arrays.asList(4, 4, 4), 1.0));
         assertFalse(Geom.isCircular(Arrays.asList(4, 4, 9), 1.0));
-        assertTrue(Geom.isCircular(Arrays.asList(4, 4, 9), 1.41));
+        assertFalse(Geom.isCircular(Arrays.asList(4, 8), 1.33));
+        assertTrue(Geom.isCircular(Arrays.asList(4, 8), 1.34));
+        assertFalse(Geom.isCircular(Arrays.asList(4, 4, 16), 1.99));
         assertTrue(Geom.isCircular(Arrays.asList(4, 4, 16), 2.0));
-        assertFalse(Geom.isCircular(Arrays.asList(4, 4, 16), 1.41));
     }
 }

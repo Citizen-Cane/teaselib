@@ -136,6 +136,19 @@ public class Geom {
         return isCircular(distance2Center(contour), circularity);
     }
 
+    /**
+     * Determine how much a list of distances from a given center define a
+     * circle
+     * 
+     * @param distance2Center
+     *            A list of distances from the object center
+     * @param circularity
+     *            The required amount of "circularness" to pass as circular. 1
+     *            is a perfect circle, higher values allow for non-perfect
+     *            circles (ellipses, dished objects, etc.)
+     * @return Whether the object defined by the list passes through as
+     *         circular.
+     */
     public static boolean isCircular(List<Integer> distance2Center,
             double circularity) {
         Collections.sort(distance2Center);

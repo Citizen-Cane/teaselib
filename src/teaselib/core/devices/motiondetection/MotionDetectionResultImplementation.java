@@ -25,7 +25,6 @@ import teaselib.motiondetection.MotionDetector.Presence;
 public class MotionDetectionResultImplementation
         extends MotionDetectionResultData {
 
-    // TODO exactly define Circularity and its calculation
     private static final double CircularityVariance = 1.3; // 1.3 seems to
                                                            // be necessary
                                                            // to detect

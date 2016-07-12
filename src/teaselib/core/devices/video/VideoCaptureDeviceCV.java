@@ -1,6 +1,7 @@
 package teaselib.core.devices.video;
 
-import static org.bytedeco.javacpp.opencv_videoio.*;
+import static org.bytedeco.javacpp.opencv_videoio.CAP_PROP_FRAME_HEIGHT;
+import static org.bytedeco.javacpp.opencv_videoio.CAP_PROP_FRAME_WIDTH;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -44,9 +45,7 @@ public class VideoCaptureDeviceCV implements VideoCaptureDevice {
     final int device;
     final VideoCapture videoCapture;
     final Mat mat = new Mat();
-
     Size captureSize;
-    Size size;
 
     double fps;
 
@@ -172,11 +171,6 @@ public class VideoCaptureDeviceCV implements VideoCaptureDevice {
     @Override
     public boolean active() {
         return videoCapture.isOpened();
-    }
-
-    @Override
-    public Size size() {
-        return size;
     }
 
     @Override

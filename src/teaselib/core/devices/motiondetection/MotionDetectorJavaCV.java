@@ -145,20 +145,21 @@ public class MotionDetectorJavaCV implements MotionDetector {
             this.desiredFrameTimeMillis = (long) (1000.0 / fps);
 
             videoCaptureDevice.open(DesiredProcessingSize);
-            // TODO introducec image processor interface
+            // TODO introduce image processor interface
             this.scaleDown = new ScaleDown(videoCaptureDevice.captureSize(),
                     DesiredProcessingSize, input);
             this.scaleDownAndMirror = new ScaleDownAndMirror(
                     videoCaptureDevice.captureSize(), DesiredProcessingSize,
                     input);
-            @SuppressWarnings("resource")
-            Size actualSize = videoCaptureDevice.size();
+            Size actualSize = new Size(
+                    videoCaptureDevice.captureSize().width() / scaleDown.factor,
+                    videoCaptureDevice.captureSize().height()
+                            / scaleDown.factor);
             motionProcessor = new MotionProcessorJavaCV(
                     videoCaptureDevice.captureSize().width(),
                     actualSize.width());
             detectionResult = new MotionDetectionResultImplementation(
                     actualSize);
-
         }
 
         @Override
@@ -169,7 +170,12 @@ public class MotionDetectorJavaCV implements MotionDetector {
                 // -> adjust to < 50% processing time per frame
                 fpsStatistics.startFrame();
                 debugInfo = new MotionDetectorJavaCVDebugRenderer(
-                        motionProcessor, videoCaptureDevice.size());
+                        motionProcessor,
+                        new Size(
+                                videoCaptureDevice.captureSize().width()
+                                        / scaleDown.factor,
+                                videoCaptureDevice.captureSize().height()
+                                        / scaleDown.factor));
                 for (final Mat frame : videoCaptureDevice) {
                     // TODO handle camera surprise removal and reconnect
                     // -> in VideoCaptureDevice?

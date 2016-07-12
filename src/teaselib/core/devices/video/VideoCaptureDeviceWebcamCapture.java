@@ -16,7 +16,6 @@ import org.bytedeco.javacpp.opencv_core.Size;
 import com.github.sarxos.webcam.Webcam;
 import com.github.sarxos.webcam.WebcamDiscoveryEvent;
 import com.github.sarxos.webcam.WebcamDiscoveryListener;
-import com.github.sarxos.webcam.WebcamException;
 
 import teaselib.TeaseLib;
 import teaselib.core.devices.DeviceCache;
@@ -44,9 +43,6 @@ public class VideoCaptureDeviceWebcamCapture implements VideoCaptureDevice {
                             webcam);
                     devices.put(device.getDevicePath(), device);
                 }
-            } catch (WebcamException e) {
-                TeaseLib.instance().log
-                        .info(DeviceClassName + ": No webcams found");
             } catch (Exception e) {
                 TeaseLib.instance().log.error(Webcam.class, e);
             }
@@ -68,10 +64,10 @@ public class VideoCaptureDeviceWebcamCapture implements VideoCaptureDevice {
                 final Webcam newWebcam = event.getWebcam();
                 // Same as before and not claimed by another discovery listener
                 if (name.equals(newWebcam.getName()) && !webcam.isOpen()) {
+                    Dimension resolution = webcam.getViewSize();
                     webcam = newWebcam;
                     webcam.open();
-                    webcam.setViewSize(new Dimension(captureSize.width(),
-                            captureSize.height()));
+                    webcam.setViewSize(resolution);
                     TeaseLib.instance().log.info(name + " reconnected");
                 }
             } catch (Exception e) {
@@ -96,8 +92,7 @@ public class VideoCaptureDeviceWebcamCapture implements VideoCaptureDevice {
 
     Mat mat;
 
-    Size captureSize;
-    Size size;
+    Size captureSize; // Keep to restore size when old webcam is gone
     ScaleDown resize;
 
     double fps;
@@ -120,7 +115,8 @@ public class VideoCaptureDeviceWebcamCapture implements VideoCaptureDevice {
     }
 
     @Override
-    public void open(Size size) {
+    public void open(Size resolution) {
+        setResolution(resolution);
         if (!webcam.isOpen()) {
             webcam.open();
         }
@@ -128,16 +124,20 @@ public class VideoCaptureDeviceWebcamCapture implements VideoCaptureDevice {
             throw new IllegalArgumentException(
                     "Camera not opened: " + getName());
         }
-        this.size = size;
-        setResolution(size);
-        final Dimension captureSize = webcam.getViewSize();
+        Dimension captureSize = webcam.getViewSize();
         this.captureSize = new Size(captureSize.width, captureSize.height);
+        if (webcam.isOpen()) {
+            fps = webcam.getFPS();
+        }
     }
 
     @Override
     public void setResolution(Size size) {
         webcam.setViewSize(new Dimension(size.width(), size.height()));
-        fps = webcam.getFPS();
+        this.captureSize = size;
+        if (webcam.isOpen()) {
+            fps = webcam.getFPS();
+        }
     }
 
     @Override
@@ -155,13 +155,9 @@ public class VideoCaptureDeviceWebcamCapture implements VideoCaptureDevice {
     }
 
     @Override
-    public Size size() {
-        return size;
-    }
-
-    @Override
     public Size captureSize() {
-        return captureSize;
+        Dimension viewSize = webcam.getViewSize();
+        return new Size(viewSize.width, viewSize.height);
     }
 
     @Override

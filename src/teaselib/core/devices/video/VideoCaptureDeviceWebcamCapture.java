@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Vector;
 
 import org.bytedeco.javacpp.BytePointer;
+import org.bytedeco.javacpp.opencv_core;
 import org.bytedeco.javacpp.opencv_core.Mat;
 import org.bytedeco.javacpp.opencv_core.Size;
 
@@ -19,7 +20,6 @@ import com.github.sarxos.webcam.WebcamDiscoveryListener;
 
 import teaselib.TeaseLib;
 import teaselib.core.devices.DeviceCache;
-import teaselib.core.javacv.ScaleDown;
 import teaselib.video.VideoCaptureDevice;
 
 public class VideoCaptureDeviceWebcamCapture implements VideoCaptureDevice {
@@ -93,11 +93,7 @@ public class VideoCaptureDeviceWebcamCapture implements VideoCaptureDevice {
     Mat mat;
 
     Size captureSize; // Keep to restore size when old webcam is gone
-    ScaleDown resize;
-
     double fps;
-
-    org.bytedeco.javacv.FrameGrabber.Exception e = null;
 
     private VideoCaptureDeviceWebcamCapture(Webcam webcam) {
         this.webcam = webcam;
@@ -168,10 +164,8 @@ public class VideoCaptureDeviceWebcamCapture implements VideoCaptureDevice {
     @SuppressWarnings("resource")
     private Mat read() {
         ByteBuffer image = webcam.getImageBytes();
-        // TODO Set format of mat
-        mat = new Mat(new BytePointer(image));
-        mat.cols(captureSize.width());
-        mat.rows(captureSize.height());
+        mat = new Mat(captureSize.height(), captureSize.width(),
+                opencv_core.CV_8UC3, new BytePointer(image));
         return mat;
     }
 
@@ -192,16 +186,12 @@ public class VideoCaptureDeviceWebcamCapture implements VideoCaptureDevice {
                     continue;
                 }
             }
-            if (resize.factor > 1) {
-                return resize.update(f);
-            } else {
-                return f;
-            }
+            return f;
         }
 
         @Override
         public boolean hasNext() {
-            if (!webcam.isOpen() || webcam != null) {
+            if (!webcam.isOpen() || webcam == null) {
                 return false;
             }
             f = getMat();

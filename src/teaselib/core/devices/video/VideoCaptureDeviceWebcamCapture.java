@@ -16,7 +16,6 @@ import org.bytedeco.javacpp.opencv_core.Size;
 import com.github.sarxos.webcam.Webcam;
 import com.github.sarxos.webcam.WebcamDiscoveryEvent;
 import com.github.sarxos.webcam.WebcamDiscoveryListener;
-import com.github.sarxos.webcam.WebcamException;
 
 import teaselib.TeaseLib;
 import teaselib.core.devices.DeviceCache;
@@ -44,9 +43,6 @@ public class VideoCaptureDeviceWebcamCapture implements VideoCaptureDevice {
                             webcam);
                     devices.put(device.getDevicePath(), device);
                 }
-            } catch (WebcamException e) {
-                TeaseLib.instance().log
-                        .info(DeviceClassName + ": No webcams found");
             } catch (Exception e) {
                 TeaseLib.instance().log.error(Webcam.class, e);
             }

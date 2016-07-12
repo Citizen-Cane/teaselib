@@ -233,9 +233,7 @@ public class MotionDetectorJavaCV implements MotionDetector {
                     }
                     fpsStatistics.updateFrame(now + timeLeft);
                 }
-            } catch (
-
-            Exception e) {
+            } catch (Exception e) {
                 TeaseLib.instance().log.error(this, e);
             } finally {
                 videoCaptureDevice.release();

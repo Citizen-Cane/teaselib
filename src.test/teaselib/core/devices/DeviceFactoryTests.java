@@ -33,13 +33,21 @@ public class DeviceFactoryTests {
     }
 
     @Test
-    public void instanciateAll() {
-        assertNotNull(XInputDevices.Instance.getDevicePaths());
-        assertNotNull(StimulationDevices.Instance.getDevicePaths());
-        assertNotNull(VideoCaptureDevices.Instance.getDevicePaths());
-        assertNotNull(MotionDetection.Instance.getDevicePaths());
-        assertNotNull(RemoteDevices.Instance.getDevicePaths());
-        assertNotNull(SelfBondageKeyRelease.Devices.getDevicePaths());
+    public void instanciateDeviceFactories() {
+        TeaseLib.instance().log.info("Available devices:");
+        listDevices(XInputDevices.Instance.getDevicePaths());
+        listDevices(StimulationDevices.Instance.getDevicePaths());
+        listDevices(VideoCaptureDevices.Instance.getDevicePaths());
+        listDevices(MotionDetection.Instance.getDevicePaths());
+        listDevices(RemoteDevices.Instance.getDevicePaths());
+        listDevices(SelfBondageKeyRelease.Devices.getDevicePaths());
+    }
+
+    private void listDevices(Set<String> devicePaths) {
+        assertNotNull(devicePaths);
+        for (String devicePath : devicePaths) {
+            TeaseLib.instance().log.info(devicePath);
+        }
     }
 
     @Test

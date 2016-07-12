@@ -6,7 +6,6 @@
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/4"/>
 	<classpathentry kind="lib" path="lib/jump3r-1.0.3.jar"/>
-	<classpathentry kind="lib" path="lib/webcam-capture-0.3.10.jar"/>
 	<classpathentry kind="lib" path="/javacv-bin/ffmpeg-android-arm.jar"/>
 	<classpathentry kind="lib" path="/javacv-bin/ffmpeg-android-x86.jar"/>
 	<classpathentry kind="lib" path="/javacv-bin/ffmpeg-linux-x86_64.jar"/>
@@ -33,5 +32,6 @@
 	<classpathentry kind="lib" path="/javacv-bin/opencv.jar"/>
 	<classpathentry kind="lib" path="lib/bridj-0.6.2.jar"/>
 	<classpathentry kind="lib" path="/SexScripts/sexscripts.jar"/>
+	<classpathentry kind="lib" path="lib/webcam-capture-0.3.11.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

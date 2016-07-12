@@ -1,7 +1,6 @@
 package teaselib.core.devices.video;
 
-import static org.bytedeco.javacpp.opencv_videoio.CAP_PROP_FRAME_HEIGHT;
-import static org.bytedeco.javacpp.opencv_videoio.CAP_PROP_FRAME_WIDTH;
+import static org.bytedeco.javacpp.opencv_videoio.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -48,8 +47,6 @@ public class VideoCaptureDeviceCV implements VideoCaptureDevice {
     Size captureSize;
 
     double fps;
-
-    org.bytedeco.javacv.FrameGrabber.Exception e = null;
 
     private static List<VideoCapture> devices = new ArrayList<VideoCapture>();
 

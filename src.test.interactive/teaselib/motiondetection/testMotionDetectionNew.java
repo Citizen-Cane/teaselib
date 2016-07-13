@@ -22,17 +22,22 @@ public class testMotionDetectionNew {
         // MotionDetector md = new MotionDetectorJavaCV(videoCaptureDevice);
 
         MotionDetector md = MotionDetection.Instance.getDefaultDevice();
-        md.setSensitivity(MotionSensitivity.Normal);
+
+        // using an amount < 1.0 ignores small pauses while moving
+        // respectively ignores slight motions while standing still
+        // Setting amount to 1.0 would make it very difficult to pass the test
+        final double amount = 0.95;
+        md.setSensitivity(MotionSensitivity.High);
 
         System.out.println("Move!");
-        final double amount = 1.0;
+
         while (!md.awaitChange(amount, Presence.Motion, 1.0, 5.0)) {
             System.out.println("I said 'Move'!");
         }
 
         System.out.println("Keep moving!");
         while (true) {
-            // Triggers after not moving for one second
+            // Triggers after not moving for about one second
             if (md.awaitChange(amount, Presence.NoMotion, 1.0, 10.0)) {
                 System.out.println("I said 'Keep moving'!");
                 // use the timeout to avoid repeating the message too fast
@@ -43,6 +48,7 @@ public class testMotionDetectionNew {
         }
 
         System.out.println("Stop!");
+        md.setSensitivity(MotionSensitivity.Low);
         while (!md.awaitChange(amount, Presence.NoMotion, 1.0, 5.0)) {
             System.out.println("I said 'Stop'!");
         }

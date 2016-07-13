@@ -144,7 +144,8 @@ public class MotionDetectorJavaCV implements MotionDetector {
             this.fpsStatistics = new FramesPerSecond((int) fps);
             this.desiredFrameTimeMillis = (long) (1000.0 / fps);
 
-            videoCaptureDevice.open(DesiredProcessingSize);
+            videoCaptureDevice.open(videoCaptureDevice.getResolutions()
+                    .getMatchingOrSimilar(DesiredProcessingSize));
             // TODO introduce image processor interface
             this.scaleDown = new ScaleDown(videoCaptureDevice.captureSize(),
                     DesiredProcessingSize, input);

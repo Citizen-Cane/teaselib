@@ -1,9 +1,9 @@
 package teaselib.core.devices.video;
 
-import static org.bytedeco.javacpp.opencv_videoio.*;
+import static org.bytedeco.javacpp.opencv_videoio.CAP_PROP_FRAME_HEIGHT;
+import static org.bytedeco.javacpp.opencv_videoio.CAP_PROP_FRAME_WIDTH;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -16,6 +16,7 @@ import org.bytedeco.javacpp.opencv_videoio.VideoCapture;
 
 import teaselib.TeaseLib;
 import teaselib.core.devices.DeviceCache;
+import teaselib.video.ResolutionList;
 import teaselib.video.VideoCaptureDevice;
 
 public class VideoCaptureDeviceCV implements VideoCaptureDevice {
@@ -44,9 +45,8 @@ public class VideoCaptureDeviceCV implements VideoCaptureDevice {
     final int device;
     final VideoCapture videoCapture;
     final Mat mat = new Mat();
-    Size captureSize;
-
-    double fps;
+    Size captureSize = DefaultResolution;
+    double fps = 0.0;
 
     private static List<VideoCapture> devices = new ArrayList<VideoCapture>();
 
@@ -155,6 +155,9 @@ public class VideoCaptureDeviceCV implements VideoCaptureDevice {
 
     @Override
     public void open(Size size) {
+        if (size != DefaultResolution) {
+            setResolution(size);
+        }
         if (!videoCapture.isOpened()) {
             videoCapture.open(device);
         }
@@ -162,7 +165,6 @@ public class VideoCaptureDeviceCV implements VideoCaptureDevice {
             throw new IllegalArgumentException("Camera not opened: "
                     + getClass().getName() + ":" + device);
         }
-        setResolution(getResolutions().get(0));
     }
 
     @Override
@@ -176,12 +178,16 @@ public class VideoCaptureDeviceCV implements VideoCaptureDevice {
     }
 
     @Override
-    public List<Size> getResolutions() {
-        return Arrays.asList(captureSize);
+    public ResolutionList getResolutions() {
+        return new ResolutionList(captureSize);
     }
 
     @Override
     public void setResolution(Size size) {
+        if (!getResolutions().contains(size)) {
+            throw new IllegalArgumentException(
+                    size.width() + "," + size.height());
+        }
         videoCapture.set(CAP_PROP_FRAME_WIDTH, size.width());
         videoCapture.set(CAP_PROP_FRAME_HEIGHT, size.width());
         fps = videoCapture.get(opencv_videoio.CAP_PROP_FPS);

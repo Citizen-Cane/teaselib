@@ -1,7 +1,6 @@
 package teaselib.video;
 
 import java.util.Iterator;
-import java.util.List;
 
 import org.bytedeco.javacpp.opencv_core.Mat;
 import org.bytedeco.javacpp.opencv_core.Size;
@@ -9,6 +8,7 @@ import org.bytedeco.javacpp.opencv_core.Size;
 import teaselib.core.devices.Device;
 
 public interface VideoCaptureDevice extends Iterable<Mat>, Device {
+    public static final Size DefaultResolution = new Size(0, 0);
 
     void open(Size size);
 
@@ -22,7 +22,7 @@ public interface VideoCaptureDevice extends Iterable<Mat>, Device {
     @Override
     void release();
 
-    List<Size> getResolutions();
+    ResolutionList getResolutions();
 
     void setResolution(Size size);
 }

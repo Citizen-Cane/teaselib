@@ -7,7 +7,6 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Vector;
 
 import org.bytedeco.javacpp.BytePointer;
 import org.bytedeco.javacpp.opencv_core;
@@ -20,6 +19,7 @@ import com.github.sarxos.webcam.WebcamDiscoveryListener;
 
 import teaselib.TeaseLib;
 import teaselib.core.devices.DeviceCache;
+import teaselib.video.ResolutionList;
 import teaselib.video.VideoCaptureDevice;
 
 public class VideoCaptureDeviceWebcamCapture implements VideoCaptureDevice {
@@ -66,6 +66,7 @@ public class VideoCaptureDeviceWebcamCapture implements VideoCaptureDevice {
                 if (name.equals(newWebcam.getName()) && !webcam.isOpen()) {
                     Dimension resolution = webcam.getViewSize();
                     webcam = newWebcam;
+                    resolutions = buildResolutionList();
                     webcam.open();
                     webcam.setViewSize(resolution);
                     TeaseLib.instance().log.info(name + " reconnected");
@@ -91,13 +92,38 @@ public class VideoCaptureDeviceWebcamCapture implements VideoCaptureDevice {
     };
 
     Mat mat;
-
+    ResolutionList resolutions;
     Size captureSize; // Keep to restore size when old webcam is gone
     double fps;
 
     private VideoCaptureDeviceWebcamCapture(Webcam webcam) {
         this.webcam = webcam;
         this.name = webcam.getName();
+        resolutions = buildResolutionList();
+    }
+
+    private ResolutionList buildResolutionList() {
+        ResolutionList resolutions = new ResolutionList();
+        for (Dimension dimension : webcam.getViewSizes()) {
+            resolutions.add(new Size(dimension.width, dimension.height));
+        }
+        if (resolutions.size() == 0) {
+            resolutions.add(DefaultResolution);
+        } else {
+            // OpenImagJ capture driver doesn't detect resolutions (yet) (just on Windows?)
+            // https://github.com/sarxos/webcam-capture/issues/272
+            // Therefore we have to return DefaultResolution
+            Size peek = resolutions.get(0);
+            if (isFakeResolution(peek)) {
+                resolutions.clear();
+                resolutions.add(DefaultResolution);
+            }
+        }
+        return resolutions;
+    }
+
+    private boolean isFakeResolution(Size resolution) {
+        return resolution.width() == 176 && resolution.height() == 144;
     }
 
     @Override
@@ -112,7 +138,9 @@ public class VideoCaptureDeviceWebcamCapture implements VideoCaptureDevice {
 
     @Override
     public void open(Size resolution) {
-        setResolution(resolution);
+        if (resolution != DefaultResolution) {
+            setResolution(resolution);
+        }
         if (!webcam.isOpen()) {
             webcam.open();
         }
@@ -129,19 +157,24 @@ public class VideoCaptureDeviceWebcamCapture implements VideoCaptureDevice {
 
     @Override
     public void setResolution(Size size) {
+        if (!getResolutions().contains(size)) {
+            throw new IllegalArgumentException(
+                    size.width() + "," + size.height());
+        }
+        boolean open = webcam.isOpen();
+        if (open) {
+            webcam.close();
+        }
         webcam.setViewSize(new Dimension(size.width(), size.height()));
         this.captureSize = size;
-        if (webcam.isOpen()) {
+        if (open) {
+            webcam.open();
             fps = webcam.getFPS();
         }
     }
 
     @Override
-    public List<Size> getResolutions() {
-        List<Size> resolutions = new Vector<Size>();
-        for (Dimension dimension : webcam.getCustomViewSizes()) {
-            resolutions.add(new Size(dimension.width, dimension.height));
-        }
+    public ResolutionList getResolutions() {
         return resolutions;
     }
 
@@ -153,7 +186,12 @@ public class VideoCaptureDeviceWebcamCapture implements VideoCaptureDevice {
     @Override
     public Size captureSize() {
         Dimension viewSize = webcam.getViewSize();
-        return new Size(viewSize.width, viewSize.height);
+        Size resolution = new Size(viewSize.width, viewSize.height);
+        if (isFakeResolution(resolution)) {
+            return DefaultResolution;
+        } else {
+            return resolution;
+        }
     }
 
     @Override

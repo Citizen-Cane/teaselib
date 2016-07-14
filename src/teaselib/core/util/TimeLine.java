@@ -22,7 +22,7 @@ public class TimeLine<T> {
     private int maxItems = 1000;
     private long maxTimeSpanMillis = 60 * 1000;
 
-    private T last = null;
+    private T head = null;
     private long tailTimeMillis;
 
     public TimeLine() {
@@ -53,8 +53,7 @@ public class TimeLine<T> {
     }
 
     public boolean add(double timeStamp) {
-        add(last, timeStamp);
-        return false;
+        return add(head, timeStamp);
     }
 
     public boolean add(T item, double timeStampSeconds) {
@@ -62,24 +61,26 @@ public class TimeLine<T> {
     }
 
     public boolean add(T item, long timeStamp) {
-        boolean different = last == null && item == null ? false
-                : (last == null && item != null)
-                        || (last != null && item == null) || !item.equals(last);
+        boolean different = head == null && item == null ? false
+                : (head == null && item != null)
+                        || (head != null && item == null) || !item.equals(head);
         if (different) {
             items.add(item);
             timeSpans.add(timeStamp - tailTimeMillis);
-            tailTimeMillis = timeStamp;
             ensureCapacity();
         } else {
             final int size = timeSpans.size();
             if (size == 0) {
                 timeSpans.add(timeStamp - tailTimeMillis);
             } else {
-                timeSpans.set(size - 1, timeStamp - tailTimeMillis);
+                int headIndex = size - 1;
+                timeSpans.set(headIndex,
+                        timeSpans.get(headIndex) + timeStamp - tailTimeMillis);
             }
             // Capacity doesn't change
         }
-        last = item;
+        tailTimeMillis = timeStamp;
+        head = item;
         return different;
     }
 
@@ -132,6 +133,37 @@ public class TimeLine<T> {
         while (item.hasNext()) {
             tail.add(item.next());
             long t = timeSpan.next();
+            if (t < timeSpanMillis) {
+                timeSpanMillis -= t;
+            } else {
+                break;
+            }
+        }
+        return tail;
+    }
+
+    public static class Slice<T> {
+        public final long t;
+        public final T item;
+
+        public Slice(long t, T item) {
+            this.t = t;
+            this.item = item;
+        }
+
+    }
+
+    public List<Slice<T>> getTimeSpanSlices(double timeSpanSeconds) {
+        if (timeSpanSeconds == 0.0) {
+            return Collections.EMPTY_LIST;
+        }
+        List<Slice<T>> tail = new Vector<Slice<T>>(10);
+        Iterator<T> item = items.descendingIterator();
+        Iterator<Long> timeSpan = timeSpans.descendingIterator();
+        long timeSpanMillis = (long) (timeSpanSeconds * 1000);
+        while (item.hasNext()) {
+            long t = timeSpan.next();
+            tail.add(new Slice<T>(Math.min(timeSpanMillis, t), item.next()));
             if (t < timeSpanMillis) {
                 timeSpanMillis -= t;
             } else {

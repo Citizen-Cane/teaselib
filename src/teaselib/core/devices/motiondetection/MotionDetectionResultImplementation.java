@@ -5,6 +5,7 @@ package teaselib.core.devices.motiondetection;
 
 import static teaselib.core.javacv.util.Geom.*;
 
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -20,6 +21,7 @@ import teaselib.TeaseLib;
 import teaselib.core.ScriptInterruptedException;
 import teaselib.core.concurrency.Signal;
 import teaselib.core.javacv.util.Geom;
+import teaselib.core.util.TimeLine;
 import teaselib.motiondetection.MotionDetector.Presence;
 
 public class MotionDetectionResultImplementation
@@ -145,14 +147,10 @@ public class MotionDetectionResultImplementation
                     (new Signal.HasChangedPredicate() {
                         @Override
                         public Boolean call() throws Exception {
-                            List<Set<Presence>> timeSpanIndicatorHistory = indicatorHistory
-                                    .getTimeSpan(timeSpanSeconds);
-                            // No need to join any sets, since we can just
-                            // calculate the occurrence percentage
-                            int n = numberOfOccurences(change,
-                                    timeSpanIndicatorHistory);
-                            int s = timeSpanIndicatorHistory.size();
-                            return ((double) n) / s >= amount;
+                            List<TimeLine.Slice<Set<Presence>>> timeSpanIndicatorHistory = indicatorHistory
+                                    .getTimeSpanSlices(timeSpanSeconds);
+                            return getAmount(timeSpanIndicatorHistory, change,
+                                    timeSpanSeconds) >= amount;
                         }
                     }));
         } catch (InterruptedException e) {
@@ -163,14 +161,29 @@ public class MotionDetectionResultImplementation
         return false;
     }
 
-    // TODO write test
-    int numberOfOccurences(Object item, List<Set<Presence>> collection) {
-        int n = 0;
-        for (Set<? extends Object> set : collection) {
-            if (set.contains(item))
-                n++;
+    public static double getAmount(List<TimeLine.Slice<Set<Presence>>> slices,
+            Object item, double timeSpanSeconds) {
+        if (timeSpanSeconds == 0.0 || slices.isEmpty()) {
+            return 0.0;
         }
-        return n;
+        long absoluteCoverage = 0;
+        long absoluteTime = 0;
+        for (Iterator<TimeLine.Slice<Set<Presence>>> it = slices.iterator(); it
+                .hasNext();) {
+            TimeLine.Slice<Set<Presence>> slice = it.next();
+            final long increment;
+            if (it.hasNext()) {
+                increment = slice.t;
+            } else {
+                increment = (long) (timeSpanSeconds * 1000) - absoluteTime;
+            }
+            if (slice.item.contains(item)) {
+                absoluteCoverage += increment;
+            }
+            absoluteTime += increment;
+        }
+        double amount = absoluteCoverage / (double) absoluteTime;
+        return amount;
     }
 
     @SuppressWarnings("resource")
@@ -193,8 +206,12 @@ public class MotionDetectionResultImplementation
                     || presenceInsidePresenceRect ? Presence.Present
                             : Presence.Away;
             Set<Presence> directions = new LinkedHashSet<Presence>();
-            directions.add(Presence.NoShake);
             directions.add(presenceState);
+            if (motionDetected) {
+                directions.add(Presence.Motion);
+            } else {
+                directions.add(Presence.NoMotion);
+            }
             // Presence regions
             for (Map.Entry<Presence, Rect> e : presenceIndicators.entrySet()) {
                 Presence key = e.getKey();
@@ -208,11 +225,7 @@ public class MotionDetectionResultImplementation
                     }
                 }
             }
-            if (motionDetected) {
-                directions.add(Presence.Motion);
-            } else {
-                directions.add(Presence.NoMotion);
-            }
+            directions.add(Presence.NoShake);
             return directions;
         }
     }

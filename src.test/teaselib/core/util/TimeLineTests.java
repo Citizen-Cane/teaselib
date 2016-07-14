@@ -3,12 +3,17 @@
  */
 package teaselib.core.util;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
+
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import teaselib.core.devices.motiondetection.MotionDetectionResultImplementation;
+import teaselib.motiondetection.MotionDetector;
 
 /**
  * @author someone
@@ -95,4 +100,68 @@ public class TimeLineTests {
         assertEquals(4, timeLine.last(4).size());
     }
 
+    @Test
+    public void testAmount() {
+        MotionDetector.Presence motion = MotionDetector.Presence.Motion;
+        MotionDetector.Presence noMotion = MotionDetector.Presence.NoMotion;
+        TimeLine<Set<MotionDetector.Presence>> timeLine = new TimeLine<Set<MotionDetector.Presence>>(
+                10.0);
+        assertTrue(timeLine.add(
+                new HashSet<MotionDetector.Presence>(Arrays.asList(motion)),
+                11.0));
+        assertFalse(timeLine.add(
+                new HashSet<MotionDetector.Presence>(Arrays.asList(motion)),
+                12.0));
+        assertTrue(timeLine.add(
+                new HashSet<MotionDetector.Presence>(Arrays.asList(noMotion)),
+                14.0));
+
+        // Full coverage
+
+        // "yes" is 2 seconds away from now, 0.5 coverage within 4.0 seconds
+        assertEquals(0.5, MotionDetectionResultImplementation
+                .getAmount(timeLine.getTimeSpanSlices(4.0), motion, 4.0), 0.0);
+        // "no" is 2.0 seconds away from now, 1.0 coverage within past 2.0
+        // seconds
+        assertEquals(1.0, MotionDetectionResultImplementation.getAmount(
+                timeLine.getTimeSpanSlices(2.0), noMotion, 2.0), 0.0);
+        // "no" is 2.0 seconds away from now, 0.5 coverage within past 4.0
+        // seconds
+        assertEquals(0.5, MotionDetectionResultImplementation.getAmount(
+                timeLine.getTimeSpanSlices(4.0), noMotion, 4.0), 0.0);
+
+        // no coverage
+        assertEquals(0.0, MotionDetectionResultImplementation
+                .getAmount(timeLine.getTimeSpanSlices(2.0), motion, 4.0), 0.0);
+
+        assertEquals(0.0, MotionDetectionResultImplementation
+                .getAmount(timeLine.getTimeSpanSlices(2.0), motion, 0.0), 0.0);
+
+        assertEquals(0.0, MotionDetectionResultImplementation
+                .getAmount(timeLine.getTimeSpanSlices(0.0), motion, 4.0), 0.0);
+
+        assertEquals(0.0, MotionDetectionResultImplementation
+                .getAmount(timeLine.getTimeSpanSlices(0.0), motion, 0.0), 0.0);
+
+        // partial coverage
+        assertTrue(timeLine.add(
+                new HashSet<MotionDetector.Presence>(Arrays.asList(motion)),
+                15.0));
+
+        assertEquals(0.6, MotionDetectionResultImplementation
+                .getAmount(timeLine.getTimeSpanSlices(5.0), motion, 5.0), 0.0);
+        assertEquals(0.4, MotionDetectionResultImplementation.getAmount(
+                timeLine.getTimeSpanSlices(5.0), noMotion, 5.0), 0.0);
+
+        assertEquals(0.5, MotionDetectionResultImplementation
+                .getAmount(timeLine.getTimeSpanSlices(2.0), motion, 2.0), 0.0);
+        assertEquals(0.5, MotionDetectionResultImplementation.getAmount(
+                timeLine.getTimeSpanSlices(2.0), noMotion, 2.0), 0.0);
+
+        assertEquals(0.33, MotionDetectionResultImplementation
+                .getAmount(timeLine.getTimeSpanSlices(3.0), motion, 3.0), 0.01);
+        assertEquals(0.66, MotionDetectionResultImplementation.getAmount(
+                timeLine.getTimeSpanSlices(3.0), noMotion, 3.0), 0.01);
+
+    }
 }

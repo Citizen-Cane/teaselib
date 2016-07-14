@@ -40,8 +40,11 @@ public class testMotionDetectionNew {
             // Triggers after not moving for about one second
             if (md.awaitChange(amount, Presence.NoMotion, 1.0, 10.0)) {
                 System.out.println("I said 'Keep moving'!");
-                // use the timeout to avoid repeating the message too fast
-                md.awaitChange(amount, Presence.Motion, 1.0, 5.0);
+                // Besides leaving the tester some time to move again
+                // the timeout greater than the trigger time span
+                // clears the history to avoid being triggered again
+                // and repeating the message too fast
+                md.awaitChange(amount, Presence.Motion, 1.0, 2.0);
             } else {
                 break;
             }
@@ -56,8 +59,12 @@ public class testMotionDetectionNew {
         System.out.println("Now stay still.");
         // use the timeout to avoid repeating the message too fast
         while (true) {
-            if (md.awaitChange(amount, Presence.Motion, 1.0, 5.0)) {
+            if (md.awaitChange(amount, Presence.Motion, 1.0, 10.0)) {
                 System.out.println("I said 'Stay still'!");
+                // Besides leaving the tester some time to stand still
+                // the timeout greater than the trigger time span
+                // clears the history to avoid being triggered again
+                // and repeating the message too fast
                 md.awaitChange(amount, Presence.NoMotion, 1.0, 2.0);
             } else {
                 break;

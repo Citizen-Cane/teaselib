@@ -54,7 +54,7 @@ public class Signal {
 
     public boolean awaitChange(final double timeoutSeconds,
             final HasChangedPredicate hasChangedPredicate)
-                    throws InterruptedException, Exception {
+            throws InterruptedException, Exception {
         return doLocked(new Callable<Boolean>() {
             @Override
             public Boolean call() throws Exception {
@@ -66,24 +66,26 @@ public class Signal {
             }
 
             private boolean poll() throws InterruptedException, Exception {
-                boolean inTime;
                 long start = System.currentTimeMillis();
                 long elapsed = 0;
                 long timeoutMillis = (long) (timeoutSeconds) * 1000;
                 do {
-                    inTime = condition.await(timeoutMillis - elapsed,
+                    boolean inTime = condition.await(timeoutMillis - elapsed,
                             TimeUnit.MILLISECONDS);
                     if (inTime) {
                         if (hasChangedPredicate.call()) {
-                            break;
+                            // Condition changed
+                            return true;
                         } else {
+                            // Something else changed
                             elapsed = System.currentTimeMillis() - start;
                         }
                     } else {
                         break;
                     }
                 } while (timeoutMillis > elapsed);
-                return inTime;
+                // condition may have become true since the last check
+                return hasChangedPredicate.call();
             }
         });
     }

@@ -118,30 +118,24 @@ public class TimeLineTests {
 
         // Full coverage
 
-        // "yes" is 2 seconds away from now, 0.5 coverage within 4.0 seconds
+        // "motion" is 2 seconds away from now, 0.5 coverage within 4.0 seconds
         assertEquals(0.5, MotionDetectionResultImplementation
-                .getAmount(timeLine.getTimeSpanSlices(4.0), motion, 4.0), 0.0);
-        // "no" is 2.0 seconds away from now, 1.0 coverage within past 2.0
+                .getAmount(timeLine.getTimeSpanSlices(4.0), motion), 0.0);
+        // "noMotion" is 2.0 seconds away from now, 1.0 coverage within past 2.0
         // seconds
-        assertEquals(1.0, MotionDetectionResultImplementation.getAmount(
-                timeLine.getTimeSpanSlices(2.0), noMotion, 2.0), 0.0);
-        // "no" is 2.0 seconds away from now, 0.5 coverage within past 4.0
+        assertEquals(1.0, MotionDetectionResultImplementation
+                .getAmount(timeLine.getTimeSpanSlices(2.0), noMotion), 0.0);
+        // "noMotion" is 2.0 seconds away from now, 0.5 coverage within past 4.0
         // seconds
-        assertEquals(0.5, MotionDetectionResultImplementation.getAmount(
-                timeLine.getTimeSpanSlices(4.0), noMotion, 4.0), 0.0);
+        assertEquals(0.5, MotionDetectionResultImplementation
+                .getAmount(timeLine.getTimeSpanSlices(4.0), noMotion), 0.0);
 
         // no coverage
         assertEquals(0.0, MotionDetectionResultImplementation
-                .getAmount(timeLine.getTimeSpanSlices(2.0), motion, 4.0), 0.0);
+                .getAmount(timeLine.getTimeSpanSlices(2.0), motion), 0.0);
 
         assertEquals(0.0, MotionDetectionResultImplementation
-                .getAmount(timeLine.getTimeSpanSlices(2.0), motion, 0.0), 0.0);
-
-        assertEquals(0.0, MotionDetectionResultImplementation
-                .getAmount(timeLine.getTimeSpanSlices(0.0), motion, 4.0), 0.0);
-
-        assertEquals(0.0, MotionDetectionResultImplementation
-                .getAmount(timeLine.getTimeSpanSlices(0.0), motion, 0.0), 0.0);
+                .getAmount(timeLine.getTimeSpanSlices(0.0), motion), 0.0);
 
         // partial coverage
         assertTrue(timeLine.add(
@@ -149,19 +143,19 @@ public class TimeLineTests {
                 15.0));
 
         assertEquals(0.6, MotionDetectionResultImplementation
-                .getAmount(timeLine.getTimeSpanSlices(5.0), motion, 5.0), 0.0);
-        assertEquals(0.4, MotionDetectionResultImplementation.getAmount(
-                timeLine.getTimeSpanSlices(5.0), noMotion, 5.0), 0.0);
+                .getAmount(timeLine.getTimeSpanSlices(5.0), motion), 0.0);
+        assertEquals(0.4, MotionDetectionResultImplementation
+                .getAmount(timeLine.getTimeSpanSlices(5.0), noMotion), 0.0);
 
         assertEquals(0.5, MotionDetectionResultImplementation
-                .getAmount(timeLine.getTimeSpanSlices(2.0), motion, 2.0), 0.0);
-        assertEquals(0.5, MotionDetectionResultImplementation.getAmount(
-                timeLine.getTimeSpanSlices(2.0), noMotion, 2.0), 0.0);
+                .getAmount(timeLine.getTimeSpanSlices(2.0), motion), 0.0);
+        assertEquals(0.5, MotionDetectionResultImplementation
+                .getAmount(timeLine.getTimeSpanSlices(2.0), noMotion), 0.0);
 
         assertEquals(0.33, MotionDetectionResultImplementation
-                .getAmount(timeLine.getTimeSpanSlices(3.0), motion, 3.0), 0.01);
-        assertEquals(0.66, MotionDetectionResultImplementation.getAmount(
-                timeLine.getTimeSpanSlices(3.0), noMotion, 3.0), 0.01);
+                .getAmount(timeLine.getTimeSpanSlices(3.0), motion), 0.01);
+        assertEquals(0.66, MotionDetectionResultImplementation
+                .getAmount(timeLine.getTimeSpanSlices(3.0), noMotion), 0.01);
 
     }
 }

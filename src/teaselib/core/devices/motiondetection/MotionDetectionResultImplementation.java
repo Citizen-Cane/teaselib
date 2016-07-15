@@ -149,8 +149,8 @@ public class MotionDetectionResultImplementation
                         public Boolean call() throws Exception {
                             List<TimeLine.Slice<Set<Presence>>> timeSpanIndicatorHistory = indicatorHistory
                                     .getTimeSpanSlices(timeSpanSeconds);
-                            return getAmount(timeSpanIndicatorHistory, change,
-                                    timeSpanSeconds) >= amount;
+                            return getAmount(timeSpanIndicatorHistory,
+                                    change) >= amount;
                         }
                     }));
         } catch (InterruptedException e) {
@@ -162,8 +162,8 @@ public class MotionDetectionResultImplementation
     }
 
     public static double getAmount(List<TimeLine.Slice<Set<Presence>>> slices,
-            Object item, double timeSpanSeconds) {
-        if (timeSpanSeconds == 0.0 || slices.isEmpty()) {
+            Object item) {
+        if (slices.isEmpty()) {
             return 0.0;
         }
         long absoluteCoverage = 0;
@@ -172,11 +172,7 @@ public class MotionDetectionResultImplementation
                 .hasNext();) {
             TimeLine.Slice<Set<Presence>> slice = it.next();
             final long increment;
-            if (it.hasNext()) {
-                increment = slice.t;
-            } else {
-                increment = (long) (timeSpanSeconds * 1000) - absoluteTime;
-            }
+            increment = slice.t;
             if (slice.item.contains(item)) {
                 absoluteCoverage += increment;
             }

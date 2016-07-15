@@ -8,7 +8,7 @@ import teaselib.hosts.DummyPersistence;
 import teaselib.motiondetection.MotionDetector.MotionSensitivity;
 import teaselib.motiondetection.MotionDetector.Presence;
 
-public class testMotionDetectionNew {
+public class TestTechnicalInterface {
 
     @Test
     public void testMotionStartStop() {

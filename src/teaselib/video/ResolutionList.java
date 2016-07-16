@@ -44,15 +44,18 @@ public class ResolutionList extends ArrayList<Size> {
      * Find a size similar to the desired size that fits into the available size
      * n times without remainder.
      * 
-     * @param desired
-     *            The desired size
      * @param available
      *            The available size
+     * @param desired
+     *            The desired size
+     * 
+     * @return A size that fits n times into the available size without
+     *         remainder.
      */
-    public Size getSmallestFit(Size desired, Size available) {
+    public static Size getSmallestFit(Size available, Size desired) {
         int n = available.width() / desired.width();
         int m = available.height() / desired.height();
-        int factor = Math.min(n, m);
+        int factor = Math.max(n, m);
         return new Size(available.width() / factor,
                 available.height() / factor);
     }

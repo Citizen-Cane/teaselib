@@ -110,7 +110,8 @@ public class VideoCaptureDeviceWebcamCapture implements VideoCaptureDevice {
         if (resolutions.size() == 0) {
             resolutions.add(DefaultResolution);
         } else {
-            // OpenImagJ capture driver doesn't detect resolutions (yet) (just on Windows?)
+            // OpenImagJ capture driver doesn't detect resolutions (yet) (just
+            // on Windows?)
             // https://github.com/sarxos/webcam-capture/issues/272
             // Therefore we have to return DefaultResolution
             Size peek = resolutions.get(0);
@@ -118,11 +119,12 @@ public class VideoCaptureDeviceWebcamCapture implements VideoCaptureDevice {
                 resolutions.clear();
                 resolutions.add(DefaultResolution);
             }
+            peek.close();
         }
         return resolutions;
     }
 
-    private boolean isFakeResolution(Size resolution) {
+    private static boolean isFakeResolution(Size resolution) {
         return resolution.width() == 176 && resolution.height() == 144;
     }
 

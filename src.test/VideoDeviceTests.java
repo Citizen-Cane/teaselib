@@ -38,7 +38,7 @@ public class VideoDeviceTests {
         assertFalse(resolutions.contains(new Size(640, 960)));
     }
 
-    //@Test
+    // @Test
     @SuppressWarnings("resource")
     public void testGetResolutionBeforeDeviceOpen() {
         VideoCaptureDevice defaultDevice = VideoCaptureDevices.Instance
@@ -48,5 +48,24 @@ public class VideoDeviceTests {
         defaultDevice.open(resolution);
         Size resolution2 = defaultDevice.captureSize();
         assertNotNull(resolution2);
+    }
+
+    @Test
+    @SuppressWarnings("resource")
+    public void testSmallestFit() {
+        Size bestFit1 = ResolutionList.getSmallestFit(new Size(1920, 1080),
+                new Size(320, 240));
+        assertEquals(320, bestFit1.width());
+        assertEquals(180, bestFit1.height());
+
+        Size bestFit2 = ResolutionList.getSmallestFit(new Size(1920, 1080),
+                new Size(350, 260));
+        assertEquals(384, bestFit2.width());
+        assertEquals(216, bestFit2.height());
+
+        Size bestFit3 = ResolutionList.getSmallestFit(new Size(1920, 1080),
+                new Size(310, 230));
+        assertEquals(320, bestFit3.width());
+        assertEquals(180, bestFit3.height());
     }
 }

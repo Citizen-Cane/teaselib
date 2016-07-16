@@ -16,10 +16,13 @@ import org.bytedeco.javacpp.opencv_core.Size;
 import teaselib.TeaseLib;
 import teaselib.core.concurrency.Signal;
 import teaselib.core.devices.DeviceCache;
-import teaselib.core.javacv.ScaleDown;
-import teaselib.core.javacv.ScaleDownAndMirror;
+import teaselib.core.javacv.Copy;
+import teaselib.core.javacv.Scale;
+import teaselib.core.javacv.ScaleAndMirror;
+import teaselib.core.javacv.Transformation;
 import teaselib.core.javacv.util.FramesPerSecond;
 import teaselib.motiondetection.MotionDetector;
+import teaselib.video.ResolutionList;
 import teaselib.video.VideoCaptureDevice;
 import teaselib.video.VideoCaptureDevices;
 
@@ -119,8 +122,8 @@ public class MotionDetectorJavaCV implements MotionDetector {
         private static final boolean mirror = true;
 
         private final VideoCaptureDevice videoCaptureDevice;
-        private final ScaleDown scaleDown;
-        private final ScaleDownAndMirror scaleDownAndMirror;
+        private final Transformation videoInputTransformation;
+        private final Size processingSize;
         private final MotionProcessorJavaCV motionProcessor;
         private final Mat input = new Mat();
         private final MotionDetectionResultImplementation detectionResult;
@@ -146,21 +149,41 @@ public class MotionDetectorJavaCV implements MotionDetector {
 
             videoCaptureDevice.open(videoCaptureDevice.getResolutions()
                     .getMatchingOrSimilar(DesiredProcessingSize));
-            // TODO introduce image processor interface
-            this.scaleDown = new ScaleDown(videoCaptureDevice.captureSize(),
-                    DesiredProcessingSize, input);
-            this.scaleDownAndMirror = new ScaleDownAndMirror(
-                    videoCaptureDevice.captureSize(), DesiredProcessingSize,
-                    input);
-            Size actualSize = new Size(
-                    videoCaptureDevice.captureSize().width() / scaleDown.factor,
-                    videoCaptureDevice.captureSize().height()
-                            / scaleDown.factor);
+            if (mirror) {
+                ScaleAndMirror scaleAndMirror = new ScaleAndMirror(
+                        videoCaptureDevice.captureSize(),
+                        ResolutionList.getSmallestFit(videoCaptureDevice.captureSize(),
+                                DesiredProcessingSize),
+                        input);
+                this.processingSize = new Size(
+                        (int) (videoCaptureDevice.captureSize().width()
+                                * scaleAndMirror.factor),
+                        (int) (videoCaptureDevice.captureSize().height()
+                                * scaleAndMirror.factor));
+                this.videoInputTransformation = scaleAndMirror;
+            } else if (videoCaptureDevice.captureSize()
+                    .equals(DesiredProcessingSize)) {
+                // Copy source mat because when the video capture device
+                // frame rate drops below the desired frame rate,
+                // the debug renderer would mess up motion detection
+                // when rendering into the source mat - at least for
+                // javacv
+                this.videoInputTransformation = new Copy(input);
+                this.processingSize = videoCaptureDevice.captureSize();
+            } else {
+                Scale scale = new Scale(videoCaptureDevice.captureSize(),
+                        DesiredProcessingSize, input);
+                this.processingSize = new Size(
+                        (int) (videoCaptureDevice.captureSize().width()
+                                * scale.factor),
+                        (int) (videoCaptureDevice.captureSize().height()
+                                * scale.factor));
+                this.videoInputTransformation = scale;
+            }
             motionProcessor = new MotionProcessorJavaCV(
-                    videoCaptureDevice.captureSize().width(),
-                    actualSize.width());
+                    videoCaptureDevice.captureSize(), processingSize);
             detectionResult = new MotionDetectionResultImplementation(
-                    actualSize);
+                    processingSize);
         }
 
         @Override
@@ -171,12 +194,7 @@ public class MotionDetectorJavaCV implements MotionDetector {
                 // -> adjust to < 50% processing time per frame
                 fpsStatistics.startFrame();
                 debugInfo = new MotionDetectorJavaCVDebugRenderer(
-                        motionProcessor,
-                        new Size(
-                                videoCaptureDevice.captureSize().width()
-                                        / scaleDown.factor,
-                                videoCaptureDevice.captureSize().height()
-                                        / scaleDown.factor));
+                        motionProcessor, processingSize);
                 for (final Mat frame : videoCaptureDevice) {
                     // TODO handle camera surprise removal and reconnect
                     // -> in VideoCaptureDevice?
@@ -186,20 +204,7 @@ public class MotionDetectorJavaCV implements MotionDetector {
                     // handle setting sensitivity via structuring element size
                     // TODO it's just setting a member, maybe we can ignore
                     // concurrency
-                    if (mirror) {
-                        // Renders to input
-                        scaleDownAndMirror.update(frame);
-                    } else if (scaleDown.factor > 1) {
-                        // Renders to input
-                        scaleDown.update(frame);
-                    } else {
-                        // Copy source mat because when the video capture device
-                        // frame rate drops below the desired frame rate,
-                        // the debug renderer would mess up motion detection
-                        // when rendering into the source mat - at least for
-                        // javacv
-                        frame.copyTo(input);
-                    }
+                    videoInputTransformation.update(frame);
                     try {
                         lockStartStop.lockInterruptibly();
                         // update shared items

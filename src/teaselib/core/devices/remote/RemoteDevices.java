@@ -1,7 +1,9 @@
-package teaselib.core.devices;
+package teaselib.core.devices.remote;
 
 import java.util.List;
 import java.util.Vector;
+
+import teaselib.core.devices.DeviceCache;
 
 public class RemoteDevices {
 

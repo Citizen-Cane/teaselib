@@ -1,4 +1,6 @@
-package teaselib.core.devices;
+package teaselib.core.devices.remote;
+
+import teaselib.core.devices.Device;
 
 public interface RemoteDevice extends Device {
 

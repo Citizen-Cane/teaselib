@@ -1,7 +1,7 @@
 /**
  * 
  */
-package teaselib.core.devices;
+package teaselib.core.devices.remote;
 
 import java.net.Inet4Address;
 import java.net.InetAddress;

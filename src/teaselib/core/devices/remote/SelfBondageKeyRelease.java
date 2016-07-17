@@ -1,7 +1,11 @@
-package teaselib.core.devices;
+package teaselib.core.devices.remote;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import teaselib.core.devices.Device;
+import teaselib.core.devices.DeviceCache;
+import teaselib.core.devices.DeviceCache.Factory;
 
 public class SelfBondageKeyRelease implements Device {
     public static final DeviceCache<SelfBondageKeyRelease> Devices = new DeviceCache<SelfBondageKeyRelease>()

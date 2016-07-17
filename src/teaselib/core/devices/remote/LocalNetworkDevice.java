@@ -1,9 +1,8 @@
 /**
  * 
  */
-package teaselib.core.devices;
+package teaselib.core.devices.remote;
 
-import java.io.IOException;
 import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.InterfaceAddress;
@@ -25,15 +24,18 @@ import java.util.concurrent.Future;
 
 import teaselib.TeaseLib;
 import teaselib.core.ScriptInterruptedException;
+import teaselib.core.devices.DeviceCache;
 
 /**
- * @author someone
+ * @author Citizen-Cane
  *
  */
 public class LocalNetworkDevice implements RemoteDevice {
     private static final String DeviceClassName = "UDPRemoteDevice";
 
-    private static final int Port = 6666;
+    private static final int Port = 666;
+
+    private static final UDPMessage id = new UDPMessage("id");
 
     public static final DeviceCache.Factory<RemoteDevice> Factory = new DeviceCache.Factory<RemoteDevice>() {
         final Map<String, LocalNetworkDevice> devices = new LinkedHashMap<String, LocalNetworkDevice>();
@@ -46,49 +48,72 @@ public class LocalNetworkDevice implements RemoteDevice {
         @Override
         public List<String> getDevices() {
             final ExecutorService es = Executors.newFixedThreadPool(256);
-            final List<Future<UDPClient>> futures = new ArrayList<Future<UDPClient>>();
+            final List<Future<List<LocalNetworkDevice>>> futures = new ArrayList<Future<List<LocalNetworkDevice>>>();
             try {
                 List<Subnet> subnets = enumerateNetworks();
                 for (Subnet subnet : subnets) {
                     TeaseLib.instance().log
                             .info("Scanning " + subnet.toString());
-                    for (InetAddress ip : subnet) {
-                        final UDPClient udpClient = new UDPClient(ip, Port);
-                        futures.add(es.submit(new Callable<UDPClient>() {
-                            @Override
-                            public UDPClient call() throws Exception {
-                                udpClient.sendAndReceive("id", 1000);
-                                return udpClient;
-                            }
-                        }));
+                    for (final InetAddress ip : subnet) {
+                        futures.add(es.submit(
+                                new Callable<List<LocalNetworkDevice>>() {
+                                    @Override
+                                    public List<LocalNetworkDevice> call()
+                                            throws Exception {
+                                        final UDPConnection udpClient = new UDPConnection(
+                                                ip, Port);
+                                        return getServices(udpClient,
+                                                new UDPMessage(udpClient
+                                                        .sendAndReceive(
+                                                                id.toByteArray(),
+                                                                1000)));
+                                    }
+
+                                    private List<LocalNetworkDevice> getServices(
+                                            UDPConnection connection,
+                                            UDPMessage status)
+                                            throws SocketException {
+                                        int i = 0;
+                                        String name = status.parameters
+                                                .get(i++);
+                                        int serviceCount = Integer.parseInt(
+                                                status.parameters.get(i++));
+                                        List<LocalNetworkDevice> devices = new ArrayList<LocalNetworkDevice>(
+                                                (status.parameters.size() - i)
+                                                        / 2);
+                                        for (int j = 0; j < serviceCount; j++) {
+                                            String serviceName = status.parameters
+                                                    .get(i++);
+                                            String version = status.parameters
+                                                    .get(i++);
+                                            devices.add((new LocalNetworkDevice(
+                                                    name, serviceName, version,
+                                                    connection)));
+                                            if (j < serviceCount) {
+                                                connection = new UDPConnection(
+                                                        connection.getAddress(),
+                                                        connection.getPort());
+                                                continue;
+                                            } else
+                                                break;
+                                        }
+                                        return devices;
+                                    }
+                                }));
                     }
                 }
             } catch (SocketException e) {
                 TeaseLib.instance().log.error(this, e);
             }
             es.shutdown();
-            for (final Future<UDPClient> f : futures) {
+            for (final Future<List<LocalNetworkDevice>> f : futures) {
                 try {
-                    UDPClient udpClient = f.get();
-                    if (udpClient != null) {
-                        // TODO packet sent twice, better receive ident in scan
-                        final String[] id = udpClient.sendAndReceive("id", 1000)
-                                .split("\n");
-                        String name = id[0];
-                        String serviceName = id[1];
-                        String version = id[2];
-                        // TODO query service, add device for each
-                        final LocalNetworkDevice localNetworkDevice = new LocalNetworkDevice(
-                                name, serviceName, version, udpClient);
-                        this.devices.put(localNetworkDevice.getDevicePath(),
-                                localNetworkDevice);
+                    List<LocalNetworkDevice> detectedDevices = f.get();
+                    for (LocalNetworkDevice device : detectedDevices) {
+                        this.devices.put(device.getDevicePath(), device);
                     }
                 } catch (InterruptedException e) {
                     throw new ScriptInterruptedException();
-                } catch (SocketException e) {
-                    TeaseLib.instance().log.error(this, e);
-                } catch (IOException e) {
-                    TeaseLib.instance().log.error(this, e);
                 } catch (ExecutionException e) {
                     if (e.getCause() instanceof SocketTimeoutException) {
                         // Expected
@@ -128,12 +153,12 @@ public class LocalNetworkDevice implements RemoteDevice {
     private final String serviceName;
     private final String version;
 
-    private UDPClient connection;
+    private UDPConnection connection;
 
     // TODO rescan network, reconnect to same device at different address
 
     LocalNetworkDevice(String name, String serviceName, String version,
-            UDPClient connection) {
+            UDPConnection connection) {
         this.name = name;
         this.serviceName = serviceName;
         this.connection = connection;

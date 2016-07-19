@@ -10,6 +10,7 @@ import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.LinkedHashMap;
@@ -35,7 +36,8 @@ public class LocalNetworkDevice implements RemoteDevice {
 
     private static final int Port = 666;
 
-    private static final UDPMessage id = new UDPMessage("id");
+    private static final UDPMessage id = new UDPMessage("id",
+            Arrays.asList("test"), new byte[] { 1, 2, 3 });
 
     public static final DeviceCache.Factory<RemoteDevice> Factory = new DeviceCache.Factory<RemoteDevice>() {
         final Map<String, LocalNetworkDevice> devices = new LinkedHashMap<String, LocalNetworkDevice>();

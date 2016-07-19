@@ -16,11 +16,11 @@ import java.util.Scanner;
  *         Message format:
  *         <p>
  *         <ul>
- *         <li>short text part size : the size of the text part
+ *         <li>short text part size : the size of the text part (without this size info)
  *         <li>byte parameter count : number of parameters after the name
  *         <li>String command: the command name, null-terminated
  *         <li>List<String> parameters: all parameters, null-terminated
- *         <li>short binary size: The size of the binary part of the message
+ *         <li>short binary size: The size of the binary part of the message (without this size info)
  *         <li>byte[size] binary data: the binary data of the message
  *         </ul>
  *         <p>

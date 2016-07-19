@@ -44,8 +44,8 @@ public class UDPConnection {
         ByteArrayOutputStream header = new ByteArrayOutputStream();
         try {
             DataOutput output = new DataOutputStream(header);
-            output.writeInt(++packetNumber);
-            output.writeInt(data.length);
+            output.writeShort(++packetNumber);
+            output.writeShort(data.length);
             output.write(data);
             return header.toByteArray();
         } finally {
@@ -80,13 +80,13 @@ public class UDPConnection {
         ByteArrayInputStream rawData = new ByteArrayInputStream(data);
         try {
             DataInput input = new DataInputStream(rawData);
-            int packetNumber = input.readInt();
+            int packetNumber = input.readShort();
             if (packetNumber != this.packetNumber) {
                 // TODO better handling of packet number mismatch - wait if
                 // smaller, throw if larger
                 throw new IllegalStateException("Packet-Number mismatch");
             }
-            int size = input.readInt();
+            int size = input.readShort();
             byte[] content = new byte[size];
             input.readFully(content);
             return content;

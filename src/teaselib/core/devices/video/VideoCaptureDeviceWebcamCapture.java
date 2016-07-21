@@ -7,6 +7,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import org.bytedeco.javacpp.BytePointer;
 import org.bytedeco.javacpp.opencv_core;
@@ -18,6 +19,7 @@ import com.github.sarxos.webcam.WebcamDiscoveryEvent;
 import com.github.sarxos.webcam.WebcamDiscoveryListener;
 
 import teaselib.TeaseLib;
+import teaselib.core.devices.Device;
 import teaselib.core.devices.DeviceCache;
 import teaselib.video.ResolutionList;
 import teaselib.video.VideoCaptureDevice;
@@ -35,16 +37,34 @@ public class VideoCaptureDeviceWebcamCapture implements VideoCaptureDevice {
 
         @Override
         public List<String> getDevices() {
-            devices.clear();
+            Map<String, VideoCaptureDeviceWebcamCapture> newDevices = new LinkedHashMap<String, VideoCaptureDeviceWebcamCapture>();
             try {
                 List<Webcam> webcams = Webcam.getWebcams();
                 for (Webcam webcam : webcams) {
-                    final VideoCaptureDeviceWebcamCapture device = new VideoCaptureDeviceWebcamCapture(
+                    VideoCaptureDeviceWebcamCapture device = new VideoCaptureDeviceWebcamCapture(
                             webcam);
-                    devices.put(device.getDevicePath(), device);
+                    String devicePath = device.getDevicePath();
+                    if (devices.containsKey(devicePath)) {
+                        newDevices.put(devicePath, devices.get(devicePath));
+                    } else {
+                        newDevices.put(devicePath, device);
+                    }
+                }
+                if (newDevices.isEmpty()) {
+                    // TODO Change the key to default on connect, or what?
+                    // TODO remove on connect, add real device name
+                    VideoCaptureDeviceWebcamCapture device = new VideoCaptureDeviceWebcamCapture(
+                            null);
+                    String devicePath = device.getDevicePath();
+                    newDevices.put(devicePath, device);
                 }
             } catch (Exception e) {
                 TeaseLib.instance().log.error(Webcam.class, e);
+            }
+            devices.clear();
+            for (Entry<String, VideoCaptureDeviceWebcamCapture> entry : newDevices
+                    .entrySet()) {
+                devices.put(entry.getKey(), entry.getValue());
             }
             return new ArrayList<String>(devices.keySet());
         }
@@ -57,33 +77,45 @@ public class VideoCaptureDeviceWebcamCapture implements VideoCaptureDevice {
 
     Webcam webcam;
     String name;
+
     WebcamDiscoveryListener discoveryListener = new WebcamDiscoveryListener() {
         @Override
         public void webcamFound(WebcamDiscoveryEvent event) {
             try {
-                final Webcam newWebcam = event.getWebcam();
-                // Same as before and not claimed by another discovery listener
-                if (name.equals(newWebcam.getName()) && !webcam.isOpen()) {
-                    Dimension resolution = webcam.getViewSize();
-                    webcam = newWebcam;
-                    resolutions = buildResolutionList();
-                    webcam.open();
-                    webcam.setViewSize(resolution);
-                    TeaseLib.instance().log.info(name + " reconnected");
+                Webcam newWebcam = event.getWebcam();
+                if (webcam == null) {
+                    claim(newWebcam);
+                } else {
+                    // Same as before and not claimed by another discovery
+                    // listener yet
+                    boolean claimed = webcam.isOpen();
+                    if (name.equals(newWebcam.getName()) && !claimed) {
+                        claim(newWebcam);
+                    }
                 }
             } catch (Exception e) {
                 TeaseLib.instance().log.error(this, e);
             }
         }
 
+        private void claim(final Webcam newWebcam) {
+            Dimension resolution = webcam.getViewSize();
+            webcam = newWebcam;
+            resolutions = buildResolutionList();
+            webcam.open();
+            webcam.setViewSize(resolution);
+            TeaseLib.instance().log.info(name + " connected");
+            Factory.getDevices();
+        }
+
         @Override
         public void webcamGone(WebcamDiscoveryEvent event) {
             try {
-                final Webcam gone = event.getWebcam();
-                final String goneName = gone.getName();
-                if (name.equals(goneName)) {
-                    TeaseLib.instance().log.info(goneName + " disconnected");
-                    gone.close();
+                if (event.getWebcam().equals(webcam)) {
+                    TeaseLib.instance().log.info(getName() + " disconnected");
+                    webcam.close();
+                    webcam = null;
+                    // TODO store name and release webcam
                 }
             } catch (Exception e) {
                 TeaseLib.instance().log.error(this, e);
@@ -98,8 +130,12 @@ public class VideoCaptureDeviceWebcamCapture implements VideoCaptureDevice {
 
     private VideoCaptureDeviceWebcamCapture(Webcam webcam) {
         this.webcam = webcam;
-        this.name = webcam.getName();
-        resolutions = buildResolutionList();
+        if (webcam != null) {
+            this.name = webcam.getName();
+        } else {
+            this.name = Device.WaitingForConnection;
+        }
+        resolutions = null;
     }
 
     private ResolutionList buildResolutionList() {
@@ -130,12 +166,13 @@ public class VideoCaptureDeviceWebcamCapture implements VideoCaptureDevice {
 
     @Override
     public String getDevicePath() {
-        return DeviceCache.createDevicePath(DeviceClassName, webcam.getName());
+        return DeviceCache.createDevicePath(DeviceClassName,
+                webcam != null ? webcam.getName() : WaitingForConnection);
     }
 
     @Override
     public String getName() {
-        return webcam.getName();
+        return name;
     }
 
     @Override
@@ -177,12 +214,17 @@ public class VideoCaptureDeviceWebcamCapture implements VideoCaptureDevice {
 
     @Override
     public ResolutionList getResolutions() {
+        if (resolutions == null) {
+            resolutions = buildResolutionList();
+        }
         return resolutions;
     }
 
     @Override
     public boolean active() {
-        return webcam.isOpen();
+        return webcam != null;
+        // && webcam.isOpen();
+        // TODO connected() versus active() -> enabled/isOpen()
     }
 
     @Override

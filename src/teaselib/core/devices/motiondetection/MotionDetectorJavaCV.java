@@ -14,6 +14,7 @@ import org.bytedeco.javacpp.opencv_core.Mat;
 import org.bytedeco.javacpp.opencv_core.Size;
 
 import teaselib.TeaseLib;
+import teaselib.core.ScriptInterruptedException;
 import teaselib.core.concurrency.Signal;
 import teaselib.core.devices.DeviceCache;
 import teaselib.core.javacv.Copy;
@@ -90,17 +91,6 @@ public class MotionDetectorJavaCV implements MotionDetector {
 
     private final CaptureThread eventThread;
 
-    private static final Map<MotionSensitivity, Integer> motionSensitivities = new HashMap<MotionSensitivity, Integer>(
-            initStructuringElementSizes());
-
-    private static Map<MotionSensitivity, Integer> initStructuringElementSizes() {
-        Map<MotionSensitivity, Integer> map = new HashMap<MotionSensitivity, Integer>();
-        map.put(MotionSensitivity.High, 12);
-        map.put(MotionSensitivity.Normal, 24);
-        map.put(MotionSensitivity.Low, 36);
-        return map;
-    }
-
     public MotionDetectorJavaCV(VideoCaptureDevice videoCaptureDevice) {
         super();
         eventThread = new CaptureThread(videoCaptureDevice, DesiredFps);
@@ -121,12 +111,19 @@ public class MotionDetectorJavaCV implements MotionDetector {
         private static final Size DesiredProcessingSize = new Size(320, 240);
         private static final boolean mirror = true;
 
+        private static final Map<MotionSensitivity, Integer> motionSensitivities = new HashMap<MotionSensitivity, Integer>(
+                initStructuringElementSizes());
+
         private final VideoCaptureDevice videoCaptureDevice;
-        private final Transformation videoInputTransformation;
-        private final Size processingSize;
-        private final MotionProcessorJavaCV motionProcessor;
-        private final Mat input = new Mat();
-        private final MotionDetectionResultImplementation detectionResult;
+
+        private Transformation videoInputTransformation;
+        private Size processingSize;
+        private MotionSensitivity motionSensitivity;
+        private MotionProcessorJavaCV motionProcessor;
+        private Mat input = new Mat();
+        // TODO Atomic reference
+        private MotionDetectionResultImplementation detectionResult;
+
         private final double fps;
         private final FramesPerSecond fpsStatistics;
         private final long desiredFrameTimeMillis;
@@ -146,13 +143,17 @@ public class MotionDetectorJavaCV implements MotionDetector {
                     desiredFps);
             this.fpsStatistics = new FramesPerSecond((int) fps);
             this.desiredFrameTimeMillis = (long) (1000.0 / fps);
+        }
 
+        private void openVideoCaptureDevice(
+                VideoCaptureDevice videoCaptureDevice) {
             videoCaptureDevice.open(videoCaptureDevice.getResolutions()
                     .getMatchingOrSimilar(DesiredProcessingSize));
             if (mirror) {
                 ScaleAndMirror scaleAndMirror = new ScaleAndMirror(
                         videoCaptureDevice.captureSize(),
-                        ResolutionList.getSmallestFit(videoCaptureDevice.captureSize(),
+                        ResolutionList.getSmallestFit(
+                                videoCaptureDevice.captureSize(),
                                 DesiredProcessingSize),
                         input);
                 this.processingSize = new Size(
@@ -182,8 +183,27 @@ public class MotionDetectorJavaCV implements MotionDetector {
             }
             motionProcessor = new MotionProcessorJavaCV(
                     videoCaptureDevice.captureSize(), processingSize);
+            setSensitivity(motionSensitivity);
+            debugInfo = new MotionDetectorJavaCVDebugRenderer(motionProcessor,
+                    processingSize);
             detectionResult = new MotionDetectionResultImplementation(
                     processingSize);
+        }
+
+        private static Map<MotionSensitivity, Integer> initStructuringElementSizes() {
+            Map<MotionSensitivity, Integer> map = new HashMap<MotionSensitivity, Integer>();
+            map.put(MotionSensitivity.High, 12);
+            map.put(MotionSensitivity.Normal, 24);
+            map.put(MotionSensitivity.Low, 36);
+            return map;
+        }
+
+        public void setSensitivity(MotionSensitivity motionSensivity) {
+            this.motionSensitivity = motionSensivity;
+            if (motionProcessor != null) {
+                motionProcessor.setStructuringElementSize(
+                        motionSensitivities.get(motionSensivity));
+            }
         }
 
         @Override
@@ -193,51 +213,60 @@ public class MotionDetectorJavaCV implements MotionDetector {
                 // - KNN/findContours uses less cpu without motion
                 // -> adjust to < 50% processing time per frame
                 fpsStatistics.startFrame();
-                debugInfo = new MotionDetectorJavaCVDebugRenderer(
-                        motionProcessor, processingSize);
-                for (final Mat frame : videoCaptureDevice) {
-                    // TODO handle camera surprise removal and reconnect
-                    // -> in VideoCaptureDevice?
-                    if (isInterrupted()) {
-                        break;
+                while (!isInterrupted()) {
+                    // poll the device until its reconnected
+                    while (!videoCaptureDevice.active()) {
+                        Thread.sleep(1000);
                     }
-                    // handle setting sensitivity via structuring element size
-                    // TODO it's just setting a member, maybe we can ignore
-                    // concurrency
-                    videoInputTransformation.update(frame);
-                    try {
-                        lockStartStop.lockInterruptibly();
-                        // update shared items
-                        motionProcessor.update(input);
-                    } catch (InterruptedException e1) {
-                        break;
-                    } finally {
-                        lockStartStop.unlock();
-                    }
-                    // Resulting bounding boxes
-                    final long now = System.currentTimeMillis();
-                    presenceChanged.doLocked(new Runnable() {
-                        @Override
-                        public void run() {
-                            boolean hasChanged = detectionResult
-                                    .updateMotionState(input, motionProcessor,
-                                            now);
-                            if (hasChanged) {
-                                presenceChanged.signal();
-                            }
-                            updateDisplay(input, debugInfo);
-                        }
-                    });
-                    long timeLeft = fpsStatistics
-                            .timeMillisLeft(desiredFrameTimeMillis, now);
-                    if (timeLeft > 0) {
-                        try {
-                            Thread.sleep(timeLeft);
-                        } catch (InterruptedException e) {
+                    openVideoCaptureDevice(videoCaptureDevice);
+                    for (final Mat frame : videoCaptureDevice) {
+                        // TODO handle camera surprise removal and reconnect
+                        // -> in VideoCaptureDevice?
+                        if (isInterrupted()) {
                             break;
                         }
+                        // handle setting sensitivity via structuring element
+                        // size
+                        // TODO it's just setting a member, maybe we can ignore
+                        // concurrency
+                        videoInputTransformation.update(frame);
+                        try {
+                            lockStartStop.lockInterruptibly();
+                            // update shared items
+                            motionProcessor.update(input);
+                        } catch (InterruptedException e1) {
+                            break;
+                        } finally {
+                            lockStartStop.unlock();
+                        }
+                        // Resulting bounding boxes
+                        final long now = System.currentTimeMillis();
+                        presenceChanged.doLocked(new Runnable() {
+                            @Override
+                            public void run() {
+                                boolean hasChanged = detectionResult
+                                        .updateMotionState(input,
+                                                motionProcessor, now);
+                                if (hasChanged) {
+                                    presenceChanged.signal();
+                                }
+                                updateDisplay(input, debugInfo);
+                            }
+                        });
+                        long timeLeft = fpsStatistics
+                                .timeMillisLeft(desiredFrameTimeMillis, now);
+                        if (timeLeft > 0) {
+                            try {
+                                Thread.sleep(timeLeft);
+                            } catch (InterruptedException e) {
+                                break;
+                            }
+                        }
+                        fpsStatistics.updateFrame(now + timeLeft);
                     }
-                    fpsStatistics.updateFrame(now + timeLeft);
+                    videoCaptureDevice.release();
+                    if (debugInfo != null)
+                        debugInfo.close();
                 }
             } catch (Exception e) {
                 TeaseLib.instance().log.error(this, e);
@@ -329,8 +358,7 @@ public class MotionDetectorJavaCV implements MotionDetector {
     @Override
     public void setSensitivity(MotionSensitivity motionSensivity) {
         pause();
-        eventThread.motionProcessor.setStructuringElementSize(
-                motionSensitivities.get(motionSensivity));
+        eventThread.setSensitivity(motionSensivity);
         resume();
     }
 
@@ -339,16 +367,17 @@ public class MotionDetectorJavaCV implements MotionDetector {
         return Features;
     }
 
-    // @Override
-    // public boolean awaitChange(final double timeoutSeconds,
-    // final Presence change) {
-    // return awaitChange(1.0, change, MotionRegionDefaultTimespan,
-    // timeoutSeconds);
-    // }
-
     @Override
     public boolean awaitChange(double amount, Presence change,
             double timeSpanSeconds, double timeoutSeconds) {
+        if (!active()) {
+            try {
+                Thread.sleep((long) (timeoutSeconds * 1000));
+            } catch (InterruptedException e) {
+                throw new ScriptInterruptedException();
+            }
+            return false;
+        }
         eventThread.debugWindowTimeSpan = timeSpanSeconds;
         try {
             return eventThread.detectionResult.awaitChange(
@@ -370,7 +399,8 @@ public class MotionDetectorJavaCV implements MotionDetector {
 
     @Override
     public boolean active() {
-        return eventThread.videoCaptureDevice.active();
+        return eventThread.detectionResult != null
+                && eventThread.videoCaptureDevice.active();
     }
 
     @Override

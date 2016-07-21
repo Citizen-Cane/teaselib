@@ -146,4 +146,9 @@ public class MotionDetectorJavaCVDebugRenderer {
             }
         }
     }
+
+    public void close() {
+        org.bytedeco.javacpp.opencv_highgui.destroyWindow(INPUT);
+        org.bytedeco.javacpp.opencv_highgui.destroyWindow(MOTION);
+    }
 }

@@ -23,7 +23,12 @@ public interface Device {
     String getName();
 
     /**
-     * Test whether the device is connected, available, and active.
+     * Test whether the device is connected and accessible.
+     */
+    boolean connected();
+
+    /**
+     * Test whether the device is active.
      */
     boolean active();
 

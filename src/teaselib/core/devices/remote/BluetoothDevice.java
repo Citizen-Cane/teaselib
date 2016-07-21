@@ -7,7 +7,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import teaselib.core.devices.DeviceCache;
-import teaselib.core.devices.DeviceCache.Factory;
 
 /**
  * @author someone
@@ -41,37 +40,43 @@ public class BluetoothDevice implements RemoteDevice {
     @Override
     public String getDevicePath() {
         throw new IllegalStateException(
-                "Bluetooth remote devices are not implemnted yet");
+                "Bluetooth remote devices are not implemented yet");
     }
 
     @Override
     public String getName() {
         throw new IllegalStateException(
-                "Bluetooth remote devices are not implemnted yet");
+                "Bluetooth remote devices are not implemented yet");
+    }
+
+    @Override
+    public boolean connected() {
+        throw new IllegalStateException(
+                "Bluetooth remote devices are not implemented yet");
     }
 
     @Override
     public boolean active() {
         throw new IllegalStateException(
-                "Bluetooth remote devices are not implemnted yet");
+                "Bluetooth remote devices are not implemented yet");
     }
 
     @Override
     public void release() {
         throw new IllegalStateException(
-                "Bluetooth remote devices are not implemnted yet");
+                "Bluetooth remote devices are not implemented yet");
     }
 
     @Override
     public String getServiceName() {
         throw new IllegalStateException(
-                "Bluetooth remote devices are not implemnted yet");
+                "Bluetooth remote devices are not implemented yet");
     }
 
     @Override
     public String getVersion() {
         throw new IllegalStateException(
-                "Bluetooth remote devices are not implemnted yet");
+                "Bluetooth remote devices are not implemented yet");
     }
 
 }

@@ -1,7 +1,6 @@
 package teaselib.core.devices.video;
 
-import static org.bytedeco.javacpp.opencv_videoio.CAP_PROP_FRAME_HEIGHT;
-import static org.bytedeco.javacpp.opencv_videoio.CAP_PROP_FRAME_WIDTH;
+import static org.bytedeco.javacpp.opencv_videoio.*;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -165,6 +164,11 @@ public class VideoCaptureDeviceCV implements VideoCaptureDevice {
             throw new IllegalArgumentException("Camera not opened: "
                     + getClass().getName() + ":" + device);
         }
+    }
+
+    @Override
+    public boolean connected() {
+        return videoCapture.isOpened();
     }
 
     @Override

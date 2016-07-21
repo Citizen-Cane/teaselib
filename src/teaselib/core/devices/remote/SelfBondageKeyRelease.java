@@ -5,7 +5,6 @@ import java.util.List;
 
 import teaselib.core.devices.Device;
 import teaselib.core.devices.DeviceCache;
-import teaselib.core.devices.DeviceCache.Factory;
 
 public class SelfBondageKeyRelease implements Device {
     public static final DeviceCache<SelfBondageKeyRelease> Devices = new DeviceCache<SelfBondageKeyRelease>()
@@ -51,6 +50,11 @@ public class SelfBondageKeyRelease implements Device {
     @Override
     public String getName() {
         return remoteDevice.getName() + "Key Release";
+    }
+
+    @Override
+    public boolean connected() {
+        return remoteDevice.connected();
     }
 
     @Override

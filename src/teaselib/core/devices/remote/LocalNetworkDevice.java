@@ -179,6 +179,11 @@ public class LocalNetworkDevice implements RemoteDevice {
     }
 
     @Override
+    public boolean connected() {
+        return true;
+    }
+
+    @Override
     public boolean active() {
         return true;
     }

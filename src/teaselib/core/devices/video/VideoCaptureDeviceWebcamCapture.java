@@ -221,10 +221,13 @@ public class VideoCaptureDeviceWebcamCapture implements VideoCaptureDevice {
     }
 
     @Override
-    public boolean active() {
+    public boolean connected() {
         return webcam != null;
-        // && webcam.isOpen();
-        // TODO connected() versus active() -> enabled/isOpen()
+    }
+
+    @Override
+    public boolean active() {
+        return connected() && webcam.isOpen();
     }
 
     @Override

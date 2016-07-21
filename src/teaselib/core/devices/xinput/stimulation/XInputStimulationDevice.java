@@ -114,7 +114,7 @@ public class XInputStimulationDevice implements StimulationDevice {
             for (String devicePath : XInputDevice.getDevicePaths()) {
                 XInputDevice device = XInputDevices.Instance
                         .getDevice(devicePath);
-                if (device.active()) {
+                if (device.connected()) {
                     deviceNames.add(DeviceCache.createDevicePath(
                             XInputStimulationDevice.DeviceClassName,
                             device.getDevicePath()));
@@ -149,6 +149,11 @@ public class XInputStimulationDevice implements StimulationDevice {
     @Override
     public String getName() {
         return "XInput stimulator";
+    }
+
+    @Override
+    public boolean connected() {
+        return device.connected();
     }
 
     @Override

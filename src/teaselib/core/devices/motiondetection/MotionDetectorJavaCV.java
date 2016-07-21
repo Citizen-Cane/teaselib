@@ -215,7 +215,7 @@ public class MotionDetectorJavaCV implements MotionDetector {
                 fpsStatistics.startFrame();
                 while (!isInterrupted()) {
                     // poll the device until its reconnected
-                    while (!videoCaptureDevice.active()) {
+                    while (!videoCaptureDevice.connected()) {
                         Thread.sleep(1000);
                     }
                     openVideoCaptureDevice(videoCaptureDevice);
@@ -395,6 +395,11 @@ public class MotionDetectorJavaCV implements MotionDetector {
     @Override
     public void clearMotionHistory() {
         eventThread.clearMotionHistory();
+    }
+
+    @Override
+    public boolean connected() {
+        return eventThread.videoCaptureDevice.connected();
     }
 
     @Override

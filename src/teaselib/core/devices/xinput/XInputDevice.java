@@ -65,7 +65,7 @@ public class XInputDevice implements Device {
     public static List<String> getDevicePaths() {
         List<String> devicePaths = new ArrayList<String>(4);
         for (int i = 0; i < XInputDevice.MAX_PLAYERS; i++) {
-            if (XInputDevice.getDeviceFor(i).active()) {
+            if (XInputDevice.getDeviceFor(i).connected()) {
                 devicePaths.add(DeviceCache.createDevicePath(
                         XInputDevice.DeviceClassName, Integer.toString(i)));
             }
@@ -116,6 +116,11 @@ public class XInputDevice implements Device {
     @Override
     public String getName() {
         return "XInput Game Controller #" + getPlayerNum();
+    }
+
+    @Override
+    public boolean connected() {
+        return connected;
     }
 
     /**

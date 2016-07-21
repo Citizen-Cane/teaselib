@@ -452,6 +452,11 @@ public class MotionDetectorSarxos implements MotionDetector {
     }
 
     @Override
+    public boolean connected() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public boolean active() {
         return detectionEvents != null;
     }

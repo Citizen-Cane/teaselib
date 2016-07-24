@@ -1,4 +1,4 @@
-package teaselib.video;
+package teaselib.core.devices.video;
 
 import org.bytedeco.javacpp.opencv_core.Mat;
 import org.bytedeco.javacpp.opencv_core.Size;
@@ -8,8 +8,10 @@ import org.junit.Test;
 import teaselib.TeaseLib;
 import teaselib.hosts.DummyHost;
 import teaselib.hosts.DummyPersistence;
+import teaselib.video.VideoCaptureDevice;
+import teaselib.video.VideoCaptureDevices;
 
-public class VideoCaptureTests {
+public class VideoCaptureDeviceJavaVCTests {
 
     @Test
     public void testVideoCapture() {

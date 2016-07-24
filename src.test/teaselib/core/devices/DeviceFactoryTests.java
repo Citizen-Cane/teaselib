@@ -46,7 +46,7 @@ public class DeviceFactoryTests {
         listDevices(SelfBondageKeyRelease.Devices.getDevicePaths());
     }
 
-    private void listDevices(Set<String> devicePaths) {
+    private static void listDevices(Set<String> devicePaths) {
         assertNotNull(devicePaths);
         for (String devicePath : devicePaths) {
             TeaseLib.instance().log.info(devicePath);

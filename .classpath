@@ -33,5 +33,10 @@
 	<classpathentry kind="lib" path="lib/bridj-0.6.2.jar"/>
 	<classpathentry kind="lib" path="/SexScripts/sexscripts.jar"/>
 	<classpathentry kind="lib" path="lib/webcam-capture-0.3.11.jar"/>
+	<classpathentry kind="lib" path="/javacv-bin/videoinput.jar"/>
+	<classpathentry kind="lib" path="/javacv-bin/videoinput-windows-x86_64.jar"/>
+	<classpathentry kind="lib" path="/javacv-bin/videoinput-windows-x86.jar"/>
+	<classpathentry kind="lib" path="/javacv-bin/opencv-linux-armhf.jar"/>
+	<classpathentry kind="lib" path="/javacv-bin/ffmpeg-linux-armhf.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

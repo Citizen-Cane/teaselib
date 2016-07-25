@@ -16,21 +16,65 @@ import java.util.Scanner;
  *         Message format:
  *         <p>
  *         <ul>
- *         <li>short text part size : the size of the text part (without this size info)
+ *         <li>short text part size : the size of the text part (without this
+ *         size info)
  *         <li>byte parameter count : number of parameters after the name
  *         <li>String command: the command name, null-terminated
  *         <li>List<String> parameters: all parameters, null-terminated
- *         <li>short binary size: The size of the binary part of the message (without this size info)
+ *         <li>short binary size: The size of the binary part of the message
+ *         (without this size info)
  *         <li>byte[size] binary data: the binary data of the message
  *         </ul>
  *         <p>
  */
 public class UDPMessage {
-    private static final String encoding = "UTF-8";
+    private static final String Encoding = "UTF-8";
 
     public final String command;
     public final List<String> parameters;
     public final byte[] binary;
+
+    static boolean isValid(byte[] data, int startIndex) {
+        int offset = 0;
+        int textSize = 256 * data[startIndex + offset++]
+                + data[startIndex + offset++];
+        int parameterCount = data[startIndex + offset++];
+        int commandNameLength = strlen(data, startIndex + offset);
+        offset += commandNameLength + 1;
+        for (int i = 0; i < parameterCount; i++) {
+            int parameterLength = strlen(data, startIndex + offset);
+            offset += parameterLength + 1;
+        }
+        if (offset - 2 != textSize) {
+            return false;
+        }
+        if (data.length >= offset + 2) {
+            int binarySize = 256 * data[startIndex + offset++]
+                    + data[startIndex + offset++];
+            if (data.length < offset + binarySize) {
+                return false;
+            }
+            offset += binarySize;
+        }
+        return data.length == offset;
+    }
+
+    /**
+     * Return string length in byte array
+     * 
+     * @param data
+     * @param i
+     * @return The number of bytes to the next 0
+     */
+    private static int strlen(byte[] data, int start) {
+        int n = 0;
+        for (int i = start; i < data.length; i++) {
+            if (data[i] == 0)
+                break;
+            n++;
+        }
+        return n;
+    }
 
     public UDPMessage(String command, String... parameters) {
         this(command, Arrays.asList(parameters), new byte[0]);
@@ -51,7 +95,7 @@ public class UDPMessage {
         int parameterCount = dataInputStream.readByte();
         dataInputStream.readFully(textData);
         Scanner scanner = new Scanner(new ByteArrayInputStream(textData),
-                encoding);
+                Encoding);
         try {
             scanner.useDelimiter("\u0000");
             this.command = scanner.next();

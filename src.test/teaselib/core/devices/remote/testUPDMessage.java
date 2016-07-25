@@ -102,5 +102,7 @@ public class testUPDMessage {
         }
         // Sanity - sum of sizes
         assertEquals(data.length, 2 + textSize + 2 + testMessage.binary.length);
+        // The final test - UDPMessage.isValid() method is correct
+        assertTrue(UDPMessage.isValid(data, 0));
     }
 }

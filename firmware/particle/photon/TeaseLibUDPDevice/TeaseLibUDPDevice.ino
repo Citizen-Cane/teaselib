@@ -21,26 +21,47 @@ int packetHeaderSize = 4;
 void loop() {
   // Check if data has been received
   if (socket.parsePacket() > 0) {
-    Serial.println("Packet received");
+    Serial.print("Packet received: ");
     // Receive packet in buffer
     char buffer[1024];
-    socket.read(buffer, 1024);
-      // skip packet number, packet size
-    Serial.println(&buffer[packetHeaderSize + 3]);
-    UDPMessage received(&buffer[packetHeaderSize]);
-    for(int i = 0; i < received.parameterCount; i++) {
-      Serial.println(received.parameters[i]);
+    const int packetSize = socket.read(buffer, 1024);
+    const int packetNumber = UDPMessage::readShort(buffer);
+    Serial.print("#");
+    Serial.print(packetNumber, DEC);
+    if (packetSize - 4 != UDPMessage::readShort(&buffer[2])) {
+      Serial.println("wrong size");
     }
-    if (received.binarySize > 0 && received.binary != NULL) {
-      Serial.println("plus binary data");
+    else if (!UDPMessage::isValid(buffer, packetSize - packetHeaderSize, packetHeaderSize)) {
+      Serial.println(" not valid");
     }
-    // receiving works
-    return;
-    // Reply
-    IPAddress ipAddress = socket.remoteIP();
-    int port = socket.remotePort();
-    const char* parameters[] = {"1","ident","0.01"};
-    UDPMessage status("services", parameters, sizeof(parameters));
-    socket.sendPacket(status.buffer, status.bufferSize, ipAddress, port);
+    else {
+        // skip packet number, packet size
+      UDPMessage received(&buffer[packetHeaderSize], packetSize - packetHeaderSize);
+      Serial.print(" ");
+      Serial.print(received.command);
+      Serial.print(" #p=");
+      Serial.println(received.parameterCount, DEC);
+      for(int i = 0; i < received.parameterCount; i++) {
+        Serial.println(received.parameters[i]);
+      }
+      if (received.binarySize > 0 && received.binary != NULL) {
+        Serial.print("plus binary data = ");
+        Serial.println(received.binarySize, DEC);
+      }
+      // Reply
+      IPAddress ipAddress = socket.remoteIP();
+      int port = socket.remotePort();
+      const char* parameters[] = {"1","ident","0.01"};
+      UDPMessage status("services", parameters, sizeof(parameters));
+      const int messageSize = status.toBuffer(&buffer[packetHeaderSize]);
+      if (!UDPMessage::isValid(buffer, packetSize - packetHeaderSize, packetHeaderSize)) {
+        Serial.println("response not valid");
+        return;
+      }
+      UDPMessage::writeShort(buffer, packetNumber);
+      UDPMessage::writeShort(&buffer[2], messageSize);
+      return; // crashes on sendPacket() - toBuffer() wrong - invalid packet
+      socket.sendPacket(buffer, packetHeaderSize + messageSize, ipAddress, port);
+    }
   }
 }

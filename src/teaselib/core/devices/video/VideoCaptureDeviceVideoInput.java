@@ -16,6 +16,13 @@ import teaselib.core.devices.Device;
 import teaselib.core.devices.DeviceCache;
 import teaselib.video.ResolutionList;
 import teaselib.video.VideoCaptureDevice;
+import teaselib.video.VideoCaptureDevices;
+
+// TODO set & get frame rate
+// TODO set exposure
+// detect disconnect
+// reconnect to same camera -> here
+// reconnect to new camera -> application
 
 public class VideoCaptureDeviceVideoInput implements VideoCaptureDevice {
     private static final String DeviceClassName = "JavaCVVideoInput";
@@ -63,7 +70,7 @@ public class VideoCaptureDeviceVideoInput implements VideoCaptureDevice {
     };
 
     private static int getDeviceIDFromName(String deviceName) {
-        // returns always -1
+        // returns always -1:
         // videoInput.getDeviceIDFromName(deviceName);
         int n = videoInput.listDevices(false); // no debug output
         for (int i = 0; i < n; i++) {
@@ -74,12 +81,8 @@ public class VideoCaptureDeviceVideoInput implements VideoCaptureDevice {
         return -1;
     }
 
-    // TODO camera discovery listener
-    // TODO Default device connect to discovered camera
-    // TODO set & get frame rate
-
-    final int deviceId;
-    final String deviceName;
+    private int deviceId;
+    private String deviceName;
     private videoInput vi = null;
     Mat mat = new Mat();
     Size captureSize = DefaultResolution;
@@ -106,30 +109,56 @@ public class VideoCaptureDeviceVideoInput implements VideoCaptureDevice {
 
     @Override
     public void open(Size size) {
-        if (vi == null) {
-            vi = new videoInput();
-            vi.setUseCallback(true);
-            vi.setAutoReconnectOnFreeze(deviceId, true, 100);
+        if (!connected()) {
+            connect();
         }
-        if (size != DefaultResolution) {
-            setResolution(size);
-        } else if (!vi.isDeviceSetup(deviceId)) {
-            if (!vi.setupDevice(deviceId)) {
-                throw new IllegalArgumentException("Camera not opened: "
-                        + getDevicePath() + ":" + deviceId);
+        if (connected()) {
+            if (vi == null) {
+                vi = new videoInput();
+                vi.setUseCallback(true);
+                vi.setAutoReconnectOnFreeze(deviceId, true, 100);
             }
+            if (size != DefaultResolution) {
+                setResolution(size);
+            } else if (!vi.isDeviceSetup(deviceId)) {
+                if (!vi.setupDevice(deviceId)) {
+                    throw new IllegalArgumentException("Camera not opened: "
+                            + getDevicePath() + ":" + deviceId);
+                }
+            }
+            setData(vi.getWidth(deviceId), vi.getHeight(deviceId));
         }
-        setData(vi.getWidth(deviceId), vi.getHeight(deviceId));
     }
 
     @Override
     public boolean connected() {
-        return deviceId != Integer.MIN_VALUE;
+        if (deviceId == Integer.MIN_VALUE) {
+            return connect();
+        } else {
+            return true;
+        }
+    }
+
+    private boolean connect() {
+        List<String> devicePaths = Factory.getDevices();
+        if (devicePaths.size() > 0) {
+            if (WaitingForConnection
+                    .equals(DeviceCache.getDeviceName(devicePaths.get(0)))) {
+                return false;
+            } else {
+                deviceName = DeviceCache.getDeviceName(
+                        VideoCaptureDevices.sort(devicePaths).get(0));
+                deviceId = getDeviceIDFromName(deviceName);
+                return true;
+            }
+        } else {
+            return false;
+        }
     }
 
     @Override
     public boolean active() {
-        return vi.isDeviceSetup(deviceId);
+        return connected() && vi.isDeviceSetup(deviceId);
     }
 
     @Override

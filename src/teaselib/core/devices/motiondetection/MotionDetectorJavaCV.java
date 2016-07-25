@@ -114,7 +114,7 @@ public class MotionDetectorJavaCV implements MotionDetector {
         private static final Map<MotionSensitivity, Integer> motionSensitivities = new HashMap<MotionSensitivity, Integer>(
                 initStructuringElementSizes());
 
-        private final VideoCaptureDevice videoCaptureDevice;
+        private VideoCaptureDevice videoCaptureDevice;
 
         private Transformation videoInputTransformation;
         private Size processingSize;

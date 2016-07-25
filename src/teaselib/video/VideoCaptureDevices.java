@@ -22,8 +22,9 @@ public class VideoCaptureDevices {
      * 
      * @param devicePaths
      *            The list of device paths to be sorted.
+     * @return The sorted list.
      */
-    public static void sort(List<String> devicePaths) {
+    public static List<String> sort(List<String> devicePaths) {
         devicePaths.sort(new Comparator<String>() {
             @Override
             public int compare(String a, String b) {
@@ -45,5 +46,6 @@ public class VideoCaptureDevices {
                 }
             }
         });
+        return devicePaths;
     }
 }

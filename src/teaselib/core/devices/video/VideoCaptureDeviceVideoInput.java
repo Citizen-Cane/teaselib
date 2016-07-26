@@ -39,7 +39,9 @@ public class VideoCaptureDeviceVideoInput implements VideoCaptureDevice {
         public List<String> getDevices() {
             videoInput.setVerbose(false);
             videoInput.setComMultiThreaded(false);
-            int n = videoInput.listDevices(true); // no debug output
+            int n = videoInput.listDevices(true); // no
+                                                  // debug
+                                                  // output
             List<String> deviceNames = new ArrayList<String>(n);
             for (int i = 0; i < n; i++) {
                 String deviceName = videoInput.getDeviceName(i).getString();
@@ -108,7 +110,7 @@ public class VideoCaptureDeviceVideoInput implements VideoCaptureDevice {
     }
 
     @Override
-    public void open(Size size) {
+    public void open() {
         if (!connected()) {
             connect();
         }
@@ -118,15 +120,6 @@ public class VideoCaptureDeviceVideoInput implements VideoCaptureDevice {
                 vi.setUseCallback(true);
                 vi.setAutoReconnectOnFreeze(deviceId, true, 100);
             }
-            if (size != DefaultResolution) {
-                setResolution(size);
-            } else if (!vi.isDeviceSetup(deviceId)) {
-                if (!vi.setupDevice(deviceId)) {
-                    throw new IllegalArgumentException("Camera not opened: "
-                            + getDevicePath() + ":" + deviceId);
-                }
-            }
-            setData(vi.getWidth(deviceId), vi.getHeight(deviceId));
         }
     }
 
@@ -162,7 +155,7 @@ public class VideoCaptureDeviceVideoInput implements VideoCaptureDevice {
     }
 
     @Override
-    public Size captureSize() {
+    public Size resolution() {
         return captureSize;
     }
 
@@ -172,7 +165,7 @@ public class VideoCaptureDeviceVideoInput implements VideoCaptureDevice {
     }
 
     @Override
-    public void setResolution(Size size) {
+    public void resolution(Size size) {
         if (!getResolutions().contains(size)) {
             throw new IllegalArgumentException(
                     size.width() + "," + size.height());
@@ -182,19 +175,70 @@ public class VideoCaptureDeviceVideoInput implements VideoCaptureDevice {
             throw new IllegalArgumentException(
                     "Camera not opened: " + getDevicePath() + ":" + deviceId);
         }
+        setExposure();
         setData(vi.getWidth(deviceId), vi.getHeight(deviceId));
     }
 
     private void setData(int width, int height) {
-        fps = 0.0;
-        // fps = vi.get(opencv_videoio.CAP_PROP_FPS);
-        if (fps > 0.0) {
-            // TODO set exposure
-            // videoCapture.set(opencv_videoio.CAP_PROP_EXPOSURE, 1.0 / fps);
-        }
         captureSize = new Size(width, height);
         mat = new Mat(captureSize.height(), captureSize.width(),
                 opencv_core.CV_8UC3);
+    }
+
+    private void setExposure() {
+        // set exposure time via Microsoft IAMCameraControl interface
+        // based on example code from
+        // http://stackoverflow.com/questions/36459563/getting-setting-camera-led-status-light-iusing-videoinput-logitech-c930e
+        @SuppressWarnings("unused")
+        int CameraControl_Pan = 0;
+        @SuppressWarnings("unused")
+        int CameraControl_Tilt = 1;
+        @SuppressWarnings("unused")
+        int CameraControl_Roll = 2;
+        @SuppressWarnings("unused")
+        int CameraControl_Zoom = 3;
+        int CameraControl_Exposure = 4;
+        @SuppressWarnings("unused")
+        int CameraControl_Iris = 5;
+        @SuppressWarnings("unused")
+        int CameraControl_Focus = 6;
+
+        int CameraControl_Flags_Auto = 0x0001;
+        int CameraControl_Flags_Manual = 0x0002;
+
+        int[] min = { 0 };
+        int[] max = { 0 };
+        int[] steppingDelta = { 0 };
+        int[] currentValue = { 0 };
+        int[] flags = { 0 };
+        int[] defaultValue = { 0 };
+
+        vi.getVideoSettingCamera(deviceId, CameraControl_Exposure, min, max,
+                steppingDelta, currentValue, flags, defaultValue);
+
+        if (currentValue[0] > 0) {
+            int exposure;
+            if (fps > 0) {
+                exposure = (int) (1000.0 / fps);
+                if (exposure < min[0]) {
+                    exposure = min[0];
+                } else if (exposure > max[0]) {
+                    exposure = max[0];
+                }
+            } else {
+                exposure = currentValue[0];
+            }
+            vi.setVideoSettingCamera(deviceId, CameraControl_Exposure, exposure,
+                    exposure > 0 ? CameraControl_Flags_Manual
+                            : CameraControl_Flags_Auto,
+                    false);
+        }
+    }
+
+    @Override
+    public void fps(double fps) {
+        this.fps = fps;
+        vi.setIdealFramerate(deviceId, (int) fps);
     }
 
     @Override
@@ -254,7 +298,7 @@ public class VideoCaptureDeviceVideoInput implements VideoCaptureDevice {
     }
 
     @Override
-    public void release() {
+    public void close() {
         try {
             vi.stopDevice(deviceId);
         } catch (Exception e) {

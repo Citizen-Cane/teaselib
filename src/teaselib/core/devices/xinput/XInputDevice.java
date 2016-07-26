@@ -135,7 +135,7 @@ public class XInputDevice implements Device {
     }
 
     @Override
-    public void release() {
+    public void close() {
     }
 
     /**

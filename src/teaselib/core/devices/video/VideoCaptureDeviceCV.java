@@ -153,10 +153,7 @@ public class VideoCaptureDeviceCV implements VideoCaptureDevice {
     }
 
     @Override
-    public void open(Size size) {
-        if (size != DefaultResolution) {
-            setResolution(size);
-        }
+    public void open() {
         if (!videoCapture.isOpened()) {
             videoCapture.open(device);
         }
@@ -164,6 +161,9 @@ public class VideoCaptureDeviceCV implements VideoCaptureDevice {
             throw new IllegalArgumentException("Camera not opened: "
                     + getClass().getName() + ":" + device);
         }
+        captureSize.width((int) videoCapture.get(CAP_PROP_FRAME_WIDTH));
+        captureSize.height((int) videoCapture.get(CAP_PROP_FRAME_HEIGHT));
+        fps = videoCapture.get(opencv_videoio.CAP_PROP_FPS);
     }
 
     @Override
@@ -177,7 +177,7 @@ public class VideoCaptureDeviceCV implements VideoCaptureDevice {
     }
 
     @Override
-    public Size captureSize() {
+    public Size resolution() {
         return captureSize;
     }
 
@@ -187,16 +187,29 @@ public class VideoCaptureDeviceCV implements VideoCaptureDevice {
     }
 
     @Override
-    public void setResolution(Size size) {
+    public void resolution(Size size) {
         if (!getResolutions().contains(size)) {
             throw new IllegalArgumentException(
                     size.width() + "," + size.height());
         }
         videoCapture.set(CAP_PROP_FRAME_WIDTH, size.width());
         videoCapture.set(CAP_PROP_FRAME_HEIGHT, size.width());
-        fps = videoCapture.get(opencv_videoio.CAP_PROP_FPS);
-        if (fps > 0.0) {
+        double actual = videoCapture.get(opencv_videoio.CAP_PROP_FPS);
+        if (actual > 0.0 && fps == 0.0) {
+            fps(actual);
+        } else if (fps > 0.0) {
             // Try to set a fixed fps, better than frame rate drops
+            videoCapture.set(opencv_videoio.CAP_PROP_FPS, fps);
+            fps(fps);
+        }
+    }
+
+    @Override
+    public void fps(double fps) {
+        this.fps = fps;
+        if (fps > 0.0) {
+            // Try to set a fixed exposure time to
+            // avoid frame rate drops due to exposure adjustment
             videoCapture.set(opencv_videoio.CAP_PROP_EXPOSURE, 1.0 / fps);
         }
     }
@@ -261,7 +274,7 @@ public class VideoCaptureDeviceCV implements VideoCaptureDevice {
     }
 
     @Override
-    public void release() {
+    public void close() {
         try {
             videoCapture.release();
         } catch (Exception e) {

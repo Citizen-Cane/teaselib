@@ -472,7 +472,7 @@ public class MotionDetectorSarxos implements MotionDetector {
     }
 
     @Override
-    public void release() {
+    public void close() {
         detectionEvents.interrupt();
         try {
             detectionEvents.join();

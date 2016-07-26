@@ -176,10 +176,7 @@ public class VideoCaptureDeviceWebcamCapture implements VideoCaptureDevice {
     }
 
     @Override
-    public void open(Size resolution) {
-        if (resolution != DefaultResolution) {
-            setResolution(resolution);
-        }
+    public void open() {
         if (!webcam.isOpen()) {
             webcam.open();
         }
@@ -195,18 +192,21 @@ public class VideoCaptureDeviceWebcamCapture implements VideoCaptureDevice {
     }
 
     @Override
-    public void setResolution(Size size) {
+    public void resolution(Size size) {
         if (!getResolutions().contains(size)) {
             throw new IllegalArgumentException(
                     size.width() + "," + size.height());
         }
         boolean open = webcam.isOpen();
         if (open) {
-            webcam.close();
+            if (size != DefaultResolution && size.width() != captureSize.width()
+                    && size.height() != captureSize.height()) {
+                webcam.close();
+            }
         }
         webcam.setViewSize(new Dimension(size.width(), size.height()));
         this.captureSize = size;
-        if (open) {
+        if (open && !webcam.isOpen()) {
             webcam.open();
             fps = webcam.getFPS();
         }
@@ -231,7 +231,7 @@ public class VideoCaptureDeviceWebcamCapture implements VideoCaptureDevice {
     }
 
     @Override
-    public Size captureSize() {
+    public Size resolution() {
         Dimension viewSize = webcam.getViewSize();
         Size resolution = new Size(viewSize.width, viewSize.height);
         if (isFakeResolution(resolution)) {
@@ -239,6 +239,12 @@ public class VideoCaptureDeviceWebcamCapture implements VideoCaptureDevice {
         } else {
             return resolution;
         }
+    }
+
+    @Override
+    public void fps(double fps) {
+        // TODO There's no way to set the frame rate
+        this.fps = webcam.getFPS();
     }
 
     @Override
@@ -301,7 +307,7 @@ public class VideoCaptureDeviceWebcamCapture implements VideoCaptureDevice {
     }
 
     @Override
-    public void release() {
+    public void close() {
         try {
             webcam.close();
         } catch (Exception e) {

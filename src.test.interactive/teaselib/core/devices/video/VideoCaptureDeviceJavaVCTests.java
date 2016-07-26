@@ -16,16 +16,17 @@ public class VideoCaptureDeviceJavaVCTests {
     @Test
     public void testVideoCapture() {
         TeaseLib.init(new DummyHost(), new DummyPersistence());
-        VideoCaptureDevice vc = VideoCaptureDevices.Instance
-                .getDefaultDevice();
-        final Size size = new Size(320, 240);
-        vc.open(size);
+        VideoCaptureDevice vc = VideoCaptureDevices.Instance.getDefaultDevice();
+        @SuppressWarnings("resource")
+        Size size = new Size(320, 240);
+        vc.open();
+        vc.resolution(size);
         for (Mat mat : vc) {
             opencv_highgui.imshow("Test", mat);
             if (org.bytedeco.javacpp.opencv_highgui.waitKey(30) >= 0) {
                 break;
             }
         }
-        vc.release();
+        vc.close();
     }
 }

@@ -162,7 +162,7 @@ public class XInputStimulationDevice implements StimulationDevice {
     }
 
     @Override
-    public void release() {
+    public void close() {
     }
 
     @Override

@@ -98,7 +98,7 @@ public class MotionDetectorJavaCV implements MotionDetector {
         Thread detectionEventsShutdownHook = new Thread() {
             @Override
             public void run() {
-                release();
+                close();
             }
         };
         Runtime.getRuntime().addShutdownHook(detectionEventsShutdownHook);
@@ -124,9 +124,10 @@ public class MotionDetectorJavaCV implements MotionDetector {
         // TODO Atomic reference
         private MotionDetectionResultImplementation detectionResult;
 
-        private final double fps;
-        private final FramesPerSecond fpsStatistics;
-        private final long desiredFrameTimeMillis;
+        private final double desiredFps;
+        private double fps;
+        private FramesPerSecond fpsStatistics;
+        private long desiredFrameTimeMillis;
 
         volatile double debugWindowTimeSpan = PresenceRegionDefaultTimespan;
         private final Lock lockStartStop = new ReentrantLock();
@@ -138,31 +139,34 @@ public class MotionDetectorJavaCV implements MotionDetector {
         CaptureThread(VideoCaptureDevice videoCaptureDevice,
                 double desiredFps) {
             super();
+            this.desiredFps = desiredFps;
             this.videoCaptureDevice = videoCaptureDevice;
-            this.fps = FramesPerSecond.getFps(videoCaptureDevice.fps(),
-                    desiredFps);
-            this.fpsStatistics = new FramesPerSecond((int) fps);
-            this.desiredFrameTimeMillis = (long) (1000.0 / fps);
         }
 
         private void openVideoCaptureDevice(
                 VideoCaptureDevice videoCaptureDevice) {
-            videoCaptureDevice.open(videoCaptureDevice.getResolutions()
+            videoCaptureDevice.open();
+            videoCaptureDevice.fps(fps);
+            videoCaptureDevice.resolution(videoCaptureDevice.getResolutions()
                     .getMatchingOrSimilar(DesiredProcessingSize));
+            this.fps = FramesPerSecond.getFps(videoCaptureDevice.fps(),
+                    desiredFps);
+            this.fpsStatistics = new FramesPerSecond((int) fps);
+            this.desiredFrameTimeMillis = (long) (1000.0 / fps);
             if (mirror) {
                 ScaleAndMirror scaleAndMirror = new ScaleAndMirror(
-                        videoCaptureDevice.captureSize(),
+                        videoCaptureDevice.resolution(),
                         ResolutionList.getSmallestFit(
-                                videoCaptureDevice.captureSize(),
+                                videoCaptureDevice.resolution(),
                                 DesiredProcessingSize),
                         input);
                 this.processingSize = new Size(
-                        (int) (videoCaptureDevice.captureSize().width()
+                        (int) (videoCaptureDevice.resolution().width()
                                 * scaleAndMirror.factor),
-                        (int) (videoCaptureDevice.captureSize().height()
+                        (int) (videoCaptureDevice.resolution().height()
                                 * scaleAndMirror.factor));
                 this.videoInputTransformation = scaleAndMirror;
-            } else if (videoCaptureDevice.captureSize()
+            } else if (videoCaptureDevice.resolution()
                     .equals(DesiredProcessingSize)) {
                 // Copy source mat because when the video capture device
                 // frame rate drops below the desired frame rate,
@@ -170,19 +174,19 @@ public class MotionDetectorJavaCV implements MotionDetector {
                 // when rendering into the source mat - at least for
                 // javacv
                 this.videoInputTransformation = new Copy(input);
-                this.processingSize = videoCaptureDevice.captureSize();
+                this.processingSize = videoCaptureDevice.resolution();
             } else {
-                Scale scale = new Scale(videoCaptureDevice.captureSize(),
+                Scale scale = new Scale(videoCaptureDevice.resolution(),
                         DesiredProcessingSize, input);
                 this.processingSize = new Size(
-                        (int) (videoCaptureDevice.captureSize().width()
+                        (int) (videoCaptureDevice.resolution().width()
                                 * scale.factor),
-                        (int) (videoCaptureDevice.captureSize().height()
+                        (int) (videoCaptureDevice.resolution().height()
                                 * scale.factor));
                 this.videoInputTransformation = scale;
             }
             motionProcessor = new MotionProcessorJavaCV(
-                    videoCaptureDevice.captureSize(), processingSize);
+                    videoCaptureDevice.resolution(), processingSize);
             setSensitivity(motionSensitivity);
             debugInfo = new MotionDetectorJavaCVDebugRenderer(motionProcessor,
                     processingSize);
@@ -212,13 +216,13 @@ public class MotionDetectorJavaCV implements MotionDetector {
                 // TODO Auto-adjust until frame rate is stable
                 // - KNN/findContours uses less cpu without motion
                 // -> adjust to < 50% processing time per frame
-                fpsStatistics.startFrame();
                 while (!isInterrupted()) {
                     // poll the device until its reconnected
                     while (!videoCaptureDevice.connected()) {
                         Thread.sleep(1000);
                     }
                     openVideoCaptureDevice(videoCaptureDevice);
+                    fpsStatistics.start();
                     for (final Mat frame : videoCaptureDevice) {
                         // TODO handle camera surprise removal and reconnect
                         // -> in VideoCaptureDevice?
@@ -264,14 +268,14 @@ public class MotionDetectorJavaCV implements MotionDetector {
                         }
                         fpsStatistics.updateFrame(now + timeLeft);
                     }
-                    videoCaptureDevice.release();
+                    videoCaptureDevice.close();
                     if (debugInfo != null)
                         debugInfo.close();
                 }
             } catch (Exception e) {
                 TeaseLib.instance().log.error(this, e);
             } finally {
-                videoCaptureDevice.release();
+                videoCaptureDevice.close();
             }
         }
 
@@ -419,7 +423,7 @@ public class MotionDetectorJavaCV implements MotionDetector {
     }
 
     @Override
-    public void release() {
+    public void close() {
         eventThread.interrupt();
         try {
             eventThread.join();

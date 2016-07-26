@@ -62,7 +62,7 @@ public class BluetoothDevice implements RemoteDevice {
     }
 
     @Override
-    public void release() {
+    public void close() {
         throw new IllegalStateException(
                 "Bluetooth remote devices are not implemented yet");
     }

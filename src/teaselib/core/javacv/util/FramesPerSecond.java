@@ -35,7 +35,7 @@ public class FramesPerSecond {
         frameTimes = new Vector<Long>(capacity);
     }
 
-    public void startFrame() {
+    public void start() {
         frameStartTime = System.currentTimeMillis();
     }
 

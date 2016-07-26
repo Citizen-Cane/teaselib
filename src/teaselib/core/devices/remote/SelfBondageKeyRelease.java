@@ -63,8 +63,8 @@ public class SelfBondageKeyRelease implements Device {
     }
 
     @Override
-    public void release() {
-        remoteDevice.release();
+    public void close() {
+        remoteDevice.close();
     }
 
 }

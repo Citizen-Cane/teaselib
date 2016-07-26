@@ -1,7 +1,4 @@
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import org.bytedeco.javacpp.opencv_core.Size;
 import org.junit.Test;
@@ -43,10 +40,11 @@ public class VideoDeviceTests {
     public void testGetResolutionBeforeDeviceOpen() {
         VideoCaptureDevice defaultDevice = VideoCaptureDevices.Instance
                 .getDefaultDevice();
-        Size resolution = defaultDevice.captureSize();
+        defaultDevice.open();
+        Size resolution = defaultDevice.resolution();
         assertNotNull(resolution);
-        defaultDevice.open(resolution);
-        Size resolution2 = defaultDevice.captureSize();
+        defaultDevice.resolution(resolution);
+        Size resolution2 = defaultDevice.resolution();
         assertNotNull(resolution2);
     }
 

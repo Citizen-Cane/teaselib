@@ -189,7 +189,7 @@ public class LocalNetworkDevice implements RemoteDevice {
     }
 
     @Override
-    public void release() {
+    public void close() {
     }
 
     @Override

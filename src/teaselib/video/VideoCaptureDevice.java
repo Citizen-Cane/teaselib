@@ -10,19 +10,23 @@ import teaselib.core.devices.Device;
 public interface VideoCaptureDevice extends Iterable<Mat>, Device {
     public static final Size DefaultResolution = new Size(0, 0);
 
-    void open(Size size);
+    public static final double DefaultFPS = 0.0;
 
-    Size captureSize();
+    void open();
+
+    void fps(double fps);
 
     double fps();
+
+    ResolutionList getResolutions();
+
+    void resolution(Size size);
+
+    Size resolution();
 
     @Override
     Iterator<Mat> iterator();
 
     @Override
-    void release();
-
-    ResolutionList getResolutions();
-
-    void setResolution(Size size);
+    void close();
 }

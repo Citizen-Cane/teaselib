@@ -35,5 +35,5 @@ public interface Device {
     /**
      * Release the device and make it available to other applications
      */
-    void release();
+    void close();
 }

@@ -22,7 +22,6 @@ public:
 private:
   static int sizeOf(const char* buffer);
   static int sizeOf(const char* command, const char** parameters, const int parameterCount);
-  static int sizeOf(const char* command, const char** parameters, const int parameterCount, const int binarySize);
   const bool allocatedParameters;
 };
 

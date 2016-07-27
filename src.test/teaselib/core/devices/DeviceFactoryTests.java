@@ -13,7 +13,7 @@ import org.junit.Test;
 import teaselib.TeaseLib;
 import teaselib.core.devices.remote.RemoteDevice;
 import teaselib.core.devices.remote.RemoteDevices;
-import teaselib.core.devices.remote.SelfBondageKeyRelease;
+import teaselib.core.devices.remote.KeyRelease;
 import teaselib.core.devices.xinput.XInputDevices;
 import teaselib.hosts.DummyHost;
 import teaselib.hosts.DummyPersistence;
@@ -43,7 +43,7 @@ public class DeviceFactoryTests {
         listDevices(VideoCaptureDevices.Instance.getDevicePaths());
         listDevices(MotionDetection.Instance.getDevicePaths());
         listDevices(RemoteDevices.Instance.getDevicePaths());
-        listDevices(SelfBondageKeyRelease.Devices.getDevicePaths());
+        listDevices(KeyRelease.Devices.getDevicePaths());
     }
 
     private static void listDevices(Set<String> devicePaths) {

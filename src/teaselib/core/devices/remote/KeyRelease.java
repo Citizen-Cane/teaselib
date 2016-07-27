@@ -6,19 +6,19 @@ import java.util.List;
 import teaselib.core.devices.Device;
 import teaselib.core.devices.DeviceCache;
 
-public class SelfBondageKeyRelease implements Device {
-    public static final DeviceCache<SelfBondageKeyRelease> Devices = new DeviceCache<SelfBondageKeyRelease>()
-            .addFactory(new DeviceCache.Factory<SelfBondageKeyRelease>() {
+public class KeyRelease implements Device {
+    public static final DeviceCache<KeyRelease> Devices = new DeviceCache<KeyRelease>()
+            .addFactory(new DeviceCache.Factory<KeyRelease>() {
                 @Override
                 public String getDeviceClass() {
-                    return SelfBondageKeyRelease.DeviceClassName;
+                    return KeyRelease.DeviceClassName;
                 }
 
                 @Override
                 public List<String> getDevices() {
                     List<String> devicePaths = new ArrayList<String>();
                     for (RemoteDevice remoteDevice : RemoteDevices
-                            .devicesThatSupport("SelfBondageTimelockDevice")) {
+                            .devicesThatSupport(DeviceClassName)) {
                         devicePaths.add(DeviceCache.createDevicePath(
                                 DeviceClassName, remoteDevice.getDevicePath()));
                     }
@@ -26,18 +26,18 @@ public class SelfBondageKeyRelease implements Device {
                 }
 
                 @Override
-                public SelfBondageKeyRelease getDevice(String devicePath) {
+                public KeyRelease getDevice(String devicePath) {
                     RemoteDevice remoteDevice = RemoteDevices.Instance
                             .getDevice(DeviceCache.getDeviceName(devicePath));
-                    return new SelfBondageKeyRelease(remoteDevice);
+                    return new KeyRelease(remoteDevice);
                 }
             });
 
-    private static final String DeviceClassName = "SelfBondageTimelockDevice";
+    private static final String DeviceClassName = "KeyRelease";
 
     private RemoteDevice remoteDevice;
 
-    SelfBondageKeyRelease(RemoteDevice remoteDevice) {
+    KeyRelease(RemoteDevice remoteDevice) {
         this.remoteDevice = remoteDevice;
     }
 

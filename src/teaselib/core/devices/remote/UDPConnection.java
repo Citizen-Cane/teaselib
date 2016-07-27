@@ -67,7 +67,7 @@ public class UDPConnection {
             throws IOException, SocketException {
         send(data);
         DatagramPacket receivePacket = receivePacket(timeoutMillis);
-        return receivePacket.getData();
+        return detachHeader(receivePacket.getData());
     }
 
     private byte[] receive(int timeoutMillis)
@@ -115,6 +115,6 @@ public class UDPConnection {
 
     @Override
     public String toString() {
-        return address.toString() + ":" + port;
+        return address.getHostAddress() + ":" + port;
     }
 }

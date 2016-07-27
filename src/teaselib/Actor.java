@@ -68,6 +68,11 @@ public class Actor {
         this(fullName, gender, locale, Images.None);
     }
 
+    public Actor(String fullName, String name, Voice.Gender gender,
+            String locale) {
+        this(fullName, name, gender, locale, Images.None);
+    }
+
     public Actor(String fullName, Voice.Gender gender, String locale,
             Images images) {
         this(fullName, fullName, gender, locale, images);

@@ -4,6 +4,7 @@
 package teaselib.core;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
@@ -139,7 +140,7 @@ class ShowChoices {
             recognitionCompleted = recognitionCompletedEvent(derivedChoices,
                     scriptTask, srChoiceIndices);
         } else {
-            srChoiceIndices = null;
+            srChoiceIndices = Collections.EMPTY_LIST;
             recognitionRejected = null;
             recognitionCompleted = null;
         }

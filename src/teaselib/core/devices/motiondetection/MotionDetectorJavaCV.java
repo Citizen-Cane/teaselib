@@ -224,15 +224,9 @@ public class MotionDetectorJavaCV implements MotionDetector {
                     openVideoCaptureDevice(videoCaptureDevice);
                     fpsStatistics.start();
                     for (final Mat frame : videoCaptureDevice) {
-                        // TODO handle camera surprise removal and reconnect
-                        // -> in VideoCaptureDevice?
                         if (isInterrupted()) {
                             break;
                         }
-                        // handle setting sensitivity via structuring element
-                        // size
-                        // TODO it's just setting a member, maybe we can ignore
-                        // concurrency
                         videoInputTransformation.update(frame);
                         try {
                             lockStartStop.lockInterruptibly();

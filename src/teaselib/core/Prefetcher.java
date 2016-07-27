@@ -37,8 +37,9 @@ public class Prefetcher<T> {
 
     public void fetch() {
         synchronized (this) {
-            if (!isEmpty()) {
-                fetch(resources.poll());
+            String key = resources.poll();
+            if (!isEmpty() && !fetched.containsKey(key)) {
+                fetch(key);
             }
         }
     }

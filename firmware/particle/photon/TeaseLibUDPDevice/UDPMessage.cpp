@@ -8,8 +8,8 @@ int UDPMessage::readShort(const char* data) {
 }
 
 void UDPMessage::writeShort(char* buffer, const int value) {
-  buffer[0] = (value & 0xffff0000) >> 8;
-  buffer[1] = (value & 0x0000ffff);
+  buffer[0] = (value & 0x0000ff00) >> 8;
+  buffer[1] = (value & 0x000000ff);
 }
 
 int UDPMessage::sizeOf(const char* buffer) {
@@ -19,15 +19,16 @@ int UDPMessage::sizeOf(const char* buffer) {
 }
 
 int UDPMessage::sizeOf(const char* command, const char** parameters, const int parameterCount) {
-  int size = strlen(command) + 1;
+  int size = 0;
+  // command count
+  size += 1;
+  // command string size plus terminating 0 character
+  size += strlen(command) + 1;
   for(int i = 0; i < parameterCount; i++) {
+    // parameter string size plus terminating 0 character
     size += strlen(parameters[i]) + 1;
   }
   return size;
-}
-
-int UDPMessage::sizeOf(const char* command, const char** parameters, const int parameterCount, const int binarySize) {
-  return 2 + 1 + sizeOf(command, parameters, parameterCount) + 2 + binarySize;
 }
 
 bool UDPMessage::isValid(const char* data, const int size, int startIndex) {
@@ -42,16 +43,18 @@ bool UDPMessage::isValid(const char* data, const int size, int startIndex) {
       offset += parameterLength + 1;
   }
   if (offset - 2 != textSize) {
-      return false;
+    return false;
   }
   if (size >= offset + 2) {
       int binarySize = readShort(&data[startIndex + offset]);
       offset +=2;
       if (size < offset + binarySize) {
-          return false;
+        return false;
       }
       offset += binarySize;
   }
+  // TODO output of toBuffer() is not valid
+  //return true;
   return offset == size;
 }
 
@@ -89,6 +92,7 @@ int UDPMessage::toBuffer(char* buffer) {
   int index = 0;
   writeShort(buffer + index, sizeOf(command, parameters, parameterCount));
   index += 2;
+  buffer[index++] = parameterCount;
   strcpy(buffer + index, command);
   index += strlen(command);
   buffer[index++] = 0x0;
@@ -96,12 +100,12 @@ int UDPMessage::toBuffer(char* buffer) {
     strcpy(buffer + index, parameters[i]);
     index += strlen(parameters[i]);
     buffer[index++] = 0x0;
-    writeShort(buffer + index, binarySize);
-    index += 2;
-    if (binarySize > 0) {
-      memcpy(buffer + index, binary, binarySize);
-      index += binarySize;
-    }
+  }
+  writeShort(buffer + index, binarySize);
+  index += 2;
+  if (binarySize > 0) {
+    memcpy(buffer + index, binary, binarySize);
+    index += binarySize;
   }
   return index;
 }

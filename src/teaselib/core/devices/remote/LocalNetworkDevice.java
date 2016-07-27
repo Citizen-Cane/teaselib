@@ -10,7 +10,6 @@ import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.LinkedHashMap;
@@ -32,12 +31,12 @@ import teaselib.core.devices.DeviceCache;
  *
  */
 public class LocalNetworkDevice implements RemoteDevice {
-    private static final String DeviceClassName = "UDPRemoteDevice";
+    private static final String DeviceClassName = "LocalNetworkDevice";
 
     private static final int Port = 666;
 
     private static final UDPMessage id = new UDPMessage("id",
-            Arrays.asList("test"), new byte[] { 1, 2, 3 });
+            Collections.EMPTY_LIST, new byte[] {});
 
     public static final DeviceCache.Factory<RemoteDevice> Factory = new DeviceCache.Factory<RemoteDevice>() {
         final Map<String, LocalNetworkDevice> devices = new LinkedHashMap<String, LocalNetworkDevice>();
@@ -62,7 +61,7 @@ public class LocalNetworkDevice implements RemoteDevice {
                                     @Override
                                     public List<LocalNetworkDevice> call()
                                             throws Exception {
-                                        final UDPConnection udpClient = new UDPConnection(
+                                        UDPConnection udpClient = new UDPConnection(
                                                 ip, Port);
                                         return getServices(udpClient,
                                                 new UDPMessage(udpClient
@@ -91,13 +90,14 @@ public class LocalNetworkDevice implements RemoteDevice {
                                             devices.add((new LocalNetworkDevice(
                                                     name, serviceName, version,
                                                     connection)));
-                                            if (j < serviceCount) {
+                                            if (serviceCount == 1) {
+                                                break;
+                                            } else {
                                                 connection = new UDPConnection(
                                                         connection.getAddress(),
                                                         connection.getPort());
                                                 continue;
-                                            } else
-                                                break;
+                                            }
                                         }
                                         return devices;
                                     }
@@ -170,7 +170,7 @@ public class LocalNetworkDevice implements RemoteDevice {
     @Override
     public String getDevicePath() {
         return DeviceCache.createDevicePath(DeviceClassName,
-                connection.toString());
+                name + "@" + connection.toString() + "->" + serviceName);
     }
 
     @Override

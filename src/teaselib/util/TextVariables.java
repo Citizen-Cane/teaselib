@@ -83,6 +83,10 @@ public class TextVariables implements Iterable<Enum<?>> {
                 String name = m.group().substring(1);
                 String key = name.toLowerCase();
                 String replacement = contains(key) ? get(key) : name;
+                boolean undefined = replacement == null;
+                if (undefined) {
+                    replacement = name;
+                }
                 m.appendReplacement(sb, Matcher.quoteReplacement(replacement));
             }
             m.appendTail(sb);

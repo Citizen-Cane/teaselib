@@ -174,6 +174,25 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
     }
 
     /**
+     * Show an intertitle ({@link https://en.wikipedia.org/wiki/Intertitle}) to
+     * reveal information or give instructions that are encessary to bring the
+     * script foraward, but aren't suitable to be given by a character.
+     * <p>
+     * For instance if you are to accidently spill coffee on the floor, the
+     * command to do shouldn't be given by any of the actors you're interacting
+     * with, as that would break their character.
+     * 
+     * The command works the same as the {@link #show(String ...)} command, but
+     * there will be no image associated with it.
+     * 
+     * @param text
+     *            The text to show with the intertitle.
+     */
+    public void showInterTitle(String... text) {
+        renderIntertitle(text);
+    }
+
+    /**
      * Displays the requested choices in the user interface after the mandatory
      * parts of all renderers have been completed. This means especially that
      * all text has been displayed and spoken.

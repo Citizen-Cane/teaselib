@@ -101,7 +101,7 @@ public class TextToSpeechRecorder {
             long lastModified = messageDir.lastModified();
             final File messageFile = new File(messageDir, MessageFilename);
             String oldMessageHash = readMessage(messageFile);
-            String messageHash = message.toHashString();
+            String messageHash = message.toPrerecordedSpeechHashString();
             if (messageHash.equals(oldMessageHash)) {
                 if (lastModified > buildStart) {
                     TeaseLib.instance().log.info(hash + " is reused");
@@ -202,7 +202,7 @@ public class TextToSpeechRecorder {
 
     public void create(Message message, File messageDir, Voice voice)
             throws IOException {
-        final String messageHash = message.toHashString();
+        final String messageHash = message.toPrerecordedSpeechHashString();
         TeaseLib.instance().log.info("Recording message:\n" + messageHash);
         int index = 0;
         mp3.Main lame = new mp3.Main();
@@ -276,7 +276,7 @@ public class TextToSpeechRecorder {
         }
         byte[] string = null;
         try {
-            string = message.toHashString().getBytes("UTF-16");
+            string = message.toPrerecordedSpeechHashString().getBytes("UTF-16");
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException(e);
         }

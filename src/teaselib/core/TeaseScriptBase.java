@@ -15,6 +15,7 @@ import teaselib.TeaseLib;
 import teaselib.core.media.MediaRenderer;
 import teaselib.core.media.MediaRenderer.Replay.Position;
 import teaselib.core.media.MediaRendererQueue;
+import teaselib.core.media.RenderInterTitle;
 import teaselib.core.media.RenderMessage;
 import teaselib.core.speechrecognition.SpeechRecognitionResult.Confidence;
 import teaselib.core.texttospeech.TextToSpeechPlayer;
@@ -136,47 +137,61 @@ public abstract class TeaseScriptBase {
         stopBackgroundRenderers();
     }
 
-    protected void renderMessage(Message message,
-            TextToSpeechPlayer ttsPlayer) {
+    protected void renderIntertitle(String... text) {
         try {
-            synchronized (renderQueue) {
-                // inject speech parts to replay pre-recorded speech or use TTS
-                // This has to be done first as subsequent parse steps
-                // inject moods and thus change the message hash
-                if (ttsPlayer != null) {
-                    if (ttsPlayer.prerenderedSpeechAvailable(message.actor)) {
-                        // Don't use TTS, even if pre-recorded speech is missing
-                        message = ttsPlayer.getPrerenderedMessage(message,
-                                resources);
-                    }
-                }
-                Message parsedMessage = preprocessMessage(message);
-                RenderMessage renderMessage = new RenderMessage(resources,
-                        parsedMessage, ttsPlayer, teaseLib);
-                synchronized (queuedRenderers) {
-                    queueRenderer(renderMessage);
-                    // Remember this set for replay
-                    playedRenderers = new ArrayList<MediaRenderer>(
-                            queuedRenderers);
-                    // Remember in order to clear queued before completing
-                    // previous set
-                    List<MediaRenderer> nextSet = new ArrayList<MediaRenderer>(
-                            queuedRenderers);
-                    // Must clear queue for next set before completing current,
-                    // because if the current set is cancelled,
-                    // the next set must be discarded
-                    queuedRenderers.clear();
-                    // Now the current set can be completed, and canceling the
-                    // current set will result in an empty next set
-                    completeAll();
-                    renderQueue.start(nextSet);
-                    startBackgroundRenderers();
-                    renderQueue.completeStarts();
-                }
-            }
+            RenderInterTitle interTitle = new RenderInterTitle(new Message(actor,
+                    expandTextVariables(Arrays.asList(text))),
+                    teaseLib);
+            renderMessage(interTitle);
         } finally {
             displayImage = Message.DominantImage;
             mood = Mood.Neutral;
+        }
+    }
+
+    protected void renderMessage(Message message,
+            TextToSpeechPlayer ttsPlayer) {
+        try {
+            // inject speech parts to replay pre-recorded speech or use TTS
+            // This has to be done first as subsequent parse steps
+            // inject moods and thus change the message hash
+            if (ttsPlayer != null) {
+                if (ttsPlayer.prerenderedSpeechAvailable(message.actor)) {
+                    // Don't use TTS, even if pre-recorded speech is missing
+                    message = ttsPlayer.getPrerenderedMessage(message,
+                            resources);
+                }
+            }
+            Message parsedMessage = preprocessMessage(message);
+            renderMessage(new RenderMessage(resources, parsedMessage, ttsPlayer,
+                    teaseLib));
+        } finally {
+            displayImage = Message.DominantImage;
+            mood = Mood.Neutral;
+        }
+    }
+
+    private void renderMessage(MediaRenderer renderMessage) {
+        synchronized (renderQueue) {
+            synchronized (queuedRenderers) {
+            }
+            queueRenderer(renderMessage);
+            // Remember this set for replay
+            playedRenderers = new ArrayList<MediaRenderer>(queuedRenderers);
+            // Remember in order to clear queued before completing
+            // previous set
+            List<MediaRenderer> nextSet = new ArrayList<MediaRenderer>(
+                    queuedRenderers);
+            // Must clear queue for next set before completing current,
+            // because if the current set is cancelled,
+            // the next set must be discarded
+            queuedRenderers.clear();
+            // Now the current set can be completed, and canceling the
+            // current set will result in an empty next set
+            completeAll();
+            renderQueue.start(nextSet);
+            startBackgroundRenderers();
+            renderQueue.completeStarts();
         }
     }
 

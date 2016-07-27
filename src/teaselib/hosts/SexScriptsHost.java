@@ -1,5 +1,6 @@
 package teaselib.hosts;
 
+import java.awt.Color;
 import java.awt.Container;
 import java.awt.Graphics2D;
 import java.awt.Image;
@@ -231,13 +232,7 @@ public class SexScriptsHost implements Host {
         try {
             ss.desktop.MainFrame mainFrame = getMainFrame();
             // bounds
-            Container contentPane = mainFrame.getContentPane();
-            Rectangle bounds = contentPane.getBounds();
-            Insets insets = contentPane.getInsets();
-            bounds.x += insets.left;
-            bounds.y += insets.top;
-            bounds.width -= insets.left + insets.right;
-            bounds.height -= insets.top + insets.bottom;
+            Rectangle bounds = getContentBounds(mainFrame);
             // Spacer to keep text at the right
             BufferedImage spacer = new BufferedImage(bounds.width, 16,
                     BufferedImage.TYPE_INT_ARGB);
@@ -283,6 +278,17 @@ public class SexScriptsHost implements Host {
         }
     }
 
+    private static Rectangle getContentBounds(ss.desktop.MainFrame mainFrame) {
+        Container contentPane = mainFrame.getContentPane();
+        Rectangle bounds = contentPane.getBounds();
+        Insets insets = contentPane.getInsets();
+        bounds.x += insets.left;
+        bounds.y += insets.top;
+        bounds.width -= insets.left + insets.right;
+        bounds.height -= insets.top + insets.bottom;
+        return bounds;
+    }
+
     private ImageIcon getImageIcon(String fieldName)
             throws NoSuchFieldException, IllegalAccessException {
         // Get image icon
@@ -322,9 +328,45 @@ public class SexScriptsHost implements Host {
     }
 
     @Override
+    public void showInterTitle(String text) {
+        // TODO Auto-generated method stub
+        try {
+            Image image = backgroundImageIcon.getImage();
+            ss.setImage((byte[]) null, 0);
+            MainFrame mainFrame = getMainFrame();
+            Rectangle bounds = new Rectangle(0, 0, image.getWidth(null),
+                    image.getHeight(null));// getContentBounds(mainFrame);
+            BufferedImage bi = new BufferedImage(bounds.width, bounds.height,
+                    BufferedImage.TYPE_INT_ARGB);
+            Graphics2D g2d = (Graphics2D) bi.getGraphics();
+            g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION,
+                    RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+            // Draw original background image
+            g2d.drawImage(image, 0, 0, bounds.width, bounds.height, null);
+            int offset = -bounds.height / 10;
+            g2d.setColor(new Color(0.0f, 0.0f, 0.0f, 0.65f));
+            int top = bounds.height / 4 + offset;
+            int bottom = bounds.height * 3 / 4 + offset;
+            g2d.fillRect(bounds.x, bounds.y, bounds.width, top);
+            g2d.setColor(new Color(0.0f, 0.0f, 0.0f, 0.80f));
+            g2d.fillRect(bounds.x, top, bounds.width, bottom - top);
+            g2d.setColor(new Color(0.0f, 0.0f, 0.0f, 0.65f));
+            g2d.fillRect(bounds.x, bottom, bounds.width,
+                    bounds.height - bottom);
+            backgroundImageIcon.setImage(bi);
+            mainFrame.repaint();
+            ss.show("<p style=\"color:#e0e0e0\">" + text + "</p>");
+        } catch (NoSuchFieldException e) {
+            e.printStackTrace();
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
     public List<Boolean> showCheckboxes(String caption, List<String> texts,
             List<Boolean> values, boolean allowCancel)
-                    throws ScriptInterruptedException {
+            throws ScriptInterruptedException {
         List<Boolean> results;
         do {
             try {

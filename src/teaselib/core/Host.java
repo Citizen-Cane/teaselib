@@ -54,6 +54,8 @@ public interface Host {
      */
     void show(byte[] imageBytes, String text);
 
+    void showInterTitle(String text);
+
     // @Deprecated
     // void showButton(String message);
 

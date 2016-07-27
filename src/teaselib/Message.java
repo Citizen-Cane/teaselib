@@ -223,7 +223,23 @@ public class Message {
         return buildString("\n\n", true);
     }
 
-    public String toHashString() {
+    /**
+     * Builds a string with all the formatting.
+     * 
+     * @return
+     */
+    public String toText() {
+        return buildString("\n\n", true);
+    }
+
+    /**
+     * Converts the message to a hash string suitable for speech pre-recording.
+     * The string contains only the message parts that are relevant for
+     * pre-rendering speech - all other media hints are removed.
+     * 
+     * @return
+     */
+    public String toPrerecordedSpeechHashString() {
         return buildString("\n", false);
     }
 

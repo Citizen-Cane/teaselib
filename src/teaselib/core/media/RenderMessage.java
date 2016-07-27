@@ -164,12 +164,10 @@ public class RenderMessage extends MediaRendererThread {
     private void renderMessage(Message message, boolean speakText) {
         if (message.isEmpty()) {
             // // Show image but no text
-            doText(null, false, null, Mood.Neutral);
+            show(null, Mood.Neutral);
         } else {
-            StringBuilder accumulatedText = new StringBuilder();
-            boolean append = false;
+            MessageTextAccumulator accumulatedText = new MessageTextAccumulator();
             String mood = Mood.Neutral;
-            boolean appendToItem = false;
             // Process message parts
             for (Iterator<Part> it = message.iterator(); it.hasNext();) {
                 Part part = it.next();
@@ -221,8 +219,9 @@ public class RenderMessage extends MediaRendererThread {
                         renderDesktopItem.render();
                     } catch (IOException e) {
                         teaseLib.log.error(this, e);
-                        doTextAndSpeech(accumulatedText, part.value, append,
-                                mood, lastParagraph, false);
+                        accumulatedText.add(part);
+                        show(accumulatedText.toString(), mood);
+                        speak(part.value, mood, lastParagraph, false);
                     }
                 } else if (part.type == Message.Type.Mood) {
                     // Mood
@@ -233,25 +232,17 @@ public class RenderMessage extends MediaRendererThread {
                     // Pause
                     doDelay(part);
                 } else if (part.type == Message.Type.Item) {
-                    accumulateText(accumulatedText, "°", false);
-                    appendToItem = true;
+                    accumulatedText.add(part);
                 } else { // (part.type == Message.Type.Text)
-                    doTextAndSpeech(accumulatedText, part.value, append, mood,
-                            lastParagraph, speakText);
+                    accumulatedText.add(part);
+                    show(accumulatedText.toString(), mood);
+                    speak(part.value, mood, lastParagraph, speakText);
                 }
                 if (task.isCancelled()) {
                     break;
                 }
                 if (lastParagraph) {
                     break;
-                }
-                // Find out whether to append the next sentence to the same
-                // or a new line
-                if (appendToItem) {
-                    append = true;
-                    appendToItem = false;
-                } else if (part.type == Message.Type.Text) {
-                    append = canAppend(part.value);
                 }
             }
             // Finished all parts
@@ -262,10 +253,9 @@ public class RenderMessage extends MediaRendererThread {
 
     }
 
-    private void doTextAndSpeech(StringBuilder accumulatedText, String prompt,
-            boolean append, String mood, final boolean lastParagraph,
+    private void speak(String prompt, String mood, final boolean lastParagraph,
             boolean speakText) {
-        doText(accumulatedText, append, prompt, mood);
+        teaseLib.transcript.info(">> " + prompt);
         if (ttsPlayer != null && speechRenderer == null) {
             if (speakText) {
                 speechRenderer = new RenderTTSSpeech(ttsPlayer, message.actor,
@@ -303,9 +293,7 @@ public class RenderMessage extends MediaRendererThread {
         }
     }
 
-    private void doText(StringBuilder accumulatedText, boolean append,
-            String prompt, String mood) {
-        accumulateText(accumulatedText, prompt, append);
+    private void show(String text, String mood) {
         if (message.actor.images.contains(displayImage)
                 && mood != Mood.Neutral) {
             teaseLib.transcript.info("mood = " + mood);
@@ -324,7 +312,6 @@ public class RenderMessage extends MediaRendererThread {
         }
         // Fetch the image bytes
         byte[] imageBytes = null;
-        String text = accumulatedText.toString();
         if (path != null) {
             try {
                 imageBytes = imageFetcher.get(path);
@@ -343,7 +330,6 @@ public class RenderMessage extends MediaRendererThread {
         // speech in progress never refers to the last paragraph
         completeSpeech(false);
         teaseLib.host.show(imageBytes, text);
-        teaseLib.transcript.info(">> " + prompt);
         // First message shown - start part completed
         startCompleted();
     }
@@ -413,25 +399,6 @@ public class RenderMessage extends MediaRendererThread {
         }
     }
 
-    private static void accumulateText(StringBuilder accumulatedText,
-            String text, boolean concatenate) {
-        if (accumulatedText.length() == 0) {
-            accumulatedText.append(text);
-        } else if (concatenate) {
-            accumulatedText.append(" ");
-            accumulatedText.append(text);
-        } else {
-            accumulatedText.append("\n\n");
-            accumulatedText.append(text);
-        }
-    }
-
-    private static boolean canAppend(String s) {
-        String ending = s.isEmpty() ? " "
-                : s.substring(s.length() - 1, s.length());
-        return Message.MainClauseAppendableCharacters.contains(ending);
-    }
-
     @Override
     public String toString() {
         long delay = 0;
@@ -445,7 +412,8 @@ public class RenderMessage extends MediaRendererThread {
                 delay += DELAYATENDOFTEXT;
             }
         }
-        String messageText = message.toHashString().replace("\n", " ");
+        String messageText = message.toPrerecordedSpeechHashString()
+                .replace("\n", " ");
         int length = 40;
         return "Estimated delay = "
                 + String.format("%.2f", (double) delay / 1000) + " Message = "

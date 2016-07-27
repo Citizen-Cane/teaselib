@@ -39,6 +39,11 @@ public class DummyHost implements Host {
     }
 
     @Override
+    public void showInterTitle(String text) {
+        // TODO Auto-generated method stub
+    }
+
+    @Override
     public List<Boolean> showCheckboxes(String caption, List<String> choices,
             List<Boolean> values, boolean allowCancel) {
         // TODO Auto-generated method stub

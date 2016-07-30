@@ -1,8 +1,15 @@
 #include "UDPMessage.h"
+#include "KeyReleaseService.h"
 
 unsigned int localPort = 666;
 
 UDP socket;
+
+KeyReleaseService keyRelease;
+//TimelockService timeLock;
+// BatteryChargeService batteryCharge;
+
+TeaseLibService* services = {&keyRelease};
 
 void setup() {
   // start UDP
@@ -10,53 +17,80 @@ void setup() {
 
   Serial.begin(9600);
   // Wait for key press on serial
-//  while(!Serial.available()) Particle.process();
+  while(!Serial.available()) Particle.process();
   Serial.println(WiFi.localIP());
 }
 
+void process(const UDPMessage& received, const int packetNumber);
+void send(const UDPMessage& message, const int packetNumber);
 void println(const UDPMessage& packet);
 
-int packetHeaderSize = 4;
+const int PacketHeaderSize = 4;
+const int BufferSize = 1024;
+char buffer[BufferSize];
 
 void loop() {
   // Check if data has been received
   if (socket.parsePacket() > 0) {
     Serial.print("Packet received: ");
     // Receive packet in buffer
-    char buffer[1024];
-    const int packetSize = socket.read(buffer, 1024);
+    const int packetSize = socket.read(buffer, BufferSize);
     const int packetNumber = UDPMessage::readShort(buffer);
     Serial.print("#");
     Serial.print(packetNumber, DEC);
     if (packetSize - 4 != UDPMessage::readShort(&buffer[2])) {
       Serial.println("wrong size");
     }
-    else if (!UDPMessage::isValid(buffer, packetSize - packetHeaderSize, packetHeaderSize)) {
+    else if (!UDPMessage::isValid(buffer, packetSize - PacketHeaderSize, PacketHeaderSize)) {
       Serial.println(" not valid");
     }
     else {
         // skip packet number, packet size
-      UDPMessage received(&buffer[packetHeaderSize], packetSize - packetHeaderSize);
-      println(received);
-      // Reply
-      IPAddress ipAddress = socket.remoteIP();
-      int port = socket.remotePort();
-      String deviceId = "My Photon" + System.deviceID();
-      const char* parameters[] = {deviceId, "2","KeyRelease","0.01", "Timelock","0.01"};
-      UDPMessage status("services", parameters, sizeof(parameters)/sizeof(char*));
-      const int messageSize = status.toBuffer(&buffer[packetHeaderSize]);
-      UDPMessage::writeShort(buffer, packetNumber);
-      UDPMessage::writeShort(&buffer[2], messageSize);
-      if (!UDPMessage::isValid(buffer, messageSize, packetHeaderSize)) {
-        Serial.print("Response packet not valid:");
-        println(UDPMessage(&buffer[packetHeaderSize], messageSize));
-        return;
-      }
-      Serial.print("Response =");
-      println(UDPMessage(&buffer[packetHeaderSize], messageSize));
-      socket.sendPacket(buffer, packetHeaderSize + messageSize, ipAddress, port);
+      UDPMessage received(&buffer[PacketHeaderSize], packetSize - PacketHeaderSize);
+      process(received, packetNumber);
     }
   }
+}
+
+void process(const UDPMessage& received, const int packetNumber) {
+  println(received);
+  // Reply
+  if (strcmp("id", received.command) == 0) {
+    String deviceId = "My Photon";
+    const char* parameters[] = {deviceId, "1",keyRelease.name, keyRelease.version};
+    UDPMessage status("services", parameters, sizeof(parameters)/sizeof(char*));
+    send(status, packetNumber);
+  }
+  else {
+    for(int i = 0; i < sizeof(services) / sizeof(TeaseLibService*); i++) {
+      Serial.println("services[i].name");
+      if (strncmp(services[i].name, received.command, strlen(services[i].name)) == 0)
+      {
+        Serial.println(services[i].name);
+        int responseSize = services[i].process(received, &buffer[PacketHeaderSize]);
+        if (responseSize) {
+          send(UDPMessage(&buffer[PacketHeaderSize], responseSize), packetNumber);
+        }
+        break;
+      }
+    }
+  }
+}
+
+void send(const UDPMessage& message, const int packetNumber) {
+  const int messageSize = message.toBuffer(&buffer[PacketHeaderSize]);
+  UDPMessage::writeShort(buffer, packetNumber);
+  UDPMessage::writeShort(&buffer[2], messageSize);
+  if (!UDPMessage::isValid(buffer, messageSize, PacketHeaderSize)) {
+    Serial.print("Response packet not valid:");
+    println(UDPMessage(&buffer[PacketHeaderSize], messageSize));
+    return;
+  }
+  Serial.print("Response =");
+  println(UDPMessage(&buffer[PacketHeaderSize], messageSize));
+  IPAddress ipAddress = socket.remoteIP();
+  int port = socket.remotePort();
+  socket.sendPacket(buffer, PacketHeaderSize + messageSize, ipAddress, port);
 }
 
 void println(const UDPMessage& packet) {

@@ -8,15 +8,17 @@ import teaselib.core.devices.DeviceCache;
 public class RemoteDevices {
 
     public static final DeviceCache<RemoteDevice> Instance = new DeviceCache<RemoteDevice>()
-            .addFactory(LocalNetworkDevice.Factory).addFactory(BluetoothDevice.Factory);
+            .addFactory(LocalNetworkDevice.Factory)
+            .addFactory(BluetoothDevice.Factory);
 
     public static List<RemoteDevice> devicesThatSupport(String serviceName) {
         List<RemoteDevice> remoteDevices = new Vector<RemoteDevice>();
-        for (String devicePath : Instance.getDevicePaths())
-            if (serviceName
-                    .equals(Instance.getDevice(devicePath).getServiceName())) {
-                remoteDevices.add(Instance.getDevice(devicePath));
+        for (String devicePath : Instance.getDevicePaths()) {
+            RemoteDevice device = Instance.getDevice(devicePath);
+            if (serviceName.equals(device.getServiceName())) {
+                remoteDevices.add(device);
             }
+        }
         return remoteDevices;
     }
 

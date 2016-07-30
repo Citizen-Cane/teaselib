@@ -3,6 +3,7 @@
  */
 package teaselib.core.devices.remote;
 
+import java.io.IOException;
 import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.InterfaceAddress;
@@ -35,9 +36,6 @@ public class LocalNetworkDevice implements RemoteDevice {
 
     private static final int Port = 666;
 
-    private static final UDPMessage id = new UDPMessage("id",
-            Collections.EMPTY_LIST, new byte[] {});
-
     public static final DeviceCache.Factory<RemoteDevice> Factory = new DeviceCache.Factory<RemoteDevice>() {
         final Map<String, LocalNetworkDevice> devices = new LinkedHashMap<String, LocalNetworkDevice>();
 
@@ -66,7 +64,9 @@ public class LocalNetworkDevice implements RemoteDevice {
                                         return getServices(udpClient,
                                                 new UDPMessage(udpClient
                                                         .sendAndReceive(
-                                                                id.toByteArray(),
+                                                                new UDPMessage(
+                                                                        RemoteDevice.Id)
+                                                                                .toByteArray(),
                                                                 1000)));
                                     }
 
@@ -75,17 +75,18 @@ public class LocalNetworkDevice implements RemoteDevice {
                                             UDPMessage status)
                                             throws SocketException {
                                         int i = 0;
-                                        String name = status.parameters
+                                        String name = status.message.parameters
                                                 .get(i++);
                                         int serviceCount = Integer.parseInt(
-                                                status.parameters.get(i++));
+                                                status.message.parameters
+                                                        .get(i++));
                                         List<LocalNetworkDevice> devices = new ArrayList<LocalNetworkDevice>(
-                                                (status.parameters.size() - i)
-                                                        / 2);
+                                                (status.message.parameters
+                                                        .size() - i) / 2);
                                         for (int j = 0; j < serviceCount; j++) {
-                                            String serviceName = status.parameters
+                                            String serviceName = status.message.parameters
                                                     .get(i++);
-                                            String version = status.parameters
+                                            String version = status.message.parameters
                                                     .get(i++);
                                             devices.add((new LocalNetworkDevice(
                                                     name, serviceName, version,
@@ -200,5 +201,24 @@ public class LocalNetworkDevice implements RemoteDevice {
     @Override
     public String getVersion() {
         return version;
+    }
+
+    @Override
+    public RemoteDeviceMessage sendAndReceive(RemoteDeviceMessage message) {
+        try {
+            final byte[] received = connection.sendAndReceive(
+                    new UDPMessage(message).toByteArray(), 1000);
+            return new UDPMessage(received).message;
+        } catch (SocketException e) {
+            return Timeout;
+        } catch (IOException e) {
+            return Timeout;
+        }
+    }
+
+    @Override
+    public void send(RemoteDeviceMessage message) {
+        // TODO Auto-generated method stub
+
     }
 }

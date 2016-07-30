@@ -30,9 +30,7 @@ import java.util.Scanner;
 public class UDPMessage {
     private static final String Encoding = "UTF-8";
 
-    public final String command;
-    public final List<String> parameters;
-    public final byte[] binary;
+    public final RemoteDeviceMessage message;
 
     static boolean isValid(byte[] data, int startIndex) {
         int offset = 0;
@@ -76,15 +74,17 @@ public class UDPMessage {
         return n;
     }
 
+    public UDPMessage(RemoteDeviceMessage message) {
+        this.message = message;
+    }
+
     public UDPMessage(String command, String... parameters) {
         this(command, Arrays.asList(parameters), new byte[0]);
 
     }
 
     public UDPMessage(String command, List<String> parameters, byte[] binary) {
-        this.command = command;
-        this.parameters = parameters;
-        this.binary = binary;
+        this.message = new RemoteDeviceMessage(command, parameters, binary);
     }
 
     public UDPMessage(byte[] data) throws IOException {
@@ -98,13 +98,13 @@ public class UDPMessage {
                 Encoding);
         try {
             scanner.useDelimiter("\u0000");
-            this.command = scanner.next();
-            this.parameters = new ArrayList<String>(parameterCount);
+            String name = scanner.next();
+            List<String> parameters = new ArrayList<String>(parameterCount);
             while (scanner.hasNext() && parameters.size() < parameterCount) {
-                this.parameters.add(scanner.next());
+                parameters.add(scanner.next());
             }
             int binarySize = dataInputStream.readShort();
-            binary = new byte[binarySize];
+            byte[] binary = new byte[binarySize];
             try {
                 if (binarySize > 0) {
                     dataInputStream.readFully(binary);
@@ -112,6 +112,7 @@ public class UDPMessage {
             } finally {
                 dataInputStream.close();
             }
+            message = new RemoteDeviceMessage(name, parameters, binary);
         } finally {
             scanner.close();
         }
@@ -123,9 +124,9 @@ public class UDPMessage {
         byte[] textData = getTextData();
         output.writeShort(textData.length);
         output.write(textData);
-        output.writeShort(binary.length);
-        if (binary.length > 0) {
-            output.write(binary);
+        output.writeShort(message.binary.length);
+        if (message.binary.length > 0) {
+            output.write(message.binary);
         }
         data.close();
         return data.toByteArray();
@@ -134,10 +135,10 @@ public class UDPMessage {
     private byte[] getTextData() throws IOException {
         ByteArrayOutputStream textData = new ByteArrayOutputStream();
         DataOutputStream textDataOuptut = new DataOutputStream(textData);
-        textDataOuptut.writeByte(parameters.size());
-        textDataOuptut.write(command.getBytes());
+        textDataOuptut.writeByte(message.parameters.size());
+        textDataOuptut.write(message.command.getBytes());
         textDataOuptut.writeByte(0);
-        for (String parameter : parameters) {
+        for (String parameter : message.parameters) {
             textDataOuptut.write(parameter.getBytes());
             textDataOuptut.write(0);
         }

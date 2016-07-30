@@ -88,7 +88,7 @@ UDPMessage::UDPMessage(const char* command, const char** parameters, const int p
 : command(command), parameters(parameters), parameterCount(parameterCount), binary(binary), binarySize(binarySize), allocatedParameters(false)  {
 }
 
-int UDPMessage::toBuffer(char* buffer) {
+int UDPMessage::toBuffer(char* buffer) const {
   int index = 0;
   writeShort(buffer + index, sizeOf(command, parameters, parameterCount));
   index += 2;

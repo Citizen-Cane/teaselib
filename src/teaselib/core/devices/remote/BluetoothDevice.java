@@ -79,4 +79,16 @@ public class BluetoothDevice implements RemoteDevice {
                 "Bluetooth remote devices are not implemented yet");
     }
 
+    @Override
+    public RemoteDeviceMessage sendAndReceive(RemoteDeviceMessage message) {
+        throw new IllegalStateException(
+                "Bluetooth remote devices are not implemented yet");
+    }
+
+    @Override
+    public void send(RemoteDeviceMessage message) {
+        throw new IllegalStateException(
+                "Bluetooth remote devices are not implemented yet");
+    }
+
 }

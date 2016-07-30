@@ -1,5 +1,5 @@
-#ifndef _INCLUDE_UDPMessage
-#define _INCLUDE_UDPMessage
+#ifndef _INCLUDE_TeaseLibDeviceUDPMessage
+#define _INCLUDE_TeaseLibDeviceUDPMessage
 
 class UDPMessage {
 public:
@@ -12,7 +12,7 @@ public:
   UDPMessage(const char* command, const char** parameters, const int parameterCount, const void* binary, const int binarySize);
   virtual ~UDPMessage();
 
-  int toBuffer(char* buffer);
+  int toBuffer(char* buffer) const;
 
   const char* command;
   const char** parameters;
@@ -25,4 +25,4 @@ private:
   const bool allocatedParameters;
 };
 
-#endif /* end of include guard:  _INCLUDE_UDPMessage */
+#endif /* end of include guard:   _INCLUDE_TeaseLibDeviceUDPMessage */

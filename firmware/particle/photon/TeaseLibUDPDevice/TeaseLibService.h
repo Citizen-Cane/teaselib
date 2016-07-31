@@ -8,6 +8,7 @@ public:
   TeaseLibService(const char* const name, const char* const version);
   const char* const name;
   const char* const version;
+  virtual bool canHandle(const char* command);
   virtual int process(const UDPMessage& received, char* buffer)=0;
 };
 

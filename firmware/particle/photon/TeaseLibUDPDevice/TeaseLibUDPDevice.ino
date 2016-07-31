@@ -47,7 +47,7 @@ void loop() {
     }
     else {
         // skip packet number, packet size
-      UDPMessage received(&buffer[PacketHeaderSize], packetSize - PacketHeaderSize);
+      const UDPMessage received(&buffer[PacketHeaderSize], packetSize - PacketHeaderSize);
       process(received, packetNumber);
     }
   }
@@ -57,17 +57,15 @@ void process(const UDPMessage& received, const int packetNumber) {
   println(received);
   // Reply
   if (strcmp("id", received.command) == 0) {
-    String deviceId = "My Photon";
+    const String deviceId = "My Photon";
     const char* parameters[] = {deviceId, "1",keyRelease.name, keyRelease.version};
     UDPMessage status("services", parameters, sizeof(parameters)/sizeof(char*));
     send(status, packetNumber);
   }
   else {
     for(int i = 0; i < sizeof(services) / sizeof(TeaseLibService*); i++) {
-      if (strncmp(services[i].name, received.command, strlen(services[i].name)) == 0)
-      {
-        Serial.println(services[i].name);
-        int responseSize = services[i].process(received, &buffer[PacketHeaderSize]);
+      if (services[i].canHandle(received.command)) {
+        const int responseSize = services[i].process(received, &buffer[PacketHeaderSize]);
         if (responseSize > 0) {
           send(buffer, responseSize, packetNumber);
         }

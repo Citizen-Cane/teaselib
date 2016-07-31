@@ -23,6 +23,7 @@ void setup() {
 
 void process(const UDPMessage& received, const int packetNumber);
 void send(const UDPMessage& message, const int packetNumber);
+void send(char* buffer, const int messageSize, const int packetNumber);
 void println(const UDPMessage& packet);
 
 const int PacketHeaderSize = 4;
@@ -63,13 +64,12 @@ void process(const UDPMessage& received, const int packetNumber) {
   }
   else {
     for(int i = 0; i < sizeof(services) / sizeof(TeaseLibService*); i++) {
-      Serial.println("services[i].name");
       if (strncmp(services[i].name, received.command, strlen(services[i].name)) == 0)
       {
         Serial.println(services[i].name);
         int responseSize = services[i].process(received, &buffer[PacketHeaderSize]);
-        if (responseSize) {
-          send(UDPMessage(&buffer[PacketHeaderSize], responseSize), packetNumber);
+        if (responseSize > 0) {
+          send(buffer, responseSize, packetNumber);
         }
         break;
       }
@@ -79,6 +79,10 @@ void process(const UDPMessage& received, const int packetNumber) {
 
 void send(const UDPMessage& message, const int packetNumber) {
   const int messageSize = message.toBuffer(&buffer[PacketHeaderSize]);
+  send(buffer, messageSize, packetNumber);
+}
+
+void send(char* buffer, const int messageSize, const int packetNumber) {
   UDPMessage::writeShort(buffer, packetNumber);
   UDPMessage::writeShort(&buffer[2], messageSize);
   if (!UDPMessage::isValid(buffer, messageSize, PacketHeaderSize)) {

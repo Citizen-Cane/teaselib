@@ -9,6 +9,5 @@ KeyReleaseService::KeyReleaseService()
 
 int KeyReleaseService::process(const UDPMessage& received, char* buffer) {
   const char* parameters[] = {"2"};
-  UDPMessage("actuators", parameters, 1).toBuffer(buffer);
-  return true;
+  return UDPMessage("actuators", parameters, 1).toBuffer(buffer);
 }

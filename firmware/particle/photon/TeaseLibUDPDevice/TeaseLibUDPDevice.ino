@@ -10,6 +10,7 @@ KeyReleaseService keyRelease;
 // BatteryChargeService batteryCharge;
 
 TeaseLibService* services = {&keyRelease};
+const int serviceCount = sizeof(services)/sizeof(TeaseLibService*);
 
 void setup() {
   // start UDP
@@ -19,6 +20,8 @@ void setup() {
   // Wait for key press on serial
   while(!Serial.available()) Particle.process();
   Serial.println(WiFi.localIP());
+
+  TeaseLibService::setup(services, serviceCount);
 }
 
 void process(const UDPMessage& received, const int packetNumber);
@@ -63,7 +66,7 @@ void process(const UDPMessage& received, const int packetNumber) {
     send(status, packetNumber);
   }
   else {
-    for(int i = 0; i < sizeof(services) / sizeof(TeaseLibService*); i++) {
+    for(int i = 0; i < serviceCount; i++) {
       if (services[i].canHandle(received.command)) {
         const int responseSize = services[i].process(received, &buffer[PacketHeaderSize]);
         if (responseSize > 0) {

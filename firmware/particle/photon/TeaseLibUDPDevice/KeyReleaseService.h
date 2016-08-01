@@ -8,6 +8,7 @@ public:
   static const char* const Name;
   static const char* const Version;
   KeyReleaseService();
+  void setup();
 
   virtual int process(const UDPMessage& received, char* buffer);
 };

@@ -1,16 +1,18 @@
+//#include "Particle.h"
+//#include "Servo.h"
+
 #include "UDPMessage.h"
 #include "KeyReleaseService.h"
 
-unsigned int localPort = 666;
-
-UDP socket;
-
-KeyReleaseService keyRelease;
+KeyReleaseService keyRelease(KeyReleaseService::DefaultSetup, KeyReleaseService::DefaultSetupSize);
 //TimelockService timeLock;
 // BatteryChargeService batteryCharge;
 
-TeaseLibService* services = {&keyRelease};
+TeaseLibService* services[] = {&keyRelease};
 const int serviceCount = sizeof(services)/sizeof(TeaseLibService*);
+
+UDP socket;
+unsigned int localPort = 666;
 
 void setup() {
   // start UDP
@@ -18,9 +20,10 @@ void setup() {
 
   Serial.begin(9600);
   // Wait for key press on serial
-  while(!Serial.available()) Particle.process();
+  //while(!Serial.available()) Particle.process();
   Serial.println(WiFi.localIP());
 
+  // setup services
   TeaseLibService::setup(services, serviceCount);
 }
 
@@ -67,8 +70,8 @@ void process(const UDPMessage& received, const int packetNumber) {
   }
   else {
     for(int i = 0; i < serviceCount; i++) {
-      if (services[i].canHandle(received.command)) {
-        const int responseSize = services[i].process(received, &buffer[PacketHeaderSize]);
+      if (services[i]->canHandle(received.command)) {
+        const int responseSize = services[i]->process(received, &buffer[PacketHeaderSize]);
         if (responseSize > 0) {
           send(buffer, responseSize, packetNumber);
         }

@@ -61,12 +61,11 @@ void loop() {
 
 void process(const UDPMessage& received, const int packetNumber) {
   println(received);
-  // Reply
-  if (strcmp("id", received.command) == 0) {
-    const String deviceId = "My Photon";
-    const char* parameters[] = {deviceId, "1", keyRelease.name, keyRelease.description, keyRelease.version};
-    UDPMessage status("services", parameters, sizeof(parameters)/sizeof(char*));
-    send(status, packetNumber);
+  if (strcmp(TeaseLibService::Id, received.command) == 0) {
+    const int responseSize = TeaseLibService::processIdPacket(received, &buffer[PacketHeaderSize]);
+    if (responseSize > 0) {
+      send(buffer, responseSize, packetNumber);
+    }
   }
   else {
     for(int i = 0; i < serviceCount; i++) {

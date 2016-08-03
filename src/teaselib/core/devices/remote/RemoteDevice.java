@@ -14,6 +14,8 @@ public interface RemoteDevice extends Device {
 
     String getServiceName();
 
+    String getDescription();
+
     String getVersion();
 
     RemoteDeviceMessage sendAndReceive(RemoteDeviceMessage message);

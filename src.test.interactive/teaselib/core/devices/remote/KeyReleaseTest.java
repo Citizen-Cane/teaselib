@@ -3,6 +3,8 @@
  */
 package teaselib.core.devices.remote;
 
+import static org.junit.Assert.*;
+
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -24,6 +26,8 @@ public class KeyReleaseTest {
     @Test
     public void test() {
         KeyRelease keyRelease = KeyRelease.Devices.getDefaultDevice();
-        return;
+        TeaseLib.instance().log.info("-> " + keyRelease.getName() + ": "
+                + keyRelease.actuators() + " actuators");
+        assertTrue(keyRelease.actuators() > 0);
     }
 }

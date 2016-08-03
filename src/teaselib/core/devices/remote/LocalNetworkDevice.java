@@ -86,11 +86,14 @@ public class LocalNetworkDevice implements RemoteDevice {
                                         for (int j = 0; j < serviceCount; j++) {
                                             String serviceName = status.message.parameters
                                                     .get(i++);
+                                            String description = status.message.parameters
+                                                    .get(i++);
                                             String version = status.message.parameters
                                                     .get(i++);
                                             devices.add((new LocalNetworkDevice(
-                                                    name, serviceName, version,
-                                                    connection)));
+                                                    name, connection,
+                                                    serviceName, description,
+                                                    version)));
                                             if (serviceCount == 1) {
                                                 break;
                                             } else {
@@ -154,17 +157,19 @@ public class LocalNetworkDevice implements RemoteDevice {
 
     private final String name;
     private final String serviceName;
+    private final String description;
     private final String version;
 
     private UDPConnection connection;
 
     // TODO rescan network, reconnect to same device at different address
 
-    LocalNetworkDevice(String name, String serviceName, String version,
-            UDPConnection connection) {
+    LocalNetworkDevice(String name, UDPConnection connection,
+            String serviceName, String description, String version) {
         this.name = name;
-        this.serviceName = serviceName;
         this.connection = connection;
+        this.serviceName = serviceName;
+        this.description = description;
         this.version = version;
     }
 
@@ -196,6 +201,11 @@ public class LocalNetworkDevice implements RemoteDevice {
     @Override
     public String getServiceName() {
         return serviceName;
+    }
+
+    @Override
+    public String getDescription() {
+        return description;
     }
 
     @Override

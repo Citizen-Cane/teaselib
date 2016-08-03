@@ -74,6 +74,12 @@ public class BluetoothDevice implements RemoteDevice {
     }
 
     @Override
+    public String getDescription() {
+        throw new IllegalStateException(
+                "Bluetooth remote devices are not implemented yet");
+    }
+
+    @Override
     public String getVersion() {
         throw new IllegalStateException(
                 "Bluetooth remote devices are not implemented yet");

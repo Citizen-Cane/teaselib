@@ -64,7 +64,7 @@ void process(const UDPMessage& received, const int packetNumber) {
   // Reply
   if (strcmp("id", received.command) == 0) {
     const String deviceId = "My Photon";
-    const char* parameters[] = {deviceId, "1",keyRelease.name, keyRelease.version};
+    const char* parameters[] = {deviceId, "1", keyRelease.name, keyRelease.description, keyRelease.version};
     UDPMessage status("services", parameters, sizeof(parameters)/sizeof(char*));
     send(status, packetNumber);
   }

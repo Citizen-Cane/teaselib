@@ -8,6 +8,42 @@ import teaselib.core.devices.Device;
 import teaselib.core.devices.DeviceCache;
 
 public class KeyRelease implements Device {
+
+    /**
+     * Returned by the device to indicate successful command
+     */
+    private static final String Ok = "ok";
+
+    /**
+     * Arm the device
+     */
+    private static final String Arm = "arm";
+
+    /**
+     * Start the timer
+     */
+    private static final String Start = "start";
+
+    /**
+     * Ask for remaining minutes
+     */
+    private static final String Remaining = "remaining";
+
+    /**
+     * Release a key
+     */
+    private static final String Release = "release";
+
+    /**
+     * a session key, returned by the device.
+     */
+    private static final String Key = "key";
+
+    /**
+     * A numerical value, returned by the device
+     */
+    private static final String Count = "count";
+
     public static final DeviceCache<KeyRelease> Devices = new DeviceCache<KeyRelease>()
             .addFactory(new DeviceCache.Factory<KeyRelease>() {
                 @Override
@@ -38,14 +74,15 @@ public class KeyRelease implements Device {
 
     private static final String DeviceClassName = "KeyRelease";
 
-    private static final String RemoteServiceName = "keyrelease";
+    private static final String Actuators = "actuators";
 
     private RemoteDevice remoteDevice;
+    private String releaseKey;
+
+    private String actuators;
 
     KeyRelease(RemoteDevice remoteDevice) {
         this.remoteDevice = remoteDevice;
-        int actuators = actuators();
-        return;
     }
 
     @Override
@@ -56,7 +93,9 @@ public class KeyRelease implements Device {
 
     @Override
     public String getName() {
-        return remoteDevice.getName() + "Key Release";
+        return remoteDevice.getName() + " " + remoteDevice.getServiceName()
+                + " " + remoteDevice.getDescription() + " "
+                + remoteDevice.getVersion();
     }
 
     @Override
@@ -76,32 +115,59 @@ public class KeyRelease implements Device {
 
     public int actuators() {
         RemoteDeviceMessage count = remoteDevice.sendAndReceive(
-                new RemoteDeviceMessage(DeviceClassName, "actuators"));
-        // TODO error handling - don't throw
-        return !"timeout".equals(count.command)
-                ? Integer.parseInt(count.parameters.get(0)) : 0;
+                new RemoteDeviceMessage(DeviceClassName, Actuators));
+        if (Count.equals(count.command)) {
+            // TODO error handling - don't throw
+            return Integer.parseInt(count.parameters.get(0));
+        } else {
+            return 0;
+        }
     }
 
     public boolean arm(int actuatorIndex) {
-        RemoteDeviceMessage armed = remoteDevice
-                .sendAndReceive(new RemoteDeviceMessage(DeviceClassName, "arm",
+        RemoteDeviceMessage ok = remoteDevice
+                .sendAndReceive(new RemoteDeviceMessage(DeviceClassName, Arm,
                         Arrays.asList(Integer.toString(actuatorIndex))));
-        return !"timeout".equals(armed.command);
+        return Ok.equals(ok.command);
     }
 
-    public int start(int actuatorIndex, int timeMinutes) {
-        RemoteDeviceMessage durationMinutes = remoteDevice
-                .sendAndReceive(new RemoteDeviceMessage(DeviceClassName,
-                        "start", Arrays.asList(Integer.toString(actuatorIndex),
+    public String start(int actuatorIndex, int timeMinutes) {
+        RemoteDeviceMessage key = remoteDevice
+                .sendAndReceive(new RemoteDeviceMessage(DeviceClassName, Start,
+                        Arrays.asList(Integer.toString(actuatorIndex),
                                 Integer.toString(timeMinutes))));
-        return !"timeout".equals(durationMinutes.command)
-                ? Integer.parseInt(durationMinutes.parameters.get(0)) : -1;
+        if (Key.equals(key.command)) {
+            releaseKey = key.parameters.get(0);
+            return releaseKey;
+        } else {
+            return "";
+        }
+    }
+
+    public boolean addTime(int actuatorIndex, int minutes) {
+        RemoteDeviceMessage ok = remoteDevice
+                .sendAndReceive(new RemoteDeviceMessage(DeviceClassName,
+                        Release, Arrays.asList(Integer.toString(actuatorIndex),
+                                Integer.toString(minutes))));
+        return Ok.equals(ok.command);
+    }
+
+    public int remaining(int actuatorIndex) {
+        RemoteDeviceMessage count = remoteDevice.sendAndReceive(
+                new RemoteDeviceMessage(DeviceClassName, Remaining,
+                        Arrays.asList(Integer.toString(actuatorIndex))));
+        if (Count.equals(count.command)) {
+            // TODO error handling - don't throw
+            return Integer.parseInt(count.parameters.get(0));
+        } else {
+            return 0;
+        }
     }
 
     public boolean release(int actuatorIndex) {
         RemoteDeviceMessage released = remoteDevice.sendAndReceive(
-                new RemoteDeviceMessage(DeviceClassName, "release",
-                        Arrays.asList(Integer.toString(actuatorIndex))));
-        return !"timeout".equals(released.command);
+                new RemoteDeviceMessage(DeviceClassName, Release, Arrays
+                        .asList(Integer.toString(actuatorIndex), releaseKey)));
+        return Ok.equals(released.command);
     }
 }

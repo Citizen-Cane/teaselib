@@ -24,6 +24,7 @@ public:
 private:
   static TeaseLibService** services;
   static int serviceCount;
+  
 };
 
 #endif /*end of include guard:   _INCLUDETeaseLibDeviceService */

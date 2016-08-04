@@ -217,7 +217,7 @@ public class LocalNetworkDevice implements RemoteDevice {
     public RemoteDeviceMessage sendAndReceive(RemoteDeviceMessage message) {
         try {
             final byte[] received = connection.sendAndReceive(
-                    new UDPMessage(message).toByteArray(), 1000);
+                    new UDPMessage(message).toByteArray(), 10000);
             return new UDPMessage(received).message;
         } catch (SocketException e) {
             return Timeout;

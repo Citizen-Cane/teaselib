@@ -1,6 +1,3 @@
-//#include "Particle.h"
-//#include "Servo.h"
-
 #include "UDPMessage.h"
 #include "KeyReleaseService.h"
 
@@ -20,7 +17,7 @@ void setup() {
 
   Serial.begin(9600);
   // Wait for key press on serial
-  //while(!Serial.available()) Particle.process();
+  // while(!Serial.available()) Particle.process();
   Serial.println(WiFi.localIP());
 
   // setup services

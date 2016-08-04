@@ -3,6 +3,16 @@
 
 #include "TeaseLibService.h"
 
+/* Usage instructions:
+ * call "arm" the device to rotate the servo up
+ * -> release timer is started to ensure release happens at least after the default time
+ * call "start" to run a timer with the specified time
+ * -> the servo rotates down and realeases the key automatically when the default duration has elapsed
+ * call "release" to release the key early (provided you have the release key)
+ * call "add" to increase the duration up to the maximum allowed duration
+ * - book-keeping ensures that the maximum duration cannot be exceeded
+ */
+
 class KeyReleaseService : public TeaseLibService {
 public:
   static const char* const Name;
@@ -11,12 +21,21 @@ public:
 
   struct Actuator {
     const int pin;
-    const int defaultDuration;
+    const int defaultMinutes;
+    const int maximumMinutes;
   };
 
   struct Duration {
-      int elapsed;
-      int left;
+      bool running;
+      int elapsedMinutes;
+      int remainingMinutes;
+
+      const Actuator* actuator;
+      const void arm();
+      const int start(const int minutes);
+      const int add(const int minutes);
+      const bool advance();
+      const void clear();
   };
 
   static const Actuator ShortRelease;
@@ -35,6 +54,10 @@ private:
   const int actuatorCount;
   const char* const sessionKey;
   static const char* const createSessionKey();
+  Timer timer;
+  void timerCallback();
+  void armKey(const int index);
+  void releaseKey(const int index);
 };
 
 #endif /*end of include guard:   _INCLUDE_TeaseLibKeyReleaseService */

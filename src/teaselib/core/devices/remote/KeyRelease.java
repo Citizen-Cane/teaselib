@@ -25,6 +25,21 @@ public class KeyRelease implements Device {
     private static final String Start = "start";
 
     /**
+     * add minutes until release up to the hard limit
+     */
+    private static final String Add = "add";
+
+    /**
+     * Whether the actuator is running, e.g. time elapses
+     */
+    private static final String Running = "running";
+
+    /**
+     * Ask for available minutes
+     */
+    private static final String Available = "available";
+
+    /**
      * Ask for remaining minutes
      */
     private static final String Remaining = "remaining";
@@ -37,7 +52,7 @@ public class KeyRelease implements Device {
     /**
      * a session key, returned by the device.
      */
-    private static final String Key = "key";
+    private static final String ReleaseKey = "releasekey";
 
     /**
      * A numerical value, returned by the device
@@ -78,8 +93,6 @@ public class KeyRelease implements Device {
 
     private RemoteDevice remoteDevice;
     private String releaseKey;
-
-    private String actuators;
 
     KeyRelease(RemoteDevice remoteDevice) {
         this.remoteDevice = remoteDevice;
@@ -124,19 +137,21 @@ public class KeyRelease implements Device {
         }
     }
 
-    public boolean arm(int actuatorIndex) {
+    // TODO maximum duration for this actuator -> use int return value
+
+    public boolean arm(int actuator) {
         RemoteDeviceMessage ok = remoteDevice
                 .sendAndReceive(new RemoteDeviceMessage(DeviceClassName, Arm,
-                        Arrays.asList(Integer.toString(actuatorIndex))));
+                        Arrays.asList(Integer.toString(actuator))));
         return Ok.equals(ok.command);
     }
 
-    public String start(int actuatorIndex, int timeMinutes) {
+    public String start(int actuator, int timeMinutes) {
         RemoteDeviceMessage key = remoteDevice
                 .sendAndReceive(new RemoteDeviceMessage(DeviceClassName, Start,
-                        Arrays.asList(Integer.toString(actuatorIndex),
+                        Arrays.asList(Integer.toString(actuator),
                                 Integer.toString(timeMinutes))));
-        if (Key.equals(key.command)) {
+        if (ReleaseKey.equals(key.command)) {
             releaseKey = key.parameters.get(0);
             return releaseKey;
         } else {
@@ -144,18 +159,30 @@ public class KeyRelease implements Device {
         }
     }
 
-    public boolean addTime(int actuatorIndex, int minutes) {
+    public boolean add(int actuator, int minutes) {
         RemoteDeviceMessage ok = remoteDevice
-                .sendAndReceive(new RemoteDeviceMessage(DeviceClassName,
-                        Release, Arrays.asList(Integer.toString(actuatorIndex),
+                .sendAndReceive(new RemoteDeviceMessage(DeviceClassName, Add,
+                        Arrays.asList(Integer.toString(actuator),
                                 Integer.toString(minutes))));
         return Ok.equals(ok.command);
     }
 
-    public int remaining(int actuatorIndex) {
-        RemoteDeviceMessage count = remoteDevice.sendAndReceive(
-                new RemoteDeviceMessage(DeviceClassName, Remaining,
-                        Arrays.asList(Integer.toString(actuatorIndex))));
+    public boolean isRunning(int actuator) {
+        RemoteDeviceMessage count = remoteDevice
+                .sendAndReceive(new RemoteDeviceMessage(DeviceClassName,
+                        Running, Arrays.asList(Integer.toString(actuator))));
+        if (Count.equals(count.command)) {
+            // TODO error handling - don't throw
+            return Integer.parseInt(count.parameters.get(0)) == 1;
+        } else {
+            return false;
+        }
+    }
+
+    public int available(int actuator) {
+        RemoteDeviceMessage count = remoteDevice
+                .sendAndReceive(new RemoteDeviceMessage(DeviceClassName,
+                        Available, Arrays.asList(Integer.toString(actuator))));
         if (Count.equals(count.command)) {
             // TODO error handling - don't throw
             return Integer.parseInt(count.parameters.get(0));
@@ -164,10 +191,22 @@ public class KeyRelease implements Device {
         }
     }
 
-    public boolean release(int actuatorIndex) {
+    public int remaining(int actuator) {
+        RemoteDeviceMessage count = remoteDevice
+                .sendAndReceive(new RemoteDeviceMessage(DeviceClassName,
+                        Remaining, Arrays.asList(Integer.toString(actuator))));
+        if (Count.equals(count.command)) {
+            // TODO error handling - don't throw
+            return Integer.parseInt(count.parameters.get(0));
+        } else {
+            return 0;
+        }
+    }
+
+    public boolean release(int actuator) {
         RemoteDeviceMessage released = remoteDevice.sendAndReceive(
-                new RemoteDeviceMessage(DeviceClassName, Release, Arrays
-                        .asList(Integer.toString(actuatorIndex), releaseKey)));
+                new RemoteDeviceMessage(DeviceClassName, Release,
+                        Arrays.asList(Integer.toString(actuator), releaseKey)));
         return Ok.equals(released.command);
     }
 }

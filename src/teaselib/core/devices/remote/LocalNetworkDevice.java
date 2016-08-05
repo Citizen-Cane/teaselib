@@ -23,6 +23,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import teaselib.TeaseLib;
 import teaselib.core.ScriptInterruptedException;
 import teaselib.core.devices.DeviceCache;
@@ -32,6 +35,9 @@ import teaselib.core.devices.DeviceCache;
  *
  */
 public class LocalNetworkDevice implements RemoteDevice {
+    private static final Logger logger = LoggerFactory
+            .getLogger(LocalNetworkDevice.class);
+
     private static final String DeviceClassName = "LocalNetworkDevice";
 
     private static final int Port = 666;
@@ -51,7 +57,7 @@ public class LocalNetworkDevice implements RemoteDevice {
             try {
                 List<Subnet> subnets = enumerateNetworks();
                 for (Subnet subnet : subnets) {
-                    TeaseLib.instance().log
+                    logger
                             .info("Scanning " + subnet.toString());
                     for (final InetAddress ip : subnet) {
                         futures.add(es.submit(
@@ -109,7 +115,7 @@ public class LocalNetworkDevice implements RemoteDevice {
                     }
                 }
             } catch (SocketException e) {
-                TeaseLib.instance().log.error(this, e);
+                logger.error(e.getMessage(), e);
             }
             es.shutdown();
             for (final Future<List<LocalNetworkDevice>> f : futures) {
@@ -124,7 +130,7 @@ public class LocalNetworkDevice implements RemoteDevice {
                     if (e.getCause() instanceof SocketTimeoutException) {
                         // Expected
                     } else {
-                        TeaseLib.instance().log.error(this, e);
+                        logger.error(e.getMessage(), e);
                     }
                 }
             }

@@ -7,6 +7,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import teaselib.Actor;
 import teaselib.Message;
 import teaselib.Mood;
@@ -23,6 +26,8 @@ import teaselib.util.SpeechRecognitionRejectedScript;
 import teaselib.util.TextVariables;
 
 public abstract class TeaseScriptBase {
+    private static final Logger logger = LoggerFactory
+            .getLogger(TeaseScriptBase.class);
 
     public final TeaseLib teaseLib;
     public final ResourceLoader resources;
@@ -47,13 +52,13 @@ public abstract class TeaseScriptBase {
 
         public Replay(List<MediaRenderer> renderers) {
             super();
-            teaseLib.log.info("Remembering renderers in replay " + this);
+            logger.info("Remembering renderers in replay " + this);
             this.renderers = new ArrayList<MediaRenderer>(renderers);
         }
 
         public void replay(Position replayPosition) {
             synchronized (queuedRenderers) {
-                teaseLib.log.info("Replaying renderers from replay " + this);
+                logger.info("Replaying renderers from replay " + this);
                 // Finish current set before replaying
                 completeMandatory();
                 // Restore the prompt that caused running the SR-rejected script
@@ -139,8 +144,9 @@ public abstract class TeaseScriptBase {
 
     protected void renderIntertitle(String... text) {
         try {
-            RenderInterTitle interTitle = new RenderInterTitle(new Message(actor,
-                    expandTextVariables(Arrays.asList(text))),
+            RenderInterTitle interTitle = new RenderInterTitle(
+                    new Message(actor,
+                            expandTextVariables(Arrays.asList(text))),
                     teaseLib);
             renderMessage(interTitle);
         } finally {
@@ -306,12 +312,12 @@ public abstract class TeaseScriptBase {
     // path = images.next();
     // if (path == null && !teaseLib.getBoolean(Config.Namespace,
     // Config.Debug.IgnoreMissingResources)) {
-    // teaseLib.log.info("Actor '" + message.actor.name
+    // logger.info("Actor '" + message.actor.name
     // + "': images missing - please initialize");
     // }
     // } else if (!teaseLib.getBoolean(Config.Namespace,
     // Config.Debug.IgnoreMissingResources)) {
-    // teaseLib.log.info("Actor '" + message.actor.name
+    // logger.info("Actor '" + message.actor.name
     // + "': images missing - please initialize");
     // path = null;
     // } else {
@@ -345,7 +351,7 @@ public abstract class TeaseScriptBase {
                     try {
                         renderer.render();
                     } catch (IOException e) {
-                        teaseLib.log.error(renderer, e);
+                        logger.error(e.getMessage(), e);
                     }
                 }
             }
@@ -413,9 +419,9 @@ public abstract class TeaseScriptBase {
         } else if (scriptFunction.relation != ScriptFunction.Relation.Autonomous) {
             stopBackgroundRenderers();
         }
-        teaseLib.log.info("showChoices: " + derivedChoices.toString());
+        logger.info("showChoices: " + derivedChoices.toString());
         String choice = choicesStack.show(this, showChoices, pauseHandlers);
-        teaseLib.log.debug("Reply finished");
+        logger.debug("Reply finished");
         teaseLib.transcript.info("< " + choice);
         return choice;
     }
@@ -431,7 +437,7 @@ public abstract class TeaseScriptBase {
                     while (choicesStack.peek() != showChoices) {
                         wait();
                     }
-                    teaseLib.log.info(
+                    logger.info(
                             "Resuming choices " + showChoices.derivedChoices);
                 } catch (InterruptedException e) {
                     throw new ScriptInterruptedException();
@@ -446,7 +452,7 @@ public abstract class TeaseScriptBase {
             public void run() {
                 if (playedRenderers != null) {
                     SpeechRecognitionRejectedScript speechRecognitionRejectedScript = actor.speechRecognitionRejectedScript;
-                    teaseLib.log.info("Running SpeechRecognitionRejectedScript "
+                    logger.info("Running SpeechRecognitionRejectedScript "
                             + speechRecognitionRejectedScript.toString());
                     Replay beforeSpeechRecognitionRejected = new Replay(
                             playedRenderers);

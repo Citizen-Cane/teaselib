@@ -13,6 +13,9 @@ import java.util.Set;
 import java.util.Vector;
 import java.util.concurrent.TimeUnit;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import teaselib.Actor;
 import teaselib.Message;
 import teaselib.Message.Part;
@@ -21,6 +24,9 @@ import teaselib.core.ResourceLoader;
 import teaselib.core.ScriptInterruptedException;
 
 public class TextToSpeechPlayer {
+    private static final Logger logger = LoggerFactory
+            .getLogger(TextToSpeechPlayer.class);
+
     public final TextToSpeech textToSpeech;
     private final TeaseLib teaseLib;
     private final Set<ResourceLoader> processedVoiceActorVoices = new HashSet<ResourceLoader>();
@@ -74,9 +80,9 @@ public class TextToSpeechPlayer {
         // Write list of installed voices to log file in order to provide data
         // for the Actor to Voices mapping properties file
         final InstalledVoices installedVoices = new InstalledVoices(voices);
-        teaseLib.log.info("Installed voices:");
+        logger.info("Installed voices:");
         for (String key : installedVoices.keySet()) {
-            teaseLib.log.info(key + ".guid=" + installedVoices.getGuid(key));
+            logger.info(key + ".guid=" + installedVoices.getGuid(key));
         }
     }
 
@@ -117,19 +123,18 @@ public class TextToSpeechPlayer {
                             + actorKey + "/" + voiceGuid + "/";
                     actorKey2SpeechResourcesLocation.put(actorKey,
                             speechResources);
-                    teaseLib.log.info("Actor " + actorKey
+                    logger.info("Actor " + actorKey
                             + ": using prerecorded voice '" + voiceGuid + "'");
                 } else {
-                    teaseLib.log.info("Actor " + actorKey
+                    logger.info("Actor " + actorKey
                             + ": prerecorded voice not available");
                     Voice voice = voices.get(voiceGuid);
                     if (voice != null) {
-                        teaseLib.log.info(
-                                "Actor " + actorKey + ": using TTS voice");
+                        logger.info("Actor " + actorKey + ": using TTS voice");
                         actorKey2TTSVoice.put(actorKey, voice);
                         usedVoices.add(voiceGuid);
                     } else {
-                        teaseLib.log.info(
+                        logger.info(
                                 "Actor " + actorKey + ": voice not available");
                     }
                 }
@@ -181,9 +186,8 @@ public class TextToSpeechPlayer {
             String locale = voice.locale;
             if (locale.compareToIgnoreCase(actor.locale) == 0
                     && !usedVoices.contains(voice.guid)) {
-                teaseLib.log.info("Using voice '" + voice.guid
-                        + "' with locale '" + voice.locale + "' for actor '"
-                        + actor.key + "'");
+                logger.info("Using voice '" + voice.guid + "' with locale '"
+                        + voice.locale + "' for actor '" + actor.key + "'");
                 return voice;
             }
         }
@@ -193,9 +197,8 @@ public class TextToSpeechPlayer {
             String actorLanguage = actor.locale.substring(0, 2);
             if (voiceLanguage.compareToIgnoreCase(actorLanguage) == 0
                     && !usedVoices.contains(voice.guid)) {
-                teaseLib.log.info("Using voice '" + voice.guid
-                        + "' with locale '" + voice.locale + "' for actor '"
-                        + actor.key + "'");
+                logger.info("Using voice '" + voice.guid + "' with locale '"
+                        + voice.locale + "' for actor '" + actor.key + "'");
                 return voice;
             }
         }
@@ -205,8 +208,8 @@ public class TextToSpeechPlayer {
                     && actorKey2TTSVoice
                             .get(actorName).gender == actor.gender) {
                 Voice voice = actorKey2TTSVoice.get(actorName);
-                teaseLib.log.info("Reusing voice of actor '" + actorName
-                        + "': '" + voice.guid + "' with locale '" + voice.locale
+                logger.info("Reusing voice of actor '" + actorName + "': '"
+                        + voice.guid + "' with locale '" + voice.locale
                         + "' for actor '" + actor.key + "'");
                 return voice;
             }
@@ -217,14 +220,14 @@ public class TextToSpeechPlayer {
                     && actorKey2TTSVoice
                             .get(actorName).gender == actor.gender) {
                 Voice voice = actorKey2TTSVoice.get(actorName);
-                teaseLib.log.info("Reusing voice of actor '" + actorName
-                        + "': '" + voice.guid + "' with locale '" + voice.locale
+                logger.info("Reusing voice of actor '" + actorName + "': '"
+                        + voice.guid + "' with locale '" + voice.locale
                         + "' for actor '" + actor.key + "'");
                 return voice;
             }
         }
         // No voice
-        teaseLib.log.info("No voice available for actor '" + actor.key + "'");
+        logger.info("No voice available for actor '" + actor.key + "'");
         return null;
     }
 
@@ -258,7 +261,7 @@ public class TextToSpeechPlayer {
             } catch (ScriptInterruptedException e) {
                 throw e;
             } catch (Throwable t) {
-                teaseLib.log.error(this, t);
+                logger.error(t.getMessage(), t);
                 speakSilent(prompt);
             }
         } else {
@@ -299,7 +302,7 @@ public class TextToSpeechPlayer {
             }
             return preRenderedSpeechMessage;
         } catch (IOException e) {
-            teaseLib.log.error(message, e);
+            logger.error(e.getMessage(), e);
             // Render pre-recorded speech as delay
             Message preRenderedSpeechMessage = new Message(message.actor);
             for (Part part : message.getParts()) {

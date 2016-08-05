@@ -8,6 +8,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import teaselib.TeaseLib;
 import teaselib.core.ScriptInterruptedException;
 import teaselib.core.concurrency.NamedExecutorService;
@@ -18,6 +21,8 @@ import teaselib.core.concurrency.NamedExecutorService;
  */
 public abstract class MediaRendererThread
         implements MediaRenderer.Threaded, MediaRenderer.Replay {
+    private static final Logger logger = LoggerFactory
+            .getLogger(MediaRendererThread.class);
     protected final TeaseLib teaseLib;
 
     private final static String RenderTaskBaseName = "RenderTask ";
@@ -65,11 +70,11 @@ public abstract class MediaRendererThread
                         }
                         renderMedia();
                     } catch (InterruptedException e) {
-                        teaseLib.log.debug(this, e);
+                        logger.debug(e.getMessage(), e);
                     } catch (ScriptInterruptedException e) {
                         // Expected
                     } catch (Throwable t) {
-                        teaseLib.log.error(this, t);
+                        logger.error(t.getMessage(), t);
                     } finally {
                         startCompleted();
                         mandatoryCompleted();
@@ -104,27 +109,25 @@ public abstract class MediaRendererThread
             completedStart = new CountDownLatch(1);
             completedMandatory = new CountDownLatch(1);
         }
-        teaseLib.log.info("Replay " + replayPosition.toString());
+        logger.info("Replay " + replayPosition.toString());
         render();
     }
 
     protected void startCompleted() {
         completedStart.countDown();
-        teaseLib.log
-                .debug(getClass().getSimpleName() + " completed start after "
-                        + String.format("%.2f seconds", getElapsedSeconds()));
+        logger.debug(getClass().getSimpleName() + " completed start after "
+                + String.format("%.2f seconds", getElapsedSeconds()));
     }
 
     protected void mandatoryCompleted() {
         completedMandatory.countDown();
-        teaseLib.log.debug(
-                getClass().getSimpleName() + " completed mandatory after "
-                        + String.format("%.2f seconds", getElapsedSeconds()));
+        logger.debug(getClass().getSimpleName() + " completed mandatory after "
+                + String.format("%.2f seconds", getElapsedSeconds()));
     }
 
     protected void allCompleted() {
         completedAll.countDown();
-        teaseLib.log.debug(getClass().getSimpleName() + " completed all after "
+        logger.debug(getClass().getSimpleName() + " completed all after "
                 + String.format("%.2f", getElapsedSeconds()));
     }
 
@@ -167,7 +170,7 @@ public abstract class MediaRendererThread
         } catch (InterruptedException e) {
             throw new ScriptInterruptedException();
         } catch (ExecutionException e) {
-            teaseLib.log.error(this, e);
+            logger.error(e.getMessage(), e);
         }
     }
 
@@ -192,7 +195,7 @@ public abstract class MediaRendererThread
         if (!f.isCancelled()) {
             f.cancel(true);
         }
-        teaseLib.log.debug(getClass().getSimpleName() + " cancelled after "
+        logger.debug(getClass().getSimpleName() + " cancelled after "
                 + String.format("%.2f", getElapsedSeconds()));
     }
 
@@ -206,9 +209,9 @@ public abstract class MediaRendererThread
         } catch (InterruptedException e) {
             throw new ScriptInterruptedException();
         } catch (ExecutionException e) {
-            teaseLib.log.error(this, e);
+            logger.error(e.getMessage(), e);
         }
-        teaseLib.log.debug(getClass().getSimpleName() + " ended after "
+        logger.debug(getClass().getSimpleName() + " ended after "
                 + String.format("%.2f", getElapsedSeconds()));
     }
 

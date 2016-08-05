@@ -17,10 +17,15 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import teaselib.Config;
 import teaselib.TeaseLib;
 
 public class ResourceLoader {
+    private static final Logger logger = LoggerFactory
+            .getLogger(ResourceLoader.class);
 
     private final ClassLoader classLoader = getClass().getClassLoader();
     private final Method addURL;
@@ -137,20 +142,20 @@ public class ResourceLoader {
             addURL.invoke(classLoader, new Object[] { uri.toURL() });
             if (uri.getPath().endsWith(".zip") || file.isDirectory()) {
                 enumeratableClassPaths.add(uri);
-                TeaseLib.instance().log
+                logger
                         .info("Using resource location: " + uri.getPath());
             }
         } else {
             // Just warn, since everybody should be able to unpack the archives
             // to explore or change the contents,
             // and to remove them to ensure the unpacked resources are used
-            TeaseLib.instance().log
+            logger
                     .info("Archive not available: " + uri.getPath());
         }
     }
 
     public InputStream getResource(String resource) throws IOException {
-        TeaseLib.instance().log.info("Resource: '" + resource + "'");
+        logger.info("Resource: '" + resource + "'");
         InputStream inputStream = classLoader
                 .getResourceAsStream(classLoaderAbsolutePath(resource));
         if (inputStream == null) {

@@ -3,10 +3,13 @@ package teaselib.core.events;
 import java.util.ArrayDeque;
 import java.util.Deque;
 
-import teaselib.TeaseLib;
+import org.slf4j.LoggerFactory;
+
 import teaselib.core.ScriptInterruptedException;
 
 public class DelegateThread extends Thread {
+    private static final org.slf4j.Logger logger = LoggerFactory
+            .getLogger(DelegateThread.class);
 
     private final Deque<Delegate> queue = new ArrayDeque<Delegate>();
     private boolean endThread = false;
@@ -43,7 +46,7 @@ public class DelegateThread extends Thread {
                     delegate.notifyAll();
                 }
             } catch (Throwable t) {
-                TeaseLib.instance().log.error(this, t);
+                logger.error(t.getMessage(), t);
             }
             if (endThread) {
                 break;

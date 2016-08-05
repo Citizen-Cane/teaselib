@@ -4,10 +4,15 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 
-import teaselib.TeaseLib;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import teaselib.core.ResourceLoader;
 
 public class PreRecordedVoice extends VoiceProperties {
+    private static final Logger logger = LoggerFactory
+            .getLogger(PreRecordedVoice.class);
+
     public final static String ActorPropertiesFilename = "voice.properties";
 
     public PreRecordedVoice(String actorName, String voiceGuid,
@@ -27,9 +32,8 @@ public class PreRecordedVoice extends VoiceProperties {
             }
         } catch (IOException e) {
             // This is expected, as the script may not have pre-recorded voices
-            TeaseLib.instance().log
-                    .debug("Prerecorded voice configuration file '"
-                            + actorProperties + "' not found");
+            logger.debug("Prerecorded voice configuration file '"
+                    + actorProperties + "' not found");
         }
     }
 

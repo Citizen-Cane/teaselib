@@ -16,8 +16,9 @@ import org.bytedeco.javacpp.opencv_core.Mat;
 import org.bytedeco.javacpp.opencv_core.MatVector;
 import org.bytedeco.javacpp.opencv_core.Rect;
 import org.bytedeco.javacpp.opencv_core.Size;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import teaselib.TeaseLib;
 import teaselib.core.ScriptInterruptedException;
 import teaselib.core.concurrency.Signal;
 import teaselib.core.javacv.util.Geom;
@@ -26,6 +27,8 @@ import teaselib.motiondetection.MotionDetector.Presence;
 
 public class MotionDetectionResultImplementation
         extends MotionDetectionResultData {
+    private static final Logger logger = LoggerFactory
+            .getLogger(MotionDetectionResultImplementation.class);
 
     private static final double CircularityVariance = 1.3; // 1.3 seems to
                                                            // be necessary
@@ -156,7 +159,7 @@ public class MotionDetectionResultImplementation
         } catch (InterruptedException e) {
             throw new ScriptInterruptedException();
         } catch (Exception e) {
-            TeaseLib.instance().log.error(this, e);
+            logger.error(e.getMessage(), e);
         }
         return false;
     }

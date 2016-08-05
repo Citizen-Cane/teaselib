@@ -2,9 +2,13 @@ package teaselib.core.texttospeech;
 
 import java.util.Map;
 
-import teaselib.TeaseLib;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public abstract class TextToSpeechImplementation {
+    private static final Logger logger = LoggerFactory
+            .getLogger(TextToSpeechImplementation.class);
+
     public abstract void getVoices(Map<String, Voice> voices);
 
     public abstract void setVoice(Voice voice);
@@ -35,7 +39,7 @@ public abstract class TextToSpeechImplementation {
         try {
             dispose();
         } catch (Throwable t) {
-            TeaseLib.instance().log.error(this, t);
+            logger.error(t.getMessage(), t);
         }
         super.finalize();
     }

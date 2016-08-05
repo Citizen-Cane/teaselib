@@ -1,8 +1,11 @@
 package teaselib.core.jni;
 
-import teaselib.TeaseLib;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public abstract class NativeObject {
+    private static final Logger logger = LoggerFactory
+            .getLogger(NativeObject.class);
 
     private final long nativeObject;
 
@@ -17,7 +20,7 @@ public abstract class NativeObject {
         try {
             disposeNativeObject();
         } catch (Throwable t) {
-            TeaseLib.instance().log.error(this, t);
+            logger.error(t.getMessage(), t);
         }
         super.finalize();
     }

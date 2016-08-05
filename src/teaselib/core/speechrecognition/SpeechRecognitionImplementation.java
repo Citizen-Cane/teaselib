@@ -2,9 +2,12 @@ package teaselib.core.speechrecognition;
 
 import java.util.List;
 
-import teaselib.TeaseLib;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public abstract class SpeechRecognitionImplementation {
+    private static final Logger logger = LoggerFactory
+            .getLogger(SpeechRecognitionImplementation.class);
 
     /**
      * Get a recognizer for the requested language
@@ -51,7 +54,7 @@ public abstract class SpeechRecognitionImplementation {
         try {
             dispose();
         } catch (Throwable t) {
-            TeaseLib.instance().log.error(this, t);
+            logger.error(t.getMessage(), t);
         }
         super.finalize();
     }

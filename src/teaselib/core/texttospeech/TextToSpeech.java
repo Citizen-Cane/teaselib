@@ -7,13 +7,17 @@ import java.util.Set;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-import teaselib.TeaseLib;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import teaselib.core.ScriptInterruptedException;
 import teaselib.core.events.Delegate;
 import teaselib.core.events.DelegateThread;
 import teaselib.core.texttospeech.implementation.TeaseLibTTS;
 
 public class TextToSpeech {
+    private static final Logger logger = LoggerFactory
+            .getLogger(TextToSpeech.class);
 
     private TextToSpeechImplementation tts;
 
@@ -75,7 +79,7 @@ public class TextToSpeech {
         } catch (ScriptInterruptedException e) {
             throw e;
         } catch (Throwable t) {
-            TeaseLib.instance().log.error(this, t);
+            logger.error(t.getMessage(), t);
         }
     }
 
@@ -100,7 +104,7 @@ public class TextToSpeech {
             } catch (ScriptInterruptedException e) {
                 throw e;
             } catch (Throwable t) {
-                TeaseLib.instance().log.error(this, t);
+                logger.error(t.getMessage(), t);
             }
         } else {
             ttsEngineNotInitialized();
@@ -126,7 +130,7 @@ public class TextToSpeech {
             } catch (ScriptInterruptedException e) {
                 throw e;
             } catch (Throwable t) {
-                TeaseLib.instance().log.error(this, t);
+                logger.error(t.getMessage(), t);
             }
         } else {
             ttsEngineNotInitialized();
@@ -153,7 +157,7 @@ public class TextToSpeech {
             } catch (ScriptInterruptedException e) {
                 throw e;
             } catch (Throwable t) {
-                TeaseLib.instance().log.error(this, t);
+                logger.error(t.getMessage(), t);
             }
         } else {
             ttsEngineNotInitialized();
@@ -179,7 +183,7 @@ public class TextToSpeech {
             } catch (ScriptInterruptedException e) {
                 throw e;
             } catch (Throwable t) {
-                TeaseLib.instance().log.error(this, t);
+                logger.error(t.getMessage(), t);
             }
         } else {
             ttsEngineNotInitialized();

@@ -4,11 +4,16 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import teaselib.TeaseLib;
-import teaselib.core.media.MediaRenderer.Threaded;
 import teaselib.core.media.MediaRenderer.Replay.Position;
+import teaselib.core.media.MediaRenderer.Threaded;
 
 public class MediaRendererQueue {
+    private static final Logger logger = LoggerFactory
+            .getLogger(MediaRendererQueue.class);
 
     private final HashMap<Class<?>, MediaRenderer.Threaded> threadedMediaRenderers = new HashMap<Class<?>, MediaRenderer.Threaded>();
 
@@ -40,7 +45,7 @@ public class MediaRendererQueue {
                 try {
                     r.render();
                 } catch (Exception e) {
-                    TeaseLib.instance().log.error(this, e);
+                    logger.error(e.getMessage(), e);
                 }
             }
         }
@@ -58,8 +63,7 @@ public class MediaRendererQueue {
                         threadedMediaRenderers.put(r.getClass(),
                                 (MediaRenderer.Threaded) r);
                     }
-                    ((MediaRenderer.Replay) r)
-                            .replay(replayPosition);
+                    ((MediaRenderer.Replay) r).replay(replayPosition);
                 }
             }
         }
@@ -74,13 +78,13 @@ public class MediaRendererQueue {
     public void completeStarts() {
         Map<Class<?>, Threaded> renderers = getThreadedRenderers();
         if (!renderers.isEmpty()) {
-            TeaseLib.instance().log
+            logger
                     .debug("Completing all threaded renderers starts");
             for (MediaRenderer.Threaded renderer : renderers.values()) {
                 renderer.completeStart();
             }
         } else {
-            TeaseLib.instance().log
+            logger
                     .debug("Threaded Renderers completeStarts : queue empty");
         }
     }
@@ -88,13 +92,13 @@ public class MediaRendererQueue {
     public void completeMandatories() {
         Map<Class<?>, Threaded> renderers = getThreadedRenderers();
         if (!renderers.isEmpty()) {
-            TeaseLib.instance().log
+            logger
                     .debug("Completing all threaded renderers mandatory part");
             for (MediaRenderer.Threaded renderer : renderers.values()) {
                 renderer.completeMandatory();
             }
         } else {
-            TeaseLib.instance().log.debug(
+            logger.debug(
                     "Threaded Renderers completeMandatories : queue empty");
         }
     }
@@ -106,12 +110,12 @@ public class MediaRendererQueue {
     public void completeAll() {
         Map<Class<?>, Threaded> renderers = getThreadedRenderers();
         if (!renderers.isEmpty()) {
-            TeaseLib.instance().log.debug("Completing all threaded renderers");
+            logger.debug("Completing all threaded renderers");
             for (MediaRenderer.Threaded renderer : renderers.values()) {
                 renderer.completeAll();
             }
         } else {
-            TeaseLib.instance().log
+            logger
                     .debug("Threaded Renderers completeAll: queue empty");
         }
     }
@@ -123,7 +127,7 @@ public class MediaRendererQueue {
     public void endAll() {
         Map<Class<?>, Threaded> renderers = getThreadedRenderers();
         if (!renderers.isEmpty()) {
-            TeaseLib.instance().log.debug("Ending all threaded renderers");
+            logger.debug("Ending all threaded renderers");
             // Interrupt them all
             RuntimeException exception = null;
             for (MediaRenderer.Threaded renderer : renderers.values()) {
@@ -148,7 +152,7 @@ public class MediaRendererQueue {
                 throw exception;
             }
         } else {
-            TeaseLib.instance().log
+            logger
                     .debug("Threaded Renderers endAll: queue empty");
         }
     }

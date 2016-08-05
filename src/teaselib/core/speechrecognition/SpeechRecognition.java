@@ -3,7 +3,9 @@ package teaselib.core.speechrecognition;
 import java.util.List;
 import java.util.concurrent.locks.ReentrantLock;
 
-import teaselib.TeaseLib;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import teaselib.core.ScriptInterruptedException;
 import teaselib.core.events.Delegate;
 import teaselib.core.events.DelegateThread;
@@ -15,6 +17,9 @@ import teaselib.core.speechrecognition.implementation.TeaseLibSR;
 import teaselib.core.texttospeech.TextToSpeech;
 
 public class SpeechRecognition {
+    private static final Logger logger = LoggerFactory
+            .getLogger(SpeechRecognition.class);
+
     /**
      * How to handle speech recognition and timeout in script functions.
      *
@@ -104,11 +109,10 @@ public class SpeechRecognition {
             @Override
             public void run() {
                 try {
-                    TeaseLib.instance().log
-                            .debug("Locking speech recognition sync object");
+                    logger.debug("Locking speech recognition sync object");
                     SpeechRecognitionInProgress.lock();
                 } catch (Throwable t) {
-                    TeaseLib.instance().log.error(this, t);
+                    logger.error(t.getMessage(), t);
                 }
             }
         };
@@ -117,7 +121,7 @@ public class SpeechRecognition {
         } catch (ScriptInterruptedException e) {
             throw e;
         } catch (Throwable t) {
-            TeaseLib.instance().log.error(this, t);
+            logger.error(t.getMessage(), t);
         }
     }
 
@@ -131,14 +135,14 @@ public class SpeechRecognition {
                     // hypothesis
                     // event handler may generate a Completion event
                     if (SpeechRecognitionInProgress.isHeldByCurrentThread()) {
-                        TeaseLib.instance().log
-                                .debug("Unlocking speech recognition sync object");
+                        logger.debug(
+                                "Unlocking speech recognition sync object");
                         SpeechRecognitionInProgress.unlock();
                     }
                 } catch (ScriptInterruptedException e) {
                     throw e;
                 } catch (Throwable t) {
-                    TeaseLib.instance().log.error(this, t);
+                    logger.error(t.getMessage(), t);
                 }
             }
         };
@@ -147,7 +151,7 @@ public class SpeechRecognition {
         } catch (ScriptInterruptedException e) {
             throw e;
         } catch (Throwable t) {
-            TeaseLib.instance().log.error(this, t);
+            logger.error(t.getMessage(), t);
         }
     }
 
@@ -168,10 +172,10 @@ public class SpeechRecognition {
                         sr = new TeaseLibSR();
                         sr.init(events, SpeechRecognition.this.locale);
                     } catch (UnsatisfiedLinkError e) {
-                        TeaseLib.instance().log.error(this, e);
+                        logger.error(e.getMessage(), e);
                         sr = null;
                     } catch (Throwable t) {
-                        TeaseLib.instance().log.error(this, t);
+                        logger.error(t.getMessage(), t);
                         sr = null;
                     }
                 }
@@ -180,7 +184,7 @@ public class SpeechRecognition {
         } catch (ScriptInterruptedException e) {
             throw e;
         } catch (Throwable t) {
-            TeaseLib.instance().log.error(this, t);
+            logger.error(t.getMessage(), t);
         }
         // Last add the hypothesis handler, as it may consume the
         // RecognitionRejected-event
@@ -213,8 +217,7 @@ public class SpeechRecognition {
                     // other speech related audio output
                     synchronized (TextToSpeech.AudioOutput) {
                         sr.startRecognition();
-                        TeaseLib.instance().log
-                                .info("Speech recognition started");
+                        logger.info("Speech recognition started");
                     }
                 }
             };
@@ -224,7 +227,7 @@ public class SpeechRecognition {
                 throw e;
             } catch (Throwable t) {
                 SpeechRecognition.this.speechRecognitionActive = false;
-                TeaseLib.instance().log.error(this, t);
+                logger.error(t.getMessage(), t);
             }
         } else {
             recognizerNotInitialized();
@@ -241,8 +244,7 @@ public class SpeechRecognition {
                     // other speech related audio output
                     synchronized (TextToSpeech.AudioOutput) {
                         sr.startRecognition();
-                        TeaseLib.instance().log
-                                .info("Speech recognition resumed");
+                        logger.info("Speech recognition resumed");
                     }
                 }
             };
@@ -252,7 +254,7 @@ public class SpeechRecognition {
                 throw e;
             } catch (Throwable t) {
                 SpeechRecognition.this.speechRecognitionActive = false;
-                TeaseLib.instance().log.error(this, t);
+                logger.error(t.getMessage(), t);
             }
         } else {
             recognizerNotInitialized();
@@ -270,8 +272,7 @@ public class SpeechRecognition {
                         if (SpeechRecognition.this.speechRecognitionActive) {
                             SpeechRecognition.this.speechRecognitionActive = false;
                         }
-                        TeaseLib.instance().log
-                                .info("Speech recognition stopped");
+                        logger.info("Speech recognition stopped");
                     }
                 }
             };
@@ -280,7 +281,7 @@ public class SpeechRecognition {
             } catch (ScriptInterruptedException e) {
                 throw e;
             } catch (Throwable t) {
-                TeaseLib.instance().log.error(this, t);
+                logger.error(t.getMessage(), t);
             } finally {
                 // Unlock explicitly since after stopping we won't receive
                 // events anymore
@@ -301,8 +302,7 @@ public class SpeechRecognition {
 
     public static void completeSpeechRecognitionInProgress() {
         if (SpeechRecognitionInProgress.isLocked()) {
-            TeaseLib.instance().log
-                    .info("Waiting for speech recognition to complete");
+            logger.info("Waiting for speech recognition to complete");
             try {
                 SpeechRecognitionInProgress.lockInterruptibly();
             } catch (InterruptedException e) {
@@ -313,8 +313,7 @@ public class SpeechRecognition {
                 }
             }
         } else {
-            TeaseLib.instance().log
-                    .debug("Speech recognition sync object not locked");
+            logger.debug("Speech recognition sync object not locked");
         }
     }
 

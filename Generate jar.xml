@@ -7,7 +7,9 @@
             <manifest>
                 <attribute name="Class-Path" value="lib/jump3er-1.03.jar lib/webcam-capture-0.3.11.jar bridj-0.6.2.jar"/>
             </manifest>
-            <fileset dir="bin"/>
+            <fileset dir="bin">
+           		<exclude name="simplelogger.properties"/>
+           	</fileset>
         </jar>
     </target>
     <target name="create_tests_jar">

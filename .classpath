@@ -38,5 +38,6 @@
 	<classpathentry kind="lib" path="/javacv-bin/videoinput-windows-x86.jar"/>
 	<classpathentry kind="lib" path="/javacv-bin/opencv-linux-armhf.jar"/>
 	<classpathentry kind="lib" path="/javacv-bin/ffmpeg-linux-armhf.jar"/>
+	<classpathentry exported="true" kind="lib" path="/SexScripts/lib/slf4j-api-1.7.2.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

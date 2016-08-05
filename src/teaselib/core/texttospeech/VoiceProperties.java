@@ -6,10 +6,15 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
-import teaselib.TeaseLib;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import teaselib.core.util.SortedProperties;
 
 public class VoiceProperties {
+    private static final Logger logger = LoggerFactory
+            .getLogger(VoiceProperties.class);
+
     protected final SortedProperties properties = new SortedProperties();
 
     void clear() {
@@ -66,7 +71,7 @@ public class VoiceProperties {
 
     protected void store(File path, String fileName) throws IOException {
         File file = new File(path, fileName);
-        TeaseLib.instance().log.info("Saving " + file.toString());
+        logger.info("Saving " + file.toString());
         FileOutputStream fileOutputStream = null;
         try {
             fileOutputStream = new FileOutputStream(file);

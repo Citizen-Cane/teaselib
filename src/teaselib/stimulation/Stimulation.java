@@ -3,7 +3,9 @@
  */
 package teaselib.stimulation;
 
-import teaselib.TeaseLib;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import teaselib.core.ScriptInterruptedException;
 
 /**
@@ -13,6 +15,9 @@ import teaselib.core.ScriptInterruptedException;
  *
  */
 public abstract class Stimulation {
+    private static final Logger logger = LoggerFactory
+            .getLogger(Stimulation.class);
+
     /**
      * The body region the stimulator is applied to
      *
@@ -66,9 +71,9 @@ public abstract class Stimulation {
             }
         });
         final String simpleName = getClass().getSimpleName();
-        TeaseLib.instance().log.info(simpleName + ": intensity=" + intensity
-                + " duration=" + durationSeconds + " on "
-                + stimulator.getDeviceName() + ", " + stimulator.getLocation());
+        logger.info(simpleName + ": intensity=" + intensity + " duration="
+                + durationSeconds + " on " + stimulator.getDeviceName() + ", "
+                + stimulator.getLocation());
         stim.setName(simpleName);
         stim.start();
     }

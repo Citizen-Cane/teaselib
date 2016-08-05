@@ -7,6 +7,9 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import teaselib.ScriptFunction.Relation;
 import teaselib.core.ResourceLoader;
 import teaselib.core.events.Event;
@@ -27,6 +30,8 @@ import teaselib.core.util.WildcardPattern;
 import teaselib.util.Items;
 
 public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
+    private static final Logger logger = LoggerFactory
+            .getLogger(TeaseScript.class);
 
     /**
      * see {@link teaselib.ScriptFunction#Timeout}
@@ -96,7 +101,7 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
                     resources.unpackEnclosingFolder(path), teaseLib);
             queueRenderer(desktopItem);
         } catch (IOException e) {
-            teaseLib.log.error(this, e);
+            logger.error(e.getMessage(), e);
         }
     }
 
@@ -280,7 +285,7 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
                     @Override
                     public void run(SpeechRecognitionImplementation sender,
                             SpeechRecognitionStartedEventArgs eventArgs) {
-                        teaseLib.log.info("-" + scriptFunctionThread.getName()
+                        logger.info("-" + scriptFunctionThread.getName()
                                 + " - : Disabling timeout "
                                 + timeoutBehavior.toString().toLowerCase());
                         inDubioMitius = true;
@@ -294,7 +299,7 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
                 teaseLib.sleep(seconds, TimeUnit.SECONDS);
                 if (timeoutBehavior != TimeoutBehavior.InDubioContraReum
                         && SpeechRecognition.isSpeechRecognitionInProgress()) {
-                    teaseLib.log.info("Completing speech recognition "
+                    logger.info("Completing speech recognition "
                             + timeoutBehavior.toString().toLowerCase());
                     SpeechRecognition.completeSpeechRecognitionInProgress();
                 }
@@ -305,9 +310,9 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
             }
             if (!inDubioMitius) {
                 result = Timeout;
-                teaseLib.log.info("Script function timeout triggered");
+                logger.info("Script function timeout triggered");
             } else {
-                teaseLib.log.info("Timeout ignored "
+                logger.info("Timeout ignored "
                         + timeoutBehavior.toString().toLowerCase());
             }
         }
@@ -535,11 +540,11 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
         Collection<String> items = resources.resources(pattern);
         final int size = items.size();
         if (size > 0) {
-            TeaseLib.instance().log.info(getClass().getSimpleName() + ": '"
-                    + wildcardPattern + "' yields " + size + " resources");
+            logger.info(getClass().getSimpleName() + ": '" + wildcardPattern
+                    + "' yields " + size + " resources");
         } else {
-            TeaseLib.instance().log.info(getClass().getSimpleName() + ": '"
-                    + wildcardPattern + "' doesn't yield any resources");
+            logger.info(getClass().getSimpleName() + ": '" + wildcardPattern
+                    + "' doesn't yield any resources");
         }
         return new ArrayList<String>(items);
     }

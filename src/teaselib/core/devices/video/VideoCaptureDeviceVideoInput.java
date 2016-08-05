@@ -10,8 +10,9 @@ import org.bytedeco.javacpp.opencv_core;
 import org.bytedeco.javacpp.opencv_core.Mat;
 import org.bytedeco.javacpp.opencv_core.Size;
 import org.bytedeco.javacpp.videoInputLib.videoInput;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import teaselib.TeaseLib;
 import teaselib.core.devices.Device;
 import teaselib.core.devices.DeviceCache;
 import teaselib.video.ResolutionList;
@@ -25,6 +26,9 @@ import teaselib.video.VideoCaptureDevices;
 // reconnect to new camera -> application
 
 public class VideoCaptureDeviceVideoInput implements VideoCaptureDevice {
+    private static final Logger logger = LoggerFactory
+            .getLogger(VideoCaptureDeviceVideoInput.class);
+
     private static final String DeviceClassName = "JavaCVVideoInput";
 
     public static final DeviceCache.Factory<VideoCaptureDevice> Factory = new DeviceCache.Factory<VideoCaptureDevice>() {
@@ -302,7 +306,7 @@ public class VideoCaptureDeviceVideoInput implements VideoCaptureDevice {
         try {
             vi.stopDevice(deviceId);
         } catch (Exception e) {
-            TeaseLib.instance().log.error(this, e);
+            logger.error(e.getMessage(), e);
         }
     }
 }

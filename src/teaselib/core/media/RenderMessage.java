@@ -10,6 +10,9 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import teaselib.Config;
 import teaselib.Message;
 import teaselib.Message.Part;
@@ -21,6 +24,9 @@ import teaselib.core.texttospeech.TextToSpeech;
 import teaselib.core.texttospeech.TextToSpeechPlayer;
 
 public class RenderMessage extends MediaRendererThread {
+    private static final Logger logger = LoggerFactory
+            .getLogger(RenderMessage.class);
+
     private final static long DELAYBETWEENPARAGRAPHS = 500;
     private final static long DELAYATENDOFTEXT = 2000;
 
@@ -175,7 +181,7 @@ public class RenderMessage extends MediaRendererThread {
                     teaseLib.transcript
                             .info("" + part.type.name() + " = " + part.value);
                 }
-                teaseLib.log.info(part.type.toString() + ": " + part.value);
+                logger.info(part.type.toString() + ": " + part.value);
                 // TODO Works only if the last part is a text part
                 final boolean lastParagraph = !it.hasNext();
                 // Handle message commands
@@ -218,7 +224,7 @@ public class RenderMessage extends MediaRendererThread {
                         completeSpeech(lastParagraph);
                         renderDesktopItem.render();
                     } catch (IOException e) {
-                        teaseLib.log.error(this, e);
+                        logger.error(e.getMessage(), e);
                         accumulatedText.add(part);
                         show(accumulatedText.toString(), mood);
                         speak(part.value, mood, lastParagraph, false);
@@ -318,7 +324,7 @@ public class RenderMessage extends MediaRendererThread {
             } catch (Exception e) {
                 text = text + "\n\n" + e.getClass() + ": " + e.getMessage()
                         + "\n";
-                teaseLib.log.error(this, e);
+                logger.error(e.getMessage(), e);
             } finally {
                 synchronized (imageFetcher) {
                     if (!imageFetcher.isEmpty()) {

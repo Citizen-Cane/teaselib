@@ -2,11 +2,16 @@ package teaselib.core.media;
 
 import java.io.IOException;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import teaselib.Config;
 import teaselib.TeaseLib;
 import teaselib.core.ResourceLoader;
 
 public class RenderBackgroundSound implements MediaRenderer.Threaded {
+    private static final Logger logger = LoggerFactory
+            .getLogger(RenderBackgroundSound.class);
 
     private final ResourceLoader resources;
     private final String soundFile;
@@ -25,7 +30,7 @@ public class RenderBackgroundSound implements MediaRenderer.Threaded {
     @Override
     public void render() throws IOException {
         teaseLib.transcript.info("Background sound = " + soundFile);
-        teaseLib.log.info(this.getClass().getSimpleName() + ": " + soundFile);
+        logger.info(this.getClass().getSimpleName() + ": " + soundFile);
         try {
             completedAll = false;
             audioHandle = teaseLib.host.playBackgroundSound(resources,

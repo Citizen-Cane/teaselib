@@ -13,18 +13,22 @@ import org.bytedeco.javacpp.BytePointer;
 import org.bytedeco.javacpp.opencv_core;
 import org.bytedeco.javacpp.opencv_core.Mat;
 import org.bytedeco.javacpp.opencv_core.Size;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.github.sarxos.webcam.Webcam;
 import com.github.sarxos.webcam.WebcamDiscoveryEvent;
 import com.github.sarxos.webcam.WebcamDiscoveryListener;
 
-import teaselib.TeaseLib;
 import teaselib.core.devices.Device;
 import teaselib.core.devices.DeviceCache;
 import teaselib.video.ResolutionList;
 import teaselib.video.VideoCaptureDevice;
 
 public class VideoCaptureDeviceWebcamCapture implements VideoCaptureDevice {
+    private static final Logger logger = LoggerFactory
+            .getLogger(VideoCaptureDeviceWebcamCapture.class);
+
     private static final String DeviceClassName = "WebcamCapture";
 
     public static final DeviceCache.Factory<VideoCaptureDevice> Factory = new DeviceCache.Factory<VideoCaptureDevice>() {
@@ -59,7 +63,7 @@ public class VideoCaptureDeviceWebcamCapture implements VideoCaptureDevice {
                     newDevices.put(devicePath, device);
                 }
             } catch (Exception e) {
-                TeaseLib.instance().log.error(Webcam.class, e);
+                logger.error(e.getMessage(), e);
             }
             devices.clear();
             for (Entry<String, VideoCaptureDeviceWebcamCapture> entry : newDevices
@@ -94,7 +98,7 @@ public class VideoCaptureDeviceWebcamCapture implements VideoCaptureDevice {
                     }
                 }
             } catch (Exception e) {
-                TeaseLib.instance().log.error(this, e);
+                logger.error(e.getMessage(), e);
             }
         }
 
@@ -104,7 +108,7 @@ public class VideoCaptureDeviceWebcamCapture implements VideoCaptureDevice {
             resolutions = buildResolutionList();
             webcam.open();
             webcam.setViewSize(resolution);
-            TeaseLib.instance().log.info(name + " connected");
+            logger.info(name + " connected");
             Factory.getDevices();
         }
 
@@ -112,13 +116,13 @@ public class VideoCaptureDeviceWebcamCapture implements VideoCaptureDevice {
         public void webcamGone(WebcamDiscoveryEvent event) {
             try {
                 if (event.getWebcam().equals(webcam)) {
-                    TeaseLib.instance().log.info(getName() + " disconnected");
+                    logger.info(getName() + " disconnected");
                     webcam.close();
                     webcam = null;
                     // TODO store name and release webcam
                 }
             } catch (Exception e) {
-                TeaseLib.instance().log.error(this, e);
+                logger.error(e.getMessage(), e);
             }
         }
     };
@@ -311,7 +315,7 @@ public class VideoCaptureDeviceWebcamCapture implements VideoCaptureDevice {
         try {
             webcam.close();
         } catch (Exception e) {
-            TeaseLib.instance().log.error(this, e);
+            logger.error(e.getMessage(), e);
         }
     }
 }

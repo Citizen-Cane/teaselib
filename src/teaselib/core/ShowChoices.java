@@ -9,6 +9,9 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import teaselib.ScriptFunction;
 import teaselib.TeaseLib;
 import teaselib.core.events.Delegate;
@@ -25,6 +28,8 @@ import teaselib.util.SpeechRecognitionRejectedScript;
  *
  */
 class ShowChoices {
+    private static final Logger logger = LoggerFactory
+            .getLogger(ShowChoices.class);
     /**
      * The choices instance is paused in order to display a different set of
      * choices
@@ -100,8 +105,8 @@ class ShowChoices {
                     // run speech recognition rejected script?
                     if (speechRecognitionRejectedScript != null) {
                         if (choicesStackContainsSRRejectedState == true) {
-                            teaseLib.log
-                                    .info("The choices stack contains already another SR rejection script"
+                            logger.info(
+                                    "The choices stack contains already another SR rejection script"
                                             + " - skipping RecognitionRejectedScript "
                                             + speechRecognitionRejectedScript
                                                     .toString());
@@ -110,23 +115,21 @@ class ShowChoices {
                             // timeout script functions
                             // TimeoutBehavior.InDubioMitius and maybe also for
                             // TimeoutBehavior.TimeoutBehavior.InDubioMitius
-                            teaseLib.log
-                                    .info(scriptTask.getRelation().toString()
-                                            + " script functions running"
-                                            + " - skipping RecognitionRejectedScript "
-                                            + speechRecognitionRejectedScript
-                                                    .toString());
+                            logger.info(scriptTask.getRelation().toString()
+                                    + " script functions running"
+                                    + " - skipping RecognitionRejectedScript "
+                                    + speechRecognitionRejectedScript
+                                            .toString());
                         } else if (!script.renderQueue.hasCompletedAll()) {
                             // must complete all to avoid parallel rendering
                             // see {@link Message#ShowChoices}
-                            teaseLib.log
-                                    .info(" message rendering still in progress"
-                                            + " - skipping RecognitionRejectedScript "
-                                            + speechRecognitionRejectedScript
-                                                    .toString());
+                            logger.info(" message rendering still in progress"
+                                    + " - skipping RecognitionRejectedScript "
+                                    + speechRecognitionRejectedScript
+                                            .toString());
                         } else if (speechRecognitionRejectedScript
                                 .canRun() == false) {
-                            teaseLib.log.info("RecognitionRejectedScript "
+                            logger.info("RecognitionRejectedScript "
                                     + speechRecognitionRejectedScript.toString()
                                     + ".canRun() returned false - skipping");
                         } else {
@@ -147,7 +150,7 @@ class ShowChoices {
     }
 
     public String show() {
-        teaseLib.log.info("Showing " + derivedChoices.toString());
+        logger.info("Showing " + derivedChoices.toString());
         // Start SR first, otherwise there would be a race condition between
         // this thread and the script function when displaying/speaking a
         // message in the script function, causing the display of the choices to
@@ -173,9 +176,9 @@ class ShowChoices {
             boolean stopScriptTask = !isPaused() && scriptTask != null;
             if (stopScriptTask) {
                 if (scriptTask.isDone()) {
-                    teaseLib.log.debug("choose: script task finished");
+                    logger.debug("choose: script task finished");
                 } else {
-                    teaseLib.log.debug("choose: Cancelling script task");
+                    logger.debug("choose: Cancelling script task");
                     scriptTask.cancel(true);
                 }
             }
@@ -190,7 +193,7 @@ class ShowChoices {
             pauseSync.lock();
             try {
                 if (isPaused()) {
-                    teaseLib.log.info("Entering pause state " + pauseState);
+                    logger.info("Entering pause state " + pauseState);
                     return pauseState;
                 }
             } finally {
@@ -227,7 +230,7 @@ class ShowChoices {
     }
 
     private void disableSpeechRecognition() {
-        teaseLib.log.debug("Stopping speech recognition");
+        logger.debug("Stopping speech recognition");
         speechRecognizer.events.recognitionRejected.remove(recognitionRejected);
         speechRecognizer.events.recognitionCompleted
                 .remove(recognitionCompleted);
@@ -250,7 +253,7 @@ class ShowChoices {
             pauseSync.lock();
             try {
                 this.pauseState = pauseState;
-                teaseLib.log.info("Pausing " + derivedChoices.toString());
+                logger.info("Pausing " + derivedChoices.toString());
                 // Must wait until there is something to pause, because
                 // the buttons are realized by the host, and therefore
                 // we don't have a synchronization object that defines a
@@ -265,7 +268,7 @@ class ShowChoices {
                 } catch (ScriptInterruptedException e) {
                     throw new ScriptInterruptedException();
                 } catch (Exception e) {
-                    teaseLib.log.debug(this, e);
+                    logger.debug(e.getMessage(), e);
                 }
             } finally {
                 pauseSync.unlock();
@@ -273,7 +276,7 @@ class ShowChoices {
             // Keep the pause status until the choices are about to be
             // realized again in the user interface
         } else {
-            teaseLib.log.info("Paused already " + derivedChoices.toString());
+            logger.info("Paused already " + derivedChoices.toString());
         }
     }
 
@@ -326,16 +329,16 @@ class ShowChoices {
                         }
                         // Click the button
                         delegate.run();
-                        teaseLib.log.info("Clicked delegate for '"
+                        logger.info("Clicked delegate for '"
                                 + speechRecognitionResult.text + "' index="
                                 + speechRecognitionResult.index);
                     } else {
-                        teaseLib.log.info("Button gone for choice "
+                        logger.info("Button gone for choice "
                                 + speechRecognitionResult.index + ": "
                                 + speechRecognitionResult.text);
                     }
                 } catch (Throwable t) {
-                    teaseLib.log.error(this, t);
+                    logger.error(t.getMessage(), t);
                 }
             }
         };

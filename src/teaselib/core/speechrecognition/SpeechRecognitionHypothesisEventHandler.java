@@ -7,7 +7,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import teaselib.TeaseLib;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import teaselib.core.events.Event;
 import teaselib.core.speechrecognition.SpeechRecognitionResult.Confidence;
 import teaselib.core.speechrecognition.events.SpeechRecognitionStartedEventArgs;
@@ -18,6 +20,8 @@ import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
  *
  */
 public class SpeechRecognitionHypothesisEventHandler {
+    private static final Logger logger = LoggerFactory
+            .getLogger(SpeechRecognitionHypothesisEventHandler.class);
     /**
      * Hypothesis speech recognition is used for longer sentences, as short
      * sentences or single word recognitions are prone to error. In fact, for
@@ -95,7 +99,8 @@ public class SpeechRecognitionHypothesisEventHandler {
                     // hypothesis, and add the probability weight for each
                     final SpeechRecognitionResult hypothesis = eventArgs.result[0];
                     String hypothesisText = hypothesis.text;
-                    final double propabilityWeight = propabilityWeight(hypothesis);
+                    final double propabilityWeight = propabilityWeight(
+                            hypothesis);
                     for (int index = 0; index < choices.size(); index++) {
                         String choice = choices.get(index).toLowerCase();
                         if (choice.startsWith(hypothesisText.toLowerCase())) {
@@ -107,7 +112,8 @@ public class SpeechRecognitionHypothesisEventHandler {
                     for (SpeechRecognitionResult hypothesis : recognitionResults) {
                         // The first word(s) are usually incorrect,
                         // whereas later hypothesis usually match better
-                        final double propabilityWeight = propabilityWeight(hypothesis);
+                        final double propabilityWeight = propabilityWeight(
+                                hypothesis);
                         final int index = hypothesis.index;
                         updateHypothesisProgress(index, hypothesis.text,
                                 propabilityWeight);
@@ -124,11 +130,10 @@ public class SpeechRecognitionHypothesisEventHandler {
                                 .length()) {
                     hypothesisAccumulatedWeights[index] += propabilityWeight;
                     hypothesisProgress[index] = hypothesisText;
-                    TeaseLib.instance().log.info("'" + hypothesisText + "' + "
-                            + propabilityWeight);
+                    logger.info(
+                            "'" + hypothesisText + "' + " + propabilityWeight);
                 } else {
-                    TeaseLib.instance().log.info("Ignoring hypothesis '"
-                            + hypothesisText);
+                    logger.info("Ignoring hypothesis '" + hypothesisText);
                 }
             }
 
@@ -148,8 +153,8 @@ public class SpeechRecognitionHypothesisEventHandler {
             int choiceWithMaxProbabilityIndex = 0;
             for (int i = 0; i < hypothesisAccumulatedWeights.length; i++) {
                 double value = hypothesisAccumulatedWeights[i];
-                TeaseLib.instance().log.info("Result " + i + ": '"
-                        + choices.get(i) + "' hypothesisCount=" + value);
+                logger.info("Result " + i + ": '" + choices.get(i)
+                        + "' hypothesisCount=" + value);
                 if (value > maxValue) {
                     maxValue = value;
                     choiceWithMaxProbabilityIndex = i;
@@ -192,7 +197,8 @@ public class SpeechRecognitionHypothesisEventHandler {
                     - confidenceBonus;
             // prompts with few words need a higher weight to be
             // accepted
-            double hypothesisAccumulatedWeight = wordCount >= minimumNumberOfWordsForHypothesisRecognition ? HypothesisMinimumAccumulatedWeight
+            double hypothesisAccumulatedWeight = wordCount >= minimumNumberOfWordsForHypothesisRecognition
+                    ? HypothesisMinimumAccumulatedWeight
                     : HypothesisMinimumAccumulatedWeight
                             * (minimumNumberOfWordsForHypothesisRecognition
                                     - wordCount + 1);
@@ -201,31 +207,24 @@ public class SpeechRecognitionHypothesisEventHandler {
             // Prompts with few words need more consistent speech
             // detection events (doesn't alternate between different
             // choices)
-            int choiceHypothesisCount = wordCount(hypothesisProgress[choiceWithMaxProbabilityIndex]);
+            int choiceHypothesisCount = wordCount(
+                    hypothesisProgress[choiceWithMaxProbabilityIndex]);
             boolean choiceDetectionCountAccepted = choiceHypothesisCount >= minimumNumberOfWordsForHypothesisRecognition;
             boolean choiceAccepted = choiceWeightAccepted
                     && choiceDetectionCountAccepted;
             if (!choiceWeightAccepted) {
-                TeaseLib.instance().log
-                        .info("Phrase '"
-                                + choice
-                                + "' hypothesis accumulated weight="
-                                + maxValue
-                                + " < threshold="
-                                + hypothesisAccumulatedWeight
-                                + " is too low to accept hypothesis-based recognition for confidence "
-                                + confidence.toString());
+                logger.info("Phrase '" + choice
+                        + "' hypothesis accumulated weight=" + maxValue
+                        + " < threshold=" + hypothesisAccumulatedWeight
+                        + " is too low to accept hypothesis-based recognition for confidence "
+                        + confidence.toString());
             }
             if (!choiceDetectionCountAccepted) {
-                TeaseLib.instance().log
-                        .info("Phrase '"
-                                + choice
-                                + "' word detection count="
-                                + choiceHypothesisCount
-                                + " < threshold="
-                                + minimumNumberOfWordsForHypothesisRecognition
-                                + " is too low to accept hypothesis-based recognition for confidence "
-                                + confidence.toString());
+                logger.info("Phrase '" + choice + "' word detection count="
+                        + choiceHypothesisCount + " < threshold="
+                        + minimumNumberOfWordsForHypothesisRecognition
+                        + " is too low to accept hypothesis-based recognition for confidence "
+                        + confidence.toString());
             }
             return choiceAccepted;
         }
@@ -247,20 +246,21 @@ public class SpeechRecognitionHypothesisEventHandler {
                         // Consume the recognitionRejected event and
                         // fire a RecognitionCompleted-event instead
                         eventArgs.consumed = true;
-                        SpeechRecognitionResult[] results = { new SpeechRecognitionResult(
-                                hypothesisResult.choiceWithMaxProbabilityIndex,
-                                choice, recognitionConfidence.propability,
-                                recognitionConfidence) };
+                        SpeechRecognitionResult[] results = {
+                                new SpeechRecognitionResult(
+                                        hypothesisResult.choiceWithMaxProbabilityIndex,
+                                        choice,
+                                        recognitionConfidence.propability,
+                                        recognitionConfidence) };
                         SpeechRecognizedEventArgs recognitionCompletedEventArgs = new SpeechRecognizedEventArgs(
                                 results);
-                        speechRecognizer.events.recognitionCompleted.run(
-                                sender, recognitionCompletedEventArgs);
+                        speechRecognizer.events.recognitionCompleted.run(sender,
+                                recognitionCompletedEventArgs);
                     }
                 } else {
-                    TeaseLib.instance().log
-                            .info("Speech recognition hypothesis dropped - "
-                                    + size
-                                    + " recognition results share the same accumulated weight - can't decide");
+                    logger.info("Speech recognition hypothesis dropped - "
+                            + size
+                            + " recognition results share the same accumulated weight - can't decide");
                 }
             }
         };

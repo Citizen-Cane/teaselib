@@ -12,13 +12,17 @@ import org.bytedeco.javacpp.opencv_core.Mat;
 import org.bytedeco.javacpp.opencv_core.Size;
 import org.bytedeco.javacpp.opencv_videoio;
 import org.bytedeco.javacpp.opencv_videoio.VideoCapture;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import teaselib.TeaseLib;
 import teaselib.core.devices.DeviceCache;
 import teaselib.video.ResolutionList;
 import teaselib.video.VideoCaptureDevice;
 
 public class VideoCaptureDeviceCV implements VideoCaptureDevice {
+    private static final Logger logger = LoggerFactory
+            .getLogger(VideoCaptureDeviceCV.class);
+
     private static final String DeviceClassName = "JavaCVVideoCapture";
 
     public static final DeviceCache.Factory<VideoCaptureDevice> Factory = new DeviceCache.Factory<VideoCaptureDevice>() {
@@ -82,7 +86,7 @@ public class VideoCaptureDeviceCV implements VideoCaptureDevice {
                 }
                 } catch (Exception e) {
                 // Ignore
-                TeaseLib.instance().log.error(devices, e);
+                logger.error(e.getMessage(), e);
                 break;
                 }
             else {
@@ -97,7 +101,7 @@ public class VideoCaptureDeviceCV implements VideoCaptureDevice {
                             videoCapture.close();
                         } catch (Exception e) {
                             // Ignore
-                            TeaseLib.instance().log.error(devices, e);
+                            logger.error(e.getMessage(), e);
                         }
                         // After removing an entry from the list,
                         // Repeat without incrementing the index
@@ -278,7 +282,7 @@ public class VideoCaptureDeviceCV implements VideoCaptureDevice {
         try {
             videoCapture.release();
         } catch (Exception e) {
-            TeaseLib.instance().log.error(this, e);
+            logger.error(e.getMessage(), e);
         }
     }
 }

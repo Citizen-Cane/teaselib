@@ -9,11 +9,12 @@ import java.util.Set;
 
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.slf4j.LoggerFactory;
 
 import teaselib.TeaseLib;
+import teaselib.core.devices.remote.KeyRelease;
 import teaselib.core.devices.remote.RemoteDevice;
 import teaselib.core.devices.remote.RemoteDevices;
-import teaselib.core.devices.remote.KeyRelease;
 import teaselib.core.devices.xinput.XInputDevices;
 import teaselib.hosts.DummyHost;
 import teaselib.hosts.DummyPersistence;
@@ -26,6 +27,8 @@ import teaselib.video.VideoCaptureDevices;
  *
  */
 public class DeviceFactoryTests {
+    private static final org.slf4j.Logger logger = LoggerFactory
+            .getLogger(DeviceFactoryTests.class);
 
     /**
      * @throws java.lang.Exception
@@ -37,7 +40,7 @@ public class DeviceFactoryTests {
 
     @Test
     public void instanciateDeviceFactories() {
-        TeaseLib.instance().log.info("Available devices:");
+        logger.info("Available devices:");
         listDevices(XInputDevices.Instance.getDevicePaths());
         listDevices(StimulationDevices.Instance.getDevicePaths());
         listDevices(VideoCaptureDevices.Instance.getDevicePaths());
@@ -49,7 +52,7 @@ public class DeviceFactoryTests {
     private static void listDevices(Set<String> devicePaths) {
         assertNotNull(devicePaths);
         for (String devicePath : devicePaths) {
-            TeaseLib.instance().log.info(devicePath);
+            logger.info(devicePath);
         }
     }
 
@@ -59,11 +62,10 @@ public class DeviceFactoryTests {
         assertNotNull(devicePaths);
         // assertNotNull(SelfBondageKeyRelease.Devices.getDevicePaths());
         for (String devicePath : devicePaths) {
-            TeaseLib.instance().log.info(devicePath);
+            logger.info(devicePath);
             RemoteDevice device = RemoteDevices.Instance.getDevice(devicePath);
-            TeaseLib.instance().log.info(
-                    "-> " + device.getName() + ":" + device.getServiceName()
-                            + " Version " + device.getVersion());
+            logger.info("-> " + device.getName() + ":" + device.getServiceName()
+                    + " Version " + device.getVersion());
 
         }
     }

@@ -1,6 +1,7 @@
 package teaselib.core;
 
-import teaselib.TeaseLib;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author someone
@@ -9,17 +10,19 @@ import teaselib.TeaseLib;
  *         interrupted. Used to cancel script closures upon choice.
  */
 public class ScriptInterruptedException extends RuntimeException {
+    private static final Logger logger = LoggerFactory
+            .getLogger(ScriptInterruptedException.class);
+
     private static final long serialVersionUID = 1L;
 
     public ScriptInterruptedException() {
         final StackTraceElement[] stackTrace = getStackTrace();
         if (stackTrace.length > 0) {
             final StackTraceElement firstElement = stackTrace[0];
-            TeaseLib.instance().log
-                    .info("interrupted at " + firstElement.toString());
+            logger.info("interrupted at " + firstElement.toString());
             for (StackTraceElement element : stackTrace) {
                 if (element != firstElement) {
-                    TeaseLib.instance().log.debug("\t" + element.toString());
+                    logger.debug("\t" + element.toString());
                 }
             }
         }

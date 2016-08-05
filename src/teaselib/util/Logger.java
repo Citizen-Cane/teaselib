@@ -1,6 +1,3 @@
-/**
- * 
- */
 package teaselib.util;
 
 import java.io.BufferedWriter;
@@ -10,10 +7,6 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-/**
- * @author someone
- *
- */
 public class Logger {
     private final BufferedWriter log;
     private final Level level;

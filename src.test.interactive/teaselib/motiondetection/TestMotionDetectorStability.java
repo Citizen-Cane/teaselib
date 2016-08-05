@@ -5,6 +5,8 @@ package teaselib.motiondetection;
 
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import teaselib.TeaseLib;
 import teaselib.hosts.DummyHost;
@@ -17,6 +19,8 @@ import teaselib.motiondetection.MotionDetector.Presence;
  *
  */
 public class TestMotionDetectorStability {
+    private static final Logger logger = LoggerFactory
+            .getLogger(TestMotionDetectorStability.class);
 
     /**
      * @throws java.lang.Exception
@@ -42,6 +46,6 @@ public class TestMotionDetectorStability {
             i = System.currentTimeMillis() - start;
             n++;
         }
-        TeaseLib.instance().log.info("tested " + n + " calls to pause/Resume");
+        logger.info("tested " + n + " calls to pause/Resume");
     }
 }

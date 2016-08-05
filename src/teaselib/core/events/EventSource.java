@@ -3,9 +3,13 @@ package teaselib.core.events;
 import java.util.ArrayList;
 import java.util.List;
 
-import teaselib.TeaseLib;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class EventSource<S, T extends EventArgs> {
+    private static final Logger logger = LoggerFactory
+            .getLogger(EventSource.class);
+
     private final String name;
     private final List<Event<S, T>> delegates = new ArrayList<Event<S, T>>();
     final Event<S, T> initial;
@@ -17,7 +21,8 @@ public class EventSource<S, T extends EventArgs> {
         this.completing = null;
     }
 
-    public EventSource(String name, Event<S, T> initial, Event<S, T> completing) {
+    public EventSource(String name, Event<S, T> initial,
+            Event<S, T> completing) {
         this.name = name;
         this.initial = initial;
         this.completing = completing;
@@ -30,8 +35,8 @@ public class EventSource<S, T extends EventArgs> {
     public synchronized void remove(Event<S, T> delegate) {
         boolean removed = delegates.remove(delegate);
         if (!removed) {
-            throw new IllegalArgumentException("Removing event "
-                    + delegate.toString() + "failed.");
+            throw new IllegalArgumentException(
+                    "Removing event " + delegate.toString() + "failed.");
         }
     }
 
@@ -40,17 +45,15 @@ public class EventSource<S, T extends EventArgs> {
     }
 
     public synchronized void run(S sender, T eventArgs) {
-        TeaseLib.instance().log.info(getClass().getSimpleName() + " " + name
-                + ", " + delegates.size() + " listeners "
-                + eventArgs.toString());
+        logger.info(getClass().getSimpleName() + " " + name + ", "
+                + delegates.size() + " listeners " + eventArgs.toString());
         if (initial != null) {
             runDelegate(sender, eventArgs, initial);
         }
         for (Event<S, T> delegate : delegates) {
             runDelegate(sender, eventArgs, delegate);
             if (eventArgs.consumed) {
-                TeaseLib.instance().log.info("Event " + eventArgs.toString()
-                        + " consumed");
+                logger.info("Event " + eventArgs.toString() + " consumed");
                 break;
             }
         }
@@ -63,7 +66,7 @@ public class EventSource<S, T extends EventArgs> {
         try {
             delegate.run(sender, eventArgs);
         } catch (Throwable t) {
-            TeaseLib.instance().log.error(this, t);
+            logger.error(t.getMessage(), t);
         }
     }
 

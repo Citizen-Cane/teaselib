@@ -17,14 +17,19 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Vector;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import teaselib.Actor;
 import teaselib.Message;
 import teaselib.Message.Part;
 import teaselib.Mood;
-import teaselib.TeaseLib;
 import teaselib.core.ResourceLoader;
 
 public class TextToSpeechRecorder {
+    private static final Logger logger = LoggerFactory
+            .getLogger(TextToSpeechRecorder.class);
+
     public final static String SpeechDirName = "speech";
     public final static String MessageFilename = "message.txt";
     public final static String ResourcesFilename = "inventory.txt";
@@ -54,26 +59,22 @@ public class TextToSpeechRecorder {
         InstalledVoices available = new InstalledVoices(voices);
         available.store(assetsDir);
         actorVoices = new ActorVoices(resources, speechResourcesPath);
-        TeaseLib.instance().log
-                .info("Build start: " + new Date(buildStart).toString());
+        logger.info("Build start: " + new Date(buildStart).toString());
     }
 
     private static File createSubDir(File dir, String name) {
         File subDir = new File(dir, name);
         if (subDir.exists() == false) {
-            TeaseLib.instance().log
-                    .info("Creating directory " + subDir.getAbsolutePath());
+            logger.info("Creating directory " + subDir.getAbsolutePath());
             subDir.mkdirs();
         } else {
-            TeaseLib.instance().log
-                    .info("Using directory " + subDir.getAbsolutePath());
+            logger.info("Using directory " + subDir.getAbsolutePath());
         }
         return subDir;
     }
 
     public void create(ScriptScanner scanner) throws IOException {
-        TeaseLib.instance().log
-                .info("Scanning script '" + scanner.getScriptName() + "'");
+        logger.info("Scanning script '" + scanner.getScriptName() + "'");
         Set<String> created = new HashSet<String>();
         for (Message message : scanner) {
             Actor actor = message.actor;
@@ -81,7 +82,7 @@ public class TextToSpeechRecorder {
             // Process voices for each character
             final Voice voice;
             voice = getVoice(actor);
-            TeaseLib.instance().log.info("Voice: " + voice.name);
+            logger.info("Voice: " + voice.name);
             ttsPlayer.textToSpeech.setVoice(voice);
             File voiceDir = createSubDir(characterDir, voice.guid);
             createActorFile(actor, voice);
@@ -104,22 +105,22 @@ public class TextToSpeechRecorder {
             String messageHash = message.toPrerecordedSpeechHashString();
             if (messageHash.equals(oldMessageHash)) {
                 if (lastModified > buildStart) {
-                    TeaseLib.instance().log.info(hash + " is reused");
+                    logger.info(hash + " is reused");
                     reusedDuplicates++;
                 } else {
-                    TeaseLib.instance().log.info(hash + " is up to date");
+                    logger.info(hash + " is up to date");
                     upToDateEntries++;
                 }
             } else if (lastModified > buildStart) {
                 // Collision
-                TeaseLib.instance().log.info(hash + " collision!");
-                TeaseLib.instance().log.info("Old:");
-                TeaseLib.instance().log.info(oldMessageHash);
-                TeaseLib.instance().log.info("New:");
-                TeaseLib.instance().log.info(messageHash);
+                logger.info(hash + " collision!");
+                logger.info("Old:");
+                logger.info(oldMessageHash);
+                logger.info("New:");
+                logger.info(messageHash);
                 throw new IllegalStateException("Collision");
             } else {
-                TeaseLib.instance().log.info(hash + " has changed");
+                logger.info(hash + " has changed");
                 // Change - delete old first
                 for (String file : messageDir.list()) {
                     new File(messageDir, file).delete();
@@ -132,7 +133,7 @@ public class TextToSpeechRecorder {
             // -> collision
             // - if created before the current build, then change
         } else {
-            TeaseLib.instance().log.info(hash + " is new");
+            logger.info(hash + " is new");
             // new
             messageDir.mkdir();
             create(message, messageDir, voice);
@@ -177,9 +178,9 @@ public class TextToSpeechRecorder {
     }
 
     public void finish() {
-        TeaseLib.instance().log.info("Finished: " + upToDateEntries
-                + " up to date, " + reusedDuplicates + " reused duplicates, "
-                + changedEntries + " changed, " + newEntries + " new");
+        logger.info("Finished: " + upToDateEntries + " up to date, "
+                + reusedDuplicates + " reused duplicates, " + changedEntries
+                + " changed, " + newEntries + " new");
     }
 
     private static String readMessage(File file)
@@ -203,7 +204,7 @@ public class TextToSpeechRecorder {
     public void create(Message message, File messageDir, Voice voice)
             throws IOException {
         final String messageHash = message.toPrerecordedSpeechHashString();
-        TeaseLib.instance().log.info("Recording message:\n" + messageHash);
+        logger.info("Recording message:\n" + messageHash);
         int index = 0;
         mp3.Main lame = new mp3.Main();
         List<String> soundFiles = new Vector<String>();
@@ -215,7 +216,7 @@ public class TextToSpeechRecorder {
             if (part.type == Message.Type.Mood) {
                 mood = part.value;
             } else if (part.type == Message.Type.Text) {
-                TeaseLib.instance().log.info("Recording part " + index);
+                logger.info("Recording part " + index);
                 File soundFile = new File(messageDir, Integer.toString(index));
                 final TextToSpeech textToSpeech = ttsPlayer.textToSpeech;
                 textToSpeech.setVoice(voice);

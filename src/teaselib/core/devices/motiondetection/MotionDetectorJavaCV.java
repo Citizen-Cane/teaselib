@@ -12,8 +12,9 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import org.bytedeco.javacpp.opencv_core.Mat;
 import org.bytedeco.javacpp.opencv_core.Size;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import teaselib.TeaseLib;
 import teaselib.core.ScriptInterruptedException;
 import teaselib.core.concurrency.Signal;
 import teaselib.core.devices.DeviceCache;
@@ -56,6 +57,9 @@ import teaselib.video.VideoCaptureDevices;
  * 
  */
 public class MotionDetectorJavaCV implements MotionDetector {
+    private static final Logger logger = LoggerFactory
+            .getLogger(MotionDetectorJavaCV.class);
+
     private static final String DeviceClassName = "MotionDetectorJavaCV";
 
     public static final DeviceCache.Factory<MotionDetector> Factory = new DeviceCache.Factory<MotionDetector>() {
@@ -267,7 +271,7 @@ public class MotionDetectorJavaCV implements MotionDetector {
                         debugInfo.close();
                 }
             } catch (Exception e) {
-                TeaseLib.instance().log.error(this, e);
+                logger.error(e.getMessage(), e);
             } finally {
                 videoCaptureDevice.close();
             }
@@ -319,9 +323,9 @@ public class MotionDetectorJavaCV implements MotionDetector {
                 MotionProcessorJavaCV motionProcessor,
                 boolean contourMotionDetected, boolean trackerMotionDetected) {
             // Log state
-            TeaseLib.instance().log.info("contourMotionDetected="
-                    + contourMotionDetected + "  trackerMotionDetected="
-                    + trackerMotionDetected + "(distance="
+            logger.info("contourMotionDetected=" + contourMotionDetected
+                    + "  trackerMotionDetected=" + trackerMotionDetected
+                    + "(distance="
                     + motionProcessor.distanceTracker.distance2(
                             motionProcessor.trackFeatures.keyPoints())
                     + "), " + indicators.toString());

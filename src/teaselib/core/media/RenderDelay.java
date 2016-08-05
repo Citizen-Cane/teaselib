@@ -2,10 +2,15 @@ package teaselib.core.media;
 
 import java.util.concurrent.TimeUnit;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import teaselib.TeaseLib;
 import teaselib.core.ScriptInterruptedException;
 
 public class RenderDelay extends MediaRendererThread {
+    private static final Logger logger = LoggerFactory
+            .getLogger(RenderDelay.class);
     public final int seconds;
 
     public RenderDelay(int seconds, TeaseLib teaseLib) {
@@ -19,11 +24,11 @@ public class RenderDelay extends MediaRendererThread {
         startCompleted();
         try {
             if (seconds > 0) {
-                teaseLib.log.info(getClass().getSimpleName() + " " + toString()
+                logger.info(getClass().getSimpleName() + " " + toString()
                         + ": " + seconds + " seconds");
                 teaseLib.sleep(seconds, TimeUnit.SECONDS);
             } else {
-                teaseLib.log.info(getClass().getSimpleName() + " " + toString()
+                logger.info(getClass().getSimpleName() + " " + toString()
                         + ": skipped sleeping " + seconds + " seconds");
             }
         } catch (ScriptInterruptedException e) {

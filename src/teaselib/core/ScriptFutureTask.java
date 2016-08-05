@@ -9,12 +9,18 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import teaselib.ScriptFunction;
 import teaselib.TeaseLib;
 import teaselib.core.concurrency.NamedExecutorService;
 import teaselib.core.events.Delegate;
 
 public class ScriptFutureTask extends FutureTask<String> {
+    private static final Logger logger = LoggerFactory
+            .getLogger(ScriptFutureTask.class);
+
     public static class TimeoutClick {
         public boolean clicked = false;
     }
@@ -46,8 +52,10 @@ public class ScriptFutureTask extends FutureTask<String> {
                         clickToFinishFunction(script, derivedChoices, timeout);
                         return null;
                     } catch (ScriptInterruptedException e) {
-                        // TODO Remove completely because this should be obsolete:
-                        // renderers are cancelled in TeaseScriptBase.showChoices
+                        // TODO Remove completely because this should be
+                        // obsolete:
+                        // renderers are cancelled in
+                        // TeaseScriptBase.showChoices
                         // but let's better test it for a while...
                         // script.endAll();
                         throw e;
@@ -66,7 +74,7 @@ public class ScriptFutureTask extends FutureTask<String> {
                     if (clickable != null) {
                         // Signal timeout and click any button
                         timeout.clicked = true;
-                        TeaseLib.instance().log
+                        logger
                                 .info("Script function finished click");
                         // Click any delegate
                         clickables.get(0).run();

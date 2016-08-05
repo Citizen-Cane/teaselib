@@ -2,11 +2,15 @@ package teaselib.core.speechrecognition.implementation;
 
 import java.util.List;
 
-import teaselib.TeaseLib;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import teaselib.core.speechrecognition.SpeechRecognitionEvents;
 import teaselib.core.speechrecognition.SpeechRecognitionImplementation;
 
 public class TeaseLibSR extends SpeechRecognitionImplementation {
+    private static final Logger logger = LoggerFactory
+            .getLogger(TeaseLibSR.class);
 
     private long nativeObject;
 
@@ -31,13 +35,13 @@ public class TeaseLibSR extends SpeechRecognitionImplementation {
                             // Never ends
                             initSREventThread(eventThread);
                         } catch (Throwable t) {
-                            TeaseLib.instance().log.error(this, t);
+                            logger.error(t.getMessage(), t);
                             eventThreadException = t;
                         }
                         eventThread.notifyAll();
                     }
                 } catch (IllegalMonitorStateException e) {
-                    TeaseLib.instance().log.error(this, e);
+                    logger.error(e.getMessage(), e);
                 }
             }
         });
@@ -47,7 +51,7 @@ public class TeaseLibSR extends SpeechRecognitionImplementation {
             try {
                 eventThread.wait();
             } catch (InterruptedException e) {
-                TeaseLib.instance().log.debug(this, e);
+                logger.debug(e.getMessage(), e);
             }
             if (eventThreadException != null) {
                 throw eventThreadException;
@@ -95,7 +99,7 @@ public class TeaseLibSR extends SpeechRecognitionImplementation {
         try {
             dispose();
         } catch (Throwable t) {
-            TeaseLib.instance().log.error(this, t);
+            logger.error(t.getMessage(), t);
         }
         super.finalize();
     }

@@ -4,7 +4,11 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Stack;
 
+import org.slf4j.LoggerFactory;
+
 public class ChoicesStack implements Iterable<ShowChoices> {
+    private static final org.slf4j.Logger logger = LoggerFactory
+            .getLogger(ChoicesStack.class);
 
     private final Object showChoicesSyncObject = new Object();
     private final Stack<ShowChoices> stack = new Stack<ShowChoices>();
@@ -55,10 +59,9 @@ public class ChoicesStack implements Iterable<ShowChoices> {
             }
             synchronized (this) {
                 if (pauseHandlers.containsKey(choice)) {
-                    script.teaseLib.log
-                            .info("Invoking choices handler for choices="
-                                    + showChoices.derivedChoices.toString()
-                                    + " reason=" + choice.toString());
+                    logger.info("Invoking choices handler for choices="
+                            + showChoices.derivedChoices.toString() + " reason="
+                            + choice.toString());
                     pauseHandlers.get(choice).run();
                     continue;
                 } else {

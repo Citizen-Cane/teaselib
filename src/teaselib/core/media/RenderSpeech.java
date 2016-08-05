@@ -3,6 +3,9 @@ package teaselib.core.media;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import teaselib.Config;
 import teaselib.TeaseLib;
 import teaselib.core.ScriptInterruptedException;
@@ -10,6 +13,9 @@ import teaselib.core.speechrecognition.SpeechRecognition;
 import teaselib.core.speechrecognition.SpeechRecognizer;
 
 public abstract class RenderSpeech extends MediaRendererThread {
+    private static final Logger logger = LoggerFactory
+            .getLogger(RenderSpeech.class);
+
     private final long pauseMillis;
 
     public RenderSpeech(long pauseMillis, TeaseLib teaseLib) {
@@ -19,7 +25,7 @@ public abstract class RenderSpeech extends MediaRendererThread {
 
     @Override
     public final void renderMedia() {
-        teaseLib.log.info(this.getClass().getSimpleName() + ": " + toString());
+        logger.info(this.getClass().getSimpleName() + ": " + toString());
         // Suspend speech recognition while speaking,
         // to avoid wrong recognitions
         // - and the mistress speech isn't to be interrupted anyway
@@ -42,7 +48,7 @@ public abstract class RenderSpeech extends MediaRendererThread {
             resumeSpeechRecognition.run();
         }
         String text = toString();
-        teaseLib.log.info(
+        logger.info(
                 this.getClass().getSimpleName() + ": " + text + " completed");
     }
 

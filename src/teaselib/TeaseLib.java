@@ -34,10 +34,9 @@ public class TeaseLib {
     private static TeaseLib instance;
     private Map<Class<?>, State<? extends Enum<?>>> states = new HashMap<Class<?>, State<? extends Enum<?>>>();
 
-    public final Logger log;
     public final Logger transcript;
 
-    private static final File techLogFile = new File("./TeaseLib.log");
+    private static final File techLogFile = new File("./logger");
     private static final File transcriptLogFile = new File(
             "./TeaseLib session transcript.log");
 
@@ -71,20 +70,7 @@ public class TeaseLib {
         }
         this.host = host;
         this.persistence = persistence;
-        Logger techLogger = null;
         Logger transcriptLogger = null;
-        try {
-            techLogger = new Logger(techLogFile,
-                    getConfigSetting(Config.Debug.LogDetails)
-                            ? Logger.Level.Debug : Logger.Level.Info)
-                                    .showTime(true).showThread(true)
-                                    .logToConsole(true);
-        } catch (IOException e) {
-            host.show(null,
-                    "Cannot open log file " + techLogFile.getAbsolutePath());
-            host.reply(Arrays.asList("Oh dear"));
-            techLogger = Logger.getConsoleLogger();
-        }
         try {
             transcriptLogger = new Logger(transcriptLogFile,
                     getConfigSetting(Config.Debug.LogDetails)
@@ -96,7 +82,6 @@ public class TeaseLib {
             host.reply(Arrays.asList("Oh dear"));
             transcriptLogger = Logger.getDummyLogger();
         }
-        this.log = techLogger;
         this.transcript = transcriptLogger;
     }
 
@@ -654,8 +639,7 @@ public class TeaseLib {
         String teaseLibProperty = getString(Config.Namespace, name.toString());
         if (teaseLibProperty.isEmpty()) {
             String systemProperty = System.getProperty(
-                    Config.Namespace + "." + name.toString().toLowerCase(),
-                    "");
+                    Config.Namespace + "." + name.toString().toLowerCase(), "");
             return systemProperty;
         }
         return teaseLibProperty;

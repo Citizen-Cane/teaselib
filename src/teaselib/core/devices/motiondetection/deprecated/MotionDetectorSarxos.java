@@ -15,6 +15,9 @@ import java.util.concurrent.locks.ReentrantLock;
 import javax.swing.JFrame;
 import javax.swing.WindowConstants;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.github.sarxos.webcam.Webcam;
 import com.github.sarxos.webcam.WebcamDiscoveryEvent;
 import com.github.sarxos.webcam.WebcamDiscoveryListener;
@@ -23,7 +26,6 @@ import com.github.sarxos.webcam.WebcamMotionDetector;
 import com.github.sarxos.webcam.WebcamPanel;
 import com.github.sarxos.webcam.WebcamResolution;
 
-import teaselib.TeaseLib;
 import teaselib.core.devices.DeviceCache;
 import teaselib.motiondetection.MotionDetector;
 
@@ -45,6 +47,9 @@ import teaselib.motiondetection.MotionDetector;
 
 @Deprecated
 public class MotionDetectorSarxos implements MotionDetector {
+    private static final Logger logger = LoggerFactory
+            .getLogger(MotionDetectorSarxos.class);
+
     public static final String DeviceClassName = "MotionDetectorSarxos";
 
     public static final EnumSet<Feature> Features = EnumSet.of(Feature.Motion);
@@ -76,7 +81,7 @@ public class MotionDetectorSarxos implements MotionDetector {
                         webcam.getName()));
             }
         } catch (Exception e) {
-            TeaseLib.instance().log.error(Webcam.class, e);
+            logger.error(e.getMessage(), e);
         }
         return devices;
     }
@@ -87,7 +92,7 @@ public class MotionDetectorSarxos implements MotionDetector {
             try {
                 attachWebcam(event.getWebcam());
             } catch (Exception e) {
-                TeaseLib.instance().log.error(this, e);
+                logger.error(e.getMessage(), e);
             }
         }
 
@@ -96,7 +101,7 @@ public class MotionDetectorSarxos implements MotionDetector {
             try {
                 detachWebcam(event.getWebcam());
             } catch (Exception e) {
-                TeaseLib.instance().log.error(this, e);
+                logger.error(e.getMessage(), e);
             }
         }
     }
@@ -114,7 +119,7 @@ public class MotionDetectorSarxos implements MotionDetector {
         try {
             return Webcam.getDefault();
         } catch (WebcamException e) {
-            TeaseLib.instance().log.error(Webcam.class, e);
+            logger.error(e.getMessage(), e);
             return null;
         }
     }
@@ -132,10 +137,10 @@ public class MotionDetectorSarxos implements MotionDetector {
                 }
             }
         } catch (Exception e) {
-            TeaseLib.instance().log.error(Webcam.class, e);
+            logger.error(e.getMessage(), e);
             return null;
         }
-        TeaseLib.instance().log.info("No webcam detected");
+        logger.info("No webcam detected");
         return null;
     }
 
@@ -156,7 +161,7 @@ public class MotionDetectorSarxos implements MotionDetector {
     }
 
     private void attachWebcam(Webcam newWebcam) {
-        TeaseLib.instance().log.info(newWebcam.getName() + " connected");
+        logger.info(newWebcam.getName() + " connected");
         newWebcam.setViewSize(ViewSize);
         newWebcam.open();
         showWebcamWindow(newWebcam);
@@ -170,7 +175,7 @@ public class MotionDetectorSarxos implements MotionDetector {
     }
 
     private void detachWebcam(Webcam oldWebcam) {
-        TeaseLib.instance().log.info(oldWebcam.getName() + " disconnected");
+        logger.info(oldWebcam.getName() + " disconnected");
         detectionEvents.interrupt();
         hideWebcamWindow();
         while (detectionEvents.isAlive()) {
@@ -228,7 +233,7 @@ public class MotionDetectorSarxos implements MotionDetector {
         protected void signalMotionStart() {
             motionStartLock.lock();
             try {
-                TeaseLib.instance().log.info("Motion started");
+                logger.info("Motion started");
                 motionStart.signalAll();
             } finally {
                 motionStartLock.unlock();
@@ -238,7 +243,7 @@ public class MotionDetectorSarxos implements MotionDetector {
         protected void signalMotionEnd() {
             motionEndLock.lock();
             try {
-                TeaseLib.instance().log.info("Motion ended");
+                logger.info("Motion ended");
                 motionEnd.signalAll();
             } finally {
                 motionEndLock.unlock();
@@ -356,8 +361,7 @@ public class MotionDetectorSarxos implements MotionDetector {
         }
 
         private void printDebug() {
-            TeaseLib.instance().log
-                    .debug("MotionArea=" + detector.getMotionArea());
+            logger.debug("MotionArea=" + detector.getMotionArea());
         }
     }
 

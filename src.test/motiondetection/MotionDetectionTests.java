@@ -5,6 +5,8 @@ import static org.junit.Assert.*;
 import java.util.Set;
 
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import teaselib.TeaseLib;
 import teaselib.core.devices.DeviceCache;
@@ -13,6 +15,8 @@ import teaselib.hosts.DummyPersistence;
 import teaselib.motiondetection.MotionDetection;
 
 public class MotionDetectionTests {
+    private static final Logger logger = LoggerFactory
+            .getLogger(MotionDetectionTests.class);
 
     @Test
     public void testNaming() {
@@ -27,7 +31,7 @@ public class MotionDetectionTests {
                 new DummyPersistence());
         Set<String> devices = MotionDetection.Instance.getDevicePaths();
         for (String id : devices) {
-            teaseLib.log.info(id);
+            logger.info(id);
         }
     }
 }

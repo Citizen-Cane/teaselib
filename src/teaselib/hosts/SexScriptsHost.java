@@ -20,6 +20,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.imageio.ImageIO;
 import javax.swing.ComboBoxModel;
@@ -71,8 +72,6 @@ public class SexScriptsHost implements Host {
     private final ExecutorService showChoicesThreadPool = NamedExecutorService
             .newFixedThreadPool(1, "Show-Popup", 1, TimeUnit.HOURS);
 
-    private final ShowPopup showPopup;
-
     private Runnable onQuitHandler = null;
 
     public SexScriptsHost(ss.IScript script) {
@@ -99,7 +98,6 @@ public class SexScriptsHost implements Host {
             backgroundImage = null;
         }
         // automatically show popup
-        showPopup = new ShowPopup();
         final int originalDefaultCloseoperation = mainFrame
                 .getDefaultCloseOperation();
         mainFrame.addWindowListener(new WindowListener() {
@@ -507,11 +505,14 @@ public class SexScriptsHost implements Host {
         return ssComboBox;
     }
 
-    class ShowPopup {
-        JComboBox<String> comboBox = null;
+    class ShowPopupTask {
         final FutureTask<Boolean> task;
+        final AtomicBoolean resetPopupVisibility = new AtomicBoolean(false);
+        final static int PollIntervalMillis = 100;
 
-        public ShowPopup() {
+        JComboBox<String> comboBox = null;
+
+        public ShowPopupTask() {
             try {
                 comboBox = getComboBox();
             } catch (NoSuchFieldException e) {
@@ -522,16 +523,36 @@ public class SexScriptsHost implements Host {
             task = new FutureTask<Boolean>(new Callable<Boolean>() {
                 @Override
                 public Boolean call() throws Exception {
-                    // Poll for one second
-                    int pollIntervalMillis = 100;
+                    // Poll a little
                     for (int i = 1; i < 10; i++) {
-                        if (comboBox.isVisible()) {
-                            comboBox.setPopupVisible(true);
+                        if (comboBox.isVisible() /* && comboBox.hasFocus() */) {
+                            // Work-around the issue that the pop-up cannot be
+                            // hidden
+                            // after making it visible when not focused
+                            showPopup();
                             return true;
                         }
-                        Thread.sleep(pollIntervalMillis);
+                        Thread.sleep(PollIntervalMillis);
                     }
                     return false;
+                }
+            });
+        }
+
+        void showPopup() {
+            comboBox.requestFocus();
+            comboBox.setPopupVisible(true);
+            resetPopupVisibility.set(true);
+        }
+
+        void cleanup() {
+            java.awt.EventQueue.invokeLater(new Runnable() {
+                @Override
+                public void run() {
+                    if (resetPopupVisibility.get())
+                        if (comboBox.isPopupVisible()) {
+                            comboBox.setPopupVisible(false);
+                        }
                 }
             });
         }
@@ -543,17 +564,18 @@ public class SexScriptsHost implements Host {
         if (Thread.interrupted()) {
             throw new ScriptInterruptedException();
         }
-        // if necessary open the combobox popup in order to let the user
-        // speak a prompt without mouse/touch interaction
-        final boolean tryShowPopup = choices.size() > 1;
-        if (tryShowPopup) {
-            showPopupThreadPool.execute(showPopup.task);
+        // open the combo box pop-up if necessary in order to
+        // allow the user to read prompts without mouse/touch interaction
+        ShowPopupTask showPopupTask = new ShowPopupTask();
+        boolean showPopup = choices.size() > 1;
+        if (showPopup) {
+            showPopupThreadPool.execute(showPopupTask.task);
         }
-        // TODO getSelectedValue() won't throw InterruptedException,
+        // getSelectedValue() won't throw InterruptedException,
         // and won't clean up buttons
-        // Workaround: Execute it in a separate thread,
-        // cancel the same way as speech recognition -> bingo
-        final FutureTask<Integer> showChoices = new FutureTask<Integer>(
+        // -> Execute it in a separate thread, and
+        // cancel the same way as speech recognition
+        FutureTask<Integer> showChoices = new FutureTask<Integer>(
                 new Callable<Integer>() {
                     @Override
                     public Integer call() throws Exception {
@@ -564,38 +586,33 @@ public class SexScriptsHost implements Host {
         showChoicesThreadPool.execute(showChoices);
         try {
             result = showChoices.get();
-            if (tryShowPopup) {
+            if (showPopup) {
                 try {
-                    // Fix visible popup not disappearing
-                    // after clicking a choice
-                    if (showPopup.task.get()) {
-                        showPopup.comboBox.setPopupVisible(false);
-                        // Doesn't work with two combos in a row
-                        // - there's no delay between combos in Mine debug menus
-                        // because the debug texts are not spoken
-                    }
+                    showPopupTask.task.get();
                 } catch (ExecutionException e) {
                     logger.error(e.getMessage(), e);
                 }
             }
         } catch (InterruptedException e) {
-            final List<Delegate> clickableChoices = getClickableChoices(
-                    choices);
+            List<Delegate> clickableChoices = getClickableChoices(choices);
             if (!clickableChoices.isEmpty()) {
                 // Click any button
-                final Delegate delegate = clickableChoices.get(0);
+                Delegate delegate = clickableChoices.get(0);
                 while (!showChoices.isDone()) {
                     // Stupid trick to be able to actually click a combo item
-                    if (showPopup.comboBox.isVisible()) {
-                        showPopup.comboBox.setPopupVisible(true);
+                    if (showPopupTask.comboBox.isVisible()) {
+                        showPopupTask.showPopup();
                     }
                     delegate.run();
                     TeaseLib.instance().sleep(100, TimeUnit.MILLISECONDS);
                 }
             }
             throw new ScriptInterruptedException();
-        } catch (Exception e1) {
+        } catch (Exception e) {
+            logger.error(e.getMessage(), e);
             result = -1;
+        } finally {
+            showPopupTask.cleanup();
         }
         return result;
     }

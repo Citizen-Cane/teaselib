@@ -23,6 +23,8 @@ public:
     const int pin;
     const int defaultMinutes;
     const int maximumMinutes;
+    const int releasedAngle;
+    const int armedAngle;
   };
 
   struct Duration {

@@ -4,10 +4,31 @@ const char* const KeyReleaseService::Name = "KeyRelease";
 const char* const KeyReleaseService::Description = "Servo-based key release mechanism";
 const char* const KeyReleaseService::Version = "0.01";
 
-const KeyReleaseService::Actuator KeyReleaseService::ShortRelease = {RX, 30 /* minutes*/ , 60 /* minutes*/};
-const KeyReleaseService::Actuator KeyReleaseService::LongRelease = {TX, 60 /* minutes*/ , 120 /* minutes*/};
-const KeyReleaseService::Actuator* KeyReleaseService::DefaultSetup[] = {&ShortRelease, &LongRelease};
+/* The default setup:
+ - two servos, one for short term, one for long term self-bondage or restraint
+ - servos open at an angle of 120°
+   - 180° should be possible according to the Photon docs, but servos seem to be to cheap to work that way
+   - anyway 90° to 120° rotation is sufficient for holding and releasing the key
+ - on startup the servos will turn down immediately releae any keys
+ - they stay down until a hook is "armed", then the servo goes up and a key can be attached
+*/
+
+/*
+ How to make the key hooks:
+ - cut off all but two orthognally oriented arms from the servo horn
+ - place the horn on the axis so that you can hang the key at the hook
+ - on releae the servo moves down to let the key slip off the hook
+*/
+
+/* Servo orientation:
+ - if the servos move in the wrong direction, either
+   simply turn your device upside down or change the default settings to your needs
+*/
+
 const int KeyReleaseService::DefaultSetupSize = 2;
+const KeyReleaseService::Actuator KeyReleaseService::ShortRelease = {TX, 30 /* minutes*/ , 60 /* minutes*/, 30, 150};
+const KeyReleaseService::Actuator KeyReleaseService::LongRelease = {RX, 60 /* minutes*/ , 120 /* minutes*/, 150, 30};
+const KeyReleaseService::Actuator* KeyReleaseService::DefaultSetup[] = {&ShortRelease, &LongRelease};
 
 KeyReleaseService::KeyReleaseService(const Actuator** actuators, const int actuatorCount)
 : TeaseLibService(Name, Description, Version)
@@ -34,8 +55,14 @@ void KeyReleaseService::setup() {
       servos[i].attach(actuators[i]->pin);
       durations[i].actuator = actuators[i];
       durations[i].clear();
+      if (i > 0) {
+        delay(1000);
+      }
       releaseKey(i);
       delay(1000);
+      armKey(i);
+      delay(1000);
+      releaseKey(i);
       Serial.print("Actuator ");
       Serial.print(i, DEC);
       Serial.print(": default=");
@@ -133,11 +160,11 @@ void KeyReleaseService::timerCallback() {
 }
 
 void KeyReleaseService::armKey(const int index) {
-  servos[index].write(0);
+  servos[index].write(actuators[index]->armedAngle);
 }
 
 void KeyReleaseService::releaseKey(const int index) {
-  servos[index].write(180);
+  servos[index].write(actuators[index]->releasedAngle);
 }
 
 const void KeyReleaseService::Duration::arm() {

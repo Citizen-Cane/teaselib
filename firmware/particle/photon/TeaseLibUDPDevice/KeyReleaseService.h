@@ -56,10 +56,20 @@ private:
   const int actuatorCount;
   const char* const sessionKey;
   static const char* const createSessionKey();
-  Timer timer;
-  void timerCallback();
+  Timer releaseTimer;
+  Timer ledTimer;
+  void releaseTimerCallback();
+  void ledTimerCallback();
   void armKey(const int index);
   void releaseKey(const int index);
+  enum Status {
+    Idle,
+    Armed,
+    Active,
+    Released
+  } status, lastStatus;
+  void updatePulse();
+  unsigned int nextRelease();
 };
 
 #endif /*end of include guard:   _INCLUDE_TeaseLibKeyReleaseService */

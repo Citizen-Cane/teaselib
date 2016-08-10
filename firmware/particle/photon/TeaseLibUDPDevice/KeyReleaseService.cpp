@@ -22,7 +22,15 @@ const char* const KeyReleaseService::Version = "0.01";
 
 /* Servo orientation:
  - if the servos move in the wrong direction, either
-   simply turn your device upside down or change the default settings to your needs
+   turn your device upside down or change the default settings to your needs
+*/
+
+/* LED state:
+  - The LED breathes cyan as usual (connected to the cloud) while the device is inactve.
+  - It pulses dark green when any of the servos is ready to receive a key
+  - It pulses dark red while any of the timers is counting down
+  - It starts breathing again once all keys have been released
+  the activity pulse frequence indicates the remaining time until all keys will have been released
 */
 
 const int KeyReleaseService::DefaultSetupSize = 2;
@@ -37,7 +45,10 @@ KeyReleaseService::KeyReleaseService(const Actuator** actuators, const int actua
 , durations(new Duration[actuatorCount])
 , actuatorCount(actuatorCount)
 , sessionKey(createSessionKey())
-, timer(60 * 1000, &KeyReleaseService::timerCallback, *this)
+, releaseTimer(60 * 1000, &KeyReleaseService::releaseTimerCallback, *this)
+, ledTimer(1000, &KeyReleaseService::ledTimerCallback, *this)
+, status(Idle)
+, lastStatus(Idle)
 {
 }
 
@@ -71,11 +82,11 @@ void KeyReleaseService::setup() {
       Serial.print(durations[i].actuator->maximumMinutes, DEC);
       Serial.println("m");
   }
-  timer.start();
+  releaseTimer.start();
 }
 
-// starting and stopping restarts the timer, and is done in write command only
-// to avoid a never-ending test by polling to often (disabled some timer stops)
+// starting and stopping restarts the timer, and is done only in write commands
+// to avoid blocking the key release by polling to often
 
 int KeyReleaseService::process(const UDPMessage& received, char* buffer) {
   if (isCommand(received, "actuators")) {
@@ -84,33 +95,39 @@ int KeyReleaseService::process(const UDPMessage& received, char* buffer) {
     return UDPMessage("count", parameters, 1).toBuffer(buffer);
   }
   else if (isCommand(received, "arm" /* actuator */)) {
-    timer.stop();
+    releaseTimer.stop();
     const int index = atol(received.parameters[0]);
     releaseKey(index);
     durations[index].arm();
     delay(1000);
     armKey(index);
-    timer.start();
+    status = Armed;
+    updatePulse();
+    ledTimer.start();
+    releaseTimer.start();
     return Ok.toBuffer(buffer);
   }
   else if (isCommand(received, "start" /* actuator minutes */)) {
-    timer.stop();
+    releaseTimer.stop();
     const int index = atol(received.parameters[0]);
-    Duration& duration = durations[index];
     const int minutes = atol(received.parameters[1]);
     durations[index].start(minutes);
-    timer.start();
+    status = Active;
+    updatePulse();
+    ledTimer.start();
+    releaseTimer.start();
     const char* parameters[] = {sessionKey};
     return UDPMessage("releasekey", parameters, 1).toBuffer(buffer);
   }
   else if (isCommand(received, "add" /* actuator minutes */)) {
-    timer.stop();
+    releaseTimer.stop();
     const int index = atol(received.parameters[0]);
     const int minutes = atol(received.parameters[1]);
     durations[index].add(minutes);
+    updatePulse();
     char actualMinutes[4];
     sprintf(actualMinutes, "%d", durations[index].remainingMinutes);
-    timer.start();
+    releaseTimer.start();
     const char* parameters[] = {actualMinutes};
     return UDPMessage("count", parameters, 1).toBuffer(buffer);
   }
@@ -134,11 +151,12 @@ int KeyReleaseService::process(const UDPMessage& received, char* buffer) {
     return UDPMessage("count", parameters, 1).toBuffer(buffer);
   }
   else if (isCommand(received, "release" /* actuator releaseKey */)) {
-    timer.stop();
+    releaseTimer.stop();
     const int index = atol(received.parameters[0]);
     durations[index].clear();
     releaseKey(index);
-    timer.start();
+    updatePulse();
+    releaseTimer.start();
     return Ok.toBuffer(buffer);
   }
   else  {
@@ -146,7 +164,16 @@ int KeyReleaseService::process(const UDPMessage& received, char* buffer) {
   }
 }
 
-void KeyReleaseService::timerCallback() {
+void KeyReleaseService::releaseTimerCallback() {
+  if (status == Released) {
+    const unsigned int nextReleaseDuration = nextRelease();
+    if (nextReleaseDuration > 0) {
+      status = Active;
+    } else {
+      status = Idle;
+    }
+  }
+  // Update durations
   for(int i = 0; i < actuatorCount; i++) {
     Duration& duration = durations[i];
     if (durations[i].running) {
@@ -157,6 +184,61 @@ void KeyReleaseService::timerCallback() {
       }
     }
   }
+  updatePulse();
+}
+
+unsigned int KeyReleaseService::nextRelease() {
+  unsigned int nextReleaseDuration = durations[0].remainingMinutes;
+  for(int i = 1; i < actuatorCount; i++) {
+    nextReleaseDuration = min(nextReleaseDuration, durations[i].remainingMinutes);
+  }
+  return nextReleaseDuration;
+}
+
+void KeyReleaseService::updatePulse() {
+  if (status == Armed) {
+    ledTimer.changePeriod(1000);
+    ledTimerCallback();
+  } else if (status == Active) {
+    const unsigned int nextReleaseDuration = nextRelease();
+    if (nextReleaseDuration > 0) {
+      ledTimer.changePeriod(500 + 200 * nextReleaseDuration);
+    }
+    else {
+      // TODO pulse is never blue, turns white / rose immediately
+      status = Released;
+      ledTimer.changePeriod(1000);
+    }
+  }
+}
+
+void KeyReleaseService::ledTimerCallback() {
+  if (lastStatus != status) {
+    // on/off
+    if (lastStatus == Idle) {
+      RGB.control(true);
+    }
+    else if (status == Idle) {
+      RGB.control(false);
+      ledTimer.stop();
+    }
+    // pulse color
+    if (status == Armed) {
+      RGB.color(0, 255, 0);
+    }
+    else if (status == Active) {
+      RGB.color(0, 0, 255);
+    }
+    else if (status == Released) {
+      RGB.color(255, 64, 64);
+    }
+    // Update
+    lastStatus = status;
+  }
+  // Pulse
+  RGB.brightness(48);
+  delay(10);
+  RGB.brightness(0);
 }
 
 void KeyReleaseService::armKey(const int index) {

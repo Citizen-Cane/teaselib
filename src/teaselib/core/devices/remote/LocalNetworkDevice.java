@@ -26,7 +26,6 @@ import java.util.concurrent.Future;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import teaselib.TeaseLib;
 import teaselib.core.ScriptInterruptedException;
 import teaselib.core.devices.DeviceCache;
 
@@ -57,8 +56,7 @@ public class LocalNetworkDevice implements RemoteDevice {
             try {
                 List<Subnet> subnets = enumerateNetworks();
                 for (Subnet subnet : subnets) {
-                    logger
-                            .info("Scanning " + subnet.toString());
+                    logger.info("Scanning " + subnet.toString());
                     for (final InetAddress ip : subnet) {
                         futures.add(es.submit(
                                 new Callable<List<LocalNetworkDevice>>() {
@@ -234,7 +232,10 @@ public class LocalNetworkDevice implements RemoteDevice {
 
     @Override
     public void send(RemoteDeviceMessage message) {
-        // TODO Auto-generated method stub
-
+        try {
+            connection.send(new UDPMessage(message).toByteArray());
+        } catch (IOException e) {
+            logger.error(e.getMessage(), e);
+        }
     }
 }

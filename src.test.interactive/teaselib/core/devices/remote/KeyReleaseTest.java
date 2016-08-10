@@ -40,6 +40,11 @@ public class KeyReleaseTest {
             int available = keyRelease.available(i);
             assertTrue(available > 0);
             keyRelease.arm(i);
+            try {
+                Thread.sleep(10 * 1000);
+            } catch (InterruptedException e) {
+                return;
+            }
             keyRelease.start(i, minutes);
             assertTrue(keyRelease.isRunning(i));
             logger.info("Actuator " + i);

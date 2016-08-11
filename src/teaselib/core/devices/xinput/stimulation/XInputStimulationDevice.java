@@ -2,8 +2,10 @@ package teaselib.core.devices.xinput.stimulation;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import teaselib.core.devices.DeviceCache;
+import teaselib.core.devices.DeviceFactory;
 import teaselib.core.devices.xinput.XInputDevice;
 import teaselib.core.devices.xinput.XInputDevices;
 import teaselib.stimulation.StimulationDevice;
@@ -102,14 +104,11 @@ import teaselib.stimulation.Stimulator;
 public class XInputStimulationDevice implements StimulationDevice {
     private static final String DeviceClassName = "XInputStimulationDevice";
 
-    public static final DeviceCache.Factory<StimulationDevice> Factory = new DeviceCache.Factory<StimulationDevice>() {
+    public static final DeviceFactory<StimulationDevice> Factory = new DeviceFactory<StimulationDevice>(
+            DeviceClassName) {
         @Override
-        public String getDeviceClass() {
-            return XInputStimulationDevice.DeviceClassName;
-        }
-
-        @Override
-        public List<String> getDevices() {
+        public List<String> enumerateDevicePaths(
+                Map<String, StimulationDevice> deviceCache) {
             List<String> deviceNames = new ArrayList<String>(4);
             for (String devicePath : XInputDevice.getDevicePaths()) {
                 XInputDevice device = XInputDevices.Instance
@@ -124,9 +123,9 @@ public class XInputStimulationDevice implements StimulationDevice {
         }
 
         @Override
-        public XInputStimulationDevice getDevice(String devicePath) {
-            return new XInputStimulationDevice(XInputDevices.Instance
-                    .getDevice(DeviceCache.getDeviceName(devicePath)));
+        public StimulationDevice createDevice(String deviceName) {
+            return new XInputStimulationDevice(
+                    XInputDevices.Instance.getDevice(deviceName));
         }
     };
 

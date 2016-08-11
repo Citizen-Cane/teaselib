@@ -5,10 +5,11 @@ import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 import teaselib.core.devices.Device;
 import teaselib.core.devices.DeviceCache;
-import teaselib.core.devices.DeviceCache.Factory;
+import teaselib.core.devices.DeviceFactory;
 import teaselib.core.jni.LibraryLoader;
 
 /**
@@ -21,23 +22,20 @@ import teaselib.core.jni.LibraryLoader;
 public class XInputDevice implements Device {
     private static final String DeviceClassName = "XInput360GameController";
 
-    static final DeviceCache.Factory<XInputDevice> Factory = new Factory<XInputDevice>() {
-        @Override
-        public String getDeviceClass() {
-            return XInputDevice.DeviceClassName;
-        }
+    static final DeviceFactory<XInputDevice> Factory = new DeviceFactory<XInputDevice>(
+            DeviceClassName) {
 
         @Override
-        public List<String> getDevices() {
+        public List<String> enumerateDevicePaths(
+                Map<String, XInputDevice> deviceCache) {
             List<String> deviceNames = new ArrayList<String>();
             deviceNames.addAll(XInputDevice.getDevicePaths());
             return deviceNames;
         }
 
         @Override
-        public XInputDevice getDevice(String path) {
-            return XInputDevice.getDeviceFor(
-                    Integer.parseInt(DeviceCache.getDeviceName(path)));
+        public XInputDevice createDevice(String deviceName) {
+            return XInputDevice.getDeviceFor(Integer.parseInt(deviceName));
         }
     };
 

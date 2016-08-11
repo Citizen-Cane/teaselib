@@ -1,28 +1,19 @@
-/**
- * 
- */
 package teaselib.core.devices.remote;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
-import teaselib.core.devices.DeviceCache;
+import teaselib.core.devices.DeviceFactory;
 
-/**
- * @author someone
- *
- */
 public class BluetoothDevice implements RemoteDevice {
     private static final String DeviceClassName = "BluetoothDevice";
 
-    public static final DeviceCache.Factory<RemoteDevice> Factory = new DeviceCache.Factory<RemoteDevice>() {
+    public static final DeviceFactory<RemoteDevice> Factory = new DeviceFactory<RemoteDevice>(
+            DeviceClassName) {
         @Override
-        public String getDeviceClass() {
-            return BluetoothDevice.DeviceClassName;
-        }
-
-        @Override
-        public List<String> getDevices() {
+        public List<String> enumerateDevicePaths(
+                Map<String, RemoteDevice> deviceCache) {
             List<String> deviceNames = new ArrayList<String>();
             // TODO scan
             // TODO available devices
@@ -32,10 +23,14 @@ public class BluetoothDevice implements RemoteDevice {
         }
 
         @Override
-        public BluetoothDevice getDevice(String path) {
-            return new BluetoothDevice();
+        public RemoteDevice createDevice(String deviceName) {
+            return new BluetoothDevice(deviceName);
         }
     };
+
+    public BluetoothDevice(@SuppressWarnings("unused") String deviceName) {
+        super();
+    }
 
     @Override
     public String getDevicePath() {

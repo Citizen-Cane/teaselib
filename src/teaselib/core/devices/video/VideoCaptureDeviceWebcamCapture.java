@@ -22,6 +22,7 @@ import com.github.sarxos.webcam.WebcamDiscoveryListener;
 
 import teaselib.core.devices.Device;
 import teaselib.core.devices.DeviceCache;
+import teaselib.core.devices.DeviceFactory;
 import teaselib.video.ResolutionList;
 import teaselib.video.VideoCaptureDevice;
 
@@ -31,16 +32,11 @@ public class VideoCaptureDeviceWebcamCapture implements VideoCaptureDevice {
 
     private static final String DeviceClassName = "WebcamCapture";
 
-    public static final DeviceCache.Factory<VideoCaptureDevice> Factory = new DeviceCache.Factory<VideoCaptureDevice>() {
-        final Map<String, VideoCaptureDeviceWebcamCapture> devices = new LinkedHashMap<String, VideoCaptureDeviceWebcamCapture>();
-
+    public static final DeviceFactory<VideoCaptureDeviceWebcamCapture> Factory = new DeviceFactory<VideoCaptureDeviceWebcamCapture>(
+            DeviceClassName) {
         @Override
-        public String getDeviceClass() {
-            return VideoCaptureDeviceWebcamCapture.DeviceClassName;
-        }
-
-        @Override
-        public List<String> getDevices() {
+        public List<String> enumerateDevicePaths(
+                Map<String, VideoCaptureDeviceWebcamCapture> deviceCache) {
             Map<String, VideoCaptureDeviceWebcamCapture> newDevices = new LinkedHashMap<String, VideoCaptureDeviceWebcamCapture>();
             try {
                 List<Webcam> webcams = Webcam.getWebcams();
@@ -48,8 +44,8 @@ public class VideoCaptureDeviceWebcamCapture implements VideoCaptureDevice {
                     VideoCaptureDeviceWebcamCapture device = new VideoCaptureDeviceWebcamCapture(
                             webcam);
                     String devicePath = device.getDevicePath();
-                    if (devices.containsKey(devicePath)) {
-                        newDevices.put(devicePath, devices.get(devicePath));
+                    if (deviceCache.containsKey(devicePath)) {
+                        newDevices.put(devicePath, deviceCache.get(devicePath));
                     } else {
                         newDevices.put(devicePath, device);
                     }
@@ -65,17 +61,17 @@ public class VideoCaptureDeviceWebcamCapture implements VideoCaptureDevice {
             } catch (Exception e) {
                 logger.error(e.getMessage(), e);
             }
-            devices.clear();
+            deviceCache.clear();
             for (Entry<String, VideoCaptureDeviceWebcamCapture> entry : newDevices
                     .entrySet()) {
-                devices.put(entry.getKey(), entry.getValue());
+                deviceCache.put(entry.getKey(), entry.getValue());
             }
-            return new ArrayList<String>(devices.keySet());
+            return new ArrayList<String>(deviceCache.keySet());
         }
 
         @Override
-        public VideoCaptureDevice getDevice(String devicePath) {
-            return devices.get(devicePath);
+        public VideoCaptureDeviceWebcamCapture createDevice(String deviceName) {
+            throw new UnsupportedOperationException();
         }
     };
 

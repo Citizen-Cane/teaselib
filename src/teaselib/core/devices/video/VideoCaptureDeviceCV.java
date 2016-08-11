@@ -1,11 +1,13 @@
 package teaselib.core.devices.video;
 
-import static org.bytedeco.javacpp.opencv_videoio.*;
+import static org.bytedeco.javacpp.opencv_videoio.CAP_PROP_FRAME_HEIGHT;
+import static org.bytedeco.javacpp.opencv_videoio.CAP_PROP_FRAME_WIDTH;
 
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.bytedeco.javacpp.opencv_core.Mat;
@@ -16,6 +18,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import teaselib.core.devices.DeviceCache;
+import teaselib.core.devices.DeviceFactory;
 import teaselib.video.ResolutionList;
 import teaselib.video.VideoCaptureDevice;
 
@@ -25,24 +28,21 @@ public class VideoCaptureDeviceCV implements VideoCaptureDevice {
 
     private static final String DeviceClassName = "JavaCVVideoCapture";
 
-    public static final DeviceCache.Factory<VideoCaptureDevice> Factory = new DeviceCache.Factory<VideoCaptureDevice>() {
+    public static final DeviceFactory<VideoCaptureDevice> Factory = new DeviceFactory<VideoCaptureDevice>(
+            DeviceClassName) {
         @Override
-        public String getDeviceClass() {
-            return VideoCaptureDeviceCV.DeviceClassName;
-        }
-
-        @Override
-        public List<String> getDevices() {
+        public List<String> enumerateDevicePaths(
+                Map<String, VideoCaptureDevice> deviceCache) {
             List<String> deviceNames = new ArrayList<String>();
             deviceNames.addAll(VideoCaptureDeviceCV.getDevicesPaths());
             return deviceNames;
         }
 
         @Override
-        public VideoCaptureDevice getDevice(String devicePath) {
-            return VideoCaptureDeviceCV
-                    .get(DeviceCache.getDeviceName(devicePath));
+        public VideoCaptureDevice createDevice(String deviceName) {
+            return VideoCaptureDeviceCV.get(deviceName);
         }
+
     };
 
     final int device;

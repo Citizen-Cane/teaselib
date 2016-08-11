@@ -18,6 +18,7 @@ import org.slf4j.LoggerFactory;
 import teaselib.core.ScriptInterruptedException;
 import teaselib.core.concurrency.Signal;
 import teaselib.core.devices.DeviceCache;
+import teaselib.core.devices.DeviceFactory;
 import teaselib.core.javacv.Copy;
 import teaselib.core.javacv.Scale;
 import teaselib.core.javacv.ScaleAndMirror;
@@ -62,30 +63,27 @@ public class MotionDetectorJavaCV implements MotionDetector {
 
     private static final String DeviceClassName = "MotionDetectorJavaCV";
 
-    public static final DeviceCache.Factory<MotionDetector> Factory = new DeviceCache.Factory<MotionDetector>() {
+    public static final DeviceFactory<MotionDetector> Factory = new DeviceFactory<MotionDetector>(
+            DeviceClassName) {
         @Override
-        public String getDeviceClass() {
-            return MotionDetectorJavaCV.DeviceClassName;
-        }
-
-        @Override
-        public List<String> getDevices() {
+        public List<String> enumerateDevicePaths(
+                Map<String, MotionDetector> deviceCache) {
             List<String> deviceNames = new ArrayList<String>();
             Set<String> videoCaptureDevicePaths = VideoCaptureDevices.Instance
                     .getDevicePaths();
             for (String videoCaptureDevicePath : videoCaptureDevicePaths) {
-                deviceNames.add(DeviceCache.createDevicePath(
-                        MotionDetectorJavaCV.DeviceClassName,
+                deviceNames.add(DeviceCache.createDevicePath(DeviceClassName,
                         videoCaptureDevicePath));
             }
             return deviceNames;
         }
 
         @Override
-        public MotionDetector getDevice(String devicePath) {
-            return new MotionDetectorJavaCV(VideoCaptureDevices.Instance
-                    .getDevice(DeviceCache.getDeviceName(devicePath)));
+        public MotionDetector createDevice(String deviceName) {
+            return new MotionDetectorJavaCV(
+                    VideoCaptureDevices.Instance.getDevice(deviceName));
         }
+
     };
 
     public static final EnumSet<Feature> Features = EnumSet.of(Feature.Motion,
@@ -229,6 +227,8 @@ public class MotionDetectorJavaCV implements MotionDetector {
                     fpsStatistics.start();
                     for (final Mat frame : videoCaptureDevice) {
                         if (isInterrupted()) {
+                            // TODO clears Interrupted state and thread doesn't
+                            // end
                             break;
                         }
                         videoInputTransformation.update(frame);
@@ -236,7 +236,7 @@ public class MotionDetectorJavaCV implements MotionDetector {
                             lockStartStop.lockInterruptibly();
                             // update shared items
                             motionProcessor.update(input);
-                        } catch (InterruptedException e1) {
+                        } catch (InterruptedException e) {
                             break;
                         } finally {
                             lockStartStop.unlock();

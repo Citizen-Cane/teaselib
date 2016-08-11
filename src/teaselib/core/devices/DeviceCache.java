@@ -1,32 +1,20 @@
 package teaselib.core.devices;
 
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 public class DeviceCache<T extends Device> {
-
+    private final Map<String, DeviceFactory<T>> factories = new LinkedHashMap<String, DeviceFactory<T>>();
     private static final String PathSeparator = "/";
-
-    public interface Factory<T extends Device> {
-        String getDeviceClass();
-
-        List<String> getDevices();
-
-        T getDevice(String path);
-    }
-
-    private final Map<String, Factory<T>> factories = new HashMap<String, Factory<T>>();
 
     public DeviceCache() {
     }
 
-    public DeviceCache<T> addFactory(DeviceCache.Factory<T> factory) {
+    public DeviceCache<T> addFactory(DeviceFactory<T> factory) {
         factories.put(factory.getDeviceClass(), factory);
         return this;
     }
@@ -76,7 +64,7 @@ public class DeviceCache<T extends Device> {
 
     public Set<String> getDevicePaths() {
         Set<String> devicePaths = new LinkedHashSet<String>();
-        for (Map.Entry<String, Factory<T>> entry : factories.entrySet())
+        for (Map.Entry<String, DeviceFactory<T>> entry : factories.entrySet())
             devicePaths.addAll(entry.getValue().getDevices());
         return devicePaths;
     }

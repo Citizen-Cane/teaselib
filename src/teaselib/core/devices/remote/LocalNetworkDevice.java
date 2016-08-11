@@ -13,7 +13,6 @@ import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Vector;
@@ -28,6 +27,7 @@ import org.slf4j.LoggerFactory;
 
 import teaselib.core.ScriptInterruptedException;
 import teaselib.core.devices.DeviceCache;
+import teaselib.core.devices.DeviceFactory;
 
 /**
  * @author Citizen-Cane
@@ -41,16 +41,11 @@ public class LocalNetworkDevice implements RemoteDevice {
 
     private static final int Port = 666;
 
-    public static final DeviceCache.Factory<RemoteDevice> Factory = new DeviceCache.Factory<RemoteDevice>() {
-        final Map<String, LocalNetworkDevice> devices = new LinkedHashMap<String, LocalNetworkDevice>();
-
+    public static final DeviceFactory<RemoteDevice> Factory = new DeviceFactory<RemoteDevice>(
+            DeviceClassName) {
         @Override
-        public String getDeviceClass() {
-            return LocalNetworkDevice.DeviceClassName;
-        }
-
-        @Override
-        public List<String> getDevices() {
+        public List<String> enumerateDevicePaths(
+                Map<String, RemoteDevice> deviceCache) {
             final ExecutorService es = Executors.newFixedThreadPool(256);
             final List<Future<List<LocalNetworkDevice>>> futures = new ArrayList<Future<List<LocalNetworkDevice>>>();
             try {
@@ -120,7 +115,7 @@ public class LocalNetworkDevice implements RemoteDevice {
                 try {
                     List<LocalNetworkDevice> detectedDevices = f.get();
                     for (LocalNetworkDevice device : detectedDevices) {
-                        this.devices.put(device.getDevicePath(), device);
+                        deviceCache.put(device.getDevicePath(), device);
                     }
                 } catch (InterruptedException e) {
                     throw new ScriptInterruptedException();
@@ -132,13 +127,12 @@ public class LocalNetworkDevice implements RemoteDevice {
                     }
                 }
             }
-            return new ArrayList<String>(this.devices.keySet());
+            return new ArrayList<String>(deviceCache.keySet());
         }
 
         @Override
-        public LocalNetworkDevice getDevice(String devicePath) {
-            // TODO create new and remember in map
-            return devices.get(devicePath);
+        public RemoteDevice createDevice(String deviceName) {
+            throw new UnsupportedOperationException();
         }
 
     };

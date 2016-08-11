@@ -3,9 +3,11 @@ package teaselib.core.devices.remote;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 import teaselib.core.devices.Device;
 import teaselib.core.devices.DeviceCache;
+import teaselib.core.devices.DeviceFactory;
 
 public class KeyRelease implements Device {
 
@@ -59,15 +61,13 @@ public class KeyRelease implements Device {
      */
     private static final String Count = "count";
 
-    public static final DeviceCache<KeyRelease> Devices = new DeviceCache<KeyRelease>()
-            .addFactory(new DeviceCache.Factory<KeyRelease>() {
-                @Override
-                public String getDeviceClass() {
-                    return KeyRelease.DeviceClassName;
-                }
+    private static final String DeviceClassName = "KeyRelease";
 
+    public static final DeviceCache<KeyRelease> Devices = new DeviceCache<KeyRelease>()
+            .addFactory(new DeviceFactory<KeyRelease>(DeviceClassName) {
                 @Override
-                public List<String> getDevices() {
+                public List<String> enumerateDevicePaths(
+                        Map<String, KeyRelease> deviceCache) {
                     List<String> devicePaths = new ArrayList<String>();
                     for (RemoteDevice remoteDevice : RemoteDevices
                             .devicesThatSupport(DeviceClassName)) {
@@ -78,16 +78,11 @@ public class KeyRelease implements Device {
                 }
 
                 @Override
-                public KeyRelease getDevice(String devicePath) {
-                    final String deviceName = DeviceCache
-                            .getDeviceName(devicePath);
-                    RemoteDevice remoteDevice = RemoteDevices.Instance
-                            .getDevice(deviceName);
-                    return new KeyRelease(remoteDevice);
+                public KeyRelease createDevice(String deviceName) {
+                    return new KeyRelease(
+                            RemoteDevices.Instance.getDevice(deviceName));
                 }
             });
-
-    private static final String DeviceClassName = "KeyRelease";
 
     private static final String Actuators = "actuators";
 

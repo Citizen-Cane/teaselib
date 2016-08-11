@@ -2,7 +2,6 @@ package teaselib.core.devices.video;
 
 import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -15,6 +14,7 @@ import org.slf4j.LoggerFactory;
 
 import teaselib.core.devices.Device;
 import teaselib.core.devices.DeviceCache;
+import teaselib.core.devices.DeviceFactory;
 import teaselib.video.ResolutionList;
 import teaselib.video.VideoCaptureDevice;
 import teaselib.video.VideoCaptureDevices;
@@ -31,48 +31,27 @@ public class VideoCaptureDeviceVideoInput implements VideoCaptureDevice {
 
     private static final String DeviceClassName = "JavaCVVideoInput";
 
-    public static final DeviceCache.Factory<VideoCaptureDevice> Factory = new DeviceCache.Factory<VideoCaptureDevice>() {
-        final Map<String, VideoCaptureDeviceVideoInput> devices = new LinkedHashMap<String, VideoCaptureDeviceVideoInput>();
-
+    public static final DeviceFactory<VideoCaptureDevice> Factory = new DeviceFactory<VideoCaptureDevice>(
+            DeviceClassName) {
         @Override
-        public String getDeviceClass() {
-            return VideoCaptureDeviceVideoInput.DeviceClassName;
-        }
-
-        @Override
-        public List<String> getDevices() {
+        public List<String> enumerateDevicePaths(
+                Map<String, VideoCaptureDevice> deviceCache) {
             videoInput.setVerbose(false);
             videoInput.setComMultiThreaded(false);
-            int n = videoInput.listDevices(true); // no
-                                                  // debug
-                                                  // output
+            int n = videoInput.listDevices(true); // no debug output
             List<String> deviceNames = new ArrayList<String>(n);
             for (int i = 0; i < n; i++) {
                 String deviceName = videoInput.getDeviceName(i).getString();
                 deviceNames.add(DeviceCache.createDevicePath(DeviceClassName,
                         deviceName));
-
-            }
-            if (deviceNames.isEmpty()) {
-                deviceNames.add(DeviceCache.createDevicePath(DeviceClassName,
-                        Device.WaitingForConnection));
             }
             return deviceNames;
         }
 
         @Override
-        public VideoCaptureDevice getDevice(String devicePath) {
-            if (devices.containsKey(devicePath)) {
-                return devices.get(devicePath);
-            } else {
-                String deviceName = DeviceCache.getDeviceName(devicePath);
-                VideoCaptureDeviceVideoInput device = new VideoCaptureDeviceVideoInput(
-                        deviceName);
-                devices.put(devicePath, device);
-                return device;
-            }
+        public VideoCaptureDevice createDevice(String deviceName) {
+            return new VideoCaptureDeviceVideoInput(deviceName);
         }
-
     };
 
     private static int getDeviceIDFromName(String deviceName) {

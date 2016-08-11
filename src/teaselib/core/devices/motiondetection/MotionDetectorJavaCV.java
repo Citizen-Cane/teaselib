@@ -225,55 +225,47 @@ public class MotionDetectorJavaCV implements MotionDetector {
                     }
                     openVideoCaptureDevice(videoCaptureDevice);
                     fpsStatistics.start();
-                    for (final Mat frame : videoCaptureDevice) {
-                        if (isInterrupted()) {
-                            // TODO clears Interrupted state and thread doesn't
-                            // end
-                            break;
-                        }
-                        videoInputTransformation.update(frame);
-                        try {
-                            lockStartStop.lockInterruptibly();
-                            // update shared items
-                            motionProcessor.update(input);
-                        } catch (InterruptedException e) {
-                            break;
-                        } finally {
-                            lockStartStop.unlock();
-                        }
-                        // Resulting bounding boxes
-                        final long now = System.currentTimeMillis();
-                        presenceChanged.doLocked(new Runnable() {
-                            @Override
-                            public void run() {
-                                boolean hasChanged = detectionResult
-                                        .updateMotionState(input,
-                                                motionProcessor, now);
-                                if (hasChanged) {
-                                    presenceChanged.signal();
-                                }
-                                updateDisplay(input, debugInfo);
-                            }
-                        });
-                        long timeLeft = fpsStatistics
-                                .timeMillisLeft(desiredFrameTimeMillis, now);
-                        if (timeLeft > 0) {
+                    try {
+                        for (Mat frame : videoCaptureDevice) {
+                            videoInputTransformation.update(frame);
                             try {
-                                Thread.sleep(timeLeft);
-                            } catch (InterruptedException e) {
-                                break;
+                                lockStartStop.lockInterruptibly();
+                                // update shared items
+                                motionProcessor.update(input);
+                            } finally {
+                                lockStartStop.unlock();
                             }
+                            // Resulting bounding boxes
+                            final long now = System.currentTimeMillis();
+                            presenceChanged.doLocked(new Runnable() {
+                                @Override
+                                public void run() {
+                                    boolean hasChanged = detectionResult
+                                            .updateMotionState(input,
+                                                    motionProcessor, now);
+                                    if (hasChanged) {
+                                        presenceChanged.signal();
+                                    }
+                                    updateDisplay(input, debugInfo);
+                                }
+                            });
+                            long timeLeft = fpsStatistics.timeMillisLeft(
+                                    desiredFrameTimeMillis, now);
+                            if (timeLeft > 0) {
+                                Thread.sleep(timeLeft);
+                            }
+                            fpsStatistics.updateFrame(now + timeLeft);
                         }
-                        fpsStatistics.updateFrame(now + timeLeft);
+                    } finally {
+                        videoCaptureDevice.close();
+                        if (debugInfo != null)
+                            debugInfo.close();
                     }
-                    videoCaptureDevice.close();
-                    if (debugInfo != null)
-                        debugInfo.close();
                 }
+            } catch (InterruptedException e) {
+                // Thread ends gracefully
             } catch (Exception e) {
                 logger.error(e.getMessage(), e);
-            } finally {
-                videoCaptureDevice.close();
             }
         }
 

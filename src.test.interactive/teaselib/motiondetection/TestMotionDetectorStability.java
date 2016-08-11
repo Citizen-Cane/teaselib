@@ -8,9 +8,6 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import teaselib.TeaseLib;
-import teaselib.hosts.DummyHost;
-import teaselib.hosts.DummyPersistence;
 import teaselib.motiondetection.MotionDetector.MotionSensitivity;
 import teaselib.motiondetection.MotionDetector.Presence;
 
@@ -31,8 +28,6 @@ public class TestMotionDetectorStability {
 
     @Test
     public void testPauseResume() {
-        TeaseLib.init(new DummyHost(), new DummyPersistence());
-
         MotionDetector md = MotionDetection.Instance.getDefaultDevice();
         md.setSensitivity(MotionSensitivity.Normal);
 

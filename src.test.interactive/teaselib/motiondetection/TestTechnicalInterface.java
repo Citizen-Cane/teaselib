@@ -2,9 +2,6 @@ package teaselib.motiondetection;
 
 import org.junit.Test;
 
-import teaselib.TeaseLib;
-import teaselib.hosts.DummyHost;
-import teaselib.hosts.DummyPersistence;
 import teaselib.motiondetection.MotionDetector.MotionSensitivity;
 import teaselib.motiondetection.MotionDetector.Presence;
 
@@ -12,8 +9,6 @@ public class TestTechnicalInterface {
 
     @Test
     public void testMotionStartStop() {
-        TeaseLib.init(new DummyHost(), new DummyPersistence());
-
         // String devicePath = VideoCaptureDeviceFactory.Instance
         // .createDevicePath(VideoCaptureDeviceCV.DeviceClassName, "0");
         // VideoCaptureDevice videoCaptureDevice =

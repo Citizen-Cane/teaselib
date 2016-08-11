@@ -11,7 +11,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.Vector;
-import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,7 +18,6 @@ import org.slf4j.LoggerFactory;
 import teaselib.Actor;
 import teaselib.Message;
 import teaselib.Message.Part;
-import teaselib.TeaseLib;
 import teaselib.core.ResourceLoader;
 import teaselib.core.ScriptInterruptedException;
 
@@ -28,7 +26,6 @@ public class TextToSpeechPlayer {
             .getLogger(TextToSpeechPlayer.class);
 
     public final TextToSpeech textToSpeech;
-    private final TeaseLib teaseLib;
     private final Set<ResourceLoader> processedVoiceActorVoices = new HashSet<ResourceLoader>();
 
     /**
@@ -52,7 +49,7 @@ public class TextToSpeechPlayer {
     private final Map<String, Voice> actorKey2TTSVoice = new HashMap<String, Voice>();
 
     /**
-     * voice guid
+     * guids of used voices
      */
     private final Set<String> usedVoices = new HashSet<String>();
 
@@ -68,8 +65,6 @@ public class TextToSpeechPlayer {
     }
 
     private TextToSpeechPlayer() {
-        super();
-        this.teaseLib = TeaseLib.instance();
         this.textToSpeech = new TextToSpeech();
         // TTS might not be available
         if (textToSpeech.isReady()) {
@@ -79,8 +74,8 @@ public class TextToSpeechPlayer {
         }
         // Write list of installed voices to log file in order to provide data
         // for the Actor to Voices mapping properties file
-        final InstalledVoices installedVoices = new InstalledVoices(voices);
         logger.info("Installed voices:");
+        InstalledVoices installedVoices = new InstalledVoices(voices);
         for (String key : installedVoices.keySet()) {
             logger.info(key + ".guid=" + installedVoices.getGuid(key));
         }
@@ -262,10 +257,10 @@ public class TextToSpeechPlayer {
                 throw e;
             } catch (Throwable t) {
                 logger.error(t.getMessage(), t);
-                speakSilent(prompt);
+                waitEstimatedSpeechDuration(prompt);
             }
         } else {
-            speakSilent(prompt);
+            waitEstimatedSpeechDuration(prompt);
         }
     }
 
@@ -273,10 +268,17 @@ public class TextToSpeechPlayer {
         textToSpeech.stop();
     }
 
-    private void speakSilent(String prompt) {
-        // Unable to speak, just display the estimated duration
-        long duration = TextToSpeech.getEstimatedSpeechDuration(prompt);
-        teaseLib.sleep(duration, TimeUnit.MILLISECONDS);
+    /**
+     * Unable to speak, just display the estimated duration.
+     * 
+     * @param prompt
+     */
+    private void waitEstimatedSpeechDuration(String prompt) {
+        try {
+            Thread.sleep(TextToSpeech.getEstimatedSpeechDuration(prompt));
+        } catch (InterruptedException e) {
+            throw new ScriptInterruptedException();
+        }
     }
 
     public boolean prerenderedSpeechAvailable(Actor actor) {

@@ -3,17 +3,13 @@
  */
 package teaselib.core.devices.remote;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import org.junit.Assume;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import teaselib.TeaseLib;
-import teaselib.hosts.DummyHost;
-import teaselib.hosts.DummyPersistence;
 
 /**
  * @author someone
@@ -22,11 +18,6 @@ import teaselib.hosts.DummyPersistence;
 public class KeyReleaseTest {
     private static final Logger logger = LoggerFactory
             .getLogger(KeyReleaseTest.class);
-
-    @BeforeClass
-    public static void setUpBeforeClass() throws Exception {
-        TeaseLib.init(new DummyHost(), new DummyPersistence());
-    }
 
     static final int minutes = 2;
 

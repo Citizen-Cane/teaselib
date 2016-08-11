@@ -3,17 +3,13 @@
  */
 package teaselib.stimulation;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertNotNull;
 
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 
-import teaselib.TeaseLib;
-import teaselib.hosts.DummyHost;
-import teaselib.hosts.DummyPersistence;
 import teaselib.stimulation.Stimulation.Type;
 
 /**
@@ -21,15 +17,6 @@ import teaselib.stimulation.Stimulation.Type;
  *
  */
 public class StimulationControllerTest {
-
-    /**
-     * @throws java.lang.Exception
-     */
-    @BeforeClass
-    public static void setUpBeforeClass() throws Exception {
-        TeaseLib.init(new DummyHost(), new DummyPersistence());
-    }
-
     /**
      * @throws java.lang.Exception
      */

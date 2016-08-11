@@ -2,23 +2,10 @@ package teaselib.motiondetection;
 
 import org.junit.Test;
 
-import teaselib.TeaseLib;
-import teaselib.hosts.DummyHost;
-import teaselib.hosts.DummyPersistence;
-
 public class TestMotionInterface {
 
     @Test
     public void testMotionStartStop() {
-        TeaseLib.init(new DummyHost(), new DummyPersistence());
-
-        // String devicePath = VideoCaptureDeviceFactory.Instance
-        // .createDevicePath(VideoCaptureDeviceCV.DeviceClassName, "0");
-        // VideoCaptureDevice videoCaptureDevice =
-        // VideoCaptureDeviceFactory.Instance
-        // .getDevice(devicePath);
-        // MotionDetector md = new MotionDetectorJavaCV(videoCaptureDevice);
-
         Movement movement = MotionDetection
                 .movement(MotionDetection.Instance.getDefaultDevice());
 

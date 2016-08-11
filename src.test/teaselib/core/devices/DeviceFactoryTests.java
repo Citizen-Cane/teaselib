@@ -3,21 +3,17 @@
  */
 package teaselib.core.devices;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertNotNull;
 
 import java.util.Set;
 
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.slf4j.LoggerFactory;
 
-import teaselib.TeaseLib;
 import teaselib.core.devices.remote.KeyRelease;
 import teaselib.core.devices.remote.RemoteDevice;
 import teaselib.core.devices.remote.RemoteDevices;
 import teaselib.core.devices.xinput.XInputDevices;
-import teaselib.hosts.DummyHost;
-import teaselib.hosts.DummyPersistence;
 import teaselib.motiondetection.MotionDetection;
 import teaselib.stimulation.StimulationDevices;
 import teaselib.video.VideoCaptureDevices;
@@ -29,14 +25,6 @@ import teaselib.video.VideoCaptureDevices;
 public class DeviceFactoryTests {
     private static final org.slf4j.Logger logger = LoggerFactory
             .getLogger(DeviceFactoryTests.class);
-
-    /**
-     * @throws java.lang.Exception
-     */
-    @BeforeClass
-    public static void setUpBeforeClass() throws Exception {
-        TeaseLib.init(new DummyHost(), new DummyPersistence());
-    }
 
     @Test
     public void instanciateDeviceFactories() {

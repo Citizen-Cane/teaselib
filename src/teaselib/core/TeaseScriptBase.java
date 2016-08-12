@@ -36,7 +36,7 @@ public abstract class TeaseScriptBase {
     public final String namespace;
 
     protected String mood = Mood.Neutral;
-    protected String displayImage = Message.DominantImage;
+    protected String displayImage = Message.ActorImage;
 
     protected static final int NoTimeout = 0;
 
@@ -150,7 +150,7 @@ public abstract class TeaseScriptBase {
                     teaseLib);
             renderMessage(interTitle);
         } finally {
-            displayImage = Message.DominantImage;
+            displayImage = Message.ActorImage;
             mood = Mood.Neutral;
         }
     }
@@ -172,7 +172,7 @@ public abstract class TeaseScriptBase {
             renderMessage(new RenderMessage(resources, parsedMessage, ttsPlayer,
                     teaseLib));
         } finally {
-            displayImage = Message.DominantImage;
+            displayImage = Message.ActorImage;
             mood = Mood.Neutral;
         }
     }
@@ -218,7 +218,7 @@ public abstract class TeaseScriptBase {
             if (part.type == Message.Type.Image) {
                 // Remember what type of image to display
                 // with the next text element
-                if (part.value == Message.DominantImage) {
+                if (part.value == Message.ActorImage) {
                     imageType = part.value;
                 } else if (part.value == Message.NoImage) {
                     imageType = part.value;
@@ -228,7 +228,7 @@ public abstract class TeaseScriptBase {
             } else if (Message.Type.FileTypes.contains(part.type)) {
                 parsedMessage.add(part.type, absoluteResource(part.value));
             } else if (part.type == Message.Type.Keyword) {
-                if (part.value == Message.DominantImage) {
+                if (part.value == Message.ActorImage) {
                     imageType = part.value;
                 } else if (part.value == Message.NoImage) {
                     imageType = part.value;
@@ -239,7 +239,7 @@ public abstract class TeaseScriptBase {
                 nextMood = part.value;
             } else if (part.type == Message.Type.Text) {
                 // Resolve actor image
-                if (imageType == Message.DominantImage) {
+                if (imageType == Message.ActorImage) {
                     if (actor.images.hasNext()) {
                         if (selectFirstImage) {
                             // TODO hint aspect

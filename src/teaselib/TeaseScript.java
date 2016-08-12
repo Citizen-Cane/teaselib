@@ -85,8 +85,8 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
     public void setImage(String path) {
         if (path == null) {
             displayImage = Message.NoImage;
-        } else if (path.equalsIgnoreCase(Message.DominantImage)) {
-            displayImage = Message.DominantImage;
+        } else if (path.equalsIgnoreCase(Message.ActorImage)) {
+            displayImage = Message.ActorImage;
         } else if (path.equalsIgnoreCase(Message.NoImage)) {
             displayImage = Message.NoImage;
         } else {

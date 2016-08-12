@@ -107,7 +107,7 @@ public class Message {
     /**
      * Display an image of the dominant, the actor that speaks the message
      */
-    public final static String DominantImage = "DominantImage";
+    public final static String ActorImage = "ActorImage";
 
     /**
      * Execute the desktop action
@@ -127,7 +127,7 @@ public class Message {
     public final static String Bullet = "°";
 
     public final static String[] Keywords = { Delay, ShowOnDesktop, ShowChoices,
-            AwaitSoundCompletion, DominantImage, NoImage, Bullet };
+            AwaitSoundCompletion, ActorImage, NoImage, Bullet };
 
     public final Actor actor;
 

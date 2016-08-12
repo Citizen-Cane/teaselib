@@ -344,7 +344,7 @@ public class RenderMessage extends MediaRendererThread {
 
     private void doKeyword(Part part) {
         String keyword = part.value;
-        if (keyword == Message.DominantImage) {
+        if (keyword == Message.ActorImage) {
             // Image has to be resolved in preprocessMessage
             throw new IllegalStateException(keyword);
         } else if (keyword == Message.NoImage) {

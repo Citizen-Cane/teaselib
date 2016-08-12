@@ -8,7 +8,6 @@ import org.slf4j.LoggerFactory;
 import teaselib.Config;
 import teaselib.TeaseLib;
 import teaselib.core.ResourceLoader;
-import teaselib.core.ScriptInterruptedException;
 
 public class RenderSound extends MediaRendererThread {
     private static final Logger logger = LoggerFactory
@@ -27,19 +26,16 @@ public class RenderSound extends MediaRendererThread {
     }
 
     @Override
-    public void renderMedia() throws IOException {
+    public void renderMedia() throws IOException, InterruptedException {
         try {
             teaseLib.transcript.info("Message sound = " + soundFile);
-            logger
-                    .info(this.getClass().getSimpleName() + ": " + soundFile);
+            logger.info(this.getClass().getSimpleName() + ": " + soundFile);
             startCompleted();
             try {
                 audioHandle = soundFile;
                 teaseLib.host.playSound(resources, soundFile);
-                logger.info(this.getClass().getSimpleName() + ": "
-                        + soundFile + " completed");
-            } catch (ScriptInterruptedException e) {
-                // Expected
+                logger.info(this.getClass().getSimpleName() + ": " + soundFile
+                        + " completed");
             } catch (IOException e) {
                 if (!teaseLib.getBoolean(Config.Namespace,
                         Config.Debug.IgnoreMissingResources)) {

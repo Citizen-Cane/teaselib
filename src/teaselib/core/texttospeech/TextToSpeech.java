@@ -76,8 +76,8 @@ public class TextToSpeech {
                 }
             };
             delegateThread.run(delegate);
-        } catch (ScriptInterruptedException e) {
-            throw e;
+        } catch (InterruptedException e) {
+            throw new ScriptInterruptedException();
         } catch (Throwable t) {
             logger.error(t.getMessage(), t);
         }
@@ -101,8 +101,8 @@ public class TextToSpeech {
             };
             try {
                 delegateThread.run(delegate);
-            } catch (ScriptInterruptedException e) {
-                throw e;
+            } catch (InterruptedException e) {
+                throw new ScriptInterruptedException();
             } catch (Throwable t) {
                 logger.error(t.getMessage(), t);
             }
@@ -127,8 +127,8 @@ public class TextToSpeech {
             };
             try {
                 delegateThread.run(delegate);
-            } catch (ScriptInterruptedException e) {
-                throw e;
+            } catch (InterruptedException e) {
+                throw new ScriptInterruptedException();
             } catch (Throwable t) {
                 logger.error(t.getMessage(), t);
             }
@@ -154,8 +154,8 @@ public class TextToSpeech {
             };
             try {
                 delegateThread.run(delegate);
-            } catch (ScriptInterruptedException e) {
-                throw e;
+            } catch (InterruptedException e) {
+                throw new ScriptInterruptedException();
             } catch (Throwable t) {
                 logger.error(t.getMessage(), t);
             }
@@ -164,7 +164,7 @@ public class TextToSpeech {
         }
     }
 
-    public void speak(final String prompt) {
+    public void speak(final String prompt) throws InterruptedException {
         if (tts != null) {
             Delegate delegate = new Delegate() {
                 @Override
@@ -180,7 +180,7 @@ public class TextToSpeech {
             };
             try {
                 delegateThread.run(delegate);
-            } catch (ScriptInterruptedException e) {
+            } catch (InterruptedException e) {
                 throw e;
             } catch (Throwable t) {
                 logger.error(t.getMessage(), t);
@@ -206,8 +206,8 @@ public class TextToSpeech {
             };
             try {
                 delegateThread.run(delegate);
-            } catch (ScriptInterruptedException e) {
-                throw e;
+            } catch (InterruptedException e) {
+                throw new ScriptInterruptedException();
             } catch (RuntimeException e) {
                 throw e;
             } catch (Throwable t) {

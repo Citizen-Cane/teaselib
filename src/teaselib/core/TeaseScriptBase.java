@@ -426,7 +426,7 @@ public abstract class TeaseScriptBase {
         return choice;
     }
 
-    private Runnable pauseHandler(final ShowChoices showChoices) {
+    private static Runnable pauseHandler(final ShowChoices showChoices) {
         return new Runnable() {
             @Override
             public void run() {

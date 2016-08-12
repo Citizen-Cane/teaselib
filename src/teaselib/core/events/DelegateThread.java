@@ -5,8 +5,6 @@ import java.util.Deque;
 
 import org.slf4j.LoggerFactory;
 
-import teaselib.core.ScriptInterruptedException;
-
 public class DelegateThread extends Thread {
     private static final org.slf4j.Logger logger = LoggerFactory
             .getLogger(DelegateThread.class);
@@ -64,17 +62,13 @@ public class DelegateThread extends Thread {
      *             If the delegate throws, the throwable is forwarded to the
      *             current thread.
      */
-    public void run(Delegate delegate) throws Throwable {
+    public void run(Delegate delegate) throws InterruptedException, Throwable {
         synchronized (delegate) {
             synchronized (queue) {
                 queue.addLast(delegate);
                 queue.notify();
             }
-            try {
-                delegate.wait();
-            } catch (InterruptedException e) {
-                throw new ScriptInterruptedException();
-            }
+            delegate.wait();
         }
         Throwable t = delegate.getError();
         if (t != null) {

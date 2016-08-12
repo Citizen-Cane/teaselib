@@ -16,7 +16,7 @@ public class DummyHost implements Host {
 
     @Override
     public void playSound(ResourceLoader resources, String path)
-            throws IOException {
+            throws IOException, InterruptedException {
     }
 
     @Override

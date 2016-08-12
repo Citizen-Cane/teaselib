@@ -377,6 +377,8 @@ public class MotionDetectorJavaCV implements MotionDetector {
             return eventThread.detectionResult.awaitChange(
                     eventThread.presenceChanged, amount, change,
                     timeSpanSeconds, timeoutSeconds);
+        }    catch(InterruptedException e) {
+            throw new ScriptInterruptedException();
         } finally {
             eventThread.debugWindowTimeSpan = MotionRegionDefaultTimespan;
         }

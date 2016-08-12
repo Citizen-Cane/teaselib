@@ -1,7 +1,5 @@
 package teaselib.core.media;
 
-import java.io.IOException;
-
 import teaselib.Actor;
 import teaselib.TeaseLib;
 import teaselib.core.texttospeech.TextToSpeechPlayer;
@@ -22,7 +20,7 @@ public class RenderTTSSpeech extends RenderSpeech {
     }
 
     @Override
-    protected void renderSpeech() throws IOException {
+    protected void renderSpeech() throws InterruptedException {
         ttsPlayer.speak(actor, prompt, mood);
     }
 

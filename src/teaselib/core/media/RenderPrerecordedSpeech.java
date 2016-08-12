@@ -19,7 +19,7 @@ public class RenderPrerecordedSpeech extends RenderSpeech {
     }
 
     @Override
-    protected void renderSpeech() throws IOException {
+    protected void renderSpeech() throws IOException, InterruptedException {
         audioHandle = speechSoundFile;
         teaseLib.host.playSound(resources, speechSoundFile);
     }

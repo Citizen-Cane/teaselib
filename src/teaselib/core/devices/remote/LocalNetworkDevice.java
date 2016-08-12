@@ -25,7 +25,6 @@ import java.util.concurrent.Future;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import teaselib.core.ScriptInterruptedException;
 import teaselib.core.devices.DeviceCache;
 import teaselib.core.devices.DeviceFactory;
 
@@ -45,7 +44,8 @@ public class LocalNetworkDevice implements RemoteDevice {
             DeviceClassName) {
         @Override
         public List<String> enumerateDevicePaths(
-                Map<String, RemoteDevice> deviceCache) {
+                Map<String, RemoteDevice> deviceCache)
+                throws InterruptedException {
             final ExecutorService es = Executors.newFixedThreadPool(256);
             final List<Future<List<LocalNetworkDevice>>> futures = new ArrayList<Future<List<LocalNetworkDevice>>>();
             try {
@@ -117,8 +117,6 @@ public class LocalNetworkDevice implements RemoteDevice {
                     for (LocalNetworkDevice device : detectedDevices) {
                         deviceCache.put(device.getDevicePath(), device);
                     }
-                } catch (InterruptedException e) {
-                    throw new ScriptInterruptedException();
                 } catch (ExecutionException e) {
                     if (e.getCause() instanceof SocketTimeoutException) {
                         // Expected

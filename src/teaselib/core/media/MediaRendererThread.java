@@ -70,7 +70,7 @@ public abstract class MediaRendererThread
                         }
                         renderMedia();
                     } catch (InterruptedException e) {
-                        logger.debug(e.getMessage(), e);
+                        // Expected
                     } catch (ScriptInterruptedException e) {
                         // Expected
                     } catch (Throwable t) {

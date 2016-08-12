@@ -118,8 +118,8 @@ public class SpeechRecognition {
         };
         try {
             delegateThread.run(delegate);
-        } catch (ScriptInterruptedException e) {
-            throw e;
+        } catch (InterruptedException e) {
+            throw new ScriptInterruptedException();
         } catch (Throwable t) {
             logger.error(t.getMessage(), t);
         }
@@ -139,8 +139,6 @@ public class SpeechRecognition {
                                 "Unlocking speech recognition sync object");
                         SpeechRecognitionInProgress.unlock();
                     }
-                } catch (ScriptInterruptedException e) {
-                    throw e;
                 } catch (Throwable t) {
                     logger.error(t.getMessage(), t);
                 }
@@ -148,8 +146,8 @@ public class SpeechRecognition {
         };
         try {
             delegateThread.run(delegate);
-        } catch (ScriptInterruptedException e) {
-            throw e;
+        } catch (InterruptedException e) {
+            throw new ScriptInterruptedException();
         } catch (Throwable t) {
             logger.error(t.getMessage(), t);
         }
@@ -181,8 +179,8 @@ public class SpeechRecognition {
                 }
             };
             delegateThread.run(delegate);
-        } catch (ScriptInterruptedException e) {
-            throw e;
+        } catch (InterruptedException e) {
+            throw new ScriptInterruptedException();
         } catch (Throwable t) {
             logger.error(t.getMessage(), t);
         }
@@ -223,8 +221,8 @@ public class SpeechRecognition {
             };
             try {
                 delegateThread.run(delegate);
-            } catch (ScriptInterruptedException e) {
-                throw e;
+            } catch (InterruptedException e) {
+                throw new ScriptInterruptedException();
             } catch (Throwable t) {
                 SpeechRecognition.this.speechRecognitionActive = false;
                 logger.error(t.getMessage(), t);
@@ -250,8 +248,8 @@ public class SpeechRecognition {
             };
             try {
                 delegateThread.run(delegate);
-            } catch (ScriptInterruptedException e) {
-                throw e;
+            } catch (InterruptedException e) {
+                throw new ScriptInterruptedException();
             } catch (Throwable t) {
                 SpeechRecognition.this.speechRecognitionActive = false;
                 logger.error(t.getMessage(), t);
@@ -278,8 +276,8 @@ public class SpeechRecognition {
             };
             try {
                 delegateThread.run(delegate);
-            } catch (ScriptInterruptedException e) {
-                throw e;
+            } catch (InterruptedException e) {
+                throw new ScriptInterruptedException();
             } catch (Throwable t) {
                 logger.error(t.getMessage(), t);
             } finally {

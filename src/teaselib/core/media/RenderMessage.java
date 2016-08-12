@@ -254,12 +254,10 @@ public class RenderMessage extends MediaRendererThread {
             // Finished all parts
             completeSpeech(true);
             allCompleted();
-
         }
-
     }
 
-    private void speak(String prompt, String mood, final boolean lastParagraph,
+    private void speak(String prompt, String mood, boolean lastParagraph,
             boolean speakText) {
         teaseLib.transcript.info(">> " + prompt);
         if (ttsPlayer != null && speechRenderer == null) {

@@ -25,7 +25,7 @@ interface MotionDetectionResult {
 
     public boolean awaitChange(Signal signal, final double amount,
             final Presence change, final double timeSpanSeconds,
-            final double timeoutSeconds);
+            final double timeoutSeconds) throws InterruptedException;
 
     Set<Presence> getPresence(Rect motionRegion, Rect presenceRegion);
 }

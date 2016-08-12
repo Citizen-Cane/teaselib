@@ -23,7 +23,8 @@ public interface Host {
      * @param path
      *            The resource path to the wav, mp3 or ogg sound.
      */
-    void playSound(ResourceLoader resources, String path) throws IOException;
+    void playSound(ResourceLoader resources, String path)
+            throws IOException, InterruptedException;
 
     /**
      * Play the sound denoted by the resource path. Return immediately.

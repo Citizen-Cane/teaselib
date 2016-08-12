@@ -78,22 +78,19 @@ public class MediaRendererQueue {
     public void completeStarts() {
         Map<Class<?>, Threaded> renderers = getThreadedRenderers();
         if (!renderers.isEmpty()) {
-            logger
-                    .debug("Completing all threaded renderers starts");
+            logger.debug("Completing all threaded renderers starts");
             for (MediaRenderer.Threaded renderer : renderers.values()) {
                 renderer.completeStart();
             }
         } else {
-            logger
-                    .debug("Threaded Renderers completeStarts : queue empty");
+            logger.debug("Threaded Renderers completeStarts : queue empty");
         }
     }
 
     public void completeMandatories() {
         Map<Class<?>, Threaded> renderers = getThreadedRenderers();
         if (!renderers.isEmpty()) {
-            logger
-                    .debug("Completing all threaded renderers mandatory part");
+            logger.debug("Completing all threaded renderers mandatory part");
             for (MediaRenderer.Threaded renderer : renderers.values()) {
                 renderer.completeMandatory();
             }
@@ -115,8 +112,7 @@ public class MediaRendererQueue {
                 renderer.completeAll();
             }
         } else {
-            logger
-                    .debug("Threaded Renderers completeAll: queue empty");
+            logger.debug("Threaded Renderers completeAll: queue empty");
         }
     }
 
@@ -152,8 +148,7 @@ public class MediaRendererQueue {
                 throw exception;
             }
         } else {
-            logger
-                    .debug("Threaded Renderers endAll: queue empty");
+            logger.debug("Threaded Renderers endAll: queue empty");
         }
     }
 

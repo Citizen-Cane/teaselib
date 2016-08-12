@@ -147,12 +147,8 @@ public class SexScriptsHost implements Host {
 
     @Override
     public void playSound(ResourceLoader resources, String path)
-            throws IOException, ScriptInterruptedException {
-        try {
-            ss.playSound(resources.unpackToFile(path).getAbsolutePath());
-        } catch (InterruptedException e) {
-            throw new ScriptInterruptedException();
-        }
+            throws IOException, InterruptedException {
+        ss.playSound(resources.unpackToFile(path).getAbsolutePath());
     }
 
     @Override
@@ -223,11 +219,7 @@ public class SexScriptsHost implements Host {
             ((ss.desktop.Script) ss).setImage(image, false);
 
         } else {
-            try {
-                ss.setImage(null);
-            } catch (InterruptedException e) {
-                throw new ScriptInterruptedException();
-            }
+            ss.setImage((byte[]) null, 0);
         }
     }
 

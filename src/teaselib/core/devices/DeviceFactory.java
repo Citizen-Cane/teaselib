@@ -4,6 +4,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import teaselib.core.ScriptInterruptedException;
+
 public abstract class DeviceFactory<T extends Device> {
     private final String deviceClass;
 
@@ -19,20 +21,25 @@ public abstract class DeviceFactory<T extends Device> {
     }
 
     public List<String> getDevices() {
-        List<String> devicePaths = enumerateDevicePaths(deviceCache);
-        if (devicePaths.isEmpty()) {
-            devicePaths.add(Device.WaitingForConnection);
-        }
-        // remove disconnected
-        Map<String, T> updatedDeviceCache = new LinkedHashMap<>();
-        for (String devicePath : devicePaths) {
-            if (deviceCache.containsKey(devicePath)) {
-                updatedDeviceCache.put(devicePath, deviceCache.get(devicePath));
+        try {
+            List<String> devicePaths = enumerateDevicePaths(deviceCache);
+            if (devicePaths.isEmpty()) {
+                devicePaths.add(Device.WaitingForConnection);
             }
+            // remove disconnected
+            Map<String, T> updatedDeviceCache = new LinkedHashMap<>();
+            for (String devicePath : devicePaths) {
+                if (deviceCache.containsKey(devicePath)) {
+                    updatedDeviceCache.put(devicePath,
+                            deviceCache.get(devicePath));
+                }
+            }
+            deviceCache.clear();
+            deviceCache.putAll(updatedDeviceCache);
+            return devicePaths;
+        } catch (InterruptedException e) {
+            throw new ScriptInterruptedException();
         }
-        deviceCache.clear();
-        deviceCache.putAll(updatedDeviceCache);
-        return devicePaths;
     }
 
     public T getDevice(String devicePath) {
@@ -82,7 +89,7 @@ public abstract class DeviceFactory<T extends Device> {
      * @return A list of device paths
      */
     public abstract List<String> enumerateDevicePaths(
-            Map<String, T> deviceCache);
+            Map<String, T> deviceCache) throws InterruptedException;
 
     /**
      * Create a new device.

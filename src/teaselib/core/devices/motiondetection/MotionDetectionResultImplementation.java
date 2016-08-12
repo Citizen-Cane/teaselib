@@ -3,7 +3,7 @@
  */
 package teaselib.core.devices.motiondetection;
 
-import static teaselib.core.javacv.util.Geom.*;
+import static teaselib.core.javacv.util.Geom.intersects;
 
 import java.util.Iterator;
 import java.util.LinkedHashSet;
@@ -19,7 +19,6 @@ import org.bytedeco.javacpp.opencv_core.Size;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import teaselib.core.ScriptInterruptedException;
 import teaselib.core.concurrency.Signal;
 import teaselib.core.javacv.util.Geom;
 import teaselib.core.util.TimeLine;
@@ -143,7 +142,7 @@ public class MotionDetectionResultImplementation
     @Override
     public boolean awaitChange(Signal signal, final double amount,
             final Presence change, final double timeSpanSeconds,
-            final double timeoutSeconds) {
+            final double timeoutSeconds) throws InterruptedException {
         // TODO clamp amount to [0,1] and handle > 0.0, >= 1.0
         try {
             return signal.awaitChange(timeoutSeconds,
@@ -157,7 +156,7 @@ public class MotionDetectionResultImplementation
                         }
                     }));
         } catch (InterruptedException e) {
-            throw new ScriptInterruptedException();
+            throw e;
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
         }

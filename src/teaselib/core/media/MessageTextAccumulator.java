@@ -53,6 +53,10 @@ public class MessageTextAccumulator {
         return Message.MainClauseAppendableCharacters.contains(ending);
     }
 
+    public boolean canAppend() {
+        return appendToParagraph;
+    }
+
     @Override
     public String toString() {
         return message.toString();

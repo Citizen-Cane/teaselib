@@ -27,8 +27,8 @@ public class RenderMessage extends MediaRendererThread {
     private static final Logger logger = LoggerFactory
             .getLogger(RenderMessage.class);
 
-    private final static long DELAYBETWEENPARAGRAPHS = 500;
-    private final static long DELAYATENDOFTEXT = 2000;
+    private final static long DELAY_BETWEEN_PARAGRAPHS = 500;
+    private final static long DELAY_AT_END_OF_MESSAGE = 2000;
 
     static final Set<Message.Type> logSpecialMessageTypes = new HashSet<Message.Type>(
             Arrays.asList(Message.Type.Text, Message.Type.Image,
@@ -212,8 +212,9 @@ public class RenderMessage extends MediaRendererThread {
                 } else if (part.type == Message.Type.Speech) {
                     if (speakText) {
                         speechRenderer = new RenderPrerecordedSpeech(part.value,
-                                getParagraphPause(lastParagraph), resources,
-                                teaseLib);
+                                getParagraphPause(accumulatedText,
+                                        lastParagraph),
+                                resources, teaseLib);
                     }
                 } else if (part.type == Message.Type.DesktopItem) {
                     // Finish the current text part
@@ -225,9 +226,9 @@ public class RenderMessage extends MediaRendererThread {
                         renderDesktopItem.render();
                     } catch (IOException e) {
                         logger.error(e.getMessage(), e);
-                        accumulatedText.add(part);
+                        accumulatedText.add(
+                                new Part(Message.Type.Text, e.getMessage()));
                         show(accumulatedText.toString(), mood);
-                        speak(part.value, mood, lastParagraph, false);
                     }
                 } else if (part.type == Message.Type.Mood) {
                     // Mood
@@ -242,7 +243,19 @@ public class RenderMessage extends MediaRendererThread {
                 } else { // (part.type == Message.Type.Text)
                     accumulatedText.add(part);
                     show(accumulatedText.toString(), mood);
-                    speak(part.value, mood, lastParagraph, speakText);
+                    if (ttsPlayer != null && speechRenderer == null) {
+                        if (speakText) {
+                            speechRenderer = new RenderTTSSpeech(ttsPlayer,
+                                    message.actor, part.value, mood,
+                                    getParagraphPause(accumulatedText,
+                                            lastParagraph),
+                                    teaseLib);
+                        }
+                    }
+                    teaseLib.transcript.info(">> " + part.value);
+                    if (speechRenderer != null) {
+                        speak();
+                    }
                 }
                 if (task.isCancelled()) {
                     break;
@@ -257,28 +270,15 @@ public class RenderMessage extends MediaRendererThread {
         }
     }
 
-    private void speak(String prompt, String mood, boolean lastParagraph,
-            boolean speakText) {
-        teaseLib.transcript.info(">> " + prompt);
-        if (ttsPlayer != null && speechRenderer == null) {
-            if (speakText) {
-                speechRenderer = new RenderTTSSpeech(ttsPlayer, message.actor,
-                        prompt, mood, getParagraphPause(lastParagraph),
-                        teaseLib);
-            }
+    private void speak() {
+        synchronized (interuptableAudio) {
+            // Play sound, wait until finished
+            speechRenderer.render();
+            // Automatically interrupt
+            interuptableAudio.add(speechRenderer);
         }
-        // Start next
-        if (speechRenderer != null) {
-            synchronized (interuptableAudio) {
-                // Play sound, wait until finished
-                speechRenderer.render();
-                // Automatically interrupt
-                interuptableAudio.add(speechRenderer);
-            }
-            speechRendererInProgress = speechRenderer;
-            speechRenderer = null;
-        }
-
+        speechRendererInProgress = speechRenderer;
+        speechRenderer = null;
     }
 
     private void completeSpeech(final boolean lastParagraph) {
@@ -338,8 +338,17 @@ public class RenderMessage extends MediaRendererThread {
         startCompleted();
     }
 
-    private static long getParagraphPause(boolean lastParagraph) {
-        return lastParagraph ? DELAYATENDOFTEXT : DELAYBETWEENPARAGRAPHS;
+    private static long getParagraphPause(
+            MessageTextAccumulator accumulatedText, boolean lastParagraph) {
+        if (lastParagraph) {
+            return DELAY_AT_END_OF_MESSAGE;
+        } else if (accumulatedText.canAppend()) {
+            // TODO pause is imperfect with M$ TTS
+            // - different from speaking the whole sentence at once
+            return 0;
+        } else {
+            return DELAY_BETWEEN_PARAGRAPHS;
+        }
     }
 
     private void doKeyword(Part part) {
@@ -373,7 +382,7 @@ public class RenderMessage extends MediaRendererThread {
         String args = removeCommandNameFromValue(part);
         if (args.isEmpty()) {
             // Fixed pause
-            teaseLib.sleep(DELAYATENDOFTEXT, TimeUnit.MILLISECONDS);
+            teaseLib.sleep(DELAY_AT_END_OF_MESSAGE, TimeUnit.MILLISECONDS);
         } else {
             try {
                 String[] argv = args.split(" ");
@@ -389,7 +398,7 @@ public class RenderMessage extends MediaRendererThread {
                 }
             } catch (NumberFormatException ignore) {
                 // Fixed pause
-                teaseLib.sleep(DELAYATENDOFTEXT, TimeUnit.MILLISECONDS);
+                teaseLib.sleep(DELAY_AT_END_OF_MESSAGE, TimeUnit.MILLISECONDS);
             }
         }
     }
@@ -411,9 +420,9 @@ public class RenderMessage extends MediaRendererThread {
             Part paragraph = it.next();
             delay += TextToSpeech.getEstimatedSpeechDuration(paragraph.value);
             if (it.hasNext()) {
-                delay += DELAYBETWEENPARAGRAPHS;
+                delay += DELAY_BETWEEN_PARAGRAPHS;
             } else {
-                delay += DELAYATENDOFTEXT;
+                delay += DELAY_AT_END_OF_MESSAGE;
             }
         }
         String messageText = message.toPrerecordedSpeechHashString()

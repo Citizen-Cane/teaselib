@@ -19,7 +19,6 @@ import teaselib.Actor;
 import teaselib.Message;
 import teaselib.Message.Part;
 import teaselib.core.ResourceLoader;
-import teaselib.core.ScriptInterruptedException;
 
 public class TextToSpeechPlayer {
     private static final Logger logger = LoggerFactory
@@ -244,7 +243,8 @@ public class TextToSpeechPlayer {
      * @param teaseLib
      *            instance to call sleep on
      */
-    public void speak(Actor actor, String prompt, String mood) {
+    public void speak(Actor actor, String prompt, String mood)
+            throws InterruptedException {
         boolean useTTS = textToSpeech.isReady();
         if (useTTS) {
             Voice voice = getVoiceFor(actor);
@@ -253,7 +253,7 @@ public class TextToSpeechPlayer {
             textToSpeech.setHint(mood);
             try {
                 textToSpeech.speak(prompt);
-            } catch (ScriptInterruptedException e) {
+            } catch (InterruptedException e) {
                 throw e;
             } catch (Throwable t) {
                 logger.error(t.getMessage(), t);
@@ -273,12 +273,9 @@ public class TextToSpeechPlayer {
      * 
      * @param prompt
      */
-    private void waitEstimatedSpeechDuration(String prompt) {
-        try {
-            Thread.sleep(TextToSpeech.getEstimatedSpeechDuration(prompt));
-        } catch (InterruptedException e) {
-            throw new ScriptInterruptedException();
-        }
+    private static void waitEstimatedSpeechDuration(String prompt)
+            throws InterruptedException {
+        Thread.sleep(TextToSpeech.getEstimatedSpeechDuration(prompt));
     }
 
     public boolean prerenderedSpeechAvailable(Actor actor) {

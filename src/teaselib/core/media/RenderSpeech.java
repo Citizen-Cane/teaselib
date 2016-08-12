@@ -8,7 +8,6 @@ import org.slf4j.LoggerFactory;
 
 import teaselib.Config;
 import teaselib.TeaseLib;
-import teaselib.core.ScriptInterruptedException;
 import teaselib.core.speechrecognition.SpeechRecognition;
 import teaselib.core.speechrecognition.SpeechRecognizer;
 
@@ -37,7 +36,7 @@ public abstract class RenderSpeech extends MediaRendererThread {
             renderSpeech();
             mandatoryCompleted();
             teaseLib.sleep(pauseMillis, TimeUnit.MILLISECONDS);
-        } catch (ScriptInterruptedException e) {
+        } catch (InterruptedException e) {
             // Expected
         } catch (IOException e) {
             if (!teaseLib.getBoolean(Config.Namespace,
@@ -52,5 +51,6 @@ public abstract class RenderSpeech extends MediaRendererThread {
                 this.getClass().getSimpleName() + ": " + text + " completed");
     }
 
-    protected abstract void renderSpeech() throws IOException;
+    protected abstract void renderSpeech()
+            throws IOException, InterruptedException;
 }

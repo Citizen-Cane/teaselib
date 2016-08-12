@@ -22,7 +22,7 @@ public class RenderTTSSpeech extends RenderSpeech {
     }
 
     @Override
-    protected void renderSpeech() throws IOException {
+    protected void renderSpeech() throws IOException, InterruptedException {
         ttsPlayer.speak(actor, prompt, mood);
     }
 

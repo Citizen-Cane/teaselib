@@ -1,5 +1,7 @@
 package teaselib.core.devices;
 
+import teaselib.core.devices.remote.RemoteDevices;
+
 public interface Device {
 
     /**
@@ -24,11 +26,16 @@ public interface Device {
 
     /**
      * Test whether the device is connected and accessible.
+     * <p>
+     * Calling this method on a disconnected device may cause it to look for its
+     * resource, so don't call this too often. To conveniently connect a device
+     * to its resource, see {@link RemoteDevices#connect}.
      */
     boolean connected();
 
     /**
-     * Test whether the device is active.
+     * Test whether the device is active, e.g it is connected, and will respond
+     * to device specific commands.
      */
     boolean active();
 

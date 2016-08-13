@@ -4,10 +4,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * @author someone
+ * @author Citizen-Cane
  *
  *         Implements script interruption. Must be thrown if a script gets
  *         interrupted. Used to cancel script closures upon choice.
+ *         <p>
+ *         This is to be used if a function is in tended to be called by the
+ *         script directly. Otherwise it's a good idea to avoid the additional
+ *         dependency and stick to the standard
+ *         {@link java.lang.InterruptedException}.
  */
 public class ScriptInterruptedException extends RuntimeException {
     private static final Logger logger = LoggerFactory

@@ -4,12 +4,13 @@ import java.util.Comparator;
 import java.util.List;
 
 import teaselib.core.devices.DeviceCache;
-import teaselib.core.devices.video.VideoCaptureDeviceVideoInput;
+import teaselib.core.devices.video.VideoCaptureDeviceCV;
 
 public class VideoCaptureDevices {
     public static final DeviceCache<VideoCaptureDevice> Instance = new DeviceCache<VideoCaptureDevice>()
-            .addFactory(VideoCaptureDeviceVideoInput.Factory);// .addFactory(VideoCaptureDeviceWebcamCapture.Factory);//
-                                                              // .addFactory(VideoCaptureDeviceCV.Factory);
+            .addFactory(VideoCaptureDeviceCV.Factory);
+    // .addFactory(VideoCaptureDeviceVideoInput.Factory);
+    // .addFactory(VideoCaptureDeviceWebcamCapture.Factory);
 
     static final String front = "front";
     static final String rear = "rear";

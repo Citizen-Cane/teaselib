@@ -36,16 +36,14 @@ public class VideoCaptureDeviceVideoInput implements VideoCaptureDevice {
         @Override
         public List<String> enumerateDevicePaths(
                 Map<String, VideoCaptureDevice> deviceCache) {
-            videoInput.setVerbose(false);
-            videoInput.setComMultiThreaded(false);
-            int n = videoInput.listDevices(true); // no debug output
-            List<String> deviceNames = new ArrayList<String>(n);
-            for (int i = 0; i < n; i++) {
-                String deviceName = videoInput.getDeviceName(i).getString();
-                deviceNames.add(DeviceCache.createDevicePath(DeviceClassName,
+            List<String> deviceNames = enumerateVideoInputDevices();
+            List<String> devicePaths = new ArrayList<String>(
+                    deviceNames.size());
+            for (String deviceName : deviceNames) {
+                devicePaths.add(DeviceCache.createDevicePath(DeviceClassName,
                         deviceName));
             }
-            return deviceNames;
+            return devicePaths;
         }
 
         @Override
@@ -54,7 +52,19 @@ public class VideoCaptureDeviceVideoInput implements VideoCaptureDevice {
         }
     };
 
-    private static int getDeviceIDFromName(String deviceName) {
+    static List<String> enumerateVideoInputDevices() {
+        videoInput.setVerbose(false);
+        videoInput.setComMultiThreaded(false);
+        int n = videoInput.listDevices(true); // no debug output
+        List<String> deviceNames = new ArrayList<String>(n);
+        for (int i = 0; i < n; i++) {
+            String deviceName = videoInput.getDeviceName(i).getString();
+            deviceNames.add(deviceName);
+        }
+        return deviceNames;
+    }
+
+    static int getDeviceIDFromName(String deviceName) {
         // returns always -1:
         // videoInput.getDeviceIDFromName(deviceName);
         int n = videoInput.listDevices(false); // no debug output
@@ -154,7 +164,11 @@ public class VideoCaptureDeviceVideoInput implements VideoCaptureDevice {
             throw new IllegalArgumentException(
                     size.width() + "," + size.height());
         }
-        vi.setupDevice(deviceId, size.width(), size.height());
+        if (size == DefaultResolution) {
+            vi.setupDevice(deviceId);
+        } else {
+            vi.setupDevice(deviceId, size.width(), size.height());
+        }
         if (!active()) {
             throw new IllegalArgumentException(
                     "Camera not opened: " + getDevicePath() + ":" + deviceId);

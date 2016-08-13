@@ -5,11 +5,11 @@ import static org.bytedeco.javacpp.opencv_videoio.CAP_PROP_FRAME_WIDTH;
 
 import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
+import java.util.Vector;
 
+import org.bridj.Platform;
 import org.bytedeco.javacpp.opencv_core.Mat;
 import org.bytedeco.javacpp.opencv_core.Size;
 import org.bytedeco.javacpp.opencv_videoio;
@@ -28,142 +28,132 @@ public class VideoCaptureDeviceCV implements VideoCaptureDevice {
 
     private static final String DeviceClassName = "JavaCVVideoCapture";
 
+    private final static boolean useVideoInput = Platform.isWindows();
+
     public static final DeviceFactory<VideoCaptureDevice> Factory = new DeviceFactory<VideoCaptureDevice>(
             DeviceClassName) {
+
         @Override
         public List<String> enumerateDevicePaths(
                 Map<String, VideoCaptureDevice> deviceCache) {
-            List<String> deviceNames = new ArrayList<String>();
-            deviceNames.addAll(VideoCaptureDeviceCV.getDevicesPaths());
-            return deviceNames;
+            final List<String> devicePaths;
+            if (useVideoInput) {
+                List<String> deviceNames = VideoCaptureDeviceVideoInput
+                        .enumerateVideoInputDevices();
+                devicePaths = new ArrayList<String>(deviceNames.size());
+                for (String deviceName : deviceNames) {
+                    devicePaths.add(DeviceCache
+                            .createDevicePath(DeviceClassName, deviceName));
+                }
+            } else {
+                int i = 0;
+                List<VideoCaptureDeviceCV> captureDevices = getCaptureDevices(
+                        deviceCache);
+                devicePaths = new ArrayList<String>(captureDevices.size());
+                for (VideoCaptureDeviceCV device : captureDevices) {
+                    String devicePath = DeviceCache.createDevicePath(
+                            VideoCaptureDeviceCV.DeviceClassName,
+                            Integer.toString(i++));
+                    deviceCache.put(device.getDevicePath(), device);
+                    devicePaths.add(devicePath);
+                }
+                devicePaths.addAll(devicePaths);
+            }
+            return devicePaths;
+        }
+
+        private List<VideoCaptureDeviceCV> getCaptureDevices(
+                Map<String, VideoCaptureDevice> deviceCache) {
+            int i = 0;
+            List<VideoCaptureDeviceCV> devices = new Vector<VideoCaptureDeviceCV>();
+            while (true) {
+                // Only add new devices, because we want them to be singletons
+                if (i >= deviceCache.size())
+                    // Detect new devices
+                    try {
+                        VideoCaptureDeviceCV videoCapture = new VideoCaptureDeviceCV(
+                                i);
+                        try {
+                            videoCapture.open();
+                        } catch (IllegalArgumentException e) {
+                            // Ignore
+                        }
+                        if (videoCapture.connected()) {
+                            videoCapture.close();
+                            devices.add(videoCapture);
+                        } else {
+                            break;
+                        }
+                    } catch (Exception e) {
+                        // Ignore
+                        logger.error(e.getMessage(), e);
+                        break;
+                    }
+                i++;
+            }
+            return devices;
         }
 
         @Override
         public VideoCaptureDevice createDevice(String deviceName) {
-            return VideoCaptureDeviceCV.get(deviceName);
+            if (WaitingForConnection.equals(deviceName)) {
+                if (useVideoInput) {
+                    return new VideoCaptureDeviceCV(deviceName);
+                } else {
+                    return new VideoCaptureDeviceCV(0);
+                }
+            } else {
+                if (useVideoInput) {
+                    return new VideoCaptureDeviceCV(deviceName);
+                } else {
+                    throw new IllegalArgumentException(deviceName);
+                }
+            }
         }
 
     };
 
-    final int device;
+    private int deviceId;
+    private String deviceName;
     final VideoCapture videoCapture;
-    final Mat mat = new Mat();
     Size captureSize = DefaultResolution;
     double fps = 0.0;
 
-    private static List<VideoCapture> devices = new ArrayList<VideoCapture>();
+    final Mat mat = new Mat();
 
-    public static Set<String> getDevicesPaths() {
-        int i = 0;
-        Set<String> devicePaths = new LinkedHashSet<String>();
-        for (@SuppressWarnings("unused")
-        // TODO Enumerate to device map, to have devices available
-        VideoCapture videoCapture : getCaptureDevices()) {
-            devicePaths.add(DeviceCache.createDevicePath(
-                    VideoCaptureDeviceCV.DeviceClassName,
-                    Integer.toString(i++)));
-        }
-        return devicePaths;
+    private VideoCaptureDeviceCV(String deviceName) {
+        this.videoCapture = new VideoCapture();
+        this.deviceId = useVideoInput
+                ? VideoCaptureDeviceVideoInput.getDeviceIDFromName(deviceName)
+                : Integer.parseInt(DeviceCache.getDeviceName(deviceName));
+        this.deviceName = deviceName;
     }
 
-    static List<VideoCapture> getCaptureDevices() {
-        int i = 0;
-        while (true) {
-            // Only add new devices, because we want them to be singletons
-            if (i >= devices.size())
-                // Detect new devices
-                try {
-                @SuppressWarnings("resource")
-                VideoCapture videoCapture = new VideoCapture();
-                openDevice(videoCapture, i);
-                if (videoCapture.isOpened()) {
-                videoCapture.release();
-                devices.add(videoCapture);
-                } else {
-                videoCapture.release();
-                videoCapture.close();
-                break;
-                }
-                } catch (Exception e) {
-                // Ignore
-                logger.error(e.getMessage(), e);
-                break;
-                }
-            else {
-                // Remove removed devices
-                while (i < devices.size()) {
-                    VideoCapture videoCapture = devices.get(i);
-                    if (!videoCapture.isOpened()) {
-                        // ... but on surprise removal
-                        devices.remove(i);
-                        try {
-                            videoCapture.release();
-                            videoCapture.close();
-                        } catch (Exception e) {
-                            // Ignore
-                            logger.error(e.getMessage(), e);
-                        }
-                        // After removing an entry from the list,
-                        // Repeat without incrementing the index
-                        continue;
-                    }
-                    // End device enumeration
-                    break;
-                }
-            }
-            i++;
-        }
-        return devices;
-    }
-
-    private static void openDevice(VideoCapture videoCapture, int i) {
-        // videoCapture.open(opencv_videoio.CV_CAP_MSMF + i);
-        videoCapture.open(i);
-    }
-
-    public static VideoCaptureDeviceCV get(String name) {
-        return get(Integer.parseInt(name));
-    }
-
-    public static VideoCaptureDeviceCV get(int n) {
-        if (n >= devices.size()) {
-            getCaptureDevices();
-            if (n >= devices.size()) {
-                // default to previous device if camera has been removed
-                n = devices.size() - 1;
-            }
-        }
-        return new VideoCaptureDeviceCV(n);
-    }
-
-    private VideoCaptureDeviceCV(String id) throws Exception {
-        this(Integer.parseInt(DeviceCache.getDeviceName(id)));
-    }
-
-    private VideoCaptureDeviceCV(int device) {
-        this.device = device;
-        videoCapture = devices.get(device);
+    private VideoCaptureDeviceCV(int deviceId) {
+        this.videoCapture = new VideoCapture();
+        this.deviceId = deviceId;
+        this.deviceName = Integer.toString(deviceId);
     }
 
     @Override
     public String getDevicePath() {
         return DeviceCache.createDevicePath(DeviceClassName,
-                Integer.toString(device));
+                Integer.toString(deviceId));
     }
 
     @Override
     public String getName() {
-        return "OpenCV Video Capture #" + this.device;
+        return "OpenCV Video Capture " + this.deviceName;
     }
 
     @Override
     public void open() {
         if (!videoCapture.isOpened()) {
-            videoCapture.open(device);
+            videoCapture.open(deviceId);
         }
         if (!videoCapture.isOpened()) {
             throw new IllegalArgumentException("Camera not opened: "
-                    + getClass().getName() + ":" + device);
+                    + getClass().getName() + ":" + deviceId);
         }
         captureSize.width((int) videoCapture.get(CAP_PROP_FRAME_WIDTH));
         captureSize.height((int) videoCapture.get(CAP_PROP_FRAME_HEIGHT));
@@ -197,7 +187,7 @@ public class VideoCaptureDeviceCV implements VideoCaptureDevice {
                     size.width() + "," + size.height());
         }
         videoCapture.set(CAP_PROP_FRAME_WIDTH, size.width());
-        videoCapture.set(CAP_PROP_FRAME_HEIGHT, size.width());
+        videoCapture.set(CAP_PROP_FRAME_HEIGHT, size.height());
         double actual = videoCapture.get(opencv_videoio.CAP_PROP_FPS);
         if (actual > 0.0 && fps == 0.0) {
             fps(actual);

@@ -155,40 +155,34 @@ public class MotionDetectorJavaCV implements MotionDetector {
                     desiredFps);
             this.fpsStatistics = new FramesPerSecond((int) fps);
             this.desiredFrameTimeMillis = (long) (1000.0 / fps);
+            Size resolution = videoCaptureDevice.resolution();
             if (mirror) {
-                ScaleAndMirror scaleAndMirror = new ScaleAndMirror(
-                        videoCaptureDevice.resolution(),
-                        ResolutionList.getSmallestFit(
-                                videoCaptureDevice.resolution(),
+                ScaleAndMirror scaleAndMirror = new ScaleAndMirror(resolution,
+                        ResolutionList.getSmallestFit(resolution,
                                 DesiredProcessingSize),
                         input);
                 this.processingSize = new Size(
-                        (int) (videoCaptureDevice.resolution().width()
-                                * scaleAndMirror.factor),
-                        (int) (videoCaptureDevice.resolution().height()
-                                * scaleAndMirror.factor));
+                        (int) (resolution.width() * scaleAndMirror.factor),
+                        (int) (resolution.height() * scaleAndMirror.factor));
                 this.videoInputTransformation = scaleAndMirror;
-            } else if (videoCaptureDevice.resolution()
-                    .equals(DesiredProcessingSize)) {
+            } else if (resolution.equals(DesiredProcessingSize)) {
                 // Copy source mat because when the video capture device
                 // frame rate drops below the desired frame rate,
                 // the debug renderer would mess up motion detection
                 // when rendering into the source mat - at least for
                 // javacv
                 this.videoInputTransformation = new Copy(input);
-                this.processingSize = videoCaptureDevice.resolution();
+                this.processingSize = resolution;
             } else {
-                Scale scale = new Scale(videoCaptureDevice.resolution(),
-                        DesiredProcessingSize, input);
+                Scale scale = new Scale(resolution, DesiredProcessingSize,
+                        input);
                 this.processingSize = new Size(
-                        (int) (videoCaptureDevice.resolution().width()
-                                * scale.factor),
-                        (int) (videoCaptureDevice.resolution().height()
-                                * scale.factor));
+                        (int) (resolution.width() * scale.factor),
+                        (int) (resolution.height() * scale.factor));
                 this.videoInputTransformation = scale;
             }
-            motionProcessor = new MotionProcessorJavaCV(
-                    videoCaptureDevice.resolution(), processingSize);
+            motionProcessor = new MotionProcessorJavaCV(resolution,
+                    processingSize);
             setSensitivity(motionSensitivity);
             debugInfo = new MotionDetectorJavaCVDebugRenderer(motionProcessor,
                     processingSize);

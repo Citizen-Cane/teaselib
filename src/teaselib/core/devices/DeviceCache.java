@@ -52,7 +52,8 @@ public class DeviceCache<T extends Device> {
     private T create(String devicePath) {
         try {
             String deviceClassName = getDeviceClass(devicePath);
-            T device = factories.get(deviceClassName).getDevice(devicePath);
+            DeviceFactory<T> deviceFactory = factories.get(deviceClassName);
+            T device = deviceFactory.getDevice(devicePath);
             if (device == null) {
                 throw new IllegalArgumentException(devicePath);
             }

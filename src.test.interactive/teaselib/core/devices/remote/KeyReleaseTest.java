@@ -26,6 +26,8 @@ public class KeyReleaseTest {
         KeyRelease keyRelease = KeyRelease.Devices.getDefaultDevice();
         int actuators = keyRelease.actuators();
         logger.info(keyRelease.getName() + ": " + actuators + " actuators");
+        Assume.assumeTrue(RemoteDevices.connect(keyRelease, 5.0));
+        assertTrue(keyRelease.connected());
         assertTrue(actuators > 0);
         for (int i = 0; i < actuators; i++) {
             int available = keyRelease.available(i);

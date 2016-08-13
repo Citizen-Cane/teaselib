@@ -130,7 +130,10 @@ public class LocalNetworkDevice implements RemoteDevice {
 
         @Override
         public RemoteDevice createDevice(String deviceName) {
-            throw new UnsupportedOperationException();
+            if (WaitingForConnection.equals(deviceName)) {
+                throw new IllegalArgumentException(WaitingForConnection);
+            }
+            throw new UnsupportedOperationException(deviceName);
         }
 
     };

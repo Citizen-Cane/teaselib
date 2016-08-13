@@ -63,31 +63,42 @@ public class KeyRelease implements Device {
 
     private static final String DeviceClassName = "KeyRelease";
 
-    public static final DeviceCache<KeyRelease> Devices = new DeviceCache<KeyRelease>()
-            .addFactory(new DeviceFactory<KeyRelease>(DeviceClassName) {
-                @Override
-                public List<String> enumerateDevicePaths(
-                        Map<String, KeyRelease> deviceCache) {
-                    List<String> devicePaths = new ArrayList<String>();
-                    for (RemoteDevice remoteDevice : RemoteDevices
-                            .devicesThatSupport(DeviceClassName)) {
-                        devicePaths.add(DeviceCache.createDevicePath(
-                                DeviceClassName, remoteDevice.getDevicePath()));
-                    }
-                    return devicePaths;
-                }
+    private static final DeviceFactory<KeyRelease> Factory = new DeviceFactory<KeyRelease>(
+            DeviceClassName) {
+        @Override
+        public List<String> enumerateDevicePaths(
+                Map<String, KeyRelease> deviceCache) {
+            List<String> devicePaths = new ArrayList<String>();
+            for (RemoteDevice remoteDevice : RemoteDevices
+                    .devicesThatSupport(DeviceClassName)) {
+                devicePaths.add(DeviceCache.createDevicePath(DeviceClassName,
+                        remoteDevice.getDevicePath()));
+            }
+            return devicePaths;
+        }
 
-                @Override
-                public KeyRelease createDevice(String deviceName) {
-                    return new KeyRelease(
-                            RemoteDevices.Instance.getDevice(deviceName));
-                }
-            });
+        @Override
+        public KeyRelease createDevice(String deviceName) {
+            if (WaitingForConnection.equals(deviceName)) {
+                return new KeyRelease();
+            } else {
+                return new KeyRelease(
+                        RemoteDevices.Instance.getDevice(deviceName));
+            }
+        }
+    };
+
+    public static final DeviceCache<KeyRelease> Devices = new DeviceCache<KeyRelease>()
+            .addFactory(Factory);
 
     private static final String Actuators = "actuators";
 
     private RemoteDevice remoteDevice;
     private String releaseKey;
+
+    KeyRelease() {
+        this(RemoteDevices.WaitingForConnection);
+    }
 
     KeyRelease(RemoteDevice remoteDevice) {
         this.remoteDevice = remoteDevice;
@@ -108,7 +119,17 @@ public class KeyRelease implements Device {
 
     @Override
     public boolean connected() {
-        return remoteDevice.connected();
+        if (remoteDevice == RemoteDevices.WaitingForConnection) {
+            List<RemoteDevice> keyReleaseDevices = RemoteDevices
+                    .devicesThatSupport(DeviceClassName);
+            if (!keyReleaseDevices.isEmpty()) {
+                remoteDevice = keyReleaseDevices.get(0);
+                Factory.connectDevice(this);
+            }
+            return remoteDevice.connected();
+        } else {
+            return remoteDevice.connected();
+        }
     }
 
     @Override

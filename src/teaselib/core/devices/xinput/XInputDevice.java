@@ -22,7 +22,7 @@ import teaselib.core.jni.LibraryLoader;
 public class XInputDevice implements Device {
     private static final String DeviceClassName = "XInput360GameController";
 
-    static final DeviceFactory<XInputDevice> Factory = new DeviceFactory<XInputDevice>(
+    public static final DeviceFactory<XInputDevice> Factory = new DeviceFactory<XInputDevice>(
             DeviceClassName) {
 
         @Override
@@ -35,7 +35,11 @@ public class XInputDevice implements Device {
 
         @Override
         public XInputDevice createDevice(String deviceName) {
-            return XInputDevice.getDeviceFor(Integer.parseInt(deviceName));
+            if (WaitingForConnection.equals(deviceName)) {
+                return XInputDevice.getDeviceFor(0);
+            } else {
+                return XInputDevice.getDeviceFor(Integer.parseInt(deviceName));
+            }
         }
     };
 
@@ -118,7 +122,7 @@ public class XInputDevice implements Device {
 
     @Override
     public boolean connected() {
-        return connected;
+        return poll();
     }
 
     /**
@@ -129,7 +133,7 @@ public class XInputDevice implements Device {
      */
     @Override
     public boolean active() {
-        return connected;
+        return connected();
     }
 
     @Override

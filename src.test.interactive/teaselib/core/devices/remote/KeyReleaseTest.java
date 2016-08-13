@@ -11,6 +11,8 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import teaselib.core.devices.DeviceCache;
+
 /**
  * @author someone
  *
@@ -26,7 +28,7 @@ public class KeyReleaseTest {
         KeyRelease keyRelease = KeyRelease.Devices.getDefaultDevice();
         int actuators = keyRelease.actuators();
         logger.info(keyRelease.getName() + ": " + actuators + " actuators");
-        Assume.assumeTrue(RemoteDevices.connect(keyRelease, 5.0));
+        Assume.assumeTrue(DeviceCache.connect(keyRelease, 5.0));
         assertTrue(keyRelease.connected());
         assertTrue(actuators > 0);
         for (int i = 0; i < actuators; i++) {

@@ -108,7 +108,7 @@ public class VideoCaptureDeviceVideoInput implements VideoCaptureDevice {
 
     @Override
     public boolean connected() {
-        if (deviceId == Integer.MIN_VALUE) {
+        if (WaitingForConnection.equals(deviceName)) {
             return connect();
         } else {
             return true;
@@ -125,6 +125,7 @@ public class VideoCaptureDeviceVideoInput implements VideoCaptureDevice {
                 deviceName = DeviceCache.getDeviceName(
                         VideoCaptureDevices.sort(devicePaths).get(0));
                 deviceId = getDeviceIDFromName(deviceName);
+                Factory.connectDevice(this);
                 return true;
             }
         } else {

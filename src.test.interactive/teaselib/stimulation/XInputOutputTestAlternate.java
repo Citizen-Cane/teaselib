@@ -3,6 +3,7 @@ package teaselib.stimulation;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import teaselib.core.devices.Device;
 import teaselib.core.devices.xinput.XInputAxes;
 import teaselib.core.devices.xinput.XInputButtons;
 import teaselib.core.devices.xinput.XInputComponents;
@@ -18,7 +19,8 @@ public class XInputOutputTestAlternate {
     @Test
     public void testAlternate() throws InterruptedException {
         XInputDevice xid = XInputDevices.Instance.getDefaultDevice();
-        System.out.println(xid.getDevicePath());
+        System.out.println(xid.getDevicePath()
+                + (xid.connected() ? "" : ":" + Device.WaitingForConnection));
         for (int i = 0; i < 1000; i++) {
             try {
                 testVibration(xid, XInputDevice.VIBRATION_MAX_VALUE,

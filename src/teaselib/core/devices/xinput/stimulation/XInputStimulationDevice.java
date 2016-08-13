@@ -110,14 +110,12 @@ public class XInputStimulationDevice implements StimulationDevice {
         public List<String> enumerateDevicePaths(
                 Map<String, StimulationDevice> deviceCache) {
             List<String> deviceNames = new ArrayList<String>(4);
-            for (String devicePath : XInputDevice.getDevicePaths()) {
-                XInputDevice device = XInputDevices.Instance
+            for (String devicePath : XInputDevice.Factory.getDevices()) {
+                XInputDevice controller = XInputDevices.Instance
                         .getDevice(devicePath);
-                if (device.connected()) {
-                    deviceNames.add(DeviceCache.createDevicePath(
-                            XInputStimulationDevice.DeviceClassName,
-                            device.getDevicePath()));
-                }
+                deviceNames.add(DeviceCache.createDevicePath(
+                        XInputStimulationDevice.DeviceClassName,
+                        controller.getDevicePath()));
             }
             return deviceNames;
         }

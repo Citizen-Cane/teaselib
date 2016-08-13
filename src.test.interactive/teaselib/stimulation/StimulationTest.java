@@ -2,6 +2,7 @@ package teaselib.stimulation;
 
 import org.junit.Test;
 
+import teaselib.core.devices.Device;
 import teaselib.stimulation.pattern.Attention;
 import teaselib.stimulation.pattern.Cum;
 import teaselib.stimulation.pattern.Punish;
@@ -24,8 +25,11 @@ public class StimulationTest {
 
     @Test
     public void testEnumerateStimulators() {
-        for (Stimulator stimulator : StimulationDevices.Instance
-                .getDefaultDevice().stimulators()) {
+        StimulationDevice device = StimulationDevices.Instance
+                .getDefaultDevice();
+        System.out.println(device.getDevicePath() + (device.connected() ? ""
+                : ":" + Device.WaitingForConnection));
+        for (Stimulator stimulator : device.stimulators()) {
             System.out.println(stimulator.getDeviceName());
         }
     }

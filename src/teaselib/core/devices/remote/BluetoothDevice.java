@@ -81,6 +81,11 @@ public class BluetoothDevice implements RemoteDevice {
     }
 
     @Override
+    public int sleep(int durationMinutes) {
+        return 0;
+    }
+
+    @Override
     public RemoteDeviceMessage sendAndReceive(RemoteDeviceMessage message) {
         throw new IllegalStateException(
                 "Bluetooth remote devices are not implemented yet");

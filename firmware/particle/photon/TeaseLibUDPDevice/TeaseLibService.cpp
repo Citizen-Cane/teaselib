@@ -5,9 +5,10 @@
 
 const UDPMessage TeaseLibService::Ok("ok", {}, 0);
 const char* const TeaseLibService::Id = "id";
+const char* const TeaseLibService::Sleep = "sleep";
 
 TeaseLibService** TeaseLibService::services = NULL;
-int TeaseLibService::serviceCount = 0;
+unsigned int TeaseLibService::serviceCount = 0;
 
 TeaseLibService::TeaseLibService(const char* const name, const char* const description, const char* const version)
 : name(name), description(description), version(version) {
@@ -33,8 +34,28 @@ bool TeaseLibService::isCommand(const UDPMessage& received, const char* serviceC
   return strcmp(TeaseLibService::serviceCommand(received.command), serviceCommand) == 0;
 }
 
-int TeaseLibService::processIdPacket(const UDPMessage& received, char* buffer) {
+unsigned int TeaseLibService::processIdPacket(const UDPMessage& received, char* buffer) {
   const String deviceId = "My Photon";
   const char* parameters[] = {deviceId, "1", services[0]->name,  services[0]->description, services[0]->version};
   return UDPMessage("services", parameters, sizeof(parameters)/sizeof(char*)).toBuffer(buffer);
+}
+
+unsigned int TeaseLibService::processSleepPacket(const UDPMessage& received, SleepMode& sleepMode) {
+  unsigned int durationMinutes = atol(received.parameters[0]);
+  for(int i = 0; i < TeaseLibService::serviceCount ; i++) {
+    durationMinutes = TeaseLibService::services[i]->sleepRequested(durationMinutes, sleepMode);
+    if (sleepMode == None) {
+      durationMinutes = 0;
+      break;
+    }
+  }
+  return durationMinutes;
+}
+
+unsigned int TeaseLibService::processPacket(const UDPMessage& received, char* buffer) {
+  for(unsigned int i = 0; i < serviceCount; i++) {
+    if (services[i]->canHandle(received.command)) {
+      return services[i]->process(received, buffer);
+    }
+  }
 }

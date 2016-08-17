@@ -10,13 +10,13 @@ import java.util.Set;
 import teaselib.core.ScriptInterruptedException;
 
 public class DeviceCache<T extends Device> {
-    private final Map<String, DeviceFactory<T>> factories = new LinkedHashMap<String, DeviceFactory<T>>();
+    private final Map<String, DeviceFactory<? extends T>> factories = new LinkedHashMap<String, DeviceFactory<? extends T>>();
     private static final String PathSeparator = "/";
 
     public DeviceCache() {
     }
 
-    public DeviceCache<T> addFactory(DeviceFactory<T> factory) {
+    public DeviceCache<T> addFactory(DeviceFactory<? extends T> factory) {
         factories.put(factory.getDeviceClass(), factory);
         return this;
     }
@@ -54,7 +54,8 @@ public class DeviceCache<T extends Device> {
     private T create(String devicePath) {
         try {
             String deviceClassName = getDeviceClass(devicePath);
-            DeviceFactory<T> deviceFactory = factories.get(deviceClassName);
+            DeviceFactory<? extends T> deviceFactory = factories
+                    .get(deviceClassName);
             T device = deviceFactory.getDevice(devicePath);
             if (device == null) {
                 throw new IllegalArgumentException(devicePath);
@@ -67,7 +68,8 @@ public class DeviceCache<T extends Device> {
 
     public Set<String> getDevicePaths() {
         Set<String> devicePaths = new LinkedHashSet<String>();
-        for (Map.Entry<String, DeviceFactory<T>> entry : factories.entrySet())
+        for (Map.Entry<String, DeviceFactory<? extends T>> entry : factories
+                .entrySet())
             devicePaths.addAll(entry.getValue().getDevices());
         return devicePaths;
     }

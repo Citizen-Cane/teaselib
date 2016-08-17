@@ -56,11 +56,6 @@ public class KeyRelease implements Device {
      */
     private static final String ReleaseKey = "releasekey";
 
-    /**
-     * A numerical value, returned by the device
-     */
-    private static final String Count = "count";
-
     private static final String DeviceClassName = "KeyRelease";
 
     private static final DeviceFactory<KeyRelease> Factory = new DeviceFactory<KeyRelease>(
@@ -145,7 +140,7 @@ public class KeyRelease implements Device {
     public int actuators() {
         RemoteDeviceMessage count = remoteDevice.sendAndReceive(
                 new RemoteDeviceMessage(DeviceClassName, Actuators));
-        if (Count.equals(count.command)) {
+        if (RemoteDevice.Count.equals(count.command)) {
             // TODO error handling - don't throw
             return Integer.parseInt(count.parameters.get(0));
         } else {
@@ -175,6 +170,10 @@ public class KeyRelease implements Device {
         }
     }
 
+    public int sleep(int timeMinutes) {
+        return remoteDevice.sleep(timeMinutes);
+    }
+
     public boolean add(int actuator, int minutes) {
         RemoteDeviceMessage ok = remoteDevice
                 .sendAndReceive(new RemoteDeviceMessage(DeviceClassName, Add,
@@ -187,7 +186,7 @@ public class KeyRelease implements Device {
         RemoteDeviceMessage count = remoteDevice
                 .sendAndReceive(new RemoteDeviceMessage(DeviceClassName,
                         Running, Arrays.asList(Integer.toString(actuator))));
-        if (Count.equals(count.command)) {
+        if (RemoteDevice.Count.equals(count.command)) {
             // TODO error handling - don't throw
             return Integer.parseInt(count.parameters.get(0)) == 1;
         } else {
@@ -199,7 +198,7 @@ public class KeyRelease implements Device {
         RemoteDeviceMessage count = remoteDevice
                 .sendAndReceive(new RemoteDeviceMessage(DeviceClassName,
                         Available, Arrays.asList(Integer.toString(actuator))));
-        if (Count.equals(count.command)) {
+        if (RemoteDevice.Count.equals(count.command)) {
             // TODO error handling - don't throw
             return Integer.parseInt(count.parameters.get(0));
         } else {
@@ -211,7 +210,7 @@ public class KeyRelease implements Device {
         RemoteDeviceMessage count = remoteDevice
                 .sendAndReceive(new RemoteDeviceMessage(DeviceClassName,
                         Remaining, Arrays.asList(Integer.toString(actuator))));
-        if (Count.equals(count.command)) {
+        if (RemoteDevice.Count.equals(count.command)) {
             // TODO error handling - don't throw
             return Integer.parseInt(count.parameters.get(0));
         } else {

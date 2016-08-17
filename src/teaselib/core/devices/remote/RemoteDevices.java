@@ -55,6 +55,11 @@ public class RemoteDevices {
         }
 
         @Override
+        public int sleep(int durationMinutes) {
+            return 0;
+        }
+
+        @Override
         public RemoteDeviceMessage sendAndReceive(RemoteDeviceMessage message) {
             return Timeout;
         }

@@ -48,4 +48,12 @@ public class RemoteDeviceMessage {
         this.parameters = parameters;
         this.binary = binary;
     }
+
+    @Override
+    public String toString() {
+        String binaryString = binary.length > 0
+                ? ("binary size = " + binary.length) : "";
+        return command + ": " + parameters + " " + binaryString;
+    }
+
 }

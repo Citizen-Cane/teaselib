@@ -64,15 +64,27 @@ void process(const UDPMessage& received, const int packetNumber) {
       send(buffer, responseSize, packetNumber);
     }
   }
-  else {
-    for(int i = 0; i < serviceCount; i++) {
-      if (services[i]->canHandle(received.command)) {
-        const int responseSize = services[i]->process(received, &buffer[PacketHeaderSize]);
-        if (responseSize > 0) {
-          send(buffer, responseSize, packetNumber);
-        }
-        break;
+  else if (strcmp(TeaseLibService::Sleep, received.command) == 0) {
+    TeaseLibService::SleepMode sleepMode = TeaseLibService::DeepSleep;
+    const unsigned int sleepMinutes = TeaseLibService::processSleepPacket(received, sleepMode);
+    char minutes[4];
+    sprintf(minutes, "%d", sleepMinutes);
+    const char* parameters[] = {minutes};
+    const int responseSize = UDPMessage("count", parameters, 1).toBuffer(buffer);
+    send(buffer, responseSize, packetNumber);
+    socket.flush();
+    if (sleepMinutes > 0) {
+      if (sleepMode == TeaseLibService::DeepSleep) {
+        System.sleep(SLEEP_MODE_DEEP, 60 * sleepMinutes);
+      } else if (sleepMode == TeaseLibService::LightSleep) {
+        System.sleep(60 * sleepMinutes);
       }
+    }
+  }
+  else {
+    const unsigned int responseSize = TeaseLibService::processPacket(received, &buffer[PacketHeaderSize]);
+    if (responseSize > 0) {
+      send(buffer, responseSize, packetNumber);
     }
   }
 }

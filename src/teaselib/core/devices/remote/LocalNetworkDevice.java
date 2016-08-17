@@ -11,6 +11,7 @@ import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
@@ -40,11 +41,27 @@ public class LocalNetworkDevice implements RemoteDevice {
 
     private static final int Port = 666;
 
-    public static final DeviceFactory<RemoteDevice> Factory = new DeviceFactory<RemoteDevice>(
+    /**
+     * Local network device have to respond in one seconds, plus some head room
+     */
+    public static final int AllowedTimeoutMillis = 1000;
+
+    /**
+     * The socket timeout.
+     */
+    private static final int SocketTimeoutMillis = 2000;
+
+    public static final DeviceFactory<LocalNetworkDevice> Factory = new DeviceFactory<LocalNetworkDevice>(
             DeviceClassName) {
         @Override
         public List<String> enumerateDevicePaths(
-                Map<String, RemoteDevice> deviceCache)
+                Map<String, LocalNetworkDevice> deviceCache)
+                throws InterruptedException {
+            searchDevices(deviceCache);
+            return new ArrayList<String>(deviceCache.keySet());
+        }
+
+        private void searchDevices(Map<String, LocalNetworkDevice> deviceCache)
                 throws InterruptedException {
             final ExecutorService es = Executors.newFixedThreadPool(256);
             final List<Future<List<LocalNetworkDevice>>> futures = new ArrayList<Future<List<LocalNetworkDevice>>>();
@@ -53,58 +70,7 @@ public class LocalNetworkDevice implements RemoteDevice {
                 for (Subnet subnet : subnets) {
                     logger.info("Scanning " + subnet.toString());
                     for (final InetAddress ip : subnet) {
-                        futures.add(es.submit(
-                                new Callable<List<LocalNetworkDevice>>() {
-                                    @Override
-                                    public List<LocalNetworkDevice> call()
-                                            throws Exception {
-                                        UDPConnection udpClient = new UDPConnection(
-                                                ip, Port);
-                                        return getServices(udpClient,
-                                                new UDPMessage(udpClient
-                                                        .sendAndReceive(
-                                                                new UDPMessage(
-                                                                        RemoteDevice.Id)
-                                                                                .toByteArray(),
-                                                                1000)));
-                                    }
-
-                                    private List<LocalNetworkDevice> getServices(
-                                            UDPConnection connection,
-                                            UDPMessage status)
-                                            throws SocketException {
-                                        int i = 0;
-                                        String name = status.message.parameters
-                                                .get(i++);
-                                        int serviceCount = Integer.parseInt(
-                                                status.message.parameters
-                                                        .get(i++));
-                                        List<LocalNetworkDevice> devices = new ArrayList<LocalNetworkDevice>(
-                                                (status.message.parameters
-                                                        .size() - i) / 2);
-                                        for (int j = 0; j < serviceCount; j++) {
-                                            String serviceName = status.message.parameters
-                                                    .get(i++);
-                                            String description = status.message.parameters
-                                                    .get(i++);
-                                            String version = status.message.parameters
-                                                    .get(i++);
-                                            devices.add((new LocalNetworkDevice(
-                                                    name, connection,
-                                                    serviceName, description,
-                                                    version)));
-                                            if (serviceCount == 1) {
-                                                break;
-                                            } else {
-                                                connection = new UDPConnection(
-                                                        connection.getAddress(),
-                                                        connection.getPort());
-                                                continue;
-                                            }
-                                        }
-                                        return devices;
-                                    }
-                                }));
+                        futures.add(es.submit(serviceLookup(ip)));
                     }
                 }
             } catch (SocketException e) {
@@ -125,11 +91,53 @@ public class LocalNetworkDevice implements RemoteDevice {
                     }
                 }
             }
-            return new ArrayList<String>(deviceCache.keySet());
+        }
+
+        private Callable<List<LocalNetworkDevice>> serviceLookup(
+                final InetAddress ip) {
+            Callable<List<LocalNetworkDevice>> createDevice = new Callable<List<LocalNetworkDevice>>() {
+                @Override
+                public List<LocalNetworkDevice> call() throws Exception {
+                    UDPConnection udpClient = new UDPConnection(ip, Port);
+                    return getServices(udpClient,
+                            new UDPMessage(udpClient.sendAndReceive(
+                                    new UDPMessage(RemoteDevice.Id)
+                                            .toByteArray(),
+                                    1000)));
+                }
+
+                private List<LocalNetworkDevice> getServices(
+                        UDPConnection connection, UDPMessage status)
+                        throws SocketException {
+                    int i = 0;
+                    String name = status.message.parameters.get(i++);
+                    int serviceCount = Integer
+                            .parseInt(status.message.parameters.get(i++));
+                    List<LocalNetworkDevice> devices = new ArrayList<LocalNetworkDevice>(
+                            (status.message.parameters.size() - i) / 2);
+                    for (int j = 0; j < serviceCount; j++) {
+                        String serviceName = status.message.parameters.get(i++);
+                        String description = status.message.parameters.get(i++);
+                        String version = status.message.parameters.get(i++);
+                        devices.add((new LocalNetworkDevice(name, connection,
+                                serviceName, description, version)));
+                        if (serviceCount == 1) {
+                            break;
+                        } else {
+                            connection = new UDPConnection(
+                                    connection.getAddress(),
+                                    connection.getPort());
+                            continue;
+                        }
+                    }
+                    return devices;
+                }
+            };
+            return createDevice;
         }
 
         @Override
-        public RemoteDevice createDevice(String deviceName) {
+        public LocalNetworkDevice createDevice(String deviceName) {
             if (WaitingForConnection.equals(deviceName)) {
                 throw new IllegalArgumentException(WaitingForConnection);
             }
@@ -195,6 +203,7 @@ public class LocalNetworkDevice implements RemoteDevice {
 
     @Override
     public void close() {
+        connection.close();
     }
 
     @Override
@@ -213,21 +222,71 @@ public class LocalNetworkDevice implements RemoteDevice {
     }
 
     @Override
+    public int sleep(int timeMinutes) {
+        RemoteDeviceMessage count = sendAndReceive(new RemoteDeviceMessage(
+                Sleep, Arrays.asList(Integer.toString(timeMinutes))));
+        if (Count.equals(count.command)) {
+            return Integer.parseInt(count.parameters.get(0));
+        } else {
+            return 0;
+        }
+    }
+
+    @Override
     public RemoteDeviceMessage sendAndReceive(RemoteDeviceMessage message) {
-        try {
-            final byte[] received = connection.sendAndReceive(
-                    new UDPMessage(message).toByteArray(), 10000);
-            return new UDPMessage(received).message;
-        } catch (SocketException e) {
-            return Timeout;
-        } catch (IOException e) {
-            return Timeout;
+        RemoteDeviceMessage received = Timeout;
+        for (int i = 0; i < 3; i++) {
+            try {
+                received = sendAndReceive(message, SocketTimeoutMillis);
+                break;
+            } catch (SocketException e) {
+                continue;
+            } catch (IOException e) {
+                continue;
+            }
+        }
+        if (received == Timeout) {
+            reconnect();
+            for (int i = 0; i < 3; i++) {
+                try {
+                    received = sendAndReceive(message, SocketTimeoutMillis);
+                    break;
+                } catch (SocketException e) {
+                    continue;
+                } catch (IOException e) {
+                    continue;
+                }
+            }
+        }
+        return received;
+    }
+
+    private RemoteDeviceMessage sendAndReceive(RemoteDeviceMessage message,
+            int timeout) throws SocketException, IOException {
+        logger.info("Sending " + message.toString());
+        byte[] received = connection
+                .sendAndReceive(new UDPMessage(message).toByteArray(), timeout);
+        RemoteDeviceMessage receivedMessage = new UDPMessage(received).message;
+        logger.info("Received " + receivedMessage.toString());
+        return receivedMessage;
+    }
+
+    private void reconnect() {
+        List<String> devicePaths = Factory.getDevices();
+        for (String devicePath : devicePaths) {
+            if (getDevicePath().equals(devicePath)) {
+                LocalNetworkDevice device = Factory.getDevice(devicePath);
+                connection.close();
+                connection = device.connection;
+            }
         }
     }
 
     @Override
     public void send(RemoteDeviceMessage message) {
         try {
+            logger.info("Sending " + message.getClass().getSimpleName() + ": "
+                    + message.toString());
             connection.send(new UDPMessage(message).toByteArray());
         } catch (IOException e) {
             logger.error(e.getMessage(), e);

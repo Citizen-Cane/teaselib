@@ -28,6 +28,10 @@ public class UDPConnection {
         this.clientSocket = new DatagramSocket();
     }
 
+    void close() {
+        clientSocket.close();
+    }
+
     public void send(String data) throws IOException {
         byte[] sendData = data.getBytes();
         send(sendData);

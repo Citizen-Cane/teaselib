@@ -8,23 +8,33 @@
 
 class TeaseLibService {
 public:
+  enum SleepMode {
+    None,       // Dont't sleep at all - drains battery
+    LightSleep, // Sleep but continue to run services
+    DeepSleep   // Stop running services, reset on wakeup -> releases all keys
+  };
   TeaseLibService(const char* const name, const char* const decription, const char* const version);
   const char* const name;
   const char* const description;
   const char* const version;
-  virtual void setup()=0;
   static void setup(TeaseLibService** services, const int size);
   virtual bool canHandle(const char* serviceCommand) const;
   static const char* serviceCommand(const char* serviceCommand);
   static bool isCommand(const UDPMessage& received, const char* serviceCommand);
-  static int processIdPacket(const UDPMessage& received, char* buffer);
-  virtual int process(const UDPMessage& received, char* buffer)=0;
+  static unsigned int processIdPacket(const UDPMessage& received, char* buffer);
+  static unsigned int processSleepPacket(const UDPMessage& received, SleepMode& sleepMode);
+  static unsigned int processPacket(const UDPMessage& received, char* buffer);
   static const UDPMessage Ok;
   static const char* const Id;
+  static const char* const Sleep;
+protected:
+  virtual void setup()=0;
+  virtual unsigned int process(const UDPMessage& received, char* buffer)=0;
+  virtual unsigned int sleepRequested(const unsigned int requestedSleepDuration, SleepMode& sleepMode)=0;
 private:
   static TeaseLibService** services;
-  static int serviceCount;
-  
+  static unsigned int serviceCount;
+
 };
 
 #endif /*end of include guard:   _INCLUDETeaseLibDeviceService */

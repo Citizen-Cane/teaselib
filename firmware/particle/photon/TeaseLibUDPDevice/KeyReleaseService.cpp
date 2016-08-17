@@ -33,6 +33,13 @@ const char* const KeyReleaseService::Version = "0.01";
   the activity pulse frequence indicates the remaining time until all keys will have been released
 */
 
+/* Sleep modes:
+  - Deep sleep is supported if a single release is pending and
+  - the requested sleep time is greater than or equal to the relase duration
+  Otherwise the device enters light sleep until the next release.
+  TODO light sleep to all but last release, then deep sleep to last.
+*/
+
 const int KeyReleaseService::DefaultSetupSize = 2;
 const KeyReleaseService::Actuator KeyReleaseService::ShortRelease = {TX, 30 /* minutes*/ , 60 /* minutes*/, 30, 150};
 const KeyReleaseService::Actuator KeyReleaseService::LongRelease = {RX, 60 /* minutes*/ , 120 /* minutes*/, 150, 30};
@@ -48,16 +55,17 @@ KeyReleaseService::KeyReleaseService(const Actuator** actuators, const int actua
 , releaseTimer(60 * 1000, &KeyReleaseService::releaseTimerCallback, *this)
 , ledTimer(1000, &KeyReleaseService::ledTimerCallback, *this)
 , status(Idle)
-, lastStatus(Idle)
 {
 }
 
 const char* const KeyReleaseService::createSessionKey() {
-  static int SessionKeySize= 16;
+  static int SessionKeySize= 17;
   char* sessionKey = new char[SessionKeySize];
-  for(int i = 0; i < SessionKeySize; i++) {
+  int i = 0;
+  for(; i < SessionKeySize; i++) {
     sessionKey[i] = '0' + rand() % 10;
   }
+  sessionKey[i] = 0;
   return sessionKey;
 }
 
@@ -88,7 +96,7 @@ void KeyReleaseService::setup() {
 // starting and stopping restarts the timer, and is done only in write commands
 // to avoid blocking the key release by polling to often
 
-int KeyReleaseService::process(const UDPMessage& received, char* buffer) {
+unsigned int KeyReleaseService::process(const UDPMessage& received, char* buffer) {
   if (isCommand(received, "actuators")) {
     const char count[2] = {'0' + min(9, actuatorCount) , 0};
     const char* parameters[] = {count};
@@ -101,9 +109,7 @@ int KeyReleaseService::process(const UDPMessage& received, char* buffer) {
     durations[index].arm();
     delay(1000);
     armKey(index);
-    status = Armed;
-    updatePulse();
-    ledTimer.start();
+    updatePulse(Armed);
     releaseTimer.start();
     return Ok.toBuffer(buffer);
   }
@@ -112,9 +118,7 @@ int KeyReleaseService::process(const UDPMessage& received, char* buffer) {
     const int index = atol(received.parameters[0]);
     const int minutes = atol(received.parameters[1]);
     durations[index].start(minutes);
-    status = Active;
-    updatePulse();
-    ledTimer.start();
+    updatePulse(Active);
     releaseTimer.start();
     const char* parameters[] = {sessionKey};
     return UDPMessage("releasekey", parameters, 1).toBuffer(buffer);
@@ -124,7 +128,7 @@ int KeyReleaseService::process(const UDPMessage& received, char* buffer) {
     const int index = atol(received.parameters[0]);
     const int minutes = atol(received.parameters[1]);
     durations[index].add(minutes);
-    updatePulse();
+    updatePulse(status);
     char actualMinutes[4];
     sprintf(actualMinutes, "%d", durations[index].remainingMinutes);
     releaseTimer.start();
@@ -155,7 +159,7 @@ int KeyReleaseService::process(const UDPMessage& received, char* buffer) {
     const int index = atol(received.parameters[0]);
     durations[index].clear();
     releaseKey(index);
-    updatePulse();
+    updatePulse(Released);
     releaseTimer.start();
     return Ok.toBuffer(buffer);
   }
@@ -164,7 +168,27 @@ int KeyReleaseService::process(const UDPMessage& received, char* buffer) {
   }
 }
 
+unsigned int KeyReleaseService::sleepRequested(const unsigned int requestedSleepDuration, SleepMode& sleepMode) {
+  const unsigned int n = runningReleases();
+  if (n == 0) {
+    return requestedSleepDuration;
+  } else if (n == 1) {
+    const unsigned int nextReleaseDuration = nextRelease();
+    if (sleepMode == DeepSleep && nextReleaseDuration <= requestedSleepDuration) {
+      return nextReleaseDuration;
+    } else {
+      sleepMode = LightSleep;
+      return requestedSleepDuration;
+    }
+  } else {
+      const unsigned int nextReleaseDuration = nextRelease();
+      sleepMode = LightSleep;
+      return nextReleaseDuration;
+  }
+}
+
 void KeyReleaseService::releaseTimerCallback() {
+  // Resume to Active or Idle after one minute
   if (status == Released) {
     const unsigned int nextReleaseDuration = nextRelease();
     if (nextReleaseDuration > 0) {
@@ -176,68 +200,71 @@ void KeyReleaseService::releaseTimerCallback() {
   // Update durations
   for(int i = 0; i < actuatorCount; i++) {
     Duration& duration = durations[i];
-    if (durations[i].running) {
-      if(durations[i].advance()) {
+    if (duration.running) {
+      if(duration.advance()) {
         continue;
       } else {
         releaseKey(i);
+        updatePulse(Released);
       }
     }
   }
-  updatePulse();
+  // Update pulse
+  if (status != Released) {
+    updatePulse(status);
+  }
 }
 
 unsigned int KeyReleaseService::nextRelease() {
-  unsigned int nextReleaseDuration = durations[0].remainingMinutes;
-  for(int i = 1; i < actuatorCount; i++) {
-    nextReleaseDuration = min(nextReleaseDuration, durations[i].remainingMinutes);
+  unsigned int nextReleaseDuration = 0;
+  for(int i = 0; i < actuatorCount; i++) {
+    nextReleaseDuration = max(nextReleaseDuration, durations[i].remainingMinutes);
   }
   return nextReleaseDuration;
 }
 
-void KeyReleaseService::updatePulse() {
+unsigned int KeyReleaseService::runningReleases() {
+  unsigned int runningReleases = 0;
+  for(int i = 0; i < actuatorCount; i++) {
+    if (durations[i].running) {
+      runningReleases++;
+    }
+  }
+  return runningReleases;
+}
+
+void KeyReleaseService::updatePulse(const Status status) {
+  this->status = status;
   if (status == Armed) {
-    ledTimer.changePeriod(1000);
-    ledTimerCallback();
+    ledTimer.changePeriod(3000);
+    RGB.control(true);
+    RGB.color(0, 255, 0);
+    ledTimer.start();
   } else if (status == Active) {
     const unsigned int nextReleaseDuration = nextRelease();
     if (nextReleaseDuration > 0) {
       ledTimer.changePeriod(500 + 200 * nextReleaseDuration);
+      RGB.color(0, 0, 255);
     }
     else {
-      // TODO pulse is never blue, turns white / rose immediately
-      status = Released;
-      ledTimer.changePeriod(1000);
+      updatePulse(Idle);
     }
+  }
+  else if (status == Released) {
+    // TODO pulse is never blue, turns white / rose immediately
+    ledTimer.changePeriod(3000);
+    RGB.color(255, 0, 255);
+  }
+  else if (status == Idle) {
+    ledTimer.stop();
+    RGB.brightness(255);
+    RGB.control(false);
   }
 }
 
 void KeyReleaseService::ledTimerCallback() {
-  if (lastStatus != status) {
-    // on/off
-    if (lastStatus == Idle) {
-      RGB.control(true);
-    }
-    else if (status == Idle) {
-      RGB.control(false);
-      ledTimer.stop();
-    }
-    // pulse color
-    if (status == Armed) {
-      RGB.color(0, 255, 0);
-    }
-    else if (status == Active) {
-      RGB.color(0, 0, 255);
-    }
-    else if (status == Released) {
-      RGB.color(255, 64, 64);
-    }
-    // Update
-    lastStatus = status;
-  }
-  // Pulse
   RGB.brightness(48);
-  delay(10);
+  delay(100);
   RGB.brightness(0);
 }
 
@@ -270,9 +297,9 @@ const bool KeyReleaseService::Duration::advance() {
     if (remainingMinutes > 0 && elapsedMinutes < actuator->maximumMinutes) {
       elapsedMinutes++;
       remainingMinutes--;
-    }
-    else {
-      running = false;
+      if (remainingMinutes == 0) {
+        running = false;
+      }
     }
   }
   return running;

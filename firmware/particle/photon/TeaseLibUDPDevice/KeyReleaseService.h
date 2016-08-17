@@ -46,9 +46,10 @@ public:
   static const int DefaultSetupSize;
 
   KeyReleaseService(const Actuator**, const int actuators);
-  void setup();
-
-  virtual int process(const UDPMessage& received, char* buffer);
+protected:
+  virtual void setup();
+  virtual unsigned int process(const UDPMessage& received, char* buffer);
+  virtual unsigned int sleepRequested(const unsigned int requestedSleepDuration, SleepMode& sleepMode);
 private:
   const Actuator** actuators;
   Servo* servos;
@@ -67,9 +68,10 @@ private:
     Armed,
     Active,
     Released
-  } status, lastStatus;
-  void updatePulse();
+  } status;
+  void updatePulse(Status status);
   unsigned int nextRelease();
+  unsigned int runningReleases();
 };
 
 #endif /*end of include guard:   _INCLUDE_TeaseLibKeyReleaseService */

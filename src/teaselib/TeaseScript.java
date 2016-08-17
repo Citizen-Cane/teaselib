@@ -534,6 +534,14 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
         return false;
     }
 
+    /**
+     * Build a list of resource strings from a {@link WildcardPattern}.
+     * 
+     * @param wildcardPattern
+     *            The wildcard pattern ("?" replaces a single, "*" multiple
+     *            characters).
+     * @return A list of resources that matches the wildcard pattern.
+     */
     public List<String> resources(String wildcardPattern) {
         Pattern pattern = WildcardPattern
                 .compile(absoluteResource(wildcardPattern));

@@ -3,7 +3,7 @@
  */
 package teaselib.core.devices;
 
-import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.*;
 
 import java.util.Set;
 
@@ -51,10 +51,14 @@ public class DeviceFactoryTests {
         // assertNotNull(SelfBondageKeyRelease.Devices.getDevicePaths());
         for (String devicePath : devicePaths) {
             logger.info(devicePath);
-            RemoteDevice device = RemoteDevices.Instance.getDevice(devicePath);
-            logger.info("-> " + device.getName() + ":" + device.getServiceName()
-                    + " Version " + device.getVersion());
-
+            if (!Device.WaitingForConnection
+                    .equals(DeviceCache.getDeviceName(devicePath))) {
+                RemoteDevice device = RemoteDevices.Instance
+                        .getDevice(devicePath);
+                logger.info(
+                        "-> " + device.getName() + ":" + device.getServiceName()
+                                + " Version " + device.getVersion());
+            }
         }
     }
 }

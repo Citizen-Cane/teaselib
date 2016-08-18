@@ -1,12 +1,14 @@
 package teaselib;
 
 import teaselib.core.texttospeech.Voice;
+import teaselib.core.texttospeech.Voice.Gender;
 import teaselib.util.SpeechRecognitionRejectedScript;
 import teaselib.util.TextVariables;
 
 public class Actor {
-
-    public final static String Dominant = "Dominant";
+    public class Key {
+        public final static String Dominant = "Dominant";
+    }
 
     /**
      * How to address the actor.
@@ -70,16 +72,18 @@ public class Actor {
 
     public Actor(String fullName, String name, Voice.Gender gender,
             String locale) {
-        this(fullName, name, gender, locale, Images.None);
+        this(fullName, name, gender, locale, key(fullName, gender, locale),
+                Images.None);
     }
 
     public Actor(String fullName, Voice.Gender gender, String locale,
             Images images) {
-        this(fullName, fullName, gender, locale, images);
+        this(fullName, fullName, gender, locale, key(fullName, gender, locale),
+                images);
     }
 
     public Actor(String fullName, String name, Voice.Gender gender,
-            String locale, Images images) {
+            String locale, String key, Images images) {
         super();
         this.locale = locale;
         this.language = language(locale);
@@ -87,7 +91,7 @@ public class Actor {
         this.textVariables = new TextVariables();
         textVariables.put(FormOfAddress.Name, name);
         textVariables.put(FormOfAddress.FullName, fullName);
-        this.key = key();
+        this.key = key;
         this.images = images;
     }
 
@@ -95,8 +99,8 @@ public class Actor {
         return locale.substring(0, 2);
     }
 
-    private String key() {
-        return get(FormOfAddress.FullName) + "." + gender + "." + language;
+    private static String key(String fullName, Gender gender, String language) {
+        return fullName + "." + gender + "." + language;
     }
 
     public String get(Enum<?> formOfAddress) {

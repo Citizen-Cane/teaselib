@@ -38,7 +38,7 @@ public class TeaseScriptResourceLoadingTest {
         TeaseScript script = new TeaseScript(
                 TeaseLib.init(new DummyHost(), new DummyPersistence()),
                 new ResourceLoader(TeaseScriptResourceLoadingTest.class),
-                new Actor(Actor.Dominant, Voice.Gender.Female, "en-us"),
+                new Actor(Actor.Key.Dominant, Voice.Gender.Female, "en-us"),
                 "test") {
             @Override
             public void run() {

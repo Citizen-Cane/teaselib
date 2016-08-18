@@ -4,6 +4,7 @@ import java.util.Locale;
 
 import ss.IScript;
 import teaselib.Actor;
+import teaselib.Images;
 import teaselib.Toys;
 import teaselib.core.Persistence;
 import teaselib.core.texttospeech.Voice;
@@ -109,9 +110,10 @@ public class SexScriptsStatePersistence implements Persistence {
         switch (gender) {
         case Female:
             return new Actor("Mistress", "Miss", Voice.Gender.Female, locale,
-                    null);
+                    Actor.Key.Dominant, Images.None);
         case Male:
-            return new Actor("Master", "Sir", Voice.Gender.Male, locale, null);
+            return new Actor("Master", "Sir", Voice.Gender.Male, locale,
+                    Actor.Key.Dominant, Images.None);
         default:
             throw new IllegalArgumentException(gender.toString());
         }

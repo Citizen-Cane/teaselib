@@ -3,8 +3,7 @@
  */
 package teaselib;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import org.junit.Test;
 
@@ -23,8 +22,7 @@ public class PersistenceTest {
             new DummyPersistence());
     final static TeaseScript script = new TeaseScript(teaseLib,
             new ResourceLoader(PersistenceTest.class),
-            new Actor(Actor.Dominant, Voice.Gender.Female, "en-us"),
-            namespace) {
+            new Actor("Test", Voice.Gender.Female, "en-us"), namespace) {
         @Override
         public void run() {
             throw new UnsupportedOperationException();

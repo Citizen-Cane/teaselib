@@ -15,8 +15,8 @@ import teaselib.core.texttospeech.Voice;
  */
 public class MessageTest {
 
-    private static final Actor actor = new Actor(Actor.Dominant,
-            Voice.Gender.Female, "en-us");
+    private static final Actor actor = new Actor("Test", Voice.Gender.Female,
+            "en-us");
 
     @Test
     public void determineType() {

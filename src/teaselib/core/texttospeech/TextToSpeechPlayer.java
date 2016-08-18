@@ -198,7 +198,7 @@ public class TextToSpeechPlayer {
         }
         // Reuse voice of first non-dominant actor
         for (String actorName : actorKey2TTSVoice.keySet()) {
-            if (actorName.compareToIgnoreCase(Actor.Dominant) != 0
+            if (actorName.compareToIgnoreCase(Actor.Key.Dominant) != 0
                     && actorKey2TTSVoice
                             .get(actorName).gender == actor.gender) {
                 Voice voice = actorKey2TTSVoice.get(actorName);
@@ -210,7 +210,7 @@ public class TextToSpeechPlayer {
         }
         // voice of default dominant actor
         for (String actorName : actorKey2TTSVoice.keySet()) {
-            if (actorName.compareToIgnoreCase(Actor.Dominant) == 0
+            if (actorName.compareToIgnoreCase(Actor.Key.Dominant) == 0
                     && actorKey2TTSVoice
                             .get(actorName).gender == actor.gender) {
                 Voice voice = actorKey2TTSVoice.get(actorName);

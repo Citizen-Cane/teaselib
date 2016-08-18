@@ -1,6 +1,6 @@
 package teaselib;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 import java.util.Arrays;
 import java.util.List;
@@ -70,7 +70,7 @@ public class TextVariablesTests {
     @Test
     public void testActor() {
         Actor actor = new Actor("Miss Mary", "Ma'am", Voice.Gender.Female,
-                "en-uk", null);
+                "en-uk");
         List<String> expected = Arrays.asList(
                 "Yes, " + actor.textVariables.get(Actor.FormOfAddress.Name),
                 "No, " + actor.textVariables.get(Actor.FormOfAddress.FullName));

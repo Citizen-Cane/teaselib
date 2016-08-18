@@ -39,8 +39,10 @@ public class XInputTest {
         List<XInputDevice> xinputDevices = getXInputDevices();
         for (XInputDevice xinputDevice : xinputDevices) {
             assertNotEquals(null, xinputDevice);
-            assertEquals(true, xinputDevice.connected());
-            assertEquals(true, xinputDevice.active());
+            assertEquals(true, xinputDevice.connected()
+                    || xinputDevice.getPlayerNum() == 0);
+            assertEquals(true,
+                    xinputDevice.active() || xinputDevice.getPlayerNum() == 0);
             System.out.println("Device " + xinputDevice.getDevicePath() + ": "
                     + (xinputDevice.connected() ? "connected"
                             : "not connected"));
@@ -52,8 +54,10 @@ public class XInputTest {
         List<XInputDevice> xinputDevices = getXInputDevices();
         int n = 0;
         for (XInputDevice xinputDevice : xinputDevices) {
-            assertEquals(true, xinputDevice.connected());
-            if (xinputDevice.connected()) {
+            final boolean useDevice = xinputDevice.connected()
+                    || xinputDevice.getPlayerNum() == 0;
+            assertEquals(true, useDevice);
+            if (useDevice) {
                 n++;
             }
         }

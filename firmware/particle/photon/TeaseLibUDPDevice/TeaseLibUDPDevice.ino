@@ -19,7 +19,6 @@ void setup() {
   // Wait for key press on serial
   // while(!Serial.available()) Particle.process();
   Serial.println(WiFi.localIP());
-
   // setup services
   TeaseLibService::setup(services, serviceCount);
 }
@@ -70,7 +69,7 @@ void process(const UDPMessage& received, const int packetNumber) {
     char minutes[4];
     sprintf(minutes, "%d", sleepMinutes);
     const char* parameters[] = {minutes};
-    const int responseSize = UDPMessage("count", parameters, 1).toBuffer(buffer);
+    const int responseSize = UDPMessage("count", parameters, 1).toBuffer(&buffer[PacketHeaderSize]);
     send(buffer, responseSize, packetNumber);
     socket.flush();
     if (sleepMinutes > 0) {

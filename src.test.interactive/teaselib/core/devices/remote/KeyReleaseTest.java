@@ -123,4 +123,18 @@ public class KeyReleaseTest {
             sleepSeconds(10);
         }
     }
+
+    @Test
+    public void testDeepSleepPacket() {
+        KeyRelease keyRelease = KeyRelease.Devices.getDefaultDevice();
+        logger.info(keyRelease.getName());
+        Assume.assumeTrue(DeviceCache.connect(keyRelease, 5.0));
+        assertTrue(keyRelease.connected());
+        keyRelease.sleep(Minutes);
+        // Sleeping longer than the next release duration with only one
+        // release pending causes the device to enter deep sleep and
+        // release on reset
+        sleepMinutes(Minutes);
+        assertTrue(keyRelease.connected());
+    }
 }

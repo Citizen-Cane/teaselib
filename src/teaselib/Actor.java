@@ -16,7 +16,17 @@ public class Actor {
      */
     public enum FormOfAddress {
         /**
-         * The actor's surname, title or honorific.
+         * The actor's title or honorific, as Mistress/Master, Miss/Sir
+         */
+        Title,
+
+        Miss,
+        Mistress,
+        Sir,
+        Master,
+
+        /**
+         * The actor's surname.
          */
         Name,
         /**
@@ -70,29 +80,49 @@ public class Actor {
         this(fullName, gender, locale, Images.None);
     }
 
-    public Actor(String fullName, String name, Voice.Gender gender,
+    public Actor(String fullName, String title, Voice.Gender gender,
             String locale) {
-        this(fullName, name, gender, locale, key(fullName, gender, locale),
-                Images.None);
+        this(fullName, title, title, gender, locale,
+                key(fullName, gender, locale), Images.None);
     }
 
     public Actor(String fullName, Voice.Gender gender, String locale,
             Images images) {
-        this(fullName, fullName, gender, locale, key(fullName, gender, locale),
-                images);
+        this(fullName, fullName, fullName, gender, locale,
+                key(fullName, gender, locale), images);
     }
 
-    public Actor(String fullName, String name, Voice.Gender gender,
+    public Actor(String fullName, String title, Voice.Gender gender,
             String locale, String key, Images images) {
+        this(fullName, title, title, gender, locale, key, images);
+    }
+
+    public Actor(String fullName, String title, String name,
+            Voice.Gender gender, String locale, Images images) {
+        this(fullName, title, name, gender, locale,
+                key(fullName, gender, locale), images);
+    }
+
+    public Actor(String fullName, String title, String name,
+            Voice.Gender gender, String locale, String key, Images images) {
         super();
         this.locale = locale;
         this.language = language(locale);
         this.gender = gender;
         this.textVariables = new TextVariables();
-        textVariables.put(FormOfAddress.Name, name);
-        textVariables.put(FormOfAddress.FullName, fullName);
+        addTextVariables(title, fullName, name);
         this.key = key;
         this.images = images;
+    }
+
+    private void addTextVariables(String title, String fullName, String name) {
+        textVariables.put(FormOfAddress.Title, title);
+        textVariables.put(FormOfAddress.Miss, title);
+        textVariables.put(FormOfAddress.Sir, title);
+        textVariables.put(FormOfAddress.Mistress, title);
+        textVariables.put(FormOfAddress.Master, title);
+        textVariables.put(FormOfAddress.FullName, fullName);
+        textVariables.put(FormOfAddress.Name, name);
     }
 
     private static String language(String locale) {

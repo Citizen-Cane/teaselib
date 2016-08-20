@@ -101,12 +101,14 @@ unsigned int KeyReleaseService::process(const UDPMessage& received, char* buffer
     const char count[2] = {'0' + min(9, actuatorCount) , 0};
     const char* parameters[] = {count};
     return UDPMessage("count", parameters, 1).toBuffer(buffer);
+    return createCountMessage(actuatorCount, buffer);
   }
   else if (isCommand(received, "arm" /* actuator */)) {
     releaseTimer.stop();
     const int index = atol(received.parameters[0]);
     releaseKey(index);
-    durations[index].arm();
+    Duration& duration = durations[index];
+    duration.arm();
     delay(1000);
     armKey(index);
     updatePulse(Armed);
@@ -127,32 +129,26 @@ unsigned int KeyReleaseService::process(const UDPMessage& received, char* buffer
     releaseTimer.stop();
     const int index = atol(received.parameters[0]);
     const int minutes = atol(received.parameters[1]);
-    durations[index].add(minutes);
+    Duration& duration = durations[index];
+    duration.add(minutes);
     updatePulse(status);
-    char actualMinutes[4];
-    sprintf(actualMinutes, "%d", durations[index].remainingMinutes);
     releaseTimer.start();
-    const char* parameters[] = {actualMinutes};
-    return UDPMessage("count", parameters, 1).toBuffer(buffer);
+    return createCountMessage(duration.remainingMinutes, buffer);
   }
   else if (isCommand(received, "available" /* actuator minutes */)) {
     const int index = atol(received.parameters[0]);
-    char minutes[4];
-    sprintf(minutes, "%d", durations[index].actuator->maximumMinutes - durations[index].elapsedMinutes);
-    const char* parameters[] = {minutes};
-    return UDPMessage("count", parameters, 1).toBuffer(buffer);
+    Duration& duration = durations[index];
+    return createCountMessage(duration.actuator->maximumMinutes - duration.elapsedMinutes, buffer);
   }
   else if (isCommand(received, "remaining" /* actuator minutes */)) {
     const int index = atol(received.parameters[0]);
-    char minutes[4];
-    sprintf(minutes, "%d", durations[index].remainingMinutes);
-    const char* parameters[] = {minutes};
-    return UDPMessage("count", parameters, 1).toBuffer(buffer);
+    Duration& duration = durations[index];
+    return createCountMessage(duration.remainingMinutes, buffer);
   }
   else if (isCommand(received, "running" /* actuator minutes */)) {
     const int index = atol(received.parameters[0]);
-    const char* parameters[] = {durations[index].running ? "1" : "0"};
-    return UDPMessage("count", parameters, 1).toBuffer(buffer);
+    Duration& duration = durations[index];
+    return createCountMessage(duration.running ? 1 : 0, buffer);
   }
   else if (isCommand(received, "release" /* actuator releaseKey */)) {
     releaseTimer.stop();
@@ -167,6 +163,14 @@ unsigned int KeyReleaseService::process(const UDPMessage& received, char* buffer
     return 0;
   }
 }
+
+unsigned int KeyReleaseService::createCountMessage(unsigned int count, char* buffer) {
+  char digits[8];
+  sprintf(digits, "%d", count);
+  const char* parameters[] = {digits};
+  return UDPMessage("count", parameters, 1).toBuffer(buffer);
+}
+
 
 unsigned int KeyReleaseService::sleepRequested(const unsigned int requestedSleepDuration, SleepMode& sleepMode) {
   const unsigned int n = runningReleases();

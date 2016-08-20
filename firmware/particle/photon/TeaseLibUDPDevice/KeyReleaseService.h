@@ -72,6 +72,7 @@ private:
   void updatePulse(Status status);
   unsigned int nextRelease();
   unsigned int runningReleases();
+  unsigned int createCountMessage(unsigned int count, char* buffer);
 };
 
 #endif /*end of include guard:   _INCLUDE_TeaseLibKeyReleaseService */

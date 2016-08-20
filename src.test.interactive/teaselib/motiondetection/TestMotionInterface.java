@@ -2,17 +2,19 @@ package teaselib.motiondetection;
 
 import org.junit.Test;
 
+import teaselib.motiondetection.MotionDetector.MotionSensitivity;
+
 public class TestMotionInterface {
 
     @Test
     public void testMotionStartStop() {
-        Movement movement = MotionDetection
-                .movement(MotionDetection.Instance.getDefaultDevice());
+        MotionDetector motionDetector = MotionDetection.Instance
+                .getDefaultDevice();
+        motionDetector.setViewPoint(ViewPoint.EyeLevel);
+        motionDetector.setSensitivity(MotionSensitivity.High);
+        Movement movement = MotionDetection.movement(motionDetector);
 
         System.out.println("Move!");
-
-        final double amount = 0.95;
-        // md.setSensitivity(MotionSensitivity.High);
 
         while (!movement.startedWithin(1.0, 5.0)) {
             System.out.println("I said 'Move'!");

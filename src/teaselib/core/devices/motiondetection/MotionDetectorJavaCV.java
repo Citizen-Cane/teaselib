@@ -25,6 +25,7 @@ import teaselib.core.javacv.ScaleAndMirror;
 import teaselib.core.javacv.Transformation;
 import teaselib.core.javacv.util.FramesPerSecond;
 import teaselib.motiondetection.MotionDetector;
+import teaselib.motiondetection.ViewPoint;
 import teaselib.video.ResolutionList;
 import teaselib.video.VideoCaptureDevice;
 import teaselib.video.VideoCaptureDevices;
@@ -97,6 +98,7 @@ public class MotionDetectorJavaCV implements MotionDetector {
         super();
         eventThread = new CaptureThread(videoCaptureDevice, DesiredFps);
         setSensitivity(MotionSensitivity.Normal);
+        setViewPoint(ViewPoint.EyeLevel);
         Thread detectionEventsShutdownHook = new Thread() {
             @Override
             public void run() {
@@ -121,6 +123,7 @@ public class MotionDetectorJavaCV implements MotionDetector {
         private Transformation videoInputTransformation;
         private Size processingSize;
         private MotionSensitivity motionSensitivity;
+        private ViewPoint viewPoint;
         private MotionProcessorJavaCV motionProcessor;
         private Mat input = new Mat();
         // TODO Atomic reference
@@ -183,10 +186,11 @@ public class MotionDetectorJavaCV implements MotionDetector {
             }
             motionProcessor = new MotionProcessorJavaCV(resolution,
                     processingSize);
-            setSensitivity(motionSensitivity);
-            debugInfo = new MotionDetectorJavaCVDebugRenderer(motionProcessor,
-                    processingSize);
             detectionResult = new MotionDetectionResultImplementation(
+                    processingSize);
+            setSensitivity(motionSensitivity);
+            setPointOfView(viewPoint);
+            debugInfo = new MotionDetectorJavaCVDebugRenderer(motionProcessor,
                     processingSize);
         }
 
@@ -203,6 +207,13 @@ public class MotionDetectorJavaCV implements MotionDetector {
             if (motionProcessor != null) {
                 motionProcessor.setStructuringElementSize(
                         motionSensitivities.get(motionSensivity));
+            }
+        }
+
+        public void setPointOfView(ViewPoint viewPoint) {
+            this.viewPoint = viewPoint;
+            if (detectionResult != null) {
+                detectionResult.setViewPoint(viewPoint);
             }
         }
 
@@ -345,6 +356,13 @@ public class MotionDetectorJavaCV implements MotionDetector {
     public void setSensitivity(MotionSensitivity motionSensivity) {
         pause();
         eventThread.setSensitivity(motionSensivity);
+        resume();
+    }
+
+    @Override
+    public void setViewPoint(ViewPoint pointOfView) {
+        pause();
+        eventThread.setPointOfView(pointOfView);
         resume();
     }
 

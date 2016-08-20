@@ -4,6 +4,7 @@
 package teaselib.core.devices.motiondetection;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -14,6 +15,7 @@ import org.bytedeco.javacpp.opencv_core.Size;
 
 import teaselib.core.util.TimeLine;
 import teaselib.motiondetection.MotionDetector.Presence;
+import teaselib.motiondetection.ViewPoint;
 
 /**
  * The data set for the motion detection results
@@ -21,6 +23,7 @@ import teaselib.motiondetection.MotionDetector.Presence;
  */
 public abstract class MotionDetectionResultData
         implements MotionDetectionResult {
+    // TODO size of one or two structuring elements
     static final int cornerSize = 32;
 
     protected boolean contourMotionDetected = false;
@@ -33,6 +36,21 @@ public abstract class MotionDetectionResultData
     protected final TimeLine<Rect> presenceRegionHistory = new TimeLine<Rect>();
     protected final TimeLine<Integer> motionAreaHistory = new TimeLine<Integer>();
     protected final TimeLine<Set<Presence>> indicatorHistory = new TimeLine<Set<Presence>>();
+
+    protected final static Map<ViewPoint, Presence> viewPoint2PresenceRegion = getViewPointRegions();
+
+    private static Map<ViewPoint, Presence> getViewPointRegions() {
+        Map<ViewPoint, Presence> m = new HashMap<ViewPoint, Presence>();
+        // Include border regions that are prone to body clipping
+        // in the as presence region
+        m.put(ViewPoint.EyeLevel, Presence.PresenceExtendedVertically);
+        m.put(ViewPoint.EyeLevelFar, Presence.Present);
+        m.put(ViewPoint.HighAngle, Presence.Present);
+        m.put(ViewPoint.LowAngle, Presence.PresenceExtendedVertically);
+        return m;
+    }
+
+    protected ViewPoint viewPoint = ViewPoint.EyeLevel;
 
     private final Rect all;
 
@@ -48,6 +66,8 @@ public abstract class MotionDetectionResultData
         Map<Presence, Rect> map = new LinkedHashMap<Presence, Rect>();
         map.put(Presence.Present, new Rect(cornerSize, cornerSize,
                 s.width() - 2 * cornerSize, s.height() - 2 * cornerSize));
+        map.put(Presence.PresenceExtendedVertically, new Rect(cornerSize, 0,
+                s.width() - 2 * cornerSize, s.height()));
         // Define a center rectangle half the width
         // and third the height of the capture size
         int cl = s.width() / 2 - s.width() / 4;
@@ -99,5 +119,10 @@ public abstract class MotionDetectionResultData
         indicatorHistory.add(
                 new HashSet<Presence>(Arrays.asList(Presence.Shake)),
                 timeStamp);
+    }
+
+    @Override
+    public void setViewPoint(ViewPoint viewPoint) {
+        this.viewPoint = viewPoint;
     }
 }

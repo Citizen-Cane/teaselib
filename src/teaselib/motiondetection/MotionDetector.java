@@ -79,11 +79,13 @@ public interface MotionDetector extends Device {
          */
         TopBorder,
         NoTopBorder,
+
         /**
          * The bottom border of the capture view
          */
         BottomBorder,
         NoBottomBorder,
+
         /**
          * Calculated from capture input to indicate that there is ongoing
          * motion
@@ -108,13 +110,20 @@ public interface MotionDetector extends Device {
          * Calculated from capture input to indicate camera shaking
          */
         Shake,
-        NoShake
+        NoShake,
+
+        /**
+         * The Presence region extended to the top and the bottom.
+         */
+        PresenceExtendedVertically,
     }
 
     static final double MotionRegionDefaultTimespan = 1.0;
     static final double PresenceRegionDefaultTimespan = 1.0;
 
     void setSensitivity(MotionSensitivity motionSensivity);
+
+    void setViewPoint(ViewPoint pointOfView);
 
     void clearMotionHistory();
 

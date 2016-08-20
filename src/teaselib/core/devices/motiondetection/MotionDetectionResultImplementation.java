@@ -3,7 +3,7 @@
  */
 package teaselib.core.devices.motiondetection;
 
-import static teaselib.core.javacv.util.Geom.intersects;
+import static teaselib.core.javacv.util.Geom.*;
 
 import java.util.Iterator;
 import java.util.LinkedHashSet;
@@ -187,7 +187,8 @@ public class MotionDetectionResultImplementation
     @SuppressWarnings("resource")
     @Override
     public Set<Presence> getPresence(Rect motionRegion, Rect presenceRegion) {
-        Rect presenceRect = presenceIndicators.get(Presence.Present);
+        Rect presenceRect = presenceIndicators
+                .get(viewPoint2PresenceRegion.get(viewPoint));
         if (motionRegion == null || (motionRegion.contains(presenceRect.tl())
                 && motionRegion.contains(presenceRect.br()))) {
             // Keep last state, to avoid signaling changes during shakes

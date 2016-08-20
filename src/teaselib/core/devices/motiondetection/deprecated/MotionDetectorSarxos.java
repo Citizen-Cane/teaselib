@@ -28,6 +28,7 @@ import com.github.sarxos.webcam.WebcamResolution;
 
 import teaselib.core.devices.DeviceCache;
 import teaselib.motiondetection.MotionDetector;
+import teaselib.motiondetection.ViewPoint;
 
 /**
  * Uses webcam to detect motion.
@@ -371,6 +372,11 @@ public class MotionDetectorSarxos implements MotionDetector {
         detectionEvents.setAreaTreshold(areaTreshold);
         this.pixelTreshold = InitialPixelTreshold;
         detectionEvents.setPixelTreshold(pixelTreshold);
+    }
+
+    @Override
+    public void setViewPoint(ViewPoint pointOfView) {
+        // TODO Ignored
     }
 
     // @Override

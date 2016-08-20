@@ -103,7 +103,8 @@ public class DeviceCache<T extends Device> {
      */
     public static boolean connect(Device device, double timeoutSeconds)
             throws ScriptInterruptedException {
-        long timeoutMillis = (long) timeoutSeconds * 1000;
+        long timeoutMillis = timeoutSeconds > 0 ? (long) timeoutSeconds * 1000
+                : Long.MAX_VALUE;
         while (timeoutMillis > 0) {
             long now = System.currentTimeMillis();
             if (device.connected()) {

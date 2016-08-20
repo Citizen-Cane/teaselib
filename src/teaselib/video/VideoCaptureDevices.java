@@ -12,8 +12,8 @@ public class VideoCaptureDevices {
     // .addFactory(VideoCaptureDeviceVideoInput.Factory);
     // .addFactory(VideoCaptureDeviceWebcamCapture.Factory);
 
-    static final String front = "front";
-    static final String rear = "rear";
+    private static final String Front = "front";
+    private static final String Rear = "rear";
 
     /**
      * Sort device names so that external video capture devices appear first in
@@ -31,16 +31,16 @@ public class VideoCaptureDevices {
             public int compare(String a, String b) {
                 String deviceNameA = DeviceCache.getDeviceName(a).toLowerCase();
                 String deviceNameB = DeviceCache.getDeviceName(b).toLowerCase();
-                if (deviceNameA.contains(front) && deviceNameB.contains(rear)) {
+                if (deviceNameA.contains(Front) && deviceNameB.contains(Rear)) {
                     return -1;
-                } else if (deviceNameA.contains(rear)
-                        && deviceNameB.contains(front)) {
+                } else if (deviceNameA.contains(Rear)
+                        && deviceNameB.contains(Front)) {
                     return 1;
-                } else if (deviceNameA.contains(front)
-                        && !deviceNameB.contains(front)) {
+                } else if (deviceNameA.contains(Front)
+                        && !deviceNameB.contains(Front)) {
                     return 1;
-                } else if (deviceNameA.contains(rear)
-                        && !deviceNameB.contains(rear)) {
+                } else if (deviceNameA.contains(Rear)
+                        && !deviceNameB.contains(Rear)) {
                     return 1;
                 } else {
                     return a.compareTo(b);

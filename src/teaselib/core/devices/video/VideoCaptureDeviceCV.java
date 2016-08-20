@@ -1,7 +1,6 @@
 package teaselib.core.devices.video;
 
-import static org.bytedeco.javacpp.opencv_videoio.CAP_PROP_FRAME_HEIGHT;
-import static org.bytedeco.javacpp.opencv_videoio.CAP_PROP_FRAME_WIDTH;
+import static org.bytedeco.javacpp.opencv_videoio.*;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -21,6 +20,7 @@ import teaselib.core.devices.DeviceCache;
 import teaselib.core.devices.DeviceFactory;
 import teaselib.video.ResolutionList;
 import teaselib.video.VideoCaptureDevice;
+import teaselib.video.VideoCaptureDevices;
 
 public class VideoCaptureDeviceCV implements VideoCaptureDevice {
     private static final Logger logger = LoggerFactory
@@ -40,6 +40,7 @@ public class VideoCaptureDeviceCV implements VideoCaptureDevice {
             if (useVideoInput) {
                 List<String> deviceNames = VideoCaptureDeviceVideoInput
                         .enumerateVideoInputDevices();
+                VideoCaptureDevices.sort(deviceNames);
                 devicePaths = new ArrayList<String>(deviceNames.size());
                 for (String deviceName : deviceNames) {
                     devicePaths.add(DeviceCache
@@ -148,21 +149,45 @@ public class VideoCaptureDeviceCV implements VideoCaptureDevice {
 
     @Override
     public void open() {
-        if (!videoCapture.isOpened()) {
+        if (!connected()) {
+            connect();
+        }
+        if (connected()) {
             videoCapture.open(deviceId);
+            if (!videoCapture.isOpened()) {
+                throw new IllegalArgumentException("Camera not opened: "
+                        + getClass().getName() + ":" + deviceId);
+            }
+            captureSize.width((int) videoCapture.get(CAP_PROP_FRAME_WIDTH));
+            captureSize.height((int) videoCapture.get(CAP_PROP_FRAME_HEIGHT));
+            fps = videoCapture.get(opencv_videoio.CAP_PROP_FPS);
         }
-        if (!videoCapture.isOpened()) {
-            throw new IllegalArgumentException("Camera not opened: "
-                    + getClass().getName() + ":" + deviceId);
-        }
-        captureSize.width((int) videoCapture.get(CAP_PROP_FRAME_WIDTH));
-        captureSize.height((int) videoCapture.get(CAP_PROP_FRAME_HEIGHT));
-        fps = videoCapture.get(opencv_videoio.CAP_PROP_FPS);
     }
 
     @Override
     public boolean connected() {
-        return videoCapture.isOpened();
+        if (WaitingForConnection.equals(deviceName)) {
+            return connect();
+        } else {
+            return true;
+        }
+    }
+
+    private boolean connect() {
+        List<String> devicePaths = Factory.getDevices();
+        if (devicePaths.size() > 0) {
+            deviceName = DeviceCache.getDeviceName(devicePaths.get(0));
+            if (WaitingForConnection.equals(deviceName)) {
+                return false;
+            } else {
+                deviceId = VideoCaptureDeviceVideoInput
+                        .getDeviceIDFromName(deviceName);
+                Factory.connectDevice(this);
+                return true;
+            }
+        } else {
+            return false;
+        }
     }
 
     @Override

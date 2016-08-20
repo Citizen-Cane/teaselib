@@ -37,6 +37,7 @@ public class VideoCaptureDeviceVideoInput implements VideoCaptureDevice {
         public List<String> enumerateDevicePaths(
                 Map<String, VideoCaptureDevice> deviceCache) {
             List<String> deviceNames = enumerateVideoInputDevices();
+            VideoCaptureDevices.sort(deviceNames);
             List<String> devicePaths = new ArrayList<String>(
                     deviceNames.size());
             for (String deviceName : deviceNames) {
@@ -128,12 +129,10 @@ public class VideoCaptureDeviceVideoInput implements VideoCaptureDevice {
     private boolean connect() {
         List<String> devicePaths = Factory.getDevices();
         if (devicePaths.size() > 0) {
-            if (WaitingForConnection
-                    .equals(DeviceCache.getDeviceName(devicePaths.get(0)))) {
+            deviceName = DeviceCache.getDeviceName(devicePaths.get(0));
+            if (WaitingForConnection.equals(deviceName)) {
                 return false;
             } else {
-                deviceName = DeviceCache.getDeviceName(
-                        VideoCaptureDevices.sort(devicePaths).get(0));
                 deviceId = getDeviceIDFromName(deviceName);
                 Factory.connectDevice(this);
                 return true;

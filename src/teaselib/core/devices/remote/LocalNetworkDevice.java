@@ -42,12 +42,12 @@ public class LocalNetworkDevice implements RemoteDevice {
     private static final int Port = 666;
 
     /**
-     * Local network device have to respond in one seconds, plus some head room
+     * Local network devices have to respond in this time, plus some head room.
      */
     public static final int AllowedTimeoutMillis = 1000;
 
     /**
-     * The socket timeout.
+     * The socket timeout, after which a packet is considered timed out.
      */
     private static final int SocketTimeoutMillis = 2000;
 
@@ -169,8 +169,6 @@ public class LocalNetworkDevice implements RemoteDevice {
 
     private UDPConnection connection;
 
-    // TODO rescan network, reconnect to same device at different address
-
     LocalNetworkDevice(String name, UDPConnection connection,
             String serviceName, String description, String version) {
         this.name = name;
@@ -193,12 +191,34 @@ public class LocalNetworkDevice implements RemoteDevice {
 
     @Override
     public boolean connected() {
-        return true;
+        boolean connected = !connection.closed();
+        if (connected) {
+            RemoteDeviceMessage ok;
+            try {
+                ok = sendAndReceive(Id, SocketTimeoutMillis);
+            } catch (SocketException e) {
+                ok = Timeout;
+            } catch (IOException e) {
+                ok = Timeout;
+            }
+            if (ok.equals(Timeout)) {
+                reconnect();
+                try {
+                    ok = sendAndReceive(Id, SocketTimeoutMillis);
+                } catch (SocketException e) {
+                    ok = Timeout;
+                } catch (IOException e) {
+                    ok = Timeout;
+                }
+                connected = ok != Timeout;
+            }
+        }
+        return connected;
     }
 
     @Override
     public boolean active() {
-        return true;
+        return !connection.closed();
     }
 
     @Override
@@ -272,12 +292,16 @@ public class LocalNetworkDevice implements RemoteDevice {
     }
 
     private void reconnect() {
+        Factory.disconnectDevice(this);
         List<String> devicePaths = Factory.getDevices();
         for (String devicePath : devicePaths) {
-            if (getDevicePath().equals(devicePath)) {
+            if (!WaitingForConnection.equals(devicePath)
+                    && getDevicePath().equals(devicePath)) {
                 LocalNetworkDevice device = Factory.getDevice(devicePath);
                 connection.close();
                 connection = device.connection;
+                Factory.connectDevice(this);
+                break;
             }
         }
     }

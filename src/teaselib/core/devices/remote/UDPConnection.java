@@ -32,6 +32,10 @@ public class UDPConnection {
         clientSocket.close();
     }
 
+    boolean closed() {
+        return clientSocket.isClosed();
+    }
+
     public void send(String data) throws IOException {
         byte[] sendData = data.getBytes();
         send(sendData);

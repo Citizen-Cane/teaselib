@@ -141,14 +141,11 @@ public class KeyRelease implements Device {
         RemoteDeviceMessage count = remoteDevice.sendAndReceive(
                 new RemoteDeviceMessage(DeviceClassName, Actuators));
         if (RemoteDevice.Count.equals(count.command)) {
-            // TODO error handling - don't throw
             return Integer.parseInt(count.parameters.get(0));
         } else {
             return 0;
         }
     }
-
-    // TODO maximum duration for this actuator -> use int return value
 
     public boolean arm(int actuator) {
         RemoteDeviceMessage ok = remoteDevice
@@ -187,7 +184,6 @@ public class KeyRelease implements Device {
                 .sendAndReceive(new RemoteDeviceMessage(DeviceClassName,
                         Running, Arrays.asList(Integer.toString(actuator))));
         if (RemoteDevice.Count.equals(count.command)) {
-            // TODO error handling - don't throw
             return Integer.parseInt(count.parameters.get(0)) == 1;
         } else {
             return false;
@@ -199,7 +195,6 @@ public class KeyRelease implements Device {
                 .sendAndReceive(new RemoteDeviceMessage(DeviceClassName,
                         Available, Arrays.asList(Integer.toString(actuator))));
         if (RemoteDevice.Count.equals(count.command)) {
-            // TODO error handling - don't throw
             return Integer.parseInt(count.parameters.get(0));
         } else {
             return 0;
@@ -211,7 +206,6 @@ public class KeyRelease implements Device {
                 .sendAndReceive(new RemoteDeviceMessage(DeviceClassName,
                         Remaining, Arrays.asList(Integer.toString(actuator))));
         if (RemoteDevice.Count.equals(count.command)) {
-            // TODO error handling - don't throw
             return Integer.parseInt(count.parameters.get(0));
         } else {
             return 0;

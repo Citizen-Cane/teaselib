@@ -69,18 +69,19 @@ public abstract class DeviceFactory<T extends Device> {
     }
 
     /**
-     * Disconnect a device to waiting state. Devices usually only reconnect to
-     * the entity denoted by the device path, but sometimes it may be desirable
-     * or necessary to connect to any connected entity.
+     * Remove a disconnect a device from the device cache after
+     * surprise-removal. The device is removed from the cache. The device
+     * instance may reconnect later on by calling
+     * {@link DeviceFactory#connectDevice(Device)}
      * 
      * @param device
+     *            The disconnected device.
      */
-    public String disconnectDevice(T device) {
-        if (deviceCache.get(device.getDevicePath()) == device) {
-            deviceCache.remove(device.getDevicePath());
+    public void removeDisconnectedDevice(T device) {
+        String devicePath = device.getDevicePath();
+        if (deviceCache.get(devicePath) == device) {
+            deviceCache.remove(devicePath);
         }
-        deviceCache.put(Device.WaitingForConnection, device);
-        return Device.WaitingForConnection;
     }
 
     /**

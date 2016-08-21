@@ -292,7 +292,7 @@ public class LocalNetworkDevice implements RemoteDevice {
     }
 
     private void reconnect() {
-        Factory.disconnectDevice(this);
+        Factory.removeDisconnectedDevice(this);
         List<String> devicePaths = Factory.getDevices();
         for (String devicePath : devicePaths) {
             if (!WaitingForConnection.equals(devicePath)

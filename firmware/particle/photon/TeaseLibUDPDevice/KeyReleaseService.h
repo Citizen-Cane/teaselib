@@ -13,6 +13,9 @@
  * - book-keeping ensures that the maximum duration cannot be exceeded
  */
 
+// enable experimental servo detach
+//#define TEASELIB_KEYRELEASE_SERVO_DEACTIVATE_ON_IDLE
+
 class KeyReleaseService : public TeaseLibService {
 public:
   static const char* const Name;
@@ -40,6 +43,20 @@ public:
       const void clear();
   };
 
+  class ServoControl {
+  public:
+    void attach(const Actuator* actuator);
+    void arm();
+    void release();
+private:
+    const Actuator* actuator;
+    Servo* servo;
+#ifdef TEASELIB_KEYRELEASE_SERVO_DEACTIVATE_ON_IDLE
+     Timer* detachTimer;
+    void detachCallback();
+#endif
+  };
+
   static const Actuator ShortRelease;
   static const Actuator LongRelease;
   static const Actuator* DefaultSetup[];
@@ -52,7 +69,7 @@ protected:
   virtual unsigned int sleepRequested(const unsigned int requestedSleepDuration, SleepMode& sleepMode);
 private:
   const Actuator** actuators;
-  Servo* servos;
+  ServoControl* servoControl;
   Duration* durations;
   const int actuatorCount;
   const char* const sessionKey;

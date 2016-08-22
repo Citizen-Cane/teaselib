@@ -25,6 +25,17 @@ const char* const KeyReleaseService::Version = "0.01";
    turn your device upside down or change the default settings to your needs
 */
 
+/* Servo control:
+   When the battery drains and the voltage drops, moving the servos
+   drop the voltage down below the amount needed to feed them with a proper PWM signal
+
+   Experimental (non-working, can be activated in source code):
+   - To save battery charge servos are attached only for the time it takes to move the shaft to the requested angle.
+   - This also solves constant servo readjusting at low battery charge:
+     - because the voltage drops when moving the servo, the PWM signal is not properly recognized by the servo anymore,
+       resulting in constant readjusting, which drains the battery even more
+*/
+
 /* LED state:
   - The LED breathes cyan as usual (connected to the cloud) while the device is inactve.
   - It pulses dark green when any of the servos is ready to receive a key
@@ -48,7 +59,7 @@ const KeyReleaseService::Actuator* KeyReleaseService::DefaultSetup[] = {&ShortRe
 KeyReleaseService::KeyReleaseService(const Actuator** actuators, const int actuatorCount)
 : TeaseLibService(Name, Description, Version)
 , actuators(actuators)
-, servos(new Servo[actuatorCount])
+, servoControl(new ServoControl[actuatorCount])
 , durations(new Duration[actuatorCount])
 , actuatorCount(actuatorCount)
 , sessionKey(createSessionKey())
@@ -71,7 +82,7 @@ const char* const KeyReleaseService::createSessionKey() {
 
 void KeyReleaseService::setup() {
   for(int i = 0; i < actuatorCount; i++) {
-      servos[i].attach(actuators[i]->pin);
+      servoControl[i].attach(actuators[i]);
       durations[i].actuator = actuators[i];
       durations[i].clear();
       if (i > 0) {
@@ -273,12 +284,13 @@ void KeyReleaseService::ledTimerCallback() {
 }
 
 void KeyReleaseService::armKey(const int index) {
-  servos[index].write(actuators[index]->armedAngle);
+  servoControl[index].arm();
 }
 
 void KeyReleaseService::releaseKey(const int index) {
-  servos[index].write(actuators[index]->releasedAngle);
+  servoControl[index].release();
 }
+
 
 const void KeyReleaseService::Duration::arm() {
   running = true;
@@ -314,3 +326,54 @@ const void KeyReleaseService::Duration::clear() {
   elapsedMinutes = 0;
   remainingMinutes = 0;
 }
+
+
+void KeyReleaseService::ServoControl::attach(const Actuator* actuator) {
+  this->actuator = actuator;
+  servo = new Servo();
+#ifdef TEASELIB_KEYRELEASE_SERVO_DEACTIVATE_ON_IDLE
+  /*
+  delay(200);
+  servo->write(actuator->armedAngle);
+  delay(2000);
+  servo->detach();
+  delay(2000);
+  servo->attach(actuator->pin);
+  delay(200);
+  servo->write(actuator->releasedAngle);
+  delay(2000);
+  servo->detach();
+  */
+  detachTimer = new Timer(2 * 1000, &ServoControl::detachCallback, *this, true);
+#else
+  servo->attach(actuator->pin);
+#endif
+}
+
+void KeyReleaseService::ServoControl::arm() {
+#ifdef TEASELIB_KEYRELEASE_SERVO_DEACTIVATE_ON_IDLE
+   detachTimer->stop();
+   servo->attach(actuator->pin);
+   servo->write(actuator->armedAngle);
+   detachTimer->start();
+#else
+  servo->write(actuator->armedAngle);
+#endif
+}
+
+void KeyReleaseService::ServoControl::release() {
+#ifdef TEASELIB_KEYRELEASE_SERVO_DEACTIVATE_ON_IDLE
+  detachTimer->stop();
+  servo->attach(actuator->pin);
+  servo->write(actuator->releasedAngle);
+  detachTimer->start();
+#else
+  servo->write(actuator->releasedAngle);
+#endif
+}
+
+#ifdef TEASELIB_KEYRELEASE_SERVO_DEACTIVATE_ON_IDLE
+  void KeyReleaseService::ServoControl::detachCallback() {
+    servo->detach();
+  }
+#endif

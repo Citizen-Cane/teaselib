@@ -27,16 +27,16 @@ public abstract class TeaseScriptPersistence extends TeaseScriptBase {
         return teaseLib.getToy(item);
     }
 
-    public <C extends Enum<?>> Item<C> clothing(C item) {
-        return teaseLib.getClothing(item);
+    public <C extends Enum<?>> Item<C> clothing(Object wearer, C item) {
+        return teaseLib.getClothing(wearer, item);
     }
 
     public <T> Item<T> toy(T item) {
         return teaseLib.getToy(item);
     }
 
-    public <C> Item<C> clothing(C item) {
-        return teaseLib.getClothing(item);
+    public <C> Item<C> clothing(Object wearer, C item) {
+        return teaseLib.getClothing(wearer, item);
     }
 
     public <T extends Enum<?>> Items<T> toys(T... toys) {
@@ -73,36 +73,37 @@ public abstract class TeaseScriptPersistence extends TeaseScriptBase {
         return items;
     }
 
-    public <C extends Enum<C>> Items<C> clothes(C... clothes) {
+    public <C extends Enum<C>> Items<C> clothes(Object wearer, C... clothes) {
         Items<C> items = new Items<C>();
         for (C clothing : clothes) {
-            Item<C> item = teaseLib.getClothing(clothing);
+            Item<C> item = teaseLib.getClothing(wearer, clothing);
             items.add(item);
         }
         return items;
     }
 
-    public <C extends Enum<C>> Items<C> clothes(C[]... clothing) {
+    public <C extends Enum<C>> Items<C> clothes(Object wearer,
+            C[]... clothing) {
         Items<C> items = new Items<C>();
         for (C[] selection : clothing) {
-            items.addAll(clothes(selection));
+            items.addAll(clothes(wearer, selection));
         }
         return items;
     }
 
-    public <C> Items<C> clothes(C... clothes) {
+    public <C> Items<C> clothes(Object wearer, C... clothes) {
         Items<C> items = new Items<C>();
         for (C clothing : clothes) {
-            Item<C> item = teaseLib.getClothing(clothing);
+            Item<C> item = teaseLib.getClothing(wearer, clothing);
             items.add(item);
         }
         return items;
     }
 
-    public <C> Items<C> clothes(C[]... clothing) {
+    public <C> Items<C> clothes(Object wearer, C[]... clothing) {
         Items<C> items = new Items<C>();
         for (C[] selection : clothing) {
-            items.addAll(clothes(selection));
+            items.addAll(clothes(wearer, selection));
         }
         return items;
     }

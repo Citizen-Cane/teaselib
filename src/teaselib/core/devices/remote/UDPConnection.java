@@ -12,11 +12,17 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * @author
  *
  */
 public class UDPConnection {
+    private static final Logger logger = LoggerFactory
+            .getLogger(UDPConnection.class);
+
     final InetAddress address;
     final int port;
     final DatagramSocket clientSocket;
@@ -89,7 +95,10 @@ public class UDPConnection {
         try {
             DataInput input = new DataInputStream(rawData);
             int packetNumber = input.readShort();
-            if (packetNumber != this.packetNumber) {
+            if (packetNumber < this.packetNumber) {
+                logger.warn(
+                        "Ignoring packet with smaller number #" + packetNumber);
+            } else if (packetNumber > this.packetNumber) {
                 // TODO better handling of packet number mismatch - wait if
                 // smaller, throw if larger
                 throw new IllegalStateException("Packet-Number mismatch");

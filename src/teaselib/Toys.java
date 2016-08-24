@@ -1,21 +1,19 @@
-/**
- * 
- */
 package teaselib;
 
 /**
  * Toys are generalized, which means their names have been chosen not be too
  * specific.
- * 
+ * <p>
+ * Toys are grouped by category, to make it possible to query a whole category.
+ * <p>
  * I guess that because toys can be grouped (Gags, spanking implements, plugs,
  * clamps, restraints), there has to be a more advanced approach to organize
  * toys.
- * 
+ * <p>
  * So for now, just the generalized version of something is added.
- * 
+ * <p>
  * The list has been inspired by CyberMistress and SexScripts.
- * 
- * @author someone
+ * <p>
  *
  */
 public enum Toys {
@@ -33,7 +31,6 @@ public enum Toys {
     Blindfold,
     Breast_Forms,
     Buttplug,
-    Camera,
     Candle,
     Cane,
     Chains,
@@ -84,6 +81,8 @@ public enum Toys {
     Rope,
     Rubber_bands,
     Ruler,
+    SelfBondage_TimeLock,
+    SelfBondage_TimeLock_Computer_Controlled,
     Shoe_Lace,
     Shrinkwrap,
     Spreader_Bar,
@@ -92,13 +91,54 @@ public enum Toys {
     Vibrating_Buttplug,
     Vibrating_Dildo,
     Vibrating_Egg,
-    Vibrating_Gamepad,
+    Vibrating_Computer_Controlled_Device,
     Vibrator,
-    Wax,
+    Webcam,
     Weights,
     Whip,
     Wife,
-    Wooden_Spoon;
+    Wooden_Spoon,
+    Worshiping_Shoes,;
+
+    /**
+     * The basic toy set, without specializations.
+     */
+    public final static Toys Basic[] = { Ankle_Cuffs, Anal_Dildo, Ball_Gag,
+            Bit_Gag, Blindfold, Buttplug, Cane, Chains, Chastity_Cage, Collar,
+            Dildo, Handcuffs, Humbler, Rope, Nipple_clamps, Paddle,
+            Pussy_Clamps, Ring_Gag, Rope, Vibrator };
+
+    public final static Toys Advanced[] = { Anal_Beads, Ball_Stretcher,
+            Ben_Wa_Balls, Cockring, Crop, Doll, Enema_Bulb, Enema_Kit,
+            EStim_Device, Gates_Of_Hell, Harness, Hood, Inflatable_Buttplug,
+            Inflatable_Dildo, Leather_Ankle_Cuffs, Leather_Wrist_Cuffs,
+            Muzzle_Gag, Penis_Gag, Whip };
+
+    public final static Toys Other[] = { Ass_Hook, Breast_Forms, Chastity_Belt,
+            Diaper, Flogger, Penis_Pump, Posture_Collar, Spreader_Bar,
+            SelfBondage_TimeLock, Strap_On, Vibrating_Buttplug, Vibrating_Dildo,
+            Vibrating_Egg };
+
+    public final static Toys ComputerDevices[] = {
+            EStim_Computer_Controlled_Device,
+            SelfBondage_TimeLock_Computer_Controlled,
+            Vibrating_Computer_Controlled_Device, Webcam };
+
+    public final static Toys HouseHoldItems[] = { Baby_Oil, Belt, Candle,
+            Cigarette, Clothespins, Condoms, Dog_Collar, Duct_Tape, Hairbrush,
+            Heat_Rub, Husband, Ice_Tray, Leash, Lube, Padlocks, Plants,
+            Rubber_bands, Ruler, Shoe_Lace, Shrinkwrap, Tampon, Weights, Wife,
+            Wooden_Spoon };
+
+    public final static Toys Accesoires[] = { Bells };
+
+    public final static Toys WorshipingItems[] = { Princess_Tiara,
+            Worshiping_Shoes };
+
+    public final static Toys[] Categories[] = { Basic, Advanced, Other,
+            ComputerDevices, HouseHoldItems, Accesoires, WorshipingItems };
+
+    // More categories
 
     public final static Toys AnalToys[] = { Toys.Anal_Beads, Toys.Ass_Hook,
             Toys.Anal_Dildo, Toys.Buttplug, Toys.Inflatable_Buttplug,
@@ -127,7 +167,7 @@ public enum Toys {
             Toys.Posture_Collar };
 
     public final static Toys Vibrators[] = { Toys.Vibrator, Toys.Vibrating_Egg,
-            Toys.Vibrating_Dildo, Toys.Vibrating_Gamepad };
+            Toys.Vibrating_Dildo, Toys.Vibrating_Computer_Controlled_Device };
 
     public final static Toys Spanking_Implements[] = { Toys.Belt, Toys.Cane,
             Toys.Crop, Toys.Flogger, Toys.Paddle, Toys.Ruler, Toys.Hairbrush,
@@ -138,9 +178,4 @@ public enum Toys {
 
     public final static Toys Wrist_Restraints[] = { Toys.Handcuffs,
             Toys.Leather_Wrist_Cuffs };
-
-    @Override
-    public String toString() {
-        return super.toString().toLowerCase();
-    }
 }

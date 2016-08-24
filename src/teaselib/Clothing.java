@@ -15,7 +15,65 @@ package teaselib;
  *
  */
 public enum Clothing {
-    Apron, Baby_Doll, Bathing_Suit, Belt, Bikini, Blouse, Boots, Boxers, Bra, Briefs, Catsuit, Cheerleader_Uniform, Corset, Diaper, Dress, Garterbelt, GString, Gloves, Handbag, High_Heels, Jacket, Jeans, Jewelry, Leotard, Maid_Attire, Make_up, Miniskirt, Monokini, Nightie, Nurse_Uniform, Pajamas, Panties, Pantyhose, Sandals, Scarf, Schoolgirl_Uniform, Shirt, Shoes, Shorts, Skirt, Socks, Stockings, Suit, Sweater, Sweatpants, Swimsuit, Tanktop, Thong, Tie, Trousers, TShirt, Vest;
+    Apron,
+    Baby_Doll,
+    Bathing_Suit,
+    Belt,
+    Bikini,
+    Blouse,
+    Boots,
+    Boxers,
+    Bra,
+    Briefs,
+    Catsuit,
+    Cheerleader_Uniform,
+    Corset,
+    Diaper,
+    Dress,
+    Garterbelt,
+    GString,
+    Gloves,
+    Handbag,
+    High_Heels,
+    Jacket,
+    Jeans,
+    Jewelry,
+    Leotard,
+    Maid_Attire,
+    Make_up,
+    Miniskirt,
+    Monokini,
+    Nightie,
+    Nurse_Uniform,
+    Pajamas,
+    Panties,
+    Pantyhose,
+    Sandals,
+    Scarf,
+    Schoolgirl_Uniform,
+    Shirt,
+    Shoes,
+    Shorts,
+    Skirt,
+    Socks,
+    Stockings,
+    Suit,
+    Sweater,
+    Sweatpants,
+    Swimsuit,
+    Tanktop,
+    Thong,
+    Tie,
+    Trousers,
+    TShirt,
+    Vest;
+
+    public static final String Male = "male";
+    public static final String Female = "female";
+    public static final String Tranny = "tranny";
+    public static final String Doll = "doll";
+    public static final String Wife = "wife";
+    public static final String Husband = "husband";
 
     @Override
     public String toString() {

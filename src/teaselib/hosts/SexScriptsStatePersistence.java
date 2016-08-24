@@ -4,6 +4,7 @@ import java.util.Locale;
 
 import ss.IScript;
 import teaselib.Actor;
+import teaselib.Clothing;
 import teaselib.Images;
 import teaselib.Toys;
 import teaselib.core.Persistence;
@@ -64,13 +65,24 @@ public class SexScriptsStatePersistence implements Persistence {
 
     /**
      * TeaseLib uses a lot of standard properties instead of just plain strings,
+     * and those don't match the way SexScripts save it's properties.
      * 
      * @param name
      *            The name of a property
      * @return The actual property name or the original name
      */
     private static String mapName(String name) {
-        if (("toys." + Toys.Ball_Gag.name()).equalsIgnoreCase(name)) {
+        if (name.contains(
+                ("Male." + Clothing.class.getSimpleName()).toLowerCase()
+                        + ".")) {
+            name = name.substring(name.indexOf(
+                    Clothing.class.getSimpleName().toLowerCase() + "."));
+        } else if (name.contains(
+                ("Female." + Clothing.class.getSimpleName()).toLowerCase()
+                        + ".")) {
+            name = name.substring(name.indexOf(
+                    Clothing.class.getSimpleName().toLowerCase() + "."));
+        } else if (("toys." + Toys.Ball_Gag.name()).equalsIgnoreCase(name)) {
             name = "toys.ballgag";
         }
         return name;

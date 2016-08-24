@@ -28,6 +28,14 @@ import teaselib.util.TextVariables;
  *         All static methods refer to the shared instance
  */
 public class TeaseLib {
+    /**
+     * 
+     */
+    private static final String CLOTHINGSPACE = "clothes";
+    /**
+     * 
+     */
+    private static final String TOYSPACE = "toys";
     public final Host host;
     private final Persistence persistence;
 
@@ -36,7 +44,6 @@ public class TeaseLib {
 
     public final Logger transcript;
 
-    private static final File techLogFile = new File("./logger");
     private static final File transcriptLogFile = new File(
             "./TeaseLib session transcript.log");
 
@@ -431,28 +438,35 @@ public class TeaseLib {
     }
 
     private static String makePropertyName(String namespace, String name) {
-        return namespace + "." + name;
+        return namespace.toLowerCase() + "." + name.toLowerCase();
     }
 
     private static String makePropertyName(String namespace, Enum<?> name) {
-        return namespace + "." + name.getClass().getSimpleName() + "."
-                + name.name();
+        boolean noClassName = name instanceof Toys || name instanceof Clothing;
+        if (noClassName && (TOYSPACE.equals(namespace)
+                || CLOTHINGSPACE.equals(namespace))) {
+            return namespace.toLowerCase() + "." + name.name().toLowerCase();
+        } else {
+            return namespace.toLowerCase() + "."
+                    + name.getClass().getSimpleName().toLowerCase() + "."
+                    + name.name().toLowerCase();
+        }
     }
 
     public <T extends Enum<?>> Item<T> getToy(T toy) {
-        return item("toys", toy);
+        return item(TOYSPACE, toy);
     }
 
-    public <T extends Enum<?>> Item<T> getClothing(T item) {
-        return item("clothes", item);
+    public <T extends Enum<?>> Item<T> getClothing(Object wearer, T item) {
+        return item(wearer.toString(), item);
     }
 
     public <T> Item<T> getToy(T toy) {
-        return item("toys", toy);
+        return item(TOYSPACE, toy);
     }
 
-    public <T> Item<T> getClothing(T item) {
-        return item("clothes", item);
+    public <T> Item<T> getClothing(Object wearer, T item) {
+        return item(wearer.toString(), item);
     }
 
     public TextVariables getTextVariables(String locale) {
@@ -598,8 +612,7 @@ public class TeaseLib {
      * @return The item that corresponds to the enumeration member
      */
     public <T extends Enum<?>> Item<T> item(String namespace, T value) {
-        return new Item<T>(value, new PersistentBoolean(namespace, value),
-                Item.createDisplayName(value));
+        return new Item<T>(value, new PersistentBoolean(namespace, value));
     }
 
     /**
@@ -613,8 +626,7 @@ public class TeaseLib {
      */
     public <T> Item<T> item(String namespace, T value) {
         return new Item<T>(value,
-                new PersistentBoolean(namespace, value.toString()),
-                Item.createDisplayName(value));
+                new PersistentBoolean(namespace, value.toString()));
     }
 
     public Actor getDominant(String locale) {

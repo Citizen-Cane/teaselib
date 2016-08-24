@@ -15,9 +15,14 @@ public class Item<T> {
     public final TeaseLib.PersistentBoolean value;
     public final String displayName;
 
-    public static String createDisplayName(Object name) {
-        String displayName = name.toString().replace("_", " ");
-        return displayName;
+    public static String createDisplayName(Object item) {
+        return item.toString().replace("_", " ");
+    }
+
+    public Item(T item, TeaseLib.PersistentBoolean value) {
+        this.item = item;
+        this.value = value;
+        this.displayName = createDisplayName(item);
     }
 
     public Item(T item, TeaseLib.PersistentBoolean value, String displayName) {

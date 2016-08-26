@@ -442,7 +442,7 @@ public class TeaseLib {
     }
 
     private static String makePropertyName(String namespace, Enum<?> name) {
-        boolean noClassName = name instanceof Toys || name instanceof Clothing;
+        boolean noClassName = name instanceof Toys || name instanceof Clothes;
         if (noClassName && (TOYSPACE.equals(namespace)
                 || CLOTHINGSPACE.equals(namespace))) {
             return namespace.toLowerCase() + "." + name.name().toLowerCase();

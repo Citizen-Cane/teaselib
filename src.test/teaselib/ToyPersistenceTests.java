@@ -40,7 +40,7 @@ public class ToyPersistenceTests {
     public void testToysAndClothing() {
         teaseLib.getToy(Toys.Ball_Gag).setAvailable(true);
         assertTrue(persistence.storage.containsKey("toys.ball_gag"));
-        teaseLib.getClothing(Clothing.Female, Clothing.High_Heels)
+        teaseLib.getClothing(Clothes.Female, Clothes.High_Heels)
                 .setAvailable(true);
         assertTrue(
                 persistence.storage.containsKey("female.clothing.high_heels"));
@@ -52,9 +52,9 @@ public class ToyPersistenceTests {
         teaseLib.item(namespace, Toys.Ball_Gag).setAvailable(true);
         assertTrue(persistence.storage.containsKey(namespace.toLowerCase() + "."
                 + Toys.class.getSimpleName().toLowerCase() + ".ball_gag"));
-        teaseLib.item(namespace, Clothing.High_Heels).setAvailable(true);
+        teaseLib.item(namespace, Clothes.High_Heels).setAvailable(true);
         assertTrue(persistence.storage.containsKey(namespace.toLowerCase() + "."
-                + Clothing.class.getSimpleName().toLowerCase()
+                + Clothes.class.getSimpleName().toLowerCase()
                 + ".high_heels"));
     }
 }

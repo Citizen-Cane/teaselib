@@ -24,12 +24,11 @@ public enum Toys {
     Baby_Oil,
     Ball_Gag,
     Ball_Stretcher,
-    Bells,
+    Bell,
     Belt,
     Ben_Wa_Balls,
     Bit_Gag,
     Blindfold,
-    Breast_Forms,
     Buttplug,
     Candle,
     Cane,
@@ -75,7 +74,6 @@ public enum Toys {
     Penis_Pump,
     Plants,
     Posture_Collar,
-    Princess_Tiara,
     Pussy_Clamps,
     Ring_Gag,
     Rope,
@@ -97,16 +95,15 @@ public enum Toys {
     Weights,
     Whip,
     Wife,
-    Wooden_Spoon,
-    Worshiping_Shoes,;
+    Wooden_Spoon,;
 
     /**
      * The basic toy set, without specializations.
      */
     public final static Toys Basic[] = { Ankle_Cuffs, Anal_Dildo, Ball_Gag,
             Bit_Gag, Blindfold, Buttplug, Cane, Chains, Chastity_Cage, Collar,
-            Dildo, Handcuffs, Humbler, Rope, Nipple_clamps, Paddle,
-            Pussy_Clamps, Ring_Gag, Rope, Vibrator };
+            Dildo, Handcuffs, Humbler, Nipple_clamps, Paddle, Pussy_Clamps,
+            Ring_Gag, Rope, Vibrator };
 
     public final static Toys Advanced[] = { Anal_Beads, Ball_Stretcher,
             Ben_Wa_Balls, Cockring, Crop, Doll, Enema_Bulb, Enema_Kit,
@@ -114,8 +111,8 @@ public enum Toys {
             Inflatable_Dildo, Leather_Ankle_Cuffs, Leather_Wrist_Cuffs,
             Muzzle_Gag, Penis_Gag, Whip };
 
-    public final static Toys Other[] = { Ass_Hook, Breast_Forms, Chastity_Belt,
-            Diaper, Flogger, Penis_Pump, Posture_Collar, Spreader_Bar,
+    public final static Toys Other[] = { Ass_Hook, Chastity_Belt, Diaper,
+            Flogger, Penis_Pump, Posture_Collar, Spreader_Bar,
             SelfBondage_TimeLock, Strap_On, Vibrating_Buttplug, Vibrating_Dildo,
             Vibrating_Egg };
 
@@ -124,19 +121,14 @@ public enum Toys {
             SelfBondage_TimeLock_Computer_Controlled,
             Vibrating_Computer_Controlled_Device, Webcam };
 
-    public final static Toys HouseHoldItems[] = { Baby_Oil, Belt, Candle,
+    public final static Toys HouseHoldItems[] = { Baby_Oil, Bell, Belt, Candle,
             Cigarette, Clothespins, Condoms, Dog_Collar, Duct_Tape, Hairbrush,
             Heat_Rub, Husband, Ice_Tray, Leash, Lube, Padlocks, Plants,
             Rubber_bands, Ruler, Shoe_Lace, Shrinkwrap, Tampon, Weights, Wife,
             Wooden_Spoon };
 
-    public final static Toys Accesoires[] = { Bells };
-
-    public final static Toys WorshipingItems[] = { Princess_Tiara,
-            Worshiping_Shoes };
-
     public final static Toys[] Categories[] = { Basic, Advanced, Other,
-            ComputerDevices, HouseHoldItems, Accesoires, WorshipingItems };
+            ComputerDevices, HouseHoldItems };
 
     // More categories
 
@@ -144,9 +136,9 @@ public enum Toys {
             Toys.Anal_Dildo, Toys.Buttplug, Toys.Inflatable_Buttplug,
             Toys.Vibrating_Buttplug };
 
-    public final static Toys VaginalToys[] = { Toys.Ben_Wa_Balls,
-            Toys.Anal_Dildo, Toys.Dildo, Toys.Inflatable_Dildo,
-            Toys.Vibrating_Dildo, Toys.Vibrating_Egg, Toys.Vibrator };
+    public final static Toys VaginalToys[] = { Toys.Ben_Wa_Balls, Toys.Dildo,
+            Toys.Inflatable_Dildo, Toys.Vibrating_Dildo, Toys.Vibrating_Egg,
+            Toys.Vibrator };
 
     public final static Toys Buttplugs[] = { Toys.Buttplug,
             Toys.Inflatable_Buttplug, Toys.Vibrating_Buttplug };
@@ -158,12 +150,12 @@ public enum Toys {
             Toys.EStim_Computer_Controlled_Device };
 
     public final static Toys Gags[] = { Toys.Ball_Gag, Toys.Bit_Gag,
-            Toys.Penis_Gag, Toys.Ring_Gag };
+            Toys.Muzzle_Gag, Toys.Penis_Gag, Toys.Ring_Gag };
 
     public final static Toys Chastity_Devices[] = { Toys.Chastity_Belt,
-            Toys.Chastity_Cage };
+            Toys.Chastity_Cage, Toys.Gates_Of_Hell };
 
-    public final static Toys Collars[] = { Toys.Dog_Collar, Toys.Collar,
+    public final static Toys Collars[] = { Toys.Collar, Toys.Dog_Collar,
             Toys.Posture_Collar };
 
     public final static Toys Vibrators[] = { Toys.Vibrator, Toys.Vibrating_Egg,

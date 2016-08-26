@@ -4,7 +4,7 @@ import java.util.Locale;
 
 import ss.IScript;
 import teaselib.Actor;
-import teaselib.Clothing;
+import teaselib.Clothes;
 import teaselib.Images;
 import teaselib.Toys;
 import teaselib.core.Persistence;
@@ -73,15 +73,15 @@ public class SexScriptsStatePersistence implements Persistence {
      */
     private static String mapName(String name) {
         if (name.contains(
-                ("Male." + Clothing.class.getSimpleName()).toLowerCase()
+                ("Male." + Clothes.class.getSimpleName()).toLowerCase()
                         + ".")) {
             name = name.substring(name.indexOf(
-                    Clothing.class.getSimpleName().toLowerCase() + "."));
+                    Clothes.class.getSimpleName().toLowerCase() + "."));
         } else if (name.contains(
-                ("Female." + Clothing.class.getSimpleName()).toLowerCase()
+                ("Female." + Clothes.class.getSimpleName()).toLowerCase()
                         + ".")) {
             name = name.substring(name.indexOf(
-                    Clothing.class.getSimpleName().toLowerCase() + "."));
+                    Clothes.class.getSimpleName().toLowerCase() + "."));
         } else if (("toys." + Toys.Ball_Gag.name()).equalsIgnoreCase(name)) {
             name = "toys.ballgag";
         }

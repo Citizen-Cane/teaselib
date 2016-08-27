@@ -9,8 +9,6 @@ import java.util.concurrent.TimeUnit;
 
 import teaselib.TeaseLib.Duration;
 
-// todo global get without script
-
 /**
  * @author someone
  *
@@ -20,7 +18,7 @@ public class State<T extends Enum<T>> {
     final TeaseLib teaseLib;
     final Map<T, Item> state = new HashMap<T, Item>();
 
-    public State(TeaseLib teaseLib, Class<Enum<?>> enumClass) {
+    public State(TeaseLib teaseLib, Class<T> enumClass) {
         super();
         this.teaseLib = teaseLib;
         for (T value : values(enumClass)) {
@@ -32,28 +30,22 @@ public class State<T extends Enum<T>> {
         }
     }
 
-    @SuppressWarnings({ "unchecked", "static-method" })
-    private T[] values(Class<Enum<?>> enumClass) {
-        return (T[]) enumClass.getEnumConstants();
+    private T[] values(Class<T> enumClass) {
+        return (enumClass.getEnumConstants());
     }
 
-    private String namespaceOf(Enum<T> item) {
+    private String namespaceOf(T item) {
         return item.getClass().getName();
     }
 
-    private String nameOf(Enum<T> item) {
+    private String nameOf(T item) {
         return item.name();
     }
 
-    private void save(T item, Duration duration, long time, TimeUnit unit) {
-        teaseLib.set(namespaceOf(item), nameOf(item),
-                persisted(duration.start, unit.toSeconds(time)));
-    }
-
     public class Item {
-        public final T item;
-        public final Duration duration;
-        public final long howLongSeconds;
+        private final T item;
+        Duration duration;
+        private long expected;
 
         /**
          * Apply an item infinitely
@@ -73,13 +65,8 @@ public class State<T extends Enum<T>> {
          *            or 0 to remove.
          */
         Item(T item, long time, TimeUnit unit) {
-            super();
             this.item = item;
-            this.duration = teaseLib.new Duration();
-            this.howLongSeconds = unit.toSeconds(time);
-            if (howLongSeconds > 0) {
-                save(item, duration, time, unit);
-            }
+            apply(time, unit);
         }
 
         /**
@@ -92,50 +79,100 @@ public class State<T extends Enum<T>> {
         private Item(T item, long startTimeSeconds, long howLongSeconds) {
             this.item = item;
             this.duration = teaseLib.new Duration(startTimeSeconds);
-            this.howLongSeconds = howLongSeconds;
+            this.expected = howLongSeconds;
+            if (howLongSeconds > 0) {
+                save();
+            }
+        }
+
+        public Duration getDuration() {
+            return duration;
+        }
+
+        public boolean valid() {
+            return !expired();
         }
 
         public boolean expired() {
-            return duration.elapsed(TimeUnit.SECONDS) > howLongSeconds;
+            return duration.elapsed(TimeUnit.SECONDS) >= expected;
         }
 
+        /**
+         * Time until the item expires.
+         * 
+         * @param unit
+         *            THe unit of the return value.
+         * @return The remaining time for the item.
+         */
         public long remaining(TimeUnit unit) {
-            final long now = teaseLib.getTime(unit);
-            final long end = unit.convert(duration.elapsedSeconds()
-                    + duration.start + howLongSeconds, TimeUnit.SECONDS);
-            final long remaining = Math.max(0, end - now);
+            long now = teaseLib.getTime(unit);
+            long end = unit.convert(
+                    duration.elapsedSeconds() + duration.start + expected,
+                    TimeUnit.SECONDS);
+            long remaining = Math.max(0, end - now);
             return remaining;
         }
 
+        /**
+         * @return Whether the item is currently applied.
+         * 
+         */
         public boolean applied() {
-            return howLongSeconds > 0;
+            return expected > 0;
         }
 
         public boolean freeSince(long time, TimeUnit unit) {
             return duration.elapsed(unit) >= time;
         }
 
+        /**
+         * Remove the item.
+         */
         public void remove() {
+            clear();
             State.this.remove(item);
         }
 
         /**
          * Clears the item.
-         * 
+         * <p>
          * Last usage including apply-duration is written to duration start, so
          * duration denotes the time the item was taken off.
-         * 
+         * <p>
          * As a result, for an item that is not applied, the duration elapsed
          * time is the duration the item hasn't been applied since the last
          * usage
          */
-        public void clear() {
-            teaseLib.set(
-                    namespaceOf(item),
-                    nameOf(item),
-                    persisted(
-                            duration.start + duration.elapsed(TimeUnit.SECONDS),
-                            0));
+        private void clear() {
+            duration = teaseLib.new Duration(
+                    duration.start + duration.elapsed(TimeUnit.SECONDS));
+            expected = 0;
+            save();
+        }
+
+        public void apply() {
+            apply(Long.MAX_VALUE, TimeUnit.SECONDS);
+        }
+
+        /**
+         * Start a duration on the item. This clears any previous durations.
+         * 
+         * @param time
+         * @param unit
+         */
+        public void apply(long time, TimeUnit unit) {
+            this.duration = teaseLib.new Duration();
+            this.expected = unit.toSeconds(time);
+            save();
+        }
+
+        private void save() {
+            if (expected > 0 && expected < Long.MAX_VALUE) {
+                teaseLib.set(namespaceOf(item), nameOf(item),
+                        persisted(duration.start, expected));
+            } else {
+                teaseLib.clear(namespaceOf(item), nameOf(item));
+            }
         }
     }
 
@@ -148,19 +185,19 @@ public class State<T extends Enum<T>> {
     }
 
     public Item add(T item) {
-        final Item value = new Item(item);
+        Item value = new Item(item);
         state.put(item, value);
         return value;
     }
 
     public Item add(T item, long time, TimeUnit unit) {
-        final Item value = new Item(item, time, unit);
+        Item value = new Item(item, time, unit);
         state.put(item, value);
         return value;
     }
 
     Item add(T item, long startSeconds, long howLongSeconds) {
-        final Item value = new Item(item, startSeconds, howLongSeconds);
+        Item value = new Item(item, startSeconds, howLongSeconds);
         state.put(item, value);
         return value;
     }

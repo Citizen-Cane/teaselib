@@ -247,8 +247,4 @@ public abstract class TeaseScriptPersistence extends TeaseScriptBase {
     public <T extends Enum<T>> State<T>.Item state(T item) {
         return teaseLib.state(item);
     }
-
-    public <T extends Enum<T>> State<T> state(T[] values) {
-        return teaseLib.state(values);
-    }
 }

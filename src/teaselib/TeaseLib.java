@@ -533,14 +533,14 @@ public class TeaseLib {
      */
     @SuppressWarnings("unchecked")
     public <T extends Enum<T>> State<T>.Item state(T item) {
-        Class<Enum<?>> enumClass = (Class<Enum<?>>) item.getClass();
-        final State<T> state = state(enumClass);
-        final State<T>.Item stateItem;
+        Class<T> enumClass = (Class<T>) item.getClass();
+        State<T> state = state(enumClass);
+        State<T>.Item stateItem;
         if (state.has(item)) {
             stateItem = state.get(item);
         } else {
             // If there is no entry, we can assume that the item hasn't been
-            // used yet, or that the apply durations doens't matter
+            // used yet, or no duration was applied
             // -> mark the item as not applied, and taken off a long time ago
             // -> checks against elapsed() do always succeed in this case,
             // allowing for simpler coding on the application layer
@@ -556,11 +556,11 @@ public class TeaseLib {
      *            The values to retrieve the state for. This should be
      *            {@code Enum.values()}, as the state will only contain the
      *            state items for the listed values.
-     * @return The state of all members of the {@code values} parameter
+     * @return The state of all members in {@code values}.
      */
     @SuppressWarnings("unchecked")
-    public <T extends Enum<T>> State<T> state(T[] values) {
-        Class<Enum<?>> enumClass = (Class<Enum<?>>) values[0].getClass();
+    <T extends Enum<T>> State<T> state(T[] values) {
+        Class<T> enumClass = (Class<T>) values[0].getClass();
         return state(enumClass);
     }
 
@@ -572,7 +572,7 @@ public class TeaseLib {
      * @return The state of all members of the enumeration.
      */
     @SuppressWarnings("unchecked")
-    public <T extends Enum<T>> State<T> state(Class<Enum<?>> enumClass) {
+    private <T extends Enum<T>> State<T> state(Class<T> enumClass) {
         final State<T> state;
         if (states.containsKey(enumClass)) {
             state = (State<T>) states.get(enumClass);

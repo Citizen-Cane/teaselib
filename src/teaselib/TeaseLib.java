@@ -36,39 +36,13 @@ public class TeaseLib {
     private static final File transcriptLogFile = new File(
             "./TeaseLib session transcript.log");
 
-    private static TeaseLib instance;
-
     public final Host host;
     private final Persistence persistence;
     public final Logger transcript;
     private final Map<Class<?>, State<? extends Enum<?>>> states = new HashMap<Class<?>, State<? extends Enum<?>>>();
     public final MediaRendererQueue renderQueue = new MediaRendererQueue();
 
-    /**
-     * Call this function from the host in order to initialize TeaseLib
-     * 
-     * @param host
-     * @param persistence
-     * @return The teaselib instance created during the initialization
-     */
-    public static TeaseLib init(Host host, Persistence persistence) {
-        synchronized (TeaseLib.class) {
-            if (instance == null) {
-                instance = new TeaseLib(host, persistence);
-            }
-        }
-        return instance;
-    }
-
-    public static TeaseLib instance() {
-        if (instance == null) {
-            throw new IllegalStateException(
-                    "Please create a TeaseLib instance first");
-        }
-        return instance;
-    }
-
-    private TeaseLib(Host host, Persistence persistence) {
+    public TeaseLib(Host host, Persistence persistence) {
         if (host == null || persistence == null) {
             throw new IllegalArgumentException();
         }

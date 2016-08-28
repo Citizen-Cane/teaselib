@@ -17,10 +17,10 @@ import teaselib.hosts.DummyPersistence;
  *
  */
 public class PersistenceTest {
-    final static String namespace = "JUnit test";
-    final static TeaseLib teaseLib = TeaseLib.init(new DummyHost(),
-            new DummyPersistence());
-    final static TeaseScript script = new TeaseScript(teaseLib,
+    final DummyPersistence persistence = new DummyPersistence();
+    final TeaseLib teaseLib = new TeaseLib(new DummyHost(), persistence);
+    final String namespace = "JUnit test";
+    final TeaseScript script = new TeaseScript(teaseLib,
             new ResourceLoader(PersistenceTest.class),
             new Actor("Test", Voice.Gender.Female, "en-us"), namespace) {
         @Override

@@ -18,11 +18,10 @@ import teaselib.hosts.DummyPersistence;
  *
  */
 public class ToyPersistenceTests {
-    final static DummyPersistence persistence = new DummyPersistence();
-    final static String namespace = "JUnit test";
-    final static TeaseLib teaseLib = TeaseLib.init(new DummyHost(),
-            persistence);
-    final static TeaseScript script = new TeaseScript(teaseLib,
+    final DummyPersistence persistence = new DummyPersistence();
+    final TeaseLib teaseLib = new TeaseLib(new DummyHost(), persistence);
+    final String namespace = "JUnit test";
+    final TeaseScript script = new TeaseScript(teaseLib,
             new ResourceLoader(PersistenceTest.class),
             new Actor("Test", Voice.Gender.Female, "en-us"), namespace) {
         @Override
@@ -43,7 +42,7 @@ public class ToyPersistenceTests {
         teaseLib.getClothing(Clothes.Female, Clothes.High_Heels)
                 .setAvailable(true);
         assertTrue(
-                persistence.storage.containsKey("female.clothing.high_heels"));
+                persistence.storage.containsKey("female.clothes.high_heels"));
     }
 
     @Test
@@ -54,7 +53,6 @@ public class ToyPersistenceTests {
                 + Toys.class.getSimpleName().toLowerCase() + ".ball_gag"));
         teaseLib.item(namespace, Clothes.High_Heels).setAvailable(true);
         assertTrue(persistence.storage.containsKey(namespace.toLowerCase() + "."
-                + Clothes.class.getSimpleName().toLowerCase()
-                + ".high_heels"));
+                + Clothes.class.getSimpleName().toLowerCase() + ".high_heels"));
     }
 }

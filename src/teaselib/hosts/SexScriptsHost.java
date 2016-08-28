@@ -33,7 +33,6 @@ import org.slf4j.LoggerFactory;
 
 import ss.IScript;
 import ss.desktop.MainFrame;
-import teaselib.TeaseLib;
 import teaselib.core.Host;
 import teaselib.core.ResourceLoader;
 import teaselib.core.ScriptInterruptedException;
@@ -596,7 +595,10 @@ public class SexScriptsHost implements Host {
                         showPopupTask.showPopup();
                     }
                     delegate.run();
-                    TeaseLib.instance().sleep(100, TimeUnit.MILLISECONDS);
+                    try {
+                        Thread.sleep(100);
+                    } catch (InterruptedException ignored) {
+                    }
                 }
             }
             throw new ScriptInterruptedException();

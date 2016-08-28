@@ -120,7 +120,7 @@ class ShowChoices {
                                     + " - skipping RecognitionRejectedScript "
                                     + speechRecognitionRejectedScript
                                             .toString());
-                        } else if (!script.renderQueue.hasCompletedAll()) {
+                        } else if (!teaseLib.renderQueue.hasCompletedAll()) {
                             // must complete all to avoid parallel rendering
                             // see {@link Message#ShowChoices}
                             logger.info(" message rendering still in progress"

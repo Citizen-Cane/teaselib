@@ -7,7 +7,6 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import teaselib.TeaseLib;
 import teaselib.core.media.MediaRenderer.Replay.Position;
 import teaselib.core.media.MediaRenderer.Threaded;
 
@@ -35,8 +34,6 @@ public class MediaRendererQueue {
     public void start(Collection<MediaRenderer> renderers) {
         synchronized (threadedMediaRenderers) {
             threadedMediaRenderers.clear();
-            // Start a new message in the log
-            TeaseLib.instance().transcript.info("");
             for (MediaRenderer r : renderers) {
                 if (r instanceof MediaRenderer.Threaded) {
                     threadedMediaRenderers.put(r.getClass(),

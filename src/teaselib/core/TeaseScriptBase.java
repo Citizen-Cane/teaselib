@@ -17,7 +17,6 @@ import teaselib.ScriptFunction;
 import teaselib.TeaseLib;
 import teaselib.core.media.MediaRenderer;
 import teaselib.core.media.MediaRenderer.Replay.Position;
-import teaselib.core.media.MediaRendererQueue;
 import teaselib.core.media.RenderInterTitle;
 import teaselib.core.media.RenderMessage;
 import teaselib.core.speechrecognition.SpeechRecognitionResult.Confidence;
@@ -41,7 +40,6 @@ public abstract class TeaseScriptBase {
     protected static final int NoTimeout = 0;
 
     private static final ChoicesStack choicesStack = new ChoicesStack();
-    static final MediaRendererQueue renderQueue = new MediaRendererQueue();
     private final List<MediaRenderer> queuedRenderers = new ArrayList<MediaRenderer>();
     private final List<MediaRenderer.Threaded> backgroundRenderers = new ArrayList<MediaRenderer.Threaded>();
 
@@ -64,7 +62,7 @@ public abstract class TeaseScriptBase {
                 // Restore the prompt that caused running the SR-rejected script
                 // as soon as possible
                 endAll();
-                renderQueue.replay(renderers, replayPosition);
+                teaseLib.renderQueue.replay(renderers, replayPosition);
                 playedRenderers = renderers;
             }
         }
@@ -83,7 +81,7 @@ public abstract class TeaseScriptBase {
         this.actor = actor;
         this.namespace = namespace;
         TextToSpeechPlayer ttsPlayer = TextToSpeechPlayer.instance();
-        // This hardwires sound resources to a sub folder %namespace% in the
+        // This hard-wires sound resources to a sub folder %namespace% in the
         // root directory
         // TODO be able to store class relative and relative to script class
         // - don't reference resource loader basedir, to make resource loader a
@@ -116,11 +114,11 @@ public abstract class TeaseScriptBase {
     }
 
     public void completeStarts() {
-        renderQueue.completeStarts();
+        teaseLib.renderQueue.completeStarts();
     }
 
     public void completeMandatory() {
-        renderQueue.completeMandatories();
+        teaseLib.renderQueue.completeMandatories();
     }
 
     /**
@@ -129,16 +127,14 @@ public abstract class TeaseScriptBase {
      * display a button, it just waits.
      */
     public void completeAll() {
-        renderQueue.completeAll();
+        teaseLib.renderQueue.completeAll();
     }
 
     /**
      * Stop rendering and end all render threads
      */
     public void endAll() {
-        renderQueue.endAll();
-        // todo Test and remove, since queued renderers are cleared at start
-        // clearQueuedRenderers();
+        teaseLib.renderQueue.endAll();
         stopBackgroundRenderers();
     }
 
@@ -178,26 +174,28 @@ public abstract class TeaseScriptBase {
     }
 
     private void renderMessage(MediaRenderer renderMessage) {
-        synchronized (renderQueue) {
+        synchronized (teaseLib.renderQueue) {
             synchronized (queuedRenderers) {
+                queueRenderer(renderMessage);
+                // Remember this set for replay
+                playedRenderers = new ArrayList<MediaRenderer>(queuedRenderers);
+                // Remember in order to clear queued before completing
+                // previous set
+                List<MediaRenderer> nextSet = new ArrayList<MediaRenderer>(
+                        queuedRenderers);
+                // Must clear queue for next set before completing current,
+                // because if the current set is cancelled,
+                // the next set must be discarded
+                queuedRenderers.clear();
+                // Now the current set can be completed, and canceling the
+                // current set will result in an empty next set
+                completeAll();
+                // Start a new message in the log
+                teaseLib.transcript.info("");
+                teaseLib.renderQueue.start(nextSet);
             }
-            queueRenderer(renderMessage);
-            // Remember this set for replay
-            playedRenderers = new ArrayList<MediaRenderer>(queuedRenderers);
-            // Remember in order to clear queued before completing
-            // previous set
-            List<MediaRenderer> nextSet = new ArrayList<MediaRenderer>(
-                    queuedRenderers);
-            // Must clear queue for next set before completing current,
-            // because if the current set is cancelled,
-            // the next set must be discarded
-            queuedRenderers.clear();
-            // Now the current set can be completed, and canceling the
-            // current set will result in an empty next set
-            completeAll();
-            renderQueue.start(nextSet);
             startBackgroundRenderers();
-            renderQueue.completeStarts();
+            teaseLib.renderQueue.completeStarts();
         }
     }
 

@@ -10,6 +10,7 @@ import java.util.concurrent.TimeUnit;
 import teaselib.core.Host;
 import teaselib.core.Persistence;
 import teaselib.core.ScriptInterruptedException;
+import teaselib.core.media.MediaRendererQueue;
 import teaselib.core.texttospeech.Voice;
 import teaselib.util.Item;
 import teaselib.util.Items;
@@ -28,24 +29,20 @@ import teaselib.util.TextVariables;
  *         All static methods refer to the shared instance
  */
 public class TeaseLib {
-    /**
-     * 
-     */
     private static final String CLOTHINGSPACE = "clothes";
-    /**
-     * 
-     */
+
     private static final String TOYSPACE = "toys";
-    public final Host host;
-    private final Persistence persistence;
-
-    private static TeaseLib instance;
-    private Map<Class<?>, State<? extends Enum<?>>> states = new HashMap<Class<?>, State<? extends Enum<?>>>();
-
-    public final Logger transcript;
 
     private static final File transcriptLogFile = new File(
             "./TeaseLib session transcript.log");
+
+    private static TeaseLib instance;
+
+    public final Host host;
+    private final Persistence persistence;
+    public final Logger transcript;
+    private final Map<Class<?>, State<? extends Enum<?>>> states = new HashMap<Class<?>, State<? extends Enum<?>>>();
+    public final MediaRendererQueue renderQueue = new MediaRendererQueue();
 
     /**
      * Call this function from the host in order to initialize TeaseLib

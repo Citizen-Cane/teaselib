@@ -113,19 +113,14 @@ public class SexScriptsStatePersistence implements Persistence {
     }
 
     @Override
-    public Actor getDominant(String locale) {
-        return getDominant(Voice.Gender.Female, locale);
-    }
-
-    @Override
     public Actor getDominant(Voice.Gender gender, String locale) {
         switch (gender) {
         case Female:
             return new Actor("Mistress", "Miss", Voice.Gender.Female, locale,
-                    Actor.Key.Dominant, Images.None);
+                    Actor.Key.DominantFemale, Images.None);
         case Male:
             return new Actor("Master", "Sir", Voice.Gender.Male, locale,
-                    Actor.Key.Dominant, Images.None);
+                    Actor.Key.DominantMale, Images.None);
         default:
             throw new IllegalArgumentException(gender.toString());
         }

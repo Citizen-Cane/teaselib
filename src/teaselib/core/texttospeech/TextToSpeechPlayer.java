@@ -198,9 +198,8 @@ public class TextToSpeechPlayer {
         }
         // Reuse voice of first non-dominant actor
         for (String actorName : actorKey2TTSVoice.keySet()) {
-            if (actorName.compareToIgnoreCase(Actor.Key.Dominant) != 0
-                    && actorKey2TTSVoice
-                            .get(actorName).gender == actor.gender) {
+            if (!isDominantActor(actorName) && actorKey2TTSVoice
+                    .get(actorName).gender == actor.gender) {
                 Voice voice = actorKey2TTSVoice.get(actorName);
                 logger.info("Reusing voice of actor '" + actorName + "': '"
                         + voice.guid + "' with locale '" + voice.locale
@@ -210,9 +209,8 @@ public class TextToSpeechPlayer {
         }
         // voice of default dominant actor
         for (String actorName : actorKey2TTSVoice.keySet()) {
-            if (actorName.compareToIgnoreCase(Actor.Key.Dominant) == 0
-                    && actorKey2TTSVoice
-                            .get(actorName).gender == actor.gender) {
+            if (isDominantActor(actorName) && actorKey2TTSVoice
+                    .get(actorName).gender == actor.gender) {
                 Voice voice = actorKey2TTSVoice.get(actorName);
                 logger.info("Reusing voice of actor '" + actorName + "': '"
                         + voice.guid + "' with locale '" + voice.locale
@@ -223,6 +221,11 @@ public class TextToSpeechPlayer {
         // No voice
         logger.info("No voice available for actor '" + actor.key + "'");
         return null;
+    }
+
+    private static boolean isDominantActor(String actorName) {
+        return actorName.compareToIgnoreCase(Actor.Key.DominantFemale) == 0
+                || actorName.compareToIgnoreCase(Actor.Key.DominantMale) == 0;
     }
 
     public Voice acquireVoice(Actor actor) {

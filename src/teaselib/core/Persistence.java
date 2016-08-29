@@ -33,7 +33,5 @@ public interface Persistence {
      */
     TextVariables getTextVariables(String locale);
 
-    public Actor getDominant(String locale);
-
     public Actor getDominant(Voice.Gender gender, String locale);
 }

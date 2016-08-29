@@ -600,10 +600,6 @@ public class TeaseLib {
                 new PersistentBoolean(namespace, value.toString()));
     }
 
-    public Actor getDominant(String locale) {
-        return persistence.getDominant(locale);
-    }
-
     public Actor getDominant(Voice.Gender gender, String locale) {
         return persistence.getDominant(gender, locale);
     }

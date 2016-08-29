@@ -6,7 +6,6 @@ import java.io.InputStream;
 
 import org.slf4j.LoggerFactory;
 
-import teaselib.TeaseLib;
 import teaselib.core.ResourceLoader;
 
 public class ActorVoices extends VoiceProperties {
@@ -28,9 +27,8 @@ public class ActorVoices extends VoiceProperties {
                 }
             }
         } catch (IOException e) {
-            logger
-                    .info("No actor voices configuration found in '" + resource
-                            + "' - using defaults");
+            logger.info("No actor voices configuration found in '" + resource
+                    + "' - using defaults");
         }
     }
 

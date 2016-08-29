@@ -16,10 +16,9 @@ import java.util.regex.Pattern;
 
 import org.junit.Test;
 
-import teaselib.Actor;
 import teaselib.TeaseLib;
 import teaselib.TeaseScript;
-import teaselib.core.texttospeech.Voice;
+import teaselib.core.texttospeech.Voice.Gender;
 import teaselib.hosts.DummyHost;
 import teaselib.hosts.DummyPersistence;
 
@@ -35,11 +34,11 @@ public class TeaseScriptResourceLoadingTest {
     private static final String RESOURCE_1 = "resource1.txt";
 
     private static TeaseScript createTestScript() {
-        TeaseScript script = new TeaseScript(
-                new TeaseLib(new DummyHost(), new DummyPersistence()),
+        TeaseLib teaseLib = new TeaseLib(new DummyHost(),
+                new DummyPersistence());
+        TeaseScript script = new TeaseScript(teaseLib,
                 new ResourceLoader(TeaseScriptResourceLoadingTest.class),
-                new Actor(Actor.Key.Dominant, Voice.Gender.Female, "en-us"),
-                "test") {
+                teaseLib.getDominant(Gender.Female, "en-us"), "test") {
             @Override
             public void run() {
             }

@@ -7,7 +7,8 @@ import teaselib.util.TextVariables;
 
 public class Actor {
     public class Key {
-        public final static String Dominant = "Dominant";
+        public final static String DominantFemale = "Dominant.Female";
+        public final static String DominantMale = "Dominant.Male";
     }
 
     /**
@@ -82,14 +83,14 @@ public class Actor {
 
     public Actor(String fullName, String title, Voice.Gender gender,
             String locale) {
-        this(fullName, title, title, gender, locale,
-                key(fullName, gender, locale), Images.None);
+        this(fullName, title, title, gender, locale, key(fullName, gender),
+                Images.None);
     }
 
     public Actor(String fullName, Voice.Gender gender, String locale,
             Images images) {
         this(fullName, fullName, fullName, gender, locale,
-                key(fullName, gender, locale), images);
+                key(fullName, gender), images);
     }
 
     public Actor(String fullName, String title, Voice.Gender gender,
@@ -99,8 +100,8 @@ public class Actor {
 
     public Actor(String fullName, String title, String name,
             Voice.Gender gender, String locale, Images images) {
-        this(fullName, title, name, gender, locale,
-                key(fullName, gender, locale), images);
+        this(fullName, title, name, gender, locale, key(fullName, gender),
+                images);
     }
 
     public Actor(String fullName, String title, String name,
@@ -129,8 +130,8 @@ public class Actor {
         return locale.substring(0, 2);
     }
 
-    private static String key(String fullName, Gender gender, String language) {
-        return fullName + "." + gender + "." + language;
+    private static String key(String fullName, Gender gender) {
+        return fullName + "." + gender;
     }
 
     public String get(Enum<?> formOfAddress) {

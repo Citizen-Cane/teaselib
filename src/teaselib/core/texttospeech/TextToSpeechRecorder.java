@@ -60,6 +60,7 @@ public class TextToSpeechRecorder {
         available.store(assetsDir);
         actorVoices = new ActorVoices(resources, speechResourcesPath);
         logger.info("Build start: " + new Date(buildStart).toString());
+        ttsPlayer.loadActorVoices(resources, speechResourcesPath);
     }
 
     private static File createSubDir(File dir, String name) {

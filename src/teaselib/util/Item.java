@@ -3,7 +3,7 @@
  */
 package teaselib.util;
 
-import teaselib.TeaseLib;
+import teaselib.core.TeaseLib;
 
 /**
  * @author someone

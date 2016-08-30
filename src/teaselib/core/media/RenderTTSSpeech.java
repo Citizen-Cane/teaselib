@@ -1,7 +1,7 @@
 package teaselib.core.media;
 
 import teaselib.Actor;
-import teaselib.TeaseLib;
+import teaselib.core.TeaseLib;
 import teaselib.core.texttospeech.TextToSpeechPlayer;
 
 public class RenderTTSSpeech extends RenderSpeech {

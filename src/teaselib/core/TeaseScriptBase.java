@@ -14,7 +14,6 @@ import teaselib.Actor;
 import teaselib.Message;
 import teaselib.Mood;
 import teaselib.ScriptFunction;
-import teaselib.TeaseLib;
 import teaselib.core.media.MediaRenderer;
 import teaselib.core.media.MediaRenderer.Replay.Position;
 import teaselib.core.media.RenderInterTitle;

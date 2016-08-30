@@ -7,6 +7,7 @@ import java.util.concurrent.TimeUnit;
 import org.junit.Test;
 
 import teaselib.core.ResourceLoader;
+import teaselib.core.TeaseLib;
 import teaselib.core.texttospeech.Voice;
 import teaselib.hosts.DummyHost;
 import teaselib.hosts.DummyPersistence;
@@ -26,27 +27,27 @@ public class StateTests {
 
     @Test
     public void testLocalState() {
-        State<Body>.Item item = script.state(Body.SomethingOnNipples);
-        assertFalse(item.applied());
-        item.apply();
-        assertTrue(item.applied());
-        assertFalse(item.expired());
-        item.remove();
-        assertTrue(item.expired());
-        assertFalse(item.applied());
+        State somethingOnNipples = script.state(Body.SomethingOnNipples);
+        assertFalse(somethingOnNipples.applied());
+        somethingOnNipples.apply();
+        assertTrue(somethingOnNipples.applied());
+        assertFalse(somethingOnNipples.expired());
+        somethingOnNipples.remove();
+        assertTrue(somethingOnNipples.expired());
+        assertFalse(somethingOnNipples.applied());
     }
 
     @Test
     public void testPersistentState() {
-        State<Body>.Item item = script.state(Body.SomethingOnNipples);
-        assertFalse(item.applied());
-        item.apply(30, TimeUnit.MINUTES);
-        assertTrue(item.applied());
-        assertFalse(item.expired());
-        assertEquals(30, item.remaining(TimeUnit.MINUTES));
-        item.remove();
-        assertTrue(item.expired());
-        assertFalse(item.applied());
+        State somethingOnNipples = script.state(Body.SomethingOnNipples);
+        assertFalse(somethingOnNipples.applied());
+        somethingOnNipples.apply(30, TimeUnit.MINUTES);
+        assertTrue(somethingOnNipples.applied());
+        assertFalse(somethingOnNipples.expired());
+        assertEquals(30, somethingOnNipples.remaining(TimeUnit.MINUTES));
+        somethingOnNipples.remove();
+        assertTrue(somethingOnNipples.expired());
+        assertFalse(somethingOnNipples.applied());
     }
 
 }

@@ -3,7 +3,7 @@ package teaselib.core.media;
 import java.io.IOException;
 
 import teaselib.Message;
-import teaselib.TeaseLib;
+import teaselib.core.TeaseLib;
 
 public class RenderInterTitle extends MediaRendererThread {
     private final Message message;

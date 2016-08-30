@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import teaselib.core.ResourceLoader;
+import teaselib.core.TeaseLib;
 import teaselib.core.TeaseScriptBase;
 
 /**

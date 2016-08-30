@@ -13,7 +13,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import teaselib.ScriptFunction;
-import teaselib.TeaseLib;
 import teaselib.core.concurrency.NamedExecutorService;
 import teaselib.core.events.Delegate;
 

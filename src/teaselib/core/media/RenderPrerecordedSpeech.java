@@ -2,8 +2,8 @@ package teaselib.core.media;
 
 import java.io.IOException;
 
-import teaselib.TeaseLib;
 import teaselib.core.ResourceLoader;
+import teaselib.core.TeaseLib;
 
 public class RenderPrerecordedSpeech extends RenderSpeech {
     private final ResourceLoader resources;

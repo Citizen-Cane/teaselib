@@ -16,7 +16,6 @@ import java.util.regex.Pattern;
 
 import org.junit.Test;
 
-import teaselib.TeaseLib;
 import teaselib.TeaseScript;
 import teaselib.core.texttospeech.Voice.Gender;
 import teaselib.hosts.DummyHost;

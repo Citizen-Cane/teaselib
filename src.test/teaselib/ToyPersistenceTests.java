@@ -9,6 +9,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import teaselib.core.ResourceLoader;
+import teaselib.core.TeaseLib;
 import teaselib.core.texttospeech.Voice;
 import teaselib.hosts.DummyHost;
 import teaselib.hosts.DummyPersistence;

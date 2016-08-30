@@ -21,7 +21,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import teaselib.Config;
-import teaselib.TeaseLib;
 
 public class ResourceLoader {
     private static final Logger logger = LoggerFactory

@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 
 import teaselib.ScriptFunction.Relation;
 import teaselib.core.ResourceLoader;
+import teaselib.core.TeaseLib;
 import teaselib.core.events.Event;
 import teaselib.core.events.EventSource;
 import teaselib.core.media.MediaRenderer;

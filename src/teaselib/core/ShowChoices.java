@@ -13,7 +13,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import teaselib.ScriptFunction;
-import teaselib.TeaseLib;
 import teaselib.core.events.Delegate;
 import teaselib.core.events.Event;
 import teaselib.core.speechrecognition.SpeechRecognition;

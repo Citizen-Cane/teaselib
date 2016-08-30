@@ -17,9 +17,9 @@ import teaselib.Config;
 import teaselib.Message;
 import teaselib.Message.Part;
 import teaselib.Mood;
-import teaselib.TeaseLib;
 import teaselib.core.Prefetcher;
 import teaselib.core.ResourceLoader;
+import teaselib.core.TeaseLib;
 import teaselib.core.texttospeech.TextToSpeech;
 import teaselib.core.texttospeech.TextToSpeechPlayer;
 

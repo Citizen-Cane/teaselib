@@ -4,7 +4,7 @@ import java.awt.Desktop;
 import java.io.File;
 import java.io.IOException;
 
-import teaselib.TeaseLib;
+import teaselib.core.TeaseLib;
 
 /**
  * Image is a default command. As such, every action has one, but since it

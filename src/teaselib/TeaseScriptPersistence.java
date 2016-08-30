@@ -4,6 +4,7 @@
 package teaselib;
 
 import teaselib.core.ResourceLoader;
+import teaselib.core.TeaseLib;
 import teaselib.core.TeaseScriptBase;
 import teaselib.util.Item;
 import teaselib.util.Items;
@@ -244,7 +245,7 @@ public abstract class TeaseScriptPersistence extends TeaseScriptBase {
         return teaseLib.new PersistentSequence<T>(namespace, name, values);
     }
 
-    public <T extends Enum<T>> State<T>.Item state(T item) {
+    public <T extends Enum<T>> State state(T item) {
         return teaseLib.state(item);
     }
 }

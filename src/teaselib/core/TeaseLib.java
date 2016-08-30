@@ -1,4 +1,4 @@
-package teaselib;
+package teaselib.core;
 
 import java.io.File;
 import java.io.IOException;
@@ -7,9 +7,11 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import teaselib.core.Host;
-import teaselib.core.Persistence;
-import teaselib.core.ScriptInterruptedException;
+import teaselib.Actor;
+import teaselib.Clothes;
+import teaselib.Config;
+import teaselib.State;
+import teaselib.Toys;
 import teaselib.core.media.MediaRendererQueue;
 import teaselib.core.texttospeech.Voice;
 import teaselib.util.Item;
@@ -39,7 +41,7 @@ public class TeaseLib {
     public final Host host;
     private final Persistence persistence;
     public final Logger transcript;
-    private final Map<Class<?>, State<? extends Enum<?>>> states = new HashMap<Class<?>, State<? extends Enum<?>>>();
+    private final Map<Class<?>, StateMap<? extends Enum<?>>> states = new HashMap<Class<?>, StateMap<? extends Enum<?>>>();
     public final MediaRendererQueue renderQueue = new MediaRendererQueue();
 
     public TeaseLib(Host host, Persistence persistence) {
@@ -503,10 +505,10 @@ public class TeaseLib {
      * @return The item state.
      */
     @SuppressWarnings("unchecked")
-    public <T extends Enum<T>> State<T>.Item state(T item) {
+    public <T extends Enum<T>> State state(T item) {
         Class<T> enumClass = (Class<T>) item.getClass();
-        State<T> state = state(enumClass);
-        State<T>.Item stateItem;
+        StateMap<T> state = state(enumClass);
+        State stateItem;
         if (state.has(item)) {
             stateItem = state.get(item);
         } else {
@@ -530,7 +532,7 @@ public class TeaseLib {
      * @return The state of all members in {@code values}.
      */
     @SuppressWarnings("unchecked")
-    <T extends Enum<T>> State<T> state(T[] values) {
+    <T extends Enum<T>> StateMap<T> state(T[] values) {
         Class<T> enumClass = (Class<T>) values[0].getClass();
         return state(enumClass);
     }
@@ -543,12 +545,12 @@ public class TeaseLib {
      * @return The state of all members of the enumeration.
      */
     @SuppressWarnings("unchecked")
-    private <T extends Enum<T>> State<T> state(Class<T> enumClass) {
-        final State<T> state;
+    private <T extends Enum<T>> StateMap<T> state(Class<T> enumClass) {
+        final StateMap<T> state;
         if (states.containsKey(enumClass)) {
-            state = (State<T>) states.get(enumClass);
+            state = (StateMap<T>) states.get(enumClass);
         } else {
-            state = new State<T>(this, enumClass);
+            state = new StateMap<T>(this, enumClass);
             states.put(enumClass, state);
         }
         return state;

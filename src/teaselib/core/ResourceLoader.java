@@ -59,7 +59,7 @@ public class ResourceLoader {
         addAssets(basePath.getAbsolutePath());
     }
 
-    public static File getClassPath(Class<?> mainScript) {
+    private static File getClassPath(Class<?> mainScript) {
         String classFile = "/" + mainScript.getName().replace(".", "/")
                 + ".class";
         URL url = mainScript.getResource(classFile);
@@ -103,6 +103,10 @@ public class ResourceLoader {
         return addURI;
     }
 
+    public void addAssets(Class<?> scriptClass) {
+        addAssets(ResourceLoader.getClassPath(scriptClass).getAbsolutePath());
+    }
+
     public void addAssets(String... paths) {
         try {
             addAssets(toURIs(paths));
@@ -137,19 +141,17 @@ public class ResourceLoader {
     private void addAsset(URI uri) throws IllegalAccessException,
             InvocationTargetException, MalformedURLException {
         File file = new File(uri);
-        if (file.exists()) {
-            addURL.invoke(classLoader, new Object[] { uri.toURL() });
+        if (file.exists() && !enumeratableClassPaths.contains(uri)) {
             if (uri.getPath().endsWith(".zip") || file.isDirectory()) {
+                addURL.invoke(classLoader, new Object[] { uri.toURL() });
                 enumeratableClassPaths.add(uri);
-                logger
-                        .info("Using resource location: " + uri.getPath());
+                logger.info("Using resource location: " + uri.getPath());
             }
         } else {
             // Just warn, since everybody should be able to unpack the archives
             // to explore or change the contents,
             // and to remove them to ensure the unpacked resources are used
-            logger
-                    .info("Archive not available: " + uri.getPath());
+            logger.info("Archive not available: " + uri.getPath());
         }
     }
 

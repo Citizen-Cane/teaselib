@@ -147,6 +147,20 @@ public class KeyRelease implements Device {
         }
     }
 
+    public int getBestActuatorForTime(int timeMinutes) {
+        int actuatorCount = actuators();
+        int bestDifferenceSoFar = Integer.MAX_VALUE;
+        int bestActuator = 0;
+        for (int actuator = 0; actuator < actuatorCount; actuator++) {
+            int difference = available(actuator) - timeMinutes;
+            if (difference < bestDifferenceSoFar) {
+                bestActuator = actuator;
+                bestDifferenceSoFar = difference;
+            }
+        }
+        return bestActuator;
+    }
+
     public boolean arm(int actuator) {
         RemoteDeviceMessage ok = remoteDevice
                 .sendAndReceive(new RemoteDeviceMessage(DeviceClassName, Arm,

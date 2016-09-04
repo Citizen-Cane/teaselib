@@ -32,16 +32,8 @@ public class ResourceLoader {
     private final File basePath;
 
     /**
-     * @param basePath
-     *            The base path under which to find the resources. Either a zip,
-     *            a jar, or a folder
-     * @param assetRoot
-     *            The root folder for all resources - either a directory in the
-     *            base folder or a root folderin a zip or jar
-     * @throws NoSuchMethodException
-     * @throws InvocationTargetException
-     * @throws IllegalAccessException
-     * @throws MalformedURLException
+     * @param mainScript
+     *            The class of the main script, for loading resources.
      */
     public ResourceLoader(Class<?> mainScript) {
         String systemProperty = System.getProperty(
@@ -59,6 +51,57 @@ public class ResourceLoader {
         addAssets(basePath.getAbsolutePath());
     }
 
+    /**
+     * Return the path to the main script.
+     * 
+     * TODO This function has issues:
+     * <li>The base path used here is set once when TeaseLib is initialized, so
+     * later scripts will not get "their" folder for cached content.
+     * <li>The base path must be writable to use it as a cache, but it may be
+     * the project folder of the script - which shouldn't be written into. As of
+     * now, for jar-based scripts it's the main script folder, for file-based
+     * scripts it's the script-project folder.
+     * <p>
+     * Desired behavior:
+     * <li>The base path must always be the same folder, which as of now is the
+     * main script folder. The host should pass the folder in.
+     * <li>Scripts should just add asset paths.
+     * 
+     * @param mainScript
+     *            The class of the main script. All resource paths will be
+     *            relative to this class.
+     * @return An absolute file path to the parent folder of the class file.
+     *         <li>For a jar ins SecScripts this will be
+     *         {@code X:\Projects\SexScripts\scripts}
+     *         <li>For a file based project this will be the project's bin
+     *         folder, for instance
+     *         {@code X:\Projects\SexScripts\scripts\Rakhee - The Indian Princess}
+     *         <p>
+     *         This system now works because:
+     *         <li>The PCM player uses a script namespace to search for
+     *         resources.
+     *         <li>The Mine project stores all resources in the "Mine" namespace
+     *         in all jars.
+     *         <li>This allows the resource loader to unpack resources to
+     *         {@code X:\Projects\SexScripts\scripts\Mine}
+     *         <li>In this case the storage path has to be defined explicitly,
+     *         because it's an actual script managed by the PCMPlayer, and not a
+     *         bunch of java class files.
+     *         <li>Only the mistress path is absolute to {@code ...\scripts}
+     *         <p>
+     *         <li>TODO Storing java classes into jars.
+     *         <p>
+     *         More TODOs:
+     *         <li>{@link #getAssetPath(String)} just works correct for the
+     *         first project
+     *         <p>
+     *         However {@link #unpackToFile(String)} and
+     *         {@link #unpackEnclosingFolder(String)} do check whether the
+     *         resource is a file already, because {@link #getAssetPath(String)}
+     *         returns the location of the original file (the script bin
+     *         folder).
+     * 
+     */
     private static File getClassPath(Class<?> mainScript) {
         String classFile = "/" + mainScript.getName().replace(".", "/")
                 + ".class";
@@ -193,14 +236,16 @@ public class ResourceLoader {
     }
 
     /**
-     * Get the absolute path of a resource. Good for creating a File or URL
+     * Get the absolute file path of a resource. Good for creating a File or URL
      * object. The path denotes a directory or file in the file system, not in a
      * jar or zip.
+     * <p>
+     * The directory is writable in order to cache resources that must exist as
+     * a file.
      * 
      * @param resourcePath
      *            The path to the resource relative to the asset root directory.
      * @return The absolute file system path to the resource item.
-     * @throws IOException
      */
     public File getAssetPath(String resourcePath) {
         return new File(basePath, resourcePath);
@@ -230,9 +275,8 @@ public class ResourceLoader {
     }
 
     /**
-     * Unpacks a resource into the file system. If the resource is accessable as
-     * a file already, nothing is done, and the method just returns the absolute
-     * file path.
+     * Unpacks a resource into the file system. If the file already, the method
+     * just returns the absolute file path.
      * 
      * @param path
      *            A resource path.

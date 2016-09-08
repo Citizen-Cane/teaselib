@@ -28,7 +28,7 @@ public class ResourceLoader {
 
     private final ClassLoader classLoader = getClass().getClassLoader();
     private final Method addURL;
-    private final Set<URI> enumeratableClassPaths = new HashSet<URI>();
+    private final Set<URI> resourceLocations = new HashSet<URI>();
     private final File basePath;
 
     /**
@@ -48,7 +48,13 @@ public class ResourceLoader {
         } catch (NoSuchMethodException e) {
             throw new IllegalArgumentException(e.getMessage(), e);
         }
-        addAssets(basePath.getAbsolutePath());
+        // This is already part of the class path,
+        // but not listed in resource locations
+        // addAssets(basePath.getAbsolutePath());
+        URI uri = basePath.toURI();
+        if (isValidResourceLocation(uri)) {
+            resourceLocations.add(uri);
+        }
     }
 
     /**
@@ -61,23 +67,35 @@ public class ResourceLoader {
      * the project folder of the script - which shouldn't be written into. As of
      * now, for jar-based scripts it's the main script folder, for file-based
      * scripts it's the script-project folder.
+     * <li>ResourceLoader should be a singleton again, to make scripts calling
+     * other scripts consistent.
      * <p>
      * Desired behavior:
      * <li>The base path must always be the same folder, which as of now is the
-     * main script folder. The host should pass the folder in.
+     * main script folder. The host should pass that folder in.
+     * <li>The host might unpack files from an archive to make it accessible,
+     * but instead of writing into the base script folder, files should be
+     * unpacked into a designated cache folder.
+     * <li>Base and cache folder may me the same.
+     * <li>Resource loading must respect jars, folders and cache folders. This
+     * requires booking keeping to add all locations to the clas path /resource
+     * location list.
      * <li>Scripts should just add asset paths.
+     * <li>Resource locations must be added to the class path, because later on
+     * resources will be loaded via the class loader.
      * 
      * @param mainScript
      *            The class of the main script. All resource paths will be
      *            relative to this class.
      * @return An absolute file path to the parent folder of the class file.
-     *         <li>For a jar ins SecScripts this will be
-     *         {@code X:\Projects\SexScripts\scripts}
+     *         <li>For a PCM-based script jar ins SexScripts this will be
+     *         {@code X:\Projects\SexScripts\scripts} because the jars are
+     *         located in the base folder.
      *         <li>For a file based project this will be the project's bin
      *         folder, for instance
      *         {@code X:\Projects\SexScripts\scripts\Rakhee - The Indian Princess}
      *         <p>
-     *         This system now works because:
+     *         This system works because:
      *         <li>The PCM player uses a script namespace to search for
      *         resources.
      *         <li>The Mine project stores all resources in the "Mine" namespace
@@ -161,17 +179,20 @@ public class ResourceLoader {
     private URI[] toURIs(String[] paths) {
         URI[] uris = new URI[paths.length];
         for (int i = 0; i < paths.length; i++) {
-            File path = new File(paths[i]);
-            final File file;
-            if (path.isAbsolute()) {
-                file = path;
-            } else {
-                // throw new IllegalArgumentException(path.getPath());
-                file = new File(basePath, paths[i]);
-            }
-            uris[i] = file.toURI();
+            String entry = paths[i];
+            URI uri = toURI(entry);
+            uris[i] = uri;
         }
         return uris;
+    }
+
+    private URI toURI(String path) {
+        File file = new File(path);
+        if (!file.isAbsolute()) {
+            file = new File(basePath, path);
+        }
+        URI uri = file.toURI();
+        return uri;
     }
 
     private void addAssets(URI[] assets) throws IllegalAccessException,
@@ -183,19 +204,27 @@ public class ResourceLoader {
 
     private void addAsset(URI uri) throws IllegalAccessException,
             InvocationTargetException, MalformedURLException {
-        File file = new File(uri);
-        if (file.exists() && !enumeratableClassPaths.contains(uri)) {
-            if (uri.getPath().endsWith(".zip") || file.isDirectory()) {
-                addURL.invoke(classLoader, new Object[] { uri.toURL() });
-                enumeratableClassPaths.add(uri);
-                logger.info("Using resource location: " + uri.getPath());
-            }
+        boolean isValid = isValidResourceLocation(uri);
+        if (isValid) {
+            addURL.invoke(classLoader, new Object[] { uri.toURL() });
+            resourceLocations.add(uri);
+            logger.info("Using resource location: " + uri.getPath());
         } else {
             // Just warn, since everybody should be able to unpack the archives
             // to explore or change the contents,
             // and to remove them to ensure the unpacked resources are used
             logger.info("Archive not available: " + uri.getPath());
         }
+    }
+
+    private boolean isValidResourceLocation(URI uri) {
+        File file = new File(uri);
+        boolean isValidAndNotAddYet = file.exists()
+                && !resourceLocations.contains(uri);
+        boolean isArchiveOrDirectory = uri.getPath().endsWith(".jar")
+                || uri.getPath().endsWith(".zip") || file.isDirectory();
+        boolean isValid = isValidAndNotAddYet && isArchiveOrDirectory;
+        return isValid;
     }
 
     public InputStream getResource(String resource) throws IOException {
@@ -219,7 +248,7 @@ public class ResourceLoader {
      */
     public Collection<String> resources(Pattern pattern) {
         Collection<String> resources = new LinkedHashSet<String>();
-        for (URI classsPathEntry : enumeratableClassPaths) {
+        for (URI classsPathEntry : resourceLocations) {
             Collection<String> matches = ResourceList
                     .getResources(classsPathEntry, pattern);
             resources.addAll(matches);

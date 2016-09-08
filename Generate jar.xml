@@ -2,17 +2,17 @@
 <project default="create_run_jar" name="Deploy TeaseLib">
     <!--this file was created by Eclipse Runnable JAR Export Wizard-->
     <!--ANT 1.7 is required                                        -->
-    <target name="create_run_jar">
+    <target name="CreateTeaseLibJar">
         <jar destfile="lib/TeaseLib.jar">
             <manifest>
-                <attribute name="Class-Path" value="lib/jump3er-1.03.jar lib/webcam-capture-0.3.11.jar bridj-0.6.2.jar"/>
+                <attribute name="Class-Path" value="lib/jump3er-1.03.jar lib/webcam-capture-0.3.11.jar bridj-0.6.2.jar javacpp.jar javacv.jar opencv.jar opencv-android-arm.jar opencv-android-x86.jar opencv-linux-armhf.jar opencv-linux-x86.jar opencv-linux-x86_64.jar opencv-macosx-x86_64.jar opencv-windows-x86.jar opencv-windows-x86_64.jar videoinput.jar videoinput-x86.jar videoinput-x86_x64.jar"/>
             </manifest>
             <fileset dir="bin">
            		<exclude name="simplelogger.properties"/>
            	</fileset>
         </jar>
     </target>
-    <target name="create_tests_jar">
+    <target name="CreateTeaseLibTestsJar">
         <jar destfile="lib/TeaseLib_tests.jar">
             <manifest>
                 <attribute name="Class-Path" value="lib/TeaseLib.jar"/>
@@ -20,4 +20,14 @@
             <fileset dir="bin.test"/>
         </jar>
     </target>
+	
+    <target name="DeployToSexScripts" depends="CreateTeaseLibJar,CreateTeaseLibTestsJar">
+        <copy todir="${basedir}/../SexScripts/lib/TeaseLib">
+            <fileset dir="${basedir}/lib/" excludes="**.pdb,**.exp,**.ilk,**.lib"/>
+        </copy>
+    </target>
+
+    <target name="create_run_jar" depends="DeployToSexScripts">
+    </target>
+
 </project>

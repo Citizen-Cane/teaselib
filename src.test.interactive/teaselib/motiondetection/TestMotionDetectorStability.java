@@ -28,7 +28,7 @@ public class TestMotionDetectorStability {
 
     @Test
     public void testPauseResume() {
-        MotionDetector md = MotionDetection.Instance.getDefaultDevice();
+        MotionDetector md = MotionDetection.Devices.getDefaultDevice();
         md.setSensitivity(MotionSensitivity.Normal);
 
         int durationMillis = 10 * 1000;

@@ -14,18 +14,18 @@ import teaselib.stimulation.pattern.Whip;
 
 public class StimulationTest {
     public static Stimulator getLeftStimulator() {
-        return StimulationDevices.Instance.getDefaultDevice().stimulators()
+        return StimulationDevices.Devices.getDefaultDevice().stimulators()
                 .get(0);
     }
 
     public static Stimulator getRightStimulator() {
-        return StimulationDevices.Instance.getDefaultDevice().stimulators()
+        return StimulationDevices.Devices.getDefaultDevice().stimulators()
                 .get(1);
     }
 
     @Test
     public void testEnumerateStimulators() {
-        StimulationDevice device = StimulationDevices.Instance
+        StimulationDevice device = StimulationDevices.Devices
                 .getDefaultDevice();
         System.out.println(device.getDevicePath() + (device.connected() ? ""
                 : ":" + Device.WaitingForConnection));

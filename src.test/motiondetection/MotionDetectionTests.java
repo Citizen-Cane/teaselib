@@ -24,7 +24,7 @@ public class MotionDetectionTests {
 
     @Test
     public void testVideoCaptureDeviceEnumeration() {
-        Set<String> devices = MotionDetection.Instance.getDevicePaths();
+        Set<String> devices = MotionDetection.Devices.getDevicePaths();
         for (String id : devices) {
             logger.info(id);
         }

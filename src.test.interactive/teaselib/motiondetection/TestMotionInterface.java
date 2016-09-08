@@ -8,7 +8,7 @@ public class TestMotionInterface {
 
     @Test
     public void testMotionStartStop() {
-        MotionDetector motionDetector = MotionDetection.Instance
+        MotionDetector motionDetector = MotionDetection.Devices
                 .getDefaultDevice();
         motionDetector.setViewPoint(ViewPoint.EyeLevel);
         motionDetector.setSensitivity(MotionSensitivity.High);

@@ -61,11 +61,11 @@ public class XInputTest {
                 n++;
             }
         }
-        Collection<String> devicePaths = StimulationDevices.Instance
+        Collection<String> devicePaths = StimulationDevices.Devices
                 .getDevicePaths();
         List<StimulationDevice> stimulationDevices = new Vector<StimulationDevice>();
         for (String devicePath : devicePaths) {
-            StimulationDevice stimulationDevice = StimulationDevices.Instance
+            StimulationDevice stimulationDevice = StimulationDevices.Devices
                     .getDevice(devicePath);
             if (stimulationDevice instanceof XInputStimulationDevice) {
                 stimulationDevices.add(stimulationDevice);

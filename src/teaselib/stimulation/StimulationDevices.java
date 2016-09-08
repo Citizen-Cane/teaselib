@@ -27,7 +27,7 @@ import teaselib.core.devices.xinput.stimulation.XInputStimulationDevice;
  */
 public class StimulationDevices {
 
-    public static final DeviceCache<StimulationDevice> Instance = new DeviceCache<StimulationDevice>() {
+    public static final DeviceCache<StimulationDevice> Devices = new DeviceCache<StimulationDevice>() {
 
         @Override
         public StimulationDevice getDefaultDevice() {

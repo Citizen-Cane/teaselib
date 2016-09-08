@@ -30,9 +30,9 @@ public class DeviceFactoryTests {
     public void instanciateDeviceFactories() {
         logger.info("Available devices:");
         listDevices(XInputDevices.Instance.getDevicePaths());
-        listDevices(StimulationDevices.Instance.getDevicePaths());
+        listDevices(StimulationDevices.Devices.getDevicePaths());
         listDevices(VideoCaptureDevices.Instance.getDevicePaths());
-        listDevices(MotionDetection.Instance.getDevicePaths());
+        listDevices(MotionDetection.Devices.getDevicePaths());
         listDevices(RemoteDevices.Instance.getDevicePaths());
         listDevices(KeyRelease.Devices.getDevicePaths());
     }

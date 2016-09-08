@@ -16,7 +16,7 @@ public class TestTechnicalInterface {
         // .getDevice(devicePath);
         // MotionDetector md = new MotionDetectorJavaCV(videoCaptureDevice);
 
-        MotionDetector md = MotionDetection.Instance.getDefaultDevice();
+        MotionDetector md = MotionDetection.Devices.getDefaultDevice();
 
         // using an amount < 1.0 ignores small pauses while moving
         // respectively ignores slight motions while standing still

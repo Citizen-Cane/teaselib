@@ -8,7 +8,7 @@ import teaselib.core.devices.motiondetection.MotionDetectorJavaCV;
  */
 public class MotionDetection {
 
-    public static final DeviceCache<MotionDetector> Instance = new DeviceCache<MotionDetector>() {
+    public static final DeviceCache<MotionDetector> Devices = new DeviceCache<MotionDetector>() {
         @Override
         public MotionDetector getDefaultDevice() {
             String defaultId = getLast(getDevicePaths());

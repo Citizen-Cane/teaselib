@@ -8,7 +8,6 @@
 	<classpathentry kind="lib" path="lib/jump3r-1.0.3.jar"/>
 	<classpathentry kind="lib" path="lib/bridj-0.6.2.jar"/>
 	<classpathentry kind="lib" path="/SexScripts/sexscripts.jar"/>
-	<classpathentry kind="lib" path="lib/webcam-capture-0.3.11.jar"/>
 	<classpathentry exported="true" kind="lib" path="/SexScripts/lib/slf4j-api-1.7.2.jar"/>
 	<classpathentry kind="lib" path="lib/javacpp.jar"/>
 	<classpathentry kind="lib" path="lib/javacv.jar"/>

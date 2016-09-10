@@ -1,7 +1,10 @@
 package teaselib;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
+import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.Test;
@@ -18,7 +21,7 @@ public class StateTests {
     final String namespace = "JUnit test";
     final TeaseScript script = new TeaseScript(teaseLib,
             new ResourceLoader(PersistenceTest.class),
-            new Actor("Test", Voice.Gender.Female, "en-us"), namespace) {
+            new Actor("Test", Voice.Gender.Female, Locale.US), namespace) {
         @Override
         public void run() {
             throw new UnsupportedOperationException();

@@ -277,7 +277,7 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
                 final SpeechRecognition.TimeoutBehavior timeoutBehavior) {
             final Event<SpeechRecognitionImplementation, SpeechRecognitionStartedEventArgs> recognitionStarted;
             final EventSource<SpeechRecognitionImplementation, SpeechRecognitionStartedEventArgs> recognitionStartedEvents = SpeechRecognizer.instance
-                    .get(actor.locale).events.recognitionStarted;
+                    .get(actor.getLocale()).events.recognitionStarted;
             if (timeoutBehavior == TimeoutBehavior.InDubioMitius) {
                 // disable timeout on first speech recognition event
                 // (non-audio)

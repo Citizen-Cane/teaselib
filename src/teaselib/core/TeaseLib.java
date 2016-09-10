@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -442,7 +443,7 @@ public class TeaseLib {
         return item(wearer.toString(), item);
     }
 
-    public TextVariables getTextVariables(String locale) {
+    public TextVariables getTextVariables(Locale locale) {
         return persistence.getTextVariables(locale);
     }
 
@@ -602,7 +603,7 @@ public class TeaseLib {
                 new PersistentBoolean(namespace, value.toString()));
     }
 
-    public Actor getDominant(Voice.Gender gender, String locale) {
+    public Actor getDominant(Voice.Gender gender, Locale locale) {
         return persistence.getDominant(gender, locale);
     }
 

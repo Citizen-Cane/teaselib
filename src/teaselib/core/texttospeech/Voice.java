@@ -1,13 +1,9 @@
 package teaselib.core.texttospeech;
 
+import java.util.Locale;
+
 import teaselib.core.jni.NativeObject;
 
-// refactor -> change class name in native code
-
-/**
- * @author someone
- *
- */
 /**
  * @author someone
  * 
@@ -25,11 +21,13 @@ public class Voice extends NativeObject {
     public final String vendor;
 
     public enum Gender {
-        Male, Female, Robot
+        Male,
+        Female,
+        Robot
     }
 
-    public Voice(long nativeObject, String guid, String locale,
-            String language, Gender gender, String name, String vendor) {
+    public Voice(long nativeObject, String guid, String locale, String language,
+            Gender gender, String name, String vendor) {
         super(nativeObject);
         this.guid = guid;
         this.gender = gender;
@@ -37,6 +35,10 @@ public class Voice extends NativeObject {
         this.language = language;
         this.name = name;
         this.vendor = vendor;
+    }
+
+    public boolean matches(Locale locale) {
+        return this.locale.replace("-", "_").equals(locale.toString());
     }
 
     @Override

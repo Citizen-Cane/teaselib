@@ -1,6 +1,7 @@
 package teaselib.core.speechrecognition.implementation;
 
 import java.util.List;
+import java.util.Locale;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,20 +24,30 @@ public class TeaseLibSR extends SpeechRecognitionImplementation {
 
     @Override
     public void init(
-            SpeechRecognitionEvents<SpeechRecognitionImplementation> events,
-            String languageCode) throws Throwable {
-        initSR(events, languageCode);
+            final SpeechRecognitionEvents<SpeechRecognitionImplementation> events,
+            final Locale locale) throws Throwable {
         eventThread = new Thread(new Runnable() {
             @Override
             public void run() {
                 try {
                     synchronized (eventThread) {
                         try {
+                            String languageCode = locale.getLanguage() + "-"
+                                    + locale.getCountry();
+                            initSR(events, languageCode);
                             // Never ends
                             initSREventThread(eventThread);
-                        } catch (Throwable t) {
-                            logger.error(t.getMessage(), t);
-                            eventThreadException = t;
+                        } catch (Exception e) {
+                            logger.warn(e.getMessage());
+                            logger.info("-> trying langauge "
+                                    + locale.getLanguage());
+                            initSR(events, locale.getLanguage());
+                            try {
+                                initSREventThread(eventThread);
+                            } catch (Exception e1) {
+                                logger.error(e.getMessage(), e);
+                                eventThreadException = e;
+                            }
                         }
                         eventThread.notifyAll();
                     }

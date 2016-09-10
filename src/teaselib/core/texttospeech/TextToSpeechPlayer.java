@@ -16,6 +16,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import teaselib.Actor;
+import teaselib.Actor.FormOfAddress;
 import teaselib.Message;
 import teaselib.Message.Part;
 import teaselib.core.ResourceLoader;
@@ -177,22 +178,19 @@ public class TextToSpeechPlayer {
         }
         // Full match: language and region
         for (Voice voice : genderFilteredVoices) {
-            String locale = voice.locale;
-            if (locale.compareToIgnoreCase(actor.locale) == 0
+            if (voice.matches(actor.getLocale())
                     && !usedVoices.contains(voice.guid)) {
-                logger.info("Using voice '" + voice.guid + "' with locale '"
-                        + voice.locale + "' for actor '" + actor.key + "'");
+                useVoice(actor, voice);
                 return voice;
             }
         }
         // Partial match: language only
         for (Voice voice : genderFilteredVoices) {
             String voiceLanguage = voice.locale.substring(0, 2);
-            String actorLanguage = actor.locale.substring(0, 2);
-            if (voiceLanguage.compareToIgnoreCase(actorLanguage) == 0
+            String actorLanguage = actor.getLocale().getLanguage();
+            if (voiceLanguage.equals(actorLanguage)
                     && !usedVoices.contains(voice.guid)) {
-                logger.info("Using voice '" + voice.guid + "' with locale '"
-                        + voice.locale + "' for actor '" + actor.key + "'");
+                useVoice(actor, voice);
                 return voice;
             }
         }
@@ -200,27 +198,32 @@ public class TextToSpeechPlayer {
         for (String actorName : actorKey2TTSVoice.keySet()) {
             if (!isDominantActor(actorName) && actorKey2TTSVoice
                     .get(actorName).gender == actor.gender) {
-                Voice voice = actorKey2TTSVoice.get(actorName);
-                logger.info("Reusing voice of actor '" + actorName + "': '"
-                        + voice.guid + "' with locale '" + voice.locale
-                        + "' for actor '" + actor.key + "'");
-                return voice;
+                return reuseVoice(actor, actorName);
             }
         }
         // voice of default dominant actor
         for (String actorName : actorKey2TTSVoice.keySet()) {
             if (isDominantActor(actorName) && actorKey2TTSVoice
                     .get(actorName).gender == actor.gender) {
-                Voice voice = actorKey2TTSVoice.get(actorName);
-                logger.info("Reusing voice of actor '" + actorName + "': '"
-                        + voice.guid + "' with locale '" + voice.locale
-                        + "' for actor '" + actor.key + "'");
-                return voice;
+                return reuseVoice(actor, actorName);
             }
         }
         // No voice
-        logger.info("No voice available for actor '" + actor.key + "'");
+        logger.warn("No voice available for '" + actor.key + "'");
         return null;
+    }
+
+    private static void useVoice(Actor actor, Voice voice) {
+        logger.info("Actor '" + actor.get(FormOfAddress.FullName) + "("
+                + actor.getLocale() + ") ' uses voice " + voice.guid);
+    }
+
+    private Voice reuseVoice(Actor actor, String actorName) {
+        Voice voice = actorKey2TTSVoice.get(actorName);
+        logger.warn("Actor '" + actor.get(FormOfAddress.FullName) + "("
+                + actor.getLocale() + ") ' re-uses voice " + voice.guid
+                + " of actor " + actorName);
+        return voice;
     }
 
     private static boolean isDominantActor(String actorName) {

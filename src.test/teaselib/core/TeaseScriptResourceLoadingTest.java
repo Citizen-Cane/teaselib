@@ -3,7 +3,9 @@
  */
 package teaselib.core;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -12,6 +14,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.Collection;
+import java.util.Locale;
 import java.util.regex.Pattern;
 
 import org.junit.Test;
@@ -37,7 +40,7 @@ public class TeaseScriptResourceLoadingTest {
                 new DummyPersistence());
         TeaseScript script = new TeaseScript(teaseLib,
                 new ResourceLoader(TeaseScriptResourceLoadingTest.class),
-                teaseLib.getDominant(Gender.Female, "en-us"), "test") {
+                teaseLib.getDominant(Gender.Female, Locale.US), "test") {
             @Override
             public void run() {
             }

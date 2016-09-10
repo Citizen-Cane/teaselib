@@ -1,6 +1,7 @@
 package teaselib.core.speechrecognition;
 
 import java.util.List;
+import java.util.Locale;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,7 +19,7 @@ public abstract class SpeechRecognitionImplementation {
      */
     public abstract void init(
             SpeechRecognitionEvents<SpeechRecognitionImplementation> events,
-            String languageCode) throws Throwable;
+            Locale locale) throws Throwable;
 
     public abstract void setChoices(List<String> choices);
 

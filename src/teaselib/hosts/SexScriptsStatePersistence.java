@@ -89,14 +89,14 @@ public class SexScriptsStatePersistence implements Persistence {
     }
 
     @Override
-    public TextVariables getTextVariables(String locale) {
+    public TextVariables getTextVariables(Locale locale) {
         TextVariables variables = new TextVariables();
         variables.put(TextVariables.Names.Slave,
                 getLocalized("intro.name", locale));
         return variables;
     }
 
-    private String getLocalized(String name, String locale) {
+    private String getLocalized(String name, Locale locale) {
         if (defaultLanguageMatches(locale)) {
             return get(name);
         } else {
@@ -104,16 +104,13 @@ public class SexScriptsStatePersistence implements Persistence {
         }
     }
 
-    private static boolean defaultLanguageMatches(String locale) {
-        final Locale defaultLocale = Locale.getDefault();
-        String defaultLanguage = defaultLocale.getLanguage();
-        final String localeLanguage = new Locale(locale).getLanguage();
-        final boolean languagesMatch = defaultLanguage.equals(localeLanguage);
-        return languagesMatch;
+    private static boolean defaultLanguageMatches(Locale locale) {
+        Locale defaultLocale = Locale.getDefault();
+        return defaultLocale.getLanguage().equals(locale.getLanguage());
     }
 
     @Override
-    public Actor getDominant(Voice.Gender gender, String locale) {
+    public Actor getDominant(Voice.Gender gender, Locale locale) {
         switch (gender) {
         case Female:
             return new Actor("Mistress", "Miss", Voice.Gender.Female, locale,

@@ -1,6 +1,7 @@
 package teaselib.core.speechrecognition;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.locks.ReentrantLock;
 
 import org.slf4j.Logger;
@@ -70,7 +71,7 @@ public class SpeechRecognition {
 
     public final SpeechRecognitionEvents<SpeechRecognitionImplementation> events;
 
-    private final String locale;
+    private final Locale locale;
     private SpeechRecognitionImplementation sr;
     private final DelegateThread delegateThread = new DelegateThread(
             "Text-To-Speech dispatcher thread");
@@ -155,13 +156,13 @@ public class SpeechRecognition {
 
     private final SpeechRecognitionHypothesisEventHandler hypothesisEventHandler;
 
-    public SpeechRecognition(String locale) {
+    public SpeechRecognition(Locale locale) {
         // First add the progress events, because we don't want to get events
         // consumed before setting the in-progress state
         this.events = new SpeechRecognitionEvents<SpeechRecognitionImplementation>(
                 lockSpeechRecognitionInProgress,
                 unlockSpeechRecognitionInProgress);
-        this.locale = locale.toLowerCase();
+        this.locale = locale;
         try {
             Delegate delegate = new Delegate() {
                 @Override

@@ -71,7 +71,7 @@ class ShowChoices {
         this.scriptTask = scriptTask;
         this.teaseLib = script.teaseLib;
         this.speechRecognizer = SpeechRecognizer.instance
-                .get(script.actor.locale);
+                .get(script.actor.getLocale());
         this.recognitionConfidence = recognitionConfidence;
         this.recognizeSpeech = speechRecognizer.isReady();
         if (recognizeSpeech) {

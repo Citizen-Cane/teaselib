@@ -493,6 +493,6 @@ public abstract class TeaseScriptBase {
 
     private TextVariables allTextVariables() {
         return new TextVariables(TextVariables.Defaults,
-                teaseLib.getTextVariables(actor.locale), actor.textVariables);
+                teaseLib.getTextVariables(actor.getLocale()), actor.textVariables);
     }
 }

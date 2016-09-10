@@ -1,6 +1,7 @@
 package teaselib.hosts;
 
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 import teaselib.Actor;
@@ -52,12 +53,12 @@ public class DummyPersistence implements Persistence {
     }
 
     @Override
-    public TextVariables getTextVariables(String locale) {
+    public TextVariables getTextVariables(Locale locale) {
         return new TextVariables();
     }
 
     @Override
-    public Actor getDominant(Voice.Gender gender, String locale) {
+    public Actor getDominant(Voice.Gender gender, Locale locale) {
         switch (gender) {
         case Female:
             return new Actor("Mistress", "Miss", Voice.Gender.Female, locale,

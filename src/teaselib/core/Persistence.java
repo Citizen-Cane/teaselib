@@ -1,5 +1,7 @@
 package teaselib.core;
 
+import java.util.Locale;
+
 import teaselib.Actor;
 import teaselib.core.texttospeech.Voice;
 import teaselib.util.TextVariables;
@@ -31,7 +33,7 @@ public interface Persistence {
      * @param locale
      * @return
      */
-    TextVariables getTextVariables(String locale);
+    TextVariables getTextVariables(Locale locale);
 
-    public Actor getDominant(Voice.Gender gender, String locale);
+    public Actor getDominant(Voice.Gender gender, Locale locale);
 }

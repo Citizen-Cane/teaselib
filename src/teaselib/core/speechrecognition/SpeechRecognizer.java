@@ -6,6 +6,7 @@ package teaselib.core.speechrecognition;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -16,12 +17,12 @@ public class SpeechRecognizer {
 
     public static SpeechRecognizer instance = new SpeechRecognizer();
 
-    private final Map<String, SpeechRecognition> speechRecognitionInstances = new HashMap<String, SpeechRecognition>();
+    private final Map<Locale, SpeechRecognition> speechRecognitionInstances = new HashMap<Locale, SpeechRecognition>();
 
     private SpeechRecognizer() {
     }
 
-    public SpeechRecognition get(String locale) {
+    public SpeechRecognition get(Locale locale) {
         synchronized (speechRecognitionInstances) {
             if (speechRecognitionInstances.containsKey(locale)) {
                 return speechRecognitionInstances.get(locale);

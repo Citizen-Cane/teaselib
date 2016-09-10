@@ -1,5 +1,7 @@
 package teaselib;
 
+import java.util.Locale;
+
 import teaselib.core.texttospeech.Voice;
 import teaselib.core.texttospeech.Voice.Gender;
 import teaselib.util.SpeechRecognitionRejectedScript;
@@ -37,14 +39,9 @@ public class Actor {
     }
 
     /**
-     * The locale of the actor (e.g. "en-us", "en-gb")
+     * The locale of the actor (e.g. "en-us", "en-uk", "de")
      */
-    public final String locale;
-
-    /**
-     * The actor's language (e.g. "en", "de"), derived from the locale
-     */
-    public final String language;
+    private final Locale locale;
 
     /**
      * The actor's gender.
@@ -69,46 +66,44 @@ public class Actor {
     public SpeechRecognitionRejectedScript speechRecognitionRejectedScript = null;
 
     public Actor(Actor actor) {
-        this.locale = actor.locale;
-        this.language = actor.language;
+        this.locale = actor.getLocale();
         this.gender = actor.gender;
         this.key = actor.key;
         this.textVariables = actor.textVariables;
         this.images = actor.images;
     }
 
-    public Actor(String fullName, Voice.Gender gender, String locale) {
+    public Actor(String fullName, Voice.Gender gender, Locale locale) {
         this(fullName, gender, locale, Images.None);
     }
 
     public Actor(String fullName, String title, Voice.Gender gender,
-            String locale) {
+            Locale locale) {
         this(fullName, title, title, gender, locale, key(fullName, gender),
                 Images.None);
     }
 
-    public Actor(String fullName, Voice.Gender gender, String locale,
+    public Actor(String fullName, Voice.Gender gender, Locale locale,
             Images images) {
         this(fullName, fullName, fullName, gender, locale,
                 key(fullName, gender), images);
     }
 
     public Actor(String fullName, String title, Voice.Gender gender,
-            String locale, String key, Images images) {
+            Locale locale, String key, Images images) {
         this(fullName, title, title, gender, locale, key, images);
     }
 
     public Actor(String fullName, String title, String name,
-            Voice.Gender gender, String locale, Images images) {
+            Voice.Gender gender, Locale locale, Images images) {
         this(fullName, title, name, gender, locale, key(fullName, gender),
                 images);
     }
 
     public Actor(String fullName, String title, String name,
-            Voice.Gender gender, String locale, String key, Images images) {
+            Voice.Gender gender, Locale locale, String key, Images images) {
         super();
         this.locale = locale;
-        this.language = language(locale);
         this.gender = gender;
         this.textVariables = new TextVariables();
         addTextVariables(title, fullName, name);
@@ -126,10 +121,6 @@ public class Actor {
         textVariables.put(FormOfAddress.Name, name);
     }
 
-    private static String language(String locale) {
-        return locale.substring(0, 2);
-    }
-
     private static String key(String fullName, Gender gender) {
         return fullName + "." + gender;
     }
@@ -140,7 +131,11 @@ public class Actor {
 
     @Override
     public String toString() {
-        return get(FormOfAddress.FullName) + ": " + locale + " " + gender;
+        return get(FormOfAddress.FullName) + ": " + getLocale() + " " + gender;
+    }
+
+    public Locale getLocale() {
+        return locale;
     }
 
 }

@@ -3,7 +3,10 @@
  */
 package teaselib;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
+import java.util.Locale;
 
 import org.junit.Test;
 
@@ -16,7 +19,7 @@ import teaselib.core.texttospeech.Voice;
 public class MessageTest {
 
     private static final Actor actor = new Actor("Test", Voice.Gender.Female,
-            "en-us");
+            Locale.US);
 
     @Test
     public void determineType() {

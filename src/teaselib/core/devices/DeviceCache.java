@@ -11,6 +11,8 @@ import teaselib.core.ScriptInterruptedException;
 
 public class DeviceCache<T extends Device> {
     private final Map<String, DeviceFactory<? extends T>> factories = new LinkedHashMap<String, DeviceFactory<? extends T>>();
+    private final Set<DeviceFactoryListener<T>> deviceListeners = new LinkedHashSet<DeviceFactoryListener<T>>();
+
     private static final String PathSeparator = "/";
 
     public DeviceCache() {
@@ -47,6 +49,7 @@ public class DeviceCache<T extends Device> {
         } else {
             T device = create(devicePath);
             devices.put(devicePath, device);
+            fireDeviceCreated(device);
             return device;
         }
     }
@@ -124,5 +127,19 @@ public class DeviceCache<T extends Device> {
             }
         }
         return device.connected();
+    }
+
+    private void fireDeviceCreated(T device) {
+        for (DeviceFactoryListener<T> deviceListener : deviceListeners) {
+            deviceListener.deviceCreated(device);
+        }
+    }
+
+    public void addDeviceListener(DeviceFactoryListener<T> deviceListener) {
+        deviceListeners.add(deviceListener);
+    }
+
+    public void removeDeviceListener(DeviceFactoryListener<T> deviceListener) {
+        deviceListeners.remove(deviceListener);
     }
 }

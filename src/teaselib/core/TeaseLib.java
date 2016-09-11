@@ -13,8 +13,11 @@ import teaselib.Clothes;
 import teaselib.Config;
 import teaselib.State;
 import teaselib.Toys;
+import teaselib.core.devices.DeviceFactoryListener;
 import teaselib.core.media.MediaRendererQueue;
 import teaselib.core.texttospeech.Voice;
+import teaselib.motiondetection.MotionDetection;
+import teaselib.motiondetection.MotionDetector;
 import teaselib.util.Item;
 import teaselib.util.Items;
 import teaselib.util.Logger;
@@ -64,6 +67,14 @@ public class TeaseLib {
             transcriptLogger = Logger.getDummyLogger();
         }
         this.transcript = transcriptLogger;
+        MotionDetection.Devices
+                .addDeviceListener(new DeviceFactoryListener<MotionDetector>() {
+                    @Override
+                    public void deviceCreated(MotionDetector motionDetector) {
+                        motionDetector.setVideoRenderer(TeaseLib.this.host
+                                .getDisplay(VideoRenderer.Type.CameraFeedback));
+                    }
+                });
     }
 
     /**

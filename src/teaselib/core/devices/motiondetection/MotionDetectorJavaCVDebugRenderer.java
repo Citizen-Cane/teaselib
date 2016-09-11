@@ -57,10 +57,8 @@ public class MotionDetectorJavaCVDebugRenderer {
         boolean present = indicators.contains(Presence.Present);
         // Motion
         if (indicators.contains(Presence.Shake)) {
-            Rect presenceRect = presenceIndicators.get(Presence.Present);
-            rectangle(debugOutput, presenceRect,
+            rectangle(debugOutput, presenceIndicators.get(Presence.Present),
                     present ? Color.MidBlue : Color.DarkBlue, 15, 8, 0);
-            presenceRect.close();
         } else {
             if (r != null) {
                 renderMotionRegion(debugOutput, r, present);

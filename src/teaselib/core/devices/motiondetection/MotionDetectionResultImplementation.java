@@ -14,6 +14,7 @@ import java.util.Vector;
 
 import org.bytedeco.javacpp.opencv_core.Mat;
 import org.bytedeco.javacpp.opencv_core.MatVector;
+import org.bytedeco.javacpp.opencv_core.Point;
 import org.bytedeco.javacpp.opencv_core.Rect;
 import org.bytedeco.javacpp.opencv_core.Size;
 import org.slf4j.Logger;
@@ -189,8 +190,10 @@ public class MotionDetectionResultImplementation
     public Set<Presence> getPresence(Rect motionRegion, Rect presenceRegion) {
         Rect presenceRect = presenceIndicators
                 .get(viewPoint2PresenceRegion.get(viewPoint));
-        if (motionRegion == null || (motionRegion.contains(presenceRect.tl())
-                && motionRegion.contains(presenceRect.br()))) {
+        Point br = presenceRect.br();
+        Point tl = presenceRect.tl();
+        if (motionRegion == null || (motionRegion.contains(tl)
+                && motionRegion.contains(br))) {
             // Keep last state, to avoid signaling changes during shakes
             Set<Presence> last = new LinkedHashSet<Presence>(
                     indicatorHistory.tail());

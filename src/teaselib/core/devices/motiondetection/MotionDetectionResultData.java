@@ -66,8 +66,17 @@ public abstract class MotionDetectionResultData
         Map<Presence, Rect> map = new LinkedHashMap<Presence, Rect>();
         map.put(Presence.Present, new Rect(cornerSize, cornerSize,
                 s.width() - 2 * cornerSize, s.height() - 2 * cornerSize));
-        map.put(Presence.PresenceExtendedVertically, new Rect(cornerSize, 0,
-                s.width() - 2 * cornerSize, s.height()));
+        // The extended region cannot touch the screen border,
+        // since the presence region cannot touch the border because
+        // findContours ignores a one pixel border around the input mat.
+        // Plus Rect.contains() bottom right border is exclusive,
+        // so the extended region must be shrunk by 2+1 = 3
+        // TODO Shrinking the vertically extended presence region breaks Absent
+        // detection. It restores Shake, but also triggers Absent when leaving
+        // the camera area at the bottom
+        // (which should be handled by the vertically extended presence region)
+        map.put(Presence.PresenceExtendedVertically, new Rect(cornerSize, 1,
+                s.width() - 2 * cornerSize, s.height() - 2));
         // Define a center rectangle half the width
         // and third the height of the capture size
         int cl = s.width() / 2 - s.width() / 4;

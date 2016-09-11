@@ -1,7 +1,7 @@
 package teaselib.core.javacv;
 
-import static org.bytedeco.javacpp.opencv_core.*;
-import static org.bytedeco.javacpp.opencv_imgproc.*;
+import static org.bytedeco.javacpp.opencv_core.FONT_HERSHEY_PLAIN;
+import static org.bytedeco.javacpp.opencv_imgproc.putText;
 
 import org.bytedeco.javacpp.opencv_core.Mat;
 import org.bytedeco.javacpp.opencv_core.Point;
@@ -68,10 +68,15 @@ public class DistanceTracker {
             Point p1 = new Point((int) from.get(i, 0), (int) from.get(i, 1));
             Point p2 = new Point((int) to.get(i, 0), (int) to.get(i, 1));
             opencv_imgproc.line(output, p1, p2, color);
+            p1.close();
+            p2.close();
         }
         int distance = (int) Math.sqrt(distance2(currentKeyPoints));
         Point p = new Point(0, output.rows() - 20);
         putText(output, Integer.toString(distance), p, FONT_HERSHEY_PLAIN, 1.75,
                 color);
+        p.close();
+        from.release();
+        to.release();
     }
 }

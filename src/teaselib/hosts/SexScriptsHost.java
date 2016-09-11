@@ -28,16 +28,20 @@ import javax.swing.ImageIcon;
 import javax.swing.JComboBox;
 import javax.swing.WindowConstants;
 
+import org.bytedeco.javacpp.opencv_core.Point;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import ss.IScript;
 import ss.desktop.MainFrame;
+import teaselib.core.VideoRenderer;
+import teaselib.core.VideoRenderer.Type;
 import teaselib.core.Host;
 import teaselib.core.ResourceLoader;
 import teaselib.core.ScriptInterruptedException;
 import teaselib.core.concurrency.NamedExecutorService;
 import teaselib.core.events.Delegate;
+import teaselib.core.javacv.VideoRendererJavaCV;
 import teaselib.util.Interval;
 
 /**
@@ -615,4 +619,22 @@ public class SexScriptsHost implements Host {
     public void setQuitHandler(Runnable onQuitHandler) {
         this.onQuitHandler = onQuitHandler;
     }
+
+    @Override
+    public VideoRenderer getDisplay(Type displayType) {
+        return new VideoRendererJavaCV(displayType) {
+            @Override
+            protected Point getPosition(Type type, int width, int height) {
+                if (type == VideoRenderer.Type.CameraFeedback) {
+                    return new Point(
+                            mainFrame.getX()
+                                    + (mainFrame.getWidth() - width) / 2,
+                            mainFrame.getY());
+                } else {
+                    throw new UnsupportedOperationException();
+                }
+            }
+        };
+    }
+
 }

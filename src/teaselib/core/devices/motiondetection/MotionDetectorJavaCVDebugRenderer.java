@@ -3,11 +3,19 @@
  */
 package teaselib.core.devices.motiondetection;
 
-import static org.bytedeco.javacpp.opencv_core.*;
-import static org.bytedeco.javacpp.opencv_imgproc.*;
-import static teaselib.core.javacv.Color.*;
-import static teaselib.core.javacv.util.Geom.*;
-import static teaselib.core.javacv.util.Gui.*;
+import static org.bytedeco.javacpp.opencv_core.FONT_HERSHEY_PLAIN;
+import static org.bytedeco.javacpp.opencv_imgproc.circle;
+import static org.bytedeco.javacpp.opencv_imgproc.putText;
+import static org.bytedeco.javacpp.opencv_imgproc.rectangle;
+import static teaselib.core.javacv.Color.Blue;
+import static teaselib.core.javacv.Color.DarkBlue;
+import static teaselib.core.javacv.Color.DarkGreen;
+import static teaselib.core.javacv.Color.Green;
+import static teaselib.core.javacv.Color.MidBlue;
+import static teaselib.core.javacv.Color.MidGreen;
+import static teaselib.core.javacv.Color.White;
+import static teaselib.core.javacv.util.Geom.center;
+import static teaselib.core.javacv.util.Gui.drawRect;
 
 import java.util.ConcurrentModificationException;
 import java.util.Map;
@@ -26,9 +34,6 @@ import teaselib.motiondetection.MotionDetector.Presence;
  * called from several threads.
  */
 public class MotionDetectorJavaCVDebugRenderer {
-    private static final String INPUT = "Input";
-    private static final String MOTION = "Motion";
-
     final private MotionProcessorJavaCV motionProcessor;
     final private Size windowSize;
 
@@ -39,9 +44,6 @@ public class MotionDetectorJavaCVDebugRenderer {
         this.motionProcessor = motionProcessor;
         this.windowSize = windowSize;
         this.owner = Thread.currentThread();
-
-        String windows[] = { INPUT, MOTION };
-        positionWindows(windowSize.width(), windowSize.height(), windows);
     }
 
     public void render(Mat debugOutput, Rect r,
@@ -55,10 +57,10 @@ public class MotionDetectorJavaCVDebugRenderer {
         boolean present = indicators.contains(Presence.Present);
         // Motion
         if (indicators.contains(Presence.Shake)) {
-            @SuppressWarnings("resource")
             Rect presenceRect = presenceIndicators.get(Presence.Present);
             rectangle(debugOutput, presenceRect,
                     present ? Color.MidBlue : Color.DarkBlue, 15, 8, 0);
+            presenceRect.close();
         } else {
             if (r != null) {
                 renderMotionRegion(debugOutput, r, present);
@@ -75,7 +77,6 @@ public class MotionDetectorJavaCVDebugRenderer {
         }
         renderRegionList(debugOutput, indicators);
         renderFPS(debugOutput, fps);
-        updateWindows(debugOutput);
     }
 
     private static void renderMotionRegion(Mat debugOutput, Rect r,
@@ -85,12 +86,13 @@ public class MotionDetectorJavaCVDebugRenderer {
     }
 
     private void renderContourMotionRegion(Mat debugOutput, Rect rM) {
-        motionProcessor.motionContours.render(debugOutput, -1, DarkRed);
+        motionProcessor.motionContours.render(debugOutput, -1, White);
         if (rM != null) {
             Point p = new Point(debugOutput.cols() - 40,
                     debugOutput.cols() - 20);
             putText(debugOutput, rM.area() + "p2", p, FONT_HERSHEY_PLAIN, 2.75,
                     White);
+            p.close();
         }
     }
 
@@ -98,15 +100,6 @@ public class MotionDetectorJavaCVDebugRenderer {
         if (motionProcessor.trackFeatures.haveFeatures()) {
             motionProcessor.distanceTracker.renderDebug(debugOutput,
                     motionProcessor.trackFeatures.keyPoints());
-        }
-    }
-
-    private void updateWindows(Mat debugOutput) {
-        org.bytedeco.javacpp.opencv_highgui.imshow(INPUT, debugOutput);
-        org.bytedeco.javacpp.opencv_highgui.imshow(MOTION,
-                motionProcessor.motion.output);
-        if (org.bytedeco.javacpp.opencv_highgui.waitKey(30) >= 0) {
-            // break;
         }
     }
 
@@ -119,6 +112,7 @@ public class MotionDetectorJavaCVDebugRenderer {
             putText(debugOutput, indicator.toString(), p, FONT_HERSHEY_PLAIN,
                     1.25, White);
             n += s;
+            p.close();
         }
     }
 
@@ -128,6 +122,7 @@ public class MotionDetectorJavaCVDebugRenderer {
         Point p = new Point(0, debugOutput.rows() - 10);
         putText(debugOutput, fpsFormatted + "fps", p, FONT_HERSHEY_PLAIN, 1.75,
                 White);
+        p.close();
     }
 
     private void renderPresenceIndicators(Mat debugOutput, Rect rM,
@@ -148,7 +143,5 @@ public class MotionDetectorJavaCVDebugRenderer {
     }
 
     public void close() {
-        org.bytedeco.javacpp.opencv_highgui.destroyWindow(INPUT);
-        org.bytedeco.javacpp.opencv_highgui.destroyWindow(MOTION);
     }
 }

@@ -16,6 +16,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import teaselib.core.ScriptInterruptedException;
+import teaselib.core.VideoRenderer;
 import teaselib.core.concurrency.Signal;
 import teaselib.core.devices.DeviceCache;
 import teaselib.core.devices.DeviceFactory;
@@ -139,6 +140,7 @@ public class MotionDetectorJavaCV implements MotionDetector {
         private final Signal presenceChanged = new Signal();
 
         MotionDetectorJavaCVDebugRenderer debugInfo = null;
+        VideoRenderer videoRenderer = null;
         boolean logDetails = false;
 
         CaptureThread(VideoCaptureDevice videoCaptureDevice,
@@ -249,9 +251,21 @@ public class MotionDetectorJavaCV implements MotionDetector {
                                     if (hasChanged) {
                                         presenceChanged.signal();
                                     }
-                                    updateDisplay(input, debugInfo);
+                                    if (videoRenderer != null) {
+                                        Set<Presence> indicators = renderFeedback(
+                                                input);
+                                        if (logDetails) {
+                                            logMotionState(indicators,
+                                                    motionProcessor,
+                                                    detectionResult.contourMotionDetected,
+                                                    detectionResult.trackerMotionDetected);
+                                        }
+                                    }
                                 }
                             });
+                            if (videoRenderer != null) {
+                                videoRenderer.update(input);
+                            }
                             long timeLeft = fpsStatistics.timeMillisLeft(
                                     desiredFrameTimeMillis, now);
                             if (timeLeft > 0) {
@@ -265,6 +279,9 @@ public class MotionDetectorJavaCV implements MotionDetector {
                         logger.error(e.getMessage(), e);
                     } finally {
                         videoCaptureDevice.close();
+                        if (videoRenderer != null) {
+                            videoRenderer.close();
+                        }
                         if (debugInfo != null)
                             debugInfo.close();
                     }
@@ -276,8 +293,7 @@ public class MotionDetectorJavaCV implements MotionDetector {
             }
         }
 
-        private void updateDisplay(Mat image,
-                MotionDetectorJavaCVDebugRenderer debugInfo) {
+        private Set<Presence> renderFeedback(Mat image) {
             Set<Presence> indicators = getIndicatorHistory(debugWindowTimeSpan);
             debugInfo.render(image,
                     detectionResult.getPresenceRegion(debugWindowTimeSpan),
@@ -285,11 +301,7 @@ public class MotionDetectorJavaCV implements MotionDetector {
                     detectionResult.contourMotionDetected,
                     detectionResult.trackerMotionDetected,
                     fpsStatistics.value());
-            if (logDetails) {
-                logMotionState(indicators, motionProcessor,
-                        detectionResult.contourMotionDetected,
-                        detectionResult.trackerMotionDetected);
-            }
+            return indicators;
         }
 
         private Set<Presence> getIndicatorHistory(double timeSpan) {
@@ -368,6 +380,11 @@ public class MotionDetectorJavaCV implements MotionDetector {
         pause();
         eventThread.setPointOfView(pointOfView);
         resume();
+    }
+
+    @Override
+    public void setVideoRenderer(VideoRenderer videoRenderer) {
+        eventThread.videoRenderer = videoRenderer;
     }
 
     @Override

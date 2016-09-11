@@ -1,7 +1,10 @@
 package teaselib.core.javacv.util;
 
-import static org.bytedeco.javacpp.opencv_core.*;
-import static org.bytedeco.javacpp.opencv_imgproc.*;
+import static org.bytedeco.javacpp.opencv_core.FONT_HERSHEY_PLAIN;
+import static org.bytedeco.javacpp.opencv_imgproc.approxPolyDP;
+import static org.bytedeco.javacpp.opencv_imgproc.boundingRect;
+import static org.bytedeco.javacpp.opencv_imgproc.putText;
+import static org.bytedeco.javacpp.opencv_imgproc.rectangle;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -15,7 +18,7 @@ import org.bytedeco.javacpp.opencv_core.Scalar;
 
 public class Gui {
     public static void positionWindows(int width, int height,
-            String[] windows) {
+            String... windows) {
         for (String name : windows) {
             org.bytedeco.javacpp.opencv_highgui.namedWindow(name);
         }

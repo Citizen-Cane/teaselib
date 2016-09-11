@@ -119,4 +119,6 @@ public interface Host {
      *            The script to execute when the slave quits the application.
      */
     void setQuitHandler(Runnable onQuitHandler);
+
+    VideoRenderer getDisplay(VideoRenderer.Type displayType);
 }

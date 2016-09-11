@@ -3,9 +3,14 @@ package teaselib.hosts;
 import java.io.IOException;
 import java.util.List;
 
+import org.bytedeco.javacpp.opencv_core.Point;
+
+import teaselib.core.VideoRenderer;
+import teaselib.core.VideoRenderer.Type;
 import teaselib.core.Host;
 import teaselib.core.ResourceLoader;
 import teaselib.core.events.Delegate;
+import teaselib.core.javacv.VideoRendererJavaCV;
 
 public class DummyHost implements Host {
 
@@ -71,6 +76,18 @@ public class DummyHost implements Host {
     @Override
     public void setQuitHandler(Runnable onQuit) {
         // TODO Auto-generated method stub
-
     }
+
+    static final Point javacvDebugWindow = new Point(80, 80);
+
+    @Override
+    public VideoRenderer getDisplay(Type displayType) {
+        return new VideoRendererJavaCV(displayType) {
+            @Override
+            protected Point getPosition(Type type, int width, int height) {
+                return javacvDebugWindow;
+            }
+        };
+    }
+
 }

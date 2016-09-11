@@ -2,6 +2,7 @@ package teaselib.motiondetection;
 
 import java.util.Set;
 
+import teaselib.core.VideoRenderer;
 import teaselib.core.devices.Device;
 
 public interface MotionDetector extends Device {
@@ -124,6 +125,8 @@ public interface MotionDetector extends Device {
     void setSensitivity(MotionSensitivity motionSensivity);
 
     void setViewPoint(ViewPoint pointOfView);
+
+    void setVideoRenderer(VideoRenderer videoRenderer);
 
     void clearMotionHistory();
 

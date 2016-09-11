@@ -68,10 +68,10 @@ public class MotionDetectorJavaCVDebugRenderer {
             renderPresenceIndicators(debugOutput, r, presenceIndicators,
                     indicators, present);
             motionProcessor.trackFeatures.render(debugOutput, Green);
-            // tracker distance
-            if (contourMotionDetected && !trackerMotionDetected) {
+            if (contourMotionDetected) {
                 renderContourMotionRegion(debugOutput, r);
-            } else if (trackerMotionDetected) {
+            }
+            if (trackerMotionDetected) {
                 renderDistanceTrackerPoints(debugOutput);
             }
         }

@@ -69,12 +69,6 @@ public abstract class MotionDetectionResultData
         // The extended region cannot touch the screen border,
         // since the presence region cannot touch the border because
         // findContours ignores a one pixel border around the input mat.
-        // Plus Rect.contains() bottom right border is exclusive,
-        // so the extended region must be shrunk by 2+1 = 3
-        // TODO Shrinking the vertically extended presence region breaks Absent
-        // detection. It restores Shake, but also triggers Absent when leaving
-        // the camera area at the bottom
-        // (which should be handled by the vertically extended presence region)
         map.put(Presence.PresenceExtendedVertically, new Rect(cornerSize, 1,
                 s.width() - 2 * cornerSize, s.height() - 2));
         // Define a center rectangle half the width

@@ -1,17 +1,12 @@
 package teaselib.core.javacv.util;
 
 import static org.bytedeco.javacpp.opencv_core.FONT_HERSHEY_PLAIN;
-import static org.bytedeco.javacpp.opencv_imgproc.approxPolyDP;
-import static org.bytedeco.javacpp.opencv_imgproc.boundingRect;
 import static org.bytedeco.javacpp.opencv_imgproc.putText;
 import static org.bytedeco.javacpp.opencv_imgproc.rectangle;
 
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 
 import org.bytedeco.javacpp.opencv_core.Mat;
-import org.bytedeco.javacpp.opencv_core.MatVector;
 import org.bytedeco.javacpp.opencv_core.Point;
 import org.bytedeco.javacpp.opencv_core.Rect;
 import org.bytedeco.javacpp.opencv_core.Scalar;
@@ -70,21 +65,4 @@ public class Gui {
             rectangle(mat, r, color, size, 8, 0);
         }
     }
-
-    public static List<Rect> rectangles(MatVector contours) {
-        Mat p = new Mat();
-        int size = (int) contours.size();
-        List<Rect> rectangles = new ArrayList<Rect>(size);
-        for (int i = 0; i < size; i++) {
-            // TODO Remove approxPolyDP?
-            approxPolyDP(contours.get(i), p, 3, true);
-            @SuppressWarnings("resource")
-            Rect r = boundingRect(p);
-            // Rect r = opencv_imgproc.boundingRect(contours.get(i));
-            if (r != null)
-                rectangles.add(r);
-        }
-        return rectangles;
-    }
-
 }

@@ -40,6 +40,7 @@ public class TrackFeatures {
             goodFeaturesToTrack(videoMatGray, keyPoints, maxPoints, 0.5, 8.0);
         }
         keyPoints.copyTo(keyPointsPrevious);
+        size.close();
         // update(input); // init current to be able to render something
     }
 

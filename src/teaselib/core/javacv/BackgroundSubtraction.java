@@ -2,6 +2,8 @@ package teaselib.core.javacv;
 
 import org.bytedeco.javacpp.opencv_core;
 import org.bytedeco.javacpp.opencv_core.Mat;
+import org.bytedeco.javacpp.opencv_core.Point;
+import org.bytedeco.javacpp.opencv_core.Size;
 import org.bytedeco.javacpp.opencv_imgproc;
 import org.bytedeco.javacpp.opencv_video.BackgroundSubtractorKNN;
 
@@ -28,10 +30,12 @@ public class BackgroundSubtraction {
     }
 
     public void setStructuringElementSize(int size) {
-        opencv_core.Size s = new opencv_core.Size(size, size);
-        opencv_core.Point p = new opencv_core.Point(1, 1);
+        Size s = new opencv_core.Size(size, size);
+        Point p = new opencv_core.Point(1, 1);
         element = opencv_imgproc.getStructuringElement(
                 org.bytedeco.javacpp.opencv_imgproc.MORPH_RECT, s, p);
+        s.close();
+        p.close();
     }
 
     private void init(int history, double dist2Threshold,

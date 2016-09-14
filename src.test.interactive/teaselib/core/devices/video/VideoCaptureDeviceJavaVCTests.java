@@ -13,7 +13,6 @@ public class VideoCaptureDeviceJavaVCTests {
     @Test
     public void testVideoCapture() {
         VideoCaptureDevice vc = VideoCaptureDevices.Instance.getDefaultDevice();
-        @SuppressWarnings("resource")
         Size size = new Size(320, 240);
         vc.open();
         vc.resolution(size);
@@ -23,6 +22,7 @@ public class VideoCaptureDeviceJavaVCTests {
                 break;
             }
         }
+        size.close();
         vc.close();
     }
 }

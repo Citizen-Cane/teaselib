@@ -1,6 +1,7 @@
 package teaselib.core.javacv.util;
 
-import static org.bytedeco.javacpp.opencv_imgproc.*;
+import static org.bytedeco.javacpp.opencv_imgproc.approxPolyDP;
+import static org.bytedeco.javacpp.opencv_imgproc.boundingRect;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -63,7 +64,10 @@ public class Geom {
         int r1 = (rect1.width() + rect1.height()) / 4;
         Point p2 = center(rect2);
         int r2 = (rect2.width() + rect2.height()) / 4;
-        return distance2(p1, p2) - (r1 + r2) * (r1 + r2);
+        int distance2 = distance2(p1, p2);
+        p1.close();
+        p2.close();
+        return distance2 - (r1 + r2) * (r1 + r2);
     }
 
     public static Point center(Rect r) {
@@ -119,16 +123,18 @@ public class Geom {
     }
 
     public static List<Rect> rectangles(MatVector contours) {
+        Mat p = new Mat();
         int size = (int) contours.size();
         List<Rect> rectangles = new ArrayList<Rect>(size);
         for (int i = 0; i < size; i++) {
-            Mat p = new Mat();
             approxPolyDP(contours.get(i), p, 3, true);
+            @SuppressWarnings("resource")
             Rect r = boundingRect(p);
             if (r != null) {
                 rectangles.add(r);
             }
         }
+        p.close();
         return rectangles;
     }
 

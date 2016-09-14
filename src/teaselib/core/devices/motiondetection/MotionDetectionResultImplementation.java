@@ -186,6 +186,7 @@ public class MotionDetectionResultImplementation
     }
 
     @Override
+    @SuppressWarnings("resource")
     public Set<Presence> getPresence(Rect motionRegion, Rect presenceRegion) {
         Rect presenceRect = presenceIndicators
                 .get(viewPoint2PresenceRegion.get(viewPoint));
@@ -193,43 +194,58 @@ public class MotionDetectionResultImplementation
         // rect.br() returns point + size which is not inside rect
         Point br = new Point(tl.x() + presenceRect.width() - 1,
                 tl.y() + presenceRect.height() - 1);
-        if (motionRegion == null
-                || (motionRegion.contains(tl) && motionRegion.contains(br))) {
-            // Keep last state, to avoid signaling changes during shakes
-            Set<Presence> last = new LinkedHashSet<Presence>(
-                    indicatorHistory.tail());
-            last.remove(Presence.NoShake);
-            last.add(Presence.Shake);
-            return last;
-        } else {
-            boolean presenceInsidePresenceRect = intersects(presenceRegion,
-                    presenceRect);
-            boolean motionDetected = motionAreaHistory.tail() > 0.0;
-            Presence presenceState = motionDetected
-                    || presenceInsidePresenceRect ? Presence.Present
-                            : Presence.Away;
-            Set<Presence> directions = new LinkedHashSet<Presence>();
-            directions.add(presenceState);
-            if (motionDetected) {
-                directions.add(Presence.Motion);
+        final Set<Presence> presence;
+        try {
+            if (motionRegion == null || (motionRegion.contains(tl)
+                    && motionRegion.contains(br))) {
+                presence = shakePresence();
             } else {
-                directions.add(Presence.NoMotion);
+                presence = presenceState(presenceRegion, presenceRect);
             }
-            // Presence regions
-            for (Map.Entry<Presence, Rect> e : presenceIndicators.entrySet()) {
-                Presence key = e.getKey();
-                if (key != Presence.Present) {
-                    if (intersects(e.getValue(), presenceRegion)) {
-                        // Intersects region
-                        directions.add(key);
-                    } else if (negatedRegions.containsKey(key)) {
-                        // Doesn't intersect region
-                        directions.add(negatedRegions.get(key));
-                    }
+        } finally {
+            tl.close();
+            br.close();
+        }
+        return presence;
+    }
+
+    private Set<Presence> shakePresence() {
+        // Keep last state, to avoid signaling changes during shakes
+        Set<Presence> last = new LinkedHashSet<Presence>(
+                indicatorHistory.tail());
+        last.remove(Presence.NoShake);
+        last.add(Presence.Shake);
+        return last;
+    }
+
+    private Set<Presence> presenceState(Rect presenceRegion,
+            Rect presenceRect) {
+        boolean presenceInsidePresenceRect = intersects(presenceRegion,
+                presenceRect);
+        boolean motionDetected = motionAreaHistory.tail() > 0.0;
+        Presence presenceState = motionDetected || presenceInsidePresenceRect
+                ? Presence.Present : Presence.Away;
+        Set<Presence> directions = new LinkedHashSet<Presence>();
+        directions.add(presenceState);
+        if (motionDetected) {
+            directions.add(Presence.Motion);
+        } else {
+            directions.add(Presence.NoMotion);
+        }
+        // Presence regions
+        for (Map.Entry<Presence, Rect> e : presenceIndicators.entrySet()) {
+            Presence key = e.getKey();
+            if (key != Presence.Present) {
+                if (intersects(e.getValue(), presenceRegion)) {
+                    // Intersects region
+                    directions.add(key);
+                } else if (negatedRegions.containsKey(key)) {
+                    // Doesn't intersect region
+                    directions.add(negatedRegions.get(key));
                 }
             }
-            directions.add(Presence.NoShake);
-            return directions;
         }
+        directions.add(Presence.NoShake);
+        return directions;
     }
 }

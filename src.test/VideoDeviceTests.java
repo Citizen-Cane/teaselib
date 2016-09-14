@@ -1,4 +1,7 @@
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 import org.bytedeco.javacpp.opencv_core.Size;
 import org.junit.Test;
@@ -21,6 +24,7 @@ public class VideoDeviceTests {
                 resolutions.getMatchingOrSimilar(new Size(800, 600)));
     }
 
+    @SuppressWarnings("resource")
     @Test
     public void testFindingMatchingResolution() {
         assertTrue(resolutions.contains(resolutions.get(0)));

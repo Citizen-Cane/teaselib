@@ -288,7 +288,7 @@ public class TextToSpeechPlayer {
         return actorKey2PrerecordedVoiceGuid.containsKey(actor.key);
     }
 
-    public Message getPrerenderedMessage(Message message,
+    public Message createPrerenderedSpeechMessage(Message message,
             ResourceLoader resources) {
         // Do we have a pre-recorded voice?
         try {

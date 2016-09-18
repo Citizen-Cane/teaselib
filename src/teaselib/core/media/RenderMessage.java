@@ -55,7 +55,10 @@ public class RenderMessage extends MediaRendererThread {
         this.resources = resources;
         this.message = message;
         this.ttsPlayer = ttsPlayer;
-        // pre-fetch images
+        prefetchImages(message);
+    }
+
+    private void prefetchImages(Message message) {
         for (Part part : message.getParts()) {
             if (part.type == Message.Type.Image) {
                 final String resourcePath = part.value;
@@ -177,86 +180,15 @@ public class RenderMessage extends MediaRendererThread {
             // Process message parts
             for (Iterator<Part> it = message.iterator(); it.hasNext();) {
                 Part part = it.next();
+                boolean lastParagraph = !it.hasNext();
                 if (!logSpecialMessageTypes.contains(part.type)) {
                     teaseLib.transcript
                             .info("" + part.type.name() + " = " + part.value);
                 }
                 logger.info(part.type.toString() + ": " + part.value);
                 // TODO Works only if the last part is a text part
-                final boolean lastParagraph = !it.hasNext();
-                // Handle message commands
-                if (part.type == Message.Type.Image) {
-                    displayImage = part.value;
-                } else if (part.type == Message.Type.BackgroundSound) {
-                    // Play sound, continue message execution
-                    synchronized (interuptableAudio) {
-                        soundRenderer = new RenderSound(resources, part.value,
-                                teaseLib);
-                        soundRenderer.render();
-                        interuptableAudio.add(soundRenderer);
-                    }
-                    // use awaitSoundCompletion keyword to wait for sound
-                    // completion
-                } else if (part.type == Message.Type.Sound) {
-                    // Play sound, wait until finished
-                    RenderSound sound = new RenderSound(resources, part.value,
-                            teaseLib);
-                    synchronized (interuptableAudio) {
-                        sound.render();
-                        interuptableAudio.add(sound);
-                    }
-                    sound.completeAll();
-                    synchronized (interuptableAudio) {
-                        interuptableAudio.remove(sound);
-                    }
-                } else if (part.type == Message.Type.Speech) {
-                    if (speakText) {
-                        speechRenderer = new RenderPrerecordedSpeech(part.value,
-                                getParagraphPause(accumulatedText,
-                                        lastParagraph),
-                                resources, teaseLib);
-                    }
-                } else if (part.type == Message.Type.DesktopItem) {
-                    // Finish the current text part
-                    try {
-                        final RenderDesktopItem renderDesktopItem = new RenderDesktopItem(
-                                resources.unpackEnclosingFolder(part.value),
-                                teaseLib);
-                        completeSpeech(lastParagraph);
-                        renderDesktopItem.render();
-                    } catch (IOException e) {
-                        logger.error(e.getMessage(), e);
-                        accumulatedText.add(
-                                new Part(Message.Type.Text, e.getMessage()));
-                        show(accumulatedText.toString(), mood);
-                    }
-                } else if (part.type == Message.Type.Mood) {
-                    // Mood
-                    mood = part.value;
-                } else if (part.type == Message.Type.Keyword) {
-                    doKeyword(part);
-                } else if (part.type == Message.Type.Delay) {
-                    // Pause
-                    doDelay(part);
-                } else if (part.type == Message.Type.Item) {
-                    accumulatedText.add(part);
-                } else { // (part.type == Message.Type.Text)
-                    accumulatedText.add(part);
-                    show(accumulatedText.toString(), mood);
-                    if (ttsPlayer != null && speechRenderer == null) {
-                        if (speakText) {
-                            speechRenderer = new RenderTTSSpeech(ttsPlayer,
-                                    message.actor, part.value, mood,
-                                    getParagraphPause(accumulatedText,
-                                            lastParagraph),
-                                    teaseLib);
-                        }
-                    }
-                    teaseLib.transcript.info(">> " + part.value);
-                    if (speechRenderer != null) {
-                        speak();
-                    }
-                }
+                mood = renderMessagePart(message, part, accumulatedText, mood,
+                        speakText, lastParagraph);
                 if (task.isCancelled()) {
                     break;
                 }
@@ -268,6 +200,81 @@ public class RenderMessage extends MediaRendererThread {
             completeSpeech(true);
             allCompleted();
         }
+    }
+
+    private String renderMessagePart(Message message, Part part,
+            MessageTextAccumulator accumulatedText, String mood,
+            boolean speakText, boolean lastParagraph) {
+        if (part.type == Message.Type.Image) {
+            displayImage = part.value;
+        } else if (part.type == Message.Type.BackgroundSound) {
+            // Play sound, continue message execution
+            synchronized (interuptableAudio) {
+                soundRenderer = new RenderSound(resources, part.value,
+                        teaseLib);
+                soundRenderer.render();
+                interuptableAudio.add(soundRenderer);
+            }
+            // use awaitSoundCompletion keyword to wait for sound
+            // completion
+        } else if (part.type == Message.Type.Sound) {
+            // Play sound, wait until finished
+            RenderSound sound = new RenderSound(resources, part.value,
+                    teaseLib);
+            synchronized (interuptableAudio) {
+                sound.render();
+                interuptableAudio.add(sound);
+            }
+            sound.completeAll();
+            synchronized (interuptableAudio) {
+                interuptableAudio.remove(sound);
+            }
+        } else if (part.type == Message.Type.Speech) {
+            if (speakText) {
+                speechRenderer = new RenderPrerecordedSpeech(part.value,
+                        getParagraphPause(accumulatedText, lastParagraph),
+                        resources, teaseLib);
+            }
+        } else if (part.type == Message.Type.DesktopItem) {
+            // Finish the current text part
+            try {
+                final RenderDesktopItem renderDesktopItem = new RenderDesktopItem(
+                        resources.unpackEnclosingFolder(part.value), teaseLib);
+                completeSpeech(lastParagraph);
+                renderDesktopItem.render();
+            } catch (IOException e) {
+                logger.error(e.getMessage(), e);
+                accumulatedText
+                        .add(new Part(Message.Type.Text, e.getMessage()));
+                show(accumulatedText.toString(), mood);
+            }
+        } else if (part.type == Message.Type.Mood) {
+            // Mood
+            mood = part.value;
+        } else if (part.type == Message.Type.Keyword) {
+            doKeyword(part);
+        } else if (part.type == Message.Type.Delay) {
+            // Pause
+            doDelay(part);
+        } else if (part.type == Message.Type.Item) {
+            accumulatedText.add(part);
+        } else { // (part.type == Message.Type.Text)
+            accumulatedText.add(part);
+            show(accumulatedText.toString(), mood);
+            if (ttsPlayer != null && speechRenderer == null) {
+                if (speakText) {
+                    speechRenderer = new RenderTTSSpeech(ttsPlayer,
+                            message.actor, part.value, mood,
+                            getParagraphPause(accumulatedText, lastParagraph),
+                            teaseLib);
+                }
+            }
+            teaseLib.transcript.info(">> " + part.value);
+            if (speechRenderer != null) {
+                speak();
+            }
+        }
+        return mood;
     }
 
     private void speak() {

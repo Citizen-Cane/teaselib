@@ -159,11 +159,11 @@ public abstract class TeaseScriptBase {
             if (ttsPlayer != null) {
                 if (ttsPlayer.prerenderedSpeechAvailable(message.actor)) {
                     // Don't use TTS, even if pre-recorded speech is missing
-                    message = ttsPlayer.getPrerenderedMessage(message,
+                    message = ttsPlayer.createPrerenderedSpeechMessage(message,
                             resources);
                 }
             }
-            Message parsedMessage = preprocessMessage(message);
+            Message parsedMessage = injectActorImagesAndExpandTextVariables(message);
             renderMessage(new RenderMessage(resources, parsedMessage, ttsPlayer,
                     teaseLib));
         } finally {
@@ -198,7 +198,7 @@ public abstract class TeaseScriptBase {
         }
     }
 
-    private Message preprocessMessage(Message message) {
+    private Message injectActorImagesAndExpandTextVariables(Message message) {
         // Clone the actor to prevent the wrong actor image to be displayed
         // when changing the actor images right after saying a message.
         // Without cloning one of the new actor images would be displayed

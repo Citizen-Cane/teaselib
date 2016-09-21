@@ -45,12 +45,14 @@ public class KeyReleaseTest {
         logger.info(keyRelease.getName() + ": " + actuators + " actuators");
         Assume.assumeTrue(DeviceCache.connect(keyRelease, 5.0));
         assertTrue(keyRelease.connected());
+        assertTrue(keyRelease.active());
         assertTrue(actuators > 0);
         for (int i = 0; i < actuators; i++) {
             int available = keyRelease.available(i);
             assertTrue(available > 0);
             keyRelease.arm(i);
-            sleepSeconds(10);
+            sleepSeconds(1);
+            assertTrue(keyRelease.isRunning(i));
             keyRelease.start(i, Minutes);
             assertTrue(keyRelease.isRunning(i));
             logger.info("Actuator " + i);
@@ -66,6 +68,9 @@ public class KeyReleaseTest {
             assertFalse(keyRelease.isRunning(i));
             sleepSeconds(10);
         }
+        assertTrue(keyRelease.connected());
+        assertTrue(keyRelease.active());
+        assertTrue(actuators > 0);
     }
 
     @Test
@@ -75,12 +80,14 @@ public class KeyReleaseTest {
         logger.info(keyRelease.getName() + ": " + actuators + " actuators");
         Assume.assumeTrue(DeviceCache.connect(keyRelease, 5.0));
         assertTrue(keyRelease.connected());
+        assertTrue(keyRelease.active());
         assertTrue(actuators > 0);
         for (int i = 0; i < actuators; i++) {
             int available = keyRelease.available(i);
             assertTrue(available > 0);
             keyRelease.arm(i);
-            sleepSeconds(10);
+            sleepSeconds(1);
+            assertTrue(keyRelease.isRunning(i));
             keyRelease.start(i, Minutes);
             assertTrue(keyRelease.isRunning(i));
             logger.info("Actuator " + i);
@@ -95,6 +102,9 @@ public class KeyReleaseTest {
             assertFalse(keyRelease.isRunning(i));
             sleepSeconds(10);
         }
+        assertTrue(keyRelease.connected());
+        assertTrue(keyRelease.active());
+        assertTrue(actuators > 0);
     }
 
     @Test
@@ -104,12 +114,14 @@ public class KeyReleaseTest {
         logger.info(keyRelease.getName() + ": " + actuators + " actuators");
         Assume.assumeTrue(DeviceCache.connect(keyRelease, 5.0));
         assertTrue(keyRelease.connected());
+        assertTrue(keyRelease.active());
         assertTrue(actuators > 0);
         for (int i = 0; i < actuators; i++) {
             int available = keyRelease.available(i);
             assertTrue(available > 0);
             keyRelease.arm(i);
-            sleepSeconds(10);
+            sleepSeconds(1);
+            assertTrue(keyRelease.isRunning(i));
             keyRelease.start(i, Minutes);
             assertTrue(keyRelease.isRunning(i));
             logger.info("Actuator " + i);
@@ -117,11 +129,14 @@ public class KeyReleaseTest {
             // Sleeping longer than the next release duration with only one
             // release pending causes the device to enter deep sleep and
             // release on reset
-            sleepMinutes(Minutes);
+            sleepMinutes(Minutes + 1);
             // The key should have been released automatically by now
             assertFalse(keyRelease.isRunning(i));
             sleepSeconds(10);
         }
+        assertTrue(keyRelease.connected());
+        assertTrue(keyRelease.active());
+        assertTrue(actuators > 0);
     }
 
     @Test
@@ -130,11 +145,16 @@ public class KeyReleaseTest {
         logger.info(keyRelease.getName());
         Assume.assumeTrue(DeviceCache.connect(keyRelease, 5.0));
         assertTrue(keyRelease.connected());
+        assertTrue(keyRelease.active());
+        int actuators = keyRelease.actuators();
+        logger.info(keyRelease.getName() + ": " + actuators + " actuators");
         keyRelease.sleep(Minutes);
         // Sleeping longer than the next release duration with only one
         // release pending causes the device to enter deep sleep and
         // release on reset
-        sleepMinutes(Minutes);
+        sleepMinutes(Minutes + 1);
         assertTrue(keyRelease.connected());
+        assertTrue(keyRelease.active());
+        assertTrue(actuators > 0);
     }
 }

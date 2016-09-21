@@ -73,6 +73,7 @@ const char* const KeyReleaseService::createSessionKey() {
   static int SessionKeySize= 17;
   char* sessionKey = new char[SessionKeySize];
   int i = 0;
+  // TODO Without a proper seed, the session key is always the same
   for(; i < SessionKeySize; i++) {
     sessionKey[i] = '0' + rand() % 10;
   }
@@ -146,17 +147,17 @@ unsigned int KeyReleaseService::process(const UDPMessage& received, char* buffer
     releaseTimer.start();
     return createCountMessage(duration.remainingMinutes, buffer);
   }
-  else if (isCommand(received, "available" /* actuator minutes */)) {
+  else if (isCommand(received, "available" /* actuator */)) {
     const int index = atol(received.parameters[0]);
     Duration& duration = durations[index];
     return createCountMessage(duration.actuator->maximumMinutes - duration.elapsedMinutes, buffer);
   }
-  else if (isCommand(received, "remaining" /* actuator minutes */)) {
+  else if (isCommand(received, "remaining" /* actuator */)) {
     const int index = atol(received.parameters[0]);
     Duration& duration = durations[index];
     return createCountMessage(duration.remainingMinutes, buffer);
   }
-  else if (isCommand(received, "running" /* actuator minutes */)) {
+  else if (isCommand(received, "running" /* actuator */)) {
     const int index = atol(received.parameters[0]);
     Duration& duration = durations[index];
     return createCountMessage(duration.running ? 1 : 0, buffer);
@@ -164,6 +165,7 @@ unsigned int KeyReleaseService::process(const UDPMessage& received, char* buffer
   else if (isCommand(received, "release" /* actuator releaseKey */)) {
     releaseTimer.stop();
     const int index = atol(received.parameters[0]);
+    // TODO comparre release key string in order to  prevent cheating
     durations[index].clear();
     releaseKey(index);
     updatePulse(Released);

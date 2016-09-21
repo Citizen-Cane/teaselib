@@ -193,6 +193,13 @@ public class KeyRelease implements Device {
         return Ok.equals(ok.command);
     }
 
+    /**
+     * Whether any of the actuators is holding a key.
+     * 
+     * @param actuator
+     *            The actuator.
+     * @return True if the actuator holds a key and is counting down.
+     */
     public boolean isRunning(int actuator) {
         RemoteDeviceMessage count = remoteDevice
                 .sendAndReceive(new RemoteDeviceMessage(DeviceClassName,
@@ -204,6 +211,12 @@ public class KeyRelease implements Device {
         }
     }
 
+    /**
+     * Get the number of minutes that can be added to this actuator.
+     * 
+     * @param actuator
+     * @return The number of available minutes.
+     */
     public int available(int actuator) {
         RemoteDeviceMessage count = remoteDevice
                 .sendAndReceive(new RemoteDeviceMessage(DeviceClassName,
@@ -215,6 +228,10 @@ public class KeyRelease implements Device {
         }
     }
 
+    /**
+     * @param actuator
+     * @return Duration minutes until release.
+     */
     public int remaining(int actuator) {
         RemoteDeviceMessage count = remoteDevice
                 .sendAndReceive(new RemoteDeviceMessage(DeviceClassName,
@@ -226,6 +243,13 @@ public class KeyRelease implements Device {
         }
     }
 
+    /**
+     * Release a key.
+     * 
+     * @param actuator
+     *            THe actuator that holds the key.
+     * @return Whether the key has been released.
+     */
     public boolean release(int actuator) {
         RemoteDeviceMessage released = remoteDevice.sendAndReceive(
                 new RemoteDeviceMessage(DeviceClassName, Release,

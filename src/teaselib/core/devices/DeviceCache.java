@@ -90,6 +90,10 @@ public class DeviceCache<T extends Device> {
         return devicePath.substring(0, devicePath.indexOf(PathSeparator));
     }
 
+    public static boolean connect(Device device) {
+        return connect(device, -1);
+    }
+
     /**
      * Poll for connection until the device is connected or the timeout duration
      * is exceeded.
@@ -106,9 +110,9 @@ public class DeviceCache<T extends Device> {
      */
     public static boolean connect(Device device, double timeoutSeconds)
             throws ScriptInterruptedException {
-        long timeoutMillis = timeoutSeconds > 0 ? (long) timeoutSeconds * 1000
+        long timeoutMillis = timeoutSeconds >= 0 ? (long) timeoutSeconds * 1000
                 : Long.MAX_VALUE;
-        while (timeoutMillis > 0) {
+        while (timeoutMillis >= 0) {
             long now = System.currentTimeMillis();
             if (device.connected()) {
                 return true;

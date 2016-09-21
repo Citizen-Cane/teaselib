@@ -227,7 +227,7 @@ public class MotionDetectorJavaCV implements MotionDetector {
                 // -> adjust to < 50% processing time per frame
                 while (!isInterrupted()) {
                     // poll the device until its reconnected
-                    DeviceCache.connect(videoCaptureDevice, -1);
+                    DeviceCache.connect(videoCaptureDevice);
                     openVideoCaptureDevice(videoCaptureDevice);
                     fpsStatistics.start();
                     try {

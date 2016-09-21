@@ -4,9 +4,7 @@
 package teaselib;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -85,41 +83,72 @@ public class TeaseScriptMath extends TeaseScriptPersistence {
         return item;
     }
 
-    public <T> List<T> randomized(T[] items, int n) {
-        @SuppressWarnings("unchecked")
-        T[] introduction = (T[]) new Object[0];
-        return randomized(introduction, items, n);
+    public <T> List<T> randomized(T[] items, int elements) {
+        return randomized(null, 0, items, elements);
     }
 
     /**
-     * Build a list with n randomized entries, starting with the shuffled items
-     * in introduction, followed by random items of repetitions.
+     * Build a list with n randomized entries, starting with all the shuffled
+     * items in introduction, followed by random items of repetitions.
      * 
      * @param introduction
-     * @param repeations
-     * @param n
+     * @param repetition
+     * @param size
      *            Requested size of the resulting list, at least
      *            introduction.size()
-     * @return The list starting with the shuffled items from the introduction,
-     *         followed by items from repetition. Repetitions are never added
-     *         twice in a row.
+     * @return The list starting with all the shuffled items from the
+     *         introduction, followed by items from repetition until the
+     *         requested count is reached. Repetitions are never added one after
+     *         the other.
      */
-    public <T> List<T> randomized(T[] introduction, T[] repetitions, int n) {
-        List<T> out = new ArrayList<T>(n);
+    public <T> List<T> randomized(T[] introduction, T[] repetition, int size) {
+        return randomized(introduction, introduction.length, repetition,
+                Math.max(0, size - introduction.length));
+    }
+
+    /**
+     * Build a list with n randomized entries, starting with all the shuffled
+     * items in introduction, followed by random items of repetitions.
+     * 
+     * @param introduction
+     * @param introductionElements
+     *            Number of randomized elements from the introduction
+     * @param repetition
+     * @param repetitionElements
+     *            Number of randomized elements from the repetition.
+     * @return The list starting with some shuffled items from the introduction
+     *         until the requested count is reached, followed by some items from
+     *         repetition until the requested count is reached. Repetitions are
+     *         never added one after the other.
+     */
+    public <T> List<T> randomized(T[] introduction, int introductionElements,
+            T[] repetition, int repetitionElements) {
+        List<T> out = new ArrayList<T>(repetitionElements);
         if (introduction != null) {
-            out.addAll(Arrays.asList(introduction));
-            Collections.shuffle(out);
-        }
-        T last = out.size() > 0 ? out.get(out.size() - 1) : null;
-        for (int i = out.size(); i < n; i++) {
-            T t = null;
-            // Don't add the same entry twice in a row
-            while (last == (t = repetitions[random(0, repetitions.length - 1)])) {
+            if (introduction.length > 0) {
+                addRandomizedElements(out, introduction, introductionElements);
             }
-            out.add(t);
-            last = t;
+        }
+        if (repetition != null) {
+            if (repetition.length > 0) {
+                addRandomizedElements(out, repetition, repetitionElements);
+            }
         }
         return out;
+    }
+
+    private <T> List<T> addRandomizedElements(List<T> list, T[] elements,
+            int n) {
+        T last = list.size() > 0 ? list.get(list.size() - 1) : null;
+        for (int i = 0; i < n; i++) {
+            T t = null;
+            while (last == (t = elements[random(0, elements.length - 1)])) {
+                // Don't add the same entry twice in a row
+            }
+            list.add(t);
+            last = t;
+        }
+        return list;
     }
 
     public void sleep(long duration, TimeUnit timeUnit) {

@@ -97,7 +97,10 @@ public class Message {
     public final static String Delay50s = "delay 50";
     public final static String Delay55s = "delay 55";
     public final static String Delay60s = "delay 60";
+    public final static String Delay90s = "delay 90";
     public final static String Delay60to120s = "delay 60 120";
+    public final static String Delay90to120s = "delay 90 120";
+    public final static String Delay120s = "delay 120 120";
 
     /**
      * Don't display an image

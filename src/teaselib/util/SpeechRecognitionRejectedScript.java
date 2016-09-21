@@ -30,7 +30,9 @@ public abstract class SpeechRecognitionRejectedScript extends TeaseScript {
      * 
      * @return Whether to run the script.
      */
-    public abstract boolean canRun();
+    public boolean canRun() {
+        return true;
+    }
 
     @Override
     final protected String showChoices(ScriptFunction scriptFunction,

@@ -13,8 +13,9 @@ public class ClothesTests {
     @Test
     public void testClothesCategoriesCompletness() {
 
-        Clothes[][] categories = { Clothes.MaleClothes, Clothes.FemaleClothes,
-                Clothes.Accesoires, Clothes.TrannyItems, Clothes.Costumes };
+        Clothes[][] categories = { Clothes.MaleClothes, Clothes.MaleAccesoires,
+                Clothes.FemaleClothes, Clothes.FemaleAccesoires,
+                Clothes.TrannyItems, Clothes.Costumes };
         Set<Clothes> all = new HashSet<Clothes>();
         for (Clothes[] clothes : categories) {
             all.addAll(asSet(clothes));

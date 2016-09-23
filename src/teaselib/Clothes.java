@@ -20,6 +20,7 @@ public enum Clothes {
     Belt,
     Bikini,
     Blouse,
+    Body,
     Boots,
     Boxers,
     Bra,
@@ -69,30 +70,42 @@ public enum Clothes {
     Vest,
     Wig;
 
-    // Wearers of the diverse clothing items
+    // Namespaces of wearers of the diverse clothing items
 
     public static final String Male = "male";
     public static final String Female = "female";
-    public static final String Tranny = "tranny";
     public static final String Maid = "maid";
     public static final String Schoolgirl = "schoolgirl";
     public static final String Doll = "doll";
     public static final String Wife = "wife";
     public static final String Husband = "husband";
 
+    public static final Clothes[] Underwear = { Boxers, Briefs, GString,
+            Panties, Thong };
+
     public static final Clothes[] MaleClothes = { Boots, Boxers, Briefs, Jacket,
             Jeans, Sandals, Shirt, Shoes, Shorts, Socks, Suit, Sweater,
             Sweatpants, Trousers, TShirt, Tie };
 
     public static final Clothes[] FemaleClothes = { Baby_Doll, Bikini, Blouse,
-            Boots, Bra, Catsuit, Cheerleader_Uniform, Corset, Dress, Garterbelt,
-            GString, Handbag, High_Heels, Jacket, Jeans, Leotard, Miniskirt,
+            Body, Boots, Bra, Catsuit, Cheerleader_Uniform, Corset, Dress,
+            Garterbelt, GString, High_Heels, Jacket, Jeans, Leotard, Miniskirt,
             Monokini, Nightie, Panties, Pantyhose, Sandals, Shirt, Shoes,
             Shorts, Skirt, Socks, Stockings, Sweater, Sweatpants, Swimsuit,
             Tanktop, Thong, Trousers, TShirt, Vest };
 
-    public static final Clothes[] Accesoires = { Apron, Belt, Gloves, Jewelry,
-            Make_up, Princess_Tiara, Scarf, Tie };
+    public static final Clothes[] MaidClothes = { Blouse, Body, Boots, Bra,
+            Catsuit, Corset, Dress, Garterbelt, GString, High_Heels, Leotard,
+            Miniskirt, Panties, Pantyhose, Sandals, Shirt, Shoes, Skirt, Socks,
+            Stockings, Thong };
+
+    public static final Clothes[] MaleAccesoires = { Apron, Belt, Gloves, Tie };
+
+    public static final Clothes[] FemaleAccesoires = { Apron, Belt, Gloves,
+            Handbag, Jewelry, Make_up, Princess_Tiara, Scarf };
+
+    public static final Clothes[] MaidAccesoires = { Apron, Belt, Gloves,
+            Make_up };
 
     public static final Clothes[] TrannyItems = { Breast_Forms, Diaper, Wig };
 

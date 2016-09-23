@@ -224,6 +224,78 @@ public abstract class TeaseScriptPersistence extends TeaseScriptBase {
         return teaseLib.getString(namespace, name);
     }
 
+    public void clear(String global, String name) {
+        teaseLib.clear(global, name);
+    }
+
+    public void clear(String global, Enum<?> name) {
+        teaseLib.clear(global, name);
+    }
+
+    public void set(String global, Enum<?> name, boolean value) {
+        teaseLib.set(global, name, value);
+    }
+
+    public void set(String global, Enum<?> name, int value) {
+        teaseLib.set(global, name, value);
+    }
+
+    public void set(String global, Enum<?> name, double value) {
+        teaseLib.set(global, name, value);
+    }
+
+    public void set(String global, Enum<?> name, String value) {
+        teaseLib.set(global, name, value);
+    }
+
+    public void set(String global, String name, boolean value) {
+        teaseLib.set(global, name, value);
+    }
+
+    public void set(String global, String name, int value) {
+        teaseLib.set(global, name, value);
+    }
+
+    public void set(String global, String name, double value) {
+        teaseLib.set(global, name, value);
+    }
+
+    public void set(String global, String name, String value) {
+        teaseLib.set(global, name, value);
+    }
+
+    public boolean getBoolean(String global, String name) {
+        return teaseLib.getBoolean(global, name);
+    }
+
+    public int getInteger(String global, String name) {
+        return teaseLib.getInteger(global, name);
+    }
+
+    public double getFloat(String global, String name) {
+        return teaseLib.getFloat(global, name);
+    }
+
+    public String getString(String global, String name) {
+        return teaseLib.getString(global, name);
+    }
+
+    public boolean getBoolean(String global, Enum<?> name) {
+        return teaseLib.getBoolean(global, name);
+    }
+
+    public int getInteger(String global, Enum<?> name) {
+        return teaseLib.getInteger(global, name);
+    }
+
+    public double getFloat(String global, Enum<?> name) {
+        return teaseLib.getFloat(global, name);
+    }
+
+    public String getString(String global, Enum<?> name) {
+        return teaseLib.getString(global, name);
+    }
+
     public TeaseLib.PersistentBoolean persistentBoolean(String name) {
         return teaseLib.new PersistentBoolean(namespace, name);
     }

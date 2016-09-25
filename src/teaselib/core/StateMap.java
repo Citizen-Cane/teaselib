@@ -50,20 +50,20 @@ public class StateMap<T extends Enum<T>> {
     private class StateImpl implements State {
         private final T item;
         Duration duration;
-        private long expected;
+        private long expectedSeconds;
 
         /**
          * Apply an item for a specific duration which has already begun.
          *
          * @param item
          * @param startTimeSeconds
-         * @param howLongSeconds
+         * @param expectedSeconds
          */
-        private StateImpl(T item, long startTimeSeconds, long howLongSeconds) {
+        private StateImpl(T item, long startTimeSeconds, long expectedSeconds) {
             this.item = item;
             this.duration = teaseLib.new Duration(startTimeSeconds);
-            this.expected = howLongSeconds;
-            if (howLongSeconds > 0) {
+            this.expectedSeconds = expectedSeconds;
+            if (expectedSeconds > 0) {
                 save();
             }
         }
@@ -95,7 +95,12 @@ public class StateMap<T extends Enum<T>> {
          */
         @Override
         public boolean expired() {
-            return duration.elapsed(TimeUnit.SECONDS) >= expected;
+            return duration.elapsed(TimeUnit.SECONDS) >= expectedSeconds;
+        }
+
+        @Override
+        public long expected() {
+            return expectedSeconds;
         }
 
         /*
@@ -107,7 +112,7 @@ public class StateMap<T extends Enum<T>> {
         public long remaining(TimeUnit unit) {
             long now = teaseLib.getTime(unit);
             long end = unit.convert(
-                    duration.elapsedSeconds() + duration.start + expected,
+                    duration.elapsedSeconds() + duration.startSeconds + expectedSeconds,
                     TimeUnit.SECONDS);
             long remaining = Math.max(0, end - now);
             return remaining;
@@ -115,7 +120,7 @@ public class StateMap<T extends Enum<T>> {
 
         @Override
         public boolean applied() {
-            return expected > 0;
+            return expectedSeconds > 0;
         }
 
         @Override
@@ -141,8 +146,8 @@ public class StateMap<T extends Enum<T>> {
          */
         private void clear() {
             duration = teaseLib.new Duration(
-                    duration.start + duration.elapsed(TimeUnit.SECONDS));
-            expected = 0;
+                    duration.startSeconds + duration.elapsed(TimeUnit.SECONDS));
+            expectedSeconds = 0;
             save();
         }
 
@@ -154,14 +159,14 @@ public class StateMap<T extends Enum<T>> {
         @Override
         public void apply(long time, TimeUnit unit) {
             this.duration = teaseLib.new Duration();
-            this.expected = unit.toSeconds(time);
+            this.expectedSeconds = unit.toSeconds(time);
             save();
         }
 
         private void save() {
-            if (expected > 0 && expected < Long.MAX_VALUE) {
+            if (expectedSeconds > 0 && expectedSeconds < Long.MAX_VALUE) {
                 teaseLib.set(namespaceOf(item), nameOf(item),
-                        persisted(duration.start, expected));
+                        persisted(duration.startSeconds, expectedSeconds));
             } else {
                 teaseLib.clear(namespaceOf(item), nameOf(item));
             }

@@ -133,19 +133,19 @@ public class TeaseLib {
      *         Handles elapsed seconds since object creation
      */
     public class Duration {
-        public final long start;
+        public final long startSeconds;
 
         public Duration() {
-            this.start = getTime(TimeUnit.SECONDS);
+            this.startSeconds = getTime(TimeUnit.SECONDS);
         }
 
         public Duration(long startSeconds) {
-            this.start = startSeconds;
+            this.startSeconds = startSeconds;
         }
 
         public long elapsed(TimeUnit unit) {
             long now = getTime(TimeUnit.SECONDS);
-            long elapsedSeconds = now - start;
+            long elapsedSeconds = now - startSeconds;
             return unit.convert(elapsedSeconds, TimeUnit.SECONDS);
         }
 
@@ -519,19 +519,19 @@ public class TeaseLib {
     @SuppressWarnings("unchecked")
     public <T extends Enum<T>> State state(T item) {
         Class<T> enumClass = (Class<T>) item.getClass();
-        StateMap<T> state = state(enumClass);
-        State stateItem;
-        if (state.has(item)) {
-            stateItem = state.get(item);
+        StateMap<T> stateMap = state(enumClass);
+        State state;
+        if (stateMap.has(item)) {
+            state = stateMap.get(item);
         } else {
             // If there is no entry, we can assume that the item hasn't been
             // used yet, or no duration was applied
             // -> mark the item as not applied, and taken off a long time ago
             // -> checks against elapsed() do always succeed in this case,
             // allowing for simpler coding on the application layer
-            stateItem = state.add(item, 0, 0);
+            state = stateMap.add(item, 0, 0);
         }
-        return stateItem;
+        return state;
     }
 
     /**

@@ -386,7 +386,7 @@ public class RenderMessage extends MediaRendererThread {
     }
 
     private void doDelay(Part part) {
-        String args = removeCommandNameFromValue(part);
+        String args = part.value;
         if (args.isEmpty()) {
             // Fixed pause
             teaseLib.sleep(DELAY_AT_END_OF_MESSAGE, TimeUnit.MILLISECONDS);
@@ -407,15 +407,6 @@ public class RenderMessage extends MediaRendererThread {
                 // Fixed pause
                 teaseLib.sleep(DELAY_AT_END_OF_MESSAGE, TimeUnit.MILLISECONDS);
             }
-        }
-    }
-
-    private static String removeCommandNameFromValue(Part part) {
-        String value = part.value;
-        if (value.equalsIgnoreCase(part.type.toString())) {
-            return "";
-        } else {
-            return part.value.substring(part.type.toString().length() + 1);
         }
     }
 

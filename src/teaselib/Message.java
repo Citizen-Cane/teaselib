@@ -73,6 +73,14 @@ public class Message {
      */
     public final static String Delay = "delay";
 
+    public static String delay(int n) {
+        return Delay + " " + n;
+    }
+
+    public static String delay(int n, int m) {
+        return Delay + " " + n + " " + m;
+    }
+
     public final static String Delay2s = "delay 2";
     public final static String Delay2to5s = "delay 2 5";
     public final static String Delay3s = "delay 3";
@@ -100,7 +108,7 @@ public class Message {
     public final static String Delay90s = "delay 90";
     public final static String Delay60to120s = "delay 60 120";
     public final static String Delay90to120s = "delay 90 120";
-    public final static String Delay120s = "delay 120 120";
+    public final static String Delay120s = "delay 120";
 
     /**
      * Don't display an image
@@ -416,13 +424,20 @@ public class Message {
             } else if (type == Type.DesktopItem) {
                 // The keyword is optional,
                 // it's just needed to show an image on the desktop
-                if (text.toLowerCase().startsWith(ShowOnDesktop.toString())) {
-                    text = text.substring(ShowOnDesktop.toString().length())
-                            .trim();
-                }
+                text = removeAnyKeywordInFront(ShowOnDesktop, text);
+            } else if (type == Type.Delay) {
+                text = removeAnyKeywordInFront(Delay, text);
             }
             this.type = type;
             this.value = text;
+        }
+
+        private static String removeAnyKeywordInFront(String keyword,
+                String text) {
+            if (text.toLowerCase().startsWith(keyword)) {
+                text = text.substring(keyword.length()).trim();
+            }
+            return text;
         }
 
         public Part(Type type, String value) {

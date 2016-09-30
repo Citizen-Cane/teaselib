@@ -89,7 +89,7 @@ public class KeyRelease implements Device {
     private static final String Actuators = "actuators";
 
     private RemoteDevice remoteDevice;
-    private String releaseKey;
+    private String[] releaseKeys = { "" };
 
     KeyRelease() {
         this(RemoteDevices.WaitingForConnection);
@@ -141,7 +141,12 @@ public class KeyRelease implements Device {
         RemoteDeviceMessage count = remoteDevice.sendAndReceive(
                 new RemoteDeviceMessage(DeviceClassName, Actuators));
         if (RemoteDevice.Count.equals(count.command)) {
-            return Integer.parseInt(count.parameters.get(0));
+            int actuators = Integer.parseInt(count.parameters.get(0));
+            releaseKeys = new String[actuators];
+            for (int i = 0; i < releaseKeys.length; i++) {
+                releaseKeys[i] = "";
+            }
+            return actuators;
         } else {
             return 0;
         }
@@ -165,6 +170,7 @@ public class KeyRelease implements Device {
         RemoteDeviceMessage ok = remoteDevice
                 .sendAndReceive(new RemoteDeviceMessage(DeviceClassName, Arm,
                         Arrays.asList(Integer.toString(actuator))));
+        releaseKeys[actuator] = "";
         return Ok.equals(ok.command);
     }
 
@@ -174,8 +180,8 @@ public class KeyRelease implements Device {
                         Arrays.asList(Integer.toString(actuator),
                                 Integer.toString(timeMinutes))));
         if (ReleaseKey.equals(key.command)) {
-            releaseKey = key.parameters.get(0);
-            return releaseKey;
+            releaseKeys[actuator] = key.parameters.get(0);
+            return releaseKeys[actuator];
         } else {
             return "";
         }
@@ -252,8 +258,8 @@ public class KeyRelease implements Device {
      */
     public boolean release(int actuator) {
         RemoteDeviceMessage released = remoteDevice.sendAndReceive(
-                new RemoteDeviceMessage(DeviceClassName, Release,
-                        Arrays.asList(Integer.toString(actuator), releaseKey)));
+                new RemoteDeviceMessage(DeviceClassName, Release, Arrays.asList(
+                        Integer.toString(actuator), releaseKeys[actuator])));
         return Ok.equals(released.command);
     }
 }

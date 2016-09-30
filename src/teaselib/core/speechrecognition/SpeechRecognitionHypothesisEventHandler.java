@@ -27,7 +27,7 @@ public class SpeechRecognitionHypothesisEventHandler {
      * sentences or single word recognitions are prone to error. In fact, for
      * single word phrases, the recognizer may recognize anything.
      */
-    final static int HypothesisMinimumNumberOfWords = 3;
+    final static int HypothesisMinimumNumberOfWordsDefault = 6;
 
     /**
      * This adjusts the sensibility of the hypothesis rating. The better the
@@ -193,7 +193,7 @@ public class SpeechRecognitionHypothesisEventHandler {
 
         private boolean isRecognizedAs(String choice, Confidence confidence,
                 int confidenceBonus, int wordCount) {
-            int minimumNumberOfWordsForHypothesisRecognition = HypothesisMinimumNumberOfWords
+            int minimumNumberOfWordsForHypothesisRecognition = getHypothesisMinimumNumberOfWords()
                     - confidenceBonus;
             // prompts with few words need a higher weight to be
             // accepted
@@ -228,6 +228,31 @@ public class SpeechRecognitionHypothesisEventHandler {
             }
             return choiceAccepted;
         }
+
+        private int getHypothesisMinimumNumberOfWords() {
+            return HypothesisMinimumNumberOfWordsDefault
+                    + numberOfSameWordsAtStart(choices);
+        }
+
+    }
+
+    private static int numberOfSameWordsAtStart(List<String> choices) {
+        if (choices.size() == 1)
+            return 0;
+        List<String> list = new ArrayList<String>(
+                choices.subList(1, choices.size()));
+        String[] words = choices.get(0).toLowerCase().split(" ");
+        int i = 0;
+        while (i < words.length) {
+            String word = words[i];
+            for (String string : list) {
+                if (!string.toLowerCase().startsWith(word)) {
+                    return i;
+                }
+            }
+            i++;
+        }
+        return i;
     }
 
     private Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs> recognitionRejected() {

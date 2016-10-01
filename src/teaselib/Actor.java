@@ -3,14 +3,13 @@ package teaselib;
 import java.util.Locale;
 
 import teaselib.core.texttospeech.Voice;
-import teaselib.core.texttospeech.Voice.Gender;
 import teaselib.util.SpeechRecognitionRejectedScript;
 import teaselib.util.TextVariables;
 
 public class Actor {
     public class Key {
-        public final static String DominantFemale = "Dominant.Female";
-        public final static String DominantMale = "Dominant.Male";
+        public final static String DominantFemale = "Dominant_Female";
+        public final static String DominantMale = "Dominant_Male";
     }
 
     /**
@@ -79,14 +78,14 @@ public class Actor {
 
     public Actor(String fullName, String title, Voice.Gender gender,
             Locale locale) {
-        this(fullName, title, title, gender, locale, key(fullName, gender),
+        this(fullName, title, title, gender, locale, key(fullName),
                 Images.None);
     }
 
     public Actor(String fullName, Voice.Gender gender, Locale locale,
             Images images) {
-        this(fullName, fullName, fullName, gender, locale,
-                key(fullName, gender), images);
+        this(fullName, fullName, fullName, gender, locale, key(fullName),
+                images);
     }
 
     public Actor(String fullName, String title, Voice.Gender gender,
@@ -96,8 +95,7 @@ public class Actor {
 
     public Actor(String fullName, String title, String name,
             Voice.Gender gender, Locale locale, Images images) {
-        this(fullName, title, name, gender, locale, key(fullName, gender),
-                images);
+        this(fullName, title, name, gender, locale, key(fullName), images);
     }
 
     public Actor(String fullName, String title, String name,
@@ -121,8 +119,8 @@ public class Actor {
         textVariables.put(FormOfAddress.Name, name);
     }
 
-    private static String key(String fullName, Gender gender) {
-        return escape(fullName) + "." + gender;
+    private static String key(String fullName) {
+        return escape(fullName);
     }
 
     private static String escape(String string) {
@@ -136,7 +134,7 @@ public class Actor {
     @Override
     public String toString() {
         return "'" + get(FormOfAddress.FullName) + "(" + gender + ","
-                + getLocale() + ")' key='" + key;
+                + getLocale() + ")' key=" + key;
     }
 
     public Locale getLocale() {

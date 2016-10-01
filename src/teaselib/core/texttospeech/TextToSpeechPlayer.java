@@ -120,16 +120,19 @@ public class TextToSpeechPlayer {
                     logger.info("Actor " + actorKey
                             + ": using prerecorded voice '" + voiceGuid + "'");
                 } else {
-                    logger.info("Actor " + actorKey
-                            + ": prerecorded voice not available");
+                    logger.info(
+                            "Actor key=" + actorKey + ": prerecorded voice '"
+                                    + voiceGuid + "' not available");
                     Voice voice = voices.get(voiceGuid);
                     if (voice != null) {
-                        logger.info("Actor " + actorKey + ": using TTS voice");
+                        logger.info("Actor key=" + actorKey
+                                + ": using TTS voice '" + voiceGuid + "'");
                         actorKey2TTSVoice.put(actorKey, voice);
                         usedVoices.add(voiceGuid);
                     } else {
                         logger.info(
-                                "Actor " + actorKey + ": voice not available");
+                                "Actor key=" + actorKey + ": assigned voice '"
+                                        + voiceGuid + "' not available");
                     }
                 }
             }

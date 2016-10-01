@@ -59,7 +59,6 @@ public abstract class MediaRendererThread
     public final void render() {
         synchronized (this) {
             startMillis = System.currentTimeMillis();
-            // renderThread.setName(getClass().getName());
             task = Executor.submit(new Runnable() {
                 @Override
                 public void run() {

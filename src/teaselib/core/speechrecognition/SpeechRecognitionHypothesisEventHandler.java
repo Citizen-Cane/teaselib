@@ -243,18 +243,18 @@ public class SpeechRecognitionHypothesisEventHandler {
             return 0;
         List<String[]> list = new ArrayList<String[]>();
         for (String choice : choices) {
-            list.add(choice.toLowerCase().split(" "));
+            list.add(removePunctation(choice).toLowerCase().split(" "));
         }
         int i = 0;
         word: while (true) {
             for (String[] choice : list) {
                 for (int j = 0; j < list.size(); j++) {
                     String[] other = list.get(j);
-                    if (other.length < i)
-                        break word;
-                    else if (choice == other) {
+                    if (choice == other) {
                         break;
-                    } else if (choice[i].equals(other[i])) {
+                    } else if (i > choice.length - 1 || i > other.length - 1)
+                        continue;
+                    else if (choice[i].equals(other[i])) {
                         i++;
                         continue word;
                     }
@@ -303,11 +303,24 @@ public class SpeechRecognitionHypothesisEventHandler {
 
     private static int wordCount(String text) {
         String preparatedText = text;
-        preparatedText = preparatedText.replace(",", " ");
-        preparatedText = preparatedText.replace(".", " ");
-        preparatedText = preparatedText.replace("!", " ");
-        preparatedText.trim();
+        preparatedText = removePunctation(preparatedText);
         return preparatedText.split(" ").length;
+    }
+
+    private static String removePunctation(String preparatedText) {
+        preparatedText = preparatedText.replace(".", " ");
+        preparatedText = preparatedText.replace(":", " ");
+        preparatedText = preparatedText.replace(",", " ");
+        preparatedText = preparatedText.replace(";", " ");
+        preparatedText = preparatedText.replace("!", " ");
+        preparatedText = preparatedText.replace("-", " ");
+        preparatedText = preparatedText.replace("(", " ");
+        preparatedText = preparatedText.replace(")", " ");
+        preparatedText = preparatedText.replace("\"", " ");
+        preparatedText = preparatedText.replace("'", " ");
+        preparatedText = preparatedText.replace("  ", " ");
+        preparatedText.trim();
+        return preparatedText;
     }
 
     /**

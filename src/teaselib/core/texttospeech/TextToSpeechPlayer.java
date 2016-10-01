@@ -16,7 +16,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import teaselib.Actor;
-import teaselib.Actor.FormOfAddress;
 import teaselib.Message;
 import teaselib.Message.Part;
 import teaselib.core.ResourceLoader;
@@ -209,19 +208,17 @@ public class TextToSpeechPlayer {
             }
         }
         // No voice
-        logger.warn("No voice available for '" + actor.key + "'");
+        logger.warn("No voice available for '" + actor.toString() + "'");
         return null;
     }
 
     private static void useVoice(Actor actor, Voice voice) {
-        logger.info("Actor '" + actor.get(FormOfAddress.FullName) + "("
-                + actor.getLocale() + ") ' uses voice " + voice.guid);
+        logger.info("Actor " + actor.toString() + " uses voice " + voice.guid);
     }
 
     private Voice reuseVoice(Actor actor, String actorName) {
         Voice voice = actorKey2TTSVoice.get(actorName);
-        logger.warn("Actor '" + actor.get(FormOfAddress.FullName) + "("
-                + actor.getLocale() + ") ' re-uses voice " + voice.guid
+        logger.warn("Actor " + actor.toString() + " re-uses voice " + voice.guid
                 + " of actor " + actorName);
         return voice;
     }

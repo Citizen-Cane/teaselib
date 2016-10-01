@@ -107,7 +107,7 @@ public class Actor {
         this.gender = gender;
         this.textVariables = new TextVariables();
         addTextVariables(title, fullName, name);
-        this.key = key;
+        this.key = escape(key);
         this.images = images;
     }
 
@@ -122,7 +122,11 @@ public class Actor {
     }
 
     private static String key(String fullName, Gender gender) {
-        return fullName + "." + gender;
+        return escape(fullName) + "." + gender;
+    }
+
+    private static String escape(String string) {
+        return string.replace(" ", "_");
     }
 
     public String get(Enum<?> formOfAddress) {
@@ -131,7 +135,8 @@ public class Actor {
 
     @Override
     public String toString() {
-        return get(FormOfAddress.FullName) + ": " + getLocale() + " " + gender;
+        return "'" + get(FormOfAddress.FullName) + "(" + gender + ","
+                + getLocale() + ")' key='" + key;
     }
 
     public Locale getLocale() {

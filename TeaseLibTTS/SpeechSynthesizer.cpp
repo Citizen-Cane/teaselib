@@ -30,25 +30,12 @@ using namespace std;
 	int rateReading = -2;
 #endif
 
-SpeechSynthesizer::SpeechSynthesizer(JNIEnv *env, jobject jthis, Voice *voice)
+SpeechSynthesizer::SpeechSynthesizer(JNIEnv *env, jobject jthis)
     : NativeObject(env, jthis), cancelSpeech(false) {
     HRESULT hr = CoCreateInstance(CLSID_SpVoice, NULL, CLSCTX_ALL, IID_ISpVoice, (void **)&pVoice);
     assert(SUCCEEDED(hr));
     if (FAILED(hr)) {
         throw new COMException(hr);
-    }
-    if (voice) {
-        hr = pVoice->SetVoice(*voice);
-        if (FAILED(hr)) {
-            throw new COMException(hr);
-        }
-		else
-		{
-			hr = pVoice->SetVolume(volumeNeutral);
-			if (FAILED(hr)) {
-				throw new COMException(hr);
-			}
-		}
     }
 }
 
@@ -64,6 +51,21 @@ SpeechSynthesizer::~SpeechSynthesizer() {
 // but nevertheless prooved unreliable while setting values via COM worked. Good luck!
 wstring hintsPromptPrefix;
 wstring hintsPromptPostfix;
+
+void SpeechSynthesizer::setVoice(Voice * voice) {
+	if (voice) {
+		HRESULT hr = pVoice->SetVoice(*voice);
+		if (FAILED(hr)) {
+			throw new COMException(hr);
+		}
+		else {
+			hr = pVoice->SetVolume(volumeNeutral);
+			if (FAILED(hr)) {
+				throw new COMException(hr);
+			}
+		}
+	}
+}
 
 void SpeechSynthesizer::applyHints(const vector<wstring>& hints)
 {

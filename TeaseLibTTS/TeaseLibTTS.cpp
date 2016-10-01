@@ -95,18 +95,12 @@ extern "C"
         try {
             // Dispose existing
             SpeechSynthesizer* speechSynthesizer = static_cast<SpeechSynthesizer*>(NativeObject::get(env, jthis));
-            if (speechSynthesizer) {
-                if (env->IsSameObject(*speechSynthesizer, jthis)) {
-                    return;
-                } else {
-                    delete speechSynthesizer;
-                }
+            if (!speechSynthesizer) {
+				speechSynthesizer = new SpeechSynthesizer(env, jthis);
             }
             Voice* voice = static_cast<Voice*>(NativeObject::get(env, jvoice));
             // A null voice is a valid value, it denotes the system default voice
-            // The speech synthesizer object reference will be managed by the jobject,
-            // so there's no need to store the reference here
-            new SpeechSynthesizer(env, jthis, voice);
+			speechSynthesizer->setVoice(voice);
         } catch (NativeException *e) {
             JNIException::throwNew(env, e);
         } catch (JNIException /**e*/) {

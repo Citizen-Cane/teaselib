@@ -163,7 +163,8 @@ public abstract class TeaseScriptBase {
                             resources);
                 }
             }
-            Message parsedMessage = injectActorImagesAndExpandTextVariables(message);
+            Message parsedMessage = injectActorImagesAndExpandTextVariables(
+                    message);
             renderMessage(new RenderMessage(resources, parsedMessage, ttsPlayer,
                     teaseLib));
         } finally {
@@ -431,8 +432,10 @@ public abstract class TeaseScriptBase {
                 // a different set, so we have to wait until we may restore
                 try {
                     // only the top-most element may resume
-                    while (choicesStack.peek() != showChoices) {
-                        wait();
+                    synchronized (choicesStack) {
+                        while (choicesStack.peek() != showChoices) {
+                            choicesStack.wait();
+                        }
                     }
                     logger.info(
                             "Resuming choices " + showChoices.derivedChoices);
@@ -493,6 +496,7 @@ public abstract class TeaseScriptBase {
 
     private TextVariables allTextVariables() {
         return new TextVariables(TextVariables.Defaults,
-                teaseLib.getTextVariables(actor.getLocale()), actor.textVariables);
+                teaseLib.getTextVariables(actor.getLocale()),
+                actor.textVariables);
     }
 }

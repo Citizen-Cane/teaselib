@@ -231,26 +231,35 @@ public class SpeechRecognitionHypothesisEventHandler {
 
         private int getHypothesisMinimumNumberOfWords() {
             return HypothesisMinimumNumberOfWordsDefault
-                    + numberOfSameWordsAtStart(choices);
+                    + numberOfSameWordsInAnyTwoChoicesAtStart(choices);
         }
 
     }
 
-    private static int numberOfSameWordsAtStart(List<String> choices) {
+    private static int numberOfSameWordsInAnyTwoChoicesAtStart(
+            List<String> choices) {
         if (choices.size() == 1)
             return 0;
-        List<String> list = new ArrayList<String>(
-                choices.subList(1, choices.size()));
-        String[] words = choices.get(0).toLowerCase().split(" ");
+        List<String[]> list = new ArrayList<String[]>();
+        for (String choice : choices) {
+            list.add(choice.toLowerCase().split(" "));
+        }
         int i = 0;
-        while (i < words.length) {
-            String word = words[i];
-            for (String string : list) {
-                if (!string.toLowerCase().startsWith(word)) {
-                    return i;
+        word: while (true) {
+            for (String[] choice : list) {
+                for (int j = 0; j < list.size(); j++) {
+                    String[] other = list.get(j);
+                    if (other.length < i)
+                        break word;
+                    else if (choice == other) {
+                        break;
+                    } else if (choice[i].equals(other[i])) {
+                        i++;
+                        continue word;
+                    }
                 }
             }
-            i++;
+            break;
         }
         return i;
     }

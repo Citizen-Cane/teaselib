@@ -50,6 +50,10 @@ public abstract class SpeechRecognitionImplementation {
 
     protected abstract void dispose();
 
+    protected static String languageCode(final Locale locale) {
+        return locale.toString().replace("_", "-");
+    }
+
     @Override
     protected void finalize() throws Throwable {
         try {

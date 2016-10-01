@@ -32,7 +32,7 @@ public class TeaseLibSR extends SpeechRecognitionImplementation {
                 try {
                     synchronized (eventThread) {
                         try {
-                            String languageCode = locale.toString();
+                            String languageCode = languageCode(locale);
                             initSR(events, languageCode);
                             // Never ends
                             initSREventThread(eventThread);

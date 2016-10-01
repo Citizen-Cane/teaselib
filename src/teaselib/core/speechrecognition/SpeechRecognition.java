@@ -198,10 +198,6 @@ public class SpeechRecognition {
         return sr != null;
     }
 
-    public void startRecognition(final List<String> choices) {
-        startRecognition(choices, Confidence.Default);
-    }
-
     public void startRecognition(final List<String> choices,
             Confidence recognitionConfidence) {
         hypothesisEventHandler.setChoices(choices);

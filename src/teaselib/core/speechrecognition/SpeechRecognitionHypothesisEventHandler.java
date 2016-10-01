@@ -46,6 +46,7 @@ public class SpeechRecognitionHypothesisEventHandler {
     private String[] hypothesisProgress;
 
     private List<String> choices;
+    private int hypothesisMinimumNumberOfWordsForHypothesisRecognition = HypothesisMinimumNumberOfWordsDefault;
     private Confidence recognitionConfidence = Confidence.Default;
 
     public SpeechRecognitionHypothesisEventHandler(
@@ -62,6 +63,8 @@ public class SpeechRecognitionHypothesisEventHandler {
 
     public void setChoices(List<String> choices) {
         this.choices = choices;
+        this.hypothesisMinimumNumberOfWordsForHypothesisRecognition = getHypothesisMinimumNumberOfWords(
+                choices);
     }
 
     public void setConfidence(Confidence recognitionConfidence) {
@@ -193,10 +196,9 @@ public class SpeechRecognitionHypothesisEventHandler {
 
         private boolean isRecognizedAs(String choice, Confidence confidence,
                 int confidenceBonus, int wordCount) {
-            int minimumNumberOfWordsForHypothesisRecognition = getHypothesisMinimumNumberOfWords()
+            int minimumNumberOfWordsForHypothesisRecognition = hypothesisMinimumNumberOfWordsForHypothesisRecognition
                     - confidenceBonus;
-            // prompts with few words need a higher weight to be
-            // accepted
+            // prompts with few words need a higher weight to be accepted
             double hypothesisAccumulatedWeight = wordCount >= minimumNumberOfWordsForHypothesisRecognition
                     ? HypothesisMinimumAccumulatedWeight
                     : HypothesisMinimumAccumulatedWeight
@@ -228,12 +230,11 @@ public class SpeechRecognitionHypothesisEventHandler {
             }
             return choiceAccepted;
         }
+    }
 
-        private int getHypothesisMinimumNumberOfWords() {
-            return HypothesisMinimumNumberOfWordsDefault
-                    + numberOfSameWordsInAnyTwoChoicesAtStart(choices);
-        }
-
+    private static int getHypothesisMinimumNumberOfWords(List<String> choices) {
+        return HypothesisMinimumNumberOfWordsDefault
+                + numberOfSameWordsInAnyTwoChoicesAtStart(choices);
     }
 
     private static int numberOfSameWordsInAnyTwoChoicesAtStart(

@@ -27,7 +27,11 @@ public class SpeechRecognitionHypothesisEventHandler {
      * sentences or single word recognitions are prone to error. In fact, for
      * single word phrases, the recognizer may recognize anything.
      */
-    final static int HypothesisMinimumNumberOfWordsDefault = 6;
+    final static int HypothesisMinimumNumberOfWordsDefault = 4;
+    // TODO set confidence for script functions
+    // - high for script functions
+    // - low for PCM [] replies
+    // - normal for .pause and .yesno statements
 
     /**
      * This adjusts the sensibility of the hypothesis rating. The better the

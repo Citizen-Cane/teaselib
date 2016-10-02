@@ -3,7 +3,8 @@
  */
 package teaselib.core.devices.remote;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import org.junit.Assume;
 import org.junit.Test;
@@ -21,6 +22,53 @@ public class KeyReleaseTest {
             .getLogger(KeyReleaseTest.class);
 
     static final int Minutes = 2;
+
+    private static int connect(KeyRelease keyRelease) {
+        Assume.assumeTrue(DeviceCache.connect(keyRelease, 10.0));
+        assertTrue(keyRelease.connected());
+        logger.info(keyRelease.getName());
+        assertTrue(keyRelease.active());
+        int actuators = keyRelease.actuators();
+        assertTrue(actuators > 0);
+        logger.info(keyRelease.getName() + ": " + actuators + " actuators");
+        return actuators;
+    }
+
+    private static void arm(KeyRelease keyRelease, int i) {
+        int available = keyRelease.available(i);
+        assertTrue(available > 0);
+        keyRelease.arm(i);
+        sleepSeconds(1);
+        assertTrue(keyRelease.isRunning(i));
+    }
+
+    private static void start(KeyRelease keyRelease, int i) {
+        keyRelease.start(i, Minutes);
+        assertTrue(keyRelease.isRunning(i));
+        logger.info("Actuator " + i);
+    }
+
+    private static void poll(KeyRelease keyRelease, int i) {
+        while (keyRelease.isRunning(i)) {
+            int remaining = keyRelease.remaining(i);
+            if (remaining == 0) {
+                break;
+            }
+            sleepSeconds(10);
+        }
+    }
+
+    private static void assertRunningAfterRelease(KeyRelease keyRelease,
+            int i) {
+        assertFalse(keyRelease.isRunning(i));
+        sleepSeconds(10);
+    }
+
+    private static void assertEndState(KeyRelease keyRelease, int actuators) {
+        assertTrue(keyRelease.connected());
+        assertTrue(keyRelease.active());
+        assertTrue(actuators > 0);
+    }
 
     private static void sleepSeconds(int seconds) {
         try {
@@ -41,120 +89,59 @@ public class KeyReleaseTest {
     @Test
     public void testManualRelease() {
         KeyRelease keyRelease = KeyRelease.Devices.getDefaultDevice();
-        int actuators = keyRelease.actuators();
-        logger.info(keyRelease.getName() + ": " + actuators + " actuators");
-        Assume.assumeTrue(DeviceCache.connect(keyRelease, 5.0));
-        assertTrue(keyRelease.connected());
-        assertTrue(keyRelease.active());
-        assertTrue(actuators > 0);
+        int actuators = connect(keyRelease);
         for (int i = 0; i < actuators; i++) {
-            int available = keyRelease.available(i);
-            assertTrue(available > 0);
-            keyRelease.arm(i);
-            sleepSeconds(1);
-            assertTrue(keyRelease.isRunning(i));
-            keyRelease.start(i, Minutes);
-            assertTrue(keyRelease.isRunning(i));
-            logger.info("Actuator " + i);
-            while (keyRelease.isRunning(i)) {
-                int remaining = keyRelease.remaining(i);
-                if (remaining == 0) {
-                    break;
-                }
-                sleepSeconds(10);
-            }
+            arm(keyRelease, i);
+            start(keyRelease, i);
+            poll(keyRelease, i);
             // Release the key in the last minute
             keyRelease.release(i);
-            assertFalse(keyRelease.isRunning(i));
-            sleepSeconds(10);
+            assertRunningAfterRelease(keyRelease, i);
         }
-        assertTrue(keyRelease.connected());
-        assertTrue(keyRelease.active());
-        assertTrue(actuators > 0);
+        assertEndState(keyRelease, actuators);
     }
 
     @Test
     public void testAutomaticRelease() {
         KeyRelease keyRelease = KeyRelease.Devices.getDefaultDevice();
-        int actuators = keyRelease.actuators();
-        logger.info(keyRelease.getName() + ": " + actuators + " actuators");
-        Assume.assumeTrue(DeviceCache.connect(keyRelease, 5.0));
-        assertTrue(keyRelease.connected());
-        assertTrue(keyRelease.active());
-        assertTrue(actuators > 0);
+        int actuators = connect(keyRelease);
         for (int i = 0; i < actuators; i++) {
-            int available = keyRelease.available(i);
-            assertTrue(available > 0);
-            keyRelease.arm(i);
-            sleepSeconds(1);
-            assertTrue(keyRelease.isRunning(i));
-            keyRelease.start(i, Minutes);
-            assertTrue(keyRelease.isRunning(i));
-            logger.info("Actuator " + i);
-            while (keyRelease.isRunning(i)) {
-                int remaining = keyRelease.remaining(i);
-                if (remaining == 0) {
-                    break;
-                }
-                sleepSeconds(10);
-            }
-            // The key should have been released automatically by now
-            assertFalse(keyRelease.isRunning(i));
-            sleepSeconds(10);
+            arm(keyRelease, i);
+            start(keyRelease, i);
+            poll(keyRelease, i);
+            assertRunningAfterRelease(keyRelease, i);
         }
-        assertTrue(keyRelease.connected());
-        assertTrue(keyRelease.active());
-        assertTrue(actuators > 0);
+        assertEndState(keyRelease, actuators);
     }
 
     @Test
     public void testDeepSleepRelease() {
         KeyRelease keyRelease = KeyRelease.Devices.getDefaultDevice();
-        int actuators = keyRelease.actuators();
-        logger.info(keyRelease.getName() + ": " + actuators + " actuators");
-        Assume.assumeTrue(DeviceCache.connect(keyRelease, 5.0));
-        assertTrue(keyRelease.connected());
-        assertTrue(keyRelease.active());
-        assertTrue(actuators > 0);
+        int actuators = connect(keyRelease);
         for (int i = 0; i < actuators; i++) {
-            int available = keyRelease.available(i);
-            assertTrue(available > 0);
-            keyRelease.arm(i);
-            sleepSeconds(1);
-            assertTrue(keyRelease.isRunning(i));
-            keyRelease.start(i, Minutes);
-            assertTrue(keyRelease.isRunning(i));
-            logger.info("Actuator " + i);
+            arm(keyRelease, i);
+            start(keyRelease, i);
             keyRelease.sleep(Integer.MAX_VALUE);
             // Sleeping longer than the next release duration with only one
             // release pending causes the device to enter deep sleep and
             // release on reset
             sleepMinutes(Minutes + 1);
             // The key should have been released automatically by now
-            assertFalse(keyRelease.isRunning(i));
-            sleepSeconds(10);
+            assertRunningAfterRelease(keyRelease, i);
         }
-        assertTrue(keyRelease.connected());
-        assertTrue(keyRelease.active());
-        assertTrue(actuators > 0);
+        assertEndState(keyRelease, actuators);
     }
 
     @Test
     public void testDeepSleepPacket() {
         KeyRelease keyRelease = KeyRelease.Devices.getDefaultDevice();
-        logger.info(keyRelease.getName());
-        Assume.assumeTrue(DeviceCache.connect(keyRelease, 5.0));
-        assertTrue(keyRelease.connected());
-        assertTrue(keyRelease.active());
-        int actuators = keyRelease.actuators();
+        int actuators = connect(keyRelease);
         logger.info(keyRelease.getName() + ": " + actuators + " actuators");
         keyRelease.sleep(Minutes);
         // Sleeping longer than the next release duration with only one
         // release pending causes the device to enter deep sleep and
         // release on reset
         sleepMinutes(Minutes + 1);
-        assertTrue(keyRelease.connected());
-        assertTrue(keyRelease.active());
-        assertTrue(actuators > 0);
+        assertEndState(keyRelease, actuators);
     }
 }

@@ -301,13 +301,13 @@ const void KeyReleaseService::Duration::arm() {
 }
 
 const int KeyReleaseService::Duration::start(const int minutes) {
-  remainingMinutes = minutes;
-  return min(remainingMinutes, actuator->maximumMinutes - elapsedMinutes);
+  remainingMinutes = min(minutes, actuator->maximumMinutes - elapsedMinutes);
+  return remainingMinutes;
 }
 
 const int KeyReleaseService::Duration::add(const int minutes) {
-  remainingMinutes += minutes;
-  return min(remainingMinutes, actuator->maximumMinutes - elapsedMinutes);
+  remainingMinutes = min(remainingMinutes + minutes, actuator->maximumMinutes - elapsedMinutes);
+  return remainingMinutes;
 }
 
 const bool KeyReleaseService::Duration::advance() {

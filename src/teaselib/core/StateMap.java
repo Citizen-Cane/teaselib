@@ -111,8 +111,8 @@ public class StateMap<T extends Enum<T>> {
         @Override
         public long remaining(TimeUnit unit) {
             long now = teaseLib.getTime(unit);
-            long end = unit.convert(
-                    duration.elapsedSeconds() + duration.startSeconds + expectedSeconds,
+            long end = unit.convert(duration.elapsedSeconds()
+                    + duration.startSeconds + expectedSeconds,
                     TimeUnit.SECONDS);
             long remaining = Math.max(0, end - now);
             return remaining;
@@ -173,8 +173,8 @@ public class StateMap<T extends Enum<T>> {
         }
     }
 
-    private static String persisted(long when, long howLongSeconds) {
-        return when + " " + howLongSeconds;
+    private static String persisted(long whenSeconds, long howLongSeconds) {
+        return whenSeconds + " " + howLongSeconds;
     }
 
     public boolean has(T item) {
@@ -193,7 +193,12 @@ public class StateMap<T extends Enum<T>> {
     }
 
     public void remove(T item) {
-        state.remove(item).clear();
+        if (has(item)) {
+            StateMap<T>.StateImpl removed = state.remove(item);
+            if (removed != null) {
+                removed.clear();
+            }
+        }
     }
 
     public State get(T item) {

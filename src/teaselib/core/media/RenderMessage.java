@@ -209,6 +209,7 @@ public class RenderMessage extends MediaRendererThread {
             displayImage = part.value;
         } else if (part.type == Message.Type.BackgroundSound) {
             // Play sound, continue message execution
+            completeSpeech(lastParagraph);
             synchronized (interuptableAudio) {
                 soundRenderer = new RenderSound(resources, part.value,
                         teaseLib);
@@ -219,6 +220,7 @@ public class RenderMessage extends MediaRendererThread {
             // completion
         } else if (part.type == Message.Type.Sound) {
             // Play sound, wait until finished
+            completeSpeech(lastParagraph);
             RenderSound sound = new RenderSound(resources, part.value,
                     teaseLib);
             synchronized (interuptableAudio) {

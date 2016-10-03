@@ -39,7 +39,7 @@ public class ResourceLoader {
         String systemProperty = System.getProperty(
                 Config.Namespace + "." + Config.Assets.toString(), "");
         if (systemProperty.isEmpty()) {
-            basePath = getClassPath(mainScript);
+            basePath = getMainScriptClassPath(mainScript);
         } else {
             basePath = new File(systemProperty);
         }
@@ -50,11 +50,62 @@ public class ResourceLoader {
         }
         // This is already part of the class path,
         // but not listed in resource locations
-        // addAssets(basePath.getAbsolutePath());
+        // URI uri = basePath.toURI();
+        // if (isValidResourceLocation(uri)) {
+        // resourceLocations.add(uri);
+        // }
+
+        // Hack for loading resources with getMainScriptClassPath
         URI uri = basePath.toURI();
         if (isValidResourceLocation(uri)) {
-            resourceLocations.add(uri);
+            addAssets(basePath.getAbsolutePath());
         }
+    }
+
+    /**
+     * TODO Changed base path to be set to the path to the package of the main
+     * script, instead of the script project folder.
+     * <p>
+     * This is necessary to manage resources in a multi package project, so this
+     * is the way to go.
+     * <p>
+     * Downsides: Includes adding a class path inside a folder that's in the
+     * class path already. jars are project absolute, since Mine is the only
+     * other script that uses jars.
+     * <p>
+     * Must package Rakhee as a jar to complete the change.
+     * 
+     * @param mainScript
+     * @return
+     */
+    private static File getMainScriptClassPath(Class<?> mainScript) {
+        String classFile = getClassResourcePath(mainScript);
+        URL url = mainScript.getResource(classFile);
+        String protocol = url.getProtocol().toLowerCase();
+        if (protocol.equals("file")) {
+            String path = getUndecoratedPath(url);
+            int classOffset = classFile.length() - classFile.lastIndexOf("/")
+                    + 1;
+            File folderThatContainsClassFile = new File(
+                    path.substring(0, path.length() - classOffset + 1));
+            return folderThatContainsClassFile;
+        } else if (protocol.equals("jar")) {
+            String path = getUndecoratedPath(url);
+            int startOffset = new String("File:/").length();
+            int jarOffset = path.indexOf(".jar!");
+            File folderThatContainsHJarFile = new File(
+                    path.substring(startOffset, jarOffset)).getParentFile();
+            return folderThatContainsHJarFile;
+        } else {
+            throw new IllegalArgumentException(
+                    "Unsupported protocol: " + url.toString());
+        }
+    }
+
+    private static String getClassResourcePath(Class<?> mainScript) {
+        String classFile = "/" + mainScript.getName().replace(".", "/")
+                + ".class";
+        return classFile;
     }
 
     /**
@@ -120,7 +171,8 @@ public class ResourceLoader {
      *         folder).
      * 
      */
-    private static File getClassPath(Class<?> mainScript) {
+    @SuppressWarnings("unused")
+    private static File getPackagePath(Class<?> mainScript) {
         String classFile = "/" + mainScript.getName().replace(".", "/")
                 + ".class";
         URL url = mainScript.getResource(classFile);
@@ -165,7 +217,8 @@ public class ResourceLoader {
     }
 
     public void addAssets(Class<?> scriptClass) {
-        addAssets(ResourceLoader.getClassPath(scriptClass).getAbsolutePath());
+        addAssets(ResourceLoader.getMainScriptClassPath(scriptClass)
+                .getAbsolutePath());
     }
 
     public void addAssets(String... paths) {

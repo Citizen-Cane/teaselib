@@ -14,17 +14,19 @@ import java.util.zip.ZipFile;
 // Pasted from
 // http://stackoverflow.com/questions/3923129/get-a-list-of-resources-from-classpath-directory
 // forums.devx.com/showthread.php?t=153784
-// and changed to suit TeaseLib
+// and improved for teaselib
 
 /**
  * list resources available from the class path @ *
  */
 public class ResourceList {
-
-    /**
-     * 
-     */
     private static final String PathSeparator = "/";
+
+    private final String resourceRoot;
+
+    public ResourceList(String resourceRoot) {
+        this.resourceRoot = resourceRoot;
+    }
 
     /**
      * for all elements of java.class.path get a Collection of resources Pattern
@@ -34,7 +36,7 @@ public class ResourceList {
      *            the pattern to match
      * @return the resources in the order they are found
      */
-    public static Collection<String> getResources(final URI basePath,
+    public Collection<String> getResources(final URI basePath,
             final Pattern pattern) {
         final ArrayList<String> retval = new ArrayList<String>();
         final File file = new File(basePath.getPath());
@@ -46,7 +48,7 @@ public class ResourceList {
         return retval;
     }
 
-    private static Collection<String> getResourcesFromJarFile(File file,
+    private Collection<String> getResourcesFromJarFile(File file,
             Pattern pattern) {
         ArrayList<String> retval = new ArrayList<String>();
         ZipFile zf;
@@ -72,7 +74,7 @@ public class ResourceList {
         return retval;
     }
 
-    private static Collection<String> getResourcesFromDirectory(URI basePath,
+    private Collection<String> getResourcesFromDirectory(URI basePath,
             File directory, Pattern pattern) {
         ArrayList<String> retval = new ArrayList<String>();
         File[] fileList = directory.listFiles();
@@ -90,13 +92,16 @@ public class ResourceList {
         return retval;
     }
 
-    private static void addMatchingEntry(Pattern pattern,
-            Collection<String> retval, String resourcePath) {
-        String absoluteResourcePath = resourcePath.startsWith(PathSeparator)
-                ? resourcePath : PathSeparator + resourcePath;
-        boolean accept = pattern.matcher(absoluteResourcePath).matches();
-        if (accept) {
-            retval.add(absoluteResourcePath);
+    private void addMatchingEntry(Pattern pattern, Collection<String> retval,
+            String resourcePath) {
+        if (resourcePath.startsWith(resourceRoot)) {
+            resourcePath = resourcePath.substring(resourceRoot.length());
+            String absoluteResourcePath = resourcePath.startsWith(PathSeparator)
+                    ? resourcePath : PathSeparator + resourcePath;
+            boolean accept = pattern.matcher(absoluteResourcePath).matches();
+            if (accept) {
+                retval.add(absoluteResourcePath);
+            }
         }
     }
 }

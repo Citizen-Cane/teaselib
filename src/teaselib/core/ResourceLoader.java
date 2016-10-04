@@ -26,171 +26,102 @@ public class ResourceLoader {
     private static final Logger logger = LoggerFactory
             .getLogger(ResourceLoader.class);
 
+    public static final String ResourcesInProjectFolder = "/";
+
     private final ClassLoader classLoader = getClass().getClassLoader();
     private final Method addURL;
     private final Set<URI> resourceLocations = new HashSet<URI>();
     private final File basePath;
+    private final String resourceRoot;
 
     /**
      * @param mainScript
      *            The class of the main script, for loading resources.
      */
     public ResourceLoader(Class<?> mainScript) {
+        this(mainScript, getPackagePath(mainScript));
+    }
+
+    /**
+     * @param mainScript
+     *            The class of the main script, for loading resources.
+     * @param resourceRoot
+     *            The resource path under which to start looking for resources.
+     */
+    public ResourceLoader(Class<?> mainScript, String resourceRoot) {
+        this.resourceRoot = classLoaderCompatibleResourcePath(resourceRoot);
         String systemProperty = System.getProperty(
                 Config.Namespace + "." + Config.Assets.toString(), "");
-        if (systemProperty.isEmpty()) {
-            basePath = getMainScriptClassPath(mainScript);
+        if (classLoaderCompatibleResourcePath(systemProperty).isEmpty()) {
+            basePath = getProjectPath(mainScript);
         } else {
-            basePath = new File(systemProperty);
+            basePath = new File(
+                    classLoaderCompatibleResourcePath(systemProperty));
         }
         try {
             addURL = addURLMethod();
         } catch (NoSuchMethodException e) {
             throw new IllegalArgumentException(e.getMessage(), e);
         }
-        // This is already part of the class path,
+        // The base path already part of the class path,
         // but not listed in resource locations
-        // URI uri = basePath.toURI();
-        // if (isValidResourceLocation(uri)) {
-        // resourceLocations.add(uri);
-        // }
-
-        // Hack for loading resources with getMainScriptClassPath
         URI uri = basePath.toURI();
         if (isValidResourceLocation(uri)) {
-            addAssets(basePath.getAbsolutePath());
+            resourceLocations.add(uri);
         }
     }
 
-    /**
-     * TODO Changed base path to be set to the path to the package of the main
-     * script, instead of the script project folder.
-     * <p>
-     * This is necessary to manage resources in a multi package project, so this
-     * is the way to go.
-     * <p>
-     * Downsides: Includes adding a class path inside a folder that's in the
-     * class path already. jars are project absolute, since Mine is the only
-     * other script that uses jars.
-     * <p>
-     * Must package Rakhee as a jar to complete the change.
-     * 
-     * @param mainScript
-     * @return
-     */
-    private static File getMainScriptClassPath(Class<?> mainScript) {
-        String classFile = getClassResourcePath(mainScript);
-        URL url = mainScript.getResource(classFile);
+    private static String classLoaderCompatibleResourcePath(String path) {
+        if (path.startsWith("/")) {
+            return path.substring(1);
+        } else {
+            return path;
+        }
+    }
+
+    private static String getPackagePath(Class<?> mainScript) {
+        String packagePath = "/"
+                + mainScript.getPackage().getName().replace(".", "/") + "/";
+        return classLoaderCompatibleResourcePath(packagePath);
+    }
+
+    private static File getProjectPath(Class<?> mainScript) {
+        String classFile = getClassFilePath(mainScript);
+        URL url = mainScript.getClassLoader()
+                .getResource(classLoaderCompatibleResourcePath(classFile));
         String protocol = url.getProtocol().toLowerCase();
-        if (protocol.equals("file")) {
-            String path = getUndecoratedPath(url);
-            int classOffset = classFile.length() - classFile.lastIndexOf("/")
-                    + 1;
-            File folderThatContainsClassFile = new File(
-                    path.substring(0, path.length() - classOffset + 1));
-            return folderThatContainsClassFile;
-        } else if (protocol.equals("jar")) {
-            String path = getUndecoratedPath(url);
-            int startOffset = new String("File:/").length();
-            int jarOffset = path.indexOf(".jar!");
-            File folderThatContainsHJarFile = new File(
-                    path.substring(startOffset, jarOffset)).getParentFile();
-            return folderThatContainsHJarFile;
+        if (classLoaderCompatibleResourcePath(protocol).equals("file")) {
+            return projectPathFromFile(url,
+                    classLoaderCompatibleResourcePath(classFile));
+        } else if (classLoaderCompatibleResourcePath(protocol).equals("jar")) {
+            return projectParentPathFromJar(url);
         } else {
             throw new IllegalArgumentException(
                     "Unsupported protocol: " + url.toString());
         }
     }
 
-    private static String getClassResourcePath(Class<?> mainScript) {
+    private static String getClassFilePath(Class<?> mainScript) {
         String classFile = "/" + mainScript.getName().replace(".", "/")
                 + ".class";
-        return classFile;
+        return classLoaderCompatibleResourcePath(classFile);
     }
 
-    /**
-     * Return the path to the main script.
-     * 
-     * TODO This function has issues:
-     * <li>The base path used here is set once when TeaseLib is initialized, so
-     * later scripts will not get "their" folder for cached content.
-     * <li>The base path must be writable to use it as a cache, but it may be
-     * the project folder of the script - which shouldn't be written into. As of
-     * now, for jar-based scripts it's the main script folder, for file-based
-     * scripts it's the script-project folder.
-     * <li>ResourceLoader should be a singleton again, to make scripts calling
-     * other scripts consistent.
-     * <p>
-     * Desired behavior:
-     * <li>The base path must always be the same folder, which as of now is the
-     * main script folder. The host should pass that folder in.
-     * <li>The host might unpack files from an archive to make it accessible,
-     * but instead of writing into the base script folder, files should be
-     * unpacked into a designated cache folder.
-     * <li>Base and cache folder may me the same.
-     * <li>Resource loading must respect jars, folders and cache folders. This
-     * requires booking keeping to add all locations to the clas path /resource
-     * location list.
-     * <li>Scripts should just add asset paths.
-     * <li>Resource locations must be added to the class path, because later on
-     * resources will be loaded via the class loader.
-     * 
-     * @param mainScript
-     *            The class of the main script. All resource paths will be
-     *            relative to this class.
-     * @return An absolute file path to the parent folder of the class file.
-     *         <li>For a PCM-based script jar ins SexScripts this will be
-     *         {@code X:\Projects\SexScripts\scripts} because the jars are
-     *         located in the base folder.
-     *         <li>For a file based project this will be the project's bin
-     *         folder, for instance
-     *         {@code X:\Projects\SexScripts\scripts\Rakhee - The Indian Princess}
-     *         <p>
-     *         This system works because:
-     *         <li>The PCM player uses a script namespace to search for
-     *         resources.
-     *         <li>The Mine project stores all resources in the "Mine" namespace
-     *         in all jars.
-     *         <li>This allows the resource loader to unpack resources to
-     *         {@code X:\Projects\SexScripts\scripts\Mine}
-     *         <li>In this case the storage path has to be defined explicitly,
-     *         because it's an actual script managed by the PCMPlayer, and not a
-     *         bunch of java class files.
-     *         <li>Only the mistress path is absolute to {@code ...\scripts}
-     *         <p>
-     *         <li>TODO Storing java classes into jars.
-     *         <p>
-     *         More TODOs:
-     *         <li>{@link #getAssetPath(String)} just works correct for the
-     *         first project
-     *         <p>
-     *         However {@link #unpackToFile(String)} and
-     *         {@link #unpackEnclosingFolder(String)} do check whether the
-     *         resource is a file already, because {@link #getAssetPath(String)}
-     *         returns the location of the original file (the script bin
-     *         folder).
-     * 
-     */
-    @SuppressWarnings("unused")
-    private static File getPackagePath(Class<?> mainScript) {
-        String classFile = "/" + mainScript.getName().replace(".", "/")
-                + ".class";
-        URL url = mainScript.getResource(classFile);
-        String protocol = url.getProtocol().toLowerCase();
-        if (protocol.equals("file")) {
-            String path = getUndecoratedPath(url);
-            int classOffset = classFile.length();
-            return new File(path.substring(0, path.length() - classOffset));
-        } else if (protocol.equals("jar")) {
-            String path = getUndecoratedPath(url);
-            int startOffset = new String("File:/").length();
-            int jarOffset = path.indexOf(".jar!");
-            return new File(path.substring(startOffset, jarOffset))
-                    .getParentFile();
-        } else {
-            throw new IllegalArgumentException(
-                    "Unsupported protocol: " + url.toString());
-        }
+    private static File projectPathFromFile(URL url, String classFile) {
+        String path = getUndecoratedPath(url);
+        int classOffset = classLoaderCompatibleResourcePath(classFile).length();
+        return new File(classLoaderCompatibleResourcePath(path).substring(0,
+                classLoaderCompatibleResourcePath(path).length()
+                        - classOffset));
+    }
+
+    private static File projectParentPathFromJar(URL url) {
+        String path = getUndecoratedPath(url);
+        int startOffset = new String("File:/").length();
+        int jarOffset = classLoaderCompatibleResourcePath(path)
+                .indexOf(".jar!");
+        return new File(classLoaderCompatibleResourcePath(path)
+                .substring(startOffset, jarOffset)).getParentFile();
     }
 
     /**
@@ -203,13 +134,12 @@ public class ResourceLoader {
      */
     private static String getUndecoratedPath(URL url) {
         final String path = url.getPath();
-        return path.replace("%20", " ");
+        return classLoaderCompatibleResourcePath(path).replace("%20", " ");
     }
 
     private static Method addURLMethod() throws NoSuchMethodException {
         Class<URLClassLoader> classLoaderClass = URLClassLoader.class;
-        @SuppressWarnings("rawtypes")
-        final Class[] parameters = new Class[] { URL.class };
+        Class<?>[] parameters = new Class[] { URL.class };
         Method addURI = classLoaderClass.getDeclaredMethod("addURL",
                 parameters);
         addURI.setAccessible(true);
@@ -217,8 +147,7 @@ public class ResourceLoader {
     }
 
     public void addAssets(Class<?> scriptClass) {
-        addAssets(ResourceLoader.getMainScriptClassPath(scriptClass)
-                .getAbsolutePath());
+        addAssets(ResourceLoader.getProjectPath(scriptClass).getAbsolutePath());
     }
 
     public void addAssets(String... paths) {
@@ -233,16 +162,16 @@ public class ResourceLoader {
         URI[] uris = new URI[paths.length];
         for (int i = 0; i < paths.length; i++) {
             String entry = paths[i];
-            URI uri = toURI(entry);
+            URI uri = toURI(classLoaderCompatibleResourcePath(entry));
             uris[i] = uri;
         }
         return uris;
     }
 
     private URI toURI(String path) {
-        File file = new File(path);
+        File file = new File(classLoaderCompatibleResourcePath(path));
         if (!file.isAbsolute()) {
-            file = new File(basePath, path);
+            file = new File(basePath, classLoaderCompatibleResourcePath(path));
         }
         URI uri = file.toURI();
         return uri;
@@ -281,11 +210,16 @@ public class ResourceLoader {
     }
 
     public InputStream getResource(String resource) throws IOException {
-        logger.info("Resource: '" + resource + "'");
+        String absoluteResource = resourceRoot
+                + classLoaderCompatibleResourcePath(resource);
+        logger.info("Resource: '"
+                + classLoaderCompatibleResourcePath(absoluteResource) + "'");
         InputStream inputStream = classLoader
-                .getResourceAsStream(classLoaderAbsolutePath(resource));
+                .getResourceAsStream(classLoaderAbsolutePath(
+                        classLoaderCompatibleResourcePath(absoluteResource)));
         if (inputStream == null) {
-            throw new IOException(resource);
+            throw new IOException(
+                    classLoaderCompatibleResourcePath(absoluteResource));
         }
         return inputStream;
     }
@@ -302,7 +236,7 @@ public class ResourceLoader {
     public Collection<String> resources(Pattern pattern) {
         Collection<String> resources = new LinkedHashSet<String>();
         for (URI classsPathEntry : resourceLocations) {
-            Collection<String> matches = ResourceList
+            Collection<String> matches = new ResourceList(resourceRoot)
                     .getResources(classsPathEntry, pattern);
             resources.addAll(matches);
         }
@@ -310,10 +244,10 @@ public class ResourceLoader {
     }
 
     private static String classLoaderAbsolutePath(String path) {
-        if (path.startsWith("/")) {
-            return path.substring(1);
+        if (classLoaderCompatibleResourcePath(path).startsWith("/")) {
+            return classLoaderCompatibleResourcePath(path).substring(1);
         } else {
-            return path;
+            return classLoaderCompatibleResourcePath(path);
         }
     }
 
@@ -325,31 +259,35 @@ public class ResourceLoader {
      * The directory is writable in order to cache resources that must exist as
      * a file.
      * 
-     * @param resourcePath
+     * @param classLoaderCompatibleResourcePath(resourcePath)
      *            The path to the resource relative to the asset root directory.
      * @return The absolute file system path to the resource item.
      */
     public File getAssetPath(String resourcePath) {
-        return new File(basePath, resourcePath);
+        return new File(basePath,
+                resourceRoot + classLoaderCompatibleResourcePath(resourcePath));
     }
 
     /**
      * Unpacks the enclosing folder of the requested resource, including all
      * other resources and all sub folders.
      * 
-     * @param path
+     * @param classLoaderCompatibleResourcePath(path)
      *            The path to the requested resource
      * @return The requested resource file.
      * @throws IOException
      */
     public File unpackEnclosingFolder(String path) throws IOException {
         File match = null;
-        String parentPath = path.substring(0, path.lastIndexOf("/"));
-        Collection<String> folder = resources(
-                Pattern.compile(parentPath + "/.*"));
+        String parentPath = classLoaderCompatibleResourcePath(path).substring(0,
+                classLoaderCompatibleResourcePath(path).lastIndexOf("/"));
+        Collection<String> folder = resources(Pattern.compile(
+                classLoaderCompatibleResourcePath(parentPath) + "/.*"));
         for (String file : folder) {
-            File unpacked = unpackToFile(file);
-            if (match == null && file.equals(path)) {
+            File unpacked = unpackToFile(
+                    classLoaderCompatibleResourcePath(file));
+            if (match == null && classLoaderCompatibleResourcePath(file)
+                    .equals(classLoaderCompatibleResourcePath(path))) {
                 match = unpacked;
             }
         }
@@ -360,18 +298,20 @@ public class ResourceLoader {
      * Unpacks a resource into the file system. If the file already, the method
      * just returns the absolute file path.
      * 
-     * @param path
+     * @param classLoaderCompatibleResourcePath(resourcePath)
      *            A resource path.
      * @return Absolute file path to the resource denoted by the {@code path}
      *         parameter.
      * @throws IOException
      */
-    public File unpackToFile(String path) throws IOException {
-        File file = getAssetPath(path);
+    public File unpackToFile(String resourcePath) throws IOException {
+        File file = getAssetPath(
+                classLoaderCompatibleResourcePath(resourcePath));
         if (!file.exists()) {
             InputStream resource = null;
             try {
-                resource = getResource(path);
+                resource = getResource(
+                        classLoaderCompatibleResourcePath(resourcePath));
                 if (!file.exists()) {
                     file.getParentFile().mkdirs();
                     Files.copy(resource, Paths.get(file.toURI()));

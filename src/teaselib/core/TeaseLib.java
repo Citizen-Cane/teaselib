@@ -2,6 +2,10 @@ package teaselib.core;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Locale;
@@ -23,17 +27,6 @@ import teaselib.util.Items;
 import teaselib.util.Logger;
 import teaselib.util.TextVariables;
 
-/**
- * @author someone
- *
- *         Teaselib can either be used via the shared global instance, or by
- *         creating a private instance.
- * 
- *         A private TeaseLib instance might be useful when using more than one
- *         TTS voice in a scenario with multiple actors
- * 
- *         All static methods refer to the shared instance
- */
 public class TeaseLib {
     private static final String CLOTHINGSPACE = "clothes";
 
@@ -75,6 +68,48 @@ public class TeaseLib {
                                 .getDisplay(VideoRenderer.Type.CameraFeedback));
                     }
                 });
+    }
+
+    @SuppressWarnings("resource")
+    public static void run(Host host, Persistence persistence, File classPath,
+            String script) throws ReflectiveOperationException, IOException {
+        URLClassLoader classLoader = (URLClassLoader) ClassLoader
+                .getSystemClassLoader();
+        Class<?> classLoaderClass = URLClassLoader.class;
+        try {
+            Method method = classLoaderClass.getDeclaredMethod("addURL",
+                    new Class[] { URL.class });
+            method.setAccessible(true);
+            method.invoke(classLoader,
+                    new Object[] { classPath.toURI().toURL() });
+        } catch (IOException e) {
+            throw e;
+        } catch (Error e) {
+            throw e;
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new ReflectiveOperationException(
+                    "Error, could not add URL to system classloader");
+        }
+        new TeaseLib(host, persistence).run(script);
+    }
+
+    public static void run(Host host, Persistence persistence, String script)
+            throws ReflectiveOperationException {
+        new TeaseLib(host, persistence).run(script);
+    }
+
+    public void run(String script) throws ReflectiveOperationException {
+        Class<?> scriptClass = getClass().getClassLoader().loadClass(script);
+        Constructor<?> teaseLibConstructor = scriptClass
+                .getConstructor(TeaseLib.class);
+        Runnable runnable = (Runnable) teaseLibConstructor.newInstance(this);
+        try {
+            runnable.run();
+        } finally {
+            host.show(null, "");
+        }
     }
 
     /**

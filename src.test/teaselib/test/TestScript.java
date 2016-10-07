@@ -15,7 +15,8 @@ public class TestScript extends TeaseScript {
     public final DummyHost host;
     public final DummyPersistence persistence;
 
-    public static final String TestScriptNamespace = TestScript.class.getName();
+    public static final String TestScriptNamespace = TestScript.class
+            .getSimpleName() + " " + "Namespace";
     public static final Actor TestScriptActor = new Actor("Test",
             Voice.Gender.Female, Locale.US);
 
@@ -35,4 +36,11 @@ public class TestScript extends TeaseScript {
     public void run() {
         throw new UnsupportedOperationException();
     }
+
+    @Override
+    public String toString() {
+        return "namespace=" + namespace + ", storage="
+                + persistence.storage.toString();
+    }
+
 }

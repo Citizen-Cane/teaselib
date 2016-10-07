@@ -32,7 +32,7 @@ public class Item<T> {
     }
 
     public boolean isAvailable() {
-        return value.get();
+        return value.value();
     }
 
     public void setAvailable(boolean isAvailable) {

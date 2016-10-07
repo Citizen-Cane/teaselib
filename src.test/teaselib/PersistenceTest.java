@@ -40,7 +40,7 @@ public class PersistenceTest {
         assertTrue(b.available() == false);
         assertEquals(null, script.getString(name));
         assertEquals(null, teaseLib.getString(namespace, name));
-        assertTrue(b.get() == false);
+        assertTrue(b.value() == false);
         b.set();
         assertEquals(DummyPersistence.True, script.getString(name));
         assertEquals(DummyPersistence.True,
@@ -64,7 +64,7 @@ public class PersistenceTest {
         String name = "TestBoolean2";
         TeaseLib.PersistentBoolean b = script.persistentBoolean(name)
                 .defaultValue(true);
-        assertTrue(b.get() == true);
+        assertTrue(b.value() == true);
         assertTrue(b.available() == false);
         assertEquals(null, script.getString(name));
         assertEquals(null, teaseLib.getString(namespace, name));
@@ -79,7 +79,7 @@ public class PersistenceTest {
                 teaseLib.getString(namespace, name));
         assertTrue(b.available() == true);
         b.clear();
-        assertTrue(b.get() == true);
+        assertTrue(b.value() == true);
         assertEquals(null, script.getString(name));
         assertEquals(null, teaseLib.getString(namespace, name));
         assertTrue(b.available() == false);
@@ -94,10 +94,10 @@ public class PersistenceTest {
         double testValue = TeaseLib.PersistentFloat.DefaultValue + 1.0;
         TeaseLib.PersistentFloat f = script.persistentFloat(name);
         assertTrue(f.available() == false);
-        assertEquals(TeaseLib.PersistentFloat.DefaultValue, f.get(), 0.0);
+        assertEquals(TeaseLib.PersistentFloat.DefaultValue, f.value(), 0.0);
         assertEquals(null, script.getString(name));
         assertEquals(null, teaseLib.getString(namespace, name));
-        assertTrue(f.get() == TeaseLib.PersistentFloat.DefaultValue);
+        assertTrue(f.value() == TeaseLib.PersistentFloat.DefaultValue);
         f.set(testValue);
         assertEquals(Double.toString(testValue), script.getString(name));
         assertEquals(Double.toString(testValue),
@@ -124,7 +124,7 @@ public class PersistenceTest {
         double testDefaultValue = TeaseLib.PersistentFloat.DefaultValue + 2.0;
         TeaseLib.PersistentFloat f = script.persistentFloat(name)
                 .defaultValue(testDefaultValue);
-        assertTrue(f.get() == testDefaultValue);
+        assertTrue(f.value() == testDefaultValue);
         assertTrue(f.available() == false);
         assertEquals(null, script.getString(name));
         assertEquals(null, teaseLib.getString(namespace, name));
@@ -140,7 +140,7 @@ public class PersistenceTest {
                 teaseLib.getString(namespace, name));
         f.clear();
         assertTrue(f.available() == false);
-        assertTrue(f.get() == testDefaultValue);
+        assertTrue(f.value() == testDefaultValue);
         assertEquals(null, script.getString(name));
         assertEquals(null, teaseLib.getString(namespace, name));
         f.set(testValue);
@@ -154,10 +154,10 @@ public class PersistenceTest {
         int testValue = TeaseLib.PersistentInteger.DefaultValue + 1;
         TeaseLib.PersistentInteger i = script.persistentInteger(name);
         assertTrue(i.available() == false);
-        assertEquals(TeaseLib.PersistentInteger.DefaultValue, i.get(), 0);
+        assertEquals(TeaseLib.PersistentInteger.DefaultValue, i.value(), 0);
         assertEquals(null, script.getString(name));
         assertEquals(null, teaseLib.getString(namespace, name));
-        assertTrue(i.get() == TeaseLib.PersistentInteger.DefaultValue);
+        assertTrue(i.value() == TeaseLib.PersistentInteger.DefaultValue);
         i.set(testValue);
         assertEquals(Integer.toString(testValue), script.getString(name));
         assertEquals(Integer.toString(testValue),
@@ -184,7 +184,7 @@ public class PersistenceTest {
         int testDefaultValue = TeaseLib.PersistentInteger.DefaultValue + 2;
         TeaseLib.PersistentInteger i = script.persistentInteger(name)
                 .defaultValue(testDefaultValue);
-        assertTrue(i.get() == testDefaultValue);
+        assertTrue(i.value() == testDefaultValue);
         assertTrue(i.available() == false);
         assertEquals(null, script.getString(name));
         assertEquals(null, teaseLib.getString(namespace, name));
@@ -201,7 +201,7 @@ public class PersistenceTest {
                 teaseLib.getString(namespace, name));
         i.clear();
         assertTrue(i.available() == false);
-        assertTrue(i.get() == testDefaultValue);
+        assertTrue(i.value() == testDefaultValue);
         assertEquals(null, script.getString(name));
         assertEquals(null, teaseLib.getString(namespace, name));
         i.set(testValue);
@@ -215,10 +215,10 @@ public class PersistenceTest {
         String testValue = TeaseLib.PersistentString.DefaultValue + "test";
         TeaseLib.PersistentString i = script.persistentString(name);
         assertTrue(i.available() == false);
-        assertEquals(TeaseLib.PersistentString.DefaultValue, i.get());
+        assertEquals(TeaseLib.PersistentString.DefaultValue, i.value());
         assertEquals(null, script.getString(name));
         assertEquals(null, teaseLib.getString(namespace, name));
-        assertTrue(i.get() == TeaseLib.PersistentString.DefaultValue);
+        assertTrue(i.value() == TeaseLib.PersistentString.DefaultValue);
         i.set(testValue);
         assertEquals(testValue, script.getString(name));
         assertEquals(testValue, teaseLib.getString(namespace, name));
@@ -244,7 +244,7 @@ public class PersistenceTest {
         String testDefaultValue = TeaseLib.PersistentString.DefaultValue + " 2";
         TeaseLib.PersistentString i = script.persistentString(name)
                 .defaultValue(testDefaultValue);
-        assertTrue(i.get() == testDefaultValue);
+        assertTrue(i.value() == testDefaultValue);
         assertTrue(i.available() == false);
         assertEquals(null, script.getString(name));
         assertEquals(null, teaseLib.getString(namespace, name));
@@ -258,7 +258,7 @@ public class PersistenceTest {
         assertEquals(testDefaultValue, teaseLib.getString(namespace, name));
         i.clear();
         assertTrue(i.available() == false);
-        assertTrue(i.get() == testDefaultValue);
+        assertTrue(i.value() == testDefaultValue);
         assertEquals(null, script.getString(name));
         assertEquals(null, teaseLib.getString(namespace, name));
         i.set(testValue);

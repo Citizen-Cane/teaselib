@@ -158,6 +158,11 @@ public abstract class TeaseScriptPersistence extends TeaseScriptBase {
         return teaseLib.new PersistentBoolean(namespace, name);
     }
 
+    public <T extends Enum<?>> TeaseLib.PersistentEnum<T> persistentEnum(
+            String name, T[] values) {
+        return teaseLib.new PersistentEnum<T>(namespace, name, values);
+    }
+
     public TeaseLib.PersistentInteger persistentInteger(String name) {
         return teaseLib.new PersistentInteger(namespace, name);
     }

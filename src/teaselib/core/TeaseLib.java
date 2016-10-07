@@ -39,7 +39,7 @@ public class TeaseLib {
     private final Persistence persistence;
     public final Logger transcript;
     private final Map<Class<?>, StateMap<? extends Enum<?>>> states = new HashMap<Class<?>, StateMap<? extends Enum<?>>>();
-    public final MediaRendererQueue renderQueue = new MediaRendererQueue();
+    final MediaRendererQueue renderQueue = new MediaRendererQueue();
 
     public TeaseLib(Host host, Persistence persistence) {
         if (host == null || persistence == null) {

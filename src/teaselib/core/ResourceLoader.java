@@ -279,10 +279,9 @@ public class ResourceLoader {
      */
     public File unpackEnclosingFolder(String path) throws IOException {
         File match = null;
-        String parentPath = classLoaderCompatibleResourcePath(path).substring(0,
-                classLoaderCompatibleResourcePath(path).lastIndexOf("/"));
-        Collection<String> folder = resources(Pattern.compile(
-                classLoaderCompatibleResourcePath(parentPath) + "/.*"));
+        String parentPath = path.substring(0, path.lastIndexOf("/"));
+        Collection<String> folder = resources(
+                Pattern.compile(parentPath + "/.*"));
         for (String file : folder) {
             File unpacked = unpackToFile(
                     classLoaderCompatibleResourcePath(file));

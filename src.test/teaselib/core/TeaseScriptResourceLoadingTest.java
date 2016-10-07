@@ -19,6 +19,7 @@ import java.util.regex.Pattern;
 
 import org.junit.Test;
 
+import teaselib.Actor;
 import teaselib.TeaseScript;
 import teaselib.core.texttospeech.Voice.Gender;
 import teaselib.hosts.DummyHost;
@@ -35,11 +36,26 @@ public class TeaseScriptResourceLoadingTest {
      */
     private static final String RESOURCE_1 = "resource1.txt";
 
-    private static TeaseScript createTestScript() {
+    static abstract class TestScript extends TeaseScript {
+        public TestScript(TeaseLib teaseLib, ResourceLoader resources,
+                Actor actor, String namespace) {
+            super(teaseLib, resources, actor, namespace);
+        }
+
+        public TestScript(TeaseScript script, Actor actor) {
+            super(script, actor);
+        }
+
+        public TestScript(TeaseScript script) {
+            super(script);
+        }
+
+    }
+
+    private static TeaseScript createTestScript(ResourceLoader resourceLoader) {
         TeaseLib teaseLib = new TeaseLib(new DummyHost(),
                 new DummyPersistence());
-        TeaseScript script = new TeaseScript(teaseLib,
-                new ResourceLoader(TeaseScriptResourceLoadingTest.class),
+        TeaseScript script = new TestScript(teaseLib, resourceLoader,
                 teaseLib.getDominant(Gender.Female, Locale.US), "test") {
             @Override
             public void run() {
@@ -52,7 +68,8 @@ public class TeaseScriptResourceLoadingTest {
 
     @Test
     public void testResourcePathBuilding() {
-        TeaseScript script = createTestScript();
+        TeaseScript script = createTestScript(
+                new ResourceLoader(TeaseScriptResourceLoadingTest.class));
         final String name = "dummy";
         final String path = script.getClass().getPackage().getName()
                 .replace(".", "/") + "/";
@@ -63,10 +80,10 @@ public class TeaseScriptResourceLoadingTest {
 
     @Test
     public void testAbsoluteResourceLoadingFromFile() throws IOException {
-        TeaseScript script = createTestScript();
-        final String name = RESOURCE_1;
-        final String path = script.absoluteResource(name);
-        InputStream res1 = script.resources.getResource(path);
+        TeaseScript script = createTestScript(
+                new ResourceLoader(TeaseScriptResourceLoadingTest.class));
+        String name = RESOURCE_1;
+        InputStream res1 = script.resources.getResource(name);
         String resource1 = null;
         BufferedReader reader = new BufferedReader(new InputStreamReader(res1));
         try {
@@ -79,8 +96,10 @@ public class TeaseScriptResourceLoadingTest {
 
     @Test
     public void testAbsoluteResourceLoadingFromZip() throws IOException {
-        TeaseScript script = createTestScript();
-        final String path = "UnpackResourcesTestData" + "/" + RESOURCE_1;
+        TeaseScript script = createTestScript(
+                new ResourceLoader(TeaseScriptResourceLoadingTest.class,
+                        ResourceLoader.ResourcesInProjectFolder));
+        String path = "UnpackResourcesTestData" + "/" + RESOURCE_1;
         InputStream res1 = script.resources.getResource(path);
         String resource1 = null;
         BufferedReader reader = new BufferedReader(new InputStreamReader(res1));
@@ -94,7 +113,9 @@ public class TeaseScriptResourceLoadingTest {
 
     @Test
     public void testResourceLoadingWithWildcards() {
-        TeaseScript script = createTestScript();
+        TeaseScript script = createTestScript(
+                new ResourceLoader(TeaseScriptResourceLoadingTest.class,
+                        ResourceLoader.ResourcesInProjectFolder));
         assertEquals(1, script.resources("util/Foo.txt").size());
         assertEquals(2, script.resources("util/Foo?.txt").size());
         assertEquals(3, script.resources("util/Foo*.txt").size());
@@ -102,7 +123,9 @@ public class TeaseScriptResourceLoadingTest {
 
     @Test
     public void testResourceLoadingWithWildcardsAbsolutePaths() {
-        TeaseScript script = createTestScript();
+        TeaseScript script = createTestScript(
+                new ResourceLoader(TeaseScriptResourceLoadingTest.class,
+                        ResourceLoader.ResourcesInProjectFolder));
         assertEquals(1, script.resources("/teaselib/core/util/Foo.txt").size());
         assertEquals(2,
                 script.resources("/teaselib/core/util/Foo?.txt").size());
@@ -115,7 +138,9 @@ public class TeaseScriptResourceLoadingTest {
 
     @Test
     public void testResourceLoadingCase() {
-        TeaseScript script = createTestScript();
+        TeaseScript script = createTestScript(
+                new ResourceLoader(TeaseScriptResourceLoadingTest.class,
+                        ResourceLoader.ResourcesInProjectFolder));
         assertEquals(1, script.resources("util/bar.txt").size());
         assertEquals(3, script.resources("util/bar?.txt").size());
         assertEquals(4, script.resources("util/bar*.txt").size());
@@ -126,7 +151,9 @@ public class TeaseScriptResourceLoadingTest {
 
     @Test
     public void testUnpackFile() throws IOException {
-        TeaseScript script = createTestScript();
+        TeaseScript script = createTestScript(
+                new ResourceLoader(TeaseScriptResourceLoadingTest.class,
+                        ResourceLoader.ResourcesInProjectFolder));
         final String path = "UnpackResourcesTestData" + "/" + RESOURCE_1;
         File res1 = script.resources.unpackToFile(path);
         String resource1 = null;
@@ -153,7 +180,9 @@ public class TeaseScriptResourceLoadingTest {
 
     @Test
     public void testUnpackFolder() throws IOException {
-        TeaseScript script = createTestScript();
+        TeaseScript script = createTestScript(
+                new ResourceLoader(TeaseScriptResourceLoadingTest.class,
+                        ResourceLoader.ResourcesInProjectFolder));
         final String resources = "/" + "UnpackResourcesTestData" + "/";
         final String path = resources + RESOURCE_1;
         File res1 = script.resources.unpackEnclosingFolder(path);

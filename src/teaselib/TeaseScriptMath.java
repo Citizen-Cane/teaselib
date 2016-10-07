@@ -17,7 +17,7 @@ import teaselib.core.TeaseScriptBase;
  * @author someone
  *
  */
-public class TeaseScriptMath extends TeaseScriptPersistence {
+public class TeaseScriptMath extends TeaseScriptPersistenceUtil {
 
     protected TeaseScriptMath(TeaseLib teaseLib, ResourceLoader resources,
             Actor actor, String namespace) {

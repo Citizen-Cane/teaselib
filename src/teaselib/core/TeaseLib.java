@@ -264,6 +264,14 @@ public class TeaseLib {
         public void set(boolean value) {
             persistence.set(name, value);
         }
+
+        public boolean isTrue() {
+            return get() == true;
+        }
+
+        public boolean isFalse() {
+            return get() == false;
+        }
     }
 
     /**
@@ -304,6 +312,49 @@ public class TeaseLib {
 
         public void set(int value) {
             persistence.set(name, Integer.toString(value));
+        }
+    }
+
+    /**
+     * @author someone
+     * 
+     *         A persistent long value, default value is 0.
+     *         <p>
+     *         The long value can be used to store dates and time.
+     */
+    public class PersistentLong extends PersistentValue {
+        public final static long DefaultValue = 0;
+
+        private long defaultValue = DefaultValue;
+
+        public PersistentLong(String namespace, String name) {
+            super(namespace, name);
+        }
+
+        public PersistentLong(String namespace, Enum<?> name) {
+            super(namespace, name);
+        }
+
+        public PersistentLong defaultValue(long defaultValue) {
+            this.defaultValue = defaultValue;
+            return this;
+        }
+
+        public long get() {
+            final String value = persistence.get(name);
+            if (value == null) {
+                return defaultValue;
+            } else {
+                try {
+                    return Long.parseLong(value);
+                } catch (NumberFormatException e) {
+                    return 0;
+                }
+            }
+        }
+
+        public void set(long value) {
+            persistence.set(name, Long.toString(value));
         }
     }
 
@@ -401,6 +452,10 @@ public class TeaseLib {
         new PersistentInteger(namespace, name).set(value);
     }
 
+    public void set(String namespace, Enum<?> name, long value) {
+        new PersistentLong(namespace, name).set(value);
+    }
+
     public void set(String namespace, Enum<?> name, double value) {
         new PersistentFloat(namespace, name).set(value);
     }
@@ -415,6 +470,10 @@ public class TeaseLib {
 
     public void set(String namespace, String name, int value) {
         new PersistentInteger(namespace, name).set(value);
+    }
+
+    public void set(String namespace, String name, long value) {
+        new PersistentLong(namespace, name).set(value);
     }
 
     public void set(String namespace, String name, double value) {
@@ -437,6 +496,10 @@ public class TeaseLib {
         return new PersistentInteger(namespace, name).get();
     }
 
+    public long getLong(String namespace, String name) {
+        return new PersistentLong(namespace, name).get();
+    }
+
     public String getString(String namespace, String name) {
         return persistence.get(makePropertyName(namespace, name));
     }
@@ -450,6 +513,10 @@ public class TeaseLib {
     }
 
     public int getInteger(String namespace, Enum<?> name) {
+        return new PersistentInteger(namespace, name).get();
+    }
+
+    public long getLong(String namespace, Enum<?> name) {
         return new PersistentInteger(namespace, name).get();
     }
 

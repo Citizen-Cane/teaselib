@@ -4,19 +4,12 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-import java.util.Map;
-import java.util.Map.Entry;
-
 import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import teaselib.core.TeaseLib.PersistentEnum;
 import teaselib.test.TestScript;
 
 public class ScriptPersistenceTests {
-    private static final Logger logger = LoggerFactory
-            .getLogger(ScriptPersistenceTests.class);
 
     private enum TestValuesEnumClass {
         My_Test_Value_toy,
@@ -49,7 +42,7 @@ public class ScriptPersistenceTests {
                 .containsKey(script.namespace.toLowerCase()
                         + ".testvaluesenumclass.my_test_value_set_by_enum"));
 
-        print(script.persistence.storage);
+        script.persistence.printStorage();
     }
 
     @Test
@@ -66,7 +59,46 @@ public class ScriptPersistenceTests {
         assertTrue(script.persistence.storage.containsKey(
                 script.namespace.toLowerCase() + ".my test value item"));
 
-        print(script.persistence.storage);
+        script.persistence.printStorage();
+    }
+
+    @Test
+    public void testToyVersusItem() {
+        TestScript script = TestScript.getOne();
+
+        script.item(Toys.Nipple_clamps).setAvailable(true);
+        script.toy(Toys.Nipple_clamps).setAvailable(true);
+        script.persistence.printStorage();
+        assertEquals(2, script.persistence.storage.size());
+    }
+
+    @Test
+    public void testSetVersusItem() {
+        TestScript script = TestScript.getOne();
+
+        script.item(TestValuesEnumClass.My_Test_Value_item_by_enum)
+                .setAvailable(false);
+        assertEquals(false, script
+                .getBoolean(TestValuesEnumClass.My_Test_Value_item_by_enum));
+
+        script.item(TestValuesEnumClass.My_Test_Value_item_by_enum)
+                .setAvailable(true);
+        assertEquals(true, script
+                .getBoolean(TestValuesEnumClass.My_Test_Value_item_by_enum));
+
+        script.set(TestValuesEnumClass.My_Test_Value_item_by_enum, false);
+        assertEquals(false,
+                script.item(TestValuesEnumClass.My_Test_Value_item_by_enum)
+                        .isAvailable());
+
+        script.set(TestValuesEnumClass.My_Test_Value_item_by_enum, true);
+        assertEquals(true,
+                script.item(TestValuesEnumClass.My_Test_Value_item_by_enum)
+                        .isAvailable());
+
+        script.persistence.printStorage();
+        assertEquals(1, script.persistence.storage.size());
+
     }
 
     @Test
@@ -99,7 +131,7 @@ public class ScriptPersistenceTests {
         assertTrue(script.persistence.storage.containsKey(
                 "my global namespace.testvaluesenumclass.my_test_value_item_by_enum"));
 
-        print(script.persistence.storage);
+        script.persistence.printStorage();
     }
 
     @Test
@@ -112,19 +144,11 @@ public class ScriptPersistenceTests {
         for (TestValuesEnumClass value : TestValuesEnumClass.values()) {
             testValue.set(value);
             assertEquals(value, testValue.value());
-            print(script.persistence.storage);
+            script.persistence.printStorage();
         }
 
         assertTrue(testValue.available());
         testValue.clear();
         assertFalse(testValue.available());
-
     }
-
-    private static void print(Map<String, String> storage) {
-        for (Entry<String, String> entry : storage.entrySet()) {
-            logger.info(entry.getKey() + "=" + entry.getValue());
-        }
-    }
-
 }

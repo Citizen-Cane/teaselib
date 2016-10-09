@@ -3,6 +3,10 @@ package teaselib.hosts;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Map.Entry;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import teaselib.Actor;
 import teaselib.Images;
@@ -11,6 +15,8 @@ import teaselib.core.texttospeech.Voice;
 import teaselib.util.TextVariables;
 
 public class DummyPersistence implements Persistence {
+    private static final Logger logger = LoggerFactory
+            .getLogger(DummyPersistence.class);
 
     public final static String True = "true";
     public final static String False = "false";
@@ -69,5 +75,16 @@ public class DummyPersistence implements Persistence {
         default:
             throw new IllegalArgumentException(gender.toString());
         }
+    }
+
+    public void printStorage() {
+        for (Entry<String, String> entry : storage.entrySet()) {
+            logger.info(entry.getKey() + "=" + entry.getValue());
+        }
+    }
+
+    @Override
+    public String toString() {
+        return storage.toString();
     }
 }

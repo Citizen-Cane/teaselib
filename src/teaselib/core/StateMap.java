@@ -44,7 +44,7 @@ public class StateMap<T extends Enum<T>> {
     }
 
     private String nameOf(T item) {
-        return item.name();
+        return item.name() + ".state";
     }
 
     private class StateImpl implements State {

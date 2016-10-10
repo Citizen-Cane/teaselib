@@ -1,6 +1,8 @@
 package teaselib;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.util.concurrent.TimeUnit;
 
@@ -34,7 +36,7 @@ public class StateScopeTests {
         state.apply(30, TimeUnit.MINUTES);
         assertTrue(state.applied());
         assertTrue(script.teaseLib.getString(Body.class.getName(),
-                Body.SomethingOnNipples.name()) != null);
+                Body.SomethingOnNipples.name() + ".state") != null);
         assertFalse(state.expired());
     }
 

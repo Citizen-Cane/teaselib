@@ -13,13 +13,12 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import teaselib.Actor;
-import teaselib.Clothes;
 import teaselib.Config;
 import teaselib.State;
-import teaselib.Toys;
 import teaselib.core.devices.DeviceFactoryListener;
 import teaselib.core.media.MediaRendererQueue;
 import teaselib.core.texttospeech.Voice;
+import teaselib.core.util.PropertyNameMapping;
 import teaselib.motiondetection.MotionDetection;
 import teaselib.motiondetection.MotionDetector;
 import teaselib.util.Item;
@@ -587,20 +586,28 @@ public class TeaseLib {
         return persistence.get(makePropertyName(namespace, name));
     }
 
-    private static String makePropertyName(String namespace, String name) {
-        return namespace.toLowerCase() + "." + name.toLowerCase();
+    private String makePropertyName(String namespace, String name) {
+        PropertyNameMapping nameMapping = persistence.getNameMapping();
+        String mappedDomain = PropertyNameMapping.None;
+        String mappedPath = nameMapping.mapPath(PropertyNameMapping.None,
+                namespace, name);
+        String mappedName = nameMapping.mapName(PropertyNameMapping.None,
+                namespace, name);
+        return nameMapping.buildPath(mappedDomain, mappedPath, mappedName);
     }
 
-    private static String makePropertyName(String namespace, Enum<?> name) {
-        boolean noClassName = name instanceof Toys || name instanceof Clothes;
-        if (noClassName && (TOYSPACE.equals(namespace)
-                || CLOTHINGSPACE.equals(namespace))) {
-            return namespace.toLowerCase() + "." + name.name().toLowerCase();
-        } else {
-            return namespace.toLowerCase() + "."
-                    + name.getClass().getSimpleName().toLowerCase() + "."
-                    + name.name().toLowerCase();
-        }
+    private String makePropertyName(String namespace, Enum<?> name) {
+        // boolean noClassName = name instanceof Toys || name instanceof
+        // Clothes;
+        // if (noClassName && (TOYSPACE.equals(namespace)
+        // || CLOTHINGSPACE.equals(namespace))) {
+        // return namespace.toLowerCase() + "." + name.name().toLowerCase();
+        // } else {
+        // return namespace.toLowerCase() + "."
+        // + name.getClass().getSimpleName().toLowerCase() + "."
+        // + name.name().toLowerCase();
+        // }
+        return makePropertyName(namespace, name.name());
     }
 
     public <T extends Enum<?>> Item<T> getToy(T toy) {

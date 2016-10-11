@@ -4,9 +4,12 @@ import java.util.Locale;
 
 import teaselib.Actor;
 import teaselib.core.texttospeech.Voice;
+import teaselib.core.util.PropertyNameMapping;
 import teaselib.util.TextVariables;
 
 public interface Persistence {
+
+    PropertyNameMapping getNameMapping();
 
     boolean has(String name);
 

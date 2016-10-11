@@ -12,6 +12,7 @@ import teaselib.Actor;
 import teaselib.Images;
 import teaselib.core.Persistence;
 import teaselib.core.texttospeech.Voice;
+import teaselib.core.util.PropertyNameMapping;
 import teaselib.util.TextVariables;
 
 public class DummyPersistence implements Persistence {
@@ -22,6 +23,12 @@ public class DummyPersistence implements Persistence {
     public final static String False = "false";
 
     public final Map<String, String> storage = new HashMap<String, String>();
+    private final PropertyNameMapping nameMapping = new SexScriptsPropertyNameMapping();
+
+    @Override
+    public PropertyNameMapping getNameMapping() {
+        return nameMapping;
+    }
 
     @Override
     public boolean has(String name) {

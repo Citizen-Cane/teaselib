@@ -4,11 +4,10 @@ import java.util.Locale;
 
 import ss.IScript;
 import teaselib.Actor;
-import teaselib.Clothes;
 import teaselib.Images;
-import teaselib.Toys;
 import teaselib.core.Persistence;
 import teaselib.core.texttospeech.Voice;
+import teaselib.core.util.PropertyNameMapping;
 import teaselib.util.TextVariables;
 
 public class SexScriptsStatePersistence implements Persistence {
@@ -17,15 +16,22 @@ public class SexScriptsStatePersistence implements Persistence {
     private static final String TRUE = "true";
 
     private final ss.IScript host;
+    private final PropertyNameMapping nameMapping;
 
     public SexScriptsStatePersistence(IScript host) {
         this.host = host;
+        this.nameMapping = new SexScriptsPropertyNameMapping() {
+        };
+    }
+
+    @Override
+    public PropertyNameMapping getNameMapping() {
+        return nameMapping;
     }
 
     @Override
     public boolean has(String name) {
-        name = mapName(name);
-        return host.loadString(name) != null;
+        return get(name) != null;
     }
 
     @Override
@@ -40,52 +46,30 @@ public class SexScriptsStatePersistence implements Persistence {
 
     @Override
     public String get(String name) {
-        name = mapName(name);
-        String value = host.loadString(name);
-        return value;
+        name = getNameMapping().mapName(PropertyNameMapping.None,
+                PropertyNameMapping.None, name);
+        return host.loadString(name);
     }
 
     @Override
     public void set(String name, String value) {
-        name = mapName(name);
+        name = getNameMapping().mapName(PropertyNameMapping.None,
+                PropertyNameMapping.None, name);
         host.save(name, value);
     }
 
     @Override
     public void set(String name, boolean value) {
-        name = mapName(name);
+        name = getNameMapping().mapName(PropertyNameMapping.None,
+                PropertyNameMapping.None, name);
         set(name, value ? TRUE : FALSE);
     }
 
     @Override
     public void clear(String name) {
-        name = mapName(name);
+        name = getNameMapping().mapName(PropertyNameMapping.None,
+                PropertyNameMapping.None, name);
         host.save(name, null);
-    }
-
-    /**
-     * TeaseLib uses a lot of standard properties instead of just plain strings,
-     * and those don't match the way SexScripts save it's properties.
-     * 
-     * @param name
-     *            The name of a property
-     * @return The actual property name or the original name
-     */
-    private static String mapName(String name) {
-        if (name.contains(
-                ("Male." + Clothes.class.getSimpleName()).toLowerCase()
-                        + ".")) {
-            name = name.substring(name.indexOf(
-                    Clothes.class.getSimpleName().toLowerCase() + "."));
-        } else if (name.contains(
-                ("Female." + Clothes.class.getSimpleName()).toLowerCase()
-                        + ".")) {
-            name = name.substring(name.indexOf(
-                    Clothes.class.getSimpleName().toLowerCase() + "."));
-        } else if (("toys." + Toys.Ball_Gag.name()).equalsIgnoreCase(name)) {
-            name = "toys.ballgag";
-        }
-        return name;
     }
 
     @Override

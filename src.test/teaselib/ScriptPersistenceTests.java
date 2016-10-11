@@ -73,6 +73,16 @@ public class ScriptPersistenceTests {
     }
 
     @Test
+    public void testClothingVersusItem() {
+        TestScript script = TestScript.getOne();
+
+        script.item(Clothes.Panties).setAvailable(true);
+        script.clothing(Clothes.Female, Clothes.Panties).setAvailable(true);
+        script.persistence.printStorage();
+        assertEquals(2, script.persistence.storage.size());
+    }
+
+    @Test
     public void testSetVersusItem() {
         TestScript script = TestScript.getOne();
 
@@ -148,6 +158,7 @@ public class ScriptPersistenceTests {
         }
 
         assertTrue(testValue.available());
+        script.persistence.printStorage();
         testValue.clear();
         assertFalse(testValue.available());
     }

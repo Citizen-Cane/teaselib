@@ -28,7 +28,7 @@ public class PersistenceLogger implements Persistence {
     public boolean has(String name) {
         boolean exists = persistence.has(name);
         logger.info("Persistence: " + name
-                + (exists ? " exists" : "doesn't exist"));
+                + (exists ? " exists" : " doesn't exist"));
         return exists;
     }
 

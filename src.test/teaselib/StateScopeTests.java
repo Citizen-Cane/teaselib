@@ -8,6 +8,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.junit.Test;
 
+import teaselib.core.TeaseLib;
 import teaselib.test.TestScript;
 
 public class StateScopeTests {
@@ -27,15 +28,16 @@ public class StateScopeTests {
         state.remove();
         assertFalse(state.applied());
         assertTrue(state.expired());
-        assertEquals(null, script.teaseLib.getString(Body.class.getName(),
-                Body.SomethingOnNipples.name()));
+        assertEquals(null, script.teaseLib.getString(TeaseLib.DefaultDomain,
+                Body.class.getName(), Body.SomethingOnNipples.name()));
     }
 
     private static void assertTimedStateIsPersisted(TestScript script,
             State state) {
         state.apply(30, TimeUnit.MINUTES);
         assertTrue(state.applied());
-        assertTrue(script.teaseLib.getString(Body.class.getName(),
+        assertTrue(script.teaseLib.getString(TeaseLib.DefaultDomain,
+                Body.class.getName(),
                 Body.SomethingOnNipples.name() + ".state") != null);
         assertFalse(state.expired());
     }
@@ -44,8 +46,8 @@ public class StateScopeTests {
             State state) {
         assertFalse(state.applied());
         assertTrue(state.expired());
-        assertEquals(null, script.teaseLib.getString(Body.class.getName(),
-                Body.SomethingOnNipples.name()));
+        assertEquals(null, script.teaseLib.getString(TeaseLib.DefaultDomain,
+                Body.class.getName(), Body.SomethingOnNipples.name()));
         return state;
     }
 

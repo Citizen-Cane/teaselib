@@ -5,57 +5,68 @@ package teaselib;
 
 import static org.junit.Assert.assertTrue;
 
-import java.util.Locale;
-
-import org.junit.Before;
 import org.junit.Test;
 
-import teaselib.core.ResourceLoader;
 import teaselib.core.TeaseLib;
-import teaselib.core.texttospeech.Voice;
-import teaselib.hosts.DummyHost;
-import teaselib.hosts.DummyPersistence;
+import teaselib.hosts.SexScriptsPropertyNameMapping;
+import teaselib.test.TestScript;
 
 /**
  * @author someone
  *
  */
 public class ToyPersistenceTests {
-    final DummyPersistence persistence = new DummyPersistence();
-    final TeaseLib teaseLib = new TeaseLib(new DummyHost(), persistence);
-    final String namespace = "JUnit test";
-    final TeaseScript script = new TeaseScript(teaseLib,
-            new ResourceLoader(PersistenceTest.class),
-            new Actor("Test", Voice.Gender.Female, Locale.US), namespace) {
-        @Override
-        public void run() {
-            throw new UnsupportedOperationException();
-        }
-    };
-
-    @Before
-    public void before() {
-        persistence.storage.clear();
-    }
-
     @Test
     public void testToysAndClothing() {
-        teaseLib.getToy(Toys.Ball_Gag).setAvailable(true);
-        assertTrue(persistence.storage.containsKey("toys.ball_gag"));
-        teaseLib.getClothing(Clothes.Female, Clothes.High_Heels)
+        TestScript script = TestScript.getOne();
+
+        script.teaseLib.getToy(TeaseLib.DefaultDomain, Toys.Ball_Gag)
                 .setAvailable(true);
-        assertTrue(
-                persistence.storage.containsKey("female.clothes.high_heels"));
+        if (script.persistence
+                .getNameMapping() instanceof SexScriptsPropertyNameMapping) {
+            assertTrue(script.persistence.storage.containsKey("Toys.ballgag"));
+        } else {
+            assertTrue(script.persistence.storage.containsKey("Toys.Ball_Gag"));
+        }
+
+        script.teaseLib.getClothing(Clothes.Female, Clothes.High_Heels)
+                .setAvailable(true);
+        assertTrue(script.persistence.storage
+                .containsKey("Female.Clothes.High_Heels"));
     }
 
     @Test
     public void testToysAndClothingAsItems() {
-        String namespace = "MyNameSpace";
-        teaseLib.item(namespace, Toys.Ball_Gag).setAvailable(true);
-        assertTrue(persistence.storage.containsKey(namespace.toLowerCase() + "."
-                + Toys.class.getSimpleName().toLowerCase() + ".ball_gag"));
-        teaseLib.item(namespace, Clothes.High_Heels).setAvailable(true);
-        assertTrue(persistence.storage.containsKey(namespace.toLowerCase() + "."
-                + Clothes.class.getSimpleName().toLowerCase() + ".high_heels"));
+        TestScript script = TestScript.getOne();
+
+        script.teaseLib.item(TeaseLib.DefaultDomain, Toys.Ball_Gag)
+                .setAvailable(true);
+        if (script.persistence
+                .getNameMapping() instanceof SexScriptsPropertyNameMapping) {
+            assertTrue(script.persistence.storage
+                    .containsKey(Toys.class.getSimpleName() + ".ballgag"));
+        } else {
+            assertTrue(script.persistence.storage
+                    .containsKey(Toys.class.getSimpleName() + ".Ball_Gag"));
+        }
+
+        script.teaseLib.item(TeaseLib.DefaultDomain, Clothes.High_Heels)
+                .setAvailable(true);
+        assertTrue(script.persistence.storage
+                .containsKey(Clothes.class.getSimpleName() + ".High_Heels"));
+    }
+
+    public void testAssignedToysAndClothingAsItems() {
+        TestScript script = TestScript.getOne();
+
+        script.teaseLib.item(Clothes.Maid, Toys.Ball_Gag).setAvailable(true);
+        assertTrue(script.persistence.storage.containsKey(
+                "Maid." + Toys.class.getSimpleName() + ".Ball_Gag"));
+
+        script.teaseLib.item(Clothes.Female, Clothes.High_Heels)
+                .setAvailable(true);
+
+        assertTrue(script.persistence.storage.containsKey(
+                "Female." + Clothes.class.getSimpleName() + ".High_Heels"));
     }
 }

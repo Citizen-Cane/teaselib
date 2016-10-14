@@ -13,8 +13,10 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import teaselib.Actor;
+import teaselib.Clothes;
 import teaselib.Config;
 import teaselib.State;
+import teaselib.Toys;
 import teaselib.core.devices.DeviceFactoryListener;
 import teaselib.core.media.MediaRendererQueue;
 import teaselib.core.texttospeech.Voice;
@@ -24,12 +26,12 @@ import teaselib.motiondetection.MotionDetector;
 import teaselib.util.Item;
 import teaselib.util.Items;
 import teaselib.util.Logger;
+import teaselib.util.PersistenceLogger;
 import teaselib.util.TextVariables;
 
 public class TeaseLib {
-    private static final String CLOTHINGSPACE = "clothes";
-
-    private static final String TOYSPACE = "toys";
+    public static final String DefaultDomain = PropertyNameMapping.DefaultDomain;
+    public static final String DefaultName = PropertyNameMapping.None;
 
     private static final File transcriptLogFile = new File(
             "./TeaseLib session transcript.log");
@@ -45,7 +47,7 @@ public class TeaseLib {
             throw new IllegalArgumentException();
         }
         this.host = host;
-        this.persistence = persistence;
+        this.persistence = new PersistenceLogger(persistence);
         Logger transcriptLogger = null;
         try {
             transcriptLogger = new Logger(transcriptLogFile,
@@ -203,12 +205,13 @@ public class TeaseLib {
     protected abstract class PersistentValue<T> {
         public final String name;
 
-        protected PersistentValue(String namespace, String name) {
-            this.name = makePropertyName(namespace, name);
+        protected PersistentValue(String domain, String namespace,
+                String name) {
+            this.name = makePropertyName(domain, namespace, name);
         }
 
-        protected PersistentValue(String namespace, Enum<?> name) {
-            this.name = makePropertyName(namespace, name);
+        protected PersistentValue(String domain, Enum<?> name) {
+            this.name = makePropertyName(domain, name);
         }
 
         public void clear() {
@@ -236,12 +239,12 @@ public class TeaseLib {
 
         private boolean defaultValue = DefaultValue;
 
-        public PersistentBoolean(String namespace, String name) {
-            super(namespace, name);
+        public PersistentBoolean(String domain, String namespace, String name) {
+            super(domain, namespace, name);
         }
 
-        public PersistentBoolean(String namespace, Enum<?> name) {
-            super(namespace, name);
+        public PersistentBoolean(String domain, Enum<?> name) {
+            super(domain, name);
         }
 
         @Override
@@ -288,12 +291,12 @@ public class TeaseLib {
 
         private int defaultValue = DefaultValue;
 
-        public PersistentInteger(String namespace, String name) {
-            super(namespace, name);
+        public PersistentInteger(String domain, String namespace, String name) {
+            super(domain, namespace, name);
         }
 
-        public PersistentInteger(String namespace, Enum<?> name) {
-            super(namespace, name);
+        public PersistentInteger(String domain, Enum<?> name) {
+            super(domain, name);
         }
 
         @Override
@@ -335,12 +338,12 @@ public class TeaseLib {
 
         private long defaultValue = DefaultValue;
 
-        public PersistentLong(String namespace, String name) {
-            super(namespace, name);
+        public PersistentLong(String domain, String namespace, String name) {
+            super(domain, namespace, name);
         }
 
-        public PersistentLong(String namespace, Enum<?> name) {
-            super(namespace, name);
+        public PersistentLong(String domain, Enum<?> name) {
+            super(domain, name);
         }
 
         @Override
@@ -380,12 +383,12 @@ public class TeaseLib {
 
         private double defaultValue = DefaultValue;
 
-        public PersistentFloat(String namespace, String name) {
-            super(namespace, name);
+        public PersistentFloat(String domain, String namespace, String name) {
+            super(domain, namespace, name);
         }
 
-        public PersistentFloat(String namespace, Enum<?> name) {
-            super(namespace, name);
+        public PersistentFloat(String domain, Enum<?> name) {
+            super(domain, name);
         }
 
         @Override
@@ -425,12 +428,12 @@ public class TeaseLib {
 
         private String defaultValue = DefaultValue;
 
-        public PersistentString(String namespace, String name) {
-            super(namespace, name);
+        public PersistentString(String domain, String namespace, String name) {
+            super(domain, namespace, name);
         }
 
-        public PersistentString(String namespace, Enum<?> name) {
-            super(namespace, name);
+        public PersistentString(String domain, Enum<?> name) {
+            super(domain, name);
         }
 
         @Override
@@ -461,14 +464,15 @@ public class TeaseLib {
         T[] values;
         private T defaultValue = null;
 
-        public PersistentEnum(String namespace, String name, T[] values) {
-            super(namespace, name);
+        public PersistentEnum(String domain, String namespace, String name,
+                T[] values) {
+            super(domain, namespace, name);
             this.values = values;
             defaultValue = values[0];
         }
 
-        public PersistentEnum(String namespace, Enum<?> name, T[] values) {
-            super(namespace, name);
+        public PersistentEnum(String domain, Enum<?> name, T[] values) {
+            super(domain, name.getClass().getName(), DefaultName);
             defaultValue = values[0];
         }
 
@@ -498,132 +502,132 @@ public class TeaseLib {
         }
     }
 
-    public void clear(String namespace, String name) {
-        persistence.clear(makePropertyName(namespace, name));
+    public void clear(String domain, String namespace, String name) {
+        persistence.clear(makePropertyName(domain, namespace, name));
     }
 
-    public void clear(String namespace, Enum<?> name) {
-        persistence.clear(makePropertyName(namespace, name));
+    public void clear(String domain, Enum<?> name) {
+        persistence.clear(makePropertyName(domain, name));
     }
 
-    public void set(String namespace, Enum<?> name, boolean value) {
-        persistence.set(makePropertyName(namespace, name), value);
+    public void set(String domain, Enum<?> name, boolean value) {
+        persistence.set(makePropertyName(domain, name), value);
     }
 
-    public void set(String namespace, Enum<?> name, int value) {
-        new PersistentInteger(namespace, name).set(value);
+    public void set(String domain, Enum<?> name, int value) {
+        new PersistentInteger(domain, name).set(value);
     }
 
-    public void set(String namespace, Enum<?> name, long value) {
-        new PersistentLong(namespace, name).set(value);
+    public void set(String domain, Enum<?> name, long value) {
+        new PersistentLong(domain, name).set(value);
     }
 
-    public void set(String namespace, Enum<?> name, double value) {
-        new PersistentFloat(namespace, name).set(value);
+    public void set(String domain, Enum<?> name, double value) {
+        new PersistentFloat(domain, name).set(value);
     }
 
-    public void set(String namespace, Enum<?> name, String value) {
-        persistence.set(makePropertyName(namespace, name), value);
+    public void set(String domain, Enum<?> name, String value) {
+        persistence.set(makePropertyName(domain, name), value);
     }
 
-    public void set(String namespace, String name, boolean value) {
-        persistence.set(makePropertyName(namespace, name), value);
+    public void set(String domain, String namespace, String name,
+            boolean value) {
+        persistence.set(makePropertyName(domain, namespace, name), value);
     }
 
-    public void set(String namespace, String name, int value) {
-        new PersistentInteger(namespace, name).set(value);
+    public void set(String domain, String namespace, String name, int value) {
+        new PersistentInteger(domain, namespace, name).set(value);
     }
 
-    public void set(String namespace, String name, long value) {
-        new PersistentLong(namespace, name).set(value);
+    public void set(String domain, String namespace, String name, long value) {
+        new PersistentLong(domain, namespace, name).set(value);
     }
 
-    public void set(String namespace, String name, double value) {
-        new PersistentFloat(namespace, name).set(value);
+    public void set(String domain, String namespace, String name,
+            double value) {
+        new PersistentFloat(domain, namespace, name).set(value);
     }
 
-    public void set(String namespace, String name, String value) {
-        persistence.set(makePropertyName(namespace, name), value);
+    public void set(String domain, String namespace, String name,
+            String value) {
+        persistence.set(makePropertyName(domain, namespace, name), value);
     }
 
-    public boolean getBoolean(String namespace, String name) {
-        return persistence.getBoolean(makePropertyName(namespace, name));
+    public boolean getBoolean(String domain, String namespace, String name) {
+        return persistence
+                .getBoolean(makePropertyName(domain, namespace, name));
     }
 
-    public double getFloat(String namespace, String name) {
-        return new PersistentFloat(namespace, name).value();
+    public double getFloat(String domain, String namespace, String name) {
+        return new PersistentFloat(domain, namespace, name).value();
     }
 
-    public int getInteger(String namespace, String name) {
-        return new PersistentInteger(namespace, name).value();
+    public int getInteger(String domain, String namespace, String name) {
+        return new PersistentInteger(domain, namespace, name).value();
     }
 
-    public long getLong(String namespace, String name) {
-        return new PersistentLong(namespace, name).value();
+    public long getLong(String domain, String namespace, String name) {
+        return new PersistentLong(domain, namespace, name).value();
     }
 
-    public String getString(String namespace, String name) {
-        return persistence.get(makePropertyName(namespace, name));
+    public String getString(String domain, String namespace, String name) {
+        return persistence.get(makePropertyName(domain, namespace, name));
     }
 
-    public boolean getBoolean(String namespace, Enum<?> name) {
-        return persistence.getBoolean(makePropertyName(namespace, name));
+    public boolean getBoolean(String domain, Enum<?> name) {
+        return persistence.getBoolean(makePropertyName(domain, name));
     }
 
-    public double getFloat(String namespace, Enum<?> name) {
-        return new PersistentFloat(namespace, name).value();
+    public double getFloat(String domain, Enum<?> name) {
+        return new PersistentFloat(domain, name).value();
     }
 
-    public int getInteger(String namespace, Enum<?> name) {
-        return new PersistentInteger(namespace, name).value();
+    public int getInteger(String domain, Enum<?> name) {
+        return new PersistentInteger(domain, name).value();
     }
 
-    public long getLong(String namespace, Enum<?> name) {
-        return new PersistentInteger(namespace, name).value();
+    public long getLong(String domain, Enum<?> name) {
+        return new PersistentInteger(domain, name).value();
     }
 
-    public String getString(String namespace, Enum<?> name) {
-        return persistence.get(makePropertyName(namespace, name));
+    public String getString(String domain, Enum<?> name) {
+        return persistence.get(makePropertyName(domain, name));
     }
 
-    private String makePropertyName(String namespace, String name) {
+    private String makePropertyName(String domain, String path, String name) {
         PropertyNameMapping nameMapping = persistence.getNameMapping();
-        String mappedDomain = PropertyNameMapping.None;
-        String mappedPath = nameMapping.mapPath(PropertyNameMapping.None,
-                namespace, name);
-        String mappedName = nameMapping.mapName(PropertyNameMapping.None,
-                namespace, name);
+
+        String strippedPath = nameMapping.stripPath(domain, path, name);
+
+        String mappedDomain = nameMapping.mapDomain(domain, strippedPath, name);
+        String mappedPath = nameMapping.mapPath(domain, strippedPath, name);
+        String mappedName = nameMapping.mapName(domain, strippedPath, name);
+
         return nameMapping.buildPath(mappedDomain, mappedPath, mappedName);
     }
 
-    private String makePropertyName(String namespace, Enum<?> name) {
-        // boolean noClassName = name instanceof Toys || name instanceof
-        // Clothes;
-        // if (noClassName && (TOYSPACE.equals(namespace)
-        // || CLOTHINGSPACE.equals(namespace))) {
-        // return namespace.toLowerCase() + "." + name.name().toLowerCase();
-        // } else {
-        // return namespace.toLowerCase() + "."
-        // + name.getClass().getSimpleName().toLowerCase() + "."
-        // + name.name().toLowerCase();
-        // }
-        return makePropertyName(namespace, name.name());
+    private String makePropertyName(String domain, Enum<?> name) {
+        return makePropertyName(domain, name.getClass().getName(), name.name());
     }
 
-    public <T extends Enum<?>> Item<T> getToy(T toy) {
-        return item(TOYSPACE, toy);
+    @Deprecated
+    public <T extends Enum<?>> Item<T> getToy(String domain, T toy) {
+        return item(domain, toy);
     }
 
-    public <T extends Enum<?>> Item<T> getClothing(Object wearer, T item) {
-        return item(wearer.toString(), item);
+    @Deprecated
+    public Item<String> getToy(String domain, String toy) {
+        return item(domain, Toys.class.getName(), toy);
     }
 
-    public <T> Item<T> getToy(T toy) {
-        return item(TOYSPACE, toy);
+    @Deprecated
+    public <T extends Enum<?>> Item<T> getClothing(Object domain, T item) {
+        return item(domain.toString(), item);
     }
 
-    public <T> Item<T> getClothing(Object wearer, T item) {
-        return item(wearer.toString(), item);
+    @Deprecated
+    public Item<String> getClothing(Object domain, String item) {
+        return item(domain.toString(), Clothes.class.getName(), item);
     }
 
     public TextVariables getTextVariables(Locale locale) {
@@ -635,8 +639,9 @@ public class TeaseLib {
         public final T[] values;
         private T value;
 
-        public PersistentSequence(String namespace, String name, T[] values) {
-            this.valueName = new PersistentString(namespace, name);
+        public PersistentSequence(String domain, String namespace, String name,
+                T[] values) {
+            this.valueName = new PersistentString(domain, namespace, name);
             this.values = values;
             String persistedValue = valueName.value();
             this.value = values[0];
@@ -751,10 +756,11 @@ public class TeaseLib {
      * @param values
      * @return A list of items whose names are based on the enumeration members
      */
-    public <T extends Enum<?>> Items<T> items(String namespace, T... values) {
+    public <T extends Enum<?>> Items<T> items(String domain, String namespace,
+            T... values) {
         Items<T> items = new Items<T>(values.length);
         for (T v : values) {
-            items.add(item(namespace, v));
+            items.add(item(domain, v));
         }
         return items;
     }
@@ -768,8 +774,9 @@ public class TeaseLib {
      *            The enumeration value to get the item for
      * @return The item that corresponds to the enumeration member
      */
-    public <T extends Enum<?>> Item<T> item(String namespace, T value) {
-        return new Item<T>(value, new PersistentBoolean(namespace, value));
+    public <T extends Enum<?>> Item<T> item(String domain, T value) {
+        return new Item<T>(value, new PersistentBoolean(domain,
+                value.getClass().getName(), value.name()));
     }
 
     /**
@@ -777,13 +784,13 @@ public class TeaseLib {
      * 
      * @param namespace
      *            The namespace of the item.
-     * @param value
+     * @param name
      *            The value to get the item for.
      * @return The item that corresponds to the value.
      */
-    public <T> Item<T> item(String namespace, T value) {
-        return new Item<T>(value,
-                new PersistentBoolean(namespace, value.toString()));
+    public Item<String> item(String domain, String namespace, String name) {
+        return new Item<String>(name,
+                new PersistentBoolean(domain, namespace, name));
     }
 
     public Actor getDominant(Voice.Gender gender, Locale locale) {
@@ -791,20 +798,19 @@ public class TeaseLib {
     }
 
     public boolean getConfigSetting(Enum<?> name) {
-        String systemProperty = System.getProperty(
-                Config.Namespace + "." + name.toString().toLowerCase(),
-                "false");
-        boolean teaseLibProperty = getBoolean(Config.Namespace, name);
-        boolean ignoreMissingResources = teaseLibProperty
-                && systemProperty != "false";
-        return ignoreMissingResources;
+        String systemProperty = System
+                .getProperty(Config.Namespace + "." + name.toString(), "false");
+        boolean teaseLibProperty = getBoolean(TeaseLib.DefaultDomain, name);
+        boolean finalProperty = teaseLibProperty && systemProperty != "false";
+        return finalProperty;
     }
 
     public String getConfigString(Enum<?> name) {
-        String teaseLibProperty = getString(Config.Namespace, name.toString());
+        String teaseLibProperty = getString(TeaseLib.DefaultDomain,
+                Config.Namespace, name.toString());
         if (teaseLibProperty.isEmpty()) {
-            String systemProperty = System.getProperty(
-                    Config.Namespace + "." + name.toString().toLowerCase(), "");
+            String systemProperty = System
+                    .getProperty(Config.Namespace + "." + name.toString(), "");
             return systemProperty;
         }
         return teaseLibProperty;

@@ -25,6 +25,10 @@ public class Items<T> extends ArrayList<Item<T>> {
         super(capacity);
     }
 
+    public boolean isAvailable() {
+        return available().size() > 0;
+    }
+
     public Items<T> available() {
         Items<T> available = new Items<T>();
         for (Item<T> item : this) {

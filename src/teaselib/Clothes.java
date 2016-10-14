@@ -72,13 +72,12 @@ public enum Clothes {
 
     // Namespaces of wearers of the diverse clothing items
 
-    public static final String Male = "male";
-    public static final String Female = "female";
-    public static final String Maid = "maid";
-    public static final String Schoolgirl = "schoolgirl";
-    public static final String Doll = "doll";
+    public static final String Male = "Male";
+    public static final String Female = "Female";
+    public static final String Maid = "Maid";
+    public static final String Doll = "Doll";
     public static final String Wife = "wife";
-    public static final String Husband = "husband";
+    public static final String Husband = "Husband";
 
     public static final Clothes[] Underwear = { Boxers, Briefs, GString,
             Panties, Thong };
@@ -88,11 +87,11 @@ public enum Clothes {
             Sweatpants, Trousers, TShirt, Tie };
 
     public static final Clothes[] FemaleClothes = { Baby_Doll, Bikini, Blouse,
-            Body, Boots, Bra, Catsuit, Cheerleader_Uniform, Corset, Dress,
-            Garterbelt, GString, High_Heels, Jacket, Jeans, Leotard, Miniskirt,
-            Monokini, Nightie, Panties, Pantyhose, Sandals, Shirt, Shoes,
-            Shorts, Skirt, Socks, Stockings, Sweater, Sweatpants, Swimsuit,
-            Tanktop, Thong, Trousers, TShirt, Vest };
+            Body, Boots, Bra, Catsuit, Corset, Dress, Garterbelt, GString,
+            High_Heels, Jacket, Jeans, Leotard, Miniskirt, Monokini, Nightie,
+            Panties, Pantyhose, Sandals, Shirt, Shoes, Shorts, Skirt, Socks,
+            Stockings, Sweater, Sweatpants, Swimsuit, Tanktop, Thong, Trousers,
+            TShirt, Vest };
 
     public static final Clothes[] MaidClothes = { Blouse, Body, Boots, Bra,
             Catsuit, Corset, Dress, Garterbelt, GString, High_Heels, Leotard,

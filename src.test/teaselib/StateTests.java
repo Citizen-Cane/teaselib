@@ -45,7 +45,7 @@ public class StateTests {
     }
 
     @Test
-    public void testPersistentStateAndVlueCompatibility() {
+    public void testPersistentStateAndValueCompatibility() {
         TestScript script = TestScript.getOne();
 
         Item<Toys> nippleClampsToy = script.toy(Toys.Nipple_clamps);
@@ -53,15 +53,15 @@ public class StateTests {
         assertTrue(nippleClampsToy.isAvailable());
 
         Item<Toys> nippleClampsItem = script.item(Toys.Nipple_clamps);
-        nippleClampsItem.setAvailable(true);
         assertTrue(nippleClampsItem.isAvailable());
+        nippleClampsItem.setAvailable(false);
+        assertFalse(nippleClampsItem.isAvailable());
 
         State nippleClampsState = script.state(Toys.Nipple_clamps);
         assertFalse(nippleClampsState.applied());
         nippleClampsState.apply(30, TimeUnit.MINUTES);
 
-        script.persistence.printStorage();
-        assertEquals(3, script.persistence.storage.size());
+        assertEquals(2, script.persistence.storage.size());
     }
 
 }

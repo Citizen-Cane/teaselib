@@ -26,91 +26,6 @@ public abstract class TeaseScriptPersistence extends TeaseScriptBase {
         super(script, actor);
     }
 
-    public <T extends Enum<?>> Item<T> toy(T item) {
-        return teaseLib.getToy(item);
-    }
-
-    public <C extends Enum<?>> Item<C> clothing(Object wearer, C item) {
-        return teaseLib.getClothing(wearer, item);
-    }
-
-    public <T> Item<T> toy(T item) {
-        return teaseLib.getToy(item);
-    }
-
-    public <C> Item<C> clothing(Object wearer, C item) {
-        return teaseLib.getClothing(wearer, item);
-    }
-
-    public <T extends Enum<?>> Items<T> toys(T... toys) {
-        Items<T> items = new Items<T>();
-        for (T toy : toys) {
-            Item<T> item = teaseLib.getToy(toy);
-            items.add(item);
-        }
-        return items;
-    }
-
-    public <T extends Enum<?>> Items<T> toys(T[]... toys) {
-        Items<T> items = new Items<T>();
-        for (T[] selection : toys) {
-            items.addAll(toys(selection));
-        }
-        return items;
-    }
-
-    public <T> Items<T> toys(T... toys) {
-        Items<T> items = new Items<T>();
-        for (T toy : toys) {
-            Item<T> item = teaseLib.getToy(toy);
-            items.add(item);
-        }
-        return items;
-    }
-
-    public <T> Items<T> toys(T[]... toys) {
-        Items<T> items = new Items<T>();
-        for (T[] selection : toys) {
-            items.addAll(toys(selection));
-        }
-        return items;
-    }
-
-    public <C extends Enum<C>> Items<C> clothes(Object wearer, C... clothes) {
-        Items<C> items = new Items<C>();
-        for (C clothing : clothes) {
-            Item<C> item = teaseLib.getClothing(wearer, clothing);
-            items.add(item);
-        }
-        return items;
-    }
-
-    public <C extends Enum<C>> Items<C> clothes(Object wearer,
-            C[]... clothing) {
-        Items<C> items = new Items<C>();
-        for (C[] selection : clothing) {
-            items.addAll(clothes(wearer, selection));
-        }
-        return items;
-    }
-
-    public <C> Items<C> clothes(Object wearer, C... clothes) {
-        Items<C> items = new Items<C>();
-        for (C clothing : clothes) {
-            Item<C> item = teaseLib.getClothing(wearer, clothing);
-            items.add(item);
-        }
-        return items;
-    }
-
-    public <C> Items<C> clothes(Object wearer, C[]... clothing) {
-        Items<C> items = new Items<C>();
-        for (C[] selection : clothing) {
-            items.addAll(clothes(wearer, selection));
-        }
-        return items;
-    }
-
     /**
      * Get items from a enumeration. This is different from toys and clothing in
      * that toys and clothing is usually maintained by the host, whereas
@@ -123,7 +38,17 @@ public abstract class TeaseScriptPersistence extends TeaseScriptBase {
         if (values.length > 0) {
             final String namespace = this.namespace + "."
                     + values[0].getClass().getSimpleName();
-            return teaseLib.items(namespace, values);
+            return teaseLib.items(TeaseLib.DefaultDomain, namespace, values);
+        } else {
+            return new Items<T>();
+        }
+    }
+
+    public <T extends Enum<?>> Items<T> items(String domain, T... values) {
+        if (values.length > 0) {
+            String namespace = this.namespace + "."
+                    + values[0].getClass().getSimpleName();
+            return teaseLib.items(domain, namespace, values);
         } else {
             return new Items<T>();
         }
@@ -138,8 +63,27 @@ public abstract class TeaseScriptPersistence extends TeaseScriptBase {
      * @return The item of the enumeration member
      */
     public <T extends Enum<?>> Item<T> item(T value) {
-        final String namespace = this.namespace;
-        return teaseLib.item(namespace, value);
+        return teaseLib.item(TeaseLib.DefaultDomain, value);
+    }
+
+    public <T extends Enum<?>> Item<T> item(String domain, T value) {
+        return teaseLib.item(domain, value);
+    }
+
+    public <T extends Enum<T>> Items<T> items(T[]... values) {
+        Items<T> items = new Items<T>();
+        for (T[] t : values) {
+            items.addAll(items(TeaseLib.DefaultDomain, t));
+        }
+        return items;
+    }
+
+    public <T extends Enum<T>> Items<T> items(String domain, T[]... values) {
+        Items<T> items = new Items<T>();
+        for (T[] t : values) {
+            items.addAll(items(domain, t));
+        }
+        return items;
     }
 
     /**
@@ -149,39 +93,49 @@ public abstract class TeaseScriptPersistence extends TeaseScriptBase {
      *            The item to retrieve.
      * @return The item that corresponds to the value.
      */
-    public <T> Item<T> item(T value) {
-        String namespace = this.namespace;
-        return teaseLib.item(namespace, value);
+    public Item<String> item(String value) {
+        return teaseLib.item(TeaseLib.DefaultDomain, namespace, value);
+    }
+
+    public Item<String> item(String domain, String value) {
+        return teaseLib.item(domain, namespace, value);
     }
 
     public TeaseLib.PersistentBoolean persistentBoolean(String name) {
-        return teaseLib.new PersistentBoolean(namespace, name);
+        return teaseLib.new PersistentBoolean(TeaseLib.DefaultDomain, namespace,
+                name);
     }
 
     public <T extends Enum<?>> TeaseLib.PersistentEnum<T> persistentEnum(
             String name, T[] values) {
-        return teaseLib.new PersistentEnum<T>(namespace, name, values);
+        return teaseLib.new PersistentEnum<T>(TeaseLib.DefaultDomain, namespace,
+                name, values);
     }
 
     public TeaseLib.PersistentInteger persistentInteger(String name) {
-        return teaseLib.new PersistentInteger(namespace, name);
+        return teaseLib.new PersistentInteger(TeaseLib.DefaultDomain, namespace,
+                name);
     }
 
     public TeaseLib.PersistentLong persistentLong(String name) {
-        return teaseLib.new PersistentLong(namespace, name);
+        return teaseLib.new PersistentLong(TeaseLib.DefaultDomain, namespace,
+                name);
     }
 
     public TeaseLib.PersistentFloat persistentFloat(String name) {
-        return teaseLib.new PersistentFloat(namespace, name);
+        return teaseLib.new PersistentFloat(TeaseLib.DefaultDomain, namespace,
+                name);
     }
 
     public TeaseLib.PersistentString persistentString(String name) {
-        return teaseLib.new PersistentString(namespace, name);
+        return teaseLib.new PersistentString(TeaseLib.DefaultDomain, namespace,
+                name);
     }
 
     public <T extends Enum<T>> TeaseLib.PersistentSequence<T> persistentSequence(
             String name, T[] values) {
-        return teaseLib.new PersistentSequence<T>(namespace, name, values);
+        return teaseLib.new PersistentSequence<T>(TeaseLib.DefaultDomain,
+                namespace, name, values);
     }
 
     public <T extends Enum<T>> State state(T item) {

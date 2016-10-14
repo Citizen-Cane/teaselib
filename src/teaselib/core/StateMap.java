@@ -9,6 +9,7 @@ import java.util.concurrent.TimeUnit;
 
 import teaselib.State;
 import teaselib.core.TeaseLib.Duration;
+import teaselib.core.util.PropertyNameMapping;
 
 /**
  * @author someone
@@ -23,7 +24,8 @@ public class StateMap<T extends Enum<T>> {
         super();
         this.teaseLib = teaseLib;
         for (T value : values(enumClass)) {
-            String args = teaseLib.getString(namespaceOf(value), nameOf(value));
+            String args = teaseLib.getString(TeaseLib.DefaultDomain,
+                    namespaceOf(value), nameOf(value));
             if (args != null) {
                 String[] argv = args.split(" ");
                 long startSeconds = Long.parseLong(argv[0]);
@@ -165,10 +167,12 @@ public class StateMap<T extends Enum<T>> {
 
         private void save() {
             if (expectedSeconds > 0 && expectedSeconds < Long.MAX_VALUE) {
-                teaseLib.set(namespaceOf(item), nameOf(item),
+                teaseLib.set(TeaseLib.DefaultDomain,
+                        namespaceOf(item), nameOf(item),
                         persisted(duration.startSeconds, expectedSeconds));
             } else {
-                teaseLib.clear(namespaceOf(item), nameOf(item));
+                teaseLib.clear(TeaseLib.DefaultDomain,
+                        namespaceOf(item), nameOf(item));
             }
         }
     }

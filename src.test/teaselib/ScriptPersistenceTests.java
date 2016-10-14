@@ -6,6 +6,7 @@ import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 
+import teaselib.core.TeaseLib;
 import teaselib.core.TeaseLib.PersistentEnum;
 import teaselib.test.TestScript;
 
@@ -23,26 +24,24 @@ public class ScriptPersistenceTests {
     public void testScriptPersistence() {
         TestScript script = TestScript.getOne();
 
-        script.toy(TestValuesEnumClass.My_Test_Value_toy).setAvailable(true);
-        assertTrue(script.persistence.storage
-                .containsKey("toys.testvaluesenumclass.my_test_value_toy"));
+        // script.toy(TestValuesEnumClass.My_Test_Value_toy).setAvailable(true);
+        // assertTrue(script.persistence.storage
+        // .containsKey("toys.my_test_value_toy"));
 
         script.toy("My Test value toy").setAvailable(true);
         assertTrue(script.persistence.storage
-                .containsKey("toys.my test value toy"));
+                .containsKey("Toys.My Test value toy"));
 
         script.set(TestValuesEnumClass.My_Test_Value_set_by_name.name(),
                 "Saved as local enum by name");
-        assertTrue(script.persistence.storage.containsKey(
-                script.namespace.toLowerCase() + ".my_test_value_set_by_name"));
+        assertTrue(script.persistence.storage
+                .containsKey(script.namespace + ".My_Test_Value_set_by_name"));
 
         script.set(TestValuesEnumClass.My_Test_Value_set_by_enum,
                 "Saved by local enum");
-        assertTrue(script.persistence.storage
-                .containsKey(script.namespace.toLowerCase()
-                        + ".testvaluesenumclass.my_test_value_set_by_enum"));
+        assertTrue(script.persistence.storage.containsKey(
+                "ScriptPersistenceTests.TestValuesEnumClass.My_Test_Value_set_by_enum"));
 
-        script.persistence.printStorage();
     }
 
     @Test
@@ -51,25 +50,24 @@ public class ScriptPersistenceTests {
 
         script.item(TestValuesEnumClass.My_Test_Value_item_by_enum)
                 .setAvailable(true);
-        assertTrue(script.persistence.storage
-                .containsKey(script.namespace.toLowerCase()
-                        + ".testvaluesenumclass.my_test_value_item_by_enum"));
+        assertTrue(script.persistence.storage.containsKey(
+                "ScriptPersistenceTests.TestValuesEnumClass.My_Test_Value_item_by_enum"));
 
         script.item("My Test Value item").setAvailable(true);
-        assertTrue(script.persistence.storage.containsKey(
-                script.namespace.toLowerCase() + ".my test value item"));
-
-        script.persistence.printStorage();
+        assertTrue(script.persistence.storage
+                .containsKey(script.namespace + ".My Test Value item"));
     }
 
     @Test
-    public void testToyVersusItem() {
+    public void testToyAndItemAreTheSame() {
         TestScript script = TestScript.getOne();
 
         script.item(Toys.Nipple_clamps).setAvailable(true);
         script.toy(Toys.Nipple_clamps).setAvailable(true);
+
         script.persistence.printStorage();
-        assertEquals(2, script.persistence.storage.size());
+
+        assertEquals(1, script.persistence.storage.size());
     }
 
     @Test
@@ -77,8 +75,12 @@ public class ScriptPersistenceTests {
         TestScript script = TestScript.getOne();
 
         script.item(Clothes.Panties).setAvailable(true);
+        assertTrue(script.item(Clothes.Panties).isAvailable());
+        assertFalse(script.item(Clothes.Female, Clothes.Panties).isAvailable());
+
         script.clothing(Clothes.Female, Clothes.Panties).setAvailable(true);
-        script.persistence.printStorage();
+        assertTrue(script.item(Clothes.Female, Clothes.Panties).isAvailable());
+
         assertEquals(2, script.persistence.storage.size());
     }
 
@@ -106,47 +108,44 @@ public class ScriptPersistenceTests {
                 script.item(TestValuesEnumClass.My_Test_Value_item_by_enum)
                         .isAvailable());
 
-        script.persistence.printStorage();
         assertEquals(1, script.persistence.storage.size());
-
     }
 
     @Test
     public void testScriptPersistencenGlobalNamespace() {
         TestScript script = TestScript.getOne();
 
-        script.teaseLib.set("My global namespace",
+        script.teaseLib.set(TeaseLib.DefaultDomain, "My domain",
                 TestValuesEnumClass.My_Test_Value_set_by_name.name(),
                 "Saved by global name");
         assertTrue(script.persistence.storage
-                .containsKey("my global namespace.my_test_value_set_by_name"));
+                .containsKey("My domain.My_Test_Value_set_by_name"));
 
-        script.teaseLib.set("My global namespace",
+        script.teaseLib.set("My domain",
                 TestValuesEnumClass.My_Test_Value_set_by_enum,
                 "Saved by global enum");
         assertTrue(script.persistence.storage.containsKey(
-                "my global namespace.testvaluesenumclass.my_test_value_set_by_enum"));
+                "My domain.ScriptPersistenceTests.TestValuesEnumClass.My_Test_Value_set_by_enum"));
 
         script.teaseLib
-                .item("My global namespace",
+                .item(TeaseLib.DefaultDomain, "My namespace",
                         TestValuesEnumClass.My_Test_Value_item_by_name.name())
                 .setAvailable(true);
         assertTrue(script.persistence.storage
-                .containsKey("my global namespace.my_test_value_item_by_name"));
+                .containsKey("My namespace.My_Test_Value_item_by_name"));
 
         script.teaseLib
-                .item("My global namespace",
+                .item(TeaseLib.DefaultDomain,
                         TestValuesEnumClass.My_Test_Value_item_by_enum)
                 .setAvailable(true);
         assertTrue(script.persistence.storage.containsKey(
-                "my global namespace.testvaluesenumclass.my_test_value_item_by_enum"));
-
-        script.persistence.printStorage();
+                "ScriptPersistenceTests.TestValuesEnumClass.My_Test_Value_item_by_enum"));
     }
 
     @Test
     public void testPersistentEnum() {
         TestScript script = TestScript.getOne();
+
         PersistentEnum<TestValuesEnumClass> testValue = script
                 .persistentEnum("test", TestValuesEnumClass.values());
         assertFalse(testValue.available());
@@ -158,7 +157,6 @@ public class ScriptPersistenceTests {
         }
 
         assertTrue(testValue.available());
-        script.persistence.printStorage();
         testValue.clear();
         assertFalse(testValue.available());
     }

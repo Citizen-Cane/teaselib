@@ -288,7 +288,7 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
                             SpeechRecognitionStartedEventArgs eventArgs) {
                         logger.info("-" + scriptFunctionThread.getName()
                                 + " - : Disabling timeout "
-                                + timeoutBehavior.toString().toLowerCase());
+                                + timeoutBehavior.toString());
                         inDubioMitius = true;
                     }
                 };
@@ -301,7 +301,7 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
                 if (timeoutBehavior != TimeoutBehavior.InDubioContraReum
                         && SpeechRecognition.isSpeechRecognitionInProgress()) {
                     logger.info("Completing speech recognition "
-                            + timeoutBehavior.toString().toLowerCase());
+                            + timeoutBehavior.toString());
                     SpeechRecognition.completeSpeechRecognitionInProgress();
                 }
             } finally {
@@ -313,8 +313,7 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
                 result = Timeout;
                 logger.info("Script function timeout triggered");
             } else {
-                logger.info("Timeout ignored "
-                        + timeoutBehavior.toString().toLowerCase());
+                logger.info("Timeout ignored " + timeoutBehavior.toString());
             }
         }
     }

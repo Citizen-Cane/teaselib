@@ -39,23 +39,25 @@ public class PersistenceTest {
         TeaseLib.PersistentBoolean b = script.persistentBoolean(name);
         assertTrue(b.available() == false);
         assertEquals(null, script.getString(name));
-        assertEquals(null, teaseLib.getString(namespace, name));
+        assertEquals(null,
+                teaseLib.getString(TeaseLib.DefaultDomain, namespace, name));
         assertTrue(b.value() == false);
         b.set();
         assertEquals(DummyPersistence.True, script.getString(name));
         assertEquals(DummyPersistence.True,
-                teaseLib.getString(namespace, name));
+                teaseLib.getString(TeaseLib.DefaultDomain, namespace, name));
         assertTrue(b.available() == true);
         b.clear();
         assertEquals(null, script.getString(name));
-        assertEquals(null, teaseLib.getString(namespace, name));
+        assertEquals(null,
+                teaseLib.getString(TeaseLib.DefaultDomain, namespace, name));
         assertTrue(b.available() == false);
         b.set(false);
         assertEquals(DummyPersistence.False, script.getString(name));
         assertEquals(DummyPersistence.False,
-                teaseLib.getString(namespace, name));
+                teaseLib.getString(TeaseLib.DefaultDomain, namespace, name));
         assertTrue(b.available() == true);
-        teaseLib.clear(namespace, name);
+        teaseLib.clear(TeaseLib.DefaultDomain, namespace, name);
         assertTrue(b.available() == false);
     }
 
@@ -67,24 +69,26 @@ public class PersistenceTest {
         assertTrue(b.value() == true);
         assertTrue(b.available() == false);
         assertEquals(null, script.getString(name));
-        assertEquals(null, teaseLib.getString(namespace, name));
+        assertEquals(null,
+                teaseLib.getString(TeaseLib.DefaultDomain, namespace, name));
         b.set(false);
         assertTrue(b.available() == true);
         assertEquals(DummyPersistence.False, script.getString(name));
         assertEquals(DummyPersistence.False,
-                teaseLib.getString(namespace, name));
+                teaseLib.getString(TeaseLib.DefaultDomain, namespace, name));
         b.set();
         assertEquals(DummyPersistence.True, script.getString(name));
         assertEquals(DummyPersistence.True,
-                teaseLib.getString(namespace, name));
+                teaseLib.getString(TeaseLib.DefaultDomain, namespace, name));
         assertTrue(b.available() == true);
         b.clear();
         assertTrue(b.value() == true);
         assertEquals(null, script.getString(name));
-        assertEquals(null, teaseLib.getString(namespace, name));
+        assertEquals(null,
+                teaseLib.getString(TeaseLib.DefaultDomain, namespace, name));
         assertTrue(b.available() == false);
         b.set();
-        teaseLib.clear(namespace, name);
+        teaseLib.clear(TeaseLib.DefaultDomain, namespace, name);
         assertTrue(b.available() == false);
     }
 
@@ -96,24 +100,26 @@ public class PersistenceTest {
         assertTrue(f.available() == false);
         assertEquals(TeaseLib.PersistentFloat.DefaultValue, f.value(), 0.0);
         assertEquals(null, script.getString(name));
-        assertEquals(null, teaseLib.getString(namespace, name));
+        assertEquals(null,
+                teaseLib.getString(TeaseLib.DefaultDomain, namespace, name));
         assertTrue(f.value() == TeaseLib.PersistentFloat.DefaultValue);
         f.set(testValue);
         assertEquals(Double.toString(testValue), script.getString(name));
         assertEquals(Double.toString(testValue),
-                teaseLib.getString(namespace, name));
+                teaseLib.getString(TeaseLib.DefaultDomain, namespace, name));
         assertTrue(f.available() == true);
         f.clear();
         assertEquals(null, script.getString(name));
-        assertEquals(null, teaseLib.getString(namespace, name));
+        assertEquals(null,
+                teaseLib.getString(TeaseLib.DefaultDomain, namespace, name));
         assertTrue(f.available() == false);
         f.set(TeaseLib.PersistentFloat.DefaultValue);
         assertEquals(Double.toString(TeaseLib.PersistentFloat.DefaultValue),
                 script.getString(name));
         assertEquals(Double.toString(TeaseLib.PersistentFloat.DefaultValue),
-                teaseLib.getString(namespace, name));
+                teaseLib.getString(TeaseLib.DefaultDomain, namespace, name));
         assertTrue(f.available() == true);
-        teaseLib.clear(namespace, name);
+        teaseLib.clear(TeaseLib.DefaultDomain, namespace, name);
         assertTrue(f.available() == false);
     }
 
@@ -127,24 +133,26 @@ public class PersistenceTest {
         assertTrue(f.value() == testDefaultValue);
         assertTrue(f.available() == false);
         assertEquals(null, script.getString(name));
-        assertEquals(null, teaseLib.getString(namespace, name));
+        assertEquals(null,
+                teaseLib.getString(TeaseLib.DefaultDomain, namespace, name));
         f.set(testValue);
         assertTrue(f.available() == true);
         assertEquals(Double.toString(testValue), script.getString(name));
         assertEquals(Double.toString(testValue),
-                teaseLib.getString(namespace, name));
+                teaseLib.getString(TeaseLib.DefaultDomain, namespace, name));
         f.set(testDefaultValue);
         assertTrue(f.available() == true);
         assertEquals(Double.toString(testDefaultValue), script.getString(name));
         assertEquals(Double.toString(testDefaultValue),
-                teaseLib.getString(namespace, name));
+                teaseLib.getString(TeaseLib.DefaultDomain, namespace, name));
         f.clear();
         assertTrue(f.available() == false);
         assertTrue(f.value() == testDefaultValue);
         assertEquals(null, script.getString(name));
-        assertEquals(null, teaseLib.getString(namespace, name));
+        assertEquals(null,
+                teaseLib.getString(TeaseLib.DefaultDomain, namespace, name));
         f.set(testValue);
-        teaseLib.clear(namespace, name);
+        teaseLib.clear(TeaseLib.DefaultDomain, namespace, name);
         assertTrue(f.available() == false);
     }
 
@@ -156,24 +164,26 @@ public class PersistenceTest {
         assertTrue(i.available() == false);
         assertEquals(TeaseLib.PersistentInteger.DefaultValue, i.value(), 0);
         assertEquals(null, script.getString(name));
-        assertEquals(null, teaseLib.getString(namespace, name));
+        assertEquals(null,
+                teaseLib.getString(TeaseLib.DefaultDomain, namespace, name));
         assertTrue(i.value() == TeaseLib.PersistentInteger.DefaultValue);
         i.set(testValue);
         assertEquals(Integer.toString(testValue), script.getString(name));
         assertEquals(Integer.toString(testValue),
-                teaseLib.getString(namespace, name));
+                teaseLib.getString(TeaseLib.DefaultDomain, namespace, name));
         assertTrue(i.available() == true);
         i.clear();
         assertEquals(null, script.getString(name));
-        assertEquals(null, teaseLib.getString(namespace, name));
+        assertEquals(null,
+                teaseLib.getString(TeaseLib.DefaultDomain, namespace, name));
         assertTrue(i.available() == false);
         i.set(TeaseLib.PersistentInteger.DefaultValue);
         assertEquals(Integer.toString(TeaseLib.PersistentInteger.DefaultValue),
                 script.getString(name));
         assertEquals(Integer.toString(TeaseLib.PersistentInteger.DefaultValue),
-                teaseLib.getString(namespace, name));
+                teaseLib.getString(TeaseLib.DefaultDomain, namespace, name));
         assertTrue(i.available() == true);
-        teaseLib.clear(namespace, name);
+        teaseLib.clear(TeaseLib.DefaultDomain, namespace, name);
         assertTrue(i.available() == false);
     }
 
@@ -187,25 +197,27 @@ public class PersistenceTest {
         assertTrue(i.value() == testDefaultValue);
         assertTrue(i.available() == false);
         assertEquals(null, script.getString(name));
-        assertEquals(null, teaseLib.getString(namespace, name));
+        assertEquals(null,
+                teaseLib.getString(TeaseLib.DefaultDomain, namespace, name));
         i.set(testValue);
         assertTrue(i.available() == true);
         assertEquals(Integer.toString(testValue), script.getString(name));
         assertEquals(Integer.toString(testValue),
-                teaseLib.getString(namespace, name));
+                teaseLib.getString(TeaseLib.DefaultDomain, namespace, name));
         i.set(testDefaultValue);
         assertTrue(i.available() == true);
         assertEquals(Integer.toString(testDefaultValue),
                 script.getString(name));
         assertEquals(Integer.toString(testDefaultValue),
-                teaseLib.getString(namespace, name));
+                teaseLib.getString(TeaseLib.DefaultDomain, namespace, name));
         i.clear();
         assertTrue(i.available() == false);
         assertTrue(i.value() == testDefaultValue);
         assertEquals(null, script.getString(name));
-        assertEquals(null, teaseLib.getString(namespace, name));
+        assertEquals(null,
+                teaseLib.getString(TeaseLib.DefaultDomain, namespace, name));
         i.set(testValue);
-        teaseLib.clear(namespace, name);
+        teaseLib.clear(TeaseLib.DefaultDomain, namespace, name);
         assertTrue(i.available() == false);
     }
 
@@ -217,23 +229,26 @@ public class PersistenceTest {
         assertTrue(i.available() == false);
         assertEquals(TeaseLib.PersistentString.DefaultValue, i.value());
         assertEquals(null, script.getString(name));
-        assertEquals(null, teaseLib.getString(namespace, name));
+        assertEquals(null,
+                teaseLib.getString(TeaseLib.DefaultDomain, namespace, name));
         assertTrue(i.value() == TeaseLib.PersistentString.DefaultValue);
         i.set(testValue);
         assertEquals(testValue, script.getString(name));
-        assertEquals(testValue, teaseLib.getString(namespace, name));
+        assertEquals(testValue,
+                teaseLib.getString(TeaseLib.DefaultDomain, namespace, name));
         assertTrue(i.available() == true);
         i.clear();
         assertEquals(null, script.getString(name));
-        assertEquals(null, teaseLib.getString(namespace, name));
+        assertEquals(null,
+                teaseLib.getString(TeaseLib.DefaultDomain, namespace, name));
         assertTrue(i.available() == false);
         i.set(TeaseLib.PersistentString.DefaultValue);
         assertEquals(TeaseLib.PersistentString.DefaultValue,
                 script.getString(name));
         assertEquals(TeaseLib.PersistentString.DefaultValue,
-                teaseLib.getString(namespace, name));
+                teaseLib.getString(TeaseLib.DefaultDomain, namespace, name));
         assertTrue(i.available() == true);
-        teaseLib.clear(namespace, name);
+        teaseLib.clear(TeaseLib.DefaultDomain, namespace, name);
         assertTrue(i.available() == false);
     }
 
@@ -247,22 +262,26 @@ public class PersistenceTest {
         assertTrue(i.value() == testDefaultValue);
         assertTrue(i.available() == false);
         assertEquals(null, script.getString(name));
-        assertEquals(null, teaseLib.getString(namespace, name));
+        assertEquals(null,
+                teaseLib.getString(TeaseLib.DefaultDomain, namespace, name));
         i.set(testValue);
         assertTrue(i.available() == true);
         assertEquals(testValue, script.getString(name));
-        assertEquals(testValue, teaseLib.getString(namespace, name));
+        assertEquals(testValue,
+                teaseLib.getString(TeaseLib.DefaultDomain, namespace, name));
         i.set(testDefaultValue);
         assertTrue(i.available() == true);
         assertEquals(testDefaultValue, script.getString(name));
-        assertEquals(testDefaultValue, teaseLib.getString(namespace, name));
+        assertEquals(testDefaultValue,
+                teaseLib.getString(TeaseLib.DefaultDomain, namespace, name));
         i.clear();
         assertTrue(i.available() == false);
         assertTrue(i.value() == testDefaultValue);
         assertEquals(null, script.getString(name));
-        assertEquals(null, teaseLib.getString(namespace, name));
+        assertEquals(null,
+                teaseLib.getString(TeaseLib.DefaultDomain, namespace, name));
         i.set(testValue);
-        teaseLib.clear(namespace, name);
+        teaseLib.clear(TeaseLib.DefaultDomain, namespace, name);
         assertTrue(i.available() == false);
     }
 }

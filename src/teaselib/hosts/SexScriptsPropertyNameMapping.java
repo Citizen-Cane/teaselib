@@ -7,48 +7,46 @@ import teaselib.core.util.PropertyNameMapping;
 public class SexScriptsPropertyNameMapping extends PropertyNameMapping {
 
     @Override
+    public String mapDomain(String domain, String path, String name) {
+        if ("Male".equals(domain)
+                && Clothes.class.getSimpleName().equals(path)) {
+            return DefaultDomain;
+        } else if ("Female".equals(domain)
+                && Clothes.class.getSimpleName().equals(path)) {
+            return DefaultDomain;
+        } else {
+            return super.mapDomain(domain, path, name);
+        }
+    }
+
+    @Override
     public String mapPath(String domain, String path, String name) {
-        return super.mapPath(domain, path, name).toLowerCase();
-    }
-
-    private static String mapDomainsToDefaults(String name) {
-        if (name.contains(
-                ("Male." + Clothes.class.getSimpleName()).toLowerCase()
-                        + ".")) {
-            name = name.substring(name.indexOf(
-                    Clothes.class.getSimpleName().toLowerCase() + "."));
-        } else if (name.contains(
-                ("Female." + Clothes.class.getSimpleName()).toLowerCase()
-                        + ".")) {
-            name = name.substring(name.indexOf(
-                    Clothes.class.getSimpleName().toLowerCase() + "."));
+        String mappedPath = super.mapPath(domain, path, name);
+        if (lowerCaseRequired(path)) {
+            return mappedPath.toLowerCase();
+        } else {
+            return mappedPath;
         }
-        return name;
     }
 
-    private static String mapToyName(String name) {
-        if (("toys." + Toys.Ball_Gag.name()).equalsIgnoreCase(name)) {
-            name = "toys.ballgag";
+    @Override
+    public String mapName(String domain, String path, String name) {
+        if (Toys.class.getSimpleName().equals(path)
+                && Toys.Ball_Gag.name().equals(name)) {
+            return "ballgag";
+        } else {
+            String mappedName = super.mapName(domain, path, name);
+            if (lowerCaseRequired(path)) {
+                return mappedName.toLowerCase();
+            } else {
+                return mappedName;
+            }
         }
-        return name;
     }
 
-    /**
-     * TeaseLib uses a lot of standard properties instead of just plain strings,
-     * and those don't match the way SexScripts save it's properties.
-     * 
-     * @param name
-     *            The name of a property
-     * @return The actual property name or the original name
-     */
-    private static String mapName(String name) {
-        name = mapDomainsToDefaults(name);
-        name = mapClassNames(name);
-        name = mapToyName(name);
-        return name;
-    }
-
-    private static String mapClassNames(String name) {
-        return reduceToSimpleName(name, Toys.class);
+    private static boolean lowerCaseRequired(String path) {
+        boolean lowerCaseRequiredBecauseSexScriptLooksForLowerCaseProperties = "Toys"
+                .equals(path) || "Clothes".equals(path);
+        return lowerCaseRequiredBecauseSexScriptLooksForLowerCaseProperties;
     }
 }

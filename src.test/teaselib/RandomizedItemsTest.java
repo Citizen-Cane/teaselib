@@ -3,38 +3,25 @@
  */
 package teaselib;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 import java.util.Collections;
-import java.util.Locale;
 
 import org.junit.Test;
 
-import teaselib.core.ResourceLoader;
-import teaselib.core.TeaseLib;
-import teaselib.core.texttospeech.Voice;
-import teaselib.hosts.DummyHost;
-import teaselib.hosts.DummyPersistence;
+import teaselib.test.TestScript;
 
 /**
  * @author someone
  *
  */
 public class RandomizedItemsTest {
-    final TeaseLib teaseLib = new TeaseLib(new DummyHost(),
-            new DummyPersistence());
-    final String namespace = "JUnit test";
-    final TeaseScript script = new TeaseScript(teaseLib,
-            new ResourceLoader(RandomizedItemsTest.class),
-            new Actor("Test", Voice.Gender.Female, Locale.US), namespace) {
-        @Override
-        public void run() {
-            throw new UnsupportedOperationException();
-        }
-    };
 
     @Test
     public void testRandomized() {
+        TestScript script = TestScript.getOne();
+
         assertNotNull(script.randomized(null, 1, null, 1));
         assertEquals(Collections.EMPTY_LIST,
                 script.randomized(null, 1, null, 1));

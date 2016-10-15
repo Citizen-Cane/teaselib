@@ -14,62 +14,23 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.Collection;
-import java.util.Locale;
 import java.util.regex.Pattern;
 
 import org.junit.Test;
 
-import teaselib.Actor;
-import teaselib.TeaseScript;
-import teaselib.core.texttospeech.Voice.Gender;
-import teaselib.hosts.DummyHost;
-import teaselib.hosts.DummyPersistence;
+import teaselib.test.TestScript;
 
 /**
  * @author someone
  *
  */
 public class TeaseScriptResourceLoadingTest {
-
-    /**
-     * 
-     */
     private static final String RESOURCE_1 = "resource1.txt";
-
-    static abstract class TestScript extends TeaseScript {
-        public TestScript(TeaseLib teaseLib, ResourceLoader resources,
-                Actor actor, String namespace) {
-            super(teaseLib, resources, actor, namespace);
-        }
-
-        public TestScript(TeaseScript script, Actor actor) {
-            super(script, actor);
-        }
-
-        public TestScript(TeaseScript script) {
-            super(script);
-        }
-
-    }
-
-    private static TeaseScript createTestScript(ResourceLoader resourceLoader) {
-        TeaseLib teaseLib = new TeaseLib(new DummyHost(),
-                new DummyPersistence());
-        TeaseScript script = new TestScript(teaseLib, resourceLoader,
-                teaseLib.getDominant(Gender.Female, Locale.US), "test") {
-            @Override
-            public void run() {
-            }
-        };
-        script.resources.addAssets(
-                script.absoluteResource("UnpackResourcesTestData.zip"));
-        return script;
-    }
 
     @Test
     public void testResourcePathBuilding() {
-        TeaseScript script = createTestScript(
-                new ResourceLoader(TeaseScriptResourceLoadingTest.class));
+        TestScript script = TestScript.getOne();
+
         final String name = "dummy";
         final String path = script.getClass().getPackage().getName()
                 .replace(".", "/") + "/";
@@ -80,8 +41,9 @@ public class TeaseScriptResourceLoadingTest {
 
     @Test
     public void testAbsoluteResourceLoadingFromFile() throws IOException {
-        TeaseScript script = createTestScript(
-                new ResourceLoader(TeaseScriptResourceLoadingTest.class));
+        TestScript script = TestScript
+                .getOne(TeaseScriptResourceLoadingTest.class);
+
         String name = RESOURCE_1;
         InputStream res1 = script.resources.getResource(name);
         String resource1 = null;
@@ -96,9 +58,10 @@ public class TeaseScriptResourceLoadingTest {
 
     @Test
     public void testAbsoluteResourceLoadingFromZip() throws IOException {
-        TeaseScript script = createTestScript(
-                new ResourceLoader(TeaseScriptResourceLoadingTest.class,
-                        ResourceLoader.ResourcesInProjectFolder));
+        TestScript script = TestScript.getOne();
+        script.resources.addAssets(script.absoluteResource(
+                "/teaselib/core/UnpackResourcesTestData.zip"));
+
         String path = "UnpackResourcesTestData" + "/" + RESOURCE_1;
         InputStream res1 = script.resources.getResource(path);
         String resource1 = null;
@@ -112,48 +75,46 @@ public class TeaseScriptResourceLoadingTest {
     }
 
     @Test
-    public void testResourceLoadingWithWildcards() {
-        TeaseScript script = createTestScript(
-                new ResourceLoader(TeaseScriptResourceLoadingTest.class,
-                        ResourceLoader.ResourcesInProjectFolder));
-        assertEquals(1, script.resources("util/Foo.txt").size());
-        assertEquals(2, script.resources("util/Foo?.txt").size());
-        assertEquals(3, script.resources("util/Foo*.txt").size());
+    public void testResourceLoadingAbsolutePathWithWildcards() {
+        TestScript script = TestScript
+                .getOne(TeaseScriptResourceLoadingTest.class);
+
+        assertEquals(1, script.resources("/util/Foo.txt").size());
+        assertEquals(2, script.resources("/util/Foo?.txt").size());
+        assertEquals(3, script.resources("/util/Foo*.txt").size());
     }
 
     @Test
     public void testResourceLoadingWithWildcardsAbsolutePaths() {
-        TeaseScript script = createTestScript(
-                new ResourceLoader(TeaseScriptResourceLoadingTest.class,
-                        ResourceLoader.ResourcesInProjectFolder));
-        assertEquals(1, script.resources("/teaselib/core/util/Foo.txt").size());
-        assertEquals(2,
-                script.resources("/teaselib/core/util/Foo?.txt").size());
-        assertEquals(3,
-                script.resources("/teaselib/core/util/Foo*.txt").size());
-        Collection<String> items = script
-                .resources("/teaselib/core/util/Foo*.txt");
+        TestScript script = TestScript
+                .getOne(TeaseScriptResourceLoadingTest.class);
+
+        assertEquals(1, script.resources("/util/Foo.txt").size());
+        assertEquals(2, script.resources("/util/Foo?.txt").size());
+        assertEquals(3, script.resources("/util/Foo*.txt").size());
+        Collection<String> items = script.resources("/util/Foo*.txt");
         assertEquals(3, items.size());
     }
 
     @Test
     public void testResourceLoadingCase() {
-        TeaseScript script = createTestScript(
-                new ResourceLoader(TeaseScriptResourceLoadingTest.class,
-                        ResourceLoader.ResourcesInProjectFolder));
-        assertEquals(1, script.resources("util/bar.txt").size());
-        assertEquals(3, script.resources("util/bar?.txt").size());
-        assertEquals(4, script.resources("util/bar*.txt").size());
-        assertEquals(0, script.resources("util/Bar.txt").size());
-        assertEquals(2, script.resources("util/Bar?.txt").size());
-        assertEquals(2, script.resources("util/Bar*.txt").size());
+        TestScript script = TestScript
+                .getOne(TeaseScriptResourceLoadingTest.class);
+
+        assertEquals(1, script.resources("/util/bar.txt").size());
+        assertEquals(3, script.resources("/util/bar?.txt").size());
+        assertEquals(4, script.resources("/util/bar*.txt").size());
+        assertEquals(0, script.resources("/util/Bar.txt").size());
+        assertEquals(2, script.resources("/util/Bar?.txt").size());
+        assertEquals(2, script.resources("/util/Bar*.txt").size());
     }
 
     @Test
     public void testUnpackFile() throws IOException {
-        TeaseScript script = createTestScript(
-                new ResourceLoader(TeaseScriptResourceLoadingTest.class,
-                        ResourceLoader.ResourcesInProjectFolder));
+        TestScript script = TestScript.getOne();
+        script.resources.addAssets(script.absoluteResource(
+                "/teaselib/core/UnpackResourcesTestData.zip"));
+
         final String path = "UnpackResourcesTestData" + "/" + RESOURCE_1;
         File res1 = script.resources.unpackToFile(path);
         String resource1 = null;
@@ -180,9 +141,10 @@ public class TeaseScriptResourceLoadingTest {
 
     @Test
     public void testUnpackFolder() throws IOException {
-        TeaseScript script = createTestScript(
-                new ResourceLoader(TeaseScriptResourceLoadingTest.class,
-                        ResourceLoader.ResourcesInProjectFolder));
+        TestScript script = TestScript.getOne();
+        script.resources.addAssets(script.absoluteResource(
+                "/teaselib/core/UnpackResourcesTestData.zip"));
+
         final String resources = "/" + "UnpackResourcesTestData" + "/";
         final String path = resources + RESOURCE_1;
         File res1 = script.resources.unpackEnclosingFolder(path);

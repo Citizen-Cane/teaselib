@@ -3,7 +3,6 @@ package teaselib.test;
 import java.util.Locale;
 
 import teaselib.Actor;
-import teaselib.PersistenceTest;
 import teaselib.TeaseScript;
 import teaselib.core.ResourceLoader;
 import teaselib.core.TeaseLib;
@@ -24,9 +23,24 @@ public class TestScript extends TeaseScript {
         return new TestScript(new DummyHost(), new DummyPersistence());
     }
 
+    public static TestScript getOne(Class<?> resourceRoot) {
+        return new TestScript(new DummyHost(), new DummyPersistence(),
+                resourceRoot);
+    }
+
     TestScript(DummyHost dummyHost, DummyPersistence dummyPersistence) {
         super(new TeaseLib(dummyHost, dummyPersistence),
-                new ResourceLoader(PersistenceTest.class), TestScriptActor,
+                new ResourceLoader(TestScript.class,
+                        ResourceLoader.ResourcesInProjectFolder),
+                TestScriptActor, TestScriptNamespace);
+        this.host = dummyHost;
+        this.persistence = dummyPersistence;
+    }
+
+    TestScript(DummyHost dummyHost, DummyPersistence dummyPersistence,
+            Class<?> resourceRoot) {
+        super(new TeaseLib(dummyHost, dummyPersistence),
+                new ResourceLoader(resourceRoot), TestScriptActor,
                 TestScriptNamespace);
         this.host = dummyHost;
         this.persistence = dummyPersistence;

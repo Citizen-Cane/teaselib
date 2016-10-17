@@ -53,6 +53,10 @@ public class TeaseScriptMath extends TeaseScriptPersistenceUtil {
         return teaseLib.random(min, max);
     }
 
+    public double random(double min, double max) {
+        return teaseLib.random(min, max);
+    }
+
     public <T> T random(T... items) {
         if (items == null)
             return null;

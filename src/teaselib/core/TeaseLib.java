@@ -163,6 +163,11 @@ public class TeaseLib {
         return min + (int) (r * (max - min + 1));
     }
 
+    public double random(double min, double max) {
+        double r = Math.random();
+        return min + (r * (max - min + 1));
+    }
+
     /**
      * @author someone
      * 

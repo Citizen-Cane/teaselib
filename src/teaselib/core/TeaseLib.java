@@ -1,8 +1,10 @@
 package teaselib.core;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -11,6 +13,9 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import teaselib.Actor;
 import teaselib.Clothes;
@@ -25,11 +30,14 @@ import teaselib.motiondetection.MotionDetection;
 import teaselib.motiondetection.MotionDetector;
 import teaselib.util.Item;
 import teaselib.util.Items;
-import teaselib.util.Logger;
 import teaselib.util.PersistenceLogger;
+import teaselib.util.TeaseLibLogger;
 import teaselib.util.TextVariables;
 
 public class TeaseLib {
+    private static final Logger logger = LoggerFactory
+            .getLogger(TeaseLib.class);
+
     public static final String DefaultDomain = PropertyNameMapping.DefaultDomain;
     public static final String DefaultName = PropertyNameMapping.None;
 
@@ -38,7 +46,7 @@ public class TeaseLib {
 
     public final Host host;
     private final Persistence persistence;
-    public final Logger transcript;
+    public final TeaseLibLogger transcript;
     private final Map<Class<?>, StateMap<? extends Enum<?>>> states = new HashMap<Class<?>, StateMap<? extends Enum<?>>>();
     final MediaRendererQueue renderQueue = new MediaRendererQueue();
 
@@ -48,17 +56,18 @@ public class TeaseLib {
         }
         this.host = host;
         this.persistence = new PersistenceLogger(persistence);
-        Logger transcriptLogger = null;
+        TeaseLibLogger transcriptLogger = null;
         try {
-            transcriptLogger = new Logger(transcriptLogFile,
+            transcriptLogger = new TeaseLibLogger(transcriptLogFile,
                     getConfigSetting(Config.Debug.LogDetails)
-                            ? Logger.Level.Debug : Logger.Level.Info)
-                                    .showTime(false).showThread(false);
+                            ? TeaseLibLogger.Level.Debug
+                            : TeaseLibLogger.Level.Info).showTime(false)
+                                    .showThread(false);
         } catch (IOException e) {
             host.show(null, "Cannot open log file "
                     + transcriptLogFile.getAbsolutePath());
             host.reply(Arrays.asList("Oh dear"));
-            transcriptLogger = Logger.getDummyLogger();
+            transcriptLogger = TeaseLibLogger.getDummyLogger();
         }
         this.transcript = transcriptLogger;
         MotionDetection.Devices
@@ -74,6 +83,10 @@ public class TeaseLib {
     @SuppressWarnings("resource")
     public static void run(Host host, Persistence persistence, File classPath,
             String script) throws ReflectiveOperationException, IOException {
+        if (!classPath.exists()) {
+            throw new FileNotFoundException(classPath.getAbsolutePath());
+        }
+        host.showInterTitle("");
         URLClassLoader classLoader = (URLClassLoader) ClassLoader
                 .getSystemClassLoader();
         Class<?> classLoaderClass = URLClassLoader.class;
@@ -83,6 +96,7 @@ public class TeaseLib {
             method.setAccessible(true);
             method.invoke(classLoader,
                     new Object[] { classPath.toURI().toURL() });
+            logger.info("Added class path " + classPath.getAbsolutePath());
         } catch (IOException e) {
             throw e;
         } catch (Error e) {
@@ -93,21 +107,32 @@ public class TeaseLib {
             throw new ReflectiveOperationException(
                     "Error, could not add URL to system classloader");
         }
-        new TeaseLib(host, persistence).run(script);
+        run(host, persistence, script);
     }
 
-    public static void run(Host host, Persistence persistence, String script)
+    private static void run(Host host, Persistence persistence, String script)
             throws ReflectiveOperationException {
         new TeaseLib(host, persistence).run(script);
     }
 
-    public void run(String script) throws ReflectiveOperationException {
+    private void run(String script) throws ReflectiveOperationException {
+        logger.info("Running script " + script);
         Class<?> scriptClass = getClass().getClassLoader().loadClass(script);
-        Constructor<?> teaseLibConstructor = scriptClass
+        run(scriptClass);
+    }
+
+    private void run(Class<?> scriptClass)
+            throws NoSuchMethodException, InstantiationException,
+            IllegalAccessException, InvocationTargetException {
+        Constructor<?> mainscriptConstructor = scriptClass
                 .getConstructor(TeaseLib.class);
-        Runnable runnable = (Runnable) teaseLibConstructor.newInstance(this);
+        Runnable runnable = (Runnable) mainscriptConstructor.newInstance(this);
+        run(runnable);
+    }
+
+    private void run(Runnable script) {
         try {
-            runnable.run();
+            script.run();
         } finally {
             host.show(null, "");
         }

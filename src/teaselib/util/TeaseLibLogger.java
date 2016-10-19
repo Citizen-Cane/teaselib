@@ -7,7 +7,7 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-public class Logger {
+public class TeaseLibLogger {
     private final BufferedWriter log;
     private final Level level;
 
@@ -24,31 +24,31 @@ public class Logger {
         Debug
     }
 
-    public static Logger getConsoleLogger() {
-        return new Logger(Level.Info).logToConsole(true);
+    public static TeaseLibLogger getConsoleLogger() {
+        return new TeaseLibLogger(Level.Info).logToConsole(true);
     }
 
-    public static Logger getDummyLogger() {
-        return new Logger(Level.None);
+    public static TeaseLibLogger getDummyLogger() {
+        return new TeaseLibLogger(Level.None);
     }
 
-    public Logger(Level level) {
+    public TeaseLibLogger(Level level) {
         this.log = null;
         this.level = level;
     }
 
-    public Logger(File logFile) throws IOException {
+    public TeaseLibLogger(File logFile) throws IOException {
         this(logFile, Level.Info);
     }
 
-    public Logger(File logFile, Level level) throws IOException {
+    public TeaseLibLogger(File logFile, Level level) throws IOException {
         super();
         this.log = new BufferedWriter(new FileWriter(logFile));
         this.level = level;
         Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override
             public void run() {
-                BufferedWriter log = Logger.this.log;
+                BufferedWriter log = TeaseLibLogger.this.log;
                 if (log != null) {
                     try {
                         log.flush();
@@ -60,17 +60,17 @@ public class Logger {
         });
     }
 
-    public Logger showTime(boolean enable) {
+    public TeaseLibLogger showTime(boolean enable) {
         showTime = enable;
         return this;
     }
 
-    public Logger showThread(boolean enable) {
+    public TeaseLibLogger showThread(boolean enable) {
         showThread = enable;
         return this;
     }
 
-    public Logger logToConsole(boolean enable) {
+    public TeaseLibLogger logToConsole(boolean enable) {
         logToConsole = enable;
         return this;
     }

@@ -99,11 +99,16 @@ public class LocalNetworkDevice implements RemoteDevice {
                 @Override
                 public List<LocalNetworkDevice> call() throws Exception {
                     UDPConnection udpClient = new UDPConnection(ip, Port);
-                    return getServices(udpClient,
-                            new UDPMessage(udpClient.sendAndReceive(
-                                    new UDPMessage(RemoteDevice.Id)
-                                            .toByteArray(),
-                                    1000)));
+                    try {
+                        return getServices(udpClient,
+                                new UDPMessage(udpClient.sendAndReceive(
+                                        new UDPMessage(RemoteDevice.Id)
+                                                .toByteArray(),
+                                        1000)));
+                    } catch (Exception e) {
+                        udpClient.close();
+                        throw e;
+                    }
                 }
 
                 private List<LocalNetworkDevice> getServices(

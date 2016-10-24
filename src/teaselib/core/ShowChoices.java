@@ -297,21 +297,37 @@ class ShowChoices {
             public void run(SpeechRecognitionImplementation sender,
                     SpeechRecognizedEventArgs eventArgs) {
                 if (eventArgs.result.length == 1) {
-                    // Find the button to click
-                    SpeechRecognitionResult speechRecognitionResult = eventArgs.result[0];
-                    if (!speechRecognitionResult.isChoice(derivedChoices)) {
-                        throw new IllegalArgumentException(
-                                speechRecognitionResult.toString());
+                    SpeechRecognitionResult result = eventArgs.result[0];
+                    if (confidenceIsHighEnough(result, recognitionConfidence)) {
+                        clickChoice(derivedChoices, scriptTask, srChoiceIndices,
+                                result);
+                    } else {
+                        logger.info("Dropping result '" + result.toString()
+                                + "' due to lack of confidence (Confidence="
+                                + recognitionConfidence + " expected)");
                     }
-                    // Assign the result even if the buttons have been
-                    // unrealized
-                    srChoiceIndices.add(speechRecognitionResult.index);
-                    clickChoice(derivedChoices, scriptTask,
-                            speechRecognitionResult);
                 } else {
-                    // none or more than one result means incorrect
-                    // recognition
+                    logger.info("Ignoring none or more than one result");
                 }
+            }
+
+            private boolean confidenceIsHighEnough(
+                    SpeechRecognitionResult result, Confidence confidence) {
+                return result.confidence.propability >= confidence.propability;
+            }
+
+            private void clickChoice(final List<String> derivedChoices,
+                    final ScriptFutureTask scriptTask,
+                    final List<Integer> srChoiceIndices,
+                    SpeechRecognitionResult result) {
+                // Find the button to click
+                if (!result.isChoice(derivedChoices)) {
+                    throw new IllegalArgumentException(result.toString());
+                }
+                // Assign the result even if the buttons have been
+                // unrealized
+                srChoiceIndices.add(result.index);
+                clickChoice(derivedChoices, scriptTask, result);
             }
 
             private void clickChoice(final List<String> derivedChoices,

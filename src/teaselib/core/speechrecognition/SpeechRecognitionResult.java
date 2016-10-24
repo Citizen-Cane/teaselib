@@ -9,12 +9,17 @@ public class SpeechRecognitionResult {
      *
      */
     public enum Confidence {
-        Low(0.5),
-        Normal(0.75),
-        High(1.0);
+        Low(0.0),
+        Normal(0.5),
+        High(0.80);
 
         public static Confidence Default = High;
 
+        /**
+         * The default probability of the recognition confidence. The actual
+         * implementation may return a probability value higher than the
+         * default, but still rate the confidence lower.
+         */
         public final double propability;
 
         Confidence(double propability) {
@@ -44,7 +49,7 @@ public class SpeechRecognitionResult {
 
     @Override
     public String toString() {
-        return "#" + index + ": " + text + "(%" + propability
-                + ")-> confidence is " + confidence.toString().toLowerCase();
+        return "#" + index + ": " + text + " (%" + propability
+                + ") -> confidence is " + confidence.toString().toLowerCase();
     }
 }

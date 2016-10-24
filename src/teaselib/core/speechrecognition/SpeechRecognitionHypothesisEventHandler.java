@@ -35,11 +35,9 @@ public class SpeechRecognitionHypothesisEventHandler {
 
     /**
      * This adjusts the sensibility of the hypothesis rating. The better the
-     * microphone, the higher this value should be. For a standard webcam, 1/2
-     * seems to be a good start, however low values may lead to wrong
-     * recognitions
+     * microphone, the higher this value should be.
      */
-    final static double HypothesisMinimumAccumulatedWeight = 0.5;
+    final static double HypothesisMinimumAccumulatedWeight = 1.0;
 
     private final SpeechRecognition speechRecognizer;
     private final Event<SpeechRecognitionImplementation, SpeechRecognitionStartedEventArgs> recognitionStarted;
@@ -186,8 +184,9 @@ public class SpeechRecognitionHypothesisEventHandler {
             int wordCount = wordCount(choice);
             for (Confidence desiredConfidence : confidences) {
                 int confidenceBonus = confidences.indexOf(desiredConfidence);
-                if (isRecognizedAs(choice, desiredConfidence, confidenceBonus,
-                        wordCount)) {
+                if (isRecognizedAs(
+                        hypothesisProgress[choiceWithMaxProbabilityIndex],
+                        desiredConfidence, confidenceBonus, wordCount)) {
                     return true;
                 }
                 if (desiredConfidence == confidence) {
@@ -198,8 +197,8 @@ public class SpeechRecognitionHypothesisEventHandler {
             return false;
         }
 
-        private boolean isRecognizedAs(String choice, Confidence confidence,
-                int confidenceBonus, int wordCount) {
+        private boolean isRecognizedAs(String hypothesisProgress,
+                Confidence confidence, int confidenceBonus, int wordCount) {
             int minimumNumberOfWordsForHypothesisRecognition = hypothesisMinimumNumberOfWordsForHypothesisRecognition
                     - confidenceBonus;
             // prompts with few words need a higher weight to be accepted
@@ -210,24 +209,25 @@ public class SpeechRecognitionHypothesisEventHandler {
                                     - wordCount + 1);
             boolean choiceWeightAccepted = maxValue >= hypothesisAccumulatedWeight
                     * confidence.propability;
-            // Prompts with few words need more consistent speech
-            // detection events (doesn't alternate between different
-            // choices)
-            int choiceHypothesisCount = wordCount(
-                    hypothesisProgress[choiceWithMaxProbabilityIndex]);
+            // Prompts with few words need more consistent speech detection
+            // events
+            // (doesn't alternate between different choices)
+            int choiceHypothesisCount = wordCount(hypothesisProgress);
             boolean choiceDetectionCountAccepted = choiceHypothesisCount >= minimumNumberOfWordsForHypothesisRecognition;
             boolean choiceAccepted = choiceWeightAccepted
                     && choiceDetectionCountAccepted;
             if (!choiceWeightAccepted) {
-                logger.info("Phrase '" + choice
+                logger.info("Phrase '" + hypothesisProgress
                         + "' hypothesis accumulated weight=" + maxValue
-                        + " < threshold=" + hypothesisAccumulatedWeight
+                        + " < hypothesisAccumulatedWeight threshold="
+                        + hypothesisAccumulatedWeight
                         + " is too low to accept hypothesis-based recognition for confidence "
                         + confidence.toString());
             }
             if (!choiceDetectionCountAccepted) {
-                logger.info("Phrase '" + choice + "' word detection count="
-                        + choiceHypothesisCount + " < threshold="
+                logger.info("Phrase '" + hypothesisProgress
+                        + "' word detection count=" + choiceHypothesisCount
+                        + " < threshold="
                         + minimumNumberOfWordsForHypothesisRecognition
                         + " is too low to accept hypothesis-based recognition for confidence "
                         + confidence.toString());
@@ -291,6 +291,7 @@ public class SpeechRecognitionHypothesisEventHandler {
                                         choice,
                                         recognitionConfidence.propability,
                                         recognitionConfidence) };
+                        // TODO construct the result with the actual confidence
                         SpeechRecognizedEventArgs recognitionCompletedEventArgs = new SpeechRecognizedEventArgs(
                                 results);
                         speechRecognizer.events.recognitionCompleted.run(sender,

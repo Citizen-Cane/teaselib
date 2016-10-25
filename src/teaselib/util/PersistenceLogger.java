@@ -60,7 +60,9 @@ public class PersistenceLogger implements Persistence {
 
     @Override
     public void clear(String name) {
-        logger.info("Persistence: cleared " + name);
+        if (persistence.has(name)) {
+            logger.info("Persistence: cleared " + name);
+        }
         persistence.clear(name);
     }
 

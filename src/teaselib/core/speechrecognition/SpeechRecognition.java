@@ -21,6 +21,11 @@ public class SpeechRecognition {
     private static final Logger logger = LoggerFactory
             .getLogger(SpeechRecognition.class);
 
+    @SuppressWarnings("deprecation")
+    static final String EnableSpeechHypothesisHandler = SpeechRecognition.class
+            .getName() + ".Enable"
+            + SpeechRecognitionHypothesisEventHandler.class.getSimpleName();
+
     /**
      * How to handle speech recognition and timeout in script functions.
      *
@@ -72,9 +77,12 @@ public class SpeechRecognition {
     public final SpeechRecognitionEvents<SpeechRecognitionImplementation> events;
 
     private final Locale locale;
-    private SpeechRecognitionImplementation sr;
+    @SuppressWarnings("deprecation")
+    private final SpeechRecognitionHypothesisEventHandler hypothesisEventHandler;
     private final DelegateThread delegateThread = new DelegateThread(
             "Text-To-Speech dispatcher thread");
+
+    private SpeechRecognitionImplementation sr;
 
     /**
      * Locked if a recognition is in progress, e.g. a start event has been
@@ -154,8 +162,7 @@ public class SpeechRecognition {
         }
     }
 
-    private final SpeechRecognitionHypothesisEventHandler hypothesisEventHandler;
-
+    @SuppressWarnings("deprecation")
     public SpeechRecognition(Locale locale) {
         // First add the progress events, because we don't want to get events
         // consumed before setting the in-progress state
@@ -185,10 +192,17 @@ public class SpeechRecognition {
         } catch (Throwable t) {
             logger.error(t.getMessage(), t);
         }
-        // Last add the hypothesis handler, as it may consume the
-        // RecognitionRejected-event
-        this.hypothesisEventHandler = new SpeechRecognitionHypothesisEventHandler(
-                this);
+        String enableSpeechHypothesisHandler = System
+                .getProperty(EnableSpeechHypothesisHandler, "false");
+        if (Boolean.toString(true)
+                .compareToIgnoreCase(enableSpeechHypothesisHandler) == 0) {
+            // Finally add the hypothesis handler, as it may consume the
+            // RecognitionRejected-event
+            this.hypothesisEventHandler = new SpeechRecognitionHypothesisEventHandler(
+                    this);
+        } else {
+            this.hypothesisEventHandler = null;
+        }
     }
 
     /**
@@ -198,10 +212,13 @@ public class SpeechRecognition {
         return sr != null;
     }
 
+    @SuppressWarnings("deprecation")
     public void startRecognition(final List<String> choices,
             Confidence recognitionConfidence) {
-        hypothesisEventHandler.setChoices(choices);
-        hypothesisEventHandler.setConfidence(recognitionConfidence);
+        if (hypothesisEventHandler != null) {
+            hypothesisEventHandler.setChoices(choices);
+            hypothesisEventHandler.setConfidence(recognitionConfidence);
+        }
         if (sr != null) {
             Delegate delegate = new Delegate() {
                 @Override

@@ -16,9 +16,17 @@ import teaselib.core.speechrecognition.events.SpeechRecognitionStartedEventArgs;
 import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
 
 /**
+ * This was started as an approach to get along with low-quality microphones,
+ * but for microphones/speaker configurations it starts to recognize noise as
+ * speech - sooner or later.
+ * <p>
+ * Might still be useful for headphones with integrated microphones, but this
+ * claim has yet to be tested.
+ * 
  * @author someone
  *
  */
+@Deprecated
 public class SpeechRecognitionHypothesisEventHandler {
     private static final Logger logger = LoggerFactory
             .getLogger(SpeechRecognitionHypothesisEventHandler.class);
@@ -27,7 +35,7 @@ public class SpeechRecognitionHypothesisEventHandler {
      * sentences or single word recognitions are prone to error. In fact, for
      * single word phrases, the recognizer may recognize anything.
      */
-    final static int HypothesisMinimumNumberOfWordsDefault = 4;
+    final static int HypothesisMinimumNumberOfWordsDefault = 99;
     // TODO set confidence for script functions
     // - high for script functions
     // - low for PCM [] replies

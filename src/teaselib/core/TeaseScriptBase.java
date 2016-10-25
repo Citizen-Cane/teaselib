@@ -122,11 +122,14 @@ public abstract class TeaseScriptBase {
 
     /**
      * Just wait for everything to be rendered (messages displayed, sounds
-     * played, delay expired), and continue execution of the script. This won't
-     * display a button, it just waits.
+     * played, delay expired), and continue execution of the script.
+     * <p>
+     * This won't display a button, it just waits. Background threads will
+     * continue to run.
      */
     public void completeAll() {
         teaseLib.renderQueue.completeAll();
+        teaseLib.renderQueue.endAll();
     }
 
     /**

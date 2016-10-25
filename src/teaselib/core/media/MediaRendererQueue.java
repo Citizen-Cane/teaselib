@@ -52,6 +52,7 @@ public class MediaRendererQueue {
             Position replayPosition) {
         synchronized (threadedMediaRenderers) {
             completeAll();
+            endAll();
             threadedMediaRenderers.clear();
             for (MediaRenderer r : renderers) {
                 // Play or replay?

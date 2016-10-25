@@ -162,15 +162,6 @@ public abstract class MediaRendererThread
         } catch (InterruptedException e) {
             throw new ScriptInterruptedException();
         }
-        try {
-            f.get();
-        } catch (CancellationException e) {
-            throw new ScriptInterruptedException();
-        } catch (InterruptedException e) {
-            throw new ScriptInterruptedException();
-        } catch (ExecutionException e) {
-            logger.error(e.getMessage(), e);
-        }
     }
 
     @Override

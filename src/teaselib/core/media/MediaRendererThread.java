@@ -132,7 +132,7 @@ public abstract class MediaRendererThread
 
     @Override
     public void completeStart() {
-        if (!task.isDone()) {
+        if (!isDoneOrCancelled()) {
             try {
                 completedStart.await();
             } catch (InterruptedException e) {
@@ -143,7 +143,7 @@ public abstract class MediaRendererThread
 
     @Override
     public void completeMandatory() {
-        if (!task.isDone()) {
+        if (!isDoneOrCancelled()) {
             try {
                 completedMandatory.await();
             } catch (InterruptedException e) {
@@ -154,14 +154,18 @@ public abstract class MediaRendererThread
 
     @Override
     public void completeAll() {
-        Future<?> f = task;
-        if (f.isDone())
-            return;
-        try {
-            completedAll.await();
-        } catch (InterruptedException e) {
-            throw new ScriptInterruptedException();
+        if (!isDoneOrCancelled()) {
+            try {
+                completedAll.await();
+            } catch (InterruptedException e) {
+                throw new ScriptInterruptedException();
+            }
         }
+    }
+
+    private boolean isDoneOrCancelled() {
+        Future<?> f = task;
+        return f.isDone() || f.isCancelled();
     }
 
     @Override
@@ -184,9 +188,9 @@ public abstract class MediaRendererThread
         Future<?> f = task;
         if (!f.isCancelled()) {
             f.cancel(true);
+            logger.debug(getClass().getSimpleName() + " cancelled after "
+                    + String.format("%.2f", getElapsedSeconds()));
         }
-        logger.debug(getClass().getSimpleName() + " cancelled after "
-                + String.format("%.2f", getElapsedSeconds()));
     }
 
     @Override

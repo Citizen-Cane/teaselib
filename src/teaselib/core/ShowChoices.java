@@ -359,4 +359,8 @@ class ShowChoices {
         };
         return recognitionCompleted;
     }
+
+    public boolean hasScriptFunction() {
+        return scriptTask != null;
+    }
 }

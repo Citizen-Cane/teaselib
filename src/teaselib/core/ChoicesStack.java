@@ -35,7 +35,7 @@ public class ChoicesStack implements Iterable<ShowChoices> {
     }
 
     public String show(TeaseScriptBase script, ShowChoices showChoices,
-            Map<String, Runnable> pauseHandlers) {
+            Map<String, PauseHandler> pauseHandlers) {
         String choice = null;
         ShowChoices previous = null;
         synchronized (this) {
@@ -55,25 +55,40 @@ public class ChoicesStack implements Iterable<ShowChoices> {
                 // in order to dismiss the message
                 // This also affects script functions,
                 // as well as {@link Message#ShowChoices}
-                script.endAll();
+                if (pauseHandlers.containsKey(choice)) {
+                    if (pauseHandlers.get(choice).endRenderers()) {
+                        script.endAll();
+                    }
+                } else {
+                    // Dismiss the current set of renderers
+                    script.endAll();
+                }
+                // Now this instance can exit or enter the pause state,
+                // while the next instance can show its choices
             }
             synchronized (this) {
                 if (pauseHandlers.containsKey(choice)) {
                     logger.info("Invoking choices handler for choices="
                             + showChoices.derivedChoices.toString() + " reason="
                             + choice.toString());
+                    // execute the pause handler
                     pauseHandlers.get(choice).run();
+                    // restore us by showing our choices again
                     continue;
                 } else {
-                    pop();
-                    if (!empty()) {
-                        notifyAll();
-                    }
+                    removeCurrentChoices();
                     break;
                 }
             }
         }
         return choice;
+    }
+
+    private void removeCurrentChoices() {
+        pop();
+        if (!empty()) {
+            notifyAll();
+        }
     }
 
     public boolean containsPauseState(String pauseState) {

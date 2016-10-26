@@ -408,7 +408,7 @@ public abstract class TeaseScriptBase {
         final ShowChoices showChoices = new ShowChoices(this, choices,
                 derivedChoices, scriptTask, recognitionConfidence,
                 choicesStackContainsSRRejectedState);
-        Map<String, Runnable> pauseHandlers = new HashMap<String, Runnable>();
+        Map<String, PauseHandler> pauseHandlers = new HashMap<String, PauseHandler>();
         // The pause handler resumes displaying choices when the choice object
         // becomes the top-element of the choices stack again
         pauseHandlers.put(ShowChoices.Paused, pauseHandler(showChoices));
@@ -427,8 +427,15 @@ public abstract class TeaseScriptBase {
         return choice;
     }
 
-    private static Runnable pauseHandler(final ShowChoices showChoices) {
-        return new Runnable() {
+    private static PauseHandler pauseHandler(final ShowChoices showChoices) {
+        return new PauseHandler() {
+            @Override
+            public boolean endRenderers() {
+                // Always false because the top element on the choices stack
+                // decides whether to end the previous set of renderers
+                return false;
+            }
+
             @Override
             public void run() {
                 // Someone dismissed our set of buttons in order to to show
@@ -449,8 +456,13 @@ public abstract class TeaseScriptBase {
         };
     }
 
-    private Runnable recognitionRejectedPauseHandler() {
-        return new Runnable() {
+    private PauseHandler recognitionRejectedPauseHandler() {
+        return new PauseHandler() {
+            @Override
+            public boolean endRenderers() {
+                return true;
+            }
+
             @Override
             public void run() {
                 if (playedRenderers != null) {

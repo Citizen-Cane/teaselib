@@ -84,11 +84,7 @@ public class LocalNetworkDevice implements RemoteDevice {
                         deviceCache.put(device.getDevicePath(), device);
                     }
                 } catch (ExecutionException e) {
-                    if (e.getCause() instanceof SocketTimeoutException) {
-                        // Expected
-                    } else {
-                        logger.error(e.getMessage(), e);
-                    }
+                    logger.error(e.getMessage(), e);
                 }
             }
         }
@@ -105,6 +101,9 @@ public class LocalNetworkDevice implements RemoteDevice {
                                         new UDPMessage(RemoteDevice.Id)
                                                 .toByteArray(),
                                         1000)));
+                    } catch (SocketTimeoutException e) {
+                        udpClient.close();
+                        return Collections.EMPTY_LIST;
                     } catch (Exception e) {
                         udpClient.close();
                         throw e;
@@ -126,13 +125,10 @@ public class LocalNetworkDevice implements RemoteDevice {
                         String version = status.message.parameters.get(i++);
                         devices.add((new LocalNetworkDevice(name, connection,
                                 serviceName, description, version)));
-                        if (serviceCount == 1) {
-                            break;
-                        } else {
+                        if (j < serviceCount - 1) {
                             connection = new UDPConnection(
                                     connection.getAddress(),
                                     connection.getPort());
-                            continue;
                         }
                     }
                     return devices;

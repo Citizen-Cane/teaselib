@@ -154,16 +154,34 @@ public class KeyRelease implements Device {
 
     public int getBestActuatorForTime(int timeMinutes) {
         int actuatorCount = actuators();
-        int bestDifferenceSoFar = Integer.MAX_VALUE;
-        int bestActuator = 0;
+        List<Integer> available = new ArrayList<Integer>(actuatorCount);
         for (int actuator = 0; actuator < actuatorCount; actuator++) {
-            int difference = available(actuator) - timeMinutes;
-            if (difference < bestDifferenceSoFar) {
+            available.add(available(actuator));
+        }
+        return getBestActuator(timeMinutes, available);
+    }
+
+    static int getBestActuator(int timeMinutes,
+            List<Integer> availableDurations) {
+        int bestDifferenceSoFar = Integer.MAX_VALUE;
+        int unset = Integer.MIN_VALUE;
+        int bestActuator = unset;
+        int maxDuration = unset;
+        int maxActuator = unset;
+        for (int actuator = 0; actuator < availableDurations
+                .size(); actuator++) {
+            int availableDuration = availableDurations.get(actuator);
+            int difference = availableDuration - timeMinutes;
+            if (0 <= difference && difference < bestDifferenceSoFar) {
                 bestActuator = actuator;
                 bestDifferenceSoFar = difference;
             }
+            if (availableDuration > maxDuration) {
+                maxDuration = availableDuration;
+                maxActuator = actuator;
+            }
         }
-        return bestActuator;
+        return bestActuator != unset ? bestActuator : maxActuator;
     }
 
     public boolean arm(int actuator) {

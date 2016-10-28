@@ -3,8 +3,11 @@
  */
 package teaselib.core.devices.remote;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+
+import java.util.Arrays;
 
 import org.junit.Assume;
 import org.junit.Test;
@@ -143,5 +146,18 @@ public class KeyReleaseTest {
         // release on reset
         sleepMinutes(Minutes + 1);
         assertEndState(keyRelease, actuators);
+    }
+
+    @Test
+    public void testHardwiredDuration() {
+        assertEquals(0, KeyRelease.getBestActuator(59, Arrays.asList(60, 120)));
+        assertEquals(0, KeyRelease.getBestActuator(60, Arrays.asList(60, 120)));
+        assertEquals(1, KeyRelease.getBestActuator(61, Arrays.asList(60, 120)));
+        assertEquals(1,
+                KeyRelease.getBestActuator(120, Arrays.asList(60, 120)));
+        assertEquals(1,
+                KeyRelease.getBestActuator(121, Arrays.asList(60, 120)));
+        assertEquals(0, KeyRelease.getBestActuator(0, Arrays.asList(60, 120)));
+        assertEquals(0, KeyRelease.getBestActuator(-1, Arrays.asList(60, 120)));
     }
 }

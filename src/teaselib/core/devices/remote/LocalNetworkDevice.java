@@ -4,25 +4,12 @@
 package teaselib.core.devices.remote;
 
 import java.io.IOException;
-import java.net.Inet4Address;
-import java.net.InetAddress;
-import java.net.InterfaceAddress;
-import java.net.NetworkInterface;
 import java.net.SocketException;
-import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
-import java.util.Vector;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,12 +22,12 @@ import teaselib.core.devices.DeviceFactory;
  *
  */
 public class LocalNetworkDevice implements RemoteDevice {
-    private static final Logger logger = LoggerFactory
+    static final Logger logger = LoggerFactory
             .getLogger(LocalNetworkDevice.class);
 
     private static final String DeviceClassName = "LocalNetworkDevice";
 
-    private static final int Port = 666;
+    static final int Port = 666;
 
     /**
      * Local network devices have to respond in this time, plus some head room.
@@ -54,11 +41,54 @@ public class LocalNetworkDevice implements RemoteDevice {
 
     public static final DeviceFactory<LocalNetworkDevice> Factory = new DeviceFactory<LocalNetworkDevice>(
             DeviceClassName) {
+
+        private LocalNetworkDeviceDiscoveryNetworkScan deviceDiscovery = new LocalNetworkDeviceDiscoveryNetworkScan();
+        private List<LocalNetworkDevice> discoveredDevices = new ArrayList<LocalNetworkDevice>();
+        {
+            installDeviceListener();
+        }
+
+        private void installDeviceListener() {
+            deviceDiscovery.addRemoteDeviceDiscoveryListener(
+                    new RemoteDeviceListener() {
+
+                        @Override
+                        public void deviceAdded(String name, String address,
+                                String serviceName, String description,
+                                String version) {
+                            String devicePath = LocalNetworkDevice
+                                    .createDevicePath(name, address,
+                                            serviceName, description, version);
+                            if (!isDeviceCached(devicePath)) {
+                                LocalNetworkDevice device;
+                                try {
+                                    device = new LocalNetworkDevice(name,
+                                            new UDPConnection(address),
+                                            serviceName, description, version);
+                                    discoveredDevices.add(device);
+                                } catch (NumberFormatException e) {
+                                    logger.error(e.getMessage(), e);
+                                } catch (SocketException e) {
+                                    logger.error(e.getMessage(), e);
+                                } catch (UnknownHostException e) {
+                                    logger.error(e.getMessage(), e);
+                                }
+                            }
+                        }
+                    });
+        }
+
         @Override
         public List<String> enumerateDevicePaths(
                 Map<String, LocalNetworkDevice> deviceCache)
                 throws InterruptedException {
-            LocalNetworkDevice.searchDevicesWithNetworkScan(deviceCache);
+            if (discoveredDevices.isEmpty()) {
+                deviceDiscovery.searchDevices(deviceCache);
+            } else {
+                for (LocalNetworkDevice device : discoveredDevices) {
+                    deviceCache.put(device.getDevicePath(), device);
+                }
+            }
             return new ArrayList<String>(deviceCache.keySet());
         }
 
@@ -67,107 +97,29 @@ public class LocalNetworkDevice implements RemoteDevice {
             if (WaitingForConnection.equals(deviceName)) {
                 throw new IllegalArgumentException(WaitingForConnection);
             }
-            throw new UnsupportedOperationException(deviceName);
+            String[] deviceAndAddress = deviceName.split("@");
+            String[] deviceInfo = deviceAndAddress[0].split(",");
+            String name = deviceInfo[0];
+            String serviceName = deviceInfo[1];
+            String description = deviceInfo[2];
+            String version = deviceInfo[3];
+            String address = deviceAndAddress[1];
+            LocalNetworkDevice localNetworkDevice;
+            try {
+                localNetworkDevice = new LocalNetworkDevice(name,
+                        new UDPConnection(address), serviceName, description,
+                        version);
+            } catch (NumberFormatException e) {
+                throw new IllegalArgumentException(e);
+            } catch (SocketException e) {
+                throw new IllegalArgumentException(e);
+            } catch (UnknownHostException e) {
+                throw new IllegalArgumentException(e);
+            }
+            return localNetworkDevice;
         }
 
     };
-
-    static void searchDevicesWithNetworkScan(
-            Map<String, LocalNetworkDevice> deviceCache)
-            throws InterruptedException {
-        final ExecutorService es = Executors.newFixedThreadPool(256);
-        final List<Future<List<LocalNetworkDevice>>> futures = new ArrayList<Future<List<LocalNetworkDevice>>>();
-        try {
-            List<Subnet> subnets = enumerateNetworks();
-            for (Subnet subnet : subnets) {
-                logger.info("Scanning " + subnet.toString());
-                for (final InetAddress ip : subnet) {
-                    futures.add(es.submit(serviceLookup(ip)));
-                }
-            }
-        } catch (SocketException e) {
-            logger.error(e.getMessage(), e);
-        }
-        es.shutdown();
-        addDevices(deviceCache, futures);
-    }
-
-    public static List<Subnet> enumerateNetworks() throws SocketException {
-        List<Subnet> subnets = new Vector<Subnet>();
-        Enumeration<NetworkInterface> networkInterfaces = NetworkInterface
-                .getNetworkInterfaces();
-        for (NetworkInterface netint : Collections.list(networkInterfaces)) {
-            if (netint.isUp() && !netint.isVirtual() && !netint.isLoopback()) {
-                for (InterfaceAddress ifa : netint.getInterfaceAddresses()) {
-                    if (ifa.getAddress() instanceof Inet4Address) {
-                        subnets.add(new Subnet(ifa));
-                    }
-                }
-            }
-        }
-        return subnets;
-    }
-
-    private static Callable<List<LocalNetworkDevice>> serviceLookup(
-            final InetAddress ip) {
-        Callable<List<LocalNetworkDevice>> createDevice = new Callable<List<LocalNetworkDevice>>() {
-            @Override
-            public List<LocalNetworkDevice> call() throws Exception {
-                UDPConnection connection = new UDPConnection(ip, Port);
-                try {
-                    return getServices(connection,
-                            new UDPMessage(connection.sendAndReceive(
-                                    new UDPMessage(RemoteDevice.Id)
-                                            .toByteArray(),
-                                    1000)));
-                } catch (SocketTimeoutException e) {
-                    return Collections.EMPTY_LIST;
-                } catch (Exception e) {
-                    throw e;
-                } finally {
-                    connection.close();
-                }
-            }
-
-            private List<LocalNetworkDevice> getServices(
-                    UDPConnection connection, UDPMessage status)
-                    throws SocketException, UnknownHostException {
-                int i = 0;
-                String name = status.message.parameters.get(i++);
-                InetAddress address = InetAddress
-                        .getByName(status.message.parameters.get(i++));
-                int serviceCount = Integer
-                        .parseInt(status.message.parameters.get(i++));
-                List<LocalNetworkDevice> devices = new ArrayList<LocalNetworkDevice>(
-                        (status.message.parameters.size() - i) / 2);
-                for (int j = 0; j < serviceCount; j++) {
-                    String serviceName = status.message.parameters.get(i++);
-                    String description = status.message.parameters.get(i++);
-                    String version = status.message.parameters.get(i++);
-                    devices.add((new LocalNetworkDevice(name,
-                            new UDPConnection(address, connection.getPort()),
-                            serviceName, description, version)));
-                }
-                return devices;
-            }
-        };
-        return createDevice;
-    }
-
-    private static void addDevices(Map<String, LocalNetworkDevice> deviceCache,
-            final List<Future<List<LocalNetworkDevice>>> futures)
-            throws InterruptedException {
-        for (final Future<List<LocalNetworkDevice>> f : futures) {
-            try {
-                List<LocalNetworkDevice> detectedDevices = f.get();
-                for (LocalNetworkDevice device : detectedDevices) {
-                    deviceCache.put(device.getDevicePath(), device);
-                }
-            } catch (ExecutionException e) {
-                logger.error(e.getMessage(), e);
-            }
-        }
-    }
 
     private final String name;
     private final String serviceName;
@@ -187,8 +139,15 @@ public class LocalNetworkDevice implements RemoteDevice {
 
     @Override
     public String getDevicePath() {
+        return createDevicePath(name, connection.toString(), serviceName,
+                description, version);
+    }
+
+    private static String createDevicePath(String name, String connection,
+            String serviceName, String description, String version) {
         return DeviceCache.createDevicePath(DeviceClassName,
-                name + "@" + connection.toString() + "->" + serviceName);
+                name + "," + serviceName + "," + description + "," + version
+                        + "@" + connection.toString());
     }
 
     @Override

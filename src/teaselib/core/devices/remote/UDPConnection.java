@@ -11,6 +11,7 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
+import java.net.UnknownHostException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,6 +28,12 @@ public class UDPConnection {
     final int port;
     final DatagramSocket clientSocket;
     private int packetNumber = 0;
+
+    public UDPConnection(String address) throws SocketException,
+            NumberFormatException, UnknownHostException {
+        this(InetAddress.getByName(address.split(":")[0]),
+                Integer.parseInt(address.split(":")[1]));
+    }
 
     public UDPConnection(InetAddress address, int port) throws SocketException {
         this.address = address;
@@ -84,6 +91,11 @@ public class UDPConnection {
         return detachHeader(receivePacket.getData());
     }
 
+    public byte[] receive() throws SocketException, IOException {
+        DatagramPacket receivePacket = receivePacket();
+        return detachHeader(receivePacket.getData());
+    }
+
     public byte[] receive(int timeoutMillis)
             throws SocketException, IOException {
         DatagramPacket receivePacket = receivePacket(timeoutMillis);
@@ -114,10 +126,14 @@ public class UDPConnection {
 
     private DatagramPacket receivePacket(int timeoutMillis)
             throws SocketException, IOException {
+        clientSocket.setSoTimeout(timeoutMillis);
+        return receivePacket();
+    }
+
+    private DatagramPacket receivePacket() throws SocketException, IOException {
         byte[] receiveData = new byte[1024];
         DatagramPacket receivePacket = new DatagramPacket(receiveData,
                 receiveData.length);
-        clientSocket.setSoTimeout(timeoutMillis);
         clientSocket.receive(receivePacket);
         return receivePacket;
     }

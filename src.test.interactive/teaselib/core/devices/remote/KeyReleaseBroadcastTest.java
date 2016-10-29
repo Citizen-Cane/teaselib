@@ -4,6 +4,7 @@
 package teaselib.core.devices.remote;
 
 import java.net.InetAddress;
+import java.net.InterfaceAddress;
 import java.net.SocketTimeoutException;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -26,19 +27,23 @@ public class KeyReleaseBroadcastTest {
     @Test
     public void testBroadcastConnect() throws Exception {
         Map<InetAddress, RemoteDeviceMessage> devices = new HashMap<InetAddress, RemoteDeviceMessage>();
-        for (Subnet subnet : LocalNetworkDevice.enumerateNetworks()) {
-            InetAddress broadcastAddress = subnet.getBroadcast();
-            logger.info("Sending broasdcast message to "
-                    + broadcastAddress.toString());
-            UDPConnection connection = new UDPConnection(broadcastAddress, 666);
+        for (InterfaceAddress interfaceAddress : new LocalNetworkDeviceDiscoveryBroadcast()
+                .networks()) {
+            logger.info("Sending broadcast message to "
+                    + interfaceAddress.toString());
+            UDPConnection connection = new UDPConnection(
+                    interfaceAddress.getBroadcast(), 666);
             connection.send(new UDPMessage(RemoteDevice.Id).toByteArray());
             while (true) {
                 try {
                     byte[] received = connection.receive(1000);
                     UDPMessage udpMessage = new UDPMessage(received);
                     RemoteDeviceMessage device = udpMessage.message;
-                    devices.put(InetAddress.getByName(device.parameters.get(1)),
-                            device);
+                    if ("services".equals(device.command)) {
+                        devices.put(
+                                InetAddress.getByName(device.parameters.get(1)),
+                                device);
+                    }
                 } catch (SocketTimeoutException e) {
                     break;
                 }
@@ -54,7 +59,7 @@ public class KeyReleaseBroadcastTest {
     @Test
     public void testNetworkScanConnect() throws Exception {
         Map<String, LocalNetworkDevice> deviceCache = new LinkedHashMap<String, LocalNetworkDevice>();
-        LocalNetworkDevice.searchDevicesWithNetworkScan(deviceCache);
+        new LocalNetworkDeviceDiscoveryNetworkScan().searchDevices(deviceCache);
         for (Map.Entry<String, LocalNetworkDevice> device : deviceCache
                 .entrySet()) {
             logger.info(device.getKey().toString() + ", "

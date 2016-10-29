@@ -43,6 +43,10 @@ public abstract class DeviceFactory<T extends Device> {
         }
     }
 
+    public boolean isDeviceCached(String devicePath) {
+        return deviceCache.containsKey(devicePath);
+    }
+
     public T getDevice(String devicePath) {
         if (deviceCache.containsKey(devicePath)) {
             return deviceCache.get(devicePath);

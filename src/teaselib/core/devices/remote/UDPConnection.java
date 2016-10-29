@@ -84,6 +84,11 @@ public class UDPConnection {
         return detachHeader(receivePacket.getData());
     }
 
+    public byte[] receive() throws SocketException, IOException {
+        DatagramPacket receivePacket = receivePacket();
+        return detachHeader(receivePacket.getData());
+    }
+
     public byte[] receive(int timeoutMillis)
             throws SocketException, IOException {
         DatagramPacket receivePacket = receivePacket(timeoutMillis);
@@ -114,10 +119,14 @@ public class UDPConnection {
 
     private DatagramPacket receivePacket(int timeoutMillis)
             throws SocketException, IOException {
+        clientSocket.setSoTimeout(timeoutMillis);
+        return receivePacket();
+    }
+
+    private DatagramPacket receivePacket() throws SocketException, IOException {
         byte[] receiveData = new byte[1024];
         DatagramPacket receivePacket = new DatagramPacket(receiveData,
                 receiveData.length);
-        clientSocket.setSoTimeout(timeoutMillis);
         clientSocket.receive(receivePacket);
         return receivePacket;
     }

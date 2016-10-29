@@ -10,6 +10,7 @@ const int serviceCount = sizeof(services)/sizeof(TeaseLibService*);
 
 UDP socket;
 unsigned int localPort = 666;
+String deviceAddress;
 
 void setup() {
   // start UDP
@@ -20,7 +21,8 @@ void setup() {
   // while(!Serial.available()) Particle.process();
   Serial.println(WiFi.localIP());
   // setup services
-  TeaseLibService::setup(services, serviceCount);
+  deviceAddress = String(WiFi.localIP());
+  TeaseLibService::setup(services, serviceCount, deviceAddress);
 }
 
 void process(const UDPMessage& received, const int packetNumber);

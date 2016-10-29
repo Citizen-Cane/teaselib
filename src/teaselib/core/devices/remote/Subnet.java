@@ -16,7 +16,7 @@ import java.util.List;
  *
  */
 public class Subnet implements Iterable<InetAddress> {
-    private InterfaceAddress interfaceAddress;
+    private final InterfaceAddress interfaceAddress;
 
     public static InetAddress subnetAddress(InterfaceAddress interfaceAddress)
             throws UnknownHostException {
@@ -62,10 +62,21 @@ public class Subnet implements Iterable<InetAddress> {
     @Override
     public String toString() {
         try {
-            return subnetAddress(interfaceAddress).toString();
+            return address().toString();
         } catch (UnknownHostException e) {
             return interfaceAddress.getAddress().toString();
         }
+    }
+
+    public InetAddress address() throws UnknownHostException {
+        return subnetAddress(interfaceAddress);
+    }
+
+    /**
+     * @return the interfaceAddress
+     */
+    public InetAddress getBroadcast() {
+        return interfaceAddress.getBroadcast();
     }
 
 }

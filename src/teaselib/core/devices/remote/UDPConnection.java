@@ -84,7 +84,7 @@ public class UDPConnection {
         return detachHeader(receivePacket.getData());
     }
 
-    private byte[] receive(int timeoutMillis)
+    public byte[] receive(int timeoutMillis)
             throws SocketException, IOException {
         DatagramPacket receivePacket = receivePacket(timeoutMillis);
         return detachHeader(receivePacket.getData());

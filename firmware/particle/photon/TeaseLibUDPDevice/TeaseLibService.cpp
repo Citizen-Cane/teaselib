@@ -9,14 +9,16 @@ const char* const TeaseLibService::Sleep = "sleep";
 
 TeaseLibService** TeaseLibService::services = NULL;
 unsigned int TeaseLibService::serviceCount = 0;
+const char* TeaseLibService::deviceAddress = NULL;
 
 TeaseLibService::TeaseLibService(const char* const name, const char* const description, const char* const version)
 : name(name), description(description), version(version) {
 }
 
-void TeaseLibService::setup(TeaseLibService** services, const int size) {
+void TeaseLibService::setup(TeaseLibService** services, const int size, const char* deviceAddress) {
   TeaseLibService::services = services;
   TeaseLibService::serviceCount = size;
+  TeaseLibService::deviceAddress = deviceAddress;
   for(int i = 0; i < TeaseLibService::serviceCount ; i++) {
     TeaseLibService::services[i]->setup();
   }
@@ -36,7 +38,7 @@ bool TeaseLibService::isCommand(const UDPMessage& received, const char* serviceC
 
 unsigned int TeaseLibService::processIdPacket(const UDPMessage& received, char* buffer) {
   const String deviceId = "My Photon";
-  const char* parameters[] = {deviceId, "1", services[0]->name,  services[0]->description, services[0]->version};
+  const char* parameters[] = {deviceId, deviceAddress, "1", services[0]->name, services[0]->description, services[0]->version};
   return UDPMessage("services", parameters, sizeof(parameters)/sizeof(char*)).toBuffer(buffer);
 }
 

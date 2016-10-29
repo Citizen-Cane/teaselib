@@ -17,7 +17,7 @@ public:
   const char* const name;
   const char* const description;
   const char* const version;
-  static void setup(TeaseLibService** services, const int size);
+  static void setup(TeaseLibService** services, const int size, const char* deviceAddress);
   virtual bool canHandle(const char* serviceCommand) const;
   static const char* serviceCommand(const char* serviceCommand);
   static bool isCommand(const UDPMessage& received, const char* serviceCommand);
@@ -34,7 +34,7 @@ protected:
 private:
   static TeaseLibService** services;
   static unsigned int serviceCount;
-
+  static const char* deviceAddress;
 };
 
 #endif /*end of include guard:   _INCLUDETeaseLibDeviceService */

@@ -30,7 +30,7 @@ public class KeyReleaseBroadcastTest {
         for (InterfaceAddress interfaceAddress : new LocalNetworkDeviceDiscoveryBroadcast()
                 .networks()) {
             logger.info("Sending broadcast message to "
-                    + interfaceAddress.toString());
+                    + interfaceAddress.getBroadcast().toString());
             UDPConnection connection = new UDPConnection(
                     interfaceAddress.getBroadcast(), 666);
             connection.send(new UDPMessage(RemoteDevice.Id).toByteArray());
@@ -60,6 +60,18 @@ public class KeyReleaseBroadcastTest {
     public void testNetworkScanConnect() throws Exception {
         Map<String, LocalNetworkDevice> deviceCache = new LinkedHashMap<String, LocalNetworkDevice>();
         new LocalNetworkDeviceDiscoveryNetworkScan().searchDevices(deviceCache);
+        for (Map.Entry<String, LocalNetworkDevice> device : deviceCache
+                .entrySet()) {
+            logger.info(device.getKey().toString() + ", "
+                    + device.getValue().getDescription() + ", "
+                    + device.getValue().getVersion());
+        }
+    }
+
+    @Test
+    public void testBroadcastDiscovery() throws Exception {
+        Map<String, LocalNetworkDevice> deviceCache = new LinkedHashMap<String, LocalNetworkDevice>();
+        new LocalNetworkDeviceDiscoveryBroadcast().searchDevices(deviceCache);
         for (Map.Entry<String, LocalNetworkDevice> device : deviceCache
                 .entrySet()) {
             logger.info(device.getKey().toString() + ", "

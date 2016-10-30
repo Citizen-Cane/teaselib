@@ -44,6 +44,7 @@ public class LocalNetworkDevice implements RemoteDevice {
 
         private LocalNetworkDeviceDiscoveryNetworkScan deviceDiscovery = new LocalNetworkDeviceDiscoveryNetworkScan();
         private List<LocalNetworkDevice> discoveredDevices = new ArrayList<LocalNetworkDevice>();
+
         {
             installDeviceListener();
         }
@@ -51,21 +52,20 @@ public class LocalNetworkDevice implements RemoteDevice {
         private void installDeviceListener() {
             deviceDiscovery.addRemoteDeviceDiscoveryListener(
                     new RemoteDeviceListener() {
-
                         @Override
                         public void deviceAdded(String name, String address,
                                 String serviceName, String description,
                                 String version) {
                             String devicePath = LocalNetworkDevice
-                                    .createDevicePath(name, address,
-                                            serviceName, description, version);
+                                    .createDevicePath(name, serviceName);
                             if (!isDeviceCached(devicePath)) {
-                                LocalNetworkDevice device;
                                 try {
-                                    device = new LocalNetworkDevice(name,
-                                            new UDPConnection(address),
+                                    LocalNetworkDevice device = new LocalNetworkDevice(
+                                            name, new UDPConnection(address),
                                             serviceName, description, version);
-                                    discoveredDevices.add(device);
+                                    synchronized (discoveredDevices) {
+                                        discoveredDevices.add(device);
+                                    }
                                 } catch (NumberFormatException e) {
                                     logger.error(e.getMessage(), e);
                                 } catch (SocketException e) {
@@ -82,14 +82,22 @@ public class LocalNetworkDevice implements RemoteDevice {
         public List<String> enumerateDevicePaths(
                 Map<String, LocalNetworkDevice> deviceCache)
                 throws InterruptedException {
-            if (discoveredDevices.isEmpty()) {
-                deviceDiscovery.searchDevices(deviceCache);
-            } else {
-                for (LocalNetworkDevice device : discoveredDevices) {
-                    deviceCache.put(device.getDevicePath(), device);
+            synchronized (discoveredDevices) {
+                if (discoveredDevices.isEmpty()) {
+                    deviceDiscovery.searchDevices(deviceCache);
+                } else {
+                    addDevicesCollectedViaBroadcastAnnouncement(deviceCache);
                 }
             }
             return new ArrayList<String>(deviceCache.keySet());
+        }
+
+        private void addDevicesCollectedViaBroadcastAnnouncement(
+                Map<String, LocalNetworkDevice> deviceCache) {
+            for (LocalNetworkDevice device : discoveredDevices) {
+                deviceCache.put(device.getDevicePath(), device);
+            }
+            discoveredDevices.clear();
         }
 
         @Override
@@ -139,15 +147,12 @@ public class LocalNetworkDevice implements RemoteDevice {
 
     @Override
     public String getDevicePath() {
-        return createDevicePath(name, connection.toString(), serviceName,
-                description, version);
+        return createDevicePath(name, serviceName);
     }
 
-    private static String createDevicePath(String name, String connection,
-            String serviceName, String description, String version) {
+    private static String createDevicePath(String name, String serviceName) {
         return DeviceCache.createDevicePath(DeviceClassName,
-                name + "," + serviceName + "," + description + "," + version
-                        + "@" + connection.toString());
+                name + "->" + serviceName);
     }
 
     @Override

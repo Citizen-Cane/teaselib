@@ -8,7 +8,6 @@ import java.net.InterfaceAddress;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Vector;
@@ -24,56 +23,61 @@ class LocalNetworkDeviceDiscoveryNetworkScan
     @Override
     void searchDevices(Map<String, LocalNetworkDevice> deviceCache)
             throws InterruptedException {
+        List<Future<Boolean>> futures = submitSearches();
+        addDevices(futures);
+    }
+
+    private List<Future<Boolean>> submitSearches() {
         ExecutorService es = Executors.newFixedThreadPool(256);
-        List<Future<List<LocalNetworkDevice>>> futures = new ArrayList<Future<List<LocalNetworkDevice>>>();
+        List<Future<Boolean>> futures = new ArrayList<Future<Boolean>>();
         try {
             List<Subnet> subnets = enumerateNetworks();
             for (Subnet subnet : subnets) {
-                LocalNetworkDevice.logger.info("Scanning " + subnet.toString());
-                for (InetAddress ip : subnet) {
-                    futures.add(es.submit(serviceLookup(ip)));
-                }
+                searchSubnet(es, futures, subnet);
             }
         } catch (SocketException e) {
             LocalNetworkDevice.logger.error(e.getMessage(), e);
         }
         es.shutdown();
-        addDevices(deviceCache, futures);
+        return futures;
     }
 
-    private Callable<List<LocalNetworkDevice>> serviceLookup(
-            final InetAddress ip) {
-        Callable<List<LocalNetworkDevice>> createDevice = new Callable<List<LocalNetworkDevice>>() {
+    private void searchSubnet(ExecutorService es, List<Future<Boolean>> futures,
+            Subnet subnet) {
+        LocalNetworkDevice.logger.info("Scanning " + subnet.toString());
+        for (InetAddress ip : subnet) {
+            futures.add(es.submit(serviceLookup(ip)));
+        }
+    }
+
+    private Callable<Boolean> serviceLookup(final InetAddress ip) {
+        Callable<Boolean> createDevice = new Callable<Boolean>() {
             @Override
-            public List<LocalNetworkDevice> call() throws Exception {
+            public Boolean call() throws Exception {
                 UDPConnection connection = new UDPConnection(ip,
                         LocalNetworkDevice.Port);
                 try {
-                    return getServices(new UDPMessage(connection.sendAndReceive(
+                    fireDeviceDiscovered(new UDPMessage(connection.sendAndReceive(
                             new UDPMessage(RemoteDevice.Id).toByteArray(),
                             1000)).message);
+                    return true;
                 } catch (SocketTimeoutException e) {
-                    return Collections.EMPTY_LIST;
+                    return false;
                 } catch (Exception e) {
                     throw e;
                 } finally {
                     connection.close();
                 }
             }
-
         };
         return createDevice;
     }
 
-    private static void addDevices(Map<String, LocalNetworkDevice> deviceCache,
-            final List<Future<List<LocalNetworkDevice>>> futures)
+    private static void addDevices(List<Future<Boolean>> futures)
             throws InterruptedException {
-        for (Future<List<LocalNetworkDevice>> f : futures) {
+        for (Future<Boolean> f : futures) {
             try {
-                List<LocalNetworkDevice> detectedDevices = f.get();
-                for (LocalNetworkDevice device : detectedDevices) {
-                    deviceCache.put(device.getDevicePath(), device);
-                }
+                f.get();
             } catch (ExecutionException e) {
                 LocalNetworkDevice.logger.error(e.getMessage(), e);
             }

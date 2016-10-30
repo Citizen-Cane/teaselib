@@ -39,15 +39,13 @@ abstract class LocalNetworkDeviceDiscovery {
         return interfaceAddresses;
     }
 
-    protected List<LocalNetworkDevice> getServices(RemoteDeviceMessage services)
+    protected void fireDeviceDiscovered(RemoteDeviceMessage services)
             throws UnknownHostException {
         int i = 0;
         String name = services.parameters.get(i++);
         InetAddress address = InetAddress
                 .getByName(services.parameters.get(i++));
         int serviceCount = Integer.parseInt(services.parameters.get(i++));
-        List<LocalNetworkDevice> devices = new ArrayList<LocalNetworkDevice>(
-                (services.parameters.size() - i) / 2);
         for (int j = 0; j < serviceCount; j++) {
             String serviceName = services.parameters.get(i++);
             String description = services.parameters.get(i++);
@@ -56,7 +54,6 @@ abstract class LocalNetworkDeviceDiscovery {
                     address.getHostAddress() + ":" + LocalNetworkDevice.Port,
                     serviceName, description, version);
         }
-        return devices;
     }
 
     protected void fireDeviceDiscovered(String name, String address,

@@ -13,11 +13,10 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 class LocalNetworkDeviceDiscoveryBroadcast extends LocalNetworkDeviceDiscovery {
-    Map<InterfaceAddress, Thread> discoveryThreads = new HashMap<InterfaceAddress, Thread>();
+    Map<InterfaceAddress, BroadcastListener> discoveryThreads = new HashMap<InterfaceAddress, BroadcastListener>();
 
     @Override
-    void searchDevices(Map<String, LocalNetworkDevice> deviceCache)
-            throws InterruptedException {
+    void searchDevices() throws InterruptedException {
         try {
             List<InterfaceAddress> networks = networks();
             updateSocketReceiveThreads(networks);
@@ -29,16 +28,16 @@ class LocalNetworkDeviceDiscoveryBroadcast extends LocalNetworkDeviceDiscovery {
     }
 
     private void updateSocketReceiveThreads(List<InterfaceAddress> networks) {
-        addSOcketThreadsForNewNetworks(networks);
+        addSocketThreadsForNewNetworks(networks);
         removeSocketThreadsForVanishedNetworks(networks);
     }
 
-    private void addSOcketThreadsForNewNetworks(
+    private void addSocketThreadsForNewNetworks(
             List<InterfaceAddress> networks) {
         for (InterfaceAddress interfaceAddress : networks) {
             if (!discoveryThreads.containsKey(interfaceAddress)) {
                 try {
-                    SocketThread socketThread = new SocketThread(
+                    BroadcastListener socketThread = new BroadcastListener(
                             interfaceAddress);
                     discoveryThreads.put(interfaceAddress, socketThread);
                     socketThread.start();
@@ -51,16 +50,15 @@ class LocalNetworkDeviceDiscoveryBroadcast extends LocalNetworkDeviceDiscovery {
 
     private void removeSocketThreadsForVanishedNetworks(
             List<InterfaceAddress> networks) {
-        for (Entry<InterfaceAddress, Thread> entry : discoveryThreads
+        for (Entry<InterfaceAddress, BroadcastListener> entry : discoveryThreads
                 .entrySet()) {
-            if (networks.contains(entry.getKey())) {
+            if (!networks.contains(entry.getKey())) {
                 discoveryThreads.remove(entry.getKey()).interrupt();
             }
         }
     }
 
-    private static void broadcastToAllInterfaces(
-            List<InterfaceAddress> networks) {
+    private void broadcastToAllInterfaces(List<InterfaceAddress> networks) {
         for (InterfaceAddress intefaceAddess : networks) {
             try {
                 sendBroadcastIDMessage(intefaceAddess);
@@ -70,12 +68,13 @@ class LocalNetworkDeviceDiscoveryBroadcast extends LocalNetworkDeviceDiscovery {
         }
     }
 
-    private static void sendBroadcastIDMessage(
-            InterfaceAddress interfaceAddress) throws IOException {
+    private void sendBroadcastIDMessage(InterfaceAddress interfaceAddress)
+            throws IOException {
         InetAddress broadcastAddress = interfaceAddress.getBroadcast();
         LocalNetworkDevice.logger.info(
                 "Sending broadcast message to " + broadcastAddress.toString());
-        UDPConnection connection = new UDPConnection(broadcastAddress, 666);
+        UDPConnection connection = discoveryThreads
+                .get(interfaceAddress).connection;
         connection.send(new UDPMessage(RemoteDevice.Id).toByteArray());
     }
 
@@ -83,10 +82,10 @@ class LocalNetworkDeviceDiscoveryBroadcast extends LocalNetworkDeviceDiscovery {
         Thread.sleep(2000);
     }
 
-    class SocketThread extends Thread {
+    class BroadcastListener extends Thread {
         final UDPConnection connection;
 
-        SocketThread(InterfaceAddress interfaceAddress) throws SocketException {
+        BroadcastListener(InterfaceAddress interfaceAddress) throws SocketException {
             connection = new UDPConnection(interfaceAddress.getBroadcast(),
                     LocalNetworkDevice.Port);
             setDaemon(true);
@@ -96,17 +95,21 @@ class LocalNetworkDeviceDiscoveryBroadcast extends LocalNetworkDeviceDiscovery {
 
         @Override
         public void run() {
-            while (!isInterrupted()) {
-                try {
-                    byte[] received = connection.receive();
-                    RemoteDeviceMessage services = new UDPMessage(
-                            received).message;
-                    if ("services".equals(services.command)) {
-                        fireDeviceDiscovered(services);
+            try {
+                while (!isInterrupted()) {
+                    try {
+                        byte[] received = connection.receive();
+                        RemoteDeviceMessage services = new UDPMessage(
+                                received).message;
+                        if ("services".equals(services.command)) {
+                            fireDeviceDiscovered(services);
+                        }
+                    } catch (IOException e) {
+                        LocalNetworkDevice.logger.error(e.getMessage(), e);
                     }
-                } catch (IOException e) {
-                    LocalNetworkDevice.logger.error(e.getMessage(), e);
                 }
+            } finally {
+                connection.close();
             }
         }
     }

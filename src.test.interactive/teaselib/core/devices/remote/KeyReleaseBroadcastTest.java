@@ -7,7 +7,6 @@ import java.net.InetAddress;
 import java.net.InterfaceAddress;
 import java.net.SocketTimeoutException;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.junit.Test;
@@ -58,25 +57,34 @@ public class KeyReleaseBroadcastTest {
 
     @Test
     public void testNetworkScanConnect() throws Exception {
-        Map<String, LocalNetworkDevice> deviceCache = new LinkedHashMap<String, LocalNetworkDevice>();
-        new LocalNetworkDeviceDiscoveryNetworkScan().searchDevices(deviceCache);
-        for (Map.Entry<String, LocalNetworkDevice> device : deviceCache
-                .entrySet()) {
-            logger.info(device.getKey().toString() + ", "
-                    + device.getValue().getDescription() + ", "
-                    + device.getValue().getVersion());
-        }
+        LocalNetworkDeviceDiscoveryNetworkScan scanner = new LocalNetworkDeviceDiscoveryNetworkScan();
+        collectFoundDevices(scanner);
     }
 
     @Test
     public void testBroadcastDiscovery() throws Exception {
-        Map<String, LocalNetworkDevice> deviceCache = new LinkedHashMap<String, LocalNetworkDevice>();
-        new LocalNetworkDeviceDiscoveryBroadcast().searchDevices(deviceCache);
-        for (Map.Entry<String, LocalNetworkDevice> device : deviceCache
-                .entrySet()) {
-            logger.info(device.getKey().toString() + ", "
-                    + device.getValue().getDescription() + ", "
-                    + device.getValue().getVersion());
+        LocalNetworkDeviceDiscoveryBroadcast scanner = new LocalNetworkDeviceDiscoveryBroadcast();
+        collectFoundDevices(scanner);
+    }
+
+    private static void collectFoundDevices(LocalNetworkDeviceDiscovery scanner)
+            throws InterruptedException {
+        scanner.addRemoteDeviceDiscoveryListener(new RemoteDeviceListener() {
+            @Override
+            public void deviceAdded(String name, String address,
+                    String serviceName, String description, String version) {
+                logger.info(name + ":" + serviceName + ", " + description + ", "
+                        + version + "@" + address);
+            }
+        });
+        scanner.searchDevices();
+        Thread.sleep(2000);
+    }
+
+    @Test
+    public void testDeviceClass() throws Exception {
+        for (String devicePath : LocalNetworkDevice.Factory.getDevices()) {
+            logger.info(devicePath);
         }
     }
 }

@@ -13,14 +13,12 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
-import java.util.Map;
 
 abstract class LocalNetworkDeviceDiscovery {
 
     List<RemoteDeviceListener> remoteDeviceListeners = new ArrayList<RemoteDeviceListener>();
 
-    abstract void searchDevices(Map<String, LocalNetworkDevice> deviceCache)
-            throws InterruptedException;
+    abstract void searchDevices() throws InterruptedException;
 
     List<InterfaceAddress> networks() throws SocketException {
         List<InterfaceAddress> interfaceAddresses = new ArrayList<InterfaceAddress>();
@@ -62,5 +60,15 @@ abstract class LocalNetworkDeviceDiscovery {
             remoteDeviceListener.deviceAdded(name, address, serviceName,
                     description, version);
         }
+    }
+
+    public void addRemoteDeviceDiscoveryListener(
+            RemoteDeviceListener remoteDeviceListener) {
+        remoteDeviceListeners.add(remoteDeviceListener);
+    }
+
+    public void removeRemoteDeviceDiscoveryListener(
+            RemoteDeviceListener remoteDeviceListener) {
+        remoteDeviceListeners.remove(remoteDeviceListener);
     }
 }

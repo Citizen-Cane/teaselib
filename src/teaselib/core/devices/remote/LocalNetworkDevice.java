@@ -42,7 +42,7 @@ public class LocalNetworkDevice implements RemoteDevice {
     public static final DeviceFactory<LocalNetworkDevice> Factory = new DeviceFactory<LocalNetworkDevice>(
             DeviceClassName) {
 
-        private LocalNetworkDeviceDiscoveryNetworkScan deviceDiscovery = new LocalNetworkDeviceDiscoveryNetworkScan();
+        private LocalNetworkDeviceDiscovery deviceDiscovery = new LocalNetworkDeviceDiscoveryBroadcast();
         private List<LocalNetworkDevice> discoveredDevices = new ArrayList<LocalNetworkDevice>();
 
         {
@@ -82,22 +82,21 @@ public class LocalNetworkDevice implements RemoteDevice {
         public List<String> enumerateDevicePaths(
                 Map<String, LocalNetworkDevice> deviceCache)
                 throws InterruptedException {
-            synchronized (discoveredDevices) {
-                if (discoveredDevices.isEmpty()) {
-                    deviceDiscovery.searchDevices(deviceCache);
-                } else {
-                    addDevicesCollectedViaBroadcastAnnouncement(deviceCache);
-                }
+            if (discoveredDevices.isEmpty()) {
+                deviceDiscovery.searchDevices();
             }
+            publishDiscoveredDevices(deviceCache);
             return new ArrayList<String>(deviceCache.keySet());
         }
 
-        private void addDevicesCollectedViaBroadcastAnnouncement(
+        private void publishDiscoveredDevices(
                 Map<String, LocalNetworkDevice> deviceCache) {
-            for (LocalNetworkDevice device : discoveredDevices) {
-                deviceCache.put(device.getDevicePath(), device);
+            synchronized (discoveredDevices) {
+                for (LocalNetworkDevice device : discoveredDevices) {
+                    deviceCache.put(device.getDevicePath(), device);
+                }
+                discoveredDevices.clear();
             }
-            discoveredDevices.clear();
         }
 
         @Override

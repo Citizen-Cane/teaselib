@@ -9,7 +9,6 @@ import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Vector;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -21,8 +20,7 @@ class LocalNetworkDeviceDiscoveryNetworkScan
         extends LocalNetworkDeviceDiscovery {
 
     @Override
-    void searchDevices(Map<String, LocalNetworkDevice> deviceCache)
-            throws InterruptedException {
+    void searchDevices() throws InterruptedException {
         List<Future<Boolean>> futures = submitSearches();
         addDevices(futures);
     }
@@ -57,9 +55,12 @@ class LocalNetworkDeviceDiscoveryNetworkScan
                 UDPConnection connection = new UDPConnection(ip,
                         LocalNetworkDevice.Port);
                 try {
-                    fireDeviceDiscovered(new UDPMessage(connection.sendAndReceive(
-                            new UDPMessage(RemoteDevice.Id).toByteArray(),
-                            1000)).message);
+                    fireDeviceDiscovered(
+                            new UDPMessage(
+                                    connection.sendAndReceive(
+                                            new UDPMessage(RemoteDevice.Id)
+                                                    .toByteArray(),
+                                            1000)).message);
                     return true;
                 } catch (SocketTimeoutException e) {
                     return false;
@@ -91,13 +92,4 @@ class LocalNetworkDeviceDiscoveryNetworkScan
         }
         return subnets;
     }
-
-    /**
-     * @param remoteDeviceListener
-     */
-    public void addRemoteDeviceDiscoveryListener(
-            RemoteDeviceListener remoteDeviceListener) {
-        remoteDeviceListeners.add(remoteDeviceListener);
-    }
-
 }

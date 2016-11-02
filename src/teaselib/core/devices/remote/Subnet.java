@@ -12,9 +12,10 @@ import java.util.Iterator;
 import java.util.List;
 
 /**
- * @author someone
+ * @author Citizen Cane
  *
  */
+@Deprecated
 public class Subnet implements Iterable<InetAddress> {
     private final InterfaceAddress interfaceAddress;
 

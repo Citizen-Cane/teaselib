@@ -9,22 +9,24 @@ import java.net.SocketTimeoutException;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.junit.Ignore;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * @author someone
+ * @author Citizen Cane
  *
  */
-public class KeyReleaseBroadcastTest {
+public class KeyReleaseDeviceDiscoveryTest {
     private static final Logger logger = LoggerFactory
-            .getLogger(KeyReleaseBroadcastTest.class);
+            .getLogger(KeyReleaseDeviceDiscoveryTest.class);
 
     static final int Minutes = 2;
 
     @Test
-    public void testBroadcastConnect() throws Exception {
+    public void testBroadcastConnectProcedure() throws Exception {
+        logger.info("Manual device discovery broadcast:");
         Map<InetAddress, RemoteDeviceMessage> devices = new HashMap<InetAddress, RemoteDeviceMessage>();
         for (InterfaceAddress interfaceAddress : new LocalNetworkDeviceDiscoveryBroadcast()
                 .networks()) {
@@ -56,13 +58,19 @@ public class KeyReleaseBroadcastTest {
     }
 
     @Test
-    public void testNetworkScanConnect() throws Exception {
+    @Ignore
+    public void testRudeNetworkScanConnectAndPotentiallyCrashNetwork()
+            throws Exception {
+        logger.info(
+                "Network scan (may cause network trouble and wifi hotspot shutdown):");
+        @SuppressWarnings("deprecation")
         LocalNetworkDeviceDiscoveryNetworkScan scanner = new LocalNetworkDeviceDiscoveryNetworkScan();
         collectFoundDevices(scanner);
     }
 
     @Test
-    public void testBroadcastDiscovery() throws Exception {
+    public void testLocalNetworkDeviceBroadcastDiscovery() throws Exception {
+        logger.info("Local network device discovery broadcast):");
         LocalNetworkDeviceDiscoveryBroadcast scanner = new LocalNetworkDeviceDiscoveryBroadcast();
         collectFoundDevices(scanner);
     }
@@ -83,6 +91,8 @@ public class KeyReleaseBroadcastTest {
 
     @Test
     public void testDeviceClass() throws Exception {
+        logger.info(
+                "Device factory network scan (uses broadcast device discoevry):");
         for (String devicePath : LocalNetworkDevice.Factory.getDevices()) {
             logger.info(devicePath);
         }

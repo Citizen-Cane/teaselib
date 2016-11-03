@@ -21,7 +21,7 @@ public:
   virtual bool canHandle(const char* serviceCommand) const;
   static const char* serviceCommand(const char* serviceCommand);
   static bool isCommand(const UDPMessage& received, const char* serviceCommand);
-  static unsigned int processIdPacket(const UDPMessage& received, char* buffer);
+  static unsigned int processIdPacket(char* buffer);
   static unsigned int processSleepPacket(const UDPMessage& received, SleepMode& sleepMode);
   static unsigned int processPacket(const UDPMessage& received, char* buffer);
   static const UDPMessage Ok;

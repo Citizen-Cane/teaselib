@@ -9,8 +9,18 @@ TeaseLibService* services[] = {&keyRelease};
 const int serviceCount = sizeof(services)/sizeof(TeaseLibService*);
 
 UDP socket;
-unsigned int localPort = 666;
+const unsigned int localPort = 666;
 String deviceAddress;
+
+const int PacketHeaderSize = 4;
+const int BufferSize = 1024;
+char buffer[BufferSize];
+
+void process(const UDPMessage& received, const int packetNumber);
+void send(const UDPMessage& message, const int packetNumber);
+void send(char* buffer, const int messageSize, const int packetNumber);
+void send(const IPAddress& ipAddress, const int port, char* buffer, const int messageSize, const int packetNumber);
+void println(const UDPMessage& packet);
 
 void setup() {
   // start UDP
@@ -19,20 +29,24 @@ void setup() {
   Serial.begin(9600);
   // Wait for key press on serial
   // while(!Serial.available()) Particle.process();
-  Serial.println(WiFi.localIP());
+  IPAddress localIP =WiFi.localIP();
+  Serial.println(localIP);
   // setup services
-  deviceAddress = String(WiFi.localIP());
+  deviceAddress = String(localIP);
   TeaseLibService::setup(services, serviceCount, deviceAddress);
+  const int responseSize = TeaseLibService::processIdPacket(&buffer[PacketHeaderSize]);
+  if (responseSize > 0) {
+    IPAddress subnetMask = WiFi.subnetMask();
+    Serial.println(subnetMask);
+    IPAddress broadcast = IPAddress(255,255,255,255);
+    for(uint8_t i = 0; i < 4; i++) {
+      const uint8_t bits = (~subnetMask[i]) | localIP[i];
+      broadcast[i] = bits;
+    }
+    Serial.println(broadcast);
+    send(broadcast, localPort, buffer, responseSize, 0);
+  }
 }
-
-void process(const UDPMessage& received, const int packetNumber);
-void send(const UDPMessage& message, const int packetNumber);
-void send(char* buffer, const int messageSize, const int packetNumber);
-void println(const UDPMessage& packet);
-
-const int PacketHeaderSize = 4;
-const int BufferSize = 1024;
-char buffer[BufferSize];
 
 void loop() {
   // Check if data has been received
@@ -60,7 +74,7 @@ void loop() {
 void process(const UDPMessage& received, const int packetNumber) {
   println(received);
   if (strcmp(TeaseLibService::Id, received.command) == 0) {
-    const int responseSize = TeaseLibService::processIdPacket(received, &buffer[PacketHeaderSize]);
+    const int responseSize = TeaseLibService::processIdPacket(&buffer[PacketHeaderSize]);
     if (responseSize > 0) {
       send(buffer, responseSize, packetNumber);
     }
@@ -96,6 +110,12 @@ void send(const UDPMessage& message, const int packetNumber) {
 }
 
 void send(char* buffer, const int messageSize, const int packetNumber) {
+  const IPAddress ipAddress = socket.remoteIP();
+  const int port = socket.remotePort();
+  send(ipAddress, port, buffer, messageSize, packetNumber);
+}
+
+void send(const IPAddress& ipAddress, const int port, char* buffer, const int messageSize, const int packetNumber) {
   UDPMessage::writeShort(buffer, packetNumber);
   UDPMessage::writeShort(&buffer[2], messageSize);
   if (!UDPMessage::isValid(buffer, messageSize, PacketHeaderSize)) {
@@ -105,8 +125,6 @@ void send(char* buffer, const int messageSize, const int packetNumber) {
   }
   Serial.print("Response =");
   println(UDPMessage(&buffer[PacketHeaderSize], messageSize));
-  IPAddress ipAddress = socket.remoteIP();
-  int port = socket.remotePort();
   socket.sendPacket(buffer, PacketHeaderSize + messageSize, ipAddress, port);
 }
 

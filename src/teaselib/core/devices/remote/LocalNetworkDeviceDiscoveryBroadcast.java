@@ -27,7 +27,7 @@ class LocalNetworkDeviceDiscoveryBroadcast extends LocalNetworkDeviceDiscovery {
         waitForDeviceAddedEvents();
     }
 
-    private void updateSocketReceiveThreads(List<InterfaceAddress> networks) {
+    void updateSocketReceiveThreads(List<InterfaceAddress> networks) {
         addSocketThreadsForNewNetworks(networks);
         removeSocketThreadsForVanishedNetworks(networks);
     }
@@ -85,7 +85,8 @@ class LocalNetworkDeviceDiscoveryBroadcast extends LocalNetworkDeviceDiscovery {
     class BroadcastListener extends Thread {
         final UDPConnection connection;
 
-        BroadcastListener(InterfaceAddress interfaceAddress) throws SocketException {
+        BroadcastListener(InterfaceAddress interfaceAddress)
+                throws SocketException {
             connection = new UDPConnection(interfaceAddress.getBroadcast(),
                     LocalNetworkDevice.Port);
             setDaemon(true);

@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 
@@ -38,6 +39,12 @@ public class UDPConnection {
     public UDPConnection(InetAddress address, int port) throws SocketException {
         this.address = address;
         this.port = port;
+        this.clientSocket = new DatagramSocket();
+    }
+
+    public UDPConnection(InetSocketAddress address) throws IOException {
+        this.address = address.getAddress();
+        this.port = address.getPort();
         this.clientSocket = new DatagramSocket();
     }
 

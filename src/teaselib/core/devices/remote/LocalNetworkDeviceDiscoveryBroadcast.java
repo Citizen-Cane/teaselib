@@ -5,6 +5,7 @@ package teaselib.core.devices.remote;
 
 import java.io.IOException;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.InterfaceAddress;
 import java.net.SocketException;
 import java.util.HashMap;
@@ -41,7 +42,7 @@ class LocalNetworkDeviceDiscoveryBroadcast extends LocalNetworkDeviceDiscovery {
                             interfaceAddress);
                     discoveryThreads.put(interfaceAddress, socketThread);
                     socketThread.start();
-                } catch (SocketException e) {
+                } catch (IOException e) {
                     LocalNetworkDevice.logger.error(e.getMessage(), e);
                 }
             }
@@ -86,9 +87,9 @@ class LocalNetworkDeviceDiscoveryBroadcast extends LocalNetworkDeviceDiscovery {
         final UDPConnection connection;
 
         BroadcastListener(InterfaceAddress interfaceAddress)
-                throws SocketException {
-            connection = new UDPConnection(interfaceAddress.getBroadcast(),
-                    LocalNetworkDevice.Port);
+                throws IOException {
+            connection = new UDPConnection(new InetSocketAddress(
+                    interfaceAddress.getBroadcast(), LocalNetworkDevice.Port));
             setDaemon(true);
             setName("Local network device discovery receiver on "
                     + interfaceAddress.getBroadcast().toString());

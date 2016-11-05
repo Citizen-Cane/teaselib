@@ -48,7 +48,7 @@ class LocalNetworkDeviceDiscoveryBroadcast extends LocalNetworkDeviceDiscovery {
         } catch (SocketException e) {
             logger.error(e.getMessage(), e);
         }
-        waitForDeviceAddedEvents();
+        waitForDevicesToReply();
     }
 
     void updateInterfaceBroadcastListeners(List<InterfaceAddress> networks) {
@@ -106,7 +106,7 @@ class LocalNetworkDeviceDiscoveryBroadcast extends LocalNetworkDeviceDiscovery {
         connection.send(new UDPMessage(RemoteDevice.Id).toByteArray());
     }
 
-    private static void waitForDeviceAddedEvents() throws InterruptedException {
+    private static void waitForDevicesToReply() throws InterruptedException {
         Thread.sleep(2000);
     }
 

@@ -20,6 +20,8 @@ abstract class LocalNetworkDeviceDiscovery {
 
     abstract void searchDevices() throws InterruptedException;
 
+    abstract void close();
+
     List<InterfaceAddress> networks() throws SocketException {
         List<InterfaceAddress> interfaceAddresses = new ArrayList<InterfaceAddress>();
         Enumeration<NetworkInterface> networkInterfaces = NetworkInterface

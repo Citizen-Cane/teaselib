@@ -18,9 +18,9 @@ import org.slf4j.LoggerFactory;
  * @author Citizen Cane
  *
  */
-public class KeyReleaseDeviceDiscoveryTest {
+public class NetworkDeviceDiscoveryTest {
     private static final Logger logger = LoggerFactory
-            .getLogger(KeyReleaseDeviceDiscoveryTest.class);
+            .getLogger(NetworkDeviceDiscoveryTest.class);
 
     static final int Minutes = 2;
 
@@ -28,27 +28,39 @@ public class KeyReleaseDeviceDiscoveryTest {
     public void testBroadcastConnectProcedure() throws Exception {
         logger.info("Manual device discovery broadcast:");
         Map<InetAddress, RemoteDeviceMessage> devices = new HashMap<InetAddress, RemoteDeviceMessage>();
-        for (InterfaceAddress interfaceAddress : new LocalNetworkDeviceDiscoveryBroadcast()
-                .networks()) {
-            logger.info("Sending broadcast message to "
-                    + interfaceAddress.getBroadcast().toString());
-            UDPConnection connection = new UDPConnection(
-                    interfaceAddress.getBroadcast(), 666);
-            connection.send(new UDPMessage(RemoteDevice.Id).toByteArray());
-            while (true) {
+        LocalNetworkDeviceDiscoveryBroadcast localNetworkDeviceDiscoveryBroadcast = new LocalNetworkDeviceDiscoveryBroadcast();
+        try {
+            for (InterfaceAddress interfaceAddress : localNetworkDeviceDiscoveryBroadcast
+                    .networks()) {
+                logger.info("Sending broadcast message to "
+                        + interfaceAddress.getBroadcast().toString());
+
+                UDPConnection connection = new UDPConnection(
+                        interfaceAddress.getBroadcast(), 666);
                 try {
-                    byte[] received = connection.receive(1000);
-                    UDPMessage udpMessage = new UDPMessage(received);
-                    RemoteDeviceMessage device = udpMessage.message;
-                    if ("services".equals(device.command)) {
-                        devices.put(
-                                InetAddress.getByName(device.parameters.get(1)),
-                                device);
+                    connection.send(
+                            new UDPMessage(RemoteDevice.Id).toByteArray());
+                    while (true) {
+                        try {
+                            byte[] received = connection.receive(1000);
+                            UDPMessage udpMessage = new UDPMessage(received);
+                            RemoteDeviceMessage device = udpMessage.message;
+                            if ("services".equals(device.command)) {
+                                devices.put(
+                                        InetAddress.getByName(
+                                                device.parameters.get(1)),
+                                        device);
+                            }
+                        } catch (SocketTimeoutException e) {
+                            break;
+                        }
                     }
-                } catch (SocketTimeoutException e) {
-                    break;
+                } finally {
+                    connection.close();
                 }
             }
+        } finally {
+            localNetworkDeviceDiscoveryBroadcast.close();
         }
         for (Map.Entry<InetAddress, RemoteDeviceMessage> device : devices
                 .entrySet()) {
@@ -72,7 +84,11 @@ public class KeyReleaseDeviceDiscoveryTest {
     public void testLocalNetworkDeviceBroadcastDiscovery() throws Exception {
         logger.info("Local network device discovery broadcast):");
         LocalNetworkDeviceDiscoveryBroadcast scanner = new LocalNetworkDeviceDiscoveryBroadcast();
-        collectFoundDevices(scanner);
+        try {
+            collectFoundDevices(scanner);
+        } finally {
+            scanner.close();
+        }
     }
 
     private static void collectFoundDevices(LocalNetworkDeviceDiscovery scanner)

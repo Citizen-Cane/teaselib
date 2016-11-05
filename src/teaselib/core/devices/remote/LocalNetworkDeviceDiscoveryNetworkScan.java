@@ -16,10 +16,15 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 @Deprecated
 @SuppressWarnings("deprecation")
 class LocalNetworkDeviceDiscoveryNetworkScan
         extends LocalNetworkDeviceDiscovery {
+    static final Logger logger = LoggerFactory
+            .getLogger(LocalNetworkDeviceDiscoveryNetworkScan.class);
 
     @Override
     void searchDevices() throws InterruptedException {
@@ -36,7 +41,7 @@ class LocalNetworkDeviceDiscoveryNetworkScan
                 searchSubnet(es, futures, subnet);
             }
         } catch (SocketException e) {
-            LocalNetworkDevice.logger.error(e.getMessage(), e);
+            logger.error(e.getMessage(), e);
         }
         es.shutdown();
         return futures;
@@ -44,7 +49,7 @@ class LocalNetworkDeviceDiscoveryNetworkScan
 
     private void searchSubnet(ExecutorService es, List<Future<Boolean>> futures,
             Subnet subnet) {
-        LocalNetworkDevice.logger.info("Scanning " + subnet.toString());
+        logger.info("Scanning " + subnet.toString());
         for (InetAddress ip : subnet) {
             futures.add(es.submit(serviceLookup(ip)));
         }
@@ -82,7 +87,7 @@ class LocalNetworkDeviceDiscoveryNetworkScan
             try {
                 f.get();
             } catch (ExecutionException e) {
-                LocalNetworkDevice.logger.error(e.getMessage(), e);
+                logger.error(e.getMessage(), e);
             }
         }
     }
@@ -93,5 +98,10 @@ class LocalNetworkDeviceDiscoveryNetworkScan
             subnets.add(new Subnet(interfaceAddress));
         }
         return subnets;
+    }
+
+    @Override
+    void close() {
+        // ignore
     }
 }

@@ -22,7 +22,7 @@ import teaselib.core.devices.DeviceFactory;
  *
  */
 public class LocalNetworkDevice implements RemoteDevice {
-    static final Logger logger = LoggerFactory
+    private static final Logger logger = LoggerFactory
             .getLogger(LocalNetworkDevice.class);
 
     private static final String DeviceClassName = "LocalNetworkDevice";
@@ -42,40 +42,45 @@ public class LocalNetworkDevice implements RemoteDevice {
     public static final DeviceFactory<LocalNetworkDevice> Factory = new DeviceFactory<LocalNetworkDevice>(
             DeviceClassName) {
 
-        private LocalNetworkDeviceDiscovery deviceDiscovery = new LocalNetworkDeviceDiscoveryBroadcast();
-        private List<LocalNetworkDevice> discoveredDevices = new ArrayList<LocalNetworkDevice>();
+        private final LocalNetworkDeviceDiscovery deviceDiscovery;
+        private final List<LocalNetworkDevice> discoveredDevices = new ArrayList<LocalNetworkDevice>();
 
         {
+            deviceDiscovery = new LocalNetworkDeviceDiscoveryBroadcast();
             installDeviceListener();
         }
 
         private void installDeviceListener() {
-            deviceDiscovery.addRemoteDeviceDiscoveryListener(
-                    new RemoteDeviceListener() {
-                        @Override
-                        public void deviceAdded(String name, String address,
-                                String serviceName, String description,
-                                String version) {
-                            String devicePath = LocalNetworkDevice
-                                    .createDevicePath(name, serviceName);
-                            if (!isDeviceCached(devicePath)) {
-                                try {
-                                    LocalNetworkDevice device = new LocalNetworkDevice(
-                                            name, new UDPConnection(address),
-                                            serviceName, description, version);
-                                    synchronized (discoveredDevices) {
-                                        discoveredDevices.add(device);
+            if (deviceDiscovery != null) {
+                deviceDiscovery.addRemoteDeviceDiscoveryListener(
+                        new RemoteDeviceListener() {
+                            @Override
+                            public void deviceAdded(String name, String address,
+                                    String serviceName, String description,
+                                    String version) {
+                                String devicePath = LocalNetworkDevice
+                                        .createDevicePath(name, serviceName);
+                                if (!isDeviceCached(devicePath)) {
+                                    try {
+                                        LocalNetworkDevice device = new LocalNetworkDevice(
+                                                name,
+                                                new UDPConnection(address),
+                                                serviceName, description,
+                                                version);
+                                        synchronized (discoveredDevices) {
+                                            discoveredDevices.add(device);
+                                        }
+                                    } catch (NumberFormatException e) {
+                                        logger.error(e.getMessage(), e);
+                                    } catch (SocketException e) {
+                                        logger.error(e.getMessage(), e);
+                                    } catch (UnknownHostException e) {
+                                        logger.error(e.getMessage(), e);
                                     }
-                                } catch (NumberFormatException e) {
-                                    logger.error(e.getMessage(), e);
-                                } catch (SocketException e) {
-                                    logger.error(e.getMessage(), e);
-                                } catch (UnknownHostException e) {
-                                    logger.error(e.getMessage(), e);
                                 }
                             }
-                        }
-                    });
+                        });
+            }
         }
 
         @Override

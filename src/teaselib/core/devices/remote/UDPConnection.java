@@ -30,6 +30,8 @@ public class UDPConnection {
     final DatagramSocket clientSocket;
     private int packetNumber = 0;
 
+    private boolean checkPacketNumber = true;
+
     public UDPConnection(String address) throws SocketException,
             NumberFormatException, UnknownHostException {
         this(InetAddress.getByName(address.split(":")[0]),
@@ -45,7 +47,7 @@ public class UDPConnection {
     public UDPConnection(InetSocketAddress address) throws IOException {
         this.address = address.getAddress();
         this.port = address.getPort();
-        this.clientSocket = new DatagramSocket();
+        this.clientSocket = new DatagramSocket(address);
     }
 
     void close() {
@@ -114,13 +116,15 @@ public class UDPConnection {
         try {
             DataInput input = new DataInputStream(rawData);
             int packetNumber = input.readShort();
-            if (packetNumber < this.packetNumber) {
-                logger.warn(
-                        "Ignoring packet with smaller number #" + packetNumber);
-            } else if (packetNumber > this.packetNumber) {
-                // TODO better handling of packet number mismatch - wait if
-                // smaller, throw if larger
-                throw new IllegalStateException("Packet-Number mismatch");
+            if (checkPacketNumber) {
+                if (packetNumber < this.packetNumber) {
+                    logger.warn("Ignoring packet with smaller number #"
+                            + packetNumber);
+                } else if (packetNumber > this.packetNumber) {
+                    // TODO better handling of packet number mismatch - wait if
+                    // smaller, throw if larger
+                    throw new IllegalStateException("Packet-Number mismatch");
+                }
             }
             int size = input.readShort();
             byte[] content = new byte[size];
@@ -156,5 +160,13 @@ public class UDPConnection {
     @Override
     public String toString() {
         return address.getHostAddress() + ":" + port;
+    }
+
+    public boolean getCheckPacketNumber() {
+        return checkPacketNumber;
+    }
+
+    public void setCheckPacketNumber(boolean enabled) {
+        this.checkPacketNumber = enabled;
     }
 }

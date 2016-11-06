@@ -23,7 +23,7 @@ public class SpeechRecognition {
 
     @SuppressWarnings("deprecation")
     static final String EnableSpeechHypothesisHandler = SpeechRecognition.class
-            .getName() + ".Enable"
+            .getPackage().getName() + ".Enable"
             + SpeechRecognitionHypothesisEventHandler.class.getSimpleName();
 
     /**

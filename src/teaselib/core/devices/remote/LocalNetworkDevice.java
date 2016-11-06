@@ -11,6 +11,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import javax.swing.SwingUtilities;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -291,4 +293,14 @@ public class LocalNetworkDevice implements RemoteDevice {
             logger.error(e.getMessage(), e);
         }
     }
+
+    public static void startDeviceDetection() {
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                Factory.getDevices();
+            }
+        });
+    }
+
 }

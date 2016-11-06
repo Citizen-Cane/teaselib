@@ -22,13 +22,16 @@ import org.slf4j.LoggerFactory;
  *
  */
 public class UDPConnection {
+    private static final int PacketBufferSize = 1024;
+
     private static final Logger logger = LoggerFactory
             .getLogger(UDPConnection.class);
 
+    private static final int SequenceNumberForIncomingBroadcastPacket = 0;
     final InetAddress address;
     final int port;
     final DatagramSocket clientSocket;
-    private int packetNumber = 0;
+    private int packetNumber = SequenceNumberForIncomingBroadcastPacket;
 
     private boolean checkPacketNumber = true;
 
@@ -44,6 +47,8 @@ public class UDPConnection {
         this.clientSocket = new DatagramSocket();
     }
 
+    // TODO Make clear that the socket is bound to the given address - the
+    // initial idea was that the adress denotes the target
     public UDPConnection(InetSocketAddress address) throws IOException {
         this.address = address.getAddress();
         this.port = address.getPort();
@@ -74,13 +79,22 @@ public class UDPConnection {
         ByteArrayOutputStream header = new ByteArrayOutputStream();
         try {
             DataOutput output = new DataOutputStream(header);
-            output.writeShort(++packetNumber);
+            output.writeShort(getPacketNumber());
             output.writeShort(data.length);
             output.write(data);
             return header.toByteArray();
         } finally {
             header.close();
         }
+    }
+
+    private int getPacketNumber() {
+        packetNumber++;
+        packetNumber &= 0x7fff;
+        if (packetNumber == SequenceNumberForIncomingBroadcastPacket) {
+            packetNumber++;
+        }
+        return packetNumber;
     }
 
     private void send(DatagramPacket sendPacket) throws IOException {
@@ -96,19 +110,28 @@ public class UDPConnection {
     public byte[] sendAndReceive(byte[] data, int timeoutMillis)
             throws IOException, SocketException {
         send(data);
-        DatagramPacket receivePacket = receivePacket(timeoutMillis);
-        return detachHeader(receivePacket.getData());
+        clientSocket.setSoTimeout(timeoutMillis);
+        return receiveMatchingPacket();
     }
 
     public byte[] receive() throws SocketException, IOException {
-        DatagramPacket receivePacket = receivePacket();
-        return detachHeader(receivePacket.getData());
+        clientSocket.setSoTimeout(0);
+        return receiveMatchingPacket();
     }
 
     public byte[] receive(int timeoutMillis)
             throws SocketException, IOException {
-        DatagramPacket receivePacket = receivePacket(timeoutMillis);
-        return detachHeader(receivePacket.getData());
+        clientSocket.setSoTimeout(timeoutMillis);
+        return receiveMatchingPacket();
+    }
+
+    private byte[] receiveMatchingPacket() throws SocketException, IOException {
+        byte[] payload = null;
+        while (payload == null) {
+            DatagramPacket receivePacket = receivePacket();
+            payload = detachHeader(receivePacket.getData());
+        }
+        return payload;
     }
 
     private byte[] detachHeader(byte[] data) throws IOException {
@@ -119,10 +142,10 @@ public class UDPConnection {
             if (checkPacketNumber) {
                 if (packetNumber < this.packetNumber) {
                     logger.warn("Ignoring packet with smaller number #"
-                            + packetNumber);
+                            + packetNumber + " != expected packet number #"
+                            + this.packetNumber);
+                    return null;
                 } else if (packetNumber > this.packetNumber) {
-                    // TODO better handling of packet number mismatch - wait if
-                    // smaller, throw if larger
                     throw new IllegalStateException("Packet-Number mismatch");
                 }
             }
@@ -135,14 +158,8 @@ public class UDPConnection {
         }
     }
 
-    private DatagramPacket receivePacket(int timeoutMillis)
-            throws SocketException, IOException {
-        clientSocket.setSoTimeout(timeoutMillis);
-        return receivePacket();
-    }
-
     private DatagramPacket receivePacket() throws SocketException, IOException {
-        byte[] receiveData = new byte[1024];
+        byte[] receiveData = new byte[PacketBufferSize];
         DatagramPacket receivePacket = new DatagramPacket(receiveData,
                 receiveData.length);
         clientSocket.receive(receivePacket);

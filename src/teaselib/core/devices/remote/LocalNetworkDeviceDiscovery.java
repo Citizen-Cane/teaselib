@@ -14,7 +14,15 @@ import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
 
-abstract class LocalNetworkDeviceDiscovery {
+public abstract class LocalNetworkDeviceDiscovery {
+
+    /**
+     * Bind a broadcast listener for receiving devices startup messages to the
+     * meta-address 0.0.0.0. This speeds up device discovery, but - at least on
+     * Windows - may pop-up a firewall notification.
+     */
+    public static final String EnableNetworkDeviceStartupListener = LocalNetworkDeviceDiscoveryBroadcast.class
+            .getName() + ".EnableNetworkDeviceStartupListener";
 
     List<RemoteDeviceListener> remoteDeviceListeners = new ArrayList<RemoteDeviceListener>();
 
@@ -73,4 +81,14 @@ abstract class LocalNetworkDeviceDiscovery {
             RemoteDeviceListener remoteDeviceListener) {
         remoteDeviceListeners.remove(remoteDeviceListener);
     }
+
+    public static boolean isListeningForDeviceStartupMessagesEnabled() {
+        String bindBroadcastListenerProperty = System.getProperty(
+                LocalNetworkDeviceDiscovery.EnableNetworkDeviceStartupListener,
+                "false");
+        boolean installBroadcastListener = Boolean.toString(true)
+                .compareToIgnoreCase(bindBroadcastListenerProperty) == 0;
+        return installBroadcastListener;
+    }
+
 }

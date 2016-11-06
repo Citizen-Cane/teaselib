@@ -27,7 +27,9 @@ class LocalNetworkDeviceDiscoveryBroadcast extends LocalNetworkDeviceDiscovery {
     public LocalNetworkDeviceDiscoveryBroadcast() {
         super();
 
-        installBroadcastListener();
+        if (isListeningForDeviceStartupMessagesEnabled()) {
+            installBroadcastListener();
+        }
     }
 
     private void installBroadcastListener() {
@@ -117,8 +119,7 @@ class LocalNetworkDeviceDiscoveryBroadcast extends LocalNetworkDeviceDiscovery {
         public BroadcastListener(InetAddress address, int port)
                 throws IOException {
             connection = new UDPConnection(address, port);
-            initThread();
-            setName("Installed interface broadcast socket on "
+            initThread("Installed interface broadcast socket on "
                     + address.toString());
         }
 
@@ -128,12 +129,13 @@ class LocalNetworkDeviceDiscoveryBroadcast extends LocalNetworkDeviceDiscovery {
                     LocalNetworkDevice.Port);
             connection = new UDPConnection(address);
             connection.setCheckPacketNumber(false);
-            initThread();
-            setName("Listening for broadcast packets on " + address.toString());
+            initThread(
+                    "Listening for broadcast packets on " + address.toString());
         }
 
-        private void initThread() {
+        private void initThread(String name) {
             setDaemon(true);
+            setName(name);
         }
 
         @Override

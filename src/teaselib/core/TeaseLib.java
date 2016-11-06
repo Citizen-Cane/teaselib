@@ -23,6 +23,8 @@ import teaselib.Config;
 import teaselib.State;
 import teaselib.Toys;
 import teaselib.core.devices.DeviceFactoryListener;
+import teaselib.core.devices.remote.LocalNetworkDevice;
+import teaselib.core.devices.remote.LocalNetworkDeviceDiscovery;
 import teaselib.core.media.MediaRendererQueue;
 import teaselib.core.texttospeech.Voice;
 import teaselib.core.util.PropertyNameMapping;
@@ -56,6 +58,15 @@ public class TeaseLib {
         }
         this.host = host;
         this.persistence = new PersistenceLogger(persistence);
+        this.transcript = newTranscriptLogger(host);
+        bindMotionDetectorFeedback();
+        if (LocalNetworkDeviceDiscovery
+                .isListeningForDeviceStartupMessagesEnabled()) {
+            LocalNetworkDevice.startDeviceDetection();
+        }
+    }
+
+    private TeaseLibLogger newTranscriptLogger(Host host) {
         TeaseLibLogger transcriptLogger = null;
         try {
             transcriptLogger = new TeaseLibLogger(transcriptLogFile,
@@ -69,7 +80,10 @@ public class TeaseLib {
             host.reply(Arrays.asList("Oh dear"));
             transcriptLogger = TeaseLibLogger.getDummyLogger();
         }
-        this.transcript = transcriptLogger;
+        return transcriptLogger;
+    }
+
+    private void bindMotionDetectorFeedback() {
         MotionDetection.Devices
                 .addDeviceListener(new DeviceFactoryListener<MotionDetector>() {
                     @Override

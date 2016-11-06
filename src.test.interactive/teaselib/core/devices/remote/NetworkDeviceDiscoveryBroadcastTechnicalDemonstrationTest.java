@@ -14,8 +14,8 @@ import org.slf4j.LoggerFactory;
  *
  */
 public class NetworkDeviceDiscoveryBroadcastTechnicalDemonstrationTest {
-    private static final Logger logger = LoggerFactory
-            .getLogger(NetworkDeviceDiscoveryBroadcastTechnicalDemonstrationTest.class);
+    private static final Logger logger = LoggerFactory.getLogger(
+            NetworkDeviceDiscoveryBroadcastTechnicalDemonstrationTest.class);
 
     @Test
     public void testAwaitDeviceStartupServicesBroadcastMessageViaUDPConnection()

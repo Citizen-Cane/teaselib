@@ -25,6 +25,9 @@ public class NetworkDeviceDiscoveryProductionCodeTest {
     public void testAwaitDeviceStartupServicesBroadcastMessage()
             throws Exception {
         logger.info("Awaiting device startup broadscast message:");
+        System.setProperty(
+                LocalNetworkDeviceDiscovery.EnableNetworkDeviceStartupListener,
+                Boolean.TRUE.toString());
         LocalNetworkDeviceDiscoveryBroadcast scanner = new LocalNetworkDeviceDiscoveryBroadcast();
         try {
             List<InterfaceAddress> networks = scanner.networks();

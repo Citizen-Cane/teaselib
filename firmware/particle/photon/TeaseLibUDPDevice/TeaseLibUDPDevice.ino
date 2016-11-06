@@ -45,6 +45,7 @@ void setup() {
     }
     Serial.println(broadcast);
     send(broadcast, localPort, buffer, responseSize, 0);
+    socket.flush();
   }
 }
 

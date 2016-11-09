@@ -18,6 +18,8 @@ public class BurstSquareWave extends WaveForm {
      *            Duration of a period
      * @param onTimeMillis
      *            The on-time during each period
+     * @param burstOnOffMillis
+     *            Period of the bursts during the on-time
      */
     public BurstSquareWave(double periodTimeMillis, double onTimeMillis,
             double burstOnOffMillis) {
@@ -27,6 +29,16 @@ public class BurstSquareWave extends WaveForm {
         this.burstOffMillis = (long) burstOnOffMillis;
     }
 
+    /**
+     * @param periodTimeMillis
+     *            Duration of a period
+     * @param onTimeMillis
+     *            The on-time during each period
+     * @param burstOnMillis
+     *            The on-time of each burst during the on-time of the period
+     * @param burstOffMillis
+     *            The off-time of each burst during the on-time of the period
+     */
     public BurstSquareWave(double periodTimeMillis, double onTimeMillis,
             double burstOnMillis, double burstOffMillis) {
         this.periodTimeMillis = (long) periodTimeMillis;

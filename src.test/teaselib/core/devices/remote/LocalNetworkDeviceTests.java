@@ -1,5 +1,6 @@
 package teaselib.core.devices.remote;
 
+import org.junit.Ignore;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -9,8 +10,9 @@ public class LocalNetworkDeviceTests {
             .getLogger(LocalNetworkDeviceTests.class);
 
     @Test
-    public void testResourceDeallocation() throws Exception {
-        for (int i = 0; i < 500; i++) {
+    @Ignore
+    public void testResourceDeallocationQuiteLong() throws Exception {
+        for (int i = 0; i < 1000; i++) {
             try {
                 LocalNetworkDevice.Factory.getDevices();
             } catch (Exception e) {

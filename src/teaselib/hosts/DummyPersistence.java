@@ -23,7 +23,15 @@ public class DummyPersistence implements Persistence {
     public final static String False = "false";
 
     public final Map<String, String> storage = new HashMap<String, String>();
-    private final PropertyNameMapping nameMapping = new PropertyNameMapping();
+    private final PropertyNameMapping nameMapping;
+
+    public DummyPersistence() {
+        nameMapping = new PropertyNameMapping();
+    }
+
+    public DummyPersistence(PropertyNameMapping propertyNameMapping) {
+        nameMapping = propertyNameMapping;
+    }
 
     @Override
     public PropertyNameMapping getNameMapping() {

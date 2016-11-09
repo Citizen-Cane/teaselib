@@ -9,6 +9,7 @@ import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 
 import teaselib.core.TeaseLib;
+import teaselib.core.TeaseLib.PersistentEnum;
 import teaselib.hosts.DummyPersistence;
 import teaselib.test.TestScript;
 
@@ -286,5 +287,21 @@ public class PersistenceTest {
         i.set(testValue);
         script.teaseLib.clear(TeaseLib.DefaultDomain, script.namespace, name);
         assertTrue(i.available() == false);
+    }
+
+    enum Fruit {
+        Apple,
+        Banana
+    }
+
+    @Test
+    public void testPersistentEnum() {
+        TestScript script = TestScript.getOne();
+
+        PersistentEnum<Fruit> myFruit = script.persistentEnum("myfruit",
+                Fruit.Banana);
+        assertEquals(Fruit.Banana, myFruit.value());
+        myFruit.set(Fruit.Apple);
+        assertEquals(Fruit.Apple, myFruit.value());
     }
 }

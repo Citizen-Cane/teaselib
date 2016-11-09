@@ -7,6 +7,7 @@ import teaselib.TeaseScript;
 import teaselib.core.ResourceLoader;
 import teaselib.core.TeaseLib;
 import teaselib.core.texttospeech.Voice;
+import teaselib.core.util.PropertyNameMapping;
 import teaselib.hosts.DummyHost;
 import teaselib.hosts.DummyPersistence;
 
@@ -21,6 +22,11 @@ public class TestScript extends TeaseScript {
 
     public static TestScript getOne() {
         return new TestScript(new DummyHost(), new DummyPersistence());
+    }
+
+    public static TestScript getOne(PropertyNameMapping propertyNameMapping) {
+        return new TestScript(new DummyHost(),
+                new DummyPersistence(propertyNameMapping));
     }
 
     public static TestScript getOne(Class<?> resourceRoot) {

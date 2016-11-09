@@ -107,9 +107,21 @@ public abstract class TeaseScriptPersistence extends TeaseScriptBase {
     }
 
     public <T extends Enum<?>> TeaseLib.PersistentEnum<T> persistentEnum(
-            String name, T[] values) {
+            String name, T defaultValue) {
         return teaseLib.new PersistentEnum<T>(TeaseLib.DefaultDomain, namespace,
-                name, values);
+                name, defaultValue);
+    }
+
+    public <T extends Enum<?>> TeaseLib.PersistentEnum<T> persistentEnum(
+            Enum<?> name, T defaultValue) {
+        return teaseLib.new PersistentEnum<T>(TeaseLib.DefaultDomain, name,
+                defaultValue);
+    }
+
+    public <T extends Enum<?>> TeaseLib.PersistentEnum<T> persistentEnum(
+            T defaultValue) {
+        return teaseLib.new PersistentEnum<T>(TeaseLib.DefaultDomain,
+                defaultValue);
     }
 
     public TeaseLib.PersistentInteger persistentInteger(String name) {

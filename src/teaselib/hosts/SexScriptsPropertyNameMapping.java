@@ -1,10 +1,15 @@
 package teaselib.hosts;
 
 import teaselib.Clothes;
+import teaselib.Sexuality;
 import teaselib.Toys;
+import teaselib.core.Persistence;
 import teaselib.core.util.PropertyNameMapping;
 
 public class SexScriptsPropertyNameMapping extends PropertyNameMapping {
+
+    private static final String SEXUALITY_SEX = "Sexuality.Sex";
+    private static final String INTRO_FEMALE = "intro.female";
 
     @Override
     public String mapDomain(String domain, String path, String name) {
@@ -41,6 +46,50 @@ public class SexScriptsPropertyNameMapping extends PropertyNameMapping {
             } else {
                 return mappedName;
             }
+        }
+    }
+
+    @Override
+    public boolean has(String name, Persistence persistence) {
+        if (SEXUALITY_SEX.equals(name)) {
+            return persistence.has(INTRO_FEMALE);
+        } else {
+            return super.has(name, persistence);
+        }
+    }
+
+    @Override
+    public String get(String name, Persistence persistence) {
+        if (SEXUALITY_SEX.equals(name)) {
+            if ("true".equals(persistence.get(INTRO_FEMALE))) {
+                return Sexuality.Sex.Female.name();
+            } else {
+                return Sexuality.Sex.Male.name();
+            }
+        } else {
+            return super.get(name, persistence);
+        }
+    }
+
+    @Override
+    public void set(String name, String value, Persistence persistence) {
+        if (SEXUALITY_SEX.equals(name)) {
+            if ("Female".equals(value)) {
+                persistence.set(INTRO_FEMALE, false);
+            } else {
+                persistence.set(INTRO_FEMALE, true);
+            }
+        } else {
+            super.set(name, value, persistence);
+        }
+    }
+
+    @Override
+    public void clear(String name, Persistence persistence) {
+        if (SEXUALITY_SEX.equals(name)) {
+            persistence.clear(INTRO_FEMALE);
+        } else {
+            super.clear(name, persistence);
         }
     }
 

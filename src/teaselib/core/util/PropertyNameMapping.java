@@ -1,6 +1,7 @@
 package teaselib.core.util;
 
 import teaselib.Toys;
+import teaselib.core.Persistence;
 
 public class PropertyNameMapping {
     public static final PropertyNameMapping PassThrough = new PropertyNameMapping();
@@ -82,4 +83,29 @@ public class PropertyNameMapping {
         }
         return name;
     }
+
+    public boolean has(String name, Persistence persistence) {
+        return persistence.has(name);
+    }
+
+    public String get(String name, Persistence persistence) {
+        return persistence.get(name);
+    }
+
+    public boolean getBoolean(String name, Persistence persistence) {
+        return persistence.getBoolean(name);
+    }
+
+    public void set(String name, String value, Persistence persistence) {
+        persistence.set(name, value);
+    }
+
+    public void set(String name, boolean value, Persistence persistence) {
+        persistence.set(name, value);
+    }
+
+    public void clear(String name, Persistence persistence) {
+        persistence.clear(name);
+    }
+
 }

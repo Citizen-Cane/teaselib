@@ -9,7 +9,7 @@ public class LocalNetworkDeviceTests {
             .getLogger(LocalNetworkDeviceTests.class);
 
     @Test
-    public void testeEsourceDeallocation() throws Exception {
+    public void testResourceDeallocation() throws Exception {
         for (int i = 0; i < 500; i++) {
             try {
                 LocalNetworkDevice.Factory.getDevices();

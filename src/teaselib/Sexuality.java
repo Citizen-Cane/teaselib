@@ -1,9 +1,9 @@
 package teaselib;
 
 public class Sexuality {
-    enum Likes {
-        Females,
-        Males
+    public enum Orientation {
+        LikesFemales,
+        LikesMales
     }
 
     public enum Gender {

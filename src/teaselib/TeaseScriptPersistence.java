@@ -106,6 +106,10 @@ public abstract class TeaseScriptPersistence extends TeaseScriptBase {
                 name);
     }
 
+    public TeaseLib.PersistentBoolean persistentBoolean(Enum<?> name) {
+        return teaseLib.new PersistentBoolean(TeaseLib.DefaultDomain, name);
+    }
+
     public <T extends Enum<?>> TeaseLib.PersistentEnum<T> persistentEnum(
             String name, T defaultValue) {
         return teaseLib.new PersistentEnum<T>(TeaseLib.DefaultDomain, namespace,

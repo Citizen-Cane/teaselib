@@ -6,6 +6,7 @@ import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 
+import teaselib.core.TeaseLib.PersistentBoolean;
 import teaselib.core.TeaseLib.PersistentEnum;
 import teaselib.hosts.SexScriptsPropertyNameMapping;
 import teaselib.test.TestScript;
@@ -31,7 +32,7 @@ public class GenderAndSexTest {
     }
 
     @Test
-    public void testSexScriptsMapping() {
+    public void testSexScriptsSexMapping() {
         TestScript script = TestScript
                 .getOne(new SexScriptsPropertyNameMapping());
 
@@ -49,5 +50,36 @@ public class GenderAndSexTest {
 
         script.persistence.storage.remove("intro.female");
         assertFalse(sex.available());
+    }
+
+    @Test
+    public void testSexScriptsSexualOrientationMappingAndMappingOfNestedEnums() {
+        TestScript script = TestScript
+                .getOne(new SexScriptsPropertyNameMapping());
+
+        PersistentBoolean likesMales = script
+                .persistentBoolean(Sexuality.Orientation.LikesMales);
+        assertFalse(likesMales.available());
+        assertEquals(false, likesMales.value());
+
+        script.persistence.storage.put("intro.likemale", "true");
+        assertTrue(likesMales.available());
+        assertEquals(true, likesMales.value());
+
+        likesMales.set(false);
+        assertEquals("false", script.persistence.storage.get("intro.likemale"));
+
+        PersistentBoolean likesFemales = script
+                .persistentBoolean(Sexuality.Orientation.LikesFemales);
+        assertFalse(likesFemales.available());
+        assertEquals(false, likesFemales.value());
+
+        script.persistence.storage.put("intro.likefemale", "true");
+        assertTrue(likesFemales.available());
+        assertEquals(true, likesFemales.value());
+
+        likesFemales.set(false);
+        assertEquals("false",
+                script.persistence.storage.get("intro.likefemale"));
     }
 }

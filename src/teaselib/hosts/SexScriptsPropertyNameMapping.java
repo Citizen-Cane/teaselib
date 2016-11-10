@@ -29,6 +29,8 @@ public class SexScriptsPropertyNameMapping extends PropertyNameMapping {
         String mappedPath = super.mapPath(domain, path, name);
         if (lowerCaseRequired(path)) {
             return mappedPath.toLowerCase();
+        } else if ("Sexuality$Orientation".equals(path)) {
+            return "intro";
         } else {
             return mappedPath;
         }
@@ -39,6 +41,12 @@ public class SexScriptsPropertyNameMapping extends PropertyNameMapping {
         if (Toys.class.getSimpleName().equals(path)
                 && Toys.Ball_Gag.name().equals(name)) {
             return "ballgag";
+        } else if ("Sexuality$Orientation".equals(path)
+                && Sexuality.Orientation.LikesMales.name().equals(name)) {
+            return "likemale";
+        } else if ("Sexuality$Orientation".equals(path)
+                && Sexuality.Orientation.LikesFemales.name().equals(name)) {
+            return "likefemale";
         } else {
             String mappedName = super.mapName(domain, path, name);
             if (lowerCaseRequired(path)) {

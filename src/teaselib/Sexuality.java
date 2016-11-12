@@ -7,7 +7,7 @@ public class Sexuality {
     }
 
     public enum Gender {
-        Mamasculine,
+        Masculine,
         Feminine;
     }
 

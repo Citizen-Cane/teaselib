@@ -233,9 +233,8 @@ public class MotionDetectorJavaCV implements MotionDetector {
                     try {
                         for (Mat frame : videoCaptureDevice) {
                             videoInputTransformation.update(frame);
+                            lockStartStop.lockInterruptibly();
                             try {
-                                lockStartStop.lockInterruptibly();
-                                // update shared items
                                 motionProcessor.update(input);
                             } finally {
                                 lockStartStop.unlock();

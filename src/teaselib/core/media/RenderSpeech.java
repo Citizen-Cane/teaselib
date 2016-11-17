@@ -33,17 +33,21 @@ public abstract class RenderSpeech extends MediaRendererThread {
                 .pauseRecognition();
         startCompleted();
         try {
-            renderSpeech();
-            mandatoryCompleted();
-            teaseLib.sleep(pauseMillis, TimeUnit.MILLISECONDS);
-        } catch (IOException e) {
-            if (!teaseLib.getBoolean(Config.Namespace,
-                    Config.Debug.IgnoreMissingResources)) {
+            try {
+                renderSpeech();
+            } catch (IOException e) {
+                if (!teaseLib.getBoolean(Config.Namespace,
+                        Config.Debug.IgnoreMissingResources)) {
+                }
+            } finally {
+                mandatoryCompleted();
+                resumeSpeechRecognition.run();
             }
+            teaseLib.sleep(pauseMillis, TimeUnit.MILLISECONDS);
         } finally {
             allCompleted();
-            resumeSpeechRecognition.run();
         }
+
         String text = toString();
         logger.info(
                 this.getClass().getSimpleName() + ": " + text + " completed");

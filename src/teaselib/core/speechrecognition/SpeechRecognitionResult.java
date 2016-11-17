@@ -13,7 +13,7 @@ public class SpeechRecognitionResult {
         Normal(0.5),
         High(0.80);
 
-        public static Confidence Default = High;
+        public static Confidence Default = Normal;
 
         /**
          * The default probability of the recognition confidence. The actual

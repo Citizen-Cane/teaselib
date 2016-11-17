@@ -45,8 +45,8 @@ public class EventSource<S, T extends EventArgs> {
     }
 
     public synchronized void run(S sender, T eventArgs) {
-        logger.info(getClass().getSimpleName() + " " + name + ", "
-                + delegates.size() + " listeners " + eventArgs.toString());
+        logger.info(name + ", " + delegates.size() + " listeners "
+                + eventArgs.toString());
         if (initial != null) {
             runDelegate(sender, eventArgs, initial);
         }

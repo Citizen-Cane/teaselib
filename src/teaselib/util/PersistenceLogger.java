@@ -27,41 +27,40 @@ public class PersistenceLogger implements Persistence {
     @Override
     public boolean has(String name) {
         boolean exists = persistence.has(name);
-        logger.info("Persistence: " + name
-                + (exists ? " exists" : " doesn't exist"));
+        logger.info(name + (exists ? " exists" : " doesn't exist"));
         return exists;
     }
 
     @Override
     public String get(String name) {
         String value = persistence.get(name);
-        logger.info("Persistence: get(" + name + ") = " + value);
+        logger.info("get(" + name + ") = " + value);
         return value;
     }
 
     @Override
     public void set(String name, String value) {
-        logger.info("Persistence: set " + name + " = " + value);
+        logger.info("set " + name + " = " + value);
         persistence.set(name, value);
     }
 
     @Override
     public boolean getBoolean(String name) {
         boolean value = persistence.getBoolean(name);
-        logger.info("Persistence: get(" + name + ") = " + value);
+        logger.info("get(" + name + ")  = " + value);
         return value;
     }
 
     @Override
     public void set(String name, boolean value) {
-        logger.info("Persistence: set " + name + " = " + value);
+        logger.info("set " + name + " = " + value);
         persistence.set(name, value);
     }
 
     @Override
     public void clear(String name) {
         if (persistence.has(name)) {
-            logger.info("Persistence: cleared " + name);
+            logger.info("cleared " + name);
         }
         persistence.clear(name);
     }

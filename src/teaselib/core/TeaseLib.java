@@ -209,7 +209,7 @@ public class TeaseLib {
     }
 
     /**
-     * @author someone
+     * @author Citizen-Cane
      * 
      *         Handles elapsed seconds since object creation
      */
@@ -249,14 +249,17 @@ public class TeaseLib {
 
     protected abstract class PersistentValue<T> {
         public final String name;
+        protected T defaultValue;
 
-        protected PersistentValue(String domain, String namespace,
-                String name) {
+        protected PersistentValue(String domain, String namespace, String name,
+                T defaultValue) {
             this.name = makePropertyName(domain, namespace, name);
+            this.defaultValue = defaultValue;
         }
 
-        protected PersistentValue(String domain, Enum<?> name) {
+        protected PersistentValue(String domain, Enum<?> name, T defaultValue) {
             this.name = makePropertyName(domain, name);
+            this.defaultValue = defaultValue;
         }
 
         public void clear() {
@@ -267,7 +270,10 @@ public class TeaseLib {
             return persistence.getNameMapping().has(name, persistence);
         }
 
-        public abstract PersistentValue<T> defaultValue(T value);
+        public PersistentValue<T> defaultValue(T defaultValue) {
+            this.defaultValue = defaultValue;
+            return this;
+        }
 
         public abstract T value();
 
@@ -275,27 +281,24 @@ public class TeaseLib {
     }
 
     /**
-     * @author someone
+     * @author Citizen-Cane
      * 
      *         A persistent boolean value, start value is false
      */
     public class PersistentBoolean extends PersistentValue<Boolean> {
         public final static boolean DefaultValue = false;
 
-        private boolean defaultValue = DefaultValue;
-
         public PersistentBoolean(String domain, String namespace, String name) {
-            super(domain, namespace, name);
+            super(domain, namespace, name, DefaultValue);
         }
 
         public PersistentBoolean(String domain, Enum<?> name) {
-            super(domain, name);
+            super(domain, name, DefaultValue);
         }
 
         @Override
         public PersistentBoolean defaultValue(Boolean defaultValue) {
-            this.defaultValue = defaultValue;
-            return this;
+            return (PersistentBoolean) super.defaultValue(defaultValue);
         }
 
         @Override
@@ -328,27 +331,24 @@ public class TeaseLib {
     }
 
     /**
-     * @author someone
+     * @author Citizen-Cane
      * 
      *         A persistent integer value, start value is 0
      */
     public class PersistentInteger extends PersistentValue<Integer> {
         public final static int DefaultValue = 0;
 
-        private int defaultValue = DefaultValue;
-
         public PersistentInteger(String domain, String namespace, String name) {
-            super(domain, namespace, name);
+            super(domain, namespace, name, DefaultValue);
         }
 
         public PersistentInteger(String domain, Enum<?> name) {
-            super(domain, name);
+            super(domain, name, DefaultValue);
         }
 
         @Override
         public PersistentInteger defaultValue(Integer defaultValue) {
-            this.defaultValue = defaultValue;
-            return this;
+            return (PersistentInteger) super.defaultValue(defaultValue);
         }
 
         @Override
@@ -374,7 +374,7 @@ public class TeaseLib {
     }
 
     /**
-     * @author someone
+     * @author Citizen-Cane
      * 
      *         A persistent long value, default value is 0.
      *         <p>
@@ -383,20 +383,17 @@ public class TeaseLib {
     public class PersistentLong extends PersistentValue<Long> {
         public final static long DefaultValue = 0;
 
-        private long defaultValue = DefaultValue;
-
         public PersistentLong(String domain, String namespace, String name) {
-            super(domain, namespace, name);
+            super(domain, namespace, name, DefaultValue);
         }
 
         public PersistentLong(String domain, Enum<?> name) {
-            super(domain, name);
+            super(domain, name, DefaultValue);
         }
 
         @Override
         public PersistentLong defaultValue(Long defaultValue) {
-            this.defaultValue = defaultValue;
-            return this;
+            return (PersistentLong) super.defaultValue(defaultValue);
         }
 
         @Override
@@ -422,27 +419,24 @@ public class TeaseLib {
     }
 
     /**
-     * @author someone
+     * @author Citizen-Cane
      * 
      *         A persistent float value, start value is 0.0
      */
     public class PersistentFloat extends PersistentValue<Double> {
         public final static double DefaultValue = 0.0;
 
-        private double defaultValue = DefaultValue;
-
         public PersistentFloat(String domain, String namespace, String name) {
-            super(domain, namespace, name);
+            super(domain, namespace, name, DefaultValue);
         }
 
         public PersistentFloat(String domain, Enum<?> name) {
-            super(domain, name);
+            super(domain, name, DefaultValue);
         }
 
         @Override
         public PersistentFloat defaultValue(Double defaultValue) {
-            this.defaultValue = defaultValue;
-            return this;
+            return (PersistentFloat) super.defaultValue(defaultValue);
         }
 
         @Override
@@ -468,27 +462,24 @@ public class TeaseLib {
     }
 
     /**
-     * @author someone
+     * @author Citizen-Cane
      * 
      *         A persistent String value, start value is the empty string
      */
     public class PersistentString extends PersistentValue<String> {
         public final static String DefaultValue = "";
 
-        private String defaultValue = DefaultValue;
-
         public PersistentString(String domain, String namespace, String name) {
-            super(domain, namespace, name);
+            super(domain, namespace, name, DefaultValue);
         }
 
         public PersistentString(String domain, Enum<?> name) {
-            super(domain, name);
+            super(domain, name, DefaultValue);
         }
 
         @Override
         public PersistentString defaultValue(String defaultValue) {
-            this.defaultValue = defaultValue;
-            return this;
+            return (PersistentString) super.defaultValue(defaultValue);
         }
 
         @Override
@@ -509,29 +500,26 @@ public class TeaseLib {
     }
 
     public class PersistentEnum<T extends Enum<?>> extends PersistentValue<T> {
-        private T defaultValue = null;
 
         public PersistentEnum(String domain, Class<T> enumClass) {
             super(domain, ReflectionUtils.classParentName(enumClass),
-                    ReflectionUtils.classSimpleName(enumClass));
-            this.defaultValue = enumClass.getEnumConstants()[0];
+                    ReflectionUtils.classSimpleName(enumClass),
+                    enumClass.getEnumConstants()[0]);
         }
 
         public PersistentEnum(String domain, String namespace, String name,
                 Class<T> enumClass) {
-            super(domain, namespace, name);
-            this.defaultValue = enumClass.getEnumConstants()[0];
+            super(domain, namespace, name, enumClass.getEnumConstants()[0]);
         }
 
         public PersistentEnum(String domain, Enum<?> name, Class<T> enumClass) {
-            super(domain, name.getClass().getName(), DefaultName);
-            this.defaultValue = enumClass.getEnumConstants()[0];
+            super(domain, name.getClass().getName(), DefaultName,
+                    enumClass.getEnumConstants()[0]);
         }
 
         @Override
         public PersistentEnum<T> defaultValue(T defaultValue) {
-            this.defaultValue = defaultValue;
-            return this;
+            return (PersistentEnum<T>) super.defaultValue(defaultValue);
         }
 
         @Override

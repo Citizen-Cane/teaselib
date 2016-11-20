@@ -74,4 +74,10 @@ public class PersistenceLogger implements Persistence {
     public Actor getDominant(Gender gender, Locale locale) {
         return persistence.getDominant(gender, locale);
     }
+
+    @Override
+    public String toString() {
+        return persistence.toString();
+    }
+
 }

@@ -511,21 +511,21 @@ public class TeaseLib {
     public class PersistentEnum<T extends Enum<?>> extends PersistentValue<T> {
         private T defaultValue = null;
 
-        public PersistentEnum(String domain, T defaultValue) {
-            super(domain, ReflectionUtils.classParentName(defaultValue),
-                    ReflectionUtils.classSimpleName(defaultValue));
-            this.defaultValue = defaultValue;
+        public PersistentEnum(String domain, Class<T> enumClass) {
+            super(domain, ReflectionUtils.classParentName(enumClass),
+                    ReflectionUtils.classSimpleName(enumClass));
+            this.defaultValue = enumClass.getEnumConstants()[0];
         }
 
         public PersistentEnum(String domain, String namespace, String name,
-                T defaultValue) {
+                Class<T> enumClass) {
             super(domain, namespace, name);
-            this.defaultValue = defaultValue;
+            this.defaultValue = enumClass.getEnumConstants()[0];
         }
 
-        public PersistentEnum(String domain, Enum<?> name, T defaultValue) {
+        public PersistentEnum(String domain, Enum<?> name, Class<T> enumClass) {
             super(domain, name.getClass().getName(), DefaultName);
-            this.defaultValue = defaultValue;
+            this.defaultValue = enumClass.getEnumConstants()[0];
         }
 
         @Override

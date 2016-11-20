@@ -298,8 +298,9 @@ public class PersistenceTest {
     public void testPersistentEnum() {
         TestScript script = TestScript.getOne();
 
-        PersistentEnum<Fruit> myFruit = script.persistentEnum("myfruit",
-                Fruit.Banana);
+        PersistentEnum<Fruit> myFruit = script
+                .persistentEnum("myfruit", Fruit.class)
+                .defaultValue(Fruit.Banana);
         assertEquals(Fruit.Banana, myFruit.value());
         myFruit.set(Fruit.Apple);
         assertEquals(Fruit.Apple, myFruit.value());

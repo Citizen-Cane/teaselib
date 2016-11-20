@@ -6,6 +6,7 @@ import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 
+import teaselib.Sexuality.Gender;
 import teaselib.core.TeaseLib.PersistentBoolean;
 import teaselib.core.TeaseLib.PersistentEnum;
 import teaselib.hosts.SexScriptsPropertyNameMapping;
@@ -18,7 +19,7 @@ public class GenderAndSexTest {
         TestScript script = TestScript.getOne();
 
         PersistentEnum<Sexuality.Sex> sex = script
-                .persistentEnum(Sexuality.Sex.Male);
+                .persistentEnum(Sexuality.Sex.class);
         assertEquals(Sexuality.Sex.Male, sex.value());
         sex.set(Sexuality.Sex.Female);
         assertEquals(Sexuality.Sex.Female, sex.value());
@@ -27,7 +28,8 @@ public class GenderAndSexTest {
                 script.persistence.storage.get("Sexuality.Sex"));
 
         PersistentEnum<Sexuality.Gender> gender = script
-                .persistentEnum(Sexuality.Gender.Feminine);
+                .persistentEnum(Sexuality.Gender.class)
+                .defaultValue(Gender.Feminine);
         assertEquals(Sexuality.Gender.Feminine, gender.value());
     }
 
@@ -37,7 +39,7 @@ public class GenderAndSexTest {
                 .getOne(new SexScriptsPropertyNameMapping());
 
         PersistentEnum<Sexuality.Sex> sex = script
-                .persistentEnum(Sexuality.Sex.Male);
+                .persistentEnum(Sexuality.Sex.class);
         assertFalse(sex.available());
 
         script.persistence.storage.put("intro.female", "true");

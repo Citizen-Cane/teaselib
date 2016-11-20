@@ -146,8 +146,8 @@ public class ScriptPersistenceTests {
     public void testPersistentEnum() {
         TestScript script = TestScript.getOne();
 
-        PersistentEnum<TestValuesEnumClass> testValue = script.persistentEnum(
-                "test", TestValuesEnumClass.My_Test_Value_item_by_enum);
+        PersistentEnum<TestValuesEnumClass> testValue = script
+                .persistentEnum("test", TestValuesEnumClass.class);
         assertFalse(testValue.available());
 
         for (TestValuesEnumClass value : TestValuesEnumClass.values()) {

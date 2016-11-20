@@ -275,6 +275,10 @@ public class TeaseLib {
             return this;
         }
 
+        public T defaultValue() {
+            return defaultValue;
+        }
+
         public abstract T value();
 
         public abstract PersistentValue<T> set(T value);

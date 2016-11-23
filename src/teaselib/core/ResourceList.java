@@ -20,7 +20,6 @@ import java.util.zip.ZipFile;
  * list resources available from the class path @ *
  */
 public class ResourceList {
-    private static final String PathSeparator = "/";
 
     private final String resourceRoot;
 
@@ -95,12 +94,8 @@ public class ResourceList {
     private void addMatchingEntry(Pattern pattern, Collection<String> retval,
             String resourcePath) {
         if (resourcePath.startsWith(resourceRoot)) {
-            resourcePath = resourcePath.substring(resourceRoot.length());
-            String absoluteResourcePath = resourcePath.startsWith(PathSeparator)
-                    ? resourcePath : PathSeparator + resourcePath;
-            boolean accept = pattern.matcher(absoluteResourcePath).matches();
-            if (accept) {
-                retval.add(absoluteResourcePath);
+            if (pattern.matcher(resourcePath).matches()) {
+                retval.add(resourcePath);
             }
         }
     }

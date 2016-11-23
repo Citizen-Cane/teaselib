@@ -91,7 +91,7 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
         } else if (path.equalsIgnoreCase(Message.NoImage)) {
             displayImage = Message.NoImage;
         } else {
-            displayImage = absoluteResource(path);
+            displayImage = path;
         }
     }
 
@@ -108,14 +108,13 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
 
     public Object setBackgroundSound(String path) {
         RenderBackgroundSound audioHandle = new RenderBackgroundSound(resources,
-                absoluteResource(path), teaseLib);
+                path, teaseLib);
         queueBackgropundRenderer(audioHandle);
         return audioHandle;
     }
 
     public Object setSound(String path) {
-        RenderSound soundRenderer = new RenderSound(resources,
-                absoluteResource(path), teaseLib);
+        RenderSound soundRenderer = new RenderSound(resources, path, teaseLib);
         queueRenderer(soundRenderer);
         Object audioHandle = soundRenderer;
         return audioHandle;
@@ -543,8 +542,8 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
      * @return A list of resources that matches the wildcard pattern.
      */
     public List<String> resources(String wildcardPattern) {
-        Pattern pattern = WildcardPattern
-                .compile(absoluteResource(wildcardPattern));
+        Pattern pattern = WildcardPattern.compile(
+                resources.getClassLoaderAbsoluteResourcePath(wildcardPattern));
         Collection<String> items = resources.resources(pattern);
         final int size = items.size();
         if (size > 0) {

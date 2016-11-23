@@ -224,10 +224,10 @@ public abstract class TeaseScriptBase {
                 } else if (part.value == Message.NoImage) {
                     imageType = part.value;
                 } else {
-                    imageType = nextImage = absoluteResource(part.value);
+                    imageType = nextImage = part.value;
                 }
             } else if (Message.Type.FileTypes.contains(part.type)) {
-                parsedMessage.add(part.type, absoluteResource(part.value));
+                parsedMessage.add(part.type, part.value);
             } else if (part.type == Message.Type.Keyword) {
                 if (part.value == Message.ActorImage) {
                     imageType = part.value;
@@ -279,53 +279,6 @@ public abstract class TeaseScriptBase {
         return parsedMessage;
 
     }
-
-    /**
-     * Return the absolute resource path of an resource. If the path is absolute
-     * already, {@code path} is returned.
-     * 
-     * @param path
-     *            The path to return the absolute resource path for.
-     * @return The absolute resource path.
-     */
-    public String absoluteResource(String path) {
-        if (path.startsWith("/")) {
-            return path;
-        } else {
-            String folder = getClass().getPackage().getName().replace(".", "/")
-                    + "/";
-            if (path.startsWith(folder)) {
-                return path;
-            } else {
-                return "/" + folder + path;
-            }
-        }
-    }
-
-    // // TODO must be part of preprocessMessage
-    // private String getActorImage(Set<String> imageHints) {
-    // final String path;
-    // Images images = message.actor.images;
-    // if (images != null) {
-    // String[] hintArray = new String[imageHints.size()];
-    // hintArray = imageHints.toArray(hintArray);
-    // images.hint(hintArray);
-    // path = images.next();
-    // if (path == null && !teaseLib.getBoolean(Config.Namespace,
-    // Config.Debug.IgnoreMissingResources)) {
-    // logger.info("Actor '" + message.actor.name
-    // + "': images missing - please initialize");
-    // }
-    // } else if (!teaseLib.getBoolean(Config.Namespace,
-    // Config.Debug.IgnoreMissingResources)) {
-    // logger.info("Actor '" + message.actor.name
-    // + "': images missing - please initialize");
-    // path = null;
-    // } else {
-    // path = null;
-    // }
-    // return path;
-    // }
 
     protected void queueRenderers(List<MediaRenderer> renderers) {
         synchronized (queuedRenderers) {

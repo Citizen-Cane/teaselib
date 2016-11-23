@@ -210,18 +210,36 @@ public class ResourceLoader {
     }
 
     public InputStream getResource(String resource) throws IOException {
-        String absoluteResource = resourceRoot
-                + classLoaderCompatibleResourcePath(resource);
-        logger.info("Resource: '"
-                + classLoaderCompatibleResourcePath(absoluteResource) + "'");
+        final String classloaderCompatibleResourcePath = getClassLoaderAbsoluteResourcePath(
+                resource);
+        logger.info("Resource: '" + classloaderCompatibleResourcePath + "'");
         InputStream inputStream = classLoader
-                .getResourceAsStream(classLoaderAbsolutePath(
-                        classLoaderCompatibleResourcePath(absoluteResource)));
+                .getResourceAsStream(classloaderCompatibleResourcePath);
         if (inputStream == null) {
-            throw new IOException(
-                    classLoaderCompatibleResourcePath(absoluteResource));
+            throw new IOException(classloaderCompatibleResourcePath);
         }
         return inputStream;
+    }
+
+    public String getClassLoaderAbsoluteResourcePath(String resource) {
+        final String classloaderCompatibleResourcePath;
+        if (isAbsoluteResourcePath(resource)) {
+            classloaderCompatibleResourcePath = classLoaderCompatibleResourcePath(
+                    resource);
+        } else if (isNearlyAbsoluteResourcePath(resource)) {
+            classloaderCompatibleResourcePath = resource;
+        } else {
+            classloaderCompatibleResourcePath = resourceRoot + resource;
+        }
+        return classloaderCompatibleResourcePath;
+    }
+
+    private boolean isNearlyAbsoluteResourcePath(String resource) {
+        return resource.startsWith(resourceRoot);
+    }
+
+    private static boolean isAbsoluteResourcePath(String resource) {
+        return resource.startsWith("/");
     }
 
     /**
@@ -241,14 +259,6 @@ public class ResourceLoader {
             resources.addAll(matches);
         }
         return resources;
-    }
-
-    private static String classLoaderAbsolutePath(String path) {
-        if (classLoaderCompatibleResourcePath(path).startsWith("/")) {
-            return classLoaderCompatibleResourcePath(path).substring(1);
-        } else {
-            return classLoaderCompatibleResourcePath(path);
-        }
     }
 
     /**
@@ -280,8 +290,8 @@ public class ResourceLoader {
     public File unpackEnclosingFolder(String path) throws IOException {
         File match = null;
         String parentPath = path.substring(0, path.lastIndexOf("/"));
-        Collection<String> folder = resources(
-                Pattern.compile(parentPath + "/.*"));
+        Collection<String> folder = resources(Pattern.compile(
+                getClassLoaderAbsoluteResourcePath(parentPath + "/.*")));
         for (String file : folder) {
             File unpacked = unpackToFile(
                     classLoaderCompatibleResourcePath(file));

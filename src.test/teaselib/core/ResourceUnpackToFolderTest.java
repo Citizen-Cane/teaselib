@@ -26,8 +26,6 @@ public class ResourceUnpackToFolderTest {
     @Test
     public void testUnpackFolderAbsolute() throws IOException {
         TestScript script = TestScript.getOne();
-        script.resources
-                .addAssets("/teaselib/core/UnpackResourcesTestData.zip");
 
         String resourcesFolder = "/" + "UnpackResourcesTestData" + "/";
         testUnpackResourcesToFolder(script, resourcesFolder);

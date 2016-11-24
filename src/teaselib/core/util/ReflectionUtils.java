@@ -28,4 +28,12 @@ public final class ReflectionUtils {
     public static String normalizeClassName(String className) {
         return className.replace("$", ".");
     }
+
+    public static String asAbsolutePath(String className) {
+        return "/" + className.replace(".", "/") + "/";
+    }
+
+    public static String asClassLoaderCompatiblePath(String className) {
+        return className.replace(".", "/") + "/";
+    }
 }

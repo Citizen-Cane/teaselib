@@ -40,8 +40,8 @@ public class TeaseScriptResourceLoadingTest {
         TestScript script = TestScript
                 .getOne(TeaseScriptResourceLoadingTest.class);
 
-        String name = "/" + ReflectionUtils.classParentName(this.getClass())
-                .replace(".", "/") + "/" + RESOURCE_1;
+        String name = ReflectionUtils.asAbsolutePath(
+                ReflectionUtils.classParentName(this.getClass())) + RESOURCE_1;
         loadResource(script, name);
     }
 
@@ -133,4 +133,24 @@ public class TeaseScriptResourceLoadingTest {
             res1.delete();
         }
     }
+
+    @Test
+    public void testThatPathsAreCompatibleBetweenDifferentResourceLoaders() {
+        TestScript script1 = TestScript
+                .getOne(TeaseScriptResourceLoadingTest.class);
+        TestScript script2 = TestScript.getOne();
+
+        assertFalse(script1.resources.equals(script2.resources));
+        assertFalse(script1.resources.getAssetPath("")
+                .equals(script2.resources.getAssetPath("")));
+
+        Collection<String> itemsFromRelative = script1
+                .resources("util/Foo*.txt");
+        Collection<String> itemsFromAbsolute = script2
+                .resources("/teaselib/core/util/Foo*.txt");
+
+        assertEquals(3, itemsFromRelative.size());
+        assertEquals(itemsFromRelative, itemsFromAbsolute);
+    }
+
 }

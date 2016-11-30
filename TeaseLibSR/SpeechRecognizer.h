@@ -38,6 +38,7 @@ private:
 	HRESULT speechRecognitionInitInterests();
 
 	std::wstring locale;
+	LANGID langID;
 
 	CComPtr<ISpRecognizer> cpRecognizer;
 	CComPtr<ISpRecoContext> cpContext;
@@ -47,5 +48,7 @@ private:
 	jobject gjthis;
 	jobject gjevents;
 	JNIEnv* threadEnv;
+
+	HRESULT resetGrammar();
 };
 

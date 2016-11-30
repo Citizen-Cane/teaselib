@@ -25,6 +25,7 @@ SpeechRecognizer::SpeechRecognizer(JNIEnv *env, jobject jthis, jobject jevents, 
     : NativeObject(env, jthis)
     , speechRecognitionThread()
     , locale(locale)
+	, langID(0x0000)
     , hExitEvent(INVALID_HANDLE_VALUE)
     , gjthis(env->NewGlobalRef(jthis))
     , gjevents(env->NewGlobalRef(jevents))
@@ -96,31 +97,40 @@ HRESULT SpeechRecognizer::speechRecognitionInitContext() {
         throw new NativeException(FAILED(hr) ? hr : E_INVALIDARG, (std::wstring(L"Unsupported language or region '") + locale +
                                   L"'. Please install the corresponding Windows language pack.").c_str());
     }
-    // Create a recognizer and immediately set its state to inactive
-    if (SUCCEEDED(hr)) {
-        hr = cpRecognizer.CoCreateInstance(CLSID_SpInprocRecognizer);
-        assert(SUCCEEDED(hr));
-        if (SUCCEEDED(hr)) {
-            hr = cpRecognizer->SetRecognizer(cpRecognizerToken);
-            assert(SUCCEEDED(hr));
-            if (SUCCEEDED(hr)) {
-                hr = cpRecognizer->SetRecoState(SPRST_INACTIVE);
-                assert(SUCCEEDED(hr));
-                // Create a new recognition context from the recognizer
-                if (SUCCEEDED(hr)) {
-                    hr = cpRecognizer->CreateRecoContext(&cpContext);
-                    assert(SUCCEEDED(hr));
-                    if (SUCCEEDED(hr)) {
-                        HRESULT hr = cpContext->SetContextState(SPCS_DISABLED);
-                        assert(SUCCEEDED(hr));
-                        if (SUCCEEDED(hr)) {
-                            hr = cpRecognizer->SetRecoState(SPRST_ACTIVE);
-                        }
-                    }
-                }
-            }
-        }
-    }
+	if (SUCCEEDED(hr)) {
+		// Get the lang id in order to be able reset the grammar
+		hr = SpGetLanguageFromToken(cpRecognizerToken, &langID);
+		assert(SUCCEEDED(hr));
+		if (SUCCEEDED(hr)) {
+			// Create a recognizer and immediately set its state to inactive
+			hr = cpRecognizer.CoCreateInstance(CLSID_SpInprocRecognizer);
+			assert(SUCCEEDED(hr));
+			if (SUCCEEDED(hr)) {
+				hr = cpRecognizer->SetRecognizer(cpRecognizerToken);
+				assert(SUCCEEDED(hr));
+				if (SUCCEEDED(hr)) {
+					hr = cpRecognizer->SetRecoState(SPRST_INACTIVE);
+					assert(SUCCEEDED(hr));
+					// Create a new recognition context from the recognizer
+					if (SUCCEEDED(hr)) {
+						hr = cpRecognizer->CreateRecoContext(&cpContext);
+						assert(SUCCEEDED(hr));
+						if (SUCCEEDED(hr)) {
+							HRESULT hr = cpContext->SetContextState(SPCS_DISABLED);
+							assert(SUCCEEDED(hr));
+							if (SUCCEEDED(hr)) {
+								hr = cpRecognizer->SetRecoState(SPRST_ACTIVE);
+								if (SUCCEEDED(hr)) {
+									hr = cpContext->CreateGrammar(0, &cpGrammar);
+									assert(SUCCEEDED(hr));
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
     return hr;
 }
 
@@ -258,9 +268,7 @@ void SpeechRecognizer::setChoices(const Choices& choices) {
     if (!cpContext) {
         throw new COMException(E_UNEXPECTED);
     }
-    cpGrammar.Release();
-    HRESULT hr = cpContext->CreateGrammar(0, &cpGrammar);
-    assert(SUCCEEDED(hr));
+	HRESULT hr = resetGrammar();
     if (SUCCEEDED(hr)) {
         // SPSTATEHANDLE hRule;
         // const wchar_t* ruleName = L"Choices";
@@ -338,9 +346,24 @@ void SpeechRecognizer::stopRecognition() {
     if (!cpContext) {
         throw new COMException(E_UNEXPECTED);
     }
+
     HRESULT hr = cpContext->SetContextState(SPCS_DISABLED);
     assert(SUCCEEDED(hr));
     if (FAILED(hr)) {
         throw new COMException(hr);
     }
+
+	hr = resetGrammar();
+	if(FAILED(hr)) {
+		throw new COMException(hr);
+	}
+}
+
+HRESULT SpeechRecognizer::resetGrammar() {
+	// Surprisingly just releasing the grammar may take a lot of time,
+	// but the grammar can also be reset, using the langID of the recognizer token
+	assert(cpGrammar!= NULL);
+	HRESULT hr = cpGrammar->ResetGrammar(langID);
+	assert(SUCCEEDED(hr));
+	return hr;
 }

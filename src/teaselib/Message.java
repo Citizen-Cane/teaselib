@@ -1,5 +1,6 @@
 package teaselib;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
@@ -300,8 +301,7 @@ public class Message {
     }
 
     public static boolean isFile(Type t) {
-        return t == Type.Image || t == Type.BackgroundSound || t == Type.Sound
-                || t == Type.Speech || t == Type.DesktopItem;
+        return (Type.FileTypes.contains(t));
     }
 
     public static boolean isImage(String m) {
@@ -599,5 +599,15 @@ public class Message {
         this.parts.clear();
         this.parts.addAll(newParts);
         return this;
+    }
+
+    public List<String> resources() {
+        List<String> resources = new ArrayList<String>();
+        for (Part part : parts) {
+            if (isFile(part.type)) {
+                resources.add(part.value);
+            }
+        }
+        return resources;
     }
 }

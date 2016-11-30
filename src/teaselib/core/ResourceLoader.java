@@ -49,7 +49,8 @@ public class ResourceLoader {
      *            The resource path under which to start looking for resources.
      */
     public ResourceLoader(Class<?> mainScript, String resourceRoot) {
-        this.resourceRoot = classLoaderCompatibleResourcePath(resourceRoot);
+        this.resourceRoot = classLoaderCompatibleResourcePath(
+                pathToFolder(resourceRoot));
         String systemProperty = System.getProperty(
                 Config.Namespace + "." + Config.Assets.toString(), "");
         if (classLoaderCompatibleResourcePath(systemProperty).isEmpty()) {
@@ -71,6 +72,13 @@ public class ResourceLoader {
         }
     }
 
+    private static String pathToFolder(String path) {
+        if (path.endsWith("/"))
+            return path;
+        else
+            return path + "/";
+    }
+
     private static String classLoaderCompatibleResourcePath(String path) {
         if (path.startsWith("/")) {
             return path.substring(1);
@@ -80,9 +88,7 @@ public class ResourceLoader {
     }
 
     private static String getPackagePath(Class<?> mainScript) {
-        String packagePath = "/"
-                + mainScript.getPackage().getName().replace(".", "/") + "/";
-        return classLoaderCompatibleResourcePath(packagePath);
+        return mainScript.getPackage().getName().replace(".", "/") + "/";
     }
 
     private static File getProjectPath(Class<?> mainScript) {

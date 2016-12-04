@@ -206,8 +206,12 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
      *            The prompts to be displayed in the user interface
      * @return The choice object that has been selected by the user.
      */
-    public final String reply(final List<String> choices) {
+    public final String reply(List<String> choices) {
         return super.showChoices(null, choices);
+    }
+
+    public final String reply(Confidence confidence, List<String> choices) {
+        return super.showChoices(null, confidence, choices);
     }
 
     /**
@@ -237,9 +241,8 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
      *         {@link TeaseScript#Timeout} if the script function completes.
      */
     public final String reply(ScriptFunction scriptFunction,
-            final List<String> choices) {
-        String chosen = super.showChoices(scriptFunction, choices);
-        return chosen;
+            List<String> choices) {
+        return super.showChoices(scriptFunction, choices);
     }
 
     /**
@@ -334,7 +337,7 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
      *            reached
      * @return A script function that accomplishes the described behavior.
      */
-    public ScriptFunction timeout(final long seconds,
+    public ScriptFunction timeout(long seconds,
             final SpeechRecognition.TimeoutBehavior timoutBehavior) {
         return new SpeechRecognitionAwareTimeoutScriptFunction(seconds,
                 Relation.Autonomous) {
@@ -364,7 +367,7 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
      *            reached
      * @return A script function that accomplishes the described behavior.
      */
-    public ScriptFunction timeoutWithConfirmation(final long seconds,
+    public ScriptFunction timeoutWithConfirmation(long seconds,
             final SpeechRecognition.TimeoutBehavior timoutBehavior) {
         return new SpeechRecognitionAwareTimeoutScriptFunction(seconds,
                 Relation.Confirmation) {
@@ -393,7 +396,7 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
      *            reached
      * @return A script function that accomplishes the described behavior.
      */
-    public ScriptFunction timeoutWithAutoConfirmation(final long seconds,
+    public ScriptFunction timeoutWithAutoConfirmation(long seconds,
             final SpeechRecognition.TimeoutBehavior timoutBehavior) {
         return new SpeechRecognitionAwareTimeoutScriptFunction(seconds,
                 Relation.Confirmation) {
@@ -470,7 +473,7 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
      */
     public final String reply(String choice, Confidence recognitionConfidence) {
         List<String> choices = buildChoicesFromArray(choice);
-        return showChoices(null, choices, recognitionConfidence);
+        return showChoices(null, recognitionConfidence, choices);
     }
 
     /**
@@ -478,19 +481,19 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
      * parts of all renderers have been completed. This means especially that
      * all text has been displayed and spoken.
      * 
+     * @param recognitionConfidence
+     *            The confidence threshold used for speech recognition.
      * @param choice
      *            The first prompt to be displayed by the user interface.
      * @param more
      *            More prompts to be displayed by the user interface
-     * @param recognitionConfidence
-     *            The confidence threshold used for speech recognition.
+     * 
      * @return The choice object that has been selected by the user, or
      *         {@link TeaseScript#Timeout} if the script function completes.
      */
-    public final String reply(ScriptFunction scriptFunction, String choice,
-            Confidence recognitionConfidence) {
-        List<String> choices = buildChoicesFromArray(choice);
-        return showChoices(scriptFunction, choices, recognitionConfidence);
+    public final String reply(ScriptFunction scriptFunction,
+            Confidence recognitionConfidence, List<String> choices) {
+        return showChoices(scriptFunction, recognitionConfidence, choices);
     }
 
     /**

@@ -21,10 +21,10 @@ public class SpeechRecognition {
     private static final Logger logger = LoggerFactory
             .getLogger(SpeechRecognition.class);
 
-    @SuppressWarnings("deprecation")
-    static final String EnableSpeechHypothesisHandler = SpeechRecognition.class
+    static final String EnableSpeechHypothesisHandlerGlobally = SpeechRecognition.class
             .getPackage().getName() + ".Enable"
-            + SpeechRecognitionHypothesisEventHandler.class.getSimpleName();
+            + SpeechRecognitionHypothesisEventHandler.class.getSimpleName()
+            + "Globally";
 
     /**
      * How to handle speech recognition and timeout in script functions.
@@ -77,7 +77,6 @@ public class SpeechRecognition {
     public final SpeechRecognitionEvents<SpeechRecognitionImplementation> events;
 
     private final Locale locale;
-    @SuppressWarnings("deprecation")
     private final SpeechRecognitionHypothesisEventHandler hypothesisEventHandler;
     private final DelegateThread delegateThread = new DelegateThread(
             "Text-To-Speech dispatcher thread");
@@ -112,6 +111,10 @@ public class SpeechRecognition {
             unlockSpeechRecognitionInProgressSyncObject();
         }
     };
+
+    private Confidence recognitionConfidence;
+
+    private List<String> choices;
 
     private void lockSpeechRecognitionInProgressSyncObject() {
         Delegate delegate = new Delegate() {
@@ -162,7 +165,6 @@ public class SpeechRecognition {
         }
     }
 
-    @SuppressWarnings("deprecation")
     public SpeechRecognition(Locale locale) {
         // First add the progress events, because we don't want to get events
         // consumed before setting the in-progress state
@@ -192,17 +194,17 @@ public class SpeechRecognition {
         } catch (Throwable t) {
             logger.error(t.getMessage(), t);
         }
-        String enableSpeechHypothesisHandler = System
-                .getProperty(EnableSpeechHypothesisHandler, "false");
-        if (Boolean.toString(true)
-                .compareToIgnoreCase(enableSpeechHypothesisHandler) == 0) {
-            // Finally add the hypothesis handler, as it may consume the
-            // RecognitionRejected-event
-            this.hypothesisEventHandler = new SpeechRecognitionHypothesisEventHandler(
-                    this);
-        } else {
-            this.hypothesisEventHandler = null;
-        }
+        // add the hypothesis handler now, as it may consume the
+        // RecognitionRejected-event and fire an recognized event instead,
+        // and subsequent listeners should react to these events
+        hypothesisEventHandler = new SpeechRecognitionHypothesisEventHandler(
+                this);
+        hypothesisEventHandler.addEventListeners();
+    }
+
+    private static boolean enableSpeechHypothesisHandlerGlobally() {
+        return Boolean.toString(true).compareToIgnoreCase(System.getProperty(
+                EnableSpeechHypothesisHandlerGlobally, "false")) == 0;
     }
 
     /**
@@ -212,32 +214,27 @@ public class SpeechRecognition {
         return sr != null;
     }
 
-    @SuppressWarnings("deprecation")
-    public void startRecognition(final List<String> choices,
+    public void startRecognition(List<String> choices,
             Confidence recognitionConfidence) {
-        if (hypothesisEventHandler != null) {
-            hypothesisEventHandler.setChoices(choices);
-            hypothesisEventHandler.setConfidence(recognitionConfidence);
-        }
+        this.choices = choices;
+        this.recognitionConfidence = recognitionConfidence;
         if (sr != null) {
-            Delegate delegate = new Delegate() {
+            Delegate startRecognition = new Delegate() {
                 @Override
                 public void run() {
-                    SpeechRecognition.this.speechRecognitionActive = true;
-                    sr.setChoices(choices);
-                    // Don't try to recognize speech during speech synthesis or
-                    // other speech related audio output
-                    synchronized (TextToSpeech.AudioOutput) {
-                        sr.startRecognition();
-                        logger.info("Speech recognition started");
-                    }
+                    setupAndStartSR(SpeechRecognition.this.choices);
+                    logger.info("Speech recognition started");
                 }
+
             };
             try {
-                delegateThread.run(delegate);
+                delegateThread.run(startRecognition);
             } catch (InterruptedException e) {
+                hypothesisEventHandler.enable(false);
+                SpeechRecognition.this.speechRecognitionActive = false;
                 throw new ScriptInterruptedException();
             } catch (Throwable t) {
+                hypothesisEventHandler.enable(false);
                 SpeechRecognition.this.speechRecognitionActive = false;
                 logger.error(t.getMessage(), t);
             }
@@ -248,23 +245,21 @@ public class SpeechRecognition {
 
     public void resumeRecognition() {
         if (sr != null) {
-            Delegate delegate = new Delegate() {
+            Delegate resumeRecognition = new Delegate() {
                 @Override
                 public void run() {
-                    SpeechRecognition.this.speechRecognitionActive = true;
-                    // Don't try to recognize speech during speech synthesis or
-                    // other speech related audio output
-                    synchronized (TextToSpeech.AudioOutput) {
-                        sr.startRecognition();
-                        logger.info("Speech recognition resumed");
-                    }
+                    setupAndStartSR(choices);
+                    logger.info("Speech recognition resumed");
                 }
             };
             try {
-                delegateThread.run(delegate);
+                delegateThread.run(resumeRecognition);
             } catch (InterruptedException e) {
+                hypothesisEventHandler.enable(false);
+                SpeechRecognition.this.speechRecognitionActive = false;
                 throw new ScriptInterruptedException();
             } catch (Throwable t) {
+                hypothesisEventHandler.enable(false);
                 SpeechRecognition.this.speechRecognitionActive = false;
                 logger.error(t.getMessage(), t);
             }
@@ -275,21 +270,20 @@ public class SpeechRecognition {
 
     public void stopRecognition() {
         if (sr != null) {
-            Delegate delegate = new Delegate() {
+            Delegate stopRecognition = new Delegate() {
                 @Override
                 public void run() {
                     try {
+                        hypothesisEventHandler.enable(false);
                         sr.stopRecognition();
                     } finally {
-                        if (SpeechRecognition.this.speechRecognitionActive) {
-                            SpeechRecognition.this.speechRecognitionActive = false;
-                        }
+                        SpeechRecognition.this.speechRecognitionActive = false;
                         logger.info("Speech recognition stopped");
                     }
                 }
             };
             try {
-                delegateThread.run(delegate);
+                delegateThread.run(stopRecognition);
             } catch (InterruptedException e) {
                 throw new ScriptInterruptedException();
             } catch (Throwable t) {
@@ -301,6 +295,25 @@ public class SpeechRecognition {
             }
         } else {
             recognizerNotInitialized();
+        }
+    }
+
+    private void setupAndStartSR(final List<String> choices) {
+        if (enableSpeechHypothesisHandlerGlobally()
+                || SpeechRecognition.this.recognitionConfidence == Confidence.Low) {
+            hypothesisEventHandler.setChoices(choices);
+            hypothesisEventHandler.setConfidence(
+                    SpeechRecognition.this.recognitionConfidence);
+            hypothesisEventHandler.enable(true);
+        } else {
+            hypothesisEventHandler.enable(false);
+        }
+        sr.setChoices(SpeechRecognition.this.choices);
+        SpeechRecognition.this.speechRecognitionActive = true;
+        // Don't try to recognize speech during speech synthesis or
+        // other speech related audio output
+        synchronized (TextToSpeech.AudioOutput) {
+            sr.startRecognition();
         }
     }
 

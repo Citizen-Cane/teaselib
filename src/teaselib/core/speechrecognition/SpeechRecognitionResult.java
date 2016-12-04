@@ -9,9 +9,15 @@ public class SpeechRecognitionResult {
      *
      */
     public enum Confidence {
-        Low(0.0),
+        Noise(0.0),
+        Low(0.25),
         Normal(0.5),
         High(0.80);
+
+        // TODO automatically choose default confidence for script functions
+        // - high for script functions
+        // - low for PCM [] replies
+        // - normal for .pause and .yesno statements
 
         public static Confidence Default = Normal;
 
@@ -24,6 +30,32 @@ public class SpeechRecognitionResult {
 
         Confidence(double propability) {
             this.propability = propability;
+        }
+
+        public Confidence lower() {
+            return lower(this);
+        }
+
+        public Confidence higher() {
+            return higher(this);
+        }
+
+        public static Confidence lower(Confidence confidence) {
+            if (confidence == High)
+                return Normal;
+            else if (confidence == Normal)
+                return Low;
+            else
+                return confidence;
+        }
+
+        public static Confidence higher(Confidence confidence) {
+            if (confidence == Low)
+                return Normal;
+            else if (confidence == Normal)
+                return High;
+            else
+                return confidence;
         }
     }
 

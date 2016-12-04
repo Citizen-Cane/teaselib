@@ -1,6 +1,3 @@
-/**
- * 
- */
 package teaselib.core.speechrecognition;
 
 import java.util.ArrayList;
@@ -22,11 +19,14 @@ import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
  * <p>
  * Might still be useful for headphones with integrated microphones, but this
  * claim has yet to be tested.
+ * <p>
+ * Well, there's one use for un-exactly recognizing phrases: when we don't care
+ * about the exact phrase. This is how it is used by the speech recognizer, to
+ * fetch results with low confidence for long prompts.
  * 
- * @author someone
+ * @author Citizen-Cane
  *
  */
-@Deprecated
 public class SpeechRecognitionHypothesisEventHandler {
     private static final Logger logger = LoggerFactory
             .getLogger(SpeechRecognitionHypothesisEventHandler.class);
@@ -35,17 +35,13 @@ public class SpeechRecognitionHypothesisEventHandler {
      * sentences or single word recognitions are prone to error. In fact, for
      * single word phrases, the recognizer may recognize anything.
      */
-    final static int HypothesisMinimumNumberOfWordsDefault = 99;
-    // TODO set confidence for script functions
-    // - high for script functions
-    // - low for PCM [] replies
-    // - normal for .pause and .yesno statements
+    private final static int HypothesisMinimumNumberOfWordsDefault = 6;
 
     /**
      * This adjusts the sensibility of the hypothesis rating. The better the
      * microphone, the higher this value should be.
      */
-    final static double HypothesisMinimumAccumulatedWeight = 1.0;
+    private final static double HypothesisMinimumAccumulatedWeight = 1.0;
 
     private final SpeechRecognition speechRecognizer;
     private final Event<SpeechRecognitionImplementation, SpeechRecognitionStartedEventArgs> recognitionStarted;
@@ -56,8 +52,9 @@ public class SpeechRecognitionHypothesisEventHandler {
     private String[] hypothesisProgress;
 
     private List<String> choices;
-    private int hypothesisMinimumNumberOfWordsForHypothesisRecognition = HypothesisMinimumNumberOfWordsDefault;
+    private int minimumNumberOfWordsForHypothesisRecognition = HypothesisMinimumNumberOfWordsDefault;
     private Confidence recognitionConfidence = Confidence.Default;
+    private boolean enabled = false;
 
     public SpeechRecognitionHypothesisEventHandler(
             SpeechRecognition speechRecognizer) {
@@ -66,19 +63,34 @@ public class SpeechRecognitionHypothesisEventHandler {
         this.recognitionStarted = recognitionStarted();
         this.speechDetected = speechDetected();
         this.recognitionRejected = recognitionRejected();
+    }
+
+    public void addEventListeners() {
         speechRecognizer.events.recognitionStarted.add(recognitionStarted);
         speechRecognizer.events.speechDetected.add(speechDetected);
         speechRecognizer.events.recognitionRejected.add(recognitionRejected);
     }
 
+    public void removeEventListeners() {
+        speechRecognizer.events.recognitionStarted.add(recognitionStarted);
+        speechRecognizer.events.speechDetected.add(speechDetected);
+        speechRecognizer.events.recognitionRejected.add(recognitionRejected);
+    }
+
+    void enable(boolean enable) {
+        this.enabled = enable;
+    }
+
     public void setChoices(List<String> choices) {
         this.choices = choices;
-        this.hypothesisMinimumNumberOfWordsForHypothesisRecognition = getHypothesisMinimumNumberOfWords(
-                choices);
     }
 
     public void setConfidence(Confidence recognitionConfidence) {
         this.recognitionConfidence = recognitionConfidence;
+    }
+
+    public Confidence getConfidence() {
+        return recognitionConfidence;
     }
 
     private Event<SpeechRecognitionImplementation, SpeechRecognitionStartedEventArgs> recognitionStarted() {
@@ -86,6 +98,8 @@ public class SpeechRecognitionHypothesisEventHandler {
             @Override
             public void run(SpeechRecognitionImplementation sender,
                     SpeechRecognitionStartedEventArgs eventArgs) {
+                if (!enabled)
+                    return;
                 final int size = choices.size();
                 hypothesisAccumulatedWeights = new double[size];
                 hypothesisProgress = new String[size];
@@ -102,15 +116,17 @@ public class SpeechRecognitionHypothesisEventHandler {
             @Override
             public void run(SpeechRecognitionImplementation sender,
                     SpeechRecognizedEventArgs eventArgs) {
+                if (!enabled)
+                    return;
                 // The Microsoft SAPI based SR is supposed to return
                 // multiple results, however usually only one entry is
                 // returned when hypothesizing a recognition result and
                 // multiple choices start with the same words
-                final SpeechRecognitionResult[] recognitionResults = eventArgs.result;
+                SpeechRecognitionResult[] recognitionResults = eventArgs.result;
                 if (recognitionResults.length == 1) {
                     // Manually search for all choices that start with the
                     // hypothesis, and add the probability weight for each
-                    final SpeechRecognitionResult hypothesis = eventArgs.result[0];
+                    SpeechRecognitionResult hypothesis = eventArgs.result[0];
                     String hypothesisText = hypothesis.text;
                     final double propabilityWeight = propabilityWeight(
                             hypothesis);
@@ -125,9 +141,9 @@ public class SpeechRecognitionHypothesisEventHandler {
                     for (SpeechRecognitionResult hypothesis : recognitionResults) {
                         // The first word(s) are usually incorrect,
                         // whereas later hypothesis usually match better
-                        final double propabilityWeight = propabilityWeight(
+                        double propabilityWeight = propabilityWeight(
                                 hypothesis);
-                        final int index = hypothesis.index;
+                        int index = hypothesis.index;
                         updateHypothesisProgress(index, hypothesis.text,
                                 propabilityWeight);
                     }
@@ -135,7 +151,7 @@ public class SpeechRecognitionHypothesisEventHandler {
             }
 
             private void updateHypothesisProgress(int index,
-                    final String hypothesisText, double propabilityWeight) {
+                    String hypothesisText, double propabilityWeight) {
                 // Only update if the hypothesis is progressing,
                 // e.g. sort out detection duplicates
                 if (hypothesisText.startsWith(hypothesisProgress[index])
@@ -159,7 +175,7 @@ public class SpeechRecognitionHypothesisEventHandler {
     class HypothesisResult {
         private final double maxValue;
         private final int choiceWithMaxProbabilityIndex;
-        final List<String> acceptedChoices = new ArrayList<String>();
+        List<String> acceptedChoices = new ArrayList<String>();
 
         HypothesisResult(double[] hypothesisAccumulatedWeights) {
             double maxValue = 0;
@@ -187,7 +203,7 @@ public class SpeechRecognitionHypothesisEventHandler {
         }
 
         boolean recognizedAs(String choice, Confidence confidence) {
-            final List<Confidence> confidences = Arrays.asList(Confidence.High,
+            List<Confidence> confidences = Arrays.asList(Confidence.High,
                     Confidence.Normal, Confidence.Low);
             int wordCount = wordCount(choice);
             for (Confidence desiredConfidence : confidences) {
@@ -206,15 +222,22 @@ public class SpeechRecognitionHypothesisEventHandler {
         }
 
         private boolean isRecognizedAs(String hypothesisProgress,
-                Confidence confidence, int confidenceBonus, int wordCount) {
-            int minimumNumberOfWordsForHypothesisRecognition = hypothesisMinimumNumberOfWordsForHypothesisRecognition
-                    - confidenceBonus;
+                Confidence confidence,
+                @SuppressWarnings("unused") int confidenceBonus,
+                int wordCount) {
+            int minimumNumberOfWordsForHypothesisRecognition = getHypothesisMinimumNumberOfWords(
+                    acceptedChoices);
+            // minimumNumberOfWordsForHypothesisRecognition -= confidenceBonus;
             // prompts with few words need a higher weight to be accepted
             double hypothesisAccumulatedWeight = wordCount >= minimumNumberOfWordsForHypothesisRecognition
                     ? HypothesisMinimumAccumulatedWeight
                     : HypothesisMinimumAccumulatedWeight
                             * (minimumNumberOfWordsForHypothesisRecognition
                                     - wordCount + 1);
+            // TODO accumulated weight should be divided by the number of
+            // hypothesized words
+            // to get a value in [0...1] -> would be much clearer
+            // -> commit first, then refactor
             boolean choiceWeightAccepted = maxValue >= hypothesisAccumulatedWeight
                     * confidence.propability;
             // Prompts with few words need more consistent speech detection
@@ -244,8 +267,8 @@ public class SpeechRecognitionHypothesisEventHandler {
         }
     }
 
-    private static int getHypothesisMinimumNumberOfWords(List<String> choices) {
-        return HypothesisMinimumNumberOfWordsDefault
+    private int getHypothesisMinimumNumberOfWords(List<String> choices) {
+        return getMinimumNumberOfWordsForHypothesisRecognition()
                 + numberOfSameWordsInAnyTwoChoicesAtStart(choices);
     }
 
@@ -282,6 +305,8 @@ public class SpeechRecognitionHypothesisEventHandler {
             @Override
             public void run(SpeechRecognitionImplementation sender,
                     SpeechRecognizedEventArgs eventArgs) {
+                if (!enabled)
+                    return;
                 // choose the choice with the highest hypothesis weight
                 HypothesisResult hypothesisResult = new HypothesisResult(
                         hypothesisAccumulatedWeights);
@@ -299,7 +324,6 @@ public class SpeechRecognitionHypothesisEventHandler {
                                         choice,
                                         recognitionConfidence.propability,
                                         recognitionConfidence) };
-                        // TODO construct the result with the actual confidence
                         SpeechRecognizedEventArgs recognitionCompletedEventArgs = new SpeechRecognizedEventArgs(
                                 results);
                         speechRecognizer.events.recognitionCompleted.run(sender,
@@ -336,17 +360,12 @@ public class SpeechRecognitionHypothesisEventHandler {
         return preparatedText;
     }
 
-    /**
-     * Must be called in order to remove events.
-     */
-    public void dispose() {
-        if (recognitionStarted != null)
-            speechRecognizer.events.recognitionStarted
-                    .remove(recognitionStarted);
-        if (speechDetected != null)
-            speechRecognizer.events.speechDetected.remove(speechDetected);
-        if (recognitionRejected != null)
-            speechRecognizer.events.recognitionRejected
-                    .remove(recognitionRejected);
+    public int getMinimumNumberOfWordsForHypothesisRecognition() {
+        return minimumNumberOfWordsForHypothesisRecognition;
+    }
+
+    public void setMinimumNumberOfWordsForHypothesisRecognition(
+            int minimumNumberOfWordsForHypothesisRecognition) {
+        this.minimumNumberOfWordsForHypothesisRecognition = minimumNumberOfWordsForHypothesisRecognition;
     }
 }

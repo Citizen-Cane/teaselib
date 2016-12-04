@@ -36,9 +36,9 @@ public abstract class SpeechRecognitionRejectedScript extends TeaseScript {
 
     @Override
     final protected String showChoices(ScriptFunction scriptFunction,
-            List<String> choices, Confidence recognitionConfidence) {
+            Confidence recognitionConfidence, List<String> choices) {
         // Always use low confidence for recognitions
-        return super.showChoices(scriptFunction, choices, confidence);
+        return super.showChoices(scriptFunction, confidence, choices);
     }
 
 }

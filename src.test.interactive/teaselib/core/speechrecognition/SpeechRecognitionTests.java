@@ -23,7 +23,7 @@ public class SpeechRecognitionTests {
     @Test
     public void test() throws Exception {
         if (enableSpeechHypothesisHandler) {
-            System.setProperty(SpeechRecognition.EnableSpeechHypothesisHandler,
+            System.setProperty(SpeechRecognition.EnableSpeechHypothesisHandlerGlobally,
                     Boolean.toString(true));
         }
         SpeechRecognition sr = new SpeechRecognition(new Locale("en-us"));

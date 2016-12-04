@@ -1,7 +1,6 @@
 package teaselib.core.speechrecognition;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import org.slf4j.Logger;
@@ -28,7 +27,7 @@ import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
  *
  */
 public class SpeechRecognitionHypothesisEventHandler {
-    private static final Logger logger = LoggerFactory
+    static final Logger logger = LoggerFactory
             .getLogger(SpeechRecognitionHypothesisEventHandler.class);
     /**
      * Hypothesis speech recognition is used for longer sentences, as short
@@ -41,7 +40,7 @@ public class SpeechRecognitionHypothesisEventHandler {
      * This adjusts the sensibility of the hypothesis rating. The better the
      * microphone, the higher this value should be.
      */
-    private final static double HypothesisMinimumAccumulatedWeight = 1.0;
+    final static double HypothesisMinimumAccumulatedWeight = 1.0;
 
     private final SpeechRecognition speechRecognizer;
     private final Event<SpeechRecognitionImplementation, SpeechRecognitionStartedEventArgs> recognitionStarted;
@@ -49,9 +48,9 @@ public class SpeechRecognitionHypothesisEventHandler {
     private final Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs> recognitionRejected;
 
     private double[] hypothesisAccumulatedWeights;
-    private String[] hypothesisProgress;
+    String[] hypothesisProgress;
 
-    private List<String> choices;
+    List<String> choices;
     private int minimumNumberOfWordsForHypothesisRecognition = HypothesisMinimumNumberOfWordsDefault;
     private Confidence recognitionConfidence = Confidence.Default;
     private boolean enabled = false;
@@ -172,102 +171,7 @@ public class SpeechRecognitionHypothesisEventHandler {
         };
     }
 
-    class HypothesisResult {
-        private final double maxValue;
-        private final int choiceWithMaxProbabilityIndex;
-        List<String> acceptedChoices = new ArrayList<String>();
-
-        HypothesisResult(double[] hypothesisAccumulatedWeights) {
-            double maxValue = 0;
-            int choiceWithMaxProbabilityIndex = 0;
-            for (int i = 0; i < hypothesisAccumulatedWeights.length; i++) {
-                double value = hypothesisAccumulatedWeights[i];
-                logger.info("Result " + i + ": '" + choices.get(i)
-                        + "' hypothesisCount=" + value);
-                if (value > maxValue) {
-                    maxValue = value;
-                    choiceWithMaxProbabilityIndex = i;
-                }
-            }
-            this.maxValue = maxValue;
-            this.choiceWithMaxProbabilityIndex = choiceWithMaxProbabilityIndex;
-            // sort out the case where two or more recognition results have the
-            // same weight. This happens when they all start with the same text,
-            // or (although unlikely) when the weighted sums add up to the same
-            // value.
-            for (int i = 0; i < hypothesisAccumulatedWeights.length; i++) {
-                if (hypothesisAccumulatedWeights[i] == maxValue) {
-                    acceptedChoices.add(choices.get(i));
-                }
-            }
-        }
-
-        boolean recognizedAs(String choice, Confidence confidence) {
-            List<Confidence> confidences = Arrays.asList(Confidence.High,
-                    Confidence.Normal, Confidence.Low);
-            int wordCount = wordCount(choice);
-            for (Confidence desiredConfidence : confidences) {
-                int confidenceBonus = confidences.indexOf(desiredConfidence);
-                if (isRecognizedAs(
-                        hypothesisProgress[choiceWithMaxProbabilityIndex],
-                        desiredConfidence, confidenceBonus, wordCount)) {
-                    return true;
-                }
-                if (desiredConfidence == confidence) {
-                    // Don't test against a lower confidence than requested
-                    break;
-                }
-            }
-            return false;
-        }
-
-        private boolean isRecognizedAs(String hypothesisProgress,
-                Confidence confidence,
-                @SuppressWarnings("unused") int confidenceBonus,
-                int wordCount) {
-            int minimumNumberOfWordsForHypothesisRecognition = getHypothesisMinimumNumberOfWords(
-                    acceptedChoices);
-            // minimumNumberOfWordsForHypothesisRecognition -= confidenceBonus;
-            // prompts with few words need a higher weight to be accepted
-            double hypothesisAccumulatedWeight = wordCount >= minimumNumberOfWordsForHypothesisRecognition
-                    ? HypothesisMinimumAccumulatedWeight
-                    : HypothesisMinimumAccumulatedWeight
-                            * (minimumNumberOfWordsForHypothesisRecognition
-                                    - wordCount + 1);
-            // TODO accumulated weight should be divided by the number of
-            // hypothesized words
-            // to get a value in [0...1] -> would be much clearer
-            // -> commit first, then refactor
-            boolean choiceWeightAccepted = maxValue >= hypothesisAccumulatedWeight
-                    * confidence.propability;
-            // Prompts with few words need more consistent speech detection
-            // events
-            // (doesn't alternate between different choices)
-            int choiceHypothesisCount = wordCount(hypothesisProgress);
-            boolean choiceDetectionCountAccepted = choiceHypothesisCount >= minimumNumberOfWordsForHypothesisRecognition;
-            boolean choiceAccepted = choiceWeightAccepted
-                    && choiceDetectionCountAccepted;
-            if (!choiceWeightAccepted) {
-                logger.info("Phrase '" + hypothesisProgress
-                        + "' hypothesis accumulated weight=" + maxValue
-                        + " < hypothesisAccumulatedWeight threshold="
-                        + hypothesisAccumulatedWeight
-                        + " is too low to accept hypothesis-based recognition for confidence "
-                        + confidence.toString());
-            }
-            if (!choiceDetectionCountAccepted) {
-                logger.info("Phrase '" + hypothesisProgress
-                        + "' word detection count=" + choiceHypothesisCount
-                        + " < threshold="
-                        + minimumNumberOfWordsForHypothesisRecognition
-                        + " is too low to accept hypothesis-based recognition for confidence "
-                        + confidence.toString());
-            }
-            return choiceAccepted;
-        }
-    }
-
-    private int getHypothesisMinimumNumberOfWords(List<String> choices) {
+    int getHypothesisMinimumNumberOfWords(List<String> choices) {
         return getMinimumNumberOfWordsForHypothesisRecognition()
                 + numberOfSameWordsInAnyTwoChoicesAtStart(choices);
     }
@@ -308,37 +212,74 @@ public class SpeechRecognitionHypothesisEventHandler {
                 if (!enabled)
                     return;
                 // choose the choice with the highest hypothesis weight
-                HypothesisResult hypothesisResult = new HypothesisResult(
-                        hypothesisAccumulatedWeights);
-                final int size = hypothesisResult.acceptedChoices.size();
-                if (size == 1) {
-                    String choice = hypothesisResult.acceptedChoices.get(0);
-                    if (hypothesisResult.recognizedAs(choice,
-                            recognitionConfidence)) {
-                        // Consume the recognitionRejected event and
-                        // fire a RecognitionCompleted-event instead
-                        eventArgs.consumed = true;
-                        SpeechRecognitionResult[] results = {
-                                new SpeechRecognitionResult(
-                                        hypothesisResult.choiceWithMaxProbabilityIndex,
-                                        choice,
-                                        recognitionConfidence.propability,
-                                        recognitionConfidence) };
-                        SpeechRecognizedEventArgs recognitionCompletedEventArgs = new SpeechRecognizedEventArgs(
-                                results);
-                        speechRecognizer.events.recognitionCompleted.run(sender,
-                                recognitionCompletedEventArgs);
+                HypothesisResult hypothesisResult = attemptToCreateHypothesisResult();
+                if (hypothesisResult != null) {
+                    if (hypothesisResult
+                            .recognizedWith(recognitionConfidence)) {
+                        consumeRejectedEventAndFireRecognizedEventInstead(
+                                sender, eventArgs, hypothesisResult);
                     }
                 } else {
                     logger.info("Speech recognition hypothesis dropped - "
-                            + size
-                            + " recognition results share the same accumulated weight - can't decide");
+                            + "multiple recognition results share the same accumulated weight - can't decide");
                 }
+            }
+
+            private void consumeRejectedEventAndFireRecognizedEventInstead(
+                    SpeechRecognitionImplementation sender,
+                    SpeechRecognizedEventArgs eventArgs,
+                    HypothesisResult hypothesisResult) {
+                eventArgs.consumed = true;
+                SpeechRecognitionResult[] results = {
+                        new SpeechRecognitionResult(hypothesisResult.index,
+                                hypothesisResult.choice,
+                                recognitionConfidence.propability,
+                                recognitionConfidence) };
+                SpeechRecognizedEventArgs recognitionCompletedEventArgs = new SpeechRecognizedEventArgs(
+                        results);
+                speechRecognizer.events.recognitionCompleted.run(sender,
+                        recognitionCompletedEventArgs);
             }
         };
     }
 
-    private static int wordCount(String text) {
+    HypothesisResult attemptToCreateHypothesisResult() {
+        double maxValue = 0;
+        int choiceWithMaxProbabilityIndex = 0;
+        for (int i = 0; i < hypothesisAccumulatedWeights.length; i++) {
+            double value = hypothesisAccumulatedWeights[i];
+            SpeechRecognitionHypothesisEventHandler.logger.info("Result " + i
+                    + ": '" + choices.get(i) + "' hypothesisCount=" + value);
+            if (value > maxValue) {
+                maxValue = value;
+                choiceWithMaxProbabilityIndex = i;
+            }
+        }
+        // sort out the case where two or more recognition results have the
+        // same weight. This happens when they all start with the same text,
+        // or (although unlikely) when the weighted sums add up to the same
+        // value.
+        if (numberOfHypothesisResults(maxValue) == 1) {
+            return new HypothesisResult(choices,
+                    hypothesisProgress[choiceWithMaxProbabilityIndex], maxValue,
+                    choiceWithMaxProbabilityIndex,
+                    getHypothesisMinimumNumberOfWords(choices));
+        } else {
+            return null;
+        }
+    }
+
+    private int numberOfHypothesisResults(double maxValue) {
+        int n = 0;
+        for (int i = 0; i < hypothesisAccumulatedWeights.length; i++) {
+            if (hypothesisAccumulatedWeights[i] == maxValue) {
+                n++;
+            }
+        }
+        return n;
+    }
+
+    static int wordCount(String text) {
         String preparatedText = text;
         preparatedText = removePunctation(preparatedText);
         return preparatedText.split(" ").length;

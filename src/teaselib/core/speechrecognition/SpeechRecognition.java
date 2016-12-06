@@ -23,8 +23,7 @@ public class SpeechRecognition {
 
     static final String EnableSpeechHypothesisHandlerGlobally = SpeechRecognition.class
             .getPackage().getName() + ".Enable"
-            + SpeechRecognitionHypothesisEventHandler.class.getSimpleName()
-            + "Globally";
+            + SpeechDetectionEventHandler.class.getSimpleName() + "Globally";
 
     /**
      * How to handle speech recognition and timeout in script functions.
@@ -77,7 +76,7 @@ public class SpeechRecognition {
     public final SpeechRecognitionEvents<SpeechRecognitionImplementation> events;
 
     private final Locale locale;
-    private final SpeechRecognitionHypothesisEventHandler hypothesisEventHandler;
+    private final SpeechDetectionEventHandler hypothesisEventHandler;
     private final DelegateThread delegateThread = new DelegateThread(
             "Text-To-Speech dispatcher thread");
 
@@ -197,8 +196,7 @@ public class SpeechRecognition {
         // add the hypothesis handler now, as it may consume the
         // RecognitionRejected-event and fire an recognized event instead,
         // and subsequent listeners should react to these events
-        hypothesisEventHandler = new SpeechRecognitionHypothesisEventHandler(
-                this);
+        hypothesisEventHandler = new SpeechDetectionEventHandler(this);
         hypothesisEventHandler.addEventListeners();
     }
 

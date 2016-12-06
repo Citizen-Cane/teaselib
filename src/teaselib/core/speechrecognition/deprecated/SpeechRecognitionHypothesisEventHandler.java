@@ -1,4 +1,4 @@
-package teaselib.core.speechrecognition;
+package teaselib.core.speechrecognition.deprecated;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -7,6 +7,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import teaselib.core.events.Event;
+import teaselib.core.speechrecognition.SpeechRecognition;
+import teaselib.core.speechrecognition.SpeechRecognitionImplementation;
+import teaselib.core.speechrecognition.SpeechRecognitionResult;
 import teaselib.core.speechrecognition.SpeechRecognitionResult.Confidence;
 import teaselib.core.speechrecognition.events.SpeechRecognitionStartedEventArgs;
 import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
@@ -26,6 +29,8 @@ import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
  * @author Citizen-Cane
  *
  */
+@SuppressWarnings("deprecation")
+@Deprecated
 public class SpeechRecognitionHypothesisEventHandler {
     static final Logger logger = LoggerFactory
             .getLogger(SpeechRecognitionHypothesisEventHandler.class);
@@ -212,7 +217,7 @@ public class SpeechRecognitionHypothesisEventHandler {
                 if (!enabled)
                     return;
                 // choose the choice with the highest hypothesis weight
-                HypothesisResult hypothesisResult = attemptToCreateHypothesisResult();
+                SpeechRecognitionHypothesisResult hypothesisResult = attemptToCreateHypothesisResult();
                 if (hypothesisResult != null) {
                     if (hypothesisResult
                             .recognizedWith(recognitionConfidence)) {
@@ -228,7 +233,7 @@ public class SpeechRecognitionHypothesisEventHandler {
             private void consumeRejectedEventAndFireRecognizedEventInstead(
                     SpeechRecognitionImplementation sender,
                     SpeechRecognizedEventArgs eventArgs,
-                    HypothesisResult hypothesisResult) {
+                    SpeechRecognitionHypothesisResult hypothesisResult) {
                 eventArgs.consumed = true;
                 SpeechRecognitionResult[] results = {
                         new SpeechRecognitionResult(hypothesisResult.index,
@@ -243,7 +248,7 @@ public class SpeechRecognitionHypothesisEventHandler {
         };
     }
 
-    HypothesisResult attemptToCreateHypothesisResult() {
+    SpeechRecognitionHypothesisResult attemptToCreateHypothesisResult() {
         double maxValue = 0;
         int choiceWithMaxProbabilityIndex = 0;
         for (int i = 0; i < hypothesisAccumulatedWeights.length; i++) {
@@ -260,7 +265,7 @@ public class SpeechRecognitionHypothesisEventHandler {
         // or (although unlikely) when the weighted sums add up to the same
         // value.
         if (numberOfHypothesisResults(maxValue) == 1) {
-            return new HypothesisResult(choices,
+            return new SpeechRecognitionHypothesisResult(choices,
                     hypothesisProgress[choiceWithMaxProbabilityIndex], maxValue,
                     choiceWithMaxProbabilityIndex,
                     getHypothesisMinimumNumberOfWords(choices));

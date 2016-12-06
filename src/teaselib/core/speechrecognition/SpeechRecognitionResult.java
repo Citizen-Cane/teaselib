@@ -79,6 +79,12 @@ public class SpeechRecognitionResult {
         return UNKNOWN_PHRASE_INDEX < index && index < choices.size();
     }
 
+    public boolean hasHigherProbabilityThan(
+            SpeechRecognitionResult recognitionResult) {
+        return propability > recognitionResult.propability
+                || confidence.propability > recognitionResult.confidence.propability;
+    }
+
     @Override
     public String toString() {
         return "#" + index + ": " + text + " (%" + propability

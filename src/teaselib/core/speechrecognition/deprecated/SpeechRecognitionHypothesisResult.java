@@ -1,19 +1,22 @@
-package teaselib.core.speechrecognition;
+package teaselib.core.speechrecognition.deprecated;
 
 import java.util.Arrays;
 import java.util.List;
 
 import teaselib.core.speechrecognition.SpeechRecognitionResult.Confidence;
 
-class HypothesisResult {
+@SuppressWarnings("deprecation")
+@Deprecated
+class SpeechRecognitionHypothesisResult {
     final String choice;
     private final String hypothesisProgress;
     private final double maxValue;
     final int index;
     private int minimumNumberOfWords;
 
-    HypothesisResult(List<String> choices, String hypothesisProgress,
-            double probability, int index, int minimumNumberOfWords) {
+    SpeechRecognitionHypothesisResult(List<String> choices,
+            String hypothesisProgress, double probability, int index,
+            int minimumNumberOfWords) {
         this.choice = choices.get(index);
         this.hypothesisProgress = hypothesisProgress;
         this.maxValue = probability;

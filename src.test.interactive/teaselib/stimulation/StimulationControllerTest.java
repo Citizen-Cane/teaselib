@@ -10,8 +10,6 @@ import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.Test;
 
-import teaselib.stimulation.Stimulation.Type;
-
 /**
  * @author someone
  *
@@ -38,13 +36,17 @@ public class StimulationControllerTest {
     public void tearDown() throws Exception {
     }
 
-    // @Test
-    // public void testAnusAndBalls() {
-    // Stimulator anus = Stimulators.getAll().get(0);
-    // Stimulator balls = Stimulators.getAll().get(1);
-    // StimulationController<Stimulation.Type> stim = StimulationController
-    // .stimulateAnusAndBalls(anus, balls);
-    // }
+    @Test
+    public void testAnusAndBalls() {
+        Stimulator anus = StimulationTest.getRightStimulator();
+        assertNotNull(anus);
+        Stimulator balls = StimulationTest.getLeftStimulator();
+        assertNotNull(balls);
+        StimulationController<StimulationType> stim = StimulationType
+                .stimulateAnusAndBalls(anus, balls);
+        testWhipStimulation(stim);
+        testStimulation(stim);
+    }
 
     @Test
     public void testCockAndAnus() {
@@ -52,59 +54,59 @@ public class StimulationControllerTest {
         assertNotNull(cock);
         Stimulator balls = StimulationTest.getLeftStimulator();
         assertNotNull(balls);
-        StimulationController<Stimulation.Type> stim = StimulationController
+        StimulationController<StimulationType> stim = StimulationType
                 .stimulateCockAndAnus(cock, balls);
         testWhipStimulation(stim);
         testStimulation(stim);
     }
 
     private static void testWhipStimulation(
-            StimulationController<Stimulation.Type> stim) {
+            StimulationController<StimulationType> stim) {
         for (int i = 1; i < 10; i++) {
-            stim.stimulate(Type.Attention, 0);
+            stim.stimulate(StimulationType.Attention, 0);
             stim.complete();
-            stim.stimulate(Type.Whip, 0);
-            stim.stimulate(Type.Walk, 0);
+            stim.stimulate(StimulationType.Whip, 0);
+            stim.stimulate(StimulationType.Walk, 0);
             stim.complete();
         }
     }
 
     private static void testStimulation(
-            StimulationController<Stimulation.Type> stim) {
+            StimulationController<StimulationType> stim) {
         int durationSeconds = 10;
         for (int i = 1; i < 10; i++) {
-            stim.stimulate(Type.Attention, 0);
+            stim.stimulate(StimulationType.Attention, 0);
             stim.complete();
-            stim.stimulate(Type.Whip, 0);
-            stim.stimulate(Type.Walk, durationSeconds);
+            stim.stimulate(StimulationType.Whip, 0);
+            stim.stimulate(StimulationType.Walk, durationSeconds);
             stim.complete();
-            stim.stimulate(Type.Whip, 0);
-            stim.stimulate(Type.Trot, durationSeconds);
+            stim.stimulate(StimulationType.Whip, 0);
+            stim.stimulate(StimulationType.Trot, durationSeconds);
             stim.complete();
-            stim.stimulate(Type.Whip, 0);
-            stim.stimulate(Type.Run, durationSeconds);
+            stim.stimulate(StimulationType.Whip, 0);
+            stim.stimulate(StimulationType.Run, durationSeconds);
             stim.complete();
-            stim.stimulate(Type.Punish, 0);
+            stim.stimulate(StimulationType.Punish, 0);
             stim.complete();
-            if (stim.canStimulate(Type.Tease)) {
-                stim.stimulate(Type.Tease, durationSeconds);
+            if (stim.canStimulate(StimulationType.Tease)) {
+                stim.stimulate(StimulationType.Tease, durationSeconds);
                 stim.complete();
             }
-            if (stim.canStimulate(Type.Cum)) {
-                stim.stimulate(Type.Whip, 0);
-                stim.stimulate(Type.Cum, durationSeconds);
+            if (stim.canStimulate(StimulationType.Cum)) {
+                stim.stimulate(StimulationType.Whip, 0);
+                stim.stimulate(StimulationType.Cum, durationSeconds);
                 stim.complete();
             }
             stim.increaseIntensity();
         }
-        stim.stimulate(Type.Punish, 0);
+        stim.stimulate(StimulationType.Punish, 0);
         stim.complete();
-        if (stim.canStimulate(Type.Tease)) {
-            stim.stimulate(Type.Tease, 60);
+        if (stim.canStimulate(StimulationType.Tease)) {
+            stim.stimulate(StimulationType.Tease, 60);
             stim.complete();
         }
-        if (stim.canStimulate(Type.Cum)) {
-            stim.stimulate(Type.Cum, 60);
+        if (stim.canStimulate(StimulationType.Cum)) {
+            stim.stimulate(StimulationType.Cum, 60);
             stim.complete();
         }
     }

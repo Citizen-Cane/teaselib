@@ -93,6 +93,7 @@ public class Message {
     public final static String Delay10to20s = "delay 10 20";
     public final static String Delay15s = "delay 15";
     public final static String Delay15to30s = "delay 15 30";
+    public final static String Delay15to45s = "delay 15 45";
     public final static String Delay20s = "delay 20";
     public final static String Delay25s = "delay 25";
     public final static String Delay30s = "delay 30";

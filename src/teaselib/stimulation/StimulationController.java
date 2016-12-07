@@ -1,115 +1,33 @@
-/**
- * 
- */
 package teaselib.stimulation;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-import teaselib.stimulation.Stimulation.BodyPart;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import teaselib.stimulation.Stimulator.ChannelDependency;
-import teaselib.stimulation.pattern.Attention;
-import teaselib.stimulation.pattern.Cum;
-import teaselib.stimulation.pattern.Punish;
-import teaselib.stimulation.pattern.Run;
-import teaselib.stimulation.pattern.Tease;
-import teaselib.stimulation.pattern.Trot;
-import teaselib.stimulation.pattern.Walk;
-import teaselib.stimulation.pattern.Whip;
 
 /**
- * @author someone
+ * @author Citizen-Cane
  *
- *         Bookkeeping for available stimulations on vertain body parts.
+ *         Bookkeeping for available stimulations on various body parts.
  */
-public class StimulationController<StimulationType> {
-    /**
-     * 
-     */
+public class StimulationController<T> {
+    private final static Logger logger = LoggerFactory
+            .getLogger(StimulationController.class);
+
     private static final int SleepTimeForPartiallyDependentStimChannels = 100;
-    private final Map<BodyPart, Stimulator> stimulators = new HashMap<BodyPart, Stimulator>();
-    private final Map<StimulationType, Stimulation> stimulations = new HashMap<StimulationType, Stimulation>();
+    private final Map<StimulationRegion, Stimulator> stimulators = new HashMap<StimulationRegion, Stimulator>();
+    private final Map<T, Stimulation> stimulations = new HashMap<T, Stimulation>();
 
     private int intensity;
 
-    private final Map<StimulationType, Stimulation> playing = new HashMap<StimulationType, Stimulation>();
+    private final Map<T, Stimulation> playing = new HashMap<T, Stimulation>();
 
     public StimulationController() {
         clear();
-    }
-
-    public static StimulationController<Stimulation.Type> dummy() {
-        return new StimulationController<Stimulation.Type>();
-    }
-
-    public static StimulationController<Stimulation.Type> stimulateAnusAndBalls(
-            Stimulator anus, Stimulator balls) {
-        StimulationController<Stimulation.Type> stim = new StimulationController<Stimulation.Type>();
-        stim.addRegion(Stimulation.BodyPart.Anus, anus);
-        stim.addRegion(Stimulation.BodyPart.Balls, balls);
-        stim.add(Stimulation.Type.Walk,
-                new Walk(stim.stimulator(Stimulation.BodyPart.Anus)));
-        stim.add(Stimulation.Type.Trot,
-                new Trot(stim.stimulator(Stimulation.BodyPart.Anus)));
-        stim.add(Stimulation.Type.Run,
-                new Run(stim.stimulator(Stimulation.BodyPart.Anus)));
-        stim.add(Stimulation.Type.Attention,
-                new Attention(stim.stimulator(Stimulation.BodyPart.Anus)));
-        stim.add(Stimulation.Type.Whip,
-                new Whip(stim.stimulator(Stimulation.BodyPart.Balls)));
-        stim.add(Stimulation.Type.Punish,
-                new Punish(stim.stimulator(Stimulation.BodyPart.Balls)));
-        // There's no teasing involved in this configuration
-        return stim;
-    }
-
-    public static StimulationController<Stimulation.Type> stimulateCockAndBalls(
-            Stimulator cock, Stimulator balls) {
-        StimulationController<Stimulation.Type> stim = new StimulationController<Stimulation.Type>();
-        stim.addRegion(Stimulation.BodyPart.Cock, cock);
-        stim.addRegion(Stimulation.BodyPart.Balls, balls);
-        stim.add(Stimulation.Type.Walk,
-                new Walk(stim.stimulator(Stimulation.BodyPart.Cock)));
-        stim.add(Stimulation.Type.Trot,
-                new Trot(stim.stimulator(Stimulation.BodyPart.Cock)));
-        stim.add(Stimulation.Type.Run,
-                new Run(stim.stimulator(Stimulation.BodyPart.Cock)));
-        stim.add(Stimulation.Type.Attention,
-                new Attention(stim.stimulator(Stimulation.BodyPart.Cock)));
-        stim.add(Stimulation.Type.Whip,
-                new Whip(stim.stimulator(Stimulation.BodyPart.Balls)));
-        stim.add(Stimulation.Type.Punish,
-                new Punish(stim.stimulator(Stimulation.BodyPart.Balls)));
-        stim.add(Stimulation.Type.Tease,
-                new Tease(stim.stimulator(Stimulation.BodyPart.Cock)));
-        stim.add(Stimulation.Type.Cum,
-                new Cum(stim.stimulator(Stimulation.BodyPart.Cock)));
-        return stim;
-    }
-
-    public static StimulationController<Stimulation.Type> stimulateCockAndAnus(
-            Stimulator cock, Stimulator anus) {
-        StimulationController<Stimulation.Type> stim = new StimulationController<Stimulation.Type>();
-        stim.addRegion(Stimulation.BodyPart.Cock, cock);
-        stim.addRegion(Stimulation.BodyPart.Anus, anus);
-        stim.add(Stimulation.Type.Walk,
-                new Walk(stim.stimulator(Stimulation.BodyPart.Cock)));
-        stim.add(Stimulation.Type.Trot,
-                new Trot(stim.stimulator(Stimulation.BodyPart.Cock)));
-        stim.add(Stimulation.Type.Run,
-                new Run(stim.stimulator(Stimulation.BodyPart.Cock)));
-        stim.add(Stimulation.Type.Attention,
-                new Attention(stim.stimulator(Stimulation.BodyPart.Cock)));
-        stim.add(Stimulation.Type.Whip,
-                new Whip(stim.stimulator(Stimulation.BodyPart.Anus), 0.0));
-        stim.add(Stimulation.Type.Punish,
-                new Punish(stim.stimulator(Stimulation.BodyPart.Anus)));
-        stim.add(Stimulation.Type.Tease,
-                new Tease(stim.stimulator(Stimulation.BodyPart.Cock)));
-        stim.add(Stimulation.Type.Cum,
-                new Cum(stim.stimulator(Stimulation.BodyPart.Cock)));
-        return stim;
     }
 
     public void clear() {
@@ -128,15 +46,15 @@ public class StimulationController<StimulationType> {
         return intensity;
     }
 
-    public void addRegion(BodyPart region, Stimulator stimulator) {
+    public void addRegion(StimulationRegion region, Stimulator stimulator) {
         stimulators.put(region, stimulator);
     }
 
-    public Set<BodyPart> regions() {
+    public Set<StimulationRegion> regions() {
         return stimulators.keySet();
     }
 
-    public Stimulator stimulator(BodyPart region) {
+    public Stimulator stimulator(StimulationRegion region) {
         if (stimulators.containsKey(region)) {
             return stimulators.get(region);
         } else {
@@ -146,70 +64,98 @@ public class StimulationController<StimulationType> {
         }
     }
 
-    public void add(StimulationType type, Stimulation stimulation) {
+    public void add(T type, Stimulation stimulation) {
         stimulations.put(type, stimulation);
     }
 
-    public boolean canStimulate(StimulationType type) {
+    public boolean canStimulate(T type) {
         return stimulations.containsKey(type);
     }
 
-    public boolean canStimulate(BodyPart region) {
+    public boolean canStimulate(StimulationRegion region) {
         return stimulators.containsKey(region);
     }
 
-    public void stimulate(StimulationType type, double durationSeconds) {
+    public void stimulate(T type) {
+        stimulate(type, 0.0);
+    }
+
+    public void stimulate(T type, double durationSeconds) {
         synchronized (playing) {
-            if (stimulations.containsKey(type)) {
-                if (playing.containsKey(type)) {
-                    final Stimulation stimulation = playing.get(type);
-                    stimulation.stop();
-                    playing.remove(type);
-                }
-                final Stimulation stimulation = stimulations.get(type);
-                final ChannelDependency channelDependency = stimulation.stimulator
-                        .channelDependency();
-                if (channelDependency != Stimulator.ChannelDependency.Independent) {
-                    for (Stimulation s : playing.values()) {
-                        if (s.stimulator.getDevice() == stimulation.stimulator
-                                .getDevice()) {
-                            if (channelDependency == Stimulator.ChannelDependency.PartiallyDependent) {
-                                try {
-                                    Thread.sleep(SleepTimeForPartiallyDependentStimChannels);
-                                } catch (InterruptedException ignore) {
-                                }
-                                if (durationSeconds > SleepTimeForPartiallyDependentStimChannels) {
-                                    durationSeconds -= SleepTimeForPartiallyDependentStimChannels;
-                                }
-                                break;
-                            } else {
-                                // If the channels can't be used simultaneously,
-                                // we're going to wait.
-                                // Since this changes the script timing it is
-                                // advised to trigger the shorter stimulation
-                                // first
-                                long start = System.currentTimeMillis();
-                                s.complete();
-                                long now = System.currentTimeMillis();
-                                double sleepTimeSeconds = 1.0 / 1000.0 * (now - start);
-                                if (durationSeconds > sleepTimeSeconds) {
-                                    durationSeconds -= sleepTimeSeconds;
-                                }
-                                break;
-                            }
-                        }
-                    }
-                }
+            if (canStimulate(type)) {
+                stopStimulation(type);
+                Stimulation stimulation = stimulations.get(type);
+                durationSeconds = ensureStimulationIsPlayedAtLeastOnce(
+                        stimulation, durationSeconds);
+                durationSeconds = handleChannelDependencies(stimulation,
+                        durationSeconds);
                 stimulation.play(intensity, durationSeconds);
                 playing.put(type, stimulation);
             } else {
-                throw new IllegalArgumentException("Stimulation type "
-                        + type.toString() + " not supported");
+                logger.warn("Stimulation type " + type.toString()
+                        + " hasn't been assigned to a body region");
             }
         }
     }
 
-    public void complete(StimulationType type) {
+    private static double ensureStimulationIsPlayedAtLeastOnce(
+            Stimulation stimulation, double durationSeconds) {
+        if (durationSeconds == 0) {
+            durationSeconds = stimulation.periodDurationSeconds;
+        }
+        return durationSeconds;
+    }
+
+    private void stopStimulation(T type) {
+        if (playing.containsKey(type)) {
+            Stimulation stimulation = playing.get(type);
+            stimulation.stop();
+            playing.remove(type);
+        }
+    }
+
+    private double handleChannelDependencies(Stimulation stimulation,
+            double durationSeconds) {
+        ChannelDependency channelDependency = stimulation.stimulator
+                .channelDependency();
+        if (channelDependency != Stimulator.ChannelDependency.Independent) {
+            for (Stimulation s : playing.values()) {
+                if (s.stimulator.getDevice() == stimulation.stimulator
+                        .getDevice()) {
+                    if (channelDependency == Stimulator.ChannelDependency.PartiallyDependent) {
+                        try {
+                            Thread.sleep(
+                                    SleepTimeForPartiallyDependentStimChannels);
+                        } catch (InterruptedException ignore) {
+                        }
+                        if (durationSeconds > SleepTimeForPartiallyDependentStimChannels) {
+                            durationSeconds -= SleepTimeForPartiallyDependentStimChannels;
+                        }
+                        break;
+                    } else {
+                        durationSeconds = completePreviousStimulation(s,
+                                durationSeconds);
+                        break;
+                    }
+                }
+            }
+        }
+        return durationSeconds;
+    }
+
+    private static double completePreviousStimulation(Stimulation stimulation,
+            double durationSeconds) {
+        long start = System.currentTimeMillis();
+        stimulation.complete();
+        long now = System.currentTimeMillis();
+        double sleepTimeSeconds = 1.0 / 1000.0 * (now - start);
+        if (durationSeconds > sleepTimeSeconds) {
+            durationSeconds -= sleepTimeSeconds;
+        }
+        return durationSeconds;
+    }
+
+    public void complete(T type) {
         synchronized (playing) {
             if (stimulations.containsKey(type)) {
                 if (playing.containsKey(type)) {
@@ -221,7 +167,7 @@ public class StimulationController<StimulationType> {
 
     public void complete() {
         synchronized (playing) {
-            for (StimulationType type : playing.keySet()) {
+            for (T type : playing.keySet()) {
                 complete(type);
             }
         }

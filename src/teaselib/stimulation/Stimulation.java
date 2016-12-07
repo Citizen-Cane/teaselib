@@ -18,30 +18,6 @@ public abstract class Stimulation {
     private static final Logger logger = LoggerFactory
             .getLogger(Stimulation.class);
 
-    /**
-     * The body region the stimulator is applied to
-     *
-     */
-    public enum BodyPart {
-        Anus,
-        Balls,
-        Buttocks,
-        Cock,
-        Thighs,
-        Tits
-    }
-
-    public enum Type {
-        Walk,
-        Trot,
-        Run,
-        Attention,
-        Whip,
-        Punish,
-        Tease,
-        Cum
-    }
-
     protected final static int MaxIntensity = 10;
     protected final static double maxStrength = 1.0;
 

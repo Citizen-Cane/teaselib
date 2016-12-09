@@ -11,6 +11,8 @@
 #include <atlbase.h>
 #include <sapi.h>
 
+#include <sphelper.h>
+
 #include <COMException.h>
 #include <COMUser.h>
 #include <JNIException.h>
@@ -26,64 +28,80 @@
 
 extern "C"
 {
-    /*
-    * Class:     teaselib_texttospeech_implementation_TeaseLibTTS
-    * Method:    getInstalledVoices
-    * Signature: (Ljava/util/Map;)V
-    */
-    JNIEXPORT void JNICALL Java_teaselib_core_texttospeech_implementation_TeaseLibTTS_getInstalledVoices
-    (JNIEnv *env, jclass, jobject voiceMap) {
-        try {
-            COMUser cu;
-            std::vector<Voice*> voices;
-            HRESULT hr = S_OK;
-            CComPtr<ISpObjectToken> cpVoiceToken;
-            CComPtr<IEnumSpObjectTokens> cpEnum;
-            ULONG ulCount = 0;
-            // Enumerate the available voices
-            CComPtr<ISpObjectTokenCategory> cpCategory;
-            CComPtr<ISpObjectTokenCategory> cpTokenCategory;
-            hr = cpTokenCategory.CoCreateInstance(CLSID_SpObjectTokenCategory);
-            if (SUCCEEDED(hr)) {
-                hr = cpTokenCategory->SetId(SPCAT_VOICES, false);
-                if (SUCCEEDED(hr)) {
-                    cpCategory = cpTokenCategory.Detach();
-                    if (SUCCEEDED(hr)) {
-                        hr = cpCategory->EnumTokens(NULL, NULL, &cpEnum);
-                    }
-                }
-            }
-            if (SUCCEEDED(hr)) {
-                // Get the number of voices
-                hr = cpEnum->GetCount(&ulCount);
-                // Obtain a list of available voice tokens,
-                // set the voice to the token, and call Speak
-                while (SUCCEEDED(hr) && ulCount--) {
-                    cpVoiceToken.Release();
-                    if (SUCCEEDED(hr)) {
-                        hr = cpEnum->Next(1, &cpVoiceToken, NULL);
-                    }
-                    voices.push_back(new Voice(env, cpVoiceToken));
-                }
-            }
-            // Build a map from the voices
-            jclass mapClass = JNIClass::getClass(env, "java/util/HashMap");
-            std::for_each(voices.begin(), voices.end(), [&](const Voice * voice) {
-                JNIString key(env, voice->guid.c_str());
-                jobject jvoice = *voice;
-                env->CallObjectMethod(
-                    voiceMap,
-                    env->GetMethodID(mapClass, "put", "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;"), key.operator jstring(), jvoice);
-                if (env->ExceptionCheck()) {
-                    throw new JNIException(env);
-                }
-            });
-        } catch (NativeException *e) {
-            JNIException::throwNew(env, e);
-        } catch (JNIException /**e*/) {
-            // Forwarded automatically
-        }
-    }
+	const wchar_t* SPCAT_VOICES_ONECORE = L"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Speech_OneCore\\Voices";
+	const wchar_t* SPCAT_VOICES_SPEECH_SERVER = L"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Speech Server\\v11.0\\Voices";
+
+	const wchar_t* voiceCategories[] = { SPCAT_VOICES_ONECORE, SPCAT_VOICES_SPEECH_SERVER,  SPCAT_VOICES };
+
+	HRESULT addVoices(const wchar_t* pszCatName, std::vector<Voice*>& voices, JNIEnv *env);
+	void buildVoiceMap(const std::vector<Voice*>& voices, JNIEnv *env, jobject voiceMap);
+
+	/*
+	* Class:     teaselib_texttospeech_implementation_TeaseLibTTS
+	* Method:    getInstalledVoices
+	* Signature: (Ljava/util/Map;)V
+	*/
+	JNIEXPORT void JNICALL Java_teaselib_core_texttospeech_implementation_TeaseLibTTS_getInstalledVoices
+		(JNIEnv *env, jclass, jobject voiceMap) {
+		try {
+			COMUser comUser;
+			HRESULT hr = S_OK;
+			std::vector<Voice*> voices;
+			for (int i = 0; i < sizeof(voiceCategories) / sizeof(wchar_t*); i++) {
+				hr = addVoices(voiceCategories[i], voices, env);
+				if (FAILED(hr)) break;
+			}
+			buildVoiceMap(voices, env, voiceMap);
+		}
+		catch (NativeException *e) {
+			JNIException::throwNew(env, e);
+		}
+		catch (JNIException /**e*/) {
+			// Forwarded automatically
+		}
+	}
+
+	HRESULT addVoices(const wchar_t* pszCatName, std::vector<Voice*>& voices, JNIEnv *env) {
+		CComPtr<IEnumSpObjectTokens> cpEnum;
+		HRESULT hr = SpEnumTokens(pszCatName, NULL, NULL, &cpEnum);
+		const bool succeeded = SUCCEEDED(hr);
+		const bool notAvailable = hr == SPERR_NOT_FOUND;
+		assert(succeeded || notAvailable);
+		if (notAvailable) return S_FALSE;
+		if (succeeded) {
+			CComPtr<ISpObjectToken> cpVoiceToken;
+			if (SUCCEEDED(hr)) {
+				ULONG ulCount = 0;
+				hr = cpEnum->GetCount(&ulCount);
+				if (SUCCEEDED(hr)) {
+					while (ulCount--) {
+						hr = cpEnum->Next(1, &cpVoiceToken, NULL);
+						if (SUCCEEDED(hr)) {
+							voices.push_back(new Voice(env, cpVoiceToken));
+							cpVoiceToken.Release();
+						}
+						else {
+							break;
+						}
+					}
+				}
+			}
+		}
+	}
+
+	void buildVoiceMap(const std::vector<Voice*>& voices, JNIEnv *env, jobject voiceMap) {
+		jclass mapClass = JNIClass::getClass(env, "java/util/HashMap");
+		std::for_each(voices.begin(), voices.end(), [&](const Voice * voice) {
+			JNIString key(env, voice->guid.c_str());
+			jobject jvoice = *voice;
+			env->CallObjectMethod(
+				voiceMap,
+				env->GetMethodID(mapClass, "put", "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;"), key.operator jstring(), jvoice);
+			if (env->ExceptionCheck()) {
+				throw new JNIException(env);
+			}
+		});
+	}
 
     /*
     * Class:     teaselib_texttospeech_implementation_TeaseLibTTS

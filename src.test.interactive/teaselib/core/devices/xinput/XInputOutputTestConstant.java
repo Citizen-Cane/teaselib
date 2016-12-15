@@ -1,7 +1,7 @@
 /**
  * 
  */
-package teaselib.stimulation;
+package teaselib.core.devices.xinput;
 
 import org.junit.BeforeClass;
 import org.junit.Test;

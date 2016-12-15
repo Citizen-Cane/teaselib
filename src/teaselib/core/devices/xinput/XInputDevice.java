@@ -7,6 +7,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import teaselib.core.devices.BatteryStatus;
 import teaselib.core.devices.Device;
 import teaselib.core.devices.DeviceCache;
 import teaselib.core.devices.DeviceFactory;
@@ -136,8 +137,15 @@ public class XInputDevice implements Device {
         return connected();
     }
 
+    /**
+     * CLose the device. Turns off actuators, then shutdowns wireless device to
+     * save battery power.
+     * 
+     * @return Whether shutting down the device was successful.
+     */
     @Override
     public void close() {
+        shutdown();
     }
 
     /**
@@ -241,6 +249,35 @@ public class XInputDevice implements Device {
         return true;
     }
 
+    /**
+     * Reads input from the device and updates components.
+     *
+     * @return <code>false</code> if the device was not connected
+     */
+    public BatteryStatus getStatus() {
+        // TODO retrieve battery status
+
+        // DWORD XInputGetBatteryInformation(
+        // _In_ DWORD dwUserIndex,
+        // _In_ BYTE devType,
+        // _Out_ XINPUT_BATTERY_INFORMATION *pBatteryInformation
+        // );
+        //
+        // typedef struct _XINPUT_BATTERY_INFORMATION
+        // {
+        // BYTE BatteryType;
+        // BYTE BatteryLevel;
+        // } XINPUT_BATTERY_INFORMATION, *PXINPUT_BATTERY_INFORMATION;
+
+        return BatteryStatus.Empty;
+    }
+
+    public boolean isWireless() {
+        // can be determined from xinput battery status
+        // TODO if so make default device
+        return true;
+    }
+
     private void setConnected(final boolean state) {
         lastConnected = connected;
         connected = state;
@@ -299,12 +336,12 @@ public class XInputDevice implements Device {
     }
 
     /**
-     * Shutdown the device completely. First turn off vibration, then shutdown
+     * Shutdown the device completely. First turn off actuators, then shutdown
      * wireless device to save battery power.
      * 
      * @return Whether shutting down the device was successful.
      */
-    public boolean shutdown() {
+    boolean shutdown() {
         return shutdownDevice(playerNum);
     }
 
@@ -349,6 +386,11 @@ public class XInputDevice implements Device {
     }
 
     private static native int pollDevice(int playerNum, ByteBuffer data);
+
+    private static native int getBatteryInformation(int playerNum,
+            ByteBuffer data);
+
+    private static native int getCapabilities(int playerNum, ByteBuffer data);
 
     private static native int setVibration(int playerNum, int leftMotor,
             int rightMotor);

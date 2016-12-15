@@ -160,6 +160,7 @@ public class XInputStimulationDevice implements StimulationDevice {
 
     @Override
     public void close() {
+        device.close();
     }
 
     @Override

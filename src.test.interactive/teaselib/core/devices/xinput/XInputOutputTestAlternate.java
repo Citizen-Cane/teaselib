@@ -1,20 +1,10 @@
-package teaselib.stimulation;
+package teaselib.core.devices.xinput;
 
-import org.junit.BeforeClass;
 import org.junit.Test;
 
 import teaselib.core.devices.Device;
-import teaselib.core.devices.xinput.XInputAxes;
-import teaselib.core.devices.xinput.XInputButtons;
-import teaselib.core.devices.xinput.XInputComponents;
-import teaselib.core.devices.xinput.XInputDevice;
-import teaselib.core.devices.xinput.XInputDevices;
 
 public class XInputOutputTestAlternate {
-
-    @BeforeClass
-    public static void setUpBeforeClass() {
-    }
 
     @Test
     public void testAlternate() throws InterruptedException {

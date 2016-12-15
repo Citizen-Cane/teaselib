@@ -1,23 +1,13 @@
 /**
  * 
  */
-package teaselib.stimulation;
+package teaselib.core.devices.xinput;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 
-import teaselib.core.devices.xinput.XInputButton;
-import teaselib.core.devices.xinput.XInputButtonsDelta;
-import teaselib.core.devices.xinput.XInputComponentsDelta;
-import teaselib.core.devices.xinput.XInputDevice;
-import teaselib.core.devices.xinput.XInputDevices;
-
-/**
- * @author someone
- *
- */
-public class XInputGuideButtonAndShutdown {
+public class XInputGuideButtonAndShutdownTest {
 
     @Test
     public void testPressGuideButtonFor1SecondAndShutdown()
@@ -61,7 +51,6 @@ public class XInputGuideButtonAndShutdown {
             System.out.println(
                     "Guide button pressed for one second - shutting down controller");
         } finally {
-            // Shutdown
             assertTrue(xid.shutdown());
         }
     }

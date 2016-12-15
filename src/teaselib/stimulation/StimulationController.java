@@ -1,12 +1,14 @@
 package teaselib.stimulation;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import teaselib.core.devices.Device;
 import teaselib.stimulation.Stimulator.ChannelDependency;
 
 /**
@@ -179,6 +181,17 @@ public class StimulationController<T> {
                 stimulation.stop();
             }
             playing.clear();
+        }
+    }
+
+    public void close() {
+        Set<Device> closed = new HashSet<Device>();
+        for (Stimulator stimulator : stimulators.values()) {
+            StimulationDevice device = stimulator.getDevice();
+            if (!closed.contains(device)) {
+                device.close();
+                closed.add(device);
+            }
         }
     }
 }

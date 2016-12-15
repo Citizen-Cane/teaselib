@@ -1,7 +1,7 @@
 /**
  * 
  */
-package teaselib.stimulation;
+package teaselib.core.devices.xinput;
 
 import static org.junit.Assert.*;
 

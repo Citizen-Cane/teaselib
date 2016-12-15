@@ -1,5 +1,7 @@
 package teaselib.stimulation;
 
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import teaselib.core.devices.Device;
@@ -13,20 +15,28 @@ import teaselib.stimulation.pattern.Walk;
 import teaselib.stimulation.pattern.Whip;
 
 public class StimulationTest {
+    private static StimulationDevice device;
+
+    @BeforeClass
+    public static void openDefaultDevice() {
+        device = StimulationDevices.Devices.getDefaultDevice();
+    }
+
+    @AfterClass
+    public static void closeDefaultDevice() {
+        device.close();
+    }
+
     public static Stimulator getLeftStimulator() {
-        return StimulationDevices.Devices.getDefaultDevice().stimulators()
-                .get(0);
+        return device.stimulators().get(0);
     }
 
     public static Stimulator getRightStimulator() {
-        return StimulationDevices.Devices.getDefaultDevice().stimulators()
-                .get(1);
+        return device.stimulators().get(1);
     }
 
     @Test
     public void testEnumerateStimulators() {
-        StimulationDevice device = StimulationDevices.Devices
-                .getDefaultDevice();
         System.out.println(device.getDevicePath() + (device.connected() ? ""
                 : ":" + Device.WaitingForConnection));
         for (Stimulator stimulator : device.stimulators()) {

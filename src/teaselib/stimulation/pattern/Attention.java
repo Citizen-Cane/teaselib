@@ -27,6 +27,6 @@ public class Attention extends Stimulation {
     }
 
     public static double getSeconds(int intensity) {
-        return 2.0 + 5.0 * intensity / MaxIntensity;
+        return 2.0 + 8.0 * intensity / MaxIntensity;
     }
 }

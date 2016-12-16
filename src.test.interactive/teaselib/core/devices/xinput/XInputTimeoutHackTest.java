@@ -22,7 +22,7 @@ public class XInputTimeoutHackTest {
 
     @Test
     public void testTimeoutHack_feedback() throws InterruptedException {
-        XInputDevice xid = XInputDevices.Instance.getDefaultDevice();
+        XInputDevice xid = XInputDevices.Devices.getDefaultDevice();
         System.out.println(xid.getDevicePath());
         xid.setVibration((short) 0, (short) 0);
         XInputButtonsDelta xib;
@@ -46,7 +46,7 @@ public class XInputTimeoutHackTest {
     @Test
     @Ignore
     public void testTimeoutHack_1h() throws InterruptedException {
-        XInputDevice xid = XInputDevices.Instance.getDefaultDevice();
+        XInputDevice xid = XInputDevices.Devices.getDefaultDevice();
         System.out.println(xid.getDevicePath());
         for (int i = 0; i < 360; i++) {
             xid.setVibration((short) 0, (short) 0);

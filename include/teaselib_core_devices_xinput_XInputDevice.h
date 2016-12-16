@@ -57,6 +57,22 @@ JNIEXPORT jint JNICALL Java_teaselib_core_devices_xinput_XInputDevice_pollDevice
 
 /*
  * Class:     teaselib_core_devices_xinput_XInputDevice
+ * Method:    getBatteryInformation
+ * Signature: (ILjava/nio/ByteBuffer;)I
+ */
+JNIEXPORT jint JNICALL Java_teaselib_core_devices_xinput_XInputDevice_getBatteryInformation
+  (JNIEnv *, jclass, jint, jobject);
+
+/*
+ * Class:     teaselib_core_devices_xinput_XInputDevice
+ * Method:    getCapabilities
+ * Signature: (ILjava/nio/ByteBuffer;)I
+ */
+JNIEXPORT jint JNICALL Java_teaselib_core_devices_xinput_XInputDevice_getCapabilities
+  (JNIEnv *, jclass, jint, jobject);
+
+/*
+ * Class:     teaselib_core_devices_xinput_XInputDevice
  * Method:    setVibration
  * Signature: (III)I
  */

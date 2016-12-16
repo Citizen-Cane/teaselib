@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import teaselib.core.devices.BatteryLevel;
 import teaselib.core.devices.DeviceCache;
 import teaselib.core.devices.DeviceFactory;
 import teaselib.core.devices.xinput.XInputDevice;
@@ -111,7 +112,7 @@ public class XInputStimulationDevice implements StimulationDevice {
                 Map<String, StimulationDevice> deviceCache) {
             List<String> deviceNames = new ArrayList<String>(4);
             for (String devicePath : XInputDevice.Factory.getDevices()) {
-                XInputDevice controller = XInputDevices.Instance
+                XInputDevice controller = XInputDevices.Devices
                         .getDevice(devicePath);
                 deviceNames.add(DeviceCache.createDevicePath(
                         XInputStimulationDevice.DeviceClassName,
@@ -123,7 +124,7 @@ public class XInputStimulationDevice implements StimulationDevice {
         @Override
         public StimulationDevice createDevice(String deviceName) {
             return new XInputStimulationDevice(
-                    XInputDevices.Instance.getDevice(deviceName));
+                    XInputDevices.Devices.getDevice(deviceName));
         }
     };
 
@@ -161,6 +162,16 @@ public class XInputStimulationDevice implements StimulationDevice {
     @Override
     public void close() {
         device.close();
+    }
+
+    @Override
+    public boolean isWireless() {
+        return device.isWireless();
+    }
+
+    @Override
+    public BatteryLevel batteryLevel() {
+        return device.batteryLevel();
     }
 
     @Override

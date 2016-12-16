@@ -10,6 +10,7 @@ import java.util.Set;
 import teaselib.core.ScriptInterruptedException;
 
 public class DeviceCache<T extends Device> {
+    private static final int CONNECTION_WAIT_UNTIL_CONNECTED = -1;
     private final Map<String, DeviceFactory<? extends T>> factories = new LinkedHashMap<String, DeviceFactory<? extends T>>();
     private final Set<DeviceFactoryListener<T>> deviceListeners = new LinkedHashSet<DeviceFactoryListener<T>>();
 
@@ -91,7 +92,7 @@ public class DeviceCache<T extends Device> {
     }
 
     public static boolean connect(Device device) {
-        return connect(device, -1);
+        return connect(device, CONNECTION_WAIT_UNTIL_CONNECTED);
     }
 
     /**

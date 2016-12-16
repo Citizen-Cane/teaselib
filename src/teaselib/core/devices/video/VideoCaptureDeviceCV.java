@@ -1,6 +1,7 @@
 package teaselib.core.devices.video;
 
-import static org.bytedeco.javacpp.opencv_videoio.*;
+import static org.bytedeco.javacpp.opencv_videoio.CAP_PROP_FRAME_HEIGHT;
+import static org.bytedeco.javacpp.opencv_videoio.CAP_PROP_FRAME_WIDTH;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -18,11 +19,13 @@ import org.slf4j.LoggerFactory;
 
 import teaselib.core.devices.DeviceCache;
 import teaselib.core.devices.DeviceFactory;
+import teaselib.core.devices.WiredDevice;
 import teaselib.video.ResolutionList;
 import teaselib.video.VideoCaptureDevice;
 import teaselib.video.VideoCaptureDevices;
 
-public class VideoCaptureDeviceCV implements VideoCaptureDevice {
+public class VideoCaptureDeviceCV extends WiredDevice
+        implements VideoCaptureDevice {
     private static final Logger logger = LoggerFactory
             .getLogger(VideoCaptureDeviceCV.class);
 

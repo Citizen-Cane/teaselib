@@ -23,11 +23,11 @@ import teaselib.stimulation.StimulationDevices;
 public class XInputTest {
 
     private static List<XInputDevice> getXInputDevices() {
-        Collection<String> devicePaths = XInputDevices.Instance
+        Collection<String> devicePaths = XInputDevices.Devices
                 .getDevicePaths();
         List<XInputDevice> devices = new ArrayList<XInputDevice>(4);
         for (String devicePath : devicePaths) {
-            XInputDevice xinputDevice = XInputDevices.Instance
+            XInputDevice xinputDevice = XInputDevices.Devices
                     .getDevice(devicePath);
             devices.add(xinputDevice);
         }

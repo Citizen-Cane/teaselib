@@ -185,12 +185,15 @@ public class StimulationController<T> {
     }
 
     public void close() {
-        Set<Device> closed = new HashSet<Device>();
-        for (Stimulator stimulator : stimulators.values()) {
-            StimulationDevice device = stimulator.getDevice();
-            if (!closed.contains(device)) {
-                device.close();
-                closed.add(device);
+        synchronized (playing) {
+            stop();
+            Set<Device> closed = new HashSet<Device>();
+            for (Stimulator stimulator : stimulators.values()) {
+                StimulationDevice device = stimulator.getDevice();
+                if (!closed.contains(device)) {
+                    device.close();
+                    closed.add(device);
+                }
             }
         }
     }

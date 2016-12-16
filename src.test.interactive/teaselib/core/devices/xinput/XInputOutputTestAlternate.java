@@ -8,7 +8,7 @@ public class XInputOutputTestAlternate {
 
     @Test
     public void testAlternate() throws InterruptedException {
-        XInputDevice xid = XInputDevices.Instance.getDefaultDevice();
+        XInputDevice xid = XInputDevices.Devices.getDefaultDevice();
         System.out.println(xid.getDevicePath()
                 + (xid.connected() ? "" : ":" + Device.WaitingForConnection));
         for (int i = 0; i < 1000; i++) {

@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import teaselib.core.devices.BatteryLevel;
 import teaselib.core.devices.Device;
 import teaselib.core.devices.DeviceCache;
 import teaselib.core.devices.DeviceFactory;
@@ -135,6 +136,16 @@ public class KeyRelease implements Device {
     @Override
     public void close() {
         remoteDevice.close();
+    }
+
+    @Override
+    public boolean isWireless() {
+        return remoteDevice.isWireless();
+    }
+
+    @Override
+    public BatteryLevel batteryLevel() {
+        return remoteDevice.batteryLevel();
     }
 
     public int actuators() {

@@ -20,6 +20,7 @@ import teaselib.core.VideoRenderer;
 import teaselib.core.concurrency.Signal;
 import teaselib.core.devices.DeviceCache;
 import teaselib.core.devices.DeviceFactory;
+import teaselib.core.devices.WiredDevice;
 import teaselib.core.javacv.Copy;
 import teaselib.core.javacv.Scale;
 import teaselib.core.javacv.ScaleAndMirror;
@@ -59,7 +60,8 @@ import teaselib.video.VideoCaptureDevices;
  *         light sources from moving cars or traffic lights.
  * 
  */
-public class MotionDetectorJavaCV implements MotionDetector {
+public class MotionDetectorJavaCV extends WiredDevice
+        implements MotionDetector {
     private static final Logger logger = LoggerFactory
             .getLogger(MotionDetectorJavaCV.class);
 

@@ -15,6 +15,7 @@ import org.slf4j.LoggerFactory;
 import teaselib.core.devices.Device;
 import teaselib.core.devices.DeviceCache;
 import teaselib.core.devices.DeviceFactory;
+import teaselib.core.devices.WiredDevice;
 import teaselib.video.ResolutionList;
 import teaselib.video.VideoCaptureDevice;
 import teaselib.video.VideoCaptureDevices;
@@ -25,7 +26,8 @@ import teaselib.video.VideoCaptureDevices;
 // reconnect to same camera -> here
 // reconnect to new camera -> application
 
-public class VideoCaptureDeviceVideoInput implements VideoCaptureDevice {
+public class VideoCaptureDeviceVideoInput extends WiredDevice
+        implements VideoCaptureDevice {
     private static final Logger logger = LoggerFactory
             .getLogger(VideoCaptureDeviceVideoInput.class);
 

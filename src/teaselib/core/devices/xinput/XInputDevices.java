@@ -3,6 +3,8 @@
  */
 package teaselib.core.devices.xinput;
 
+import java.util.Set;
+
 import teaselib.core.devices.DeviceCache;
 
 /**
@@ -10,11 +12,18 @@ import teaselib.core.devices.DeviceCache;
  *
  */
 public class XInputDevices {
-    public static final DeviceCache<XInputDevice> Instance = new DeviceCache<XInputDevice>() {
+    public static final DeviceCache<XInputDevice> Devices = new DeviceCache<XInputDevice>() {
 
         @Override
         public XInputDevice getDefaultDevice() {
-            String defaultId = getLast(getDevicePaths());
+            Set<String> devicePaths = getDevicePaths();
+            for (String devicePath : devicePaths) {
+                XInputDevice device = getDevice(devicePath);
+                if (device.isWireless()) {
+                    return device;
+                }
+            }
+            String defaultId = getLast(devicePaths);
             return getDevice(defaultId);
         }
     }.addFactory(XInputDevice.Factory);

@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import teaselib.core.devices.BatteryLevel;
 import teaselib.core.devices.DeviceFactory;
 
 public class BluetoothDevice implements RemoteDevice {
@@ -93,6 +94,18 @@ public class BluetoothDevice implements RemoteDevice {
 
     @Override
     public void send(RemoteDeviceMessage message) {
+        throw new IllegalStateException(
+                "Bluetooth remote devices are not implemented yet");
+    }
+
+    @Override
+    public boolean isWireless() {
+        throw new IllegalStateException(
+                "Bluetooth remote devices are not implemented yet");
+    }
+
+    @Override
+    public BatteryLevel batteryLevel() {
         throw new IllegalStateException(
                 "Bluetooth remote devices are not implemented yet");
     }

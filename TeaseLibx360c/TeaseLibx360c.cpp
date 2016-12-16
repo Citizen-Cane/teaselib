@@ -74,6 +74,16 @@ JNIEXPORT jint JNICALL Java_teaselib_core_devices_xinput_XInputDevice_pollDevice
 	}
 }
 
+JNIEXPORT jint JNICALL Java_teaselib_core_devices_xinput_XInputDevice_getBatteryInformation
+(JNIEnv * env, jclass cls, jint dwUserIndex, jobject byteBuffer) {
+	// the byte buffer must be allocatedDirect(2)'d in Java...
+	void *bbuf = env->GetDirectBufferAddress(byteBuffer);
+	// ... because we're going to write straight into it
+	XINPUT_BATTERY_INFORMATION *batteryInfo = (XINPUT_BATTERY_INFORMATION *)bbuf;
+	ZeroMemory(batteryInfo, sizeof(XINPUT_BATTERY_INFORMATION));
+	return XInputGetBatteryInformation(dwUserIndex, BATTERY_DEVTYPE_GAMEPAD, batteryInfo);
+}
+
 JNIEXPORT jint JNICALL Java_teaselib_core_devices_xinput_XInputDevice_setVibration
 (JNIEnv *env, jclass cls, jint dwUserIndex, jint leftMotor, jint rightMotor) {
     XINPUT_VIBRATION vib;

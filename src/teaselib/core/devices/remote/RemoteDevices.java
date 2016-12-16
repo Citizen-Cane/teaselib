@@ -3,6 +3,7 @@ package teaselib.core.devices.remote;
 import java.util.List;
 import java.util.Vector;
 
+import teaselib.core.devices.BatteryLevel;
 import teaselib.core.devices.Device;
 import teaselib.core.devices.DeviceCache;
 
@@ -37,6 +38,16 @@ public class RemoteDevices {
 
         @Override
         public void close() {
+        }
+
+        @Override
+        public boolean isWireless() {
+            return true;
+        }
+
+        @Override
+        public BatteryLevel batteryLevel() {
+            return BatteryLevel.Medium;
         }
 
         @Override

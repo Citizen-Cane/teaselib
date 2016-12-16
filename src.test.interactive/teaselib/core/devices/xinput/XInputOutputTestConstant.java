@@ -27,7 +27,7 @@ public class XInputOutputTestConstant {
 
     @Test
     public void testConstantStim() throws InterruptedException {
-        XInputDevice xid = XInputDevices.Instance.getDefaultDevice();
+        XInputDevice xid = XInputDevices.Devices.getDefaultDevice();
         System.out.println(xid.getDevicePath());
         try {
             testVibration(xid, (short) 65535, (short) 0);

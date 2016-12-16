@@ -12,7 +12,7 @@ public class XInputGuideButtonAndShutdownTest {
     @Test
     public void testPressGuideButtonFor1SecondAndShutdown()
             throws InterruptedException {
-        XInputDevice xid = XInputDevices.Instance.getDefaultDevice();
+        XInputDevice xid = XInputDevices.Devices.getDefaultDevice();
         System.out.println(xid.getDevicePath());
         try {
             // Press guide button for one seconds

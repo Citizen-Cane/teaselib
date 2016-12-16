@@ -29,7 +29,7 @@ public class DeviceFactoryTests {
     @Test
     public void instanciateDeviceFactories() {
         logger.info("Available devices:");
-        listDevices(XInputDevices.Instance.getDevicePaths());
+        listDevices(XInputDevices.Devices.getDevicePaths());
         listDevices(StimulationDevices.Devices.getDevicePaths());
         listDevices(VideoCaptureDevices.Instance.getDevicePaths());
         listDevices(MotionDetection.Devices.getDevicePaths());

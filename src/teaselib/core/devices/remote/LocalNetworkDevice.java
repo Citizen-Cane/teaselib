@@ -16,6 +16,7 @@ import javax.swing.SwingUtilities;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import teaselib.core.devices.BatteryLevel;
 import teaselib.core.devices.DeviceCache;
 import teaselib.core.devices.DeviceFactory;
 
@@ -201,6 +202,16 @@ public class LocalNetworkDevice implements RemoteDevice {
     @Override
     public void close() {
         connection.close();
+    }
+
+    @Override
+    public boolean isWireless() {
+        return true;
+    }
+
+    @Override
+    public BatteryLevel batteryLevel() {
+        return BatteryLevel.High;
     }
 
     @Override

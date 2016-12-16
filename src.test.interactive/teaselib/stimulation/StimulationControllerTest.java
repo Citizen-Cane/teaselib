@@ -5,6 +5,8 @@ package teaselib.stimulation;
 
 import static org.junit.Assert.assertNotNull;
 
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 /**
@@ -12,12 +14,31 @@ import org.junit.Test;
  *
  */
 public class StimulationControllerTest {
+    private static StimulationDevice device;
+
+    @BeforeClass
+    public static void openDefaultDevice() {
+        device = StimulationDevices.Devices.getDefaultDevice();
+    }
+
+    @AfterClass
+    public static void closeDefaultDevice() {
+        device.close();
+    }
+
+    public static Stimulator getLeftStimulator() {
+        return device.stimulators().get(0);
+    }
+
+    public static Stimulator getRightStimulator() {
+        return device.stimulators().get(1);
+    }
 
     @Test
     public void testAnusAndBalls() {
-        Stimulator anus = StimulationTest.getRightStimulator();
+        Stimulator anus = getRightStimulator();
         assertNotNull(anus);
-        Stimulator balls = StimulationTest.getLeftStimulator();
+        Stimulator balls = getLeftStimulator();
         assertNotNull(balls);
         StimulationController<StimulationType> stim = StimulationType
                 .stimulateAnusAndBalls(anus, balls);

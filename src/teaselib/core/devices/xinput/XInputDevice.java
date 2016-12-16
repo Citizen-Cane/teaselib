@@ -7,7 +7,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import teaselib.core.devices.BatteryStatus;
+import teaselib.core.devices.BatteryLevel;
 import teaselib.core.devices.Device;
 import teaselib.core.devices.DeviceCache;
 import teaselib.core.devices.DeviceFactory;
@@ -46,12 +46,14 @@ public class XInputDevice implements Device {
 
     private final int playerNum;
     private final ByteBuffer buffer; // Contains the XINPUT_STATE struct
+    private final ByteBuffer batteryStatusBuffer; // _XINPUT_BATTERY_INFORMATION
     private final XInputComponents lastComponents;
     private final XInputComponents components;
     private final XInputComponentsDelta delta;
 
     private boolean lastConnected;
     private boolean connected;
+    private boolean isWireless = true; // true if disconnected :^)
 
     private final List<XInputDeviceListener> listeners;
 
@@ -68,9 +70,9 @@ public class XInputDevice implements Device {
     public static List<String> getDevicePaths() {
         List<String> devicePaths = new ArrayList<String>(4);
         for (int i = 0; i < XInputDevice.MAX_PLAYERS; i++) {
-            if (XInputDevice.getDeviceFor(i).connected()) {
-                devicePaths.add(DeviceCache.createDevicePath(
-                        XInputDevice.DeviceClassName, Integer.toString(i)));
+            XInputDevice device = XInputDevice.getDeviceFor(i);
+            if (device.connected()) {
+                devicePaths.add(device.getDevicePath());
             }
         }
         return devicePaths;
@@ -102,6 +104,7 @@ public class XInputDevice implements Device {
         this.playerNum = playerNum;
         buffer = ByteBuffer.allocateDirect(16); // sizeof(XINPUT_STATE)
         buffer.order(ByteOrder.nativeOrder());
+        batteryStatusBuffer = ByteBuffer.allocateDirect(2); // sizeof(_XINPUT_BATTERY_INFORMATION)
 
         lastComponents = new XInputComponents();
         components = new XInputComponents();
@@ -146,6 +149,52 @@ public class XInputDevice implements Device {
     @Override
     public void close() {
         shutdown();
+    }
+
+    /**
+     * Reads input from the device and updates components.
+     *
+     * @return <code>false</code> if the device was not connected
+     */
+    @Override
+    public BatteryLevel batteryLevel() {
+        // typedef struct _XINPUT_BATTERY_INFORMATION
+        // {
+        // BYTE BatteryType;
+        // BYTE BatteryLevel;
+        // } XINPUT_BATTERY_INFORMATION, *PXINPUT_BATTERY_INFORMATION;
+
+        int ret = getBatteryInformation(playerNum, batteryStatusBuffer);
+        if (ret == ERROR_DEVICE_NOT_CONNECTED) {
+            setConnected(false);
+            return BatteryLevel.Empty;
+        }
+
+        int batteryType = batteryStatusBuffer.get();
+        int batteryLevel = batteryStatusBuffer.get();
+        batteryStatusBuffer.flip();
+
+        isWireless = true;
+        if (batteryType == BATTERY_TYPE_DISCONNECTED) {
+            return BatteryLevel.Empty;
+        } else if (batteryType == BATTERY_TYPE_WIRED) {
+            isWireless = false;
+            return BatteryLevel.High;
+        } else if (batteryLevel == BATTERY_LEVEL_FULL) {
+            return BatteryLevel.High;
+        } else if (batteryLevel == BATTERY_LEVEL_MEDIUM) {
+            return BatteryLevel.Medium;
+        } else if (batteryLevel == BATTERY_LEVEL_LOW) {
+            return BatteryLevel.Low;
+        } else {
+            return BatteryLevel.Empty;
+        }
+    }
+
+    @Override
+    public boolean isWireless() {
+        batteryLevel();
+        return isWireless;
     }
 
     /**
@@ -246,35 +295,6 @@ public class XInputDevice implements Device {
         buttons.right = right;
 
         processDelta();
-        return true;
-    }
-
-    /**
-     * Reads input from the device and updates components.
-     *
-     * @return <code>false</code> if the device was not connected
-     */
-    public BatteryStatus getStatus() {
-        // TODO retrieve battery status
-
-        // DWORD XInputGetBatteryInformation(
-        // _In_ DWORD dwUserIndex,
-        // _In_ BYTE devType,
-        // _Out_ XINPUT_BATTERY_INFORMATION *pBatteryInformation
-        // );
-        //
-        // typedef struct _XINPUT_BATTERY_INFORMATION
-        // {
-        // BYTE BatteryType;
-        // BYTE BatteryLevel;
-        // } XINPUT_BATTERY_INFORMATION, *PXINPUT_BATTERY_INFORMATION;
-
-        return BatteryStatus.Empty;
-    }
-
-    public boolean isWireless() {
-        // can be determined from xinput battery status
-        // TODO if so make default device
         return true;
     }
 
@@ -416,4 +436,19 @@ public class XInputDevice implements Device {
     // Windows error codes
     private static final int ERROR_SUCCESS = 0;
     private static final int ERROR_DEVICE_NOT_CONNECTED = 1167;
+    // Battery types
+    //
+    private static final int BATTERY_TYPE_DISCONNECTED = 0x00; // not connected
+    private static final int BATTERY_TYPE_WIRED = 0x01; // Wired device
+    private static final int BATTERY_TYPE_ALKALINE = 0x02; // Alkaline battery
+    private static final int BATTERY_TYPE_NIMH = 0x03; // Nickel Metal Hydride
+    private static final int BATTERY_TYPE_UNKNOWN = 0xFF; // Cannot determine
+                                                          // the battery type
+
+    // These are only valid for wireless, connected devices, with known battery
+    // types, the amount of use time remaining depends on the type of device.
+    private static final int BATTERY_LEVEL_EMPTY = 0x00;
+    private static final int BATTERY_LEVEL_LOW = 0x01;
+    private static final int BATTERY_LEVEL_MEDIUM = 0x02;
+    private static final int BATTERY_LEVEL_FULL = 0x03;
 }

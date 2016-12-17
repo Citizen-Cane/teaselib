@@ -16,11 +16,10 @@ public class PreRecordedVoice extends VoiceProperties {
     public final static String ActorPropertiesFilename = "voice.properties";
 
     public PreRecordedVoice(String actorName, String voiceGuid,
-            ResourceLoader resources, String speechResourcesLocation) {
+            ResourceLoader resources) {
         InputStream prerecordedVoiceConfig = null;
-        String actorProperties = speechResourcesLocation + "/"
-                + TextToSpeechRecorder.SpeechDirName + "/" + actorName + "/"
-                + voiceGuid + "/" + ActorPropertiesFilename;
+        String actorProperties = TextToSpeechRecorder.SpeechDirName + "/"
+                + actorName + "/" + voiceGuid + "/" + ActorPropertiesFilename;
         try {
             try {
                 prerecordedVoiceConfig = resources.getResource(actorProperties);

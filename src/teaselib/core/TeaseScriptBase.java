@@ -85,7 +85,7 @@ public abstract class TeaseScriptBase {
         // TODO be able to store class relative and relative to script class
         // - don't reference resource loader basedir, to make resource loader a
         // singleton
-        ttsPlayer.loadActorVoices(resources, "/" + namespace);
+        ttsPlayer.loadActorVoices(resources);
         ttsPlayer.acquireVoice(actor);
     }
 

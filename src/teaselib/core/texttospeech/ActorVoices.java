@@ -14,12 +14,11 @@ public class ActorVoices extends VoiceProperties {
 
     public final static String VoicesFilename = "Actor Voices.properties";
 
-    public ActorVoices(ResourceLoader resources, String speechResourcesPath) {
-        String resource = speechResourcesPath + "/" + VoicesFilename;
+    public ActorVoices(ResourceLoader resources) {
         try {
             InputStream recordedVoicesConfig = null;
             try {
-                recordedVoicesConfig = resources.getResource(resource);
+                recordedVoicesConfig = resources.getResource(VoicesFilename);
                 properties.load(recordedVoicesConfig);
             } finally {
                 if (recordedVoicesConfig != null) {
@@ -27,8 +26,8 @@ public class ActorVoices extends VoiceProperties {
                 }
             }
         } catch (IOException e) {
-            logger.info("No actor voices configuration found in '" + resource
-                    + "' - using defaults");
+            logger.info("No actor voices configuration found in '"
+                    + VoicesFilename + "' - using defaults");
         }
     }
 

@@ -91,30 +91,26 @@ public class TextToSpeechPlayer {
      *            The resource object that contains the assignments and/or
      *            pre-recorded speech.
      */
-    public void loadActorVoices(ResourceLoader resources,
-            String speechResourcesLocation) {
+    public void loadActorVoices(ResourceLoader resources) {
         // Have we read any voice-related configuration files from this resource
         // loader yet?
         if (!processedVoiceActorVoices.contains(resources)) {
             processedVoiceActorVoices.add(resources);
             // Get the list of actor to voice assignments
-            ActorVoices actorVoices = new ActorVoices(resources,
-                    speechResourcesLocation);
+            ActorVoices actorVoices = new ActorVoices(resources);
             for (String actorKey : actorVoices.keySet()) {
                 // Available as a pre-recorded voice?
                 String voiceGuid = actorVoices.getGuid(actorKey);
                 PreRecordedVoice preRecordedVoice = new PreRecordedVoice(
-                        actorKey, voiceGuid, resources,
-                        speechResourcesLocation);
+                        actorKey, voiceGuid, resources);
                 // Only if actor isn't assigned yet - when called from other
                 // script
                 if (!actorKey2TTSVoice.containsKey(actorKey)
                         && preRecordedVoice.available()) {
                     actorKey2PrerecordedVoiceGuid.put(actorKey, voiceGuid);
                     usedVoices.add(voiceGuid);
-                    String speechResources = speechResourcesLocation + "/"
-                            + TextToSpeechRecorder.SpeechDirName + "/"
-                            + actorKey + "/" + voiceGuid + "/";
+                    String speechResources = TextToSpeechRecorder.SpeechDirName
+                            + "/" + actorKey + "/" + voiceGuid + "/";
                     actorKey2SpeechResourcesLocation.put(actorKey,
                             speechResources);
                     logger.info("Actor " + actorKey

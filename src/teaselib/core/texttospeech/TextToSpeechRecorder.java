@@ -7,6 +7,7 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -35,7 +36,6 @@ public class TextToSpeechRecorder {
     public final static String ResourcesFilename = "inventory.txt";
 
     private final ResourceLoader resources;
-    private final String speechResourcesPath;
     private File speechDir = null;
     private final Map<String, Voice> voices;
     private final Set<String> actors = new HashSet<String>();
@@ -48,19 +48,17 @@ public class TextToSpeechRecorder {
     int upToDateEntries = 0;
     int reusedDuplicates = 0;
 
-    public TextToSpeechRecorder(ResourceLoader resources,
-            String speechResourcesPath) throws IOException {
+    public TextToSpeechRecorder(ResourceLoader resources) throws IOException {
         this.resources = resources;
-        this.speechResourcesPath = speechResourcesPath;
         this.ttsPlayer = TextToSpeechPlayer.instance();
         this.voices = ttsPlayer.textToSpeech.getVoices();
-        File assetsDir = resources.getAssetPath(speechResourcesPath);
+        File assetsDir = resources.getAssetPath("");
         this.speechDir = createSubDir(assetsDir, SpeechDirName);
         InstalledVoices available = new InstalledVoices(voices);
         available.store(assetsDir);
-        actorVoices = new ActorVoices(resources, speechResourcesPath);
+        actorVoices = new ActorVoices(resources);
         logger.info("Build start: " + new Date(buildStart).toString());
-        ttsPlayer.loadActorVoices(resources, speechResourcesPath);
+        ttsPlayer.loadActorVoices(resources);
     }
 
     private static File createSubDir(File dir, String name) {
@@ -152,30 +150,44 @@ public class TextToSpeechRecorder {
             // directories in the resource paths
             actors.add(actor.key);
             PreRecordedVoice actorVoice = new PreRecordedVoice(actor.key,
-                    voice.guid, resources, speechResourcesPath);
+                    voice.guid, resources);
             actorVoice.clear();
             actorVoice.put(actor.key, voice);
             actorVoice.store(
                     new File(new File(speechDir, actor.key), voice.guid));
             // update actor voices property file
             actorVoices.putGuid(actor.key, voice);
-            actorVoices.store(resources.getAssetPath(speechResourcesPath));
+            if (updateActorVoicesFile()) {
+                actorVoices.store(resources.getAssetPath(""));
+            }
+        }
+    }
+
+    private boolean updateActorVoicesFile() throws IOException {
+        InputStream is = null;
+        try {
+            is = resources.getResource(ActorVoices.VoicesFilename);
+            return is == null;
+        } finally {
+            if (is != null) {
+                is.close();
+            }
         }
     }
 
     private Voice getVoice(Actor actor) {
-        final Voice neutralVoice;
+        final Voice voice;
         String voiceGuid = ttsPlayer.getAssignedVoiceFor(actor);
         if (voiceGuid == null) {
-            neutralVoice = ttsPlayer.getVoiceFor(actor);
+            voice = ttsPlayer.getVoiceFor(actor);
         } else {
-            neutralVoice = voices.get(voiceGuid);
+            voice = voices.get(voiceGuid);
         }
-        if (neutralVoice == null) {
+        if (voice == null) {
             throw new IllegalArgumentException("Voice for actor '" + actor
                     + "' not found in " + ActorVoices.VoicesFilename);
         }
-        return neutralVoice;
+        return voice;
     }
 
     public void finish() {

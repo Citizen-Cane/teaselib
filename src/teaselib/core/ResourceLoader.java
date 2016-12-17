@@ -42,6 +42,12 @@ public class ResourceLoader {
         this(mainScript, getPackagePath(mainScript));
     }
 
+    public ResourceLoader(Class<?> mainScript, String resourceRoot,
+            String[] paths) {
+        this(mainScript, resourceRoot);
+        addAssets(paths);
+    }
+
     /**
      * @param mainScript
      *            The class of the main script, for loading resources.

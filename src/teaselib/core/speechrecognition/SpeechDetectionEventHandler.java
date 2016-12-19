@@ -1,6 +1,5 @@
 package teaselib.core.speechrecognition;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import org.slf4j.Logger;
@@ -12,16 +11,17 @@ import teaselib.core.speechrecognition.events.SpeechRecognitionStartedEventArgs;
 import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
 
 /**
- * This was started as an approach to get along with low-quality microphones,
- * but for microphones/speaker configurations it starts to recognize noise as
- * speech - sooner or later.
+ * Improve speech recognition user experience by just recognizing the first n
+ * words. Speaking a longer prompt often results in rejected speech recognition,
+ * because the prompt is just too long.
  * <p>
- * Might still be useful for headphones with integrated microphones, but this
- * claim has yet to be tested.
+ * By just attempting to recognize the first few words, longer prompts are
+ * recognized, while keeping high accuracy.
  * <p>
- * Well, there's one use for un-exactly recognizing phrases: when we don't care
- * about the exact phrase. This is how it is used by the speech recognizer, to
- * fetch results with low confidence for long prompts.
+ * Multiple prompts starting with the same words are taken into account, in
+ * order to avoid the wrong prompt being recognized.
+ * <p>
+ * The minimal word count
  * 
  * @author Citizen-Cane
  *
@@ -30,30 +30,32 @@ public class SpeechDetectionEventHandler {
     static final Logger logger = LoggerFactory
             .getLogger(SpeechDetectionEventHandler.class);
     /**
-     * Hypothesis speech recognition is used for longer sentences, as short
-     * sentences or single word recognitions are prone to error. In fact, for
-     * single word phrases, the recognizer may recognize anything.
+     * The default number of words after which the handler will accept a
+     * hypothesis when the confidence is high enough.
      * <p>
      * The first three or four syllables of any prompt are usually detected with
-     * a high probability values, so the minimum value should be four.
+     * a high probability value, so the minimum value should be four.
      */
-    private final static int HypothesisMinimumNumberOfWordsDefault = 6;
+    private final static int HypothesisMinimumNumberOfWordsDefault = 5;
 
     /**
-     * This adjusts the sensibility of the hypothesis rating. The better the
-     * microphone, the higher this value should be.
+     * The default number of vowels after which the handler will accept a
+     * hypothesis when the confidence is high enough.
      */
-    final static double HypothesisMinimumAccumulatedWeight = 1.0;
+    @SuppressWarnings("unused")
+    private final static int HypothesisMinimumNumberOfVowelsDefault = 8;
 
     private final SpeechRecognition speechRecognizer;
     private final Event<SpeechRecognitionImplementation, SpeechRecognitionStartedEventArgs> recognitionStarted;
     private final Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs> speechDetected;
     private final Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs> recognitionRejected;
 
+    private final Vowels vowels = new Vowels(
+            HypothesisMinimumNumberOfWordsDefault);
+
     private List<String> choices;
     SpeechRecognitionResult recognitionResult;
 
-    private int minimumNumberOfWordsForHypothesisRecognition = HypothesisMinimumNumberOfWordsDefault;
     private Confidence recognitionConfidence = Confidence.Default;
     private boolean enabled = false;
 
@@ -116,14 +118,32 @@ public class SpeechDetectionEventHandler {
                     return;
                 } else {
                     for (SpeechRecognitionResult result : eventArgs.result) {
-                        if (recognitionResult == null || (result
-                                .hasHigherProbabilityThan(recognitionResult)
-                                || wordCount(result.text) > wordCount(
-                                        recognitionResult.text))) {
+                        if (acceptHypothesis(result)) {
+                            logger.info("Considering " + result.toString());
                             recognitionResult = result;
                         }
                     }
                 }
+            }
+
+            private boolean acceptHypothesis(SpeechRecognitionResult result) {
+                if (enoughWordsForHypothesisResult(result)) {
+                    if (recognitionResult == null) {
+                        return true;
+                    } else if (vowels.count(result.text) > vowels
+                            .count(recognitionResult.text)
+                            && result.hasHigherProbabilityThan(
+                                    recognitionResult)) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+
+            private boolean enoughWordsForHypothesisResult(
+                    SpeechRecognitionResult result) {
+                return vowels.count(result.text) >= vowels
+                        .getHypothesisMinimumCount(choices);
             }
         };
     }
@@ -159,9 +179,9 @@ public class SpeechDetectionEventHandler {
                             + recognitionConfidence.propability);
                     return false;
                 } else {
-                    int wordCount = wordCount(recognitionResult.text);
-                    int minimumNumberOfWordsRequired = getHypothesisMinimumNumberOfWords(
-                            choices);
+                    int wordCount = vowels.count(recognitionResult.text);
+                    int minimumNumberOfWordsRequired = vowels
+                            .getHypothesisMinimumCount(choices);
                     if (wordCount < minimumNumberOfWordsRequired) {
                         logger.info("Phrase '" + recognitionResult.text
                                 + "' word detection count=" + wordCount
@@ -176,67 +196,4 @@ public class SpeechDetectionEventHandler {
         };
     }
 
-    int getHypothesisMinimumNumberOfWords(List<String> choices) {
-        return getMinimumNumberOfWordsForHypothesisRecognition()
-                + numberOfSameWordsInAnyTwoChoicesAtStart(choices);
-    }
-
-    private static int numberOfSameWordsInAnyTwoChoicesAtStart(
-            List<String> choices) {
-        if (choices.size() == 1)
-            return 0;
-        List<String[]> list = new ArrayList<String[]>();
-        for (String choice : choices) {
-            list.add(removePunctation(choice).toLowerCase().split(" "));
-        }
-        int i = 0;
-        word: while (true) {
-            for (String[] choice : list) {
-                for (int j = 0; j < list.size(); j++) {
-                    String[] other = list.get(j);
-                    if (choice == other) {
-                        break;
-                    } else if (i > choice.length - 1 || i > other.length - 1)
-                        continue;
-                    else if (choice[i].equals(other[i])) {
-                        i++;
-                        continue word;
-                    }
-                }
-            }
-            break;
-        }
-        return i;
-    }
-
-    static int wordCount(String text) {
-        String preparatedText = text;
-        preparatedText = removePunctation(preparatedText);
-        return preparatedText.split(" ").length;
-    }
-
-    private static String removePunctation(String preparatedText) {
-        preparatedText = preparatedText.replace(".", " ");
-        preparatedText = preparatedText.replace(":", " ");
-        preparatedText = preparatedText.replace(",", " ");
-        preparatedText = preparatedText.replace(";", " ");
-        preparatedText = preparatedText.replace("!", " ");
-        preparatedText = preparatedText.replace("-", " ");
-        preparatedText = preparatedText.replace("(", " ");
-        preparatedText = preparatedText.replace(")", " ");
-        preparatedText = preparatedText.replace("\"", " ");
-        preparatedText = preparatedText.replace("'", " ");
-        preparatedText = preparatedText.replace("  ", " ");
-        preparatedText.trim();
-        return preparatedText;
-    }
-
-    public int getMinimumNumberOfWordsForHypothesisRecognition() {
-        return minimumNumberOfWordsForHypothesisRecognition;
-    }
-
-    public void setMinimumNumberOfWordsForHypothesisRecognition(
-            int minimumNumberOfWordsForHypothesisRecognition) {
-        this.minimumNumberOfWordsForHypothesisRecognition = minimumNumberOfWordsForHypothesisRecognition;
-    }
 }

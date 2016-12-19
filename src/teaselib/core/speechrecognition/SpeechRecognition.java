@@ -202,7 +202,7 @@ public class SpeechRecognition {
 
     private static boolean enableSpeechHypothesisHandlerGlobally() {
         return Boolean.toString(true).compareToIgnoreCase(System.getProperty(
-                EnableSpeechHypothesisHandlerGlobally, "false")) == 0;
+                EnableSpeechHypothesisHandlerGlobally, "true")) == 0;
     }
 
     /**

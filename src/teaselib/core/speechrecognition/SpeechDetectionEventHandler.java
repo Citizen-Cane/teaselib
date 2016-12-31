@@ -42,7 +42,6 @@ public class SpeechDetectionEventHandler {
      * The default number of vowels after which the handler will accept a
      * hypothesis when the confidence is high enough.
      */
-    @SuppressWarnings("unused")
     private final static int HypothesisMinimumNumberOfVowelsDefault = 8;
 
     private final SpeechRecognition speechRecognizer;
@@ -50,8 +49,12 @@ public class SpeechDetectionEventHandler {
     private final Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs> speechDetected;
     private final Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs> recognitionRejected;
 
-    private final Vowels vowels = new Vowels(
+    private PromptSplitter vowelSplitter = new LatinVowelSplitter(
+            HypothesisMinimumNumberOfVowelsDefault);
+    private PromptSplitter wordSplitter = new WordSplitter(
             HypothesisMinimumNumberOfWordsDefault);
+
+    private PromptSplitter promptSplitter = null;
 
     private List<String> choices;
     SpeechRecognitionResult recognitionResult;
@@ -85,6 +88,11 @@ public class SpeechDetectionEventHandler {
 
     public void setChoices(List<String> choices) {
         this.choices = choices;
+        if (vowelSplitter.count(choices.get(0)) > 0) {
+            promptSplitter = vowelSplitter;
+        } else {
+            promptSplitter = wordSplitter;
+        }
     }
 
     public void setConfidence(Confidence recognitionConfidence) {
@@ -130,8 +138,9 @@ public class SpeechDetectionEventHandler {
                 if (enoughWordsForHypothesisResult(result)) {
                     if (recognitionResult == null) {
                         return true;
-                    } else if (vowels.count(result.text) > vowels
-                            .count(recognitionResult.text)
+                    } else if (promptSplitter
+                            .count(result.text) > promptSplitter
+                                    .count(recognitionResult.text)
                             && result.hasHigherProbabilityThan(
                                     recognitionResult)) {
                         return true;
@@ -142,7 +151,7 @@ public class SpeechDetectionEventHandler {
 
             private boolean enoughWordsForHypothesisResult(
                     SpeechRecognitionResult result) {
-                return vowels.count(result.text) >= vowels
+                return promptSplitter.count(result.text) >= promptSplitter
                         .getHypothesisMinimumCount(choices);
             }
         };
@@ -179,8 +188,9 @@ public class SpeechDetectionEventHandler {
                             + recognitionConfidence.propability);
                     return false;
                 } else {
-                    int wordCount = vowels.count(recognitionResult.text);
-                    int minimumNumberOfWordsRequired = vowels
+                    int wordCount = promptSplitter
+                            .count(recognitionResult.text);
+                    int minimumNumberOfWordsRequired = promptSplitter
                             .getHypothesisMinimumCount(choices);
                     if (wordCount < minimumNumberOfWordsRequired) {
                         logger.info("Phrase '" + recognitionResult.text

@@ -3,41 +3,53 @@ package teaselib.core.speechrecognition;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Vowels {
+public abstract class BasicSplitter implements PromptSplitter {
 
-    private int minimumNumberOfWordsForHypothesisRecognition;
+    private int minimumForHypothesisRecognition;
 
-    public Vowels(int minimumNumberOfWordsForHypothesisRecognition) {
-        this.minimumNumberOfWordsForHypothesisRecognition = minimumNumberOfWordsForHypothesisRecognition;
+    public BasicSplitter(int minimumForHypothesisRecognition) {
+        super();
+        this.minimumForHypothesisRecognition = minimumForHypothesisRecognition;
     }
 
-    public int getMinimumNumberOfWordsForHypothesisRecognition() {
-        return minimumNumberOfWordsForHypothesisRecognition;
+    @Override
+    public int getMinimumForHypothesisRecognition() {
+        return minimumForHypothesisRecognition;
     }
 
-    public void setMinimumNumberOfWordsForHypothesisRecognition(
+    @Override
+    public void setMinimumForHypothesisRecognition(
             int minimumNumberOfWordsForHypothesisRecognition) {
-        this.minimumNumberOfWordsForHypothesisRecognition = minimumNumberOfWordsForHypothesisRecognition;
+        this.minimumForHypothesisRecognition = minimumNumberOfWordsForHypothesisRecognition;
     }
 
-    public int count(String text) {
-        String preparatedText = text;
-        preparatedText = removePunctation(preparatedText);
-        return splitVowels(preparatedText).length;
-    }
-
+    /*
+     * (non-Javadoc)
+     * 
+     * @see
+     * teaselib.core.speechrecognition.PromptSplitter#getHypothesisMinimumCount(
+     * java.util.List)
+     */
+    @Override
     public int getHypothesisMinimumCount(List<String> choices) {
         return numberOfSameItemsInAnyTwoAtStart(choices)
-                + getMinimumNumberOfWordsForHypothesisRecognition();
+                + getMinimumForHypothesisRecognition();
     }
 
+    /*
+     * (non-Javadoc)
+     * 
+     * @see teaselib.core.speechrecognition.PromptSplitter#
+     * numberOfSameItemsInAnyTwoAtStart(java.util.List)
+     */
+    @Override
     public int numberOfSameItemsInAnyTwoAtStart(List<String> choices) {
         if (choices.size() == 1)
             return 0;
         List<String[]> list = new ArrayList<String[]>();
         for (String choice : choices) {
             String lowerCase = removePunctation(choice).toLowerCase();
-            list.add(splitVowels(lowerCase));
+            list.add(split(lowerCase));
         }
         int i = 0;
         word: while (true) {
@@ -59,8 +71,9 @@ public class Vowels {
         return i;
     }
 
-    public String[] splitVowels(String text) {
-        return text.split(" ");
+    @Override
+    public int count(String text) {
+        return split(removePunctation(text)).length;
     }
 
     private static String removePunctation(String text) {
@@ -79,4 +92,5 @@ public class Vowels {
         return text;
     }
 
+    protected abstract String[] split(String text);
 }

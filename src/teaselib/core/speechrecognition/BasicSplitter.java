@@ -31,19 +31,12 @@ public abstract class BasicSplitter implements PromptSplitter {
      * java.util.List)
      */
     @Override
-    public int getHypothesisMinimumCount(List<String> choices) {
-        return numberOfSameItemsInAnyTwoAtStart(choices)
-                + getMinimumForHypothesisRecognition();
+    public int getMinimumForHypothesisRecognition(List<String> choices) {
+        return getMinimumForHypothesisRecognition()
+                + numberOfSameItemsInAnyTwoAtStart(choices);
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see teaselib.core.speechrecognition.PromptSplitter#
-     * numberOfSameItemsInAnyTwoAtStart(java.util.List)
-     */
-    @Override
-    public int numberOfSameItemsInAnyTwoAtStart(List<String> choices) {
+    private int numberOfSameItemsInAnyTwoAtStart(List<String> choices) {
         if (choices.size() == 1)
             return 0;
         List<String[]> list = new ArrayList<String[]>();

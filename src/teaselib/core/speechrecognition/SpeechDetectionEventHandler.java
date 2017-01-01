@@ -54,13 +54,12 @@ public class SpeechDetectionEventHandler {
     private PromptSplitter wordSplitter = new WordSplitter(
             HypothesisMinimumNumberOfWordsDefault);
 
-    private PromptSplitter promptSplitter = null;
-
-    private List<String> choices;
-    SpeechRecognitionResult recognitionResult;
-
     private Confidence recognitionConfidence = Confidence.Default;
     private boolean enabled = false;
+    private List<String> choices;
+    private PromptSplitter promptSplitter = null;
+    private int minimumForHypothesisRecognition = 0;
+    SpeechRecognitionResult recognitionResult;
 
     public SpeechDetectionEventHandler(SpeechRecognition speechRecognizer) {
         super();
@@ -93,6 +92,8 @@ public class SpeechDetectionEventHandler {
         } else {
             promptSplitter = wordSplitter;
         }
+        minimumForHypothesisRecognition = promptSplitter
+                .getMinimumForHypothesisRecognition(choices);
     }
 
     public void setConfidence(Confidence recognitionConfidence) {
@@ -151,8 +152,8 @@ public class SpeechDetectionEventHandler {
 
             private boolean enoughWordsForHypothesisResult(
                     SpeechRecognitionResult result) {
-                return promptSplitter.count(result.text) >= promptSplitter
-                        .getHypothesisMinimumCount(choices);
+                return promptSplitter
+                        .count(result.text) >= minimumForHypothesisRecognition;
             }
         };
     }
@@ -167,7 +168,7 @@ public class SpeechDetectionEventHandler {
                 } else if (isRecognizedPrompt()) {
                     eventArgs.consumed = true;
                     logger.info(
-                            "Recognized as speech hypothesis -> forwarding event as completed");
+                            "Recognized as speech hypothesis -> forwarding as completed");
                     SpeechRecognitionResult[] results = { recognitionResult };
                     SpeechRecognizedEventArgs recognitionCompletedEventArgs = new SpeechRecognizedEventArgs(
                             results);
@@ -188,14 +189,12 @@ public class SpeechDetectionEventHandler {
                             + recognitionConfidence.propability);
                     return false;
                 } else {
-                    int wordCount = promptSplitter
-                            .count(recognitionResult.text);
-                    int minimumNumberOfWordsRequired = promptSplitter
-                            .getHypothesisMinimumCount(choices);
-                    if (wordCount < minimumNumberOfWordsRequired) {
+                    int count = promptSplitter.count(recognitionResult.text);
+                    if (count < minimumForHypothesisRecognition) {
                         logger.info("Phrase '" + recognitionResult.text
-                                + "' word detection count=" + wordCount
-                                + " < threshold=" + minimumNumberOfWordsRequired
+                                + "' word detection count=" + count
+                                + " < threshold="
+                                + minimumForHypothesisRecognition
                                 + " is too low to accept hypothesis-based recognition for confidence "
                                 + recognitionConfidence.toString());
                         return false;

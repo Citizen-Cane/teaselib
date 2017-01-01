@@ -9,9 +9,7 @@ public interface PromptSplitter {
 
     int getMinimumForHypothesisRecognition();
 
-    int getHypothesisMinimumCount(List<String> choices);
-
-    int numberOfSameItemsInAnyTwoAtStart(List<String> choices);
+    int getMinimumForHypothesisRecognition(List<String> choices);
 
     int count(String text);
 

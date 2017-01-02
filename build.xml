@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<project default="buildTeaseLib" name="DeployTeaseLib">
+	<dirname property="DeployTeaseLib.basedir" file="${ant.file.DeployTeaseLib}"/>
+
+    <target name="createTeaseLibFolder">
+        <jar destfile="${DeployTeaseLib.basedir}/lib/TeaseLib.jar">
+            <manifest>
+                <attribute name="Class-Path" value="jump3er-1.03.jar bridj-0.6.2.jar javacpp.jar javacv.jar opencv.jar opencv-android-arm.jar opencv-android-x86.jar opencv-linux-armhf.jar opencv-linux-x86.jar opencv-linux-x86_64.jar opencv-macosx-x86_64.jar opencv-windows-x86.jar opencv-windows-x86_64.jar videoinput.jar videoinput-x86.jar videoinput-x86_x64.jar"/>
+            </manifest>
+            <fileset dir="${DeployTeaseLib.basedir}/bin">
+           		<exclude name="simplelogger.properties"/>
+           	</fileset>
+        </jar>
+    </target>
+    <target name="createTeaseLibTestsJar">
+        <jar destfile="${DeployTeaseLib.basedir}/lib/TeaseLib_tests.jar">
+            <manifest>
+                <attribute name="Class-Path" value="lib/TeaseLib.jar"/>
+            </manifest>
+            <fileset dir="${DeployTeaseLib.basedir}/bin.test"/>
+        </jar>
+    </target>
+
+    <target name="deploy" depends="createTeaseLibFolder,createTeaseLibTestsJar">
+        <copy todir="${destination}/lib/TeaseLib">
+            <fileset dir="${DeployTeaseLib.basedir}/lib/" excludes="**.obj,**.iobj,**.pdb,**.ipdb,**.exp,**.ilk,**.lib"/>
+        </copy>
+    </target>
+
+    <target name="deployToSexScripts" depends="createTeaseLibFolder,createTeaseLibTestsJar">
+        <property name="destination" value="${basedir}/../SexScripts"/>
+        <antcall target="deploy"/>
+    </target>
+
+    <target name="deployToMine" depends="createTeaseLibFolder">
+        <antcall target="deploy"/>
+    </target>
+
+    <target name="buildTeaseLib" depends="deployToSexScripts">
+    </target>
+
+</project>

@@ -34,11 +34,11 @@ import org.slf4j.LoggerFactory;
 
 import ss.IScript;
 import ss.desktop.MainFrame;
-import teaselib.core.VideoRenderer;
-import teaselib.core.VideoRenderer.Type;
 import teaselib.core.Host;
 import teaselib.core.ResourceLoader;
 import teaselib.core.ScriptInterruptedException;
+import teaselib.core.VideoRenderer;
+import teaselib.core.VideoRenderer.Type;
 import teaselib.core.concurrency.NamedExecutorService;
 import teaselib.core.events.Delegate;
 import teaselib.core.javacv.VideoRendererJavaCV;
@@ -332,27 +332,32 @@ public class SexScriptsHost implements Host {
             Image image = backgroundImageIcon.getImage();
             ss.setImage((byte[]) null, 0);
             MainFrame mainFrame = getMainFrame();
-            Rectangle bounds = new Rectangle(0, 0, image.getWidth(null),
-                    image.getHeight(null));// getContentBounds(mainFrame);
-            BufferedImage bi = new BufferedImage(bounds.width, bounds.height,
-                    BufferedImage.TYPE_INT_ARGB);
-            Graphics2D g2d = (Graphics2D) bi.getGraphics();
+            Rectangle bounds = getContentBounds(mainFrame);
+            bounds.x = 0;
+            bounds.y = 0;
+            BufferedImage interTitleImage = new BufferedImage(bounds.width,
+                    bounds.height, BufferedImage.TYPE_INT_ARGB);
+            Graphics2D g2d = (Graphics2D) interTitleImage.getGraphics();
             g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION,
                     RenderingHints.VALUE_INTERPOLATION_BICUBIC);
             // Draw original background image
             g2d.drawImage(image, 0, 0, bounds.width, bounds.height, null);
-            int offset = -bounds.height / 10;
+            // Compensate for the text not being centered (causes the text area
+            // to be not centered anymore)
+            int offset = 0; // -bounds.height / 10;
             g2d.setColor(new Color(0.0f, 0.0f, 0.0f, 0.65f));
             int top = bounds.height / 4 + offset;
             int bottom = bounds.height * 3 / 4 + offset;
+            // Render the intertitle top, text and bottom areas
             g2d.fillRect(bounds.x, bounds.y, bounds.width, top);
             g2d.setColor(new Color(0.0f, 0.0f, 0.0f, 0.80f));
             g2d.fillRect(bounds.x, top, bounds.width, bottom - top);
             g2d.setColor(new Color(0.0f, 0.0f, 0.0f, 0.65f));
             g2d.fillRect(bounds.x, bottom, bounds.width,
                     bounds.height - bottom);
-            backgroundImageIcon.setImage(bi);
+            backgroundImageIcon.setImage(interTitleImage);
             mainFrame.repaint();
+            // Show white text, since the background is black
             ss.show("<p style=\"color:#e0e0e0\">" + text + "</p>");
         } catch (NoSuchFieldException e) {
             e.printStackTrace();

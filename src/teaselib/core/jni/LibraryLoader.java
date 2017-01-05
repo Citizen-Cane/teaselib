@@ -2,6 +2,7 @@ package teaselib.core.jni;
 
 import java.io.File;
 
+import teaselib.core.ResourceLoader;
 import teaselib.core.util.Environment;
 import teaselib.core.util.Environment.Arch;
 
@@ -13,8 +14,8 @@ public class LibraryLoader {
         if (system == Environment.Windows) {
             extension = "dll";
         } else {
-            throw new UnsupportedOperationException("LoadLibrary() " + system
-                    + " not supported yet");
+            throw new UnsupportedOperationException(
+                    "LoadLibrary() " + system + " not supported yet");
         }
         final String architecture;
         Arch arch = Environment.ARCH;
@@ -27,18 +28,18 @@ public class LibraryLoader {
                     "LoadLibrary() processor architecture " + arch
                             + " not supported yet");
         }
-        // Release
+        File releaseLocation = ResourceLoader
+                .getProjectPath(LibraryLoader.class);
         try {
-            System.load(getAbsolutePath(new File("lib/TeaseLib"), name,
-                    architecture, extension));
+            System.load(getAbsolutePath(releaseLocation, name, architecture,
+                    extension));
         } catch (UnsatisfiedLinkError e) {
-            // try dev folder
             try {
-                System.load(getAbsolutePath(new File("lib"), name,
-                        architecture, extension));
+                File devLocation = new File(releaseLocation.getParentFile(),
+                        "lib");
+                System.load(getAbsolutePath(devLocation, name, architecture,
+                        extension));
             } catch (UnsatisfiedLinkError e1) {
-
-                // throw the original exception
                 throw e;
             }
         }

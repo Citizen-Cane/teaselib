@@ -11,6 +11,7 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -55,16 +56,24 @@ public class ResourceLoader {
      *            The resource path under which to start looking for resources.
      */
     public ResourceLoader(Class<?> mainScript, String resourceRoot) {
-        this.resourceRoot = classLoaderCompatibleResourcePath(
-                pathToFolder(resourceRoot));
+        this(getBasePath(mainScript), resourceRoot);
+    }
+
+    private static File getBasePath(Class<?> mainScript) {
         String systemProperty = System.getProperty(
                 Config.Namespace + "." + Config.Assets.toString(), "");
         if (classLoaderCompatibleResourcePath(systemProperty).isEmpty()) {
-            basePath = getProjectPath(mainScript);
+            return getProjectPath(mainScript);
         } else {
-            basePath = new File(
-                    classLoaderCompatibleResourcePath(systemProperty));
+            return new File(classLoaderCompatibleResourcePath(systemProperty));
         }
+    }
+
+    public ResourceLoader(File basePath, String resourceRoot) {
+        this.basePath = basePath;
+        this.resourceRoot = classLoaderCompatibleResourcePath(
+                pathToFolder(resourceRoot));
+        logger.info("Using basepath='" + basePath.getAbsolutePath() + "'");
         try {
             addURL = addURLMethod();
         } catch (NoSuchMethodException e) {
@@ -97,7 +106,7 @@ public class ResourceLoader {
         return mainScript.getPackage().getName().replace(".", "/") + "/";
     }
 
-    private static File getProjectPath(Class<?> mainScript) {
+    public static File getProjectPath(Class<?> mainScript) {
         String classFile = getClassFilePath(mainScript);
         URL url = mainScript.getClassLoader()
                 .getResource(classLoaderCompatibleResourcePath(classFile));
@@ -150,10 +159,8 @@ public class ResourceLoader {
     }
 
     private static Method addURLMethod() throws NoSuchMethodException {
-        Class<URLClassLoader> classLoaderClass = URLClassLoader.class;
-        Class<?>[] parameters = new Class[] { URL.class };
-        Method addURI = classLoaderClass.getDeclaredMethod("addURL",
-                parameters);
+        Method addURI = URLClassLoader.class.getDeclaredMethod("addURL",
+                URL.class);
         addURI.setAccessible(true);
         return addURI;
     }
@@ -164,10 +171,45 @@ public class ResourceLoader {
 
     public void addAssets(String... paths) {
         try {
-            addAssets(toURIs(paths));
+            if (haveAntClassLoader()) {
+                addAssetsToAntClassLoader(paths);
+            } else {
+                addAssets(toURIs(paths));
+            }
+        } catch (IllegalArgumentException e) {
+            throw e;
         } catch (Exception e) {
-            throw new IllegalArgumentException("Cannot add assets:" + e);
+            throw new IllegalArgumentException("Cannot add assets "
+                    + Arrays.toString(paths) + " - " + e.getMessage(), e);
         }
+    }
+
+    private void addAssetsToAntClassLoader(String[] paths)
+            throws NoSuchMethodException, IllegalAccessException,
+            IllegalArgumentException, InvocationTargetException {
+        Method addPathComponent = addPathComponentMethod();
+        for (String path : paths) {
+            File file = new File(basePath, path);
+            logger.info("Using resource location: " + file.getAbsolutePath());
+            addPathComponent.invoke(classLoader, new Object[] { file });
+        }
+    }
+
+    private boolean haveAntClassLoader() {
+        return classLoader.getClass().getSimpleName()
+                .startsWith("AntClassLoader");
+    }
+
+    private Method addPathComponentMethod() throws NoSuchMethodException {
+        Class<?> classLoaderClass = classLoader.getClass().getSuperclass();
+        // for (Method method : classLoaderClass.getDeclaredMethods()) {
+        // System.out.println(method);
+        // }
+        // System.out.println(classLoaderClass.getName());
+        Method addPathComponent = classLoaderClass
+                .getDeclaredMethod("addPathComponent", File.class);
+        addPathComponent.setAccessible(true);
+        return addPathComponent;
     }
 
     private URI[] toURIs(String[] paths) {

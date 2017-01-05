@@ -97,9 +97,9 @@ public class TextToSpeechRecorder {
             File voiceDir) throws IOException {
         String hash = getHash(message);
         File messageDir = new File(voiceDir, hash);
-        if (messageDir.exists()) {
+        File messageFile = new File(messageDir, MessageFilename);
+        if (messageDir.exists() && messageFile.exists()) {
             long lastModified = messageDir.lastModified();
-            final File messageFile = new File(messageDir, MessageFilename);
             String oldMessageHash = readMessage(messageFile);
             String messageHash = message.toPrerecordedSpeechHashString();
             if (messageHash.equals(oldMessageHash)) {

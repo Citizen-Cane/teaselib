@@ -3,6 +3,7 @@ package teaselib.core.texttospeech;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -75,10 +76,14 @@ public class VoiceProperties {
         FileOutputStream fileOutputStream = null;
         try {
             fileOutputStream = new FileOutputStream(file);
-            properties.store(fileOutputStream, "");
+            store(fileOutputStream);
         } finally {
             if (fileOutputStream != null)
                 fileOutputStream.close();
         }
+    }
+
+    protected void store(OutputStream os) throws IOException {
+        properties.store(os, "");
     }
 }

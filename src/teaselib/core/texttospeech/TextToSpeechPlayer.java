@@ -109,7 +109,7 @@ public class TextToSpeechPlayer {
                         && preRecordedVoice.available()) {
                     actorKey2PrerecordedVoiceGuid.put(actorKey, voiceGuid);
                     usedVoices.add(voiceGuid);
-                    String speechResources = TextToSpeechRecorder.SpeechDirName
+                    String speechResources = TextToSpeechRecorderFileStorage.SpeechDirName
                             + "/" + actorKey + "/" + voiceGuid + "/";
                     actorKey2SpeechResourcesLocation.put(actorKey,
                             speechResources);

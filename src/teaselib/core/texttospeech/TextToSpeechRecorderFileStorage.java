@@ -19,17 +19,15 @@ public class TextToSpeechRecorderFileStorage {
 
     public final static String SpeechDirName = "speech";
 
-    private final File assetsDir;
     private final File speechDir;
 
     public TextToSpeechRecorderFileStorage(File assetsDir) {
-        this.assetsDir = assetsDir;
         this.speechDir = createSubDir(assetsDir, SpeechDirName);
     }
 
     public void createActorFile(Actor actor, Voice voice) {
         File characterDir = createSubDir(speechDir, actor.key);
-        File voiceDir = createSubDir(characterDir, voice.guid);
+        createSubDir(characterDir, voice.guid);
     }
 
     private static File createSubDir(File dir, String name) {

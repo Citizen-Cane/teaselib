@@ -4,15 +4,9 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import teaselib.Actor;
 
 public class PreRecordedVoice extends VoiceProperties {
-    private static final Logger logger = LoggerFactory
-            .getLogger(PreRecordedVoice.class);
-
     public final static String ActorPropertiesFilename = "voice.properties";
 
     public PreRecordedVoice(Actor actor, Voice voice) {

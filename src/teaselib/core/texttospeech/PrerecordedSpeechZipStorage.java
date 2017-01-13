@@ -19,29 +19,31 @@ import teaselib.Actor;
 import teaselib.core.util.Stream;
 
 public class PrerecordedSpeechZipStorage implements PrerecordedSpeechStorage {
-    // private static final Logger logger = LoggerFactory
-    // .getLogger(PrerecordedSpeechZipStorage.class);
     private static final String Zip = ".zip";
     private static final String Updated = " updated";
 
+    private final String resourcesRoot;
+    private final String archiveName;
     private final ZipFile current;
     private final ZipOutputStream updated;
 
     private final Map<String, Long> processed = new HashMap<String, Long>();
     private final Map<String, String> messageHashes = new HashMap<String, String>();
     private File zipFileUpdated;
-    private static File zipFileCurrent;
+    private File zipFileCurrent;
 
-    public PrerecordedSpeechZipStorage(File assetsDir) throws IOException {
-        zipFileCurrent = new File(assetsDir, SpeechDirName + Zip)
-                .getAbsoluteFile();
-        zipFileUpdated = new File(assetsDir, SpeechDirName + Updated + Zip)
+    public PrerecordedSpeechZipStorage(File path, String resourcesRoot)
+            throws IOException {
+        this.resourcesRoot = resourcesRoot;
+        this.archiveName = resourcesRoot + " " + "Speech";
+        zipFileCurrent = new File(path, archiveName + Zip).getAbsoluteFile();
+        zipFileUpdated = new File(path, archiveName + Updated + Zip)
                 .getAbsoluteFile();
         current = getCurrent();
         updated = new ZipOutputStream(new FileOutputStream(zipFileUpdated));
     }
 
-    private static ZipFile getCurrent() throws ZipException, IOException {
+    private ZipFile getCurrent() throws ZipException, IOException {
         try {
             return new ZipFile(zipFileCurrent);
         } catch (FileNotFoundException e) {
@@ -57,17 +59,21 @@ public class PrerecordedSpeechZipStorage implements PrerecordedSpeechStorage {
     @Override
     public void createActorEntry(Actor actor, Voice voice,
             VoiceProperties properties) throws IOException {
-        String voicePath = PreRecordedVoice.getResourcePath(actor, voice);
+        String voicePath = getPath(actor, voice,
+                PreRecordedVoice.ActorPropertiesFilename);
         ZipEntry actorEntry = new ZipEntry(voicePath);
         updated.putNextEntry(actorEntry);
         properties.store(updated, "");
         updated.closeEntry();
     }
 
-    private static String getPath(Actor actor, Voice voice, String hash,
-            String name) {
-        return SpeechDirName + "/" + actor.key + "/" + voice.guid + "/" + hash
-                + "/" + name;
+    private String getPath(Actor actor, Voice voice, String name) {
+        return resourcesRoot + "/" + SpeechDirName + "/" + actor.key + "/"
+                + voice.guid + "/" + name;
+    }
+
+    private String getPath(Actor actor, Voice voice, String hash, String name) {
+        return getPath(actor, voice, hash) + "/" + name;
     }
 
     @Override
@@ -80,7 +86,7 @@ public class PrerecordedSpeechZipStorage implements PrerecordedSpeechStorage {
         return entry != null;
     }
 
-    private static String processHash(Actor actor, Voice voice, String hash) {
+    private String processHash(Actor actor, Voice voice, String hash) {
         return getPath(actor, voice, hash, "");
     }
 

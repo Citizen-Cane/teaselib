@@ -16,6 +16,7 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.Vector;
 
@@ -27,6 +28,7 @@ import teaselib.Message;
 import teaselib.Message.Part;
 import teaselib.Mood;
 import teaselib.core.ResourceLoader;
+import teaselib.util.TextVariables;
 
 public class TextToSpeechRecorder {
     private static final Logger logger = LoggerFactory
@@ -44,23 +46,36 @@ public class TextToSpeechRecorder {
     private final TextToSpeechPlayer ttsPlayer;
     private final mp3.Main mp3Encoder;
     private final long buildStart = System.currentTimeMillis();
+    private final TextVariables textVariables;
 
     int newEntries = 0;
     int changedEntries = 0;
     int upToDateEntries = 0;
     int reusedDuplicates = 0;
 
-    public TextToSpeechRecorder(ResourceLoader resources) throws IOException {
+    int numberOfPasses = 0;
+
+    public TextToSpeechRecorder(File path, String resourcesRoot,
+            ResourceLoader resources, TextVariables textVariables)
+            throws IOException {
         this.resources = resources;
+        this.textVariables = textVariables;
         this.ttsPlayer = TextToSpeechPlayer.instance();
         this.voices = ttsPlayer.textToSpeech.getVoices();
         // storage = new TextToSpeechRecorderFileStorage(
         // resources.getAssetPath(""));
-        storage = new PrerecordedSpeechZipStorage(resources.getAssetPath(""));
+        storage = new PrerecordedSpeechZipStorage(path, resourcesRoot);
         actorVoices = new ActorVoices(resources);
         logger.info("Build start: " + new Date(buildStart).toString());
         ttsPlayer.loadActorVoices(resources);
         mp3Encoder = new mp3.Main();
+    }
+
+    public void preparePass(Entry<String, String> entry) {
+        this.numberOfPasses++;
+        logger.info("Pass " + numberOfPasses + " for symbol " + entry.getKey()
+                + "=" + entry.getValue());
+        logger.info("using text variables: '" + textVariables.toString() + "'");
     }
 
     public void create(ScriptScanner scanner) throws IOException {
@@ -68,12 +83,8 @@ public class TextToSpeechRecorder {
         Set<String> created = new HashSet<String>();
         for (Message message : scanner) {
             Actor actor = message.actor;
-            // Process voices for each character
-            final Voice voice;
-            voice = getVoice(actor);
+            Voice voice = getVoice(actor);
             logger.info("Voice: " + voice.name);
-            ttsPlayer.textToSpeech.setVoice(voice);
-
             if (!actors.contains(actor.key)) {
                 createActorEntry(actor, voice);
             }
@@ -169,6 +180,11 @@ public class TextToSpeechRecorder {
 
     public void finish() throws IOException {
         storage.close();
+
+        if (numberOfPasses > 1) {
+            logger.info(
+                    "Generating speech files for all symbols generates a lot of reused entries");
+        }
 
         logger.info("Finished: " + upToDateEntries + " up to date, "
                 + reusedDuplicates + " reused, " + changedEntries + " changed, "

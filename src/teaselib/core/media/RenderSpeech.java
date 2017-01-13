@@ -24,7 +24,7 @@ public abstract class RenderSpeech extends MediaRendererThread {
 
     @Override
     public final void renderMedia() throws IOException, InterruptedException {
-        logger.info(this.getClass().getSimpleName() + ": " + toString());
+        logger.info(this + " started");
         // Suspend speech recognition while speaking,
         // to avoid wrong recognitions
         // - and the mistress speech isn't to be interrupted anyway
@@ -48,9 +48,7 @@ public abstract class RenderSpeech extends MediaRendererThread {
             allCompleted();
         }
 
-        String text = toString();
-        logger.info(
-                this.getClass().getSimpleName() + ": " + text + " completed");
+        logger.info(this + " completed");
     }
 
     protected abstract void renderSpeech()

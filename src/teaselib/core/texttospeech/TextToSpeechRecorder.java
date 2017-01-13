@@ -1,7 +1,6 @@
 package teaselib.core.texttospeech;
 
 import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -9,7 +8,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
-import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Date;
@@ -276,20 +274,14 @@ public class TextToSpeechRecorder {
             inventory.append(soundFile);
             inventory.append("\n");
         }
-        InputStream inputStream = new ByteArrayInputStream(
-                inventory.toString().getBytes(StandardCharsets.UTF_8));
-        storage.storeSpeechResource(actor, voice, hash, inputStream,
-                TextToSpeechRecorder.ResourcesFilename);
-        inputStream.close();
+        storage.writeStringResource(actor, voice, hash,
+                TextToSpeechRecorder.ResourcesFilename, inventory.toString());
     }
 
     private void writeMessageHash(Actor actor, Voice voice, String hash,
             String messageHash) throws IOException {
-        InputStream inputStream = new ByteArrayInputStream(
-                messageHash.getBytes(StandardCharsets.UTF_8));
-        storage.storeSpeechResource(actor, voice, hash, inputStream,
-                TextToSpeechRecorder.MessageFilename);
-        inputStream.close();
+        storage.writeStringResource(actor, voice, hash,
+                TextToSpeechRecorder.MessageFilename, messageHash);
     }
 
     private static File createTempFile(String prefix, String suffix)

@@ -1,10 +1,12 @@
 package teaselib.core.texttospeech;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -175,5 +177,17 @@ public class TextToSpeechRecorderFileStorage
         // because the old hash is not known
         // TODO build hash set of messages,
         // delete directories that are not present in the map
+    }
+
+    @Override
+    public void writeStringResource(Actor actor, Voice voice, String hash,
+            String name, String value) throws IOException {
+        InputStream inputStream = new ByteArrayInputStream(
+                value.getBytes(StandardCharsets.UTF_8));
+        try {
+            storeSpeechResource(actor, voice, hash, inputStream, name);
+        } finally {
+            inputStream.close();
+        }
     }
 }

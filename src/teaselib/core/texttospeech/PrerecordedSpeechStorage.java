@@ -1,7 +1,10 @@
 package teaselib.core.texttospeech;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.zip.ZipOutputStream;
 
 import teaselib.Actor;
 
@@ -31,5 +34,8 @@ public interface PrerecordedSpeechStorage {
     void keepMessage(Actor actor, Voice voice, String hash) throws IOException;
 
     void close() throws IOException;
+
+    void writeStringResource(Actor actor, Voice voice, String hash,
+            String name, String value) throws IOException;
 
 }

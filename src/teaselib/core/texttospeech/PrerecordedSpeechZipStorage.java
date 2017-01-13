@@ -129,8 +129,18 @@ public class PrerecordedSpeechZipStorage implements PrerecordedSpeechStorage {
     @Override
     public void storeSpeechResource(Actor actor, Voice voice, String hash,
             InputStream inputStream, String name) throws IOException {
+        storeSpeechResource(actor, voice, hash, inputStream, name,
+                ZipOutputStream.DEFLATED);
+        // TODO use ZipOutputStream.STORED, but according to exception message,
+        // size, compressed size and/or CRC is needed
+    }
+
+    private void storeSpeechResource(Actor actor, Voice voice, String hash,
+            InputStream inputStream, String name, int zipStorageMethod)
+            throws IOException {
         ZipEntry resourceEntry = new ZipEntry(
                 getPath(actor, voice, hash, name));
+        resourceEntry.setMethod(zipStorageMethod);
         updated.putNextEntry(resourceEntry);
         Stream.copy(inputStream, updated);
         updated.flush();
@@ -172,26 +182,30 @@ public class PrerecordedSpeechZipStorage implements PrerecordedSpeechStorage {
         ZipEntry entry = current.getEntry(getPath(actor, voice, hash, name));
         InputStream inputStream = current.getInputStream(entry);
         storeSpeechResource(actor, voice, hash, inputStream, name);
-        inputStream.close();
         updated.closeEntry();
+        inputStream.close();
     }
 
     private String getStringResource(Actor actor, Voice voice, String hash,
             String name) throws IOException {
         ZipEntry entry = current.getEntry(getPath(actor, voice, hash, name));
-        InputStream inputStream = current.getInputStream(entry);
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        InputStream inputStream;
+        ByteArrayOutputStream bos;
+        inputStream = current.getInputStream(entry);
+        bos = new ByteArrayOutputStream();
         Stream.copy(inputStream, bos);
         inputStream.close();
         bos.close();
         return new String(bos.toByteArray(), StandardCharsets.UTF_8);
     }
 
-    private void writeStringResource(Actor actor, Voice voice, String hash,
+    @Override
+    public void writeStringResource(Actor actor, Voice voice, String hash,
             String name, String value) throws IOException {
         InputStream inputStream = new ByteArrayInputStream(
                 value.toString().getBytes(StandardCharsets.UTF_8));
-        storeSpeechResource(actor, voice, hash, inputStream, name);
+        storeSpeechResource(actor, voice, hash, inputStream, name,
+                ZipOutputStream.DEFLATED);
     }
 
     @Override

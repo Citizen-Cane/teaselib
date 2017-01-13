@@ -109,7 +109,8 @@ public class TextToSpeechPlayer {
                 } catch (IOException e) {
                     preRecordedVoice = null;
                 }
-                // Only if actor isn't assigned yet - when called from other script
+                // Only if actor isn't assigned yet
+                // - when called from other script
                 if (!actorKey2TTSVoice.containsKey(actorKey)
                         && preRecordedVoice != null) {
                     actorKey2PrerecordedVoiceGuid.put(actorKey, voiceGuid);
@@ -341,10 +342,7 @@ public class TextToSpeechPlayer {
         if (voice == null) {
             return null;
         } else {
-            // TODO main script name missing for loading resources
-            // getAssetPath doesn't do the trick because
-            // it just denotes the parent directory for resource jars/zips
-            String path = actorKey2SpeechResourcesLocation.get(key) + "/"
+            String path = actorKey2SpeechResourcesLocation.get(key)
                     + TextToSpeechRecorder.getHash(message) + "/";
             BufferedReader reader = null;
             List<String> speechResources = new Vector<String>();

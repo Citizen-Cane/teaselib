@@ -5,7 +5,6 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,11 +12,10 @@ import org.slf4j.LoggerFactory;
 import teaselib.Actor;
 import teaselib.core.util.Stream;
 
-public class TextToSpeechRecorderFileStorage {
+public class TextToSpeechRecorderFileStorage
+        implements PrerecordedSpeechStorage {
     private static final Logger logger = LoggerFactory
             .getLogger(TextToSpeechRecorderFileStorage.class);
-
-    public final static String SpeechDirName = "speech";
 
     private final File speechDir;
 
@@ -25,9 +23,9 @@ public class TextToSpeechRecorderFileStorage {
         this.speechDir = createSubDir(assetsDir, SpeechDirName);
     }
 
-    public void createActorFile(Actor actor, Voice voice) {
-        File characterDir = createSubDir(speechDir, actor.key);
-        createSubDir(characterDir, voice.guid);
+    private void createActorDirectories(Actor actor, Voice voice) {
+        File actorDir = createSubDir(speechDir, actor.key);
+        createSubDir(actorDir, voice.guid);
     }
 
     private static File createSubDir(File dir, String name) {
@@ -41,17 +39,39 @@ public class TextToSpeechRecorderFileStorage {
         return subDir;
     }
 
-    public OutputStream getActorVoiceStream(Actor actor, Voice voice)
-            throws IOException {
+    /*
+     * (non-Javadoc)
+     * 
+     * @see
+     * teaselib.core.texttospeech.PrerecordedSpeechStorage#getActorVoiceStream(
+     * teaselib.Actor, teaselib.core.texttospeech.Voice)
+     */
+    @Override
+    public void createActorEntry(Actor actor, Voice voice,
+            VoiceProperties properties) throws IOException {
+        createActorDirectories(actor, voice);
         File file = new File(getVoiceDir(actor, voice),
                 PreRecordedVoice.ActorPropertiesFilename);
-        return new FileOutputStream(file);
+        FileOutputStream fileOutputStream = new FileOutputStream(file);
+        try {
+            properties.store(fileOutputStream, "");
+        } finally {
+            fileOutputStream.close();
+        }
     }
 
     private File getVoiceDir(Actor actor, Voice voice) {
         return new File(new File(speechDir, actor.key), voice.guid);
     }
 
+    /*
+     * (non-Javadoc)
+     * 
+     * @see
+     * teaselib.core.texttospeech.PrerecordedSpeechStorage#haveMessage(teaselib.
+     * Actor, teaselib.core.texttospeech.Voice, java.lang.String)
+     */
+    @Override
     public boolean haveMessage(Actor actor, Voice voice, String hash) {
         File messageDir = getMessageDir(actor, voice, hash);
         File messageFile = new File(messageDir,
@@ -63,16 +83,47 @@ public class TextToSpeechRecorderFileStorage {
         return new File(getVoiceDir(actor, voice), hash);
     }
 
+    /*
+     * (non-Javadoc)
+     * 
+     * @see
+     * teaselib.core.texttospeech.PrerecordedSpeechStorage#lastModified(teaselib
+     * .Actor, teaselib.core.texttospeech.Voice, java.lang.String)
+     */
+    @Override
     public long lastModified(Actor actor, Voice voice, String hash) {
         return getMessageDir(actor, voice, hash).lastModified();
     }
 
-    public InputStream getMessageStream(Actor actor, Voice voice, String hash)
+    /*
+     * (non-Javadoc)
+     * 
+     * @see
+     * teaselib.core.texttospeech.PrerecordedSpeechStorage#getMessageStream(
+     * teaselib.Actor, teaselib.core.texttospeech.Voice, java.lang.String)
+     */
+    @Override
+    public String getMessageHash(Actor actor, Voice voice, String hash)
             throws IOException {
-        return new FileInputStream(new File(getMessageDir(actor, voice, hash),
-                TextToSpeechRecorder.MessageFilename));
+        FileInputStream fileInputStream = new FileInputStream(
+                new File(getMessageDir(actor, voice, hash),
+                        TextToSpeechRecorder.MessageFilename));
+        String messageHash;
+        try {
+            messageHash = TextToSpeechRecorder.readMessage(fileInputStream);
+        } finally {
+            fileInputStream.close();
+        }
+        return messageHash;
     }
 
+    /*
+     * (non-Javadoc)
+     * 
+     * @see teaselib.core.texttospeech.PrerecordedSpeechStorage#deleteMessage(
+     * teaselib.Actor, teaselib.core.texttospeech.Voice, java.lang.String)
+     */
+    @Override
     public void deleteMessage(Actor actor, Voice voice, String hash) {
         File messageDir = getMessageDir(actor, voice, hash);
         for (File file : messageDir.listFiles()) {
@@ -81,6 +132,15 @@ public class TextToSpeechRecorderFileStorage {
         messageDir.delete();
     }
 
+    /*
+     * (non-Javadoc)
+     * 
+     * @see
+     * teaselib.core.texttospeech.PrerecordedSpeechStorage#storeSpeechResource(
+     * teaselib.Actor, teaselib.core.texttospeech.Voice, java.lang.String,
+     * java.io.InputStream, java.lang.String)
+     */
+    @Override
     public void storeSpeechResource(Actor actor, Voice voice, String hash,
             InputStream inputStream, String name) throws IOException {
         FileOutputStream os = new FileOutputStream(
@@ -89,21 +149,31 @@ public class TextToSpeechRecorderFileStorage {
         os.close();
     }
 
-    public OutputStream getInventoryOutputStream(Actor actor, Voice voice,
-            String messageHash) throws IOException {
-        File inventory = new File(getMessageDir(actor, voice, messageHash),
-                TextToSpeechRecorder.ResourcesFilename);
-        return new FileOutputStream(inventory);
-    }
-
-    public OutputStream getMessageOutputStream(Actor actor, Voice voice,
-            String messageHash) throws IOException {
-        File message = new File(getMessageDir(actor, voice, messageHash),
-                TextToSpeechRecorder.MessageFilename);
-        return new FileOutputStream(message);
-    }
-
-    public void createNewEntry(Actor actor, Voice voice, String hash) {
+    /*
+     * (non-Javadoc)
+     * 
+     * @see teaselib.core.texttospeech.PrerecordedSpeechStorage#createNewEntry(
+     * teaselib.Actor, teaselib.core.texttospeech.Voice, java.lang.String)
+     */
+    @Override
+    public void createNewEntry(Actor actor, Voice voice, String hash,
+            String messageHash) {
         getMessageDir(actor, voice, hash).mkdir();
+    }
+
+    @Override
+    public void keepMessage(Actor actor, Voice voice, String hash) {
+        // nothing to do - already on the file system
+    }
+
+    @Override
+    public void close() {
+        // nothing to do - already on the file system
+
+        // messages that have been changed in the scripts anymore
+        // will not be deleted
+        // because the old hash is not known
+        // TODO build hash set of messages,
+        // delete directories that are not present in the map
     }
 }

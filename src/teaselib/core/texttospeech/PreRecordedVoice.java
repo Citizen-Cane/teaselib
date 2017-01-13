@@ -7,7 +7,7 @@ import java.io.InputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import teaselib.core.ResourceLoader;
+import teaselib.Actor;
 
 public class PreRecordedVoice extends VoiceProperties {
     private static final Logger logger = LoggerFactory
@@ -15,26 +15,25 @@ public class PreRecordedVoice extends VoiceProperties {
 
     public final static String ActorPropertiesFilename = "voice.properties";
 
-    public PreRecordedVoice(String actorName, String voiceGuid,
-            ResourceLoader resources) {
-        InputStream prerecordedVoiceConfig = null;
-        String actorProperties = TextToSpeechRecorderFileStorage.SpeechDirName
-                + "/" + actorName + "/" + voiceGuid + "/"
-                + ActorPropertiesFilename;
+    public PreRecordedVoice(Actor actor, Voice voice) {
+        put(actor.key, voice);
+    }
+
+    public PreRecordedVoice(InputStream inputStream) throws IOException {
         try {
-            try {
-                prerecordedVoiceConfig = resources.getResource(actorProperties);
-                properties.load(prerecordedVoiceConfig);
-            } finally {
-                if (prerecordedVoiceConfig != null) {
-                    prerecordedVoiceConfig.close();
-                }
-            }
-        } catch (IOException e) {
-            // This is expected, as the script may not have pre-recorded voices
-            logger.debug("Prerecorded voice configuration file '"
-                    + actorProperties + "' not found");
+            properties.load(inputStream);
+        } finally {
+            inputStream.close();
         }
+    }
+
+    public static String getResourcePath(Actor actor, Voice voice) {
+        return getResourcePath(actor.key, voice.guid);
+    }
+
+    public static String getResourcePath(String actorKey, String voiceGuid) {
+        return PrerecordedSpeechStorage.SpeechDirName + "/" + actorKey + "/"
+                + voiceGuid + "/" + ActorPropertiesFilename;
     }
 
     public boolean available() {

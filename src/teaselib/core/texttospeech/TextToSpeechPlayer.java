@@ -101,15 +101,20 @@ public class TextToSpeechPlayer {
             for (String actorKey : actorVoices.keySet()) {
                 // Available as a pre-recorded voice?
                 String voiceGuid = actorVoices.getGuid(actorKey);
-                PreRecordedVoice preRecordedVoice = new PreRecordedVoice(
-                        actorKey, voiceGuid, resources);
-                // Only if actor isn't assigned yet - when called from other
-                // script
+                PreRecordedVoice preRecordedVoice;
+                try {
+                    preRecordedVoice = new PreRecordedVoice(
+                            resources.getResource(PreRecordedVoice
+                                    .getResourcePath(actorKey, voiceGuid)));
+                } catch (IOException e) {
+                    preRecordedVoice = null;
+                }
+                // Only if actor isn't assigned yet - when called from other script
                 if (!actorKey2TTSVoice.containsKey(actorKey)
-                        && preRecordedVoice.available()) {
+                        && preRecordedVoice != null) {
                     actorKey2PrerecordedVoiceGuid.put(actorKey, voiceGuid);
                     usedVoices.add(voiceGuid);
-                    String speechResources = TextToSpeechRecorderFileStorage.SpeechDirName
+                    String speechResources = PrerecordedSpeechStorage.SpeechDirName
                             + "/" + actorKey + "/" + voiceGuid + "/";
                     actorKey2SpeechResourcesLocation.put(actorKey,
                             speechResources);

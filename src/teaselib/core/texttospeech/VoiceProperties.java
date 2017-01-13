@@ -76,14 +76,14 @@ public class VoiceProperties {
         FileOutputStream fileOutputStream = null;
         try {
             fileOutputStream = new FileOutputStream(file);
-            store(fileOutputStream);
+            store(fileOutputStream, "");
         } finally {
             if (fileOutputStream != null)
                 fileOutputStream.close();
         }
     }
 
-    protected void store(OutputStream os) throws IOException {
-        properties.store(os, "");
+    protected void store(OutputStream os, String comments) throws IOException {
+        properties.store(os, comments);
     }
 }

@@ -29,8 +29,8 @@ public class PrerecordedSpeechZipStorage implements PrerecordedSpeechStorage {
 
     private final Map<String, Long> processed = new HashMap<String, Long>();
     private final Map<String, String> messageHashes = new HashMap<String, String>();
-    private File zipFileUpdated;
-    private File zipFileCurrent;
+    private final File zipFileUpdated;
+    private final File zipFileCurrent;
 
     public PrerecordedSpeechZipStorage(File path, String resourcesRoot)
             throws IOException {

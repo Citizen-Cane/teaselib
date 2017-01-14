@@ -13,6 +13,7 @@ import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import teaselib.Actor;
 import teaselib.Config;
 import teaselib.Message;
 import teaselib.Message.Part;
@@ -186,9 +187,14 @@ public class RenderMessage extends MediaRendererThread {
                             .info("" + part.type.name() + " = " + part.value);
                 }
                 logger.info(part.type.toString() + ": " + part.value);
-                // TODO Works only if the last part is a text part
-                mood = renderMessagePart(message, part, accumulatedText, mood,
-                        speakText, lastParagraph);
+
+                mood = renderMessagePart(part, accumulatedText, mood, speakText,
+                        lastParagraph);
+                if (part.type == Message.Type.Text || lastParagraph) {
+                    showParagraph(message.actor, part, accumulatedText, mood,
+                            speakText, lastParagraph);
+                }
+
                 if (task.isCancelled()) {
                     break;
                 }
@@ -196,13 +202,12 @@ public class RenderMessage extends MediaRendererThread {
                     break;
                 }
             }
-            // Finished all parts
             completeSpeech(true);
             allCompleted();
         }
     }
 
-    private String renderMessagePart(Message message, Part part,
+    private String renderMessagePart(Part part,
             MessageTextAccumulator accumulatedText, String mood,
             boolean speakText, boolean lastParagraph) {
         if (part.type == Message.Type.Image) {
@@ -260,23 +265,31 @@ public class RenderMessage extends MediaRendererThread {
             doDelay(part);
         } else if (part.type == Message.Type.Item) {
             accumulatedText.add(part);
-        } else { // (part.type == Message.Type.Text)
+        } else if (part.type == Message.Type.Text || lastParagraph) {
             accumulatedText.add(part);
-            show(accumulatedText.toString(), mood);
-            if (ttsPlayer != null && speechRenderer == null) {
-                if (speakText) {
-                    speechRenderer = new RenderTTSSpeech(ttsPlayer,
-                            message.actor, part.value, mood,
-                            getParagraphPause(accumulatedText, lastParagraph),
-                            teaseLib);
-                }
-            }
-            teaseLib.transcript.info(">> " + part.value);
-            if (speechRenderer != null) {
-                speak();
-            }
+        } else {
+            throw new UnsupportedOperationException(
+                    part.type + "=" + part.value);
         }
         return mood;
+    }
+
+    private void showParagraph(Actor actor, Part part,
+            MessageTextAccumulator accumulatedText, String mood,
+            boolean speakText, boolean lastParagraph) {
+        show(accumulatedText.toString(), mood);
+        if (ttsPlayer != null && speechRenderer == null) {
+            if (speakText) {
+                speechRenderer = new RenderTTSSpeech(ttsPlayer, actor,
+                        part.value, mood,
+                        getParagraphPause(accumulatedText, lastParagraph),
+                        teaseLib);
+            }
+        }
+        teaseLib.transcript.info(">> " + part.value);
+        if (speechRenderer != null) {
+            speak();
+        }
     }
 
     private void speak() {

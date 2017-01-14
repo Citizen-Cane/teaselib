@@ -204,75 +204,90 @@ public abstract class TeaseScriptBase {
         // with the current message because the actor is shared between
         // script and message
         Message parsedMessage = new Message(new Actor(message.actor));
-        // Preprocess message
-        boolean selectFirstImage = true;
-        String imageType = displayImage;
-        String selectedImage = "";
-        String nextImage = displayImage;
-        String nextMood = null;
-        for (Message.Part part : message.getParts()) {
-            if (part.type == Message.Type.Image) {
-                // Remember what type of image to display
-                // with the next text element
-                if (part.value == Message.ActorImage) {
-                    imageType = part.value;
-                } else if (part.value == Message.NoImage) {
-                    imageType = part.value;
-                } else {
-                    imageType = nextImage = part.value;
-                }
-            } else if (Message.Type.FileTypes.contains(part.type)) {
-                parsedMessage.add(part.type, part.value);
-            } else if (part.type == Message.Type.Keyword) {
-                if (part.value == Message.ActorImage) {
-                    imageType = part.value;
-                } else if (part.value == Message.NoImage) {
-                    imageType = part.value;
+
+        // TODO hint actor aspect, camera position, posture
+
+        if (message.isEmpty()) {
+            ensureEmptyMessageContainsDisplayImage(parsedMessage,
+                    getActorOrDisplayImage(displayImage));
+        } else {
+            String imageType = displayImage;
+            String selectedImage = "";
+            String nextImage = displayImage;
+            String nextMood = null;
+
+            for (Message.Part part : message.getParts()) {
+                if (part.type == Message.Type.Image) {
+                    // Remember what type of image to display
+                    // with the next text element
+                    if (part.value == Message.ActorImage) {
+                        imageType = part.value;
+                    } else if (part.value == Message.NoImage) {
+                        imageType = part.value;
+                    } else {
+                        imageType = nextImage = part.value;
+                    }
+                } else if (Message.Type.FileTypes.contains(part.type)) {
+                    parsedMessage.add(part.type, part.value);
+                } else if (part.type == Message.Type.Keyword) {
+                    if (part.value == Message.ActorImage) {
+                        imageType = part.value;
+                    } else if (part.value == Message.NoImage) {
+                        imageType = part.value;
+                    } else {
+                        parsedMessage.add(part);
+                    }
+                } else if (part.type == Message.Type.Mood) {
+                    nextMood = part.value;
+                } else if (part.type == Message.Type.Text) {
+                    nextImage = getActorOrDisplayImage(imageType);
+                    // Update image if changed
+                    if (!nextImage.equalsIgnoreCase(selectedImage)) {
+                        parsedMessage.add(Message.Type.Image, nextImage);
+                        selectedImage = nextImage;
+                    }
+                    // set mood if not done already
+                    if (nextMood == null) {
+                        parsedMessage.add(Message.Type.Mood, mood);
+                    } else {
+                        // Reset mood after each text part
+                        nextMood = null;
+                    }
+                    // Replace text variables
+                    parsedMessage.add(new Message.Part(part.type,
+                            expandTextVariables(part.value)));
                 } else {
                     parsedMessage.add(part);
                 }
-            } else if (part.type == Message.Type.Mood) {
-                nextMood = part.value;
-            } else if (part.type == Message.Type.Text) {
-                // Resolve actor image
-                if (imageType == Message.ActorImage) {
-                    if (actor.images.hasNext()) {
-                        if (selectFirstImage) {
-                            // TODO hint aspect
-                            // TODO hint camera position
-                            // TODO hint posture
-                            // TODO hint mood
-                            nextImage = actor.images.next();
-                            selectFirstImage = false;
-                        } else {
-                            nextImage = actor.images.next();
-                        }
-                    } else {
-                        nextImage = Message.NoImage;
-                    }
-                }
-                // Update image if changed
-                if (!nextImage.equalsIgnoreCase(selectedImage)) {
-                    parsedMessage.add(Message.Type.Image, nextImage);
-                    selectedImage = nextImage;
-                }
-                // set mood if not done already
-                if (nextMood == null) {
-                    parsedMessage.add(Message.Type.Mood, mood);
-                } else {
-                    // Reset mood after each text part
-                    nextMood = null;
-                }
-                // Replace text variables
-                parsedMessage.add(new Message.Part(part.type,
-                        expandTextVariables(part.value)));
-            } else {
-                parsedMessage.add(part);
             }
 
+            if (parsedMessage.isEmpty()) {
+                ensureEmptyMessageContainsDisplayImage(parsedMessage,
+                        getActorOrDisplayImage(imageType));
+            }
         }
+
         return parsedMessage;
 
+    }
+
+    private String getActorOrDisplayImage(String imageType) {
+        final String nextImage;
+        if (imageType == Message.ActorImage) {
+            if (actor.images.hasNext()) {
+                nextImage = actor.images.next();
+            } else {
+                nextImage = Message.NoImage;
+            }
+        } else {
+            nextImage = imageType;
+        }
+        return nextImage;
+    }
+
+    private static void ensureEmptyMessageContainsDisplayImage(
+            Message parsedMessage, String nextImage) {
+        parsedMessage.add(Message.Type.Image, nextImage);
     }
 
     protected void queueRenderers(List<MediaRenderer> renderers) {

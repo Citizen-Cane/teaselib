@@ -80,12 +80,7 @@ public abstract class TeaseScriptBase {
         this.actor = actor;
         this.namespace = namespace;
         TextToSpeechPlayer ttsPlayer = TextToSpeechPlayer.instance();
-        // This hard-wires sound resources to a sub folder %namespace% in the
-        // root directory
-        // TODO be able to store class relative and relative to script class
-        // - don't reference resource loader basedir, to make resource loader a
-        // singleton
-        ttsPlayer.loadActorVoices(resources);
+        ttsPlayer.loadActorVoiceProperties(resources);
         ttsPlayer.acquireVoice(actor);
     }
 

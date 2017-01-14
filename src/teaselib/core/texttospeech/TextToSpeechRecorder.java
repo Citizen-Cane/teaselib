@@ -65,7 +65,7 @@ public class TextToSpeechRecorder {
         storage = new PrerecordedSpeechZipStorage(path, resourcesRoot);
         actorVoices = new ActorVoices(resources);
         logger.info("Build start: " + new Date(buildStart).toString());
-        ttsPlayer.loadActorVoices(resources);
+        ttsPlayer.loadActorVoiceProperties(resources);
         mp3Encoder = new mp3.Main();
     }
 
@@ -86,62 +86,77 @@ public class TextToSpeechRecorder {
             if (!actors.contains(actor.key)) {
                 createActorEntry(actor, voice);
             }
-            String hash = recordMessage(actor, voice, message);
+            String hash = processMessage(actor, voice, message);
             created.add(hash);
         }
     }
 
-    private String recordMessage(Actor actor, final Voice voice,
+    private String processMessage(Actor actor, final Voice voice,
             Message message) throws IOException {
         String hash = getHash(message);
-        if (storage.haveMessage(actor, voice, hash)) {
-            long lastModified = storage.lastModified(actor, voice, hash);
-            String oldMessageHash = storage.getMessageHash(actor, voice, hash);
-            String messageHash = message.toPrerecordedSpeechHashString();
-            if (messageHash.equals(oldMessageHash)) {
-                if (lastModified > buildStart) {
-                    logger.info(hash + " is reused");
-                    reusedDuplicates++;
+        String newMessageHash = message.toPrerecordedSpeechHashString();
+        if (!newMessageHash.isEmpty()) {
+            if (storage.haveMessage(actor, voice, hash)) {
+                long lastModified = storage.lastModified(actor, voice, hash);
+                String oldMessageHash = storage.getMessageHash(actor, voice,
+                        hash);
+                if (oldMessageHash.equals(newMessageHash)) {
+                    keepOrReuseMessage(actor, voice, hash, lastModified);
+                } else if (lastModified > buildStart) {
+                    handleCollision(hash, oldMessageHash, newMessageHash);
                 } else {
-                    logger.info(hash + " is up to date");
-                    storage.keepMessage(actor, voice, hash);
-                    upToDateEntries++;
+                    updateMessage(actor, voice, message, hash, newMessageHash);
                 }
-            } else if (lastModified > buildStart) {
-                // Collision
-                logger.info(hash + " collision!");
-                logger.info("Old:");
-                logger.info(oldMessageHash);
-                logger.info("New:");
-                logger.info(messageHash);
-                throw new IllegalStateException("Collision");
             } else {
-                logger.info(hash + " has changed");
-                storage.deleteMessage(actor, voice, hash);
-                create(actor, voice, message, hash, messageHash);
-                changedEntries++;
+                createNewMessage(actor, voice, message, hash);
             }
-            // - check whether we have created this during the current
-            // scan -> collision
-            // - if created before the current build, then change
-        } else {
-            logger.info(hash + " is new");
-            create(actor, voice, message, hash,
-                    message.toPrerecordedSpeechHashString());
-            newEntries++;
         }
         return hash;
     }
 
+    private void keepOrReuseMessage(Actor actor, final Voice voice, String hash,
+            long lastModified) throws IOException {
+        if (lastModified > buildStart) {
+            logger.info(hash + " is reused");
+            reusedDuplicates++;
+        } else {
+            logger.info(hash + " is up to date");
+            storage.keepMessage(actor, voice, hash);
+            upToDateEntries++;
+        }
+    }
+
+    private static void handleCollision(String hash, String oldMessageHash,
+            String newMessageHash) {
+        logger.info(hash + " collision!");
+        logger.info("Old:");
+        logger.info(oldMessageHash);
+        logger.info("New:");
+        logger.info(newMessageHash);
+        throw new IllegalStateException("Collision");
+    }
+
+    private void updateMessage(Actor actor, final Voice voice, Message message,
+            String hash, String newMessageHash) throws IOException {
+        logger.info(hash + " has changed");
+        storage.deleteMessage(actor, voice, hash);
+        create(actor, voice, message, hash, newMessageHash);
+        changedEntries++;
+    }
+
+    private void createNewMessage(Actor actor, final Voice voice,
+            Message message, String hash) throws IOException {
+        logger.info(hash + " is new");
+        create(actor, voice, message, hash,
+                message.toPrerecordedSpeechHashString());
+        newEntries++;
+    }
+
     private void createActorEntry(Actor actor, final Voice voice)
             throws IOException {
-        // Create a tag file containing the actor voice properties,
-        // for information and because
-        // the resource loader can just load files, but not check for
-        // directories in the resource paths
         actors.add(actor.key);
-        PreRecordedVoice info = new PreRecordedVoice(actor, voice);
-        storage.createActorEntry(actor, voice, info);
+        PreRecordedVoice prerecordedVoice = new PreRecordedVoice(actor, voice);
+        storage.createActorEntry(actor, voice, prerecordedVoice);
         actorVoices.putGuid(actor.key, voice);
 
         if (!haveActorVoicesFile()) {

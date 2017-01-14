@@ -169,8 +169,10 @@ public class PrerecordedSpeechZipStorage implements PrerecordedSpeechStorage {
         writeStringResource(actor, voice, hash,
                 TextToSpeechRecorder.ResourcesFilename, inventory);
 
-        for (String speechResource : inventory.split("\n")) {
-            copyEntry(actor, voice, hash, speechResource);
+        if (!inventory.isEmpty()) {
+            for (String speechResource : inventory.split("\n")) {
+                copyEntry(actor, voice, hash, speechResource);
+            }
         }
 
         long lastModified = System.currentTimeMillis();

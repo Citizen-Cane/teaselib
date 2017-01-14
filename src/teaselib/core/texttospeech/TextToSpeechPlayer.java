@@ -25,7 +25,7 @@ public class TextToSpeechPlayer {
             .getLogger(TextToSpeechPlayer.class);
 
     public final TextToSpeech textToSpeech;
-    private final Set<ResourceLoader> processedVoiceActorVoices = new HashSet<ResourceLoader>();
+    private final Set<ResourceLoader> loadedActorVoiceProperties = new HashSet<ResourceLoader>();
 
     /**
      * voice guid to voice
@@ -84,18 +84,15 @@ public class TextToSpeechPlayer {
      * Actors may have preferred voices or pre-recorded voices. These are stored
      * in the resources section of each project.
      * 
-     * As a result, the configuration has to be loaded for each resource loader
-     * instance.
+     * The configuration has to be loaded for each resource loader instance.
      * 
      * @param resources
      *            The resource object that contains the assignments and/or
      *            pre-recorded speech.
      */
-    public void loadActorVoices(ResourceLoader resources) {
-        // Have we read any voice-related configuration files from this resource
-        // loader yet?
-        if (!processedVoiceActorVoices.contains(resources)) {
-            processedVoiceActorVoices.add(resources);
+    public void loadActorVoiceProperties(ResourceLoader resources) {
+        if (!loadedActorVoiceProperties.contains(resources)) {
+            loadedActorVoiceProperties.add(resources);
             // Get the list of actor to voice assignments
             ActorVoices actorVoices = new ActorVoices(resources);
             for (String actorKey : actorVoices.keySet()) {
@@ -109,35 +106,38 @@ public class TextToSpeechPlayer {
                 } catch (IOException e) {
                     preRecordedVoice = null;
                 }
-                // Only if actor isn't assigned yet
-                // - when called from other script
                 if (!actorKey2TTSVoice.containsKey(actorKey)
                         && preRecordedVoice != null) {
-                    actorKey2PrerecordedVoiceGuid.put(actorKey, voiceGuid);
-                    usedVoices.add(voiceGuid);
-                    String speechResources = PrerecordedSpeechStorage.SpeechDirName
-                            + "/" + actorKey + "/" + voiceGuid + "/";
-                    actorKey2SpeechResourcesLocation.put(actorKey,
-                            speechResources);
-                    logger.info("Actor " + actorKey
-                            + ": using prerecorded voice '" + voiceGuid + "'");
+                    usePrerecordedVoice(actorKey, voiceGuid);
                 } else {
-                    logger.info(
-                            "Actor key=" + actorKey + ": prerecorded voice '"
-                                    + voiceGuid + "' not available");
-                    Voice voice = voices.get(voiceGuid);
-                    if (voice != null) {
-                        logger.info("Actor key=" + actorKey
-                                + ": using TTS voice '" + voiceGuid + "'");
-                        actorKey2TTSVoice.put(actorKey, voice);
-                        usedVoices.add(voiceGuid);
-                    } else {
-                        logger.info(
-                                "Actor key=" + actorKey + ": assigned voice '"
-                                        + voiceGuid + "' not available");
-                    }
+                    useTTSVoice(actorKey, voiceGuid);
                 }
             }
+        }
+    }
+
+    private void usePrerecordedVoice(String actorKey, String voiceGuid) {
+        actorKey2PrerecordedVoiceGuid.put(actorKey, voiceGuid);
+        usedVoices.add(voiceGuid);
+        String speechResources = PrerecordedSpeechStorage.SpeechDirName + "/"
+                + actorKey + "/" + voiceGuid + "/";
+        actorKey2SpeechResourcesLocation.put(actorKey, speechResources);
+        logger.info("Actor " + actorKey + ": using prerecorded voice '"
+                + voiceGuid + "'");
+    }
+
+    private void useTTSVoice(String actorKey, String voiceGuid) {
+        logger.info("Actor key=" + actorKey + ": prerecorded voice '"
+                + voiceGuid + "' not available");
+        Voice voice = voices.get(voiceGuid);
+        if (voice != null) {
+            logger.info("Actor key=" + actorKey + ": using TTS voice '"
+                    + voiceGuid + "'");
+            actorKey2TTSVoice.put(actorKey, voice);
+            usedVoices.add(voiceGuid);
+        } else {
+            logger.info("Actor key=" + actorKey + ": assigned voice '"
+                    + voiceGuid + "' not available");
         }
     }
 
@@ -292,39 +292,41 @@ public class TextToSpeechPlayer {
 
     public Message createPrerenderedSpeechMessage(Message message,
             ResourceLoader resources) {
-        // Do we have a pre-recorded voice?
-        try {
-            Iterator<String> prerenderedSpeechFiles = getSpeechResources(
-                    message, resources).iterator();
-            // Render pre-recorded speech as sound
-            Message preRenderedSpeechMessage = new Message(message.actor);
-            for (Part part : message.getParts()) {
-                if (part.type == Message.Type.Text) {
-                    preRenderedSpeechMessage.add(Message.Type.Speech,
-                            prerenderedSpeechFiles.next());
-                    preRenderedSpeechMessage.add(part);
-                } else {
-                    preRenderedSpeechMessage.add(part);
+        if (message.toPrerecordedSpeechHashString().isEmpty()) {
+            return message;
+        } else {
+            try {
+                Iterator<String> prerenderedSpeechFiles = getSpeechResources(
+                        message, resources).iterator();
+                // Render pre-recorded speech as sound
+                Message preRenderedSpeechMessage = new Message(message.actor);
+                for (Part part : message.getParts()) {
+                    if (part.type == Message.Type.Text) {
+                        preRenderedSpeechMessage.add(Message.Type.Speech,
+                                prerenderedSpeechFiles.next());
+                        preRenderedSpeechMessage.add(part);
+                    } else {
+                        preRenderedSpeechMessage.add(part);
+                    }
                 }
-            }
-            return preRenderedSpeechMessage;
-        } catch (IOException e) {
-            logger.error(e.getMessage(), e);
-            // Render pre-recorded speech as delay
-            Message preRenderedSpeechMessage = new Message(message.actor);
-            for (Part part : message.getParts()) {
-                if (part.type == Message.Type.Text) {
-                    preRenderedSpeechMessage.add(part);
-                    int durationSeconds = Math.toIntExact(
-                            TextToSpeech.getEstimatedSpeechDuration(part.value)
-                                    / 1000);
-                    preRenderedSpeechMessage.add(Message.Type.Delay,
-                            Integer.toString(durationSeconds));
-                } else {
-                    preRenderedSpeechMessage.add(part);
+                return preRenderedSpeechMessage;
+            } catch (IOException e) {
+                logger.error(e.getMessage(), e);
+                // Render missing pre-recorded speech as delay
+                Message preRenderedSpeechMessage = new Message(message.actor);
+                for (Part part : message.getParts()) {
+                    if (part.type == Message.Type.Text) {
+                        preRenderedSpeechMessage.add(part);
+                        int durationSeconds = Math.toIntExact(TextToSpeech
+                                .getEstimatedSpeechDuration(part.value) / 1000);
+                        preRenderedSpeechMessage.add(Message.Type.Delay,
+                                Integer.toString(durationSeconds));
+                    } else {
+                        preRenderedSpeechMessage.add(part);
+                    }
                 }
+                return preRenderedSpeechMessage;
             }
-            return preRenderedSpeechMessage;
         }
     }
 

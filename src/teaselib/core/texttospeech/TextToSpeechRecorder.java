@@ -199,9 +199,15 @@ public class TextToSpeechRecorder {
                     "Generating speech files for all symbols generates a lot of reused entries");
         }
 
-        logger.info("Finished: " + upToDateEntries + " up to date, "
-                + reusedDuplicates + " reused, " + changedEntries + " changed, "
-                + newEntries + " new");
+        long now = System.currentTimeMillis();
+        long seconds = (now - buildStart) / 1000;
+        String duration = String.format("%d:%02d:%02d", seconds / 3600,
+                (seconds % 3600) / 60, (seconds % 60));
+        logger.info("Finished - Build time : " + duration);
+
+        logger.info(upToDateEntries + " up to date, " + reusedDuplicates
+                + " reused, " + changedEntries + " changed, " + newEntries
+                + " new");
     }
 
     static String readMessage(InputStream inputStream) throws IOException {

@@ -44,9 +44,16 @@ public class ResourceLoader {
     }
 
     public ResourceLoader(Class<?> mainScript, String resourceRoot,
-            String[] paths) {
+            String[] assets) {
         this(mainScript, resourceRoot);
-        addAssets(paths);
+        addAssets(assets);
+    }
+
+    public ResourceLoader(Class<?> mainScript, String resourceRoot,
+            String[] assets, String[] optionalAssets) {
+        this(mainScript, resourceRoot);
+        addAssets(assets);
+        addAssets(optionalAssets);
     }
 
     /**

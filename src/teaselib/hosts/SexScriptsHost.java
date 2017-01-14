@@ -540,9 +540,14 @@ public class SexScriptsHost implements Host {
         }
 
         void showPopup() {
-            comboBox.requestFocus();
-            comboBox.setPopupVisible(true);
-            resetPopupVisibility.set(true);
+            java.awt.EventQueue.invokeLater(new Runnable() {
+                @Override
+                public void run() {
+                    comboBox.requestFocus();
+                    comboBox.setPopupVisible(true);
+                    resetPopupVisibility.set(true);
+                }
+            });
         }
 
         void cleanup() {

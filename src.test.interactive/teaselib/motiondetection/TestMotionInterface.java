@@ -1,7 +1,11 @@
 package teaselib.motiondetection;
 
+import org.bytedeco.javacpp.opencv_core.Point;
 import org.junit.Test;
 
+import teaselib.core.VideoRenderer;
+import teaselib.core.VideoRenderer.Type;
+import teaselib.core.javacv.VideoRendererJavaCV;
 import teaselib.motiondetection.MotionDetector.MotionSensitivity;
 
 public class TestMotionInterface {
@@ -12,6 +16,15 @@ public class TestMotionInterface {
                 .getDefaultDevice();
         motionDetector.setViewPoint(ViewPoint.EyeLevel);
         motionDetector.setSensitivity(MotionSensitivity.High);
+        VideoRenderer vr = new VideoRendererJavaCV(Type.CameraFeedback) {
+
+            @Override
+            protected Point getPosition(Type type, int width, int height) {
+                return new Point(0, 0);
+            }
+        };
+        motionDetector.setVideoRenderer(vr);
+
         Movement movement = MotionDetection.movement(motionDetector);
 
         System.out.println("Move!");

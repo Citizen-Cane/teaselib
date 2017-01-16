@@ -210,10 +210,6 @@ public class VideoCaptureDeviceCV extends WiredDevice
 
     @Override
     public void resolution(Size size) {
-        if (!getResolutions().contains(size)) {
-            throw new IllegalArgumentException(
-                    size.width() + "," + size.height());
-        }
         videoCapture.set(CAP_PROP_FRAME_WIDTH, size.width());
         videoCapture.set(CAP_PROP_FRAME_HEIGHT, size.height());
         double actual = videoCapture.get(opencv_videoio.CAP_PROP_FPS);

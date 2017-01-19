@@ -76,9 +76,9 @@ public class SpeechDetectionEventHandler {
     }
 
     public void removeEventListeners() {
-        speechRecognizer.events.recognitionStarted.add(recognitionStarted);
-        speechRecognizer.events.speechDetected.add(speechDetected);
-        speechRecognizer.events.recognitionRejected.add(recognitionRejected);
+        speechRecognizer.events.recognitionStarted.remove(recognitionStarted);
+        speechRecognizer.events.speechDetected.remove(speechDetected);
+        speechRecognizer.events.recognitionRejected.remove(recognitionRejected);
     }
 
     void enable(boolean enable) {

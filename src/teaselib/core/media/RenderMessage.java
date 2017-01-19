@@ -31,9 +31,9 @@ public class RenderMessage extends MediaRendererThread {
     private final static long DELAY_BETWEEN_PARAGRAPHS = 500;
     private final static long DELAY_AT_END_OF_MESSAGE = 2000;
 
-    static final Set<Message.Type> logSpecialMessageTypes = new HashSet<Message.Type>(
+    static final Set<Message.Type> ManuallyLoggedMessageTypes = new HashSet<Message.Type>(
             Arrays.asList(Message.Type.Text, Message.Type.Image,
-                    Message.Type.Mood));
+                    Message.Type.Mood, Message.Type.Speech));
 
     private final ResourceLoader resources;
     private final Message message;
@@ -182,7 +182,7 @@ public class RenderMessage extends MediaRendererThread {
             for (Iterator<Part> it = message.iterator(); it.hasNext();) {
                 Part part = it.next();
                 boolean lastParagraph = !it.hasNext();
-                if (!logSpecialMessageTypes.contains(part.type)) {
+                if (!ManuallyLoggedMessageTypes.contains(part.type)) {
                     teaseLib.transcript
                             .info("" + part.type.name() + " = " + part.value);
                 }

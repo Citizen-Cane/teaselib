@@ -83,6 +83,10 @@ public class SpeechDetectionEventHandler {
 
     void enable(boolean enable) {
         this.enabled = enable;
+        // Although this disables event handling in each listener,
+        // it doesn't disable event logging by the event source itself
+        // TODO Disable event logging since it's very irritating
+        // to see speech detection events in the log
     }
 
     public void setChoices(List<String> choices) {

@@ -193,9 +193,10 @@ public class SpeechRecognition {
         } catch (Throwable t) {
             logger.error(t.getMessage(), t);
         }
-        // add the hypothesis handler now, as it may consume the
-        // RecognitionRejected-event and fire an recognized event instead,
-        // and subsequent listeners should react to these events
+        // add the SpeechDetectionEventHandler listeners now to ensure
+        // other listeners downstream receive only the correct event,
+        // as the event handler may consume the
+        // RecognitionRejected-event and fire an recognized event instead
         hypothesisEventHandler = new SpeechDetectionEventHandler(this);
         hypothesisEventHandler.addEventListeners();
     }

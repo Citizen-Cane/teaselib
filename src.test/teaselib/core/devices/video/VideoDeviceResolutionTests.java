@@ -1,3 +1,4 @@
+package teaselib.core.devices.video;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -10,7 +11,7 @@ import teaselib.video.ResolutionList;
 import teaselib.video.VideoCaptureDevice;
 import teaselib.video.VideoCaptureDevices;
 
-public class VideoDeviceTests {
+public class VideoDeviceResolutionTests {
     ResolutionList resolutions = new ResolutionList(new Size(1920, 1080),
             new Size(1280, 960), new Size(640, 480));
 

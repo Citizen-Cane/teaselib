@@ -199,13 +199,11 @@ public class TeaseLib {
      * @return A value in the interval [min, max]
      */
     public int random(int min, int max) {
-        double r = Math.random();
-        return min + (int) (r * (max - min + 1));
+        return teaselib.util.math.Random.random(min, max);
     }
 
     public double random(double min, double max) {
-        double r = Math.random();
-        return min + (r * (max - min + 1));
+        return teaselib.util.math.Random.random(min, max);
     }
 
     /**

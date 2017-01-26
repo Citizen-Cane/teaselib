@@ -40,7 +40,7 @@ extern "C"
             NativeObject::checkInitializedOrThrow(speechRecognizer);
         } catch (NativeException *e) {
             JNIException::throwNew(env, e);
-        } catch (JNIException /**e*/) {
+        } catch (JNIException * /**e*/) {
             // Forwarded automatically
         }
     }
@@ -79,7 +79,7 @@ extern "C"
             });
         } catch (NativeException *e) {
             JNIException::throwNew(threadEnv, e);
-        } catch (JNIException /**e*/) {
+        } catch (JNIException * /**e*/) {
             // Forwarded automatically
         }
     }
@@ -113,7 +113,7 @@ extern "C"
             speechRecognizer->setChoices(choices);
         } catch (NativeException *e) {
             JNIException::throwNew(env, e);
-        } catch (JNIException /**e*/) {
+        } catch (JNIException * /**e*/) {
             // Forwarded automatically
         }
     }

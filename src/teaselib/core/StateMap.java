@@ -15,6 +15,8 @@ import teaselib.core.TeaseLib.Duration;
  *
  */
 public class StateMap<T extends Enum<T>> {
+    static final Long SESSION = Long.MAX_VALUE;
+    static final Long INFINITE = Long.MAX_VALUE - 1;
 
     final TeaseLib teaseLib;
     final Map<T, StateImpl> state = new HashMap<T, StateImpl>();
@@ -153,8 +155,13 @@ public class StateMap<T extends Enum<T>> {
         }
 
         @Override
-        public void apply() {
-            apply(Long.MAX_VALUE, TimeUnit.SECONDS);
+        public void applyForSession() {
+            apply(SESSION, TimeUnit.SECONDS);
+        }
+
+        @Override
+        public void applyIndefinitely() {
+            apply(INFINITE, TimeUnit.SECONDS);
         }
 
         @Override

@@ -38,7 +38,17 @@ public interface State {
      */
     void remove();
 
-    void apply();
+    /**
+     * Apply the item, but assume it's removed at the end of the session, e.g.
+     * when the current main script terminates.
+     */
+    void applyForSession();
+
+    /**
+     * Apply the item, but don't set a expiration duration. Use with care
+     * because this might interfere with other scripts if never reset.
+     */
+    void applyIndefinitely();
 
     /**
      * Start a duration on the item. This clears any previous durations.

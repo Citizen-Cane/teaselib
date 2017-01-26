@@ -18,7 +18,7 @@ public class StateTests {
         TestScript script = TestScript.getOne();
         State somethingOnNipples = script.state(Body.SomethingOnNipples);
         assertFalse(somethingOnNipples.applied());
-        somethingOnNipples.apply();
+        somethingOnNipples.applyForSession();
         assertTrue(somethingOnNipples.applied());
         assertFalse(somethingOnNipples.expired());
         somethingOnNipples.remove();

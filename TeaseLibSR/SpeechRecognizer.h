@@ -50,5 +50,6 @@ private:
 	JNIEnv* threadEnv;
 
 	HRESULT resetGrammar();
+	void checkRecogizerStatus();
 };
 

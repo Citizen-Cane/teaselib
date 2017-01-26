@@ -17,6 +17,7 @@
 #include "AudioLevelSignalProblemOccuredEvent.h"
 #include "SpeechRecognitionStartedEvent.h"
 #include "SpeechRecognizedEvent.h"
+#include "UpdateGrammar.h"
 
 #include "SpeechRecognizer.h"
 
@@ -66,7 +67,7 @@ void SpeechRecognizer::speechRecognitionEventHandlerThread(JNIEnv* threadEnv) {
         if (SUCCEEDED(recognizerStatus)) {
             // Establish a separate win32 event to signal event loop exit
             hExitEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
-            HANDLE hSpeechNotifyEvent = cpContext->GetNotifyEventHandle();
+            hSpeechNotifyEvent = cpContext->GetNotifyEventHandle();
             if (INVALID_HANDLE_VALUE == hSpeechNotifyEvent) {
                 // Notification handle unsupported
                 recognizerStatus = E_NOINTERFACE;
@@ -83,7 +84,7 @@ void SpeechRecognizer::speechRecognitionEventHandlerThread(JNIEnv* threadEnv) {
 
 HRESULT SpeechRecognizer::speechRecognitionInitContext() {
     TCHAR languageID[MAX_PATH];
-    int size = GetLocaleInfoEx(locale.c_str(), LOCALE_ILANGUAGE, languageID, MAX_PATH);
+    /* const int size = */ GetLocaleInfoEx(locale.c_str(), LOCALE_ILANGUAGE, languageID, MAX_PATH);
     const wchar_t* langIDWithoutTrailingZeros = languageID;
     while (*langIDWithoutTrailingZeros == '0') {
         langIDWithoutTrailingZeros++;
@@ -116,7 +117,7 @@ HRESULT SpeechRecognizer::speechRecognitionInitContext() {
 						hr = cpRecognizer->CreateRecoContext(&cpContext);
 						assert(SUCCEEDED(hr));
 						if (SUCCEEDED(hr)) {
-							HRESULT hr = cpContext->SetContextState(SPCS_DISABLED);
+							hr = cpContext->SetContextState(SPCS_DISABLED);
 							assert(SUCCEEDED(hr));
 							if (SUCCEEDED(hr)) {
 								hr = cpRecognizer->SetRecoState(SPRST_ACTIVE);
@@ -262,77 +263,72 @@ void SpeechRecognizer::speechRecognitionEventHandlerLoop(HANDLE* rghEvents) {
 }
 
 void SpeechRecognizer::setChoices(const Choices& choices) {
-    if (FAILED(recognizerStatus)) {
-        throw new COMException(recognizerStatus);
-    }
-    if (!cpContext) {
-        throw new COMException(E_UNEXPECTED);
-    }
-	HRESULT hr = resetGrammar();
-    if (SUCCEEDED(hr)) {
-        // SPSTATEHANDLE hRule;
-        // const wchar_t* ruleName = L"Choices";
-        // hr = cpGrammar->GetRule(ruleName, 1, SPRAF_TopLevel | SPRAF_Active, TRUE, &hRule);
-        assert(SUCCEEDED(hr));
-        if (SUCCEEDED(hr)) {
-            // Add a rule for each choice, index them so we can return the proper index in the recognitino result
-            int n = 0;
-            for_each(choices.begin(), choices.end(), [&](const Choices::value_type & choice) {
-                const std::wstring ruleName = choice;
-                SPSTATEHANDLE hRule;
-                hr = cpGrammar->GetRule(ruleName.c_str(), n++, SPRAF_TopLevel | SPRAF_Active, TRUE, &hRule);
-                assert(SUCCEEDED(hr));
-                if (SUCCEEDED(hr)) {
-                    HRESULT hr = cpGrammar->AddWordTransition(hRule, NULL, ruleName.c_str(), L" ", SPWT_LEXICAL, 1, NULL);
-                    assert(SUCCEEDED(hr));
-                    if (FAILED(hr)) {
-                        throw new COMException(hr);
-                    }
-                }
-            });
-            hr = cpGrammar->Commit(0);
-            assert(SUCCEEDED(hr));
-            if (SUCCEEDED(hr)) {
-                // activate the grammar since "construction" is finished, and ready for receiving recognitions
-                hr = cpGrammar->SetGrammarState(SPGS_ENABLED);
-                assert(SUCCEEDED(hr));
-                if (SUCCEEDED(hr)) {
-                    // Set all top-level rules in the new grammar to the active state.
-                    hr = cpGrammar->SetRuleState(NULL, NULL, SPRS_ACTIVE);
-                    // hr = cpGrammar->SetRuleState(ruleName, NULL, SPRS_ACTIVE);
-                    assert(SUCCEEDED(hr));
-                }
-            }
-        }
-    }
-    if (FAILED(hr)) {
-        throw new COMException(hr);
-    }
+	checkRecogizerStatus();
+
+	UpdateGrammar(cpContext, [&choices, this]() {
+		HRESULT hr = resetGrammar();
+		if (SUCCEEDED(hr)) {
+			// SPSTATEHANDLE hRule;
+			// const wchar_t* ruleName = L"Choices";
+			// hr = cpGrammar->GetRule(ruleName, 1, SPRAF_TopLevel | SPRAF_Active, TRUE, &hRule);
+			assert(SUCCEEDED(hr));
+			if (SUCCEEDED(hr)) {
+				// Add a rule for each choice, index them so we can return the proper index in the recognitino result
+				int n = 0;
+				CComPtr<ISpRecoGrammar>& cpGrammar = this->cpGrammar;
+				for_each(choices.begin(), choices.end(), [&cpGrammar, &n](const Choices::value_type & choice) {
+					const std::wstring ruleName = choice;
+					SPSTATEHANDLE hRule;
+					HRESULT hr = cpGrammar->GetRule(ruleName.c_str(), n++, SPRAF_TopLevel | SPRAF_Active, TRUE, &hRule);
+					assert(SUCCEEDED(hr));
+					if (SUCCEEDED(hr)) {
+						hr = cpGrammar->AddWordTransition(hRule, NULL, ruleName.c_str(), L" ", SPWT_LEXICAL, 1, NULL);
+						assert(SUCCEEDED(hr));
+						if (FAILED(hr)) {
+							throw new COMException(hr);
+						}
+					}
+				});
+				hr = cpGrammar->Commit(0);
+				assert(SUCCEEDED(hr));
+				if (SUCCEEDED(hr)) {
+					// activate the grammar since "construction" is finished, and ready for receiving recognitions
+					hr = cpGrammar->SetGrammarState(SPGS_ENABLED);
+					assert(SUCCEEDED(hr));
+					if (SUCCEEDED(hr)) {
+						// Set all top-level rules in the new grammar to the active state.
+						hr = cpGrammar->SetRuleState(NULL, NULL, SPRS_ACTIVE);
+						// hr = cpGrammar->SetRuleState(ruleName, NULL, SPRS_ACTIVE);
+						assert(SUCCEEDED(hr));
+					}
+				}
+			}
+			if (FAILED(hr)) {
+				throw new COMException(hr);
+			}
+		}
+	});
 }
 
 void SpeechRecognizer::setMaxAlternates(const int maxAlternates) {
-    if (!cpContext) {
-        throw new COMException(E_UNEXPECTED);
-    }
-    HRESULT hr = cpContext->SetMaxAlternates(maxAlternates);
+	checkRecogizerStatus();
+	
+	HRESULT hr = cpContext->SetMaxAlternates(maxAlternates);
     if (FAILED(hr)) {
         throw new COMException(hr);
     }
 }
 
 void SpeechRecognizer::startRecognition() {
-    if (FAILED(recognizerStatus)) {
-        throw new COMException(recognizerStatus);
-    }
-    if (!cpContext) {
-        throw new COMException(E_UNEXPECTED);
-    }
-    HRESULT hr = cpRecognizer->SetRecoState(SPRST_ACTIVE_ALWAYS);
+	checkRecogizerStatus();
+
+	HRESULT hr = cpRecognizer->SetRecoState(SPRST_ACTIVE_ALWAYS);
     assert(SUCCEEDED(hr));
     if (FAILED(hr)) {
         throw new COMException(hr);
     }
-    hr = cpContext->SetContextState(SPCS_ENABLED);
+
+	hr = cpContext->SetContextState(SPCS_ENABLED);
     assert(SUCCEEDED(hr));
     if (FAILED(hr)) {
         throw new COMException(hr);
@@ -340,12 +336,7 @@ void SpeechRecognizer::startRecognition() {
 }
 
 void SpeechRecognizer::stopRecognition() {
-    if (FAILED(recognizerStatus)) {
-        throw new COMException(recognizerStatus);
-    }
-    if (!cpContext) {
-        throw new COMException(E_UNEXPECTED);
-    }
+	checkRecogizerStatus();
 
     HRESULT hr = cpContext->SetContextState(SPCS_DISABLED);
     assert(SUCCEEDED(hr));
@@ -353,10 +344,16 @@ void SpeechRecognizer::stopRecognition() {
         throw new COMException(hr);
     }
 
-	hr = resetGrammar();
-	if(FAILED(hr)) {
+	hr = cpRecognizer->SetRecoState(SPRST_INACTIVE_WITH_PURGE);
+	assert(SUCCEEDED(hr));
+	if (FAILED(hr)) {
 		throw new COMException(hr);
 	}
+
+	//hr = resetGrammar();
+	//if(FAILED(hr)) {
+	//	throw new COMException(hr);
+	//}
 }
 
 HRESULT SpeechRecognizer::resetGrammar() {
@@ -366,4 +363,15 @@ HRESULT SpeechRecognizer::resetGrammar() {
 	HRESULT hr = cpGrammar->ResetGrammar(langID);
 	assert(SUCCEEDED(hr));
 	return hr;
+}
+
+void SpeechRecognizer::checkRecogizerStatus() {
+	assert(recognizerStatus);
+	if (FAILED(recognizerStatus)) {
+		throw new COMException(recognizerStatus);
+	}
+
+	if (!cpContext) {
+		throw new COMException(E_UNEXPECTED);
+	}
 }

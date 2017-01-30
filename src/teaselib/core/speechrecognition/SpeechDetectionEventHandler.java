@@ -56,7 +56,6 @@ public class SpeechDetectionEventHandler {
 
     private Confidence recognitionConfidence = Confidence.Default;
     private boolean enabled = false;
-    private List<String> choices;
     private PromptSplitter promptSplitter = null;
     private int minimumForHypothesisRecognition = 0;
     SpeechRecognitionResult recognitionResult;
@@ -90,7 +89,6 @@ public class SpeechDetectionEventHandler {
     }
 
     public void setChoices(List<String> choices) {
-        this.choices = choices;
         if (vowelSplitter.count(choices.get(0)) > 0) {
             promptSplitter = vowelSplitter;
         } else {

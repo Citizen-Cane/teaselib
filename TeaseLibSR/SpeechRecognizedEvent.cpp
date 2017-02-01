@@ -61,7 +61,6 @@ void SpeechRecognizedEvent::fire(ISpRecoResult* pResult) {
     } else {
         ulCount = 0;
     }
-    ::CoTaskMemFree(pPhrase);
     if (FAILED(hr)) {
         throw new COMException(hr);
     }
@@ -133,7 +132,9 @@ void SpeechRecognizedEvent::fire(ISpRecoResult* pResult) {
         } else if (FAILED(hr)) {
             throw new COMException(hr);
         }
-    }
+	}
+	// TODO resolve memory leak on exception
+	::CoTaskMemFree(pPhrase);
     // Fire the event, pass choices or null array
     jclass eventClass = JNIClass::getClass(env, "teaselib/core/speechrecognition/events/SpeechRecognizedEventArgs");
     jobject eventArgs = env->NewObject(

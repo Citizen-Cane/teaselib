@@ -5,49 +5,57 @@ import java.util.Iterator;
 
 public class Interval implements Iterable<Integer> {
 
-	public final int start;
-	public final int end;
+    public final int start;
+    public final int end;
 
+    public Interval(Collection<?> collection) {
+        this(0, collection.size() - 1);
+    }
 
-	public Interval(Collection<?> collection) {
-		this(0, collection.size() - 1);
-	}
+    public Interval(int start) {
+        this(start, start);
+    }
 
+    public Interval(int start, int end) {
+        if (start > end)
+            throw new IllegalArgumentException("start > end");
+        this.start = start;
+        this.end = end;
+    }
 
-	public Interval(int start) {
-		this(start, start);
-	}
+    @Override
+    public Iterator<Integer> iterator() {
+        return new Iterator<Integer>() {
+            private int i = start;
 
-	public Interval(int start, int end) {
-		if (start > end) throw new IllegalArgumentException("start > end");
-		this.start = start;
-		this.end = end;
-	}
+            @Override
+            public boolean hasNext() {
+                return i <= end;
+            }
 
-	@Override
-	public Iterator<Integer> iterator() {
-		return new Iterator<Integer>() {
-			private int i = start;
-			@Override
-			public boolean hasNext() {
-				return i <= end;
-			}
-	
-			@Override
-			public Integer next() {
-				return new Integer(i++);
-			}
-	
-			@Override
-			public void remove() {
-				throw new UnsupportedOperationException();
-			}
-		
-		};
-	}
+            @Override
+            public Integer next() {
+                return new Integer(i++);
+            }
 
-	public boolean contains(int n) {
-		return start <= n && n <= end; 
-	}
+            @Override
+            public void remove() {
+                throw new UnsupportedOperationException();
+            }
+
+        };
+    }
+
+    public boolean contains(int n) {
+        return start <= n && n <= end;
+    }
+
+    public boolean contains(Integer n) {
+        return start <= n && n <= end;
+    }
+
+    public int size() {
+        return end - start;
+    }
 
 }

@@ -207,11 +207,11 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
      * @return The choice object that has been selected by the user.
      */
     public final String reply(List<String> choices) {
-        return super.showChoices(null, choices);
+        return showChoices(null, choices);
     }
 
     public final String reply(Confidence confidence, List<String> choices) {
-        return super.showChoices(null, confidence, choices);
+        return showChoices(null, confidence, choices);
     }
 
     /**
@@ -242,7 +242,7 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
      */
     public final String reply(ScriptFunction scriptFunction,
             List<String> choices) {
-        return super.showChoices(scriptFunction, choices);
+        return showChoices(scriptFunction, choices);
     }
 
     /**

@@ -7,6 +7,8 @@ import teaselib.core.TeaseLib.Duration;
 // TODO Clean up so this can be understood
 // -> expected() -> duration(), getDuration() -> getElapsed(), and so on
 public interface State {
+    static final Long SESSION = Long.MAX_VALUE;
+    static final Long INFINITE = Long.MAX_VALUE - 1;
 
     Duration getDuration();
 

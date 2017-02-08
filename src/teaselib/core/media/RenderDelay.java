@@ -24,12 +24,10 @@ public class RenderDelay extends MediaRendererThread {
         startCompleted();
         try {
             if (seconds > 0) {
-                logger.info(getClass().getSimpleName() + " " + toString()
-                        + ": " + seconds + " seconds");
+                logger.info(toString() + " seconds");
                 teaseLib.sleep(seconds, TimeUnit.SECONDS);
             } else {
-                logger.info(getClass().getSimpleName() + " " + toString()
-                        + ": skipped sleeping " + seconds + " seconds");
+                logger.info("skipped sleeping " + seconds + " seconds");
             }
         } catch (ScriptInterruptedException e) {
             // Expected

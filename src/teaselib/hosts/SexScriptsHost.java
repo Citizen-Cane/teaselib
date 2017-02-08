@@ -440,10 +440,9 @@ public class SexScriptsHost implements Host {
                     final String choice = choices.get(index);
                     if (buttonText.contains(choice)) {
                         Delegate click = new Delegate() {
-
                             @Override
                             public void run() {
-                                logger.info("Clicking on " + choice);
+                                logger.info("Clicking on '" + choice + "'");
                                 button.doClick();
                             }
                         };
@@ -457,23 +456,11 @@ public class SexScriptsHost implements Host {
             // If a choice wasn't found, the element at the corresponding index
             // would be null
             return clickableChoices;
-        } catch (
-
-        IllegalAccessException e)
-
-        {
+        } catch (IllegalAccessException e) {
             logger.error(e.getMessage(), e);
-        } catch (
-
-        NoSuchFieldException e)
-
-        {
+        } catch (NoSuchFieldException e) {
             logger.error(e.getMessage(), e);
-        } catch (
-
-        SecurityException e)
-
-        {
+        } catch (SecurityException e) {
             logger.error(e.getMessage(), e);
         }
         return new ArrayList<Delegate>();

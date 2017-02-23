@@ -271,7 +271,11 @@ public class Message {
                     if (messageString.length() > 0) {
                         messageString.append(newLine);
                     }
-                    messageString.append(part.value);
+                    if (part.type == Type.Text || part.type == Type.Mood) {
+                        messageString.append(part.value);
+                    } else {
+                        messageString.append(part.toString());
+                    }
                 }
             }
             return messageString.toString();

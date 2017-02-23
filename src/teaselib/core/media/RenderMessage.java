@@ -190,9 +190,11 @@ public class RenderMessage extends MediaRendererThread {
 
                 mood = renderMessagePart(part, accumulatedText, mood, speakText,
                         lastParagraph);
-                if (part.type == Message.Type.Text || lastParagraph) {
-                    showParagraph(message.actor, part, accumulatedText, mood,
-                            speakText, lastParagraph);
+                if (part.type == Message.Type.Text) {
+                    show(message.actor, part, accumulatedText, mood, speakText,
+                            lastParagraph);
+                } else if (lastParagraph) {
+                    show(accumulatedText.toString());
                 }
 
                 if (task.isCancelled()) {
@@ -261,11 +263,11 @@ public class RenderMessage extends MediaRendererThread {
         } else if (part.type == Message.Type.Keyword) {
             doKeyword(part);
         } else if (part.type == Message.Type.Delay) {
-            // Pause
+            completeSpeech(lastParagraph);
             doDelay(part);
         } else if (part.type == Message.Type.Item) {
             accumulatedText.add(part);
-        } else if (part.type == Message.Type.Text || lastParagraph) {
+        } else if (part.type == Message.Type.Text) {
             accumulatedText.add(part);
         } else {
             throw new UnsupportedOperationException(
@@ -274,7 +276,7 @@ public class RenderMessage extends MediaRendererThread {
         return mood;
     }
 
-    private void showParagraph(Actor actor, Part part,
+    private void show(Actor actor, Part part,
             MessageTextAccumulator accumulatedText, String mood,
             boolean speakText, boolean lastParagraph) {
         show(accumulatedText.toString(), mood);
@@ -325,6 +327,10 @@ public class RenderMessage extends MediaRendererThread {
             teaseLib.transcript.info("mood = " + mood);
         }
 
+        show(text);
+    }
+
+    private void show(String text) {
         String path = displayImage == Message.NoImage ? null : displayImage;
         // log image to transcript if not an actor's image
         if (path == null) {

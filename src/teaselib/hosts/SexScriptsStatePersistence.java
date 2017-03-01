@@ -1,5 +1,10 @@
 package teaselib.hosts;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.Locale;
 
 import ss.IScript;
@@ -8,10 +13,14 @@ import teaselib.Images;
 import teaselib.core.Persistence;
 import teaselib.core.texttospeech.Voice;
 import teaselib.core.util.PropertyNameMapping;
+import teaselib.core.util.Stream;
 import teaselib.util.TextVariables;
 
 public class SexScriptsStatePersistence implements Persistence {
 
+    private static final String DATA_PROPERTIES = "data.properties";
+    private static final String DATA_PROPERTIES_BACKUP = "data backup.properties";
+    private static final String PROPERTY_FILE_VALID_TAG = "intro.start_script";
     private static final String FALSE = "false";
     private static final String TRUE = "true";
 
@@ -20,8 +29,27 @@ public class SexScriptsStatePersistence implements Persistence {
 
     public SexScriptsStatePersistence(IScript host) {
         this.host = host;
-        this.nameMapping = new SexScriptsPropertyNameMapping() {
-        };
+        this.nameMapping = new SexScriptsPropertyNameMapping();
+        if (has(PROPERTY_FILE_VALID_TAG)) {
+            makeDataPropertiesBackup();
+        }
+    }
+
+    private static void makeDataPropertiesBackup() {
+        try {
+            FileInputStream dataProperties = new FileInputStream(
+                    new File(DATA_PROPERTIES));
+            FileOutputStream dataPropertiesBackup = new FileOutputStream(
+                    new File(DATA_PROPERTIES_BACKUP));
+            try {
+                Stream.copy(dataProperties, dataPropertiesBackup);
+            } finally {
+                dataProperties.close();
+                dataPropertiesBackup.close();
+            }
+        } catch (FileNotFoundException e) {
+        } catch (IOException e) {
+        }
     }
 
     @Override

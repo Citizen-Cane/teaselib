@@ -211,7 +211,7 @@ public abstract class TeaseScriptBase {
                     getActorOrDisplayImage(displayImage, mood));
         } else {
             String imageType = displayImage;
-            String nextImage = displayImage;
+            String nextImage = null;
             String nextMood = null;
 
             for (Message.Part part : message.getParts()) {
@@ -250,8 +250,7 @@ public abstract class TeaseScriptBase {
                         nextMood = null;
                     }
                     // Update image if changed
-                    if (imageType == Message.ActorImage
-                            || imageType == Message.NoImage) {
+                    if (imageType != nextImage) {
                         nextImage = getActorOrDisplayImage(imageType,
                                 currentMood);
                         parsedMessage.add(Message.Type.Image, nextImage);

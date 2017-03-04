@@ -1,6 +1,6 @@
 package teaselib.core;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 import org.junit.Test;
 
@@ -25,7 +25,7 @@ public class TeaseScriptBaseTest {
     }
 
     @Test
-    public void testImageInjection() {
+    public void testInjectionOfInlineResources() {
         TestScript script = TestScript.getOne(getClass());
 
         Message message = new Message(script.actor);
@@ -64,4 +64,24 @@ public class TeaseScriptBaseTest {
 
         assertEquals(parts.size(), n);
     }
+
+    @Test
+    public void testInjectionOfScriptImage() {
+        TestScript script = TestScript.getOne(getClass());
+
+        Message message = new Message(script.actor);
+        message.add("Some text.");
+        script.setImage("foo.jpg");
+
+        Message parsed = script.injectImagesAndExpandTextVariables(message);
+        Parts parts = parsed.getParts();
+        int n = 0;
+        assertEquals(Type.Mood, parts.get(n++).type);
+        assertEquals(Type.Image, parts.get(n).type);
+        assertEquals("foo.jpg", parts.get(n++).value);
+        assertEquals(Type.Text, parts.get(n++).type);
+
+        assertEquals(parts.size(), n);
+    }
+
 }

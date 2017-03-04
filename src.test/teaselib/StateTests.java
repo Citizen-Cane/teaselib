@@ -18,12 +18,15 @@ public class StateTests {
         TestScript script = TestScript.getOne();
         State somethingOnNipples = script.state(Body.SomethingOnNipples);
         assertFalse(somethingOnNipples.applied());
-        somethingOnNipples.applyForSession();
+
+        somethingOnNipples.apply();
         assertTrue(somethingOnNipples.applied());
-        assertFalse(somethingOnNipples.expired());
+        assertTrue(somethingOnNipples.expired());
+
         somethingOnNipples.remove();
         assertTrue(somethingOnNipples.expired());
         assertFalse(somethingOnNipples.applied());
+
         assertEquals(0, script.persistence.storage.size());
     }
 
@@ -31,17 +34,25 @@ public class StateTests {
     public void testPersistentState() {
         TestScript script = TestScript.getOne();
         State somethingOnNipples = script.state(Body.SomethingOnNipples);
+        assertTrue(somethingOnNipples.expired());
         assertFalse(somethingOnNipples.applied());
+        assertEquals(0, script.persistence.storage.size());
+
         somethingOnNipples.apply(30, TimeUnit.MINUTES);
         assertTrue(somethingOnNipples.applied());
         assertFalse(somethingOnNipples.expired());
         assertEquals(30, somethingOnNipples.remaining(TimeUnit.MINUTES));
+
+        assertEquals(0, script.persistence.storage.size());
+        somethingOnNipples.remember();
         assertEquals(1, script.persistence.storage.size());
 
+        assertEquals(1, script.persistence.storage.size());
         somethingOnNipples.remove();
+        assertEquals(0, script.persistence.storage.size());
+
         assertTrue(somethingOnNipples.expired());
         assertFalse(somethingOnNipples.applied());
-        assertEquals(0, script.persistence.storage.size());
     }
 
     @Test
@@ -61,7 +72,15 @@ public class StateTests {
         assertFalse(nippleClampsState.applied());
         nippleClampsState.apply(30, TimeUnit.MINUTES);
 
+        assertEquals(1, script.persistence.storage.size());
+        nippleClampsState.remember();
         assertEquals(2, script.persistence.storage.size());
-    }
 
+        assertFalse(nippleClampsState.expired());
+        assertTrue(nippleClampsState.applied());
+
+        nippleClampsState.remove();
+        assertTrue(nippleClampsState.expired());
+        assertFalse(nippleClampsState.applied());
+    }
 }

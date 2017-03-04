@@ -1,6 +1,3 @@
-/**
- * 
- */
 package teaselib.core;
 
 import java.util.HashMap;
@@ -9,34 +6,25 @@ import java.util.concurrent.TimeUnit;
 
 import teaselib.State;
 import teaselib.core.TeaseLib.Duration;
+import teaselib.core.TeaseLib.PersistentString;
 
 /**
- * @author someone
+ * @author Citizen-Cane
  *
  */
 public class StateMap<T extends Enum<T>> {
     final TeaseLib teaseLib;
     final Map<T, StateImpl> state = new HashMap<T, StateImpl>();
 
-    public StateMap(TeaseLib teaseLib, Class<T> enumClass) {
+    public StateMap(TeaseLib teaseLib) {
         super();
         this.teaseLib = teaseLib;
-        for (T value : values(enumClass)) {
-            String args = teaseLib.getString(TeaseLib.DefaultDomain,
-                    namespaceOf(value), nameOf(value));
-            if (args != null) {
-                String[] argv = args.split(" ");
-                long startSeconds = Long.parseLong(argv[0]);
-                long howLongSeconds = Long.parseLong(argv[1]);
-                StateImpl state = new StateImpl(value, startSeconds,
-                        howLongSeconds);
-                add(state);
-            }
-        }
     }
 
-    private T[] values(Class<T> enumClass) {
-        return (enumClass.getEnumConstants());
+    private void cacheItem(T value) {
+        if (!state.containsKey(value)) {
+            state.put(value, new StateImpl(value));
+        }
     }
 
     private String namespaceOf(T item) {
@@ -48,9 +36,28 @@ public class StateMap<T extends Enum<T>> {
     }
 
     private class StateImpl implements State {
-        private final T item;
+        private final PersistentString storage;
         Duration duration;
         private long expectedSeconds;
+
+        private StateImpl(T item) {
+            this.storage = storage(item);
+            if (storage.available()) {
+                String[] argv = storage.value().split(" ");
+                long startSeconds = Long.parseLong(argv[0]);
+                long howLongSeconds = Long.parseLong(argv[1]);
+                this.duration = teaseLib.new Duration(startSeconds);
+                this.expectedSeconds = howLongSeconds;
+            } else {
+                this.duration = teaseLib.new Duration(0);
+                this.expectedSeconds = REMOVED;
+            }
+        }
+
+        private PersistentString storage(T value) {
+            return teaseLib.new PersistentString(TeaseLib.DefaultDomain,
+                    namespaceOf(value), nameOf(value));
+        }
 
         /**
          * Apply an item for a specific duration which has already begun.
@@ -60,12 +67,10 @@ public class StateMap<T extends Enum<T>> {
          * @param expectedSeconds
          */
         private StateImpl(T item, long startTimeSeconds, long expectedSeconds) {
-            this.item = item;
+            this.storage = storage(item);
             this.duration = teaseLib.new Duration(startTimeSeconds);
             this.expectedSeconds = expectedSeconds;
-            if (expectedSeconds > 0) {
-                save();
-            }
+            update();
         }
 
         /*
@@ -120,72 +125,53 @@ public class StateMap<T extends Enum<T>> {
 
         @Override
         public boolean applied() {
-            return expectedSeconds > 0;
+            return expectedSeconds >= 0;
         }
 
         @Override
         public boolean freeSince(long time, TimeUnit unit) {
+            // TODO Check and test implementation
             return duration.elapsed(unit) >= time;
         }
 
         @Override
         public void remove() {
-            clear();
-            StateMap.this.remove(item);
-        }
-
-        /**
-         * Clears the item.
-         * <p>
-         * Last usage including apply-duration is written to duration start, so
-         * duration denotes the time the item was taken off.
-         * <p>
-         * As a result, for an item that is not applied, the duration elapsed
-         * time is the duration the item hasn't been applied since the last
-         * usage
-         */
-        private void clear() {
             duration = teaseLib.new Duration(
                     duration.startSeconds + duration.elapsed(TimeUnit.SECONDS));
-            expectedSeconds = 0;
-            save();
+            expectedSeconds = REMOVED;
+            removePersistenceeButKeepCached();
+        }
+
+        private void removePersistenceeButKeepCached() {
+            storage.clear();
         }
 
         @Override
-        public void applyForSession() {
-            apply(SESSION, TimeUnit.SECONDS);
-        }
-
-        @Override
-        public void applyIndefinitely() {
-            apply(INFINITE, TimeUnit.SECONDS);
+        public void apply() {
+            apply(0, TimeUnit.SECONDS);
         }
 
         @Override
         public void apply(long time, TimeUnit unit) {
             this.duration = teaseLib.new Duration();
             this.expectedSeconds = unit.toSeconds(time);
-            save();
+            update();
         }
 
-        private void save() {
-            if (expectedSeconds > 0 && expectedSeconds < Long.MAX_VALUE) {
-                teaseLib.set(TeaseLib.DefaultDomain, namespaceOf(item),
-                        nameOf(item),
-                        persisted(duration.startSeconds, expectedSeconds));
-            } else {
-                teaseLib.clear(TeaseLib.DefaultDomain, namespaceOf(item),
-                        nameOf(item));
+        private void update() {
+            if (storage.available()) {
+                remember();
             }
+        }
+
+        @Override
+        public void remember() {
+            storage.set(persisted(duration.startSeconds, expectedSeconds));
         }
     }
 
     private static String persisted(long whenSeconds, long howLongSeconds) {
         return whenSeconds + " " + howLongSeconds;
-    }
-
-    public boolean has(T item) {
-        return state.containsKey(item);
     }
 
     State add(T item, long startSeconds, long howLongSeconds) {
@@ -194,21 +180,8 @@ public class StateMap<T extends Enum<T>> {
         return value;
     }
 
-    State add(StateImpl item) {
-        state.put(item.item, item);
-        return item;
-    }
-
-    public void remove(T item) {
-        if (has(item)) {
-            StateMap<T>.StateImpl removed = state.remove(item);
-            if (removed != null) {
-                removed.clear();
-            }
-        }
-    }
-
     public State get(T item) {
+        cacheItem(item);
         return state.get(item);
     }
 

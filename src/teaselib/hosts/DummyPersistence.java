@@ -50,7 +50,11 @@ public class DummyPersistence implements Persistence {
 
     @Override
     public void set(String name, String value) {
-        storage.put(name, value);
+        if (value == null) {
+            clear(name);
+        } else {
+            storage.put(name, value);
+        }
     }
 
     @Override

@@ -50,7 +50,7 @@ public class TeaseLib {
     public final Host host;
     private final Persistence persistence;
     public final TeaseLibLogger transcript;
-    private final Map<Class<?>, StateMap<? extends Enum<?>>> states = new HashMap<Class<?>, StateMap<? extends Enum<?>>>();
+    private final Map<Class<?>, StateMap<? extends Enum<?>>> stateMaps = new HashMap<Class<?>, StateMap<? extends Enum<?>>>();
     final MediaRendererQueue renderQueue = new MediaRendererQueue();
 
     public TeaseLib(Host host, Persistence persistence) {
@@ -751,20 +751,7 @@ public class TeaseLib {
      */
     @SuppressWarnings("unchecked")
     public <T extends Enum<T>> State state(T item) {
-        Class<T> enumClass = (Class<T>) item.getClass();
-        StateMap<T> stateMap = state(enumClass);
-        State state;
-        if (stateMap.has(item)) {
-            state = stateMap.get(item);
-        } else {
-            // If there is no entry, we can assume that the item hasn't been
-            // used yet, or no duration was applied
-            // -> mark the item as not applied, and taken off a long time ago
-            // -> checks against elapsed() do always succeed in this case,
-            // allowing for simpler coding on the application layer
-            state = stateMap.add(item, 0, 0);
-        }
-        return state;
+        return state((Class<T>) item.getClass()).get(item);
     }
 
     /**
@@ -778,8 +765,7 @@ public class TeaseLib {
      */
     @SuppressWarnings("unchecked")
     <T extends Enum<T>> StateMap<T> state(T[] values) {
-        Class<T> enumClass = (Class<T>) values[0].getClass();
-        return state(enumClass);
+        return state((Class<T>) values[0].getClass());
     }
 
     /**
@@ -791,14 +777,14 @@ public class TeaseLib {
      */
     @SuppressWarnings("unchecked")
     private <T extends Enum<T>> StateMap<T> state(Class<T> enumClass) {
-        final StateMap<T> state;
-        if (states.containsKey(enumClass)) {
-            state = (StateMap<T>) states.get(enumClass);
+        final StateMap<T> stateMap;
+        if (stateMaps.containsKey(enumClass)) {
+            stateMap = (StateMap<T>) stateMaps.get(enumClass);
         } else {
-            state = new StateMap<T>(this, enumClass);
-            states.put(enumClass, state);
+            stateMap = new StateMap<T>(this);
+            stateMaps.put(enumClass, stateMap);
         }
-        return state;
+        return stateMap;
     }
 
     /**

@@ -7,8 +7,8 @@ import teaselib.core.TeaseLib.Duration;
 // TODO Clean up so this can be understood
 // -> expected() -> duration(), getDuration() -> getElapsed(), and so on
 public interface State {
-    static final Long SESSION = Long.MAX_VALUE;
-    static final Long INFINITE = Long.MAX_VALUE - 1;
+    static final Long INFINITE = Long.MAX_VALUE;
+    static final Long REMOVED = Long.MIN_VALUE;
 
     Duration getDuration();
 
@@ -33,41 +33,46 @@ public interface State {
      */
     boolean applied();
 
+    /**
+     * Whether the item has not been applied before the given time.
+     * <p>
+     * TODO Better name, does it do what's intended
+     * 
+     * @param time
+     * @param unit
+     * @return
+     */
     boolean freeSince(long time, TimeUnit unit);
 
     /**
-     * Remove the item.
+     * Make the state persistent.
+     */
+    void remember();
+
+    /**
+     * Remove the item. The start time is set to the current time when calling
+     * the function, and the duration is set to {@link State#REMOVED}.
+     * <p>
+     * Because the state won't be persisted anymore, but still cached, scripts
+     * can still react on it as long as the current main script is running.
      */
     void remove();
 
     /**
-     * Apply the item, but assume it's removed anytime before the end of the
-     * session, e.g. before the current main script terminates.
+     * Apply the item, but don't set a expiration duration.
      * <p>
      * The state is set active but expired, so {@link State#remaining} returns
      * 0, {@link State#expired} returns true, and {@link State#applied} returns
      * true until the item is removed.
-     * <p>
-     * Furthermore the state is not persisted beyond the scope of the main
-     * script.
      */
-    void applyForSession();
+    void apply();
 
     /**
-     * Apply the item, but don't set a expiration duration. Use with care
-     * because this might interfere with other scripts if never reset.
+     * Start a new duration of the item.
      * <p>
-     * The state is set active but expired, so {@link State#remaining} returns
-     * 0, {@link State#expired} returns true, and {@link State#applied} returns
-     * true until the item is removed.
-     * <p>
-     * Unlike {@link State#applyForSession} the state is persisted and available
-     * until removed.
-     */
-    void applyIndefinitely();
-
-    /**
-     * Start a duration on the item. This clears any previous durations.
+     * You may specify the duration as {@link State#INFINITE} to indicate that
+     * the item shouldn't be removed. However the consequence would be that you
+     * are solely responsible for resetting the state.
      * 
      * @param time
      * @param unit

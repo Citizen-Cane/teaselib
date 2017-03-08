@@ -59,6 +59,7 @@ public class StateMap<T extends Enum<T>> {
                 this.expectedSeconds = howLongSeconds;
                 this.what = Persist.from(argv[2]);
             } else {
+                // TODO should start at REMOVED, and expected should be 0
                 this.duration = teaseLib.new Duration(0);
                 this.expectedSeconds = REMOVED;
                 this.what = None;
@@ -136,15 +137,21 @@ public class StateMap<T extends Enum<T>> {
 
         @Override
         public <W> State apply(W what) {
-            apply(what, 0, TimeUnit.SECONDS);
+            apply(what, TEMPORARY, TimeUnit.SECONDS);
             return this;
         }
 
         @Override
-        public <W> State apply(W what, long time, TimeUnit unit) {
+        public <W> State apply(W what, long duration, TimeUnit unit) {
+            return apply(what, teaseLib.getTime(unit), duration, unit);
+        }
+
+        @Override
+        public <W> State apply(W what, long time, long duration,
+                TimeUnit unit) {
             this.what = what;
             this.duration = teaseLib.new Duration();
-            this.expectedSeconds = unit.toSeconds(time);
+            this.expectedSeconds = unit.toSeconds(duration);
             update();
             return this;
         }

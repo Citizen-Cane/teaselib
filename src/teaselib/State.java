@@ -13,8 +13,9 @@ import teaselib.core.TeaseLib.Duration;
  *
  */
 public interface State {
-    static final Long INFINITE = Long.MAX_VALUE;
-    static final Long REMOVED = Long.MIN_VALUE;
+    static final long INFINITE = Long.MAX_VALUE;
+    static final long TEMPORARY = 0L;
+    static final long REMOVED = -1L;
 
     // TODO Find better name - used if the state just applies time, no item
     static final String None = new String("None");
@@ -97,10 +98,26 @@ public interface State {
      * the item shouldn't be removed. However the consequence would be that you
      * are solely responsible for resetting the state.
      * 
-     * @param time
+     * @param duration
      * @param unit
      */
-    <T> State apply(T what, long time, TimeUnit unit);
+    <T> State apply(T what, long duration, TimeUnit unit);
+
+    /**
+     * Start a new duration of the item.
+     * <p>
+     * You may specify the duration as {@link State#INFINITE} to indicate that
+     * the item shouldn't be removed. However the consequence would be that you
+     * are solely responsible for resetting the state.
+     * 
+     * @param time
+     *            The start time of the application
+     * @param duration
+     *            How long the item is applied
+     * @param unit
+     *            The time unit
+     */
+    <T> State apply(T what, long time, long duration, TimeUnit unit);
 
     /**
      * The item the state is applied to.

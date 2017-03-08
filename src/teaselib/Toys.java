@@ -102,9 +102,9 @@ public enum Toys {
      * The basic toy set, without specializations.
      */
     public final static Toys Basic[] = { Ankle_Cuffs, Anal_Dildo, Ball_Gag,
-            Bit_Gag, Blindfold, Buttplug, Cane, Chains, Chastity_Cage, Collar,
-            Dildo, Handcuffs, Humbler, Nipple_clamps, Paddle, Pussy_Clamps,
-            Ring_Gag, Rope, Vibrator };
+            Bit_Gag, Blindfold, Buttplug, Cane, Chains, Chastity_Cage,
+            Chastity_Device_Lock, Collar, Dildo, Handcuffs, Humbler,
+            Nipple_clamps, Paddle, Pussy_Clamps, Ring_Gag, Rope, Vibrator };
 
     public final static Toys Advanced[] = { Anal_Beads, Ball_Stretcher,
             Ben_Wa_Balls, Cockring, Crop, Doll, Enema_Bulb, Enema_Kit,

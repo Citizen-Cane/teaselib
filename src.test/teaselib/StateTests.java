@@ -75,7 +75,7 @@ public class StateTests {
     }
 
     @Test
-    public void testStatePairs() {
+    public void testStatePairsAreNotImplemetedBecauseTheirRelationshipIs1ToN() {
         TestScript script = TestScript.getOne();
 
         State somethingOnNipples = script.state(Body.SomethingOnNipples);
@@ -87,11 +87,6 @@ public class StateTests {
         somethingOnNipples.apply(Toys.Nipple_clamps, 30, TimeUnit.MINUTES);
 
         assertTrue(somethingOnNipples.applied());
-        assertTrue(nippleClampsState.applied());
-
-        assertEquals(somethingOnNipples.getDuration().startSeconds,
-                nippleClampsState.getDuration().startSeconds);
-        assertEquals(somethingOnNipples.expected(),
-                nippleClampsState.expected());
+        assertFalse(nippleClampsState.applied());
     }
 }

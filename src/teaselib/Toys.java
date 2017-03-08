@@ -35,6 +35,7 @@ public enum Toys {
     Chains,
     Chastity_Belt,
     Chastity_Cage,
+    Chastity_Device_Lock,
     Cigarette,
     Clothespins,
     Cockring,

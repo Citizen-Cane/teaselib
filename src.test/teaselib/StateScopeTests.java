@@ -1,6 +1,5 @@
 package teaselib;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -18,43 +17,43 @@ public class StateScopeTests {
         TestScript script = TestScript.getOne();
         State somethingOnNipples = script.state(Body.SomethingOnNipples);
 
-        assertThatInfiniteStateIsTemporary(script, somethingOnNipples);
-        assertThatTimedStateIsPersisted(script, somethingOnNipples);
-        assertThatRemovedStateIsStillPersistedButExpired(script,
-                somethingOnNipples);
+        TeaseLib.PersistentString stateStorage = script.teaseLib.new PersistentString(
+                TeaseLib.DefaultDomain, Body.class.getName(),
+                Body.SomethingOnNipples.name() + ".state");
+
+        assertThatByDefaultStateIsTemporary(somethingOnNipples, stateStorage);
+        assertThatTimedStateIsPersisted(somethingOnNipples, stateStorage);
+        assertThatRemovedStateIsStillAvailableButNotPersisted(
+                somethingOnNipples, stateStorage);
     }
 
-    private static State assertThatInfiniteStateIsTemporary(TestScript script,
-            State state) {
+    private static State assertThatByDefaultStateIsTemporary(State state,
+            TeaseLib.PersistentString stateStorage) {
         assertFalse(state.applied());
         assertTrue(state.expired());
-        assertEquals(null, script.teaseLib.getString(TeaseLib.DefaultDomain,
-                Body.class.getName(), Body.SomethingOnNipples.name()));
+        assertFalse(stateStorage.available());
         return state;
     }
 
-    private static void assertThatRemovedStateIsStillPersistedButExpired(
-            TestScript script, State state) {
+    private static void assertThatTimedStateIsPersisted(State state,
+            TeaseLib.PersistentString stateStorage) {
+        state.apply(Toys.Nipple_clamps, 30, TimeUnit.MINUTES);
+        assertTrue(state.applied());
+        assertFalse(stateStorage.available());
+
+        state.remember();
+        assertTrue(stateStorage.available());
+        String value = stateStorage.value();
+        assertTrue(value.contains(Toys.Nipple_clamps.name()));
+        assertFalse(state.expired());
+    }
+
+    private static void assertThatRemovedStateIsStillAvailableButNotPersisted(
+            State state, TeaseLib.PersistentString stateStorage) {
         state.remove();
         assertFalse(state.applied());
         assertTrue(state.expired());
-        assertEquals(null, script.teaseLib.getString(TeaseLib.DefaultDomain,
-                Body.class.getName(), Body.SomethingOnNipples.name()));
-    }
-
-    private static void assertThatTimedStateIsPersisted(TestScript script,
-            State state) {
-        state.apply(30, TimeUnit.MINUTES);
-        assertTrue(state.applied());
-        assertFalse(script.teaseLib.getString(TeaseLib.DefaultDomain,
-                Body.class.getName(),
-                Body.SomethingOnNipples.name() + ".state") != null);
-        state.remember();
-        assertTrue(script.teaseLib.getString(TeaseLib.DefaultDomain,
-                Body.class.getName(),
-                Body.SomethingOnNipples.name() + ".state") != null);
-
-        assertFalse(state.expired());
+        assertFalse(stateStorage.available());
     }
 
 }

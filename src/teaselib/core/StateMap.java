@@ -7,8 +7,13 @@ import java.util.concurrent.TimeUnit;
 import teaselib.State;
 import teaselib.core.TeaseLib.Duration;
 import teaselib.core.TeaseLib.PersistentString;
+import teaselib.core.util.Persist;
 
 /**
+ * State-Implementation;
+ * <li>A mapping from item class to item.
+ * <li>An implementation of the {@link State} interface.
+ * 
  * @author Citizen-Cane
  *
  */
@@ -37,40 +42,32 @@ public class StateMap<T extends Enum<T>> {
 
     private class StateImpl implements State {
         private final PersistentString storage;
+        private final Object item;
+        Object what = None;
+
         Duration duration;
         private long expectedSeconds;
 
         private StateImpl(T item) {
             this.storage = storage(item);
+            this.item = item;
             if (storage.available()) {
                 String[] argv = storage.value().split(" ");
                 long startSeconds = Long.parseLong(argv[0]);
                 long howLongSeconds = Long.parseLong(argv[1]);
                 this.duration = teaseLib.new Duration(startSeconds);
                 this.expectedSeconds = howLongSeconds;
+                this.what = Persist.from(argv[2]);
             } else {
                 this.duration = teaseLib.new Duration(0);
                 this.expectedSeconds = REMOVED;
+                this.what = None;
             }
         }
 
         private PersistentString storage(T value) {
             return teaseLib.new PersistentString(TeaseLib.DefaultDomain,
                     namespaceOf(value), nameOf(value));
-        }
-
-        /**
-         * Apply an item for a specific duration which has already begun.
-         *
-         * @param item
-         * @param startTimeSeconds
-         * @param expectedSeconds
-         */
-        private StateImpl(T item, long startTimeSeconds, long expectedSeconds) {
-            this.storage = storage(item);
-            this.duration = teaseLib.new Duration(startTimeSeconds);
-            this.expectedSeconds = expectedSeconds;
-            update();
         }
 
         /*
@@ -81,16 +78,6 @@ public class StateMap<T extends Enum<T>> {
         @Override
         public Duration getDuration() {
             return duration;
-        }
-
-        /*
-         * (non-Javadoc)
-         * 
-         * @see teaselib.core.StateItem#valid()
-         */
-        @Override
-        public boolean valid() {
-            return !expired();
         }
 
         /*
@@ -135,11 +122,12 @@ public class StateMap<T extends Enum<T>> {
         }
 
         @Override
-        public void remove() {
+        public State remove() {
             duration = teaseLib.new Duration(
                     duration.startSeconds + duration.elapsed(TimeUnit.SECONDS));
             expectedSeconds = REMOVED;
             removePersistenceeButKeepCached();
+            return this;
         }
 
         private void removePersistenceeButKeepCached() {
@@ -147,15 +135,30 @@ public class StateMap<T extends Enum<T>> {
         }
 
         @Override
-        public void apply() {
-            apply(0, TimeUnit.SECONDS);
+        public <W> State apply(W what) {
+            apply(what, 0, TimeUnit.SECONDS);
+            return this;
         }
 
         @Override
-        public void apply(long time, TimeUnit unit) {
+        public <W> State apply(W what, long time, TimeUnit unit) {
+            this.what = what;
             this.duration = teaseLib.new Duration();
             this.expectedSeconds = unit.toSeconds(time);
             update();
+            return this;
+        }
+
+        @Override
+        @SuppressWarnings("unchecked")
+        public <I> I item() {
+            return (I) item;
+        }
+
+        @Override
+        @SuppressWarnings("unchecked")
+        public <W> W what() {
+            return (W) what;
         }
 
         private void update() {
@@ -165,19 +168,15 @@ public class StateMap<T extends Enum<T>> {
         }
 
         @Override
-        public void remember() {
-            storage.set(persisted(duration.startSeconds, expectedSeconds));
+        public State remember() {
+            storage.set(persisted());
+            return this;
         }
-    }
 
-    private static String persisted(long whenSeconds, long howLongSeconds) {
-        return whenSeconds + " " + howLongSeconds;
-    }
-
-    State add(T item, long startSeconds, long howLongSeconds) {
-        StateImpl value = new StateImpl(item, startSeconds, howLongSeconds);
-        state.put(item, value);
-        return value;
+        private String persisted() {
+            return duration.startSeconds + " " + expectedSeconds + " "
+                    + Persist.to(what);
+        }
     }
 
     public State get(T item) {

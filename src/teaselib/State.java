@@ -6,16 +6,39 @@ import teaselib.core.TeaseLib.Duration;
 
 // TODO Clean up so this can be understood
 // -> expected() -> duration(), getDuration() -> getElapsed(), and so on
+/**
+ * A states defines a temporary or indefinite relationship between two objects.
+ * 
+ * @author Citizen-Cane
+ *
+ */
 public interface State {
     static final Long INFINITE = Long.MAX_VALUE;
     static final Long REMOVED = Long.MIN_VALUE;
 
+    // TODO Find better name - used if the state just applies time, no item
+    static final String None = new String("None");
+    static final String Timed = new String("Timed");
+
+    /**
+     * The duration of this state.
+     * 
+     * @return
+     */
     Duration getDuration();
 
-    boolean valid();
-
+    /**
+     * Whether the state is expired.
+     * 
+     * @return
+     */
     boolean expired();
 
+    /**
+     * Duration of the state.
+     * 
+     * @return
+     */
     long expected();
 
     /**
@@ -47,7 +70,7 @@ public interface State {
     /**
      * Make the state persistent.
      */
-    void remember();
+    State remember();
 
     /**
      * Remove the item. The start time is set to the current time when calling
@@ -56,7 +79,7 @@ public interface State {
      * Because the state won't be persisted anymore, but still cached, scripts
      * can still react on it as long as the current main script is running.
      */
-    void remove();
+    State remove();
 
     /**
      * Apply the item, but don't set a expiration duration.
@@ -65,7 +88,7 @@ public interface State {
      * 0, {@link State#expired} returns true, and {@link State#applied} returns
      * true until the item is removed.
      */
-    void apply();
+    <T> State apply(T what);
 
     /**
      * Start a new duration of the item.
@@ -77,5 +100,19 @@ public interface State {
      * @param time
      * @param unit
      */
-    void apply(long time, TimeUnit unit);
+    <T> State apply(T what, long time, TimeUnit unit);
+
+    /**
+     * The item the state is applied to.
+     * 
+     * @return
+     */
+    public <T> T item();
+
+    /**
+     * The object applied to the item.
+     * 
+     * @return
+     */
+    public <T> T what();
 }

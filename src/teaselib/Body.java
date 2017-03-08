@@ -18,7 +18,6 @@ public enum Body {
 
     Collared,
     Harnessed,
-    Chastified,
     Blindfolded,
     Tethered,
     AnklesTied,

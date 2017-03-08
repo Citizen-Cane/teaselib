@@ -19,9 +19,10 @@ public class StateTests {
         State somethingOnNipples = script.state(Body.SomethingOnNipples);
         assertFalse(somethingOnNipples.applied());
 
-        somethingOnNipples.apply();
+        somethingOnNipples.apply(Toys.Nipple_clamps);
         assertTrue(somethingOnNipples.applied());
         assertTrue(somethingOnNipples.expired());
+        assertEquals(Toys.Nipple_clamps, somethingOnNipples.what());
 
         somethingOnNipples.remove();
         assertTrue(somethingOnNipples.expired());
@@ -38,7 +39,7 @@ public class StateTests {
         assertFalse(somethingOnNipples.applied());
         assertEquals(0, script.persistence.storage.size());
 
-        somethingOnNipples.apply(30, TimeUnit.MINUTES);
+        somethingOnNipples.apply(Toys.Nipple_clamps, 30, TimeUnit.MINUTES);
         assertTrue(somethingOnNipples.applied());
         assertFalse(somethingOnNipples.expired());
         assertEquals(30, somethingOnNipples.remaining(TimeUnit.MINUTES));
@@ -70,17 +71,27 @@ public class StateTests {
 
         State nippleClampsState = script.state(Toys.Nipple_clamps);
         assertFalse(nippleClampsState.applied());
-        nippleClampsState.apply(30, TimeUnit.MINUTES);
+        assertTrue(nippleClampsState.expired());
+    }
 
-        assertEquals(1, script.persistence.storage.size());
-        nippleClampsState.remember();
-        assertEquals(2, script.persistence.storage.size());
+    @Test
+    public void testStatePairs() {
+        TestScript script = TestScript.getOne();
 
-        assertFalse(nippleClampsState.expired());
+        State somethingOnNipples = script.state(Body.SomethingOnNipples);
+        State nippleClampsState = script.state(Toys.Nipple_clamps);
+
+        assertFalse(somethingOnNipples.applied());
+        assertFalse(nippleClampsState.applied());
+
+        somethingOnNipples.apply(Toys.Nipple_clamps, 30, TimeUnit.MINUTES);
+
+        assertTrue(somethingOnNipples.applied());
         assertTrue(nippleClampsState.applied());
 
-        nippleClampsState.remove();
-        assertTrue(nippleClampsState.expired());
-        assertFalse(nippleClampsState.applied());
+        assertEquals(somethingOnNipples.getDuration().startSeconds,
+                nippleClampsState.getDuration().startSeconds);
+        assertEquals(somethingOnNipples.expected(),
+                nippleClampsState.expected());
     }
 }

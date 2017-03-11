@@ -36,4 +36,12 @@ public final class ReflectionUtils {
     public static String asClassLoaderCompatiblePath(String className) {
         return className.replace(".", "/") + "/";
     }
+
+    public static String getEnumClass(String enumValue) {
+        return enumValue.substring(0, enumValue.lastIndexOf("."));
+    }
+
+    public static String getEnmumValue(String enumValue) {
+        return enumValue.substring(enumValue.lastIndexOf(".") + 1);
+    }
 }

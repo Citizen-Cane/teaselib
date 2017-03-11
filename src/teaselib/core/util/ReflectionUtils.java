@@ -44,4 +44,13 @@ public final class ReflectionUtils {
     public static String getEnmumValue(String enumValue) {
         return enumValue.substring(enumValue.lastIndexOf(".") + 1);
     }
+
+    @SuppressWarnings({ "rawtypes", "unchecked", "cast" })
+    public static Enum getEnum(String enumValue) throws ClassNotFoundException {
+        Class<?> enumClass = Class
+                .forName(ReflectionUtils.getEnumClass(enumValue));
+        return (Enum) Enum.valueOf((Class<? extends Enum>) enumClass,
+                ReflectionUtils.getEnmumValue(enumValue));
+    }
+
 }

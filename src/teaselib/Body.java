@@ -22,6 +22,7 @@ public enum Body {
     Tethered,
     AnklesTied,
     WristsTied,
+    WristsTiedBehindBack,
 
     CannotKneel,
     CannotStand,

@@ -212,36 +212,37 @@ public class TeaseLib {
      *         Handles elapsed seconds since object creation
      */
     public class Duration {
-        public final long startSeconds;
+        private final TimeUnit DURATION_TIME_UNIT = TimeUnit.SECONDS;
+
+        private final long start;
+        private final long limit;
 
         public Duration() {
-            this.startSeconds = getTime(TimeUnit.SECONDS);
+            this(0, TimeUnit.SECONDS);
         }
 
-        public Duration(long startSeconds) {
-            this.startSeconds = startSeconds;
+        public Duration(long limit, TimeUnit unit) {
+            this.start = getTime(DURATION_TIME_UNIT);
+            this.limit = DURATION_TIME_UNIT.convert(limit, unit);
+        }
+
+        Duration(long startSeconds) {
+            this.start = DURATION_TIME_UNIT.convert(startSeconds,
+                    TimeUnit.SECONDS);
+            this.limit = 0;
+        }
+
+        public long start(TimeUnit unit) {
+            return unit.convert(start, TimeUnit.MILLISECONDS);
         }
 
         public long elapsed(TimeUnit unit) {
-            long now = getTime(TimeUnit.SECONDS);
-            long elapsedSeconds = now - startSeconds;
-            return unit.convert(elapsedSeconds, TimeUnit.SECONDS);
+            long now = getTime(DURATION_TIME_UNIT);
+            long elapsed = now - start;
+            return unit.convert(elapsed, DURATION_TIME_UNIT);
         }
-
-        public long elapsedSeconds() {
-            return elapsed(TimeUnit.SECONDS);
-        }
-
-        public long elapsedMinutes() {
-            return elapsed(TimeUnit.MINUTES);
-        }
-
-        public long elapsedHours() {
-            return elapsed(TimeUnit.HOURS);
-        }
-
-        public long elapsedDays() {
-            return elapsed(TimeUnit.DAYS);
+        public boolean expired() {
+            return getTime(DURATION_TIME_UNIT) - start >= limit;
         }
     }
 

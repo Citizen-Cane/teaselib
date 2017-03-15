@@ -104,8 +104,8 @@ public class StateMap<T extends Enum<T>> {
         @Override
         public long remaining(TimeUnit unit) {
             long now = teaseLib.getTime(unit);
-            long end = unit.convert(duration.elapsedSeconds()
-                    + duration.startSeconds + expectedSeconds,
+            long end = unit.convert(duration.elapsed(TimeUnit.SECONDS)
+                    + duration.start(TimeUnit.SECONDS) + expectedSeconds,
                     TimeUnit.SECONDS);
             long remaining = Math.max(0, end - now);
             return remaining;
@@ -124,8 +124,8 @@ public class StateMap<T extends Enum<T>> {
 
         @Override
         public State remove() {
-            duration = teaseLib.new Duration(
-                    duration.startSeconds + duration.elapsed(TimeUnit.SECONDS));
+            duration = teaseLib.new Duration(duration.start(TimeUnit.SECONDS)
+                    + duration.elapsed(TimeUnit.SECONDS));
             expectedSeconds = REMOVED;
             removePersistenceeButKeepCached();
             return this;
@@ -150,7 +150,7 @@ public class StateMap<T extends Enum<T>> {
         public <W> State apply(W what, long time, long duration,
                 TimeUnit unit) {
             this.what = what;
-            this.duration = teaseLib.new Duration();
+            this.duration = teaseLib.new Duration(0, TimeUnit.SECONDS);
             this.expectedSeconds = unit.toSeconds(duration);
             update();
             return this;
@@ -181,8 +181,8 @@ public class StateMap<T extends Enum<T>> {
         }
 
         private String persisted() {
-            return duration.startSeconds + " " + expectedSeconds + " "
-                    + Persist.to(what);
+            return duration.start(TimeUnit.SECONDS) + " " + expectedSeconds
+                    + " " + Persist.to(what);
         }
     }
 

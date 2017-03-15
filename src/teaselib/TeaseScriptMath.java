@@ -163,4 +163,8 @@ public class TeaseScriptMath extends TeaseScriptPersistenceUtil {
         return teaseLib.new Duration();
     }
 
+    public TeaseLib.Duration duration(long limit, TimeUnit unit) {
+        return teaseLib.new Duration(limit, unit);
+    }
+
 }

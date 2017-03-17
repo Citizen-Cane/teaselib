@@ -125,7 +125,7 @@ public class EnumStateMapsTest extends EnumStateMaps {
         State handsTiedBehindBack = state(Body.WristsTiedBehindBack);
 
         chastityCage.apply(Body.SomethingOnPenis, Body.CannotJerkOff);
-        chastityCage.apply(Toys.Chastity_Device_Lock);
+        key.apply(Toys.Chastity_Cage);
         wristRestraints.apply(Body.WristsTiedBehindBack, Body.CannotJerkOff);
 
         assertTrue(chastityCage.applied());
@@ -200,5 +200,30 @@ public class EnumStateMapsTest extends EnumStateMaps {
 
         assertFalse(state(Body.SomethingOnPenis).applied());
         assertFalse(state(Body.SomethingOnPenis).applied());
+    }
+
+    @Test
+    public void testApplyRemovesPreviousApplyCorrectSequence() {
+        state(Toys.Chastity_Cage).apply(Body.CannotJerkOff);
+        state(Toys.Chastity_Device_Lock).apply(Toys.Chastity_Cage);
+
+        assertTrue(state(Body.CannotJerkOff).applied());
+        assertTrue(state(Toys.Chastity_Cage).applied());
+        assertTrue(state(Toys.Chastity_Device_Lock).applied());
+
+        state(Toys.Chastity_Device_Lock).remove();
+        assertTrue(state(Toys.Chastity_Cage).applied());
+        assertTrue(state(Body.CannotJerkOff).applied());
+
+        state(Toys.Chastity_Cage).remove();
+        assertFalse(state(Body.CannotJerkOff).applied());
+    }
+
+    @Test
+    public void testApplyRemovesPreviousApplyWrongSequence() {
+        state(Toys.Chastity_Cage).apply(Body.CannotJerkOff);
+        state(Toys.Chastity_Cage).apply(Toys.Chastity_Device_Lock);
+
+        assertFalse(state(Body.CannotJerkOff).applied());
     }
 }

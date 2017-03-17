@@ -95,11 +95,18 @@ public class EnumStateMaps {
 
         @Override
         public <S extends Enum<?>> State.Options apply(S... reason) {
+            remove();
+            applyInternal(reason);
+            return this;
+        }
+
+        protected <S extends Enum<?>> EnumState<?> applyInternal(S... reason) {
             for (S s : reason) {
                 if (!reasons.contains(s)) {
                     reasons.add(s);
                     Enum<?>[] items = new Enum<?>[] { item };
-                    state(s).apply(items);
+                    EnumState<?> state = (EnumState<?>) state(s);
+                    state.applyInternal(items);
                 }
             }
             return this;

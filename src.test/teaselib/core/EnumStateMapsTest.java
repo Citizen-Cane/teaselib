@@ -226,4 +226,30 @@ public class EnumStateMapsTest extends EnumStateMaps {
 
         assertFalse(state(Body.CannotJerkOff).applied());
     }
+
+    @Test
+    public void testApplyItemToMultiplePlacesCorrectly() throws Exception {
+        state(Body.SomethingOnNipples).apply(Toys.Clothespins);
+
+        assertTrue(state(Toys.Clothespins).applied());
+        assertTrue(state(Body.SomethingOnNipples).applied());
+        assertFalse(state(Body.SomethingOnBalls).applied());
+
+        state(Body.SomethingOnBalls).apply(Toys.Clothespins);
+
+        assertTrue(state(Toys.Clothespins).applied());
+        assertTrue(state(Body.SomethingOnNipples).applied());
+        assertTrue(state(Body.SomethingOnBalls).applied());
+    }
+
+    @Test
+    public void testApplyItemToMultiplePlacesTheWrongWay() throws Exception {
+        state(Toys.Clothespins).apply(Body.SomethingOnNipples);
+        state(Toys.Clothespins).apply(Body.SomethingOnBalls);
+
+        assertTrue(state(Toys.Clothespins).applied());
+        assertTrue(state(Body.SomethingOnBalls).applied());
+
+        assertFalse(state(Body.SomethingOnNipples).applied());
+    }
 }

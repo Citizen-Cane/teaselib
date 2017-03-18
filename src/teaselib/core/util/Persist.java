@@ -3,14 +3,25 @@ package teaselib.core.util;
 import java.lang.reflect.Constructor;
 
 public class Persist {
-    public static final String CLASS_NAME = "Class:";
-    public static final String SEPARATOR = ";";
-    public static final String STRING_REPRESENTATION = "Value:";
+    public static final String PERSISTED_STRING_SEPARATOR = " ";
 
-    public static String to(Object toStringSerializable) {
-        return CLASS_NAME + toStringSerializable.getClass().getName()
-                + SEPARATOR + STRING_REPRESENTATION
-                + toStringSerializable.toString();
+    private static final String CLASS_NAME = "Class:";
+    private static final String SEPARATOR = ";";
+    private static final String STRING_REPRESENTATION = "Value:";
+
+    public static String persist(Object toStringSerializable) {
+        String serializedObject = toStringSerializable.toString();
+        if (canPersistObject(serializedObject)) {
+            return CLASS_NAME + toStringSerializable.getClass().getName()
+                    + SEPARATOR + STRING_REPRESENTATION + serializedObject;
+        } else {
+            throw new UnsupportedOperationException(
+                    "String serialized objects with white space aren't supported yet.");
+        }
+    }
+
+    private static boolean canPersistObject(String serializedObject) {
+        return !serializedObject.contains(PERSISTED_STRING_SEPARATOR);
     }
 
     public static <T> T from(String serializedObject) {

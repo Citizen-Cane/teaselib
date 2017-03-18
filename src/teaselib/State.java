@@ -2,8 +2,6 @@ package teaselib;
 
 import java.util.concurrent.TimeUnit;
 
-import teaselib.core.TeaseLib.Duration;
-
 // TODO Clean up so this can be understood
 // -> expected() -> duration(), getDuration() -> getElapsed(), and so on
 /**

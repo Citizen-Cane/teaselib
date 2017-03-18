@@ -20,6 +20,7 @@ import org.slf4j.LoggerFactory;
 import teaselib.Actor;
 import teaselib.Clothes;
 import teaselib.Config;
+import teaselib.Duration;
 import teaselib.State;
 import teaselib.Toys;
 import teaselib.core.devices.DeviceFactoryListener;
@@ -211,38 +212,47 @@ public class TeaseLib {
      * 
      *         Handles elapsed seconds since object creation
      */
-    public class Duration {
+    public class DurationImpl implements Duration {
         private final TimeUnit DURATION_TIME_UNIT = TimeUnit.SECONDS;
 
         private final long start;
         private final long limit;
 
-        public Duration() {
+        public DurationImpl() {
             this(0, TimeUnit.SECONDS);
         }
 
-        public Duration(long limit, TimeUnit unit) {
+        public DurationImpl(long limit, TimeUnit unit) {
             this.start = getTime(DURATION_TIME_UNIT);
             this.limit = DURATION_TIME_UNIT.convert(limit, unit);
         }
 
-        Duration(long startSeconds) {
-            this.start = DURATION_TIME_UNIT.convert(startSeconds,
-                    TimeUnit.SECONDS);
-            this.limit = 0;
+        DurationImpl(long start, long limit, TimeUnit unit) {
+            this.start = DURATION_TIME_UNIT.convert(start, unit);
+            this.limit = DURATION_TIME_UNIT.convert(limit, unit);
         }
 
+        @Override
         public long start(TimeUnit unit) {
-            return unit.convert(start, TimeUnit.MILLISECONDS);
+            return unit.convert(start, DURATION_TIME_UNIT);
         }
 
+        @Override
+        public long limit(TimeUnit unit) {
+            return unit.convert(limit, DURATION_TIME_UNIT);
+        }
+
+        @Override
         public long elapsed(TimeUnit unit) {
             long now = getTime(DURATION_TIME_UNIT);
             long elapsed = now - start;
             return unit.convert(elapsed, DURATION_TIME_UNIT);
         }
+
+        @Override
         public boolean expired() {
-            return getTime(DURATION_TIME_UNIT) - start >= limit;
+            return getTime(DURATION_TIME_UNIT)
+                    - start >= limit(DURATION_TIME_UNIT);
         }
     }
 

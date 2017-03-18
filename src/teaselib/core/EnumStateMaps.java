@@ -6,12 +6,14 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
+import teaselib.Duration;
 import teaselib.core.TeaseLib.PersistentString;
+import teaselib.core.util.Persist;
 
 public class EnumStateMaps {
 
     private final Map<Class<?>, EnumStateMap<? extends Enum<?>>> stateMaps = new HashMap<Class<?>, EnumStateMap<? extends Enum<?>>>();
-    private final TeaseLib teaseLib;
+    protected final TeaseLib teaseLib;
 
     public EnumStateMaps(TeaseLib teaseLib) {
         this.teaseLib = teaseLib;
@@ -58,17 +60,60 @@ public class EnumStateMaps {
 
     public class EnumState<T extends Enum<?>> implements State, State.Options {
         private final T item;
-        private final Set<Enum<?>> reasons = new HashSet<Enum<?>>();
-        private final PersistentString storage;
+        private final PersistentString durationStorage;
+        private final PersistentString peersStorage;
 
-        private TeaseLib.Duration duration = teaseLib.new Duration(REMOVEED,
+        private Duration duration = teaseLib.new DurationImpl(REMOVEED,
                 TimeUnit.SECONDS);
+        private final Set<Enum<?>> reasons = new HashSet<Enum<?>>();
 
         public EnumState(T item) {
             super();
             this.item = item;
-            this.storage = teaseLib.new PersistentString(TeaseLib.DefaultDomain,
-                    namespaceOf(item), nameOf(item));
+            this.durationStorage = teaseLib.new PersistentString(
+                    TeaseLib.DefaultDomain, namespaceOf(item),
+                    nameOf(item) + "." + "duration");
+            this.peersStorage = teaseLib.new PersistentString(
+                    TeaseLib.DefaultDomain, namespaceOf(item),
+                    nameOf(item) + "." + "peers");
+            restoreDuration();
+            restoreReasons();
+        }
+
+        private void restoreDuration() {
+            if (durationStorage.available()) {
+                String[] argv = durationStorage.value().split(" ");
+                long start = Long.parseLong(argv[0]);
+                long limit = Long.parseLong(argv[1]);
+                this.duration = teaseLib.new DurationImpl(start, limit,
+                        TimeUnit.SECONDS);
+            }
+        }
+
+        private void restoreReasons() {
+            if (peersStorage.available()) {
+                String[] serializedPeers = peersStorage.value()
+                        .split(Persist.PERSISTED_STRING_SEPARATOR);
+                for (String serializedPeer : serializedPeers) {
+                    reasons.add((Enum<?>) Persist.from(serializedPeer));
+                }
+            }
+        }
+
+        private void persistDuration() {
+            durationStorage.set(duration.start(TimeUnit.SECONDS) + " "
+                    + duration.limit(TimeUnit.SECONDS));
+
+        }
+
+        private void persistPeers() {
+            StringBuilder s = new StringBuilder();
+            for (Enum<?> reason : reasons) {
+                if (s.length() > 0) {
+                    s.append(Persist.PERSISTED_STRING_SEPARATOR);
+                    s.append(Persist.persist(reason));
+                }
+            }
         }
 
         private String namespaceOf(T item) {
@@ -114,22 +159,43 @@ public class EnumStateMaps {
 
         @Override
         public State.Persistence upTo(long limit, TimeUnit unit) {
-            this.duration = teaseLib.new Duration(limit, unit);
+            setDuration(limit, unit);
             for (Enum<?> reason : reasons) {
-                EnumState<?> state = (EnumState<?>) state(reason);
-                state.setDuration(limit, unit);
+                EnumState<?> peer = (EnumState<?>) state(reason);
+                peer.setDuration(limit, unit);
             }
             return this;
         }
 
         State setDuration(long limit, TimeUnit unit) {
-            this.duration = teaseLib.new Duration(limit, unit);
+            this.duration = teaseLib.new DurationImpl(limit, unit);
             return this;
         }
 
         @Override
         public State remember() {
+            rememberInternal();
+            for (Enum<?> s : reasons) {
+                EnumState<?> peer = (EnumState<?>) state(s);
+                peer.rememberInternal();
+            }
             return this;
+        }
+
+        protected void addPeersDeep(Set<Enum<?>> deepPeers) {
+            for (Enum<?> reason : reasons) {
+                boolean contains = deepPeers.contains(reason);
+                if (!contains) {
+                    deepPeers.add(reason);
+                    EnumState<?> peer = (EnumState<?>) state(reason);
+                    peer.addPeersDeep(deepPeers);
+                }
+            }
+        }
+
+        private void rememberInternal() {
+            persistDuration();
+            persistPeers();
         }
 
         @Override

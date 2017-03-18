@@ -9,7 +9,7 @@ public class PersistTest {
     @Test
     public void testPersistToString() throws Exception {
         String test = "foobar";
-        String serialized = Persist.to(test);
+        String serialized = Persist.persist(test);
 
         assertEquals("Class:java.lang.String;Value:foobar", serialized);
     }

@@ -5,7 +5,7 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import teaselib.State;
-import teaselib.core.TeaseLib.Duration;
+import teaselib.core.TeaseLib.DurationImpl;
 import teaselib.core.TeaseLib.PersistentString;
 import teaselib.core.util.Persist;
 
@@ -45,7 +45,7 @@ public class StateMap<T extends Enum<T>> {
         private final Object item;
         Object what = None;
 
-        Duration duration;
+        DurationImpl duration;
         private long expectedSeconds;
 
         private StateImpl(T item) {
@@ -55,12 +55,13 @@ public class StateMap<T extends Enum<T>> {
                 String[] argv = storage.value().split(" ");
                 long startSeconds = Long.parseLong(argv[0]);
                 long howLongSeconds = Long.parseLong(argv[1]);
-                this.duration = teaseLib.new Duration(startSeconds);
+                this.duration = teaseLib.new DurationImpl(startSeconds, 0,
+                        TimeUnit.SECONDS);
                 this.expectedSeconds = howLongSeconds;
                 this.what = Persist.from(argv[2]);
             } else {
-                // TODO should start at REMOVED, and expected should be 0
-                this.duration = teaseLib.new Duration(0);
+                this.duration = teaseLib.new DurationImpl(0, REMOVED,
+                        TimeUnit.SECONDS);
                 this.expectedSeconds = REMOVED;
                 this.what = None;
             }
@@ -77,7 +78,7 @@ public class StateMap<T extends Enum<T>> {
          * @see teaselib.core.StateItem#getDuration()
          */
         @Override
-        public Duration getDuration() {
+        public DurationImpl getDuration() {
             return duration;
         }
 
@@ -124,8 +125,10 @@ public class StateMap<T extends Enum<T>> {
 
         @Override
         public State remove() {
-            duration = teaseLib.new Duration(duration.start(TimeUnit.SECONDS)
-                    + duration.elapsed(TimeUnit.SECONDS));
+            duration = teaseLib.new DurationImpl(
+                    duration.start(TimeUnit.SECONDS)
+                            + duration.elapsed(TimeUnit.SECONDS),
+                    REMOVED, TimeUnit.SECONDS);
             expectedSeconds = REMOVED;
             removePersistenceeButKeepCached();
             return this;
@@ -150,7 +153,7 @@ public class StateMap<T extends Enum<T>> {
         public <W> State apply(W what, long time, long duration,
                 TimeUnit unit) {
             this.what = what;
-            this.duration = teaseLib.new Duration(0, TimeUnit.SECONDS);
+            this.duration = teaseLib.new DurationImpl(0, TimeUnit.SECONDS);
             this.expectedSeconds = unit.toSeconds(duration);
             update();
             return this;
@@ -182,7 +185,7 @@ public class StateMap<T extends Enum<T>> {
 
         private String persisted() {
             return duration.start(TimeUnit.SECONDS) + " " + expectedSeconds
-                    + " " + Persist.to(what);
+                    + " " + Persist.persist(what);
         }
     }
 

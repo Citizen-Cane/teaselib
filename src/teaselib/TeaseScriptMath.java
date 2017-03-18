@@ -159,12 +159,12 @@ public class TeaseScriptMath extends TeaseScriptPersistenceUtil {
         teaseLib.sleep(duration, timeUnit);
     }
 
-    public TeaseLib.Duration duration() {
-        return teaseLib.new Duration();
+    public Duration duration() {
+        return teaseLib.new DurationImpl();
     }
 
-    public TeaseLib.Duration duration(long limit, TimeUnit unit) {
-        return teaseLib.new Duration(limit, unit);
+    public Duration duration(long limit, TimeUnit unit) {
+        return teaseLib.new DurationImpl(limit, unit);
     }
 
 }

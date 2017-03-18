@@ -4,22 +4,20 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static teaselib.Toys.Clothespins;
 
-import java.util.concurrent.TimeUnit;
-
 import org.junit.Test;
 
 import teaselib.Body;
 import teaselib.Toys;
 import teaselib.test.TestScript;
 
-public class EnumStateMapsTest extends EnumStateMaps {
+public class EnumStateMapsApplyTest extends EnumStateMaps {
 
-    public EnumStateMapsTest() {
+    public EnumStateMapsApplyTest() {
         super(TestScript.getOne().teaseLib);
     }
 
     @Test
-    public void testCannotJerkOff() throws Exception {
+    public void testCannotJerkOff() {
         State chastityCage = state(Toys.Chastity_Cage);
         State wristRestraints = state(Toys.Leather_Wrist_Cuffs);
 
@@ -56,8 +54,7 @@ public class EnumStateMapsTest extends EnumStateMaps {
     }
 
     @Test
-    public void testPegsOnNipplesAndNutsApplyOneAfterAnother()
-            throws Exception {
+    public void testPegsOnNipplesAndNutsApplyOneAfterAnother() {
         State clothesPins = state(Toys.Clothespins);
 
         State somethingOnNipples = state(Body.SomethingOnNipples);
@@ -83,8 +80,7 @@ public class EnumStateMapsTest extends EnumStateMaps {
     }
 
     @Test
-    public void testPegsOnNipplesAndNutsRemoveOneAfterAnother()
-            throws Exception {
+    public void testPegsOnNipplesAndNutsRemoveOneAfterAnother() {
         State clothesPins = state(Toys.Clothespins);
 
         State somethingOnNipples = state(Body.SomethingOnNipples);
@@ -111,7 +107,7 @@ public class EnumStateMapsTest extends EnumStateMaps {
     }
 
     @Test
-    public void testLockUp() throws Exception {
+    public void testLockUp() {
         State chastityCage = state(Toys.Chastity_Cage);
         State wristRestraints = state(Toys.Leather_Wrist_Cuffs);
         State key = state(Toys.Chastity_Device_Lock);
@@ -160,46 +156,6 @@ public class EnumStateMapsTest extends EnumStateMaps {
 
         assertFalse(wristRestraints.applied());
         assertFalse(handsTiedBehindBack.applied());
-    }
-
-    @Test
-    public void testLockDuration() throws Exception {
-        State chastityCage = state(Toys.Chastity_Cage);
-        State key = state(Toys.Chastity_Device_Lock);
-
-        assertFalse(chastityCage.applied());
-        assertFalse(key.applied());
-
-        chastityCage.apply(Body.SomethingOnPenis, Body.CannotJerkOff);
-        assertTrue(state(Body.SomethingOnPenis).applied());
-        assertTrue(state(Body.CannotJerkOff).applied());
-
-        key.apply(Toys.Chastity_Cage);
-
-        assertTrue(chastityCage.applied());
-        assertTrue(chastityCage.expired());
-        assertTrue(key.applied());
-        assertTrue(key.expired());
-
-        key.apply(Toys.Chastity_Cage).upTo(24, TimeUnit.HOURS);
-        assertTrue(key.applied());
-        assertTrue(chastityCage.applied());
-
-        assertFalse(key.expired());
-        assertFalse(chastityCage.expired());
-
-        key.remove();
-        assertFalse(key.applied());
-        assertTrue(key.expired());
-        assertTrue(chastityCage.applied());
-        assertFalse(chastityCage.expired());
-
-        chastityCage.remove();
-        assertFalse(chastityCage.applied());
-        assertTrue(chastityCage.expired());
-
-        assertFalse(state(Body.SomethingOnPenis).applied());
-        assertFalse(state(Body.SomethingOnPenis).applied());
     }
 
     @Test
@@ -228,7 +184,7 @@ public class EnumStateMapsTest extends EnumStateMaps {
     }
 
     @Test
-    public void testApplyItemToMultiplePlacesCorrectly() throws Exception {
+    public void testApplyItemToMultiplePlacesCorrectly() {
         state(Body.SomethingOnNipples).apply(Toys.Clothespins);
 
         assertTrue(state(Toys.Clothespins).applied());
@@ -243,7 +199,9 @@ public class EnumStateMapsTest extends EnumStateMaps {
     }
 
     @Test
-    public void testApplyItemToMultiplePlacesTheWrongWay() throws Exception {
+    public void testApplyItemToMultiplePlacesTheWrongWay() {
+        // This should work, as we can remove explicitly via
+        // state(Body.SomethingOnBalls).remove()
         state(Toys.Clothespins).apply(Body.SomethingOnNipples);
         state(Toys.Clothespins).apply(Body.SomethingOnBalls);
 
@@ -252,4 +210,5 @@ public class EnumStateMapsTest extends EnumStateMaps {
 
         assertFalse(state(Body.SomethingOnNipples).applied());
     }
+
 }

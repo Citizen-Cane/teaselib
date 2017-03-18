@@ -140,7 +140,6 @@ public class EnumStateMaps {
 
         @Override
         public <S extends Enum<?>> State.Options apply(S... reason) {
-            remove();
             applyInternal(reason);
             return this;
         }

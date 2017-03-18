@@ -176,15 +176,16 @@ public class EnumStateMapsApplyTest extends EnumStateMaps {
     }
 
     @Test
-    public void testApplyRemovesPreviousApplyWrongSequence() {
+    public void testApplyRemovesPreviousApplyMultipleTimes() {
         state(Toys.Chastity_Cage).apply(Body.CannotJerkOff);
         state(Toys.Chastity_Cage).apply(Toys.Chastity_Device_Lock);
 
-        assertFalse(state(Body.CannotJerkOff).applied());
+        assertTrue(state(Body.CannotJerkOff).applied());
+        assertTrue(state(Toys.Chastity_Device_Lock).applied());
     }
 
     @Test
-    public void testApplyItemToMultiplePlacesCorrectly() {
+    public void testApplyItemToMultiplePlacesWorksButNotRecomented() {
         state(Body.SomethingOnNipples).apply(Toys.Clothespins);
 
         assertTrue(state(Toys.Clothespins).applied());
@@ -199,16 +200,60 @@ public class EnumStateMapsApplyTest extends EnumStateMaps {
     }
 
     @Test
-    public void testApplyItemToMultiplePlacesTheWrongWay() {
-        // This should work, as we can remove explicitly via
-        // state(Body.SomethingOnBalls).remove()
+    public void testApplyItemToMultiplePlaces() {
         state(Toys.Clothespins).apply(Body.SomethingOnNipples);
         state(Toys.Clothespins).apply(Body.SomethingOnBalls);
 
         assertTrue(state(Toys.Clothespins).applied());
         assertTrue(state(Body.SomethingOnBalls).applied());
+        assertTrue(state(Body.SomethingOnNipples).applied());
+    }
 
+    @Test
+    public void testApplyItemToMultiplePlacesRemoveAllAtOnce() {
+        state(Toys.Clothespins).apply(Body.SomethingOnNipples);
+        state(Toys.Clothespins).apply(Body.SomethingOnBalls);
+
+        assertTrue(state(Toys.Clothespins).applied());
+        assertTrue(state(Body.SomethingOnBalls).applied());
+        assertTrue(state(Body.SomethingOnNipples).applied());
+
+        state(Toys.Clothespins).remove();
+
+        assertFalse(state(Toys.Clothespins).applied());
+        assertFalse(state(Body.SomethingOnBalls).applied());
         assertFalse(state(Body.SomethingOnNipples).applied());
     }
 
+    @Test
+    public void testApplyItemToMultiplePlacesRemoveOneAfterAnother() {
+        state(Toys.Clothespins).apply(Body.SomethingOnNipples);
+        state(Toys.Clothespins).apply(Body.SomethingOnBalls);
+
+        assertTrue(state(Toys.Clothespins).applied());
+        assertTrue(state(Body.SomethingOnBalls).applied());
+        assertTrue(state(Body.SomethingOnNipples).applied());
+
+        state(Toys.Clothespins).remove(Body.SomethingOnBalls);
+
+        assertTrue(state(Toys.Clothespins).applied());
+        assertFalse(state(Body.SomethingOnBalls).applied());
+        assertTrue(state(Body.SomethingOnNipples).applied());
+    }
+
+    @Test
+    public void testApplyItemToMultiplePlacesRemoveOneAfterAnotherWithoutKnowingTheActualToy() {
+        state(Toys.Clothespins).apply(Body.SomethingOnNipples);
+        state(Toys.Clothespins).apply(Body.SomethingOnBalls);
+
+        assertTrue(state(Toys.Clothespins).applied());
+        assertTrue(state(Body.SomethingOnBalls).applied());
+        assertTrue(state(Body.SomethingOnNipples).applied());
+
+        state(Body.SomethingOnNipples).remove();
+
+        assertTrue(state(Toys.Clothespins).applied());
+        assertTrue(state(Body.SomethingOnBalls).applied());
+        assertFalse(state(Body.SomethingOnNipples).applied());
+    }
 }

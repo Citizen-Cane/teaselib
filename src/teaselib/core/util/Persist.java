@@ -38,8 +38,20 @@ public class Persist {
             String stringRepresentation) {
         try {
             Class<?> clazz = Class.forName(className);
-            Constructor<?> constructor = clazz.getConstructor(String.class);
-            return (T) constructor.newInstance(stringRepresentation);
+            if (clazz.isEnum()) {
+                Enum<?>[] enumConstants = (Enum<?>[]) clazz.getEnumConstants();
+                Class<Enum> enumClass = (Class<Enum>) clazz;
+                Object enumValue = enumConstants[0].valueOf(enumClass,
+                        stringRepresentation);
+                return (T) enumValue;
+                // for (Enum<?> enum1 : enumConstants) {
+                //
+                // }
+                // return enumConstants;
+            } else {
+                Constructor<?> constructor = clazz.getConstructor(String.class);
+                return (T) constructor.newInstance(stringRepresentation);
+            }
         } catch (ReflectiveOperationException e) {
             throw new IllegalArgumentException(
                     "Cannot restore " + className + ":" + stringRepresentation,

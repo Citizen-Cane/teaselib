@@ -19,6 +19,10 @@ public class EnumStateMaps {
         this.teaseLib = teaseLib;
     }
 
+    void clear() {
+        stateMaps.clear();
+    }
+
     interface State {
         public static final int REMOVEED = -1;
 
@@ -55,6 +59,10 @@ public class EnumStateMaps {
                 states.put(item, state);
                 return state;
             }
+        }
+
+        void clear() {
+            states.clear();
         }
     }
 
@@ -111,9 +119,10 @@ public class EnumStateMaps {
             for (Enum<?> reason : reasons) {
                 if (s.length() > 0) {
                     s.append(Persist.PERSISTED_STRING_SEPARATOR);
-                    s.append(Persist.persist(reason));
                 }
+                s.append(Persist.persist(reason));
             }
+            peersStorage.set(s.toString());
         }
 
         private String namespaceOf(T item) {
@@ -171,10 +180,23 @@ public class EnumStateMaps {
             return this;
         }
 
+        // @Override
+        public State rememberFlat() {
+            rememberInternal();
+            for (Enum<?> s : reasons) {
+                EnumState<?> peer = (EnumState<?>) state(s);
+                peer.rememberInternal();
+            }
+            return this;
+        }
+
         @Override
         public State remember() {
             rememberInternal();
-            for (Enum<?> s : reasons) {
+            Set<Enum<?>> deepPeers = new HashSet<Enum<?>>();
+            // deepPeers.addAll(reasons);
+            addPeersDeep(deepPeers);
+            for (Enum<?> s : deepPeers) {
                 EnumState<?> peer = (EnumState<?>) state(s);
                 peer.rememberInternal();
             }

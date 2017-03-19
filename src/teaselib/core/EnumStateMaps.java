@@ -12,8 +12,8 @@ import teaselib.core.util.Persist;
 
 public class EnumStateMaps {
 
-    private final Map<Class<?>, EnumStateMap<? extends Enum<?>>> stateMaps = new HashMap<Class<?>, EnumStateMap<? extends Enum<?>>>();
-    protected final TeaseLib teaseLib;
+    final Map<Class<?>, EnumStateMap<? extends Enum<?>>> stateMaps = new HashMap<Class<?>, EnumStateMap<? extends Enum<?>>>();
+    final TeaseLib teaseLib;
 
     public EnumStateMaps(TeaseLib teaseLib) {
         this.teaseLib = teaseLib;

@@ -1,6 +1,10 @@
 package teaselib.hosts;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -97,7 +101,17 @@ public class DummyPersistence implements Persistence {
     }
 
     public void printStorage() {
-        for (Entry<String, String> entry : storage.entrySet()) {
+        List<Entry<String, String>> entryList = new ArrayList<Entry<String, String>>(
+                storage.entrySet());
+        Collections.sort(entryList, new Comparator<Entry<String, String>>() {
+            @Override
+            public int compare(Entry<String, String> o1,
+                    Entry<String, String> o2) {
+                return o1.getKey().compareTo(o2.getKey());
+            }
+        });
+        logger.info("Storage: " + storage.size() + " entries");
+        for (Entry<String, String> entry : entryList) {
             logger.info(entry.getKey() + "=" + entry.getValue());
         }
     }

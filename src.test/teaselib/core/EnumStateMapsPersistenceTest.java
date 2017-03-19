@@ -32,7 +32,7 @@ public class EnumStateMapsPersistenceTest extends EnumStateMaps {
     public static void initPersistence() {
         script = TestScript.getOne();
     }
-    
+
     enum TestParameter {
         DontTestPersistence,
         TestPersistence
@@ -40,8 +40,8 @@ public class EnumStateMapsPersistenceTest extends EnumStateMaps {
 
     @Parameters(name = "{0}")
     public static Collection<Object[]> parameters() {
-        return Arrays.asList(
-                new Object[][] { { TestParameter.DontTestPersistence },
+        return Arrays
+                .asList(new Object[][] { { TestParameter.DontTestPersistence },
                         { TestParameter.TestPersistence } });
     }
 
@@ -65,6 +65,7 @@ public class EnumStateMapsPersistenceTest extends EnumStateMaps {
 
     void clearStatesMapsOrNot() {
         if (rememberState == TestParameter.TestPersistence) {
+            persistence.printStorage();
             clear();
         }
     }
@@ -108,13 +109,13 @@ public class EnumStateMapsPersistenceTest extends EnumStateMaps {
         assertTrue(state(Toys.Chastity_Device_Lock).applied());
         assertTrue(state(Toys.Chastity_Device_Lock).expired());
 
-        state(Toys.Chastity_Device_Lock).apply(Toys.Chastity_Cage)
-                .upTo(24, TimeUnit.HOURS).remember();
+        rememberOrNot(state(Toys.Chastity_Device_Lock).apply(Toys.Chastity_Cage)
+                .upTo(24, TimeUnit.HOURS));
 
         assertFalse(state(Body.SomethingOnPenis).expired());
         assertFalse(state(Body.CannotJerkOff).expired());
 
-        clear();
+        clearStatesMapsOrNot();
 
         assertFalse(state(Body.SomethingOnPenis).expired());
         assertFalse(state(Body.CannotJerkOff).expired());

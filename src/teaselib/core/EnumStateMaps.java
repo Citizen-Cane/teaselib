@@ -24,7 +24,7 @@ public class EnumStateMaps {
     }
 
     interface State {
-        public static final int REMOVEED = -1;
+        public static final int REMOVED = -1;
 
         State.Options apply();
 
@@ -71,7 +71,7 @@ public class EnumStateMaps {
         private final PersistentString durationStorage;
         private final PersistentString peersStorage;
 
-        private Duration duration = teaseLib.new DurationImpl(REMOVEED,
+        private Duration duration = teaseLib.new DurationImpl(REMOVED,
                 TimeUnit.SECONDS);
         private final Set<Enum<?>> reasons = new HashSet<Enum<?>>();
 
@@ -194,8 +194,7 @@ public class EnumStateMaps {
         public State remember() {
             rememberInternal();
             Set<Enum<?>> deepPeers = new HashSet<Enum<?>>();
-            // deepPeers.addAll(reasons);
-            addPeersDeep(deepPeers);
+            addDirectPeers(deepPeers);
             for (Enum<?> s : deepPeers) {
                 EnumState<?> peer = (EnumState<?>) state(s);
                 peer.rememberInternal();
@@ -203,13 +202,17 @@ public class EnumStateMaps {
             return this;
         }
 
-        protected void addPeersDeep(Set<Enum<?>> deepPeers) {
+        protected void addDirectPeers(Set<Enum<?>> deepPeers) {
+            deepPeers.addAll(reasons);
+        }
+
+        protected void addAllPeers(Set<Enum<?>> deepPeers) {
             for (Enum<?> reason : reasons) {
                 boolean contains = deepPeers.contains(reason);
                 if (!contains) {
                     deepPeers.add(reason);
                     EnumState<?> peer = (EnumState<?>) state(reason);
-                    peer.addPeersDeep(deepPeers);
+                    peer.addAllPeers(deepPeers);
                 }
             }
         }
@@ -236,7 +239,9 @@ public class EnumStateMaps {
                 state(reason).remove(item);
             }
             reasons.clear();
-            setDuration(REMOVEED, TimeUnit.SECONDS);
+            setDuration(REMOVED, TimeUnit.SECONDS);
+            durationStorage.clear();
+            peersStorage.clear();
             return this;
         }
 
@@ -247,7 +252,14 @@ public class EnumStateMaps {
                 state(reason).remove(item);
             }
             if (reasons.isEmpty()) {
-                setDuration(REMOVEED, TimeUnit.SECONDS);
+                setDuration(REMOVED, TimeUnit.SECONDS);
+                if (durationStorage.available()) {
+                    durationStorage.clear();
+                    peersStorage.clear();
+                }
+            } else if (durationStorage.available()) {
+                persistDuration();
+                persistPeers();
             }
             return this;
         }

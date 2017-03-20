@@ -11,12 +11,12 @@ public class PersistTest {
         String test = "foobar";
         String serialized = Persist.persist(test);
 
-        assertEquals("Class:java.lang.String;Value:foobar", serialized);
+        assertEquals("Class=java.lang.String;Value=foobar", serialized);
     }
 
     @Test
     public void testPersistFromString() throws Exception {
-        String serialized = "Class:java.lang.String;Value:foobar";
+        String serialized = "Class=java.lang.String;Value=foobar";
         String deserialized = Persist.from(serialized);
 
         assertEquals("foobar", deserialized);

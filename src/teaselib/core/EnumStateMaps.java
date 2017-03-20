@@ -24,7 +24,10 @@ public class EnumStateMaps {
     }
 
     interface State {
-        public static final int REMOVED = -1;
+        public static final long REMOVED = -1;
+        public static final long TEMPORARY = 0;
+
+        public static final long INDEFINITELY = Long.MAX_VALUE;
 
         State.Options apply();
 
@@ -33,7 +36,6 @@ public class EnumStateMaps {
         boolean applied();
 
         boolean expired();
-        // TeaseLib.Duration duration();
 
         <S extends Enum<?>> State remove();
 
@@ -67,6 +69,10 @@ public class EnumStateMaps {
     }
 
     public class EnumState<T extends Enum<?>> implements State, State.Options {
+        private static final String TEMPORARY_KEYWORD = "TEMPORARY";
+        private static final String REMOVED_KEYWORD = "REMOVED";
+        private static final String INDEFINITELY_KEYWORD = "INDEFINITELY";
+
         private final T item;
         private final PersistentString durationStorage;
         private final PersistentString peersStorage;
@@ -92,7 +98,16 @@ public class EnumStateMaps {
             if (durationStorage.available()) {
                 String[] argv = durationStorage.value().split(" ");
                 long start = Long.parseLong(argv[0]);
-                long limit = Long.parseLong(argv[1]);
+                long limit;
+                if (argv[1].equals(REMOVED_KEYWORD)) {
+                    limit = REMOVED;
+                } else if (argv[1].equals(TEMPORARY_KEYWORD)) {
+                    limit = TEMPORARY;
+                } else if (argv[1].equals(INDEFINITELY_KEYWORD)) {
+                    limit = INDEFINITELY;
+                } else {
+                    limit = Long.parseLong(argv[1]);
+                }
                 this.duration = teaseLib.new DurationImpl(start, limit,
                         TimeUnit.SECONDS);
             }
@@ -109,8 +124,19 @@ public class EnumStateMaps {
         }
 
         private void persistDuration() {
-            durationStorage.set(duration.start(TimeUnit.SECONDS) + " "
-                    + duration.limit(TimeUnit.SECONDS));
+            String startValue = Long.toString(duration.start(TimeUnit.SECONDS));
+            long limit = duration.limit(TimeUnit.SECONDS);
+            String limitValue;
+            if (limit <= REMOVED) {
+                limitValue = REMOVED_KEYWORD;
+            } else if (limit == TEMPORARY) {
+                limitValue = TEMPORARY_KEYWORD;
+            } else if (limit == INDEFINITELY) {
+                limitValue = INDEFINITELY_KEYWORD;
+            } else {
+                limitValue = Long.toString(duration.limit(TimeUnit.SECONDS));
+            }
+            durationStorage.set(startValue + " " + limitValue);
 
         }
 
@@ -139,14 +165,6 @@ public class EnumStateMaps {
             return this;
         }
 
-        // protected <S extends Enum<?>> State.Options apply(S reason) {
-        // if (!reasons.contains(reason)) {
-        // reasons.add(reason);
-        // state(reason).apply(item);
-        // }
-        // return this;
-        // }
-
         @Override
         public <S extends Enum<?>> State.Options apply(S... reason) {
             applyInternal(reason);
@@ -154,6 +172,7 @@ public class EnumStateMaps {
         }
 
         protected <S extends Enum<?>> EnumState<?> applyInternal(S... reason) {
+            setDuration(TEMPORARY, TimeUnit.SECONDS);
             for (S s : reason) {
                 if (!reasons.contains(s)) {
                     reasons.add(s);
@@ -177,16 +196,6 @@ public class EnumStateMaps {
 
         State setDuration(long limit, TimeUnit unit) {
             this.duration = teaseLib.new DurationImpl(limit, unit);
-            return this;
-        }
-
-        // @Override
-        public State rememberFlat() {
-            rememberInternal();
-            for (Enum<?> s : reasons) {
-                EnumState<?> peer = (EnumState<?>) state(s);
-                peer.rememberInternal();
-            }
             return this;
         }
 
@@ -263,6 +272,7 @@ public class EnumStateMaps {
             }
             return this;
         }
+
     }
 
     /**

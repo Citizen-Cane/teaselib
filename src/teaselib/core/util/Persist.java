@@ -5,9 +5,9 @@ import java.lang.reflect.Constructor;
 public class Persist {
     public static final String PERSISTED_STRING_SEPARATOR = " ";
 
-    private static final String CLASS_NAME = "Class:";
+    private static final String CLASS_NAME = "Class=";
     private static final String SEPARATOR = ";";
-    private static final String STRING_REPRESENTATION = "Value:";
+    private static final String STRING_REPRESENTATION = "Value=";
 
     public static String persist(Object toStringSerializable) {
         String serializedObject = toStringSerializable.toString();

@@ -75,11 +75,11 @@ public class EnumStateMaps {
 
         private final T item;
         private final PersistentString durationStorage;
-        private final PersistentString peersStorage;
+        private final PersistentString peerStorage;
 
         private Duration duration = teaseLib.new DurationImpl(REMOVED,
                 TimeUnit.SECONDS);
-        private final Set<Enum<?>> reasons = new HashSet<Enum<?>>();
+        private final Set<Enum<?>> peers = new HashSet<Enum<?>>();
 
         public EnumState(T item) {
             super();
@@ -87,11 +87,11 @@ public class EnumStateMaps {
             this.durationStorage = teaseLib.new PersistentString(
                     TeaseLib.DefaultDomain, namespaceOf(item),
                     nameOf(item) + "." + "duration");
-            this.peersStorage = teaseLib.new PersistentString(
+            this.peerStorage = teaseLib.new PersistentString(
                     TeaseLib.DefaultDomain, namespaceOf(item),
                     nameOf(item) + "." + "peers");
             restoreDuration();
-            restoreReasons();
+            restorePeers();
         }
 
         private void restoreDuration() {
@@ -118,12 +118,12 @@ public class EnumStateMaps {
             return limit;
         }
 
-        private void restoreReasons() {
-            if (peersStorage.available()) {
-                String[] serializedPeers = peersStorage.value()
+        private void restorePeers() {
+            if (peerStorage.available()) {
+                String[] serializedPeers = peerStorage.value()
                         .split(Persist.PERSISTED_STRING_SEPARATOR);
                 for (String serializedPeer : serializedPeers) {
-                    reasons.add((Enum<?>) Persist.from(serializedPeer));
+                    peers.add((Enum<?>) Persist.from(serializedPeer));
                 }
             }
         }
@@ -152,13 +152,13 @@ public class EnumStateMaps {
 
         private void persistPeers() {
             StringBuilder s = new StringBuilder();
-            for (Enum<?> reason : reasons) {
+            for (Enum<?> peer : peers) {
                 if (s.length() > 0) {
                     s.append(Persist.PERSISTED_STRING_SEPARATOR);
                 }
-                s.append(Persist.persist(reason));
+                s.append(Persist.persist(peer));
             }
-            peersStorage.set(s.toString());
+            peerStorage.set(s.toString());
         }
 
         private String namespaceOf(T item) {
@@ -176,20 +176,20 @@ public class EnumStateMaps {
         }
 
         @Override
-        public <S extends Enum<?>> State.Options apply(S... reason) {
-            applyInternal(reason);
+        public <S extends Enum<?>> State.Options apply(S... peer) {
+            applyInternal(peer);
             return this;
         }
 
-        protected <S extends Enum<?>> EnumState<?> applyInternal(S... reason) {
+        protected <P extends Enum<?>> EnumState<?> applyInternal(P... peer) {
             if (!applied()) {
                 setDuration(TEMPORARY, TimeUnit.SECONDS);
             }
-            for (S s : reason) {
-                if (!reasons.contains(s)) {
-                    reasons.add(s);
+            for (P p : peer) {
+                if (!peers.contains(p)) {
+                    peers.add(p);
                     Enum<?>[] items = new Enum<?>[] { item };
-                    EnumState<?> state = (EnumState<?>) state(s);
+                    EnumState<?> state = (EnumState<?>) state(p);
                     state.applyInternal(items);
                 }
             }
@@ -210,17 +210,11 @@ public class EnumStateMaps {
         @Override
         public State remember() {
             rememberMe();
-            Set<Enum<?>> deepPeers = new HashSet<Enum<?>>();
-            addDirectPeers(deepPeers);
-            for (Enum<?> s : deepPeers) {
+            for (Enum<?> s : peers) {
                 EnumState<?> peer = (EnumState<?>) state(s);
                 peer.rememberMe();
             }
             return this;
-        }
-
-        protected void addDirectPeers(Set<Enum<?>> deepPeers) {
-            deepPeers.addAll(reasons);
         }
 
         private void rememberMe() {
@@ -230,7 +224,7 @@ public class EnumStateMaps {
 
         @Override
         public boolean applied() {
-            return !reasons.isEmpty();
+            return !peers.isEmpty();
         }
 
         @Override
@@ -238,9 +232,9 @@ public class EnumStateMaps {
             if (duration.limit(TimeUnit.SECONDS) > TEMPORARY) {
                 return isExpired();
             } else {
-                for (Enum<?> reason : reasons) {
-                    EnumState<?> peer = (EnumState<?>) state(reason);
-                    if (!peer.isExpired()) {
+                for (Enum<?> peer : peers) {
+                    EnumState<?> peerState = (EnumState<?>) state(peer);
+                    if (!peerState.isExpired()) {
                         return false;
                     }
                 }
@@ -254,28 +248,28 @@ public class EnumStateMaps {
 
         @Override
         public EnumState<T> remove() {
-            Enum<?>[] copyOfReasons = new Enum<?>[reasons.size()];
-            for (Enum<?> reason : reasons.toArray(copyOfReasons)) {
-                state(reason).remove(item);
+            Enum<?>[] copyOfReasons = new Enum<?>[peers.size()];
+            for (Enum<?> peer : peers.toArray(copyOfReasons)) {
+                state(peer).remove(item);
             }
-            reasons.clear();
+            peers.clear();
             setDuration(REMOVED, TimeUnit.SECONDS);
             durationStorage.clear();
-            peersStorage.clear();
+            peerStorage.clear();
             return this;
         }
 
         @Override
-        public <S extends Enum<?>> State remove(S reason) {
-            if (reasons.contains(reason)) {
-                reasons.remove(reason);
-                state(reason).remove(item);
+        public <P extends Enum<?>> State remove(P peer) {
+            if (peers.contains(peer)) {
+                peers.remove(peer);
+                state(peer).remove(item);
             }
-            if (reasons.isEmpty()) {
+            if (peers.isEmpty()) {
                 setDuration(REMOVED, TimeUnit.SECONDS);
                 if (durationStorage.available()) {
                     durationStorage.clear();
-                    peersStorage.clear();
+                    peerStorage.clear();
                 }
             } else if (durationStorage.available()) {
                 persistDuration();
@@ -289,7 +283,7 @@ public class EnumStateMaps {
             long limit = duration.limit(TimeUnit.SECONDS);
             return item.name() + " " + duration.start(TimeUnit.SECONDS)
                     + (limit > 0 ? "+" : " ") + limit2String(limit) + " "
-                    + reasons;
+                    + peers;
         }
     }
 

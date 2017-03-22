@@ -32,7 +32,7 @@ public class EnumStateMapsTestRemember extends EnumStateMaps {
 
         assertUnrelatedStateIsNotAffected();
         assertRememberedToyAndPeersAreRemembered();
-        assertRememberIsShallowndIndirectlyReferencedPeersArentAffected();
+        assertRememberIsShallowAndIndirectlyReferencedPeersArentAffected();
 
     }
 
@@ -50,7 +50,7 @@ public class EnumStateMapsTestRemember extends EnumStateMaps {
         assertTrue(state(Body.WristsTiedBehindBack).expired());
     }
 
-    private void assertRememberIsShallowndIndirectlyReferencedPeersArentAffected() {
+    private void assertRememberIsShallowAndIndirectlyReferencedPeersArentAffected() {
         assertTrue(state(Body.CannotJerkOff).applied());
         assertTrue(state(Body.SomethingOnPenis).applied());
         assertTrue(state(Body.CannotJerkOff).expired());

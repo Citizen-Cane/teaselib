@@ -98,19 +98,24 @@ public class EnumStateMaps {
             if (durationStorage.available()) {
                 String[] argv = durationStorage.value().split(" ");
                 long start = Long.parseLong(argv[0]);
-                long limit;
-                if (argv[1].equals(REMOVED_KEYWORD)) {
-                    limit = REMOVED;
-                } else if (argv[1].equals(TEMPORARY_KEYWORD)) {
-                    limit = TEMPORARY;
-                } else if (argv[1].equals(INDEFINITELY_KEYWORD)) {
-                    limit = INDEFINITELY;
-                } else {
-                    limit = Long.parseLong(argv[1]);
-                }
+                long limit = string2limit(argv[1]);
                 this.duration = teaseLib.new DurationImpl(start, limit,
                         TimeUnit.SECONDS);
             }
+        }
+
+        private long string2limit(String limitString) {
+            long limit;
+            if (limitString.equals(REMOVED_KEYWORD)) {
+                limit = REMOVED;
+            } else if (limitString.equals(TEMPORARY_KEYWORD)) {
+                limit = TEMPORARY;
+            } else if (limitString.equals(INDEFINITELY_KEYWORD)) {
+                limit = INDEFINITELY;
+            } else {
+                limit = Long.parseLong(limitString);
+            }
+            return limit;
         }
 
         private void restoreReasons() {
@@ -126,18 +131,23 @@ public class EnumStateMaps {
         private void persistDuration() {
             String startValue = Long.toString(duration.start(TimeUnit.SECONDS));
             long limit = duration.limit(TimeUnit.SECONDS);
-            String limitValue;
-            if (limit <= REMOVED) {
-                limitValue = REMOVED_KEYWORD;
-            } else if (limit == TEMPORARY) {
-                limitValue = TEMPORARY_KEYWORD;
-            } else if (limit == INDEFINITELY) {
-                limitValue = INDEFINITELY_KEYWORD;
-            } else {
-                limitValue = Long.toString(duration.limit(TimeUnit.SECONDS));
-            }
+            String limitValue = limit2String(limit);
             durationStorage.set(startValue + " " + limitValue);
 
+        }
+
+        private String limit2String(long limit) {
+            String limitString;
+            if (limit <= REMOVED) {
+                limitString = REMOVED_KEYWORD;
+            } else if (limit == TEMPORARY) {
+                limitString = TEMPORARY_KEYWORD;
+            } else if (limit == INDEFINITELY) {
+                limitString = INDEFINITELY_KEYWORD;
+            } else {
+                limitString = Long.toString(duration.limit(TimeUnit.SECONDS));
+            }
+            return limitString;
         }
 
         private void persistPeers() {
@@ -172,7 +182,9 @@ public class EnumStateMaps {
         }
 
         protected <S extends Enum<?>> EnumState<?> applyInternal(S... reason) {
-            setDuration(TEMPORARY, TimeUnit.SECONDS);
+            if (!applied()) {
+                setDuration(TEMPORARY, TimeUnit.SECONDS);
+            }
             for (S s : reason) {
                 if (!reasons.contains(s)) {
                     reasons.add(s);
@@ -187,10 +199,6 @@ public class EnumStateMaps {
         @Override
         public State.Persistence upTo(long limit, TimeUnit unit) {
             setDuration(limit, unit);
-            for (Enum<?> reason : reasons) {
-                EnumState<?> peer = (EnumState<?>) state(reason);
-                peer.setDuration(limit, unit);
-            }
             return this;
         }
 
@@ -201,12 +209,12 @@ public class EnumStateMaps {
 
         @Override
         public State remember() {
-            rememberInternal();
+            rememberMe();
             Set<Enum<?>> deepPeers = new HashSet<Enum<?>>();
             addDirectPeers(deepPeers);
             for (Enum<?> s : deepPeers) {
                 EnumState<?> peer = (EnumState<?>) state(s);
-                peer.rememberInternal();
+                peer.rememberMe();
             }
             return this;
         }
@@ -215,18 +223,7 @@ public class EnumStateMaps {
             deepPeers.addAll(reasons);
         }
 
-        protected void addAllPeers(Set<Enum<?>> deepPeers) {
-            for (Enum<?> reason : reasons) {
-                boolean contains = deepPeers.contains(reason);
-                if (!contains) {
-                    deepPeers.add(reason);
-                    EnumState<?> peer = (EnumState<?>) state(reason);
-                    peer.addAllPeers(deepPeers);
-                }
-            }
-        }
-
-        private void rememberInternal() {
+        private void rememberMe() {
             persistDuration();
             persistPeers();
         }
@@ -238,6 +235,20 @@ public class EnumStateMaps {
 
         @Override
         public boolean expired() {
+            if (duration.limit(TimeUnit.SECONDS) > TEMPORARY) {
+                return isExpired();
+            } else {
+                for (Enum<?> reason : reasons) {
+                    EnumState<?> peer = (EnumState<?>) state(reason);
+                    if (!peer.isExpired()) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+        }
+
+        boolean isExpired() {
             return duration.expired();
         }
 
@@ -273,6 +284,13 @@ public class EnumStateMaps {
             return this;
         }
 
+        @Override
+        public String toString() {
+            long limit = duration.limit(TimeUnit.SECONDS);
+            return item.name() + " " + duration.start(TimeUnit.SECONDS)
+                    + (limit > 0 ? "+" : " ") + limit2String(limit) + " "
+                    + reasons;
+        }
     }
 
     /**
@@ -319,5 +337,4 @@ public class EnumStateMaps {
         }
         return stateMap;
     }
-
 }

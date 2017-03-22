@@ -116,7 +116,34 @@ public class EnumStateMapsPersistenceTest extends EnumStateMaps {
         assertTrue(state(Body.SomethingOnPenis).expired());
         assertTrue(state(Body.CannotJerkOff).expired());
 
-        assertRemoveKey();
+        assertTrue(state(Toys.Chastity_Device_Lock).applied());
+        assertTrue(state(Toys.Chastity_Cage).applied());
+        assertFalse(state(Toys.Chastity_Device_Lock).expired());
+        assertFalse(state(Toys.Chastity_Cage).expired());
+
+        teaseLib.advanceTime(24, TimeUnit.HOURS);
+
+        assertTrue(state(Toys.Chastity_Device_Lock).applied());
+        assertTrue(state(Toys.Chastity_Cage).applied());
+        assertTrue(state(Toys.Chastity_Device_Lock).expired());
+        assertTrue(state(Toys.Chastity_Cage).expired());
+
+        state(Toys.Chastity_Device_Lock).remove();
+
+        assertFalse(state(Toys.Chastity_Device_Lock).applied());
+        assertTrue(state(Toys.Chastity_Device_Lock).expired());
+        assertTrue(state(Toys.Chastity_Cage).applied());
+        assertTrue(state(Toys.Chastity_Cage).expired());
+
+        state(Toys.Chastity_Cage).remove();
+
+        assertFalse(state(Toys.Chastity_Device_Lock).applied());
+        assertTrue(state(Toys.Chastity_Device_Lock).expired());
+        assertFalse(state(Toys.Chastity_Cage).applied());
+        assertTrue(state(Toys.Chastity_Cage).expired());
+
+        assertFalse(state(Body.SomethingOnPenis).applied());
+        assertFalse(state(Body.SomethingOnPenis).applied());
     }
 
     @Test
@@ -152,27 +179,5 @@ public class EnumStateMapsPersistenceTest extends EnumStateMaps {
 
         assertFalse(state(Toys.Leather_Wrist_Cuffs).applied());
         assertFalse(state(Body.WristsTiedBehindBack).applied());
-    }
-
-    private void assertRemoveKey() {
-        assertTrue(state(Toys.Chastity_Device_Lock).applied());
-        assertTrue(state(Toys.Chastity_Cage).applied());
-
-        assertFalse(state(Toys.Chastity_Device_Lock).expired());
-        assertFalse(state(Toys.Chastity_Cage).expired());
-
-        state(Toys.Chastity_Device_Lock).remove();
-
-        assertFalse(state(Toys.Chastity_Device_Lock).applied());
-        assertTrue(state(Toys.Chastity_Device_Lock).expired());
-        assertTrue(state(Toys.Chastity_Cage).applied());
-        assertFalse(state(Toys.Chastity_Cage).expired());
-
-        state(Toys.Chastity_Cage).remove();
-        assertFalse(state(Toys.Chastity_Cage).applied());
-        assertTrue(state(Toys.Chastity_Cage).expired());
-
-        assertFalse(state(Body.SomethingOnPenis).applied());
-        assertFalse(state(Body.SomethingOnPenis).applied());
     }
 }

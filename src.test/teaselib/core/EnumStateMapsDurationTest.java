@@ -19,7 +19,7 @@ public class EnumStateMapsDurationTest extends EnumStateMaps {
     }
 
     @Test
-    public void testLockDurationIsShallow() {
+    public void testLockDurationIsAppliedToDirectPeers() {
         assertApplyChastityCage();
 
         state(Toys.Chastity_Device_Lock).apply(Toys.Chastity_Cage);
@@ -31,10 +31,9 @@ public class EnumStateMapsDurationTest extends EnumStateMaps {
 
         state(Toys.Chastity_Device_Lock).apply(Toys.Chastity_Cage).upTo(24,
                 TimeUnit.HOURS);
+
         assertTrue(state(Body.SomethingOnPenis).expired());
         assertTrue(state(Body.CannotJerkOff).expired());
-
-        assertRemoveKey();
     }
 
     @Test
@@ -44,15 +43,31 @@ public class EnumStateMapsDurationTest extends EnumStateMaps {
         state(Toys.Chastity_Cage)
                 .apply(Body.SomethingOnPenis, Body.CannotJerkOff)
                 .upTo(Duration.INFINITE, TimeUnit.SECONDS);
+        assertFalse(state(Toys.Chastity_Cage).expired());
+
         state(Toys.Chastity_Device_Lock).apply(Toys.Chastity_Cage);
 
         assertTrue(state(Toys.Chastity_Cage).applied());
         assertFalse(state(Toys.Chastity_Cage).expired());
         assertTrue(state(Toys.Chastity_Device_Lock).applied());
-        assertTrue(state(Toys.Chastity_Device_Lock).expired());
+        assertFalse(state(Toys.Chastity_Device_Lock).expired());
+        // false is correct, because we havn't set a duration for the lock yet.
+        // As a result the lock "inherits" the duration of the cage
 
         state(Toys.Chastity_Device_Lock).apply(Toys.Chastity_Cage).upTo(24,
                 TimeUnit.HOURS);
+
+        assertTrue(state(Toys.Chastity_Cage).applied());
+        assertFalse(state(Toys.Chastity_Cage).expired());
+        assertTrue(state(Toys.Chastity_Device_Lock).applied());
+        assertFalse(state(Toys.Chastity_Device_Lock).expired());
+
+        teaseLib.advanceTime(24, TimeUnit.HOURS);
+
+        assertTrue(state(Toys.Chastity_Cage).applied());
+        assertFalse(state(Toys.Chastity_Cage).expired());
+        assertTrue(state(Toys.Chastity_Device_Lock).applied());
+        assertTrue(state(Toys.Chastity_Device_Lock).expired());
 
         assertFalse(state(Body.SomethingOnPenis).expired());
         assertFalse(state(Body.CannotJerkOff).expired());
@@ -69,13 +84,15 @@ public class EnumStateMapsDurationTest extends EnumStateMaps {
 
         assertTrue(state(Body.SomethingOnPenis).applied());
         assertTrue(state(Body.CannotJerkOff).applied());
+        assertTrue(state(Body.SomethingOnPenis).expired());
+        assertTrue(state(Body.CannotJerkOff).expired());
     }
 
     private void assertRemoveKey() {
         assertTrue(state(Toys.Chastity_Device_Lock).applied());
         assertTrue(state(Toys.Chastity_Cage).applied());
 
-        assertFalse(state(Toys.Chastity_Device_Lock).expired());
+        assertTrue(state(Toys.Chastity_Device_Lock).expired());
         assertFalse(state(Toys.Chastity_Cage).expired());
 
         state(Toys.Chastity_Device_Lock).remove();

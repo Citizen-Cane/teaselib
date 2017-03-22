@@ -54,6 +54,8 @@ public class TeaseLib {
     private final Map<Class<?>, StateMap<? extends Enum<?>>> stateMaps = new HashMap<Class<?>, StateMap<? extends Enum<?>>>();
     final MediaRendererQueue renderQueue = new MediaRendererQueue();
 
+    private long timeOffsetMillis = 0;
+
     public TeaseLib(Host host, Persistence persistence) {
         if (host == null || persistence == null) {
             throw new IllegalArgumentException();
@@ -180,14 +182,20 @@ public class TeaseLib {
      */
     @Deprecated
     public long getTime() {
-        return System.currentTimeMillis() / 1000;
+        return getTime(TimeUnit.SECONDS);
     }
 
     /**
      * @return time since midnight 1.1.1970 UTC
      */
     public long getTime(TimeUnit unit) {
-        return unit.convert(System.currentTimeMillis(), TimeUnit.MILLISECONDS);
+        long now = System.currentTimeMillis();
+        long time = now + timeOffsetMillis;
+        return unit.convert(time, TimeUnit.MILLISECONDS);
+    }
+
+    void advanceTime(long offset, TimeUnit unit) {
+        timeOffsetMillis += unit.toMillis(offset);
     }
 
     /**
@@ -254,6 +262,11 @@ public class TeaseLib {
             return getTime(DURATION_TIME_UNIT)
                     - start >= limit(DURATION_TIME_UNIT);
         }
+
+        @Override
+        public String toString() {
+            return start + "+" + limit;
+        }
     }
 
     protected abstract class PersistentValue<T> {
@@ -291,6 +304,11 @@ public class TeaseLib {
         public abstract T value();
 
         public abstract PersistentValue<T> set(T value);
+
+        @Override
+        public String toString() {
+            return name + "=" + value();
+        }
     }
 
     /**

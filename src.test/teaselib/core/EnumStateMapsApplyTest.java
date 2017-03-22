@@ -159,7 +159,7 @@ public class EnumStateMapsApplyTest extends EnumStateMaps {
     }
 
     @Test
-    public void testApplyRemovesPreviousApplyCorrectSequence() {
+    public void testApplyHierarchically() {
         state(Toys.Chastity_Cage).apply(Body.CannotJerkOff);
         state(Toys.Chastity_Device_Lock).apply(Toys.Chastity_Cage);
 
@@ -176,16 +176,24 @@ public class EnumStateMapsApplyTest extends EnumStateMaps {
     }
 
     @Test
-    public void testApplyRemovesPreviousApplyMultipleTimes() {
+    public void testApplyFromMiddleOfTheHierarchy() {
         state(Toys.Chastity_Cage).apply(Body.CannotJerkOff);
         state(Toys.Chastity_Cage).apply(Toys.Chastity_Device_Lock);
 
         assertTrue(state(Body.CannotJerkOff).applied());
+        assertTrue(state(Toys.Chastity_Cage).applied());
         assertTrue(state(Toys.Chastity_Device_Lock).applied());
+
+        state(Toys.Chastity_Device_Lock).remove();
+        assertTrue(state(Toys.Chastity_Cage).applied());
+        assertTrue(state(Body.CannotJerkOff).applied());
+
+        state(Toys.Chastity_Cage).remove();
+        assertFalse(state(Body.CannotJerkOff).applied());
     }
 
     @Test
-    public void testApplyItemToMultiplePlacesWorksButNotRecomented() {
+    public void testApplyItemToMultiplePlacesOneAfterAnother() {
         state(Body.SomethingOnNipples).apply(Toys.Clothespins);
 
         assertTrue(state(Toys.Clothespins).applied());

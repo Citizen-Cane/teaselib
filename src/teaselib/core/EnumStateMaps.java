@@ -42,7 +42,7 @@ public class EnumStateMaps {
         <S extends Enum<?>> State remove(S reason);
 
         interface Options extends State.Persistence {
-            Persistence upTo(long duration, TimeUnit unit);
+            Persistence over(long duration, TimeUnit unit);
         }
 
         interface Persistence {
@@ -197,7 +197,7 @@ public class EnumStateMaps {
         }
 
         @Override
-        public State.Persistence upTo(long limit, TimeUnit unit) {
+        public State.Persistence over(long limit, TimeUnit unit) {
             setDuration(limit, unit);
             return this;
         }

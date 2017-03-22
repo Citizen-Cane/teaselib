@@ -102,7 +102,7 @@ public class EnumStateMapsPersistenceTest extends EnumStateMaps {
         assertTrue(state(Toys.Chastity_Device_Lock).applied());
 
         rememberOrNot(state(Toys.Chastity_Device_Lock).apply(Toys.Chastity_Cage)
-                .upTo(24, TimeUnit.HOURS));
+                .over(24, TimeUnit.HOURS));
 
         assertTrue(state(Body.SomethingOnPenis).applied());
         assertTrue(state(Body.CannotJerkOff).applied());
@@ -155,7 +155,7 @@ public class EnumStateMapsPersistenceTest extends EnumStateMaps {
                 Body.CannotJerkOff);
         rememberOrNot(state(Toys.Chastity_Cage)
                 .apply(Body.SomethingOnPenis, Body.CannotJerkOff)
-                .upTo(24, TimeUnit.HOURS));
+                .over(24, TimeUnit.HOURS));
 
         clearStatesMapsOrNot();
 

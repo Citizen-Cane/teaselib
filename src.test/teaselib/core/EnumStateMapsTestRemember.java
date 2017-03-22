@@ -28,7 +28,7 @@ public class EnumStateMapsTestRemember extends EnumStateMaps {
                 Body.CannotJerkOff);
 
         state(Toys.Chastity_Device_Lock).apply(Toys.Chastity_Cage)
-                .upTo(24, TimeUnit.HOURS).remember();
+                .over(24, TimeUnit.HOURS).remember();
 
         assertUnrelatedStateIsNotAffected();
         assertRememberedToyAndPeersAreRemembered();

@@ -1,12 +1,16 @@
 package teaselib.core;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static teaselib.Toys.Clothespins;
 
+import java.util.concurrent.TimeUnit;
+
 import org.junit.Test;
 
 import teaselib.Body;
+import teaselib.State;
 import teaselib.Toys;
 import teaselib.test.TestScript;
 
@@ -263,5 +267,19 @@ public class EnumStateMapsApplyTest extends EnumStateMaps {
         assertTrue(state(Toys.Clothespins).applied());
         assertTrue(state(Body.SomethingOnBalls).applied());
         assertFalse(state(Body.SomethingOnNipples).applied());
+    }
+
+    @Test
+    public void testThatStateDefaultValueEqualsRemovedALongTimeAgo() {
+        assertEquals(0,
+                state(Toys.Clothespins).duration().start(TimeUnit.SECONDS));
+        assertEquals(State.REMOVED,
+                state(Toys.Clothespins).duration().limit(TimeUnit.SECONDS));
+    }
+
+    @Test
+    public void testApplyWithoutPeersWorks() {
+        state(Body.SomethingOnBalls).apply();
+        assertTrue(state(Body.SomethingOnBalls).applied());
     }
 }

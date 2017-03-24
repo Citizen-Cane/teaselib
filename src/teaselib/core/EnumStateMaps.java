@@ -1,5 +1,6 @@
 package teaselib.core;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -7,6 +8,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import teaselib.Duration;
+import teaselib.State;
 import teaselib.core.TeaseLib.PersistentString;
 import teaselib.core.util.Persist;
 
@@ -21,33 +23,6 @@ public class EnumStateMaps {
 
     void clear() {
         stateMaps.clear();
-    }
-
-    interface State {
-        public static final long REMOVED = -1;
-        public static final long TEMPORARY = 0;
-
-        public static final long INDEFINITELY = Long.MAX_VALUE;
-
-        State.Options apply();
-
-        <S extends Enum<?>> State.Options apply(S... reason);
-
-        boolean applied();
-
-        boolean expired();
-
-        <S extends Enum<?>> State remove();
-
-        <S extends Enum<?>> State remove(S reason);
-
-        interface Options extends State.Persistence {
-            Persistence over(long duration, TimeUnit unit);
-        }
-
-        interface Persistence {
-            State remember();
-        }
     }
 
     public class EnumStateMap<T extends Enum<?>> {
@@ -77,7 +52,7 @@ public class EnumStateMaps {
         private final PersistentString durationStorage;
         private final PersistentString peerStorage;
 
-        private Duration duration = teaseLib.new DurationImpl(REMOVED,
+        private Duration duration = teaseLib.new DurationImpl(0, REMOVED,
                 TimeUnit.SECONDS);
         private final Set<Enum<?>> peers = new HashSet<Enum<?>>();
 
@@ -170,12 +145,6 @@ public class EnumStateMaps {
         }
 
         @Override
-        public State.Options apply() {
-            remove();
-            return this;
-        }
-
-        @Override
         public <S extends Enum<?>> State.Options apply(S... peer) {
             applyInternal(peer);
             return this;
@@ -183,7 +152,7 @@ public class EnumStateMaps {
 
         protected <P extends Enum<?>> EnumState<?> applyInternal(P... peer) {
             if (!applied()) {
-                setDuration(TEMPORARY, TimeUnit.SECONDS);
+                setTemporary();
             }
             for (P p : peer) {
                 if (!peers.contains(p)) {
@@ -196,15 +165,29 @@ public class EnumStateMaps {
             return this;
         }
 
+        private void setTemporary() {
+            over(TEMPORARY, TimeUnit.SECONDS);
+        }
+
+        @Override
+        public Set<Enum<?>> peers() {
+            return Collections.unmodifiableSet(peers);
+        }
+
         @Override
         public State.Persistence over(long limit, TimeUnit unit) {
-            setDuration(limit, unit);
+            return over(teaseLib.new DurationImpl(limit, unit));
+        }
+
+        @Override
+        public Persistence over(Duration duration) {
+            this.duration = duration;
             return this;
         }
 
-        State setDuration(long limit, TimeUnit unit) {
-            this.duration = teaseLib.new DurationImpl(limit, unit);
-            return this;
+        @Override
+        public Duration duration() {
+            return duration;
         }
 
         @Override
@@ -224,7 +207,7 @@ public class EnumStateMaps {
 
         @Override
         public boolean applied() {
-            return !peers.isEmpty();
+            return duration.limit(TimeUnit.SECONDS) > REMOVED;
         }
 
         @Override
@@ -253,7 +236,7 @@ public class EnumStateMaps {
                 state(peer).remove(item);
             }
             peers.clear();
-            setDuration(REMOVED, TimeUnit.SECONDS);
+            setRemoved();
             durationStorage.clear();
             peerStorage.clear();
             return this;
@@ -266,7 +249,7 @@ public class EnumStateMaps {
                 state(peer).remove(item);
             }
             if (peers.isEmpty()) {
-                setDuration(REMOVED, TimeUnit.SECONDS);
+                setRemoved();
                 if (durationStorage.available()) {
                     durationStorage.clear();
                     peerStorage.clear();
@@ -276,6 +259,10 @@ public class EnumStateMaps {
                 persistPeers();
             }
             return this;
+        }
+
+        private void setRemoved() {
+            over(REMOVED, TimeUnit.SECONDS);
         }
 
         @Override

@@ -5,6 +5,7 @@ import static org.junit.Assert.assertTrue;
 
 import java.util.concurrent.TimeUnit;
 
+import org.junit.Before;
 import org.junit.Test;
 
 import teaselib.core.TeaseLib;
@@ -12,48 +13,50 @@ import teaselib.test.TestScript;
 
 public class StateScopeTests {
 
+    private State somethingOnNipples;
+    private TestScript script;
+    private TeaseLib.PersistentString peerStorage;
+
+    @Before
+    public void before() {
+        script = TestScript.getOne();
+        somethingOnNipples = script.state(Body.SomethingOnNipples);
+        peerStorage = script.teaseLib.new PersistentString(
+                TeaseLib.DefaultDomain, Body.class.getName(),
+                Body.SomethingOnNipples.name() + ".state.peers");
+    }
+
     @Test
     public void testLocalState() {
-        TestScript script = TestScript.getOne();
-        State somethingOnNipples = script.state(Body.SomethingOnNipples);
-
-        TeaseLib.PersistentString stateStorage = script.teaseLib.new PersistentString(
-                TeaseLib.DefaultDomain, Body.class.getName(),
-                Body.SomethingOnNipples.name() + ".state");
-
-        assertThatByDefaultStateIsTemporary(somethingOnNipples, stateStorage);
-        assertThatTimedStateIsPersisted(somethingOnNipples, stateStorage);
-        assertThatRemovedStateIsStillAvailableButNotPersisted(
-                somethingOnNipples, stateStorage);
+        assertThatByDefaultStateIsTemporary();
+        assertThatStateIsPersisted();
+        assertThatRemovedStateIsStillAvailableButNotPersisted();
     }
 
-    private static State assertThatByDefaultStateIsTemporary(State state,
-            TeaseLib.PersistentString stateStorage) {
-        assertFalse(state.applied());
-        assertTrue(state.expired());
-        assertFalse(stateStorage.available());
-        return state;
+    private void assertThatByDefaultStateIsTemporary() {
+        assertFalse(somethingOnNipples.applied());
+        assertTrue(somethingOnNipples.expired());
+        assertFalse(peerStorage.available());
     }
 
-    private static void assertThatTimedStateIsPersisted(State state,
-            TeaseLib.PersistentString stateStorage) {
-        state.apply(Toys.Nipple_clamps, 30, TimeUnit.MINUTES);
-        assertTrue(state.applied());
-        assertFalse(stateStorage.available());
+    private void assertThatStateIsPersisted() {
+        somethingOnNipples.apply(Toys.Nipple_clamps).over(30, TimeUnit.MINUTES);
+        assertTrue(somethingOnNipples.applied());
+        assertFalse(peerStorage.available());
 
-        state.remember();
-        assertTrue(stateStorage.available());
-        String value = stateStorage.value();
+        somethingOnNipples.apply(Toys.Nipple_clamps).over(30, TimeUnit.MINUTES)
+                .remember();
+        assertTrue(peerStorage.available());
+        String value = peerStorage.value();
         assertTrue(value.contains(Toys.Nipple_clamps.name()));
-        assertFalse(state.expired());
+        assertFalse(somethingOnNipples.expired());
     }
 
-    private static void assertThatRemovedStateIsStillAvailableButNotPersisted(
-            State state, TeaseLib.PersistentString stateStorage) {
-        state.remove();
-        assertFalse(state.applied());
-        assertTrue(state.expired());
-        assertFalse(stateStorage.available());
+    private void assertThatRemovedStateIsStillAvailableButNotPersisted() {
+        somethingOnNipples.remove();
+        assertFalse(somethingOnNipples.applied());
+        assertTrue(somethingOnNipples.expired());
+        assertFalse(peerStorage.available());
     }
 
 }

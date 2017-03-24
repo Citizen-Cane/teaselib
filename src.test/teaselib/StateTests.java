@@ -22,7 +22,7 @@ public class StateTests {
         somethingOnNipples.apply(Toys.Nipple_clamps);
         assertTrue(somethingOnNipples.applied());
         assertTrue(somethingOnNipples.expired());
-        assertEquals(Toys.Nipple_clamps, somethingOnNipples.what());
+        assertTrue(somethingOnNipples.peers().contains(Toys.Nipple_clamps));
 
         somethingOnNipples.remove();
         assertTrue(somethingOnNipples.expired());
@@ -39,16 +39,16 @@ public class StateTests {
         assertFalse(somethingOnNipples.applied());
         assertEquals(0, script.persistence.storage.size());
 
-        somethingOnNipples.apply(Toys.Nipple_clamps, 30, TimeUnit.MINUTES);
+        somethingOnNipples.apply(Toys.Nipple_clamps).over(30, TimeUnit.MINUTES);
         assertTrue(somethingOnNipples.applied());
         assertFalse(somethingOnNipples.expired());
-        assertEquals(30, somethingOnNipples.remaining(TimeUnit.MINUTES));
+        // assertEquals(30, somethingOnNipples.remaining(TimeUnit.MINUTES));
 
         assertEquals(0, script.persistence.storage.size());
-        somethingOnNipples.remember();
-        assertEquals(1, script.persistence.storage.size());
+        somethingOnNipples.apply(Toys.Nipple_clamps).over(30, TimeUnit.MINUTES)
+                .remember();
 
-        assertEquals(1, script.persistence.storage.size());
+        assertEquals(4, script.persistence.storage.size());
         somethingOnNipples.remove();
         assertEquals(0, script.persistence.storage.size());
 
@@ -75,7 +75,7 @@ public class StateTests {
     }
 
     @Test
-    public void testStatePairsAreNotImplemetedBecauseTheirRelationshipIs1ToN() {
+    public void testStatePeersAreImplemeted() {
         TestScript script = TestScript.getOne();
 
         State somethingOnNipples = script.state(Body.SomethingOnNipples);
@@ -84,9 +84,9 @@ public class StateTests {
         assertFalse(somethingOnNipples.applied());
         assertFalse(nippleClampsState.applied());
 
-        somethingOnNipples.apply(Toys.Nipple_clamps, 30, TimeUnit.MINUTES);
+        somethingOnNipples.apply(Toys.Nipple_clamps).over(30, TimeUnit.MINUTES);
 
         assertTrue(somethingOnNipples.applied());
-        assertFalse(nippleClampsState.applied());
+        assertTrue(nippleClampsState.applied());
     }
 }

@@ -9,9 +9,7 @@ import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.Locale;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
@@ -51,7 +49,7 @@ public class TeaseLib {
     public final Host host;
     private final Persistence persistence;
     public final TeaseLibLogger transcript;
-    private final Map<Class<?>, StateMap<? extends Enum<?>>> stateMaps = new HashMap<Class<?>, StateMap<? extends Enum<?>>>();
+    private final EnumStateMaps stateMaps = new EnumStateMaps(this);
     final MediaRendererQueue renderQueue = new MediaRendererQueue();
 
     private long timeOffsetMillis = 0;
@@ -215,13 +213,14 @@ public class TeaseLib {
         return teaselib.util.math.Random.random(min, max);
     }
 
+    private static final TimeUnit DURATION_TIME_UNIT = TimeUnit.SECONDS;
+
     /**
      * @author Citizen-Cane
      * 
      *         Handles elapsed seconds since object creation
      */
     public class DurationImpl implements Duration {
-        private final TimeUnit DURATION_TIME_UNIT = TimeUnit.SECONDS;
 
         private final long start;
         private final long limit;
@@ -231,11 +230,10 @@ public class TeaseLib {
         }
 
         public DurationImpl(long limit, TimeUnit unit) {
-            this.start = getTime(DURATION_TIME_UNIT);
-            this.limit = DURATION_TIME_UNIT.convert(limit, unit);
+            this(getTime(unit), limit, unit);
         }
 
-        DurationImpl(long start, long limit, TimeUnit unit) {
+        public DurationImpl(long start, long limit, TimeUnit unit) {
             this.start = DURATION_TIME_UNIT.convert(start, unit);
             this.limit = DURATION_TIME_UNIT.convert(limit, unit);
         }
@@ -251,10 +249,11 @@ public class TeaseLib {
         }
 
         @Override
-        public long elapsed(TimeUnit unit) {
+        public long remaining(TimeUnit unit) {
             long now = getTime(DURATION_TIME_UNIT);
             long elapsed = now - start;
-            return unit.convert(elapsed, DURATION_TIME_UNIT);
+            long remaining = limit - elapsed;
+            return unit.convert(remaining, DURATION_TIME_UNIT);
         }
 
         @Override
@@ -778,42 +777,8 @@ public class TeaseLib {
      *            The enumeration member to return the state for
      * @return The item state.
      */
-    @SuppressWarnings("unchecked")
     public <T extends Enum<T>> State state(T item) {
-        return state((Class<T>) item.getClass()).get(item);
-    }
-
-    /**
-     * Return the state for all or a subset of members of an enumeration.
-     * 
-     * @param values
-     *            The values to retrieve the state for. This should be
-     *            {@code Enum.values()}, as the state will only contain the
-     *            state items for the listed values.
-     * @return The state of all members in {@code values}.
-     */
-    @SuppressWarnings("unchecked")
-    <T extends Enum<T>> StateMap<T> state(T[] values) {
-        return state((Class<T>) values[0].getClass());
-    }
-
-    /**
-     * Return the state for all members of an enumeration.
-     * 
-     * @param enumClass
-     *            The class of the enumeration.
-     * @return The state of all members of the enumeration.
-     */
-    @SuppressWarnings("unchecked")
-    private <T extends Enum<T>> StateMap<T> state(Class<T> enumClass) {
-        final StateMap<T> stateMap;
-        if (stateMaps.containsKey(enumClass)) {
-            stateMap = (StateMap<T>) stateMaps.get(enumClass);
-        } else {
-            stateMap = new StateMap<T>(this);
-            stateMaps.put(enumClass, stateMap);
-        }
-        return stateMap;
+        return stateMaps.state(item);
     }
 
     /**

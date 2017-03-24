@@ -1,133 +1,35 @@
 package teaselib;
 
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-// TODO Clean up so this can be understood
-// -> expected() -> duration(), getDuration() -> getElapsed(), and so on
-/**
- * A states defines a temporary or indefinite relationship between two objects.
- * 
- * @author Citizen-Cane
- *
- */
 public interface State {
-    static final long INFINITE = Long.MAX_VALUE;
-    static final long TEMPORARY = 0L;
-    static final long REMOVED = -1L;
+    public static final long REMOVED = -1;
+    public static final long TEMPORARY = 0;
 
-    // TODO Find better name - used if the state just applies time, no item
-    static final String None = new String("None");
-    static final String Timed = new String("Timed");
+    public static final long INDEFINITELY = Long.MAX_VALUE;
 
-    /**
-     * The duration of this state.
-     * 
-     * @return
-     */
-    Duration getDuration();
+    <S extends Enum<?>> State.Options apply(S... reason);
 
-    /**
-     * Whether the state is expired.
-     * 
-     * @return
-     */
-    boolean expired();
+    Set<Enum<?>> peers();
 
-    /**
-     * Duration of the state.
-     * 
-     * @return
-     */
-    long expected();
-
-    /**
-     * Time until the item expires.
-     * 
-     * @param unit
-     *            THe unit of the return value.
-     * @return The remaining time for the item.
-     */
-    long remaining(TimeUnit unit);
-
-    /**
-     * @return Whether the item is currently applied.
-     * 
-     */
     boolean applied();
 
-    /**
-     * Whether the item has not been applied before the given time.
-     * <p>
-     * TODO Better name, does it do what's intended
-     * 
-     * @param time
-     * @param unit
-     * @return
-     */
-    boolean freeSince(long time, TimeUnit unit);
+    boolean expired();
 
-    /**
-     * Make the state persistent.
-     */
-    State remember();
+    Duration duration();
 
-    /**
-     * Remove the item. The start time is set to the current time when calling
-     * the function, and the duration is set to {@link State#REMOVED}.
-     * <p>
-     * Because the state won't be persisted anymore, but still cached, scripts
-     * can still react on it as long as the current main script is running.
-     */
-    State remove();
+    <S extends Enum<?>> State remove();
 
-    /**
-     * Apply the item, but don't set a expiration duration.
-     * <p>
-     * The state is set active but expired, so {@link State#remaining} returns
-     * 0, {@link State#expired} returns true, and {@link State#applied} returns
-     * true until the item is removed.
-     */
-    <T> State apply(T what);
+    <S extends Enum<?>> State remove(S reason);
 
-    /**
-     * Start a new duration of the item.
-     * <p>
-     * You may specify the duration as {@link State#INFINITE} to indicate that
-     * the item shouldn't be removed. However the consequence would be that you
-     * are solely responsible for resetting the state.
-     * 
-     * @param duration
-     * @param unit
-     */
-    <T> State apply(T what, long duration, TimeUnit unit);
+    interface Options extends State.Persistence {
+        Persistence over(long duration, TimeUnit unit);
 
-    /**
-     * Start a new duration of the item.
-     * <p>
-     * You may specify the duration as {@link State#INFINITE} to indicate that
-     * the item shouldn't be removed. However the consequence would be that you
-     * are solely responsible for resetting the state.
-     * 
-     * @param time
-     *            The start time of the application
-     * @param duration
-     *            How long the item is applied
-     * @param unit
-     *            The time unit
-     */
-    <T> State apply(T what, long time, long duration, TimeUnit unit);
+        Persistence over(Duration duration);
+    }
 
-    /**
-     * The item the state is applied to.
-     * 
-     * @return
-     */
-    public <T> T item();
-
-    /**
-     * The object applied to the item.
-     * 
-     * @return
-     */
-    public <T> T what();
+    interface Persistence {
+        State remember();
+    }
 }

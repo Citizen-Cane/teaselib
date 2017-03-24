@@ -16,6 +16,7 @@ import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
 import teaselib.Body;
+import teaselib.State;
 import teaselib.Toys;
 import teaselib.hosts.DummyPersistence;
 import teaselib.test.TestScript;

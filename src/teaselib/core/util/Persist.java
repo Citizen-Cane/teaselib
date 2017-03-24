@@ -39,15 +39,11 @@ public class Persist {
         try {
             Class<?> clazz = Class.forName(className);
             if (clazz.isEnum()) {
-                Enum<?>[] enumConstants = (Enum<?>[]) clazz.getEnumConstants();
+                @SuppressWarnings("rawtypes")
                 Class<Enum> enumClass = (Class<Enum>) clazz;
-                Object enumValue = enumConstants[0].valueOf(enumClass,
+                Enum<?> enumValue = Enum.valueOf(enumClass,
                         stringRepresentation);
                 return (T) enumValue;
-                // for (Enum<?> enum1 : enumConstants) {
-                //
-                // }
-                // return enumConstants;
             } else {
                 Constructor<?> constructor = clazz.getConstructor(String.class);
                 return (T) constructor.newInstance(stringRepresentation);

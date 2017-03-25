@@ -282,4 +282,24 @@ public class EnumStateMapsApplyTest extends EnumStateMaps {
         state(Body.SomethingOnBalls).apply();
         assertTrue(state(Body.SomethingOnBalls).applied());
     }
+
+    @Test
+    public void testApplyAndRemoveWithSelfReference() {
+        assertFalse(state(Toys.Chastity_Cage).applied());
+        assertFalse(state(Body.SomethingOnPenis).applied());
+
+        state(Toys.Chastity_Cage).apply(Body.SomethingOnPenis);
+
+        assertTrue(state(Toys.Chastity_Cage).applied());
+        assertTrue(state(Body.SomethingOnPenis).applied());
+
+        state(Body.SomethingOnPenis).apply(Body.SomethingOnPenis);
+        assertTrue(state(Body.SomethingOnPenis).applied());
+
+        state(Toys.Chastity_Cage).remove();
+        assertTrue(state(Body.SomethingOnPenis).applied());
+
+        state(Body.SomethingOnPenis).remove();
+        assertFalse(state(Body.SomethingOnPenis).applied());
+    }
 }

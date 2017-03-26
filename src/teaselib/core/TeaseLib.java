@@ -202,8 +202,8 @@ public class TeaseLib {
         frozenTime = getTime(TimeUnit.MILLISECONDS);
     }
 
-    void advanceTime(long offset, TimeUnit unit) {
-        timeOffsetMillis += unit.toMillis(offset);
+    void advanceTime(long duration, TimeUnit unit) {
+        timeOffsetMillis += unit.toMillis(duration);
     }
 
     void resumeTime() {
@@ -229,13 +229,7 @@ public class TeaseLib {
 
     private static final TimeUnit DURATION_TIME_UNIT = TimeUnit.SECONDS;
 
-    /**
-     * @author Citizen-Cane
-     * 
-     *         Handles elapsed seconds since object creation
-     */
-    public class DurationImpl implements Duration {
-
+    class DurationImpl implements Duration {
         private final long start;
         private final long limit;
 
@@ -287,6 +281,14 @@ public class TeaseLib {
         public String toString() {
             return start + "+" + limit;
         }
+    }
+
+    public Duration duration() {
+        return new DurationImpl();
+    }
+
+    public Duration duration(long limit, TimeUnit unit) {
+        return new DurationImpl(limit, unit);
     }
 
     protected abstract class PersistentValue<T> {

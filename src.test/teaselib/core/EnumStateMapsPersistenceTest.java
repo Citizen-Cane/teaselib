@@ -32,6 +32,7 @@ public class EnumStateMapsPersistenceTest extends EnumStateMaps {
     @BeforeClass
     public static void initPersistence() {
         script = TestScript.getOne();
+        script.teaseLib.freezeTime();
     }
 
     enum TestParameter {

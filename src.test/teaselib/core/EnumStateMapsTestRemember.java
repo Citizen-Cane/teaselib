@@ -15,6 +15,7 @@ public class EnumStateMapsTestRemember extends EnumStateMaps {
 
     public EnumStateMapsTestRemember() {
         super(TestScript.getOne().teaseLib);
+        teaseLib.freezeTime();
     }
 
     @Test

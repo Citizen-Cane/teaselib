@@ -1,4 +1,4 @@
-package teaselib;
+package teaselib.core;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -8,6 +8,9 @@ import java.util.concurrent.TimeUnit;
 
 import org.junit.Test;
 
+import teaselib.Body;
+import teaselib.State;
+import teaselib.Toys;
 import teaselib.test.TestScript;
 import teaselib.util.Item;
 
@@ -34,6 +37,7 @@ public class StateTests {
     @Test
     public void testPersistentState() {
         TestScript script = TestScript.getOne();
+        script.teaseLib.freezeTime();
         State somethingOnNipples = script.state(Body.SomethingOnNipples);
         assertTrue(somethingOnNipples.expired());
         assertFalse(somethingOnNipples.applied());
@@ -42,7 +46,8 @@ public class StateTests {
         somethingOnNipples.apply(Toys.Nipple_clamps).over(30, TimeUnit.MINUTES);
         assertTrue(somethingOnNipples.applied());
         assertFalse(somethingOnNipples.expired());
-        // assertEquals(30, somethingOnNipples.remaining(TimeUnit.MINUTES));
+        assertEquals(30,
+                somethingOnNipples.duration().remaining(TimeUnit.MINUTES));
 
         assertEquals(0, script.persistence.storage.size());
         somethingOnNipples.apply(Toys.Nipple_clamps).over(30, TimeUnit.MINUTES)
@@ -59,6 +64,7 @@ public class StateTests {
     @Test
     public void testPersistentStateAndValueCompatibility() {
         TestScript script = TestScript.getOne();
+        script.teaseLib.freezeTime();
 
         Item<Toys> nippleClampsToy = script.toy(Toys.Nipple_clamps);
         nippleClampsToy.setAvailable(true);
@@ -77,6 +83,7 @@ public class StateTests {
     @Test
     public void testStatePeersAreImplemeted() {
         TestScript script = TestScript.getOne();
+        script.teaseLib.freezeTime();
 
         State somethingOnNipples = script.state(Body.SomethingOnNipples);
         State nippleClampsState = script.state(Toys.Nipple_clamps);

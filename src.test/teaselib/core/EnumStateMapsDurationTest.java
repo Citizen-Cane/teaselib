@@ -17,6 +17,7 @@ public class EnumStateMapsDurationTest extends EnumStateMaps {
 
     public EnumStateMapsDurationTest() {
         super(TestScript.getOne().teaseLib);
+        teaseLib.freezeTime();
     }
 
     @Test
@@ -52,7 +53,7 @@ public class EnumStateMapsDurationTest extends EnumStateMaps {
         assertFalse(state(Toys.Chastity_Cage).expired());
         assertTrue(state(Toys.Chastity_Device_Lock).applied());
         assertFalse(state(Toys.Chastity_Device_Lock).expired());
-        // false is correct, because we havn't set a duration for the lock yet.
+        // false is correct, because we haven't set a duration for the lock yet.
         // As a result the lock "inherits" the duration of the cage
 
         state(Toys.Chastity_Device_Lock).apply(Toys.Chastity_Cage).over(24,

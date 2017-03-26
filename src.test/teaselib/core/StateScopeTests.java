@@ -1,4 +1,4 @@
-package teaselib;
+package teaselib.core;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -8,6 +8,9 @@ import java.util.concurrent.TimeUnit;
 import org.junit.Before;
 import org.junit.Test;
 
+import teaselib.Body;
+import teaselib.State;
+import teaselib.Toys;
 import teaselib.core.TeaseLib;
 import teaselib.test.TestScript;
 
@@ -20,6 +23,7 @@ public class StateScopeTests {
     @Before
     public void before() {
         script = TestScript.getOne();
+        script.teaseLib.freezeTime();
         somethingOnNipples = script.state(Body.SomethingOnNipples);
         peerStorage = script.teaseLib.new PersistentString(
                 TeaseLib.DefaultDomain, Body.class.getName(),

@@ -9,8 +9,9 @@ public interface Duration {
 
     long limit(TimeUnit unit);
 
+    long elapsed(TimeUnit unit);
+
     long remaining(TimeUnit unit);
 
     boolean expired();
-
 }

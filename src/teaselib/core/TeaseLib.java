@@ -52,6 +52,7 @@ public class TeaseLib {
     private final EnumStateMaps stateMaps = new EnumStateMaps(this);
     final MediaRendererQueue renderQueue = new MediaRendererQueue();
 
+    private long frozenTime = Long.MIN_VALUE;
     private long timeOffsetMillis = 0;
 
     public TeaseLib(Host host, Persistence persistence) {
@@ -187,13 +188,26 @@ public class TeaseLib {
      * @return time since midnight 1.1.1970 UTC
      */
     public long getTime(TimeUnit unit) {
-        long now = System.currentTimeMillis();
-        long time = now + timeOffsetMillis;
+        final long time;
+        if (frozenTime > Long.MIN_VALUE) {
+            time = frozenTime + timeOffsetMillis;
+        } else {
+            long now = System.currentTimeMillis();
+            time = now + timeOffsetMillis;
+        }
         return unit.convert(time, TimeUnit.MILLISECONDS);
+    }
+
+    void freezeTime() {
+        frozenTime = getTime(TimeUnit.MILLISECONDS);
     }
 
     void advanceTime(long offset, TimeUnit unit) {
         timeOffsetMillis += unit.toMillis(offset);
+    }
+
+    void resumeTime() {
+        frozenTime = Long.MIN_VALUE;
     }
 
     /**
@@ -249,11 +263,18 @@ public class TeaseLib {
         }
 
         @Override
-        public long remaining(TimeUnit unit) {
+        public long elapsed(TimeUnit unit) {
             long now = getTime(DURATION_TIME_UNIT);
             long elapsed = now - start;
-            long remaining = limit - elapsed;
-            return unit.convert(remaining, DURATION_TIME_UNIT);
+            return unit.convert(elapsed, DURATION_TIME_UNIT);
+        }
+
+        @Override
+        public long remaining(TimeUnit unit) {
+            long now = getTime(unit);
+            long elapsed = now - unit.convert(start, DURATION_TIME_UNIT);
+            long remaining = unit.convert(limit, DURATION_TIME_UNIT) - elapsed;
+            return remaining;
         }
 
         @Override

@@ -1,5 +1,6 @@
 package teaselib.core;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -73,6 +74,21 @@ public class EnumStateMapsDurationTest extends EnumStateMaps {
         assertFalse(state(Body.CannotJerkOff).expired());
 
         assertRemoveKey();
+    }
+
+    @Test
+    public void testElapedAlsoImplementsFreeSince() {
+        state(Toys.Chastity_Cage).apply();
+        assertTrue(state(Toys.Chastity_Cage).applied());
+        assertTrue(state(Toys.Chastity_Cage).expired());
+
+        state(Toys.Chastity_Cage).remove();
+        assertFalse(state(Toys.Chastity_Cage).applied());
+        assertTrue(state(Toys.Chastity_Cage).expired());
+
+        teaseLib.advanceTime(24, TimeUnit.HOURS);
+        assertEquals(24,
+                state(Toys.Chastity_Cage).duration().elapsed(TimeUnit.HOURS));
     }
 
     private void assertApplyChastityCage() {

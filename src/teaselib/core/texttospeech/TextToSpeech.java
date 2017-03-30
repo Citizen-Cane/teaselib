@@ -1,5 +1,6 @@
 package teaselib.core.texttospeech;
 
+import java.io.File;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -190,14 +191,15 @@ public class TextToSpeech {
         }
     }
 
-    public String speak(final String prompt, final String wav) {
+    public String speak(final String prompt, final File file) {
         final StringBuilder soundFilePath = new StringBuilder();
         if (tts != null) {
             Delegate delegate = new Delegate() {
                 @Override
                 public void run() {
                     try {
-                        String actualPath = tts.speak(prompt, wav);
+                        String actualPath = tts.speak(prompt,
+                                file.getAbsolutePath());
                         soundFilePath.append(actualPath);
                     } finally {
                         tts.setHints(NoHints);

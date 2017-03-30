@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.UUID;
 import java.util.Vector;
 
 import org.slf4j.Logger;
@@ -34,6 +35,8 @@ public class TextToSpeechRecorder {
 
     public final static String MessageFilename = "message.txt";
     public final static String ResourcesFilename = "inventory.txt";
+
+    private static final String SpeechResourceTempFilePrefix = "TeaseLib_SpeechRecorder";
     private static final String SpeechResourceFileTypeExtension = ".mp3";
 
     private final ResourceLoader resources;
@@ -261,20 +264,27 @@ public class TextToSpeechRecorder {
             int index, String mood, String text)
             throws IOException, FileNotFoundException {
         String soundFileName = Integer.toString(index);
-        File soundFile = createTempFile("Part_" + soundFileName + "_", "wav");
+        File soundFile = createTempFileName(
+                SpeechResourceTempFilePrefix + "_" + soundFileName + "_", "");
         TextToSpeech textToSpeech = ttsPlayer.textToSpeech;
         textToSpeech.setVoice(voice);
         textToSpeech.setHint(mood);
-        String recordedSoundFile = textToSpeech.speak(text,
-                soundFile.getAbsolutePath());
+        String recordedSoundFile = textToSpeech.speak(text, soundFile);
         if (!recordedSoundFile.endsWith(SpeechResourceFileTypeExtension)) {
             String encodedSoundFile = recordedSoundFile.replace(".wav",
                     SpeechResourceFileTypeExtension);
             // sampling frequency is read from the wav audio file
             String[] argv = { recordedSoundFile, encodedSoundFile, "--preset",
                     "standard" };
-            mp3Encoder.run(argv);
-            new File(recordedSoundFile).delete();
+            try {
+                mp3Encoder.run(argv);
+            } finally {
+                if (!new File(recordedSoundFile).delete()) {
+                    throw new IllegalStateException(
+                            "Can't delete temporary speech file "
+                                    + recordedSoundFile);
+                }
+            }
             recordedSoundFile = encodedSoundFile;
         }
         FileInputStream inputStream = new FileInputStream(recordedSoundFile);
@@ -283,6 +293,11 @@ public class TextToSpeechRecorder {
                     soundFileName + SpeechResourceFileTypeExtension);
         } finally {
             inputStream.close();
+            if (!new File(recordedSoundFile).delete()) {
+                throw new IllegalStateException(
+                        "Can't delete temporary encoded speech file "
+                                + recordedSoundFile);
+            }
         }
         return new File(soundFileName + SpeechResourceFileTypeExtension)
                 .getName();
@@ -305,9 +320,9 @@ public class TextToSpeechRecorder {
                 TextToSpeechRecorder.MessageFilename, messageHash);
     }
 
-    private static File createTempFile(String prefix, String suffix)
-            throws IOException {
-        return File.createTempFile(prefix, suffix);
+    private static File createTempFileName(String prefix, String suffix) {
+        return new File(System.getProperty("java.io.tmpdir"),
+                prefix + UUID.randomUUID() + suffix);
     }
 
     public static String getHash(Message message) {

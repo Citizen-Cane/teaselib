@@ -10,6 +10,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import teaselib.Duration;
+import teaselib.State;
 import teaselib.TeaseScript;
 import teaselib.test.TestScript;
 
@@ -74,6 +75,17 @@ public class DurationImplTest {
 
         assertEquals(24, script.duration(24, TimeUnit.SECONDS)
                 .remaining(TimeUnit.SECONDS));
+    }
+
+    @Test
+    public void testEnd() {
+        script.teaseLib.freezeTime();
+        assertEquals(script.teaseLib.getTime(TimeUnit.SECONDS) + 60,
+                script.duration(60, TimeUnit.SECONDS).end(TimeUnit.SECONDS));
+
+        assertEquals(State.INDEFINITELY,
+                script.duration(State.INDEFINITELY, TimeUnit.SECONDS)
+                        .end(TimeUnit.SECONDS));
     }
 
     @Test

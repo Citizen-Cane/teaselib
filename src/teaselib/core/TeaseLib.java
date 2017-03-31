@@ -272,6 +272,15 @@ public class TeaseLib {
         }
 
         @Override
+        public long end(TimeUnit unit) {
+            if (limit >= Long.MAX_VALUE - start) {
+                return Long.MAX_VALUE;
+            } else {
+                return unit.convert(start + limit, unit);
+            }
+        }
+
+        @Override
         public boolean expired() {
             return getTime(DURATION_TIME_UNIT)
                     - start >= limit(DURATION_TIME_UNIT);

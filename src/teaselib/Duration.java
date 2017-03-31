@@ -14,4 +14,6 @@ public interface Duration {
     long remaining(TimeUnit unit);
 
     boolean expired();
+
+    long end(TimeUnit unit);
 }

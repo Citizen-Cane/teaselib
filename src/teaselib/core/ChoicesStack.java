@@ -36,7 +36,6 @@ public class ChoicesStack implements Iterable<ShowChoices> {
 
     public String show(TeaseScriptBase script, ShowChoices showChoices,
             Map<String, PauseHandler> pauseHandlers) {
-        String choice = null;
         ShowChoices previous = null;
         synchronized (this) {
             if (!empty()) {
@@ -47,6 +46,7 @@ public class ChoicesStack implements Iterable<ShowChoices> {
                 previous.pause(ShowChoices.Paused);
             }
         }
+        String choice = null;
         while (true) {
             // Ensure only one thread at a time can realize ui elements
             synchronized (showChoicesSyncObject) {

@@ -239,14 +239,6 @@ class ShowChoices {
     /**
      * Dismiss clickables but keep script function running
      */
-
-    // TODO Avoid deadlock pause() in speech-rejected-script-handler waiting for
-    // a notify, while showChoices wants to remove its rejected-handler
-    // - both sync on the EventSource for SR-Rejected-Events
-    // It seems that the choice was somehow considered as a valid choice,
-    // instead of a pause -> using volatile for signaling
-    // This issue needs to be observed (Mine has a SR Rejected script handler)
-
     public void pause(String pauseState) {
         if (!isPaused()) {
             pauseSync.lock();

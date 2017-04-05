@@ -479,7 +479,6 @@ public class SexScriptsHost implements Host {
             }
         }
         return false;
-        // TODO Doesn't make showChoices to return null, but good enough for now
     }
 
     public javax.swing.JComboBox<String> getComboBox()

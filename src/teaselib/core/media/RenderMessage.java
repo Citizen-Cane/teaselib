@@ -288,7 +288,7 @@ public class RenderMessage extends MediaRendererThread {
                         teaseLib);
             }
         }
-        teaseLib.transcript.info(">> " + part.value);
+        teaseLib.transcript.info(part.value);
         if (speechRenderer != null) {
             speak();
         }

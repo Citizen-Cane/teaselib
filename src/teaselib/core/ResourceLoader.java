@@ -1,6 +1,7 @@
 package teaselib.core;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
@@ -354,14 +355,18 @@ public class ResourceLoader {
         Collection<String> folder = resources(Pattern.compile(
                 getClassLoaderAbsoluteResourcePath(parentPath + "/.*")));
         for (String file : folder) {
-            File unpacked = unpackToFile(
-                    classLoaderCompatibleResourcePath(file));
+            File unpacked = unpackFileFromFolder(file);
             if (match == null && classLoaderCompatibleResourcePath(file)
-                    .equals(classLoaderCompatibleResourcePath(path))) {
+                    .equals(classLoaderCompatibleResourcePath(
+                            getClassLoaderAbsoluteResourcePath(path)))) {
                 match = unpacked;
             }
         }
-        return match;
+        if (match != null) {
+            return match;
+        } else {
+            throw new FileNotFoundException(path);
+        }
     }
 
     /**
@@ -375,13 +380,25 @@ public class ResourceLoader {
      * @throws IOException
      */
     public File unpackToFile(String resourcePath) throws IOException {
-        File file = getAssetPath(
-                classLoaderCompatibleResourcePath(resourcePath));
+        String classLoaderCompatibleResourcePath = classLoaderCompatibleResourcePath(
+                resourcePath);
+        File file = getAssetPath(classLoaderCompatibleResourcePath);
+        return unpackToFileInternal(classLoaderCompatibleResourcePath, file);
+    }
+
+    private File unpackFileFromFolder(String resourcePath) throws IOException {
+        String classLoaderCompatibleResourcePath = classLoaderCompatibleResourcePath(
+                resourcePath);
+        File file = new File(basePath, classLoaderCompatibleResourcePath);
+        return unpackToFileInternal(classLoaderCompatibleResourcePath, file);
+    }
+
+    private File unpackToFileInternal(String classLoaderCompatibleResourcePath,
+            File file) throws IOException {
         if (!file.exists()) {
             InputStream resource = null;
             try {
-                resource = getResource(
-                        classLoaderCompatibleResourcePath(resourcePath));
+                resource = getResource(classLoaderCompatibleResourcePath);
                 if (!file.exists()) {
                     file.getParentFile().mkdirs();
                     Files.copy(resource, Paths.get(file.toURI()));

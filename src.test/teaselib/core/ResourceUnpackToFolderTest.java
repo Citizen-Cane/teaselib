@@ -3,8 +3,7 @@
  */
 package teaselib.core;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.*;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -26,6 +25,8 @@ public class ResourceUnpackToFolderTest {
     @Test
     public void testUnpackFolderAbsolute() throws IOException {
         TestScript script = TestScript.getOne();
+        script.resources
+                .addAssets("/teaselib/core/UnpackResourcesTestData_flat.zip");
 
         String resourcesFolder = "/" + "UnpackResourcesTestData" + "/";
         testUnpackResourcesToFolder(script, resourcesFolder);
@@ -34,6 +35,18 @@ public class ResourceUnpackToFolderTest {
     @Test
     public void testUnpackFolderRelative() throws IOException {
         TestScript script = TestScript.getOne();
+        script.resources
+                .addAssets("/teaselib/core/UnpackResourcesTestData_flat.zip");
+
+        String resourcesFolder = "UnpackResourcesTestData" + "/";
+        testUnpackResourcesToFolder(script, resourcesFolder);
+    }
+
+    @Test
+    public void testUnpackFolderReferencedViaClass() throws IOException {
+        TestScript script = TestScript.getOne(ResourceUnpackToFolderTest.class);
+        script.resources.addAssets(
+                "/teaselib/core/UnpackResourcesTestData_ResourceRootStructure.zip");
 
         String resourcesFolder = "UnpackResourcesTestData" + "/";
         testUnpackResourcesToFolder(script, resourcesFolder);
@@ -41,8 +54,6 @@ public class ResourceUnpackToFolderTest {
 
     private void testUnpackResourcesToFolder(TestScript script,
             String resourcesFolder) throws IOException {
-        script.resources
-                .addAssets("/teaselib/core/UnpackResourcesTestData.zip");
         String path = resourcesFolder + RESOURCE_1;
 
         deleteTestData(script, path);

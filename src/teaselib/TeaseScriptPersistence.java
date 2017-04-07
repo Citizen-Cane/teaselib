@@ -35,13 +35,7 @@ public abstract class TeaseScriptPersistence extends TeaseScriptBase {
      * @return A list of items whose names are based on the enumeration members
      */
     public <T extends Enum<?>> Items<T> items(T... values) {
-        if (values.length > 0) {
-            final String namespace = this.namespace + "."
-                    + values[0].getClass().getSimpleName();
-            return teaseLib.items(TeaseLib.DefaultDomain, namespace, values);
-        } else {
-            return new Items<T>();
-        }
+        return items(TeaseLib.DefaultDomain, values);
     }
 
     public <T extends Enum<?>> Items<T> items(String domain, T... values) {
@@ -63,7 +57,7 @@ public abstract class TeaseScriptPersistence extends TeaseScriptBase {
      * @return The item of the enumeration member
      */
     public <T extends Enum<?>> Item<T> item(T value) {
-        return teaseLib.item(TeaseLib.DefaultDomain, value);
+        return item(TeaseLib.DefaultDomain, value);
     }
 
     public <T extends Enum<?>> Item<T> item(String domain, T value) {
@@ -71,11 +65,7 @@ public abstract class TeaseScriptPersistence extends TeaseScriptBase {
     }
 
     public <T extends Enum<T>> Items<T> items(T[]... values) {
-        Items<T> items = new Items<T>();
-        for (T[] t : values) {
-            items.addAll(items(TeaseLib.DefaultDomain, t));
-        }
-        return items;
+        return items(TeaseLib.DefaultDomain, values);
     }
 
     public <T extends Enum<T>> Items<T> items(String domain, T[]... values) {

@@ -1,0 +1,26 @@
+package teaselib;
+
+public enum HouseHold {
+    Baby_Oil,
+    Belt,
+    Bell,
+    Candle,
+    Cigarettes,
+    Clothes_Pegs,
+    Condoms,
+    Diaper,
+    Duct_Tape,
+    Heat_Rub,
+    Hairbrush,
+    Ice_Tray,
+    Lube,
+    Padlocks,
+    Plants,
+    Rubber_bands,
+    Ruler,
+    Shoe_Lace,
+    Shrinkwrap,
+    Tampon,
+    Weights,
+    Wooden_Spoon,
+}

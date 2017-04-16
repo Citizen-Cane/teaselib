@@ -2,6 +2,8 @@ package teaselib.core.util;
 
 import teaselib.Toys;
 import teaselib.core.Persistence;
+import teaselib.core.TeaseLib;
+import teaselib.util.Items;
 
 public class PropertyNameMapping {
     public static final PropertyNameMapping PassThrough = new PropertyNameMapping();
@@ -9,8 +11,7 @@ public class PropertyNameMapping {
     public static final String DefaultDomain = new String();
     public static final String None = new String();
 
-    protected static final String[] StrippedPackageNames = { "teaselib",
-            "teaselib.scripts" };
+    protected static final String[] StrippedPackageNames = { "teaselib", "teaselib.scripts" };
 
     /**
      * @param domain
@@ -78,8 +79,7 @@ public class PropertyNameMapping {
     public static String reduceToSimpleName(String name, Class<Toys> clazz) {
         String className = clazz.getName();
         if (name.startsWith(className)) {
-            return clazz.getSimpleName() + "."
-                    + name.substring(className.length());
+            return clazz.getSimpleName() + "." + name.substring(className.length());
         }
         return name;
     }
@@ -106,6 +106,21 @@ public class PropertyNameMapping {
 
     public void clear(String name, Persistence persistence) {
         persistence.clear(name);
+    }
+
+    /**
+     * Obtain pre-defined items from the hosting application.
+     * 
+     * @param teaseLib
+     *            A TeaseLib instance used for retrieving items from persistence
+     * @param item
+     *            The item to obtain additional entries for
+     * 
+     * @return A list of items, all of type T and the value of the input
+     *         argument, but with additional extras defined by the mapping.
+     */
+    public <T> Items userItems(TeaseLib teaseLib, T item) {
+        return Items.None;
     }
 
 }

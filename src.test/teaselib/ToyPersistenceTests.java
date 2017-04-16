@@ -10,9 +10,10 @@ import org.junit.Test;
 import teaselib.core.TeaseLib;
 import teaselib.hosts.SexScriptsPropertyNameMapping;
 import teaselib.test.TestScript;
+import teaselib.util.Item;
 
 /**
- * @author someone
+ * @author Citizen-Cane
  *
  */
 public class ToyPersistenceTests {
@@ -20,38 +21,39 @@ public class ToyPersistenceTests {
     public void testToysAndClothing() {
         TestScript script = TestScript.getOne();
 
-        script.teaseLib.getToy(TeaseLib.DefaultDomain, Toys.Ball_Gag)
-                .setAvailable(true);
-        if (script.persistence
-                .getNameMapping() instanceof SexScriptsPropertyNameMapping) {
+        Item gag = script.teaseLib.getToy(TeaseLib.DefaultDomain, Toys.Gag);
+        // TODO this should get the first gag from the user items gag list, not
+        // the generic item
+        assertTrue(gag.is(Toys.Gags.Ball_Gag));
+        gag.setAvailable(true);
+        if (script.persistence.getNameMapping() instanceof SexScriptsPropertyNameMapping) {
             assertTrue(script.persistence.storage.containsKey("Toys.ballgag"));
         } else {
-            assertTrue(script.persistence.storage.containsKey("Toys.Ball_Gag"));
+            assertTrue(script.persistence.storage.containsKey("Toys.ball_gag"));
         }
 
-        script.teaseLib.getClothing(Clothes.Female, Clothes.High_Heels)
-                .setAvailable(true);
-        assertTrue(script.persistence.storage
-                .containsKey("Female.Clothes.High_Heels"));
+        script.teaseLib.getClothing(Clothes.Female, Clothes.High_Heels).setAvailable(true);
+        assertTrue(script.persistence.storage.containsKey("Female.Clothes.High_Heels"));
     }
 
     @Test
     public void testToysAndClothingAsItems() {
         TestScript script = TestScript.getOne();
 
-        script.teaseLib.item(TeaseLib.DefaultDomain, Toys.Ball_Gag)
-                .setAvailable(true);
-        if (script.persistence
-                .getNameMapping() instanceof SexScriptsPropertyNameMapping) {
+        Item gag = script.teaseLib.item(TeaseLib.DefaultDomain, Toys.Gag);
+        // TODO this should get the first gag from the user items gag list, not
+        // the generic item
+        assertTrue(gag.is(Toys.Gags.Ball_Gag));
+        gag.setAvailable(true);
+        if (script.persistence.getNameMapping() instanceof SexScriptsPropertyNameMapping) {
             assertTrue(script.persistence.storage
                     .containsKey(Toys.class.getSimpleName() + ".ballgag"));
         } else {
             assertTrue(script.persistence.storage
-                    .containsKey(Toys.class.getSimpleName() + ".Ball_Gag"));
+                    .containsKey(Toys.class.getSimpleName() + ".ball_gag"));
         }
 
-        script.teaseLib.item(TeaseLib.DefaultDomain, Clothes.High_Heels)
-                .setAvailable(true);
+        script.teaseLib.item(TeaseLib.DefaultDomain, Clothes.High_Heels).setAvailable(true);
         assertTrue(script.persistence.storage
                 .containsKey(Clothes.class.getSimpleName() + ".High_Heels"));
     }
@@ -59,14 +61,13 @@ public class ToyPersistenceTests {
     public void testAssignedToysAndClothingAsItems() {
         TestScript script = TestScript.getOne();
 
-        script.teaseLib.item(Clothes.Maid, Toys.Ball_Gag).setAvailable(true);
-        assertTrue(script.persistence.storage.containsKey(
-                "Maid." + Toys.class.getSimpleName() + ".Ball_Gag"));
+        script.teaseLib.item(Clothes.Maid, Toys.Gag).setAvailable(true);
+        assertTrue(script.persistence.storage
+                .containsKey("Maid." + Toys.class.getSimpleName() + ".ball_gag"));
 
-        script.teaseLib.item(Clothes.Female, Clothes.High_Heels)
-                .setAvailable(true);
+        script.teaseLib.item(Clothes.Female, Clothes.High_Heels).setAvailable(true);
 
-        assertTrue(script.persistence.storage.containsKey(
-                "Female." + Clothes.class.getSimpleName() + ".High_Heels"));
+        assertTrue(script.persistence.storage
+                .containsKey("Female." + Clothes.class.getSimpleName() + ".high_heels"));
     }
 }

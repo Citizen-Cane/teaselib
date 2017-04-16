@@ -1,46 +1,40 @@
-/**
- * 
- */
 package teaselib.util;
 
-import teaselib.core.TeaseLib;
+public interface Item {
 
-/**
- * @author someone
- *
- */
-public class Item<T> {
+    public static final Item NotAvailable = new Item() {
 
-    public final T item;
-    public final TeaseLib.PersistentBoolean value;
-    public final String displayName;
+        @Override
+        public <S> boolean is(S... attributes) {
+            return false;
+        }
 
-    public static String createDisplayName(Object item) {
-        return item.toString().replace("_", " ");
-    }
+        @Override
+        public boolean isAvailable() {
+            return false;
+        }
 
-    public Item(T item, TeaseLib.PersistentBoolean value) {
-        this.item = item;
-        this.value = value;
-        this.displayName = createDisplayName(item);
-    }
+        @Override
+        public void setAvailable(boolean isAvailable) {
+            // ignore
+        }
 
-    public Item(T item, TeaseLib.PersistentBoolean value, String displayName) {
-        this.item = item;
-        this.value = value;
-        this.displayName = displayName;
-    }
+        @Override
+        public String displayName() {
+            return "Not available";
+        }
 
-    public boolean isAvailable() {
-        return value.value();
-    }
+        @Override
+        public String toString() {
+            return displayName();
+        }
+    };
 
-    public void setAvailable(boolean isAvailable) {
-        value.set(isAvailable);
-    }
+    boolean isAvailable();
 
-    @Override
-    public String toString() {
-        return value.name;
-    }
+    void setAvailable(boolean isAvailable);
+
+    String displayName();
+
+    <S> boolean is(S... attributes);
 }

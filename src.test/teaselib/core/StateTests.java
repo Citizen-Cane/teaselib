@@ -46,12 +46,10 @@ public class StateTests {
         somethingOnNipples.apply(Toys.Nipple_clamps).over(30, TimeUnit.MINUTES);
         assertTrue(somethingOnNipples.applied());
         assertFalse(somethingOnNipples.expired());
-        assertEquals(30,
-                somethingOnNipples.duration().remaining(TimeUnit.MINUTES));
+        assertEquals(30, somethingOnNipples.duration().remaining(TimeUnit.MINUTES));
 
         assertEquals(0, script.persistence.storage.size());
-        somethingOnNipples.apply(Toys.Nipple_clamps).over(30, TimeUnit.MINUTES)
-                .remember();
+        somethingOnNipples.apply(Toys.Nipple_clamps).over(30, TimeUnit.MINUTES).remember();
 
         assertEquals(4, script.persistence.storage.size());
         somethingOnNipples.remove();
@@ -66,11 +64,11 @@ public class StateTests {
         TestScript script = TestScript.getOne();
         script.teaseLib.freezeTime();
 
-        Item<Toys> nippleClampsToy = script.toy(Toys.Nipple_clamps);
+        Item nippleClampsToy = script.toy(Toys.Nipple_clamps);
         nippleClampsToy.setAvailable(true);
         assertTrue(nippleClampsToy.isAvailable());
 
-        Item<Toys> nippleClampsItem = script.item(Toys.Nipple_clamps);
+        Item nippleClampsItem = script.item(Toys.Nipple_clamps);
         assertTrue(nippleClampsItem.isAvailable());
         nippleClampsItem.setAvailable(false);
         assertFalse(nippleClampsItem.isAvailable());

@@ -10,14 +10,16 @@ import java.util.Collection;
  * @author someone
  *
  */
-public class Items<T> extends ArrayList<Item<T>> {
+public class Items extends ArrayList<Item> {
     private static final long serialVersionUID = 1L;
+
+    public static final Items None = new Items();
 
     public Items() {
         super();
     }
 
-    public Items(Collection<? extends Item<T>> items) {
+    public Items(Collection<? extends Item> items) {
         super(items);
     }
 
@@ -29,13 +31,37 @@ public class Items<T> extends ArrayList<Item<T>> {
         return available().size() > 0;
     }
 
-    public Items<T> available() {
-        Items<T> available = new Items<T>();
-        for (Item<T> item : this) {
+    public Items available() {
+        Items available = new Items();
+        for (Item item : this) {
             if (item.isAvailable()) {
                 available.add(item);
             }
         }
         return available;
     }
+
+    public <S> Item get(S... attributes) {
+        for (Item item : this) {
+            if (item.is(attributes)) {
+                return item;
+            }
+        }
+        return Item.NotAvailable;
+    }
+
+    public <S> Items all(S... attributes) {
+        if (attributes.length == 0) {
+            return this;
+        } else {
+            Items items = new Items();
+            for (Item item : this) {
+                if (item.is(attributes)) {
+                    items.add(item);
+                }
+            }
+            return items;
+        }
+    }
+
 }

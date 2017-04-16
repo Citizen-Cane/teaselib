@@ -11,6 +11,7 @@ import ss.IScript;
 import teaselib.Actor;
 import teaselib.Images;
 import teaselib.core.Persistence;
+import teaselib.core.UserItems;
 import teaselib.core.texttospeech.Voice;
 import teaselib.core.util.PropertyNameMapping;
 import teaselib.core.util.Stream;
@@ -25,11 +26,11 @@ public class SexScriptsStatePersistence implements Persistence {
     private static final String TRUE = "true";
 
     private final ss.IScript host;
-    private final PropertyNameMapping nameMapping;
+    private final PropertyNameMapping nameMapping = new SexScriptsPropertyNameMapping();
+    private UserItems sexScriptsUserItems = new PreDefinedItems();
 
     public SexScriptsStatePersistence(IScript host) {
         this.host = host;
-        this.nameMapping = new SexScriptsPropertyNameMapping();
         if (has(PROPERTY_FILE_VALID_TAG)) {
             makeDataPropertiesBackup();
         }
@@ -55,6 +56,11 @@ public class SexScriptsStatePersistence implements Persistence {
     @Override
     public PropertyNameMapping getNameMapping() {
         return nameMapping;
+    }
+
+    @Override
+    public UserItems getUserItems() {
+        return sexScriptsUserItems;
     }
 
     @Override

@@ -31,8 +31,7 @@ import teaselib.core.util.WildcardPattern;
 import teaselib.util.Items;
 
 public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
-    private static final Logger logger = LoggerFactory
-            .getLogger(TeaseScript.class);
+    private static final Logger logger = LoggerFactory.getLogger(TeaseScript.class);
 
     /**
      * see {@link teaselib.ScriptFunction#Timeout}
@@ -69,8 +68,7 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
      * @param actor
      * @param namespace
      */
-    public TeaseScript(TeaseLib teaseLib, ResourceLoader resources, Actor actor,
-            String namespace) {
+    public TeaseScript(TeaseLib teaseLib, ResourceLoader resources, Actor actor, String namespace) {
         super(teaseLib, resources, actor, namespace);
     }
 
@@ -98,8 +96,7 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
     public void showDesktopItem(String path) {
         MediaRenderer desktopItem;
         try {
-            desktopItem = new RenderDesktopItem(
-                    resources.unpackEnclosingFolder(path), teaseLib);
+            desktopItem = new RenderDesktopItem(resources.unpackEnclosingFolder(path), teaseLib);
             queueRenderer(desktopItem);
         } catch (IOException e) {
             logger.error(e.getMessage(), e);
@@ -107,8 +104,7 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
     }
 
     public Object setBackgroundSound(String path) {
-        RenderBackgroundSound audioHandle = new RenderBackgroundSound(resources,
-                path, teaseLib);
+        RenderBackgroundSound audioHandle = new RenderBackgroundSound(resources, path, teaseLib);
         queueBackgropundRenderer(audioHandle);
         return audioHandle;
     }
@@ -240,8 +236,7 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
      * @return The choice object that has been selected by the user, or
      *         {@link TeaseScript#Timeout} if the script function completes.
      */
-    public final String reply(ScriptFunction scriptFunction,
-            List<String> choices) {
+    public final String reply(ScriptFunction scriptFunction, List<String> choices) {
         return showChoices(scriptFunction, choices);
     }
 
@@ -257,26 +252,22 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
      * @return The choice object that has been selected by the user, or
      *         {@link TeaseScript#Timeout} if the script function completes.
      */
-    public final String reply(ScriptFunction scriptFunction, String choice,
-            String... more) {
+    public final String reply(ScriptFunction scriptFunction, String choice, String... more) {
         List<String> choices = buildChoicesFromArray(choice, more);
         return reply(scriptFunction, choices);
     }
 
-    protected abstract class SpeechRecognitionAwareTimeoutScriptFunction
-            extends ScriptFunction {
+    protected abstract class SpeechRecognitionAwareTimeoutScriptFunction extends ScriptFunction {
         final long seconds;
 
         boolean inDubioMitius = false;
 
-        public SpeechRecognitionAwareTimeoutScriptFunction(long seconds,
-                Relation relation) {
+        public SpeechRecognitionAwareTimeoutScriptFunction(long seconds, Relation relation) {
             super(relation);
             this.seconds = seconds;
         }
 
-        protected void awaitTimeout(
-                final SpeechRecognition.TimeoutBehavior timeoutBehavior) {
+        protected void awaitTimeout(final SpeechRecognition.TimeoutBehavior timeoutBehavior) {
             final Event<SpeechRecognitionImplementation, SpeechRecognitionStartedEventArgs> recognitionStarted;
             final EventSource<SpeechRecognitionImplementation, SpeechRecognitionStartedEventArgs> recognitionStartedEvents = SpeechRecognizer.instance
                     .get(actor.getLocale()).events.recognitionStarted;
@@ -288,8 +279,7 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
                     @Override
                     public void run(SpeechRecognitionImplementation sender,
                             SpeechRecognitionStartedEventArgs eventArgs) {
-                        logger.info("-" + scriptFunctionThread.getName()
-                                + " - : Disabling timeout "
+                        logger.info("-" + scriptFunctionThread.getName() + " - : Disabling timeout "
                                 + timeoutBehavior.toString());
                         inDubioMitius = true;
                     }
@@ -302,8 +292,7 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
                 teaseLib.sleep(seconds, TimeUnit.SECONDS);
                 if (timeoutBehavior != TimeoutBehavior.InDubioContraReum
                         && SpeechRecognition.isSpeechRecognitionInProgress()) {
-                    logger.info("Completing speech recognition "
-                            + timeoutBehavior.toString());
+                    logger.info("Completing speech recognition " + timeoutBehavior.toString());
                     SpeechRecognition.completeSpeechRecognitionInProgress();
                 }
             } finally {
@@ -339,8 +328,7 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
      */
     public ScriptFunction timeout(long seconds,
             final SpeechRecognition.TimeoutBehavior timoutBehavior) {
-        return new SpeechRecognitionAwareTimeoutScriptFunction(seconds,
-                Relation.Autonomous) {
+        return new SpeechRecognitionAwareTimeoutScriptFunction(seconds, Relation.Autonomous) {
             @Override
             public void run() {
                 awaitTimeout(timoutBehavior);
@@ -369,8 +357,7 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
      */
     public ScriptFunction timeoutWithConfirmation(long seconds,
             final SpeechRecognition.TimeoutBehavior timoutBehavior) {
-        return new SpeechRecognitionAwareTimeoutScriptFunction(seconds,
-                Relation.Confirmation) {
+        return new SpeechRecognitionAwareTimeoutScriptFunction(seconds, Relation.Confirmation) {
             @Override
             public void run() {
                 awaitTimeout(timoutBehavior);
@@ -398,8 +385,7 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
      */
     public ScriptFunction timeoutWithAutoConfirmation(long seconds,
             final SpeechRecognition.TimeoutBehavior timoutBehavior) {
-        return new SpeechRecognitionAwareTimeoutScriptFunction(seconds,
-                Relation.Confirmation) {
+        return new SpeechRecognitionAwareTimeoutScriptFunction(seconds, Relation.Confirmation) {
             @Override
             public void run() {
                 awaitTimeout(timoutBehavior);
@@ -491,8 +477,8 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
      * @return The choice object that has been selected by the user, or
      *         {@link TeaseScript#Timeout} if the script function completes.
      */
-    public final String reply(ScriptFunction scriptFunction,
-            Confidence recognitionConfidence, List<String> choices) {
+    public final String reply(ScriptFunction scriptFunction, Confidence recognitionConfidence,
+            List<String> choices) {
         return showChoices(scriptFunction, recognitionConfidence, choices);
     }
 
@@ -508,25 +494,22 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
      *            corresponding index to false or true.
      * @return
      */
-    public List<Boolean> showItems(String caption, List<String> choices,
-            List<Boolean> values, boolean allowCancel) {
+    public List<Boolean> showItems(String caption, List<String> choices, List<Boolean> values,
+            boolean allowCancel) {
         completeMandatory();
-        List<Boolean> results = teaseLib.host.showCheckboxes(caption, choices,
-                values, allowCancel);
+        List<Boolean> results = teaseLib.host.showCheckboxes(caption, choices, values, allowCancel);
         endAll();
         return results;
     }
 
-    public boolean showItems(String caption, Items<?> items,
-            boolean allowCancel) {
+    public boolean showItems(String caption, Items items, boolean allowCancel) {
         List<String> choices = new ArrayList<String>(items.size());
         List<Boolean> values = new ArrayList<Boolean>(items.size());
         for (int i = 0; i < items.size(); i++) {
-            choices.add(items.get(i).displayName);
+            choices.add(items.get(i).displayName());
             values.add(items.get(i).isAvailable());
         }
-        List<Boolean> results = showItems(caption, choices, values,
-                allowCancel);
+        List<Boolean> results = showItems(caption, choices, values, allowCancel);
         if (results != null) {
             for (int i = 0; i < items.size(); i++) {
                 items.get(i).setAvailable(results.get(i));
@@ -545,13 +528,13 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
      * @return A list of resources that matches the wildcard pattern.
      */
     public List<String> resources(String wildcardPattern) {
-        Pattern pattern = WildcardPattern.compile(
-                resources.getClassLoaderAbsoluteResourcePath(wildcardPattern));
+        Pattern pattern = WildcardPattern
+                .compile(resources.getClassLoaderAbsoluteResourcePath(wildcardPattern));
         Collection<String> items = resources.resources(pattern);
         final int size = items.size();
         if (size > 0) {
-            logger.info(getClass().getSimpleName() + ": '" + wildcardPattern
-                    + "' yields " + size + " resources");
+            logger.info(getClass().getSimpleName() + ": '" + wildcardPattern + "' yields " + size
+                    + " resources");
         } else {
             logger.info(getClass().getSimpleName() + ": '" + wildcardPattern
                     + "' doesn't yield any resources");

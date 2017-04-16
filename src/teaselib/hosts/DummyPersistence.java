@@ -15,31 +15,43 @@ import org.slf4j.LoggerFactory;
 import teaselib.Actor;
 import teaselib.Images;
 import teaselib.core.Persistence;
+import teaselib.core.UserItems;
 import teaselib.core.texttospeech.Voice;
 import teaselib.core.util.PropertyNameMapping;
 import teaselib.util.TextVariables;
 
 public class DummyPersistence implements Persistence {
-    private static final Logger logger = LoggerFactory
-            .getLogger(DummyPersistence.class);
+    private static final Logger logger = LoggerFactory.getLogger(DummyPersistence.class);
 
     public final static String True = "true";
     public final static String False = "false";
 
     public final Map<String, String> storage = new HashMap<String, String>();
+
     private final PropertyNameMapping nameMapping;
+    private final UserItems userItems;
 
     public DummyPersistence() {
-        nameMapping = new PropertyNameMapping();
+        this(new PropertyNameMapping());
     }
 
     public DummyPersistence(PropertyNameMapping propertyNameMapping) {
-        nameMapping = propertyNameMapping;
+        this(propertyNameMapping, new PreDefinedItems());
+    }
+
+    public DummyPersistence(PropertyNameMapping propertyNameMapping, UserItems userItems) {
+        this.nameMapping = propertyNameMapping;
+        this.userItems = userItems;
     }
 
     @Override
     public PropertyNameMapping getNameMapping() {
         return nameMapping;
+    }
+
+    @Override
+    public UserItems getUserItems() {
+        return userItems;
     }
 
     @Override
@@ -93,8 +105,8 @@ public class DummyPersistence implements Persistence {
             return new Actor("Mistress", "Miss", Voice.Gender.Female, locale,
                     Actor.Key.DominantFemale, Images.None);
         case Male:
-            return new Actor("Master", "Sir", Voice.Gender.Male, locale,
-                    Actor.Key.DominantMale, Images.None);
+            return new Actor("Master", "Sir", Voice.Gender.Male, locale, Actor.Key.DominantMale,
+                    Images.None);
         default:
             throw new IllegalArgumentException(gender.toString());
         }
@@ -105,8 +117,7 @@ public class DummyPersistence implements Persistence {
                 storage.entrySet());
         Collections.sort(entryList, new Comparator<Entry<String, String>>() {
             @Override
-            public int compare(Entry<String, String> o1,
-                    Entry<String, String> o2) {
+            public int compare(Entry<String, String> o1, Entry<String, String> o2) {
                 return o1.getKey().compareTo(o2.getKey());
             }
         });

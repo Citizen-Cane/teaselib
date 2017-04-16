@@ -15,8 +15,8 @@ import teaselib.util.Items;
 @SuppressWarnings("deprecation")
 
 public class TeaseScriptPersistenceUtil extends TeaseScriptPersistence {
-    protected TeaseScriptPersistenceUtil(TeaseLib teaseLib,
-            ResourceLoader resources, Actor actor, String namespace) {
+    protected TeaseScriptPersistenceUtil(TeaseLib teaseLib, ResourceLoader resources, Actor actor,
+            String namespace) {
         super(teaseLib, resources, actor, namespace);
     }
 
@@ -201,38 +201,38 @@ public class TeaseScriptPersistenceUtil extends TeaseScriptPersistence {
     // }
 
     @Deprecated
-    public Item<Toys> toy(Toys item) {
+    public Item toy(Toys item) {
         return teaseLib.getToy(TeaseLib.DefaultDomain, item);
     }
 
     @Deprecated
-    public Item<String> toy(String item) {
+    public Item toy(String item) {
         return teaseLib.getToy(TeaseLib.DefaultDomain, item);
     }
 
     @Deprecated
-    public Item<Clothes> clothing(Object wearer, Clothes item) {
+    public Item clothing(Object wearer, Clothes item) {
         return teaseLib.getClothing(wearer, item);
     }
 
     @Deprecated
-    public Item<String> clothing(Object wearer, String item) {
+    public Item clothing(Object wearer, String item) {
         return teaseLib.getClothing(wearer, item);
     }
 
     @Deprecated
-    public <T extends Enum<?>> Items<T> toys(T... toys) {
-        Items<T> items = new Items<T>();
+    public <T extends Enum<?>> Items toys(T... toys) {
+        Items items = new Items();
         for (T toy : toys) {
-            Item<T> item = teaseLib.getToy(TeaseLib.DefaultDomain, toy);
+            Item item = teaseLib.getToy(TeaseLib.DefaultDomain, toy);
             items.add(item);
         }
         return items;
     }
 
     @Deprecated
-    public <T extends Enum<?>> Items<T> toys(T[]... toys) {
-        Items<T> items = new Items<T>();
+    public <T extends Enum<?>> Items toys(T[]... toys) {
+        Items items = new Items();
         for (T[] selection : toys) {
             items.addAll(toys(selection));
         }
@@ -240,18 +240,18 @@ public class TeaseScriptPersistenceUtil extends TeaseScriptPersistence {
     }
 
     @Deprecated
-    public Items<String> toys(String... toys) {
-        Items<String> items = new Items<String>();
+    public Items toys(String... toys) {
+        Items items = new Items();
         for (String toy : toys) {
-            Item<String> item = teaseLib.getToy(TeaseLib.DefaultDomain, toy);
+            Item item = teaseLib.getToy(TeaseLib.DefaultDomain, toy);
             items.add(item);
         }
         return items;
     }
 
     @Deprecated
-    public Items<String> toys(String[]... toys) {
-        Items<String> items = new Items<String>();
+    public Items toys(String[]... toys) {
+        Items items = new Items();
         for (String[] selection : toys) {
             items.addAll(toys(selection));
         }
@@ -259,19 +259,18 @@ public class TeaseScriptPersistenceUtil extends TeaseScriptPersistence {
     }
 
     @Deprecated
-    public <C extends Enum<C>> Items<C> clothes(Object wearer, C... clothes) {
-        Items<C> items = new Items<C>();
+    public <C extends Enum<C>> Items clothes(Object wearer, C... clothes) {
+        Items items = new Items();
         for (C clothing : clothes) {
-            Item<C> item = teaseLib.getClothing(wearer, clothing);
+            Item item = teaseLib.getClothing(wearer, clothing);
             items.add(item);
         }
         return items;
     }
 
     @Deprecated
-    public <C extends Enum<C>> Items<C> clothes(Object wearer,
-            C[]... clothing) {
-        Items<C> items = new Items<C>();
+    public <C extends Enum<C>> Items clothes(Object wearer, C[]... clothing) {
+        Items items = new Items();
         for (C[] selection : clothing) {
             items.addAll(clothes(wearer, selection));
         }
@@ -279,18 +278,18 @@ public class TeaseScriptPersistenceUtil extends TeaseScriptPersistence {
     }
 
     @Deprecated
-    public Items<String> clothes(Object wearer, String... clothes) {
-        Items<String> items = new Items<String>();
+    public Items clothes(Object wearer, String... clothes) {
+        Items items = new Items();
         for (String clothing : clothes) {
-            Item<String> item = teaseLib.getClothing(wearer, clothing);
+            Item item = teaseLib.getClothing(wearer, clothing);
             items.add(item);
         }
         return items;
     }
 
     @Deprecated
-    public Items<String> clothes(Object wearer, String[]... clothing) {
-        Items<String> items = new Items<String>();
+    public Items clothes(Object wearer, String[]... clothing) {
+        Items items = new Items();
         for (String[] selection : clothing) {
             items.addAll(clothes(wearer, selection));
         }

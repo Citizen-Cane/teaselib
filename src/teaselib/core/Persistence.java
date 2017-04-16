@@ -11,6 +11,8 @@ public interface Persistence {
 
     PropertyNameMapping getNameMapping();
 
+    UserItems getUserItems();
+
     boolean has(String name);
 
     /**

@@ -64,18 +64,25 @@ public class StateTests {
         TestScript script = TestScript.getOne();
         script.teaseLib.freezeTime();
 
-        Item nippleClampsToy = script.toy(Toys.Nipple_clamps);
-        nippleClampsToy.setAvailable(true);
-        assertTrue(nippleClampsToy.isAvailable());
-
         Item nippleClampsItem = script.item(Toys.Nipple_clamps);
-        assertTrue(nippleClampsItem.isAvailable());
-        nippleClampsItem.setAvailable(false);
         assertFalse(nippleClampsItem.isAvailable());
+        nippleClampsItem.setAvailable(true);
+        assertTrue(nippleClampsItem.isAvailable());
 
         State nippleClampsState = script.state(Toys.Nipple_clamps);
         assertFalse(nippleClampsState.applied());
         assertTrue(nippleClampsState.expired());
+
+        nippleClampsState.apply(Body.SomethingOnNipples).over(1, TimeUnit.HOURS);
+        assertTrue(nippleClampsState.applied());
+        assertFalse(nippleClampsState.expired());
+
+        assertTrue(nippleClampsItem.isAvailable());
+        nippleClampsItem.setAvailable(false);
+        assertFalse(nippleClampsItem.isAvailable());
+
+        assertTrue(nippleClampsState.applied());
+        assertFalse(nippleClampsState.expired());
     }
 
     @Test

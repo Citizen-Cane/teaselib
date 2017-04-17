@@ -24,12 +24,9 @@ public class ScriptPersistenceTests {
     public void testScriptPersistence() {
         TestScript script = TestScript.getOne();
 
-        // script.toy(TestValuesEnumClass.My_Test_Value_toy).setAvailable(true);
-        // assertTrue(script.persistence.storage
-        // .containsKey("toys.my_test_value_toy"));
-
-        script.toy("My Test value toy").setAvailable(true);
-        assertTrue(script.persistence.storage.containsKey("Toys.My Test value toy"));
+        script.item("My Test value toy").setAvailable(true);
+        assertTrue(script.persistence.storage
+                .containsKey(script.namespace + "." + "My Test value toy"));
 
         script.set(TestValuesEnumClass.My_Test_Value_set_by_name.name(),
                 "Saved as local enum by name");
@@ -56,26 +53,14 @@ public class ScriptPersistenceTests {
     }
 
     @Test
-    public void testToyAndItemAreTheSame() {
-        TestScript script = TestScript.getOne();
-
-        script.item(Toys.Nipple_clamps).setAvailable(true);
-        script.toy(Toys.Nipple_clamps).setAvailable(true);
-
-        script.persistence.printStorage();
-
-        assertEquals(1, script.persistence.storage.size());
-    }
-
-    @Test
-    public void testClothingVersusItem() {
+    public void testDomainSeparation() {
         TestScript script = TestScript.getOne();
 
         script.item(Clothes.Panties).setAvailable(true);
         assertTrue(script.item(Clothes.Panties).isAvailable());
         assertFalse(script.item(Clothes.Female, Clothes.Panties).isAvailable());
 
-        script.clothing(Clothes.Female, Clothes.Panties).setAvailable(true);
+        script.item(Clothes.Female, Clothes.Panties).setAvailable(true);
         assertTrue(script.item(Clothes.Female, Clothes.Panties).isAvailable());
 
         assertEquals(2, script.persistence.storage.size());

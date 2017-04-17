@@ -21,7 +21,7 @@ public class ToyPersistenceTests {
     public void testToysAndClothing() {
         TestScript script = TestScript.getOne();
 
-        Item gag = script.teaseLib.getToy(TeaseLib.DefaultDomain, Toys.Gag);
+        Item gag = script.teaseLib.item(TeaseLib.DefaultDomain, Toys.Gag);
         assertTrue(gag.is(Toys.Gags.Ball_Gag));
 
         gag.setAvailable(true);
@@ -31,7 +31,7 @@ public class ToyPersistenceTests {
             assertTrue(script.persistence.storage.containsKey("Toys.ball_gag"));
         }
 
-        script.teaseLib.getClothing(Clothes.Female, Clothes.High_Heels).setAvailable(true);
+        script.teaseLib.item(Clothes.Female, Clothes.High_Heels).setAvailable(true);
         assertTrue(script.persistence.storage.containsKey("Female.Clothes.High_Heels"));
     }
 

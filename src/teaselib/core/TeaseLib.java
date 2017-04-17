@@ -16,11 +16,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import teaselib.Actor;
-import teaselib.Clothes;
 import teaselib.Config;
 import teaselib.Duration;
 import teaselib.State;
-import teaselib.Toys;
 import teaselib.core.devices.DeviceFactoryListener;
 import teaselib.core.devices.remote.LocalNetworkDevice;
 import teaselib.core.devices.remote.LocalNetworkDeviceDiscovery;
@@ -163,14 +161,6 @@ public class TeaseLib {
         } catch (InterruptedException e) {
             throw new ScriptInterruptedException();
         }
-    }
-
-    /**
-     * @return Seconds since midnight 1.1.1970 UTC
-     */
-    @Deprecated
-    public long getTime() {
-        return getTime(TimeUnit.SECONDS);
     }
 
     /**
@@ -694,26 +684,6 @@ public class TeaseLib {
 
     private String makePropertyName(String domain, Enum<?> name) {
         return makePropertyName(domain, name.getClass().getName(), name.name());
-    }
-
-    @Deprecated
-    public <T extends Enum<?>> Item getToy(String domain, T toy) {
-        return item(domain, toy);
-    }
-
-    @Deprecated
-    public Item getToy(String domain, String toy) {
-        return item(domain, Toys.class.getName(), toy);
-    }
-
-    @Deprecated
-    public <T extends Enum<?>> Item getClothing(Object domain, T item) {
-        return item(domain.toString(), item);
-    }
-
-    @Deprecated
-    public Item getClothing(Object domain, String item) {
-        return item(domain.toString(), Clothes.class.getName(), item);
     }
 
     public TextVariables getTextVariables(Locale locale) {

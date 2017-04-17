@@ -22,9 +22,8 @@ public class ToyPersistenceTests {
         TestScript script = TestScript.getOne();
 
         Item gag = script.teaseLib.getToy(TeaseLib.DefaultDomain, Toys.Gag);
-        // TODO this should get the first gag from the user items gag list, not
-        // the generic item
         assertTrue(gag.is(Toys.Gags.Ball_Gag));
+
         gag.setAvailable(true);
         if (script.persistence.getNameMapping() instanceof SexScriptsPropertyNameMapping) {
             assertTrue(script.persistence.storage.containsKey("Toys.ballgag"));
@@ -41,9 +40,8 @@ public class ToyPersistenceTests {
         TestScript script = TestScript.getOne();
 
         Item gag = script.teaseLib.item(TeaseLib.DefaultDomain, Toys.Gag);
-        // TODO this should get the first gag from the user items gag list, not
-        // the generic item
         assertTrue(gag.is(Toys.Gags.Ball_Gag));
+
         gag.setAvailable(true);
         if (script.persistence.getNameMapping() instanceof SexScriptsPropertyNameMapping) {
             assertTrue(script.persistence.storage

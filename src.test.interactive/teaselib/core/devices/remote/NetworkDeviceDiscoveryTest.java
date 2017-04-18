@@ -9,7 +9,6 @@ import java.net.SocketTimeoutException;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.junit.Ignore;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,8 +18,7 @@ import org.slf4j.LoggerFactory;
  *
  */
 public class NetworkDeviceDiscoveryTest {
-    private static final Logger logger = LoggerFactory
-            .getLogger(NetworkDeviceDiscoveryTest.class);
+    private static final Logger logger = LoggerFactory.getLogger(NetworkDeviceDiscoveryTest.class);
 
     static final int Minutes = 2;
 
@@ -35,20 +33,16 @@ public class NetworkDeviceDiscoveryTest {
                 logger.info("Sending broadcast message to "
                         + interfaceAddress.getBroadcast().toString());
 
-                UDPConnection connection = new UDPConnection(
-                        interfaceAddress.getBroadcast(), 666);
+                UDPConnection connection = new UDPConnection(interfaceAddress.getBroadcast(), 666);
                 try {
-                    connection.send(
-                            new UDPMessage(RemoteDevice.Id).toByteArray());
+                    connection.send(new UDPMessage(RemoteDevice.Id).toByteArray());
                     while (true) {
                         try {
                             byte[] received = connection.receive(1000);
                             UDPMessage udpMessage = new UDPMessage(received);
                             RemoteDeviceMessage device = udpMessage.message;
                             if ("services".equals(device.command)) {
-                                devices.put(
-                                        InetAddress.getByName(
-                                                device.parameters.get(1)),
+                                devices.put(InetAddress.getByName(device.parameters.get(1)),
                                         device);
                             }
                         } catch (SocketTimeoutException e) {
@@ -62,22 +56,9 @@ public class NetworkDeviceDiscoveryTest {
         } finally {
             localNetworkDeviceDiscoveryBroadcast.close();
         }
-        for (Map.Entry<InetAddress, RemoteDeviceMessage> device : devices
-                .entrySet()) {
-            logger.info(
-                    device.getKey().toString() + " -> " + device.getValue());
+        for (Map.Entry<InetAddress, RemoteDeviceMessage> device : devices.entrySet()) {
+            logger.info(device.getKey().toString() + " -> " + device.getValue());
         }
-    }
-
-    @Test
-    @Ignore
-    public void testRudeNetworkScanConnectAndPotentiallyCrashNetwork()
-            throws Exception {
-        logger.info(
-                "Network scan (may cause network trouble and wifi hotspot shutdown):");
-        @SuppressWarnings("deprecation")
-        LocalNetworkDeviceDiscoveryNetworkScan scanner = new LocalNetworkDeviceDiscoveryNetworkScan();
-        collectFoundDevices(scanner);
     }
 
     @Test
@@ -95,10 +76,10 @@ public class NetworkDeviceDiscoveryTest {
             throws InterruptedException {
         scanner.addRemoteDeviceDiscoveryListener(new RemoteDeviceListener() {
             @Override
-            public void deviceAdded(String name, String address,
-                    String serviceName, String description, String version) {
-                logger.info(name + ":" + serviceName + ", " + description + ", "
-                        + version + "@" + address);
+            public void deviceAdded(String name, String address, String serviceName,
+                    String description, String version) {
+                logger.info(name + ":" + serviceName + ", " + description + ", " + version + "@"
+                        + address);
             }
         });
         scanner.searchDevices();
@@ -107,8 +88,9 @@ public class NetworkDeviceDiscoveryTest {
 
     @Test
     public void testDeviceClass() throws Exception {
-        logger.info(
-                "Device factory network scan (uses broadcast device discoevry):");
+        logger.info("Device factory network scan (uses broadcast device discovery):");
+        System.setProperty(LocalNetworkDevice.EnableDeviceDiscovery, Boolean.TRUE.toString());
+
         for (String devicePath : LocalNetworkDevice.Factory.getDevices()) {
             logger.info(devicePath);
         }

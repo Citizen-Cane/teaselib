@@ -27,7 +27,7 @@ class LocalNetworkDeviceDiscoveryBroadcast extends LocalNetworkDeviceDiscovery {
     public LocalNetworkDeviceDiscoveryBroadcast() {
         super();
 
-        if (isListeningForDeviceStartupMessagesEnabled()) {
+        if (isListeningForDeviceMessagesEnabled()) {
             installBroadcastListener();
         }
     }
@@ -43,32 +43,34 @@ class LocalNetworkDeviceDiscoveryBroadcast extends LocalNetworkDeviceDiscovery {
 
     @Override
     void searchDevices() throws InterruptedException {
-        try {
-            List<InterfaceAddress> networks = networks();
-            updateInterfaceBroadcastListeners(networks);
-            broadcastToAllInterfaces(networks);
-        } catch (SocketException e) {
-            logger.error(e.getMessage(), e);
+        if (isDeviceDiscoveryEnabled()) {
+            try {
+                List<InterfaceAddress> networks = networks();
+                updateInterfaceBroadcastListeners(networks);
+                broadcastToAllInterfaces(networks);
+            } catch (SocketException e) {
+                logger.error(e.getMessage(), e);
+            }
+            waitForDevicesToReply();
         }
-        waitForDevicesToReply();
     }
 
     void updateInterfaceBroadcastListeners(List<InterfaceAddress> networks) {
         if (globalBroadcastListener == null) {
-            installBroadcastListener();
+            if (isListeningForDeviceMessagesEnabled()) {
+                installBroadcastListener();
+            }
         }
         addSocketThreadsForNewNetworkInterfaces(networks);
         removeSocketThreadsForVanishedNetworks(networks);
     }
 
-    private void addSocketThreadsForNewNetworkInterfaces(
-            List<InterfaceAddress> networks) {
+    private void addSocketThreadsForNewNetworkInterfaces(List<InterfaceAddress> networks) {
         for (InterfaceAddress interfaceAddress : networks) {
             if (!discoveryThreads.containsKey(interfaceAddress)) {
                 try {
                     BroadcastListener socketThread = new BroadcastListener(
-                            interfaceAddress.getBroadcast(),
-                            LocalNetworkDevice.Port);
+                            interfaceAddress.getBroadcast(), LocalNetworkDevice.Port);
                     discoveryThreads.put(interfaceAddress, socketThread);
                     socketThread.start();
                 } catch (IOException e) {
@@ -78,10 +80,8 @@ class LocalNetworkDeviceDiscoveryBroadcast extends LocalNetworkDeviceDiscovery {
         }
     }
 
-    private void removeSocketThreadsForVanishedNetworks(
-            List<InterfaceAddress> networks) {
-        for (Entry<InterfaceAddress, BroadcastListener> entry : discoveryThreads
-                .entrySet()) {
+    private void removeSocketThreadsForVanishedNetworks(List<InterfaceAddress> networks) {
+        for (Entry<InterfaceAddress, BroadcastListener> entry : discoveryThreads.entrySet()) {
             if (!networks.contains(entry.getKey())) {
                 discoveryThreads.remove(entry.getKey()).interrupt();
             }
@@ -98,13 +98,10 @@ class LocalNetworkDeviceDiscoveryBroadcast extends LocalNetworkDeviceDiscovery {
         }
     }
 
-    private void sendBroadcastIDMessage(InterfaceAddress interfaceAddress)
-            throws IOException {
+    private void sendBroadcastIDMessage(InterfaceAddress interfaceAddress) throws IOException {
         InetAddress broadcastAddress = interfaceAddress.getBroadcast();
-        logger.info(
-                "Sending broadcast message to " + broadcastAddress.toString());
-        UDPConnection connection = discoveryThreads
-                .get(interfaceAddress).connection;
+        logger.info("Sending broadcast message to " + broadcastAddress.toString());
+        UDPConnection connection = discoveryThreads.get(interfaceAddress).connection;
         connection.send(new UDPMessage(RemoteDevice.Id).toByteArray());
     }
 
@@ -116,21 +113,17 @@ class LocalNetworkDeviceDiscoveryBroadcast extends LocalNetworkDeviceDiscovery {
         final UDPConnection connection;
         private final AtomicBoolean isRunning = new AtomicBoolean(false);
 
-        public BroadcastListener(InetAddress address, int port)
-                throws IOException {
+        public BroadcastListener(InetAddress address, int port) throws IOException {
             connection = new UDPConnection(address, port);
-            initThread("Installed interface broadcast socket on "
-                    + address.toString());
+            initThread("Installed interface broadcast socket on " + address.toString());
         }
 
         BroadcastListener() throws IOException {
             InetSocketAddress address = new InetSocketAddress(
-                    InetAddress.getByAddress(new byte[] { 0, 0, 0, 0 }),
-                    LocalNetworkDevice.Port);
+                    InetAddress.getByAddress(new byte[] { 0, 0, 0, 0 }), LocalNetworkDevice.Port);
             connection = new UDPConnection(address);
             connection.setCheckPacketNumber(false);
-            initThread(
-                    "Listening for broadcast packets on " + address.toString());
+            initThread("Listening for broadcast packets on " + address.toString());
         }
 
         private void initThread(String name) {
@@ -150,11 +143,9 @@ class LocalNetworkDeviceDiscoveryBroadcast extends LocalNetworkDeviceDiscovery {
                 while (!isInterrupted()) {
                     try {
                         byte[] received = connection.receive();
-                        RemoteDeviceMessage services = new UDPMessage(
-                                received).message;
+                        RemoteDeviceMessage services = new UDPMessage(received).message;
                         if ("services".equals(services.command)) {
-                            logger.info("Received device startup message on "
-                                    + connection);
+                            logger.info("Received device startup message on " + connection);
                             fireDeviceDiscovered(services);
                         }
                     } catch (SocketException e) {

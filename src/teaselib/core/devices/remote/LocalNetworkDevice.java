@@ -25,12 +25,29 @@ import teaselib.core.devices.DeviceFactory;
  *
  */
 public class LocalNetworkDevice implements RemoteDevice {
-    private static final Logger logger = LoggerFactory
-            .getLogger(LocalNetworkDevice.class);
+    private static final Logger logger = LoggerFactory.getLogger(LocalNetworkDevice.class);
 
     private static final String DeviceClassName = "LocalNetworkDevice";
 
     static final int Port = 666;
+
+    /**
+     * Boolean property to enable discovery of TeaseLib local network devices.
+     * <p>
+     * Sends broadcast messages into all local networks every few seconds.
+     */
+    public static final String EnableDeviceDiscovery = LocalNetworkDevice.class.getName()
+            + ".EnableDeviceDiscovery";
+
+    /**
+     * Boolean property to enable discovery of TeaseLib local network devices.
+     * <p>
+     * Binds a broadcast listener for receiving devices startup messages to the
+     * meta-address 0.0.0.0. This speeds up device discovery, but - at least on
+     * Windows - it may pop-up a firewall notification.
+     */
+    public static final String EnableDeviceStatusListener = LocalNetworkDevice.class.getName()
+            + ".EnableDeviceStatusListener";
 
     /**
      * Local network devices have to respond in this time, plus some head room.
@@ -55,40 +72,34 @@ public class LocalNetworkDevice implements RemoteDevice {
 
         private void installDeviceListener() {
             if (deviceDiscovery != null) {
-                deviceDiscovery.addRemoteDeviceDiscoveryListener(
-                        new RemoteDeviceListener() {
-                            @Override
-                            public void deviceAdded(String name, String address,
-                                    String serviceName, String description,
-                                    String version) {
-                                String devicePath = LocalNetworkDevice
-                                        .createDevicePath(name, serviceName);
-                                if (!isDeviceCached(devicePath)) {
-                                    try {
-                                        LocalNetworkDevice device = new LocalNetworkDevice(
-                                                name,
-                                                new UDPConnection(address),
-                                                serviceName, description,
-                                                version);
-                                        synchronized (discoveredDevices) {
-                                            discoveredDevices.add(device);
-                                        }
-                                    } catch (NumberFormatException e) {
-                                        logger.error(e.getMessage(), e);
-                                    } catch (SocketException e) {
-                                        logger.error(e.getMessage(), e);
-                                    } catch (UnknownHostException e) {
-                                        logger.error(e.getMessage(), e);
-                                    }
+                deviceDiscovery.addRemoteDeviceDiscoveryListener(new RemoteDeviceListener() {
+                    @Override
+                    public void deviceAdded(String name, String address, String serviceName,
+                            String description, String version) {
+                        String devicePath = LocalNetworkDevice.createDevicePath(name, serviceName);
+                        if (!isDeviceCached(devicePath)) {
+                            try {
+                                LocalNetworkDevice device = new LocalNetworkDevice(name,
+                                        new UDPConnection(address), serviceName, description,
+                                        version);
+                                synchronized (discoveredDevices) {
+                                    discoveredDevices.add(device);
                                 }
+                            } catch (NumberFormatException e) {
+                                logger.error(e.getMessage(), e);
+                            } catch (SocketException e) {
+                                logger.error(e.getMessage(), e);
+                            } catch (UnknownHostException e) {
+                                logger.error(e.getMessage(), e);
                             }
-                        });
+                        }
+                    }
+                });
             }
         }
 
         @Override
-        public List<String> enumerateDevicePaths(
-                Map<String, LocalNetworkDevice> deviceCache)
+        public List<String> enumerateDevicePaths(Map<String, LocalNetworkDevice> deviceCache)
                 throws InterruptedException {
             if (discoveredDevices.isEmpty()) {
                 deviceDiscovery.searchDevices();
@@ -97,8 +108,7 @@ public class LocalNetworkDevice implements RemoteDevice {
             return new ArrayList<String>(deviceCache.keySet());
         }
 
-        private void publishDiscoveredDevices(
-                Map<String, LocalNetworkDevice> deviceCache) {
+        private void publishDiscoveredDevices(Map<String, LocalNetworkDevice> deviceCache) {
             synchronized (discoveredDevices) {
                 for (LocalNetworkDevice device : discoveredDevices) {
                     deviceCache.put(device.getDevicePath(), device);
@@ -121,9 +131,8 @@ public class LocalNetworkDevice implements RemoteDevice {
             String address = deviceAndAddress[1];
             LocalNetworkDevice localNetworkDevice;
             try {
-                localNetworkDevice = new LocalNetworkDevice(name,
-                        new UDPConnection(address), serviceName, description,
-                        version);
+                localNetworkDevice = new LocalNetworkDevice(name, new UDPConnection(address),
+                        serviceName, description, version);
             } catch (NumberFormatException e) {
                 throw new IllegalArgumentException(e);
             } catch (SocketException e) {
@@ -143,8 +152,8 @@ public class LocalNetworkDevice implements RemoteDevice {
 
     private UDPConnection connection;
 
-    LocalNetworkDevice(String name, UDPConnection connection,
-            String serviceName, String description, String version) {
+    LocalNetworkDevice(String name, UDPConnection connection, String serviceName,
+            String description, String version) {
         this.name = name;
         this.connection = connection;
         this.serviceName = serviceName;
@@ -158,8 +167,7 @@ public class LocalNetworkDevice implements RemoteDevice {
     }
 
     private static String createDevicePath(String name, String serviceName) {
-        return DeviceCache.createDevicePath(DeviceClassName,
-                name + "->" + serviceName);
+        return DeviceCache.createDevicePath(DeviceClassName, name + "->" + serviceName);
     }
 
     @Override
@@ -231,8 +239,8 @@ public class LocalNetworkDevice implements RemoteDevice {
 
     @Override
     public int sleep(int timeMinutes) {
-        RemoteDeviceMessage count = sendAndReceive(new RemoteDeviceMessage(
-                Sleep, Arrays.asList(Integer.toString(timeMinutes))));
+        RemoteDeviceMessage count = sendAndReceive(
+                new RemoteDeviceMessage(Sleep, Arrays.asList(Integer.toString(timeMinutes))));
         if (Count.equals(count.command)) {
             return Integer.parseInt(count.parameters.get(0));
         } else {
@@ -269,11 +277,10 @@ public class LocalNetworkDevice implements RemoteDevice {
         return received;
     }
 
-    private RemoteDeviceMessage sendAndReceive(RemoteDeviceMessage message,
-            int timeout) throws SocketException, IOException {
+    private RemoteDeviceMessage sendAndReceive(RemoteDeviceMessage message, int timeout)
+            throws SocketException, IOException {
         logger.info("Sending " + message.toString());
-        byte[] received = connection
-                .sendAndReceive(new UDPMessage(message).toByteArray(), timeout);
+        byte[] received = connection.sendAndReceive(new UDPMessage(message).toByteArray(), timeout);
         RemoteDeviceMessage receivedMessage = new UDPMessage(received).message;
         logger.info("Received " + receivedMessage.toString());
         return receivedMessage;
@@ -283,8 +290,7 @@ public class LocalNetworkDevice implements RemoteDevice {
         Factory.removeDisconnectedDevice(this);
         List<String> devicePaths = Factory.getDevices();
         for (String devicePath : devicePaths) {
-            if (!WaitingForConnection.equals(devicePath)
-                    && getDevicePath().equals(devicePath)) {
+            if (!WaitingForConnection.equals(devicePath) && getDevicePath().equals(devicePath)) {
                 LocalNetworkDevice device = Factory.getDevice(devicePath);
                 connection.close();
                 connection = device.connection;
@@ -297,8 +303,8 @@ public class LocalNetworkDevice implements RemoteDevice {
     @Override
     public void send(RemoteDeviceMessage message) {
         try {
-            logger.info("Sending " + message.getClass().getSimpleName() + ": "
-                    + message.toString());
+            logger.info(
+                    "Sending " + message.getClass().getSimpleName() + ": " + message.toString());
             connection.send(new UDPMessage(message).toByteArray());
         } catch (IOException e) {
             logger.error(e.getMessage(), e);

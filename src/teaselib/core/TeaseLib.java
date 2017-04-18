@@ -60,7 +60,7 @@ public class TeaseLib {
         this.persistence = new PersistenceLogger(persistence);
         this.transcript = newTranscriptLogger(host);
         bindMotionDetectorFeedback();
-        if (LocalNetworkDeviceDiscovery.isListeningForDeviceStartupMessagesEnabled()) {
+        if (LocalNetworkDeviceDiscovery.isListeningForDeviceMessagesEnabled()) {
             LocalNetworkDevice.startDeviceDetection();
         }
     }

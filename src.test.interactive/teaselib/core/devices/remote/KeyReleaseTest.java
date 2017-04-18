@@ -3,13 +3,12 @@
  */
 package teaselib.core.devices.remote;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import java.util.Arrays;
 
 import org.junit.Assume;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,10 +20,14 @@ import teaselib.core.devices.DeviceCache;
  *
  */
 public class KeyReleaseTest {
-    private static final Logger logger = LoggerFactory
-            .getLogger(KeyReleaseTest.class);
+    private static final Logger logger = LoggerFactory.getLogger(KeyReleaseTest.class);
 
     static final int Minutes = 2;
+
+    @BeforeClass
+    public static void beforeClass() {
+        System.setProperty(LocalNetworkDevice.EnableDeviceDiscovery, Boolean.TRUE.toString());
+    }
 
     private static int connect(KeyRelease keyRelease) {
         Assume.assumeTrue(DeviceCache.connect(keyRelease, 10.0));
@@ -61,8 +64,7 @@ public class KeyReleaseTest {
         }
     }
 
-    private static void assertRunningAfterRelease(KeyRelease keyRelease,
-            int i) {
+    private static void assertRunningAfterRelease(KeyRelease keyRelease, int i) {
         assertFalse(keyRelease.isRunning(i));
         sleepSeconds(10);
     }
@@ -153,10 +155,8 @@ public class KeyReleaseTest {
         assertEquals(0, KeyRelease.getBestActuator(59, Arrays.asList(60, 120)));
         assertEquals(0, KeyRelease.getBestActuator(60, Arrays.asList(60, 120)));
         assertEquals(1, KeyRelease.getBestActuator(61, Arrays.asList(60, 120)));
-        assertEquals(1,
-                KeyRelease.getBestActuator(120, Arrays.asList(60, 120)));
-        assertEquals(1,
-                KeyRelease.getBestActuator(121, Arrays.asList(60, 120)));
+        assertEquals(1, KeyRelease.getBestActuator(120, Arrays.asList(60, 120)));
+        assertEquals(1, KeyRelease.getBestActuator(121, Arrays.asList(60, 120)));
         assertEquals(0, KeyRelease.getBestActuator(0, Arrays.asList(60, 120)));
         assertEquals(0, KeyRelease.getBestActuator(-1, Arrays.asList(60, 120)));
     }

@@ -22,29 +22,24 @@ public class NetworkDeviceDiscoveryProductionCodeTest {
     static final int Minutes = 2;
 
     @Test
-    public void testAwaitDeviceStartupServicesBroadcastMessage()
-            throws Exception {
+    public void testAwaitDeviceStartupServicesBroadcastMessage() throws Exception {
         logger.info("Awaiting device startup broadscast message:");
-        System.setProperty(
-                LocalNetworkDeviceDiscovery.EnableNetworkDeviceStartupListener,
-                Boolean.TRUE.toString());
+        System.setProperty(LocalNetworkDevice.EnableDeviceStatusListener, Boolean.TRUE.toString());
+
         LocalNetworkDeviceDiscoveryBroadcast scanner = new LocalNetworkDeviceDiscoveryBroadcast();
         try {
             List<InterfaceAddress> networks = scanner.networks();
             scanner.updateInterfaceBroadcastListeners(networks);
             final CountDownLatch deviceConnected = new CountDownLatch(1);
-            scanner.addRemoteDeviceDiscoveryListener(
-                    new RemoteDeviceListener() {
-                        @Override
-                        public void deviceAdded(String name, String address,
-                                String serviceName, String description,
-                                String version) {
-                            logger.info(name + ":" + serviceName + ", "
-                                    + description + ", " + version + "@"
-                                    + address);
-                            deviceConnected.countDown();
-                        }
-                    });
+            scanner.addRemoteDeviceDiscoveryListener(new RemoteDeviceListener() {
+                @Override
+                public void deviceAdded(String name, String address, String serviceName,
+                        String description, String version) {
+                    logger.info(name + ":" + serviceName + ", " + description + ", " + version + "@"
+                            + address);
+                    deviceConnected.countDown();
+                }
+            });
             deviceConnected.await();
             logger.info("Device startup message detected");
         } finally {

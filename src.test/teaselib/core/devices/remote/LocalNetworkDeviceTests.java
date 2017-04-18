@@ -1,25 +1,45 @@
 package teaselib.core.devices.remote;
 
-import org.junit.Ignore;
+import static org.junit.Assert.*;
+
+import java.util.List;
+
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class LocalNetworkDeviceTests {
-    private static final Logger logger = LoggerFactory
-            .getLogger(LocalNetworkDeviceTests.class);
+    private static final Logger logger = LoggerFactory.getLogger(LocalNetworkDeviceTests.class);
 
     @Test
-    @Ignore
     public void testResourceDeallocationQuiteLong() throws Exception {
-        for (int i = 0; i < 1000; i++) {
+        System.setProperty(LocalNetworkDevice.EnableDeviceDiscovery, Boolean.TRUE.toString());
+
+        int j = 10;
+        testResourceDeallocation(j);
+    }
+
+    private static void testResourceDeallocation(int j) throws Exception {
+        for (int i = 0; i < j; i++) {
             try {
-                LocalNetworkDevice.Factory.getDevices();
+                List<String> devices = LocalNetworkDevice.Factory.getDevices();
+                for (String device : devices) {
+                    logger.info("Found device: " + device);
+                }
             } catch (Exception e) {
-                logger.info("Enumerating network devices failed after " + i
-                        + " iterations. Reason: ", e.getMessage());
+                logger.info(
+                        "Enumerating network devices failed after " + i + " iterations. Reason: ",
+                        e.getMessage());
                 throw e;
             }
         }
+    }
+
+    @Test
+    public void ensureConfigSettingChangeIsDetected() throws Exception {
+        assertEquals("teaselib.core.devices.remote.LocalNetworkDevice.EnableDeviceDiscovery",
+                LocalNetworkDevice.EnableDeviceDiscovery);
+        assertEquals("teaselib.core.devices.remote.LocalNetworkDevice.EnableDeviceStatusListener",
+                LocalNetworkDevice.EnableDeviceStatusListener);
     }
 }

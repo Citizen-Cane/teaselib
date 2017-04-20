@@ -49,7 +49,9 @@ public enum Toys {
 
     EStim_Device,
 
-    VaginalInsert,;
+    VaginalInsert,
+
+    Vibrator;
 
     public enum ChastityDevices {
         Chastity_Belt,
@@ -77,8 +79,6 @@ public enum Toys {
         Crop,
         Flogger,
         Paddle,
-        Hairbrush,
-        Wooden_Spoon,
         Whip
     }
 
@@ -92,12 +92,17 @@ public enum Toys {
         VibratingEgg,
     }
 
+    public enum Vibrators {
+        HandsFree,
+        Manual,
+    }
+
     public final static Toys Basic[] = { Ankle_Restraints, Gag, Blindfold, Buttplug, Chains,
             Chastity_Device, Collar, Dildo, Nipple_clamps, Rope, Spanking_Implement, VaginalInsert,
             Wrist_Restraints };
 
     public final static Toys Advanced[] = { Ball_Stretcher, Cockring, Enema_Bulb, Enema_Kit,
-            EStim_Device, Harness, Hood, Humbler, Leash, Pussy_Clamps };
+            EStim_Device, Harness, Hood, Humbler, Leash, Pussy_Clamps, Vibrator };
 
     public final static Toys Other[] = { Doll, Husband, Spreader_Bar, Strap_On, Wife };
 

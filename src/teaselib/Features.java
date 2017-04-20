@@ -2,7 +2,7 @@ package teaselib;
 
 public enum Features {
     Inflatable,
-    Teasing,
+    Vibrating,
     Detachable,
     Anal,
     Vaginal,

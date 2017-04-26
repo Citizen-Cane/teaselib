@@ -748,7 +748,7 @@ public class TeaseLib {
      *            The enumeration member to return the state for
      * @return The item state.
      */
-    public <T extends Enum<T>> State state(T item) {
+    public <T extends Enum<?>> State state(T item) {
         return stateMaps.state(item);
     }
 
@@ -801,7 +801,7 @@ public class TeaseLib {
      * @return The item that corresponds to the value.
      */
     public Item item(String domain, String namespace, String name) {
-        return new ItemImpl(name, new PersistentBoolean(domain, namespace, name));
+        return new ItemImpl(this, name, new PersistentBoolean(domain, namespace, name));
     }
 
     public Actor getDominant(Voice.Gender gender, Locale locale) {

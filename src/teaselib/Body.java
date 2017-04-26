@@ -10,6 +10,8 @@ package teaselib;
  */
 public enum Body {
     SomethingOnNipples,
+    SomethingInVagina,
+    SomethingOnClit,
     SomethingInButt,
     SomethingInMouth,
     SomethingOnPenis,

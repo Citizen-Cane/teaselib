@@ -18,12 +18,12 @@ public abstract class AbstractUserItems implements UserItems {
 
     protected static Item[] onlyTheOriginalItem(TeaseLib teaseLib, String domain, Object item) {
         String name;
-        if (item instanceof Enum) {
+        if (item instanceof Enum<?>) {
             name = ((Enum<?>) item).name();
         } else {
             name = item.toString();
         }
-        return new Item[] { new ItemImpl(item,
+        return new Item[] { new ItemImpl(teaseLib, item,
                 teaseLib.new PersistentBoolean(domain, item.getClass().getName(), name)) };
     }
 
@@ -52,14 +52,14 @@ public abstract class AbstractUserItems implements UserItems {
     protected abstract Item[] createUserItems(TeaseLib teaseLib, String domain, Object item);
 
     protected Item item(TeaseLib teaseLib, Object item, String namespace, String name,
-            String displayName, Enum<?>... attributes) {
-        return item(teaseLib, TeaseLib.DefaultDomain, namespace, name, displayName, item,
+            String displayName, Enum<?>[] peers, Enum<?>... attributes) {
+        return item(teaseLib, TeaseLib.DefaultDomain, namespace, name, displayName, item, peers,
                 attributes);
     }
 
     protected Item item(TeaseLib teaseLib, String domain, String namespace, String name,
-            String displayName, Object item, Enum<?>... attributes) {
-        return new ItemImpl(item, teaseLib.new PersistentBoolean(domain, namespace, name),
-                displayName, attributes);
+            String displayName, Object item, Enum<?>[] peers, Enum<?>... attributes) {
+        return new ItemImpl(teaseLib, item, teaseLib.new PersistentBoolean(domain, namespace, name),
+                displayName, peers, attributes);
     }
 }

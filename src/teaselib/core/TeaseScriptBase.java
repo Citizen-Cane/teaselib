@@ -204,6 +204,7 @@ public abstract class TeaseScriptBase {
         } else {
             String imageType = displayImage;
             String nextImage = null;
+            String lastMood = null;
             String nextMood = null;
 
             for (Message.Part part : message.getParts()) {
@@ -219,10 +220,13 @@ public abstract class TeaseScriptBase {
                         if (nextMood == null) {
                             currentMood = mood;
                         } else {
-                            // Reset mood after each text part
                             currentMood = nextMood;
                         }
-                        parsedMessage.add(Message.Type.Mood, currentMood);
+                        // Inject mood if changed
+                        if (currentMood != lastMood) {
+                            parsedMessage.add(Message.Type.Mood, currentMood);
+                            lastMood = currentMood;
+                        }
                         imageType = nextImage = part.value;
                         parsedMessage.add(part);
                     }
@@ -244,11 +248,14 @@ public abstract class TeaseScriptBase {
                     if (nextMood == null) {
                         currentMood = mood;
                     } else {
-                        // Reset mood after each text part
                         currentMood = nextMood;
                         nextMood = null;
                     }
-                    parsedMessage.add(Message.Type.Mood, currentMood);
+                    // Inject mood if changed
+                    if (currentMood != lastMood) {
+                        parsedMessage.add(Message.Type.Mood, currentMood);
+                        lastMood = currentMood;
+                    }
                     // Update image if changed
                     if (imageType != nextImage) {
                         nextImage = getActorOrDisplayImage(imageType, currentMood);

@@ -47,22 +47,17 @@ public class TeaseScriptBaseTest {
         assertEquals(Message.NoImage, parts.get(n++).value);
         assertEquals(Type.Text, parts.get(n++).type);
 
-        assertEquals(Type.Mood, parts.get(n++).type);
         assertEquals(Type.Image, parts.get(n).type);
         assertEquals("foobar.jpg", parts.get(n++).value);
-        assertEquals(Type.Mood, parts.get(n++).type);
         assertEquals(Type.Text, parts.get(n++).type);
 
-        assertEquals(Type.Mood, parts.get(n++).type);
         assertEquals(Type.Image, parts.get(n++).type);
         assertEquals(Type.Text, parts.get(n++).type);
 
-        assertEquals(Type.Mood, parts.get(n++).type);
         assertEquals(Type.Image, parts.get(n).type);
         assertEquals("foo.jpg", parts.get(n++).value);
         assertEquals(Type.Delay, parts.get(n++).type);
 
-        assertEquals(Type.Mood, parts.get(n++).type);
         assertEquals(Type.Image, parts.get(n).type);
         assertEquals("bar.jpg", parts.get(n++).value);
 
@@ -111,8 +106,6 @@ public class TeaseScriptBaseTest {
         assertEquals(Mood.Friendly, parts.get(n++).value);
         assertEquals(Type.Image, parts.get(n).type);
         assertEquals("foobar.jpg", parts.get(n++).value);
-        assertEquals(Type.Mood, parts.get(n).type);
-        assertEquals(Mood.Friendly, parts.get(n++).value);
         assertEquals(Type.Text, parts.get(n++).type);
 
         assertEquals(Type.Mood, parts.get(n).type);
@@ -126,15 +119,9 @@ public class TeaseScriptBaseTest {
         assertEquals("foo.jpg", parts.get(n++).value);
         assertEquals(Type.Delay, parts.get(n++).type);
 
-        assertEquals(Type.Mood, parts.get(n).type);
-        assertEquals(Mood.Friendly, parts.get(n++).value);
         assertEquals(Type.Image, parts.get(n++).type);
-        assertEquals(Type.Mood, parts.get(n).type);
-        assertEquals(Mood.Friendly, parts.get(n++).value);
         assertEquals(Type.Text, parts.get(n++).type);
 
-        assertEquals(Type.Mood, parts.get(n).type);
-        assertEquals(Mood.Friendly, parts.get(n++).value);
         assertEquals(Type.Text, parts.get(n++).type);
 
         assertEquals(Type.Mood, parts.get(n).type);

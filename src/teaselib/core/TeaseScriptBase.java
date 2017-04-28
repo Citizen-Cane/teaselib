@@ -24,8 +24,7 @@ import teaselib.util.SpeechRecognitionRejectedScript;
 import teaselib.util.TextVariables;
 
 public abstract class TeaseScriptBase {
-    private static final Logger logger = LoggerFactory
-            .getLogger(TeaseScriptBase.class);
+    private static final Logger logger = LoggerFactory.getLogger(TeaseScriptBase.class);
 
     public final TeaseLib teaseLib;
     public final ResourceLoader resources;
@@ -73,8 +72,8 @@ public abstract class TeaseScriptBase {
      * @param teaseLib
      * @param locale
      */
-    protected TeaseScriptBase(TeaseLib teaseLib, ResourceLoader resources,
-            Actor actor, String namespace) {
+    protected TeaseScriptBase(TeaseLib teaseLib, ResourceLoader resources, Actor actor,
+            String namespace) {
         this.teaseLib = teaseLib;
         this.resources = resources;
         this.actor = actor;
@@ -99,8 +98,7 @@ public abstract class TeaseScriptBase {
         ttsPlayer.acquireVoice(actor);
     }
 
-    protected static List<String> buildChoicesFromArray(String choice,
-            String... more) {
+    protected static List<String> buildChoicesFromArray(String choice, String... more) {
         List<String> choices = new ArrayList<String>(1 + more.length);
         choices.add(choice);
         choices.addAll(Arrays.asList(more));
@@ -138,9 +136,7 @@ public abstract class TeaseScriptBase {
     protected void renderIntertitle(String... text) {
         try {
             RenderInterTitle interTitle = new RenderInterTitle(
-                    new Message(actor,
-                            expandTextVariables(Arrays.asList(text))),
-                    teaseLib);
+                    new Message(actor, expandTextVariables(Arrays.asList(text))), teaseLib);
             renderMessage(interTitle);
         } finally {
             displayImage = Message.ActorImage;
@@ -148,8 +144,7 @@ public abstract class TeaseScriptBase {
         }
     }
 
-    protected void renderMessage(Message message,
-            TextToSpeechPlayer ttsPlayer) {
+    protected void renderMessage(Message message, TextToSpeechPlayer ttsPlayer) {
         try {
             // inject speech parts to replay pre-recorded speech or use TTS
             // This has to be done first as subsequent parse steps
@@ -157,13 +152,11 @@ public abstract class TeaseScriptBase {
             if (ttsPlayer != null) {
                 if (ttsPlayer.prerenderedSpeechAvailable(message.actor)) {
                     // Don't use TTS, even if pre-recorded speech is missing
-                    message = ttsPlayer.createPrerenderedSpeechMessage(message,
-                            resources);
+                    message = ttsPlayer.createPrerenderedSpeechMessage(message, resources);
                 }
             }
             Message parsedMessage = injectImagesAndExpandTextVariables(message);
-            renderMessage(new RenderMessage(resources, parsedMessage, ttsPlayer,
-                    teaseLib));
+            renderMessage(new RenderMessage(resources, parsedMessage, ttsPlayer, teaseLib));
         } finally {
             displayImage = Message.ActorImage;
             mood = Mood.Neutral;
@@ -178,8 +171,7 @@ public abstract class TeaseScriptBase {
                 playedRenderers = new ArrayList<MediaRenderer>(queuedRenderers);
                 // Remember in order to clear queued before completing
                 // previous set
-                List<MediaRenderer> nextSet = new ArrayList<MediaRenderer>(
-                        queuedRenderers);
+                List<MediaRenderer> nextSet = new ArrayList<MediaRenderer>(queuedRenderers);
                 // Must clear queue for next set before completing current,
                 // because if the current set is cancelled,
                 // the next set must be discarded
@@ -223,6 +215,14 @@ public abstract class TeaseScriptBase {
                     } else if (part.value == Message.NoImage) {
                         imageType = part.value;
                     } else {
+                        final String currentMood;
+                        if (nextMood == null) {
+                            currentMood = mood;
+                        } else {
+                            // Reset mood after each text part
+                            currentMood = nextMood;
+                        }
+                        parsedMessage.add(Message.Type.Mood, currentMood);
                         imageType = nextImage = part.value;
                         parsedMessage.add(part);
                     }
@@ -242,22 +242,20 @@ public abstract class TeaseScriptBase {
                     // set mood if not done already
                     final String currentMood;
                     if (nextMood == null) {
-                        parsedMessage.add(Message.Type.Mood, mood);
                         currentMood = mood;
                     } else {
                         // Reset mood after each text part
                         currentMood = nextMood;
                         nextMood = null;
                     }
+                    parsedMessage.add(Message.Type.Mood, currentMood);
                     // Update image if changed
                     if (imageType != nextImage) {
-                        nextImage = getActorOrDisplayImage(imageType,
-                                currentMood);
+                        nextImage = getActorOrDisplayImage(imageType, currentMood);
                         parsedMessage.add(Message.Type.Image, nextImage);
                     }
                     // Replace text variables
-                    parsedMessage.add(new Message.Part(part.type,
-                            expandTextVariables(part.value)));
+                    parsedMessage.add(new Message.Part(part.type, expandTextVariables(part.value)));
                 } else {
                     parsedMessage.add(part);
                 }
@@ -273,8 +271,7 @@ public abstract class TeaseScriptBase {
 
     }
 
-    private String getActorOrDisplayImage(String imageType,
-            String currentMood) {
+    private String getActorOrDisplayImage(String imageType, String currentMood) {
         final String nextImage;
         if (imageType == Message.ActorImage) {
             if (actor.images.hasNext()) {
@@ -289,8 +286,8 @@ public abstract class TeaseScriptBase {
         return nextImage;
     }
 
-    private static void ensureEmptyMessageContainsDisplayImage(
-            Message parsedMessage, String nextImage) {
+    private static void ensureEmptyMessageContainsDisplayImage(Message parsedMessage,
+            String nextImage) {
         parsedMessage.add(Message.Type.Image, nextImage);
     }
 
@@ -340,8 +337,7 @@ public abstract class TeaseScriptBase {
      * 
      * @see TeaseScriptBase#showChoices(ScriptFunction, Confidence, List)
      */
-    protected final String showChoices(ScriptFunction scriptFunction,
-            List<String> choices) {
+    protected final String showChoices(ScriptFunction scriptFunction, List<String> choices) {
         return showChoices(scriptFunction, Confidence.Default, choices);
     }
 
@@ -362,25 +358,21 @@ public abstract class TeaseScriptBase {
      *         the function has ended, or a custom result value set by the
      *         script function.
      */
-    protected String showChoices(ScriptFunction scriptFunction,
-            Confidence recognitionConfidence, List<String> choices) {
+    protected String showChoices(ScriptFunction scriptFunction, Confidence recognitionConfidence,
+            List<String> choices) {
         // argument checking and text variable replacement
         final List<String> derivedChoices = expandTextVariables(choices);
-        ScriptFutureTask scriptTask = scriptFunction != null
-                ? new ScriptFutureTask(this, scriptFunction, derivedChoices,
-                        new ScriptFutureTask.TimeoutClick())
-                : null;
+        ScriptFutureTask scriptTask = scriptFunction != null ? new ScriptFutureTask(this,
+                scriptFunction, derivedChoices, new ScriptFutureTask.TimeoutClick()) : null;
         final boolean choicesStackContainsSRRejectedState = choicesStack
                 .containsPauseState(ShowChoices.RecognitionRejected);
-        final ShowChoices showChoices = new ShowChoices(this, choices,
-                derivedChoices, scriptTask, recognitionConfidence,
-                choicesStackContainsSRRejectedState);
+        final ShowChoices showChoices = new ShowChoices(this, choices, derivedChoices, scriptTask,
+                recognitionConfidence, choicesStackContainsSRRejectedState);
         Map<String, PauseHandler> pauseHandlers = new HashMap<String, PauseHandler>();
         // The pause handler resumes displaying choices when the choice object
         // becomes the top-element of the choices stack again
         pauseHandlers.put(ShowChoices.Paused, pauseHandler(showChoices));
-        pauseHandlers.put(ShowChoices.RecognitionRejected,
-                recognitionRejectedPauseHandler());
+        pauseHandlers.put(ShowChoices.RecognitionRejected, recognitionRejectedPauseHandler());
         waitToStartScriptFunction(scriptFunction);
         if (scriptFunction == null) {
             stopBackgroundRenderers();
@@ -414,8 +406,7 @@ public abstract class TeaseScriptBase {
                             choicesStack.wait();
                         }
                     }
-                    logger.info(
-                            "Resuming choices " + showChoices.derivedChoices);
+                    logger.info("Resuming choices " + showChoices.derivedChoices);
                 } catch (InterruptedException e) {
                     throw new ScriptInterruptedException();
                 }
@@ -436,8 +427,7 @@ public abstract class TeaseScriptBase {
                     SpeechRecognitionRejectedScript speechRecognitionRejectedScript = actor.speechRecognitionRejectedScript;
                     logger.info("Running SpeechRecognitionRejectedScript "
                             + speechRecognitionRejectedScript.toString());
-                    Replay beforeSpeechRecognitionRejected = new Replay(
-                            playedRenderers);
+                    Replay beforeSpeechRecognitionRejected = new Replay(playedRenderers);
                     speechRecognitionRejectedScript.run();
                     beforeSpeechRecognitionRejected.replay(Position.End);
                 }
@@ -445,8 +435,7 @@ public abstract class TeaseScriptBase {
         };
     }
 
-    private void waitToStartScriptFunction(
-            final ScriptFunction scriptFunction) {
+    private void waitToStartScriptFunction(final ScriptFunction scriptFunction) {
         // Wait for previous message to complete
         if (scriptFunction == null) {
             // If we don't have a script function,
@@ -478,7 +467,6 @@ public abstract class TeaseScriptBase {
 
     private TextVariables allTextVariables() {
         return new TextVariables(TextVariables.Defaults,
-                teaseLib.getTextVariables(actor.getLocale()),
-                actor.textVariables);
+                teaseLib.getTextVariables(actor.getLocale()), actor.textVariables);
     }
 }

@@ -41,13 +41,33 @@ public class Items extends ArrayList<Item> {
         return available;
     }
 
+    /**
+     * Get a suitable item matching all attributes
+     * 
+     * @param attributes
+     * @return An item that matches all attributes, or the first available, or
+     *         {@link Item#NotAvailable}.
+     */
     public <S> Item get(S... attributes) {
-        for (Item item : this) {
-            if (item.is(attributes)) {
-                return item;
+        if (attributes.length == 0) {
+            return firstAvailableOrNotAvailable();
+        } else {
+            for (Item item : this) {
+                if (item.is(attributes)) {
+                    return item;
+                }
             }
+            return Item.NotAvailable;
         }
-        return Item.NotAvailable;
+    }
+
+    private Item firstAvailableOrNotAvailable() {
+        Items available = available();
+        if (available.size() > 0) {
+            return available.get(0);
+        } else {
+            return Item.NotAvailable;
+        }
     }
 
     public <S> Items all(S... attributes) {
@@ -64,4 +84,16 @@ public class Items extends ArrayList<Item> {
         }
     }
 
+    public <S> Item like(S... attributes) {
+        if (attributes.length == 0) {
+            return Item.NotAvailable;
+        } else {
+            for (Item item : this) {
+                if (item.isAvailable() && item.is(attributes)) {
+                    return item;
+                }
+            }
+            return firstAvailableOrNotAvailable();
+        }
+    }
 }

@@ -5,6 +5,7 @@ package teaselib.util;
 
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import teaselib.State;
@@ -71,9 +72,45 @@ public class ItemImpl implements Item {
     @Override
     public <S> boolean is(S... attributes) {
         if (attributes.length > 0) {
-            return this.attributes.containsAll(Arrays.asList(attributes));
+            if (stateContainsAll(attributes)) {
+                return true;
+            } else {
+                List<S> attributeList = Arrays.asList(attributes);
+                return this.attributes.containsAll(attributeList);
+            }
         } else
             return false;
+    }
+
+    private boolean stateContainsAll(Object... attributes) {
+        if (!applied())
+            return false;
+        for (Object object : attributes) {
+            return applied() && state().is(object);
+        }
+        return true;
+    }
+
+    public Set<Enum<?>> peers() {
+        return new HashSet<Enum<?>>(Arrays.asList(peers));
+    }
+
+    @Override
+    public boolean canApply() {
+        for (Enum<?> item : peers) {
+            if (teaseLib.state(item).applied()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean applied() {
+        if (itemIsCompatibleToStateImplementation()) {
+            return state().applied();
+        } else {
+            return false;
+        }
     }
 
     @Override
@@ -106,11 +143,15 @@ public class ItemImpl implements Item {
     }
 
     private State state() {
-        if (item instanceof Enum<?>) {
+        if (itemIsCompatibleToStateImplementation()) {
             return teaseLib.state((Enum<?>) item);
         } else {
             throw new UnsupportedOperationException("State does only support enums");
         }
+    }
+
+    private boolean itemIsCompatibleToStateImplementation() {
+        return item instanceof Enum<?>;
     }
 
 }

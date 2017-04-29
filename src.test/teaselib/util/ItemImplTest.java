@@ -57,7 +57,7 @@ public class ItemImplTest {
     }
 
     @Test
-    public void testIsEmptyArg() throws Exception {
+    public void testIs_EmptyArg() throws Exception {
         TeaseScript script = TestScript.getOne();
         TeaseLib.PersistentBoolean foobar = script.teaseLib.new PersistentBoolean(
                 TeaseLib.DefaultDomain, "Foo", "Bar");
@@ -91,31 +91,30 @@ public class ItemImplTest {
         TeaseScript script = TestScript.getOne();
 
         assertFalse(script.state(Toys.Buttplug).applied());
-        assertFalse(script.state(Toys.Buttplug).peers().contains(Toys.Anal.Beads));
+        assertFalse(script.state(Toys.Buttplug).is(Toys.Anal.Beads));
 
         script.items(Toys.Buttplug).get(Toys.Anal.Beads).apply();
 
         assertTrue(script.state(Toys.Buttplug).applied());
-        assertTrue(script.state(Toys.Buttplug).peers().contains(Toys.Anal.Beads));
-        assertTrue(script.state(Toys.Buttplug).peers().contains(Features.Anal));
+        assertTrue(script.state(Toys.Buttplug).is(Toys.Anal.Beads));
+        assertTrue(script.state(Toys.Buttplug).is(Features.Anal));
 
         assertTrue(script.state(Body.SomethingInButt).applied());
-        assertTrue(script.state(Body.SomethingInButt).peers().contains(Toys.Buttplug));
+        assertTrue(script.state(Body.SomethingInButt).is(Toys.Buttplug));
 
-        assertFalse(script.state(Body.SomethingInButt).peers().contains(Toys.Anal.Beads));
-        assertFalse(script.state(Body.SomethingInButt).peers().contains(Features.Anal));
+        assertFalse(script.state(Body.SomethingInButt).is(Toys.Anal.Beads));
+        assertFalse(script.state(Body.SomethingInButt).is(Features.Anal));
 
         // This is how to comment a certain item in a certain body location
-        if (script.state(Body.SomethingInButt).peers().contains(Toys.Buttplug)) {
+        if (script.state(Body.SomethingInButt).is(Toys.Buttplug)) {
             if (script.item(Toys.Buttplug).is(Toys.Anal.Beads)) {
-                say("You're wearing anal beads",
-                        script.state(Toys.Buttplug).peers().contains(Toys.Anal.Beads));
+                say("You're wearing anal beads", script.state(Toys.Buttplug).is(Toys.Anal.Beads));
             }
         }
     }
 
     @Test
-    public void testToAutomaticDefaultsAndAttributesPlusCustomPeers() throws Exception {
+    public void testToAppliesDefaultsAndAttributesPlusCustomPeers() {
         TeaseScript script = TestScript.getOne();
 
         assertFalse(script.state(Toys.Wrist_Restraints).applied());
@@ -124,24 +123,42 @@ public class ItemImplTest {
         script.items(Toys.Wrist_Restraints).get(Material.Leather).to(Body.WristsTiedBehindBack);
 
         assertTrue(script.state(Toys.Wrist_Restraints).applied());
-        assertTrue(script.state(Toys.Wrist_Restraints).peers().contains(Material.Leather));
+        assertTrue(script.state(Toys.Wrist_Restraints).is(Material.Leather));
 
         assertTrue(script.state(Body.WristsTied).applied());
         assertTrue(script.state(Body.WristsTiedBehindBack).applied());
 
-        assertTrue(script.state(Body.WristsTied).peers().contains(Toys.Wrist_Restraints));
-        assertTrue(script.state(Body.WristsTiedBehindBack).peers().contains(Toys.Wrist_Restraints));
+        assertTrue(script.state(Body.WristsTied).is(Toys.Wrist_Restraints));
+        assertTrue(script.state(Body.WristsTiedBehindBack).is(Toys.Wrist_Restraints));
 
         // This is how to comment a certain item in a certain body location
-        if (script.state(Body.WristsTied).peers().contains(Toys.Wrist_Restraints)) {
+        if (script.state(Body.WristsTied).is(Toys.Wrist_Restraints)) {
             if (script.item(Toys.Wrist_Restraints).is(Material.Leather)) {
                 say("You're wearing leather restraints",
-                        script.state(Toys.Wrist_Restraints).peers().contains(Material.Leather));
+                        script.state(Toys.Wrist_Restraints).is(Material.Leather));
             }
         }
     }
 
     private static void say(String message, boolean assertion) {
         assertTrue(message, assertion);
+    }
+
+    @Test
+    public void testCanApply() throws Exception {
+        TeaseScript script = TestScript.getOne();
+
+        assertFalse(script.state(Toys.Wrist_Restraints).applied());
+
+        Item wristRestraints = script.items(Toys.Wrist_Restraints).get(Material.Leather);
+
+        assertTrue(wristRestraints.canApply());
+        wristRestraints.apply();
+        assertFalse(wristRestraints.canApply());
+
+        // Bend the rules, for when we have custom toys, scripts should also be
+        // flexible
+        wristRestraints.apply();
+        assertFalse(wristRestraints.canApply());
     }
 }

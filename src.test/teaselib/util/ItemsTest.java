@@ -7,6 +7,7 @@ import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 
+import teaselib.Body;
 import teaselib.Material;
 import teaselib.TeaseScript;
 import teaselib.Toys;
@@ -66,4 +67,45 @@ public class ItemsTest {
         assertEquals(gags.get(Toys.Gags.Ring_Gag), ringGag);
     }
 
+    @Test
+    public void testGet() throws Exception {
+        TeaseScript script = TestScript.getOne();
+        Items collars = script.items(Toys.Collar);
+
+        assertEquals(Item.NotAvailable, collars.get());
+
+        Item dogCollar = collars.get(Toys.Collars.Dog_Collar);
+        assertTrue(dogCollar.is(Toys.Collars.Dog_Collar));
+
+        Item postureCollar = collars.get(Toys.Collars.Posture_Collar);
+        postureCollar.setAvailable(true);
+
+        assertEquals(postureCollar, collars.get());
+        assertEquals(dogCollar, collars.get(Toys.Collars.Dog_Collar));
+
+        assertFalse(collars.get(Toys.Collars.Dog_Collar).isAvailable());
+        assertTrue(collars.get(Toys.Collars.Posture_Collar).isAvailable());
+
+        assertEquals(postureCollar, collars.get());
+        assertTrue(collars.like(Toys.Collars.Posture_Collar).isAvailable());
+
+        assertNotEquals(dogCollar, collars.like(Toys.Collars.Dog_Collar));
+        assertEquals(postureCollar, collars.like(Toys.Collars.Posture_Collar));
+    }
+
+    @Test
+    public void testApplyToDefault() {
+        TeaseScript script = TestScript.getOne();
+
+        Item collar = script.item(Toys.Collar);
+        assertFalse(collar.isAvailable());
+
+        assertTrue(collar.is(Toys.Collar));
+        assertFalse(collar.is(Body.AroundNeck));
+
+        collar.apply();
+
+        assertTrue(script.state(Body.AroundNeck).applied());
+        assertTrue(collar.is(Body.AroundNeck));
+    }
 }

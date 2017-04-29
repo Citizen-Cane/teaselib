@@ -10,4 +10,6 @@ public interface UserItems {
     Map<Object, List<Item>> userItems = new HashMap<Object, List<Item>>();
 
     List<Item> get(TeaseLib teaseLib, String domain, Object item);
+
+    Enum<?>[] defaults(Object item);
 }

@@ -17,6 +17,11 @@ public interface Item {
         }
 
         @Override
+        public boolean canApply() {
+            return false;
+        }
+
+        @Override
         public <S extends Enum<?>> State.Options to(S... items) {
             throw new UnsupportedOperationException();
         }
@@ -60,4 +65,6 @@ public interface Item {
     State.Options apply();
 
     State remove();
+
+    boolean canApply();
 }

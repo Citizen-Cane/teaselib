@@ -18,7 +18,7 @@ public enum Body {
     SomethingOnBalls,
     SomethingAroundWaist,
 
-    Collared,
+    AroundNeck,
     Harnessed,
     Blindfolded,
     Tethered,

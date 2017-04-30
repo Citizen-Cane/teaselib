@@ -4,12 +4,37 @@ const char* const KeyReleaseService::Name = "KeyRelease";
 const char* const KeyReleaseService::Description = "Servo-based key release mechanism";
 const char* const KeyReleaseService::Version = "0.01";
 
+/* Assembly:
+ * From the Circuits folder, you'l need the following Fritzing sketches:
+ * - a servo interface
+ * - Vin Voltage Divider
+ * Assemble all on bread- or perfboard. Both components match nicely together.
+ * The source code matches the sketches, so you may have to adjust
+ * - the servo angles
+ * - the voltage threshold for each charge level (full, medium, low, empty)
+ *
+ * If you opt to use the passive sevo interface, the device has a slightly
+ * higher power consumption, but is otherwsise fully functional.
+ *
+ * If charge level control, the device automatically releases all keys
+ * when the battery level drops to "Low", and refuses to arm in order to protect your life.
+ *
+ * Without charge control, the device safety level is degraded from "HardwareFailure"
+ * to "PowerFailure", since it is then your responsibility to recharge or replace the batteries.
+ * - you have an increased likelihood that the device fails to release the keys.
+ *
+ * With charge control, the device can still fail to release the keys, plus you
+ * might not be able to get the keys, but you can install a much more serious
+ * emergency release because the odds you'll have to use it are much unlikely.
+ *
+ */
+
 /* The default setup:
  - two servos, one for short term, one for long term self-bondage or restraint
  - servos open at an angle of 120°
-   - 180° should be possible according to the Photon docs, but servos seem to be to cheap to work that way
+   - 180° should be possible according to the Photon docs, but my servos seem to be to cheap to work that way
    - anyway 90° to 120° rotation is sufficient for holding and releasing the key
- - on startup the servos will turn down immediately releae any keys
+ - on startup the servos will turn down immediately release any keys
  - they stay down until a hook is "armed", then the servo goes up and a key can be attached
 */
 
@@ -31,7 +56,7 @@ const char* const KeyReleaseService::Version = "0.01";
 
    Experimental (non-working, can be activated in source code):
    - To save battery charge servos are attached only for the time it takes to move the shaft to the requested angle.
-   - This also solves constant servo readjusting at low battery charge:
+   - This also resolves constant servo readjusting at low battery charge:
      - because the voltage drops when moving the servo, the PWM signal is not properly recognized by the servo anymore,
        resulting in constant readjusting, which drains the battery even more
 */
@@ -48,7 +73,7 @@ const char* const KeyReleaseService::Version = "0.01";
   - Deep sleep is supported if a single release is pending and
   - the requested sleep time is greater than or equal to the relase duration
   Otherwise the device enters light sleep until the next release.
-  TODO light sleep to all but last release, then deep sleep to last.
+  TODO light sleep to all but last release, then switch to deep sleep until the last release is due.
 */
 
 const int KeyReleaseService::DefaultSetupSize = 2;

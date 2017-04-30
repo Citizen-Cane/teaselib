@@ -1,12 +1,13 @@
 package teaselib.core;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 import org.junit.Test;
 
 import teaselib.Message;
 import teaselib.Message.Parts;
 import teaselib.Message.Type;
+import teaselib.Mood;
 import teaselib.test.TestScript;
 
 public class TeaseScriptBaseTest {
@@ -48,10 +49,8 @@ public class TeaseScriptBaseTest {
 
         assertEquals(Type.Image, parts.get(n).type);
         assertEquals("foobar.jpg", parts.get(n++).value);
-        assertEquals(Type.Mood, parts.get(n++).type);
         assertEquals(Type.Text, parts.get(n++).type);
 
-        assertEquals(Type.Mood, parts.get(n++).type);
         assertEquals(Type.Image, parts.get(n++).type);
         assertEquals(Type.Text, parts.get(n++).type);
 
@@ -61,6 +60,73 @@ public class TeaseScriptBaseTest {
 
         assertEquals(Type.Image, parts.get(n).type);
         assertEquals("bar.jpg", parts.get(n++).value);
+
+        assertEquals(parts.size(), n);
+    }
+
+    @Test
+    public void testInjectionOfMood() {
+        TestScript script = TestScript.getOne(getClass());
+
+        script.setMood(Mood.Friendly);
+
+        Message message = new Message(script.actor);
+        message.add(Mood.Harsh);
+        message.add("I'm harsh.");
+
+        message.add("foobar.jpg");
+        message.add("I'm friendly.");
+
+        message.add(Message.ActorImage);
+        message.add(Mood.Strict);
+        message.add("I'm strict.");
+
+        message.add("foo.jpg");
+        message.add(Type.Delay, "2");
+
+        message.add("bar.jpg");
+        message.add("I'm friendly again.");
+
+        message.add("I'm still friendly.");
+
+        message.add(Mood.Happy);
+        message.add("I'm happy.");
+
+        Message parsed = script.injectImagesAndExpandTextVariables(message);
+        Parts parts = parsed.getParts();
+        int n = 0;
+
+        assertEquals(Type.Mood, parts.get(n).type);
+        assertEquals(Mood.Harsh, parts.get(n++).value);
+        assertEquals(Type.Image, parts.get(n).type);
+        assertEquals(Message.NoImage, parts.get(n++).value);
+        assertEquals(Type.Text, parts.get(n++).type);
+
+        assertEquals(Type.Mood, parts.get(n).type);
+        assertEquals(Mood.Friendly, parts.get(n++).value);
+        assertEquals(Type.Image, parts.get(n).type);
+        assertEquals("foobar.jpg", parts.get(n++).value);
+        assertEquals(Type.Text, parts.get(n++).type);
+
+        assertEquals(Type.Mood, parts.get(n).type);
+        assertEquals(Mood.Strict, parts.get(n++).value);
+        assertEquals(Type.Image, parts.get(n++).type);
+        assertEquals(Type.Text, parts.get(n++).type);
+
+        assertEquals(Type.Mood, parts.get(n).type);
+        assertEquals(Mood.Friendly, parts.get(n++).value);
+        assertEquals(Type.Image, parts.get(n).type);
+        assertEquals("foo.jpg", parts.get(n++).value);
+        assertEquals(Type.Delay, parts.get(n++).type);
+
+        assertEquals(Type.Image, parts.get(n++).type);
+        assertEquals(Type.Text, parts.get(n++).type);
+
+        assertEquals(Type.Text, parts.get(n++).type);
+
+        assertEquals(Type.Mood, parts.get(n).type);
+        assertEquals(Mood.Happy, parts.get(n++).value);
+        assertEquals(Type.Text, parts.get(n++).type);
 
         assertEquals(parts.size(), n);
     }

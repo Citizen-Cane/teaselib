@@ -25,7 +25,7 @@ public class StateTests {
         somethingOnNipples.apply(Toys.Nipple_clamps);
         assertTrue(somethingOnNipples.applied());
         assertTrue(somethingOnNipples.expired());
-        assertTrue(somethingOnNipples.peers().contains(Toys.Nipple_clamps));
+        assertTrue(somethingOnNipples.is(Toys.Nipple_clamps));
 
         somethingOnNipples.remove();
         assertTrue(somethingOnNipples.expired());

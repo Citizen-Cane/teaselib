@@ -52,19 +52,16 @@ public class EnumStateMaps {
         private final PersistentString durationStorage;
         private final PersistentString peerStorage;
 
-        private Duration duration = teaseLib.new DurationImpl(0, REMOVED,
-                TimeUnit.SECONDS);
+        private Duration duration = teaseLib.new DurationImpl(0, REMOVED, TimeUnit.SECONDS);
         private final Set<Enum<?>> peers = new HashSet<Enum<?>>();
 
         public EnumState(T item) {
             super();
             this.item = item;
-            this.durationStorage = teaseLib.new PersistentString(
-                    TeaseLib.DefaultDomain, namespaceOf(item),
-                    nameOf(item) + "." + "duration");
-            this.peerStorage = teaseLib.new PersistentString(
-                    TeaseLib.DefaultDomain, namespaceOf(item),
-                    nameOf(item) + "." + "peers");
+            this.durationStorage = teaseLib.new PersistentString(TeaseLib.DefaultDomain,
+                    namespaceOf(item), nameOf(item) + "." + "duration");
+            this.peerStorage = teaseLib.new PersistentString(TeaseLib.DefaultDomain,
+                    namespaceOf(item), nameOf(item) + "." + "peers");
             restoreDuration();
             restorePeers();
         }
@@ -74,8 +71,7 @@ public class EnumStateMaps {
                 String[] argv = durationStorage.value().split(" ");
                 long start = Long.parseLong(argv[0]);
                 long limit = string2limit(argv[1]);
-                this.duration = teaseLib.new DurationImpl(start, limit,
-                        TimeUnit.SECONDS);
+                this.duration = teaseLib.new DurationImpl(start, limit, TimeUnit.SECONDS);
             }
         }
 
@@ -175,6 +171,11 @@ public class EnumStateMaps {
         }
 
         @Override
+        public boolean is(Object object) {
+            return peers.contains(object);
+        }
+
+        @Override
         public State.Persistence over(long limit, TimeUnit unit) {
             return over(teaseLib.new DurationImpl(limit, unit));
         }
@@ -268,9 +269,8 @@ public class EnumStateMaps {
         @Override
         public String toString() {
             long limit = duration.limit(TimeUnit.SECONDS);
-            return item.name() + " " + duration.start(TimeUnit.SECONDS)
-                    + (limit > 0 ? "+" : " ") + limit2String(limit) + " "
-                    + peers;
+            return item.name() + " " + duration.start(TimeUnit.SECONDS) + (limit > 0 ? "+" : " ")
+                    + limit2String(limit) + " " + peers;
         }
     }
 

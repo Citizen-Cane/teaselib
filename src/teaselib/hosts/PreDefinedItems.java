@@ -1,5 +1,6 @@
 package teaselib.hosts;
 
+import teaselib.Body;
 import teaselib.Features;
 import teaselib.HouseHold;
 import teaselib.Material;
@@ -85,7 +86,7 @@ public class PreDefinedItems extends AbstractUserItems {
 
         } else if (item == Toys.Collar) {
             Item dogCollar = item(teaseLib, item, "Toys", "dog_collar", "A dog-collar",
-                    Toys.Collars.Maid_Collar, Material.Leather);
+                    Toys.Collars.Dog_Collar, Material.Leather);
             Item maidCollar = item(teaseLib, item, "Toys", "maid_collar", "A maid-collar",
                     Toys.Collars.Maid_Collar, Material.Leather);
             Item postureCollar = item(teaseLib, item, "Toys", "posture_collar", "Posture collar",
@@ -99,7 +100,8 @@ public class PreDefinedItems extends AbstractUserItems {
             Item chastityCage = item(teaseLib, item, "Toys", "chastity_cage", "Chastity cage",
                     Material.Metal, Features.Lockable);
             Item chastityBelt = item(teaseLib, item, "Toys", "chastity_belt", "Chastity belt",
-                    Material.Metal, Features.Lockable);
+                    array(defaults(item), Body.SomethingOnBalls), Material.Metal,
+                    Features.Lockable);
             Item gatesOfHell = item(teaseLib, item, "Toys", "gates_of_hell", "Gates of Hell",
                     Material.Leather, Material.Metal);
 

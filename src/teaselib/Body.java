@@ -10,13 +10,15 @@ package teaselib;
  */
 public enum Body {
     SomethingOnNipples,
+    SomethingInVagina,
+    SomethingOnClit,
     SomethingInButt,
     SomethingInMouth,
     SomethingOnPenis,
     SomethingOnBalls,
     SomethingAroundWaist,
 
-    Collared,
+    AroundNeck,
     Harnessed,
     Blindfolded,
     Tethered,

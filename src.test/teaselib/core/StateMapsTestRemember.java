@@ -11,12 +11,12 @@ import teaselib.Body;
 import teaselib.Toys;
 import teaselib.test.TestScript;
 
-public class EnumStateMapsTestRemember extends EnumStateMaps {
+public class StateMapsTestRemember extends StateMaps {
     enum Locks {
         Chastity_Device_Lock
     }
 
-    public EnumStateMapsTestRemember() {
+    public StateMapsTestRemember() {
         super(TestScript.getOne().teaseLib);
         teaseLib.freezeTime();
     }

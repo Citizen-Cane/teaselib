@@ -22,7 +22,7 @@ import teaselib.hosts.DummyPersistence;
 import teaselib.test.TestScript;
 
 @RunWith(Parameterized.class)
-public class EnumStateMapsPersistenceTest extends EnumStateMaps {
+public class StateMapsPersistenceTest extends StateMaps {
     enum Locks {
         Chastity_Device_Lock
     }
@@ -50,7 +50,7 @@ public class EnumStateMapsPersistenceTest extends EnumStateMaps {
                 { TestParameter.TestPersistence } });
     }
 
-    public EnumStateMapsPersistenceTest(TestParameter remember) {
+    public StateMapsPersistenceTest(TestParameter remember) {
         super(script.teaseLib);
         persistence = script.persistence;
         rememberState = remember;

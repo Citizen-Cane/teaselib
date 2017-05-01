@@ -14,13 +14,13 @@ import teaselib.State;
 import teaselib.Toys;
 import teaselib.test.TestScript;
 
-public class EnumStateMapsApplyTest extends EnumStateMaps {
+public class StateMapsApplyTest extends StateMaps {
 
     enum Locks {
         Chastity_Device_Lock
     }
 
-    public EnumStateMapsApplyTest() {
+    public StateMapsApplyTest() {
         super(TestScript.getOne().teaseLib);
     }
 

@@ -13,12 +13,12 @@ import teaselib.Duration;
 import teaselib.Toys;
 import teaselib.test.TestScript;
 
-public class EnumStateMapsDurationTest extends EnumStateMaps {
+public class StateMapsDurationTest extends StateMaps {
     enum Locks {
         Chastity_Device_Lock
     }
 
-    public EnumStateMapsDurationTest() {
+    public StateMapsDurationTest() {
         super(TestScript.getOne().teaseLib);
         teaseLib.freezeTime();
     }

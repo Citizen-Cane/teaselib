@@ -46,7 +46,7 @@ public class TeaseLib {
     public final Host host;
     private final Persistence persistence;
     public final TeaseLibLogger transcript;
-    private final EnumStateMaps stateMaps = new EnumStateMaps(this);
+    private final StateMaps stateMaps = new StateMaps(this);
     final MediaRendererQueue renderQueue = new MediaRendererQueue();
 
     private long frozenTime = Long.MIN_VALUE;

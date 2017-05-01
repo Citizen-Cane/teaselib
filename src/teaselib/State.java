@@ -9,9 +9,9 @@ public interface State {
 
     public static final long INDEFINITELY = Long.MAX_VALUE;
 
-    <S extends Enum<?>> State.Options apply(S... items);
+    <S extends Object> State.Options apply(S... items);
 
-    Set<Enum<?>> peers();
+    Set<Object> peers();
 
     boolean is(Object object);
 
@@ -21,9 +21,9 @@ public interface State {
 
     Duration duration();
 
-    <S extends Enum<?>> State remove();
+    <S extends Object> State remove();
 
-    <S extends Enum<?>> State remove(S items);
+    <S extends Object> State remove(S items);
 
     interface Options extends State.Persistence {
         Persistence over(long duration, TimeUnit unit);

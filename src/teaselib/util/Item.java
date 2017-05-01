@@ -22,7 +22,7 @@ public interface Item {
         }
 
         @Override
-        public <S extends Enum<?>> State.Options to(S... items) {
+        public <S extends Object> State.Options to(S... items) {
             throw new UnsupportedOperationException();
         }
 
@@ -60,7 +60,7 @@ public interface Item {
 
     <S> boolean is(S... attributes);
 
-    <S extends Enum<?>> State.Options to(S... items);
+    <S extends Object> State.Options to(S... items);
 
     State.Options apply();
 

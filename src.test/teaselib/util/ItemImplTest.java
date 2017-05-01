@@ -45,7 +45,7 @@ public class ItemImplTest {
                 TeaseLib.DefaultDomain, "Foo", "Bar");
         Foo[] peers = new Foo[] {};
         Item item = new ItemImpl(script.teaseLib, Foo.Bar, foobar, "Foo Bar", peers,
-                new Enum<?>[] { Size.Large, Length.Long });
+                new Object[] { Size.Large, Length.Long });
 
         assertTrue(item.is(Size.Large));
         assertFalse(item.is(Size.Small));
@@ -63,7 +63,7 @@ public class ItemImplTest {
                 TeaseLib.DefaultDomain, "Foo", "Bar");
         Foo[] peers = new Foo[] {};
         Item item = new ItemImpl(script.teaseLib, Foo.Bar, foobar, "Foo Bar", peers,
-                new Enum<?>[] { Size.Large, Length.Long });
+                new Object[] { Size.Large, Length.Long });
 
         assertFalse(item.is());
     }
@@ -75,15 +75,15 @@ public class ItemImplTest {
                 TeaseLib.DefaultDomain, "Foo", "Bar");
         Foo[] peers = new Foo[] {};
         Item item = new ItemImpl(script.teaseLib, Foo.Bar, foobar, "Foo Bar", peers,
-                new Enum<?>[] { Size.Large, Length.Long });
+                new Object[] { Size.Large, Length.Long });
 
         assertTrue(item.is(new Size[] { Size.Large }));
         assertFalse(item.is(new Size[] { Size.Small }));
 
-        assertTrue(item.is(new Enum<?>[] { Size.Large, Length.Long }));
-        assertFalse(item.is(new Enum<?>[] { Size.Large, Length.Short }));
+        assertTrue(item.is(new Object[] { Size.Large, Length.Long }));
+        assertFalse(item.is(new Object[] { Size.Large, Length.Short }));
 
-        assertFalse(item.is(new Enum<?>[] { Size.Small, Length.Short }));
+        assertFalse(item.is(new Object[] { Size.Small, Length.Short }));
     }
 
     @Test

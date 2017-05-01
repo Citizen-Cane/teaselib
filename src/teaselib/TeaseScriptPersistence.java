@@ -34,11 +34,11 @@ public abstract class TeaseScriptPersistence extends TeaseScriptBase {
      * @param values
      * @return A list of items whose names are based on the enumeration members
      */
-    public <T extends Enum<?>> Items items(T... values) {
+    public <T extends Object> Items items(T... values) {
         return items(TeaseLib.DefaultDomain, values);
     }
 
-    public <T extends Enum<?>> Items items(String domain, T... values) {
+    public <T extends Object> Items items(String domain, T... values) {
         if (values.length > 0) {
             return teaseLib.items(domain, values);
         } else {
@@ -54,19 +54,19 @@ public abstract class TeaseScriptPersistence extends TeaseScriptBase {
      *            in the namespace of the script under its simple class name.
      * @return The item of the enumeration member
      */
-    public <T extends Enum<?>> Item item(T value) {
+    public <T extends Object> Item item(T value) {
         return item(TeaseLib.DefaultDomain, value);
     }
 
-    public <T extends Enum<?>> Item item(String domain, T value) {
+    public <T extends Object> Item item(String domain, T value) {
         return teaseLib.item(domain, value);
     }
 
-    public <T extends Enum<T>> Items items(T[]... values) {
+    public <T extends Object> Items items(T[]... values) {
         return items(TeaseLib.DefaultDomain, values);
     }
 
-    public <T extends Enum<T>> Items items(String domain, T[]... values) {
+    public <T extends Object> Items items(String domain, T[]... values) {
         Items items = new Items();
         for (T[] t : values) {
             items.addAll(items(domain, t));
@@ -132,7 +132,7 @@ public abstract class TeaseScriptPersistence extends TeaseScriptBase {
         return teaseLib.new PersistentSequence<T>(TeaseLib.DefaultDomain, namespace, name, values);
     }
 
-    public <T extends Enum<T>> State state(T item) {
+    public <T extends Object> State state(T item) {
         return teaseLib.state(item);
     }
 }

@@ -748,7 +748,7 @@ public class TeaseLib {
      *            The enumeration member to return the state for
      * @return The item state.
      */
-    public <T extends Enum<?>> State state(T item) {
+    public <T extends Object> State state(T item) {
         return stateMaps.state(item);
     }
 
@@ -760,7 +760,7 @@ public class TeaseLib {
      * 
      * @return A list of items whose names are based on the enumeration members
      */
-    public <T extends Enum<?>> Items items(String domain, T... values) {
+    public <T extends Object> Items items(String domain, T... values) {
         Items items = new Items(values.length);
         for (T item : values) {
             items.addAll(persistence.getUserItems().get(this, domain, item));
@@ -779,7 +779,7 @@ public class TeaseLib {
      *         item in the definition, or {@link Item#NotAvailable}
      */
     @SuppressWarnings("unchecked")
-    public <T extends Enum<?>> Item item(String domain, T item) {
+    public <T extends Object> Item item(String domain, T item) {
         Items items = items(domain, item);
         Items available = items.available();
         if (!available.isEmpty()) {

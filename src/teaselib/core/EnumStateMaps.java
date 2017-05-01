@@ -14,7 +14,7 @@ import teaselib.core.util.Persist;
 
 public class EnumStateMaps {
 
-    final Map<Class<?>, EnumStateMap<? extends Enum<?>>> stateMaps = new HashMap<Class<?>, EnumStateMap<? extends Enum<?>>>();
+    final Map<Class<?>, EnumStateMap<? extends Object>> stateMaps = new HashMap<Class<?>, EnumStateMap<? extends Object>>();
     final TeaseLib teaseLib;
 
     public EnumStateMaps(TeaseLib teaseLib) {
@@ -25,7 +25,7 @@ public class EnumStateMaps {
         stateMaps.clear();
     }
 
-    public class EnumStateMap<T extends Enum<?>> {
+    public class EnumStateMap<T extends Object> {
         final Map<T, State> states = new HashMap<T, State>();
 
         public State get(T item) {
@@ -43,7 +43,7 @@ public class EnumStateMaps {
         }
     }
 
-    public class EnumState<T extends Enum<?>> implements State, State.Options {
+    public class EnumState<T extends Object> implements State, State.Options {
         private static final String TEMPORARY_KEYWORD = "TEMPORARY";
         private static final String REMOVED_KEYWORD = "REMOVED";
         private static final String INDEFINITELY_KEYWORD = "INDEFINITELY";
@@ -53,7 +53,7 @@ public class EnumStateMaps {
         private final PersistentString peerStorage;
 
         private Duration duration = teaseLib.new DurationImpl(0, REMOVED, TimeUnit.SECONDS);
-        private final Set<Enum<?>> peers = new HashSet<Enum<?>>();
+        private final Set<Object> peers = new HashSet<Object>();
 
         public EnumState(T item) {
             super();
@@ -94,7 +94,7 @@ public class EnumStateMaps {
                 String[] serializedPeers = peerStorage.value()
                         .split(Persist.PERSISTED_STRING_SEPARATOR);
                 for (String serializedPeer : serializedPeers) {
-                    peers.add((Enum<?>) Persist.from(serializedPeer));
+                    peers.add(Persist.from(serializedPeer));
                 }
             }
         }
@@ -123,7 +123,7 @@ public class EnumStateMaps {
 
         private void persistPeers() {
             StringBuilder s = new StringBuilder();
-            for (Enum<?> peer : peers) {
+            for (Object peer : peers) {
                 if (s.length() > 0) {
                     s.append(Persist.PERSISTED_STRING_SEPARATOR);
                 }
@@ -137,23 +137,29 @@ public class EnumStateMaps {
         }
 
         private String nameOf(T item) {
-            return item.name() + ".state";
+            String name;
+            if (item instanceof Enum<?>) {
+                name = ((Enum<?>) item).name();
+            } else {
+                name = item.toString();
+            }
+            return name + ".state";
         }
 
         @Override
-        public <S extends Enum<?>> State.Options apply(S... peer) {
+        public <S extends Object> State.Options apply(S... peer) {
             applyInternal(peer);
             return this;
         }
 
-        protected <P extends Enum<?>> EnumState<?> applyInternal(P... peer) {
+        protected <P extends Object> EnumState<?> applyInternal(P... peer) {
             if (!applied()) {
                 setTemporary();
             }
             for (P p : peer) {
                 if (!peers.contains(p)) {
                     peers.add(p);
-                    Enum<?>[] items = new Enum<?>[] { item };
+                    Object[] items = new Object[] { item };
                     EnumState<?> state = (EnumState<?>) state(p);
                     state.applyInternal(items);
                 }
@@ -166,7 +172,7 @@ public class EnumStateMaps {
         }
 
         @Override
-        public Set<Enum<?>> peers() {
+        public Set<Object> peers() {
             return Collections.unmodifiableSet(peers);
         }
 
@@ -194,7 +200,7 @@ public class EnumStateMaps {
         @Override
         public State remember() {
             rememberMe();
-            for (Enum<?> s : peers) {
+            for (Object s : peers) {
                 EnumState<?> peer = (EnumState<?>) state(s);
                 peer.rememberMe();
             }
@@ -216,7 +222,7 @@ public class EnumStateMaps {
             if (duration.limit(TimeUnit.SECONDS) > TEMPORARY) {
                 return isExpired();
             } else {
-                for (Enum<?> peer : peers) {
+                for (Object peer : peers) {
                     EnumState<?> peerState = (EnumState<?>) state(peer);
                     if (!peerState.isExpired()) {
                         return false;
@@ -232,8 +238,8 @@ public class EnumStateMaps {
 
         @Override
         public EnumState<T> remove() {
-            Enum<?>[] copyOfReasons = new Enum<?>[peers.size()];
-            for (Enum<?> peer : peers.toArray(copyOfReasons)) {
+            Object[] copyOfPeers = new Object[peers.size()];
+            for (Object peer : peers.toArray(copyOfPeers)) {
                 state(peer).remove(item);
             }
             peers.clear();
@@ -244,7 +250,7 @@ public class EnumStateMaps {
         }
 
         @Override
-        public <P extends Enum<?>> State remove(P peer) {
+        public <P extends Object> State remove(P peer) {
             if (peers.contains(peer)) {
                 peers.remove(peer);
                 state(peer).remove(item);
@@ -269,7 +275,7 @@ public class EnumStateMaps {
         @Override
         public String toString() {
             long limit = duration.limit(TimeUnit.SECONDS);
-            return item.name() + " " + duration.start(TimeUnit.SECONDS) + (limit > 0 ? "+" : " ")
+            return nameOf(item) + " " + duration.start(TimeUnit.SECONDS) + (limit > 0 ? "+" : " ")
                     + limit2String(limit) + " " + peers;
         }
     }
@@ -282,7 +288,7 @@ public class EnumStateMaps {
      * @return The item state.
      */
     @SuppressWarnings("unchecked")
-    public <T extends Enum<?>> State state(T item) {
+    public <T extends Object> State state(T item) {
         return state((Class<T>) item.getClass()).get(item);
     }
 
@@ -296,7 +302,7 @@ public class EnumStateMaps {
      * @return The state of all members in {@code values}.
      */
     @SuppressWarnings("unchecked")
-    <T extends Enum<?>> EnumStateMap<T> state(T[] values) {
+    <T extends Object> EnumStateMap<T> state(T[] values) {
         return state((Class<T>) values[0].getClass());
     }
 
@@ -308,7 +314,7 @@ public class EnumStateMaps {
      * @return The state of all members of the enumeration.
      */
     @SuppressWarnings("unchecked")
-    private <T extends Enum<?>> EnumStateMap<T> state(Class<T> enumClass) {
+    private <T extends Object> EnumStateMap<T> state(Class<T> enumClass) {
         final EnumStateMap<T> stateMap;
         if (stateMaps.containsKey(enumClass)) {
             stateMap = (EnumStateMap<T>) stateMaps.get(enumClass);

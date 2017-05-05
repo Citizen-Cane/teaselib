@@ -25,7 +25,7 @@ public abstract class AbstractUserItems implements UserItems {
         } else {
             name = item.toString();
         }
-        return new Item[] { new ItemImpl(teaseLib, item,
+        return new Item[] { new ItemImpl(teaseLib, domain, item,
                 teaseLib.new PersistentBoolean(domain, item.getClass().getName(), name)) };
     }
 
@@ -67,8 +67,9 @@ public abstract class AbstractUserItems implements UserItems {
 
     protected Item item(TeaseLib teaseLib, String domain, String namespace, String name,
             String displayName, Object item, Enum<?>[] peers, Enum<?>... attributes) {
-        return new ItemImpl(teaseLib, item, teaseLib.new PersistentBoolean(domain, namespace, name),
-                displayName, peers, attributes);
+        return new ItemImpl(teaseLib, domain, item,
+                teaseLib.new PersistentBoolean(domain, namespace, name), displayName, peers,
+                attributes);
     }
 
     public <T> T[] array(T[] defaults, T... additional) {

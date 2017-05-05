@@ -748,8 +748,12 @@ public class TeaseLib {
      *            The enumeration member to return the state for
      * @return The item state.
      */
-    public <T extends Object> State state(T item) {
-        return stateMaps.state(item);
+    public <T extends Enum<?>> State state(String domain, T item) {
+        return stateMaps.state(domain, item);
+    }
+
+    public <T extends Object> State state(String domain, T item) {
+        return stateMaps.state(domain, item);
     }
 
     /**
@@ -760,10 +764,19 @@ public class TeaseLib {
      * 
      * @return A list of items whose names are based on the enumeration members
      */
-    public <T extends Object> Items items(String domain, T... values) {
+    public <T extends Enum<?>> Items items(String domain, T... values) {
         Items items = new Items(values.length);
         for (T item : values) {
             items.addAll(persistence.getUserItems().get(this, domain, item));
+        }
+        return items;
+    }
+
+    public <T extends Object> Items items(String domain, String namespace, T... values) {
+        Items items = new Items(values.length);
+        for (T item : values) {
+            items.add(new ItemImpl(this, domain, item,
+                    new PersistentBoolean(domain, namespace, item.toString())));
         }
         return items;
     }
@@ -779,7 +792,7 @@ public class TeaseLib {
      *         item in the definition, or {@link Item#NotAvailable}
      */
     @SuppressWarnings("unchecked")
-    public <T extends Object> Item item(String domain, T item) {
+    public <T extends Enum<?>> Item item(String domain, T item) {
         Items items = items(domain, item);
         Items available = items.available();
         if (!available.isEmpty()) {
@@ -796,12 +809,13 @@ public class TeaseLib {
      * 
      * @param namespace
      *            The namespace of the item.
-     * @param name
+     * @param item
      *            The value to get the item for.
      * @return The item that corresponds to the value.
      */
-    public Item item(String domain, String namespace, String name) {
-        return new ItemImpl(this, name, new PersistentBoolean(domain, namespace, name));
+    public <T extends Object> Item item(String domain, String namespace, T item) {
+        return new ItemImpl(this, domain, item,
+                new PersistentBoolean(domain, namespace, item.toString()));
     }
 
     public Actor getDominant(Voice.Gender gender, Locale locale) {

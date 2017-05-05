@@ -18,6 +18,7 @@ import teaselib.core.TeaseLib;
 public class ItemImpl implements Item {
 
     final TeaseLib teaseLib;
+    public final String domain;
     public final Object item;
     public final TeaseLib.PersistentBoolean value;
     public final String displayName;
@@ -28,18 +29,20 @@ public class ItemImpl implements Item {
         return item.toString().replace("_", " ");
     }
 
-    public ItemImpl(TeaseLib teaseLib, Object item, TeaseLib.PersistentBoolean value) {
-        this(teaseLib, item, value, createDisplayName(item));
+    public ItemImpl(TeaseLib teaseLib, String domain, Object item,
+            TeaseLib.PersistentBoolean value) {
+        this(teaseLib, domain, item, value, createDisplayName(item));
     }
 
-    public ItemImpl(TeaseLib teaseLib, Object item, TeaseLib.PersistentBoolean value,
+    public ItemImpl(TeaseLib teaseLib, String domain, Object item, TeaseLib.PersistentBoolean value,
             String displayName) {
-        this(teaseLib, item, value, displayName, new Object[] {}, new Object[] {});
+        this(teaseLib, domain, item, value, displayName, new Object[] {}, new Object[] {});
     }
 
-    public ItemImpl(TeaseLib teaseLib, Object item, TeaseLib.PersistentBoolean value,
+    public ItemImpl(TeaseLib teaseLib, String domain, Object item, TeaseLib.PersistentBoolean value,
             String displayName, Object[] peers, Object[] attributes) {
         this.teaseLib = teaseLib;
+        this.domain = domain;
         this.item = item;
         this.value = value;
         this.displayName = displayName;
@@ -86,7 +89,7 @@ public class ItemImpl implements Item {
         if (!applied())
             return false;
         for (Object object : attributes) {
-            return teaseLib.state(item).is(object);
+            return teaseLib.state(domain, item).is(object);
         }
         return true;
     }
@@ -98,7 +101,7 @@ public class ItemImpl implements Item {
     @Override
     public boolean canApply() {
         for (Object peer : peers) {
-            if (teaseLib.state(peer).applied()) {
+            if (teaseLib.state(domain, peer).applied()) {
                 return false;
             }
         }
@@ -106,7 +109,7 @@ public class ItemImpl implements Item {
     }
 
     private boolean applied() {
-        return teaseLib.state(item).applied();
+        return teaseLib.state(domain, item).applied();
     }
 
     @Override
@@ -116,7 +119,7 @@ public class ItemImpl implements Item {
 
     @Override
     public <S extends Object> State.Options to(S... items) {
-        State state = teaseLib.state(item);
+        State state = teaseLib.state(domain, item);
         state.apply(items);
         state.apply(peers);
         Object[] array = new Object[attributes.size()];
@@ -125,7 +128,7 @@ public class ItemImpl implements Item {
 
     @Override
     public State remove() {
-        return teaseLib.state(item).remove();
+        return teaseLib.state(domain, item).remove();
     }
 
 }

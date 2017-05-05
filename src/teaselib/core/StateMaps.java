@@ -11,30 +11,47 @@ import teaselib.Duration;
 import teaselib.State;
 import teaselib.core.TeaseLib.PersistentString;
 import teaselib.core.util.Persist;
+import teaselib.core.util.ReflectionUtils;
 
 public class StateMaps {
     final TeaseLib teaseLib;
-    final Map<Class<?>, StateMap<? extends Object>> stateMaps = new HashMap<Class<?>, StateMap<? extends Object>>();
+
+    class StateMapCache extends HashMap<String, StateMap<? extends Object>> {
+        private static final long serialVersionUID = 1L;
+    }
+
+    class Domains extends HashMap<String, StateMapCache> {
+        private static final long serialVersionUID = 1L;
+    }
+
+    final Domains cache = new Domains();
 
     public StateMaps(TeaseLib teaseLib) {
         this.teaseLib = teaseLib;
     }
 
     void clear() {
-        stateMaps.clear();
+        cache.clear();
     }
 
     public class StateMap<T extends Object> {
+        final String domain;
         final Map<T, State> states = new HashMap<T, State>();
+
+        public StateMap(String domain) {
+            this.domain = domain;
+        }
 
         public State get(T item) {
             if (states.containsKey(item)) {
                 return states.get(item);
             } else {
-                State state = new StateImpl<T>(item);
-                states.put(item, state);
-                return state;
+                return null;
             }
+        }
+
+        public void put(T item, State state) {
+            states.put(item, state);
         }
 
         void clear() {
@@ -42,11 +59,51 @@ public class StateMaps {
         }
     }
 
+    private static String namespaceOf(Object item) {
+        if (item instanceof Enum<?>) {
+            return ReflectionUtils.normalizeClassName(item.getClass());
+        } else if (item instanceof Class) {
+            return ReflectionUtils.normalizeClassName((Class<?>) item);
+        } else if (item instanceof String) {
+            String string = (String) item;
+            if (string.contains(".")) {
+                return string.substring(0, string.lastIndexOf("."));
+            } else {
+                return string;
+            }
+        } else {
+            return ReflectionUtils.classParentName(item.toString());
+        }
+    }
+
+    private static String nameOfState(Object item) {
+        String name = nameOf(item);
+        return name + ".state";
+    }
+
+    private static String nameOf(Object item) {
+        String name;
+        if (item instanceof Enum<?>) {
+            name = ((Enum<?>) item).name();
+        } else if (item instanceof String) {
+            String string = (String) item;
+            if (string.contains(".")) {
+                return string.substring(string.lastIndexOf(".") + 1);
+            } else {
+                return string;
+            }
+        } else {
+            name = item.toString();
+        }
+        return name;
+    }
+
     public class StateImpl<T extends Object> implements State, State.Options {
         private static final String TEMPORARY_KEYWORD = "TEMPORARY";
         private static final String REMOVED_KEYWORD = "REMOVED";
         private static final String INDEFINITELY_KEYWORD = "INDEFINITELY";
 
+        protected final String domain;
         private final T item;
         private final PersistentString durationStorage;
         private final PersistentString peerStorage;
@@ -54,13 +111,19 @@ public class StateMaps {
         private Duration duration = teaseLib.new DurationImpl(0, REMOVED, TimeUnit.SECONDS);
         private final Set<Object> peers = new HashSet<Object>();
 
-        public StateImpl(T item) {
+        @SuppressWarnings("unchecked")
+        protected StateImpl<T> state(Object item) {
+            return (StateImpl<T>) StateMaps.this.state(domain, item);
+        }
+
+        public StateImpl(String domain, T item) {
             super();
+            this.domain = domain;
             this.item = item;
             this.durationStorage = teaseLib.new PersistentString(TeaseLib.DefaultDomain,
-                    namespaceOf(item), nameOf(item) + "." + "duration");
+                    namespaceOf(item), nameOfState(item) + "." + "duration");
             this.peerStorage = teaseLib.new PersistentString(TeaseLib.DefaultDomain,
-                    namespaceOf(item), nameOf(item) + "." + "peers");
+                    namespaceOf(item), nameOfState(item) + "." + "peers");
             restoreDuration();
             restorePeers();
         }
@@ -131,27 +194,13 @@ public class StateMaps {
             peerStorage.set(s.toString());
         }
 
-        private String namespaceOf(T item) {
-            return item.getClass().getName();
-        }
-
-        private String nameOf(T item) {
-            String name;
-            if (item instanceof Enum<?>) {
-                name = ((Enum<?>) item).name();
-            } else {
-                name = item.toString();
-            }
-            return name + ".state";
-        }
-
         @Override
         public <S extends Object> State.Options apply(S... peer) {
             applyInternal(peer);
             return this;
         }
 
-        protected <P extends Object> StateImpl<?> applyInternal(P... peer) {
+        protected <P extends Object> State applyInternal(P... peer) {
             if (!applied()) {
                 setTemporary();
             }
@@ -159,7 +208,7 @@ public class StateMaps {
                 if (!peers.contains(p)) {
                     peers.add(p);
                     Object[] items = new Object[] { item };
-                    StateImpl<?> state = (StateImpl<?>) state(p);
+                    StateImpl<T> state = state(p);
                     state.applyInternal(items);
                 }
             }
@@ -200,7 +249,7 @@ public class StateMaps {
         public State remember() {
             rememberMe();
             for (Object s : peers) {
-                StateImpl<?> peer = (StateImpl<?>) state(s);
+                StateImpl<?> peer = state(s);
                 peer.rememberMe();
             }
             return this;
@@ -222,7 +271,7 @@ public class StateMaps {
                 return isExpired();
             } else {
                 for (Object peer : peers) {
-                    StateImpl<?> peerState = (StateImpl<?>) state(peer);
+                    StateImpl<T> peerState = state(peer);
                     if (!peerState.isExpired()) {
                         return false;
                     }
@@ -274,8 +323,8 @@ public class StateMaps {
         @Override
         public String toString() {
             long limit = duration.limit(TimeUnit.SECONDS);
-            return nameOf(item) + " " + duration.start(TimeUnit.SECONDS) + (limit > 0 ? "+" : " ")
-                    + limit2String(limit) + " " + peers;
+            return nameOfState(item) + " " + duration.start(TimeUnit.SECONDS)
+                    + (limit > 0 ? "+" : " ") + limit2String(limit) + " " + peers;
         }
     }
 
@@ -286,41 +335,37 @@ public class StateMaps {
      *            The enumeration member to return the state for
      * @return The item state.
      */
-    @SuppressWarnings("unchecked")
-    public <T extends Object> State state(T item) {
-        return state((Class<T>) item.getClass()).get(item);
+    public <T extends Object> State state(String domain, T item) {
+        StateMap<Object> stateMap = stateMap(domain, namespaceOf(item));
+        State state = stateMap.get(item);
+        if (state == null) {
+            state = new StateImpl<Object>(domain, item);
+            stateMap.put(item, state);
+        }
+        return state;
     }
 
-    /**
-     * Return the state for all or a subset of members of an enumeration.
-     * 
-     * @param values
-     *            The values to retrieve the state for. This should be
-     *            {@code Enum.values()}, as the state will only contain the
-     *            state items for the listed values.
-     * @return The state of all members in {@code values}.
-     */
     @SuppressWarnings("unchecked")
-    <T extends Object> StateMap<T> state(T[] values) {
-        return state((Class<T>) values[0].getClass());
-    }
-
-    /**
-     * Return the state for all members of an enumeration.
-     * 
-     * @param enumClass
-     *            The class of the enumeration.
-     * @return The state of all members of the enumeration.
-     */
-    @SuppressWarnings("unchecked")
-    private <T extends Object> StateMap<T> state(Class<T> enumClass) {
+    private <T> StateMap<T> stateMap(String domain, String namespace) {
+        StateMapCache domainCache = getDomainCache(domain);
         final StateMap<T> stateMap;
-        if (stateMaps.containsKey(enumClass)) {
-            stateMap = (StateMap<T>) stateMaps.get(enumClass);
+        if (domainCache.containsKey(namespace)) {
+            stateMap = (StateMap<T>) domainCache.get(namespace);
         } else {
-            stateMap = new StateMap<T>();
-            stateMaps.put(enumClass, stateMap);
+            stateMap = new StateMap<T>(domain);
+            domainCache.put(namespace, stateMap);
         }
         return stateMap;
+    }
+
+    private StateMapCache getDomainCache(String domain) {
+        final StateMapCache domainCache;
+        if (cache.containsKey(domain)) {
+            domainCache = cache.get(domain);
+        } else {
+            domainCache = new StateMapCache();
+            cache.put(domain, domainCache);
+        }
+        return domainCache;
     }
 }

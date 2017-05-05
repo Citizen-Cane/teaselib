@@ -23,7 +23,7 @@ public class ItemImplTest {
         TeaseScript script = TestScript.getOne();
         TeaseLib.PersistentBoolean foobar = script.teaseLib.new PersistentBoolean(
                 TeaseLib.DefaultDomain, "Foo", "Bar");
-        Item item = new ItemImpl(script.teaseLib, "test", foobar);
+        Item item = new ItemImpl(script.teaseLib, TeaseLib.DefaultDomain, "test", foobar);
 
         item.setAvailable(false);
         assertEquals(false, item.isAvailable());
@@ -44,8 +44,8 @@ public class ItemImplTest {
         TeaseLib.PersistentBoolean foobar = script.teaseLib.new PersistentBoolean(
                 TeaseLib.DefaultDomain, "Foo", "Bar");
         Foo[] peers = new Foo[] {};
-        Item item = new ItemImpl(script.teaseLib, Foo.Bar, foobar, "Foo Bar", peers,
-                new Object[] { Size.Large, Length.Long });
+        Item item = new ItemImpl(script.teaseLib, TeaseLib.DefaultDomain, Foo.Bar, foobar,
+                "Foo Bar", peers, new Object[] { Size.Large, Length.Long });
 
         assertTrue(item.is(Size.Large));
         assertFalse(item.is(Size.Small));
@@ -62,8 +62,8 @@ public class ItemImplTest {
         TeaseLib.PersistentBoolean foobar = script.teaseLib.new PersistentBoolean(
                 TeaseLib.DefaultDomain, "Foo", "Bar");
         Foo[] peers = new Foo[] {};
-        Item item = new ItemImpl(script.teaseLib, Foo.Bar, foobar, "Foo Bar", peers,
-                new Object[] { Size.Large, Length.Long });
+        Item item = new ItemImpl(script.teaseLib, TeaseLib.DefaultDomain, Foo.Bar, foobar,
+                "Foo Bar", peers, new Object[] { Size.Large, Length.Long });
 
         assertFalse(item.is());
     }
@@ -74,8 +74,8 @@ public class ItemImplTest {
         TeaseLib.PersistentBoolean foobar = script.teaseLib.new PersistentBoolean(
                 TeaseLib.DefaultDomain, "Foo", "Bar");
         Foo[] peers = new Foo[] {};
-        Item item = new ItemImpl(script.teaseLib, Foo.Bar, foobar, "Foo Bar", peers,
-                new Object[] { Size.Large, Length.Long });
+        Item item = new ItemImpl(script.teaseLib, TeaseLib.DefaultDomain, Foo.Bar, foobar,
+                "Foo Bar", peers, new Object[] { Size.Large, Length.Long });
 
         assertTrue(item.is(new Size[] { Size.Large }));
         assertFalse(item.is(new Size[] { Size.Small }));
@@ -161,4 +161,38 @@ public class ItemImplTest {
         wristRestraints.apply();
         assertFalse(wristRestraints.canApply());
     }
+
+    @Test
+    public void testToAppliesDefaultsAndAttributesPlusCustomPeersWithStrings() {
+        TeaseScript script = TestScript.getOne();
+
+        String Toys_Wrist_Restraints = "Toys.Wrist_Restraints";
+        String Body_WristsTied = "Body.WristsTied";
+        String Body_WristsTiedBehindBack = "Body.WristsTiedBehindBack";
+
+        assertFalse(script.state(Toys.Wrist_Restraints).applied());
+
+        // Wrists are not only tied, but also tied behind back
+        // TODO String items must be user items
+        // TODO String items must be global
+        script.items(Toys_Wrist_Restraints).get(Material.Leather).to(Body_WristsTiedBehindBack);
+
+        assertTrue(script.state(Toys_Wrist_Restraints).applied());
+        assertTrue(script.state(Toys_Wrist_Restraints).is(Material.Leather));
+
+        assertTrue(script.state(Body_WristsTied).applied());
+        assertTrue(script.state(Body_WristsTiedBehindBack).applied());
+
+        assertTrue(script.state(Body_WristsTied).is(Toys_Wrist_Restraints));
+        assertTrue(script.state(Body_WristsTiedBehindBack).is(Toys_Wrist_Restraints));
+
+        // This is how to comment a certain item in a certain body location
+        if (script.state(Body_WristsTied).is(Toys_Wrist_Restraints)) {
+            if (script.item(Toys_Wrist_Restraints).is(Material.Leather)) {
+                say("You're wearing leather restraints",
+                        script.state(Toys_Wrist_Restraints).is(Material.Leather));
+            }
+        }
+    }
+
 }

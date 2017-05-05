@@ -26,6 +26,60 @@ public abstract class TeaseScriptPersistence extends TeaseScriptBase {
         super(script, actor);
     }
 
+    public class Domain {
+        final String domain;
+
+        public Domain(String domain) {
+            this.domain = domain;
+        }
+
+        public <T extends Enum<?>> Items items(T... values) {
+            if (values.length > 0) {
+                return teaseLib.items(domain, values);
+            } else {
+                return Items.None;
+            }
+        }
+
+        public Items items(String... values) {
+            if (values.length > 0) {
+                return teaseLib.items(domain, namespace, values);
+            } else {
+                return Items.None;
+            }
+        }
+
+        public <T extends Enum<?>> Item item(T value) {
+            return teaseLib.item(domain, value);
+        }
+
+        public Item item(String value) {
+            return teaseLib.item(domain, namespace, value);
+        }
+
+        public <T extends Enum<?>> Items items(T[]... values) {
+            Items items = new Items();
+            for (T[] s : values) {
+                items.addAll(items(s));
+            }
+            return items;
+        }
+
+        public Items items(String[]... values) {
+            Items items = new Items();
+            for (String[] s : values) {
+                items.addAll(items(s));
+            }
+            return items;
+        }
+    }
+
+    final Domain defaultDomain = new Domain(TeaseLib.DefaultDomain);
+
+    public Domain domain(String domain) {
+        return new Domain(domain);
+    }
+
     /**
      * Get items from a enumeration. This is different from toys and clothing in
      * that toys and clothing is usually maintained by the host, whereas
@@ -34,16 +88,12 @@ public abstract class TeaseScriptPersistence extends TeaseScriptBase {
      * @param values
      * @return A list of items whose names are based on the enumeration members
      */
-    public <T extends Object> Items items(T... values) {
-        return items(TeaseLib.DefaultDomain, values);
+    public <T extends Enum<?>> Items items(T... values) {
+        return defaultDomain.items(values);
     }
 
-    public <T extends Object> Items items(String domain, T... values) {
-        if (values.length > 0) {
-            return teaseLib.items(domain, values);
-        } else {
-            return Items.None;
-        }
+    public Items items(String... values) {
+        return defaultDomain.items(values);
     }
 
     /**
@@ -54,39 +104,20 @@ public abstract class TeaseScriptPersistence extends TeaseScriptBase {
      *            in the namespace of the script under its simple class name.
      * @return The item of the enumeration member
      */
-    public <T extends Object> Item item(T value) {
-        return item(TeaseLib.DefaultDomain, value);
+    public <T extends Enum<?>> Item item(T value) {
+        return defaultDomain.item(value);
     }
 
-    public <T extends Object> Item item(String domain, T value) {
-        return teaseLib.item(domain, value);
-    }
-
-    public <T extends Object> Items items(T[]... values) {
-        return items(TeaseLib.DefaultDomain, values);
-    }
-
-    public <T extends Object> Items items(String domain, T[]... values) {
-        Items items = new Items();
-        for (T[] t : values) {
-            items.addAll(items(domain, t));
-        }
-        return items;
-    }
-
-    /**
-     * Retrieves an item in the namespace of the script.
-     * 
-     * @param value
-     *            The item to retrieve.
-     * @return The item that corresponds to the value.
-     */
     public Item item(String value) {
-        return teaseLib.item(TeaseLib.DefaultDomain, namespace, value);
+        return defaultDomain.item(value);
     }
 
-    public Item item(String domain, String value) {
-        return teaseLib.item(domain, namespace, value);
+    public <T extends Enum<?>> Items items(T[]... values) {
+        return defaultDomain.items(values);
+    }
+
+    public Items items(String[]... values) {
+        return defaultDomain.items(values);
     }
 
     public TeaseLib.PersistentBoolean persistentBoolean(String name) {
@@ -132,7 +163,11 @@ public abstract class TeaseScriptPersistence extends TeaseScriptBase {
         return teaseLib.new PersistentSequence<T>(TeaseLib.DefaultDomain, namespace, name, values);
     }
 
-    public <T extends Object> State state(T item) {
-        return teaseLib.state(item);
+    public <T extends Enum<?>> State state(T item) {
+        return teaseLib.state(TeaseLib.DefaultDomain, item);
+    }
+
+    public State state(String item) {
+        return teaseLib.state(TeaseLib.DefaultDomain, item);
     }
 }

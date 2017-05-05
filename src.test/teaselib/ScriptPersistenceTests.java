@@ -36,7 +36,6 @@ public class ScriptPersistenceTests {
         script.set(TestValuesEnumClass.My_Test_Value_set_by_enum, "Saved by local enum");
         assertTrue(script.persistence.storage.containsKey(
                 "ScriptPersistenceTests.TestValuesEnumClass.My_Test_Value_set_by_enum"));
-
     }
 
     @Test
@@ -58,10 +57,10 @@ public class ScriptPersistenceTests {
 
         script.item(Clothes.Panties).setAvailable(true);
         assertTrue(script.item(Clothes.Panties).isAvailable());
-        assertFalse(script.item(Clothes.Female, Clothes.Panties).isAvailable());
+        assertFalse(script.domain(Clothes.Female).item(Clothes.Panties).isAvailable());
 
-        script.item(Clothes.Female, Clothes.Panties).setAvailable(true);
-        assertTrue(script.item(Clothes.Female, Clothes.Panties).isAvailable());
+        script.domain(Clothes.Female).item(Clothes.Panties).setAvailable(true);
+        assertTrue(script.domain(Clothes.Female).item(Clothes.Panties).isAvailable());
 
         assertEquals(2, script.persistence.storage.size());
     }

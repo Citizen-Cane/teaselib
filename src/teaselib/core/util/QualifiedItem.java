@@ -18,4 +18,42 @@ public abstract class QualifiedItem<T> {
         return result;
     }
 
+    public abstract String namespace();
+
+    public abstract String name();
+
+    public static String namespaceOf(Object item) {
+        if (item instanceof Enum<?>) {
+            return ReflectionUtils.normalizeClassName(item.getClass());
+        } else if (item instanceof Class) {
+            return ReflectionUtils.normalizeClassName((Class<?>) item);
+        } else if (item instanceof String) {
+            String string = (String) item;
+            if (string.contains(".")) {
+                return string.substring(0, string.lastIndexOf("."));
+            } else {
+                return string;
+            }
+        } else {
+            return ReflectionUtils.classParentName(item.toString());
+        }
+    }
+
+    public static String nameOf(Object item) {
+        String name;
+        if (item instanceof Enum<?>) {
+            name = ((Enum<?>) item).name();
+        } else if (item instanceof String) {
+            String string = (String) item;
+            if (string.contains(".")) {
+                return string.substring(string.lastIndexOf(".") + 1);
+            } else {
+                return string;
+            }
+        } else {
+            name = item.toString();
+        }
+        return name;
+    }
+
 }

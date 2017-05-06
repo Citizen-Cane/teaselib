@@ -19,17 +19,10 @@ public abstract class AbstractUserItems implements UserItems {
         }
     }
 
-    protected static Item[] onlyTheOriginalItem(TeaseLib teaseLib, String domain, Object item) {
+    protected static Item[] onlyTheOriginalItem(TeaseLib teaseLib, String domain,
+            QualifiedItem<?> item) {
         return new Item[] { new ItemImpl(teaseLib, domain, item,
-                teaseLib.new PersistentBoolean(domain, namespaceOf(item), nameOf(item))) };
-    }
-
-    protected static String namespaceOf(Object item) {
-        return StateMaps.namespaceOf(item);
-    }
-
-    protected static String nameOf(Object item) {
-        return StateMaps.nameOf(item);
+                teaseLib.new PersistentBoolean(domain, item.namespace(), item.name())) };
     }
 
     Map<String, ItemMap> userItems = new HashMap<String, ItemMap>();

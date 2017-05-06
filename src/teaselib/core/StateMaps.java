@@ -11,7 +11,7 @@ import teaselib.Duration;
 import teaselib.State;
 import teaselib.core.TeaseLib.PersistentString;
 import teaselib.core.util.Persist;
-import teaselib.core.util.ReflectionUtils;
+import teaselib.core.util.QualifiedItem;
 
 public class StateMaps {
     final TeaseLib teaseLib;
@@ -59,43 +59,9 @@ public class StateMaps {
         }
     }
 
-    static String namespaceOf(Object item) {
-        if (item instanceof Enum<?>) {
-            return ReflectionUtils.normalizeClassName(item.getClass());
-        } else if (item instanceof Class) {
-            return ReflectionUtils.normalizeClassName((Class<?>) item);
-        } else if (item instanceof String) {
-            String string = (String) item;
-            if (string.contains(".")) {
-                return string.substring(0, string.lastIndexOf("."));
-            } else {
-                return string;
-            }
-        } else {
-            return ReflectionUtils.classParentName(item.toString());
-        }
-    }
-
     static String nameOfState(Object item) {
-        String name = nameOf(item);
+        String name = QualifiedItem.nameOf(item);
         return name + ".state";
-    }
-
-    static String nameOf(Object item) {
-        String name;
-        if (item instanceof Enum<?>) {
-            name = ((Enum<?>) item).name();
-        } else if (item instanceof String) {
-            String string = (String) item;
-            if (string.contains(".")) {
-                return string.substring(string.lastIndexOf(".") + 1);
-            } else {
-                return string;
-            }
-        } else {
-            name = item.toString();
-        }
-        return name;
     }
 
     public class StateImpl<T extends Object> implements State, State.Options {
@@ -121,9 +87,9 @@ public class StateMaps {
             this.domain = domain;
             this.item = item;
             this.durationStorage = teaseLib.new PersistentString(TeaseLib.DefaultDomain,
-                    namespaceOf(item), nameOfState(item) + "." + "duration");
+                    QualifiedItem.namespaceOf(item), nameOfState(item) + "." + "duration");
             this.peerStorage = teaseLib.new PersistentString(TeaseLib.DefaultDomain,
-                    namespaceOf(item), nameOfState(item) + "." + "peers");
+                    QualifiedItem.namespaceOf(item), nameOfState(item) + "." + "peers");
             restoreDuration();
             restorePeers();
         }
@@ -336,7 +302,7 @@ public class StateMaps {
      * @return The item state.
      */
     public <T extends Object> State state(String domain, T item) {
-        StateMap<Object> stateMap = stateMap(domain, namespaceOf(item));
+        StateMap<Object> stateMap = stateMap(domain, QualifiedItem.namespaceOf(item));
         State state = stateMap.get(item);
         if (state == null) {
             state = new StateImpl<Object>(domain, item);

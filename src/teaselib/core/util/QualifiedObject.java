@@ -30,6 +30,16 @@ public class QualifiedObject extends QualifiedItem<Object> {
     }
 
     @Override
+    public String namespace() {
+        return namespaceOf(value);
+    }
+
+    @Override
+    public String name() {
+        return nameOf(value);
+    }
+
+    @Override
     public String toString() {
         return value.toString();
     }

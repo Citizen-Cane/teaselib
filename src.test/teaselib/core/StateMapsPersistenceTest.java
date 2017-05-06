@@ -281,12 +281,12 @@ public class StateMapsPersistenceTest extends StateMaps {
 
     @Test
     public void testCannotJerkOffWearingAChastityCageAndHandsTiedOnBackWithStrings() {
-        String Toys_Chastity_Device = "Toys.Chastity_Device";
-        String Toys_Wrist_Restraints = "Toys.Wrist_Restraints";
+        String Toys_Chastity_Device = "teaelib.Toys.Chastity_Device";
+        String Toys_Wrist_Restraints = "teaelib.Toys.Wrist_Restraints";
 
-        String Body_WristsTiedBehindBack = "Body.WristsTiedBehindBack";
-        String Body_SomethingOnPenis = "Body.SomethingOnPenis";
-        String Body_CannotJerkOff = "Body.CannotJerkOff";
+        String Body_WristsTiedBehindBack = "teaelib.Body.WristsTiedBehindBack";
+        String Body_SomethingOnPenis = "teaelib.Body.SomethingOnPenis";
+        String Body_CannotJerkOff = "teaelib.Body.CannotJerkOff";
 
         assertFalse(state(TEST_DOMAIN, Toys_Chastity_Device).applied());
         assertFalse(state(TEST_DOMAIN, Toys_Wrist_Restraints).applied());

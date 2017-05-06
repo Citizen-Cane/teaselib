@@ -59,7 +59,7 @@ public class StateMaps {
         }
     }
 
-    private static String namespaceOf(Object item) {
+    static String namespaceOf(Object item) {
         if (item instanceof Enum<?>) {
             return ReflectionUtils.normalizeClassName(item.getClass());
         } else if (item instanceof Class) {
@@ -76,12 +76,12 @@ public class StateMaps {
         }
     }
 
-    private static String nameOfState(Object item) {
+    static String nameOfState(Object item) {
         String name = nameOf(item);
         return name + ".state";
     }
 
-    private static String nameOf(Object item) {
+    static String nameOf(Object item) {
         String name;
         if (item instanceof Enum<?>) {
             name = ((Enum<?>) item).name();

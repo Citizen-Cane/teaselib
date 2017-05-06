@@ -43,7 +43,7 @@ public abstract class TeaseScriptPersistence extends TeaseScriptBase {
 
         public Items items(String... values) {
             if (values.length > 0) {
-                return teaseLib.items(domain, namespace, values);
+                return teaseLib.items(domain, values);
             } else {
                 return Items.None;
             }
@@ -54,7 +54,7 @@ public abstract class TeaseScriptPersistence extends TeaseScriptBase {
         }
 
         public Item item(String value) {
-            return teaseLib.item(domain, namespace, value);
+            return teaseLib.item(domain, value);
         }
 
         public <T extends Enum<?>> Items items(T[]... values) {

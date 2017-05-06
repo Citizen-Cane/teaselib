@@ -166,20 +166,20 @@ public class ItemImplTest {
     public void testToAppliesDefaultsAndAttributesPlusCustomPeersWithStrings() {
         TeaseScript script = TestScript.getOne();
 
-        String Toys_Wrist_Restraints = "Toys.Wrist_Restraints";
-        String Body_WristsTied = "Body.WristsTied";
-        String Body_WristsTiedBehindBack = "Body.WristsTiedBehindBack";
+        String Toys_Wrist_Restraints = "teaselib.Toys.Wrist_Restraints";
+        String Body_WristsTied = "teaselib.Body.WristsTied";
+        String Body_WristsTiedBehindBack = "teaselib.Body.WristsTiedBehindBack";
 
         assertFalse(script.state(Toys.Wrist_Restraints).applied());
 
         // Wrists are not only tied, but also tied behind back
-        // TODO String items must be user items
-        // TODO String items must be global
         script.items(Toys_Wrist_Restraints).get(Material.Leather).to(Body_WristsTiedBehindBack);
 
         assertTrue(script.state(Toys_Wrist_Restraints).applied());
         assertTrue(script.state(Toys_Wrist_Restraints).is(Material.Leather));
 
+        // TODO defaults applied as enums, but should be exchangeable with
+        // string
         assertTrue(script.state(Body_WristsTied).applied());
         assertTrue(script.state(Body_WristsTiedBehindBack).applied());
 

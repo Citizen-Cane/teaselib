@@ -25,11 +25,12 @@ import teaselib.core.devices.remote.LocalNetworkDeviceDiscovery;
 import teaselib.core.media.MediaRendererQueue;
 import teaselib.core.texttospeech.Voice;
 import teaselib.core.util.PropertyNameMapping;
+import teaselib.core.util.QualifiedEnum;
+import teaselib.core.util.QualifiedObject;
 import teaselib.core.util.ReflectionUtils;
 import teaselib.motiondetection.MotionDetection;
 import teaselib.motiondetection.MotionDetector;
 import teaselib.util.Item;
-import teaselib.util.ItemImpl;
 import teaselib.util.Items;
 import teaselib.util.PersistenceLogger;
 import teaselib.util.TeaseLibLogger;
@@ -767,16 +768,15 @@ public class TeaseLib {
     public <T extends Enum<?>> Items items(String domain, T... values) {
         Items items = new Items(values.length);
         for (T item : values) {
-            items.addAll(persistence.getUserItems().get(this, domain, item));
+            items.addAll(persistence.getUserItems().get(this, domain, new QualifiedEnum(item)));
         }
         return items;
     }
 
-    public <T extends Object> Items items(String domain, String namespace, T... values) {
+    public <T extends Object> Items items(String domain, T... values) {
         Items items = new Items(values.length);
         for (T item : values) {
-            items.add(new ItemImpl(this, domain, item,
-                    new PersistentBoolean(domain, namespace, item.toString())));
+            items.addAll(persistence.getUserItems().get(this, domain, new QualifiedObject(item)));
         }
         return items;
     }
@@ -813,9 +813,19 @@ public class TeaseLib {
      *            The value to get the item for.
      * @return The item that corresponds to the value.
      */
-    public <T extends Object> Item item(String domain, String namespace, T item) {
-        return new ItemImpl(this, domain, item,
-                new PersistentBoolean(domain, namespace, item.toString()));
+    public <T extends Object> Item item(String domain, T item) {
+        @SuppressWarnings("unchecked")
+        Items items = items(domain, item);
+        Items available = items.available();
+        if (!available.isEmpty()) {
+            return available.get(0);
+        } else if (!items.isEmpty()) {
+            return items.get(0);
+        } else {
+            return Item.NotAvailable;
+        }
+        // return new ItemImpl(this, domain, item,
+        // new PersistentBoolean(domain, namespace, item.toString()));
     }
 
     public Actor getDominant(Voice.Gender gender, Locale locale) {

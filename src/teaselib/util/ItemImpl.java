@@ -5,11 +5,11 @@ package teaselib.util;
 
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 import teaselib.State;
 import teaselib.core.TeaseLib;
+import teaselib.core.util.QualifiedItem;
 
 /**
  * @author someone
@@ -78,8 +78,16 @@ public class ItemImpl implements Item {
             if (stateContainsAll(attributes)) {
                 return true;
             } else {
-                List<S> attributeList = Arrays.asList(attributes);
-                return this.attributes.containsAll(attributeList);
+                nextAttribute: for (S value : attributes) {
+                    QualifiedItem<?> item = QualifiedItem.fromType(value);
+                    for (Object attribute : this.attributes) {
+                        if (item.equals(attribute)) {
+                            continue nextAttribute;
+                        }
+                    }
+                    return false;
+                }
+                return true;
             }
         } else
             return false;

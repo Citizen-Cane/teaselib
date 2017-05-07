@@ -191,8 +191,14 @@ public class StateMaps {
         }
 
         @Override
-        public boolean is(Object object) {
-            return peers.contains(object);
+        public boolean is(Object attribute) {
+            QualifiedItem<?> item = QualifiedItem.fromType(attribute);
+            for (Object peer : peers) {
+                if (item.equals(peer)) {
+                    return true;
+                }
+            }
+            return false;
         }
 
         @Override

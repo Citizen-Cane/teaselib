@@ -25,8 +25,7 @@ import teaselib.core.devices.remote.LocalNetworkDeviceDiscovery;
 import teaselib.core.media.MediaRendererQueue;
 import teaselib.core.texttospeech.Voice;
 import teaselib.core.util.PropertyNameMapping;
-import teaselib.core.util.QualifiedEnum;
-import teaselib.core.util.QualifiedObject;
+import teaselib.core.util.QualifiedItem;
 import teaselib.core.util.ReflectionUtils;
 import teaselib.motiondetection.MotionDetection;
 import teaselib.motiondetection.MotionDetector;
@@ -749,10 +748,6 @@ public class TeaseLib {
      *            The enumeration member to return the state for
      * @return The item state.
      */
-    public <T extends Enum<?>> State state(String domain, T item) {
-        return stateMaps.state(domain, item);
-    }
-
     public <T extends Object> State state(String domain, T item) {
         return stateMaps.state(domain, item);
     }
@@ -765,43 +760,13 @@ public class TeaseLib {
      * 
      * @return A list of items whose names are based on the enumeration members
      */
-    public <T extends Enum<?>> Items items(String domain, T... values) {
-        Items items = new Items(values.length);
-        for (T item : values) {
-            items.addAll(persistence.getUserItems().get(this, domain, new QualifiedEnum(item)));
-        }
-        return items;
-    }
-
     public <T extends Object> Items items(String domain, T... values) {
         Items items = new Items(values.length);
         for (T item : values) {
-            items.addAll(persistence.getUserItems().get(this, domain, new QualifiedObject(item)));
+            items.addAll(
+                    persistence.getUserItems().get(this, domain, QualifiedItem.fromType(item)));
         }
         return items;
-    }
-
-    /**
-     * Get the first matching item for the value
-     * 
-     * @param domain
-     *            The domain of the item
-     * @param item
-     *            The value to get the item for
-     * @return The first available item that matches the value, or the first
-     *         item in the definition, or {@link Item#NotAvailable}
-     */
-    @SuppressWarnings("unchecked")
-    public <T extends Enum<?>> Item item(String domain, T item) {
-        Items items = items(domain, item);
-        Items available = items.available();
-        if (!available.isEmpty()) {
-            return available.get(0);
-        } else if (!items.isEmpty()) {
-            return items.get(0);
-        } else {
-            return Item.NotAvailable;
-        }
     }
 
     /**
@@ -824,8 +789,6 @@ public class TeaseLib {
         } else {
             return Item.NotAvailable;
         }
-        // return new ItemImpl(this, domain, item,
-        // new PersistentBoolean(domain, namespace, item.toString()));
     }
 
     public Actor getDominant(Voice.Gender gender, Locale locale) {

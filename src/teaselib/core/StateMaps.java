@@ -301,12 +301,17 @@ public class StateMaps {
      *            The enumeration member to return the state for
      * @return The item state.
      */
+
     public <T extends Object> State state(String domain, T item) {
-        StateMap<Object> stateMap = stateMap(domain, QualifiedItem.namespaceOf(item));
-        State state = stateMap.get(item);
+        return state(domain, QualifiedItem.fromType(item));
+    }
+
+    private State state(String domain, QualifiedItem<?> item) {
+        StateMap<Object> stateMap = stateMap(domain, item.namespace());
+        State state = stateMap.get(item.toString());
         if (state == null) {
-            state = new StateImpl<Object>(domain, item);
-            stateMap.put(item, state);
+            state = new StateImpl<Object>(domain, item.value);
+            stateMap.put(item.toString(), state);
         }
         return state;
     }

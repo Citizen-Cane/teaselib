@@ -170,7 +170,7 @@ public class ItemImplTest {
         String Body_WristsTied = "teaselib.Body.WristsTied";
         String Body_WristsTiedBehindBack = "teaselib.Body.WristsTiedBehindBack";
 
-        assertFalse(script.state(Toys.Wrist_Restraints).applied());
+        assertFalse(script.state(Toys_Wrist_Restraints).applied());
 
         // Wrists are not only tied, but also tied behind back
         script.items(Toys_Wrist_Restraints).get(Material.Leather).to(Body_WristsTiedBehindBack);
@@ -178,8 +178,6 @@ public class ItemImplTest {
         assertTrue(script.state(Toys_Wrist_Restraints).applied());
         assertTrue(script.state(Toys_Wrist_Restraints).is(Material.Leather));
 
-        // TODO defaults applied as enums, but should be exchangeable with
-        // string
         assertTrue(script.state(Body_WristsTied).applied());
         assertTrue(script.state(Body_WristsTiedBehindBack).applied());
 
@@ -195,4 +193,5 @@ public class ItemImplTest {
         }
     }
 
+    // TODO mix enums and strings in all ways
 }

@@ -56,4 +56,12 @@ public abstract class QualifiedItem<T> {
         return name;
     }
 
+    public static QualifiedItem<?> fromType(Object value) {
+        if (value instanceof Enum<?>) {
+            return new QualifiedEnum((Enum<?>) value);
+        } else {
+            return new QualifiedObject(value);
+        }
+    }
+
 }

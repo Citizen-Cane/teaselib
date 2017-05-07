@@ -13,7 +13,7 @@ public interface State {
 
     Set<Object> peers();
 
-    boolean is(Object object);
+    boolean is(Object... objects);
 
     boolean applied();
 

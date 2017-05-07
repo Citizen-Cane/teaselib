@@ -7,7 +7,7 @@ public interface Item {
     public static final Item NotAvailable = new Item() {
 
         @Override
-        public <S> boolean is(S... attributes) {
+        public boolean is(Object... attributes) {
             return false;
         }
 
@@ -58,7 +58,7 @@ public interface Item {
 
     String displayName();
 
-    <S> boolean is(S... attributes);
+    boolean is(Object... attributes);
 
     <S extends Object> State.Options to(S... items);
 

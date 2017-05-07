@@ -73,33 +73,36 @@ public class ItemImpl implements Item {
     }
 
     @Override
-    public <S> boolean is(S... attributes) {
+    public boolean is(Object... attributes) {
         if (attributes.length > 0) {
             if (stateContainsAll(attributes)) {
                 return true;
             } else {
-                nextAttribute: for (S value : attributes) {
-                    QualifiedItem<?> item = QualifiedItem.fromType(value);
-                    for (Object attribute : this.attributes) {
-                        if (item.equals(attribute)) {
-                            continue nextAttribute;
-                        }
-                    }
-                    return false;
-                }
-                return true;
+                return hasAllAttributes(this.attributes, attributes);
             }
         } else
             return false;
     }
 
-    private boolean stateContainsAll(Object... attributes) {
-        if (!applied())
+    public static boolean hasAllAttributes(Set<Object> mine, Object[] others) {
+        attributeLoop: for (Object value : others) {
+            QualifiedItem<?> item = QualifiedItem.fromType(value);
+            for (Object attribute : mine) {
+                if (item.equals(attribute)) {
+                    continue attributeLoop;
+                }
+            }
             return false;
-        for (Object object : attributes) {
-            return teaseLib.state(domain, item).is(object);
         }
         return true;
+    }
+
+    private boolean stateContainsAll(Object... attributes) {
+        if (!applied()) {
+            return false;
+        } else {
+            return teaseLib.state(domain, item).is(attributes);
+        }
     }
 
     public Set<Object> peers() {

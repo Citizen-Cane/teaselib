@@ -21,8 +21,7 @@ public class ItemImplTest {
     @Test
     public void testAvailable() throws Exception {
         TeaseScript script = TestScript.getOne();
-        TeaseLib.PersistentBoolean foobar = script.teaseLib.new PersistentBoolean(
-                TeaseLib.DefaultDomain, "Foo", "Bar");
+        TeaseLib.PersistentBoolean foobar = script.teaseLib.new PersistentBoolean(TeaseLib.DefaultDomain, "Foo", "Bar");
         Item item = new ItemImpl(script.teaseLib, TeaseLib.DefaultDomain, "test", foobar);
 
         item.setAvailable(false);
@@ -41,11 +40,10 @@ public class ItemImplTest {
     @Test
     public void testIs() throws Exception {
         TeaseScript script = TestScript.getOne();
-        TeaseLib.PersistentBoolean foobar = script.teaseLib.new PersistentBoolean(
-                TeaseLib.DefaultDomain, "Foo", "Bar");
+        TeaseLib.PersistentBoolean foobar = script.teaseLib.new PersistentBoolean(TeaseLib.DefaultDomain, "Foo", "Bar");
         Foo[] peers = new Foo[] {};
-        Item item = new ItemImpl(script.teaseLib, TeaseLib.DefaultDomain, Foo.Bar, foobar,
-                "Foo Bar", peers, new Object[] { Size.Large, Length.Long });
+        Item item = new ItemImpl(script.teaseLib, TeaseLib.DefaultDomain, Foo.Bar, foobar, "Foo Bar", peers,
+                new Object[] { Size.Large, Length.Long });
 
         assertTrue(item.is(Size.Large));
         assertFalse(item.is(Size.Small));
@@ -59,11 +57,10 @@ public class ItemImplTest {
     @Test
     public void testIs_EmptyArg() throws Exception {
         TeaseScript script = TestScript.getOne();
-        TeaseLib.PersistentBoolean foobar = script.teaseLib.new PersistentBoolean(
-                TeaseLib.DefaultDomain, "Foo", "Bar");
+        TeaseLib.PersistentBoolean foobar = script.teaseLib.new PersistentBoolean(TeaseLib.DefaultDomain, "Foo", "Bar");
         Foo[] peers = new Foo[] {};
-        Item item = new ItemImpl(script.teaseLib, TeaseLib.DefaultDomain, Foo.Bar, foobar,
-                "Foo Bar", peers, new Object[] { Size.Large, Length.Long });
+        Item item = new ItemImpl(script.teaseLib, TeaseLib.DefaultDomain, Foo.Bar, foobar, "Foo Bar", peers,
+                new Object[] { Size.Large, Length.Long });
 
         assertFalse(item.is());
     }
@@ -71,14 +68,13 @@ public class ItemImplTest {
     @Test
     public void testIsHAndlesArrays() throws Exception {
         TeaseScript script = TestScript.getOne();
-        TeaseLib.PersistentBoolean foobar = script.teaseLib.new PersistentBoolean(
-                TeaseLib.DefaultDomain, "Foo", "Bar");
+        TeaseLib.PersistentBoolean foobar = script.teaseLib.new PersistentBoolean(TeaseLib.DefaultDomain, "Foo", "Bar");
         Foo[] peers = new Foo[] {};
-        Item item = new ItemImpl(script.teaseLib, TeaseLib.DefaultDomain, Foo.Bar, foobar,
-                "Foo Bar", peers, new Object[] { Size.Large, Length.Long });
+        Item item = new ItemImpl(script.teaseLib, TeaseLib.DefaultDomain, Foo.Bar, foobar, "Foo Bar", peers,
+                new Object[] { Size.Large, Length.Long });
 
-        assertTrue(item.is(new Size[] { Size.Large }));
-        assertFalse(item.is(new Size[] { Size.Small }));
+        assertTrue(item.is(new Object[] { Size.Large }));
+        assertFalse(item.is(new Object[] { Size.Small }));
 
         assertTrue(item.is(new Object[] { Size.Large, Length.Long }));
         assertFalse(item.is(new Object[] { Size.Large, Length.Short }));
@@ -134,8 +130,7 @@ public class ItemImplTest {
         // This is how to comment a certain item in a certain body location
         if (script.state(Body.WristsTied).is(Toys.Wrist_Restraints)) {
             if (script.item(Toys.Wrist_Restraints).is(Material.Leather)) {
-                say("You're wearing leather restraints",
-                        script.state(Toys.Wrist_Restraints).is(Material.Leather));
+                say("You're wearing leather restraints", script.state(Toys.Wrist_Restraints).is(Material.Leather));
             }
         }
     }
@@ -189,8 +184,7 @@ public class ItemImplTest {
         // This is how to comment a certain item in a certain body location
         if (script.state(Body_WristsTied).is(Toys_Wrist_Restraints)) {
             if (script.item(Toys_Wrist_Restraints).is(leather)) {
-                say("You're wearing leather restraints",
-                        script.state(Toys_Wrist_Restraints).is(leather));
+                say("You're wearing leather restraints", script.state(Toys_Wrist_Restraints).is(leather));
             }
         }
     }
@@ -236,18 +230,20 @@ public class ItemImplTest {
         // This is how to comment an item in a certain body location
         if (script.state(Body_WristsTied).is(Toys_Wrist_Restraints)) {
             if (script.item(Toys_Wrist_Restraints).is(leather)) {
-                say("You're wearing leather restraints",
-                        script.state(Toys_Wrist_Restraints).is(leather));
+                say("You're wearing leather restraints", script.state(Toys_Wrist_Restraints).is(leather));
             }
         }
 
         // Better
         if (script.state(Toys_Wrist_Restraints).is(Body.WristsTied)) {
             if (script.state(Toys_Wrist_Restraints).is(leather)) {
-                say("You're wearing leather restraints",
-                        script.state(Toys_Wrist_Restraints).is(leather));
+                say("You're wearing leather restraints", script.state(Toys_Wrist_Restraints).is(leather));
             }
         }
 
+        // Even better
+        if (script.item(Toys_Wrist_Restraints).is(Body.WristsTied, leather)) {
+            say("You're wearing leather restraints", script.state(Toys_Wrist_Restraints).is(Body.WristsTied, leather));
+        }
     }
 }

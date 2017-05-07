@@ -12,6 +12,7 @@ import teaselib.State;
 import teaselib.core.TeaseLib.PersistentString;
 import teaselib.core.util.Persist;
 import teaselib.core.util.QualifiedItem;
+import teaselib.util.ItemImpl;
 
 public class StateMaps {
     final TeaseLib teaseLib;
@@ -191,14 +192,8 @@ public class StateMaps {
         }
 
         @Override
-        public boolean is(Object attribute) {
-            QualifiedItem<?> item = QualifiedItem.fromType(attribute);
-            for (Object peer : peers) {
-                if (item.equals(peer)) {
-                    return true;
-                }
-            }
-            return false;
+        public boolean is(Object... attributes) {
+            return ItemImpl.hasAllAttributes(peers, attributes);
         }
 
         @Override

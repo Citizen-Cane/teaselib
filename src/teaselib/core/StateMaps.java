@@ -3,6 +3,7 @@ package teaselib.core;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -89,8 +90,8 @@ public class StateMaps {
             this.item = item;
             this.durationStorage = teaseLib.new PersistentString(TeaseLib.DefaultDomain,
                     QualifiedItem.namespaceOf(item), nameOfState(item) + "." + "duration");
-            this.peerStorage = teaseLib.new PersistentString(TeaseLib.DefaultDomain,
-                    QualifiedItem.namespaceOf(item), nameOfState(item) + "." + "peers");
+            this.peerStorage = teaseLib.new PersistentString(TeaseLib.DefaultDomain, QualifiedItem.namespaceOf(item),
+                    nameOfState(item) + "." + "peers");
             restoreDuration();
             restorePeers();
         }
@@ -120,8 +121,7 @@ public class StateMaps {
 
         private void restorePeers() {
             if (peerStorage.available()) {
-                String[] serializedPeers = peerStorage.value()
-                        .split(Persist.PERSISTED_STRING_SEPARATOR);
+                String[] serializedPeers = peerStorage.value().split(Persist.PERSISTED_STRING_SEPARATOR);
                 for (String serializedPeer : serializedPeers) {
                     peers.add(Persist.from(serializedPeer));
                 }
@@ -162,20 +162,28 @@ public class StateMaps {
         }
 
         @Override
-        public <S extends Object> State.Options apply(S... peer) {
-            applyInternal(peer);
+        public <A extends Object> State.Options apply(A... attributes) {
+            if (attributes.length == 1 && attributes[0] instanceof List<?>) {
+                throw new IllegalArgumentException();
+            }
+
+            applyInternal(attributes);
             return this;
         }
 
-        protected <P extends Object> State applyInternal(P... peer) {
+        protected <A extends Object> State applyInternal(A... attributes) {
+            if (attributes.length == 1 && attributes[0] instanceof List<?>) {
+                throw new IllegalArgumentException();
+            }
+
             if (!applied()) {
                 setTemporary();
             }
-            for (P p : peer) {
-                if (!peers.contains(p)) {
-                    peers.add(p);
+            for (A attribute : attributes) {
+                if (!peers.contains(attribute)) {
+                    peers.add(attribute);
                     Object[] items = new Object[] { item };
-                    StateImpl<T> state = state(p);
+                    StateImpl<T> state = state(attribute);
                     state.applyInternal(items);
                 }
             }
@@ -193,6 +201,10 @@ public class StateMaps {
 
         @Override
         public boolean is(Object... attributes) {
+            if (attributes.length == 1 && attributes[0] instanceof List<?>) {
+                throw new IllegalArgumentException();
+            }
+
             return ItemImpl.hasAllAttributes(peers, attributes);
         }
 
@@ -290,8 +302,8 @@ public class StateMaps {
         @Override
         public String toString() {
             long limit = duration.limit(TimeUnit.SECONDS);
-            return nameOfState(item) + " " + duration.start(TimeUnit.SECONDS)
-                    + (limit > 0 ? "+" : " ") + limit2String(limit) + " " + peers;
+            return nameOfState(item) + " " + duration.start(TimeUnit.SECONDS) + (limit > 0 ? "+" : " ")
+                    + limit2String(limit) + " " + peers;
         }
     }
 

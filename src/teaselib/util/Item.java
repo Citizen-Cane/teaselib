@@ -27,6 +27,16 @@ public interface Item {
         }
 
         @Override
+        public boolean applied() {
+            return false;
+        }
+
+        @Override
+        public boolean expired() {
+            return true;
+        }
+
+        @Override
         public State remove() {
             throw new UnsupportedOperationException();
         }
@@ -67,4 +77,8 @@ public interface Item {
     State remove();
 
     boolean canApply();
+
+    boolean applied();
+
+    boolean expired();
 }

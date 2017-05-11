@@ -11,7 +11,7 @@ public class CommandLineParameters<T extends Enum<?>> extends HashMap<T, List<St
     public static final List<String> EMPTY = Collections.EMPTY_LIST;
 
     public CommandLineParameters(String[] args, T[] keywords) {
-        T currentKeyword = keywords[0];
+        T currentKeyword = null;
         for (String arg : args) {
             T keyword = getKeyword(arg, keywords);
             if (keyword != null) {
@@ -33,12 +33,16 @@ public class CommandLineParameters<T extends Enum<?>> extends HashMap<T, List<St
         return super.getOrDefault(value, EMPTY);
     }
 
-    private T getKeyword(String arg, T[] keywords) {
-        for (T keyword : keywords) {
+    public static <E extends Enum<?>> E getKeyword(String arg, E[] keywords) {
+        for (E keyword : keywords) {
             if (keyword.name().equalsIgnoreCase(arg)) {
                 return keyword;
             }
         }
         return null;
+    }
+
+    public List<String> getLeading() {
+        return get(null);
     }
 }

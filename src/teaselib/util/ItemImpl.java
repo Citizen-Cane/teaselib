@@ -29,8 +29,7 @@ public class ItemImpl implements Item {
         return item.toString().replace("_", " ");
     }
 
-    public ItemImpl(TeaseLib teaseLib, String domain, Object item,
-            TeaseLib.PersistentBoolean value) {
+    public ItemImpl(TeaseLib teaseLib, String domain, Object item, TeaseLib.PersistentBoolean value) {
         this(teaseLib, domain, item, value, createDisplayName(item));
     }
 
@@ -39,8 +38,8 @@ public class ItemImpl implements Item {
         this(teaseLib, domain, item, value, displayName, new Object[] {}, new Object[] {});
     }
 
-    public ItemImpl(TeaseLib teaseLib, String domain, Object item, TeaseLib.PersistentBoolean value,
-            String displayName, Object[] peers, Object[] attributes) {
+    public ItemImpl(TeaseLib teaseLib, String domain, Object item, TeaseLib.PersistentBoolean value, String displayName,
+            Object[] peers, Object[] attributes) {
         this.teaseLib = teaseLib;
         this.domain = domain;
         this.item = item;
@@ -119,8 +118,14 @@ public class ItemImpl implements Item {
         return true;
     }
 
-    private boolean applied() {
+    @Override
+    public boolean applied() {
         return teaseLib.state(domain, item).applied();
+    }
+
+    @Override
+    public boolean expired() {
+        return teaseLib.state(domain, item).expired();
     }
 
     @Override

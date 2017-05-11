@@ -41,30 +41,30 @@ public final class ReflectionUtils {
         return className.replace(".", "/") + "/";
     }
 
-    public static String getEnumClass(String enumValue) {
-        return enumValue.substring(0, enumValue.lastIndexOf("."));
+    public static String getClass(String qualifiedName) {
+        return qualifiedName.substring(0, qualifiedName.lastIndexOf("."));
     }
 
-    public static String getEnmumValue(String enumValue) {
-        return enumValue.substring(enumValue.lastIndexOf(".") + 1);
+    public static String getName(String qualifiedName) {
+        return qualifiedName.substring(qualifiedName.lastIndexOf(".") + 1);
     }
 
     @SuppressWarnings({ "unchecked", "cast", "rawtypes" })
-    public static Enum<?> getEnum(String enumValue) throws ClassNotFoundException {
-        Class<?> enumClass = Class.forName(ReflectionUtils.getEnumClass(enumValue));
-        return (Enum<?>) Enum.valueOf((Class<? extends Enum>) enumClass, ReflectionUtils.getEnmumValue(enumValue));
+    public static Enum<?> getEnum(String qualifiedName) throws ClassNotFoundException {
+        Class<?> enumClass = Class.forName(ReflectionUtils.getClass(qualifiedName));
+        return (Enum<?>) Enum.valueOf((Class<? extends Enum>) enumClass, ReflectionUtils.getName(qualifiedName));
     }
 
-    public static List<Enum<?>> getEnums(List<String> enumValues) throws ClassNotFoundException {
-        List<Enum<?>> enums = new ArrayList<Enum<?>>(enumValues.size());
-        for (String enumValue : enumValues) {
-            enums.add(getEnum(enumValue));
+    public static List<Enum<?>> getEnums(List<String> qualifiedNames) throws ClassNotFoundException {
+        List<Enum<?>> enums = new ArrayList<Enum<?>>(qualifiedNames.size());
+        for (String qualifiedName : qualifiedNames) {
+            enums.add(getEnum(qualifiedName));
         }
         return enums;
     }
 
-    public static List<Enum<?>> getEnums(String[] enumValues) throws ClassNotFoundException {
-        return getEnums(Arrays.asList(enumValues));
+    public static List<Enum<?>> getEnums(String[] qualifiedName) throws ClassNotFoundException {
+        return getEnums(Arrays.asList(qualifiedName));
     }
 
 }

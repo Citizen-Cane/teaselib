@@ -10,8 +10,12 @@ public class CommandLineParameters<T extends Enum<?>> extends HashMap<T, List<St
 
     public static final List<String> EMPTY = Collections.EMPTY_LIST;
 
+    private T defaultKeyword;
+
     public CommandLineParameters(String[] args, T[] keywords) {
-        T currentKeyword = null;
+        this.defaultKeyword = keywords[0];
+        put(defaultKeyword, new ArrayList<String>());
+        T currentKeyword = defaultKeyword;
         for (String arg : args) {
             T keyword = getKeyword(arg, keywords);
             if (keyword != null) {
@@ -42,7 +46,7 @@ public class CommandLineParameters<T extends Enum<?>> extends HashMap<T, List<St
         return null;
     }
 
-    public List<String> getLeading() {
-        return get(null);
+    public List<String> getItems() {
+        return get(defaultKeyword);
     }
 }

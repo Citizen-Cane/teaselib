@@ -17,8 +17,7 @@ import teaselib.util.Items;
  */
 public abstract class TeaseScriptPersistence extends TeaseScriptBase {
 
-    protected TeaseScriptPersistence(TeaseLib teaseLib, ResourceLoader resources, Actor actor,
-            String namespace) {
+    protected TeaseScriptPersistence(TeaseLib teaseLib, ResourceLoader resources, Actor actor, String namespace) {
         super(teaseLib, resources, actor, namespace);
     }
 
@@ -72,6 +71,12 @@ public abstract class TeaseScriptPersistence extends TeaseScriptBase {
             }
             return items;
         }
+
+        @Override
+        public String toString() {
+            return domain;
+        }
+
     }
 
     final Domain defaultDomain = new Domain(TeaseLib.DefaultDomain);
@@ -128,13 +133,11 @@ public abstract class TeaseScriptPersistence extends TeaseScriptBase {
         return teaseLib.new PersistentBoolean(TeaseLib.DefaultDomain, name);
     }
 
-    public <T extends Enum<?>> TeaseLib.PersistentEnum<T> persistentEnum(String name,
-            Class<T> enumClass) {
+    public <T extends Enum<?>> TeaseLib.PersistentEnum<T> persistentEnum(String name, Class<T> enumClass) {
         return teaseLib.new PersistentEnum<T>(TeaseLib.DefaultDomain, namespace, name, enumClass);
     }
 
-    public <T extends Enum<?>> TeaseLib.PersistentEnum<T> persistentEnum(Enum<?> name,
-            Class<T> enumClass) {
+    public <T extends Enum<?>> TeaseLib.PersistentEnum<T> persistentEnum(Enum<?> name, Class<T> enumClass) {
         return teaseLib.new PersistentEnum<T>(TeaseLib.DefaultDomain, name, enumClass);
     }
 
@@ -158,8 +161,7 @@ public abstract class TeaseScriptPersistence extends TeaseScriptBase {
         return teaseLib.new PersistentString(TeaseLib.DefaultDomain, namespace, name);
     }
 
-    public <T extends Enum<T>> TeaseLib.PersistentSequence<T> persistentSequence(String name,
-            T[] values) {
+    public <T extends Enum<T>> TeaseLib.PersistentSequence<T> persistentSequence(String name, T[] values) {
         return teaseLib.new PersistentSequence<T>(TeaseLib.DefaultDomain, namespace, name, values);
     }
 

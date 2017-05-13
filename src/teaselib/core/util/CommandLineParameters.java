@@ -10,7 +10,7 @@ public class CommandLineParameters<T extends Enum<?>> extends HashMap<T, List<St
 
     public static final List<String> EMPTY = Collections.EMPTY_LIST;
 
-    private T defaultKeyword;
+    protected T defaultKeyword;
 
     public CommandLineParameters(String[] args, T[] keywords) {
         this.defaultKeyword = keywords[0];

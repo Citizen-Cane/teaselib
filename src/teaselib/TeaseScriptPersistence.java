@@ -3,6 +3,11 @@
  */
 package teaselib;
 
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+
+import teaselib.State.Options;
+import teaselib.State.Persistence;
 import teaselib.core.ResourceLoader;
 import teaselib.core.TeaseLib;
 import teaselib.core.TeaseScriptBase;
@@ -25,6 +30,174 @@ public abstract class TeaseScriptPersistence extends TeaseScriptBase {
         super(script, actor);
     }
 
+    public class ItemProxy implements Item {
+        final Item item;
+
+        public ItemProxy(Item item) {
+            this.item = item;
+        }
+
+        @Override
+        public boolean isAvailable() {
+            return item.isAvailable();
+        }
+
+        @Override
+        public void setAvailable(boolean isAvailable) {
+            item.setAvailable(isAvailable);
+        }
+
+        @Override
+        public String displayName() {
+            return item.displayName();
+        }
+
+        @Override
+        public boolean is(Object... attributes) {
+            return item.is(attributes);
+        }
+
+        @Override
+        public <S> Options to(S... items) {
+            injectNamespace();
+            return new StateOptionsProxy(item.to(items));
+        }
+
+        @Override
+        public Options apply() {
+            injectNamespace();
+            return new StateOptionsProxy(item.apply());
+        }
+
+        private void injectNamespace() {
+            item.to(namespace);
+        }
+
+        @Override
+        public State remove() {
+            return new StateProxy(item.remove());
+        }
+
+        @Override
+        public boolean canApply() {
+            return item.canApply();
+        }
+
+        @Override
+        public boolean applied() {
+            return item.applied();
+        }
+
+        @Override
+        public boolean expired() {
+            return item.expired();
+        }
+
+    }
+
+    public class StateProxy implements State {
+        final State state;
+
+        public StateProxy(State state) {
+            this.state = state;
+        }
+
+        @Override
+        public <S> Options apply(S... items) {
+            injectNamespace();
+            return new StateOptionsProxy(state.apply(items));
+        }
+
+        private void injectNamespace() {
+            state.apply(namespace);
+        }
+
+        @Override
+        public Set<Object> peers() {
+            return state.peers();
+        }
+
+        @Override
+        public boolean is(Object... objects) {
+            return state.is(objects);
+        }
+
+        @Override
+        public boolean applied() {
+            return state.applied();
+        }
+
+        @Override
+        public boolean expired() {
+            return state.expired();
+        }
+
+        @Override
+        public Duration duration() {
+            return state.duration();
+        }
+
+        @Override
+        public State remove() {
+            return new StateProxy(state.remove());
+        }
+
+        @Override
+        public <S> State remove(S items) {
+            return new StateProxy(state.remove(items));
+        }
+
+    }
+
+    public class StateOptionsProxy implements State.Options {
+        final State.Options options;
+
+        public StateOptionsProxy(State.Options options) {
+            this.options = options;
+        }
+
+        @Override
+        public State remember() {
+            return new StateProxy(options.remember());
+        }
+
+        @Override
+        public Persistence over(long duration, TimeUnit unit) {
+            return new StatePersistenceProxy(options.over(duration, unit));
+        }
+
+        @Override
+        public Persistence over(Duration duration) {
+            return new StatePersistenceProxy(options.over(duration));
+        }
+
+    }
+
+    public class StatePersistenceProxy implements State.Persistence {
+        final State.Persistence persistence;
+
+        public StatePersistenceProxy(Persistence persistence) {
+            this.persistence = persistence;
+        }
+
+        @Override
+        public State remember() {
+            return new StateProxy(persistence.remember());
+        }
+    }
+
+    private Items proxiesOf(Items items) {
+        Items proxies = new Items();
+        for (Item item : items) {
+            if (item instanceof ItemProxy) {
+                proxies.add(item);
+            } else {
+                proxies.add(new ItemProxy(item));
+            }
+        }
+        return proxies;
+    }
+
     public class Domain {
         final String domain;
 
@@ -34,7 +207,7 @@ public abstract class TeaseScriptPersistence extends TeaseScriptBase {
 
         public <T extends Enum<?>> Items items(T... values) {
             if (values.length > 0) {
-                return teaseLib.items(domain, values);
+                return proxiesOf(teaseLib.items(domain, values));
             } else {
                 return Items.None;
             }
@@ -42,18 +215,18 @@ public abstract class TeaseScriptPersistence extends TeaseScriptBase {
 
         public Items items(String... values) {
             if (values.length > 0) {
-                return teaseLib.items(domain, values);
+                return proxiesOf(teaseLib.items(domain, values));
             } else {
                 return Items.None;
             }
         }
 
         public <T extends Enum<?>> Item item(T value) {
-            return teaseLib.item(domain, value);
+            return new ItemProxy(teaseLib.item(domain, value));
         }
 
         public Item item(String value) {
-            return teaseLib.item(domain, value);
+            return new ItemProxy(teaseLib.item(domain, value));
         }
 
         public <T extends Enum<?>> Items items(T[]... values) {
@@ -166,10 +339,10 @@ public abstract class TeaseScriptPersistence extends TeaseScriptBase {
     }
 
     public <T extends Enum<?>> State state(T item) {
-        return teaseLib.state(TeaseLib.DefaultDomain, item);
+        return new StateProxy(teaseLib.state(TeaseLib.DefaultDomain, item));
     }
 
     public State state(String item) {
-        return teaseLib.state(TeaseLib.DefaultDomain, item);
+        return new StateProxy(teaseLib.state(TeaseLib.DefaultDomain, item));
     }
 }

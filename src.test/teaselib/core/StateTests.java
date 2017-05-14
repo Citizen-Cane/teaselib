@@ -37,7 +37,7 @@ public class StateTests {
     }
 
     @Test
-    public void testPersistentState() {
+    public void testPersistentStateAndNamespace() {
         TestScript script = TestScript.getOne();
         script.teaseLib.freezeTime();
         State somethingOnNipples = script.state(Body.SomethingOnNipples);
@@ -53,9 +53,21 @@ public class StateTests {
         assertEquals(0, script.persistence.storage.size());
         somethingOnNipples.apply(Toys.Nipple_clamps).over(30, TimeUnit.MINUTES).remember();
 
-        assertEquals(4, script.persistence.storage.size());
+        // Assert that when a state is applied then
+        // the namespace of the script is applied to that state
+        assertTrue(somethingOnNipples.is(script.namespace));
+        assertTrue(somethingOnNipples.is(Toys.Nipple_clamps));
+        assertTrue(script.state(Toys.Nipple_clamps).is(Body.SomethingOnNipples));
+        assertFalse(script.state(Toys.Nipple_clamps).is(script.namespace));
+
+        assertEquals(1, script.state(script.namespace).peers().size());
+        assertEquals(Body.SomethingOnNipples, script.state(script.namespace).peers().iterator().next());
+        assertTrue(script.state(script.namespace).is(Body.SomethingOnNipples));
+
+        assertEquals(6, script.persistence.storage.size());
         somethingOnNipples.remove();
         assertEquals(0, script.persistence.storage.size());
+        assertEquals(0, script.state(script.namespace).peers().size());
 
         assertTrue(somethingOnNipples.expired());
         assertFalse(somethingOnNipples.applied());

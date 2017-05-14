@@ -72,12 +72,11 @@ public abstract class TeaseScriptBase {
      * @param teaseLib
      * @param locale
      */
-    protected TeaseScriptBase(TeaseLib teaseLib, ResourceLoader resources, Actor actor,
-            String namespace) {
+    protected TeaseScriptBase(TeaseLib teaseLib, ResourceLoader resources, Actor actor, String namespace) {
         this.teaseLib = teaseLib;
         this.resources = resources;
         this.actor = actor;
-        this.namespace = namespace;
+        this.namespace = namespace.replace(" ", "_");
         TextToSpeechPlayer ttsPlayer = TextToSpeechPlayer.instance();
         ttsPlayer.loadActorVoiceProperties(resources);
         ttsPlayer.acquireVoice(actor);
@@ -199,8 +198,7 @@ public abstract class TeaseScriptBase {
         // TODO hint actor aspect, camera position, posture
 
         if (message.isEmpty()) {
-            ensureEmptyMessageContainsDisplayImage(parsedMessage,
-                    getActorOrDisplayImage(displayImage, mood));
+            ensureEmptyMessageContainsDisplayImage(parsedMessage, getActorOrDisplayImage(displayImage, mood));
         } else {
             String imageType = displayImage;
             String nextImage = null;
@@ -269,8 +267,7 @@ public abstract class TeaseScriptBase {
             }
 
             if (parsedMessage.isEmpty()) {
-                ensureEmptyMessageContainsDisplayImage(parsedMessage,
-                        getActorOrDisplayImage(imageType, mood));
+                ensureEmptyMessageContainsDisplayImage(parsedMessage, getActorOrDisplayImage(imageType, mood));
             }
         }
 
@@ -293,8 +290,7 @@ public abstract class TeaseScriptBase {
         return nextImage;
     }
 
-    private static void ensureEmptyMessageContainsDisplayImage(Message parsedMessage,
-            String nextImage) {
+    private static void ensureEmptyMessageContainsDisplayImage(Message parsedMessage, String nextImage) {
         parsedMessage.add(Message.Type.Image, nextImage);
     }
 
@@ -369,8 +365,9 @@ public abstract class TeaseScriptBase {
             List<String> choices) {
         // argument checking and text variable replacement
         final List<String> derivedChoices = expandTextVariables(choices);
-        ScriptFutureTask scriptTask = scriptFunction != null ? new ScriptFutureTask(this,
-                scriptFunction, derivedChoices, new ScriptFutureTask.TimeoutClick()) : null;
+        ScriptFutureTask scriptTask = scriptFunction != null
+                ? new ScriptFutureTask(this, scriptFunction, derivedChoices, new ScriptFutureTask.TimeoutClick())
+                : null;
         final boolean choicesStackContainsSRRejectedState = choicesStack
                 .containsPauseState(ShowChoices.RecognitionRejected);
         final ShowChoices showChoices = new ShowChoices(this, choices, derivedChoices, scriptTask,
@@ -432,8 +429,8 @@ public abstract class TeaseScriptBase {
             public void run() {
                 if (playedRenderers != null) {
                     SpeechRecognitionRejectedScript speechRecognitionRejectedScript = actor.speechRecognitionRejectedScript;
-                    logger.info("Running SpeechRecognitionRejectedScript "
-                            + speechRecognitionRejectedScript.toString());
+                    logger.info(
+                            "Running SpeechRecognitionRejectedScript " + speechRecognitionRejectedScript.toString());
                     Replay beforeSpeechRecognitionRejected = new Replay(playedRenderers);
                     speechRecognitionRejectedScript.run();
                     beforeSpeechRecognitionRejected.replay(Position.End);
@@ -473,7 +470,7 @@ public abstract class TeaseScriptBase {
     }
 
     private TextVariables allTextVariables() {
-        return new TextVariables(TextVariables.Defaults,
-                teaseLib.getTextVariables(actor.getLocale()), actor.textVariables);
+        return new TextVariables(TextVariables.Defaults, teaseLib.getTextVariables(actor.getLocale()),
+                actor.textVariables);
     }
 }

@@ -144,7 +144,12 @@ public abstract class TeaseScriptPersistence extends TeaseScriptBase {
 
         @Override
         public <S> State remove(S items) {
-            return new StateProxy(state.remove(items));
+            State removed = state.remove(items);
+            if (removed.peers().size() == 1 && removed.peers().contains(namespace)) {
+                // TODO Make this work for different name spaces
+                removed = removed.remove(namespace);
+            }
+            return new StateProxy(state);
         }
 
     }

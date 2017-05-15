@@ -278,6 +278,10 @@ public class StateMaps {
 
         @Override
         public <P extends Object> State remove(P peer) {
+            if (peer instanceof List<?> || peer instanceof Object[]) {
+                throw new IllegalArgumentException();
+            }
+
             if (peers.contains(peer)) {
                 peers.remove(peer);
                 state(peer).remove(item);

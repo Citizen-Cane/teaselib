@@ -9,6 +9,7 @@ import java.util.concurrent.TimeUnit;
 import teaselib.State.Options;
 import teaselib.State.Persistence;
 import teaselib.core.ResourceLoader;
+import teaselib.core.StateMaps;
 import teaselib.core.TeaseLib;
 import teaselib.core.TeaseScriptBase;
 import teaselib.util.Item;
@@ -30,7 +31,7 @@ public abstract class TeaseScriptPersistence extends TeaseScriptBase {
         super(script, actor);
     }
 
-    public class ItemProxy implements Item {
+    public class ItemProxy implements Item, StateMaps.Attributes {
         final Item item;
 
         public ItemProxy(Item item) {
@@ -70,7 +71,7 @@ public abstract class TeaseScriptPersistence extends TeaseScriptBase {
         }
 
         private void injectNamespace() {
-            item.to(namespace);
+            ((StateMaps.Attributes) item).applyAttributes(namespace);
         }
 
         @Override
@@ -93,9 +94,14 @@ public abstract class TeaseScriptPersistence extends TeaseScriptBase {
             return item.expired();
         }
 
+        @Override
+        public void applyAttributes(Object... attributes) {
+            ((StateMaps.Attributes) item).applyAttributes(attributes);
+        }
+
     }
 
-    public class StateProxy implements State {
+    public class StateProxy implements State, StateMaps.Attributes {
         final State state;
 
         public StateProxy(State state) {
@@ -109,7 +115,8 @@ public abstract class TeaseScriptPersistence extends TeaseScriptBase {
         }
 
         private void injectNamespace() {
-            state.apply(namespace);
+            ((StateMaps.Attributes) state).applyAttributes(namespace);
+
         }
 
         @Override
@@ -144,12 +151,12 @@ public abstract class TeaseScriptPersistence extends TeaseScriptBase {
 
         @Override
         public <S> State remove(S items) {
-            State removed = state.remove(items);
-            if (removed.peers().size() == 1 && removed.peers().contains(namespace)) {
-                // TODO Make this work for different name spaces
-                removed = removed.remove(namespace);
-            }
-            return new StateProxy(state);
+            return new StateProxy(state.remove(items));
+        }
+
+        @Override
+        public void applyAttributes(Object... attributes) {
+            ((StateMaps.Attributes) state).applyAttributes(attributes);
         }
 
     }

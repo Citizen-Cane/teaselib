@@ -8,6 +8,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import teaselib.State;
+import teaselib.core.StateMaps;
 import teaselib.core.TeaseLib;
 import teaselib.core.util.QualifiedItem;
 
@@ -15,7 +16,7 @@ import teaselib.core.util.QualifiedItem;
  * @author someone
  *
  */
-public class ItemImpl implements Item {
+public class ItemImpl implements Item, StateMaps.Attributes {
 
     final TeaseLib teaseLib;
     public final String domain;
@@ -136,15 +137,20 @@ public class ItemImpl implements Item {
     @Override
     public <S extends Object> State.Options to(S... items) {
         State state = teaseLib.state(domain, item);
-        state.apply(items);
-        state.apply(peers);
         Object[] array = new Object[attributes.size()];
-        return state.apply(attributes.toArray(array));
+        ((StateMaps.Attributes) state).applyAttributes(attributes.toArray(array));
+        state.apply(items);
+        return state.apply(peers);
     }
 
     @Override
     public State remove() {
         return teaseLib.state(domain, item).remove();
+    }
+
+    @Override
+    public void applyAttributes(Object... attributes) {
+        teaseLib.state(domain, item).apply(attributes);
     }
 
 }

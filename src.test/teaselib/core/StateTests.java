@@ -37,7 +37,7 @@ public class StateTests {
     }
 
     @Test
-    public void testPersistentStateAndNamespace() {
+    public void testPersistentStateAndNamespaceAttribute() {
         TestScript script = TestScript.getOne();
         script.teaseLib.freezeTime();
         State somethingOnNipples = script.state(Body.SomethingOnNipples);
@@ -60,14 +60,24 @@ public class StateTests {
         assertTrue(script.state(Toys.Nipple_clamps).is(Body.SomethingOnNipples));
         assertFalse(script.state(Toys.Nipple_clamps).is(script.namespace));
 
-        assertEquals(1, script.state(script.namespace).peers().size());
-        assertEquals(Body.SomethingOnNipples, script.state(script.namespace).peers().iterator().next());
-        assertTrue(script.state(script.namespace).is(Body.SomethingOnNipples));
+        // There's no attribute for nipple clamps, because we didn't set any,
+        // the namespace is only added automatically to Body.SomethingOnNipples
+        // because thats the state our test script applied,
+        // and empty attribute lists aren't persisted
+        assertEquals(5, script.persistence.storage.size());
 
-        assertEquals(6, script.persistence.storage.size());
+        assertTrue(script.persistence.storage.containsKey("Toys.Nipple_clamps.state.duration"));
+        assertTrue(script.persistence.storage.containsKey("Toys.Nipple_clamps.state.peers"));
+        assertFalse(script.persistence.storage.containsKey("Toys.Nipple_clamps.state.attributes"));
+
+        assertTrue(script.persistence.storage.containsKey("Body.SomethingOnNipples.state.peers"));
+        assertTrue(script.persistence.storage.containsKey("Body.SomethingOnNipples.state.duration"));
+        assertTrue(script.persistence.storage.containsKey("Body.SomethingOnNipples.state.attributes"));
+
+        assertEquals(0, script.state(script.namespace).peers().size());
+
         somethingOnNipples.remove();
         assertEquals(0, script.persistence.storage.size());
-        assertEquals(0, script.state(script.namespace).peers().size());
 
         assertTrue(somethingOnNipples.expired());
         assertFalse(somethingOnNipples.applied());

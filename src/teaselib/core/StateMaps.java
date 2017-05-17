@@ -2,6 +2,7 @@ package teaselib.core;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -326,7 +327,7 @@ public class StateMaps {
         }
 
         @Override
-        public <P extends Object> State remove(P peer) {
+        public State remove(Object peer) {
             if (peer instanceof List<?> || peer instanceof Object[]) {
                 throw new IllegalArgumentException();
             }
@@ -358,8 +359,10 @@ public class StateMaps {
         @Override
         public String toString() {
             long limit = duration.limit(TimeUnit.SECONDS);
-            return domain + " " + nameOfState(item) + " " + duration.start(TimeUnit.SECONDS) + (limit > 0 ? "+" : " ")
-                    + limit2String(limit) + " " + peers;
+            String name = domain + " " + nameOfState(item);
+            Date date = new Date(duration.start(TimeUnit.MILLISECONDS));
+            String timespan = (limit > 0 ? "+" : " ") + limit2String(limit);
+            return name + " " + date + timespan + " " + peers;
         }
     }
 

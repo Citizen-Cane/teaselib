@@ -69,7 +69,7 @@ public class ItemImpl implements Item, StateMaps.Attributes {
 
     @Override
     public String toString() {
-        return value.name;
+        return value.name + " " + attributes + " " + teaseLib.state(domain, value).toString();
     }
 
     @Override

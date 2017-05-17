@@ -84,6 +84,54 @@ public class StateTests {
     }
 
     @Test
+    public void testThatNamespaceAttributeIsNotApppliedToPeers() {
+        TestScript script = TestScript.getOne();
+        script.teaseLib.freezeTime();
+
+        script.state(HouseHold.Condoms).apply(Body.SomethingOnPenis);
+        assertTrue(script.state(HouseHold.Condoms).is(script.namespace));
+        assertTrue(script.state(Body.SomethingOnPenis).applied());
+        
+        assertFalse(script.state(Body.SomethingOnPenis).is(script.namespace));
+
+        script.state(Toys.Chastity_Device).apply(Body.SomethingOnPenis);
+        assertTrue(script.state(Body.SomethingOnPenis).applied());
+        assertTrue(script.state(Toys.Chastity_Device).is(script.namespace));
+        
+        assertFalse(script.state(Body.SomethingOnPenis).is(script.namespace));
+
+        script.state(Toys.Chastity_Device).remove();
+        assertTrue(script.state(Body.SomethingOnPenis).applied());
+        assertFalse(script.state(Toys.Chastity_Device).is(script.namespace));
+        
+        assertFalse(script.state(Body.SomethingOnPenis).is(script.namespace));
+
+        script.state(HouseHold.Condoms).remove();
+        assertFalse(script.state(Body.SomethingOnPenis).applied());
+        assertFalse(script.state(HouseHold.Condoms).is(script.namespace));
+        
+        assertFalse(script.state(Body.SomethingOnPenis).is(script.namespace));
+    }
+
+    @Test
+    public void testThatNamespaceAttributeIsRemovedWhenRemovingTheLastItem() {
+        TestScript script = TestScript.getOne();
+        script.teaseLib.freezeTime();
+
+        script.state(HouseHold.Clothes_Pegs).apply(Body.SomethingOnBalls);
+        assertTrue(script.state(HouseHold.Clothes_Pegs).is(script.namespace));
+
+        script.state(HouseHold.Clothes_Pegs).apply(Body.SomethingOnNipples);
+        assertTrue(script.state(HouseHold.Clothes_Pegs).is(script.namespace));
+
+        script.state(Body.SomethingOnBalls).remove();
+        assertTrue(script.state(HouseHold.Clothes_Pegs).is(script.namespace));
+
+        script.state(Body.SomethingOnNipples).remove();
+        assertFalse(script.state(HouseHold.Clothes_Pegs).is(script.namespace));
+    }
+
+    @Test
     public void testPersistentStateAndValueCompatibility() {
         TestScript script = TestScript.getOne();
         script.teaseLib.freezeTime();

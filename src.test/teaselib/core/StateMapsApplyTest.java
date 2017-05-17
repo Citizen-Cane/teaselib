@@ -101,13 +101,13 @@ public class StateMapsApplyTest extends StateMaps {
         assertTrue(somethingOnNipples.applied());
         assertTrue(somethingOnBalls.applied());
 
-        somethingOnBalls.remove(Clothes_Pegs);
+        somethingOnBalls.remove();
 
         assertTrue(clothesPins.applied());
         assertTrue(somethingOnNipples.applied());
         assertFalse(somethingOnBalls.applied());
 
-        somethingOnNipples.remove(Clothes_Pegs);
+        somethingOnNipples.remove();
 
         assertFalse(clothesPins.applied());
         assertFalse(somethingOnNipples.applied());
@@ -250,7 +250,8 @@ public class StateMapsApplyTest extends StateMaps {
         assertTrue(state(TEST_DOMAIN, Body.SomethingOnBalls).applied());
         assertTrue(state(TEST_DOMAIN, Body.SomethingOnNipples).applied());
 
-        state(TEST_DOMAIN, Clothes_Pegs).remove(Body.SomethingOnBalls);
+        // state(TEST_DOMAIN, Clothes_Pegs).remove(Body.SomethingOnBalls);
+        state(TEST_DOMAIN, Body.SomethingOnBalls).remove();
 
         assertTrue(state(TEST_DOMAIN, Clothes_Pegs).applied());
         assertFalse(state(TEST_DOMAIN, Body.SomethingOnBalls).applied());
@@ -276,8 +277,7 @@ public class StateMapsApplyTest extends StateMaps {
     @Test
     public void testThatStateDefaultValueEqualsRemovedALongTimeAgo() {
         assertEquals(0, state(TEST_DOMAIN, Clothes_Pegs).duration().start(TimeUnit.SECONDS));
-        assertEquals(State.REMOVED,
-                state(TEST_DOMAIN, Clothes_Pegs).duration().limit(TimeUnit.SECONDS));
+        assertEquals(State.REMOVED, state(TEST_DOMAIN, Clothes_Pegs).duration().limit(TimeUnit.SECONDS));
     }
 
     @Test

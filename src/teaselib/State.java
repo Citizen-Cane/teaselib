@@ -21,9 +21,9 @@ public interface State {
 
     Duration duration();
 
-    <S extends Object> State remove();
+    State remove();
 
-    <S extends Object> State remove(S items);
+    State remove(Object peer);
 
     interface Options extends State.Persistence {
         Persistence over(long duration, TimeUnit unit);

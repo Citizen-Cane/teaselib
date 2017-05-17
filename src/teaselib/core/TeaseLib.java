@@ -9,6 +9,7 @@ import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 
@@ -69,8 +70,8 @@ public class TeaseLib {
         TeaseLibLogger transcriptLogger = null;
         try {
             transcriptLogger = new TeaseLibLogger(transcriptLogFile,
-                    getConfigSetting(Config.Debug.LogDetails) ? TeaseLibLogger.Level.Debug
-                            : TeaseLibLogger.Level.Info).showTime(false).showThread(false);
+                    getConfigSetting(Config.Debug.LogDetails) ? TeaseLibLogger.Level.Debug : TeaseLibLogger.Level.Info)
+                            .showTime(false).showThread(false);
         } catch (IOException e) {
             host.show(null, "Cannot open log file " + transcriptLogFile.getAbsolutePath());
             host.reply(Arrays.asList("Oh dear"));
@@ -83,8 +84,7 @@ public class TeaseLib {
         MotionDetection.Devices.addDeviceListener(new DeviceFactoryListener<MotionDetector>() {
             @Override
             public void deviceCreated(MotionDetector motionDetector) {
-                motionDetector.setVideoRenderer(
-                        TeaseLib.this.host.getDisplay(VideoRenderer.Type.CameraFeedback));
+                motionDetector.setVideoRenderer(TeaseLib.this.host.getDisplay(VideoRenderer.Type.CameraFeedback));
             }
         });
     }
@@ -110,14 +110,12 @@ public class TeaseLib {
         } catch (RuntimeException e) {
             throw e;
         } catch (Exception e) {
-            throw new ReflectiveOperationException(
-                    "Error, could not add URL to system classloader");
+            throw new ReflectiveOperationException("Error, could not add URL to system classloader");
         }
         run(host, persistence, script);
     }
 
-    private static void run(Host host, Persistence persistence, String script)
-            throws ReflectiveOperationException {
+    private static void run(Host host, Persistence persistence, String script) throws ReflectiveOperationException {
         new TeaseLib(host, persistence).run(script);
     }
 
@@ -127,8 +125,8 @@ public class TeaseLib {
         run(scriptClass);
     }
 
-    private void run(Class<?> scriptClass) throws NoSuchMethodException, InstantiationException,
-            IllegalAccessException, InvocationTargetException {
+    private void run(Class<?> scriptClass)
+            throws NoSuchMethodException, InstantiationException, IllegalAccessException, InvocationTargetException {
         Constructor<?> mainscriptConstructor = scriptClass.getConstructor(TeaseLib.class);
         Runnable runnable = (Runnable) mainscriptConstructor.newInstance(this);
         run(runnable);
@@ -266,7 +264,7 @@ public class TeaseLib {
 
         @Override
         public String toString() {
-            return start + "+" + limit;
+            return new Date(start(TimeUnit.MILLISECONDS)) + "+" + limit;
         }
     }
 
@@ -537,8 +535,8 @@ public class TeaseLib {
     public class PersistentEnum<T extends Enum<?>> extends PersistentValue<T> {
 
         public PersistentEnum(String domain, Class<T> enumClass) {
-            super(domain, ReflectionUtils.classParentName(enumClass),
-                    ReflectionUtils.classSimpleName(enumClass), enumClass.getEnumConstants()[0]);
+            super(domain, ReflectionUtils.classParentName(enumClass), ReflectionUtils.classSimpleName(enumClass),
+                    enumClass.getEnumConstants()[0]);
         }
 
         public PersistentEnum(String domain, String namespace, String name, Class<T> enumClass) {
@@ -607,8 +605,7 @@ public class TeaseLib {
     }
 
     public void set(String domain, String namespace, String name, boolean value) {
-        persistence.getNameMapping().set(makePropertyName(domain, namespace, name), value,
-                persistence);
+        persistence.getNameMapping().set(makePropertyName(domain, namespace, name), value, persistence);
     }
 
     public void set(String domain, String namespace, String name, int value) {
@@ -624,13 +621,11 @@ public class TeaseLib {
     }
 
     public void set(String domain, String namespace, String name, String value) {
-        persistence.getNameMapping().set(makePropertyName(domain, namespace, name), value,
-                persistence);
+        persistence.getNameMapping().set(makePropertyName(domain, namespace, name), value, persistence);
     }
 
     public boolean getBoolean(String domain, String namespace, String name) {
-        return persistence.getNameMapping().getBoolean(makePropertyName(domain, namespace, name),
-                persistence);
+        return persistence.getNameMapping().getBoolean(makePropertyName(domain, namespace, name), persistence);
     }
 
     public double getFloat(String domain, String namespace, String name) {
@@ -646,8 +641,7 @@ public class TeaseLib {
     }
 
     public String getString(String domain, String namespace, String name) {
-        return persistence.getNameMapping().get(makePropertyName(domain, namespace, name),
-                persistence);
+        return persistence.getNameMapping().get(makePropertyName(domain, namespace, name), persistence);
     }
 
     public boolean getBoolean(String domain, Enum<?> name) {
@@ -763,8 +757,7 @@ public class TeaseLib {
     public <T extends Object> Items items(String domain, T... values) {
         Items items = new Items(values.length);
         for (T item : values) {
-            items.addAll(
-                    persistence.getUserItems().get(this, domain, QualifiedItem.fromType(item)));
+            items.addAll(persistence.getUserItems().get(this, domain, QualifiedItem.fromType(item)));
         }
         return items;
     }
@@ -796,19 +789,16 @@ public class TeaseLib {
     }
 
     public boolean getConfigSetting(Enum<?> name) {
-        String systemProperty = System.getProperty(Config.Namespace + "." + name.toString(),
-                "false");
+        String systemProperty = System.getProperty(Config.Namespace + "." + name.toString(), "false");
         boolean teaseLibProperty = getBoolean(TeaseLib.DefaultDomain, name);
         boolean finalProperty = teaseLibProperty && systemProperty != "false";
         return finalProperty;
     }
 
     public String getConfigString(Enum<?> name) {
-        String teaseLibProperty = getString(TeaseLib.DefaultDomain, Config.Namespace,
-                name.toString());
+        String teaseLibProperty = getString(TeaseLib.DefaultDomain, Config.Namespace, name.toString());
         if (teaseLibProperty.isEmpty()) {
-            String systemProperty = System.getProperty(Config.Namespace + "." + name.toString(),
-                    "");
+            String systemProperty = System.getProperty(Config.Namespace + "." + name.toString(), "");
             return systemProperty;
         }
         return teaseLibProperty;

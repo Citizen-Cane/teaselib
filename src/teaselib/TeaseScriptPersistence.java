@@ -99,6 +99,11 @@ public abstract class TeaseScriptPersistence extends TeaseScriptBase {
             ((StateMaps.Attributes) item).applyAttributes(attributes);
         }
 
+        @Override
+        public String toString() {
+            return item.toString();
+        }
+
     }
 
     public class StateProxy implements State, StateMaps.Attributes {
@@ -150,13 +155,18 @@ public abstract class TeaseScriptPersistence extends TeaseScriptBase {
         }
 
         @Override
-        public <S> State remove(S items) {
-            return new StateProxy(state.remove(items));
+        public State remove(Object peer) {
+            return new StateProxy(state.remove(peer));
         }
 
         @Override
         public void applyAttributes(Object... attributes) {
             ((StateMaps.Attributes) state).applyAttributes(attributes);
+        }
+
+        @Override
+        public String toString() {
+            return state.toString();
         }
 
     }
@@ -183,6 +193,10 @@ public abstract class TeaseScriptPersistence extends TeaseScriptBase {
             return new StatePersistenceProxy(options.over(duration));
         }
 
+        @Override
+        public String toString() {
+            return options.toString();
+        }
     }
 
     public class StatePersistenceProxy implements State.Persistence {
@@ -195,6 +209,11 @@ public abstract class TeaseScriptPersistence extends TeaseScriptBase {
         @Override
         public State remember() {
             return new StateProxy(persistence.remember());
+        }
+
+        @Override
+        public String toString() {
+            return persistence.toString();
         }
     }
 

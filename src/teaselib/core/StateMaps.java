@@ -379,35 +379,35 @@ public class StateMaps {
     }
 
     private State state(String domain, QualifiedItem<?> item) {
-        StateMap<Object> stateMap = stateMap(domain, item.namespace());
-        State state = stateMap.get(item.toString());
+        StateMap<Object> stateMap = stateMap(domain, item.namespace().toLowerCase());
+        State state = stateMap.get(item.toString().toLowerCase());
         if (state == null) {
             state = new StateImpl<Object>(domain, item.value);
-            stateMap.put(item.toString(), state);
+            stateMap.put(item.toString().toLowerCase(), state);
         }
         return state;
     }
 
     @SuppressWarnings("unchecked")
-    private <T> StateMap<T> stateMap(String domain, String namespace) {
-        StateMapCache domainCache = getDomainCache(domain);
+    private <T> StateMap<T> stateMap(String domain, String namespaceKey) {
+        StateMapCache domainCache = getDomainCache(domain.toLowerCase());
         final StateMap<T> stateMap;
-        if (domainCache.containsKey(namespace)) {
-            stateMap = (StateMap<T>) domainCache.get(namespace);
+        if (domainCache.containsKey(namespaceKey)) {
+            stateMap = (StateMap<T>) domainCache.get(namespaceKey);
         } else {
             stateMap = new StateMap<T>(domain);
-            domainCache.put(namespace, stateMap);
+            domainCache.put(namespaceKey, stateMap);
         }
         return stateMap;
     }
 
-    private StateMapCache getDomainCache(String domain) {
+    private StateMapCache getDomainCache(String domainKey) {
         final StateMapCache domainCache;
-        if (cache.containsKey(domain)) {
-            domainCache = cache.get(domain);
+        if (cache.containsKey(domainKey)) {
+            domainCache = cache.get(domainKey);
         } else {
             domainCache = new StateMapCache();
-            cache.put(domain, domainCache);
+            cache.put(domainKey, domainCache);
         }
         return domainCache;
     }

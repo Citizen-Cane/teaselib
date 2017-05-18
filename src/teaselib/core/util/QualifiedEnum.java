@@ -22,7 +22,7 @@ public class QualifiedEnum extends QualifiedItem<Enum<?>> {
         } else if (obj instanceof Enum<?>) {
             return value == obj;
         } else {
-            return this.toString().equals(obj.toString());
+            return this.toString().equalsIgnoreCase(obj.toString());
         }
     }
 

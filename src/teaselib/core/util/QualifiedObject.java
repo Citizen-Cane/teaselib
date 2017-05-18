@@ -23,9 +23,9 @@ public class QualifiedObject extends QualifiedItem<Object> {
                 return value.equals(other.value);
             }
         } else if (obj instanceof Enum<?>) {
-            return value.toString().equals(QualifiedEnum.toString((Enum<?>) obj));
+            return value.toString().equalsIgnoreCase(QualifiedEnum.toString((Enum<?>) obj));
         } else {
-            return this.toString().equals(obj.toString());
+            return this.toString().equalsIgnoreCase(obj.toString());
         }
     }
 

@@ -19,8 +19,7 @@ public abstract class AbstractUserItems implements UserItems {
         }
     }
 
-    protected static Item[] onlyTheOriginalItem(TeaseLib teaseLib, String domain,
-            QualifiedItem<?> item) {
+    protected static Item[] onlyTheOriginalItem(TeaseLib teaseLib, String domain, QualifiedItem<?> item) {
         return new Item[] { new ItemImpl(teaseLib, domain, item,
                 teaseLib.new PersistentBoolean(domain, item.namespace(), item.name())) };
     }
@@ -47,31 +46,26 @@ public abstract class AbstractUserItems implements UserItems {
         }
     }
 
-    protected abstract Item[] createUserItems(TeaseLib teaseLib, String domain,
-            QualifiedItem<?> item);
+    protected abstract Item[] createUserItems(TeaseLib teaseLib, String domain, QualifiedItem<?> item);
 
-    protected Item item(TeaseLib teaseLib, QualifiedItem<?> item, String namespace, String name,
-            String displayName, Enum<?>... attributes) {
-        return item(teaseLib, TeaseLib.DefaultDomain, namespace, name, displayName, item,
-                defaults(item), attributes);
+    protected Item item(TeaseLib teaseLib, QualifiedItem<?> item, String namespace, String name, String displayName,
+            Enum<?>... attributes) {
+        return item(teaseLib, TeaseLib.DefaultDomain, namespace, name, displayName, item, defaults(item), attributes);
     }
 
-    protected Item item(TeaseLib teaseLib, QualifiedItem<?> item, String namespace, String name,
-            String displayName, Enum<?>[] peers, Enum<?>... attributes) {
-        return item(teaseLib, TeaseLib.DefaultDomain, namespace, name, displayName, item, peers,
-                attributes);
+    protected Item item(TeaseLib teaseLib, QualifiedItem<?> item, String namespace, String name, String displayName,
+            Enum<?>[] peers, Enum<?>... attributes) {
+        return item(teaseLib, TeaseLib.DefaultDomain, namespace, name, displayName, item, peers, attributes);
     }
 
-    protected Item item(TeaseLib teaseLib, String domain, String namespace, String name,
-            String displayName, QualifiedItem<?> item, Enum<?>[] peers, Enum<?>... attributes) {
-        return new ItemImpl(teaseLib, domain, item.value,
-                teaseLib.new PersistentBoolean(domain, namespace, name), displayName, peers,
-                attributes);
+    protected Item item(TeaseLib teaseLib, String domain, String namespace, String name, String displayName,
+            QualifiedItem<?> item, Enum<?>[] peers, Enum<?>... attributes) {
+        return new ItemImpl(teaseLib, domain, item.value, teaseLib.new PersistentBoolean(domain, namespace, name),
+                displayName, peers, attributes);
     }
 
-    public <T> T[] array(T[] defaults, T... additional) {
-        @SuppressWarnings("unchecked")
-        T[] extended = (T[]) new Object[defaults.length + additional.length];
+    public Enum<?>[] array(Enum<?>[] defaults, Enum<?>... additional) {
+        Enum<?>[] extended = new Enum<?>[defaults.length + additional.length];
         System.arraycopy(defaults, 0, extended, 0, defaults.length);
         System.arraycopy(additional, 0, extended, defaults.length, additional.length);
         return extended;

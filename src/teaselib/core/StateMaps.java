@@ -240,6 +240,10 @@ public class StateMaps {
 
         @Override
         public void applyAttributes(Object... attributes) {
+            if (attributes.length == 1 && attributes[0] instanceof List<?>) {
+                throw new IllegalArgumentException();
+            }
+
             this.attributes.addAll(Arrays.asList(attributes));
         }
 

@@ -136,6 +136,9 @@ public class ItemImpl implements Item, StateMaps.Attributes {
 
     @Override
     public <S extends Object> State.Options to(S... items) {
+        if (items.length == 0 && peers.length == 0) {
+            throw new IllegalArgumentException("Item without default peers must be applied with explicit peer list");
+        }
         State state = teaseLib.state(domain, item);
         Object[] array = new Object[attributes.size()];
         ((StateMaps.Attributes) state).applyAttributes(attributes.toArray(array));

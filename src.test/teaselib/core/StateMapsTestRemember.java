@@ -1,5 +1,6 @@
 package teaselib.core;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -9,6 +10,7 @@ import org.junit.Test;
 
 import teaselib.Body;
 import teaselib.Toys;
+import teaselib.hosts.DummyPersistence;
 import teaselib.test.TestScript;
 
 public class StateMapsTestRemember extends StateMaps {
@@ -18,8 +20,15 @@ public class StateMapsTestRemember extends StateMaps {
         Chastity_Device_Lock
     }
 
+    final DummyPersistence persistence;
+
     public StateMapsTestRemember() {
-        super(TestScript.getOne().teaseLib);
+        this(TestScript.getOne());
+    }
+
+    StateMapsTestRemember(TestScript script) {
+        super(script.teaseLib);
+        persistence = script.persistence;
         teaseLib.freezeTime();
     }
 
@@ -29,11 +38,9 @@ public class StateMapsTestRemember extends StateMaps {
         assertFalse(state(TEST_DOMAIN, Toys.Wrist_Restraints).applied());
 
         state(TEST_DOMAIN, Toys.Chastity_Device).apply(Body.SomethingOnPenis, Body.CannotJerkOff);
-        state(TEST_DOMAIN, Toys.Wrist_Restraints).apply(Body.WristsTiedBehindBack,
-                Body.CannotJerkOff);
+        state(TEST_DOMAIN, Toys.Wrist_Restraints).apply(Body.WristsTiedBehindBack, Body.CannotJerkOff);
 
-        state(TEST_DOMAIN, Locks.Chastity_Device_Lock).apply(Toys.Chastity_Device)
-                .over(24, TimeUnit.HOURS).remember();
+        state(TEST_DOMAIN, Locks.Chastity_Device_Lock).apply(Toys.Chastity_Device).over(24, TimeUnit.HOURS).remember();
 
         assertUnrelatedStateIsNotAffected();
         assertRememberedToyAndPeersAreRemembered();
@@ -60,5 +67,20 @@ public class StateMapsTestRemember extends StateMaps {
         assertTrue(state(TEST_DOMAIN, Body.SomethingOnPenis).applied());
         assertTrue(state(TEST_DOMAIN, Body.CannotJerkOff).expired());
         assertTrue(state(TEST_DOMAIN, Body.SomethingOnPenis).expired());
+    }
+
+    @Test
+    public void testRememberedItemsAreCompletlyRemoved() {
+        state(TEST_DOMAIN, Toys.Wrist_Restraints).apply(Body.WristsTiedBehindBack, Body.CannotJerkOff);
+        state(TEST_DOMAIN, Toys.Chastity_Device).apply(Body.SomethingOnPenis, Body.CannotJerkOff)
+                .over(24, TimeUnit.HOURS).remember();
+
+        assertEquals(6, persistence.storage.size());
+
+        state(TEST_DOMAIN, Toys.Chastity_Device).remove();
+
+        // TODO Fails since Body.CannotJerkOff is still persisted with peer
+        // wrist restraints
+        assertEquals(0, persistence.storage.size());
     }
 }

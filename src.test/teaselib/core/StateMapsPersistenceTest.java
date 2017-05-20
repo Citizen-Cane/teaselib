@@ -10,7 +10,6 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -39,17 +38,9 @@ public class StateMapsPersistenceTest extends StateMaps {
         WristsTiedBehindBack
     }
 
+    final TestScript script;
     final DummyPersistence persistence;
-
-    static TestScript script;
-
-    TestParameter rememberState;
-
-    @BeforeClass
-    public static void initPersistence() {
-        script = TestScript.getOne();
-        script.teaseLib.freezeTime();
-    }
+    final TestParameter rememberState;
 
     enum TestParameter {
         DontTestPersistence,
@@ -63,9 +54,16 @@ public class StateMapsPersistenceTest extends StateMaps {
     }
 
     public StateMapsPersistenceTest(TestParameter remember) {
+        this(TestScript.getOne(), remember);
+    }
+
+    StateMapsPersistenceTest(TestScript script, TestParameter remember) {
         super(script.teaseLib);
+        this.script = script;
         persistence = script.persistence;
         rememberState = remember;
+
+        script.teaseLib.freezeTime();
     }
 
     @Before
@@ -334,6 +332,8 @@ public class StateMapsPersistenceTest extends StateMaps {
 
         assertEquals(isTemporary(), state(TEST_DOMAIN, Toys_Wrist_Restraints).applied());
         assertEquals(isTemporary(), state(TEST_DOMAIN, Body_WristsTiedBehindBack).applied());
+        // TODO should be temporary since the chastity device has been removed
+        // and wrist restraints are temporary
         assertEquals(isTemporary(), state(TEST_DOMAIN, Body_CannotJerkOff).applied());
 
         if (isRemembered()) {

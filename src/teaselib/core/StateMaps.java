@@ -108,7 +108,7 @@ public class StateMaps {
         }
 
         private void restoreDuration() {
-            if (durationStorage.available()) {
+            if (isPersisted()) {
                 String[] argv = durationStorage.value().split(" ");
                 long start = Long.parseLong(argv[0]);
                 long limit = string2limit(argv[1]);
@@ -286,9 +286,7 @@ public class StateMaps {
         }
 
         private void rememberMe() {
-            persistDuration();
-            persistPeers();
-            persistAttributes();
+            updatePersistence();
         }
 
         @Override
@@ -324,9 +322,7 @@ public class StateMaps {
             peers.clear();
             attributes.clear();
             setRemoved();
-            durationStorage.clear();
-            peerStorage.clear();
-            attributeStorage.clear();
+            removePersistence();
             return this;
         }
 
@@ -340,20 +336,46 @@ public class StateMaps {
                 peers.remove(peer);
                 state(peer).remove(item);
             }
+
+            if (allPeersAreTemporary() && isPersisted()) {
+                removePersistence();
+            }
+
             if (peers.isEmpty()) {
                 attributes.clear();
                 setRemoved();
-                if (durationStorage.available()) {
-                    durationStorage.clear();
-                    peerStorage.clear();
-                    attributeStorage.clear();
+                if (isPersisted()) {
+                    removePersistence();
                 }
-            } else if (durationStorage.available()) {
-                persistDuration();
-                persistPeers();
-                persistAttributes();
+            } else if (isPersisted()) {
+                updatePersistence();
             }
             return this;
+        }
+
+        private void updatePersistence() {
+            persistDuration();
+            persistPeers();
+            persistAttributes();
+        }
+
+        private boolean allPeersAreTemporary() {
+            for (Object peer : peers) {
+                if (state(peer).isPersisted()) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        private boolean isPersisted() {
+            return durationStorage.available();
+        }
+
+        private void removePersistence() {
+            durationStorage.clear();
+            peerStorage.clear();
+            attributeStorage.clear();
         }
 
         private void setRemoved() {

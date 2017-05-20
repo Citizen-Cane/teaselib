@@ -96,10 +96,6 @@ public class StateMapsPersistenceTest extends StateMaps {
         return rememberState == TestParameter.TestPersistence;
     }
 
-    private boolean isTemporary() {
-        return !isRemembered();
-    }
-
     @Test
     public void testPersistenceOnLock() {
         rememberOrNot(state(TEST_DOMAIN, NestedTestToys.Chastity_Device).apply(NestedTestBody.SomethingOnPenis,
@@ -177,8 +173,8 @@ public class StateMapsPersistenceTest extends StateMaps {
         assertTrue(state(TEST_DOMAIN, NestedTestBody.SomethingOnPenis).applied());
         assertTrue(state(TEST_DOMAIN, NestedTestBody.CannotJerkOff).applied());
 
-        assertEquals(isTemporary(), state(TEST_DOMAIN, NestedTestToys.Wrist_Restraints).applied());
-        assertEquals(isTemporary(), state(TEST_DOMAIN, NestedTestBody.WristsTiedBehindBack).applied());
+        assertEquals(!isRemembered(), state(TEST_DOMAIN, NestedTestToys.Wrist_Restraints).applied());
+        assertEquals(!isRemembered(), state(TEST_DOMAIN, NestedTestBody.WristsTiedBehindBack).applied());
 
         state(TEST_DOMAIN, NestedTestToys.Chastity_Device).remove();
 
@@ -186,8 +182,8 @@ public class StateMapsPersistenceTest extends StateMaps {
         assertFalse(state(TEST_DOMAIN, NestedTestBody.SomethingOnPenis).applied());
         assertTrue(state(TEST_DOMAIN, NestedTestBody.CannotJerkOff).applied());
 
-        assertEquals(isTemporary(), state(TEST_DOMAIN, NestedTestToys.Wrist_Restraints).applied());
-        assertEquals(isTemporary(), state(TEST_DOMAIN, NestedTestBody.WristsTiedBehindBack).applied());
+        assertEquals(!isRemembered(), state(TEST_DOMAIN, NestedTestToys.Wrist_Restraints).applied());
+        assertEquals(!isRemembered(), state(TEST_DOMAIN, NestedTestBody.WristsTiedBehindBack).applied());
 
         state(TEST_DOMAIN, NestedTestToys.Wrist_Restraints).remove();
 
@@ -309,11 +305,12 @@ public class StateMapsPersistenceTest extends StateMaps {
         assertTrue(state(TEST_DOMAIN, Body_SomethingOnPenis).applied());
         assertTrue(state(TEST_DOMAIN, Body_CannotJerkOff).applied());
 
-        assertEquals(isTemporary(), state(TEST_DOMAIN, Toys_Wrist_Restraints).applied());
-        assertEquals(isTemporary(), state(TEST_DOMAIN, Body_WristsTiedBehindBack).applied());
+        assertEquals(!isRemembered(), state(TEST_DOMAIN, Toys_Wrist_Restraints).applied());
+        assertEquals(!isRemembered(), state(TEST_DOMAIN, Body_WristsTiedBehindBack).applied());
 
         if (isRemembered()) {
             Map<String, String> storage = script.persistence.storage;
+            assertEquals(6, storage.size());
             // The teaselib package names are stripped from names of persisted
             // items, so it's just Toys.*
             assertTrue(storage.containsKey(TEST_DOMAIN + "." + stripPath(Toys_Chastity_Device) + ".state.duration"));
@@ -329,15 +326,15 @@ public class StateMapsPersistenceTest extends StateMaps {
         assertFalse(state(TEST_DOMAIN, Toys_Chastity_Device).applied());
         assertFalse(state(TEST_DOMAIN, Body_SomethingOnPenis).applied());
         assertTrue(state(TEST_DOMAIN, Body_CannotJerkOff).applied());
+        // wrists still tied behind back -> cannot jerk off
 
-        assertEquals(isTemporary(), state(TEST_DOMAIN, Toys_Wrist_Restraints).applied());
-        assertEquals(isTemporary(), state(TEST_DOMAIN, Body_WristsTiedBehindBack).applied());
-        // TODO should be temporary since the chastity device has been removed
-        // and wrist restraints are temporary
-        assertEquals(isTemporary(), state(TEST_DOMAIN, Body_CannotJerkOff).applied());
+        assertEquals(!isRemembered(), state(TEST_DOMAIN, Toys_Wrist_Restraints).applied());
+        assertEquals(!isRemembered(), state(TEST_DOMAIN, Body_WristsTiedBehindBack).applied());
+        assertEquals(!isRemembered(), state(TEST_DOMAIN, Body_CannotJerkOff).applied());
 
         if (isRemembered()) {
             Map<String, String> storage = script.persistence.storage;
+            assertEquals(0, storage.size());
             // The teaselib package names are stripped from names of persisted
             // items, so it's just Toys.*
             assertFalse(storage.containsKey(TEST_DOMAIN + "." + stripPath(Toys_Chastity_Device) + ".state.duration"));

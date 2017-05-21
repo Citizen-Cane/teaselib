@@ -103,8 +103,8 @@ public class StateMaps {
             this.peerStorage = persistentPeers(domain, item);
             this.attributeStorage = persistentAttributes(domain, item);
             restoreDuration();
-            restorePeers();
             restoreAttributes();
+            restorePeers();
         }
 
         private TeaseLib.PersistentString persistentDuration(String domain, Object item) {

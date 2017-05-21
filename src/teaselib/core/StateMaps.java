@@ -304,7 +304,14 @@ public class StateMaps {
 
         @Override
         public Duration duration() {
-            return duration;
+            Duration maximum = this.duration;
+            for (Object s : peers) {
+                StateImpl peer = state(s);
+                if (peer.duration.remaining(TimeUnit.SECONDS) > maximum.remaining(TimeUnit.SECONDS)) {
+                    maximum = peer.duration;
+                }
+            }
+            return maximum;
         }
 
         @Override

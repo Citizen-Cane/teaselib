@@ -180,10 +180,11 @@ public class StateMapsPersistenceTest extends StateMaps {
 
         assertFalse(state(TEST_DOMAIN, NestedTestToys.Chastity_Device).applied());
         assertFalse(state(TEST_DOMAIN, NestedTestBody.SomethingOnPenis).applied());
-        assertTrue(state(TEST_DOMAIN, NestedTestBody.CannotJerkOff).applied());
+        assertEquals(!isRemembered(), state(TEST_DOMAIN, NestedTestBody.CannotJerkOff).applied());
 
         assertEquals(!isRemembered(), state(TEST_DOMAIN, NestedTestToys.Wrist_Restraints).applied());
         assertEquals(!isRemembered(), state(TEST_DOMAIN, NestedTestBody.WristsTiedBehindBack).applied());
+        assertEquals(!isRemembered(), state(TEST_DOMAIN, NestedTestBody.CannotJerkOff).applied());
 
         state(TEST_DOMAIN, NestedTestToys.Wrist_Restraints).remove();
 
@@ -325,7 +326,7 @@ public class StateMapsPersistenceTest extends StateMaps {
 
         assertFalse(state(TEST_DOMAIN, Toys_Chastity_Device).applied());
         assertFalse(state(TEST_DOMAIN, Body_SomethingOnPenis).applied());
-        assertTrue(state(TEST_DOMAIN, Body_CannotJerkOff).applied());
+        assertEquals(!isRemembered(), state(TEST_DOMAIN, Body_CannotJerkOff).applied());
         // wrists still tied behind back -> cannot jerk off
 
         assertEquals(!isRemembered(), state(TEST_DOMAIN, Toys_Wrist_Restraints).applied());

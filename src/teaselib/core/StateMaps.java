@@ -24,7 +24,7 @@ public class StateMaps {
         void applyAttributes(Object... attributes);
     }
 
-    class StateMapCache extends HashMap<String, StateMap<? extends Object>> {
+    class StateMapCache extends HashMap<String, StateMap> {
         private static final long serialVersionUID = 1L;
     }
 
@@ -42,15 +42,15 @@ public class StateMaps {
         cache.clear();
     }
 
-    public class StateMap<T extends Object> {
+    public class StateMap {
         final String domain;
-        final Map<T, State> states = new HashMap<T, State>();
+        final Map<Object, State> states = new HashMap<Object, State>();
 
         public StateMap(String domain) {
             this.domain = domain;
         }
 
-        public State get(T item) {
+        public State get(Object item) {
             if (states.containsKey(item)) {
                 return states.get(item);
             } else {
@@ -58,12 +58,16 @@ public class StateMaps {
             }
         }
 
-        public void put(T item, State state) {
+        public void put(Object item, State state) {
             states.put(item, state);
         }
 
         void clear() {
             states.clear();
+        }
+
+        public boolean contains(Object item) {
+            return states.containsKey(item);
         }
     }
 
@@ -72,13 +76,13 @@ public class StateMaps {
         return name + ".state";
     }
 
-    public class StateImpl<T extends Object> implements State, State.Options, Attributes {
+    public class StateImpl implements State, State.Options, Attributes {
         private static final String TEMPORARY_KEYWORD = "TEMPORARY";
         private static final String REMOVED_KEYWORD = "REMOVED";
         private static final String INDEFINITELY_KEYWORD = "INDEFINITELY";
 
         protected final String domain;
-        private final T item;
+        private final Object item;
         private final PersistentString durationStorage;
         private final PersistentString peerStorage;
         private final PersistentString attributeStorage;
@@ -87,24 +91,35 @@ public class StateMaps {
         private final Set<Object> peers = new HashSet<Object>();
         private final Set<Object> attributes = new HashSet<Object>();
 
-        @SuppressWarnings("unchecked")
-        protected StateImpl<T> state(Object item) {
-            return (StateImpl<T>) StateMaps.this.state(domain, item);
+        protected StateImpl state(Object item) {
+            return (StateImpl) StateMaps.this.state(domain, item);
         }
 
-        public StateImpl(String domain, T item) {
+        public StateImpl(String domain, Object item) {
             super();
             this.domain = domain;
             this.item = item;
-            this.durationStorage = teaseLib.new PersistentString(domain, QualifiedItem.namespaceOf(item),
-                    nameOfState(item) + "." + "duration");
-            this.peerStorage = teaseLib.new PersistentString(domain, QualifiedItem.namespaceOf(item),
-                    nameOfState(item) + "." + "peers");
-            this.attributeStorage = teaseLib.new PersistentString(domain, QualifiedItem.namespaceOf(item),
-                    nameOfState(item) + "." + "attributes");
+            this.durationStorage = persistentDuration(domain, item);
+            this.peerStorage = persistentPeers(domain, item);
+            this.attributeStorage = persistentAttributes(domain, item);
             restoreDuration();
             restorePeers();
             restoreAttributes();
+        }
+
+        private TeaseLib.PersistentString persistentDuration(String domain, Object item) {
+            return teaseLib.new PersistentString(domain, QualifiedItem.namespaceOf(item),
+                    nameOfState(item) + "." + "duration");
+        }
+
+        private PersistentString persistentPeers(String domain, Object item) {
+            return teaseLib.new PersistentString(domain, QualifiedItem.namespaceOf(item),
+                    nameOfState(item) + "." + "peers");
+        }
+
+        private PersistentString persistentAttributes(String domain, Object item) {
+            return teaseLib.new PersistentString(domain, QualifiedItem.namespaceOf(item),
+                    nameOfState(item) + "." + "attributes");
         }
 
         private void restoreDuration() {
@@ -134,8 +149,25 @@ public class StateMaps {
             if (peerStorage.available()) {
                 String[] serializedPeers = peerStorage.value().split(Persist.PERSISTED_STRING_SEPARATOR);
                 for (String serializedPeer : serializedPeers) {
-                    peers.add(Persist.from(serializedPeer));
+                    addAppliedOrPersistedPeer(Persist.<Object> from(serializedPeer));
                 }
+
+                if (peers.isEmpty()) {
+                    remove();
+                }
+            }
+        }
+
+        private void addAppliedOrPersistedPeer(Object peer) {
+            QualifiedItem<?> qualifiedPeer = QualifiedItem.fromType(peer);
+
+            if (stateMap(domain, qualifiedPeer.namespace().toLowerCase())
+                    .contains(qualifiedPeer.name().toLowerCase())) {
+                if (state(peer).applied()) {
+                    peers.add(peer);
+                }
+            } else if (persistentDuration(domain, peer).available()) {
+                peers.add(peer);
             }
         }
 
@@ -222,7 +254,7 @@ public class StateMaps {
                 if (!peers.contains(attribute)) {
                     peers.add(attribute);
                     Object[] items = new Object[] { item };
-                    StateImpl<T> state = state(attribute);
+                    StateImpl state = state(attribute);
                     state.applyInternal(items);
                 }
             }
@@ -277,16 +309,12 @@ public class StateMaps {
 
         @Override
         public State remember() {
-            rememberMe();
+            updatePersistence();
             for (Object s : peers) {
-                StateImpl<?> peer = state(s);
-                peer.rememberMe();
+                StateImpl peer = state(s);
+                peer.updatePersistence();
             }
             return this;
-        }
-
-        private void rememberMe() {
-            updatePersistence();
         }
 
         @Override
@@ -300,7 +328,7 @@ public class StateMaps {
                 return isExpired();
             } else {
                 for (Object peer : peers) {
-                    StateImpl<T> peerState = state(peer);
+                    StateImpl peerState = state(peer);
                     if (!peerState.isExpired()) {
                         return false;
                     }
@@ -314,7 +342,7 @@ public class StateMaps {
         }
 
         @Override
-        public StateImpl<T> remove() {
+        public StateImpl remove() {
             Object[] copyOfPeers = new Object[peers.size()];
             for (Object peer : peers.toArray(copyOfPeers)) {
                 state(peer).remove(item);
@@ -400,28 +428,31 @@ public class StateMaps {
      * @return The item state.
      */
 
-    public <T extends Object> State state(String domain, T item) {
+    public State state(String domain, Object item) {
         return state(domain, QualifiedItem.fromType(item));
     }
 
     private State state(String domain, QualifiedItem<?> item) {
-        StateMap<Object> stateMap = stateMap(domain, item.namespace().toLowerCase());
+        StateMap stateMap = stateMap(domain, item);
         State state = stateMap.get(item.toString().toLowerCase());
         if (state == null) {
-            state = new StateImpl<Object>(domain, item.value);
+            state = new StateImpl(domain, item.value);
             stateMap.put(item.toString().toLowerCase(), state);
         }
         return state;
     }
 
-    @SuppressWarnings("unchecked")
-    private <T> StateMap<T> stateMap(String domain, String namespaceKey) {
+    private StateMap stateMap(String domain, QualifiedItem<?> item) {
+        return stateMap(domain, item.namespace().toLowerCase());
+    }
+
+    private StateMap stateMap(String domain, String namespaceKey) {
         StateMapCache domainCache = getDomainCache(domain.toLowerCase());
-        final StateMap<T> stateMap;
+        final StateMap stateMap;
         if (domainCache.containsKey(namespaceKey)) {
-            stateMap = (StateMap<T>) domainCache.get(namespaceKey);
+            stateMap = domainCache.get(namespaceKey);
         } else {
-            stateMap = new StateMap<T>(domain);
+            stateMap = new StateMap(domain);
             domainCache.put(namespaceKey, stateMap);
         }
         return stateMap;

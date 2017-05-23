@@ -24,10 +24,10 @@ public class StateScopeTests {
     public void before() {
         script = TestScript.getOne();
         script.teaseLib.freezeTime();
-        somethingOnNipples = script.state(Body.SomethingOnNipples);
+        somethingOnNipples = script.state(Body.OnNipples);
         peerStorage = script.teaseLib.new PersistentString(
                 TeaseLib.DefaultDomain, Body.class.getName(),
-                Body.SomethingOnNipples.name() + ".state.peers");
+                Body.OnNipples.name() + ".state.peers");
     }
 
     @Test

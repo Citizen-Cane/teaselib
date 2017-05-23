@@ -74,27 +74,27 @@ public abstract class AbstractUserItems implements UserItems {
     @Override
     public Enum<?>[] defaults(QualifiedItem<?> item) {
         if (item.equals(Toys.Buttplug)) {
-            return new Body[] { Body.SomethingInButt };
+            return new Body[] { Body.InButt };
         } else if (item.equals(Toys.Ankle_Restraints)) {
             return new Body[] { Body.AnklesTied };
         } else if (item.equals(Toys.Wrist_Restraints)) {
             return new Body[] { Body.WristsTied };
         } else if (item.equals(Toys.Gag)) {
-            return new Body[] { Body.SomethingInMouth };
+            return new Body[] { Body.InMouth };
         } else if (item.equals(Toys.Spanking_Implement)) {
             return new Body[] {};
         } else if (item.equals(Toys.Collar)) {
             return new Body[] { Body.AroundNeck };
         } else if (item.equals(Toys.Nipple_Clamps)) {
-            return new Body[] { Body.SomethingOnNipples };
+            return new Body[] { Body.OnNipples };
         } else if (item.equals(Toys.Chastity_Device)) {
-            return new Body[] { Body.SomethingOnPenis, Body.CannotJerkOff };
+            return new Body[] { Body.OnPenis, Body.CantJerkOff };
         } else if (item.equals(Toys.Dildo)) {
             return new Body[] {};
         } else if (item.equals(Toys.VaginalInsert)) {
-            return new Body[] { Body.SomethingInVagina };
+            return new Body[] { Body.InVagina };
         } else if (item.equals(Toys.Vibrator)) {
-            return new Body[] { Body.SomethingOnClit }; // TODO for men too
+            return new Body[] { Body.OnClit }; // TODO for men too
         } else if (item.equals(Toys.EStim_Device)) {
             return new Body[] {};
         } else {

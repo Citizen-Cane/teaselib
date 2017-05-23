@@ -1,22 +1,19 @@
-/**
- * 
- */
 package teaselib;
 
 /**
  *
- * @author someone
+ * @author Citizen-Cane
  *
  */
 public enum Body {
-    SomethingOnNipples,
-    SomethingInVagina,
-    SomethingOnClit,
-    SomethingInButt,
-    SomethingInMouth,
-    SomethingOnPenis,
-    SomethingOnBalls,
-    SomethingAroundWaist,
+    OnNipples,
+    InVagina,
+    OnClit,
+    InButt,
+    InMouth,
+    OnPenis,
+    OnBalls,
+    AroundWaist,
 
     AroundNeck,
     Harnessed,
@@ -26,23 +23,12 @@ public enum Body {
     WristsTied,
     WristsTiedBehindBack,
 
-    CannotKneel,
-    CannotStand,
-    CannotLie,
-    CannotCrawl,
+    CantKneel,
+    CantStand,
+    CantProne,
+    CanCrawl,
     CantSitOnChair,
-    CannotJerkOff,
-    CannotTypeOrUseMouse,
+    CantJerkOff,
+    CantTypeOrUseMouse,
 
 }
-/*
- * What Do I want do say?
- * 
- * Clamps on nipples.
- * 
- * Clothes pegs on nipples.
- * 
- * Clothes pegs on ballsack
- * 
- * Wearing a costume -> clothing
- */

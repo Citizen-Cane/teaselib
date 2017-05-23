@@ -101,7 +101,7 @@ public class PreDefinedItems extends AbstractUserItems {
             Item chastityCage = item(teaseLib, item, "Toys", "chastity_cage", "Chastity cage", Material.Metal,
                     Features.Lockable);
             Item chastityBelt = item(teaseLib, item, "Toys", "chastity_belt", "Chastity belt",
-                    array(defaults(item), Body.SomethingOnBalls), Material.Metal, Features.Lockable);
+                    array(defaults(item), Body.OnBalls), Material.Metal, Features.Lockable);
             Item gatesOfHell = item(teaseLib, item, "Toys", "gates_of_hell", "Gates of Hell", Material.Leather,
                     Material.Metal);
 

@@ -95,14 +95,14 @@ public class ItemImplTest {
         assertTrue(script.state(Toys.Buttplug).is(Toys.Anal.Beads));
         assertTrue(script.state(Toys.Buttplug).is(Features.Anal));
 
-        assertTrue(script.state(Body.SomethingInButt).applied());
-        assertTrue(script.state(Body.SomethingInButt).is(Toys.Buttplug));
+        assertTrue(script.state(Body.InButt).applied());
+        assertTrue(script.state(Body.InButt).is(Toys.Buttplug));
 
-        assertFalse(script.state(Body.SomethingInButt).is(Toys.Anal.Beads));
-        assertFalse(script.state(Body.SomethingInButt).is(Features.Anal));
+        assertFalse(script.state(Body.InButt).is(Toys.Anal.Beads));
+        assertFalse(script.state(Body.InButt).is(Features.Anal));
 
         // This is how to comment a certain item in a certain body location
-        if (script.state(Body.SomethingInButt).is(Toys.Buttplug)) {
+        if (script.state(Body.InButt).is(Toys.Buttplug)) {
             if (script.item(Toys.Buttplug).is(Toys.Anal.Beads)) {
                 say("You're wearing anal beads", script.state(Toys.Buttplug).is(Toys.Anal.Beads));
             }

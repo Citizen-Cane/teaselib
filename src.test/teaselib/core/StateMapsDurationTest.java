@@ -38,15 +38,15 @@ public class StateMapsDurationTest extends StateMaps {
 
         state(TEST_DOMAIN, Locks.Chastity_Device_Lock).apply(Toys.Chastity_Device).over(24, TimeUnit.HOURS);
 
-        assertTrue(state(TEST_DOMAIN, Body.SomethingOnPenis).expired());
-        assertTrue(state(TEST_DOMAIN, Body.CannotJerkOff).expired());
+        assertTrue(state(TEST_DOMAIN, Body.OnPenis).expired());
+        assertTrue(state(TEST_DOMAIN, Body.CantJerkOff).expired());
     }
 
     @Test
     public void testLockDurationOnInfiniteToy() {
         assertApplyChastityCage();
 
-        state(TEST_DOMAIN, Toys.Chastity_Device).apply(Body.SomethingOnPenis, Body.CannotJerkOff)
+        state(TEST_DOMAIN, Toys.Chastity_Device).apply(Body.OnPenis, Body.CantJerkOff)
                 .over(Duration.INFINITE, TimeUnit.SECONDS);
         assertFalse(state(TEST_DOMAIN, Toys.Chastity_Device).expired());
 
@@ -73,8 +73,8 @@ public class StateMapsDurationTest extends StateMaps {
         assertTrue(state(TEST_DOMAIN, Locks.Chastity_Device_Lock).applied());
         assertTrue(state(TEST_DOMAIN, Locks.Chastity_Device_Lock).expired());
 
-        assertFalse(state(TEST_DOMAIN, Body.SomethingOnPenis).expired());
-        assertFalse(state(TEST_DOMAIN, Body.CannotJerkOff).expired());
+        assertFalse(state(TEST_DOMAIN, Body.OnPenis).expired());
+        assertFalse(state(TEST_DOMAIN, Body.CantJerkOff).expired());
 
         assertRemoveKey();
     }
@@ -97,37 +97,37 @@ public class StateMapsDurationTest extends StateMaps {
     public void testDurationDependsOnPeers() {
         teaseLib.freezeTime();
 
-        state(TEST_DOMAIN, Toys.Chastity_Device).apply(Body.SomethingOnPenis, Body.CannotJerkOff).over(1,
+        state(TEST_DOMAIN, Toys.Chastity_Device).apply(Body.OnPenis, Body.CantJerkOff).over(1,
                 TimeUnit.HOURS);
 
         assertEquals(1, state(TEST_DOMAIN, Toys.Chastity_Device).duration().remaining(TimeUnit.HOURS));
-        assertEquals(1, state(TEST_DOMAIN, Body.SomethingOnPenis).duration().remaining(TimeUnit.HOURS));
-        assertEquals(1, state(TEST_DOMAIN, Body.CannotJerkOff).duration().remaining(TimeUnit.HOURS));
+        assertEquals(1, state(TEST_DOMAIN, Body.OnPenis).duration().remaining(TimeUnit.HOURS));
+        assertEquals(1, state(TEST_DOMAIN, Body.CantJerkOff).duration().remaining(TimeUnit.HOURS));
 
-        state(TEST_DOMAIN, Toys.Wrist_Restraints).apply(Body.WristsTiedBehindBack, Body.CannotJerkOff).over(2,
+        state(TEST_DOMAIN, Toys.Wrist_Restraints).apply(Body.WristsTiedBehindBack, Body.CantJerkOff).over(2,
                 TimeUnit.HOURS);
 
         assertEquals(1, state(TEST_DOMAIN, Toys.Chastity_Device).duration().remaining(TimeUnit.HOURS));
-        assertEquals(1, state(TEST_DOMAIN, Body.SomethingOnPenis).duration().remaining(TimeUnit.HOURS));
-        assertEquals(2, state(TEST_DOMAIN, Body.CannotJerkOff).duration().remaining(TimeUnit.HOURS));
+        assertEquals(1, state(TEST_DOMAIN, Body.OnPenis).duration().remaining(TimeUnit.HOURS));
+        assertEquals(2, state(TEST_DOMAIN, Body.CantJerkOff).duration().remaining(TimeUnit.HOURS));
 
         assertEquals(2, state(TEST_DOMAIN, Toys.Wrist_Restraints).duration().remaining(TimeUnit.HOURS));
 
         state(TEST_DOMAIN, Toys.Wrist_Restraints).remove();
 
-        assertEquals(1, state(TEST_DOMAIN, Body.CannotJerkOff).duration().remaining(TimeUnit.HOURS));
+        assertEquals(1, state(TEST_DOMAIN, Body.CantJerkOff).duration().remaining(TimeUnit.HOURS));
     }
 
     private void assertApplyChastityCage() {
         assertFalse(state(TEST_DOMAIN, Toys.Chastity_Device).applied());
         assertFalse(state(TEST_DOMAIN, Locks.Chastity_Device_Lock).applied());
 
-        state(TEST_DOMAIN, Toys.Chastity_Device).apply(Body.SomethingOnPenis, Body.CannotJerkOff);
+        state(TEST_DOMAIN, Toys.Chastity_Device).apply(Body.OnPenis, Body.CantJerkOff);
 
-        assertTrue(state(TEST_DOMAIN, Body.SomethingOnPenis).applied());
-        assertTrue(state(TEST_DOMAIN, Body.CannotJerkOff).applied());
-        assertTrue(state(TEST_DOMAIN, Body.SomethingOnPenis).expired());
-        assertTrue(state(TEST_DOMAIN, Body.CannotJerkOff).expired());
+        assertTrue(state(TEST_DOMAIN, Body.OnPenis).applied());
+        assertTrue(state(TEST_DOMAIN, Body.CantJerkOff).applied());
+        assertTrue(state(TEST_DOMAIN, Body.OnPenis).expired());
+        assertTrue(state(TEST_DOMAIN, Body.CantJerkOff).expired());
     }
 
     private void assertRemoveKey() {
@@ -148,7 +148,7 @@ public class StateMapsDurationTest extends StateMaps {
         assertFalse(state(TEST_DOMAIN, Toys.Chastity_Device).applied());
         assertTrue(state(TEST_DOMAIN, Toys.Chastity_Device).expired());
 
-        assertFalse(state(TEST_DOMAIN, Body.SomethingOnPenis).applied());
-        assertFalse(state(TEST_DOMAIN, Body.SomethingOnPenis).applied());
+        assertFalse(state(TEST_DOMAIN, Body.OnPenis).applied());
+        assertFalse(state(TEST_DOMAIN, Body.OnPenis).applied());
     }
 }

@@ -33,12 +33,12 @@ public class StateMapsApplyTest extends StateMaps {
         assertFalse(chastityCage.applied());
         assertFalse(wristRestraints.applied());
 
-        State somethingOnPenis = state(TEST_DOMAIN, Body.SomethingOnPenis);
-        State cannotJerkOff = state(TEST_DOMAIN, Body.CannotJerkOff);
+        State somethingOnPenis = state(TEST_DOMAIN, Body.OnPenis);
+        State cannotJerkOff = state(TEST_DOMAIN, Body.CantJerkOff);
         State handsTiedBehindBack = state(TEST_DOMAIN, Body.WristsTiedBehindBack);
 
-        chastityCage.apply(Body.SomethingOnPenis, Body.CannotJerkOff);
-        wristRestraints.apply(Body.WristsTiedBehindBack, Body.CannotJerkOff);
+        chastityCage.apply(Body.OnPenis, Body.CantJerkOff);
+        wristRestraints.apply(Body.WristsTiedBehindBack, Body.CantJerkOff);
 
         assertTrue(chastityCage.applied());
         assertTrue(somethingOnPenis.applied());
@@ -66,16 +66,16 @@ public class StateMapsApplyTest extends StateMaps {
     public void testPegsOnNipplesAndNutsApplyOneAfterAnother() {
         State clothesPins = state(TEST_DOMAIN, Clothes_Pegs);
 
-        State somethingOnNipples = state(TEST_DOMAIN, Body.SomethingOnNipples);
-        State somethingOnBalls = state(TEST_DOMAIN, Body.SomethingOnBalls);
+        State somethingOnNipples = state(TEST_DOMAIN, Body.OnNipples);
+        State somethingOnBalls = state(TEST_DOMAIN, Body.OnBalls);
 
-        state(TEST_DOMAIN, Body.SomethingOnNipples).apply(Clothes_Pegs);
+        state(TEST_DOMAIN, Body.OnNipples).apply(Clothes_Pegs);
 
         assertTrue(clothesPins.applied());
         assertTrue(somethingOnNipples.applied());
         assertFalse(somethingOnBalls.applied());
 
-        state(TEST_DOMAIN, Body.SomethingOnBalls).apply(Clothes_Pegs);
+        state(TEST_DOMAIN, Body.OnBalls).apply(Clothes_Pegs);
 
         assertTrue(clothesPins.applied());
         assertTrue(somethingOnNipples.applied());
@@ -92,10 +92,10 @@ public class StateMapsApplyTest extends StateMaps {
     public void testPegsOnNipplesAndNutsRemoveOneAfterAnother() {
         State clothesPins = state(TEST_DOMAIN, Clothes_Pegs);
 
-        State somethingOnNipples = state(TEST_DOMAIN, Body.SomethingOnNipples);
-        State somethingOnBalls = state(TEST_DOMAIN, Body.SomethingOnBalls);
+        State somethingOnNipples = state(TEST_DOMAIN, Body.OnNipples);
+        State somethingOnBalls = state(TEST_DOMAIN, Body.OnBalls);
 
-        state(TEST_DOMAIN, Clothes_Pegs).apply(Body.SomethingOnBalls, Body.SomethingOnNipples);
+        state(TEST_DOMAIN, Clothes_Pegs).apply(Body.OnBalls, Body.OnNipples);
 
         assertTrue(clothesPins.applied());
         assertTrue(somethingOnNipples.applied());
@@ -124,13 +124,13 @@ public class StateMapsApplyTest extends StateMaps {
         assertFalse(wristRestraints.applied());
         assertFalse(key.applied());
 
-        State somethingOnPenis = state(TEST_DOMAIN, Body.SomethingOnPenis);
-        State cannotJerkOff = state(TEST_DOMAIN, Body.CannotJerkOff);
+        State somethingOnPenis = state(TEST_DOMAIN, Body.OnPenis);
+        State cannotJerkOff = state(TEST_DOMAIN, Body.CantJerkOff);
         State handsTiedBehindBack = state(TEST_DOMAIN, Body.WristsTiedBehindBack);
 
-        chastityCage.apply(Body.SomethingOnPenis, Body.CannotJerkOff);
+        chastityCage.apply(Body.OnPenis, Body.CantJerkOff);
         key.apply(Toys.Chastity_Device);
-        wristRestraints.apply(Body.WristsTiedBehindBack, Body.CannotJerkOff);
+        wristRestraints.apply(Body.WristsTiedBehindBack, Body.CantJerkOff);
 
         assertTrue(chastityCage.applied());
         assertTrue(key.applied());
@@ -168,110 +168,110 @@ public class StateMapsApplyTest extends StateMaps {
 
     @Test
     public void testApplyHierarchically() {
-        state(TEST_DOMAIN, Toys.Chastity_Device).apply(Body.CannotJerkOff);
+        state(TEST_DOMAIN, Toys.Chastity_Device).apply(Body.CantJerkOff);
         state(TEST_DOMAIN, Locks.Chastity_Device_Lock).apply(Toys.Chastity_Device);
 
-        assertTrue(state(TEST_DOMAIN, Body.CannotJerkOff).applied());
+        assertTrue(state(TEST_DOMAIN, Body.CantJerkOff).applied());
         assertTrue(state(TEST_DOMAIN, Toys.Chastity_Device).applied());
         assertTrue(state(TEST_DOMAIN, Locks.Chastity_Device_Lock).applied());
 
         state(TEST_DOMAIN, Locks.Chastity_Device_Lock).remove();
         assertTrue(state(TEST_DOMAIN, Toys.Chastity_Device).applied());
-        assertTrue(state(TEST_DOMAIN, Body.CannotJerkOff).applied());
+        assertTrue(state(TEST_DOMAIN, Body.CantJerkOff).applied());
 
         state(TEST_DOMAIN, Toys.Chastity_Device).remove();
-        assertFalse(state(TEST_DOMAIN, Body.CannotJerkOff).applied());
+        assertFalse(state(TEST_DOMAIN, Body.CantJerkOff).applied());
     }
 
     @Test
     public void testApplyFromMiddleOfTheHierarchy() {
-        state(TEST_DOMAIN, Toys.Chastity_Device).apply(Body.CannotJerkOff);
+        state(TEST_DOMAIN, Toys.Chastity_Device).apply(Body.CantJerkOff);
         state(TEST_DOMAIN, Toys.Chastity_Device).apply(Locks.Chastity_Device_Lock);
 
-        assertTrue(state(TEST_DOMAIN, Body.CannotJerkOff).applied());
+        assertTrue(state(TEST_DOMAIN, Body.CantJerkOff).applied());
         assertTrue(state(TEST_DOMAIN, Toys.Chastity_Device).applied());
         assertTrue(state(TEST_DOMAIN, Locks.Chastity_Device_Lock).applied());
 
         state(TEST_DOMAIN, Locks.Chastity_Device_Lock).remove();
         assertTrue(state(TEST_DOMAIN, Toys.Chastity_Device).applied());
-        assertTrue(state(TEST_DOMAIN, Body.CannotJerkOff).applied());
+        assertTrue(state(TEST_DOMAIN, Body.CantJerkOff).applied());
 
         state(TEST_DOMAIN, Toys.Chastity_Device).remove();
-        assertFalse(state(TEST_DOMAIN, Body.CannotJerkOff).applied());
+        assertFalse(state(TEST_DOMAIN, Body.CantJerkOff).applied());
     }
 
     @Test
     public void testApplyItemToMultiplePlacesOneAfterAnother() {
-        state(TEST_DOMAIN, Body.SomethingOnNipples).apply(Clothes_Pegs);
+        state(TEST_DOMAIN, Body.OnNipples).apply(Clothes_Pegs);
 
         assertTrue(state(TEST_DOMAIN, Clothes_Pegs).applied());
-        assertTrue(state(TEST_DOMAIN, Body.SomethingOnNipples).applied());
-        assertFalse(state(TEST_DOMAIN, Body.SomethingOnBalls).applied());
+        assertTrue(state(TEST_DOMAIN, Body.OnNipples).applied());
+        assertFalse(state(TEST_DOMAIN, Body.OnBalls).applied());
 
-        state(TEST_DOMAIN, Body.SomethingOnBalls).apply(Clothes_Pegs);
+        state(TEST_DOMAIN, Body.OnBalls).apply(Clothes_Pegs);
 
         assertTrue(state(TEST_DOMAIN, Clothes_Pegs).applied());
-        assertTrue(state(TEST_DOMAIN, Body.SomethingOnNipples).applied());
-        assertTrue(state(TEST_DOMAIN, Body.SomethingOnBalls).applied());
+        assertTrue(state(TEST_DOMAIN, Body.OnNipples).applied());
+        assertTrue(state(TEST_DOMAIN, Body.OnBalls).applied());
     }
 
     @Test
     public void testApplyItemToMultiplePlaces() {
-        state(TEST_DOMAIN, Clothes_Pegs).apply(Body.SomethingOnNipples);
-        state(TEST_DOMAIN, Clothes_Pegs).apply(Body.SomethingOnBalls);
+        state(TEST_DOMAIN, Clothes_Pegs).apply(Body.OnNipples);
+        state(TEST_DOMAIN, Clothes_Pegs).apply(Body.OnBalls);
 
         assertTrue(state(TEST_DOMAIN, Clothes_Pegs).applied());
-        assertTrue(state(TEST_DOMAIN, Body.SomethingOnBalls).applied());
-        assertTrue(state(TEST_DOMAIN, Body.SomethingOnNipples).applied());
+        assertTrue(state(TEST_DOMAIN, Body.OnBalls).applied());
+        assertTrue(state(TEST_DOMAIN, Body.OnNipples).applied());
     }
 
     @Test
     public void testApplyItemToMultiplePlacesRemoveAllAtOnce() {
-        state(TEST_DOMAIN, Clothes_Pegs).apply(Body.SomethingOnNipples);
-        state(TEST_DOMAIN, Clothes_Pegs).apply(Body.SomethingOnBalls);
+        state(TEST_DOMAIN, Clothes_Pegs).apply(Body.OnNipples);
+        state(TEST_DOMAIN, Clothes_Pegs).apply(Body.OnBalls);
 
         assertTrue(state(TEST_DOMAIN, Clothes_Pegs).applied());
-        assertTrue(state(TEST_DOMAIN, Body.SomethingOnBalls).applied());
-        assertTrue(state(TEST_DOMAIN, Body.SomethingOnNipples).applied());
+        assertTrue(state(TEST_DOMAIN, Body.OnBalls).applied());
+        assertTrue(state(TEST_DOMAIN, Body.OnNipples).applied());
 
         state(TEST_DOMAIN, Clothes_Pegs).remove();
 
         assertFalse(state(TEST_DOMAIN, Clothes_Pegs).applied());
-        assertFalse(state(TEST_DOMAIN, Body.SomethingOnBalls).applied());
-        assertFalse(state(TEST_DOMAIN, Body.SomethingOnNipples).applied());
+        assertFalse(state(TEST_DOMAIN, Body.OnBalls).applied());
+        assertFalse(state(TEST_DOMAIN, Body.OnNipples).applied());
     }
 
     @Test
     public void testApplyItemToMultiplePlacesRemoveOneAfterAnother() {
-        state(TEST_DOMAIN, Clothes_Pegs).apply(Body.SomethingOnNipples);
-        state(TEST_DOMAIN, Clothes_Pegs).apply(Body.SomethingOnBalls);
+        state(TEST_DOMAIN, Clothes_Pegs).apply(Body.OnNipples);
+        state(TEST_DOMAIN, Clothes_Pegs).apply(Body.OnBalls);
 
         assertTrue(state(TEST_DOMAIN, Clothes_Pegs).applied());
-        assertTrue(state(TEST_DOMAIN, Body.SomethingOnBalls).applied());
-        assertTrue(state(TEST_DOMAIN, Body.SomethingOnNipples).applied());
+        assertTrue(state(TEST_DOMAIN, Body.OnBalls).applied());
+        assertTrue(state(TEST_DOMAIN, Body.OnNipples).applied());
 
         // state(TEST_DOMAIN, Clothes_Pegs).remove(Body.SomethingOnBalls);
-        state(TEST_DOMAIN, Body.SomethingOnBalls).remove();
+        state(TEST_DOMAIN, Body.OnBalls).remove();
 
         assertTrue(state(TEST_DOMAIN, Clothes_Pegs).applied());
-        assertFalse(state(TEST_DOMAIN, Body.SomethingOnBalls).applied());
-        assertTrue(state(TEST_DOMAIN, Body.SomethingOnNipples).applied());
+        assertFalse(state(TEST_DOMAIN, Body.OnBalls).applied());
+        assertTrue(state(TEST_DOMAIN, Body.OnNipples).applied());
     }
 
     @Test
     public void testApplyItemToMultiplePlacesRemoveOneAfterAnotherWithoutKnowingTheActualToy() {
-        state(TEST_DOMAIN, Clothes_Pegs).apply(Body.SomethingOnNipples);
-        state(TEST_DOMAIN, Clothes_Pegs).apply(Body.SomethingOnBalls);
+        state(TEST_DOMAIN, Clothes_Pegs).apply(Body.OnNipples);
+        state(TEST_DOMAIN, Clothes_Pegs).apply(Body.OnBalls);
 
         assertTrue(state(TEST_DOMAIN, Clothes_Pegs).applied());
-        assertTrue(state(TEST_DOMAIN, Body.SomethingOnBalls).applied());
-        assertTrue(state(TEST_DOMAIN, Body.SomethingOnNipples).applied());
+        assertTrue(state(TEST_DOMAIN, Body.OnBalls).applied());
+        assertTrue(state(TEST_DOMAIN, Body.OnNipples).applied());
 
-        state(TEST_DOMAIN, Body.SomethingOnNipples).remove();
+        state(TEST_DOMAIN, Body.OnNipples).remove();
 
         assertTrue(state(TEST_DOMAIN, Clothes_Pegs).applied());
-        assertTrue(state(TEST_DOMAIN, Body.SomethingOnBalls).applied());
-        assertFalse(state(TEST_DOMAIN, Body.SomethingOnNipples).applied());
+        assertTrue(state(TEST_DOMAIN, Body.OnBalls).applied());
+        assertFalse(state(TEST_DOMAIN, Body.OnNipples).applied());
     }
 
     @Test
@@ -282,27 +282,27 @@ public class StateMapsApplyTest extends StateMaps {
 
     @Test
     public void testApplyWithoutPeersWorks() {
-        state(TEST_DOMAIN, Body.SomethingOnBalls).apply();
-        assertTrue(state(TEST_DOMAIN, Body.SomethingOnBalls).applied());
+        state(TEST_DOMAIN, Body.OnBalls).apply();
+        assertTrue(state(TEST_DOMAIN, Body.OnBalls).applied());
     }
 
     @Test
     public void testApplyAndRemoveWithSelfReference() {
         assertFalse(state(TEST_DOMAIN, Toys.Chastity_Device).applied());
-        assertFalse(state(TEST_DOMAIN, Body.SomethingOnPenis).applied());
+        assertFalse(state(TEST_DOMAIN, Body.OnPenis).applied());
 
-        state(TEST_DOMAIN, Toys.Chastity_Device).apply(Body.SomethingOnPenis);
+        state(TEST_DOMAIN, Toys.Chastity_Device).apply(Body.OnPenis);
 
         assertTrue(state(TEST_DOMAIN, Toys.Chastity_Device).applied());
-        assertTrue(state(TEST_DOMAIN, Body.SomethingOnPenis).applied());
+        assertTrue(state(TEST_DOMAIN, Body.OnPenis).applied());
 
-        state(TEST_DOMAIN, Body.SomethingOnPenis).apply(Body.SomethingOnPenis);
-        assertTrue(state(TEST_DOMAIN, Body.SomethingOnPenis).applied());
+        state(TEST_DOMAIN, Body.OnPenis).apply(Body.OnPenis);
+        assertTrue(state(TEST_DOMAIN, Body.OnPenis).applied());
 
         state(TEST_DOMAIN, Toys.Chastity_Device).remove();
-        assertTrue(state(TEST_DOMAIN, Body.SomethingOnPenis).applied());
+        assertTrue(state(TEST_DOMAIN, Body.OnPenis).applied());
 
-        state(TEST_DOMAIN, Body.SomethingOnPenis).remove();
-        assertFalse(state(TEST_DOMAIN, Body.SomethingOnPenis).applied());
+        state(TEST_DOMAIN, Body.OnPenis).remove();
+        assertFalse(state(TEST_DOMAIN, Body.OnPenis).applied());
     }
 }

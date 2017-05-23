@@ -38,8 +38,8 @@ public class StateMapsTestRemember extends StateMaps {
         assertFalse(state(TEST_DOMAIN, Toys.Chastity_Device).applied());
         assertFalse(state(TEST_DOMAIN, Toys.Wrist_Restraints).applied());
 
-        state(TEST_DOMAIN, Toys.Chastity_Device).apply(Body.SomethingOnPenis, Body.CannotJerkOff);
-        state(TEST_DOMAIN, Toys.Wrist_Restraints).apply(Body.WristsTiedBehindBack, Body.CannotJerkOff);
+        state(TEST_DOMAIN, Toys.Chastity_Device).apply(Body.OnPenis, Body.CantJerkOff);
+        state(TEST_DOMAIN, Toys.Wrist_Restraints).apply(Body.WristsTiedBehindBack, Body.CantJerkOff);
 
         state(TEST_DOMAIN, Locks.Chastity_Device_Lock).apply(Toys.Chastity_Device).over(24, TimeUnit.HOURS).remember();
 
@@ -64,16 +64,16 @@ public class StateMapsTestRemember extends StateMaps {
     }
 
     private void assertRememberIsShallowAndIndirectlyReferencedPeersArentAffected() {
-        assertTrue(state(TEST_DOMAIN, Body.CannotJerkOff).applied());
-        assertTrue(state(TEST_DOMAIN, Body.SomethingOnPenis).applied());
-        assertTrue(state(TEST_DOMAIN, Body.CannotJerkOff).expired());
-        assertTrue(state(TEST_DOMAIN, Body.SomethingOnPenis).expired());
+        assertTrue(state(TEST_DOMAIN, Body.CantJerkOff).applied());
+        assertTrue(state(TEST_DOMAIN, Body.OnPenis).applied());
+        assertTrue(state(TEST_DOMAIN, Body.CantJerkOff).expired());
+        assertTrue(state(TEST_DOMAIN, Body.OnPenis).expired());
     }
 
     @Test
     public void testRememberedItemsAreCompletlyRemoved() {
-        state(TEST_DOMAIN, Toys.Wrist_Restraints).apply(Body.WristsTiedBehindBack, Body.CannotJerkOff);
-        state(TEST_DOMAIN, Toys.Chastity_Device).apply(Body.SomethingOnPenis, Body.CannotJerkOff)
+        state(TEST_DOMAIN, Toys.Wrist_Restraints).apply(Body.WristsTiedBehindBack, Body.CantJerkOff);
+        state(TEST_DOMAIN, Toys.Chastity_Device).apply(Body.OnPenis, Body.CantJerkOff)
                 .over(24, TimeUnit.HOURS).remember();
 
         assertEquals(6, persistence.storage.size());
@@ -83,20 +83,20 @@ public class StateMapsTestRemember extends StateMaps {
         assertEquals(0, persistence.storage.size());
 
         assertFalse(state(TEST_DOMAIN, Toys.Chastity_Device).applied());
-        assertFalse(state(TEST_DOMAIN, Body.SomethingOnPenis).applied());
-        assertTrue(state(TEST_DOMAIN, Body.CannotJerkOff).applied());
+        assertFalse(state(TEST_DOMAIN, Body.OnPenis).applied());
+        assertTrue(state(TEST_DOMAIN, Body.CantJerkOff).applied());
 
         state(TEST_DOMAIN, Toys.Wrist_Restraints).remove();
 
         assertFalse(state(TEST_DOMAIN, Toys.Wrist_Restraints).applied());
         assertFalse(state(TEST_DOMAIN, Body.WristsTiedBehindBack).applied());
-        assertFalse(state(TEST_DOMAIN, Body.CannotJerkOff).applied());
+        assertFalse(state(TEST_DOMAIN, Body.CantJerkOff).applied());
     }
 
     @Test
     public void testRememberedItemsAreCompletlyRemovedAfterSessionRestore() {
-        state(TEST_DOMAIN, Toys.Wrist_Restraints).apply(Body.WristsTiedBehindBack, Body.CannotJerkOff);
-        state(TEST_DOMAIN, Toys.Chastity_Device).apply(Body.SomethingOnPenis, Body.CannotJerkOff)
+        state(TEST_DOMAIN, Toys.Wrist_Restraints).apply(Body.WristsTiedBehindBack, Body.CantJerkOff);
+        state(TEST_DOMAIN, Toys.Chastity_Device).apply(Body.OnPenis, Body.CantJerkOff)
                 .over(24, TimeUnit.HOURS).remember();
 
         // Simulate session end & restore
@@ -106,8 +106,8 @@ public class StateMapsTestRemember extends StateMaps {
         assertFalse(state(TEST_DOMAIN, Body.WristsTiedBehindBack).applied());
 
         assertTrue(state(TEST_DOMAIN, Toys.Chastity_Device).applied());
-        assertTrue(state(TEST_DOMAIN, Body.SomethingOnPenis).applied());
-        assertTrue(state(TEST_DOMAIN, Body.CannotJerkOff).applied());
+        assertTrue(state(TEST_DOMAIN, Body.OnPenis).applied());
+        assertTrue(state(TEST_DOMAIN, Body.CantJerkOff).applied());
 
         assertEquals(6, persistence.storage.size());
 
@@ -116,9 +116,9 @@ public class StateMapsTestRemember extends StateMaps {
         assertEquals(0, persistence.storage.size());
 
         assertFalse(state(TEST_DOMAIN, Toys.Chastity_Device).applied());
-        assertFalse(state(TEST_DOMAIN, Body.SomethingOnPenis).applied());
+        assertFalse(state(TEST_DOMAIN, Body.OnPenis).applied());
 
-        State cannotJerkOff = state(TEST_DOMAIN, Body.CannotJerkOff);
+        State cannotJerkOff = state(TEST_DOMAIN, Body.CantJerkOff);
         assertFalse(cannotJerkOff.applied());
     }
 }

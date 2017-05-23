@@ -34,9 +34,9 @@ public class StateCaseIndepencyTests {
     public void testCaseIndepencencyOfStatePeersAndAttributes() {
         TeaseScript script = TestScript.getOne();
 
-        script.state("teaselib.household.clothes_pegs").apply("teaseLib.body.somethingonnipples");
-        assertTrue(script.state(Body.SomethingOnNipples).applied());
-        assertTrue(script.state("TeaseLib.Body.SomethingOnNipples").applied());
+        script.state("teaselib.household.clothes_pegs").apply("teaseLib.body.onnipples");
+        assertTrue(script.state(Body.OnNipples).applied());
+        assertTrue(script.state("TeaseLib.Body.OnNipples").applied());
 
         assertTrue(script.state(HouseHold.Clothes_Pegs).applied());
         assertTrue(script.state(HouseHold.Clothes_Pegs).is(script.namespace));
@@ -45,12 +45,12 @@ public class StateCaseIndepencyTests {
         assertTrue(script.state("teaselib.Household.Clothes_Pegs").is(script.namespace));
         assertTrue(script.state("teaselib.Household.Clothes_Pegs").is(script.namespace.toLowerCase()));
 
-        assertTrue(script.state(Body.SomethingOnNipples).is(HouseHold.Clothes_Pegs));
-        assertTrue(script.state(Body.SomethingOnNipples).is("teaselib.Household.Clothes_Pegs"));
-        assertTrue(script.state(Body.SomethingOnNipples).is("TEASELIB.household.cLOTHES_pEGS"));
+        assertTrue(script.state(Body.OnNipples).is(HouseHold.Clothes_Pegs));
+        assertTrue(script.state(Body.OnNipples).is("teaselib.Household.Clothes_Pegs"));
+        assertTrue(script.state(Body.OnNipples).is("TEASELIB.household.cLOTHES_pEGS"));
 
-        assertTrue(script.state(HouseHold.Clothes_Pegs).is("teaseLib.Body.SomethingOnNipples"));
-        assertTrue(script.state(HouseHold.Clothes_Pegs).is("teaseLib.body.somethingonnipples"));
+        assertTrue(script.state(HouseHold.Clothes_Pegs).is("teaseLib.Body.OnNipples"));
+        assertTrue(script.state(HouseHold.Clothes_Pegs).is("teaseLib.body.onnipples"));
     }
 
     @Test
@@ -74,9 +74,9 @@ public class StateCaseIndepencyTests {
     public void testCaseIndepencencyOfItemAttributes() {
         TeaseScript script = TestScript.getOne();
 
-        script.item("teaselib.household.clothes_pegs").to("teaseLib.body.somethingonnipples");
-        assertTrue(script.item(Body.SomethingOnNipples).applied());
-        assertTrue(script.item("TeaseLib.Body.SomethingOnNipples").applied());
+        script.item("teaselib.household.clothes_pegs").to("teaseLib.body.onnipples");
+        assertTrue(script.item(Body.OnNipples).applied());
+        assertTrue(script.item("TeaseLib.Body.OnNipples").applied());
 
         assertTrue(script.item(HouseHold.Clothes_Pegs).applied());
         assertTrue(script.item(HouseHold.Clothes_Pegs).is(script.namespace));
@@ -85,11 +85,11 @@ public class StateCaseIndepencyTests {
         assertTrue(script.item("teaselib.Household.Clothes_Pegs").is(script.namespace));
         assertTrue(script.item("teaselib.Household.Clothes_Pegs").is(script.namespace.toLowerCase()));
 
-        assertTrue(script.item(Body.SomethingOnNipples).is(HouseHold.Clothes_Pegs));
-        assertTrue(script.item(Body.SomethingOnNipples).is("teaselib.Household.Clothes_Pegs"));
-        assertTrue(script.item(Body.SomethingOnNipples).is("TEASELIB.household.cLOTHES_pEGS"));
+        assertTrue(script.item(Body.OnNipples).is(HouseHold.Clothes_Pegs));
+        assertTrue(script.item(Body.OnNipples).is("teaselib.Household.Clothes_Pegs"));
+        assertTrue(script.item(Body.OnNipples).is("TEASELIB.household.cLOTHES_pEGS"));
 
-        assertTrue(script.item(HouseHold.Clothes_Pegs).is("teaseLib.Body.SomethingOnNipples"));
-        assertTrue(script.item(HouseHold.Clothes_Pegs).is("teaseLib.body.somethingonnipples"));
+        assertTrue(script.item(HouseHold.Clothes_Pegs).is("teaseLib.Body.OnNipples"));
+        assertTrue(script.item(HouseHold.Clothes_Pegs).is("teaseLib.body.onnipples"));
     }
 }

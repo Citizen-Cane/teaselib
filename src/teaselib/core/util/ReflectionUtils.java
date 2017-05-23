@@ -1,9 +1,5 @@
 package teaselib.core.util;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
 public final class ReflectionUtils {
     public static String classParentName(Class<?> clazz) {
         String path = normalizeClassName(clazz);
@@ -49,22 +45,17 @@ public final class ReflectionUtils {
         return qualifiedName.substring(qualifiedName.lastIndexOf(".") + 1);
     }
 
-    @SuppressWarnings({ "unchecked", "cast", "rawtypes" })
     public static Enum<?> getEnum(String qualifiedName) throws ClassNotFoundException {
-        Class<?> enumClass = Class.forName(ReflectionUtils.getClass(qualifiedName));
-        return (Enum<?>) Enum.valueOf((Class<? extends Enum>) enumClass, ReflectionUtils.getName(qualifiedName));
+        return getEnum(new QualifiedObject(qualifiedName));
     }
 
-    public static List<Enum<?>> getEnums(List<String> qualifiedNames) throws ClassNotFoundException {
-        List<Enum<?>> enums = new ArrayList<Enum<?>>(qualifiedNames.size());
-        for (String qualifiedName : qualifiedNames) {
-            enums.add(getEnum(qualifiedName));
+    public static Enum<?> getEnum(QualifiedItem<?> qualifiedItem) throws ClassNotFoundException {
+        Class<?> enumClass = Class.forName(qualifiedItem.namespace());
+        for (Enum<?> value : (Enum<?>[]) enumClass.getEnumConstants()) {
+            if (value.name().equalsIgnoreCase(qualifiedItem.name())) {
+                return value;
+            }
         }
-        return enums;
+        throw new IllegalArgumentException("Undefined enum constant " + qualifiedItem);
     }
-
-    public static List<Enum<?>> getEnums(String[] qualifiedName) throws ClassNotFoundException {
-        return getEnums(Arrays.asList(qualifiedName));
-    }
-
 }

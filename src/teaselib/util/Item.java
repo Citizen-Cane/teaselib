@@ -1,5 +1,6 @@
 package teaselib.util;
 
+import teaselib.Duration;
 import teaselib.State;
 
 public interface Item {
@@ -34,6 +35,11 @@ public interface Item {
         @Override
         public boolean expired() {
             return true;
+        }
+
+        @Override
+        public Duration duration() {
+            throw new UnsupportedOperationException();
         }
 
         @Override
@@ -81,4 +87,6 @@ public interface Item {
     boolean applied();
 
     boolean expired();
+
+    Duration duration();
 }

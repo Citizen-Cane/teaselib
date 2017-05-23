@@ -7,6 +7,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
+import teaselib.Duration;
 import teaselib.State;
 import teaselib.core.StateMaps;
 import teaselib.core.TeaseLib;
@@ -127,6 +128,11 @@ public class ItemImpl implements Item, StateMaps.Attributes {
     @Override
     public boolean expired() {
         return teaseLib.state(domain, item).expired();
+    }
+
+    @Override
+    public Duration duration() {
+        return teaseLib.state(domain, item).duration();
     }
 
     @Override

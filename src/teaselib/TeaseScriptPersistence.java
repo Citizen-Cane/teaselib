@@ -95,6 +95,11 @@ public abstract class TeaseScriptPersistence extends TeaseScriptBase {
         }
 
         @Override
+        public Duration duration() {
+            return item.duration();
+        }
+
+        @Override
         public void applyAttributes(Object... attributes) {
             ((StateMaps.Attributes) item).applyAttributes(attributes);
         }

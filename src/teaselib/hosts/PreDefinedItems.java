@@ -92,7 +92,7 @@ public class PreDefinedItems extends AbstractUserItems {
 
             return new Item[] { dogCollar, postureCollar, maidCollar, slaveCollar };
 
-        } else if (item.equals(Toys.Nipple_clamps)) {
+        } else if (item.equals(Toys.Nipple_Clamps)) {
             Item nippleClamps = item(teaseLib, item, "Toys", "nipple_clamps", "Nipple clamps", Material.Metal);
 
             return new Item[] { nippleClamps };

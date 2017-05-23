@@ -85,7 +85,7 @@ public abstract class AbstractUserItems implements UserItems {
             return new Body[] {};
         } else if (item.equals(Toys.Collar)) {
             return new Body[] { Body.AroundNeck };
-        } else if (item.equals(Toys.Nipple_clamps)) {
+        } else if (item.equals(Toys.Nipple_Clamps)) {
             return new Body[] { Body.SomethingOnNipples };
         } else if (item.equals(Toys.Chastity_Device)) {
             return new Body[] { Body.SomethingOnPenis, Body.CannotJerkOff };

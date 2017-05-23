@@ -24,10 +24,10 @@ public class StateTests {
         State somethingOnNipples = script.state(Body.SomethingOnNipples);
         assertFalse(somethingOnNipples.applied());
 
-        somethingOnNipples.apply(Toys.Nipple_clamps);
+        somethingOnNipples.apply(Toys.Nipple_Clamps);
         assertTrue(somethingOnNipples.applied());
         assertTrue(somethingOnNipples.expired());
-        assertTrue(somethingOnNipples.is(Toys.Nipple_clamps));
+        assertTrue(somethingOnNipples.is(Toys.Nipple_Clamps));
 
         somethingOnNipples.remove();
         assertTrue(somethingOnNipples.expired());
@@ -45,20 +45,20 @@ public class StateTests {
         assertFalse(somethingOnNipples.applied());
         assertEquals(0, script.persistence.storage.size());
 
-        somethingOnNipples.apply(Toys.Nipple_clamps).over(30, TimeUnit.MINUTES);
+        somethingOnNipples.apply(Toys.Nipple_Clamps).over(30, TimeUnit.MINUTES);
         assertTrue(somethingOnNipples.applied());
         assertFalse(somethingOnNipples.expired());
         assertEquals(30, somethingOnNipples.duration().remaining(TimeUnit.MINUTES));
 
         assertEquals(0, script.persistence.storage.size());
-        somethingOnNipples.apply(Toys.Nipple_clamps).over(30, TimeUnit.MINUTES).remember();
+        somethingOnNipples.apply(Toys.Nipple_Clamps).over(30, TimeUnit.MINUTES).remember();
 
         // Assert that when a state is applied then
         // the namespace of the script is applied to that state
         assertTrue(somethingOnNipples.is(script.namespace));
-        assertTrue(somethingOnNipples.is(Toys.Nipple_clamps));
-        assertTrue(script.state(Toys.Nipple_clamps).is(Body.SomethingOnNipples));
-        assertFalse(script.state(Toys.Nipple_clamps).is(script.namespace));
+        assertTrue(somethingOnNipples.is(Toys.Nipple_Clamps));
+        assertTrue(script.state(Toys.Nipple_Clamps).is(Body.SomethingOnNipples));
+        assertFalse(script.state(Toys.Nipple_Clamps).is(script.namespace));
 
         // There's no attribute for nipple clamps, because we didn't set any,
         // the namespace is only added automatically to Body.SomethingOnNipples
@@ -66,9 +66,9 @@ public class StateTests {
         // and empty attribute lists aren't persisted
         assertEquals(5, script.persistence.storage.size());
 
-        assertTrue(script.persistence.storage.containsKey("Toys.Nipple_clamps.state.duration"));
-        assertTrue(script.persistence.storage.containsKey("Toys.Nipple_clamps.state.peers"));
-        assertFalse(script.persistence.storage.containsKey("Toys.Nipple_clamps.state.attributes"));
+        assertTrue(script.persistence.storage.containsKey("Toys.Nipple_Clamps.state.duration"));
+        assertTrue(script.persistence.storage.containsKey("Toys.Nipple_Clamps.state.peers"));
+        assertFalse(script.persistence.storage.containsKey("Toys.Nipple_Clamps.state.attributes"));
 
         assertTrue(script.persistence.storage.containsKey("Body.SomethingOnNipples.state.peers"));
         assertTrue(script.persistence.storage.containsKey("Body.SomethingOnNipples.state.duration"));
@@ -91,25 +91,25 @@ public class StateTests {
         script.state(HouseHold.Condoms).apply(Body.SomethingOnPenis);
         assertTrue(script.state(HouseHold.Condoms).is(script.namespace));
         assertTrue(script.state(Body.SomethingOnPenis).applied());
-        
+
         assertFalse(script.state(Body.SomethingOnPenis).is(script.namespace));
 
         script.state(Toys.Chastity_Device).apply(Body.SomethingOnPenis);
         assertTrue(script.state(Body.SomethingOnPenis).applied());
         assertTrue(script.state(Toys.Chastity_Device).is(script.namespace));
-        
+
         assertFalse(script.state(Body.SomethingOnPenis).is(script.namespace));
 
         script.state(Toys.Chastity_Device).remove();
         assertTrue(script.state(Body.SomethingOnPenis).applied());
         assertFalse(script.state(Toys.Chastity_Device).is(script.namespace));
-        
+
         assertFalse(script.state(Body.SomethingOnPenis).is(script.namespace));
 
         script.state(HouseHold.Condoms).remove();
         assertFalse(script.state(Body.SomethingOnPenis).applied());
         assertFalse(script.state(HouseHold.Condoms).is(script.namespace));
-        
+
         assertFalse(script.state(Body.SomethingOnPenis).is(script.namespace));
     }
 
@@ -136,12 +136,12 @@ public class StateTests {
         TestScript script = TestScript.getOne();
         script.teaseLib.freezeTime();
 
-        Item nippleClampsItem = script.item(Toys.Nipple_clamps);
+        Item nippleClampsItem = script.item(Toys.Nipple_Clamps);
         assertFalse(nippleClampsItem.isAvailable());
         nippleClampsItem.setAvailable(true);
         assertTrue(nippleClampsItem.isAvailable());
 
-        State nippleClampsState = script.state(Toys.Nipple_clamps);
+        State nippleClampsState = script.state(Toys.Nipple_Clamps);
         assertFalse(nippleClampsState.applied());
         assertTrue(nippleClampsState.expired());
 
@@ -163,12 +163,12 @@ public class StateTests {
         script.teaseLib.freezeTime();
 
         State somethingOnNipples = script.state(Body.SomethingOnNipples);
-        State nippleClampsState = script.state(Toys.Nipple_clamps);
+        State nippleClampsState = script.state(Toys.Nipple_Clamps);
 
         assertFalse(somethingOnNipples.applied());
         assertFalse(nippleClampsState.applied());
 
-        somethingOnNipples.apply(Toys.Nipple_clamps).over(30, TimeUnit.MINUTES);
+        somethingOnNipples.apply(Toys.Nipple_Clamps).over(30, TimeUnit.MINUTES);
 
         assertTrue(somethingOnNipples.applied());
         assertTrue(nippleClampsState.applied());
@@ -180,20 +180,20 @@ public class StateTests {
         script.teaseLib.freezeTime();
 
         assertFalse(script.state(Body.SomethingOnNipples).applied());
-        assertFalse(script.state(Toys.Nipple_clamps).applied());
+        assertFalse(script.state(Toys.Nipple_Clamps).applied());
 
-        script.state(HouseHold.Weights).apply(Toys.Nipple_clamps);
-        script.state(Toys.Nipple_clamps).apply(Body.SomethingOnNipples, Material.Metal).over(30, TimeUnit.MINUTES);
+        script.state(HouseHold.Weights).apply(Toys.Nipple_Clamps);
+        script.state(Toys.Nipple_Clamps).apply(Body.SomethingOnNipples, Material.Metal).over(30, TimeUnit.MINUTES);
 
         assertTrue(script.state(Body.SomethingOnNipples).applied());
-        assertTrue(script.state(Toys.Nipple_clamps).applied());
+        assertTrue(script.state(Toys.Nipple_Clamps).applied());
 
-        assertTrue(script.state(Toys.Nipple_clamps).is(Material.Metal));
-        assertTrue(script.state(Toys.Nipple_clamps).is(HouseHold.Weights));
-        assertFalse(script.state(Toys.Nipple_clamps).is(Material.Rubber));
+        assertTrue(script.state(Toys.Nipple_Clamps).is(Material.Metal));
+        assertTrue(script.state(Toys.Nipple_Clamps).is(HouseHold.Weights));
+        assertFalse(script.state(Toys.Nipple_Clamps).is(Material.Rubber));
 
-        assertTrue(script.state(Toys.Nipple_clamps).is(Material.Metal, HouseHold.Weights));
-        assertFalse(script.state(Toys.Nipple_clamps).is(Material.Rubber, HouseHold.Weights));
+        assertTrue(script.state(Toys.Nipple_Clamps).is(Material.Metal, HouseHold.Weights));
+        assertFalse(script.state(Toys.Nipple_Clamps).is(Material.Rubber, HouseHold.Weights));
     }
 
     @Test
@@ -202,52 +202,52 @@ public class StateTests {
         script.teaseLib.freezeTime();
 
         assertFalse(script.state(Body.SomethingOnNipples).applied());
-        assertFalse(script.state(Toys.Nipple_clamps).applied());
+        assertFalse(script.state(Toys.Nipple_Clamps).applied());
         assertFalse(script.state("teaselib.Body.SomethingOnNipples").applied());
-        assertFalse(script.state("teaselib.Toys.Nipple_clamps").applied());
+        assertFalse(script.state("teaselib.Toys.Nipple_Clamps").applied());
 
-        script.state(HouseHold.Weights).apply(Toys.Nipple_clamps);
-        script.state(Toys.Nipple_clamps).apply(Body.SomethingOnNipples, Material.Metal).over(30, TimeUnit.MINUTES);
+        script.state(HouseHold.Weights).apply(Toys.Nipple_Clamps);
+        script.state(Toys.Nipple_Clamps).apply(Body.SomethingOnNipples, Material.Metal).over(30, TimeUnit.MINUTES);
 
         assertTrue(script.state(Body.SomethingOnNipples).applied());
-        assertTrue(script.state(Toys.Nipple_clamps).applied());
+        assertTrue(script.state(Toys.Nipple_Clamps).applied());
         assertTrue(script.state("teaselib.Body.SomethingOnNipples").applied());
-        assertTrue(script.state("teaselib.Toys.Nipple_clamps").applied());
+        assertTrue(script.state("teaselib.Toys.Nipple_Clamps").applied());
 
-        assertTrue(script.state(Toys.Nipple_clamps).is(Material.Metal));
-        assertTrue(script.state(Toys.Nipple_clamps).is(HouseHold.Weights));
-        assertFalse(script.state(Toys.Nipple_clamps).is(Material.Rubber));
+        assertTrue(script.state(Toys.Nipple_Clamps).is(Material.Metal));
+        assertTrue(script.state(Toys.Nipple_Clamps).is(HouseHold.Weights));
+        assertFalse(script.state(Toys.Nipple_Clamps).is(Material.Rubber));
 
-        assertTrue(script.state(Toys.Nipple_clamps).is("teaselib.Material.Metal"));
-        assertTrue(script.state(Toys.Nipple_clamps).is("teaselib.HouseHold.Weights"));
-        assertFalse(script.state(Toys.Nipple_clamps).is("teaselib.Material.Rubber"));
+        assertTrue(script.state(Toys.Nipple_Clamps).is("teaselib.Material.Metal"));
+        assertTrue(script.state(Toys.Nipple_Clamps).is("teaselib.HouseHold.Weights"));
+        assertFalse(script.state(Toys.Nipple_Clamps).is("teaselib.Material.Rubber"));
 
-        assertTrue(script.state("teaselib.Toys.Nipple_clamps").is(Material.Metal));
-        assertTrue(script.state("teaselib.Toys.Nipple_clamps").is(HouseHold.Weights));
-        assertFalse(script.state("teaselib.Toys.Nipple_clamps").is(Material.Rubber));
+        assertTrue(script.state("teaselib.Toys.Nipple_Clamps").is(Material.Metal));
+        assertTrue(script.state("teaselib.Toys.Nipple_Clamps").is(HouseHold.Weights));
+        assertFalse(script.state("teaselib.Toys.Nipple_Clamps").is(Material.Rubber));
 
-        assertTrue(script.state("teaselib.Toys.Nipple_clamps").is(Material.Metal));
-        assertTrue(script.state("teaselib.Toys.Nipple_clamps").is(HouseHold.Weights));
-        assertFalse(script.state("teaselib.Toys.Nipple_clamps").is(Material.Rubber));
+        assertTrue(script.state("teaselib.Toys.Nipple_Clamps").is(Material.Metal));
+        assertTrue(script.state("teaselib.Toys.Nipple_Clamps").is(HouseHold.Weights));
+        assertFalse(script.state("teaselib.Toys.Nipple_Clamps").is(Material.Rubber));
 
-        assertTrue(script.state("teaselib.Toys.Nipple_clamps").is("teaselib.Material.Metal"));
-        assertTrue(script.state("teaselib.Toys.Nipple_clamps").is("teaselib.HouseHold.Weights"));
-        assertFalse(script.state("teaselib.Toys.Nipple_clamps").is("teaselib.Material.Rubber"));
+        assertTrue(script.state("teaselib.Toys.Nipple_Clamps").is("teaselib.Material.Metal"));
+        assertTrue(script.state("teaselib.Toys.Nipple_Clamps").is("teaselib.HouseHold.Weights"));
+        assertFalse(script.state("teaselib.Toys.Nipple_Clamps").is("teaselib.Material.Rubber"));
 
-        assertTrue(script.state(Toys.Nipple_clamps).is(Material.Metal, HouseHold.Weights));
-        assertFalse(script.state(Toys.Nipple_clamps).is(Material.Rubber, HouseHold.Weights));
-        assertTrue(script.state(Toys.Nipple_clamps).is("teaselib.Material.Metal", HouseHold.Weights));
-        assertFalse(script.state(Toys.Nipple_clamps).is("teaselib.Material.Rubber", HouseHold.Weights));
-        assertTrue(script.state(Toys.Nipple_clamps).is("teaselib.Material.Metal", "teaselib.HouseHold.Weights"));
-        assertFalse(script.state(Toys.Nipple_clamps).is("teaselib.Material.Rubber", "teaselib.HouseHold.Weights"));
+        assertTrue(script.state(Toys.Nipple_Clamps).is(Material.Metal, HouseHold.Weights));
+        assertFalse(script.state(Toys.Nipple_Clamps).is(Material.Rubber, HouseHold.Weights));
+        assertTrue(script.state(Toys.Nipple_Clamps).is("teaselib.Material.Metal", HouseHold.Weights));
+        assertFalse(script.state(Toys.Nipple_Clamps).is("teaselib.Material.Rubber", HouseHold.Weights));
+        assertTrue(script.state(Toys.Nipple_Clamps).is("teaselib.Material.Metal", "teaselib.HouseHold.Weights"));
+        assertFalse(script.state(Toys.Nipple_Clamps).is("teaselib.Material.Rubber", "teaselib.HouseHold.Weights"));
 
-        assertTrue(script.state("teaselib.Toys.Nipple_clamps").is(Material.Metal, HouseHold.Weights));
-        assertFalse(script.state("teaselib.Toys.Nipple_clamps").is(Material.Rubber, HouseHold.Weights));
-        assertTrue(script.state("teaselib.Toys.Nipple_clamps").is("teaselib.Material.Metal", HouseHold.Weights));
-        assertFalse(script.state("teaselib.Toys.Nipple_clamps").is("teaselib.Material.Rubber", HouseHold.Weights));
-        assertTrue(script.state("teaselib.Toys.Nipple_clamps").is("teaselib.Material.Metal",
+        assertTrue(script.state("teaselib.Toys.Nipple_Clamps").is(Material.Metal, HouseHold.Weights));
+        assertFalse(script.state("teaselib.Toys.Nipple_Clamps").is(Material.Rubber, HouseHold.Weights));
+        assertTrue(script.state("teaselib.Toys.Nipple_Clamps").is("teaselib.Material.Metal", HouseHold.Weights));
+        assertFalse(script.state("teaselib.Toys.Nipple_Clamps").is("teaselib.Material.Rubber", HouseHold.Weights));
+        assertTrue(script.state("teaselib.Toys.Nipple_Clamps").is("teaselib.Material.Metal",
                 "teaselib.HouseHold.Weights"));
-        assertFalse(script.state("teaselib.Toys.Nipple_clamps").is("teaselib.Material.Rubber",
+        assertFalse(script.state("teaselib.Toys.Nipple_Clamps").is("teaselib.Material.Rubber",
                 "teaselib.HouseHold.Weights"));
     }
 

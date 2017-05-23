@@ -44,15 +44,15 @@ public class StateScopeTests {
     }
 
     private void assertThatStateIsPersisted() {
-        somethingOnNipples.apply(Toys.Nipple_clamps).over(30, TimeUnit.MINUTES);
+        somethingOnNipples.apply(Toys.Nipple_Clamps).over(30, TimeUnit.MINUTES);
         assertTrue(somethingOnNipples.applied());
         assertFalse(peerStorage.available());
 
-        somethingOnNipples.apply(Toys.Nipple_clamps).over(30, TimeUnit.MINUTES)
+        somethingOnNipples.apply(Toys.Nipple_Clamps).over(30, TimeUnit.MINUTES)
                 .remember();
         assertTrue(peerStorage.available());
         String value = peerStorage.value();
-        assertTrue(value.contains(Toys.Nipple_clamps.name()));
+        assertTrue(value.contains(Toys.Nipple_Clamps.name()));
         assertFalse(somethingOnNipples.expired());
     }
 

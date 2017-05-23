@@ -38,7 +38,7 @@ public enum Toys {
     Hood,
     Humbler,
     Leash,
-    Nipple_clamps,
+    Nipple_Clamps,
     Pussy_Clamps,
     Rope,
     Spreader_Bar,
@@ -98,7 +98,7 @@ public enum Toys {
     }
 
     public final static Toys Basic[] = { Ankle_Restraints, Gag, Blindfold, Buttplug, Chains,
-            Chastity_Device, Collar, Dildo, Nipple_clamps, Rope, Spanking_Implement, VaginalInsert,
+            Chastity_Device, Collar, Dildo, Nipple_Clamps, Rope, Spanking_Implement, VaginalInsert,
             Wrist_Restraints };
 
     public final static Toys Advanced[] = { Ball_Stretcher, Cockring, Enema_Bulb, Enema_Kit,

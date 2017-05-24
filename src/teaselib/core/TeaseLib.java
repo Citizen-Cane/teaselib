@@ -757,7 +757,7 @@ public class TeaseLib {
     public <T extends Object> Items items(String domain, T... values) {
         Items items = new Items(values.length);
         for (T item : values) {
-            items.addAll(persistence.getUserItems().get(this, domain, QualifiedItem.fromType(item)));
+            items.addAll(persistence.getUserItems().get(this, domain, QualifiedItem.of(item)));
         }
         return items;
     }

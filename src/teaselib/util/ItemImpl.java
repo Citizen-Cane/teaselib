@@ -87,7 +87,7 @@ public class ItemImpl implements Item, StateMaps.Attributes {
 
     public static boolean hasAllAttributes(Set<Object> mine, Object[] others) {
         attributeLoop: for (Object value : others) {
-            QualifiedItem<?> item = QualifiedItem.fromType(value);
+            QualifiedItem<?> item = QualifiedItem.of(value);
             for (Object attribute : mine) {
                 if (item.equals(attribute)) {
                     continue attributeLoop;

@@ -159,7 +159,7 @@ public class StateMaps {
         }
 
         private void addAppliedOrPersistedPeer(Object peer) {
-            QualifiedItem<?> qualifiedPeer = QualifiedItem.fromType(peer);
+            QualifiedItem<?> qualifiedPeer = QualifiedItem.of(peer);
 
             if (stateMap(domain, qualifiedPeer.namespace().toLowerCase())
                     .contains(qualifiedPeer.name().toLowerCase())) {
@@ -436,7 +436,7 @@ public class StateMaps {
      */
 
     public State state(String domain, Object item) {
-        return state(domain, QualifiedItem.fromType(item));
+        return state(domain, QualifiedItem.of(item));
     }
 
     private State state(String domain, QualifiedItem<?> item) {

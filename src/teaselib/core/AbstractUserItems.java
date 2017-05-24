@@ -75,11 +75,11 @@ public abstract class AbstractUserItems implements UserItems {
 
     @Override
     public Enum<?>[] defaults(QualifiedItem<?> item) {
-        if (item.namespace().equals(Toys.class.getName())) {
+        if (item.namespace().equalsIgnoreCase(Toys.class.getName())) {
             return getToyDefaults(item);
-        } else if (item.namespace().equals(Clothes.class.getName())) {
+        } else if (item.namespace().equalsIgnoreCase(Clothes.class.getName())) {
             return getClothesDefaults(item);
-        } else if (item.namespace().equals(HouseHold.class.getName())) {
+        } else if (item.namespace().equalsIgnoreCase(HouseHold.class.getName())) {
             return getHouseholdDefaults(item);
         } else {
             throw new IllegalArgumentException("Defaults not defined for " + item);

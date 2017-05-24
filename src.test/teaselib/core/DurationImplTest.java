@@ -29,25 +29,20 @@ public class DurationImplTest {
         assertEquals(TimeUnit.MILLISECONDS.toHours(System.currentTimeMillis()),
                 script.duration(24, TimeUnit.HOURS).start(TimeUnit.HOURS));
 
-        assertEquals(
-                TimeUnit.MILLISECONDS.toMinutes(System.currentTimeMillis()),
+        assertEquals(TimeUnit.MILLISECONDS.toMinutes(System.currentTimeMillis()),
                 script.duration(60, TimeUnit.MINUTES).start(TimeUnit.MINUTES));
 
-        assertEquals(
-                TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis()),
+        assertEquals(TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis()),
                 script.duration(60, TimeUnit.SECONDS).start(TimeUnit.SECONDS));
     }
 
     @Test
     public void testLimit() throws Exception {
-        assertEquals(24,
-                script.duration(24, TimeUnit.HOURS).limit(TimeUnit.HOURS));
+        assertEquals(24, script.duration(24, TimeUnit.HOURS).limit(TimeUnit.HOURS));
 
-        assertEquals(60,
-                script.duration(60, TimeUnit.MINUTES).limit(TimeUnit.MINUTES));
+        assertEquals(60, script.duration(60, TimeUnit.MINUTES).limit(TimeUnit.MINUTES));
 
-        assertEquals(60,
-                script.duration(60, TimeUnit.SECONDS).limit(TimeUnit.SECONDS));
+        assertEquals(60, script.duration(60, TimeUnit.SECONDS).limit(TimeUnit.SECONDS));
     }
 
     @Test
@@ -67,14 +62,23 @@ public class DurationImplTest {
 
     @Test
     public void testRemaining() throws Exception {
-        assertEquals(24,
-                script.duration(24, TimeUnit.HOURS).remaining(TimeUnit.HOURS));
+        assertEquals(24, script.duration(24, TimeUnit.HOURS).remaining(TimeUnit.HOURS));
 
-        assertEquals(24, script.duration(24, TimeUnit.MINUTES)
-                .remaining(TimeUnit.MINUTES));
+        assertEquals(24, script.duration(24, TimeUnit.MINUTES).remaining(TimeUnit.MINUTES));
 
-        assertEquals(24, script.duration(24, TimeUnit.SECONDS)
-                .remaining(TimeUnit.SECONDS));
+        assertEquals(24, script.duration(24, TimeUnit.SECONDS).remaining(TimeUnit.SECONDS));
+    }
+
+    @Test
+    public void verifyThatRemainingBecomesNegative() throws Exception {
+        Duration duration = script.duration(24, TimeUnit.HOURS);
+        assertEquals(24, duration.remaining(TimeUnit.HOURS));
+
+        script.teaseLib.advanceTime(24, TimeUnit.HOURS);
+        assertEquals(0, duration.remaining(TimeUnit.HOURS));
+
+        script.teaseLib.advanceTime(1, TimeUnit.HOURS);
+        assertEquals(-1, duration.remaining(TimeUnit.HOURS));
     }
 
     @Test
@@ -83,9 +87,7 @@ public class DurationImplTest {
         assertEquals(script.teaseLib.getTime(TimeUnit.SECONDS) + 60,
                 script.duration(60, TimeUnit.SECONDS).end(TimeUnit.SECONDS));
 
-        assertEquals(State.INDEFINITELY,
-                script.duration(State.INDEFINITELY, TimeUnit.SECONDS)
-                        .end(TimeUnit.SECONDS));
+        assertEquals(State.INDEFINITELY, script.duration(State.INDEFINITELY, TimeUnit.SECONDS).end(TimeUnit.SECONDS));
     }
 
     @Test

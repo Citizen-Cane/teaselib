@@ -98,12 +98,12 @@ public class PreDefinedItems extends AbstractUserItems {
             return new Item[] { nippleClamps };
 
         } else if (item.equals(Toys.Chastity_Device)) {
-            Item chastityCage = item(teaseLib, item, "Toys", "chastity_cage", "Chastity cage", Material.Metal,
-                    Features.Lockable);
-            Item chastityBelt = item(teaseLib, item, "Toys", "chastity_belt", "Chastity belt",
-                    array(defaults(item), Body.OnBalls), Material.Metal, Features.Lockable);
-            Item gatesOfHell = item(teaseLib, item, "Toys", "gates_of_hell", "Gates of Hell", Material.Leather,
-                    Material.Metal);
+            Item chastityCage = item(teaseLib, item, "Toys", "chastity_cage", "A chastity cage",
+                    defaults(item, Body.AroundCockBase), Features.Lockable);
+            Item chastityBelt = item(teaseLib, item, "Toys", "chastity_belt", "A Chastity belt",
+                    defaults(item, Body.OnBalls), Material.Metal, Features.Lockable);
+            Item gatesOfHell = item(teaseLib, item, "Toys", "gates_of_hell", "Gates of Hell",
+                    defaults(item, Body.AroundCockBase), Material.Leather, Material.Metal);
 
             return new Item[] { chastityCage, chastityBelt, gatesOfHell };
 
@@ -118,26 +118,56 @@ public class PreDefinedItems extends AbstractUserItems {
             return new Item[] { dildo, vibratingDildo, analDildo };
 
         } else if (item.equals(Toys.VaginalInsert)) {
-            Item vibratingEgg = item(teaseLib, item, "Toys", "vibrating_egg", "Vibrating egg",
+            Item vibratingEgg = item(teaseLib, item, "Toys", "vibrating_egg", "A vibrating egg",
                     Toys.Vaginal.VibratingEgg, Features.Vibrating);
             Item benWaBalls = item(teaseLib, item, "Toys", "ben_wa_balls", "Ben Wa Balls", Toys.Vaginal.Ben_Wa_Balls);
 
             return new Item[] { vibratingEgg, benWaBalls };
 
         } else if (item.equals(Toys.Vibrator)) {
-            Item butterfly = item(teaseLib, item, "Toys", "vibrator", "Butterfly vibrator", Toys.Vibrators.HandsFree,
+            Item butterfly = item(teaseLib, item, "Toys", "vibrator", "A butterfly vibrator", Toys.Vibrators.HandsFree,
                     Features.Vibrating);
-            Item massager = item(teaseLib, item, "Toys", "vibrator_massager", "Massager", Toys.Vibrators.Manual,
+            Item massager = item(teaseLib, item, "Toys", "vibrator_massager", "A massager", Toys.Vibrators.Manual,
                     Features.Vibrating);
 
             return new Item[] { butterfly, massager };
 
         } else if (item.equals(Toys.EStim_Device)) {
-            Item estimDevice = item(teaseLib, item, "Toys", "estim", "EStim device", Features.Vibrating);
+            Item estimDevice = item(teaseLib, item, "Toys", "estim", "An EStim device", Features.Vibrating);
             return new Item[] { estimDevice };
+
+        } else if (item.equals(Toys.Ball_Stretcher)) {
+            return new Item[] { item(teaseLib, item, "Toys", "ball_stretcher", "A ball stretcher") };
+
+        } else if (item.equals(Toys.Blindfold)) {
+            return new Item[] { item(teaseLib, item, "Toys", "blindfold", "A blindfold") };
+
+        } else if (item.equals(Toys.Chains)) {
+            return new Item[] { item(teaseLib, item, "Toys", "chains", "Some chains") };
+
+        } else if (item.equals(Toys.Cockring)) {
+            return new Item[] { item(teaseLib, item, "Toys", "cockring", "A tight cock ring"),
+                    item(teaseLib, item, "Toys", "cockring_with_two_rings", "A tight cock ring with an additional ring",
+                            defaults(item, Body.OnPenis)) };
+
+        } else if (item.equals(Toys.Enema_Kit)) {
+            return new Item[] { item(teaseLib, item, "Toys", "enema_kit", "An enema kit") };
+
+        } else if (item.equals(Toys.Enema_Bulb)) {
+            return new Item[] { item(teaseLib, item, "Toys", "enema_bulb", "An enema bulb") };
+
+        } else if (item.equals(Toys.Humbler)) {
+            return new Item[] { item(teaseLib, item, "Toys", "humbler", "A humbler") };
+
+        } else if (item.equals(Toys.Pussy_Clamps)) {
+            return new Item[] { item(teaseLib, item, "Toys", "pussy_clamps", "Pussy clamps") };
 
         } else {
             return onlyTheOriginalItem(teaseLib, domain, item);
         }
+    }
+
+    protected Enum<?>[] defaults(QualifiedItem<?> item, Enum<?> more) {
+        return array(defaults(item), more);
     }
 }

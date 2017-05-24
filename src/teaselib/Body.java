@@ -7,28 +7,32 @@ package teaselib;
  */
 public enum Body {
     OnNipples,
-    InVagina,
-    OnClit,
     InButt,
     InMouth,
-    OnPenis,
-    OnBalls,
+    AroundNeck,
     AroundWaist,
 
-    AroundNeck,
-    Harnessed,
     Blindfolded,
     Tethered,
+
     AnklesTied,
     WristsTied,
     WristsTiedBehindBack,
 
-    CantKneel,
-    CantStand,
-    CantProne,
-    CanCrawl,
-    CantSitOnChair,
-    CantJerkOff,
-    CantTypeOrUseMouse,
+    AroundCockBase,
+    OnBalls,
+    OnPenis,
 
+    InVagina,
+    OnClit,
+    OnLabia,
+
+    CanCrawl,
+    CantKneel,
+    CantJerkOff,
+    CantProne,
+    CantSee,
+    CantSitOnChair,
+    CantStand,
+    CantTypeOrUseMouse,
 }

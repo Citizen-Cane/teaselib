@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.Map;
 
 import teaselib.Body;
+import teaselib.Clothes;
+import teaselib.HouseHold;
 import teaselib.Toys;
 import teaselib.core.util.QualifiedItem;
 import teaselib.util.Item;
@@ -73,6 +75,26 @@ public abstract class AbstractUserItems implements UserItems {
 
     @Override
     public Enum<?>[] defaults(QualifiedItem<?> item) {
+        if (item.namespace().equals(Toys.class.getName())) {
+            return getToyDefaults(item);
+        } else if (item.namespace().equals(Clothes.class.getName())) {
+            return getClothesDefaults(item);
+        } else if (item.namespace().equals(HouseHold.class.getName())) {
+            return getHouseholdDefaults(item);
+        } else {
+            throw new IllegalArgumentException("Defaults not defined for " + item);
+        }
+    }
+
+    private static Enum<?>[] getClothesDefaults(@SuppressWarnings("unused") QualifiedItem<?> item) {
+        return new Body[] {};
+    }
+
+    private static Enum<?>[] getHouseholdDefaults(@SuppressWarnings("unused") QualifiedItem<?> item) {
+        return new Body[] {};
+    }
+
+    private static Enum<?>[] getToyDefaults(QualifiedItem<?> item) {
         if (item.equals(Toys.Buttplug)) {
             return new Body[] { Body.InButt };
         } else if (item.equals(Toys.Ankle_Restraints)) {
@@ -97,6 +119,24 @@ public abstract class AbstractUserItems implements UserItems {
             return new Body[] { Body.OnClit }; // TODO for men too
         } else if (item.equals(Toys.EStim_Device)) {
             return new Body[] {};
+        } else if (item.equals(Toys.Ball_Stretcher)) {
+            return new Body[] { Body.OnBalls };
+        } else if (item.equals(Toys.Blindfold)) {
+            return new Body[] { Body.CantSee };
+        } else if (item.equals(Toys.Chains)) {
+            return new Body[] {};
+        } else if (item.equals(Toys.Cockring)) {
+            return new Body[] { Body.AroundCockBase };
+        } else if (item.equals(Toys.Doll)) {
+            return new Body[] {};
+        } else if (item.equals(Toys.Enema_Bulb)) {
+            return new Body[] { Body.InButt };
+        } else if (item.equals(Toys.Enema_Kit)) {
+            return new Body[] { Body.InButt };
+        } else if (item.equals(Toys.Humbler)) {
+            return new Body[] {};
+        } else if (item.equals(Toys.Pussy_Clamps)) {
+            return new Body[] { Body.OnLabia };
         } else {
             throw new IllegalArgumentException("Defaults not defined for " + item);
         }

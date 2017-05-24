@@ -35,7 +35,9 @@ public enum Clothes {
     GString,
     Gloves,
     Handbag,
+    Harness,
     High_Heels,
+    Hood,
     Jacket,
     Jeans,
     Jewelry,
@@ -79,37 +81,29 @@ public enum Clothes {
     public static final String Wife = "wife";
     public static final String Husband = "Husband";
 
-    public static final Clothes[] Underwear = { Boxers, Briefs, GString,
-            Panties, Thong };
+    public static final Clothes[] Underwear = { Boxers, Briefs, GString, Panties, Thong };
 
-    public static final Clothes[] MaleClothes = { Boots, Boxers, Briefs, Jacket,
-            Jeans, Sandals, Shirt, Shoes, Shorts, Socks, Suit, Sweater,
-            Sweatpants, Trousers, TShirt, Tie };
+    public static final Clothes[] MaleClothes = { Boots, Boxers, Briefs, Jacket, Jeans, Sandals, Shirt, Shoes, Shorts,
+            Socks, Suit, Sweater, Sweatpants, Trousers, TShirt, Tie };
 
-    public static final Clothes[] FemaleClothes = { Baby_Doll, Bikini, Blouse,
-            Body, Boots, Bra, Catsuit, Corset, Dress, Garterbelt, GString,
-            High_Heels, Jacket, Jeans, Leotard, Miniskirt, Monokini, Nightie,
-            Panties, Pantyhose, Sandals, Shirt, Shoes, Shorts, Skirt, Socks,
-            Stockings, Sweater, Sweatpants, Swimsuit, Tanktop, Thong, Trousers,
-            TShirt, Vest };
+    public static final Clothes[] FemaleClothes = { Baby_Doll, Bikini, Blouse, Body, Boots, Bra, Catsuit, Corset, Dress,
+            Garterbelt, GString, High_Heels, Jacket, Jeans, Leotard, Miniskirt, Monokini, Nightie, Panties, Pantyhose,
+            Sandals, Shirt, Shoes, Shorts, Skirt, Socks, Stockings, Sweater, Sweatpants, Swimsuit, Tanktop, Thong,
+            Trousers, TShirt, Vest };
 
-    public static final Clothes[] MaidClothes = { Blouse, Body, Boots, Bra,
-            Catsuit, Corset, Dress, Garterbelt, GString, High_Heels, Leotard,
-            Miniskirt, Panties, Pantyhose, Sandals, Shirt, Shoes, Skirt, Socks,
-            Stockings, Thong };
+    public static final Clothes[] MaidClothes = { Blouse, Body, Boots, Bra, Catsuit, Corset, Dress, Garterbelt, GString,
+            High_Heels, Leotard, Miniskirt, Panties, Pantyhose, Sandals, Shirt, Shoes, Skirt, Socks, Stockings, Thong };
 
     public static final Clothes[] MaleAccesoires = { Apron, Belt, Gloves, Tie };
 
-    public static final Clothes[] FemaleAccesoires = { Apron, Belt, Gloves,
-            Handbag, Jewelry, Make_up, Princess_Tiara, Scarf };
+    public static final Clothes[] FemaleAccesoires = { Apron, Belt, Gloves, Handbag, Jewelry, Make_up, Princess_Tiara,
+            Scarf };
 
-    public static final Clothes[] MaidAccesoires = { Apron, Belt, Gloves,
-            Make_up };
+    public static final Clothes[] MaidAccesoires = { Apron, Belt, Gloves, Make_up };
 
     public static final Clothes[] TrannyItems = { Breast_Forms, Diaper, Wig };
 
-    public static final Clothes[] Costumes = { Maid_Attire, Nurse_Uniform,
-            Schoolgirl_Uniform, Cheerleader_Uniform };
+    public static final Clothes[] Costumes = { Maid_Attire, Nurse_Uniform, Schoolgirl_Uniform, Cheerleader_Uniform };
 
     @Override
     public String toString() {

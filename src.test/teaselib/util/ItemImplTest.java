@@ -66,7 +66,7 @@ public class ItemImplTest {
     }
 
     @Test
-    public void testIsHAndlesArrays() throws Exception {
+    public void testIsHandlesArrays() throws Exception {
         TeaseScript script = TestScript.getOne();
         TeaseLib.PersistentBoolean foobar = script.teaseLib.new PersistentBoolean(TeaseLib.DefaultDomain, "Foo", "Bar");
         Foo[] peers = new Foo[] {};
@@ -80,6 +80,18 @@ public class ItemImplTest {
         assertFalse(item.is(new Object[] { Size.Large, Length.Short }));
 
         assertFalse(item.is(new Object[] { Size.Small, Length.Short }));
+    }
+
+    @Test
+    public void testIsWithMixedPeersAndAttributes() throws Exception {
+        TeaseScript script = TestScript.getOne();
+
+        Item nippleClamps = script.item(Toys.Nipple_Clamps);
+        nippleClamps.apply();
+
+        nippleClamps.is(Body.OnNipples);
+        nippleClamps.is(Material.Metal);
+        nippleClamps.is(Body.OnNipples, Material.Metal);
     }
 
     @Test

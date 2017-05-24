@@ -9,7 +9,7 @@ import java.util.List;
 import org.junit.Test;
 
 import teaselib.Clothes;
-import teaselib.HouseHold;
+import teaselib.Household;
 import teaselib.Toys;
 import teaselib.core.util.QualifiedEnum;
 import teaselib.core.util.QualifiedItem;
@@ -33,7 +33,7 @@ public class UserItemsTest {
             assertNotNull(items.defaults(new QualifiedEnum(item)));
         }
 
-        for (HouseHold item : HouseHold.values()) {
+        for (Household item : Household.values()) {
             assertNotNull(items.defaults(new QualifiedEnum(item)));
         }
 
@@ -47,7 +47,7 @@ public class UserItemsTest {
         TestScript script = TestScript.getOne();
         UserItems items = new PreDefinedItems();
 
-        for (HouseHold item : HouseHold.values()) {
+        for (Household item : Household.values()) {
             testItem(script, items, item);
         }
 

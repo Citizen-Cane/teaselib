@@ -5,7 +5,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import teaselib.Clothes;
-import teaselib.HouseHold;
+import teaselib.Household;
 import teaselib.Sexuality;
 import teaselib.Toys;
 import teaselib.core.Persistence;
@@ -26,7 +26,7 @@ public class SexScriptsPropertyNameMapping extends PropertyNameMapping {
     private static final String SEXUALITY_SEX = "Sexuality.Sex";
     private static final String INTRO_FEMALE = "intro.female";
     private static final Set<String> LOWER_CASE_NAMES = new HashSet<String>(
-            Arrays.asList("Toys", "Clothes", "HouseHold"));
+            Arrays.asList("Toys", "Clothes", "Household"));
 
     @Override
     public String mapDomain(String domain, String path, String name) {
@@ -44,7 +44,7 @@ public class SexScriptsPropertyNameMapping extends PropertyNameMapping {
         String mappedPath = super.mapPath(domain, path, name);
         if ("Sexuality$Orientation".equalsIgnoreCase(path)) {
             return "intro";
-        } else if (HouseHold.class.getSimpleName().equalsIgnoreCase(path)) {
+        } else if (Household.class.getSimpleName().equalsIgnoreCase(path)) {
             return "toys";
         } else if (lowerCaseRequired(path)) {
             return mappedPath.toLowerCase();
@@ -55,17 +55,14 @@ public class SexScriptsPropertyNameMapping extends PropertyNameMapping {
 
     @Override
     public String mapName(String domain, String path, String name) {
-        if (Toys.class.getSimpleName().equals(path)
-                && Toys.Gags.Ball_Gag.name().equalsIgnoreCase(name)) {
+        if (Toys.class.getSimpleName().equals(path) && Toys.Gags.Ball_Gag.name().equalsIgnoreCase(name)) {
             return "ballgag";
-        } else if (HouseHold.class.getSimpleName().equals(path)
-                && HouseHold.Clothes_Pegs.name().equalsIgnoreCase(name)) {
+        } else if (Household.class.getSimpleName().equals(path)
+                && Household.Clothes_Pegs.name().equalsIgnoreCase(name)) {
             return "clothespins";
-        } else if ("Sexuality$Orientation".equals(path)
-                && Sexuality.Orientation.LikesMales.name().equals(name)) {
+        } else if ("Sexuality$Orientation".equals(path) && Sexuality.Orientation.LikesMales.name().equals(name)) {
             return "likemale";
-        } else if ("Sexuality$Orientation".equals(path)
-                && Sexuality.Orientation.LikesFemales.name().equals(name)) {
+        } else if ("Sexuality$Orientation".equals(path) && Sexuality.Orientation.LikesFemales.name().equals(name)) {
             return "likefemale";
         } else {
             String mappedName = super.mapName(domain, path, name);

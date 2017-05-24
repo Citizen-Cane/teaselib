@@ -3,7 +3,7 @@ package teaselib.core;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static teaselib.HouseHold.Clothes_Pegs;
+import static teaselib.Household.Clothes_Pegs;
 
 import java.util.concurrent.TimeUnit;
 

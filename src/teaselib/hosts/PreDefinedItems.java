@@ -2,7 +2,7 @@ package teaselib.hosts;
 
 import teaselib.Body;
 import teaselib.Features;
-import teaselib.HouseHold;
+import teaselib.Household;
 import teaselib.Material;
 import teaselib.Size;
 import teaselib.Toys;
@@ -73,9 +73,9 @@ public class PreDefinedItems extends AbstractUserItems {
             Item flogger = item(teaseLib, item, "Toys", "flogger", "A flogger", Toys.Spanking_Implements.Flogger,
                     Material.Rubber);
 
-            Item hairbrush = item(teaseLib, new QualifiedEnum(HouseHold.Hairbrush), "Toys", "hairbrush", "A hairbrush",
+            Item hairbrush = item(teaseLib, new QualifiedEnum(Household.Hairbrush), "Toys", "hairbrush", "A hairbrush",
                     Material.Wood);
-            Item woodenSpoon = item(teaseLib, new QualifiedEnum(HouseHold.Wooden_Spoon), "Toys", "wooden_spoon",
+            Item woodenSpoon = item(teaseLib, new QualifiedEnum(Household.Wooden_Spoon), "Toys", "wooden_spoon",
                     "A wooden spoon", Material.Wood);
 
             return new Item[] { crop, paddle, cane, whip, flogger, hairbrush, woodenSpoon };
@@ -180,7 +180,7 @@ public class PreDefinedItems extends AbstractUserItems {
         } else if (item.equals(Toys.Wife)) {
             return new Item[] { item(teaseLib, item, "Toys", "wife", "Wife") };
 
-        } else if (item.equals(HouseHold.Leash)) {
+        } else if (item.equals(Household.Leash)) {
             return new Item[] { item(teaseLib, item, "HouseHold", "leash", "A leash"), item(teaseLib, item, "HouseHold",
                     "retractable_leash", "A retractable leash", defaults(item, Body.Tethered)) };
 

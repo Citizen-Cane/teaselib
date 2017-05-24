@@ -7,7 +7,7 @@ import java.util.Map;
 
 import teaselib.Body;
 import teaselib.Clothes;
-import teaselib.HouseHold;
+import teaselib.Household;
 import teaselib.Toys;
 import teaselib.core.util.QualifiedItem;
 import teaselib.util.Item;
@@ -79,7 +79,7 @@ public abstract class AbstractUserItems implements UserItems {
             return getToyDefaults(item);
         } else if (item.namespace().equalsIgnoreCase(Clothes.class.getName())) {
             return getClothesDefaults(item);
-        } else if (item.namespace().equalsIgnoreCase(HouseHold.class.getName())) {
+        } else if (item.namespace().equalsIgnoreCase(Household.class.getName())) {
             return getHouseholdDefaults(item);
         } else {
             throw new IllegalArgumentException("Defaults not defined for " + item);

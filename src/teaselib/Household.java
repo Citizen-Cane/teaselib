@@ -1,6 +1,6 @@
 package teaselib;
 
-public enum HouseHold {
+public enum Household {
     Baby_Oil,
     Belt,
     Bell,

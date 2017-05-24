@@ -6,7 +6,7 @@ import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 
 import teaselib.Body;
-import teaselib.HouseHold;
+import teaselib.Household;
 import teaselib.TeaseScript;
 import teaselib.Toys;
 import teaselib.test.TestScript;
@@ -38,19 +38,19 @@ public class StateCaseIndepencyTests {
         assertTrue(script.state(Body.OnNipples).applied());
         assertTrue(script.state("TeaseLib.Body.OnNipples").applied());
 
-        assertTrue(script.state(HouseHold.Clothes_Pegs).applied());
-        assertTrue(script.state(HouseHold.Clothes_Pegs).is(script.namespace));
+        assertTrue(script.state(Household.Clothes_Pegs).applied());
+        assertTrue(script.state(Household.Clothes_Pegs).is(script.namespace));
         assertTrue(script.state("teaselib.household.clothes_pegs").is(script.namespace));
 
         assertTrue(script.state("teaselib.Household.Clothes_Pegs").is(script.namespace));
         assertTrue(script.state("teaselib.Household.Clothes_Pegs").is(script.namespace.toLowerCase()));
 
-        assertTrue(script.state(Body.OnNipples).is(HouseHold.Clothes_Pegs));
+        assertTrue(script.state(Body.OnNipples).is(Household.Clothes_Pegs));
         assertTrue(script.state(Body.OnNipples).is("teaselib.Household.Clothes_Pegs"));
         assertTrue(script.state(Body.OnNipples).is("TEASELIB.household.cLOTHES_pEGS"));
 
-        assertTrue(script.state(HouseHold.Clothes_Pegs).is("teaseLib.Body.OnNipples"));
-        assertTrue(script.state(HouseHold.Clothes_Pegs).is("teaseLib.body.onnipples"));
+        assertTrue(script.state(Household.Clothes_Pegs).is("teaseLib.Body.OnNipples"));
+        assertTrue(script.state(Household.Clothes_Pegs).is("teaseLib.body.onnipples"));
     }
 
     @Test
@@ -78,18 +78,18 @@ public class StateCaseIndepencyTests {
         assertTrue(script.item(Body.OnNipples).applied());
         assertTrue(script.item("TeaseLib.Body.OnNipples").applied());
 
-        assertTrue(script.item(HouseHold.Clothes_Pegs).applied());
-        assertTrue(script.item(HouseHold.Clothes_Pegs).is(script.namespace));
+        assertTrue(script.item(Household.Clothes_Pegs).applied());
+        assertTrue(script.item(Household.Clothes_Pegs).is(script.namespace));
         assertTrue(script.item("teaselib.household.clothes_pegs").is(script.namespace));
 
         assertTrue(script.item("teaselib.Household.Clothes_Pegs").is(script.namespace));
         assertTrue(script.item("teaselib.Household.Clothes_Pegs").is(script.namespace.toLowerCase()));
 
-        assertTrue(script.item(Body.OnNipples).is(HouseHold.Clothes_Pegs));
+        assertTrue(script.item(Body.OnNipples).is(Household.Clothes_Pegs));
         assertTrue(script.item(Body.OnNipples).is("teaselib.Household.Clothes_Pegs"));
         assertTrue(script.item(Body.OnNipples).is("TEASELIB.household.cLOTHES_pEGS"));
 
-        assertTrue(script.item(HouseHold.Clothes_Pegs).is("teaseLib.Body.OnNipples"));
-        assertTrue(script.item(HouseHold.Clothes_Pegs).is("teaseLib.body.onnipples"));
+        assertTrue(script.item(Household.Clothes_Pegs).is("teaseLib.Body.OnNipples"));
+        assertTrue(script.item(Household.Clothes_Pegs).is("teaseLib.body.onnipples"));
     }
 }

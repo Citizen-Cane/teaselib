@@ -1,5 +1,6 @@
 package teaselib.core;
 
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -46,11 +47,11 @@ public class UserItemsTest {
         TestScript script = TestScript.getOne();
         UserItems items = new PreDefinedItems();
 
-        for (Toys item : Toys.values()) {
+        for (HouseHold item : HouseHold.values()) {
             testItem(script, items, item);
         }
 
-        for (Toys item : Toys.values()) {
+        for (Clothes item : Clothes.values()) {
             testItem(script, items, item);
         }
 
@@ -59,9 +60,36 @@ public class UserItemsTest {
         }
     }
 
-    private static void testItem(TestScript script, UserItems items, Toys item) {
-        List<Item> available = items.get(script.teaseLib, TeaseLib.DefaultDomain, new QualifiedEnum(item));
-        assertNotNull(available);
-        assertTrue(available.size() > 0);
+    private static void testItem(TestScript script, UserItems items, Enum<?> item) {
+        List<Item> predefined = items.get(script.teaseLib, TeaseLib.DefaultDomain, new QualifiedEnum(item));
+        assertNotNull(predefined);
+        assertTrue(predefined.size() > 0);
+    }
+
+    @Test
+    public void testPredefinedItems() throws Exception {
+
+        class TestablePredefinedItems extends PreDefinedItems {
+            public Item[] createItems(TeaseLib teaseLib, String domain, QualifiedItem<?> item) {
+                return createUserItems(teaseLib, domain, item);
+            }
+
+            @Override
+            public Item[] onlyTheOriginalItem(TeaseLib teaseLib, String domain, QualifiedItem<?> item) {
+                return new Item[] { Item.NotAvailable };
+            }
+
+        }
+
+        TestScript script = TestScript.getOne();
+        TestablePredefinedItems items = new TestablePredefinedItems();
+
+        for (Toys item : Toys.values()) {
+            Item[] predefined = items.createItems(script.teaseLib, TeaseLib.DefaultDomain, new QualifiedEnum(item));
+            assertNotNull(predefined);
+            assertTrue(predefined.length > 0);
+            assertNotEquals("Expected defined item for " + item.name(), Item.NotAvailable, predefined[0]);
+        }
+
     }
 }

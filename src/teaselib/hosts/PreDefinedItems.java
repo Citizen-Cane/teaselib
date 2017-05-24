@@ -145,6 +145,9 @@ public class PreDefinedItems extends AbstractUserItems {
         } else if (item.equals(Toys.Chains)) {
             return new Item[] { item(teaseLib, item, "Toys", "chains", "Some chains") };
 
+        } else if (item.equals(Toys.Rope)) {
+            return new Item[] { item(teaseLib, item, "Toys", "rope", "Plenty of rope") };
+
         } else if (item.equals(Toys.Cockring)) {
             return new Item[] { item(teaseLib, item, "Toys", "cockring", "A tight cock ring"),
                     item(teaseLib, item, "Toys", "cockring_with_two_rings", "A tight cock ring with an additional ring",
@@ -161,6 +164,25 @@ public class PreDefinedItems extends AbstractUserItems {
 
         } else if (item.equals(Toys.Pussy_Clamps)) {
             return new Item[] { item(teaseLib, item, "Toys", "pussy_clamps", "Pussy clamps") };
+
+        } else if (item.equals(Toys.Spreader_Bar)) {
+            return new Item[] { item(teaseLib, item, "Toys", "spreader_bar", "A spreader bar") };
+
+        } else if (item.equals(Toys.Strap_On)) {
+            return new Item[] { item(teaseLib, item, "Toys", "strap_on", "A strap-on") };
+
+        } else if (item.equals(Toys.Doll)) {
+            return new Item[] { item(teaseLib, item, "Toys", "doll", "A doll") };
+
+        } else if (item.equals(Toys.Husband)) {
+            return new Item[] { item(teaseLib, item, "Toys", "husband", "Husband") };
+
+        } else if (item.equals(Toys.Wife)) {
+            return new Item[] { item(teaseLib, item, "Toys", "wife", "Wife") };
+
+        } else if (item.equals(HouseHold.Leash)) {
+            return new Item[] { item(teaseLib, item, "HouseHold", "leash", "A leash"), item(teaseLib, item, "HouseHold",
+                    "retractable_leash", "A retractable leash", defaults(item, Body.Tethered)) };
 
         } else {
             return onlyTheOriginalItem(teaseLib, domain, item);

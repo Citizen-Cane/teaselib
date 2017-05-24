@@ -18,37 +18,41 @@ package teaselib;
  */
 public enum Toys {
     Ankle_Restraints,
+    Blindfold,
     Buttplug,
-    Chastity_Device,
     Collar,
-    Dildo,
+    Enema_Bulb,
+    Enema_Kit,
     Gag,
+    Nipple_Clamps,
     Spanking_Implement,
+    Spreader_Bar,
     Wrist_Restraints,
 
     Ball_Stretcher,
-    Blindfold,
-    Chains,
+    Chastity_Device,
     Cockring,
-    Doll,
-    Enema_Bulb,
-    Enema_Kit,
-
     Humbler,
-    Nipple_Clamps,
+
+    Dildo,
     Pussy_Clamps,
+    VaginalInsert,
+    Vibrator,
+
+    // Too BDSM like to be household items
+    Chains,
     Rope,
-    Spreader_Bar,
+
+    // These toys below aren't used directly by the player,
+    // albeit they may have a huge influence on the play
+    EStim_Device,
     Strap_On,
 
+    Doll,
     Husband,
     Wife,
 
-    EStim_Device,
-
-    VaginalInsert,
-
-    Vibrator;
+    ;
 
     public enum ChastityDevices {
         Chastity_Belt,
@@ -98,9 +102,9 @@ public enum Toys {
             Nipple_Clamps, Rope, Spanking_Implement, Wrist_Restraints };
 
     public final static Toys Advanced[] = { Ball_Stretcher, Chastity_Device, Cockring, Enema_Bulb, Enema_Kit,
-            EStim_Device, Humbler, Pussy_Clamps, VaginalInsert, Vibrator };
+            EStim_Device, Humbler, Pussy_Clamps, Spreader_Bar, VaginalInsert, Vibrator };
 
-    public final static Toys Other[] = { Doll, Husband, Spreader_Bar, Strap_On, Wife };
+    public final static Toys Other[] = { Doll, Husband, Strap_On, Wife };
 
     public final static Toys[] Categories[] = { Basic, Advanced, Other };
 }

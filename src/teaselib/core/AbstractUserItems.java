@@ -21,7 +21,7 @@ public abstract class AbstractUserItems implements UserItems {
         }
     }
 
-    protected static Item[] onlyTheOriginalItem(TeaseLib teaseLib, String domain, QualifiedItem<?> item) {
+    protected Item[] onlyTheOriginalItem(TeaseLib teaseLib, String domain, QualifiedItem<?> item) {
         return new Item[] { new ItemImpl(teaseLib, domain, item,
                 teaseLib.new PersistentBoolean(domain, item.namespace(), item.name())) };
     }
@@ -116,27 +116,37 @@ public abstract class AbstractUserItems implements UserItems {
         } else if (item.equals(Toys.VaginalInsert)) {
             return new Body[] { Body.InVagina };
         } else if (item.equals(Toys.Vibrator)) {
-            return new Body[] { Body.OnClit }; // TODO for men too
-        } else if (item.equals(Toys.EStim_Device)) {
             return new Body[] {};
         } else if (item.equals(Toys.Ball_Stretcher)) {
             return new Body[] { Body.OnBalls };
         } else if (item.equals(Toys.Blindfold)) {
             return new Body[] { Body.CantSee };
-        } else if (item.equals(Toys.Chains)) {
-            return new Body[] {};
         } else if (item.equals(Toys.Cockring)) {
             return new Body[] { Body.AroundCockBase };
-        } else if (item.equals(Toys.Doll)) {
-            return new Body[] {};
         } else if (item.equals(Toys.Enema_Bulb)) {
             return new Body[] { Body.InButt };
         } else if (item.equals(Toys.Enema_Kit)) {
             return new Body[] { Body.InButt };
         } else if (item.equals(Toys.Humbler)) {
-            return new Body[] {};
+            return new Body[] { Body.OnBalls, Body.CantStand };
         } else if (item.equals(Toys.Pussy_Clamps)) {
             return new Body[] { Body.OnLabia };
+        } else if (item.equals(Toys.Spreader_Bar)) {
+            return new Body[] {};
+        } else if (item.equals(Toys.EStim_Device)) {
+            return new Body[] {};
+        } else if (item.equals(Toys.Chains)) {
+            return new Body[] {};
+        } else if (item.equals(Toys.Rope)) {
+            return new Body[] {};
+        } else if (item.equals(Toys.Doll)) {
+            return new Body[] {};
+        } else if (item.equals(Toys.Husband)) {
+            return new Body[] {};
+        } else if (item.equals(Toys.Wife)) {
+            return new Body[] {};
+        } else if (item.equals(Toys.Strap_On)) {
+            return new Body[] {};
         } else {
             throw new IllegalArgumentException("Defaults not defined for " + item);
         }

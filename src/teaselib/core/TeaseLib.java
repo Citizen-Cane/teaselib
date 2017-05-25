@@ -235,17 +235,13 @@ public class TeaseLib {
 
         @Override
         public long elapsed(TimeUnit unit) {
-            long now = getTime(DURATION_TIME_UNIT);
-            long elapsed = now - start;
-            return unit.convert(elapsed, DURATION_TIME_UNIT);
+            long now = getTime(unit);
+            return now - unit.convert(start, DURATION_TIME_UNIT);
         }
 
         @Override
         public long remaining(TimeUnit unit) {
-            long now = getTime(unit);
-            long elapsed = now - unit.convert(start, DURATION_TIME_UNIT);
-            long remaining = unit.convert(limit, DURATION_TIME_UNIT) - elapsed;
-            return remaining;
+            return unit.convert(limit, DURATION_TIME_UNIT) - elapsed(unit);
         }
 
         @Override

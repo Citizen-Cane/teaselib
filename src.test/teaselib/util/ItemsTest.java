@@ -5,10 +5,13 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
+import java.util.concurrent.TimeUnit;
+
 import org.junit.Test;
 
 import teaselib.Body;
 import teaselib.Material;
+import teaselib.State;
 import teaselib.TeaseScript;
 import teaselib.Toys;
 import teaselib.test.TestScript;
@@ -107,5 +110,15 @@ public class ItemsTest {
 
         assertTrue(script.state(Body.AroundNeck).applied());
         assertTrue(collar.is(Body.AroundNeck));
+    }
+
+    @Test
+    public void testRemainingDurationIsNegativeIfNotApplied() {
+        TeaseScript script = TestScript.getOne();
+
+        Item collar = script.item(Toys.Collar);
+        assertFalse(collar.applied());
+
+        assertTrue(collar.duration().remaining(TimeUnit.SECONDS) < State.REMOVED);
     }
 }

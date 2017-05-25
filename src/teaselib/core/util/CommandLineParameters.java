@@ -1,6 +1,7 @@
 package teaselib.core.util;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -13,6 +14,10 @@ public class CommandLineParameters<T extends Enum<?>> extends HashMap<T, List<St
     protected T defaultKeyword;
 
     public CommandLineParameters(String[] args, T[] keywords) {
+        this(Arrays.asList(args), keywords);
+    }
+
+    public CommandLineParameters(List<String> args, T[] keywords) {
         this.defaultKeyword = keywords[0];
         put(defaultKeyword, new ArrayList<String>());
         T currentKeyword = defaultKeyword;

@@ -182,18 +182,18 @@ public class StateTests {
         assertFalse(script.state(Body.OnNipples).applied());
         assertFalse(script.state(Toys.Nipple_Clamps).applied());
 
-        script.state(Household.Weights).apply(Toys.Nipple_Clamps);
+        script.state(Household.Weight).apply(Toys.Nipple_Clamps);
         script.state(Toys.Nipple_Clamps).apply(Body.OnNipples, Material.Metal).over(30, TimeUnit.MINUTES);
 
         assertTrue(script.state(Body.OnNipples).applied());
         assertTrue(script.state(Toys.Nipple_Clamps).applied());
 
         assertTrue(script.state(Toys.Nipple_Clamps).is(Material.Metal));
-        assertTrue(script.state(Toys.Nipple_Clamps).is(Household.Weights));
+        assertTrue(script.state(Toys.Nipple_Clamps).is(Household.Weight));
         assertFalse(script.state(Toys.Nipple_Clamps).is(Material.Rubber));
 
-        assertTrue(script.state(Toys.Nipple_Clamps).is(Material.Metal, Household.Weights));
-        assertFalse(script.state(Toys.Nipple_Clamps).is(Material.Rubber, Household.Weights));
+        assertTrue(script.state(Toys.Nipple_Clamps).is(Material.Metal, Household.Weight));
+        assertFalse(script.state(Toys.Nipple_Clamps).is(Material.Rubber, Household.Weight));
     }
 
     @Test
@@ -206,7 +206,7 @@ public class StateTests {
         assertFalse(script.state("teaselib.Body.OnNipples").applied());
         assertFalse(script.state("teaselib.Toys.Nipple_Clamps").applied());
 
-        script.state(Household.Weights).apply(Toys.Nipple_Clamps);
+        script.state(Household.Weight).apply(Toys.Nipple_Clamps);
         script.state(Toys.Nipple_Clamps).apply(Body.OnNipples, Material.Metal).over(30, TimeUnit.MINUTES);
 
         assertTrue(script.state(Body.OnNipples).applied());
@@ -215,40 +215,40 @@ public class StateTests {
         assertTrue(script.state("teaselib.Toys.Nipple_Clamps").applied());
 
         assertTrue(script.state(Toys.Nipple_Clamps).is(Material.Metal));
-        assertTrue(script.state(Toys.Nipple_Clamps).is(Household.Weights));
+        assertTrue(script.state(Toys.Nipple_Clamps).is(Household.Weight));
         assertFalse(script.state(Toys.Nipple_Clamps).is(Material.Rubber));
 
         assertTrue(script.state(Toys.Nipple_Clamps).is("teaselib.Material.Metal"));
-        assertTrue(script.state(Toys.Nipple_Clamps).is("teaselib.HouseHold.Weights"));
+        assertTrue(script.state(Toys.Nipple_Clamps).is("teaselib.HouseHold.Weight"));
         assertFalse(script.state(Toys.Nipple_Clamps).is("teaselib.Material.Rubber"));
 
         assertTrue(script.state("teaselib.Toys.Nipple_Clamps").is(Material.Metal));
-        assertTrue(script.state("teaselib.Toys.Nipple_Clamps").is(Household.Weights));
+        assertTrue(script.state("teaselib.Toys.Nipple_Clamps").is(Household.Weight));
         assertFalse(script.state("teaselib.Toys.Nipple_Clamps").is(Material.Rubber));
 
         assertTrue(script.state("teaselib.Toys.Nipple_Clamps").is(Material.Metal));
-        assertTrue(script.state("teaselib.Toys.Nipple_Clamps").is(Household.Weights));
+        assertTrue(script.state("teaselib.Toys.Nipple_Clamps").is(Household.Weight));
         assertFalse(script.state("teaselib.Toys.Nipple_Clamps").is(Material.Rubber));
 
         assertTrue(script.state("teaselib.Toys.Nipple_Clamps").is("teaselib.Material.Metal"));
-        assertTrue(script.state("teaselib.Toys.Nipple_Clamps").is("teaselib.HouseHold.Weights"));
+        assertTrue(script.state("teaselib.Toys.Nipple_Clamps").is("teaselib.HouseHold.Weight"));
         assertFalse(script.state("teaselib.Toys.Nipple_Clamps").is("teaselib.Material.Rubber"));
 
-        assertTrue(script.state(Toys.Nipple_Clamps).is(Material.Metal, Household.Weights));
-        assertFalse(script.state(Toys.Nipple_Clamps).is(Material.Rubber, Household.Weights));
-        assertTrue(script.state(Toys.Nipple_Clamps).is("teaselib.Material.Metal", Household.Weights));
-        assertFalse(script.state(Toys.Nipple_Clamps).is("teaselib.Material.Rubber", Household.Weights));
-        assertTrue(script.state(Toys.Nipple_Clamps).is("teaselib.Material.Metal", "teaselib.HouseHold.Weights"));
-        assertFalse(script.state(Toys.Nipple_Clamps).is("teaselib.Material.Rubber", "teaselib.HouseHold.Weights"));
+        assertTrue(script.state(Toys.Nipple_Clamps).is(Material.Metal, Household.Weight));
+        assertFalse(script.state(Toys.Nipple_Clamps).is(Material.Rubber, Household.Weight));
+        assertTrue(script.state(Toys.Nipple_Clamps).is("teaselib.Material.Metal", Household.Weight));
+        assertFalse(script.state(Toys.Nipple_Clamps).is("teaselib.Material.Rubber", Household.Weight));
+        assertTrue(script.state(Toys.Nipple_Clamps).is("teaselib.Material.Metal", "teaselib.HouseHold.Weight"));
+        assertFalse(script.state(Toys.Nipple_Clamps).is("teaselib.Material.Rubber", "teaselib.HouseHold.Weight"));
 
-        assertTrue(script.state("teaselib.Toys.Nipple_Clamps").is(Material.Metal, Household.Weights));
-        assertFalse(script.state("teaselib.Toys.Nipple_Clamps").is(Material.Rubber, Household.Weights));
-        assertTrue(script.state("teaselib.Toys.Nipple_Clamps").is("teaselib.Material.Metal", Household.Weights));
-        assertFalse(script.state("teaselib.Toys.Nipple_Clamps").is("teaselib.Material.Rubber", Household.Weights));
-        assertTrue(script.state("teaselib.Toys.Nipple_Clamps").is("teaselib.Material.Metal",
-                "teaselib.HouseHold.Weights"));
+        assertTrue(script.state("teaselib.Toys.Nipple_Clamps").is(Material.Metal, Household.Weight));
+        assertFalse(script.state("teaselib.Toys.Nipple_Clamps").is(Material.Rubber, Household.Weight));
+        assertTrue(script.state("teaselib.Toys.Nipple_Clamps").is("teaselib.Material.Metal", Household.Weight));
+        assertFalse(script.state("teaselib.Toys.Nipple_Clamps").is("teaselib.Material.Rubber", Household.Weight));
+        assertTrue(
+                script.state("teaselib.Toys.Nipple_Clamps").is("teaselib.Material.Metal", "teaselib.HouseHold.Weight"));
         assertFalse(script.state("teaselib.Toys.Nipple_Clamps").is("teaselib.Material.Rubber",
-                "teaselib.HouseHold.Weights"));
+                "teaselib.HouseHold.Weight"));
     }
 
 }

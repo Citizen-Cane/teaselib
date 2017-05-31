@@ -61,12 +61,10 @@ public class Message {
 
         ;
         public final static Set<Message.Type> AudioTypes = new HashSet<Message.Type>(
-                Arrays.asList(Message.Type.Sound, Message.Type.BackgroundSound,
-                        Message.Type.Speech));
+                Arrays.asList(Message.Type.Sound, Message.Type.BackgroundSound, Message.Type.Speech));
 
         public final static Set<Type> FileTypes = new HashSet<Type>(
-                Arrays.asList(Type.BackgroundSound, Type.Sound, Type.Speech,
-                        Type.Image, Type.DesktopItem));
+                Arrays.asList(Type.BackgroundSound, Type.Sound, Type.Speech, Type.Image, Type.DesktopItem));
     }
 
     /**
@@ -139,13 +137,12 @@ public class Message {
 
     public final static String Bullet = "°";
 
-    public final static String[] Keywords = { Delay, ShowOnDesktop, ShowChoices,
-            AwaitSoundCompletion, ActorImage, NoImage, Bullet };
+    public final static String[] Keywords = { Delay, ShowOnDesktop, ShowChoices, AwaitSoundCompletion, ActorImage,
+            NoImage, Bullet };
 
     public final Actor actor;
 
-    public final static Set<String> EndOfSentenceCharacters = new HashSet<String>(
-            Arrays.asList(":", ".", "!", "?"));
+    public final static Set<String> EndOfSentenceCharacters = new HashSet<String>(Arrays.asList(":", ".", "!", "?"));
     public final static Set<String> MainClauseAppendableCharacters = new HashSet<String>(
             Arrays.asList("\"", ">", ",", ";", "-"));
 
@@ -265,8 +262,7 @@ public class Message {
             StringBuilder messageString = new StringBuilder();
             for (Iterator<Part> i = parts.iterator(); i.hasNext();) {
                 Part part = i.next();
-                boolean appendPart = all || part.type == Type.Text
-                        || part.type == Type.Mood;
+                boolean appendPart = all || part.type == Type.Text || part.type == Type.Mood;
                 if (appendPart) {
                     if (messageString.length() > 0) {
                         messageString.append(newLine);
@@ -289,6 +285,13 @@ public class Message {
     public static boolean isFile(String m) {
         int s = m.length();
         int i = m.lastIndexOf(".");
+
+        // Don't interpret scripting error messages and the like as resources
+        int j = m.indexOf(".");
+        if (i != j && !m.startsWith("./")) {
+            return false;
+        }
+
         if (i > 0 && i != s - 1) {
             // Inline-files must have extensions with at least one alphanumeric
             // letter after the dot
@@ -392,8 +395,7 @@ public class Message {
             // characters
             int s = words(m).length;
             // s == 2 also catches misspelled delay commands
-            if (s > 2 || endOf(m, EndOfSentenceCharacters)
-                    || endOf(m, MainClauseAppendableCharacters)) {
+            if (s > 2 || endOf(m, EndOfSentenceCharacters) || endOf(m, MainClauseAppendableCharacters)) {
                 return Type.Text;
             } else {
                 // Throwing an exception here to avoid speaking keywords in
@@ -437,8 +439,7 @@ public class Message {
             this.value = text;
         }
 
-        private static String removeAnyKeywordInFront(String keyword,
-                String text) {
+        private static String removeAnyKeywordInFront(String keyword, String text) {
             if (text.toLowerCase().startsWith(keyword)) {
                 text = text.substring(keyword.length()).trim();
             }
@@ -547,18 +548,15 @@ public class Message {
         while (parts.hasNext()) {
             Part part = parts.next();
             if (part.type == Type.Text) {
-                if (!endOf(part.value, EndOfSentenceCharacters)
-                        && !endOf(part.value, MainClauseAppendableCharacters)) {
+                if (!endOf(part.value, EndOfSentenceCharacters) && !endOf(part.value, MainClauseAppendableCharacters)) {
                     if (sentence == null) {
                         sentence = part;
                     } else {
-                        sentence = new Part(Type.Text,
-                                sentence.value + " " + part.value);
+                        sentence = new Part(Type.Text, sentence.value + " " + part.value);
                     }
                 } else {
                     if (sentence != null) {
-                        newParts.add(Type.Text,
-                                sentence.value + " " + part.value);
+                        newParts.add(Type.Text, sentence.value + " " + part.value);
                         sentence = null;
                     } else {
                         newParts.add(part);
@@ -582,9 +580,8 @@ public class Message {
             if (part.type == Type.Text) {
                 String text = part.value;
                 boolean readAloudStart = text.startsWith("\"");
-                boolean readAloudEnd = text.endsWith("\"")
-                        || text.endsWith("\"."); // todo
-                                                 // generalize
+                boolean readAloudEnd = text.endsWith("\"") || text.endsWith("\"."); // todo
+                                                                                    // generalize
                 if (readAloudStart && !readAloud) {
                     newParts.add(new Part(Type.Mood, Mood.Reading));
                     readAloud = true;

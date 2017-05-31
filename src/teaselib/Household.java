@@ -22,6 +22,6 @@ public enum Household {
     Shoe_Lace,
     Shrinkwrap,
     Tampon,
-    Weights,
+    Weight,
     Wooden_Spoon,
 }

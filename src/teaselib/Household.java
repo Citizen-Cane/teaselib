@@ -13,6 +13,7 @@ public enum Household {
     Heat_Rub,
     Hairbrush,
     Ice_Tray,
+    Icecube,
     Leash,
     Lube,
     Padlocks,

@@ -54,4 +54,81 @@ public class CommandLineParameters<T extends Enum<?>> extends HashMap<T, List<St
     public List<String> getItems() {
         return get(defaultKeyword);
     }
+
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = superHashCodeCaseIndependent();
+        result = prime * result + ((defaultKeyword == null) ? 0 : defaultKeyword.hashCode());
+        return result;
+    }
+
+    private int superHashCodeCaseIndependent() {
+        final int prime = 31;
+        int result = 1;
+        for (java.util.Map.Entry<T, List<String>> entry : this.entrySet()) {
+            result = prime * result * entry.getKey().hashCode();
+            for (String string : entry.getValue()) {
+                result = prime * result * string.toLowerCase().hashCode();
+            }
+        }
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (getClass() != obj.getClass())
+            return false;
+        CommandLineParameters<?> other = (CommandLineParameters<?>) obj;
+        if (!superEqualsIgnoreCase(other))
+            return false;
+        if (defaultKeyword == null) {
+            if (other.defaultKeyword != null)
+                return false;
+        } else if (!defaultKeyword.equals(other.defaultKeyword))
+            return false;
+        return true;
+    }
+
+    private boolean superEqualsIgnoreCase(CommandLineParameters<?> other) {
+        for (java.util.Map.Entry<T, List<String>> entry : this.entrySet()) {
+            if (!other.containsKey(entry.getKey())) {
+                return false;
+            } else {
+                if (!listsEqualsCaseIndependent(entry.getValue(), other.get(entry.getKey())))
+                    return false;
+            }
+        }
+
+        for (java.util.Map.Entry<?, List<String>> entry : other.entrySet()) {
+            if (!other.containsKey(entry.getKey())) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static boolean listsEqualsCaseIndependent(List<String> mine, List<String> other) {
+        if (mine.size() != other.size()) {
+            return false;
+        }
+
+        for (String string : mine) {
+            boolean stringFound = false;
+            for (String otherString : other) {
+                if (string.equalsIgnoreCase(otherString)) {
+                    stringFound = true;
+                    break;
+                }
+            }
+            if ((!stringFound)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
 }

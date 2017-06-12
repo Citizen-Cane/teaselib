@@ -100,6 +100,8 @@ public class ItemImplTest {
 
         assertFalse(script.state(Toys.Buttplug).applied());
         assertFalse(script.state(Toys.Buttplug).is(Toys.Anal.Beads));
+        assertFalse(script.state(Body.InButt).is(Toys.Anal.Beads));
+        assertFalse(script.state(Body.InButt).is(Features.Anal));
 
         script.items(Toys.Buttplug).get(Toys.Anal.Beads).apply();
 
@@ -110,6 +112,13 @@ public class ItemImplTest {
         assertTrue(script.state(Body.InButt).applied());
         assertTrue(script.state(Body.InButt).is(Toys.Buttplug));
 
+        assertTrue(script.state(Body.InButt).is(Toys.Anal.Beads));
+        assertTrue(script.state(Body.InButt).is(Features.Anal));
+
+        script.item(Toys.Buttplug).remove();
+
+        assertFalse(script.state(Toys.Buttplug).is(Toys.Anal.Beads));
+        assertFalse(script.state(Toys.Buttplug).is(Features.Anal));
         assertFalse(script.state(Body.InButt).is(Toys.Anal.Beads));
         assertFalse(script.state(Body.InButt).is(Features.Anal));
 

@@ -121,4 +121,22 @@ public class ItemsTest {
 
         assertTrue(collar.duration().remaining(TimeUnit.SECONDS) < State.REMOVED);
     }
+
+    @Test
+    public void showThatNamespaceAttributeIsSymetric() {
+        TestScript script = TestScript.getOne();
+
+        script.item(Toys.Nipple_Clamps).apply();
+        assertTrue(script.state(Body.OnNipples).is(script.namespace));
+        assertTrue(script.state(Body.OnNipples).is(Toys.Nipple_Clamps));
+        assertTrue(script.item(Toys.Nipple_Clamps).is(Body.OnNipples));
+        assertTrue(script.item(Toys.Nipple_Clamps).is(script.namespace));
+
+        script.item(Toys.Nipple_Clamps).remove();
+
+        assertFalse(script.state(Body.OnNipples).is(script.namespace));
+        assertFalse(script.state(Body.OnNipples).is(Toys.Nipple_Clamps));
+        assertFalse(script.state(Toys.Nipple_Clamps).is(Body.OnNipples));
+        assertFalse(script.state(Toys.Nipple_Clamps).is(script.namespace));
+    }
 }

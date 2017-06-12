@@ -159,7 +159,7 @@ public class ItemImpl implements Item, StateMaps.Attributes {
 
     @Override
     public void applyAttributes(Object... attributes) {
-        teaseLib.state(domain, item).apply(attributes);
+        ((StateMaps.Attributes) teaseLib.state(domain, item)).applyAttributes(attributes);
     }
 
 }

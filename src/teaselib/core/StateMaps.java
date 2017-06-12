@@ -286,9 +286,26 @@ public class StateMaps {
             }
 
             Set<Object> all = new HashSet<Object>();
-            all.addAll(this.peers);
-            all.addAll(this.attributes);
+            all.addAll(myAttributesAndPeers());
+            all.addAll(attributesOfDirectPeers());
+
             return ItemImpl.hasAllAttributes(all, attributes);
+        }
+
+        private Set<Object> myAttributesAndPeers() {
+            Set<Object> myAttributesAndPeers = new HashSet<Object>();
+            myAttributesAndPeers.addAll(this.peers);
+            myAttributesAndPeers.addAll(this.attributes);
+            return myAttributesAndPeers;
+        }
+
+        private Set<Object> attributesOfDirectPeers() {
+            Set<Object> attributesOfDirectPeers = new HashSet<Object>();
+            for (Object peer : this.peers) {
+                StateImpl peerState = state(peer);
+                attributesOfDirectPeers.addAll(peerState.attributes);
+            }
+            return attributesOfDirectPeers;
         }
 
         @Override

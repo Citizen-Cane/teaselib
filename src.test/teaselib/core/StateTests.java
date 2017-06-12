@@ -58,7 +58,7 @@ public class StateTests {
         assertTrue(somethingOnNipples.is(script.namespace));
         assertTrue(somethingOnNipples.is(Toys.Nipple_Clamps));
         assertTrue(script.state(Toys.Nipple_Clamps).is(Body.OnNipples));
-        assertFalse(script.state(Toys.Nipple_Clamps).is(script.namespace));
+        assertTrue(script.state(Toys.Nipple_Clamps).is(script.namespace));
 
         // There's no attribute for nipple clamps, because we didn't set any,
         // the namespace is only added automatically to Body.SomethingOnNipples
@@ -79,12 +79,17 @@ public class StateTests {
         somethingOnNipples.remove();
         assertEquals(0, script.persistence.storage.size());
 
+        assertFalse(somethingOnNipples.is(script.namespace));
+        assertFalse(somethingOnNipples.is(Toys.Nipple_Clamps));
+        assertFalse(script.state(Toys.Nipple_Clamps).is(Body.OnNipples));
+        assertFalse(script.state(Toys.Nipple_Clamps).is(script.namespace));
+
         assertTrue(somethingOnNipples.expired());
         assertFalse(somethingOnNipples.applied());
     }
 
     @Test
-    public void testThatNamespaceAttributeIsNotApppliedToPeers() {
+    public void testThatNamespaceAttributeIsApppliedToPeers() {
         TestScript script = TestScript.getOne();
         script.teaseLib.freezeTime();
 
@@ -92,19 +97,19 @@ public class StateTests {
         assertTrue(script.state(Household.Condoms).is(script.namespace));
         assertTrue(script.state(Body.OnPenis).applied());
 
-        assertFalse(script.state(Body.OnPenis).is(script.namespace));
+        assertTrue(script.state(Body.OnPenis).is(script.namespace));
 
         script.state(Toys.Chastity_Device).apply(Body.OnPenis);
         assertTrue(script.state(Body.OnPenis).applied());
         assertTrue(script.state(Toys.Chastity_Device).is(script.namespace));
 
-        assertFalse(script.state(Body.OnPenis).is(script.namespace));
+        assertTrue(script.state(Body.OnPenis).is(script.namespace));
 
         script.state(Toys.Chastity_Device).remove();
         assertTrue(script.state(Body.OnPenis).applied());
         assertFalse(script.state(Toys.Chastity_Device).is(script.namespace));
 
-        assertFalse(script.state(Body.OnPenis).is(script.namespace));
+        assertTrue(script.state(Body.OnPenis).is(script.namespace));
 
         script.state(Household.Condoms).remove();
         assertFalse(script.state(Body.OnPenis).applied());

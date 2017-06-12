@@ -4,6 +4,7 @@
 package teaselib.util;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -48,9 +49,10 @@ public class ItemImpl implements Item, StateMaps.Attributes {
         this.value = value;
         this.displayName = displayName;
         this.peers = peers;
-        this.attributes = new HashSet<Object>();
-        this.attributes.add(item);
-        this.attributes.addAll(Arrays.asList(attributes));
+        Set<Object> all = new HashSet<Object>();
+        all.add(item);
+        all.addAll(Arrays.asList(attributes));
+        this.attributes = Collections.unmodifiableSet(all);
     }
 
     @Override

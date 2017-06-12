@@ -16,7 +16,7 @@ import teaselib.TeaseScript;
 import teaselib.Toys;
 import teaselib.test.TestScript;
 
-public class ItemsTest {
+public class ItemsTests {
 
     @Test
     public void testIsAvailable() throws Exception {

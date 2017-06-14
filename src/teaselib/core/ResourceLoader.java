@@ -25,8 +25,7 @@ import org.slf4j.LoggerFactory;
 import teaselib.Config;
 
 public class ResourceLoader {
-    private static final Logger logger = LoggerFactory
-            .getLogger(ResourceLoader.class);
+    private static final Logger logger = LoggerFactory.getLogger(ResourceLoader.class);
 
     public static final String ResourcesInProjectFolder = "/";
 
@@ -44,14 +43,12 @@ public class ResourceLoader {
         this(mainScript, getPackagePath(mainScript));
     }
 
-    public ResourceLoader(Class<?> mainScript, String resourceRoot,
-            String[] assets) {
+    public ResourceLoader(Class<?> mainScript, String resourceRoot, String[] assets) {
         this(mainScript, resourceRoot);
         addAssets(assets);
     }
 
-    public ResourceLoader(Class<?> mainScript, String resourceRoot,
-            String[] assets, String[] optionalAssets) {
+    public ResourceLoader(Class<?> mainScript, String resourceRoot, String[] assets, String[] optionalAssets) {
         this(mainScript, resourceRoot);
         addAssets(assets);
         addAssets(optionalAssets);
@@ -68,8 +65,7 @@ public class ResourceLoader {
     }
 
     private static File getBasePath(Class<?> mainScript) {
-        String systemProperty = System.getProperty(
-                Config.Namespace + "." + Config.Assets.toString(), "");
+        String systemProperty = System.getProperty(Config.Namespace + "." + Config.Assets.toString(), "");
         if (classLoaderCompatibleResourcePath(systemProperty).isEmpty()) {
             return getProjectPath(mainScript);
         } else {
@@ -77,10 +73,15 @@ public class ResourceLoader {
         }
     }
 
+    public ResourceLoader(File basePath, String resourceRoot, String[] assets, String[] optionalAssets) {
+        this(basePath, resourceRoot);
+        addAssets(assets);
+        addAssets(optionalAssets);
+    }
+
     public ResourceLoader(File basePath, String resourceRoot) {
         this.basePath = basePath;
-        this.resourceRoot = classLoaderCompatibleResourcePath(
-                pathToFolder(resourceRoot));
+        this.resourceRoot = classLoaderCompatibleResourcePath(pathToFolder(resourceRoot));
         logger.info("Using basepath='" + basePath.getAbsolutePath() + "'");
         try {
             addURL = addURLMethod();
@@ -116,23 +117,19 @@ public class ResourceLoader {
 
     public static File getProjectPath(Class<?> mainScript) {
         String classFile = getClassFilePath(mainScript);
-        URL url = mainScript.getClassLoader()
-                .getResource(classLoaderCompatibleResourcePath(classFile));
+        URL url = mainScript.getClassLoader().getResource(classLoaderCompatibleResourcePath(classFile));
         String protocol = url.getProtocol().toLowerCase();
         if (classLoaderCompatibleResourcePath(protocol).equals("file")) {
-            return projectPathFromFile(url,
-                    classLoaderCompatibleResourcePath(classFile));
+            return projectPathFromFile(url, classLoaderCompatibleResourcePath(classFile));
         } else if (classLoaderCompatibleResourcePath(protocol).equals("jar")) {
             return projectParentPathFromJar(url);
         } else {
-            throw new IllegalArgumentException(
-                    "Unsupported protocol: " + url.toString());
+            throw new IllegalArgumentException("Unsupported protocol: " + url.toString());
         }
     }
 
     private static String getClassFilePath(Class<?> mainScript) {
-        String classFile = "/" + mainScript.getName().replace(".", "/")
-                + ".class";
+        String classFile = "/" + mainScript.getName().replace(".", "/") + ".class";
         return classLoaderCompatibleResourcePath(classFile);
     }
 
@@ -140,17 +137,14 @@ public class ResourceLoader {
         String path = getUndecoratedPath(url);
         int classOffset = classLoaderCompatibleResourcePath(classFile).length();
         return new File(classLoaderCompatibleResourcePath(path).substring(0,
-                classLoaderCompatibleResourcePath(path).length()
-                        - classOffset));
+                classLoaderCompatibleResourcePath(path).length() - classOffset));
     }
 
     private static File projectParentPathFromJar(URL url) {
         String path = getUndecoratedPath(url);
         int startOffset = new String("File:/").length();
-        int jarOffset = classLoaderCompatibleResourcePath(path)
-                .indexOf(".jar!");
-        return new File(classLoaderCompatibleResourcePath(path)
-                .substring(startOffset, jarOffset)).getParentFile();
+        int jarOffset = classLoaderCompatibleResourcePath(path).indexOf(".jar!");
+        return new File(classLoaderCompatibleResourcePath(path).substring(startOffset, jarOffset)).getParentFile();
     }
 
     /**
@@ -167,8 +161,7 @@ public class ResourceLoader {
     }
 
     private static Method addURLMethod() throws NoSuchMethodException {
-        Method addURI = URLClassLoader.class.getDeclaredMethod("addURL",
-                URL.class);
+        Method addURI = URLClassLoader.class.getDeclaredMethod("addURL", URL.class);
         addURI.setAccessible(true);
         return addURI;
     }
@@ -187,14 +180,13 @@ public class ResourceLoader {
         } catch (IllegalArgumentException e) {
             throw e;
         } catch (Exception e) {
-            throw new IllegalArgumentException("Cannot add assets "
-                    + Arrays.toString(paths) + " - " + e.getMessage(), e);
+            throw new IllegalArgumentException("Cannot add assets " + Arrays.toString(paths) + " - " + e.getMessage(),
+                    e);
         }
     }
 
     private void addAssetsToAntClassLoader(String[] paths)
-            throws NoSuchMethodException, IllegalAccessException,
-            IllegalArgumentException, InvocationTargetException {
+            throws NoSuchMethodException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
         Method addPathComponent = addPathComponentMethod();
         for (String path : paths) {
             File file = new File(basePath, path);
@@ -204,18 +196,12 @@ public class ResourceLoader {
     }
 
     private boolean haveAntClassLoader() {
-        return classLoader.getClass().getSimpleName()
-                .startsWith("AntClassLoader");
+        return classLoader.getClass().getSimpleName().startsWith("AntClassLoader");
     }
 
     private Method addPathComponentMethod() throws NoSuchMethodException {
         Class<?> classLoaderClass = classLoader.getClass().getSuperclass();
-        // for (Method method : classLoaderClass.getDeclaredMethods()) {
-        // System.out.println(method);
-        // }
-        // System.out.println(classLoaderClass.getName());
-        Method addPathComponent = classLoaderClass
-                .getDeclaredMethod("addPathComponent", File.class);
+        Method addPathComponent = classLoaderClass.getDeclaredMethod("addPathComponent", File.class);
         addPathComponent.setAccessible(true);
         return addPathComponent;
     }
@@ -239,15 +225,14 @@ public class ResourceLoader {
         return uri;
     }
 
-    private void addAssets(URI[] assets) throws IllegalAccessException,
-            InvocationTargetException, MalformedURLException {
+    private void addAssets(URI[] assets)
+            throws IllegalAccessException, InvocationTargetException, MalformedURLException {
         for (URI uri : assets) {
             addAsset(uri);
         }
     }
 
-    private void addAsset(URI uri) throws IllegalAccessException,
-            InvocationTargetException, MalformedURLException {
+    private void addAsset(URI uri) throws IllegalAccessException, InvocationTargetException, MalformedURLException {
         boolean isValid = isValidResourceLocation(uri);
         if (isValid) {
             addURL.invoke(classLoader, new Object[] { uri.toURL() });
@@ -257,26 +242,23 @@ public class ResourceLoader {
             // Just warn, since everybody should be able to unpack the archives
             // to explore or change the contents,
             // and to remove them to ensure the unpacked resources are used
-            logger.info("Archive not available: " + uri.getPath());
+            logger.warn("Archive not available: " + uri.getPath());
         }
     }
 
     private boolean isValidResourceLocation(URI uri) {
         File file = new File(uri);
-        boolean isValidAndNotAddYet = file.exists()
-                && !resourceLocations.contains(uri);
-        boolean isArchiveOrDirectory = uri.getPath().endsWith(".jar")
-                || uri.getPath().endsWith(".zip") || file.isDirectory();
+        boolean isValidAndNotAddYet = file.exists() && !resourceLocations.contains(uri);
+        boolean isArchiveOrDirectory = uri.getPath().endsWith(".jar") || uri.getPath().endsWith(".zip")
+                || file.isDirectory();
         boolean isValid = isValidAndNotAddYet && isArchiveOrDirectory;
         return isValid;
     }
 
     public InputStream getResource(String resource) throws IOException {
-        final String classloaderCompatibleResourcePath = getClassLoaderAbsoluteResourcePath(
-                resource);
+        final String classloaderCompatibleResourcePath = getClassLoaderAbsoluteResourcePath(resource);
         logger.info("Resource: '" + classloaderCompatibleResourcePath + "'");
-        InputStream inputStream = classLoader
-                .getResourceAsStream(classloaderCompatibleResourcePath);
+        InputStream inputStream = classLoader.getResourceAsStream(classloaderCompatibleResourcePath);
         if (inputStream == null) {
             throw new IOException(classloaderCompatibleResourcePath);
         }
@@ -286,8 +268,7 @@ public class ResourceLoader {
     public String getClassLoaderAbsoluteResourcePath(String resource) {
         final String classloaderCompatibleResourcePath;
         if (isAbsoluteResourcePath(resource)) {
-            classloaderCompatibleResourcePath = classLoaderCompatibleResourcePath(
-                    resource);
+            classloaderCompatibleResourcePath = classLoaderCompatibleResourcePath(resource);
         } else if (isNearlyAbsoluteResourcePath(resource)) {
             classloaderCompatibleResourcePath = resource;
         } else {
@@ -316,8 +297,7 @@ public class ResourceLoader {
     public Collection<String> resources(Pattern pattern) {
         Collection<String> resources = new LinkedHashSet<String>();
         for (URI classsPathEntry : resourceLocations) {
-            Collection<String> matches = new ResourceList(resourceRoot)
-                    .getResources(classsPathEntry, pattern);
+            Collection<String> matches = new ResourceList(resourceRoot).getResources(classsPathEntry, pattern);
             resources.addAll(matches);
         }
         return resources;
@@ -336,8 +316,7 @@ public class ResourceLoader {
      * @return The absolute file system path to the resource item.
      */
     public File getAssetPath(String resourcePath) {
-        return new File(basePath,
-                resourceRoot + classLoaderCompatibleResourcePath(resourcePath));
+        return new File(basePath, resourceRoot + classLoaderCompatibleResourcePath(resourcePath));
     }
 
     /**
@@ -352,13 +331,11 @@ public class ResourceLoader {
     public File unpackEnclosingFolder(String path) throws IOException {
         File match = null;
         String parentPath = path.substring(0, path.lastIndexOf("/"));
-        Collection<String> folder = resources(Pattern.compile(
-                getClassLoaderAbsoluteResourcePath(parentPath + "/.*")));
+        Collection<String> folder = resources(Pattern.compile(getClassLoaderAbsoluteResourcePath(parentPath + "/.*")));
         for (String file : folder) {
             File unpacked = unpackFileFromFolder(file);
             if (match == null && classLoaderCompatibleResourcePath(file)
-                    .equals(classLoaderCompatibleResourcePath(
-                            getClassLoaderAbsoluteResourcePath(path)))) {
+                    .equals(classLoaderCompatibleResourcePath(getClassLoaderAbsoluteResourcePath(path)))) {
                 match = unpacked;
             }
         }
@@ -380,21 +357,18 @@ public class ResourceLoader {
      * @throws IOException
      */
     public File unpackToFile(String resourcePath) throws IOException {
-        String classLoaderCompatibleResourcePath = classLoaderCompatibleResourcePath(
-                resourcePath);
+        String classLoaderCompatibleResourcePath = classLoaderCompatibleResourcePath(resourcePath);
         File file = getAssetPath(classLoaderCompatibleResourcePath);
         return unpackToFileInternal(classLoaderCompatibleResourcePath, file);
     }
 
     private File unpackFileFromFolder(String resourcePath) throws IOException {
-        String classLoaderCompatibleResourcePath = classLoaderCompatibleResourcePath(
-                resourcePath);
+        String classLoaderCompatibleResourcePath = classLoaderCompatibleResourcePath(resourcePath);
         File file = new File(basePath, classLoaderCompatibleResourcePath);
         return unpackToFileInternal(classLoaderCompatibleResourcePath, file);
     }
 
-    private File unpackToFileInternal(String classLoaderCompatibleResourcePath,
-            File file) throws IOException {
+    private File unpackToFileInternal(String classLoaderCompatibleResourcePath, File file) throws IOException {
         if (!file.exists()) {
             InputStream resource = null;
             try {

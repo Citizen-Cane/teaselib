@@ -151,13 +151,17 @@ public class TeaseLib {
      * @param milliseconds
      *            The time to sleep.
      */
-    public void sleep(long x, TimeUnit timeUnit) {
-        try {
-            if (x > 0) {
-                timeUnit.sleep(x);
+    public void sleep(long duration, TimeUnit unit) {
+        if (isTimeFrozen()) {
+            advanceTime(duration, unit);
+        } else {
+            try {
+                if (duration > 0) {
+                    unit.sleep(duration);
+                }
+            } catch (InterruptedException e) {
+                throw new ScriptInterruptedException();
             }
-        } catch (InterruptedException e) {
-            throw new ScriptInterruptedException();
         }
     }
 
@@ -166,13 +170,17 @@ public class TeaseLib {
      */
     public long getTime(TimeUnit unit) {
         final long time;
-        if (frozenTime > Long.MIN_VALUE) {
+        if (isTimeFrozen()) {
             time = frozenTime + timeOffsetMillis;
         } else {
             long now = System.currentTimeMillis();
             time = now + timeOffsetMillis;
         }
         return unit.convert(time, TimeUnit.MILLISECONDS);
+    }
+
+    private boolean isTimeFrozen() {
+        return frozenTime > Long.MIN_VALUE;
     }
 
     void freezeTime() {

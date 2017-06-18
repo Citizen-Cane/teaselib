@@ -89,10 +89,24 @@ public class DummyHost implements Host {
 
     @Override
     public boolean dismissChoices(List<String> choices) {
-        for (Delegate delegate : getClickableChoices(choices)) {
+        // The weak point - must wait until there is something to be dismissed,
+        // since there is no guarantee when the host will be creating the
+        // prompts.
+        // Therefore dismissChoices() might be called before buttons are
+        // realized.
+        // The SexScripts host returns false until SS has created the buttons,
+        // so we have to, too.
+        if (currentChoices.isEmpty()) {
+            return false;
+        }
+
+        List<Delegate> clickableChoices = getClickableChoices(choices);
+        for (Delegate delegate : clickableChoices) {
             delegate.run();
         }
+
         currentChoices = Collections.emptyList();
+
         return true;
     }
 
@@ -106,22 +120,26 @@ public class DummyHost implements Host {
         latch.getAndSet(new CountDownLatch(1)).countDown();
         selectedIndex = 0;
 
-        allChoices: for (Entry<String, Response> entry : responses.entrySet()) {
-            Pattern choice = WildcardPattern.compile(entry.getKey());
-            for (int i = 0; i < choices.size(); i++) {
-                if (choice.matcher(choices.get(i)).matches()) {
-                    if (entry.getValue().equals(Debugger.Response.Ignore)) {
-                        try {
-                            latch.get().await();
-                            break allChoices;
-                        } catch (InterruptedException e) {
-                            throw new ScriptInterruptedException();
+        try {
+            allChoices: for (Entry<String, Response> entry : responses.entrySet()) {
+                Pattern choice = WildcardPattern.compile(entry.getKey());
+                for (int i = 0; i < choices.size(); i++) {
+                    if (choice.matcher(choices.get(i)).matches()) {
+                        if (entry.getValue().equals(Debugger.Response.Ignore)) {
+                            try {
+                                latch.get().await();
+                                break allChoices;
+                            } catch (InterruptedException e) {
+                                throw new ScriptInterruptedException();
+                            }
+                        } else {
+                            return i;
                         }
-                    } else {
-                        return i;
                     }
                 }
             }
+        } finally {
+            currentChoices = Collections.emptyList();
         }
         return selectedIndex;
     }

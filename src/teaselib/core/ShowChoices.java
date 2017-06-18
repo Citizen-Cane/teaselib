@@ -27,8 +27,7 @@ import teaselib.util.SpeechRecognitionRejectedScript;
  *
  */
 class ShowChoices {
-    private static final Logger logger = LoggerFactory
-            .getLogger(ShowChoices.class);
+    private static final Logger logger = LoggerFactory.getLogger(ShowChoices.class);
     /**
      * The choices instance is paused in order to display a different set of
      * choices
@@ -61,17 +60,15 @@ class ShowChoices {
      *            Whether the stack of choices contains an element with pause
      *            state {@link ShowChoices#RecognitionRejected}
      */
-    public ShowChoices(final TeaseScriptBase script, List<String> choices,
-            List<String> derivedChoices, final ScriptFutureTask scriptTask,
-            Confidence recognitionConfidence,
+    public ShowChoices(final TeaseScriptBase script, List<String> choices, List<String> derivedChoices,
+            final ScriptFutureTask scriptTask, Confidence recognitionConfidence,
             final boolean choicesStackContainsSRRejectedState) {
         super();
         this.choices = choices;
         this.derivedChoices = derivedChoices;
         this.scriptTask = scriptTask;
         this.teaseLib = script.teaseLib;
-        this.speechRecognizer = SpeechRecognizer.instance
-                .get(script.actor.getLocale());
+        this.speechRecognizer = SpeechRecognizer.instance.get(script.actor.getLocale());
         this.recognitionConfidence = recognitionConfidence;
         this.recognizeSpeech = speechRecognizer.isReady();
         if (recognizeSpeech) {
@@ -98,38 +95,30 @@ class ShowChoices {
             // However rendering messages while showing choices should be fine.
             recognitionRejected = new Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs>() {
                 @Override
-                public void run(SpeechRecognitionImplementation sender,
-                        SpeechRecognizedEventArgs eventArgs) {
+                public void run(SpeechRecognitionImplementation sender, SpeechRecognizedEventArgs eventArgs) {
                     SpeechRecognitionRejectedScript speechRecognitionRejectedScript = script.actor.speechRecognitionRejectedScript;
                     // run speech recognition rejected script?
                     if (speechRecognitionRejectedScript != null) {
                         if (choicesStackContainsSRRejectedState == true) {
-                            logger.info(
-                                    "The choices stack contains already another SR rejection script"
-                                            + " - skipping RecognitionRejectedScript "
-                                            + speechRecognitionRejectedScript
-                                                    .toString());
+                            logger.info("The choices stack contains already another SR rejection script"
+                                    + " - skipping RecognitionRejectedScript "
+                                    + speechRecognitionRejectedScript.toString());
                         } else if (scriptTask != null) {
                             // This would work for the built-in confirmative
                             // timeout script functions
                             // TimeoutBehavior.InDubioMitius and maybe also for
                             // TimeoutBehavior.TimeoutBehavior.InDubioMitius
-                            logger.info(scriptTask.getRelation().toString()
-                                    + " script functions running"
+                            logger.info(scriptTask.getRelation().toString() + " script functions running"
                                     + " - skipping RecognitionRejectedScript "
-                                    + speechRecognitionRejectedScript
-                                            .toString());
+                                    + speechRecognitionRejectedScript.toString());
                         } else if (!teaseLib.renderQueue.hasCompletedAll()) {
                             // must complete all to avoid parallel rendering
                             // see {@link Message#ShowChoices}
-                            logger.info(" message rendering still in progress"
-                                    + " - skipping RecognitionRejectedScript "
-                                    + speechRecognitionRejectedScript
-                                            .toString());
-                        } else if (speechRecognitionRejectedScript
-                                .canRun() == false) {
-                            logger.info("RecognitionRejectedScript "
-                                    + speechRecognitionRejectedScript.toString()
+                            logger.info(
+                                    " message rendering still in progress" + " - skipping RecognitionRejectedScript "
+                                            + speechRecognitionRejectedScript.toString());
+                        } else if (speechRecognitionRejectedScript.canRun() == false) {
+                            logger.info("RecognitionRejectedScript " + speechRecognitionRejectedScript.toString()
                                     + ".canRun() returned false - skipping");
                         } else {
                             // all negative conditions sorted out
@@ -139,8 +128,7 @@ class ShowChoices {
                 }
             };
             srChoiceIndices = new ArrayList<Integer>(1);
-            recognitionCompleted = recognitionCompletedEvent(derivedChoices,
-                    scriptTask, srChoiceIndices);
+            recognitionCompleted = recognitionCompletedEvent(derivedChoices, scriptTask, srChoiceIndices);
         } else {
             srChoiceIndices = Collections.EMPTY_LIST;
             recognitionRejected = null;
@@ -201,8 +189,7 @@ class ShowChoices {
         }
         // The result of the script function may override any result
         // from button clicks or speech recognition
-        String choice = scriptTask != null
-                ? scriptTask.getScriptFunctionResult() : null;
+        String choice = scriptTask != null ? scriptTask.getScriptFunctionResult() : null;
         if (choice == null) {
             // Assign result from speech recognition,
             // script task timeout or button click
@@ -224,15 +211,13 @@ class ShowChoices {
     private void enableSpeechRecognition() {
         speechRecognizer.events.recognitionRejected.add(recognitionRejected);
         speechRecognizer.events.recognitionCompleted.add(recognitionCompleted);
-        speechRecognizer.startRecognition(derivedChoices,
-                recognitionConfidence);
+        speechRecognizer.startRecognition(derivedChoices, recognitionConfidence);
     }
 
     private void disableSpeechRecognition() {
         logger.debug("Stopping speech recognition");
         speechRecognizer.events.recognitionRejected.remove(recognitionRejected);
-        speechRecognizer.events.recognitionCompleted
-                .remove(recognitionCompleted);
+        speechRecognizer.events.recognitionCompleted.remove(recognitionCompleted);
         speechRecognizer.stopRecognition();
     }
 
@@ -280,22 +265,17 @@ class ShowChoices {
     }
 
     private Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs> recognitionCompletedEvent(
-            final List<String> derivedChoices,
-            final ScriptFutureTask scriptTask,
-            final List<Integer> srChoiceIndices) {
+            final List<String> derivedChoices, final ScriptFutureTask scriptTask, final List<Integer> srChoiceIndices) {
         Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs> recognitionCompleted;
         recognitionCompleted = new Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs>() {
             @Override
-            public void run(SpeechRecognitionImplementation sender,
-                    SpeechRecognizedEventArgs eventArgs) {
+            public void run(SpeechRecognitionImplementation sender, SpeechRecognizedEventArgs eventArgs) {
                 if (eventArgs.result.length == 1) {
                     SpeechRecognitionResult result = eventArgs.result[0];
                     if (confidenceIsHighEnough(result, recognitionConfidence)) {
-                        clickChoice(derivedChoices, scriptTask, srChoiceIndices,
-                                result);
+                        clickChoice(derivedChoices, scriptTask, srChoiceIndices, result);
                     } else {
-                        logger.info("Dropping result '" + result.toString()
-                                + "' due to lack of confidence (Confidence="
+                        logger.info("Dropping result '" + result.toString() + "' due to lack of confidence (Confidence="
                                 + recognitionConfidence + " expected)");
                     }
                 } else {
@@ -303,15 +283,12 @@ class ShowChoices {
                 }
             }
 
-            private boolean confidenceIsHighEnough(
-                    SpeechRecognitionResult result, Confidence confidence) {
+            private boolean confidenceIsHighEnough(SpeechRecognitionResult result, Confidence confidence) {
                 return result.confidence.propability >= confidence.propability;
             }
 
-            private void clickChoice(final List<String> derivedChoices,
-                    final ScriptFutureTask scriptTask,
-                    final List<Integer> srChoiceIndices,
-                    SpeechRecognitionResult result) {
+            private void clickChoice(final List<String> derivedChoices, final ScriptFutureTask scriptTask,
+                    final List<Integer> srChoiceIndices, SpeechRecognitionResult result) {
                 // Find the button to click
                 if (!result.isChoice(derivedChoices)) {
                     throw new IllegalArgumentException(result.toString());
@@ -322,26 +299,21 @@ class ShowChoices {
                 clickChoice(derivedChoices, scriptTask, result);
             }
 
-            private void clickChoice(final List<String> derivedChoices,
-                    final ScriptFutureTask scriptTask,
+            private void clickChoice(final List<String> derivedChoices, final ScriptFutureTask scriptTask,
                     SpeechRecognitionResult speechRecognitionResult) {
-                List<Delegate> uiElements = teaseLib.host
-                        .getClickableChoices(derivedChoices);
+                List<Delegate> uiElements = teaseLib.host.getClickableChoices(derivedChoices);
                 try {
-                    Delegate delegate = uiElements
-                            .get(speechRecognitionResult.index);
+                    Delegate delegate = uiElements.get(speechRecognitionResult.index);
                     if (delegate != null) {
                         if (scriptTask != null) {
                             scriptTask.cancel(true);
                         }
                         // Click the button
                         delegate.run();
-                        logger.info("Clicked delegate for '"
-                                + speechRecognitionResult.text + "' index="
+                        logger.info("Clicked delegate for '" + speechRecognitionResult.text + "' index="
                                 + speechRecognitionResult.index);
                     } else {
-                        logger.info("Button gone for choice "
-                                + speechRecognitionResult.index + ": "
+                        logger.info("Button gone for choice " + speechRecognitionResult.index + ": "
                                 + speechRecognitionResult.text);
                     }
                 } catch (Throwable t) {
@@ -354,5 +326,10 @@ class ShowChoices {
 
     public boolean hasScriptFunction() {
         return scriptTask != null;
+    }
+
+    @Override
+    public String toString() {
+        return choices + (this.pauseState != null ? " " + this.pauseState : "");
     }
 }

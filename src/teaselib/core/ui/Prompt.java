@@ -6,6 +6,7 @@ package teaselib.core.ui;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CyclicBarrier;
 
+import teaselib.ScriptFunction;
 import teaselib.core.ScriptFutureTask;
 import teaselib.core.ScriptInterruptedException;
 import teaselib.core.speechrecognition.SpeechRecognitionResult.Confidence;
@@ -57,18 +58,37 @@ public class Prompt {
         }
     }
 
-    void stopScriptTask() {
+    void completeScriptTask() {
         if (scriptTask != null) {
-            if (!scriptTask.isDone()) {
-                scriptTask.cancel(true);
-                scriptTask.join();
+            synchronized (scriptTask) {
+                if (!scriptTask.isDone()) {
+                    scriptTask.cancel(true);
+                    scriptTask.join();
+                }
+                forwardErrorsAsRuntimeException();
             }
         }
-        try {
-            Thread.sleep(1000);
-        } catch (InterruptedException e) {
-            throw new ScriptInterruptedException();
+    }
+
+    void forwardErrorsAsRuntimeException() {
+        if (scriptTask != null) {
+            scriptTask.forwardErrorsAsRuntimeException();
         }
+    }
+
+    String choice(int resultIndex) {
+        String choice = scriptTask != null
+                ? scriptTask.getScriptFunctionResult() : null;
+        if (choice == null) {
+            // TODO SR
+            if (scriptTask != null && scriptTask.timedOut()) {
+                // Timeout
+                choice = ScriptFunction.Timeout;
+            } else {
+                choice = choices.get(resultIndex);
+            }
+        }
+        return choice;
     }
 
     @Override
@@ -78,19 +98,19 @@ public class Prompt {
                 + (pauseRequested() && pausing() ? "waiting" : "active");
     }
 
-    public void enterPause() {
+    void enterPause() {
         paused = true;
     }
 
-    public boolean pauseRequested() {
+    boolean pauseRequested() {
         return paused;
     }
 
-    public boolean pausing() {
+    boolean pausing() {
         return lock.getNumberWaiting() > 0;
     }
 
-    public void resume() {
+    void resume() {
         paused = false;
         lock.reset();
     }

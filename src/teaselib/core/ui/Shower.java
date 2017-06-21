@@ -2,9 +2,7 @@ package teaselib.core.ui;
 
 import java.util.Stack;
 
-import teaselib.ScriptFunction;
 import teaselib.core.Host;
-import teaselib.core.ScriptFutureTask;
 import teaselib.core.ScriptInterruptedException;
 
 public class Shower {
@@ -18,12 +16,12 @@ public class Shower {
     }
 
     public String show(Prompt prompt) {
-        dismissPrevious();
+        pauseCurrent();
 
         try {
             return showNew(prompt);
         } finally {
-            restorePrevious();
+            resumePrevious();
         }
     }
 
@@ -38,55 +36,30 @@ public class Shower {
                 int resultIndex = host.reply(prompt.choices);
                 if (prompt.pauseRequested()) {
                     prompt.pauseUntilResumed();
+
                     if (prompt.scriptTask != null) {
                         if (prompt.scriptTask.isDone()
                                 || prompt.scriptTask.isCancelled()) {
                             prompt.scriptTask.join();
-                            prompt.scriptTask.forwardErrorsAsRuntimeException();
-                            return prompt.scriptTask.getScriptFunctionResult();
+                            synchronized (prompt.scriptTask) {
+                                prompt.forwardErrorsAsRuntimeException();
+                                return prompt.scriptTask
+                                        .getScriptFunctionResult();
+                            }
                         }
                     }
                 } else {
-                    prompt.stopScriptTask();
+                    prompt.completeScriptTask();
 
-                    host.dismissChoices(prompt.choices);
-
-                    return getChoice(prompt, resultIndex);
+                    return prompt.choice(resultIndex);
                 }
             } else {
                 prompt.pauseUntilResumed();
             }
         }
-
     }
 
-    private static String getChoice(Prompt prompt, int resultIndex) {
-        ScriptFutureTask scriptTask = prompt.scriptTask;
-        if (scriptTask != null) {
-            scriptTask.forwardErrorsAsRuntimeException();
-        }
-
-        String choice = retrieveResult(prompt, resultIndex, scriptTask);
-        return choice;
-    }
-
-    private static String retrieveResult(Prompt prompt, int resultIndex,
-            ScriptFutureTask scriptTask) {
-        String choice = scriptTask != null
-                ? scriptTask.getScriptFunctionResult() : null;
-        if (choice == null) {
-            // TODO SR
-            if (scriptTask != null && scriptTask.timedOut()) {
-                // Timeout
-                choice = ScriptFunction.Timeout;
-            } else {
-                choice = prompt.choices.get(resultIndex);
-            }
-        }
-        return choice;
-    }
-
-    private void dismissPrevious() {
+    private void pauseCurrent() {
         if (!stack.empty()) {
             pause(stack.peek());
         }
@@ -94,8 +67,8 @@ public class Shower {
 
     private void pause(Prompt prompt) {
         prompt.enterPause();
-        while (!prompt.pausing()) {
-            synchronized (prompt.lock) {
+        synchronized (prompt.lock) {
+            while (!prompt.pausing()) {
                 host.dismissChoices(prompt.choices);
                 try {
                     prompt.lock.wait(100);
@@ -116,7 +89,7 @@ public class Shower {
         }
     }
 
-    private void restorePrevious() {
+    private void resumePrevious() {
         stack.pop();
 
         if (!stack.isEmpty()) {

@@ -5,6 +5,7 @@ package teaselib.core;
 
 import java.util.List;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
@@ -14,7 +15,6 @@ import org.slf4j.LoggerFactory;
 
 import teaselib.ScriptFunction;
 import teaselib.core.concurrency.NamedExecutorService;
-import teaselib.core.events.Delegate;
 
 public class ScriptFutureTask extends FutureTask<String> {
     private static final Logger logger = LoggerFactory
@@ -30,6 +30,11 @@ public class ScriptFutureTask extends FutureTask<String> {
     private Throwable throwable = null;
     private boolean done = false;
 
+    final Host host;
+    private final List<String> derivedChoices;
+
+    private CountDownLatch joined;
+
     private final static ExecutorService Executor = NamedExecutorService
             .newFixedThreadPool(Integer.MAX_VALUE,
                     ShowChoices.class.getName() + " Script Function", 1,
@@ -42,53 +47,23 @@ public class ScriptFutureTask extends FutureTask<String> {
             @Override
             public String call() throws Exception {
                 synchronized (scriptFunction) {
-                    try {
-                        scriptFunction.run();
-                        // Keep choices available until the last part of
-                        // the script function has finished rendering
-                        if (Thread.interrupted()) {
-                            throw new ScriptInterruptedException();
-                        }
-                        script.completeAll();
-                        // Ignored
-                        return null;
-                    } catch (ScriptInterruptedException e) {
-                        throw e;
-                    } catch (Exception e) {
-                        throw e;
-                    } finally {
-                        clickToFinishFunction(script, derivedChoices, timeout);
+                    scriptFunction.run();
+                    // Keep choices available until the last part of
+                    // the script function has finished rendering
+                    if (Thread.interrupted()) {
+                        throw new ScriptInterruptedException();
                     }
-                }
-            }
-
-            private void clickToFinishFunction(final TeaseScriptBase script,
-                    final List<String> derivedChoices,
-                    final TimeoutClick timeout) {
-                // Script function finished
-                List<Delegate> clickables = script.teaseLib.host
-                        .getClickableChoices(derivedChoices);
-                if (!clickables.isEmpty()) {
-                    Delegate clickable = clickables.get(0);
-                    if (clickable != null) {
-                        // Signal timeout and click any button
-                        timeout.clicked = true;
-                        logger.info("Script function finished click");
-                        // Click any delegate
-                        clickables.get(0).run();
-                    } else {
-                        // Host implementation is incomplete
-                        throw new IllegalStateException(
-                                "Host didn't return clickables for choices: "
-                                        + derivedChoices.toString());
-                    }
-                } else {
-                    logger.info("Script function dismissed already");
+                    script.completeAll();
+                    // Ignored
+                    return null;
                 }
             }
         });
         this.scriptFunction = scriptFunction;
         this.timeout = timeout;
+
+        this.host = script.teaseLib.host;
+        this.derivedChoices = derivedChoices;
     }
 
     @Override
@@ -97,8 +72,10 @@ public class ScriptFutureTask extends FutureTask<String> {
             super.run();
         } finally {
             synchronized (this) {
+                timeout.clicked = host.dismissChoices(derivedChoices);
                 done = true;
                 notifyAll();
+                joined.countDown();
             }
         }
     }
@@ -116,14 +93,17 @@ public class ScriptFutureTask extends FutureTask<String> {
         return throwable;
     }
 
-    public void execute() {
+    public synchronized void execute() {
+        joined = new CountDownLatch(1);
         Executor.execute(this);
     }
 
     public void join() {
-        synchronized (scriptFunction) {
-            // Intentionally left blank,
-            // we just have to be able to enter the synchronized block
+        try {
+            joined.await();
+        } catch (InterruptedException e) {
+            throw new ScriptInterruptedException();
+        } finally{
         }
     }
 

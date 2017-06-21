@@ -44,12 +44,10 @@ public class Shower {
                         acquireLock();
 
                         if (prompt.scriptTask != null) {
-                            if (prompt.scriptTask.isDone()
-                                    || prompt.scriptTask.isCancelled()) {
+                            if (prompt.scriptTask.isDone() || prompt.scriptTask.isCancelled()) {
                                 prompt.scriptTask.join();
                                 prompt.forwardErrorsAsRuntimeException();
-                                return prompt.scriptTask
-                                        .getScriptFunctionResult();
+                                return prompt.scriptTask.getScriptFunctionResult();
                             }
                         }
                     } else {
@@ -69,10 +67,8 @@ public class Shower {
     }
 
     private void acquireLock() {
-        try {
-            lock.lockInterruptibly();
-        } catch (InterruptedException e) {
-            throw new ScriptInterruptedException();
+        if (!lock.tryLock()) {
+            throw new IllegalStateException("Failed to acquire lock");
         }
     }
 
@@ -96,13 +92,11 @@ public class Shower {
         }
 
         if (!prompt.pauseRequested()) {
-            throw new IllegalStateException(
-                    "Stack element " + stack.peek() + " not paused");
+            throw new IllegalStateException("Stack element " + stack.peek() + " not paused");
         }
 
         if (!prompt.pausing()) {
-            throw new IllegalStateException(
-                    "Stack element " + stack.peek() + " not waiting on lock");
+            throw new IllegalStateException("Stack element " + stack.peek() + " not waiting on lock");
         }
     }
 

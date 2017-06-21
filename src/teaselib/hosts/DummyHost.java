@@ -12,6 +12,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
 import org.bytedeco.javacpp.opencv_core.Point;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import teaselib.core.Debugger;
 import teaselib.core.Debugger.Response;
@@ -25,6 +27,8 @@ import teaselib.core.javacv.VideoRendererJavaCV;
 import teaselib.core.util.WildcardPattern;
 
 public class DummyHost implements Host {
+    private static final Logger logger = LoggerFactory.getLogger(DummyHost.class);
+
     static final Point javacvDebugWindow = new Point(80, 80);
 
     private Map<String, Response> responses;
@@ -90,6 +94,7 @@ public class DummyHost implements Host {
 
     @Override
     public boolean dismissChoices(List<String> choices) {
+        logger.info("Dismiss " + choices);
         // The weak point - must wait until there is something to be dismissed,
         // since there is no guarantee when the host will be creating the
         // prompts.
@@ -122,6 +127,8 @@ public class DummyHost implements Host {
 
     @Override
     public int reply(List<String> choices) throws ScriptInterruptedException {
+        logger.info("Reply " + choices);
+
         if (validateSingleEntrance.getAndSet(true)) {
             throw new IllegalStateException("Reply multiple entry detected: " + choices);
         }

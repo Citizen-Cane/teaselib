@@ -41,11 +41,8 @@ public class Shower {
                         if (prompt.scriptTask.isDone()
                                 || prompt.scriptTask.isCancelled()) {
                             prompt.scriptTask.join();
-                            synchronized (prompt.scriptTask) {
-                                prompt.forwardErrorsAsRuntimeException();
-                                return prompt.scriptTask
-                                        .getScriptFunctionResult();
-                            }
+                            prompt.forwardErrorsAsRuntimeException();
+                            return prompt.scriptTask.getScriptFunctionResult();
                         }
                     }
                 } else {

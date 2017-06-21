@@ -60,13 +60,11 @@ public class Prompt {
 
     void completeScriptTask() {
         if (scriptTask != null) {
-            synchronized (scriptTask) {
-                if (!scriptTask.isDone()) {
-                    scriptTask.cancel(true);
-                    scriptTask.join();
-                }
-                forwardErrorsAsRuntimeException();
+            if (!scriptTask.isDone()) {
+                scriptTask.cancel(true);
+                scriptTask.join();
             }
+            forwardErrorsAsRuntimeException();
         }
     }
 

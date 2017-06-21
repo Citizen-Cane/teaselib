@@ -26,14 +26,12 @@ public class ScriptFutureTask extends FutureTask<String> {
 
     private final ScriptFunction scriptFunction;
     private final TimeoutClick timeout;
-
     private Throwable throwable = null;
-    private boolean done = false;
 
-    final Host host;
+    private final Host host;
     private final List<String> derivedChoices;
 
-    private CountDownLatch joined;
+    private CountDownLatch finished;
 
     private final static ExecutorService Executor = NamedExecutorService
             .newFixedThreadPool(Integer.MAX_VALUE,
@@ -71,12 +69,8 @@ public class ScriptFutureTask extends FutureTask<String> {
         try {
             super.run();
         } finally {
-            synchronized (this) {
-                timeout.clicked = host.dismissChoices(derivedChoices);
-                done = true;
-                notifyAll();
-                joined.countDown();
-            }
+            timeout.clicked = host.dismissChoices(derivedChoices);
+            finished.countDown();
         }
     }
 
@@ -86,24 +80,22 @@ public class ScriptFutureTask extends FutureTask<String> {
         super.setException(t);
     }
 
-    public synchronized Throwable getException() throws InterruptedException {
-        while (!done) {
-            wait();
-        }
+    public Throwable getException() throws InterruptedException {
+        finished.await();
         return throwable;
     }
 
-    public synchronized void execute() {
-        joined = new CountDownLatch(1);
+    public void execute() {
+        finished = new CountDownLatch(1);
         Executor.execute(this);
     }
 
     public void join() {
         try {
-            joined.await();
+            finished.await();
         } catch (InterruptedException e) {
             throw new ScriptInterruptedException();
-        } finally{
+        } finally {
         }
     }
 

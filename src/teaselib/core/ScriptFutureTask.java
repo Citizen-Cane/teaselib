@@ -27,6 +27,9 @@ public class ScriptFutureTask extends FutureTask<String> {
     private final ScriptFunction scriptFunction;
     private final TimeoutClick timeout;
 
+    private Throwable throwable = null;
+    private boolean done = false;
+
     private final static ExecutorService Executor = NamedExecutorService
             .newFixedThreadPool(Integer.MAX_VALUE,
                     ShowChoices.class.getName() + " Script Function", 1,
@@ -47,17 +50,14 @@ public class ScriptFutureTask extends FutureTask<String> {
                             throw new ScriptInterruptedException();
                         }
                         script.completeAll();
-                        // Click a button to continue the main thread
-                        clickToFinishFunction(script, derivedChoices, timeout);
+                        // Ignored
                         return null;
                     } catch (ScriptInterruptedException e) {
-                        // TODO Remove completely because this should be
-                        // obsolete:
-                        // renderers are cancelled in
-                        // TeaseScriptBase.showChoices
-                        // but let's better test it for a while...
-                        // script.endAll();
                         throw e;
+                    } catch (Exception e) {
+                        throw e;
+                    } finally {
+                        clickToFinishFunction(script, derivedChoices, timeout);
                     }
                 }
             }
@@ -73,8 +73,7 @@ public class ScriptFutureTask extends FutureTask<String> {
                     if (clickable != null) {
                         // Signal timeout and click any button
                         timeout.clicked = true;
-                        logger
-                                .info("Script function finished click");
+                        logger.info("Script function finished click");
                         // Click any delegate
                         clickables.get(0).run();
                     } else {
@@ -83,11 +82,38 @@ public class ScriptFutureTask extends FutureTask<String> {
                                 "Host didn't return clickables for choices: "
                                         + derivedChoices.toString());
                     }
+                } else {
+                    logger.info("Script function dismissed already");
                 }
             }
         });
         this.scriptFunction = scriptFunction;
         this.timeout = timeout;
+    }
+
+    @Override
+    public void run() {
+        try {
+            super.run();
+        } finally {
+            synchronized (this) {
+                done = true;
+                notifyAll();
+            }
+        }
+    }
+
+    @Override
+    protected void setException(Throwable t) {
+        throwable = t;
+        super.setException(t);
+    }
+
+    public synchronized Throwable getException() throws InterruptedException {
+        while (!done) {
+            wait();
+        }
+        return throwable;
     }
 
     public void execute() {
@@ -112,4 +138,20 @@ public class ScriptFutureTask extends FutureTask<String> {
     public String getScriptFunctionResult() {
         return scriptFunction.result;
     }
+
+    public void forwardErrorsAsRuntimeException() {
+        try {
+            Throwable t = getException();
+            if (t != null) {
+                if (t instanceof RuntimeException) {
+                    throw (RuntimeException) t;
+                } else {
+                    throw new RuntimeException(t);
+                }
+            }
+        } catch (InterruptedException e) {
+            throw new ScriptInterruptedException();
+        }
+    }
+
 }

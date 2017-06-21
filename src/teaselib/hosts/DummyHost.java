@@ -163,7 +163,13 @@ public class DummyHost implements Host {
                 throw new IllegalStateException("No rule to dismiss buttons matched for " + choices);
             }
         } finally {
-            validateSingleEntrance.set(false);
+            try {
+                if (latch.get().getCount() > 0) {
+                    throw new IllegalStateException("Reply - still waiting on Latch ");
+                }
+            } finally {
+                validateSingleEntrance.set(false);
+            }
         }
     }
 

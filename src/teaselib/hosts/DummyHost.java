@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
@@ -35,13 +36,11 @@ public class DummyHost implements Host {
     }
 
     @Override
-    public void playSound(ResourceLoader resources, String path)
-            throws IOException, InterruptedException {
+    public void playSound(ResourceLoader resources, String path) throws IOException, InterruptedException {
     }
 
     @Override
-    public Object playBackgroundSound(ResourceLoader resources, String path)
-            throws IOException {
+    public Object playBackgroundSound(ResourceLoader resources, String path) throws IOException {
         // TODO Auto-generated method stub
         return null;
     }
@@ -64,15 +63,14 @@ public class DummyHost implements Host {
     }
 
     @Override
-    public List<Boolean> showCheckboxes(String caption, List<String> choices,
-            List<Boolean> values, boolean allowCancel) {
+    public List<Boolean> showCheckboxes(String caption, List<String> choices, List<Boolean> values,
+            boolean allowCancel) {
         // TODO Auto-generated method stub
         return null;
     }
 
     int selectedIndex = 0;
-    AtomicReference<CountDownLatch> latch = new AtomicReference<CountDownLatch>(
-            new CountDownLatch(0));
+    AtomicReference<CountDownLatch> latch = new AtomicReference<CountDownLatch>(new CountDownLatch(0));
 
     @Override
     public List<Delegate> getClickableChoices(List<String> choices) {
@@ -100,6 +98,9 @@ public class DummyHost implements Host {
         // The SexScripts host returns false until SS has created the buttons,
         // so we have to, too.
         if (currentChoices.isEmpty()) {
+            if (latch.get().getCount() > 0) {
+                throw new IllegalStateException("Trying to dismiss without current choices: " + choices);
+            }
             return false;
         }
 
@@ -110,47 +111,59 @@ public class DummyHost implements Host {
 
         currentChoices = Collections.emptyList();
 
+        if (latch.get().getCount() > 0) {
+            throw new IllegalStateException("Dismiss failed to countdown active latch: " + choices);
+        }
+
         return true;
     }
 
+    AtomicBoolean validateSingleEntrance = new AtomicBoolean(false);
+
     @Override
     public int reply(List<String> choices) throws ScriptInterruptedException {
-        // if (Thread.interrupted()) {
-        // throw new ScriptInterruptedException();
-        // }
-
-        currentChoices = new ArrayList<String>(choices);
-        latch.getAndSet(new CountDownLatch(1)).countDown();
-        selectedIndex = 0;
+        if (validateSingleEntrance.getAndSet(true)) {
+            throw new IllegalStateException("Reply multiple entry detected: " + choices);
+        }
 
         try {
-            allChoices: for (Entry<String, Response> entry : responses
-                    .entrySet()) {
-                Pattern choice = WildcardPattern.compile(entry.getKey());
-                for (int i = 0; i < choices.size(); i++) {
-                    if (choice.matcher(choices.get(i)).matches()) {
-                        if (entry.getValue().equals(Debugger.Response.Ignore)) {
-                            try {
-                                latch.get().await();
-                                break allChoices;
-                            } catch (InterruptedException e) {
-                                throw new ScriptInterruptedException();
+            if (latch.get().getCount() > 0) {
+                throw new IllegalStateException("Reply not dismissed: " + choices);
+            }
+            if (Thread.interrupted()) {
+                throw new ScriptInterruptedException();
+            }
+            currentChoices = new ArrayList<String>(choices);
+            selectedIndex = 0;
+            try {
+                allChoices: for (Entry<String, Response> entry : responses.entrySet()) {
+                    Pattern choice = WildcardPattern.compile(entry.getKey());
+                    for (int i = 0; i < choices.size(); i++) {
+                        if (choice.matcher(choices.get(i)).matches()) {
+                            if (entry.getValue().equals(Debugger.Response.Ignore)) {
+                                try {
+                                    latch.getAndSet(new CountDownLatch(1)).countDown();
+                                    latch.get().await();
+                                    break allChoices;
+                                } catch (InterruptedException e) {
+                                    throw new ScriptInterruptedException();
+                                }
+                            } else {
+                                return i;
                             }
-                        } else {
-                            return i;
                         }
                     }
                 }
+            } finally {
+                currentChoices = Collections.emptyList();
+            }
+            if (choices.size() == 1) {
+                return 0;
+            } else {
+                throw new IllegalStateException("No rule to dismiss buttons matched for " + choices);
             }
         } finally {
-            currentChoices = Collections.emptyList();
-        }
-
-        if (choices.size() == 1) {
-            return 0;
-        } else {
-            throw new IllegalStateException(
-                    "No rule to dismiss buttons matched for " + choices);
+            validateSingleEntrance.set(false);
         }
     }
 

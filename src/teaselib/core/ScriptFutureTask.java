@@ -17,8 +17,7 @@ import teaselib.ScriptFunction;
 import teaselib.core.concurrency.NamedExecutorService;
 
 public class ScriptFutureTask extends FutureTask<String> {
-    private static final Logger logger = LoggerFactory
-            .getLogger(ScriptFutureTask.class);
+    private static final Logger logger = LoggerFactory.getLogger(ScriptFutureTask.class);
 
     public static class TimeoutClick {
         public boolean clicked = false;
@@ -33,13 +32,10 @@ public class ScriptFutureTask extends FutureTask<String> {
 
     private CountDownLatch finished;
 
-    private final static ExecutorService Executor = NamedExecutorService
-            .newFixedThreadPool(Integer.MAX_VALUE,
-                    ShowChoices.class.getName() + " Script Function", 1,
-                    TimeUnit.HOURS);
+    private final static ExecutorService Executor = NamedExecutorService.newFixedThreadPool(Integer.MAX_VALUE,
+            ShowChoices.class.getName() + " Script Function", 1, TimeUnit.HOURS);
 
-    public ScriptFutureTask(final TeaseScriptBase script,
-            final ScriptFunction scriptFunction,
+    public ScriptFutureTask(final TeaseScriptBase script, final ScriptFunction scriptFunction,
             final List<String> derivedChoices, final TimeoutClick timeout) {
         super(new Callable<String>() {
             @Override
@@ -69,8 +65,13 @@ public class ScriptFutureTask extends FutureTask<String> {
         try {
             super.run();
         } finally {
-            timeout.clicked = host.dismissChoices(derivedChoices);
-            finished.countDown();
+            try {
+                timeout.clicked = host.dismissChoices(derivedChoices);
+            } catch (Exception e) {
+                logger.error(e.getMessage(), e);
+            } finally {
+                finished.countDown();
+            }
         }
     }
 

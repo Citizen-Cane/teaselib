@@ -1,6 +1,7 @@
 package teaselib.core.ui;
 
 import java.util.Stack;
+import java.util.concurrent.locks.ReentrantLock;
 
 import teaselib.core.Host;
 import teaselib.core.ScriptInterruptedException;
@@ -25,34 +26,53 @@ public class Shower {
         }
     }
 
+    private ReentrantLock lock = new ReentrantLock();
+
     private String showNew(Prompt prompt) {
-        stack.push(prompt);
+        acquireLock();
 
-        prompt.executeScriptTask();
+        try {
+            stack.push(prompt);
+            prompt.executeScriptTask();
+            while (true) {
+                if (stack.peek() == prompt) {
+                    // TODO SR
+                    int resultIndex = host.reply(prompt.choices);
+                    if (prompt.pauseRequested()) {
+                        lock.unlock();
+                        prompt.pauseUntilResumed();
+                        acquireLock();
 
-        while (true) {
-            if (stack.peek() == prompt) {
-                // TODO SR
-                int resultIndex = host.reply(prompt.choices);
-                if (prompt.pauseRequested()) {
-                    prompt.pauseUntilResumed();
-
-                    if (prompt.scriptTask != null) {
-                        if (prompt.scriptTask.isDone()
-                                || prompt.scriptTask.isCancelled()) {
-                            prompt.scriptTask.join();
-                            prompt.forwardErrorsAsRuntimeException();
-                            return prompt.scriptTask.getScriptFunctionResult();
+                        if (prompt.scriptTask != null) {
+                            if (prompt.scriptTask.isDone()
+                                    || prompt.scriptTask.isCancelled()) {
+                                prompt.scriptTask.join();
+                                prompt.forwardErrorsAsRuntimeException();
+                                return prompt.scriptTask
+                                        .getScriptFunctionResult();
+                            }
                         }
+                    } else {
+                        prompt.completeScriptTask();
+
+                        return prompt.choice(resultIndex);
                     }
                 } else {
-                    prompt.completeScriptTask();
-
-                    return prompt.choice(resultIndex);
+                    prompt.pauseUntilResumed();
                 }
-            } else {
-                prompt.pauseUntilResumed();
             }
+        } finally {
+            if (lock.isHeldByCurrentThread()) {
+                lock.unlock();
+            }
+        }
+    }
+
+    private void acquireLock() {
+        try {
+            lock.lockInterruptibly();
+        } catch (InterruptedException e) {
+            throw new ScriptInterruptedException();
         }
     }
 

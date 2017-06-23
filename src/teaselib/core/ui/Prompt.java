@@ -4,33 +4,45 @@
 package teaselib.core.ui;
 
 import java.util.concurrent.BrokenBarrierException;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CyclicBarrier;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import teaselib.ScriptFunction;
 import teaselib.core.ScriptFutureTask;
 import teaselib.core.ScriptInterruptedException;
+import teaselib.core.TeaseScriptBase;
 import teaselib.core.speechrecognition.SpeechRecognitionResult.Confidence;
 
 public class Prompt {
+    private static final Logger logger = LoggerFactory.getLogger(ScriptFutureTask.class);
+
+    static final int DISMISSED = -1;
+
+    static final int PAUSED = -2;
+
     final Choices choices;
     final Choices derived;
-    final ScriptFutureTask scriptTask;
+    final ScriptFunction scriptFunction;
+    ScriptFutureTask scriptTask;
     final Confidence confidence;
 
     final CyclicBarrier lock;
     boolean paused = false;
 
-    public Prompt(Choices choices, Choices derived,
-            ScriptFutureTask scriptFutureTask, Confidence confidence) {
+    public Prompt(Choices choices, Choices derived, ScriptFunction scriptFunction, Confidence confidence) {
         super();
         this.choices = choices;
         this.derived = derived;
-        this.scriptTask = scriptFutureTask;
+        this.scriptFunction = scriptFunction;
         this.confidence = confidence;
         this.lock = new CyclicBarrier(Integer.MAX_VALUE);
     }
 
     void pauseUntilResumed() {
+        logger.info("pause until resuming " + this);
         try {
             synchronized (this) {
                 notifyAll();
@@ -49,11 +61,30 @@ public class Prompt {
             if (pauseRequested()) {
                 throw new IllegalStateException();
             }
+        } finally {
         }
+
+        if (pauseRequested()) {
+            throw new IllegalStateException("Pause still requested");
+        } else if (pausing()) {
+            throw new IllegalStateException("Barrier still locked");
+        }
+
+        logger.info("resumed - continuing " + this);
     }
 
-    void executeScriptTask() {
-        if (scriptTask != null) {
+    void executeScriptTask(TeaseScriptBase script, final PromptPipeline promptPipeline) {
+        if (scriptFunction != null) {
+            Callable<Boolean> dismiss = new Callable<Boolean>() {
+                @Override
+                public Boolean call() throws Exception {
+                    return promptPipeline.dismissUntilLater(Prompt.this);
+                }
+            };
+
+            scriptTask = new ScriptFutureTask(script, scriptFunction, derived, new ScriptFutureTask.TimeoutClick(),
+                    dismiss);
+
             scriptTask.execute();
         }
     }
@@ -62,8 +93,8 @@ public class Prompt {
         if (scriptTask != null) {
             if (!scriptTask.isDone()) {
                 scriptTask.cancel(true);
-                scriptTask.join();
             }
+            scriptTask.join();
             forwardErrorsAsRuntimeException();
         }
     }
@@ -75,12 +106,13 @@ public class Prompt {
     }
 
     String choice(int resultIndex) {
-        String choice = scriptTask != null
-                ? scriptTask.getScriptFunctionResult() : null;
+        String choice = scriptTask != null ? scriptTask.getScriptFunctionResult() : null;
         if (choice == null) {
             // TODO SR
             if (scriptTask != null && scriptTask.timedOut()) {
                 // Timeout
+                choice = ScriptFunction.Timeout;
+            } else if (resultIndex == Prompt.DISMISSED) {
                 choice = ScriptFunction.Timeout;
             } else {
                 choice = choices.get(resultIndex);
@@ -91,8 +123,7 @@ public class Prompt {
 
     @Override
     public String toString() {
-        return (scriptTask != null ? scriptTask.getRelation() + " " : " ") + ""
-                + choices.toString() + " "
+        return (scriptTask != null ? scriptTask.getRelation() + " " : " ") + "" + choices.toString() + " "
                 + (pauseRequested() && pausing() ? "waiting" : "active");
     }
 
@@ -109,6 +140,7 @@ public class Prompt {
     }
 
     void resume() {
+        logger.info("Resuming " + this);
         paused = false;
         lock.reset();
     }

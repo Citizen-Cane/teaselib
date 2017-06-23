@@ -5,51 +5,57 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import teaselib.core.Host;
 import teaselib.core.ScriptInterruptedException;
+import teaselib.core.TeaseScriptBase;
 
 public class Shower {
     static final int PAUSED = -1;
 
     final Host host;
     final Stack<Prompt> stack = new Stack<Prompt>();
+    private final ReentrantLock lock = new ReentrantLock();
+
+    private final PromptPipeline promptPipeline;
 
     public Shower(Host host) {
         this.host = host;
+        this.promptPipeline = new PromptPipeline(host);
     }
 
-    public String show(Prompt prompt) {
+    public String show(TeaseScriptBase script, Prompt prompt) {
         pauseCurrent();
 
         try {
-            return showNew(prompt);
+            return showNew(script, prompt);
         } finally {
             resumePrevious();
+
         }
     }
 
-    private ReentrantLock lock = new ReentrantLock();
-
-    private String showNew(Prompt prompt) {
-        acquireLock();
+    private String showNew(TeaseScriptBase script, Prompt prompt) {
+        // acquireLock();
 
         try {
             stack.push(prompt);
-            prompt.executeScriptTask();
+            prompt.executeScriptTask(script, promptPipeline);
             while (true) {
                 if (stack.peek() == prompt) {
                     // TODO SR
-                    int resultIndex = host.reply(prompt.choices);
-                    if (prompt.pauseRequested()) {
-                        lock.unlock();
+                    int resultIndex = promptPipeline.show(prompt);
+                    if (resultIndex == Prompt.PAUSED) {
                         prompt.pauseUntilResumed();
-                        acquireLock();
-
+                        // if (prompt.pauseRequested()) {
+                        // // releaseLock();
+                        // prompt.pauseUntilResumed();
+                        // // acquireLock();
+                        // }
+                    } else if (resultIndex == Prompt.DISMISSED) {
                         if (prompt.scriptTask != null) {
-                            if (prompt.scriptTask.isDone() || prompt.scriptTask.isCancelled()) {
-                                prompt.scriptTask.join();
-                                prompt.forwardErrorsAsRuntimeException();
-                                return prompt.scriptTask.getScriptFunctionResult();
-                            }
+                            prompt.scriptTask.join();
+                            prompt.forwardErrorsAsRuntimeException();
                         }
+                        String choice = prompt.choice(resultIndex);
+                        return choice;
                     } else {
                         prompt.completeScriptTask();
 
@@ -60,16 +66,30 @@ public class Shower {
                 }
             }
         } finally {
-            if (lock.isHeldByCurrentThread()) {
-                lock.unlock();
-            }
+            // if (lock.isHeldByCurrentThread()) {
+            // releaseLock();
+            // } else {
+            // throw new IllegalStateException("Lock not hold by " + prompt);
+            // }
+        }
+    }
+
+    private void acquireLockHard() {
+        if (!lock.tryLock()) {
+            throw new IllegalStateException("Failed to acquire lock");
         }
     }
 
     private void acquireLock() {
-        if (!lock.tryLock()) {
-            throw new IllegalStateException("Failed to acquire lock");
+        try {
+            lock.lockInterruptibly();
+        } catch (InterruptedException e) {
+            throw new ScriptInterruptedException();
         }
+    }
+
+    private void releaseLock() {
+        lock.unlock();
     }
 
     private void pauseCurrent() {
@@ -80,31 +100,49 @@ public class Shower {
 
     private void pause(Prompt prompt) {
         prompt.enterPause();
+        // TODO useless - remove
         synchronized (prompt.lock) {
-            while (!prompt.pausing()) {
-                host.dismissChoices(prompt.choices);
-                try {
-                    prompt.lock.wait(100);
-                } catch (InterruptedException e) {
-                    throw new ScriptInterruptedException();
-                }
-            }
+            // while (!prompt.pausing()) {
+            promptPipeline.dismiss(prompt);
         }
 
-        if (!prompt.pauseRequested()) {
-            throw new IllegalStateException("Stack element " + stack.peek() + " not paused");
-        }
-
-        if (!prompt.pausing()) {
-            throw new IllegalStateException("Stack element " + stack.peek() + " not waiting on lock");
-        }
+        // // blocks because script task won't finish
+        // try {
+        // while (!prompt.pausing()) {
+        // Thread.sleep(100);
+        // }
+        // } catch (InterruptedException e) {
+        // throw new ScriptInterruptedException();
+        // }
+        //
+        // if (!prompt.pauseRequested()) {
+        // throw new IllegalStateException("Stack element " + stack.peek() + "
+        // not paused");
+        // }
+        //
+        // // throws because not in pause state
+        // if (!prompt.pausing()) {
+        // throw new IllegalStateException("Stack element " + stack.peek() + "
+        // not waiting on lock");
+        // }
     }
 
     private void resumePrevious() {
-        stack.pop();
+        if (!stack.isEmpty()) {
+            Prompt prompt = stack.peek();
+            synchronized (prompt) {
+                if (promptPipeline.getActive() == prompt) {
+                    promptPipeline.dismiss(prompt);
+                }
+                stack.pop();
+            }
+        } else {
+            throw new IllegalStateException("Prompt stack empty");
+        }
 
         if (!stack.isEmpty()) {
-            stack.peek().resume();
+            Prompt prompt = stack.peek();
+            prompt.resume();
         }
     }
 }

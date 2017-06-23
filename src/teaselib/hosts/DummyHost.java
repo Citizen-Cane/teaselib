@@ -92,42 +92,72 @@ public class DummyHost implements Host {
         return clickables;
     }
 
-    @Override
-    public boolean dismissChoices(List<String> choices) {
-        logger.info("Dismiss " + choices);
-        // The weak point - must wait until there is something to be dismissed,
-        // since there is no guarantee when the host will be creating the
-        // prompts.
-        // Therefore dismissChoices() might be called before buttons are
-        // realized.
-        // The SexScripts host returns false until SS has created the buttons,
-        // so we have to, too.
-        if (currentChoices.isEmpty()) {
-            if (latch.get().getCount() > 0) {
-                throw new IllegalStateException("Trying to dismiss without current choices: " + choices);
-            }
-            return false;
-        }
-
-        List<Delegate> clickableChoices = getClickableChoices(choices);
-        for (Delegate delegate : clickableChoices) {
-            delegate.run();
-        }
-
-        currentChoices = Collections.emptyList();
-
-        if (latch.get().getCount() > 0) {
-            throw new IllegalStateException("Dismiss failed to countdown active latch: " + choices);
-        }
-
-        return true;
-    }
-
     AtomicBoolean validateSingleEntrance = new AtomicBoolean(false);
 
     @Override
+    public boolean dismissChoices(List<String> choices) {
+        logger.info("Dismiss " + choices + " @ " + Thread.currentThread().getStackTrace()[1].toString());
+        // Thread.dumpStack();
+
+        // if (validateSingleEntrance.getAndSet(true)) {
+        // throw new IllegalStateException("Dismiss multiple entry detected: " +
+        // choices);
+        // }
+
+        try {
+
+            // The weak point - must wait until there is something to be
+            // dismissed,
+            // since there is no guarantee when the host will be creating the
+            // prompts.
+            // Therefore dismissChoices() might be called before buttons are
+            // realized.
+            // The SexScripts host returns false until SS has created the
+            // buttons,
+            // so we have to, too.
+            if (currentChoices.isEmpty()) {
+                if (latch.get().getCount() > 0) {
+                    throw new IllegalStateException("Trying to dismiss without current choices: " + choices);
+                }
+                return false;
+            }
+
+            // TODO triggers, although not fatal
+            if (latch.get().getCount() == 0) {
+                // throw new IllegalStateException("Dismiss called on latch
+                // already counted down: " + choices);
+            }
+
+            List<Delegate> clickableChoices = getClickableChoices(choices);
+
+            // notifyAll();
+
+            for (Delegate delegate : clickableChoices) {
+                delegate.run();
+            }
+
+            currentChoices = Collections.emptyList();
+
+            if (latch.get().getCount() > 0) {
+                throw new IllegalStateException("Dismiss failed to countdown active latch: " + choices);
+            }
+
+            return true;
+        } finally {
+            try {
+                if (latch.get().getCount() > 0) {
+                    throw new IllegalStateException("Reply - still waiting on Latch ");
+                }
+            } finally {
+                // validateSingleEntrance.set(false);
+            }
+        }
+    }
+
+    @Override
     public int reply(List<String> choices) throws ScriptInterruptedException {
-        logger.info("Reply " + choices);
+        logger.info("Reply " + choices + " @ " + Thread.currentThread().getStackTrace()[1].toString());
+        // Thread.dumpStack();
 
         if (validateSingleEntrance.getAndSet(true)) {
             throw new IllegalStateException("Reply multiple entry detected: " + choices);
@@ -150,6 +180,7 @@ public class DummyHost implements Host {
                             if (entry.getValue().equals(Debugger.Response.Ignore)) {
                                 try {
                                     latch.getAndSet(new CountDownLatch(1)).countDown();
+                                    // wait();
                                     latch.get().await();
                                     break allChoices;
                                 } catch (InterruptedException e) {

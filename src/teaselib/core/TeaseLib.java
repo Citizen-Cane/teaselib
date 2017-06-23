@@ -25,6 +25,7 @@ import teaselib.core.devices.remote.LocalNetworkDevice;
 import teaselib.core.devices.remote.LocalNetworkDeviceDiscovery;
 import teaselib.core.media.MediaRendererQueue;
 import teaselib.core.texttospeech.Voice;
+import teaselib.core.ui.Shower;
 import teaselib.core.util.PropertyNameMapping;
 import teaselib.core.util.QualifiedItem;
 import teaselib.core.util.ReflectionUtils;
@@ -49,6 +50,7 @@ public class TeaseLib {
     public final TeaseLibLogger transcript;
     private final StateMaps stateMaps = new StateMaps(this);
     final MediaRendererQueue renderQueue = new MediaRendererQueue();
+    final Shower shower;
 
     private long frozenTime = Long.MIN_VALUE;
     private long timeOffsetMillis = 0;
@@ -60,6 +62,9 @@ public class TeaseLib {
         this.host = host;
         this.persistence = new PersistenceLogger(persistence);
         this.transcript = newTranscriptLogger(host);
+
+        shower = new Shower(host);
+
         bindMotionDetectorFeedback();
         if (LocalNetworkDeviceDiscovery.isListeningForDeviceMessagesEnabled()) {
             LocalNetworkDevice.startDeviceDetection();

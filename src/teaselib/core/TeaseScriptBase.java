@@ -22,7 +22,6 @@ import teaselib.core.speechrecognition.SpeechRecognitionResult.Confidence;
 import teaselib.core.texttospeech.TextToSpeechPlayer;
 import teaselib.core.ui.Choices;
 import teaselib.core.ui.Prompt;
-import teaselib.core.ui.Shower;
 import teaselib.util.SpeechRecognitionRejectedScript;
 import teaselib.util.TextVariables;
 
@@ -40,19 +39,10 @@ public abstract class TeaseScriptBase {
 
     protected static final int NoTimeout = 0;
 
-    private static final ChoicesStack choicesStack = new ChoicesStack();
     private final List<MediaRenderer> queuedRenderers = new ArrayList<MediaRenderer>();
     private final List<MediaRenderer.Threaded> backgroundRenderers = new ArrayList<MediaRenderer.Threaded>();
 
     private List<MediaRenderer> playedRenderers = null;
-
-    // TODO proper init -> should we somewhat static but that causes some tests
-    // to fail (they succeed when executed one by one)
-    // -> ups, further instances are initialized with a new host because we
-    // create the test script new each time
-    // - this also explains why we have those ScriptInteruptedExceptions
-    // -> subsequent dummy host instances in Shower don't have reply rules
-    private Shower shower;
 
     public class Replay {
         final List<MediaRenderer> renderers;
@@ -88,9 +78,6 @@ public abstract class TeaseScriptBase {
         this.resources = resources;
         this.actor = actor;
         this.namespace = namespace.replace(" ", "_");
-        if (shower == null) {
-            shower = new Shower(teaseLib.host);
-        }
 
         TextToSpeechPlayer ttsPlayer = TextToSpeechPlayer.instance();
         ttsPlayer.loadActorVoiceProperties(resources);
@@ -108,7 +95,6 @@ public abstract class TeaseScriptBase {
         this.resources = script.resources;
         this.actor = actor;
         this.namespace = script.namespace;
-        this.shower = new Shower(teaseLib.host);
 
         TextToSpeechPlayer ttsPlayer = TextToSpeechPlayer.instance();
         ttsPlayer.acquireVoice(actor);
@@ -382,64 +368,30 @@ public abstract class TeaseScriptBase {
             List<String> choices) {
         // argument checking and text variable replacement
         final List<String> derivedChoices = expandTextVariables(choices);
-        // ScriptFutureTask scriptTask = scriptFunction != null
-        // ? new ScriptFutureTask(this, scriptFunction, derivedChoices, new
-        // ScriptFutureTask.TimeoutClick())
-        // : null;
-        final boolean choicesStackContainsSRRejectedState = choicesStack
-                .containsPauseState(ShowChoices.RecognitionRejected);
-        // final ShowChoices showChoices = new ShowChoices(this, choices,
-        // derivedChoices, scriptTask,
-        // recognitionConfidence, choicesStackContainsSRRejectedState);
+
         Map<String, PauseHandler> pauseHandlers = new HashMap<String, PauseHandler>();
         // The pause handler resumes displaying choices when the choice object
         // becomes the top-element of the choices stack again
         // pauseHandlers.put(ShowChoices.Paused, pauseHandler(showChoices));
         pauseHandlers.put(ShowChoices.RecognitionRejected, recognitionRejectedPauseHandler());
+
         waitToStartScriptFunction(scriptFunction);
         if (scriptFunction == null) {
             stopBackgroundRenderers();
         } else if (scriptFunction.relation != ScriptFunction.Relation.Autonomous) {
             stopBackgroundRenderers();
         }
+
+        // TODO Speech recognition
+        // TODO Speech recognition rejected handler
         logger.info("showChoices: " + derivedChoices.toString());
 
-        // String choice = choicesStack.show(this, showChoices, pauseHandlers);
-
-        String choice = shower.show(this,
+        String choice = teaseLib.shower.show(this,
                 new Prompt(new Choices(choices), new Choices(derivedChoices), scriptFunction, recognitionConfidence));
 
         logger.debug("Reply finished");
         teaseLib.transcript.info("< " + choice);
         return choice;
-    }
-
-    private static PauseHandler pauseHandler(final ShowChoices showChoices) {
-        return new PauseHandler() {
-            @Override
-            public boolean endRenderers() {
-                // Always false because the top element on the choices stack
-                // decides whether to end the previous set of renderers
-                return false;
-            }
-
-            @Override
-            public void run() {
-                // Someone dismissed our set of buttons in order to to show
-                // a different set, so we have to wait until we may restore
-                try {
-                    // only the top-most element may resume
-                    synchronized (choicesStack) {
-                        while (choicesStack.peek() != showChoices) {
-                            choicesStack.wait();
-                        }
-                    }
-                    logger.info("Resuming choices " + showChoices.derivedChoices);
-                } catch (InterruptedException e) {
-                    throw new ScriptInterruptedException();
-                }
-            }
-        };
     }
 
     private PauseHandler recognitionRejectedPauseHandler() {

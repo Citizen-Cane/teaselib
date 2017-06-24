@@ -29,7 +29,7 @@ public class Prompt {
     ScriptFutureTask scriptTask;
     final Confidence confidence;
 
-    final CyclicBarrier lock;
+    private final CyclicBarrier lock;
     boolean paused = false;
 
     public Prompt(Choices choices, Choices derived, ScriptFunction scriptFunction, Confidence confidence) {
@@ -46,13 +46,6 @@ public class Prompt {
         try {
             synchronized (this) {
                 notifyAll();
-                // TODO the lock should be part of the synchronized block,
-                // to ensure that notified listeners find the prompt waiting,
-                // and can continue execution immediately instead of trying
-                // again.
-                // But that would cause a deadlock because notified threads
-                // would only continue execution after we've left the
-                // synchronized block.
             }
             lock.await();
         } catch (InterruptedException e) {

@@ -1,10 +1,8 @@
 package teaselib.core.ui;
 
 import java.util.Stack;
-import java.util.concurrent.locks.ReentrantLock;
 
 import teaselib.core.Host;
-import teaselib.core.ScriptInterruptedException;
 import teaselib.core.TeaseScriptBase;
 
 public class Shower {
@@ -12,7 +10,6 @@ public class Shower {
 
     final Host host;
     final Stack<Prompt> stack = new Stack<Prompt>();
-    private final ReentrantLock lock = new ReentrantLock();
 
     private final PromptPipeline promptPipeline;
 
@@ -44,11 +41,6 @@ public class Shower {
                     int resultIndex = promptPipeline.show(prompt);
                     if (resultIndex == Prompt.PAUSED) {
                         prompt.pauseUntilResumed();
-                        // if (prompt.pauseRequested()) {
-                        // // releaseLock();
-                        // prompt.pauseUntilResumed();
-                        // // acquireLock();
-                        // }
                     } else if (resultIndex == Prompt.DISMISSED) {
                         if (prompt.scriptTask != null) {
                             prompt.scriptTask.join();
@@ -66,30 +58,7 @@ public class Shower {
                 }
             }
         } finally {
-            // if (lock.isHeldByCurrentThread()) {
-            // releaseLock();
-            // } else {
-            // throw new IllegalStateException("Lock not hold by " + prompt);
-            // }
         }
-    }
-
-    private void acquireLockHard() {
-        if (!lock.tryLock()) {
-            throw new IllegalStateException("Failed to acquire lock");
-        }
-    }
-
-    private void acquireLock() {
-        try {
-            lock.lockInterruptibly();
-        } catch (InterruptedException e) {
-            throw new ScriptInterruptedException();
-        }
-    }
-
-    private void releaseLock() {
-        lock.unlock();
     }
 
     private void pauseCurrent() {
@@ -100,30 +69,16 @@ public class Shower {
 
     private void pause(Prompt prompt) {
         prompt.enterPause();
-        // TODO useless - remove
-        synchronized (prompt.lock) {
-            // while (!prompt.pausing()) {
-            promptPipeline.dismiss(prompt);
+        promptPipeline.dismiss(prompt);
+
+        if (!prompt.pauseRequested()) {
+            throw new IllegalStateException("Stack element " + stack.peek() + "Not paused");
         }
 
-        // // blocks because script task won't finish
-        // try {
-        // while (!prompt.pausing()) {
-        // Thread.sleep(100);
-        // }
-        // } catch (InterruptedException e) {
-        // throw new ScriptInterruptedException();
-        // }
-        //
-        // if (!prompt.pauseRequested()) {
-        // throw new IllegalStateException("Stack element " + stack.peek() + "
-        // not paused");
-        // }
-        //
-        // // throws because not in pause state
+        // TODO Sort out
         // if (!prompt.pausing()) {
-        // throw new IllegalStateException("Stack element " + stack.peek() + "
-        // not waiting on lock");
+        // throw new IllegalStateException("Stack element " + stack.peek() //
+        // + "not waiting on lock");
         // }
     }
 

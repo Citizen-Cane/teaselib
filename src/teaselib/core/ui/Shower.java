@@ -15,7 +15,7 @@ public class Shower {
 
     public Shower(Host host) {
         this.host = host;
-        this.promptPipeline = new PromptPipeline(host);
+        this.promptPipeline = new PromptPipeline(new HostInputMethod(host));
     }
 
     public String show(TeaseScriptBase script, Prompt prompt) {

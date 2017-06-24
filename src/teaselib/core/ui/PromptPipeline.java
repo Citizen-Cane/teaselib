@@ -5,11 +5,8 @@ package teaselib.core.ui;
 
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.concurrent.locks.ReentrantLock;
 
-import teaselib.core.Host;
 import teaselib.core.ScriptInterruptedException;
 import teaselib.core.ui.PromptPipeline.Todo.Action;
 
@@ -20,9 +17,7 @@ import teaselib.core.ui.PromptPipeline.Todo.Action;
 public class PromptPipeline {
     static final int UNDEFINED = Integer.MIN_VALUE;
 
-    private final Host host;
-
-    static class Todo {
+    public static class Todo {
         enum Action {
             Show,
             Dismiss
@@ -41,51 +36,14 @@ public class PromptPipeline {
 
     }
 
-    SynchronousQueue<Todo> todos = new SynchronousQueue<Todo>();
-
-    Thread workerThread;
+    private final HostInputMethod inputMethod;
 
     private final AtomicReference<Todo> active = new AtomicReference<Todo>();
-    private final ReentrantLock replySection = new ReentrantLock();
     private final Set<Prompt> dismissedPermanent = new HashSet<Prompt>();
 
-    public PromptPipeline(Host host) {
-        this.host = host;
-
-        workerThread = new Thread(worker);
-        workerThread.setName(PromptPipeline.class.getSimpleName() + "@" + PromptPipeline.this.hashCode());
-        workerThread.setDaemon(true);
-        workerThread.start();
+    public PromptPipeline(HostInputMethod inputMethod) {
+        this.inputMethod = inputMethod;
     }
-
-    Runnable worker = new Runnable() {
-        @Override
-        public void run() {
-            try {
-                while (!Thread.interrupted()) {
-                    Todo todo = todos.take();
-                    synchronized (todo.prompt) {
-                        if (todo.action == Action.Show) {
-                            replySection.lockInterruptibly();
-                            active.set(todo);
-                            try {
-                                final int reply = host.reply(todo.prompt.derived);
-                                if (todo.result == UNDEFINED) {
-                                    todo.result = reply;
-                                }
-                            } finally {
-                                active.set(null);
-                                todo.prompt.notifyAll();
-                                replySection.unlock();
-                            }
-                        }
-                    }
-                }
-            } catch (InterruptedException e) {
-                // Expected
-            }
-        }
-    };
 
     public int show(Prompt prompt) {
         synchronized (prompt) {
@@ -105,8 +63,13 @@ public class PromptPipeline {
 
             try {
                 Todo todo = new Todo(Action.Show, prompt);
-                todos.put(todo);
+                active.set(todo);
+
+                inputMethod.show(todo);
                 prompt.wait();
+
+                active.set(null);
+
                 return todo.result;
             } catch (InterruptedException e) {
                 throw new ScriptInterruptedException();
@@ -115,8 +78,9 @@ public class PromptPipeline {
     }
 
     public boolean dismiss(Prompt prompt) {
-        if (active.get() == null)
+        if (active.get() == null) {
             return false;
+        }
 
         if (prompt != active.get().prompt) {
             throw new IllegalStateException(
@@ -128,31 +92,31 @@ public class PromptPipeline {
 
     private boolean dismiss(Prompt prompt, int reason) {
         active.get().result = reason;
-        boolean dismissChoices = false;
         try {
-            boolean tryLock = replySection.tryLock();
-            while (!tryLock) {
-                dismissChoices = host.dismissChoices(prompt.derived);
-                tryLock = replySection.tryLock();
-                if (tryLock) {
-                    break;
-                }
-                Thread.sleep(100);
-            }
+            return inputMethod.dismiss(prompt);
         } catch (InterruptedException e) {
             throw new ScriptInterruptedException();
         } catch (Exception e) {
             throw new RuntimeException(e);
         } finally {
+            waitUntilDismissed();
+            notifyPausedPrompt(prompt);
+        }
+    }
+
+    private void waitUntilDismissed() {
+        synchronized (inputMethod) {
+            active.set(null);
+        }
+    }
+
+    private void notifyPausedPrompt(Prompt prompt) {
+        synchronized (prompt) {
             if (active.get() != null) {
                 throw new IllegalStateException("Prompt " + prompt + ": active not cleared");
             }
-            synchronized (prompt) {
-                replySection.unlock();
-                prompt.notifyAll();
-            }
+            prompt.notifyAll();
         }
-        return dismissChoices;
     }
 
     public boolean dismissUntilLater(Prompt prompt) {
@@ -162,9 +126,6 @@ public class PromptPipeline {
         return dismiss(prompt);
     }
 
-    /**
-     * @return
-     */
     public Prompt getActive() {
         final Todo todo = active.get();
         return todo != null ? todo.prompt : null;

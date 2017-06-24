@@ -74,7 +74,11 @@ public class ScriptFutureTask extends FutureTask<String> {
                 finishing.countDown();
                 timeout.clicked = dismissChoices.call();
             } catch (Exception e) {
-                logger.error(e.getMessage(), e);
+                if (throwable == null) {
+                    setException(e);
+                } else {
+                    logger.error(e.getMessage(), e);
+                }
             } finally {
                 finished.countDown();
                 logger.info("Script task " + derivedChoices + " finished");

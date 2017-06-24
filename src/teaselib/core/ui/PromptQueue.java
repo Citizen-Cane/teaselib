@@ -8,13 +8,13 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
 import teaselib.core.ScriptInterruptedException;
-import teaselib.core.ui.PromptPipeline.Todo.Action;
+import teaselib.core.ui.PromptQueue.Todo.Action;
 
 /**
  * @author someone
  *
  */
-public class PromptPipeline {
+public class PromptQueue {
     static final int UNDEFINED = Integer.MIN_VALUE;
 
     public static class Todo {
@@ -41,7 +41,7 @@ public class PromptPipeline {
     private final AtomicReference<Todo> active = new AtomicReference<Todo>();
     private final Set<Prompt> dismissedPermanent = new HashSet<Prompt>();
 
-    public PromptPipeline(HostInputMethod inputMethod) {
+    public PromptQueue(HostInputMethod inputMethod) {
         this.inputMethod = inputMethod;
     }
 

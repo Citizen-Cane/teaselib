@@ -11,11 +11,11 @@ public class Shower {
     final Host host;
     final Stack<Prompt> stack = new Stack<Prompt>();
 
-    private final PromptPipeline promptPipeline;
+    private final PromptQueue promptPipeline;
 
     public Shower(Host host) {
         this.host = host;
-        this.promptPipeline = new PromptPipeline(new HostInputMethod(host));
+        this.promptPipeline = new PromptQueue(new HostInputMethod(host));
     }
 
     public String show(TeaseScriptBase script, Prompt prompt) {

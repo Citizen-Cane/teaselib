@@ -66,7 +66,7 @@ public class Prompt {
         logger.info("resumed - continuing " + this);
     }
 
-    void executeScriptTask(TeaseScriptBase script, final PromptPipeline promptPipeline) {
+    void executeScriptTask(TeaseScriptBase script, final PromptQueue promptPipeline) {
         if (scriptFunction != null) {
             Callable<Boolean> dismiss = new Callable<Boolean>() {
                 @Override

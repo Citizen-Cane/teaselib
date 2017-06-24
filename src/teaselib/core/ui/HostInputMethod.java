@@ -5,8 +5,8 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import teaselib.core.Host;
 import teaselib.core.ScriptInterruptedException;
-import teaselib.core.ui.PromptPipeline.Todo;
-import teaselib.core.ui.PromptPipeline.Todo.Action;
+import teaselib.core.ui.PromptQueue.Todo;
+import teaselib.core.ui.PromptQueue.Todo.Action;
 
 /**
  * @author Citizen-Cane
@@ -41,7 +41,7 @@ public class HostInputMethod {
                                 replySection.lockInterruptibly();
                                 try {
                                     final int reply = host.reply(todo.prompt.derived);
-                                    if (todo.result == PromptPipeline.UNDEFINED) {
+                                    if (todo.result == PromptQueue.UNDEFINED) {
                                         todo.result = reply;
                                     }
                                 } finally {

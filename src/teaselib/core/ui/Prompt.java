@@ -3,6 +3,7 @@
  */
 package teaselib.core.ui;
 
+import java.util.List;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CyclicBarrier;
@@ -14,7 +15,6 @@ import teaselib.ScriptFunction;
 import teaselib.core.ScriptFutureTask;
 import teaselib.core.ScriptInterruptedException;
 import teaselib.core.TeaseScriptBase;
-import teaselib.core.speechrecognition.SpeechRecognitionResult.Confidence;
 
 public class Prompt {
     private static final Logger logger = LoggerFactory.getLogger(ScriptFutureTask.class);
@@ -26,18 +26,20 @@ public class Prompt {
     final Choices choices;
     final Choices derived;
     final ScriptFunction scriptFunction;
+    final List<InputMethod> inputMethods;
+
     ScriptFutureTask scriptTask;
-    final Confidence confidence;
 
     private final CyclicBarrier lock;
     boolean paused = false;
 
-    public Prompt(Choices choices, Choices derived, ScriptFunction scriptFunction, Confidence confidence) {
+    public Prompt(Choices choices, Choices derived, ScriptFunction scriptFunction, List<InputMethod> inputMethods) {
         super();
         this.choices = choices;
         this.derived = derived;
         this.scriptFunction = scriptFunction;
-        this.confidence = confidence;
+        this.inputMethods = inputMethods;
+
         this.lock = new CyclicBarrier(Integer.MAX_VALUE);
     }
 

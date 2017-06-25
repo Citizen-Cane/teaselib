@@ -15,7 +15,14 @@ public class Shower {
 
     public Shower(Host host) {
         this.host = host;
-        this.promptPipeline = new PromptQueue(new HostInputMethod(host));
+        // TODO SR input depends on script actor locale
+        // -> move initialization to TeaseScriptBase
+        // TODO pass input methods to prompt
+        // TODO input method must be final - no state besides prompt?
+        // TODO prompt should hold input methods
+        // - static like HostInput
+        // - dynamic for speech recognition
+        this.promptPipeline = new PromptQueue();
     }
 
     public String show(TeaseScriptBase script, Prompt prompt) {
@@ -25,7 +32,6 @@ public class Shower {
             return showNew(script, prompt);
         } finally {
             resumePrevious();
-
         }
     }
 

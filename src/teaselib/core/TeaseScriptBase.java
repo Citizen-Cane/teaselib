@@ -18,10 +18,14 @@ import teaselib.core.media.MediaRenderer;
 import teaselib.core.media.MediaRenderer.Replay.Position;
 import teaselib.core.media.RenderInterTitle;
 import teaselib.core.media.RenderMessage;
+import teaselib.core.speechrecognition.SpeechRecognition;
 import teaselib.core.speechrecognition.SpeechRecognitionResult.Confidence;
+import teaselib.core.speechrecognition.SpeechRecognizer;
 import teaselib.core.texttospeech.TextToSpeechPlayer;
 import teaselib.core.ui.Choices;
+import teaselib.core.ui.InputMethod;
 import teaselib.core.ui.Prompt;
+import teaselib.core.ui.SpeechRecognitionInputMethod;
 import teaselib.util.SpeechRecognitionRejectedScript;
 import teaselib.util.TextVariables;
 
@@ -382,12 +386,22 @@ public abstract class TeaseScriptBase {
             stopBackgroundRenderers();
         }
 
-        // TODO Speech recognition
         // TODO Speech recognition rejected handler
         logger.info("showChoices: " + derivedChoices.toString());
 
-        String choice = teaseLib.shower.show(this,
-                new Prompt(new Choices(choices), new Choices(derivedChoices), scriptFunction, recognitionConfidence));
+        List<InputMethod> inputMethods = new ArrayList<InputMethod>();
+
+        SpeechRecognition sR = SpeechRecognizer.instance.get(actor.getLocale());
+        if (sR.isReady()) {
+            // TODO Blocks dismissing host input method
+            //  when added after host input method
+            inputMethods.add(new SpeechRecognitionInputMethod(sR, recognitionConfidence));
+        }
+
+        inputMethods.add(teaseLib.hostInputMethod);
+
+        Prompt prompt = new Prompt(new Choices(choices), new Choices(derivedChoices), scriptFunction, inputMethods);
+        String choice = teaseLib.shower.show(this, prompt);
 
         logger.debug("Reply finished");
         teaseLib.transcript.info("< " + choice);

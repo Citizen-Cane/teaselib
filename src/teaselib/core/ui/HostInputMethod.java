@@ -12,7 +12,7 @@ import teaselib.core.ui.PromptQueue.Todo.Action;
  * @author Citizen-Cane
  *
  */
-public class HostInputMethod {
+public class HostInputMethod implements InputMethod {
     private final Host host;
 
     Thread workerThread;
@@ -63,6 +63,7 @@ public class HostInputMethod {
         notifyAll();
     }
 
+    @Override
     public void show(Todo todo) {
         try {
             todos.put(todo);
@@ -71,6 +72,7 @@ public class HostInputMethod {
         }
     }
 
+    @Override
     public boolean dismiss(Prompt prompt) throws InterruptedException {
         boolean dismissChoices = false;
         try {

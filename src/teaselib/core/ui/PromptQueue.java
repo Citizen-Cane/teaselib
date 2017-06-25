@@ -36,14 +36,8 @@ public class PromptQueue {
 
     }
 
-    private final HostInputMethod inputMethod;
-
     private final AtomicReference<Todo> active = new AtomicReference<Todo>();
     private final Set<Prompt> dismissedPermanent = new HashSet<Prompt>();
-
-    public PromptQueue(HostInputMethod inputMethod) {
-        this.inputMethod = inputMethod;
-    }
 
     public int show(Prompt prompt) {
         synchronized (prompt) {
@@ -64,8 +58,9 @@ public class PromptQueue {
             try {
                 Todo todo = new Todo(Action.Show, prompt);
                 active.set(todo);
-
-                inputMethod.show(todo);
+                for (InputMethod inputMethod : prompt.inputMethods) {
+                    inputMethod.show(todo);
+                }
                 prompt.wait();
 
                 active.set(null);
@@ -93,20 +88,28 @@ public class PromptQueue {
     private boolean dismiss(Prompt prompt, int reason) {
         active.get().result = reason;
         try {
-            return inputMethod.dismiss(prompt);
+            boolean dismissed = false;
+            // TODO input methods are variant, so they must be remmembered
+            for (InputMethod inputMethod : prompt.inputMethods) {
+                dismissed |= inputMethod.dismiss(prompt);
+            }
+            return dismissed;
         } catch (InterruptedException e) {
             throw new ScriptInterruptedException();
         } catch (Exception e) {
             throw new RuntimeException(e);
         } finally {
-            waitUntilDismissed();
+            waitUntilDismissed(prompt);
             notifyPausedPrompt(prompt);
         }
     }
 
-    private void waitUntilDismissed() {
-        synchronized (inputMethod) {
-            active.set(null);
+    private void waitUntilDismissed(Prompt prompt) {
+        for (InputMethod inputMethod : prompt.inputMethods) {
+            synchronized (inputMethod) {
+                // TODO After all input methods have returned
+                active.set(null);
+            }
         }
     }
 

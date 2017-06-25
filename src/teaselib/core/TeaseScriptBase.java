@@ -390,15 +390,12 @@ public abstract class TeaseScriptBase {
         logger.info("showChoices: " + derivedChoices.toString());
 
         List<InputMethod> inputMethods = new ArrayList<InputMethod>();
+        inputMethods.add(teaseLib.hostInputMethod);
 
         SpeechRecognition sR = SpeechRecognizer.instance.get(actor.getLocale());
         if (sR.isReady()) {
-            // TODO Blocks dismissing host input method
-            //  when added after host input method
             inputMethods.add(new SpeechRecognitionInputMethod(sR, recognitionConfidence));
         }
-
-        inputMethods.add(teaseLib.hostInputMethod);
 
         Prompt prompt = new Prompt(new Choices(choices), new Choices(derivedChoices), scriptFunction, inputMethods);
         String choice = teaseLib.shower.show(this, prompt);

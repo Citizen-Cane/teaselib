@@ -105,7 +105,6 @@ public class Prompt {
         if (choice == null) {
             // TODO SR
             if (scriptTask != null && scriptTask.timedOut()) {
-                // Timeout
                 choice = ScriptFunction.Timeout;
             } else if (resultIndex == Prompt.DISMISSED) {
                 choice = ScriptFunction.Timeout;

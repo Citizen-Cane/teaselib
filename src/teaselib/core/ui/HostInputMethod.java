@@ -35,20 +35,20 @@ public class HostInputMethod implements InputMethod {
             try {
                 while (!Thread.interrupted()) {
                     Todo todo = todos.take();
-                    synchronized (todo.prompt) {
-                        synchronized (HostInputMethod.this) {
-                            if (todo.action == Action.Show) {
-                                replySection.lockInterruptibly();
-                                try {
-                                    final int reply = host.reply(todo.prompt.derived);
-                                    if (todo.result == PromptQueue.UNDEFINED) {
-                                        todo.result = reply;
-                                    }
-                                } finally {
-                                    notifyWaiters();
-                                    todo.prompt.notifyAll();
-                                    replySection.unlock();
+                    synchronized (HostInputMethod.this) {
+                        if (todo.action == Action.Show) {
+                            replySection.lockInterruptibly();
+                            try {
+                                final int reply = host.reply(todo.prompt.derived);
+                                if (todo.result == PromptQueue.UNDEFINED) {
+                                    todo.result = reply;
                                 }
+                            } finally {
+                                notifyWaiters();
+                                synchronized (todo.prompt) {
+                                    todo.prompt.notifyAll();
+                                }
+                                replySection.unlock();
                             }
                         }
                     }
@@ -83,7 +83,7 @@ public class HostInputMethod implements InputMethod {
                 if (tryLock) {
                     break;
                 }
-                Thread.sleep(100);
+                prompt.wait(100);
             }
         } catch (InterruptedException e) {
             throw e;
@@ -92,7 +92,6 @@ public class HostInputMethod implements InputMethod {
         } finally {
             synchronized (prompt) {
                 replySection.unlock();
-                // prompt.notifyAll();
             }
         }
         return dismissChoices;

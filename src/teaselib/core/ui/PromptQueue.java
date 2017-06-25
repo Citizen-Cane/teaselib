@@ -1,9 +1,8 @@
-/**
- * 
- */
 package teaselib.core.ui;
 
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -11,7 +10,7 @@ import teaselib.core.ScriptInterruptedException;
 import teaselib.core.ui.PromptQueue.Todo.Action;
 
 /**
- * @author someone
+ * @author Citizen-Cane
  *
  */
 public class PromptQueue {
@@ -39,25 +38,29 @@ public class PromptQueue {
     private final AtomicReference<Todo> active = new AtomicReference<Todo>();
     private final Set<Prompt> dismissedPermanent = new HashSet<Prompt>();
 
+    private final Map<Prompt, Todo> todos = new HashMap<Prompt, Todo>();
+
     public int show(Prompt prompt) {
         synchronized (prompt) {
-            synchronized (dismissedPermanent) {
-                if (dismissedPermanent.contains(prompt)) {
-                    return Prompt.DISMISSED;
-                }
-            }
-
-            if (active.get() != null && prompt == active.get().prompt) {
-                throw new IllegalStateException("Prompt " + prompt + " already showing");
-            }
-
-            if (active.get() != null) {
-                dismiss(active.get().prompt, Prompt.PAUSED);
-            }
-
             try {
-                Todo todo = new Todo(Action.Show, prompt);
+                Todo todo;
+                synchronized (dismissedPermanent) {
+                    if (dismissedPermanent.contains(prompt)) {
+                        return Prompt.DISMISSED;
+                    }
+                }
+
+                if (active.get() != null && prompt == active.get().prompt) {
+                    throw new IllegalStateException("Prompt " + prompt + " already showing");
+                }
+
+                if (active.get() != null) {
+                    dismiss(active.get().prompt, Prompt.PAUSED);
+                }
+
+                todo = new Todo(Action.Show, prompt);
                 active.set(todo);
+                todos.put(prompt, todo);
                 for (InputMethod inputMethod : prompt.inputMethods) {
                     inputMethod.show(todo);
                 }
@@ -72,24 +75,31 @@ public class PromptQueue {
         }
     }
 
+    public boolean dismissUntilLater(Prompt prompt) {
+        synchronized (prompt) {
+            synchronized (dismissedPermanent) {
+                dismissedPermanent.add(prompt);
+            }
+            return dismiss(prompt);
+        }
+    }
+
     public boolean dismiss(Prompt prompt) {
-        if (active.get() == null) {
-            return false;
-        }
+        synchronized (prompt) {
+            if (!todos.containsKey(prompt)) {
+                return false;
+            }
 
-        if (prompt != active.get().prompt) {
-            throw new IllegalStateException(
-                    "Prompt to dismiss " + prompt + " is not active prompt " + active.get().prompt);
+            return dismiss(prompt, Prompt.DISMISSED);
         }
-
-        return dismiss(prompt, Prompt.DISMISSED);
     }
 
     private boolean dismiss(Prompt prompt, int reason) {
-        active.get().result = reason;
+        todos.get(prompt).result = reason;
+
         try {
             boolean dismissed = false;
-            // TODO input methods are variant, so they must be remmembered
+            // TODO input methods are variant, so they must be remembered
             for (InputMethod inputMethod : prompt.inputMethods) {
                 dismissed |= inputMethod.dismiss(prompt);
             }
@@ -107,10 +117,11 @@ public class PromptQueue {
     private void waitUntilDismissed(Prompt prompt) {
         for (InputMethod inputMethod : prompt.inputMethods) {
             synchronized (inputMethod) {
-                // TODO After all input methods have returned
-                active.set(null);
+                // TODO check if necessary
             }
         }
+        active.set(null);
+        todos.remove(prompt);
     }
 
     private void notifyPausedPrompt(Prompt prompt) {
@@ -120,13 +131,6 @@ public class PromptQueue {
             }
             prompt.notifyAll();
         }
-    }
-
-    public boolean dismissUntilLater(Prompt prompt) {
-        synchronized (dismissedPermanent) {
-            dismissedPermanent.add(prompt);
-        }
-        return dismiss(prompt);
     }
 
     public Prompt getActive() {

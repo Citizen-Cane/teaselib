@@ -58,8 +58,7 @@ import teaselib.util.Interval;
  * 
  */
 public class SexScriptsHost implements Host {
-    private static final Logger logger = LoggerFactory
-            .getLogger(SexScriptsHost.class);
+    private static final Logger logger = LoggerFactory.getLogger(SexScriptsHost.class);
 
     private IScript ss;
 
@@ -69,11 +68,11 @@ public class SexScriptsHost implements Host {
     private final ImageIcon backgroundImageIcon;
     private final Image backgroundImage;
 
-    private final ExecutorService showPopupThreadPool = NamedExecutorService
-            .newFixedThreadPool(1, "Show-Choices", 1, TimeUnit.SECONDS);
+    private final ExecutorService showPopupThreadPool = NamedExecutorService.newFixedThreadPool(1, "Show-Choices", 1,
+            TimeUnit.SECONDS);
 
-    private final ExecutorService showChoicesThreadPool = NamedExecutorService
-            .newFixedThreadPool(1, "Show-Popup", 1, TimeUnit.HOURS);
+    private final ExecutorService showChoicesThreadPool = NamedExecutorService.newFixedThreadPool(1, "Show-Popup", 1,
+            TimeUnit.HOURS);
 
     private Runnable onQuitHandler = null;
 
@@ -101,8 +100,7 @@ public class SexScriptsHost implements Host {
             backgroundImage = null;
         }
         // automatically show popup
-        final int originalDefaultCloseoperation = mainFrame
-                .getDefaultCloseOperation();
+        final int originalDefaultCloseoperation = mainFrame.getDefaultCloseOperation();
         mainFrame.addWindowListener(new WindowListener() {
 
             @Override
@@ -124,17 +122,14 @@ public class SexScriptsHost implements Host {
             @Override
             public void windowClosing(WindowEvent e) {
                 if (onQuitHandler != null) {
-                    mainFrame.setDefaultCloseOperation(
-                            WindowConstants.DO_NOTHING_ON_CLOSE);
+                    mainFrame.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
                     Runnable runnable = onQuitHandler;
                     // Execute each quit handler just once
                     onQuitHandler = null;
-                    logger.info("Running quit handler "
-                            + runnable.getClass().getName());
+                    logger.info("Running quit handler " + runnable.getClass().getName());
                     runnable.run();
                 } else {
-                    mainFrame.setDefaultCloseOperation(
-                            originalDefaultCloseoperation);
+                    mainFrame.setDefaultCloseOperation(originalDefaultCloseoperation);
                 }
             }
 
@@ -149,14 +144,12 @@ public class SexScriptsHost implements Host {
     }
 
     @Override
-    public void playSound(ResourceLoader resources, String path)
-            throws IOException, InterruptedException {
+    public void playSound(ResourceLoader resources, String path) throws IOException, InterruptedException {
         ss.playSound(resources.unpackToFile(path).getAbsolutePath());
     }
 
     @Override
-    public Object playBackgroundSound(ResourceLoader resources, String path)
-            throws IOException {
+    public Object playBackgroundSound(ResourceLoader resources, String path) throws IOException {
         ss.playBackgroundSound(resources.unpackToFile(path).getAbsolutePath());
         return path;
     }
@@ -189,8 +182,7 @@ public class SexScriptsHost implements Host {
             }
         } else {
             setImageInternal(null);
-            setBackgroundImage(
-                    new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB));
+            setBackgroundImage(new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB));
         }
     }
 
@@ -204,8 +196,7 @@ public class SexScriptsHost implements Host {
             // Improves readability on wide screen displays, as the text is
             // laid out a bit more portrait (instead of landscape)
             // TODO SS scales down when expanding too much
-            BufferedImage expanded = new BufferedImage(height, height,
-                    BufferedImage.TYPE_INT_ARGB);
+            BufferedImage expanded = new BufferedImage(height, height, BufferedImage.TYPE_INT_ARGB);
             Graphics2D g2d = (Graphics2D) expanded.getGraphics();
             // g2d.drawRect(0, 0, expanded.getWidth() - 1,
             // expanded.getHeight() -1);
@@ -216,8 +207,7 @@ public class SexScriptsHost implements Host {
         }
     }
 
-    private void setImageInternal(Image image)
-            throws ScriptInterruptedException {
+    private void setImageInternal(Image image) throws ScriptInterruptedException {
         if (image != null) {
             ((ss.desktop.Script) ss).setImage(image, false);
 
@@ -232,19 +222,15 @@ public class SexScriptsHost implements Host {
             // bounds
             Rectangle bounds = getContentBounds(mainFrame);
             // Spacer to keep text at the right
-            BufferedImage spacer = new BufferedImage(bounds.width, 16,
-                    BufferedImage.TYPE_INT_ARGB);
+            BufferedImage spacer = new BufferedImage(bounds.width, 16, BufferedImage.TYPE_INT_ARGB);
             setImageInternal(spacer);
             // actual image
             if (image != null) {
-                BufferedImage bi = new BufferedImage(bounds.width,
-                        bounds.height, BufferedImage.TYPE_INT_ARGB);
+                BufferedImage bi = new BufferedImage(bounds.width, bounds.height, BufferedImage.TYPE_INT_ARGB);
                 Graphics2D g2d = (Graphics2D) bi.getGraphics();
-                g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION,
-                        RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+                g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
                 // Draw original background image
-                g2d.drawImage(backgroundImage, 0, 0, bounds.width,
-                        bounds.height, null);
+                g2d.drawImage(backgroundImage, 0, 0, bounds.width, bounds.height, null);
                 // todo scale image into bi
                 int width = image.getWidth(null);
                 int height = image.getHeight(null);
@@ -287,8 +273,7 @@ public class SexScriptsHost implements Host {
         return bounds;
     }
 
-    private ImageIcon getImageIcon(String fieldName)
-            throws NoSuchFieldException, IllegalAccessException {
+    private ImageIcon getImageIcon(String fieldName) throws NoSuchFieldException, IllegalAccessException {
         // Get image icon
         Class<?> mainFrameClass = mainFrame.getClass();
         // Multiple choices are managed via an array of buttons,
@@ -298,8 +283,7 @@ public class SexScriptsHost implements Host {
         return (ImageIcon) backgroundImageField.get(mainFrame);
     }
 
-    private ss.desktop.MainFrame getMainFrame()
-            throws NoSuchFieldException, IllegalAccessException {
+    private ss.desktop.MainFrame getMainFrame() throws NoSuchFieldException, IllegalAccessException {
         Class<?> scriptClass = ss.getClass().getSuperclass();
         Field mainField = scriptClass.getDeclaredField("mainWindow");
         mainField.setAccessible(true);
@@ -335,11 +319,9 @@ public class SexScriptsHost implements Host {
             Rectangle bounds = getContentBounds(mainFrame);
             bounds.x = 0;
             bounds.y = 0;
-            BufferedImage interTitleImage = new BufferedImage(bounds.width,
-                    bounds.height, BufferedImage.TYPE_INT_ARGB);
+            BufferedImage interTitleImage = new BufferedImage(bounds.width, bounds.height, BufferedImage.TYPE_INT_ARGB);
             Graphics2D g2d = (Graphics2D) interTitleImage.getGraphics();
-            g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION,
-                    RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+            g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
             // Draw original background image
             g2d.drawImage(image, 0, 0, bounds.width, bounds.height, null);
             // Compensate for the text not being centered (causes the text area
@@ -353,8 +335,7 @@ public class SexScriptsHost implements Host {
             g2d.setColor(new Color(0.0f, 0.0f, 0.0f, 0.80f));
             g2d.fillRect(bounds.x, top, bounds.width, bottom - top);
             g2d.setColor(new Color(0.0f, 0.0f, 0.0f, 0.65f));
-            g2d.fillRect(bounds.x, bottom, bounds.width,
-                    bounds.height - bottom);
+            g2d.fillRect(bounds.x, bottom, bounds.width, bounds.height - bottom);
             backgroundImageIcon.setImage(interTitleImage);
             mainFrame.repaint();
             // Show white text, since the background is black
@@ -367,8 +348,7 @@ public class SexScriptsHost implements Host {
     }
 
     @Override
-    public List<Boolean> showCheckboxes(String caption, List<String> texts,
-            List<Boolean> values, boolean allowCancel)
+    public List<Boolean> showCheckboxes(String caption, List<String> texts, List<Boolean> values, boolean allowCancel)
             throws ScriptInterruptedException {
         List<Boolean> results;
         do {
@@ -387,23 +367,21 @@ public class SexScriptsHost implements Host {
         try {
             // Get buttons
             Class<?> mainFrameClass = mainFrame.getClass();
-            List<Delegate> clickableChoices = new ArrayList<Delegate>(
-                    choices.size());
+            List<Delegate> clickableChoices = new ArrayList<Delegate>(choices.size());
             // Multiple choices are managed via an array of buttons,
             // whereas a single choice is implemented as a single button
             Field buttonsField = mainFrameClass.getDeclaredField("buttons");
             buttonsField.setAccessible(true);
-            javax.swing.JButton[] ssButtons = (javax.swing.JButton[]) buttonsField
-                    .get(mainFrame);
+            javax.swing.JButton[] ssButtons = (javax.swing.JButton[]) buttonsField.get(mainFrame);
             // Must also test the single button
             Field buttonField = mainFrameClass.getDeclaredField("button");
             buttonField.setAccessible(true);
-            final javax.swing.JButton ssButton = (javax.swing.JButton) buttonField
-                    .get(mainFrame);
-            List<javax.swing.JButton> buttons = new ArrayList<javax.swing.JButton>(
-                    ssButtons.length + 1);
+            final javax.swing.JButton ssButton = (javax.swing.JButton) buttonField.get(mainFrame);
+            List<javax.swing.JButton> buttons = new ArrayList<javax.swing.JButton>(ssButtons.length + 1);
             for (javax.swing.JButton button : ssButtons) {
-                buttons.add(button);
+                if (button.isVisible()) {
+                    buttons.add(button);
+                }
             }
             // TODO Only for ss timed button?
             buttons.add(ssButton);
@@ -481,13 +459,11 @@ public class SexScriptsHost implements Host {
         return false;
     }
 
-    public javax.swing.JComboBox<String> getComboBox()
-            throws NoSuchFieldException, IllegalAccessException {
+    public javax.swing.JComboBox<String> getComboBox() throws NoSuchFieldException, IllegalAccessException {
         Field comboField = mainFrame.getClass().getDeclaredField("comboBox");
         comboField.setAccessible(true);
         @SuppressWarnings("unchecked")
-        final javax.swing.JComboBox<String> ssComboBox = (javax.swing.JComboBox<String>) comboField
-                .get(mainFrame);
+        final javax.swing.JComboBox<String> ssComboBox = (javax.swing.JComboBox<String>) comboField.get(mainFrame);
         return ssComboBox;
     }
 
@@ -550,8 +526,7 @@ public class SexScriptsHost implements Host {
     }
 
     @Override
-    public int reply(final List<String> choices)
-            throws ScriptInterruptedException {
+    public int reply(final List<String> choices) throws ScriptInterruptedException {
         if (Thread.interrupted()) {
             throw new ScriptInterruptedException();
         }
@@ -566,13 +541,12 @@ public class SexScriptsHost implements Host {
         // and won't clean up buttons
         // -> Execute it in a separate thread, and
         // cancel the same way as speech recognition
-        FutureTask<Integer> showChoices = new FutureTask<Integer>(
-                new Callable<Integer>() {
-                    @Override
-                    public Integer call() throws Exception {
-                        return ss.getSelectedValue(null, choices);
-                    }
-                });
+        FutureTask<Integer> showChoices = new FutureTask<Integer>(new Callable<Integer>() {
+            @Override
+            public Integer call() throws Exception {
+                return ss.getSelectedValue(null, choices);
+            }
+        });
         int result;
         showChoicesThreadPool.execute(showChoices);
         try {
@@ -622,10 +596,7 @@ public class SexScriptsHost implements Host {
             @Override
             protected Point getPosition(Type type, int width, int height) {
                 if (type == VideoRenderer.Type.CameraFeedback) {
-                    return new Point(
-                            mainFrame.getX()
-                                    + (mainFrame.getWidth() - width) / 2,
-                            mainFrame.getY());
+                    return new Point(mainFrame.getX() + (mainFrame.getWidth() - width) / 2, mainFrame.getY());
                 } else {
                     throw new UnsupportedOperationException();
                 }

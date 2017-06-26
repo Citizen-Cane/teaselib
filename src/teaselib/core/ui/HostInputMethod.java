@@ -39,9 +39,12 @@ public class HostInputMethod implements InputMethod {
                         replySection.lockInterruptibly();
                         try {
                             final int reply = host.reply(todo.prompt.derived);
-                            if (todo.result == PromptQueue.UNDEFINED) {
+                            if (todo.result == Prompt.UNDEFINED) {
                                 todo.result = reply;
                             }
+                        } catch (Throwable t) {
+                            todo.exception = t;
+                            todo.result = Prompt.UNDEFINED;
                         } finally {
                             notifyWaiters();
                             synchronized (todo.prompt) {

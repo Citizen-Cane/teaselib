@@ -14,7 +14,6 @@ import teaselib.core.ui.PromptQueue.Todo.Action;
  *
  */
 public class PromptQueue {
-    static final int UNDEFINED = Integer.MIN_VALUE;
 
     public static class Todo {
         enum Action {
@@ -24,15 +23,16 @@ public class PromptQueue {
 
         final Action action;
         final Prompt prompt;
+        Throwable exception;
         int result;
 
         public Todo(Action action, Prompt prompt) {
             super();
             this.action = action;
             this.prompt = prompt;
-            this.result = UNDEFINED;
+            this.exception = null;
+            this.result = Prompt.UNDEFINED;
         }
-
     }
 
     private final AtomicReference<Todo> active = new AtomicReference<Todo>();
@@ -67,8 +67,15 @@ public class PromptQueue {
                 prompt.wait();
 
                 active.set(null);
-
-                return todo.result;
+                if (todo.exception != null) {
+                    if (todo.exception instanceof RuntimeException) {
+                        throw (RuntimeException) todo.exception;
+                    } else {
+                        throw new RuntimeException(todo.exception);
+                    }
+                } else {
+                    return todo.result;
+                }
             } catch (InterruptedException e) {
                 throw new ScriptInterruptedException();
             }

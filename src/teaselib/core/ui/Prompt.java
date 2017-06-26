@@ -20,8 +20,8 @@ public class Prompt {
     private static final Logger logger = LoggerFactory.getLogger(ScriptFutureTask.class);
 
     static final int DISMISSED = -1;
-
     static final int PAUSED = -2;
+    static final int UNDEFINED = Integer.MIN_VALUE;
 
     final Choices choices;
     final Choices derived;
@@ -114,6 +114,8 @@ public class Prompt {
                 choice = ScriptFunction.Timeout;
             } else if (resultIndex == Prompt.DISMISSED) {
                 choice = ScriptFunction.Timeout;
+            } else if (resultIndex == UNDEFINED) {
+                throw new IllegalStateException("Undefined prompt result");
             } else {
                 choice = choices.get(resultIndex);
             }

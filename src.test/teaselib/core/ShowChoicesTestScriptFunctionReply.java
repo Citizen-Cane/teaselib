@@ -17,7 +17,7 @@ import teaselib.test.TestScript;
 
 @RunWith(Parameterized.class)
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
-public class ShowChoicesTest {
+public class ShowChoicesTestScriptFunctionReply {
 
     static final int ITERATIONS = 10;
 
@@ -35,28 +35,13 @@ public class ShowChoicesTest {
     }
 
     @Test
-    public void testSimpleReply() throws Exception {
-        final TestScript script = TestScript.getOne();
-        Debugger debugger = script.debugger;
-
-        debugger.freezeTime();
-
-        debugger.addResponse("No", Debugger.Response.Choose);
-
-        script.say("Main script start.");
-        assertEquals("No", script.reply("Yes", "No"));
-        script.say("Main script end.");
-    }
-
-    @Test
     public void testSingleScriptFunction() throws Exception {
         final TestScript script = TestScript.getOne();
         Debugger debugger = script.debugger;
 
         debugger.freezeTime();
 
-        debugger.addResponse("Stop", Debugger.Response.Ignore);
-        debugger.addResponse("No", Debugger.Response.Choose);
+        debugger.addResponse("Stop", Debugger.Response.Choose);
 
         script.say("In main script.");
         assertEquals(TeaseScript.Timeout, script.reply(new ScriptFunction() {
@@ -75,7 +60,7 @@ public class ShowChoicesTest {
 
         debugger.freezeTime();
 
-        debugger.addResponse("Stop", Debugger.Response.Ignore);
+        debugger.addResponse("Stop", Debugger.Response.Choose);
         debugger.addResponse("No", Debugger.Response.Choose);
 
         script.say("In main script.");
@@ -99,6 +84,7 @@ public class ShowChoicesTest {
         debugger.freezeTime();
 
         debugger.addResponse("Stop*", Debugger.Response.Ignore);
+        debugger.addResponse("Dismiss*", Debugger.Response.Choose);
         debugger.addResponse("No*", Debugger.Response.Choose);
         debugger.addResponse("Wow*", Debugger.Response.Choose);
 
@@ -117,7 +103,7 @@ public class ShowChoicesTest {
                         script.say("End of script function 2");
 
                     }
-                }, "Stop script function 2"));
+                }, "Dismiss script function 2"));
 
                 script.say("End of script function 1.");
 
@@ -134,6 +120,7 @@ public class ShowChoicesTest {
         debugger.freezeTime();
 
         debugger.addResponse("Stop*", Debugger.Response.Ignore);
+        debugger.addResponse("Dismiss*", Debugger.Response.Choose);
         debugger.addResponse("No*", Debugger.Response.Choose);
         debugger.addResponse("Wow*", Debugger.Response.Choose);
 
@@ -154,11 +141,12 @@ public class ShowChoicesTest {
                             @Override
                             public void run() {
                                 script.say("Start of script function 3.");
-                                assertEquals("No Level 3", script.reply("No Level 3", "Wow Level 3", "Oh Level 3"));
+                                assertEquals("Ignore NoLevel 3",
+                                        script.reply("Ignore No Level 3", "Ignore Wow Level 3", "Ignore Oh Level 3"));
                                 script.say("End of script function 3");
 
                             }
-                        }, "Stop script function 3"));
+                        }, "Dismiss script function 3"));
 
                         script.say("End of script function 2");
 

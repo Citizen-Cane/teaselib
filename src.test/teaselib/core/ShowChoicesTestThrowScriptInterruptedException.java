@@ -17,7 +17,7 @@ import teaselib.test.TestScript;
 
 @RunWith(Parameterized.class)
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
-public class ShowChoicesTest {
+public class ShowChoicesTestThrowScriptInterruptedException {
 
     static final int ITERATIONS = 10;
 
@@ -34,42 +34,28 @@ public class ShowChoicesTest {
         }
     }
 
-    @Test
-    public void testSimpleReply() throws Exception {
-        final TestScript script = TestScript.getOne();
-        Debugger debugger = script.debugger;
-
-        debugger.freezeTime();
-
-        debugger.addResponse("No", Debugger.Response.Choose);
-
-        script.say("Main script start.");
-        assertEquals("No", script.reply("Yes", "No"));
-        script.say("Main script end.");
-    }
-
-    @Test
-    public void testSingleScriptFunction() throws Exception {
+    @Test(expected = ScriptInterruptedException.class)
+    public void testSingleScriptFunctionErrorHandling() throws Exception {
         final TestScript script = TestScript.getOne();
         Debugger debugger = script.debugger;
 
         debugger.freezeTime();
 
         debugger.addResponse("Stop", Debugger.Response.Ignore);
-        debugger.addResponse("No", Debugger.Response.Choose);
 
         script.say("In main script.");
         assertEquals(TeaseScript.Timeout, script.reply(new ScriptFunction() {
             @Override
             public void run() {
                 script.say("Inside script function.");
+                throwScriptInterruptedException();
             }
         }, "Stop"));
         script.say("Resuming main script");
     }
 
-    @Test
-    public void testSingleScriptFunctionWithInnerReply() throws Exception {
+    @Test(expected = ScriptInterruptedException.class)
+    public void testSingleScriptFunctionWithInnerReplyErrorHandling() throws Exception {
         final TestScript script = TestScript.getOne();
         Debugger debugger = script.debugger;
 
@@ -84,15 +70,15 @@ public class ShowChoicesTest {
             public void run() {
                 script.say("Start of script function.");
                 assertEquals("No", script.reply("Yes", "No"));
+                throwScriptInterruptedException();
                 script.say("End of script function.");
-
             }
         }, "Stop"));
         script.say("Resuming main script");
     }
 
-    @Test
-    public void testTwoScriptFunctionsEachWithInnerReply() throws Exception {
+    @Test(expected = ScriptInterruptedException.class)
+    public void testTwoScriptFunctionsEachWithInnerReplyErrorHandling() throws Exception {
         final TestScript script = TestScript.getOne();
         Debugger debugger = script.debugger;
 
@@ -113,6 +99,7 @@ public class ShowChoicesTest {
                     @Override
                     public void run() {
                         script.say("Start of script function 2.");
+                        throwScriptInterruptedException();
                         assertEquals("Wow Level 2", script.reply("Wow Level 2", "Oh Level 2"));
                         script.say("End of script function 2");
 
@@ -126,8 +113,8 @@ public class ShowChoicesTest {
         script.say("Resuming main script");
     }
 
-    @Test
-    public void testThreeScriptFunctionsEachWithInnerReply() throws Exception {
+    @Test(expected = ScriptInterruptedException.class)
+    public void testThreeScriptFunctionsEachWithInnerReplyErrorHandling() throws Exception {
         final TestScript script = TestScript.getOne();
         Debugger debugger = script.debugger;
 
@@ -155,9 +142,11 @@ public class ShowChoicesTest {
                             public void run() {
                                 script.say("Start of script function 3.");
                                 assertEquals("No Level 3", script.reply("No Level 3", "Wow Level 3", "Oh Level 3"));
+                                throwScriptInterruptedException();
                                 script.say("End of script function 3");
 
                             }
+
                         }, "Stop script function 3"));
 
                         script.say("End of script function 2");
@@ -170,5 +159,9 @@ public class ShowChoicesTest {
             }
         }, "Stop script function 1"));
         script.say("Resuming main script");
+    }
+
+    private static void throwScriptInterruptedException() {
+        throw new ScriptInterruptedException();
     }
 }

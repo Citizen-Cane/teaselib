@@ -18,49 +18,49 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class NamedExecutorService extends ThreadPoolExecutor {
 
-    private static final String THREAD_NAME_PATTERN = "%s-%d";
+    private static final String MULTITHREADED_NAME_PATTERN = "%s-%d";
+    private static final String SINGLETHREADED_NAME_PATTERN = "%s";
 
     /**
      * @param corePoolSize
      * @param maximumPoolSize
      * @param keepAliveTime
      * @param unit
-     * @param namePrefix
+     * @param name
      */
-    private NamedExecutorService(int corePoolSize, int maximumPoolSize,
-            long keepAliveTime, final TimeUnit unit, final String namePrefix) {
-        super(corePoolSize, maximumPoolSize, keepAliveTime, unit,
-                new SynchronousQueue<Runnable>(), new ThreadFactory() {
-
+    private NamedExecutorService(final int corePoolSize, final int maximumPoolSize, long keepAliveTime,
+            final TimeUnit unit, final String name) {
+        super(corePoolSize, maximumPoolSize, keepAliveTime, unit, new SynchronousQueue<Runnable>(),
+                new ThreadFactory() {
                     private final AtomicInteger counter = new AtomicInteger();
 
                     @Override
                     public Thread newThread(Runnable r) {
-                        final String threadName = String.format(
-                                THREAD_NAME_PATTERN, namePrefix,
-                                counter.incrementAndGet());
+                        boolean multiThreaded = maximumPoolSize > 1;
+                        String namePattern = multiThreaded ? MULTITHREADED_NAME_PATTERN : SINGLETHREADED_NAME_PATTERN;
+                        String threadName = String.format(namePattern, name, counter.incrementAndGet());
                         return new Thread(r, threadName);
                     }
                 });
     }
 
-    private NamedExecutorService(final String threadName) {
-        super(1, 1, 1, TimeUnit.HOURS, new LinkedBlockingQueue<Runnable>(),
-                new ThreadFactory() {
-                    @Override
-                    public Thread newThread(Runnable r) {
-                        return new Thread(r, threadName);
-                    }
-                });
+    private NamedExecutorService(final String name) {
+        super(1, 1, 1, TimeUnit.HOURS, new LinkedBlockingQueue<Runnable>(), new ThreadFactory() {
+            @Override
+            public Thread newThread(Runnable r) {
+                String namePattern = SINGLETHREADED_NAME_PATTERN;
+                String threadName = String.format(namePattern, name);
+                return new Thread(r, threadName);
+            }
+        });
     }
 
-    public static ExecutorService newFixedThreadPool(int nThreads,
-            String namePrefix, long keepAliveTime, final TimeUnit unit) {
-        return new NamedExecutorService(0, nThreads, keepAliveTime, unit,
-                namePrefix);
+    public static ExecutorService newFixedThreadPool(int nThreads, String namePrefix, long keepAliveTime,
+            final TimeUnit unit) {
+        return new NamedExecutorService(0, nThreads, keepAliveTime, unit, namePrefix);
     }
 
-    public static ExecutorService newSingleThreadedQueue(String namePrefix) {
+    public static ExecutorService singleThreadedQueue(String namePrefix) {
         return new NamedExecutorService(namePrefix);
     }
 }

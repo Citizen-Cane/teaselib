@@ -15,7 +15,7 @@ import teaselib.core.concurrency.NamedExecutorService;
 public class Prefetcher<T> {
 
     private final static ExecutorService fetcher = NamedExecutorService
-            .newSingleThreadedQueue("Resource Prefetcher");
+            .singleThreadedQueue("Resource Prefetcher");
 
     private final Queue<String> resources = new ArrayDeque<String>();
     private final Map<String, Callable<T>> toFetch = new HashMap<String, Callable<T>>();

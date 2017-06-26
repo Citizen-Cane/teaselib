@@ -64,8 +64,9 @@ public class ScriptFutureTask extends FutureTask<String> {
     public void run() {
         try {
             super.run();
+        } catch (ScriptInterruptedException e) {
+            // Expected
         } catch (Throwable t) {
-            logger.info(t.getClass().getSimpleName() + ":@" + t.hashCode() + " detected - will be forwarded");
             setException(t);
         } finally {
             try {
@@ -73,6 +74,8 @@ public class ScriptFutureTask extends FutureTask<String> {
                 logger.info("Script task " + derivedChoices + " is finishing");
                 finishing.countDown();
                 timeout.clicked = dismissChoices.call();
+            } catch (ScriptInterruptedException e) {
+                // Expected
             } catch (Exception e) {
                 if (throwable == null) {
                     setException(e);
@@ -97,8 +100,8 @@ public class ScriptFutureTask extends FutureTask<String> {
     @Override
     protected void setException(Throwable t) {
         throwable = t;
-        super.setException(t);
         logger.info(t.getClass().getSimpleName() + ":@" + t.hashCode() + " stored - will be forwarded");
+        super.setException(t);
     }
 
     public Throwable getException() throws InterruptedException {
@@ -142,6 +145,9 @@ public class ScriptFutureTask extends FutureTask<String> {
             Throwable t = getException();
             if (t != null) {
                 logger.info("Forwarding script task error of " + derivedChoices);
+                if (t instanceof ScriptInterruptedException) {
+                    throw (ScriptInterruptedException) t;
+                }
                 if (t instanceof RuntimeException) {
                     throw (RuntimeException) t;
                 } else {

@@ -90,7 +90,13 @@ public class Prompt {
                 scriptTask.cancel(true);
             }
             scriptTask.join();
-            forwardErrorsAsRuntimeException();
+            try {
+                forwardErrorsAsRuntimeException();
+            } catch (ScriptInterruptedException e) {
+                if (scriptTask.getScriptFunctionResult() != ScriptFunction.Timeout && !scriptTask.timedOut()) {
+                    throw e;
+                }
+            }
         }
     }
 

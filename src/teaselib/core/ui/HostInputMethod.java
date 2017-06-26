@@ -25,10 +25,6 @@ public class HostInputMethod implements InputMethod {
         this.host = host;
     }
 
-    private void notifyWaiters() {
-        notifyAll();
-    }
-
     @Override
     public void show(final Todo todo) {
         Callable<Integer> callable = new Callable<Integer>() {
@@ -46,7 +42,8 @@ public class HostInputMethod implements InputMethod {
                             todo.exception = t;
                             todo.result = Prompt.UNDEFINED;
                         } finally {
-                            notifyWaiters();
+                            // TODO find out if needed
+                            HostInputMethod.this.notifyAll();
                             synchronized (todo.prompt) {
                                 todo.prompt.notifyAll();
                             }

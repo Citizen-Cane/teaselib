@@ -1,7 +1,5 @@
 package teaselib.core.ui;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.slf4j.Logger;
@@ -26,11 +24,10 @@ public class SpeechRecognitionInputMethod implements InputMethod {
     private final SpeechRecognition speechRecognizer;
     private final Confidence recognitionConfidence;
 
-    private final List<Integer> srChoiceIndices;
     private final Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs> recognitionRejected;
     private Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs> recognitionCompleted;
 
-    private final AtomicReference<Prompt> active = new AtomicReference<Prompt>();
+    private final AtomicReference<Todo> active = new AtomicReference<Todo>();
 
     public SpeechRecognitionInputMethod(SpeechRecognition speechRecognizer, final Confidence recognitionConfidence) {
         this.speechRecognizer = speechRecognizer;
@@ -97,23 +94,31 @@ public class SpeechRecognitionInputMethod implements InputMethod {
                 // }
             }
         };
-        srChoiceIndices = new ArrayList<Integer>(1);
         recognitionCompleted = new Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs>() {
             @Override
             public void run(SpeechRecognitionImplementation sender, SpeechRecognizedEventArgs eventArgs) {
-                if (eventArgs.result.length == 1) {
-                    SpeechRecognitionResult result = eventArgs.result[0];
-                    if (confidenceIsHighEnough(result, recognitionConfidence)) {
-                        srChoiceIndices.add(result.index);
-                        synchronized (active.get()) {
-                            active.get().notifyAll();
+                synchronized (SpeechRecognitionInputMethod.this) {
+                    if (eventArgs.result.length == 1) {
+                        SpeechRecognitionResult result = eventArgs.result[0];
+                        if (confidenceIsHighEnough(result, recognitionConfidence)) {
+                            Prompt prompt = active.get().prompt;
+                            synchronized (prompt) {
+                                if (active.get().result == Prompt.UNDEFINED) {
+                                    active.get().result = result.index;
+                                }
+                                SpeechRecognitionInputMethod.this.notifyAll();
+                                synchronized (prompt) {
+                                    prompt.notifyAll();
+                                }
+                            }
+                        } else {
+                            logger.info(
+                                    "Dropping result '" + result.toString() + "' due to lack of confidence (Confidence="
+                                            + recognitionConfidence + " expected)");
                         }
                     } else {
-                        logger.info("Dropping result '" + result.toString() + "' due to lack of confidence (Confidence="
-                                + recognitionConfidence + " expected)");
+                        logger.info("Ignoring none or more than one result");
                     }
-                } else {
-                    logger.info("Ignoring none or more than one result");
                 }
             }
 
@@ -125,14 +130,14 @@ public class SpeechRecognitionInputMethod implements InputMethod {
 
     @Override
     public void show(final Todo todo) {
-        active.set(todo.prompt);
+        active.set(todo);
 
         enableSpeechRecognition();
     }
 
     @Override
     public boolean dismiss(Prompt prompt) throws InterruptedException {
-        boolean dismissed = prompt == active.get();
+        boolean dismissed = prompt == active.get().prompt;
         disableSpeechRecognition();
         active.set(null);
         return dismissed;
@@ -141,7 +146,7 @@ public class SpeechRecognitionInputMethod implements InputMethod {
     private void enableSpeechRecognition() {
         speechRecognizer.events.recognitionRejected.add(recognitionRejected);
         speechRecognizer.events.recognitionCompleted.add(recognitionCompleted);
-        speechRecognizer.startRecognition(active.get().derived, recognitionConfidence);
+        speechRecognizer.startRecognition(active.get().prompt.derived, recognitionConfidence);
     }
 
     private void disableSpeechRecognition() {

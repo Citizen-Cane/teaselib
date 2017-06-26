@@ -66,6 +66,9 @@ public class PromptQueue {
                 }
                 prompt.wait();
 
+                // TODO dismiss all input methods,
+                // not only the one that notified us from waiting
+
                 active.set(null);
                 if (todo.exception != null) {
                     if (todo.exception instanceof RuntimeException) {

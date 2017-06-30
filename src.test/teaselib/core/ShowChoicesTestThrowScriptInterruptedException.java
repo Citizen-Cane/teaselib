@@ -19,7 +19,7 @@ import teaselib.test.TestScript;
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class ShowChoicesTestThrowScriptInterruptedException {
 
-    static final int ITERATIONS = 10;
+    static final int ITERATIONS = 1;
 
     @Parameterized.Parameters
     public static List<Object[]> data() {
@@ -41,7 +41,7 @@ public class ShowChoicesTestThrowScriptInterruptedException {
 
         debugger.freezeTime();
 
-        debugger.addResponse("Stop", Debugger.Response.Ignore);
+        debugger.addResponse("Ignore", Debugger.Response.Ignore);
 
         script.say("In main script.");
         assertEquals(TeaseScript.Timeout, script.reply(new ScriptFunction() {
@@ -50,7 +50,7 @@ public class ShowChoicesTestThrowScriptInterruptedException {
                 script.say("Inside script function.");
                 throwScriptInterruptedException();
             }
-        }, "Stop"));
+        }, "Ignore"));
         script.say("Resuming main script");
     }
 
@@ -61,7 +61,7 @@ public class ShowChoicesTestThrowScriptInterruptedException {
 
         debugger.freezeTime();
 
-        debugger.addResponse("Stop", Debugger.Response.Ignore);
+        debugger.addResponse("Ignore", Debugger.Response.Ignore);
         debugger.addResponse("No", Debugger.Response.Choose);
 
         script.say("In main script.");
@@ -73,7 +73,7 @@ public class ShowChoicesTestThrowScriptInterruptedException {
                 throwScriptInterruptedException();
                 script.say("End of script function.");
             }
-        }, "Stop"));
+        }, "Ignore"));
         script.say("Resuming main script");
     }
 
@@ -84,7 +84,7 @@ public class ShowChoicesTestThrowScriptInterruptedException {
 
         debugger.freezeTime();
 
-        debugger.addResponse("Stop*", Debugger.Response.Ignore);
+        debugger.addResponse("Ignore*", Debugger.Response.Ignore);
         debugger.addResponse("No*", Debugger.Response.Choose);
         debugger.addResponse("Wow*", Debugger.Response.Choose);
 
@@ -104,12 +104,12 @@ public class ShowChoicesTestThrowScriptInterruptedException {
                         script.say("End of script function 2");
 
                     }
-                }, "Stop script function 2"));
+                }, "Ignore script function 2"));
 
                 script.say("End of script function 1.");
 
             }
-        }, "Stop script function 1"));
+        }, "Ignore script function 1"));
         script.say("Resuming main script");
     }
 
@@ -120,7 +120,7 @@ public class ShowChoicesTestThrowScriptInterruptedException {
 
         debugger.freezeTime();
 
-        debugger.addResponse("Stop*", Debugger.Response.Ignore);
+        debugger.addResponse("Ignore*", Debugger.Response.Ignore);
         debugger.addResponse("No*", Debugger.Response.Choose);
         debugger.addResponse("Wow*", Debugger.Response.Choose);
 
@@ -147,17 +147,17 @@ public class ShowChoicesTestThrowScriptInterruptedException {
 
                             }
 
-                        }, "Stop script function 3"));
+                        }, "Ignore script function 3"));
 
                         script.say("End of script function 2");
 
                     }
-                }, "Stop script function 2"));
+                }, "Ignore script function 2"));
 
                 script.say("End of script function 1.");
 
             }
-        }, "Stop script function 1"));
+        }, "Ignore script function 1"));
         script.say("Resuming main script");
     }
 

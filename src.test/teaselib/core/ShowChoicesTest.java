@@ -19,7 +19,7 @@ import teaselib.test.TestScript;
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class ShowChoicesTest {
 
-    static final int ITERATIONS = 10;
+    static final int ITERATIONS = 1;
 
     @Parameterized.Parameters
     public static List<Object[]> data() {

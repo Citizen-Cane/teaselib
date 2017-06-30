@@ -24,7 +24,7 @@ public class PromptQueue {
         final Action action;
         final Prompt prompt;
         Throwable exception;
-        int result;
+        private int result;
 
         public Todo(Action action, Prompt prompt) {
             super();
@@ -33,6 +33,35 @@ public class PromptQueue {
             this.exception = null;
             this.result = Prompt.UNDEFINED;
         }
+
+        public synchronized int result() {
+            return result;
+        }
+
+        public synchronized void setResultOnce(int value) {
+            if (result == Prompt.UNDEFINED) {
+                result = value;
+            }
+        }
+
+        @Override
+        public String toString() {
+            return action.toString() + " " + prompt + " result=" + toString(result, prompt);
+        }
+
+        private static String toString(int result, Prompt prompt) {
+            if (result == Prompt.UNDEFINED) {
+                return "UNDEFINED";
+            } else if (result == Prompt.PAUSED) {
+                return "PAUSED";
+            }
+            if (result == Prompt.DISMISSED) {
+                return "DISMISSED";
+            } else {
+                return prompt.choice(result);
+            }
+        }
+
     }
 
     private final AtomicReference<Todo> active = new AtomicReference<Todo>();
@@ -43,7 +72,6 @@ public class PromptQueue {
     public int show(Prompt prompt) {
         synchronized (prompt) {
             try {
-                Todo todo;
                 synchronized (dismissedPermanent) {
                     if (dismissedPermanent.contains(prompt)) {
                         return Prompt.DISMISSED;
@@ -55,21 +83,28 @@ public class PromptQueue {
                 }
 
                 if (active.get() != null) {
-                    dismiss(active.get().prompt, Prompt.PAUSED);
+                    // TODO must dismiss to pause state in order to to restore
+                    // prompt
+                    // but runs into IllegalMonitorException in HostInputMethod
+                    // dismiss(active.get().prompt, Prompt.PAUSED);
+                    dismiss(active.get().prompt);
                 }
 
-                todo = new Todo(Action.Show, prompt);
+                Todo todo = new Todo(Action.Show, prompt);
                 active.set(todo);
                 todos.put(prompt, todo);
-                for (InputMethod inputMethod : prompt.inputMethods) {
-                    inputMethod.show(todo);
+                try {
+                    for (InputMethod inputMethod : prompt.inputMethods) {
+                        inputMethod.show(todo);
+                    }
+                    prompt.wait();
+                } finally {
+                    for (InputMethod inputMethod : prompt.inputMethods) {
+                        inputMethod.dismiss(prompt);
+                    }
+
+                    active.set(null);
                 }
-                prompt.wait();
-
-                // TODO dismiss all input methods,
-                // not only the one that notified us from waiting
-
-                active.set(null);
                 if (todo.exception != null) {
                     if (todo.exception instanceof RuntimeException) {
                         throw (RuntimeException) todo.exception;
@@ -104,12 +139,11 @@ public class PromptQueue {
         }
     }
 
-    private boolean dismiss(Prompt prompt, int reason) {
-        todos.get(prompt).result = reason;
+    public boolean dismiss(Prompt prompt, int reason) {
+        todos.get(prompt).setResultOnce(reason);
 
         try {
             boolean dismissed = false;
-            // TODO input methods are variant, so they must be remembered
             for (InputMethod inputMethod : prompt.inputMethods) {
                 dismissed |= inputMethod.dismiss(prompt);
             }

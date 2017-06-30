@@ -9,6 +9,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,6 +31,7 @@ public class ScriptFutureTask extends FutureTask<String> {
     private final List<String> derivedChoices;
     private final Callable<Boolean> dismissChoices;
 
+    private AtomicBoolean dismissed = new AtomicBoolean(false);
     private CountDownLatch finishing;
     private CountDownLatch finished;
 
@@ -66,6 +68,7 @@ public class ScriptFutureTask extends FutureTask<String> {
             super.run();
         } catch (ScriptInterruptedException e) {
             // Expected
+            logger.info("Script task " + derivedChoices + " interrupted");
         } catch (Throwable t) {
             setException(t);
         } finally {
@@ -76,6 +79,7 @@ public class ScriptFutureTask extends FutureTask<String> {
                 timeout.clicked = dismissChoices.call();
             } catch (ScriptInterruptedException e) {
                 // Expected
+                logger.info("Script task " + derivedChoices + " interrupted");
             } catch (Exception e) {
                 if (throwable == null) {
                     setException(e);
@@ -98,10 +102,20 @@ public class ScriptFutureTask extends FutureTask<String> {
     }
 
     @Override
+    public boolean cancel(boolean mayInterruptIfRunning) {
+        dismissed.set(true);
+        return super.cancel(mayInterruptIfRunning);
+    }
+
+    @Override
     protected void setException(Throwable t) {
-        throwable = t;
-        logger.info(t.getClass().getSimpleName() + ":@" + t.hashCode() + " stored - will be forwarded");
-        super.setException(t);
+        if (dismissed.get() && t instanceof ScriptInterruptedException) {
+            logger.info("Script task " + derivedChoices + " already dismissed");
+        } else {
+            throwable = t;
+            logger.info(t.getClass().getSimpleName() + ":@" + t.hashCode() + " stored - will be forwarded");
+            super.setException(t);
+        }
     }
 
     public Throwable getException() throws InterruptedException {
@@ -147,8 +161,7 @@ public class ScriptFutureTask extends FutureTask<String> {
                 logger.info("Forwarding script task error of " + derivedChoices);
                 if (t instanceof ScriptInterruptedException) {
                     throw (ScriptInterruptedException) t;
-                }
-                if (t instanceof RuntimeException) {
+                } else if (t instanceof RuntimeException) {
                     throw (RuntimeException) t;
                 } else {
                     throw new RuntimeException(t);
@@ -158,5 +171,4 @@ public class ScriptFutureTask extends FutureTask<String> {
             throw new ScriptInterruptedException();
         }
     }
-
 }

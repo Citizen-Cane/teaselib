@@ -35,12 +35,9 @@ public class HostInputMethod implements InputMethod {
                         replySection.lockInterruptibly();
                         try {
                             final int reply = host.reply(todo.prompt.derived);
-                            if (todo.result == Prompt.UNDEFINED) {
-                                todo.result = reply;
-                            }
+                            todo.setResultOnce(reply);
                         } catch (Throwable t) {
                             todo.exception = t;
-                            todo.result = Prompt.UNDEFINED;
                         } finally {
                             // TODO find out if needed
                             HostInputMethod.this.notifyAll();
@@ -52,7 +49,7 @@ public class HostInputMethod implements InputMethod {
                     }
 
                 }
-                return todo.result;
+                return todo.result();
             }
         };
 
@@ -62,6 +59,7 @@ public class HostInputMethod implements InputMethod {
 
     @Override
     public boolean dismiss(Prompt prompt) throws InterruptedException {
+
         boolean dismissChoices = false;
         try {
             boolean tryLock = replySection.tryLock();
@@ -71,7 +69,11 @@ public class HostInputMethod implements InputMethod {
                 if (tryLock) {
                     break;
                 }
-                prompt.wait(100);
+                // TODO avoid illegal monitor exception when dismissing to pause
+                // but blocks
+                //synchronized (prompt) {
+                    prompt.wait(100);
+                //}
             }
         } catch (InterruptedException e) {
             throw e;

@@ -73,7 +73,9 @@ public class Prompt {
             Callable<Boolean> dismiss = new Callable<Boolean>() {
                 @Override
                 public Boolean call() throws Exception {
-                    return promptPipeline.dismissUntilLater(Prompt.this);
+                    // return promptPipeline.dismissUntilLater(Prompt.this);
+                    // TODO remove method PromptPipeline.dismissUntilLater()
+                    return promptPipeline.dismiss(Prompt.this);
                 }
             };
 
@@ -86,7 +88,7 @@ public class Prompt {
 
     void completeScriptTask() {
         if (scriptTask != null) {
-            if (!scriptTask.isDone()) {
+            if (!scriptTask.finishing() && !scriptTask.isDone()) {
                 scriptTask.cancel(true);
             }
             scriptTask.join();
@@ -109,7 +111,6 @@ public class Prompt {
     String choice(int resultIndex) {
         String choice = scriptTask != null ? scriptTask.getScriptFunctionResult() : null;
         if (choice == null) {
-            // TODO SR
             if (scriptTask != null && scriptTask.timedOut()) {
                 choice = ScriptFunction.Timeout;
             } else if (resultIndex == Prompt.DISMISSED) {

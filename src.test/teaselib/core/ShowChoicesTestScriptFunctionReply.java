@@ -19,7 +19,7 @@ import teaselib.test.TestScript;
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class ShowChoicesTestScriptFunctionReply {
 
-    static final int ITERATIONS = 10;
+    static final int ITERATIONS = 1;
 
     @Parameterized.Parameters
     public static List<Object[]> data() {
@@ -44,7 +44,7 @@ public class ShowChoicesTestScriptFunctionReply {
         debugger.addResponse("Stop", Debugger.Response.Choose);
 
         script.say("In main script.");
-        assertEquals(TeaseScript.Timeout, script.reply(new ScriptFunction() {
+        assertEquals("Stop", script.reply(new ScriptFunction() {
             @Override
             public void run() {
                 script.say("Inside script function.");
@@ -64,7 +64,7 @@ public class ShowChoicesTestScriptFunctionReply {
         debugger.addResponse("No", Debugger.Response.Choose);
 
         script.say("In main script.");
-        assertEquals(TeaseScript.Timeout, script.reply(new ScriptFunction() {
+        assertEquals("Stop", script.reply(new ScriptFunction() {
             @Override
             public void run() {
                 script.say("Start of script function.");
@@ -83,10 +83,9 @@ public class ShowChoicesTestScriptFunctionReply {
 
         debugger.freezeTime();
 
-        debugger.addResponse("Stop*", Debugger.Response.Ignore);
-        debugger.addResponse("Dismiss*", Debugger.Response.Choose);
         debugger.addResponse("No*", Debugger.Response.Choose);
-        debugger.addResponse("Wow*", Debugger.Response.Choose);
+        debugger.addResponse("Ignore*", Debugger.Response.Ignore);
+        debugger.addResponse("Stop*", Debugger.Response.Choose);
 
         script.say("In main script.");
         assertEquals(TeaseScript.Timeout, script.reply(new ScriptFunction() {
@@ -95,20 +94,19 @@ public class ShowChoicesTestScriptFunctionReply {
                 script.say("Start of script function 1.");
                 assertEquals("No Level 1", script.reply("Yes Level 1", "No Level 1"));
 
-                assertEquals(TeaseScript.Timeout, script.reply(new ScriptFunction() {
+                assertEquals("Stop script function 2", script.reply(new ScriptFunction() {
                     @Override
                     public void run() {
                         script.say("Start of script function 2.");
-                        assertEquals("Wow Level 2", script.reply("Wow Level 2", "Oh Level 2"));
                         script.say("End of script function 2");
 
                     }
-                }, "Dismiss script function 2"));
+                }, "Stop script function 2"));
 
                 script.say("End of script function 1.");
 
             }
-        }, "Stop script function 1"));
+        }, "Ignore script function 1"));
         script.say("Resuming main script");
     }
 
@@ -119,17 +117,15 @@ public class ShowChoicesTestScriptFunctionReply {
 
         debugger.freezeTime();
 
-        debugger.addResponse("Stop*", Debugger.Response.Ignore);
-        debugger.addResponse("Dismiss*", Debugger.Response.Choose);
-        debugger.addResponse("No*", Debugger.Response.Choose);
         debugger.addResponse("Wow*", Debugger.Response.Choose);
+        debugger.addResponse("Ignore*", Debugger.Response.Ignore);
+        debugger.addResponse("Stop*", Debugger.Response.Choose);
 
         script.say("In main script.");
         assertEquals(TeaseScript.Timeout, script.reply(new ScriptFunction() {
             @Override
             public void run() {
                 script.say("Start of script function 1.");
-                assertEquals("No Level 1", script.reply("Yes Level 1", "No Level 1"));
 
                 assertEquals(TeaseScript.Timeout, script.reply(new ScriptFunction() {
                     @Override
@@ -137,26 +133,24 @@ public class ShowChoicesTestScriptFunctionReply {
                         script.say("Start of script function 2.");
                         assertEquals("Wow Level 2", script.reply("Wow Level 2", "Oh Level 2"));
 
-                        assertEquals(TeaseScript.Timeout, script.reply(new ScriptFunction() {
+                        assertEquals("Stop script function 3", script.reply(new ScriptFunction() {
                             @Override
                             public void run() {
                                 script.say("Start of script function 3.");
-                                assertEquals("Ignore NoLevel 3",
-                                        script.reply("Ignore No Level 3", "Ignore Wow Level 3", "Ignore Oh Level 3"));
                                 script.say("End of script function 3");
 
                             }
-                        }, "Dismiss script function 3"));
+                        }, "Stop script function 3"));
 
                         script.say("End of script function 2");
 
                     }
-                }, "Stop script function 2"));
+                }, "Ignore script function 2"));
 
                 script.say("End of script function 1.");
 
             }
-        }, "Stop script function 1"));
+        }, "Ignore script function 1"));
         script.say("Resuming main script");
     }
 }

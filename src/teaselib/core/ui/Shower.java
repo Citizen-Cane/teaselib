@@ -29,34 +29,27 @@ public class Shower {
     }
 
     private String showNew(TeaseScriptBase script, Prompt prompt) {
-        // acquireLock();
-
-        try {
-            stack.push(prompt);
-            prompt.executeScriptTask(script, promptPipeline);
-            while (true) {
-                if (stack.peek() == prompt) {
-                    // TODO SR
-                    int resultIndex = promptPipeline.show(prompt);
-                    if (resultIndex == Prompt.PAUSED) {
-                        prompt.pauseUntilResumed();
-                    } else if (resultIndex == Prompt.DISMISSED) {
-                        if (prompt.scriptTask != null) {
-                            prompt.scriptTask.join();
-                            prompt.forwardErrorsAsRuntimeException();
-                        }
-                        String choice = prompt.choice(resultIndex);
-                        return choice;
-                    } else {
-                        prompt.completeScriptTask();
-
-                        return prompt.choice(resultIndex);
-                    }
-                } else {
+        stack.push(prompt);
+        prompt.executeScriptTask(script, promptPipeline);
+        while (true) {
+            if (stack.peek() == prompt) {
+                int resultIndex = promptPipeline.show(prompt);
+                if (resultIndex == Prompt.PAUSED) {
                     prompt.pauseUntilResumed();
+                } else if (resultIndex == Prompt.DISMISSED) {
+                    if (prompt.scriptTask != null) {
+                        prompt.scriptTask.join();
+                        prompt.forwardErrorsAsRuntimeException();
+                    }
+                    String choice = prompt.choice(resultIndex);
+                    return choice;
+                } else {
+                    prompt.completeScriptTask();
+                    return prompt.choice(resultIndex);
                 }
+            } else {
+                prompt.pauseUntilResumed();
             }
-        } finally {
         }
     }
 
@@ -68,17 +61,14 @@ public class Shower {
 
     private void pause(Prompt prompt) {
         prompt.enterPause();
+        // TODO must submit pause to restore prompt later on
+        // but runs into IllegalMonitorException in HostInputMethod
+        // dismiss(active.get().prompt, Prompt.PAUSED);
         promptPipeline.dismiss(prompt);
 
         if (!prompt.pauseRequested()) {
             throw new IllegalStateException("Stack element " + stack.peek() + "Not paused");
         }
-
-        // TODO Sort out
-        // if (!prompt.pausing()) {
-        // throw new IllegalStateException("Stack element " + stack.peek() //
-        // + "not waiting on lock");
-        // }
     }
 
     private void resumePrevious() {

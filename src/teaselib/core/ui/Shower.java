@@ -11,11 +11,11 @@ public class Shower {
     final Host host;
     final Stack<Prompt> stack = new Stack<Prompt>();
 
-    private final PromptQueue promptPipeline;
+    private final PromptQueue promptQueue;
 
     public Shower(Host host) {
         this.host = host;
-        this.promptPipeline = new PromptQueue();
+        this.promptQueue = new PromptQueue();
     }
 
     public String show(TeaseScriptBase script, Prompt prompt) {
@@ -31,7 +31,7 @@ public class Shower {
     private String showNew(TeaseScriptBase script, Prompt prompt) {
         stack.push(prompt);
         if (prompt.scriptFunction != null) {
-            prompt.executeScriptTask(script, promptPipeline.getDismissCallable(prompt));
+            prompt.executeScriptTask(script, promptQueue.getDismissCallable(prompt));
         }
 
         // TODO must sync script task and prompt input methods here
@@ -40,7 +40,7 @@ public class Shower {
 
         while (true) {
             if (stack.peek() == prompt) {
-                int resultIndex = promptPipeline.show(prompt);
+                int resultIndex = promptQueue.show(prompt);
                 if (resultIndex == Prompt.PAUSED) {
                     // prompt.pauseUntilResumed();
                     // TODO pause state is set to handle paused prompts - avoid
@@ -73,7 +73,7 @@ public class Shower {
         prompt.enterPause();
         // TODO must submit pause to restore prompt later on
         // but runs into IllegalMonitorException in HostInputMethod
-        promptPipeline.dismiss(prompt, Prompt.PAUSED);
+        promptQueue.dismiss(prompt, Prompt.PAUSED);
         // promptPipeline.dismiss(prompt);
 
         if (!prompt.pauseRequested()) {
@@ -85,8 +85,8 @@ public class Shower {
         if (!stack.isEmpty()) {
             Prompt prompt = stack.peek();
             synchronized (prompt) {
-                if (promptPipeline.getActive() == prompt) {
-                    promptPipeline.dismiss(prompt);
+                if (promptQueue.getActive() == prompt) {
+                    promptQueue.dismiss(prompt);
                 }
                 stack.pop();
             }
@@ -97,7 +97,7 @@ public class Shower {
         if (!stack.isEmpty()) {
             // Prompt prompt = stack.peek();
             // prompt.resume();
-            promptPipeline.resume(stack.peek());
+            promptQueue.resume(stack.peek());
         }
     }
 }

@@ -30,7 +30,14 @@ public class Shower {
 
     private String showNew(TeaseScriptBase script, Prompt prompt) {
         stack.push(prompt);
-        prompt.executeScriptTask(script, promptPipeline);
+        if (prompt.scriptFunction != null) {
+            prompt.executeScriptTask(script, promptPipeline.getDismissCallable(prompt));
+        }
+
+        // TODO must sync script task and prompt input methods here
+        // to avoid prompt realized when script task has already
+        // finished because of an error right at the start
+
         while (true) {
             if (stack.peek() == prompt) {
                 int resultIndex = promptPipeline.show(prompt);

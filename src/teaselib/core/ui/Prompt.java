@@ -68,23 +68,10 @@ public class Prompt {
         logger.info("resumed - continuing " + this);
     }
 
-    void executeScriptTask(TeaseScriptBase script, final PromptQueue promptPipeline) {
-        if (scriptFunction != null) {
-            Callable<Boolean> dismiss = new Callable<Boolean>() {
-                @Override
-                public Boolean call() throws Exception {
-                    // TODO Reactivated after
-                    return promptPipeline.dismissUntilLater(Prompt.this);
-                    // TODO remove method PromptPipeline.dismissUntilLater()
-                    // return promptPipeline.dismiss(Prompt.this);
-                }
-            };
-
-            scriptTask = new ScriptFutureTask(script, scriptFunction, derived, new ScriptFutureTask.TimeoutClick(),
-                    dismiss);
-
-            scriptTask.execute();
-        }
+    void executeScriptTask(TeaseScriptBase script, final Callable<Boolean> dismiss) {
+        scriptTask = new ScriptFutureTask(script, scriptFunction, derived, new ScriptFutureTask.TimeoutClick(),
+                dismiss);
+        scriptTask.execute();
     }
 
     void completeScriptTask() {

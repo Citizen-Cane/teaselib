@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -236,4 +237,18 @@ public class PromptQueue {
         final Todo todo = active.get();
         return todo != null ? todo.prompt : null;
     }
+
+    public Callable<Boolean> getDismissCallable(final Prompt prompt) {
+        Callable<Boolean> dismiss = new Callable<Boolean>() {
+            @Override
+            public Boolean call() throws Exception {
+                // TODO Reactivated after
+                return dismissUntilLater(prompt);
+                // TODO remove method PromptPipeline.dismissUntilLater()
+                // return promptPipeline.dismiss(Prompt.this);
+            }
+        };
+        return dismiss;
+    }
+
 }

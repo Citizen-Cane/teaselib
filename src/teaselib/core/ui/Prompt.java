@@ -73,9 +73,10 @@ public class Prompt {
             Callable<Boolean> dismiss = new Callable<Boolean>() {
                 @Override
                 public Boolean call() throws Exception {
-                    // return promptPipeline.dismissUntilLater(Prompt.this);
+                    // TODO Reactivated after
+                    return promptPipeline.dismissUntilLater(Prompt.this);
                     // TODO remove method PromptPipeline.dismissUntilLater()
-                    return promptPipeline.dismiss(Prompt.this);
+                    // return promptPipeline.dismiss(Prompt.this);
                 }
             };
 

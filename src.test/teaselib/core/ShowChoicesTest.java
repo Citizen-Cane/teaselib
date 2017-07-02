@@ -1,6 +1,6 @@
 package teaselib.core;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 import java.util.Arrays;
 import java.util.List;
@@ -85,7 +85,6 @@ public class ShowChoicesTest {
                 script.say("Start of script function.");
                 assertEquals("No", script.reply("Yes", "No"));
                 script.say("End of script function.");
-
             }
         }, "Stop"));
         script.say("Resuming main script");

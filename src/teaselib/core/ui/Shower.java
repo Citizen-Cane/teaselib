@@ -35,7 +35,10 @@ public class Shower {
             if (stack.peek() == prompt) {
                 int resultIndex = promptPipeline.show(prompt);
                 if (resultIndex == Prompt.PAUSED) {
-                    prompt.pauseUntilResumed();
+                    // prompt.pauseUntilResumed();
+                    // TODO pause state is set to handle paused prompts - avoid
+                    // this!
+                    throw new IllegalStateException("PAUSED is not a valid return value for " + prompt);
                 } else if (resultIndex == Prompt.DISMISSED) {
                     if (prompt.scriptTask != null) {
                         prompt.scriptTask.join();
@@ -63,8 +66,8 @@ public class Shower {
         prompt.enterPause();
         // TODO must submit pause to restore prompt later on
         // but runs into IllegalMonitorException in HostInputMethod
-        // dismiss(active.get().prompt, Prompt.PAUSED);
-        promptPipeline.dismiss(prompt);
+        promptPipeline.dismiss(prompt, Prompt.PAUSED);
+        // promptPipeline.dismiss(prompt);
 
         if (!prompt.pauseRequested()) {
             throw new IllegalStateException("Stack element " + stack.peek() + "Not paused");
@@ -85,8 +88,9 @@ public class Shower {
         }
 
         if (!stack.isEmpty()) {
-            Prompt prompt = stack.peek();
-            prompt.resume();
+            // Prompt prompt = stack.peek();
+            // prompt.resume();
+            promptPipeline.resume(stack.peek());
         }
     }
 }

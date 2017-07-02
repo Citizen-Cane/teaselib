@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import teaselib.core.ScriptInterruptedException;
@@ -24,6 +25,7 @@ public class PromptQueue {
         final Action action;
         final Prompt prompt;
         Throwable exception;
+        final AtomicBoolean paused = new AtomicBoolean(false);
         private int result;
 
         public Todo(Action action, Prompt prompt) {
@@ -86,8 +88,8 @@ public class PromptQueue {
                     // TODO must dismiss to pause state in order to to restore
                     // prompt
                     // but runs into IllegalMonitorException in HostInputMethod
-                    // dismiss(active.get().prompt, Prompt.PAUSED);
-                    dismiss(active.get().prompt);
+                    dismiss(active.get().prompt, Prompt.PAUSED);
+                    // dismiss(active.get().prompt);
                 }
 
                 Todo todo = new Todo(Action.Show, prompt);
@@ -97,6 +99,9 @@ public class PromptQueue {
                     for (InputMethod inputMethod : prompt.inputMethods) {
                         inputMethod.show(todo);
                     }
+
+                    // This waits for the prompt being dismissed
+                    // either by input or timeout
                     prompt.wait();
                 } finally {
                     for (InputMethod inputMethod : prompt.inputMethods) {
@@ -120,6 +125,48 @@ public class PromptQueue {
         }
     }
 
+    public void resume(Prompt prompt) {
+        // TODO Duplicated and changed code from show() -> try to refactor
+        synchronized (prompt) {
+            synchronized (dismissedPermanent) {
+                if (dismissedPermanent.contains(prompt)) {
+                    return;
+                }
+            }
+
+            if (active.get() != null && prompt == active.get().prompt) {
+                throw new IllegalStateException("Prompt " + prompt + " already showing");
+            }
+
+            if (active.get() != null) {
+                // TODO must dismiss to pause state in order to to restore
+                // prompt
+                // but runs into IllegalMonitorException in HostInputMethod
+                // dismiss(active.get().prompt, Prompt.PAUSED);
+                dismiss(active.get().prompt);
+                // TODO Probably there is, in that case the host could directly
+                // switch between them
+                // throw new IllegalStateException("Resume assumes there's
+                // no active prompt");
+            }
+
+            // Todo todo = new Todo(Action.Show, prompt);
+
+            Todo todo = todos.get(prompt);
+
+            if (todo.result != Prompt.UNDEFINED)
+                return;
+
+            todo.paused.set(false);
+            active.set(todo);
+            // todos.put(prompt, todo);
+            for (InputMethod inputMethod : prompt.inputMethods) {
+                inputMethod.show(todo);
+            }
+            // Were're just resuming, no need to wait or cleanup
+        }
+    }
+
     public boolean dismissUntilLater(Prompt prompt) {
         synchronized (prompt) {
             synchronized (dismissedPermanent) {
@@ -140,7 +187,12 @@ public class PromptQueue {
     }
 
     public boolean dismiss(Prompt prompt, int reason) {
-        todos.get(prompt).setResultOnce(reason);
+        // PAUSED is not a result but we're resuming wit ha new todo anyway
+        if (reason == Prompt.PAUSED) {
+            todos.get(prompt).paused.set(true);
+        } else {
+            todos.get(prompt).setResultOnce(reason);
+        }
 
         try {
             boolean dismissed = false;
@@ -154,7 +206,7 @@ public class PromptQueue {
             throw new RuntimeException(e);
         } finally {
             waitUntilDismissed(prompt);
-            notifyPausedPrompt(prompt);
+            // notifyPausedPrompt(prompt);
         }
     }
 
@@ -165,17 +217,20 @@ public class PromptQueue {
             }
         }
         active.set(null);
-        todos.remove(prompt);
-    }
-
-    private void notifyPausedPrompt(Prompt prompt) {
-        synchronized (prompt) {
-            if (active.get() != null) {
-                throw new IllegalStateException("Prompt " + prompt + ": active not cleared");
-            }
-            prompt.notifyAll();
+        if (todos.get(prompt).paused.get() == false) {
+            todos.remove(prompt);
         }
     }
+
+    // private void notifyPausedPrompt(Prompt prompt) {
+    // synchronized (prompt) {
+    // if (active.get() != null) {
+    // throw new IllegalStateException("Prompt " + prompt + ": active not
+    // cleared");
+    // }
+    // prompt.notifyAll();
+    // }
+    // }
 
     public Prompt getActive() {
         final Todo todo = active.get();

@@ -116,6 +116,9 @@ public class ScriptFutureTask extends FutureTask<String> {
             logger.info(t.getClass().getSimpleName() + ":@" + t.hashCode() + " stored - will be forwarded");
             super.setException(t);
         }
+        if (!(t instanceof ScriptInterruptedException || t instanceof InterruptedException)) {
+            logger.error(t.getMessage(), t);
+        }
     }
 
     public Throwable getException() throws InterruptedException {
@@ -163,6 +166,8 @@ public class ScriptFutureTask extends FutureTask<String> {
                     throw (ScriptInterruptedException) t;
                 } else if (t instanceof RuntimeException) {
                     throw (RuntimeException) t;
+                } else if (t instanceof Error) {
+                    throw (Error) t;
                 } else {
                     throw new RuntimeException(t);
                 }

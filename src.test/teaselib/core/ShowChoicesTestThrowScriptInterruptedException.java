@@ -1,6 +1,6 @@
 package teaselib.core;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 import java.util.Arrays;
 import java.util.List;
@@ -48,6 +48,15 @@ public class ShowChoicesTestThrowScriptInterruptedException {
             @Override
             public void run() {
                 script.say("Inside script function.");
+
+                // script.completeAll();
+                // TODO Blocks when thrown right away
+                // -> show() hasn't called yet, or not realized by host input
+                // method future task
+                // - therefore all dismissed code has been passed, and the
+                // prompt is never dismissed
+                // - same with RuntimeException
+
                 throwScriptInterruptedException();
             }
         }, "Ignore"));

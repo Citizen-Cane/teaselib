@@ -106,7 +106,9 @@ public class SpeechRecognitionInputMethod implements InputMethod {
                                 active.get().setResultOnce(result.index);
                                 SpeechRecognitionInputMethod.this.notifyAll();
                                 synchronized (prompt) {
-                                    prompt.notifyAll();
+                                    if (active.get().paused.get() == false) {
+                                        prompt.notifyAll();
+                                    }
                                 }
                             }
                         } else {
@@ -137,7 +139,7 @@ public class SpeechRecognitionInputMethod implements InputMethod {
     public boolean dismiss(Prompt prompt) throws InterruptedException {
         Todo todo = active.get();
         if (todo != null) {
-            boolean dismissed = todo.result() == prompt.UNDEFINED;
+            boolean dismissed = todo.result() == Prompt.UNDEFINED;
             disableSpeechRecognition();
             active.set(null);
             return dismissed;

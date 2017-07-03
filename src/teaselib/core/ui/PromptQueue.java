@@ -188,26 +188,28 @@ public class PromptQueue {
     }
 
     public boolean dismiss(Prompt prompt, int reason) {
-        // PAUSED is not a result but we're resuming wit ha new todo anyway
-        if (reason == Prompt.PAUSED) {
-            todos.get(prompt).paused.set(true);
-        } else {
-            todos.get(prompt).setResultOnce(reason);
-        }
-
-        try {
-            boolean dismissed = false;
-            for (InputMethod inputMethod : prompt.inputMethods) {
-                dismissed |= inputMethod.dismiss(prompt);
+        synchronized (prompt) {
+            // PAUSED is not a result but we're resuming wit ha new todo anyway
+            if (reason == Prompt.PAUSED) {
+                todos.get(prompt).paused.set(true);
+            } else {
+                todos.get(prompt).setResultOnce(reason);
             }
-            return dismissed;
-        } catch (InterruptedException e) {
-            throw new ScriptInterruptedException();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        } finally {
-            waitUntilDismissed(prompt);
-            // notifyPausedPrompt(prompt);
+
+            try {
+                boolean dismissed = false;
+                for (InputMethod inputMethod : prompt.inputMethods) {
+                    dismissed |= inputMethod.dismiss(prompt);
+                }
+                return dismissed;
+            } catch (InterruptedException e) {
+                throw new ScriptInterruptedException();
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            } finally {
+                waitUntilDismissed(prompt);
+                // notifyPausedPrompt(prompt);
+            }
         }
     }
 

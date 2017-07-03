@@ -6,9 +6,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.regex.Pattern;
 
 import org.bytedeco.javacpp.opencv_core.Point;
@@ -74,7 +73,9 @@ public class DummyHost implements Host {
     }
 
     int selectedIndex = 0;
-    AtomicReference<CountDownLatch> latch = new AtomicReference<CountDownLatch>(new CountDownLatch(0));
+
+    final ReentrantLock replySection = new ReentrantLock(true);
+    final Condition click = replySection.newCondition();
 
     @Override
     public List<Delegate> getClickableChoices(List<String> choices) {
@@ -84,87 +85,57 @@ public class DummyHost implements Host {
             clickables.add(new Delegate() {
                 @Override
                 public void run() {
-                    DummyHost.this.selectedIndex = j;
-                    DummyHost.this.latch.get().countDown();
+                    selectedIndex = j;
+                    click.signal();
                 }
             });
         }
         return clickables;
     }
 
-    AtomicBoolean validateSingleEntrance = new AtomicBoolean(false);
-
     @Override
     public boolean dismissChoices(List<String> choices) {
         logger.info("Dismiss " + choices + " @ " + Thread.currentThread().getStackTrace()[1].toString());
-        // Thread.dumpStack();
-
-        // if (validateSingleEntrance.getAndSet(true)) {
-        // throw new IllegalStateException("Dismiss multiple entry detected: " +
-        // choices);
-        // }
 
         try {
-
-            // The weak point - must wait until there is something to be
-            // dismissed,
-            // since there is no guarantee when the host will be creating the
-            // prompts.
-            // Therefore dismissChoices() might be called before buttons are
-            // realized.
-            // The SexScripts host returns false until SS has created the
-            // buttons,
-            // so we have to, too.
+            replySection.lockInterruptibly();
             if (currentChoices.isEmpty()) {
-                if (latch.get().getCount() > 0) {
+                if (replySection.hasWaiters(click)) {
                     throw new IllegalStateException("Trying to dismiss without current choices: " + choices);
                 }
+                logger.info("No current choices");
                 return false;
             }
 
-            // TODO triggers, although not fatal
-            if (latch.get().getCount() == 0) {
+            if (!replySection.hasWaiters(click)) {
                 // throw new IllegalStateException("Dismiss called on latch
                 // already counted down: " + choices);
             }
 
-            List<Delegate> clickableChoices = getClickableChoices(choices);
-
-            // notifyAll();
-
-            for (Delegate delegate : clickableChoices) {
+            for (Delegate delegate : getClickableChoices(choices)) {
                 delegate.run();
             }
-
             currentChoices = Collections.emptyList();
 
-            if (latch.get().getCount() > 0) {
-                throw new IllegalStateException("Dismiss failed to countdown active latch: " + choices);
+            if (replySection.hasWaiters(click)) {
+                throw new IllegalStateException("Dismiss failed to dismiss click condition: " + choices);
             }
 
             return true;
+        } catch (InterruptedException e) {
+            throw new ScriptInterruptedException();
         } finally {
-            try {
-                if (latch.get().getCount() > 0) {
-                    throw new IllegalStateException("Reply - still waiting on Latch ");
-                }
-            } finally {
-                // validateSingleEntrance.set(false);
-            }
+            replySection.unlock();
         }
     }
 
     @Override
     public int reply(List<String> choices) throws ScriptInterruptedException {
         logger.info("Reply " + choices + " @ " + Thread.currentThread().getStackTrace()[1].toString());
-        // Thread.dumpStack();
-
-        if (validateSingleEntrance.getAndSet(true)) {
-            throw new IllegalStateException("Reply multiple entry detected: " + choices);
-        }
 
         try {
-            if (latch.get().getCount() > 0) {
+            replySection.lockInterruptibly();
+            if (replySection.hasWaiters(click)) {
                 throw new IllegalStateException("Reply not dismissed: " + choices);
             }
             if (Thread.interrupted()) {
@@ -179,9 +150,8 @@ public class DummyHost implements Host {
                         if (choice.matcher(choices.get(i)).matches()) {
                             if (entry.getValue().equals(Debugger.Response.Ignore)) {
                                 try {
-                                    latch.getAndSet(new CountDownLatch(1)).countDown();
-                                    // wait();
-                                    latch.get().await();
+                                    logger.info("Awaiting dismiss for" + choices.get(i));
+                                    click.await();
                                     break allChoices;
                                 } catch (InterruptedException e) {
                                     throw new ScriptInterruptedException();
@@ -195,19 +165,20 @@ public class DummyHost implements Host {
             } finally {
                 currentChoices = Collections.emptyList();
             }
+
+            if (replySection.hasWaiters(click)) {
+                throw new IllegalStateException("Reply - still waiting on click");
+            }
+
             if (choices.size() == 1) {
                 return 0;
             } else {
                 throw new IllegalStateException("No rule to dismiss buttons matched for " + choices);
             }
+        } catch (InterruptedException e) {
+            throw new ScriptInterruptedException();
         } finally {
-            try {
-                if (latch.get().getCount() > 0) {
-                    throw new IllegalStateException("Reply - still waiting on Latch ");
-                }
-            } finally {
-                validateSingleEntrance.set(false);
-            }
+            replySection.unlock();
         }
     }
 

@@ -18,7 +18,7 @@ public class HostInputMethod implements InputMethod {
 
     ExecutorService workerThread = NamedExecutorService.singleThreadedQueue(getClass().getName());
 
-    private final ReentrantLock replySection = new ReentrantLock();
+    private final ReentrantLock replySection = new ReentrantLock(true);
 
     public HostInputMethod(Host host) {
         super();
@@ -27,49 +27,44 @@ public class HostInputMethod implements InputMethod {
 
     @Override
     public void show(final Todo todo) {
-        replySection.lock();
-        try {
-            Callable<Integer> callable = new Callable<Integer>() {
-                @Override
-                public Integer call() throws Exception {
-                    synchronized (HostInputMethod.this) {
-                        if (todo.action == Action.Show) {
-                            replySection.lockInterruptibly();
-                            try {
-                                if (todo.result() == Prompt.UNDEFINED) {
-                                    int reply = host.reply(todo.prompt.derived);
-                                    if (todo.paused.get() == false) {
-                                        todo.setResultOnce(reply);
-                                    }
+        Callable<Integer> callable = new Callable<Integer>() {
+            @Override
+            public Integer call() throws Exception {
+                synchronized (HostInputMethod.this) {
+                    if (todo.action == Action.Show) {
+                        replySection.lockInterruptibly();
+                        try {
+                            if (todo.result() == Prompt.UNDEFINED) {
+                                int reply = host.reply(todo.prompt.derived);
+                                if (todo.paused.get() == false) {
+                                    todo.setResultOnce(reply);
                                 }
-                            } catch (Throwable t) {
-                                todo.exception = t;
-                            } finally {
-                                // TODO find out if needed
-                                HostInputMethod.this.notifyAll();
-                                synchronized (todo.prompt) {
-                                    if (todo.paused.get() == false) {
-                                        todo.prompt.notifyAll();
-                                    }
-                                }
-                                replySection.unlock();
                             }
+                        } catch (Throwable t) {
+                            todo.exception = t;
+                        } finally {
+                            // TODO find out if needed
+                            HostInputMethod.this.notifyAll();
+                            synchronized (todo.prompt) {
+                                if (todo.paused.get() == false) {
+                                    todo.prompt.notifyAll();
+                                }
+                            }
+                            replySection.unlock();
                         }
-
                     }
-                    return todo.result();
-                }
-            };
 
-            workerThread.submit(callable);
-        } finally {
-            replySection.unlock();
-        }
+                }
+                return todo.result();
+            }
+        };
+
+        workerThread.submit(callable);
+
     }
 
     @Override
     public boolean dismiss(Prompt prompt) throws InterruptedException {
-
         boolean dismissChoices = false;
         try {
             boolean tryLock = replySection.tryLock();
@@ -79,8 +74,6 @@ public class HostInputMethod implements InputMethod {
                 if (tryLock) {
                     break;
                 }
-                // TODO avoid illegal monitor exception when dismissing to pause
-                // but blocks
                 synchronized (prompt) {
                     prompt.wait(100);
                 }

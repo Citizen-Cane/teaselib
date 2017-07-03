@@ -86,11 +86,7 @@ public class PromptQueue {
                 }
 
                 if (active.get() != null) {
-                    // TODO must dismiss to pause state in order to to restore
-                    // prompt
-                    // but runs into IllegalMonitorException in HostInputMethod
                     dismiss(active.get().prompt, Prompt.PAUSED);
-                    // dismiss(active.get().prompt);
                 }
 
                 Todo todo = new Todo(Action.Show, prompt);
@@ -101,8 +97,6 @@ public class PromptQueue {
                         inputMethod.show(todo);
                     }
 
-                    // This waits for the prompt being dismissed
-                    // either by input or timeout
                     prompt.wait();
                 } finally {
                     for (InputMethod inputMethod : prompt.inputMethods) {
@@ -140,18 +134,8 @@ public class PromptQueue {
             }
 
             if (active.get() != null) {
-                // TODO must dismiss to pause state in order to to restore
-                // prompt
-                // but runs into IllegalMonitorException in HostInputMethod
-                // dismiss(active.get().prompt, Prompt.PAUSED);
                 dismiss(active.get().prompt);
-                // TODO Probably there is, in that case the host could directly
-                // switch between them
-                // throw new IllegalStateException("Resume assumes there's
-                // no active prompt");
             }
-
-            // Todo todo = new Todo(Action.Show, prompt);
 
             Todo todo = todos.get(prompt);
 
@@ -160,7 +144,6 @@ public class PromptQueue {
 
             todo.paused.set(false);
             active.set(todo);
-            // todos.put(prompt, todo);
             for (InputMethod inputMethod : prompt.inputMethods) {
                 inputMethod.show(todo);
             }
@@ -189,7 +172,6 @@ public class PromptQueue {
 
     public boolean dismiss(Prompt prompt, int reason) {
         synchronized (prompt) {
-            // PAUSED is not a result but we're resuming wit ha new todo anyway
             if (reason == Prompt.PAUSED) {
                 todos.get(prompt).paused.set(true);
             } else {
@@ -201,14 +183,12 @@ public class PromptQueue {
                 for (InputMethod inputMethod : prompt.inputMethods) {
                     dismissed |= inputMethod.dismiss(prompt);
                 }
+                waitUntilDismissed(prompt);
                 return dismissed;
             } catch (InterruptedException e) {
                 throw new ScriptInterruptedException();
             } catch (Exception e) {
                 throw new RuntimeException(e);
-            } finally {
-                waitUntilDismissed(prompt);
-                // notifyPausedPrompt(prompt);
             }
         }
     }
@@ -225,16 +205,6 @@ public class PromptQueue {
         }
     }
 
-    // private void notifyPausedPrompt(Prompt prompt) {
-    // synchronized (prompt) {
-    // if (active.get() != null) {
-    // throw new IllegalStateException("Prompt " + prompt + ": active not
-    // cleared");
-    // }
-    // prompt.notifyAll();
-    // }
-    // }
-
     public Prompt getActive() {
         final Todo todo = active.get();
         return todo != null ? todo.prompt : null;
@@ -244,7 +214,6 @@ public class PromptQueue {
         Callable<Boolean> dismiss = new Callable<Boolean>() {
             @Override
             public Boolean call() throws Exception {
-                // TODO Reactivated after
                 return dismissUntilLater(prompt);
                 // TODO remove method PromptPipeline.dismissUntilLater()
                 // return promptPipeline.dismiss(Prompt.this);

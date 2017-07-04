@@ -105,10 +105,13 @@ public class SpeechRecognitionInputMethod implements InputMethod {
                             synchronized (prompt) {
                                 active.get().setResultOnce(result.index);
                                 SpeechRecognitionInputMethod.this.notifyAll();
-                                synchronized (prompt) {
+                                prompt.lock.lock();
+                                try {
                                     if (active.get().paused.get() == false) {
-                                        prompt.notifyAll();
+                                        prompt.click.signalAll();
                                     }
+                                } finally {
+                                    prompt.lock.unlock();
                                 }
                             }
                         } else {

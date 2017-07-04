@@ -9,7 +9,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import teaselib.core.ScriptInterruptedException;
-import teaselib.core.ui.PromptQueue.Todo.Action;
 
 /**
  * @author Citizen-Cane
@@ -18,20 +17,12 @@ import teaselib.core.ui.PromptQueue.Todo.Action;
 public class PromptQueue {
 
     public static class Todo {
-        enum Action {
-            Show,
-            Dismiss
-        }
-
-        final Action action;
         final Prompt prompt;
-        Throwable exception;
         final AtomicBoolean paused = new AtomicBoolean(false);
+        Throwable exception;
         private int result;
 
-        public Todo(Action action, Prompt prompt) {
-            super();
-            this.action = action;
+        public Todo(Prompt prompt) {
             this.prompt = prompt;
             this.exception = null;
             this.result = Prompt.UNDEFINED;
@@ -49,16 +40,14 @@ public class PromptQueue {
 
         @Override
         public String toString() {
-            return action.toString() + " " + prompt + " result=" + toString(result, prompt);
+            return prompt + " result=" + toString(result, prompt)
+                    + (exception != null ? " " + exception.getMessage() : "");
         }
 
         private static String toString(int result, Prompt prompt) {
             if (result == Prompt.UNDEFINED) {
                 return "UNDEFINED";
-            } else if (result == Prompt.PAUSED) {
-                return "PAUSED";
-            }
-            if (result == Prompt.DISMISSED) {
+            } else if (result == Prompt.DISMISSED) {
                 return "DISMISSED";
             } else {
                 return prompt.choice(result);
@@ -68,61 +57,64 @@ public class PromptQueue {
     }
 
     private final AtomicReference<Todo> active = new AtomicReference<Todo>();
-    private final Set<Prompt> dismissedPermanent = new HashSet<Prompt>();
-
     private final Map<Prompt, Todo> todos = new HashMap<Prompt, Todo>();
 
-    public int show(Prompt prompt) {
-        synchronized (prompt) {
-            try {
-                synchronized (dismissedPermanent) {
-                    if (dismissedPermanent.contains(prompt)) {
-                        return Prompt.DISMISSED;
-                    }
-                }
+    // TODO never cleared but have to
+    private final Set<Prompt> dismissedPermanent = new HashSet<Prompt>();
 
-                if (active.get() != null && prompt == active.get().prompt) {
-                    throw new IllegalStateException("Prompt " + prompt + " already showing");
+    public int show(Prompt prompt) throws InterruptedException {
+        prompt.lock.lockInterruptibly();
+        try {
+            synchronized (dismissedPermanent) {
+                if (dismissedPermanent.contains(prompt)) {
+                    return Prompt.DISMISSED;
                 }
-
-                if (active.get() != null) {
-                    dismiss(active.get().prompt, Prompt.PAUSED);
-                }
-
-                Todo todo = new Todo(Action.Show, prompt);
-                active.set(todo);
-                todos.put(prompt, todo);
-                try {
-                    for (InputMethod inputMethod : prompt.inputMethods) {
-                        inputMethod.show(todo);
-                    }
-
-                    prompt.wait();
-                } finally {
-                    for (InputMethod inputMethod : prompt.inputMethods) {
-                        inputMethod.dismiss(prompt);
-                    }
-
-                    active.set(null);
-                }
-                if (todo.exception != null) {
-                    if (todo.exception instanceof RuntimeException) {
-                        throw (RuntimeException) todo.exception;
-                    } else {
-                        throw new RuntimeException(todo.exception);
-                    }
-                } else {
-                    return todo.result;
-                }
-            } catch (InterruptedException e) {
-                throw new ScriptInterruptedException();
             }
+
+            if (active.get() != null && prompt == active.get().prompt) {
+                throw new IllegalStateException("Prompt " + prompt + " already showing");
+            }
+
+            if (active.get() != null) {
+                pause(active.get().prompt);
+            }
+
+            Todo todo = new Todo(prompt);
+            active.set(todo);
+            todos.put(prompt, todo);
+            try {
+                for (InputMethod inputMethod : prompt.inputMethods) {
+                    inputMethod.show(todo);
+                }
+
+                prompt.click.await();
+            } finally {
+                for (InputMethod inputMethod : prompt.inputMethods) {
+                    inputMethod.dismiss(prompt);
+                }
+
+                active.set(null);
+            }
+            if (todo.exception != null) {
+                if (todo.exception instanceof RuntimeException) {
+                    throw (RuntimeException) todo.exception;
+                } else {
+                    throw new RuntimeException(todo.exception);
+                }
+            } else {
+                return todo.result;
+            }
+        } catch (InterruptedException e) {
+            throw new ScriptInterruptedException();
+        } finally {
+            prompt.lock.unlock();
         }
     }
 
-    public void resume(Prompt prompt) {
+    public void resume(Prompt prompt) throws InterruptedException {
         // TODO Duplicated and changed code from show() -> try to refactor
-        synchronized (prompt) {
+        prompt.lock.lockInterruptibly();
+        try {
             synchronized (dismissedPermanent) {
                 if (dismissedPermanent.contains(prompt)) {
                     return;
@@ -148,48 +140,62 @@ public class PromptQueue {
                 inputMethod.show(todo);
             }
             // Were're just resuming, no need to wait or cleanup
+        } finally {
+            prompt.lock.unlock();
         }
     }
 
-    public boolean dismissUntilLater(Prompt prompt) {
-        synchronized (prompt) {
+    public boolean dismissUntilLater(Prompt prompt) throws InterruptedException {
+        prompt.lock.lockInterruptibly();
+        try {
             synchronized (dismissedPermanent) {
                 dismissedPermanent.add(prompt);
             }
             return dismiss(prompt);
+        } finally {
+            prompt.lock.unlock();
         }
     }
 
-    public boolean dismiss(Prompt prompt) {
-        synchronized (prompt) {
+    public boolean dismiss(Prompt prompt) throws InterruptedException {
+        prompt.lock.lockInterruptibly();
+        try {
             if (!todos.containsKey(prompt)) {
                 return false;
             }
 
-            return dismiss(prompt, Prompt.DISMISSED);
+            Todo todo = todos.get(prompt);
+            todo.setResultOnce(Prompt.DISMISSED);
+            return dismiss(todo);
+        } finally {
+            prompt.lock.unlock();
         }
     }
 
-    public boolean dismiss(Prompt prompt, int reason) {
-        synchronized (prompt) {
-            if (reason == Prompt.PAUSED) {
-                todos.get(prompt).paused.set(true);
-            } else {
-                todos.get(prompt).setResultOnce(reason);
-            }
+    public boolean pause(Prompt prompt) throws InterruptedException {
+        prompt.lock.lockInterruptibly();
+        try {
+            Todo todo = todos.get(prompt);
+            todo.paused.set(true);
+            return dismiss(todo);
+        } finally {
+            prompt.lock.unlock();
+        }
+    }
 
-            try {
-                boolean dismissed = false;
-                for (InputMethod inputMethod : prompt.inputMethods) {
-                    dismissed |= inputMethod.dismiss(prompt);
-                }
-                waitUntilDismissed(prompt);
-                return dismissed;
-            } catch (InterruptedException e) {
-                throw new ScriptInterruptedException();
-            } catch (Exception e) {
-                throw new RuntimeException(e);
+    private boolean dismiss(Todo todo) {
+        Prompt prompt = todo.prompt;
+        try {
+            boolean dismissed = false;
+            for (InputMethod inputMethod : prompt.inputMethods) {
+                dismissed |= inputMethod.dismiss(prompt);
             }
+            waitUntilDismissed(prompt);
+            return dismissed;
+        } catch (InterruptedException e) {
+            throw new ScriptInterruptedException();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -222,4 +228,7 @@ public class PromptQueue {
         return dismiss;
     }
 
+    public void clear(Prompt prompt) {
+        dismissedPermanent.remove(prompt);
+    }
 }

@@ -43,15 +43,20 @@ public class ScriptFutureTask extends FutureTask<String> {
         super(new Callable<String>() {
             @Override
             public String call() throws Exception {
-                scriptFunction.run();
-                // Keep choices available until the last part of
-                // the script function has finished rendering
-                if (Thread.interrupted()) {
-                    throw new ScriptInterruptedException();
+                try {
+                    scriptFunction.run();
+                    // Keep choices available until the last part of
+                    // the script function has finished rendering
+                    if (Thread.interrupted()) {
+                        throw new ScriptInterruptedException();
+                    }
+                    script.completeAll();
+                    // Ignored
+                    return null;
+                } catch (ScriptInterruptedException e) {
+                    script.endAll();
+                    throw e;
                 }
-                script.completeAll();
-                // Ignored
-                return null;
             }
         });
         this.scriptFunction = scriptFunction;
@@ -59,7 +64,6 @@ public class ScriptFutureTask extends FutureTask<String> {
 
         this.dismissChoices = dismissChoices;
         this.derivedChoices = derivedChoices;
-
     }
 
     @Override
@@ -159,21 +163,35 @@ public class ScriptFutureTask extends FutureTask<String> {
 
     public void forwardErrorsAsRuntimeException() {
         try {
-            Throwable t = getException();
-            if (t != null) {
-                logger.info("Forwarding script task error of " + derivedChoices);
-                if (t instanceof ScriptInterruptedException) {
-                    throw (ScriptInterruptedException) t;
-                } else if (t instanceof RuntimeException) {
-                    throw (RuntimeException) t;
-                } else if (t instanceof Error) {
-                    throw (Error) t;
-                } else {
-                    throw new RuntimeException(t);
+            try {
+                Throwable t = getException();
+                if (t != null) {
+                    throwException(t);
                 }
+            } catch (InterruptedException e) {
+                throw new ScriptInterruptedException();
             }
-        } catch (InterruptedException e) {
-            throw new ScriptInterruptedException();
+        } catch (ScriptInterruptedException e) {
+            throwOnlyIfNotTimedOut(e);
+        }
+    }
+
+    private void throwException(Throwable t) throws Error {
+        logger.info("Forwarding script task error of " + derivedChoices);
+        if (t instanceof ScriptInterruptedException) {
+            throw (ScriptInterruptedException) t;
+        } else if (t instanceof RuntimeException) {
+            throw (RuntimeException) t;
+        } else if (t instanceof Error) {
+            throw (Error) t;
+        } else {
+            throw new RuntimeException(t);
+        }
+    }
+
+    private void throwOnlyIfNotTimedOut(ScriptInterruptedException e) {
+        if (getScriptFunctionResult() != ScriptFunction.Timeout && !timedOut()) {
+            throw e;
         }
     }
 }

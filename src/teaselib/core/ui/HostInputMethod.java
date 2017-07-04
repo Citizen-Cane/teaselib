@@ -2,12 +2,12 @@ package teaselib.core.ui;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 
 import teaselib.core.Host;
 import teaselib.core.concurrency.NamedExecutorService;
 import teaselib.core.ui.PromptQueue.Todo;
-import teaselib.core.ui.PromptQueue.Todo.Action;
 
 /**
  * @author Citizen-Cane
@@ -31,36 +31,36 @@ public class HostInputMethod implements InputMethod {
             @Override
             public Integer call() throws Exception {
                 synchronized (HostInputMethod.this) {
-                    if (todo.action == Action.Show) {
-                        replySection.lockInterruptibly();
-                        try {
-                            if (todo.result() == Prompt.UNDEFINED) {
-                                int reply = host.reply(todo.prompt.derived);
-                                if (todo.paused.get() == false) {
-                                    todo.setResultOnce(reply);
-                                }
+                    replySection.lockInterruptibly();
+                    Prompt prompt = todo.prompt;
+                    try {
+                        if (todo.result() == Prompt.UNDEFINED) {
+                            int reply = host.reply(prompt.derived);
+                            if (todo.paused.get() == false) {
+                                todo.setResultOnce(reply);
                             }
-                        } catch (Throwable t) {
-                            todo.exception = t;
-                        } finally {
-                            // TODO find out if needed
-                            HostInputMethod.this.notifyAll();
-                            synchronized (todo.prompt) {
-                                if (todo.paused.get() == false) {
-                                    todo.prompt.notifyAll();
-                                }
-                            }
-                            replySection.unlock();
                         }
+                    } catch (Throwable t) {
+                        todo.exception = t;
+                    } finally {
+                        // TODO find out if needed
+                        HostInputMethod.this.notifyAll();
+                        prompt.lock.lockInterruptibly();
+                        try {
+                            if (todo.paused.get() == false) {
+                                prompt.click.signalAll();
+                            }
+                        } finally {
+                            prompt.lock.unlock();
+                        }
+                        replySection.unlock();
                     }
-
                 }
                 return todo.result();
             }
         };
 
         workerThread.submit(callable);
-
     }
 
     @Override
@@ -74,8 +74,11 @@ public class HostInputMethod implements InputMethod {
                 if (tryLock) {
                     break;
                 }
-                synchronized (prompt) {
-                    prompt.wait(100);
+                prompt.lock.lockInterruptibly();
+                try {
+                    prompt.click.await(100, TimeUnit.MILLISECONDS);
+                } finally {
+                    prompt.lock.unlock();
                 }
             }
         } catch (InterruptedException e) {

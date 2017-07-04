@@ -3,6 +3,7 @@ package teaselib.core.ui;
 import java.util.Stack;
 
 import teaselib.core.Host;
+import teaselib.core.ScriptInterruptedException;
 import teaselib.core.TeaseScriptBase;
 
 public class Shower {
@@ -19,84 +20,73 @@ public class Shower {
     }
 
     public String show(TeaseScriptBase script, Prompt prompt) {
-        pauseCurrent();
+        try {
+            pauseCurrent();
+        } catch (InterruptedException e1) {
+            throw new ScriptInterruptedException();
+        }
 
         try {
             return showNew(script, prompt);
+        } catch (InterruptedException e) {
+            throw new ScriptInterruptedException();
         } finally {
-            resumePrevious();
+            try {
+                resumePrevious();
+            } catch (InterruptedException e) {
+                throw new ScriptInterruptedException();
+            }
         }
     }
 
-    private String showNew(TeaseScriptBase script, Prompt prompt) {
+    private String showNew(TeaseScriptBase script, Prompt prompt) throws InterruptedException {
         stack.push(prompt);
         if (prompt.scriptFunction != null) {
             prompt.executeScriptTask(script, promptQueue.getDismissCallable(prompt));
         }
 
-        // TODO must sync script task and prompt input methods here
-        // to avoid prompt realized when script task has already
-        // finished because of an error right at the start
-
         while (true) {
             if (stack.peek() == prompt) {
                 int resultIndex = promptQueue.show(prompt);
-                if (resultIndex == Prompt.PAUSED) {
-                    // prompt.pauseUntilResumed();
-                    // TODO pause state is set to handle paused prompts - avoid
-                    // this!
-                    throw new IllegalStateException("PAUSED is not a valid return value for " + prompt);
-                } else if (resultIndex == Prompt.DISMISSED) {
-                    if (prompt.scriptTask != null) {
-                        prompt.scriptTask.join();
-                        prompt.forwardErrorsAsRuntimeException();
-                    }
-                    String choice = prompt.choice(resultIndex);
-                    return choice;
+                if (resultIndex == Prompt.DISMISSED) {
+                    prompt.dismissScriptTask();
                 } else {
                     prompt.completeScriptTask();
-                    return prompt.choice(resultIndex);
                 }
+                prompt.forwardErrorsAsRuntimeException();
+                return prompt.choice(resultIndex);
             } else {
-                prompt.pauseUntilResumed();
+                throw new IllegalStateException("Explicit prompt pausing is deprecated");
             }
         }
     }
 
-    private void pauseCurrent() {
+    private void pauseCurrent() throws InterruptedException {
         if (!stack.empty()) {
             pause(stack.peek());
         }
     }
 
-    private void pause(Prompt prompt) {
-        prompt.enterPause();
-        // TODO must submit pause to restore prompt later on
-        // but runs into IllegalMonitorException in HostInputMethod
-        promptQueue.dismiss(prompt, Prompt.PAUSED);
-        // promptPipeline.dismiss(prompt);
-
-        if (!prompt.pauseRequested()) {
-            throw new IllegalStateException("Stack element " + stack.peek() + "Not paused");
-        }
+    private void pause(Prompt prompt) throws InterruptedException {
+        promptQueue.pause(prompt);
     }
 
-    private void resumePrevious() {
+    private void resumePrevious() throws InterruptedException {
         if (!stack.isEmpty()) {
             Prompt prompt = stack.peek();
             synchronized (prompt) {
+                // TODO Possibly not necessary
                 if (promptQueue.getActive() == prompt) {
                     promptQueue.dismiss(prompt);
                 }
                 stack.pop();
+                promptQueue.clear(prompt);
             }
         } else {
             throw new IllegalStateException("Prompt stack empty");
         }
 
         if (!stack.isEmpty()) {
-            // Prompt prompt = stack.peek();
-            // prompt.resume();
             promptQueue.resume(stack.peek());
         }
     }

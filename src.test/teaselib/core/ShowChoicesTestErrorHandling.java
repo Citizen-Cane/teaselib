@@ -1,7 +1,8 @@
 package teaselib.core;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -10,6 +11,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.MethodSorters;
 import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameters;
 
 import teaselib.ScriptFunction;
 import teaselib.TeaseScript;
@@ -20,10 +22,19 @@ import teaselib.test.TestScript;
 public class ShowChoicesTestErrorHandling {
 
     static final int ITERATIONS = 1;
+    static final String THROW_RIGHT_AT_START = "throw right at start";
+    static final String THROW_AFTER_FIRST_QUESTION = "throw after first question";
 
-    @Parameterized.Parameters
-    public static List<Object[]> data() {
-        return Arrays.asList(new Object[ITERATIONS][0]);
+    final String throwWhen;
+
+    @Parameters(name = "{0}")
+    public static Iterable<String> data() {
+        List<String> variations = Arrays.asList(THROW_RIGHT_AT_START, THROW_AFTER_FIRST_QUESTION);
+        List<String> parameters = new ArrayList<String>(ITERATIONS * variations.size());
+        for (int i = 0; i < ITERATIONS; i++) {
+            parameters.addAll(variations);
+        }
+        return parameters;
     }
 
     class TestException extends RuntimeException {
@@ -32,6 +43,10 @@ public class ShowChoicesTestErrorHandling {
         public TestException(String message) {
             super(message);
         }
+    }
+
+    public ShowChoicesTestErrorHandling(String throwWhen) {
+        this.throwWhen = throwWhen;
     }
 
     @Test(expected = TestException.class)
@@ -47,8 +62,12 @@ public class ShowChoicesTestErrorHandling {
         assertEquals(TeaseScript.Timeout, script.reply(new ScriptFunction() {
             @Override
             public void run() {
+                if (throwWhen == THROW_RIGHT_AT_START)
+                    throwTestException();
                 script.say("Inside script function.");
-                throwTestException();
+                script.completeAll();
+                if (throwWhen == THROW_AFTER_FIRST_QUESTION)
+                    throwTestException();
             }
         }, "Stop"));
         script.say("Resuming main script");
@@ -69,8 +88,11 @@ public class ShowChoicesTestErrorHandling {
             @Override
             public void run() {
                 script.say("Start of script function.");
+                if (throwWhen == THROW_RIGHT_AT_START)
+                    throwTestException();
                 assertEquals("No", script.reply("Yes", "No"));
-                throwTestException();
+                if (throwWhen == THROW_AFTER_FIRST_QUESTION)
+                    throwTestException();
                 script.say("End of script function.");
             }
         }, "Stop"));
@@ -99,10 +121,13 @@ public class ShowChoicesTestErrorHandling {
                     @Override
                     public void run() {
                         script.say("Start of script function 2.");
-                        throwTestException();
+                        if (throwWhen == THROW_RIGHT_AT_START)
+                            throwTestException();
                         assertEquals("Wow Level 2", script.reply("Wow Level 2", "Oh Level 2"));
                         script.say("End of script function 2");
-
+                        script.completeAll();
+                        if (throwWhen == THROW_AFTER_FIRST_QUESTION)
+                            throwTestException();
                     }
                 }, "Stop script function 2"));
 
@@ -141,8 +166,11 @@ public class ShowChoicesTestErrorHandling {
                             @Override
                             public void run() {
                                 script.say("Start of script function 3.");
+                                if (throwWhen == THROW_RIGHT_AT_START)
+                                    throwTestException();
                                 assertEquals("No Level 3", script.reply("No Level 3", "Wow Level 3", "Oh Level 3"));
-                                throwTestException();
+                                if (throwWhen == THROW_AFTER_FIRST_QUESTION)
+                                    throwTestException();
                                 script.say("End of script function 3");
 
                             }

@@ -5,6 +5,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import teaselib.core.ScriptFutureTask;
+import teaselib.core.TeaseScriptBase;
 import teaselib.core.events.Event;
 import teaselib.core.speechrecognition.SpeechRecognition;
 import teaselib.core.speechrecognition.SpeechRecognitionImplementation;
@@ -12,6 +14,7 @@ import teaselib.core.speechrecognition.SpeechRecognitionResult;
 import teaselib.core.speechrecognition.SpeechRecognitionResult.Confidence;
 import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
 import teaselib.core.ui.PromptQueue.Todo;
+import teaselib.util.SpeechRecognitionRejectedScript;
 
 /**
  * @author Citizen-Cane
@@ -21,6 +24,9 @@ import teaselib.core.ui.PromptQueue.Todo;
 public class SpeechRecognitionInputMethod implements InputMethod {
     private static final Logger logger = LoggerFactory.getLogger(SpeechRecognitionInputMethod.class);
 
+    // TODO generate id at runtime to avoid collisions
+    static final int RECOGNITION_REJECTED = -666;
+
     private final SpeechRecognition speechRecognizer;
     private final Confidence recognitionConfidence;
 
@@ -29,7 +35,8 @@ public class SpeechRecognitionInputMethod implements InputMethod {
 
     private final AtomicReference<Todo> active = new AtomicReference<Todo>();
 
-    public SpeechRecognitionInputMethod(SpeechRecognition speechRecognizer, final Confidence recognitionConfidence) {
+    public SpeechRecognitionInputMethod(final TeaseScriptBase script, SpeechRecognition speechRecognizer,
+            final Confidence recognitionConfidence) {
         this.speechRecognizer = speechRecognizer;
         this.recognitionConfidence = recognitionConfidence;
         // Handling speech recognition rejected events:
@@ -56,42 +63,38 @@ public class SpeechRecognitionInputMethod implements InputMethod {
         recognitionRejected = new Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs>() {
             @Override
             public void run(SpeechRecognitionImplementation sender, SpeechRecognizedEventArgs eventArgs) {
-                // SpeechRecognitionRejectedScript
-                // speechRecognitionRejectedScript =
-                // script.actor.speechRecognitionRejectedScript;
-                // // run speech recognition rejected script?
-                // if (speechRecognitionRejectedScript != null) {
-                // if (choicesStackContainsSRRejectedState == true) {
-                // logger.info("The choices stack contains already another
-                // SR rejection script"
-                // + " - skipping RecognitionRejectedScript "
-                // + speechRecognitionRejectedScript.toString());
-                // } else if (scriptTask != null) {
-                // // This would work for the built-in confirmative
-                // // timeout script functions
-                // // TimeoutBehavior.InDubioMitius and maybe also for
-                // // TimeoutBehavior.TimeoutBehavior.InDubioMitius
-                // logger.info(scriptTask.getRelation().toString() + "
-                // script functions running"
-                // + " - skipping RecognitionRejectedScript "
-                // + speechRecognitionRejectedScript.toString());
-                // } else if (!teaseLib.renderQueue.hasCompletedAll()) {
-                // // must complete all to avoid parallel rendering
-                // // see {@link Message#ShowChoices}
-                // logger.info(
-                // " message rendering still in progress" + " - skipping
-                // RecognitionRejectedScript "
-                // + speechRecognitionRejectedScript.toString());
-                // } else if (speechRecognitionRejectedScript.canRun() ==
-                // false) {
-                // logger.info("RecognitionRejectedScript " +
-                // speechRecognitionRejectedScript.toString()
-                // + ".canRun() returned false - skipping");
-                // } else {
-                // // all negative conditions sorted out
-                // pause(ShowChoices.RecognitionRejected);
-                // }
-                // }
+                SpeechRecognitionRejectedScript speechRecognitionRejectedScript = script.actor.speechRecognitionRejectedScript;
+                // run speech recognition rejected script?
+                if (speechRecognitionRejectedScript != null) {
+                    Todo todo = active.get();
+                    Prompt prompt = todo.prompt;
+                    ScriptFutureTask scriptTask = prompt.scriptTask;
+                    boolean choicesStackContainsSRRejectedState = false;
+                    if (choicesStackContainsSRRejectedState == true) {
+                        logger.info("The choices stack contains already another SR rejection script"
+                                + " - skipping RecognitionRejectedScript "
+                                + speechRecognitionRejectedScript.toString());
+                    } else if (scriptTask != null) {
+                        // This would work for the built-in confirmative
+                        // timeout script functions
+                        // TimeoutBehavior.InDubioMitius and maybe also for
+                        // TimeoutBehavior.TimeoutBehavior.InDubioMitius
+                        logger.info(scriptTask.getRelation().toString() + " script functions running"
+                                + " - skipping RecognitionRejectedScript "
+                                + speechRecognitionRejectedScript.toString());
+                    } else if (!script.teaseLib.renderQueue.hasCompletedAll()) {
+                        // must complete all to avoid parallel rendering
+                        // see {@link Message#ShowChoices}
+                        logger.info(" message rendering still in progress" + " - skipping RecognitionRejectedScript "
+                                + speechRecognitionRejectedScript.toString());
+                    } else if (speechRecognitionRejectedScript.canRun() == false) {
+                        logger.info("RecognitionRejectedScript " + speechRecognitionRejectedScript.toString()
+                                + ".canRun() returned false - skipping");
+                    } else {
+                        // all negative conditions sorted out
+                        signal(RECOGNITION_REJECTED);
+                    }
+                }
             }
         };
         recognitionCompleted = new Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs>() {
@@ -101,19 +104,7 @@ public class SpeechRecognitionInputMethod implements InputMethod {
                     if (eventArgs.result.length == 1) {
                         SpeechRecognitionResult result = eventArgs.result[0];
                         if (confidenceIsHighEnough(result, recognitionConfidence)) {
-                            Prompt prompt = active.get().prompt;
-                            synchronized (prompt) {
-                                active.get().setResultOnce(result.index);
-                                SpeechRecognitionInputMethod.this.notifyAll();
-                                prompt.lock.lock();
-                                try {
-                                    if (active.get().paused.get() == false) {
-                                        prompt.click.signalAll();
-                                    }
-                                } finally {
-                                    prompt.lock.unlock();
-                                }
-                            }
+                            signal(result.index);
                         } else {
                             logger.info(
                                     "Dropping result '" + result.toString() + "' due to lack of confidence (Confidence="
@@ -129,6 +120,26 @@ public class SpeechRecognitionInputMethod implements InputMethod {
                 return result.confidence.propability >= confidence.propability;
             }
         };
+    }
+
+    private void signal(int resultIndex) {
+        Todo todo = active.get();
+        Prompt prompt = todo.prompt;
+        synchronized (prompt) {
+            todo.setResultOnce(resultIndex);
+            // TODO Needed - check with prompt queue
+            synchronized (SpeechRecognitionInputMethod.this) {
+                SpeechRecognitionInputMethod.this.notifyAll();
+            }
+            prompt.lock.lock();
+            try {
+                if (todo.paused.get() == false) {
+                    prompt.click.signalAll();
+                }
+            } finally {
+                prompt.lock.unlock();
+            }
+        }
     }
 
     @Override

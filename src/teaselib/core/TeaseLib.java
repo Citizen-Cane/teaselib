@@ -50,8 +50,8 @@ public class TeaseLib {
     private final Persistence persistence;
     public final TeaseLibLogger transcript;
     private final StateMaps stateMaps = new StateMaps(this);
-    final MediaRendererQueue renderQueue = new MediaRendererQueue();
 
+    public final MediaRendererQueue renderQueue = new MediaRendererQueue();
     final Shower shower;
     final HostInputMethod hostInputMethod;
 

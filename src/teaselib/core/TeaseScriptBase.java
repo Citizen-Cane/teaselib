@@ -386,7 +386,6 @@ public abstract class TeaseScriptBase {
             stopBackgroundRenderers();
         }
 
-        // TODO Speech recognition rejected handler
         logger.info("showChoices: " + derivedChoices.toString());
 
         List<InputMethod> inputMethods = new ArrayList<InputMethod>();
@@ -394,7 +393,7 @@ public abstract class TeaseScriptBase {
 
         SpeechRecognition sR = SpeechRecognizer.instance.get(actor.getLocale());
         if (sR.isReady()) {
-            inputMethods.add(new SpeechRecognitionInputMethod(sR, recognitionConfidence));
+            inputMethods.add(new SpeechRecognitionInputMethod(this, sR, recognitionConfidence));
         }
 
         Prompt prompt = new Prompt(new Choices(choices), new Choices(derivedChoices), scriptFunction, inputMethods);

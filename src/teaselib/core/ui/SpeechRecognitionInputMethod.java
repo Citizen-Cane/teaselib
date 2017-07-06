@@ -1,10 +1,13 @@
 package teaselib.core.ui;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import teaselib.Replay;
 import teaselib.core.ScriptFutureTask;
 import teaselib.core.TeaseScriptBase;
 import teaselib.core.events.Event;
@@ -22,11 +25,13 @@ import teaselib.util.SpeechRecognitionRejectedScript;
  */
 
 public class SpeechRecognitionInputMethod implements InputMethod {
+
     private static final Logger logger = LoggerFactory.getLogger(SpeechRecognitionInputMethod.class);
 
-    // TODO generate id at runtime to avoid collisions
-    static final int RECOGNITION_REJECTED = -666;
+    private static final int RECOGNITION_REJECTED = -666;
+    private static final String RECOGNITION_REJECTED_HNADLER_KEY = "Recognition Rejected";
 
+    private final TeaseScriptBase script;
     private final SpeechRecognition speechRecognizer;
     private final Confidence recognitionConfidence;
 
@@ -37,6 +42,7 @@ public class SpeechRecognitionInputMethod implements InputMethod {
 
     public SpeechRecognitionInputMethod(final TeaseScriptBase script, SpeechRecognition speechRecognizer,
             final Confidence recognitionConfidence) {
+        this.script = script;
         this.speechRecognizer = speechRecognizer;
         this.recognitionConfidence = recognitionConfidence;
         // Handling speech recognition rejected events:
@@ -63,26 +69,37 @@ public class SpeechRecognitionInputMethod implements InputMethod {
         recognitionRejected = new Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs>() {
             @Override
             public void run(SpeechRecognitionImplementation sender, SpeechRecognizedEventArgs eventArgs) {
+                if (runSpeechRecognitionRejectedScript(script)) {
+                    signal(RECOGNITION_REJECTED);
+                }
+            }
+
+            private boolean runSpeechRecognitionRejectedScript(final TeaseScriptBase script) {
                 SpeechRecognitionRejectedScript speechRecognitionRejectedScript = script.actor.speechRecognitionRejectedScript;
                 // run speech recognition rejected script?
                 if (speechRecognitionRejectedScript != null) {
                     Todo todo = active.get();
                     Prompt prompt = todo.prompt;
                     ScriptFutureTask scriptTask = prompt.scriptTask;
+
+                    // TODO Must search pause stack for speech recognition
+                    // rejected scripts - handlers of the same type shouldn't
+                    // stack up -> handle in Shower
                     boolean choicesStackContainsSRRejectedState = false;
+
                     if (choicesStackContainsSRRejectedState == true) {
                         logger.info("The choices stack contains already another SR rejection script"
                                 + " - skipping RecognitionRejectedScript "
                                 + speechRecognitionRejectedScript.toString());
                     } else if (scriptTask != null) {
                         // This would work for the built-in confirmative
-                        // timeout script functions
-                        // TimeoutBehavior.InDubioMitius and maybe also for
-                        // TimeoutBehavior.TimeoutBehavior.InDubioMitius
+                        // timeout script functions:
+                        // - TimeoutBehavior.InDubioMitius and maybe also for
+                        // - TimeoutBehavior.TimeoutBehavior.InDubioMitius
                         logger.info(scriptTask.getRelation().toString() + " script functions running"
                                 + " - skipping RecognitionRejectedScript "
                                 + speechRecognitionRejectedScript.toString());
-                    } else if (!script.teaseLib.renderQueue.hasCompletedAll()) {
+                    } else if (!script.teaseLib.renderQueue.hasCompletedMandatory()) {
                         // must complete all to avoid parallel rendering
                         // see {@link Message#ShowChoices}
                         logger.info(" message rendering still in progress" + " - skipping RecognitionRejectedScript "
@@ -91,10 +108,10 @@ public class SpeechRecognitionInputMethod implements InputMethod {
                         logger.info("RecognitionRejectedScript " + speechRecognitionRejectedScript.toString()
                                 + ".canRun() returned false - skipping");
                     } else {
-                        // all negative conditions sorted out
-                        signal(RECOGNITION_REJECTED);
+                        return true;
                     }
                 }
+                return false;
             }
         };
         recognitionCompleted = new Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs>() {
@@ -126,7 +143,11 @@ public class SpeechRecognitionInputMethod implements InputMethod {
         Todo todo = active.get();
         Prompt prompt = todo.prompt;
         synchronized (prompt) {
-            todo.setResultOnce(resultIndex);
+            if (resultIndex == RECOGNITION_REJECTED) {
+                todo.prompt.inputHandlerKey = RECOGNITION_REJECTED_HNADLER_KEY;
+            } else {
+                todo.setResultOnce(resultIndex);
+            }
             // TODO Needed - check with prompt queue
             synchronized (SpeechRecognitionInputMethod.this) {
                 SpeechRecognitionInputMethod.this.notifyAll();
@@ -173,6 +194,22 @@ public class SpeechRecognitionInputMethod implements InputMethod {
         speechRecognizer.events.recognitionRejected.remove(recognitionRejected);
         speechRecognizer.events.recognitionCompleted.remove(recognitionCompleted);
         speechRecognizer.stopRecognition();
+    }
+
+    @Override
+    public Map<String, Runnable> getHandlers() {
+        HashMap<String, Runnable> handlers = new HashMap<String, Runnable>();
+        handlers.put(RECOGNITION_REJECTED_HNADLER_KEY, new Runnable() {
+
+            @Override
+            public void run() {
+                script.endAll();
+                Replay beforeSpeechRecognitionRejected = script.getReplay();
+                script.actor.speechRecognitionRejectedScript.run();
+                beforeSpeechRecognitionRejected.replay(Replay.Position.End);
+            }
+        });
+        return handlers;
     }
 
 }

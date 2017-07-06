@@ -3,9 +3,7 @@ package teaselib.core;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,9 +11,9 @@ import org.slf4j.LoggerFactory;
 import teaselib.Actor;
 import teaselib.Message;
 import teaselib.Mood;
+import teaselib.Replay;
 import teaselib.ScriptFunction;
 import teaselib.core.media.MediaRenderer;
-import teaselib.core.media.MediaRenderer.Replay.Position;
 import teaselib.core.media.RenderInterTitle;
 import teaselib.core.media.RenderMessage;
 import teaselib.core.speechrecognition.SpeechRecognition;
@@ -26,7 +24,6 @@ import teaselib.core.ui.Choices;
 import teaselib.core.ui.InputMethod;
 import teaselib.core.ui.Prompt;
 import teaselib.core.ui.SpeechRecognitionInputMethod;
-import teaselib.util.SpeechRecognitionRejectedScript;
 import teaselib.util.TextVariables;
 
 public abstract class TeaseScriptBase {
@@ -48,16 +45,17 @@ public abstract class TeaseScriptBase {
 
     private List<MediaRenderer> playedRenderers = null;
 
-    public class Replay {
+    public class ReplayImpl implements Replay {
         final List<MediaRenderer> renderers;
 
-        public Replay(List<MediaRenderer> renderers) {
+        public ReplayImpl(List<MediaRenderer> renderers) {
             super();
             logger.info("Remembering renderers in replay " + this);
             this.renderers = new ArrayList<MediaRenderer>(renderers);
         }
 
-        public void replay(Position replayPosition) {
+        @Override
+        public void replay(Replay.Position replayPosition) {
             synchronized (queuedRenderers) {
                 logger.info("Replaying renderers from replay " + this);
                 // Finish current set before replaying
@@ -279,7 +277,6 @@ public abstract class TeaseScriptBase {
         }
 
         return parsedMessage;
-
     }
 
     private String getActorOrDisplayImage(String imageType, String currentMood) {
@@ -373,12 +370,6 @@ public abstract class TeaseScriptBase {
         // argument checking and text variable replacement
         final List<String> derivedChoices = expandTextVariables(choices);
 
-        Map<String, PauseHandler> pauseHandlers = new HashMap<String, PauseHandler>();
-        // The pause handler resumes displaying choices when the choice object
-        // becomes the top-element of the choices stack again
-        // pauseHandlers.put(ShowChoices.Paused, pauseHandler(showChoices));
-        pauseHandlers.put(ShowChoices.RecognitionRejected, recognitionRejectedPauseHandler());
-
         waitToStartScriptFunction(scriptFunction);
         if (scriptFunction == null) {
             stopBackgroundRenderers();
@@ -404,25 +395,8 @@ public abstract class TeaseScriptBase {
         return choice;
     }
 
-    private PauseHandler recognitionRejectedPauseHandler() {
-        return new PauseHandler() {
-            @Override
-            public boolean endRenderers() {
-                return true;
-            }
-
-            @Override
-            public void run() {
-                if (playedRenderers != null) {
-                    SpeechRecognitionRejectedScript speechRecognitionRejectedScript = actor.speechRecognitionRejectedScript;
-                    logger.info(
-                            "Running SpeechRecognitionRejectedScript " + speechRecognitionRejectedScript.toString());
-                    Replay beforeSpeechRecognitionRejected = new Replay(playedRenderers);
-                    speechRecognitionRejectedScript.run();
-                    beforeSpeechRecognitionRejected.replay(Position.End);
-                }
-            }
-        };
+    public Replay getReplay() {
+        return new ReplayImpl(playedRenderers);
     }
 
     private void waitToStartScriptFunction(final ScriptFunction scriptFunction) {

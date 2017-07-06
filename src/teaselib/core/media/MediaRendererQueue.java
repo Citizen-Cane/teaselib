@@ -7,12 +7,11 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import teaselib.core.media.MediaRenderer.Replay.Position;
+import teaselib.Replay;
 import teaselib.core.media.MediaRenderer.Threaded;
 
 public class MediaRendererQueue {
-    private static final Logger logger = LoggerFactory
-            .getLogger(MediaRendererQueue.class);
+    private static final Logger logger = LoggerFactory.getLogger(MediaRendererQueue.class);
 
     private final HashMap<Class<?>, MediaRenderer.Threaded> threadedMediaRenderers = new HashMap<Class<?>, MediaRenderer.Threaded>();
 
@@ -36,8 +35,7 @@ public class MediaRendererQueue {
             threadedMediaRenderers.clear();
             for (MediaRenderer r : renderers) {
                 if (r instanceof MediaRenderer.Threaded) {
-                    threadedMediaRenderers.put(r.getClass(),
-                            (MediaRenderer.Threaded) r);
+                    threadedMediaRenderers.put(r.getClass(), (MediaRenderer.Threaded) r);
                 }
                 try {
                     r.render();
@@ -48,20 +46,18 @@ public class MediaRendererQueue {
         }
     }
 
-    public void replay(Collection<MediaRenderer> renderers,
-            Position replayPosition) {
+    public void replay(Collection<MediaRenderer> renderers, Replay.Position replayPosition) {
         synchronized (threadedMediaRenderers) {
             completeAll();
             endAll();
             threadedMediaRenderers.clear();
             for (MediaRenderer r : renderers) {
                 // Play or replay?
-                if (r instanceof MediaRenderer.Replay) {
+                if (r instanceof ReplayableMediaRenderer) {
                     if (r instanceof MediaRenderer.Threaded) {
-                        threadedMediaRenderers.put(r.getClass(),
-                                (MediaRenderer.Threaded) r);
+                        threadedMediaRenderers.put(r.getClass(), (MediaRenderer.Threaded) r);
                     }
-                    ((MediaRenderer.Replay) r).replay(replayPosition);
+                    ((ReplayableMediaRenderer) r).replay(replayPosition);
                 }
             }
         }
@@ -93,8 +89,7 @@ public class MediaRendererQueue {
                 renderer.completeMandatory();
             }
         } else {
-            logger.debug(
-                    "Threaded Renderers completeMandatories : queue empty");
+            logger.debug("Threaded Renderers completeMandatories : queue empty");
         }
     }
 

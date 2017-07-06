@@ -35,6 +35,11 @@ public class PromptQueue {
         public synchronized void setResultOnce(int value) {
             if (result == Prompt.UNDEFINED) {
                 result = value;
+            } else {
+                // TODO throws so the logic is not clean yet
+                // - however all tests pass
+                // throw new IllegalStateException(
+                // "Prompt result can be set only once");
             }
         }
 
@@ -98,6 +103,8 @@ public class PromptQueue {
             if (todo.exception != null) {
                 if (todo.exception instanceof RuntimeException) {
                     throw (RuntimeException) todo.exception;
+                } else if (todo.exception instanceof Error) {
+                    throw (Error) todo.exception;
                 } else {
                     throw new RuntimeException(todo.exception);
                 }
@@ -121,12 +128,13 @@ public class PromptQueue {
                 }
             }
 
-            if (active.get() != null && prompt == active.get().prompt) {
+            Todo activeTodo = active.get();
+            if (activeTodo != null && prompt == activeTodo.prompt) {
                 throw new IllegalStateException("Prompt " + prompt + " already showing");
             }
 
-            if (active.get() != null) {
-                dismiss(active.get().prompt);
+            if (activeTodo != null) {
+                dismiss(activeTodo.prompt);
             }
 
             Todo todo = todos.get(prompt);
@@ -161,7 +169,7 @@ public class PromptQueue {
         prompt.lock.lockInterruptibly();
         try {
             if (!todos.containsKey(prompt)) {
-                return false;
+                throw new IllegalStateException("Only realized prompts can be dismissed");
             }
 
             Todo todo = todos.get(prompt);

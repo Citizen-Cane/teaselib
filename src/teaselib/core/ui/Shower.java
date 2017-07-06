@@ -48,16 +48,23 @@ public class Shower {
         while (true) {
             if (stack.peek() == prompt) {
                 int resultIndex = promptQueue.show(prompt);
+                // TODO replace index with choice -> pause handlers can be
+                // called via unique string identifiers
                 if (resultIndex == Prompt.DISMISSED) {
                     prompt.dismissScriptTask();
                     prompt.forwardErrorsAsRuntimeException();
                     return prompt.choice(resultIndex);
-                } else if (resultIndex == SpeechRecognitionInputMethod.RECOGNITION_REJECTED) {
-                    // TODO query if registered instead of hard-coding constants
-                    // here
-                    executeHandler(script, resultIndex);
-                    // TODO replay missing
-                    promptQueue.clear(prompt);
+                } else if (prompt.inputHandlerKey != Prompt.NONE) {
+                    synchronized (prompt) {
+                        try {
+                            if (notExecutedYet(prompt.inputHandlerKey)) {
+                                prompt.executeInputMethodHandler();
+                            }
+                            promptQueue.clear(prompt);
+                        } finally {
+                            prompt.inputHandlerKey = Prompt.NONE;
+                        }
+                    }
                 } else {
                     prompt.completeScriptTask();
                     prompt.forwardErrorsAsRuntimeException();
@@ -69,12 +76,14 @@ public class Shower {
         }
     }
 
-    private static void executeHandler(TeaseScriptBase script, int id) {
-        if (id == SpeechRecognitionInputMethod.RECOGNITION_REJECTED) {
-            script.actor.speechRecognitionRejectedScript.run();
-        } else {
-            throw new IllegalArgumentException("No handler for id " + id);
+    private boolean notExecutedYet(String inputHandlerKey) {
+        Prompt current = stack.peek();
+        for (Prompt prompt : stack) {
+            if (prompt != current && prompt.inputHandlerKey == inputHandlerKey) {
+                return true;
+            }
         }
+        return true;
     }
 
     private void pauseCurrent() throws InterruptedException {

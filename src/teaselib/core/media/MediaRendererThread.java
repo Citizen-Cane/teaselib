@@ -11,6 +11,7 @@ import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import teaselib.Replay;
 import teaselib.core.ScriptInterruptedException;
 import teaselib.core.TeaseLib;
 import teaselib.core.concurrency.NamedExecutorService;
@@ -19,19 +20,16 @@ import teaselib.core.concurrency.NamedExecutorService;
  * @author someone
  *
  */
-public abstract class MediaRendererThread
-        implements MediaRenderer.Threaded, MediaRenderer.Replay {
-    private static final Logger logger = LoggerFactory
-            .getLogger(MediaRendererThread.class);
+public abstract class MediaRendererThread implements MediaRenderer.Threaded, ReplayableMediaRenderer {
+    private static final Logger logger = LoggerFactory.getLogger(MediaRendererThread.class);
     protected final TeaseLib teaseLib;
 
     private final static String RenderTaskBaseName = "RenderTask ";
-    private final static ExecutorService Executor = NamedExecutorService
-            .newFixedThreadPool(Integer.MAX_VALUE, RenderTaskBaseName, 1,
-                    TimeUnit.HOURS);
+    private final static ExecutorService Executor = NamedExecutorService.newFixedThreadPool(Integer.MAX_VALUE,
+            RenderTaskBaseName, 1, TimeUnit.HOURS);
 
     protected Future<?> task = null;
-    protected Position replayPosition = Position.FromStart;
+    protected Replay.Position replayPosition = Replay.Position.FromStart;
 
     protected CountDownLatch completedStart = new CountDownLatch(1);
     protected CountDownLatch completedMandatory = new CountDownLatch(1);
@@ -94,15 +92,14 @@ public abstract class MediaRendererThread
     /**
      * The render method executed by the render thread
      */
-    protected abstract void renderMedia()
-            throws InterruptedException, IOException;
+    protected abstract void renderMedia() throws InterruptedException, IOException;
 
     @Override
-    public void replay(Position replayPosition) {
+    public void replay(Replay.Position replayPosition) {
         this.replayPosition = replayPosition;
-        if (replayPosition == Position.FromStart) {
+        if (replayPosition == Replay.Position.FromStart) {
             // Skip
-        } else if (replayPosition == Position.FromStart) {
+        } else if (replayPosition == Replay.Position.FromStart) {
             completedStart = new CountDownLatch(1);
         } else {
             completedStart = new CountDownLatch(1);
@@ -126,8 +123,7 @@ public abstract class MediaRendererThread
 
     protected void allCompleted() {
         completedAll.countDown();
-        logger.debug(getClass().getSimpleName() + " completed all after "
-                + String.format("%.2f", getElapsedSeconds()));
+        logger.debug(getClass().getSimpleName() + " completed all after " + String.format("%.2f", getElapsedSeconds()));
     }
 
     @Override
@@ -188,8 +184,7 @@ public abstract class MediaRendererThread
         Future<?> f = task;
         if (!f.isCancelled()) {
             f.cancel(true);
-            logger.debug(getClass().getSimpleName() + " cancelled after "
-                    + String.format("%.2f", getElapsedSeconds()));
+            logger.debug(getClass().getSimpleName() + " cancelled after " + String.format("%.2f", getElapsedSeconds()));
         }
     }
 
@@ -205,8 +200,7 @@ public abstract class MediaRendererThread
         } catch (ExecutionException e) {
             logger.error(e.getMessage(), e);
         }
-        logger.debug(getClass().getSimpleName() + " ended after "
-                + String.format("%.2f", getElapsedSeconds()));
+        logger.debug(getClass().getSimpleName() + " ended after " + String.format("%.2f", getElapsedSeconds()));
     }
 
     private double getElapsedSeconds() {

@@ -4,6 +4,7 @@
 package teaselib.core.ui;
 
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
@@ -16,6 +17,8 @@ public class Prompt {
     static final int DISMISSED = -1;
     static final int UNDEFINED = Integer.MIN_VALUE;
 
+    static final String NONE = "None";
+
     final Choices choices;
     final Choices derived;
     final ScriptFunction scriptFunction;
@@ -26,13 +29,15 @@ public class Prompt {
     final ReentrantLock lock;
     final Condition click;
 
+    String inputHandlerKey = NONE;
+
     public Prompt(Choices choices, Choices derived, ScriptFunction scriptFunction, List<InputMethod> inputMethods) {
         super();
         this.choices = choices;
         this.derived = derived;
         this.scriptFunction = scriptFunction;
-        this.inputMethods = inputMethods;
 
+        this.inputMethods = inputMethods;
         this.lock = new ReentrantLock();
         this.click = lock.newCondition();
     }
@@ -78,6 +83,18 @@ public class Prompt {
             }
         }
         return choice;
+    }
+
+    void executeInputMethodHandler() {
+        String key = inputHandlerKey;
+        for (InputMethod inputMethod : this.inputMethods) {
+            Map<String, Runnable> handlers = inputMethod.getHandlers();
+            if (handlers.containsKey(key)) {
+                handlers.get(key).run();
+                return;
+            }
+        }
+        throw new IllegalArgumentException("No handler for " + key);
     }
 
     @Override

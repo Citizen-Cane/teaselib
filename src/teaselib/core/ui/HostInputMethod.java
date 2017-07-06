@@ -1,5 +1,7 @@
 package teaselib.core.ui;
 
+import java.util.Collections;
+import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -39,6 +41,9 @@ public class HostInputMethod implements InputMethod {
                             if (todo.paused.get() == false) {
                                 todo.setResultOnce(reply);
                             }
+                        } else {
+                            throw new IllegalStateException(
+                                    "Prompt " + prompt + ": result already set to " + todo.result());
                         }
                     } catch (Throwable t) {
                         todo.exception = t;
@@ -93,6 +98,11 @@ public class HostInputMethod implements InputMethod {
             }
         }
         return dismissChoices;
+    }
+
+    @Override
+    public Map<String, Runnable> getHandlers() {
+        return Collections.EMPTY_MAP;
     }
 
 }

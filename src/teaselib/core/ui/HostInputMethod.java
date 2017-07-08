@@ -9,7 +9,6 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import teaselib.core.Host;
 import teaselib.core.concurrency.NamedExecutorService;
-import teaselib.core.ui.PromptQueue.Todo;
 
 /**
  * @author Citizen-Cane
@@ -28,31 +27,28 @@ public class HostInputMethod implements InputMethod {
     }
 
     @Override
-    public void show(final Todo todo) {
+    public void show(final Prompt prompt) {
         Callable<Integer> callable = new Callable<Integer>() {
             @Override
             public Integer call() throws Exception {
                 synchronized (HostInputMethod.this) {
                     replySection.lockInterruptibly();
-                    Prompt prompt = todo.prompt;
                     try {
-                        if (todo.result() == Prompt.UNDEFINED) {
+                        if (prompt.result() == Prompt.UNDEFINED) {
                             int reply = host.reply(prompt.derived);
-                            if (todo.paused.get() == false) {
-                                todo.setResultOnce(reply);
+                            if (prompt.paused.get() == false) {
+                                prompt.setResultOnce(reply);
                             }
                         } else {
                             throw new IllegalStateException(
-                                    "Prompt " + prompt + ": result already set to " + todo.result());
+                                    "Prompt " + prompt + ": result already set to " + prompt.result());
                         }
                     } catch (Throwable t) {
-                        todo.exception = t;
+                        prompt.exception = t;
                     } finally {
-                        // TODO find out if needed
-                        HostInputMethod.this.notifyAll();
                         prompt.lock.lockInterruptibly();
                         try {
-                            if (todo.paused.get() == false) {
+                            if (prompt.paused.get() == false) {
                                 prompt.click.signalAll();
                             }
                         } finally {
@@ -61,7 +57,7 @@ public class HostInputMethod implements InputMethod {
                         replySection.unlock();
                     }
                 }
-                return todo.result();
+                return prompt.result();
             }
         };
 

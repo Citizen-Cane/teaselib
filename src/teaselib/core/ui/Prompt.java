@@ -6,6 +6,7 @@ package teaselib.core.ui;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -29,6 +30,11 @@ public class Prompt {
     final ReentrantLock lock;
     final Condition click;
 
+    final AtomicBoolean paused = new AtomicBoolean(false);
+
+    Throwable exception;
+    private int result;
+
     String inputHandlerKey = NONE;
 
     public Prompt(Choices choices, Choices derived, ScriptFunction scriptFunction, List<InputMethod> inputMethods) {
@@ -40,6 +46,9 @@ public class Prompt {
         this.inputMethods = inputMethods;
         this.lock = new ReentrantLock();
         this.click = lock.newCondition();
+
+        this.exception = null;
+        this.result = Prompt.UNDEFINED;
     }
 
     void executeScriptTask(TeaseScriptBase script, final Callable<Boolean> dismiss) {
@@ -97,9 +106,36 @@ public class Prompt {
         throw new IllegalArgumentException("No handler for " + key);
     }
 
+    public synchronized int result() {
+        return result;
+    }
+
+    public synchronized void setResultOnce(int value) {
+        if (result == Prompt.UNDEFINED) {
+            result = value;
+        } else {
+            // TODO throws so the logic is not clean yet
+            // - however all tests pass
+            // throw new IllegalStateException(
+            // "Prompt result can be set only once");
+        }
+    }
+
     @Override
     public String toString() {
         return (scriptTask != null ? scriptTask.getRelation() + " " : " ") + "" + choices.toString() + " "
-                + (lock.hasWaiters(click) ? "waiting" : "active");
+                + (lock.hasWaiters(click) ? "waiting" : "active") + (paused.get() ? " paused" : "") + " result="
+                + toString(result);
     }
+
+    private String toString(int result) {
+        if (result == Prompt.UNDEFINED) {
+            return "UNDEFINED";
+        } else if (result == Prompt.DISMISSED) {
+            return "DISMISSED";
+        } else {
+            return choice(result);
+        }
+    }
+
 }

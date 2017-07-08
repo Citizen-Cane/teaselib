@@ -16,7 +16,6 @@ import teaselib.core.speechrecognition.SpeechRecognitionImplementation;
 import teaselib.core.speechrecognition.SpeechRecognitionResult;
 import teaselib.core.speechrecognition.SpeechRecognitionResult.Confidence;
 import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
-import teaselib.core.ui.PromptQueue.Todo;
 import teaselib.util.SpeechRecognitionRejectedScript;
 
 /**
@@ -38,7 +37,7 @@ public class SpeechRecognitionInputMethod implements InputMethod {
     private final Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs> recognitionRejected;
     private Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs> recognitionCompleted;
 
-    private final AtomicReference<Todo> active = new AtomicReference<Todo>();
+    private final AtomicReference<Prompt> active = new AtomicReference<Prompt>();
 
     public SpeechRecognitionInputMethod(final TeaseScriptBase script, SpeechRecognition speechRecognizer,
             final Confidence recognitionConfidence) {
@@ -69,8 +68,10 @@ public class SpeechRecognitionInputMethod implements InputMethod {
         recognitionRejected = new Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs>() {
             @Override
             public void run(SpeechRecognitionImplementation sender, SpeechRecognizedEventArgs eventArgs) {
-                if (runSpeechRecognitionRejectedScript(script)) {
-                    signal(RECOGNITION_REJECTED);
+                synchronized (SpeechRecognitionInputMethod.this) {
+                    if (runSpeechRecognitionRejectedScript(script)) {
+                        signal(RECOGNITION_REJECTED);
+                    }
                 }
             }
 
@@ -78,8 +79,7 @@ public class SpeechRecognitionInputMethod implements InputMethod {
                 SpeechRecognitionRejectedScript speechRecognitionRejectedScript = script.actor.speechRecognitionRejectedScript;
                 // run speech recognition rejected script?
                 if (speechRecognitionRejectedScript != null) {
-                    Todo todo = active.get();
-                    Prompt prompt = todo.prompt;
+                    Prompt prompt = active.get();
                     ScriptFutureTask scriptTask = prompt.scriptTask;
 
                     // TODO Must search pause stack for speech recognition
@@ -140,53 +140,50 @@ public class SpeechRecognitionInputMethod implements InputMethod {
     }
 
     private void signal(int resultIndex) {
-        Todo todo = active.get();
-        Prompt prompt = todo.prompt;
-        synchronized (prompt) {
-            if (resultIndex == RECOGNITION_REJECTED) {
-                todo.prompt.inputHandlerKey = RECOGNITION_REJECTED_HNADLER_KEY;
-            } else {
-                todo.setResultOnce(resultIndex);
+        Prompt prompt = active.get();
+        prompt.lock.lock();
+
+        if (resultIndex == RECOGNITION_REJECTED) {
+            prompt.inputHandlerKey = RECOGNITION_REJECTED_HNADLER_KEY;
+        } else {
+            prompt.setResultOnce(resultIndex);
+        }
+        try {
+            if (prompt.paused.get() == false) {
+                prompt.click.signalAll();
             }
-            // TODO Needed - check with prompt queue
-            synchronized (SpeechRecognitionInputMethod.this) {
-                SpeechRecognitionInputMethod.this.notifyAll();
-            }
-            prompt.lock.lock();
-            try {
-                if (todo.paused.get() == false) {
-                    prompt.click.signalAll();
-                }
-            } finally {
-                prompt.lock.unlock();
-            }
+        } finally {
+            prompt.lock.unlock();
         }
     }
 
     @Override
-    public void show(final Todo todo) {
-        active.set(todo);
+    public synchronized void show(Prompt prompt) {
+        active.set(prompt);
 
         enableSpeechRecognition();
     }
 
     @Override
-    public boolean dismiss(Prompt prompt) throws InterruptedException {
-        Todo todo = active.get();
-        if (todo != null) {
-            boolean dismissed = todo.result() == Prompt.UNDEFINED;
+    public synchronized boolean dismiss(Prompt prompt) throws InterruptedException {
+        Prompt activePrompt = active.get();
+
+        if (activePrompt == null) {
+            return false;
+        } else if (activePrompt != prompt) {
+            throw new IllegalStateException("Trying to dismiss wrong prompt");
+        } else {
+            boolean dismissed = prompt.result() == Prompt.UNDEFINED;
             disableSpeechRecognition();
             active.set(null);
             return dismissed;
-        } else {
-            return false;
         }
     }
 
     private void enableSpeechRecognition() {
         speechRecognizer.events.recognitionRejected.add(recognitionRejected);
         speechRecognizer.events.recognitionCompleted.add(recognitionCompleted);
-        speechRecognizer.startRecognition(active.get().prompt.derived, recognitionConfidence);
+        speechRecognizer.startRecognition(active.get().derived, recognitionConfidence);
     }
 
     private void disableSpeechRecognition() {

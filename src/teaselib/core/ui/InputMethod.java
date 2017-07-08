@@ -1,19 +1,14 @@
-/**
- * 
- */
 package teaselib.core.ui;
 
 import java.util.Map;
 
-import teaselib.core.ui.PromptQueue.Todo;
-
 /**
- * @author someone
+ * @author Citizen-Cane
  *
  */
 public interface InputMethod {
 
-    void show(Todo todo);
+    void show(Prompt prompt);
 
     boolean dismiss(Prompt prompt) throws InterruptedException;
 

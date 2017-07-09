@@ -362,8 +362,7 @@ public class SexScriptsHost implements Host {
         return results;
     }
 
-    @Override
-    public List<Delegate> getClickableChoices(List<String> choices) {
+    private List<Delegate> getClickableChoices(List<String> choices) {
         try {
             // Get buttons
             Class<?> mainFrameClass = mainFrame.getClass();

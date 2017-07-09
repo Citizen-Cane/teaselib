@@ -77,8 +77,7 @@ public class DummyHost implements Host {
     final ReentrantLock replySection = new ReentrantLock(true);
     final Condition click = replySection.newCondition();
 
-    @Override
-    public List<Delegate> getClickableChoices(List<String> choices) {
+    private List<Delegate> getClickableChoices(List<String> choices) {
         List<Delegate> clickables = new ArrayList<Delegate>(choices.size());
         for (int i = 0; i < choices.size(); i++) {
             final int j = i;

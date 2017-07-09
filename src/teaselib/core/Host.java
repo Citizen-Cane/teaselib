@@ -3,8 +3,6 @@ package teaselib.core;
 import java.io.IOException;
 import java.util.List;
 
-import teaselib.core.events.Delegate;
-
 /**
  * Render target decouples the lib from the actual implementaiton of the host.
  * The interface is closely modeled to the SexSCripts ISCript interface See
@@ -23,8 +21,7 @@ public interface Host {
      * @param path
      *            The resource path to the wav, mp3 or ogg sound.
      */
-    void playSound(ResourceLoader resources, String path)
-            throws IOException, InterruptedException;
+    void playSound(ResourceLoader resources, String path) throws IOException, InterruptedException;
 
     /**
      * Play the sound denoted by the resource path. Return immediately.
@@ -35,8 +32,7 @@ public interface Host {
      *            The resource path to the wav, mp3 or ogg sound.
      * @return An opaque handle to the sound. Can be used to stop the sound.
      */
-    Object playBackgroundSound(ResourceLoader resources, String path)
-            throws IOException;
+    Object playBackgroundSound(ResourceLoader resources, String path) throws IOException;
 
     /**
      * Stop the sound denoted by the resource path.
@@ -70,17 +66,7 @@ public interface Host {
      * @param values
      * @return
      */
-    List<Boolean> showCheckboxes(String caption, List<String> choices,
-            List<Boolean> values, boolean allowCancel);
-
-    /**
-     * Get a list of delegates, one for each user interaction. The index is the
-     * same as for showInteraction.
-     * 
-     * @return List of delegates, run the appropriate delegate to perform the
-     *         user interaction of the corresponding user interface element.
-     */
-    List<Delegate> getClickableChoices(List<String> choices);
+    List<Boolean> showCheckboxes(String caption, List<String> choices, List<Boolean> values, boolean allowCancel);
 
     /**
      * Removes the current set of buttons and causes reply() to return

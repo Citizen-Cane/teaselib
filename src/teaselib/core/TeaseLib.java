@@ -27,6 +27,7 @@ import teaselib.core.media.MediaRendererQueue;
 import teaselib.core.texttospeech.Voice;
 import teaselib.core.ui.HostInputMethod;
 import teaselib.core.ui.Shower;
+import teaselib.core.util.ObjectMap;
 import teaselib.core.util.PropertyNameMapping;
 import teaselib.core.util.QualifiedItem;
 import teaselib.core.util.ReflectionUtils;
@@ -50,6 +51,8 @@ public class TeaseLib {
     private final Persistence persistence;
     public final TeaseLibLogger transcript;
     private final StateMaps stateMaps = new StateMaps(this);
+
+    public final ObjectMap globals = new ObjectMap();
 
     public final MediaRendererQueue renderQueue = new MediaRendererQueue();
     final Shower shower;

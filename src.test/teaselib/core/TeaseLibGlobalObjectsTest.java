@@ -9,6 +9,9 @@ import java.util.Map;
 
 import org.junit.Test;
 
+import teaselib.hosts.DummyHost;
+import teaselib.hosts.DummyPersistence;
+
 public class TeaseLibGlobalObjectsTest {
 
     private final Map<Object, Object> globals = new HashMap<Object, Object>();
@@ -42,6 +45,21 @@ public class TeaseLibGlobalObjectsTest {
         assertEquals(value1, retrieved1);
 
         Collection<?> retrieved2 = getGlobal(TestObject.Object2);
+        assertEquals(0, retrieved2.size());
+        assertEquals(value2, retrieved2);
+    }
+
+    @Test
+    public void testTeaseLibGLobals() {
+        TeaseLib teaseLib = new TeaseLib(new DummyHost(), new DummyPersistence());
+
+        teaseLib.globals.store(TestObject.Object1, value1);
+        teaseLib.globals.store(TestObject.Object2, value2);
+
+        String retrieved1 = teaseLib.globals.get(TestObject.Object1);
+        assertEquals(value1, retrieved1);
+
+        Collection<?> retrieved2 = teaseLib.globals.get(TestObject.Object2);
         assertEquals(0, retrieved2.size());
         assertEquals(value2, retrieved2);
     }

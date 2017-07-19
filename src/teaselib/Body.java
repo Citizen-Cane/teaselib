@@ -27,12 +27,11 @@ public enum Body {
     OnClit,
     OnLabia,
 
-    CanCrawl,
+    CantCrawl,
     CantKneel,
     CantJerkOff,
     CantProne,
-    CantSee,
     CantSitOnChair,
-    CantStand,
+    CantStand, // TODO if this means UpRight, then there's no difference to CantProne
     CantTypeOrUseMouse,
 }

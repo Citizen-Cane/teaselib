@@ -120,7 +120,7 @@ public abstract class AbstractUserItems implements UserItems {
         } else if (item.equals(Toys.Ball_Stretcher)) {
             return new Body[] { Body.OnBalls };
         } else if (item.equals(Toys.Blindfold)) {
-            return new Body[] { Body.CantSee };
+            return new Body[] { Body.Blindfolded };
         } else if (item.equals(Toys.Cockring)) {
             return new Body[] { Body.AroundCockBase };
         } else if (item.equals(Toys.Enema_Bulb)) {
@@ -128,7 +128,7 @@ public abstract class AbstractUserItems implements UserItems {
         } else if (item.equals(Toys.Enema_Kit)) {
             return new Body[] { Body.InButt };
         } else if (item.equals(Toys.Humbler)) {
-            return new Body[] { Body.OnBalls, Body.CantStand };
+            return new Body[] { Body.OnBalls, Body.CantStand, Body.CantSitOnChair };
         } else if (item.equals(Toys.Pussy_Clamps)) {
             return new Body[] { Body.OnLabia };
         } else if (item.equals(Toys.Spreader_Bar)) {

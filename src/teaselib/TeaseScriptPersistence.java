@@ -6,7 +6,6 @@ package teaselib;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-import teaselib.State.Options;
 import teaselib.State.Persistence;
 import teaselib.core.ResourceLoader;
 import teaselib.core.StateMaps;
@@ -140,9 +139,8 @@ public abstract class TeaseScriptPersistence extends TeaseScriptBase {
 
         }
 
-        @Override
         public Set<Object> peers() {
-            return state.peers();
+            return ((StateMaps.StateImpl) state).peers();
         }
 
         @Override

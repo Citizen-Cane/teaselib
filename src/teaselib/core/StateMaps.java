@@ -270,7 +270,6 @@ public class StateMaps {
             over(TEMPORARY, TimeUnit.SECONDS);
         }
 
-        @Override
         public Set<Object> peers() {
             return Collections.unmodifiableSet(peers);
         }

@@ -1,6 +1,5 @@
 package teaselib;
 
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 public interface State {
@@ -8,8 +7,6 @@ public interface State {
     public static final long TEMPORARY = 0;
 
     public static final long INDEFINITELY = Long.MAX_VALUE;
-
-    Set<Object> peers();
 
     State.Options apply();
 

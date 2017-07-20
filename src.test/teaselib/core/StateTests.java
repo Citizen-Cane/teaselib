@@ -1,8 +1,6 @@
 package teaselib.core;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import java.util.concurrent.TimeUnit;
 
@@ -12,6 +10,7 @@ import teaselib.Body;
 import teaselib.Household;
 import teaselib.Material;
 import teaselib.State;
+import teaselib.TeaseScriptPersistence;
 import teaselib.Toys;
 import teaselib.test.TestScript;
 import teaselib.util.Item;
@@ -74,7 +73,7 @@ public class StateTests {
         assertTrue(script.persistence.storage.containsKey("Body.OnNipples.state.duration"));
         assertTrue(script.persistence.storage.containsKey("Body.OnNipples.state.attributes"));
 
-        assertEquals(0, script.state(script.namespace).peers().size());
+        assertEquals(0, ((TeaseScriptPersistence.StateProxy) script.state(script.namespace)).peers().size());
 
         somethingOnNipples.remove();
         assertEquals(0, script.persistence.storage.size());

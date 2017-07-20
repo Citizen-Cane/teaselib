@@ -3,7 +3,7 @@ package teaselib.util;
 import teaselib.Duration;
 import teaselib.State;
 
-public interface Item {
+public interface Item extends State {
 
     public static final Item NotAvailable = new Item() {
 
@@ -80,21 +80,4 @@ public interface Item {
     String displayName();
 
     boolean canApply();
-
-    State.Options apply();
-
-    <S extends Object> State.Options applyTo(S... items);
-
-    boolean is(Object... attributes);
-
-    boolean applied();
-
-    boolean expired();
-
-    Duration duration();
-
-    State remove();
-
-    State remove(Object peer);
-
 }

@@ -9,9 +9,11 @@ public interface State {
 
     public static final long INDEFINITELY = Long.MAX_VALUE;
 
-    <S extends Object> State.Options apply(S... items);
-
     Set<Object> peers();
+
+    // TODO add apply() in order to make item and state more similar
+    // TODO rename to applyTo()
+    <S extends Object> State.Options apply(S... items);
 
     boolean is(Object... objects);
 

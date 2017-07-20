@@ -74,19 +74,20 @@ public interface Item {
 
     String displayName();
 
-    boolean is(Object... attributes);
-
-    <S extends Object> State.Options to(S... items);
+    boolean canApply();
 
     State.Options apply();
 
-    State remove();
+    // TODO rename to applyTo()
+    <S extends Object> State.Options to(S... items);
 
-    boolean canApply();
+    boolean is(Object... attributes);
 
     boolean applied();
 
     boolean expired();
 
     Duration duration();
+
+    State remove();
 }

@@ -139,6 +139,8 @@ public class ItemImpl implements Item, StateMaps.Attributes {
 
     @Override
     public State.Options apply() {
+        State state = teaseLib.state(domain, item);
+        state.apply(peers);
         return to();
     }
 
@@ -150,8 +152,7 @@ public class ItemImpl implements Item, StateMaps.Attributes {
         State state = teaseLib.state(domain, item);
         Object[] array = new Object[attributes.size()];
         ((StateMaps.Attributes) state).applyAttributes(attributes.toArray(array));
-        state.apply(items);
-        return state.apply(peers);
+        return state.apply(items);
     }
 
     @Override

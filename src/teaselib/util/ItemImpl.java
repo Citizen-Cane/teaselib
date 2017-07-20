@@ -140,24 +140,29 @@ public class ItemImpl implements Item, StateMaps.Attributes {
     @Override
     public State.Options apply() {
         State state = teaseLib.state(domain, item);
-        state.apply(peers);
-        return to();
+        state.applyTo(peers);
+        return applyTo();
     }
 
     @Override
-    public <S extends Object> State.Options to(S... items) {
+    public <S extends Object> State.Options applyTo(S... items) {
         if (items.length == 0 && peers.length == 0) {
             throw new IllegalArgumentException("Item without default peers must be applied with explicit peer list");
         }
         State state = teaseLib.state(domain, item);
         Object[] array = new Object[attributes.size()];
         ((StateMaps.Attributes) state).applyAttributes(attributes.toArray(array));
-        return state.apply(items);
+        return state.applyTo(items);
     }
 
     @Override
     public State remove() {
         return teaseLib.state(domain, item).remove();
+    }
+
+    @Override
+    public State remove(Object peer) {
+        return teaseLib.state(domain, item).remove(peer);
     }
 
     @Override

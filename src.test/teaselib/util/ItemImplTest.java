@@ -93,66 +93,66 @@ public class ItemImplTest {
     }
 
     @Test
-    public void testToAutomaticDefaultsAndAttributes() throws Exception {
-        TeaseScript script = TestScript.getOne();
-
-        assertFalse(script.state(Toys.Buttplug).applied());
-        assertFalse(script.state(Toys.Buttplug).is(Toys.Anal.Beads));
-        assertFalse(script.state(Body.InButt).is(Toys.Anal.Beads));
-        assertFalse(script.state(Body.InButt).is(Features.Anal));
-
-        script.items(Toys.Buttplug).get(Toys.Anal.Beads).apply();
-
-        assertTrue(script.state(Toys.Buttplug).applied());
-        assertTrue(script.state(Toys.Buttplug).is(Toys.Anal.Beads));
-        assertTrue(script.state(Toys.Buttplug).is(Features.Anal));
-
-        assertTrue(script.state(Body.InButt).applied());
-        assertTrue(script.state(Body.InButt).is(Toys.Buttplug));
-
-        assertTrue(script.state(Body.InButt).is(Toys.Anal.Beads));
-        assertTrue(script.state(Body.InButt).is(Features.Anal));
-
-        script.item(Toys.Buttplug).remove();
-
-        assertFalse(script.state(Toys.Buttplug).is(Toys.Anal.Beads));
-        assertFalse(script.state(Toys.Buttplug).is(Features.Anal));
-        assertFalse(script.state(Body.InButt).is(Toys.Anal.Beads));
-        assertFalse(script.state(Body.InButt).is(Features.Anal));
-
-        // This is how to comment a certain item in a certain body location
-        if (script.state(Body.InButt).is(Toys.Buttplug)) {
-            if (script.item(Toys.Buttplug).is(Toys.Anal.Beads)) {
-                say("You're wearing anal beads", script.state(Toys.Buttplug).is(Toys.Anal.Beads));
+        public void testApplyToAutomaticDefaultsAndAttributes() throws Exception {
+            TeaseScript script = TestScript.getOne();
+    
+            assertFalse(script.state(Toys.Buttplug).applied());
+            assertFalse(script.state(Toys.Buttplug).is(Toys.Anal.Beads));
+            assertFalse(script.state(Body.InButt).is(Toys.Anal.Beads));
+            assertFalse(script.state(Body.InButt).is(Features.Anal));
+    
+            script.items(Toys.Buttplug).get(Toys.Anal.Beads).apply();
+    
+            assertTrue(script.state(Toys.Buttplug).applied());
+            assertTrue(script.state(Toys.Buttplug).is(Toys.Anal.Beads));
+            assertTrue(script.state(Toys.Buttplug).is(Features.Anal));
+    
+            assertTrue(script.state(Body.InButt).applied());
+            assertTrue(script.state(Body.InButt).is(Toys.Buttplug));
+    
+            assertTrue(script.state(Body.InButt).is(Toys.Anal.Beads));
+            assertTrue(script.state(Body.InButt).is(Features.Anal));
+    
+            script.item(Toys.Buttplug).remove();
+    
+            assertFalse(script.state(Toys.Buttplug).is(Toys.Anal.Beads));
+            assertFalse(script.state(Toys.Buttplug).is(Features.Anal));
+            assertFalse(script.state(Body.InButt).is(Toys.Anal.Beads));
+            assertFalse(script.state(Body.InButt).is(Features.Anal));
+    
+            // This is how to comment a certain item in a certain body location
+            if (script.state(Body.InButt).is(Toys.Buttplug)) {
+                if (script.item(Toys.Buttplug).is(Toys.Anal.Beads)) {
+                    say("You're wearing anal beads", script.state(Toys.Buttplug).is(Toys.Anal.Beads));
+                }
             }
         }
-    }
 
     @Test
-    public void testToAppliesDefaultsAndAttributesPlusCustomPeers() {
-        TeaseScript script = TestScript.getOne();
-
-        assertFalse(script.state(Toys.Wrist_Restraints).applied());
-
-        // Wrists are not only tied, but also tied behind back
-        script.items(Toys.Wrist_Restraints).get(Material.Leather).to(Body.WristsTiedBehindBack);
-
-        assertTrue(script.state(Toys.Wrist_Restraints).applied());
-        assertTrue(script.state(Toys.Wrist_Restraints).is(Material.Leather));
-
-        assertFalse(script.state(Body.WristsTied).applied());
-        assertTrue(script.state(Body.WristsTiedBehindBack).applied());
-
-        assertFalse(script.state(Body.WristsTied).is(Toys.Wrist_Restraints));
-        assertTrue(script.state(Body.WristsTiedBehindBack).is(Toys.Wrist_Restraints));
-
-        // This is how to comment a certain item in a certain body location
-        if (script.state(Body.WristsTied).is(Toys.Wrist_Restraints)) {
-            if (script.item(Toys.Wrist_Restraints).is(Material.Leather)) {
-                say("You're wearing leather restraints", script.state(Toys.Wrist_Restraints).is(Material.Leather));
+        public void testApplyToAppliesDefaultsAndAttributesPlusCustomPeers() {
+            TeaseScript script = TestScript.getOne();
+    
+            assertFalse(script.state(Toys.Wrist_Restraints).applied());
+    
+            // Wrists are not only tied, but also tied behind back
+            script.items(Toys.Wrist_Restraints).get(Material.Leather).applyTo(Body.WristsTiedBehindBack);
+    
+            assertTrue(script.state(Toys.Wrist_Restraints).applied());
+            assertTrue(script.state(Toys.Wrist_Restraints).is(Material.Leather));
+    
+            assertFalse(script.state(Body.WristsTied).applied());
+            assertTrue(script.state(Body.WristsTiedBehindBack).applied());
+    
+            assertFalse(script.state(Body.WristsTied).is(Toys.Wrist_Restraints));
+            assertTrue(script.state(Body.WristsTiedBehindBack).is(Toys.Wrist_Restraints));
+    
+            // This is how to comment a certain item in a certain body location
+            if (script.state(Body.WristsTied).is(Toys.Wrist_Restraints)) {
+                if (script.item(Toys.Wrist_Restraints).is(Material.Leather)) {
+                    say("You're wearing leather restraints", script.state(Toys.Wrist_Restraints).is(Material.Leather));
+                }
             }
         }
-    }
 
     private static void say(String message, boolean assertion) {
         assertTrue(message, assertion);
@@ -177,36 +177,36 @@ public class ItemImplTest {
     }
 
     @Test
-    public void testToAppliesDefaultsAndAttributesPlusCustomPeersWithStrings() {
-        TeaseScript script = TestScript.getOne();
-
-        String Toys_Wrist_Restraints = "teaselib.Toys.Wrist_Restraints";
-        String Body_WristsTied = "teaselib.Body.WristsTied";
-        String Body_WristsTiedBehindBack = "teaselib.Body.WristsTiedBehindBack";
-        String leather = "teaselib.Material.Leather";
-
-        assertFalse(script.state(Toys_Wrist_Restraints).applied());
-
-        // Wrists are not only tied, but also tied behind back
-
-        script.items(Toys_Wrist_Restraints).get(leather).to(Body_WristsTiedBehindBack);
-
-        assertTrue(script.state(Toys_Wrist_Restraints).applied());
-        assertTrue(script.state(Toys_Wrist_Restraints).is(leather));
-
-        assertFalse(script.state(Body_WristsTied).applied());
-        assertTrue(script.state(Body_WristsTiedBehindBack).applied());
-
-        assertFalse(script.state(Body_WristsTied).is(Toys_Wrist_Restraints));
-        assertTrue(script.state(Body_WristsTiedBehindBack).is(Toys_Wrist_Restraints));
-
-        // This is how to comment a certain item in a certain body location
-        if (script.state(Body_WristsTied).is(Toys_Wrist_Restraints)) {
-            if (script.item(Toys_Wrist_Restraints).is(leather)) {
-                say("You're wearing leather restraints", script.state(Toys_Wrist_Restraints).is(leather));
+        public void testApplyToAppliesDefaultsAndAttributesPlusCustomPeersWithStrings() {
+            TeaseScript script = TestScript.getOne();
+    
+            String Toys_Wrist_Restraints = "teaselib.Toys.Wrist_Restraints";
+            String Body_WristsTied = "teaselib.Body.WristsTied";
+            String Body_WristsTiedBehindBack = "teaselib.Body.WristsTiedBehindBack";
+            String leather = "teaselib.Material.Leather";
+    
+            assertFalse(script.state(Toys_Wrist_Restraints).applied());
+    
+            // Wrists are not only tied, but also tied behind back
+    
+            script.items(Toys_Wrist_Restraints).get(leather).applyTo(Body_WristsTiedBehindBack);
+    
+            assertTrue(script.state(Toys_Wrist_Restraints).applied());
+            assertTrue(script.state(Toys_Wrist_Restraints).is(leather));
+    
+            assertFalse(script.state(Body_WristsTied).applied());
+            assertTrue(script.state(Body_WristsTiedBehindBack).applied());
+    
+            assertFalse(script.state(Body_WristsTied).is(Toys_Wrist_Restraints));
+            assertTrue(script.state(Body_WristsTiedBehindBack).is(Toys_Wrist_Restraints));
+    
+            // This is how to comment a certain item in a certain body location
+            if (script.state(Body_WristsTied).is(Toys_Wrist_Restraints)) {
+                if (script.item(Toys_Wrist_Restraints).is(leather)) {
+                    say("You're wearing leather restraints", script.state(Toys_Wrist_Restraints).is(leather));
+                }
             }
         }
-    }
 
     @Test
     public void testStringsAndEnumsMixed() {
@@ -222,7 +222,7 @@ public class ItemImplTest {
 
         // Wrists are not only tied, but also tied behind back
 
-        script.items(Toys_Wrist_Restraints).get(leather).to(Body_WristsTiedBehindBack);
+        script.items(Toys_Wrist_Restraints).get(leather).applyTo(Body_WristsTiedBehindBack);
 
         assertTrue(script.state(Toys.Wrist_Restraints).applied());
         assertTrue(script.state(Toys_Wrist_Restraints).is(leather));

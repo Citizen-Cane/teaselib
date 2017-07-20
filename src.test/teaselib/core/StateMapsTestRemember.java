@@ -38,10 +38,10 @@ public class StateMapsTestRemember extends StateMaps {
         assertFalse(state(TEST_DOMAIN, Toys.Chastity_Device).applied());
         assertFalse(state(TEST_DOMAIN, Toys.Wrist_Restraints).applied());
 
-        state(TEST_DOMAIN, Toys.Chastity_Device).apply(Body.OnPenis, Body.CantJerkOff);
-        state(TEST_DOMAIN, Toys.Wrist_Restraints).apply(Body.WristsTiedBehindBack, Body.CantJerkOff);
+        state(TEST_DOMAIN, Toys.Chastity_Device).applyTo(Body.OnPenis, Body.CantJerkOff);
+        state(TEST_DOMAIN, Toys.Wrist_Restraints).applyTo(Body.WristsTiedBehindBack, Body.CantJerkOff);
 
-        state(TEST_DOMAIN, Locks.Chastity_Device_Lock).apply(Toys.Chastity_Device).over(24, TimeUnit.HOURS).remember();
+        state(TEST_DOMAIN, Locks.Chastity_Device_Lock).applyTo(Toys.Chastity_Device).over(24, TimeUnit.HOURS).remember();
 
         assertUnrelatedStateIsNotAffected();
         assertRememberedToyAndPeersAreRemembered();
@@ -72,8 +72,8 @@ public class StateMapsTestRemember extends StateMaps {
 
     @Test
     public void testRememberedItemsAreCompletlyRemoved() {
-        state(TEST_DOMAIN, Toys.Wrist_Restraints).apply(Body.WristsTiedBehindBack, Body.CantJerkOff);
-        state(TEST_DOMAIN, Toys.Chastity_Device).apply(Body.OnPenis, Body.CantJerkOff)
+        state(TEST_DOMAIN, Toys.Wrist_Restraints).applyTo(Body.WristsTiedBehindBack, Body.CantJerkOff);
+        state(TEST_DOMAIN, Toys.Chastity_Device).applyTo(Body.OnPenis, Body.CantJerkOff)
                 .over(24, TimeUnit.HOURS).remember();
 
         assertEquals(6, persistence.storage.size());
@@ -95,8 +95,8 @@ public class StateMapsTestRemember extends StateMaps {
 
     @Test
     public void testRememberedItemsAreCompletlyRemovedAfterSessionRestore() {
-        state(TEST_DOMAIN, Toys.Wrist_Restraints).apply(Body.WristsTiedBehindBack, Body.CantJerkOff);
-        state(TEST_DOMAIN, Toys.Chastity_Device).apply(Body.OnPenis, Body.CantJerkOff)
+        state(TEST_DOMAIN, Toys.Wrist_Restraints).applyTo(Body.WristsTiedBehindBack, Body.CantJerkOff);
+        state(TEST_DOMAIN, Toys.Chastity_Device).applyTo(Body.OnPenis, Body.CantJerkOff)
                 .over(24, TimeUnit.HOURS).remember();
 
         // Simulate session end & restore

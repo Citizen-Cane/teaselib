@@ -233,7 +233,12 @@ public class StateMaps {
         }
 
         @Override
-        public <A extends Object> State.Options apply(A... attributes) {
+        public Options apply() {
+            return applyTo(new Object[0]);
+        }
+
+        @Override
+        public <A extends Object> State.Options applyTo(A... attributes) {
             if (attributes.length == 1 && attributes[0] instanceof List<?>) {
                 throw new IllegalArgumentException();
             }

@@ -20,7 +20,7 @@ public class StateCaseIndepencyTests {
         assertFalse(script.state(Toys.Collar).applied());
         assertTrue(script.state(Toys.Collar).expired());
 
-        script.state(Toys.Collar).apply();
+        script.state(Toys.Collar).applyTo();
 
         assertTrue(script.state(Toys.Collar).is(script.namespace));
         assertTrue(script.state("teaselib.Toys.Collar").is(script.namespace));
@@ -34,7 +34,7 @@ public class StateCaseIndepencyTests {
     public void testCaseIndepencencyOfStatePeersAndAttributes() {
         TeaseScript script = TestScript.getOne();
 
-        script.state("teaselib.household.clothes_pegs").apply("teaseLib.body.onnipples");
+        script.state("teaselib.household.clothes_pegs").applyTo("teaseLib.body.onnipples");
         assertTrue(script.state(Body.OnNipples).applied());
         assertTrue(script.state("TeaseLib.Body.OnNipples").applied());
 
@@ -74,7 +74,7 @@ public class StateCaseIndepencyTests {
     public void testCaseIndepencencyOfItemAttributes() {
         TeaseScript script = TestScript.getOne();
 
-        script.item("teaselib.household.clothes_pegs").to("teaseLib.body.onnipples");
+        script.item("teaselib.household.clothes_pegs").applyTo("teaseLib.body.onnipples");
         assertTrue(script.item(Body.OnNipples).applied());
         assertTrue(script.item("TeaseLib.Body.OnNipples").applied());
 

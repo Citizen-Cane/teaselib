@@ -29,14 +29,14 @@ public class StateMapsDurationTest extends StateMaps {
     public void testLockDurationIsAppliedToDirectPeers() {
         assertApplyChastityCage();
 
-        state(TEST_DOMAIN, Locks.Chastity_Device_Lock).apply(Toys.Chastity_Device);
+        state(TEST_DOMAIN, Locks.Chastity_Device_Lock).applyTo(Toys.Chastity_Device);
 
         assertTrue(state(TEST_DOMAIN, Toys.Chastity_Device).applied());
         assertTrue(state(TEST_DOMAIN, Toys.Chastity_Device).expired());
         assertTrue(state(TEST_DOMAIN, Locks.Chastity_Device_Lock).applied());
         assertTrue(state(TEST_DOMAIN, Locks.Chastity_Device_Lock).expired());
 
-        state(TEST_DOMAIN, Locks.Chastity_Device_Lock).apply(Toys.Chastity_Device).over(24, TimeUnit.HOURS);
+        state(TEST_DOMAIN, Locks.Chastity_Device_Lock).applyTo(Toys.Chastity_Device).over(24, TimeUnit.HOURS);
 
         assertTrue(state(TEST_DOMAIN, Body.OnPenis).expired());
         assertTrue(state(TEST_DOMAIN, Body.CantJerkOff).expired());
@@ -46,11 +46,11 @@ public class StateMapsDurationTest extends StateMaps {
     public void testLockDurationOnInfiniteToy() {
         assertApplyChastityCage();
 
-        state(TEST_DOMAIN, Toys.Chastity_Device).apply(Body.OnPenis, Body.CantJerkOff)
+        state(TEST_DOMAIN, Toys.Chastity_Device).applyTo(Body.OnPenis, Body.CantJerkOff)
                 .over(Duration.INFINITE, TimeUnit.SECONDS);
         assertFalse(state(TEST_DOMAIN, Toys.Chastity_Device).expired());
 
-        state(TEST_DOMAIN, Locks.Chastity_Device_Lock).apply(Toys.Chastity_Device);
+        state(TEST_DOMAIN, Locks.Chastity_Device_Lock).applyTo(Toys.Chastity_Device);
 
         assertTrue(state(TEST_DOMAIN, Toys.Chastity_Device).applied());
         assertFalse(state(TEST_DOMAIN, Toys.Chastity_Device).expired());
@@ -59,7 +59,7 @@ public class StateMapsDurationTest extends StateMaps {
         // false is correct, because we haven't set a duration for the lock yet.
         // As a result the lock "inherits" the duration of the cage
 
-        state(TEST_DOMAIN, Locks.Chastity_Device_Lock).apply(Toys.Chastity_Device).over(24, TimeUnit.HOURS);
+        state(TEST_DOMAIN, Locks.Chastity_Device_Lock).applyTo(Toys.Chastity_Device).over(24, TimeUnit.HOURS);
 
         assertTrue(state(TEST_DOMAIN, Toys.Chastity_Device).applied());
         assertFalse(state(TEST_DOMAIN, Toys.Chastity_Device).expired());
@@ -81,7 +81,7 @@ public class StateMapsDurationTest extends StateMaps {
 
     @Test
     public void testElapedAlsoImplementsFreeSince() {
-        state(TEST_DOMAIN, Toys.Chastity_Device).apply();
+        state(TEST_DOMAIN, Toys.Chastity_Device).applyTo();
         assertTrue(state(TEST_DOMAIN, Toys.Chastity_Device).applied());
         assertTrue(state(TEST_DOMAIN, Toys.Chastity_Device).expired());
 
@@ -97,14 +97,14 @@ public class StateMapsDurationTest extends StateMaps {
     public void testDurationDependsOnPeers() {
         teaseLib.freezeTime();
 
-        state(TEST_DOMAIN, Toys.Chastity_Device).apply(Body.OnPenis, Body.CantJerkOff).over(1,
+        state(TEST_DOMAIN, Toys.Chastity_Device).applyTo(Body.OnPenis, Body.CantJerkOff).over(1,
                 TimeUnit.HOURS);
 
         assertEquals(1, state(TEST_DOMAIN, Toys.Chastity_Device).duration().remaining(TimeUnit.HOURS));
         assertEquals(1, state(TEST_DOMAIN, Body.OnPenis).duration().remaining(TimeUnit.HOURS));
         assertEquals(1, state(TEST_DOMAIN, Body.CantJerkOff).duration().remaining(TimeUnit.HOURS));
 
-        state(TEST_DOMAIN, Toys.Wrist_Restraints).apply(Body.WristsTiedBehindBack, Body.CantJerkOff).over(2,
+        state(TEST_DOMAIN, Toys.Wrist_Restraints).applyTo(Body.WristsTiedBehindBack, Body.CantJerkOff).over(2,
                 TimeUnit.HOURS);
 
         assertEquals(1, state(TEST_DOMAIN, Toys.Chastity_Device).duration().remaining(TimeUnit.HOURS));
@@ -122,7 +122,7 @@ public class StateMapsDurationTest extends StateMaps {
         assertFalse(state(TEST_DOMAIN, Toys.Chastity_Device).applied());
         assertFalse(state(TEST_DOMAIN, Locks.Chastity_Device_Lock).applied());
 
-        state(TEST_DOMAIN, Toys.Chastity_Device).apply(Body.OnPenis, Body.CantJerkOff);
+        state(TEST_DOMAIN, Toys.Chastity_Device).applyTo(Body.OnPenis, Body.CantJerkOff);
 
         assertTrue(state(TEST_DOMAIN, Body.OnPenis).applied());
         assertTrue(state(TEST_DOMAIN, Body.CantJerkOff).applied());

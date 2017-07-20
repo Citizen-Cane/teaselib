@@ -24,7 +24,7 @@ public class StateTests {
         State somethingOnNipples = script.state(Body.OnNipples);
         assertFalse(somethingOnNipples.applied());
 
-        somethingOnNipples.apply(Toys.Nipple_Clamps);
+        somethingOnNipples.applyTo(Toys.Nipple_Clamps);
         assertTrue(somethingOnNipples.applied());
         assertTrue(somethingOnNipples.expired());
         assertTrue(somethingOnNipples.is(Toys.Nipple_Clamps));
@@ -45,13 +45,13 @@ public class StateTests {
         assertFalse(somethingOnNipples.applied());
         assertEquals(0, script.persistence.storage.size());
 
-        somethingOnNipples.apply(Toys.Nipple_Clamps).over(30, TimeUnit.MINUTES);
+        somethingOnNipples.applyTo(Toys.Nipple_Clamps).over(30, TimeUnit.MINUTES);
         assertTrue(somethingOnNipples.applied());
         assertFalse(somethingOnNipples.expired());
         assertEquals(30, somethingOnNipples.duration().remaining(TimeUnit.MINUTES));
 
         assertEquals(0, script.persistence.storage.size());
-        somethingOnNipples.apply(Toys.Nipple_Clamps).over(30, TimeUnit.MINUTES).remember();
+        somethingOnNipples.applyTo(Toys.Nipple_Clamps).over(30, TimeUnit.MINUTES).remember();
 
         // Assert that when a state is applied then
         // the namespace of the script is applied to that state
@@ -93,13 +93,13 @@ public class StateTests {
         TestScript script = TestScript.getOne();
         script.teaseLib.freezeTime();
 
-        script.state(Household.Condoms).apply(Body.OnPenis);
+        script.state(Household.Condoms).applyTo(Body.OnPenis);
         assertTrue(script.state(Household.Condoms).is(script.namespace));
         assertTrue(script.state(Body.OnPenis).applied());
 
         assertTrue(script.state(Body.OnPenis).is(script.namespace));
 
-        script.state(Toys.Chastity_Device).apply(Body.OnPenis);
+        script.state(Toys.Chastity_Device).applyTo(Body.OnPenis);
         assertTrue(script.state(Body.OnPenis).applied());
         assertTrue(script.state(Toys.Chastity_Device).is(script.namespace));
 
@@ -123,10 +123,10 @@ public class StateTests {
         TestScript script = TestScript.getOne();
         script.teaseLib.freezeTime();
 
-        script.state(Household.Clothes_Pegs).apply(Body.OnBalls);
+        script.state(Household.Clothes_Pegs).applyTo(Body.OnBalls);
         assertTrue(script.state(Household.Clothes_Pegs).is(script.namespace));
 
-        script.state(Household.Clothes_Pegs).apply(Body.OnNipples);
+        script.state(Household.Clothes_Pegs).applyTo(Body.OnNipples);
         assertTrue(script.state(Household.Clothes_Pegs).is(script.namespace));
 
         script.state(Body.OnBalls).remove();
@@ -150,7 +150,7 @@ public class StateTests {
         assertFalse(nippleClampsState.applied());
         assertTrue(nippleClampsState.expired());
 
-        nippleClampsState.apply(Body.OnNipples).over(1, TimeUnit.HOURS);
+        nippleClampsState.applyTo(Body.OnNipples).over(1, TimeUnit.HOURS);
         assertTrue(nippleClampsState.applied());
         assertFalse(nippleClampsState.expired());
 
@@ -173,7 +173,7 @@ public class StateTests {
         assertFalse(somethingOnNipples.applied());
         assertFalse(nippleClampsState.applied());
 
-        somethingOnNipples.apply(Toys.Nipple_Clamps).over(30, TimeUnit.MINUTES);
+        somethingOnNipples.applyTo(Toys.Nipple_Clamps).over(30, TimeUnit.MINUTES);
 
         assertTrue(somethingOnNipples.applied());
         assertTrue(nippleClampsState.applied());
@@ -187,8 +187,8 @@ public class StateTests {
         assertFalse(script.state(Body.OnNipples).applied());
         assertFalse(script.state(Toys.Nipple_Clamps).applied());
 
-        script.state(Household.Weight).apply(Toys.Nipple_Clamps);
-        script.state(Toys.Nipple_Clamps).apply(Body.OnNipples, Material.Metal).over(30, TimeUnit.MINUTES);
+        script.state(Household.Weight).applyTo(Toys.Nipple_Clamps);
+        script.state(Toys.Nipple_Clamps).applyTo(Body.OnNipples, Material.Metal).over(30, TimeUnit.MINUTES);
 
         assertTrue(script.state(Body.OnNipples).applied());
         assertTrue(script.state(Toys.Nipple_Clamps).applied());
@@ -211,8 +211,8 @@ public class StateTests {
         assertFalse(script.state("teaselib.Body.OnNipples").applied());
         assertFalse(script.state("teaselib.Toys.Nipple_Clamps").applied());
 
-        script.state(Household.Weight).apply(Toys.Nipple_Clamps);
-        script.state(Toys.Nipple_Clamps).apply(Body.OnNipples, Material.Metal).over(30, TimeUnit.MINUTES);
+        script.state(Household.Weight).applyTo(Toys.Nipple_Clamps);
+        script.state(Toys.Nipple_Clamps).applyTo(Body.OnNipples, Material.Metal).over(30, TimeUnit.MINUTES);
 
         assertTrue(script.state(Body.OnNipples).applied());
         assertTrue(script.state(Toys.Nipple_Clamps).applied());

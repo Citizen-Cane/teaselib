@@ -59,9 +59,9 @@ public abstract class TeaseScriptPersistence extends TeaseScriptBase {
         }
 
         @Override
-        public <S> Options to(S... items) {
+        public <S> Options applyTo(S... items) {
             injectNamespace();
-            return new StateOptionsProxy(item.to(items));
+            return new StateOptionsProxy(item.applyTo(items));
         }
 
         @Override
@@ -77,6 +77,11 @@ public abstract class TeaseScriptPersistence extends TeaseScriptBase {
         @Override
         public State remove() {
             return new StateProxy(item.remove());
+        }
+
+        @Override
+        public State remove(Object peer) {
+            return new StateProxy(item.remove(peer));
         }
 
         @Override
@@ -119,9 +124,15 @@ public abstract class TeaseScriptPersistence extends TeaseScriptBase {
         }
 
         @Override
-        public <S> Options apply(S... items) {
+        public Options apply() {
             injectNamespace();
-            return new StateOptionsProxy(state.apply(items));
+            return new StateOptionsProxy(state.apply());
+        }
+
+        @Override
+        public <S> Options applyTo(S... items) {
+            injectNamespace();
+            return new StateOptionsProxy(state.applyTo(items));
         }
 
         private void injectNamespace() {

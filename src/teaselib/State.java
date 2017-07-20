@@ -11,9 +11,9 @@ public interface State {
 
     Set<Object> peers();
 
-    // TODO add apply() in order to make item and state more similar
-    // TODO rename to applyTo()
-    <S extends Object> State.Options apply(S... items);
+    State.Options apply();
+
+    <S extends Object> State.Options applyTo(S... items);
 
     boolean is(Object... objects);
 

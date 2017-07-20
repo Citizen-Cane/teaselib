@@ -23,7 +23,7 @@ public interface Item {
         }
 
         @Override
-        public <S extends Object> State.Options to(S... items) {
+        public <S extends Object> State.Options applyTo(S... items) {
             throw new UnsupportedOperationException();
         }
 
@@ -44,6 +44,11 @@ public interface Item {
 
         @Override
         public State remove() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public State remove(Object peer) {
             throw new UnsupportedOperationException();
         }
 
@@ -78,8 +83,7 @@ public interface Item {
 
     State.Options apply();
 
-    // TODO rename to applyTo()
-    <S extends Object> State.Options to(S... items);
+    <S extends Object> State.Options applyTo(S... items);
 
     boolean is(Object... attributes);
 
@@ -90,4 +94,7 @@ public interface Item {
     Duration duration();
 
     State remove();
+
+    State remove(Object peer);
+
 }

@@ -11,6 +11,8 @@ public enum Body {
     InMouth,
     AroundNeck,
     AroundWaist,
+    CrotchRoped,
+    Harnessed,
 
     Blindfolded,
     Tethered,

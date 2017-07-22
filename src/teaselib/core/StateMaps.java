@@ -370,7 +370,7 @@ public class StateMaps {
         }
 
         @Override
-        public StateImpl remove() {
+        public Persistence remove() {
             Object[] copyOfPeers = new Object[peers.size()];
             for (Object peer : peers.toArray(copyOfPeers)) {
                 state(peer).remove(item);
@@ -383,7 +383,7 @@ public class StateMaps {
         }
 
         @Override
-        public State remove(Object peer) {
+        public Persistence remove(Object peer) {
             if (peer instanceof List<?> || peer instanceof Object[]) {
                 throw new IllegalArgumentException();
             }

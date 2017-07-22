@@ -8,9 +8,9 @@ public interface State {
 
     public static final long INDEFINITELY = Long.MAX_VALUE;
 
-    State.Options apply();
+    Options apply();
 
-    <S extends Object> State.Options applyTo(S... items);
+    <S extends Object> Options applyTo(S... items);
 
     boolean is(Object... objects);
 
@@ -20,9 +20,9 @@ public interface State {
 
     Duration duration();
 
-    State remove();
+    Persistence remove();
 
-    State remove(Object peer);
+    Persistence remove(Object peer);
 
     interface Options extends State.Persistence {
         Persistence over(long duration, TimeUnit unit);

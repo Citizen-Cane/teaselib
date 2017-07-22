@@ -15,7 +15,9 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
+import teaselib.Duration;
 import teaselib.State;
+import teaselib.Toys;
 import teaselib.hosts.DummyPersistence;
 import teaselib.test.TestScript;
 
@@ -297,8 +299,8 @@ public class StateMapsPersistenceTest extends StateMaps {
         assertFalse(state(TEST_DOMAIN, Toys_Wrist_Restraints).applied());
 
         state(TEST_DOMAIN, Toys_Wrist_Restraints).applyTo(Body_WristsTiedBehindBack, Body_CannotJerkOff);
-        rememberOrNot(state(TEST_DOMAIN, Toys_Chastity_Device).applyTo(Body_SomethingOnPenis, Body_CannotJerkOff).over(24,
-                TimeUnit.HOURS));
+        rememberOrNot(state(TEST_DOMAIN, Toys_Chastity_Device).applyTo(Body_SomethingOnPenis, Body_CannotJerkOff)
+                .over(24, TimeUnit.HOURS));
 
         clearStatesMapsOrNot();
 
@@ -350,6 +352,38 @@ public class StateMapsPersistenceTest extends StateMaps {
 
         assertFalse(state(TEST_DOMAIN, Toys_Wrist_Restraints).applied());
         assertFalse(state(TEST_DOMAIN, Body_WristsTiedBehindBack).applied());
+    }
+
+    @Test
+    public void testPersistenceOfDuratioElapsedOfRemovedItems() {
+        rememberOrNot(state(TEST_DOMAIN, Toys.Enema_Kit).apply().over(24, TimeUnit.HOURS));
+
+        clearStatesMapsOrNot();
+
+        if (isRemembered()) {
+            Map<String, String> storage = script.persistence.storage;
+            assertEquals(1, storage.size());
+        }
+
+        assertTrue(state(TEST_DOMAIN, Toys.Enema_Kit).applied());
+
+        state(TEST_DOMAIN, Toys.Enema_Kit).remove().remember();
+
+        if (isRemembered()) {
+            Map<String, String> storage = script.persistence.storage;
+            assertEquals(1, storage.size());
+        }
+
+        assertFalse(state(TEST_DOMAIN, Toys.Enema_Kit).applied());
+        assertTrue(state(TEST_DOMAIN, Toys.Enema_Kit).expired());
+
+        clearStatesMapsOrNot();
+
+        teaseLib.advanceTime(1, TimeUnit.DAYS);
+        Duration duration = state(TEST_DOMAIN, Toys.Enema_Kit).duration();
+        assertEquals(86400, duration.elapsed(TimeUnit.SECONDS));
+        assertEquals(24, duration.elapsed(TimeUnit.HOURS));
+        assertEquals(1, duration.elapsed(TimeUnit.DAYS));
     }
 
     private String stripPath(String name) {

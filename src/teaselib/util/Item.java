@@ -43,12 +43,12 @@ public interface Item extends State {
         }
 
         @Override
-        public State remove() {
+        public Persistence remove() {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public State remove(Object peer) {
+        public Persistence remove(Object peer) {
             throw new UnsupportedOperationException();
         }
 

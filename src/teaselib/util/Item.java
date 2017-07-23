@@ -48,7 +48,7 @@ public interface Item extends State {
         }
 
         @Override
-        public Persistence remove(Object peer) {
+        public <S extends Object> Persistence removeFrom(S... peer) {
             throw new UnsupportedOperationException();
         }
 

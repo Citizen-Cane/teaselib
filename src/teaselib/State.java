@@ -22,7 +22,7 @@ public interface State {
 
     Persistence remove();
 
-    Persistence remove(Object peer);
+    <S extends Object> Persistence removeFrom(S... peers);
 
     interface Options extends State.Persistence {
         Persistence over(long duration, TimeUnit unit);

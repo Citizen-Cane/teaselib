@@ -161,8 +161,8 @@ public class ItemImpl implements Item, StateMaps.Attributes {
     }
 
     @Override
-    public Persistence remove(Object peer) {
-        return teaseLib.state(domain, item).remove(peer);
+    public <S extends Object> Persistence removeFrom(S... peer) {
+        return teaseLib.state(domain, item).removeFrom(peer);
     }
 
     @Override

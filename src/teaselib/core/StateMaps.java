@@ -373,7 +373,7 @@ public class StateMaps {
         public Persistence remove() {
             Object[] copyOfPeers = new Object[peers.size()];
             for (Object peer : peers.toArray(copyOfPeers)) {
-                state(peer).remove(item);
+                state(peer).removeFrom(item);
             }
             peers.clear();
             attributes.clear();
@@ -383,18 +383,25 @@ public class StateMaps {
         }
 
         @Override
-        public Persistence remove(Object peer) {
-            if (peer instanceof List<?> || peer instanceof Object[]) {
-                throw new IllegalArgumentException();
+        public <S extends Object> Persistence removeFrom(S... peers2) {
+            if (peers2.length == 0) {
+                throw new IllegalArgumentException("removeFrom requires at least one peer");
             }
 
-            if (peers.contains(peer)) {
-                peers.remove(peer);
-                state(peer).remove(item);
-            }
+            for (Object peer : peers2) {
 
-            if (allPeersAreTemporary() && isPersisted()) {
-                removePersistence();
+                if (peer instanceof List<?> || peer instanceof Object[]) {
+                    throw new IllegalArgumentException();
+                }
+
+                if (peers.contains(peer)) {
+                    peers.remove(peer);
+                    state(peer).removeFrom(item);
+                }
+
+                if (allPeersAreTemporary() && isPersisted()) {
+                    removePersistence();
+                }
             }
 
             if (peers.isEmpty()) {

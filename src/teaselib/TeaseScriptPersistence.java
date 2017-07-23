@@ -79,8 +79,8 @@ public abstract class TeaseScriptPersistence extends TeaseScriptBase {
         }
 
         @Override
-        public Persistence remove(Object peer) {
-            return new StatePersistenceProxy(item.remove(peer));
+        public <S extends Object> Persistence removeFrom(S... peer) {
+            return new StatePersistenceProxy(item.removeFrom(peer));
         }
 
         @Override
@@ -169,8 +169,8 @@ public abstract class TeaseScriptPersistence extends TeaseScriptBase {
         }
 
         @Override
-        public Persistence remove(Object peer) {
-            return new StatePersistenceProxy(state.remove(peer));
+        public <S extends Object> Persistence removeFrom(S... peer) {
+            return new StatePersistenceProxy(state.removeFrom(peer));
         }
 
         @Override

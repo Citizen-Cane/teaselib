@@ -1,7 +1,6 @@
 package teaselib.core.javacv.util;
 
-import static org.bytedeco.javacpp.opencv_imgproc.approxPolyDP;
-import static org.bytedeco.javacpp.opencv_imgproc.boundingRect;
+import static org.bytedeco.javacpp.opencv_imgproc.*;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -21,8 +20,7 @@ import teaselib.util.math.Partition;
 import teaselib.util.math.Statistics;
 
 public class Geom {
-    public static List<Partition<Rect>.Group> partition(List<Rect> rectangles,
-            int distance) {
+    public static List<Partition<Rect>.Group> partition(List<Rect> rectangles, int distance) {
         final int distance2 = distance * distance;
         Partition.Members<Rect> members = new Partition.Members<Rect>() {
             @Override
@@ -44,8 +42,7 @@ public class Geom {
                 return r1.area() - r2.area();
             }
         };
-        Partition<Rect> partition = new Partition<Rect>(rectangles, members,
-                order, comperator);
+        Partition<Rect> partition = new Partition<Rect>(rectangles, members, order, comperator);
         return partition.groups;
     }
 
@@ -75,8 +72,7 @@ public class Geom {
     }
 
     public static boolean intersects(Rect r1, Rect r2) {
-        return r1.contains(r2.tl()) || r1.contains(r2.br())
-                || r2.contains(r1.tl()) || r2.contains(r1.br());
+        return r1.contains(r2.tl()) || r1.contains(r2.br()) || r2.contains(r1.tl()) || r2.contains(r1.br());
     }
 
     public static Rect join(Collection<Rect> rectangles) {
@@ -99,8 +95,7 @@ public class Geom {
                 int x = Math.min(a.x(), b.x());
                 int y = Math.min(a.y(), b.y());
                 int width = Math.max(a.x() + a.width(), b.x() + b.width()) - x;
-                int height = Math.max(a.y() + a.height(), b.y() + b.height())
-                        - y;
+                int height = Math.max(a.y() + a.height(), b.y() + b.height()) - y;
                 r.x(x);
                 r.y(y);
                 r.width(width);
@@ -155,10 +150,9 @@ public class Geom {
      * @return Whether the object defined by the list passes through as
      *         circular.
      */
-    public static boolean isCircular(List<Integer> distance2Center,
-            double circularity) {
+    public static boolean isCircular(List<Integer> distance2Center, double circularity) {
         Collections.sort(distance2Center);
-        Statistics statistics = new Statistics(distance2Center);
+        Statistics<Integer> statistics = new Statistics<Integer>(distance2Center);
         int max = distance2Center.get(distance2Center.size() - 1);
         double mean = statistics.mean();
         double contourCircularity = max / mean;

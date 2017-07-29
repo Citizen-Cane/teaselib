@@ -6,8 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public abstract class TextToSpeechImplementation {
-    private static final Logger logger = LoggerFactory
-            .getLogger(TextToSpeechImplementation.class);
+    private static final Logger logger = LoggerFactory.getLogger(TextToSpeechImplementation.class);
 
     public abstract void getVoices(Map<String, Voice> voices);
 

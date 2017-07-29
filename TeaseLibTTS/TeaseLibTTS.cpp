@@ -41,11 +41,17 @@ extern "C"
 	* Method:    getInstalledVoices
 	* Signature: (Ljava/util/Map;)V
 	*/
-	JNIEXPORT void JNICALL Java_teaselib_core_texttospeech_implementation_TeaseLibTTS_getInstalledVoices
-		(JNIEnv *env, jclass, jobject voiceMap) {
+	JNIEXPORT void JNICALL Java_teaselib_core_texttospeech_implementation_TeaseLibTTS_getVoices
+		(JNIEnv *env, jobject jthis, jobject voiceMap) {
 		try {
 			COMUser comUser;
 			HRESULT hr = S_OK;
+
+			SpeechSynthesizer* speechSynthesizer = static_cast<SpeechSynthesizer*>(NativeObject::get(env, jthis));
+			if (!speechSynthesizer) {
+				speechSynthesizer = new SpeechSynthesizer(env, jthis);
+			}
+
 			std::vector<Voice*> voices;
 			for (int i = 0; i < sizeof(voiceCategories) / sizeof(wchar_t*); i++) {
 				hr = addVoices(voiceCategories[i], voices, env);
@@ -111,12 +117,10 @@ extern "C"
     JNIEXPORT void JNICALL Java_teaselib_core_texttospeech_implementation_TeaseLibTTS_setVoice
     (JNIEnv *env, jobject jthis, jobject jvoice) {
         try {
-            // Dispose existing
-            SpeechSynthesizer* speechSynthesizer = static_cast<SpeechSynthesizer*>(NativeObject::get(env, jthis));
-            if (!speechSynthesizer) {
-				speechSynthesizer = new SpeechSynthesizer(env, jthis);
-            }
-            Voice* voice = static_cast<Voice*>(NativeObject::get(env, jvoice));
+			SpeechSynthesizer* speechSynthesizer = static_cast<SpeechSynthesizer*>(NativeObject::get(env, jthis));
+			NativeObject::checkInitializedOrThrow(speechSynthesizer);
+
+			Voice* voice = static_cast<Voice*>(NativeObject::get(env, jvoice));
             // A null voice is a valid value, it denotes the system default voice
 			speechSynthesizer->setVoice(voice);
         } catch (NativeException *e) {

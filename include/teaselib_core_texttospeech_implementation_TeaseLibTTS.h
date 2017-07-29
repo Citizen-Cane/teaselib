@@ -9,11 +9,11 @@ extern "C" {
 #endif
 /*
  * Class:     teaselib_core_texttospeech_implementation_TeaseLibTTS
- * Method:    getInstalledVoices
+ * Method:    getVoices
  * Signature: (Ljava/util/Map;)V
  */
-JNIEXPORT void JNICALL Java_teaselib_core_texttospeech_implementation_TeaseLibTTS_getInstalledVoices
-  (JNIEnv *, jclass, jobject);
+JNIEXPORT void JNICALL Java_teaselib_core_texttospeech_implementation_TeaseLibTTS_getVoices
+  (JNIEnv *, jobject, jobject);
 
 /*
  * Class:     teaselib_core_texttospeech_implementation_TeaseLibTTS

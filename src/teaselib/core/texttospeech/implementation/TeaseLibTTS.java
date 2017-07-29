@@ -13,12 +13,8 @@ public class TeaseLibTTS extends TextToSpeechImplementation {
         teaselib.core.jni.LibraryLoader.load("TeaseLibTTS");
     }
 
-    public static native void getInstalledVoices(Map<String, Voice> voices);
-
     @Override
-    public void getVoices(Map<String, Voice> voices) {
-        TeaseLibTTS.getInstalledVoices(voices);
-    }
+    public native void getVoices(Map<String, Voice> voices);
 
     @Override
     public native void setVoice(Voice voice);

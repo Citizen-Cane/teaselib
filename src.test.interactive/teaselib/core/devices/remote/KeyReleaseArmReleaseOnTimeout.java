@@ -67,6 +67,10 @@ public class KeyReleaseArmReleaseOnTimeout {
         }
 
         executor.awaitTermination(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
+        // When the first actuator is released, the color switches to "count
+        // down" for the remaining actuators - should be green instead but
+        // tolerable - the key release models "arm" by just starting to count
+        // down from the default duration
 
         sleepSeconds(10);
         assertTrue(keyRelease.connected());

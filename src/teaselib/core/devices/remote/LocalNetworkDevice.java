@@ -36,8 +36,7 @@ public class LocalNetworkDevice implements RemoteDevice {
      * <p>
      * Sends broadcast messages into all local networks every few seconds.
      */
-    public static final String EnableDeviceDiscovery = LocalNetworkDevice.class.getName()
-            + ".EnableDeviceDiscovery";
+    public static final String EnableDeviceDiscovery = LocalNetworkDevice.class.getName() + ".EnableDeviceDiscovery";
 
     /**
      * Boolean property to enable discovery of TeaseLib local network devices.
@@ -74,14 +73,13 @@ public class LocalNetworkDevice implements RemoteDevice {
             if (deviceDiscovery != null) {
                 deviceDiscovery.addRemoteDeviceDiscoveryListener(new RemoteDeviceListener() {
                     @Override
-                    public void deviceAdded(String name, String address, String serviceName,
-                            String description, String version) {
+                    public void deviceAdded(String name, String address, String serviceName, String description,
+                            String version) {
                         String devicePath = LocalNetworkDevice.createDevicePath(name, serviceName);
                         if (!isDeviceCached(devicePath)) {
                             try {
-                                LocalNetworkDevice device = new LocalNetworkDevice(name,
-                                        new UDPConnection(address), serviceName, description,
-                                        version);
+                                LocalNetworkDevice device = new LocalNetworkDevice(name, new UDPConnection(address),
+                                        serviceName, description, version);
                                 synchronized (discoveredDevices) {
                                     discoveredDevices.add(device);
                                 }
@@ -131,8 +129,8 @@ public class LocalNetworkDevice implements RemoteDevice {
             String address = deviceAndAddress[1];
             LocalNetworkDevice localNetworkDevice;
             try {
-                localNetworkDevice = new LocalNetworkDevice(name, new UDPConnection(address),
-                        serviceName, description, version);
+                localNetworkDevice = new LocalNetworkDevice(name, new UDPConnection(address), serviceName, description,
+                        version);
             } catch (NumberFormatException e) {
                 throw new IllegalArgumentException(e);
             } catch (SocketException e) {
@@ -152,8 +150,7 @@ public class LocalNetworkDevice implements RemoteDevice {
 
     private UDPConnection connection;
 
-    LocalNetworkDevice(String name, UDPConnection connection, String serviceName,
-            String description, String version) {
+    LocalNetworkDevice(String name, UDPConnection connection, String serviceName, String description, String version) {
         this.name = name;
         this.connection = connection;
         this.serviceName = serviceName;
@@ -249,7 +246,9 @@ public class LocalNetworkDevice implements RemoteDevice {
     }
 
     @Override
-    public RemoteDeviceMessage sendAndReceive(RemoteDeviceMessage message) {
+    public synchronized RemoteDeviceMessage sendAndReceive(RemoteDeviceMessage message) {
+        // Can only send one packet at a time,
+        // in order to not mess up packet number housekeeping
         RemoteDeviceMessage received = Timeout;
         for (int i = 0; i < 3; i++) {
             try {
@@ -303,8 +302,7 @@ public class LocalNetworkDevice implements RemoteDevice {
     @Override
     public void send(RemoteDeviceMessage message) {
         try {
-            logger.info(
-                    "Sending " + message.getClass().getSimpleName() + ": " + message.toString());
+            logger.info("Sending " + message.getClass().getSimpleName() + ": " + message.toString());
             connection.send(new UDPMessage(message).toByteArray());
         } catch (IOException e) {
             logger.error(e.getMessage(), e);

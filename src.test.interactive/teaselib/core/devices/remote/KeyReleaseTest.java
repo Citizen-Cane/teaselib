@@ -3,7 +3,9 @@
  */
 package teaselib.core.devices.remote;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.util.Arrays;
 
@@ -16,7 +18,7 @@ import org.slf4j.LoggerFactory;
 import teaselib.core.devices.DeviceCache;
 
 /**
- * @author someone
+ * @author Citizen-Cane
  *
  */
 public class KeyReleaseTest {
@@ -160,4 +162,5 @@ public class KeyReleaseTest {
         assertEquals(0, KeyRelease.getBestActuator(0, Arrays.asList(60, 120)));
         assertEquals(0, KeyRelease.getBestActuator(-1, Arrays.asList(60, 120)));
     }
+
 }

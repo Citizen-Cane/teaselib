@@ -66,6 +66,7 @@ public class KeyReleaseArmReleaseOnTimeout {
             });
         }
 
+        executor.shutdown();
         executor.awaitTermination(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
         // When the first actuator is released, the color switches to "count
         // down" for the remaining actuators - should be green instead but
@@ -97,6 +98,6 @@ public class KeyReleaseArmReleaseOnTimeout {
         // Also Don't release, this should happen automatically
 
         assertFalse(keyRelease.isRunning(actuator));
-        logger.info("Actuator " + actuator + " has been released");
+        logger.info("Actuator " + actuator + " has self-released ");
     }
 }

@@ -125,7 +125,11 @@ public class Prompt {
     public String toString() {
         final String lockState;
         if (lock.tryLock()) {
-            lockState = lock.hasWaiters(click) ? "waiting" : "active";
+            try {
+                lockState = lock.hasWaiters(click) ? "waiting" : "active";
+            } finally {
+                lock.unlock();
+            }
         } else {
             lockState = "locked";
         }

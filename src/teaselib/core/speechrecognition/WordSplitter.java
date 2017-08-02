@@ -8,7 +8,7 @@ public class WordSplitter extends BasicSplitter {
 
     @Override
     public String[] split(String text) {
-        return text.split(" ");
+        return splitWords(text);
     }
 
 }

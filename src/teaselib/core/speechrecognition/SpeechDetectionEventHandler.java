@@ -27,8 +27,7 @@ import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
  *
  */
 public class SpeechDetectionEventHandler {
-    static final Logger logger = LoggerFactory
-            .getLogger(SpeechDetectionEventHandler.class);
+    static final Logger logger = LoggerFactory.getLogger(SpeechDetectionEventHandler.class);
     /**
      * The default number of words after which the handler will accept a
      * hypothesis when the confidence is high enough.
@@ -36,29 +35,28 @@ public class SpeechDetectionEventHandler {
      * The first three or four syllables of any prompt are usually detected with
      * a high probability value, so the minimum value should be four.
      */
-    private final static int HypothesisMinimumNumberOfWordsDefault = 5;
+    private final static int HypothesisMinimumNumberOfWordsDefault = 4;
 
     /**
      * The default number of vowels after which the handler will accept a
      * hypothesis when the confidence is high enough.
      */
-    private final static int HypothesisMinimumNumberOfVowelsDefault = 8;
+    private final static int HypothesisMinimumNumberOfVowelsDefault = 6;
 
     private final SpeechRecognition speechRecognizer;
     private final Event<SpeechRecognitionImplementation, SpeechRecognitionStartedEventArgs> recognitionStarted;
     private final Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs> speechDetected;
     private final Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs> recognitionRejected;
+    private final Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs> recognitionCompleted;
 
-    private PromptSplitter vowelSplitter = new LatinVowelSplitter(
-            HypothesisMinimumNumberOfVowelsDefault);
-    private PromptSplitter wordSplitter = new WordSplitter(
-            HypothesisMinimumNumberOfWordsDefault);
+    private PromptSplitter vowelSplitter = new LatinVowelSplitter(HypothesisMinimumNumberOfVowelsDefault);
+    private PromptSplitter wordSplitter = new WordSplitter(HypothesisMinimumNumberOfWordsDefault);
 
     private Confidence recognitionConfidence = Confidence.Default;
     private boolean enabled = false;
     private PromptSplitter promptSplitter = null;
     private int minimumForHypothesisRecognition = 0;
-    SpeechRecognitionResult recognitionResult;
+    SpeechRecognitionResult hypothesisResult;
 
     public SpeechDetectionEventHandler(SpeechRecognition speechRecognizer) {
         super();
@@ -66,18 +64,21 @@ public class SpeechDetectionEventHandler {
         this.recognitionStarted = recognitionStarted();
         this.speechDetected = speechDetected();
         this.recognitionRejected = recognitionRejected();
+        this.recognitionCompleted = recognitionCompleted();
     }
 
     public void addEventListeners() {
         speechRecognizer.events.recognitionStarted.add(recognitionStarted);
         speechRecognizer.events.speechDetected.add(speechDetected);
         speechRecognizer.events.recognitionRejected.add(recognitionRejected);
+        speechRecognizer.events.recognitionCompleted.add(recognitionCompleted);
     }
 
     public void removeEventListeners() {
         speechRecognizer.events.recognitionStarted.remove(recognitionStarted);
         speechRecognizer.events.speechDetected.remove(speechDetected);
         speechRecognizer.events.recognitionRejected.remove(recognitionRejected);
+        speechRecognizer.events.recognitionCompleted.remove(recognitionCompleted);
     }
 
     void enable(boolean enable) {
@@ -94,8 +95,7 @@ public class SpeechDetectionEventHandler {
         } else {
             promptSplitter = wordSplitter;
         }
-        minimumForHypothesisRecognition = promptSplitter
-                .getMinimumForHypothesisRecognition(choices);
+        minimumForHypothesisRecognition = promptSplitter.getMinimumForHypothesisRecognition(choices);
     }
 
     public void setConfidence(Confidence recognitionConfidence) {
@@ -109,12 +109,11 @@ public class SpeechDetectionEventHandler {
     private Event<SpeechRecognitionImplementation, SpeechRecognitionStartedEventArgs> recognitionStarted() {
         return new Event<SpeechRecognitionImplementation, SpeechRecognitionStartedEventArgs>() {
             @Override
-            public void run(SpeechRecognitionImplementation sender,
-                    SpeechRecognitionStartedEventArgs eventArgs) {
+            public void run(SpeechRecognitionImplementation sender, SpeechRecognitionStartedEventArgs eventArgs) {
                 if (!enabled) {
                     return;
                 } else {
-                    recognitionResult = null;
+                    hypothesisResult = null;
                 }
             }
         };
@@ -123,39 +122,30 @@ public class SpeechDetectionEventHandler {
     private Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs> speechDetected() {
         return new Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs>() {
             @Override
-            public void run(SpeechRecognitionImplementation sender,
-                    SpeechRecognizedEventArgs eventArgs) {
+            public void run(SpeechRecognitionImplementation sender, SpeechRecognizedEventArgs eventArgs) {
                 if (!enabled) {
                     return;
                 } else {
                     for (SpeechRecognitionResult result : eventArgs.result) {
                         if (acceptHypothesis(result)) {
                             logger.info("Considering " + result.toString());
-                            recognitionResult = result;
+                            hypothesisResult = result;
                         }
                     }
                 }
             }
 
             private boolean acceptHypothesis(SpeechRecognitionResult result) {
-                if (enoughWordsForHypothesisResult(result)) {
-                    if (recognitionResult == null) {
-                        return true;
-                    } else if (promptSplitter
-                            .count(result.text) > promptSplitter
-                                    .count(recognitionResult.text)
-                            && result.hasHigherProbabilityThan(
-                                    recognitionResult)) {
-                        return true;
-                    }
+                if (hypothesisResult == null) {
+                    return true;
+                } else if (result.index != hypothesisResult.index) {
+                    return true;
+                } else if (promptSplitter.count(result.text) > promptSplitter.count(hypothesisResult.text)) {
+                    return true;
+                } else if (result.hasHigherProbabilityThan(hypothesisResult)) {
+                    return true;
                 }
                 return false;
-            }
-
-            private boolean enoughWordsForHypothesisResult(
-                    SpeechRecognitionResult result) {
-                return promptSplitter
-                        .count(result.text) >= minimumForHypothesisRecognition;
             }
         };
     }
@@ -163,48 +153,92 @@ public class SpeechDetectionEventHandler {
     private Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs> recognitionRejected() {
         return new Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs>() {
             @Override
-            public void run(SpeechRecognitionImplementation sender,
-                    SpeechRecognizedEventArgs eventArgs) {
+            public void run(SpeechRecognitionImplementation sender, SpeechRecognizedEventArgs eventArgs) {
                 if (!enabled) {
                     return;
                 } else if (isRecognizedPrompt()) {
                     eventArgs.consumed = true;
-                    logger.info(
-                            "Recognized as speech hypothesis -> forwarding as completed");
-                    SpeechRecognitionResult[] results = { recognitionResult };
-                    SpeechRecognizedEventArgs recognitionCompletedEventArgs = new SpeechRecognizedEventArgs(
-                            results);
-                    speechRecognizer.events.recognitionCompleted.run(sender,
-                            recognitionCompletedEventArgs);
+                    logger.info("Recognized as speech hypothesis -> forwarding as completed");
+                    // Raise confidence to requested in order to avoid rejection
+                    // in completedEvent handler
+                    SpeechRecognitionResult speechRecognitionResult = new SpeechRecognitionResult(
+                            hypothesisResult.index, hypothesisResult.text, recognitionConfidence.probability,
+                            recognitionConfidence);
+                    fireRecognitionCompletedEvent(sender, speechRecognitionResult);
                 }
             }
 
             private boolean isRecognizedPrompt() {
-                if (recognitionResult == null) {
-                    return false;
-                } else if (recognitionResult.confidence.propability < recognitionConfidence.propability) {
-                    logger.info("Phrase '" + recognitionResult.text
-                            + "' confidence probability="
-                            + recognitionResult.propability
-                            + " < requested confidence "
-                            + recognitionConfidence.toString() + " probability="
-                            + recognitionConfidence.propability);
+                if (hypothesisResult == null) {
                     return false;
                 } else {
-                    int count = promptSplitter.count(recognitionResult.text);
+                    int count = promptSplitter.count(hypothesisResult.text);
                     if (count < minimumForHypothesisRecognition) {
-                        logger.info("Phrase '" + recognitionResult.text
-                                + "' word detection count=" + count
-                                + " < threshold="
-                                + minimumForHypothesisRecognition
-                                + " is too low to accept hypothesis-based recognition for confidence "
-                                + recognitionConfidence.toString());
+                        excuseWordDetectionCountTooLow(count);
                         return false;
+                    } else if (count == minimumForHypothesisRecognition) {
+                        double reducedProbability = (recognitionConfidence.probability
+                                + recognitionConfidence.lower().probability) / 2.0;
+                        if (hypothesisResult.probability < reducedProbability) {
+                            excuseReducedPropability(reducedProbability);
+                            return false;
+                        }
+                    } else if (count > minimumForHypothesisRecognition) {
+                        double reducedPropability = recognitionConfidence.lower().probability;
+                        if (hypothesisResult.probability < reducedPropability) {
+                            excuseReducedPropability(reducedPropability);
+                            return false;
+                        }
+
                     }
                 }
                 return true;
             }
+
+            private void excuseWordDetectionCountTooLow(int count) {
+                logger.info("Phrase '" + hypothesisResult.text + "' " + promptSplitter.getClass().getSimpleName()
+                        + " detection count=" + count + " < threshold=" + minimumForHypothesisRecognition
+                        + " is too low to accept hypothesis-based recognition for confidence "
+                        + recognitionConfidence.toString());
+            }
+
+            private void excuseReducedPropability(double reducedProbability) {
+                logger.info("Phrase '" + hypothesisResult.text + "' confidence probability="
+                        + hypothesisResult.probability + " < requested confidence " + recognitionConfidence.toString()
+                        + " reduced probability=" + reducedProbability);
+            }
         };
+    }
+
+    private Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs> recognitionCompleted() {
+        return new Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs>() {
+            @Override
+            public void run(SpeechRecognitionImplementation sender, SpeechRecognizedEventArgs eventArgs) {
+                SpeechRecognitionResult recognitionCompletedResult = eventArgs.result[0];
+                if ((!confidenceIsHighEnough(recognitionCompletedResult, recognitionConfidence)))
+                    if (hypothesisResult != null) {
+                        if (hypothesisResult.index == recognitionCompletedResult.index
+                                && hypothesisResult.probability > eventArgs.result[0].probability) {
+                            eventArgs.consumed = true;
+                            fireRecognitionCompletedEvent(sender,
+                                    new SpeechRecognitionResult(recognitionCompletedResult.index,
+                                            recognitionCompletedResult.text, hypothesisResult.probability,
+                                            hypothesisResult.confidence));
+                        }
+                    }
+            }
+
+            private boolean confidenceIsHighEnough(SpeechRecognitionResult result, Confidence confidence) {
+                return result.confidence.probability >= confidence.probability;
+            }
+        };
+    }
+
+    private void fireRecognitionCompletedEvent(SpeechRecognitionImplementation sender,
+            SpeechRecognitionResult speechRecognitionResult) {
+        SpeechRecognitionResult[] results = { speechRecognitionResult };
+        SpeechRecognizedEventArgs recognitionCompletedEventArgs = new SpeechRecognizedEventArgs(results);
+        speechRecognizer.events.recognitionCompleted.run(sender, recognitionCompletedEventArgs);
     }
 
 }

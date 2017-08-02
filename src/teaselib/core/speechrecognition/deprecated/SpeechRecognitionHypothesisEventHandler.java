@@ -171,7 +171,7 @@ public class SpeechRecognitionHypothesisEventHandler {
             }
 
             private double propabilityWeight(SpeechRecognitionResult result) {
-                return result.propability * wordCount(result.text);
+                return result.probability * wordCount(result.text);
             }
         };
     }
@@ -238,7 +238,7 @@ public class SpeechRecognitionHypothesisEventHandler {
                 SpeechRecognitionResult[] results = {
                         new SpeechRecognitionResult(hypothesisResult.index,
                                 hypothesisResult.choice,
-                                recognitionConfidence.propability,
+                                recognitionConfidence.probability,
                                 recognitionConfidence) };
                 SpeechRecognizedEventArgs recognitionCompletedEventArgs = new SpeechRecognizedEventArgs(
                         results);

@@ -18,12 +18,10 @@ import teaselib.core.speechrecognition.implementation.TeaseLibSR;
 import teaselib.core.texttospeech.TextToSpeech;
 
 public class SpeechRecognition {
-    private static final Logger logger = LoggerFactory
-            .getLogger(SpeechRecognition.class);
+    private static final Logger logger = LoggerFactory.getLogger(SpeechRecognition.class);
 
-    static final String EnableSpeechHypothesisHandlerGlobally = SpeechRecognition.class
-            .getPackage().getName() + ".Enable"
-            + SpeechDetectionEventHandler.class.getSimpleName() + "Globally";
+    static final String EnableSpeechHypothesisHandlerGlobally = SpeechRecognition.class.getPackage().getName()
+            + ".Enable" + SpeechDetectionEventHandler.class.getSimpleName() + "Globally";
 
     /**
      * How to handle speech recognition and timeout in script functions.
@@ -77,8 +75,7 @@ public class SpeechRecognition {
 
     private final Locale locale;
     private final SpeechDetectionEventHandler hypothesisEventHandler;
-    private final DelegateThread delegateThread = new DelegateThread(
-            "Text-To-Speech dispatcher thread");
+    private final DelegateThread delegateThread = new DelegateThread("Text-To-Speech dispatcher thread");
 
     private SpeechRecognitionImplementation sr;
 
@@ -87,6 +84,11 @@ public class SpeechRecognition {
      * fired, but the the recognition has neither been rejected or completed
      */
     private static final ReentrantLock SpeechRecognitionInProgress = new ReentrantLock();
+
+    @Override
+    public String toString() {
+        return locale.toString();
+    }
 
     /**
      * Speech recognition has been started or resumed and is listening for voice
@@ -97,16 +99,14 @@ public class SpeechRecognition {
     // Allow other threads to wait for speech recognition to complete
     private Event<SpeechRecognitionImplementation, SpeechRecognitionStartedEventArgs> lockSpeechRecognitionInProgress = new Event<SpeechRecognitionImplementation, SpeechRecognitionStartedEventArgs>() {
         @Override
-        public void run(SpeechRecognitionImplementation sender,
-                SpeechRecognitionStartedEventArgs args) {
+        public void run(SpeechRecognitionImplementation sender, SpeechRecognitionStartedEventArgs args) {
             lockSpeechRecognitionInProgressSyncObject();
         }
     };
 
     private Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs> unlockSpeechRecognitionInProgress = new Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs>() {
         @Override
-        public void run(SpeechRecognitionImplementation sender,
-                SpeechRecognizedEventArgs args) {
+        public void run(SpeechRecognitionImplementation sender, SpeechRecognizedEventArgs args) {
             unlockSpeechRecognitionInProgressSyncObject();
         }
     };
@@ -146,8 +146,7 @@ public class SpeechRecognition {
                     // hypothesis
                     // event handler may generate a Completion event
                     if (SpeechRecognitionInProgress.isHeldByCurrentThread()) {
-                        logger.debug(
-                                "Unlocking speech recognition sync object");
+                        logger.debug("Unlocking speech recognition sync object");
                         SpeechRecognitionInProgress.unlock();
                     }
                 } catch (Throwable t) {
@@ -167,8 +166,7 @@ public class SpeechRecognition {
     public SpeechRecognition(Locale locale) {
         // First add the progress events, because we don't want to get events
         // consumed before setting the in-progress state
-        this.events = new SpeechRecognitionEvents<SpeechRecognitionImplementation>(
-                lockSpeechRecognitionInProgress,
+        this.events = new SpeechRecognitionEvents<SpeechRecognitionImplementation>(lockSpeechRecognitionInProgress,
                 unlockSpeechRecognitionInProgress);
         this.locale = locale;
         try {
@@ -202,8 +200,8 @@ public class SpeechRecognition {
     }
 
     private static boolean enableSpeechHypothesisHandlerGlobally() {
-        return Boolean.toString(true).compareToIgnoreCase(System.getProperty(
-                EnableSpeechHypothesisHandlerGlobally, "true")) == 0;
+        return Boolean.toString(true)
+                .compareToIgnoreCase(System.getProperty(EnableSpeechHypothesisHandlerGlobally, "true")) == 0;
     }
 
     /**
@@ -213,8 +211,7 @@ public class SpeechRecognition {
         return sr != null;
     }
 
-    public void startRecognition(List<String> choices,
-            Confidence recognitionConfidence) {
+    public void startRecognition(List<String> choices, Confidence recognitionConfidence) {
         this.choices = choices;
         this.recognitionConfidence = recognitionConfidence;
         if (sr != null) {
@@ -298,11 +295,9 @@ public class SpeechRecognition {
     }
 
     private void setupAndStartSR(final List<String> choices) {
-        if (enableSpeechHypothesisHandlerGlobally()
-                || SpeechRecognition.this.recognitionConfidence == Confidence.Low) {
+        if (enableSpeechHypothesisHandlerGlobally() || SpeechRecognition.this.recognitionConfidence == Confidence.Low) {
             hypothesisEventHandler.setChoices(choices);
-            hypothesisEventHandler.setConfidence(
-                    SpeechRecognition.this.recognitionConfidence);
+            hypothesisEventHandler.setConfidence(SpeechRecognition.this.recognitionConfidence);
             hypothesisEventHandler.enable(true);
         } else {
             hypothesisEventHandler.enable(false);

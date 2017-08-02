@@ -49,7 +49,7 @@ public class SpeechRecognitionTests {
 
             private boolean confidenceIsHighEnough(
                     SpeechRecognitionResult result, Confidence confidence) {
-                return result.confidence.propability >= confidence.propability;
+                return result.confidence.probability >= confidence.probability;
             }
         };
 

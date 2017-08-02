@@ -53,7 +53,7 @@ class SpeechRecognitionHypothesisResult {
         // to get a value in [0...1] -> would be much clearer
         // -> commit first, then refactor
         boolean choiceWeightAccepted = maxValue >= hypothesisAccumulatedWeight
-                * confidence.propability;
+                * confidence.probability;
         // Prompts with few words need more consistent speech detection
         // events
         // (doesn't alternate between different choices)

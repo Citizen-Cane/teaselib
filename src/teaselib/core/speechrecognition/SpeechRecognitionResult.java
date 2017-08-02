@@ -26,10 +26,10 @@ public class SpeechRecognitionResult {
          * implementation may return a probability value higher than the
          * default, but still rate the confidence lower.
          */
-        public final double propability;
+        public final double probability;
 
         Confidence(double propability) {
-            this.propability = propability;
+            this.probability = propability;
         }
 
         public Confidence lower() {
@@ -63,7 +63,7 @@ public class SpeechRecognitionResult {
 
     public final int index;
     public final String text;
-    public final double propability;
+    public final double probability;
     public final Confidence confidence;
 
     public SpeechRecognitionResult(int index, String text, double propability,
@@ -71,7 +71,7 @@ public class SpeechRecognitionResult {
         super();
         this.index = index;
         this.text = text;
-        this.propability = propability;
+        this.probability = propability;
         this.confidence = confidence;
     }
 
@@ -81,13 +81,13 @@ public class SpeechRecognitionResult {
 
     public boolean hasHigherProbabilityThan(
             SpeechRecognitionResult recognitionResult) {
-        return propability > recognitionResult.propability
-                || confidence.propability > recognitionResult.confidence.propability;
+        return probability > recognitionResult.probability
+                || confidence.probability > recognitionResult.confidence.probability;
     }
 
     @Override
     public String toString() {
-        return "#" + index + ": " + text + " (%" + propability
+        return "#" + index + ": " + text + " (%" + probability
                 + ") -> confidence is " + confidence.toString().toLowerCase();
     }
 }

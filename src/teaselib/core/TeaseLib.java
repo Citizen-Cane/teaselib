@@ -10,7 +10,10 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.LinkedHashSet;
 import java.util.Locale;
+import java.util.Map.Entry;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
@@ -67,6 +70,25 @@ public class TeaseLib {
         }
         this.host = host;
         this.persistence = new PersistenceLogger(persistence);
+
+        Set<String> javaProperties = new LinkedHashSet<String>(
+                Arrays.asList("java.vm.name", "java.runtime.version", "os.name", "os.arch"));
+
+        StringBuilder javaVersion = new StringBuilder();
+        for (String name : javaProperties) {
+            String property = System.getProperties().getProperty(name);
+            if (property != null) {
+                if (javaVersion.length() > 0)
+                    javaVersion.append(" ");
+                javaVersion.append(property);
+            }
+        }
+        logger.info(javaVersion.toString());
+
+        for (Entry<Object, Object> entry : System.getProperties().entrySet()) {
+            logger.debug(entry.getKey() + "=" + entry.getValue());
+        }
+
         this.transcript = newTranscriptLogger(host);
 
         shower = new Shower(host);

@@ -101,4 +101,9 @@ public class HostInputMethod implements InputMethod {
         return Collections.EMPTY_MAP;
     }
 
+    @Override
+    public String toString() {
+        return host.toString();
+    }
+
 }

@@ -123,9 +123,14 @@ public class Prompt {
 
     @Override
     public String toString() {
-        return (scriptTask != null ? scriptTask.getRelation() + " " : " ") + "" + choices.toString() + " "
-                + (lock.hasWaiters(click) ? "waiting" : "active") + (paused.get() ? " paused" : "") + " result="
-                + toString(result);
+        final String lockState;
+        if (lock.tryLock()) {
+            lockState = lock.hasWaiters(click) ? "waiting" : "active";
+        } else {
+            lockState = "locked";
+        }
+        return (scriptTask != null ? scriptTask.getRelation() + " " : " ") + "" + choices.toString() + " " + lockState
+                + (paused.get() ? " paused" : "") + " result=" + toString(result);
     }
 
     private String toString(int result) {

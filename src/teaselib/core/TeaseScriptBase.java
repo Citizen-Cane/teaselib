@@ -377,8 +377,6 @@ public abstract class TeaseScriptBase {
             stopBackgroundRenderers();
         }
 
-        logger.info("showChoices: " + derivedChoices.toString());
-
         List<InputMethod> inputMethods = new ArrayList<InputMethod>();
         inputMethods.add(teaseLib.hostInputMethod);
 
@@ -388,6 +386,10 @@ public abstract class TeaseScriptBase {
         }
 
         Prompt prompt = new Prompt(new Choices(choices), new Choices(derivedChoices), scriptFunction, inputMethods);
+        logger.info("Prompt: " + prompt);
+        for (InputMethod inputMethod : inputMethods) {
+            logger.info(inputMethod.getClass().getSimpleName() + " " + inputMethod.toString());
+        }
         String choice = teaseLib.shower.show(this, prompt);
 
         logger.debug("Reply finished");

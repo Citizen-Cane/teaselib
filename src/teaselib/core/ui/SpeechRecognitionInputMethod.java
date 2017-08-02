@@ -134,7 +134,7 @@ public class SpeechRecognitionInputMethod implements InputMethod {
             }
 
             private boolean confidenceIsHighEnough(SpeechRecognitionResult result, Confidence confidence) {
-                return result.confidence.propability >= confidence.propability;
+                return result.confidence.probability >= confidence.probability;
             }
         };
     }
@@ -207,6 +207,12 @@ public class SpeechRecognitionInputMethod implements InputMethod {
             }
         });
         return handlers;
+    }
+
+    @Override
+    public String toString() {
+        return "Actor=" + script.actor.key + " SpeechRecognizer=" + speechRecognizer.toString() + " confidence="
+                + recognitionConfidence;
     }
 
 }

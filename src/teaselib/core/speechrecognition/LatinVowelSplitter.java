@@ -12,14 +12,16 @@ import java.util.List;
  */
 public class LatinVowelSplitter extends BasicSplitter {
 
-    public LatinVowelSplitter(
-            int minimumNumberOfVowelsForHypothesisRecognition) {
+    private static final String VOCALS = "aeiouy‰ˆ¸ÈË‡";
+    private static final String ALL_VOCALS = VOCALS.toLowerCase() + VOCALS.toUpperCase();
+
+    public LatinVowelSplitter(int minimumNumberOfVowelsForHypothesisRecognition) {
         super(minimumNumberOfVowelsForHypothesisRecognition);
     }
 
     @Override
     protected String[] split(String text) {
-        String[] split = text.split("[^aeiouyAEIOUY]|[\\s]");
+        String[] split = text.split("[^" + ALL_VOCALS + "]|[\\s]");
         List<String> syllables = new ArrayList<String>();
         for (String string : split) {
             if (!string.isEmpty()) {

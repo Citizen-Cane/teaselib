@@ -35,13 +35,13 @@ public class SpeechDetectionEventHandler {
      * The first three or four syllables of any prompt are usually detected with
      * a high probability value, so the minimum value should be four.
      */
-    private final static int HypothesisMinimumNumberOfWordsDefault = 4;
+    private final static int HypothesisMinimumNumberOfWordsDefault = 3;
 
     /**
      * The default number of vowels after which the handler will accept a
      * hypothesis when the confidence is high enough.
      */
-    private final static int HypothesisMinimumNumberOfVowelsDefault = 6;
+    private final static int HypothesisMinimumNumberOfVowelsDefault = 3;
 
     private final SpeechRecognition speechRecognizer;
     private final Event<SpeechRecognitionImplementation, SpeechRecognitionStartedEventArgs> recognitionStarted;

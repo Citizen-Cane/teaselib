@@ -103,7 +103,7 @@ public class PreDefinedItems extends AbstractUserItems {
             Item chastityBelt = item(teaseLib, item, "Toys", "chastity_belt", "A Chastity belt",
                     defaults(item, Body.OnBalls), Material.Metal, Features.Lockable);
             Item gatesOfHell = item(teaseLib, item, "Toys", "gates_of_hell", "Gates of Hell",
-                    defaults(item, Body.AroundCockBase), Material.Leather, Material.Metal);
+                    new Enum<?>[] { Body.AroundCockBase, Body.OnPenis }, Material.Leather, Material.Metal);
 
             return new Item[] { chastityCage, chastityBelt, gatesOfHell };
 

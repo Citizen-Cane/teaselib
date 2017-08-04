@@ -1,19 +1,43 @@
-Out of the box Windows installs with a few SAPI voices, plus additional "Mobile voices".
+Out of the box Windows installs with a few SAPI voices, plus some additional "Mobile voices".
 
-These "Mobile" voices, although they don't seem to be available for standard Windows programs (just for Universal Apps) are also available in TeaseLib on Windows. 
+These "Mobile" voices, although they don't seem to be available for standard Windows programs (usually just for Universal Apps) are also available in TeaseLib. 
 
-You also might want to install additional voices that are available from Microsoft - some of them with really good qquality - here's how:
+You may also install additional voices available from Microsoft - some of them with really good quality - here's how:
 
 Sources for TTS voices that can be used with TeaseLib on the Windows platform:
+° Already installed "SAPI" or "Mobile" voices that come with the initial language of your Windows installation.
+° Voices installed by adding additional language packs in "Time & Langauge"->"Region & Language".
+° Voices from additional Microsoft Speech products (MS Speech Server)
+° Third Party Voices
 
-- already installed "Mobile" voices that come with the initial language of your Windows installation.
-
-- voices installed by adding additional language packs in "Time & Langauge"->"Region & Language".
-	° not all language packs contain speech resources (tested: de, en-au, en-ca, en-in, en-uk, en-us, fr)
+	
+Install voices by adding additional Languages in Windows "Region & Language" Control Panel:
+	° some language pack contain speech resources (tested in 2017: de, en-us, en-uk, fr, en-in, en-ca, en-au)
 	° After downloading Speech resources for the language, you can see additional voices in "Time & Langauge"->"Speech"
+	° Some voices are installed as "SAPI" voices, others only as "Mobile"
 	° Downloading the Speech resources also installs Speech Recognition for that language
-	° Some voices are installed as "SAPI" voices, others only as "mobile"
 
-	- Speech Server Runtime 11 plus any Speech Server TTS voices for for Microsoft Speech Server (Version 11):
+	
+Install Speech Server 11 Runtime and voices:
+	° it's pretty old by now (release date is 2011), so install this only if
+		+ the voice isn't part of a language pack
+		+ or the Speech Server 11 voice download is larger than the one in the language pack
+		 (download size of the voice usually indicates voice quality)
+	° Some voices are only available as "x86" binaries, so they're aren't visible to x64-applications
+	https://www.microsoft.com/en-us/download/details.aspx?id=27225
+	https://www.microsoft.com/en-us/download/details.aspx?id=27224
+	
+
+	
+Voice categories are supported by TeaseLib:
+	
+TeaseLib supports TTS SAPI voices. However M$ in it's Winfinite marketing wisdom decided to put their SAPI voices in different categories, possibly to annoy us software developers. Technically they're all the same, but from the programmers point of view you have to look them up explicitely.
+
+SAPI voices:
+	° These are available via the "classic" Text-ToSpeech  control panel
+Mobile Voices:
+	° These are available via the new Speech control panel, but not visible to older Text-To-Speech applications
+Speech Server 11 Runtime & voices:
+	° Not available in either control panel
 	° Some of the Speech Server 11 voices are also available as part of a Windows 10 language pack - check before install
 

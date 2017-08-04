@@ -1,6 +1,7 @@
 package teaselib.core.texttospeech;
 
 import java.io.File;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -31,6 +32,8 @@ public class TextToSpeech {
     }
 
     public static final Lock AudioOutput = new ReentrantLock();
+
+    public static final Set<String> BlackList = new HashSet<String>(Arrays.asList("LTTS7Ludoviko", "MSMary", "MSMike"));
 
     public TextToSpeech() {
         Set<String> names = getImplementations();
@@ -90,6 +93,7 @@ public class TextToSpeech {
 
     public Map<String, Voice> getVoices() {
         final Map<String, Voice> voices = new HashMap<String, Voice>();
+
         if (tts != null) {
             Delegate delegate = new Delegate() {
                 @Override
@@ -107,7 +111,18 @@ public class TextToSpeech {
         } else {
             ttsEngineNotInitialized();
         }
+
+        removeBlackListed(voices);
         return voices;
+    }
+
+    /**
+     * @param voices
+     */
+    private static void removeBlackListed(Map<String, Voice> voices) {
+        for (String blackListed : BlackList) {
+            voices.remove(blackListed);
+        }
     }
 
     /**

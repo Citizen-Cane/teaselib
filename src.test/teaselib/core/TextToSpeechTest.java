@@ -1,6 +1,6 @@
 package teaselib.core;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import java.util.Map;
 import java.util.Map.Entry;
@@ -15,15 +15,13 @@ import teaselib.core.texttospeech.TextToSpeech;
 import teaselib.core.texttospeech.Voice;
 import teaselib.core.util.Environment;
 
-// TODO Fails to cleanup on Windows somehow and
-// crashes the test suite after finishing successfully
+// TODO on Windows fails to cleanup and
+// crashes the test suite while executing a subsequent test
 @Ignore
 public class TextToSpeechTest {
-    private static final Logger logger = LoggerFactory
-            .getLogger(TextToSpeechTest.class);
+    private static final Logger logger = LoggerFactory.getLogger(TextToSpeechTest.class);
 
     @Test
-    @Ignore
     public void testVoiceEnumeration() {
         Assume.assumeTrue(Environment.SYSTEM == Environment.Windows);
         TextToSpeech textToSpeech = new TextToSpeech();
@@ -44,8 +42,7 @@ public class TextToSpeechTest {
         assertTrue(voices.size() > 0);
         for (Entry<String, Voice> entry : voices.entrySet()) {
             String testPrompt = "Test.";
-            logger.info("Testing voice " + entry.getKey() + " - prompt =  '"
-                    + testPrompt + "'");
+            logger.info("Testing voice " + entry.getKey() + " - prompt =  '" + testPrompt + "'");
             textToSpeech.setVoice(entry.getValue());
             textToSpeech.speak(testPrompt);
         }

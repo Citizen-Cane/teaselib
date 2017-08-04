@@ -36,8 +36,8 @@ public class TestMotionDetectorStability {
         int n = 0;
         for (long i = 0; i < durationMillis;) {
             md.awaitChange(0.0, Presence.Shake, 0.0, 0.0);
-            md.pause();
-            md.resume();
+            md.stop();
+            md.start();
             i = System.currentTimeMillis() - start;
             n++;
         }

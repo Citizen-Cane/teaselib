@@ -135,7 +135,7 @@ public interface MotionDetector extends Device {
     public boolean awaitChange(double amount, Presence change,
             double timeSpanSeconds, double timeoutSeconds);
 
-    public void pause();
+    public void stop();
 
-    public void resume();
+    public void start();
 }

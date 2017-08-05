@@ -41,7 +41,7 @@ public class SpeechDetectionEventHandler {
      * The default number of vowels after which the handler will accept a
      * hypothesis when the confidence is high enough.
      */
-    private final static int HypothesisMinimumNumberOfVowelsDefault = 3;
+    private final static int HypothesisMinimumNumberOfVowelsDefault = 4;
 
     private final SpeechRecognition speechRecognizer;
     private final Event<SpeechRecognitionImplementation, SpeechRecognitionStartedEventArgs> recognitionStarted;

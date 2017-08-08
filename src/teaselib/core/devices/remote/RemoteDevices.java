@@ -10,15 +10,13 @@ import teaselib.core.devices.DeviceCache;
 public class RemoteDevices {
 
     public static final DeviceCache<RemoteDevice> Instance = new DeviceCache<RemoteDevice>()
-            .addFactory(LocalNetworkDevice.Factory)
-            .addFactory(BluetoothDevice.Factory);
+            .addFactory(LocalNetworkDevice.Factory).addFactory(BluetoothDevice.Factory);
 
-    static final RemoteDevice WaitingForConnection = new RemoteDevice() {
+    public static final RemoteDevice WaitingForConnection = new RemoteDevice() {
 
         @Override
         public String getDevicePath() {
-            return DeviceCache.createDevicePath(WaitingForConnection,
-                    WaitingForConnection);
+            return DeviceCache.createDevicePath(WaitingForConnection, WaitingForConnection);
         }
 
         @Override
@@ -84,8 +82,7 @@ public class RemoteDevices {
     public static List<RemoteDevice> devicesThatSupport(String serviceName) {
         List<RemoteDevice> remoteDevices = new Vector<RemoteDevice>();
         for (String devicePath : Instance.getDevicePaths()) {
-            if (!Device.WaitingForConnection
-                    .equals(DeviceCache.getDeviceName(devicePath))) {
+            if (!Device.WaitingForConnection.equals(DeviceCache.getDeviceName(devicePath))) {
                 RemoteDevice device = Instance.getDevice(devicePath);
                 if (serviceName.equals(device.getServiceName())) {
                     remoteDevices.add(device);

@@ -1,7 +1,8 @@
-package teaselib.core.devices.remote;
+package teaselib.core.devices.release;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -9,6 +10,9 @@ import teaselib.core.devices.BatteryLevel;
 import teaselib.core.devices.Device;
 import teaselib.core.devices.DeviceCache;
 import teaselib.core.devices.DeviceFactory;
+import teaselib.core.devices.remote.RemoteDevice;
+import teaselib.core.devices.remote.RemoteDeviceMessage;
+import teaselib.core.devices.remote.RemoteDevices;
 
 public class KeyRelease implements Device {
 
@@ -59,16 +63,12 @@ public class KeyRelease implements Device {
 
     private static final String DeviceClassName = "KeyRelease";
 
-    private static final DeviceFactory<KeyRelease> Factory = new DeviceFactory<KeyRelease>(
-            DeviceClassName) {
+    private static final DeviceFactory<KeyRelease> Factory = new DeviceFactory<KeyRelease>(DeviceClassName) {
         @Override
-        public List<String> enumerateDevicePaths(
-                Map<String, KeyRelease> deviceCache) {
+        public List<String> enumerateDevicePaths(Map<String, KeyRelease> deviceCache) {
             List<String> devicePaths = new ArrayList<String>();
-            for (RemoteDevice remoteDevice : RemoteDevices
-                    .devicesThatSupport(DeviceClassName)) {
-                devicePaths.add(DeviceCache.createDevicePath(DeviceClassName,
-                        remoteDevice.getDevicePath()));
+            for (RemoteDevice remoteDevice : RemoteDevices.devicesThatSupport(DeviceClassName)) {
+                devicePaths.add(DeviceCache.createDevicePath(DeviceClassName, remoteDevice.getDevicePath()));
             }
             return devicePaths;
         }
@@ -78,14 +78,12 @@ public class KeyRelease implements Device {
             if (WaitingForConnection.equals(deviceName)) {
                 return new KeyRelease();
             } else {
-                return new KeyRelease(
-                        RemoteDevices.Instance.getDevice(deviceName));
+                return new KeyRelease(RemoteDevices.Instance.getDevice(deviceName));
             }
         }
     };
 
-    public static final DeviceCache<KeyRelease> Devices = new DeviceCache<KeyRelease>()
-            .addFactory(Factory);
+    public static final DeviceCache<KeyRelease> Devices = new DeviceCache<KeyRelease>().addFactory(Factory);
 
     private static final String Actuators = "actuators";
 
@@ -102,22 +100,19 @@ public class KeyRelease implements Device {
 
     @Override
     public String getDevicePath() {
-        return DeviceCache.createDevicePath(DeviceClassName,
-                remoteDevice.getDevicePath());
+        return DeviceCache.createDevicePath(DeviceClassName, remoteDevice.getDevicePath());
     }
 
     @Override
     public String getName() {
-        return remoteDevice.getName() + " " + remoteDevice.getServiceName()
-                + " " + remoteDevice.getDescription() + " "
+        return remoteDevice.getName() + " " + remoteDevice.getServiceName() + " " + remoteDevice.getDescription() + " "
                 + remoteDevice.getVersion();
     }
 
     @Override
     public boolean connected() {
         if (remoteDevice == RemoteDevices.WaitingForConnection) {
-            List<RemoteDevice> keyReleaseDevices = RemoteDevices
-                    .devicesThatSupport(DeviceClassName);
+            List<RemoteDevice> keyReleaseDevices = RemoteDevices.devicesThatSupport(DeviceClassName);
             if (!keyReleaseDevices.isEmpty()) {
                 remoteDevice = keyReleaseDevices.get(0);
                 Factory.connectDevice(this);
@@ -148,40 +143,39 @@ public class KeyRelease implements Device {
         return remoteDevice.batteryLevel();
     }
 
-    public int actuators() {
-        RemoteDeviceMessage count = remoteDevice.sendAndReceive(
-                new RemoteDeviceMessage(DeviceClassName, Actuators));
+    public List<Actuator> actuators() {
+        RemoteDeviceMessage count = remoteDevice.sendAndReceive(new RemoteDeviceMessage(DeviceClassName, Actuators));
         if (RemoteDevice.Count.equals(count.command)) {
             int actuators = Integer.parseInt(count.parameters.get(0));
             releaseKeys = new String[actuators];
+            List<Actuator> releaseMchanisms = new ArrayList<Actuator>(actuators);
             for (int i = 0; i < releaseKeys.length; i++) {
+                releaseMchanisms.add(new Actuator(this, i));
                 releaseKeys[i] = "";
             }
-            return actuators;
+            return releaseMchanisms;
         } else {
-            return 0;
+            return Collections.EMPTY_LIST;
         }
     }
 
-    public int getBestActuatorForTime(int timeMinutes) {
-        int actuatorCount = actuators();
-        List<Integer> available = new ArrayList<Integer>(actuatorCount);
-        for (int actuator = 0; actuator < actuatorCount; actuator++) {
-            available.add(available(actuator));
+    public Actuator getBestActuatorForTime(int timeMinutes) {
+        List<Actuator> releaseMechanisms = actuators();
+        List<Integer> durations = new ArrayList<Integer>(releaseMechanisms.size());
+        for (int actuator = 0; actuator < durations.size(); actuator++) {
+            durations.add(available(actuator));
         }
-        return getBestActuator(timeMinutes, available);
+        return releaseMechanisms.get(getBestActuator(timeMinutes, durations));
     }
 
-    static int getBestActuator(int timeMinutes,
-            List<Integer> availableDurations) {
+    public static int getBestActuator(int timeMinutes, List<Integer> durations) {
         int bestDifferenceSoFar = Integer.MAX_VALUE;
         int unset = Integer.MIN_VALUE;
         int bestActuator = unset;
         int maxDuration = unset;
         int maxActuator = unset;
-        for (int actuator = 0; actuator < availableDurations
-                .size(); actuator++) {
-            int availableDuration = availableDurations.get(actuator);
+        for (int actuator = 0; actuator < durations.size(); actuator++) {
+            int availableDuration = durations.get(actuator);
             int difference = availableDuration - timeMinutes;
             if (0 <= difference && difference < bestDifferenceSoFar) {
                 bestActuator = actuator;
@@ -195,19 +189,16 @@ public class KeyRelease implements Device {
         return bestActuator != unset ? bestActuator : maxActuator;
     }
 
-    public boolean arm(int actuator) {
-        RemoteDeviceMessage ok = remoteDevice
-                .sendAndReceive(new RemoteDeviceMessage(DeviceClassName, Arm,
-                        Arrays.asList(Integer.toString(actuator))));
+    boolean arm(int actuator) {
+        RemoteDeviceMessage ok = remoteDevice.sendAndReceive(
+                new RemoteDeviceMessage(DeviceClassName, Arm, Arrays.asList(Integer.toString(actuator))));
         releaseKeys[actuator] = "";
         return Ok.equals(ok.command);
     }
 
-    public String start(int actuator, int timeMinutes) {
-        RemoteDeviceMessage key = remoteDevice
-                .sendAndReceive(new RemoteDeviceMessage(DeviceClassName, Start,
-                        Arrays.asList(Integer.toString(actuator),
-                                Integer.toString(timeMinutes))));
+    String start(int actuator, int timeMinutes) {
+        RemoteDeviceMessage key = remoteDevice.sendAndReceive(new RemoteDeviceMessage(DeviceClassName, Start,
+                Arrays.asList(Integer.toString(actuator), Integer.toString(timeMinutes))));
         if (ReleaseKey.equals(key.command)) {
             releaseKeys[actuator] = key.parameters.get(0);
             return releaseKeys[actuator];
@@ -220,11 +211,9 @@ public class KeyRelease implements Device {
         return remoteDevice.sleep(timeMinutes);
     }
 
-    public boolean add(int actuator, int minutes) {
-        RemoteDeviceMessage ok = remoteDevice
-                .sendAndReceive(new RemoteDeviceMessage(DeviceClassName, Add,
-                        Arrays.asList(Integer.toString(actuator),
-                                Integer.toString(minutes))));
+    boolean add(int actuator, int minutes) {
+        RemoteDeviceMessage ok = remoteDevice.sendAndReceive(new RemoteDeviceMessage(DeviceClassName, Add,
+                Arrays.asList(Integer.toString(actuator), Integer.toString(minutes))));
         return Ok.equals(ok.command);
     }
 
@@ -235,10 +224,9 @@ public class KeyRelease implements Device {
      *            The actuator.
      * @return True if the actuator holds a key and is counting down.
      */
-    public boolean isRunning(int actuator) {
-        RemoteDeviceMessage count = remoteDevice
-                .sendAndReceive(new RemoteDeviceMessage(DeviceClassName,
-                        Running, Arrays.asList(Integer.toString(actuator))));
+    boolean isRunning(int actuator) {
+        RemoteDeviceMessage count = remoteDevice.sendAndReceive(
+                new RemoteDeviceMessage(DeviceClassName, Running, Arrays.asList(Integer.toString(actuator))));
         if (RemoteDevice.Count.equals(count.command)) {
             return Integer.parseInt(count.parameters.get(0)) == 1;
         } else {
@@ -252,10 +240,9 @@ public class KeyRelease implements Device {
      * @param actuator
      * @return The number of available minutes.
      */
-    public int available(int actuator) {
-        RemoteDeviceMessage count = remoteDevice
-                .sendAndReceive(new RemoteDeviceMessage(DeviceClassName,
-                        Available, Arrays.asList(Integer.toString(actuator))));
+    int available(int actuator) {
+        RemoteDeviceMessage count = remoteDevice.sendAndReceive(
+                new RemoteDeviceMessage(DeviceClassName, Available, Arrays.asList(Integer.toString(actuator))));
         if (RemoteDevice.Count.equals(count.command)) {
             return Integer.parseInt(count.parameters.get(0));
         } else {
@@ -267,10 +254,9 @@ public class KeyRelease implements Device {
      * @param actuator
      * @return Duration minutes until release.
      */
-    public int remaining(int actuator) {
-        RemoteDeviceMessage count = remoteDevice
-                .sendAndReceive(new RemoteDeviceMessage(DeviceClassName,
-                        Remaining, Arrays.asList(Integer.toString(actuator))));
+    int remaining(int actuator) {
+        RemoteDeviceMessage count = remoteDevice.sendAndReceive(
+                new RemoteDeviceMessage(DeviceClassName, Remaining, Arrays.asList(Integer.toString(actuator))));
         if (RemoteDevice.Count.equals(count.command)) {
             return Integer.parseInt(count.parameters.get(0));
         } else {
@@ -285,10 +271,9 @@ public class KeyRelease implements Device {
      *            THe actuator that holds the key.
      * @return Whether the key has been released.
      */
-    public boolean release(int actuator) {
-        RemoteDeviceMessage released = remoteDevice.sendAndReceive(
-                new RemoteDeviceMessage(DeviceClassName, Release, Arrays.asList(
-                        Integer.toString(actuator), releaseKeys[actuator])));
+    boolean release(int actuator) {
+        RemoteDeviceMessage released = remoteDevice.sendAndReceive(new RemoteDeviceMessage(DeviceClassName, Release,
+                Arrays.asList(Integer.toString(actuator), releaseKeys[actuator])));
         return Ok.equals(released.command);
     }
 }

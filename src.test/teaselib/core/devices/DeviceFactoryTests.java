@@ -10,7 +10,7 @@ import java.util.Set;
 import org.junit.Test;
 import org.slf4j.LoggerFactory;
 
-import teaselib.core.devices.remote.KeyRelease;
+import teaselib.core.devices.release.KeyRelease;
 import teaselib.core.devices.remote.RemoteDevice;
 import teaselib.core.devices.remote.RemoteDevices;
 import teaselib.core.devices.xinput.XInputDevices;

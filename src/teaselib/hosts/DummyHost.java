@@ -1,5 +1,6 @@
 package teaselib.hosts;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -197,6 +198,18 @@ public class DummyHost implements Host {
 
     public void setResponses(Map<String, Response> responses) {
         this.responses = responses;
+    }
+
+    @Override
+    public File getLocation(Location folder) {
+        if (folder == Location.Host)
+            return new File("./");
+        else if (folder == Location.TeaseLib)
+            return new File(getLocation(Location.Host), "TeaseLib" + File.separator);
+        else if (folder == Location.User)
+            return getLocation(Location.Host);
+        else
+            throw new IllegalArgumentException(folder.toString());
     }
 
 }

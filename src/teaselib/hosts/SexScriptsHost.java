@@ -11,6 +11,7 @@ import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -417,6 +418,7 @@ public class SexScriptsHost implements Host {
                     final String choice = choices.get(index);
                     if (buttonText.contains(choice)) {
                         Delegate click = new Delegate() {
+
                             @Override
                             public void run() {
                                 logger.info("Clicking on '" + choice + "'");
@@ -433,7 +435,9 @@ public class SexScriptsHost implements Host {
             // If a choice wasn't found, the element at the corresponding index
             // would be null
             return clickableChoices;
-        } catch (IllegalAccessException e) {
+        } catch (
+
+        IllegalAccessException e) {
             logger.error(e.getMessage(), e);
         } catch (NoSuchFieldException e) {
             logger.error(e.getMessage(), e);
@@ -603,4 +607,15 @@ public class SexScriptsHost implements Host {
         };
     }
 
+    @Override
+    public File getLocation(Location folder) {
+        if (folder == Location.Host)
+            return new File("").getAbsoluteFile();
+        else if (folder == Location.TeaseLib)
+            return new File(getLocation(Location.Host), "lib" + File.separator + "TeaseLib" + File.separator);
+        else if (folder == Location.User)
+            return getLocation(Location.Host).getAbsoluteFile();
+        else
+            throw new IllegalArgumentException(folder.toString());
+    }
 }

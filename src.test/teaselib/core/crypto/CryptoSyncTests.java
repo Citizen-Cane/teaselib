@@ -16,7 +16,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
-import teaselib.core.util.FileUtilites;
+import teaselib.core.util.FileUtilities;
 
 /**
  * @author someone
@@ -80,7 +80,7 @@ public class CryptoSyncTests {
             assertTrue(cryptoSync.getEncryptedFile(name).exists());
             assertTrue(cryptoSyncCopy.getDecryptedFile(name).exists());
             assertTrue(cryptoSyncCopy.getEncryptedFile(name).exists());
-            assertTrue(FileUtilites.sameContent(
+            assertTrue(FileUtilities.sameContent(
                     cryptoSync.getDecryptedFile(name),
                     cryptoSyncCopy.getDecryptedFile(name)));
         }
@@ -100,7 +100,7 @@ public class CryptoSyncTests {
             assertTrue(cryptoSync.getEncryptedFile(name).exists());
             assertTrue(cryptoSyncOriginal.getDecryptedFile(name).exists());
             assertTrue(cryptoSyncOriginal.getEncryptedFile(name).exists());
-            assertTrue(FileUtilites.sameContent(
+            assertTrue(FileUtilities.sameContent(
                     cryptoSync.getDecryptedFile(name),
                     cryptoSyncOriginal.getDecryptedFile(name)));
         }
@@ -116,23 +116,23 @@ public class CryptoSyncTests {
     @Test
     public void testFileFilter() throws GeneralSecurityException, IOException {
         assertEquals(2, new CryptoSync(decryptedTestData, encryptedTestData,
-                FileUtilites.getFileFilter("jpg")).size());
+                FileUtilities.getFileFilter("jpg")).size());
         assertEquals(4, new CryptoSync(decryptedTestData, encryptedTestData,
-                FileUtilites.getFileFilter("png")).size());
+                FileUtilities.getFileFilter("png")).size());
         assertEquals(6, new CryptoSync(decryptedTestData, encryptedTestData,
-                FileUtilites.getFileFilter("jpg", "png")).size());
+                FileUtilities.getFileFilter("jpg", "png")).size());
         final File noFiles = temporaryFolder.newFolder();
         assertEquals(
                 2,
-                new CryptoSync(noFiles, encryptedTestData, FileUtilites
+                new CryptoSync(noFiles, encryptedTestData, FileUtilities
                         .getFileFilter("jpg")).size());
         assertEquals(
                 4,
-                new CryptoSync(noFiles, encryptedTestData, FileUtilites
+                new CryptoSync(noFiles, encryptedTestData, FileUtilities
                         .getFileFilter("png")).size());
         assertEquals(
                 6,
-                new CryptoSync(noFiles, encryptedTestData, FileUtilites
+                new CryptoSync(noFiles, encryptedTestData, FileUtilities
                         .getFileFilter("jpg", "png")).size());
     }
 }

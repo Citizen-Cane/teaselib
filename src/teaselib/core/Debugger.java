@@ -1,5 +1,6 @@
 package teaselib.core;
 
+import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -10,9 +11,6 @@ import teaselib.hosts.DummyPersistence;
 public class Debugger {
     public final TeaseLib teaseLib;
 
-    private final DummyHost dummyHost;
-    private final DummyPersistence dummyPersistence;
-
     public enum Response {
         Choose,
         Ignore
@@ -22,20 +20,14 @@ public class Debugger {
 
     public Debugger(TeaseLib teaseLib) {
         this.teaseLib = teaseLib;
-
-        this.dummyHost = null;
-        this.dummyPersistence = null;
     }
 
-    public Debugger(DummyHost dummyHost, DummyPersistence dummyPersistence) {
-        this(new TeaseLib(dummyHost, dummyPersistence), dummyHost, dummyPersistence);
+    public Debugger(DummyHost dummyHost, DummyPersistence dummyPersistence) throws IOException {
+        this(new TeaseLib(dummyHost, dummyPersistence), dummyHost);
     }
 
-    public Debugger(TeaseLib teaseLib, DummyHost dummyHost, DummyPersistence dummyPersistence) {
+    public Debugger(TeaseLib teaseLib, DummyHost dummyHost) {
         this.teaseLib = teaseLib;
-
-        this.dummyHost = dummyHost;
-        this.dummyPersistence = dummyPersistence;
 
         dummyHost.setResponses(responses);
     }

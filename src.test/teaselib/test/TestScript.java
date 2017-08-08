@@ -1,5 +1,6 @@
 package teaselib.test;
 
+import java.io.IOException;
 import java.util.Locale;
 
 import teaselib.Actor;
@@ -21,31 +22,44 @@ public class TestScript extends TeaseScript {
     public static final Actor TestScriptActor = new Actor("Test", Voice.Gender.Female, Locale.US);
 
     public static TestScript getOne() {
-        return new TestScript(new DummyHost(), new DummyPersistence());
+        try {
+            return new TestScript(new DummyHost(), new DummyPersistence());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public static TestScript getOne(PropertyNameMapping propertyNameMapping) {
-        return new TestScript(new DummyHost(), new DummyPersistence(propertyNameMapping));
+        try {
+            return new TestScript(new DummyHost(), new DummyPersistence(propertyNameMapping));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public static TestScript getOne(Class<?> resourceRoot) {
-        return new TestScript(new DummyHost(), new DummyPersistence(), resourceRoot);
+        try {
+            return new TestScript(new DummyHost(), new DummyPersistence(), resourceRoot);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
-    TestScript(DummyHost dummyHost, DummyPersistence dummyPersistence) {
+    TestScript(DummyHost dummyHost, DummyPersistence dummyPersistence) throws IOException {
         this(dummyHost, dummyPersistence,
                 new ResourceLoader(TestScript.class, ResourceLoader.ResourcesInProjectFolder));
     }
 
-    TestScript(DummyHost dummyHost, DummyPersistence dummyPersistence, Class<?> resourceRoot) {
+    TestScript(DummyHost dummyHost, DummyPersistence dummyPersistence, Class<?> resourceRoot) throws IOException {
         this(dummyHost, dummyPersistence, new ResourceLoader(resourceRoot));
     }
 
-    TestScript(DummyHost dummyHost, DummyPersistence dummyPersistence, ResourceLoader resourceLoader) {
+    TestScript(DummyHost dummyHost, DummyPersistence dummyPersistence, ResourceLoader resourceLoader)
+            throws IOException {
         super(new TeaseLib(dummyHost, dummyPersistence), resourceLoader, TestScriptActor, TestScriptNamespace);
         this.host = dummyHost;
         this.persistence = dummyPersistence;
-        this.debugger = new Debugger(teaseLib, dummyHost, dummyPersistence);
+        this.debugger = new Debugger(teaseLib, dummyHost);
     }
 
     @Override

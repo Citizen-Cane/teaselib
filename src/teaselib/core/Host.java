@@ -1,5 +1,6 @@
 package teaselib.core;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.List;
 
@@ -107,4 +108,12 @@ public interface Host {
     void setQuitHandler(Runnable onQuitHandler);
 
     VideoRenderer getDisplay(VideoRenderer.Type displayType);
+
+    enum Location {
+        TeaseLib,
+        Host,
+        User
+    }
+
+    File getLocation(Location folder);
 }

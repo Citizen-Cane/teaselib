@@ -34,16 +34,16 @@ public class FileUtilityTests {
     @Test
     public void testSameContentSmallFiles() throws IOException {
         File test = new File(currentDir, getClass().getSimpleName() + ".class");
-        assertTrue(FileUtilites.sameContent(test, test));
+        assertTrue(FileUtilities.sameContent(test, test));
         final File foo = new File(currentDir, "Foo.txt");
-        assertFalse(FileUtilites.sameContent(test, foo));
-        assertTrue(FileUtilites.sameContent(foo, foo));
+        assertFalse(FileUtilities.sameContent(test, foo));
+        assertTrue(FileUtilities.sameContent(foo, foo));
     }
 
     @Test
     public void testFileFilter() throws IOException {
         final File directory = temporaryFolder.newFolder();
-        assertEquals(false, FileUtilites.getFileFilter("jpg").accept(directory));
+        assertEquals(false, FileUtilities.getFileFilter("jpg").accept(directory));
     }
 
 }

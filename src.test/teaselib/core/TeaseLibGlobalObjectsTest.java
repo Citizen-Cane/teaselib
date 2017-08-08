@@ -2,6 +2,7 @@ package teaselib.core;
 
 import static org.junit.Assert.assertEquals;
 
+import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -50,7 +51,7 @@ public class TeaseLibGlobalObjectsTest {
     }
 
     @Test
-    public void testTeaseLibGLobals() {
+    public void testTeaseLibGLobals() throws IOException {
         TeaseLib teaseLib = new TeaseLib(new DummyHost(), new DummyPersistence());
 
         teaseLib.globals.store(TestObject.Object1, value1);

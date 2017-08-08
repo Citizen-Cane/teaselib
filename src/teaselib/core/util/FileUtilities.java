@@ -7,14 +7,15 @@ import java.io.File;
 import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 
 /**
  * @author someone
  *
  */
-public class FileUtilites {
-    public static boolean sameContent(File file1, File file2)
-            throws IOException {
+public class FileUtilities {
+    public static boolean sameContent(File file1, File file2) throws IOException {
         final FileInputStream is1 = new FileInputStream(file1);
         final FileInputStream is2 = new FileInputStream(file2);
         boolean sameContent = Stream.sameContent(is1, is2);
@@ -52,5 +53,9 @@ public class FileUtilites {
                 return false;
             }
         };
+    }
+
+    public static void copyFile(File source, File destination) throws IOException {
+        Files.copy(source.toPath(), destination.toPath(), StandardCopyOption.REPLACE_EXISTING);
     }
 }

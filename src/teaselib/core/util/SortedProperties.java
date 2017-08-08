@@ -7,6 +7,15 @@ import java.util.Vector;
 
 @SuppressWarnings("serial")
 public class SortedProperties extends Properties {
+
+    public SortedProperties() {
+        super();
+    }
+
+    public SortedProperties(Properties defaults) {
+        super(defaults);
+    }
+
     @SuppressWarnings("unchecked")
     @Override
     public synchronized Enumeration<Object> keys() {

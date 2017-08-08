@@ -23,6 +23,7 @@ import teaselib.Actor;
 import teaselib.Config;
 import teaselib.Duration;
 import teaselib.State;
+import teaselib.core.Host.Location;
 import teaselib.core.devices.DeviceFactoryListener;
 import teaselib.core.devices.remote.LocalNetworkDevice;
 import teaselib.core.devices.remote.LocalNetworkDeviceDiscovery;
@@ -48,12 +49,14 @@ public class TeaseLib {
     public static final String DefaultDomain = PropertyNameMapping.DefaultDomain;
     public static final String DefaultName = PropertyNameMapping.None;
 
-    private static final File transcriptLogFile = new File("./TeaseLib session transcript.log");
+    private static final String TranscriptLogFileName = "TeaseLib session transcript.log";
 
     public final Host host;
     private final Persistence persistence;
     public final TeaseLibLogger transcript;
     private final StateMaps stateMaps = new StateMaps(this);
+
+    public final Configuration configuration;
 
     public final ObjectMap globals = new ObjectMap();
 
@@ -64,13 +67,43 @@ public class TeaseLib {
     private long frozenTime = Long.MIN_VALUE;
     private long timeOffsetMillis = 0;
 
-    public TeaseLib(Host host, Persistence persistence) {
+    public TeaseLib(Host host, Persistence persistence) throws IOException {
         if (host == null || persistence == null) {
             throw new IllegalArgumentException();
         }
         this.host = host;
         this.persistence = new PersistenceLogger(persistence);
+        this.configuration = new Configuration();
 
+        logJavaVersion();
+        logJavaProperties();
+
+        integrateConfigurationFiles(host);
+
+        this.transcript = newTranscriptLogger(host.getLocation(Location.User));
+        this.shower = new Shower(host);
+        this.hostInputMethod = new HostInputMethod(host);
+
+        bindMotionDetectorFeedback();
+        if (LocalNetworkDeviceDiscovery.isListeningForDeviceMessagesEnabled()) {
+            LocalNetworkDevice.startDeviceDetection();
+        }
+    }
+
+    private void integrateConfigurationFiles(Host host) throws FileNotFoundException, IOException {
+        configuration.addConfigFile(new File(host.getLocation(Location.TeaseLib), "defaults/defaults.properties"));
+        configuration.addUserFile(new File(host.getLocation(Location.TeaseLib), "defaults/defaults.template"),
+                new File(host.getLocation(Location.Host), "defaults.properties"));
+        configuration.addConfigFile(new File(host.getLocation(Location.Host), "defaults.properties"));
+    }
+
+    private static void logJavaProperties() {
+        for (Entry<Object, Object> entry : System.getProperties().entrySet()) {
+            logger.debug(entry.getKey() + "=" + entry.getValue());
+        }
+    }
+
+    private static void logJavaVersion() {
         Set<String> javaProperties = new LinkedHashSet<String>(
                 Arrays.asList("java.vm.name", "java.runtime.version", "os.name", "os.arch"));
 
@@ -84,33 +117,14 @@ public class TeaseLib {
             }
         }
         logger.info(javaVersion.toString());
-
-        for (Entry<Object, Object> entry : System.getProperties().entrySet()) {
-            logger.debug(entry.getKey() + "=" + entry.getValue());
-        }
-
-        this.transcript = newTranscriptLogger(host);
-
-        shower = new Shower(host);
-        hostInputMethod = new HostInputMethod(host);
-
-        bindMotionDetectorFeedback();
-        if (LocalNetworkDeviceDiscovery.isListeningForDeviceMessagesEnabled()) {
-            LocalNetworkDevice.startDeviceDetection();
-        }
     }
 
-    private TeaseLibLogger newTranscriptLogger(Host host) {
+    private TeaseLibLogger newTranscriptLogger(File folder) throws IOException {
         TeaseLibLogger transcriptLogger = null;
-        try {
-            transcriptLogger = new TeaseLibLogger(transcriptLogFile,
-                    getConfigSetting(Config.Debug.LogDetails) ? TeaseLibLogger.Level.Debug : TeaseLibLogger.Level.Info)
-                            .showTime(false).showThread(false);
-        } catch (IOException e) {
-            host.show(null, "Cannot open log file " + transcriptLogFile.getAbsolutePath());
-            host.reply(Arrays.asList("Oh dear"));
-            transcriptLogger = TeaseLibLogger.getDummyLogger();
-        }
+
+        transcriptLogger = new TeaseLibLogger(new File(folder, TranscriptLogFileName),
+                getConfigSetting(Config.Debug.LogDetails) ? TeaseLibLogger.Level.Debug : TeaseLibLogger.Level.Info)
+                        .showTime(false).showThread(false);
         return transcriptLogger;
     }
 
@@ -149,7 +163,8 @@ public class TeaseLib {
         run(host, persistence, script);
     }
 
-    private static void run(Host host, Persistence persistence, String script) throws ReflectiveOperationException {
+    private static void run(Host host, Persistence persistence, String script)
+            throws ReflectiveOperationException, IOException {
         new TeaseLib(host, persistence).run(script);
     }
 
@@ -827,18 +842,12 @@ public class TeaseLib {
     }
 
     public boolean getConfigSetting(Enum<?> name) {
-        String systemProperty = System.getProperty(Config.Namespace + "." + name.toString(), "false");
-        boolean teaseLibProperty = getBoolean(TeaseLib.DefaultDomain, name);
-        boolean finalProperty = teaseLibProperty && systemProperty != "false";
-        return finalProperty;
+        String value = configuration.get(QualifiedItem.of(name));
+        return Boolean.parseBoolean(value);
     }
 
     public String getConfigString(Enum<?> name) {
-        String teaseLibProperty = getString(TeaseLib.DefaultDomain, Config.Namespace, name.toString());
-        if (teaseLibProperty.isEmpty()) {
-            String systemProperty = System.getProperty(Config.Namespace + "." + name.toString(), "");
-            return systemProperty;
-        }
-        return teaseLibProperty;
+        String value = configuration.get(QualifiedItem.of(name));
+        return value;
     }
 }

@@ -3,6 +3,8 @@
  */
 package teaselib.core;
 
+import java.io.IOException;
+
 import org.junit.Test;
 
 import teaselib.ScriptFunction;
@@ -26,7 +28,7 @@ public class ShowChoicesSample extends TeaseScript {
      * @param actor
      * @param namespace
      */
-    public ShowChoicesSample() {
+    public ShowChoicesSample() throws IOException {
         super(new TeaseLib(new DummyHost(), new DummyPersistence()), new ResourceLoader(ShowChoicesSample.class),
                 TestScript.TestScriptActor, TestScript.TestScriptNamespace);
     }

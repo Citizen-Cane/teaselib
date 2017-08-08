@@ -19,7 +19,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
-import teaselib.core.util.FileUtilites;
+import teaselib.core.util.FileUtilities;
 
 /**
  * Synchronizes a set of files to encrypted versions and back.
@@ -84,7 +84,7 @@ public class CryptoSync extends CipherUtility {
             String[] extensions = Arrays.copyOfRange(argv, argi, argv.length);
             decryptedFiles.mkdirs();
             sync = new CryptoSync(decryptedFiles, encryptedFiles,
-                    FileUtilites.getFileFilter(extensions), mode);
+                    FileUtilities.getFileFilter(extensions), mode);
             System.out.print(", " + extensions.length + " extensions (");
             for (String extension : extensions) {
                 System.out.print((extension == extensions[0] ? "" : ",")

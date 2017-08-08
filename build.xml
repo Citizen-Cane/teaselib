@@ -22,8 +22,14 @@
     </target>
 
     <target name="deploy" depends="createTeaseLibFolder,createTeaseLibTestsJar">
-        <copy todir="${destination}/lib/TeaseLib">
+        <copy todir="${destination}/lib/TeaseLib/">
             <fileset dir="${DeployTeaseLib.basedir}/lib/" excludes="**.obj,**.iobj,**.pdb,**.ipdb,**.exp,**.ilk,**.lib"/>
+        </copy>
+        <copy todir="${destination}/lib/TeaseLib/defaults">
+            <fileset dir="${DeployTeaseLib.basedir}/defaults/" includes="*.properties,*.template"/>
+        </copy>
+        <copy todir="${destination}/lib/TeaseLib/presets">
+            <fileset dir="${DeployTeaseLib.basedir}/presets/" includes="*.properties"/>
         </copy>
     </target>
 

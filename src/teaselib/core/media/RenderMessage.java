@@ -24,6 +24,7 @@ import teaselib.core.ResourceLoader;
 import teaselib.core.TeaseLib;
 import teaselib.core.texttospeech.TextToSpeech;
 import teaselib.core.texttospeech.TextToSpeechPlayer;
+import teaselib.core.util.QualifiedItem;
 
 public class RenderMessage extends MediaRendererThread {
     private static final Logger logger = LoggerFactory.getLogger(RenderMessage.class);
@@ -75,8 +76,9 @@ public class RenderMessage extends MediaRendererThread {
                                 resource = RenderMessage.this.resources.getResource(path);
                                 imageBytes = convertInputStreamToByte(resource);
                             } catch (IOException e) {
-                                if (!RenderMessage.this.teaseLib
-                                        .getConfigSetting(Config.Debug.IgnoreMissingResources)) {
+                                boolean ignoreMissingResources = Boolean.parseBoolean(
+                                        teaseLib.config.get(QualifiedItem.of(Config.Debug.IgnoreMissingResources)));
+                                if (!ignoreMissingResources) {
                                     throw e;
                                 }
                             } finally {
@@ -108,7 +110,7 @@ public class RenderMessage extends MediaRendererThread {
     }
 
     @Override
-    public void renderMedia() throws InterruptedException {
+    public void renderMedia() throws IOException, InterruptedException {
         if (replayPosition == Replay.Position.FromStart) {
             renderMessage(message, true);
         } else {
@@ -165,7 +167,7 @@ public class RenderMessage extends MediaRendererThread {
         return lastSection;
     }
 
-    private void renderMessage(Message message, boolean speakText) {
+    private void renderMessage(Message message, boolean speakText) throws IOException, InterruptedException {
         if (message.isEmpty()) {
             // // Show image but no text
             show(null, Mood.Neutral);
@@ -201,7 +203,7 @@ public class RenderMessage extends MediaRendererThread {
     }
 
     private String renderMessagePart(Part part, MessageTextAccumulator accumulatedText, String mood, boolean speakText,
-            boolean lastParagraph) {
+            boolean lastParagraph) throws IOException, InterruptedException {
         if (part.type == Message.Type.Image) {
             displayImage = part.value;
         } else if (part.type == Message.Type.BackgroundSound) {
@@ -242,6 +244,7 @@ public class RenderMessage extends MediaRendererThread {
                 logger.error(e.getMessage(), e);
                 accumulatedText.add(new Part(Message.Type.Text, e.getMessage()));
                 show(accumulatedText.toString(), mood);
+                throw e;
             }
         } else if (part.type == Message.Type.Mood) {
             // Mood
@@ -262,7 +265,7 @@ public class RenderMessage extends MediaRendererThread {
     }
 
     private void show(Actor actor, Part part, MessageTextAccumulator accumulatedText, String mood, boolean speakText,
-            boolean lastParagraph) {
+            boolean lastParagraph) throws IOException, InterruptedException {
         show(accumulatedText.toString(), mood);
         if (ttsPlayer != null && speechRenderer == null) {
             if (speakText) {
@@ -303,7 +306,7 @@ public class RenderMessage extends MediaRendererThread {
         }
     }
 
-    private void show(String text, String mood) {
+    private void show(String text, String mood) throws IOException, InterruptedException {
         if (message.actor.images.contains(displayImage) && mood != Mood.Neutral) {
             teaseLib.transcript.info("mood = " + mood);
         }
@@ -311,7 +314,7 @@ public class RenderMessage extends MediaRendererThread {
         show(text);
     }
 
-    private void show(String text) {
+    private void show(String text) throws IOException, InterruptedException {
         String path = displayImage == Message.NoImage ? null : displayImage;
         // log image to transcript if not an actor's image
         if (path == null) {
@@ -328,9 +331,12 @@ public class RenderMessage extends MediaRendererThread {
         if (path != null) {
             try {
                 imageBytes = imageFetcher.get(path);
-            } catch (Exception e) {
-                text = text + "\n\n" + e.getClass() + ": " + e.getMessage() + "\n";
-                logger.error(e.getMessage(), e);
+            } catch (IOException e) {
+                boolean ignoreMissingResources = Boolean
+                        .parseBoolean(teaseLib.config.get(QualifiedItem.of(Config.Debug.IgnoreMissingResources)));
+                if (!ignoreMissingResources) {
+                    throw e;
+                }
             } finally {
                 synchronized (imageFetcher) {
                     if (!imageFetcher.isEmpty()) {

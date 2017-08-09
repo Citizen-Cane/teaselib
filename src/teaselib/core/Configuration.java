@@ -16,6 +16,8 @@ public class Configuration {
     private final List<Properties> defaults = new ArrayList<Properties>();
     Properties properties;
 
+    Properties temporal = new Properties();
+
     public Configuration() {
     }
 
@@ -42,20 +44,28 @@ public class Configuration {
         properties = configurationFile;
     }
 
-    public String get(QualifiedItem<?> setting) {
-        String name = setting.toString();
+    public String get(QualifiedItem<?> property) {
+        String item = property.toString();
 
-        String systemProperty = System.getProperty(name);
-        if (name != null) {
-            return systemProperty;
+        String value = temporal.getProperty(item);
+        if (value != null) {
+            return value;
         }
 
-        return properties.getProperty(name);
+        value = System.getProperty(item);
+        if (value != null) {
+            return value;
+        }
+
+        value = properties.getProperty(item);
+        if (value != null) {
+            return value;
+        }
+
+        throw new IllegalArgumentException("Property not found:" + item);
     }
 
-    public void put(QualifiedItem<?> setting, String value) {
-        properties.setProperty(setting.toString(), value);
-        throw new UnsupportedOperationException("Implement persistence");
+    public void set(QualifiedItem<?> property, String value) {
+        temporal.setProperty(property.toString(), value);
     }
-
 }

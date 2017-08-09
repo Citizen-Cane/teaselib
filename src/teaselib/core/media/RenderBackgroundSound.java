@@ -8,10 +8,10 @@ import org.slf4j.LoggerFactory;
 import teaselib.Config;
 import teaselib.core.ResourceLoader;
 import teaselib.core.TeaseLib;
+import teaselib.core.util.QualifiedItem;
 
 public class RenderBackgroundSound implements MediaRenderer.Threaded {
-    private static final Logger logger = LoggerFactory
-            .getLogger(RenderBackgroundSound.class);
+    private static final Logger logger = LoggerFactory.getLogger(RenderBackgroundSound.class);
 
     private final ResourceLoader resources;
     private final String soundFile;
@@ -20,8 +20,7 @@ public class RenderBackgroundSound implements MediaRenderer.Threaded {
     private Object audioHandle = null;
     private boolean completedAll = false;
 
-    public RenderBackgroundSound(ResourceLoader resources, String soundFile,
-            TeaseLib teaseLLib) {
+    public RenderBackgroundSound(ResourceLoader resources, String soundFile, TeaseLib teaseLLib) {
         this.resources = resources;
         this.soundFile = soundFile;
         this.teaseLib = teaseLLib;
@@ -33,12 +32,12 @@ public class RenderBackgroundSound implements MediaRenderer.Threaded {
         logger.info(this.getClass().getSimpleName() + ": " + soundFile);
         try {
             completedAll = false;
-            audioHandle = teaseLib.host.playBackgroundSound(resources,
-                    soundFile);
+            audioHandle = teaseLib.host.playBackgroundSound(resources, soundFile);
         } catch (IOException e) {
             completedAll = true;
-            if (!teaseLib.getBoolean(Config.Namespace,
-                    Config.Debug.IgnoreMissingResources)) {
+            boolean ignoreMissingResources = Boolean
+                    .parseBoolean(teaseLib.config.get(QualifiedItem.of(Config.Debug.IgnoreMissingResources)));
+            if (!ignoreMissingResources) {
                 throw e;
             }
         }

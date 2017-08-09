@@ -23,6 +23,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import teaselib.Config;
+import teaselib.core.util.QualifiedItem;
 
 public class ResourceLoader {
     private static final Logger logger = LoggerFactory.getLogger(ResourceLoader.class);
@@ -61,15 +62,16 @@ public class ResourceLoader {
      *            The resource path under which to start looking for resources.
      */
     public ResourceLoader(Class<?> mainScript, String resourceRoot) {
-        this(getBasePath(mainScript), resourceRoot);
+        this(getBasePath(getProjectPath(mainScript)), resourceRoot);
     }
 
-    private static File getBasePath(Class<?> mainScript) {
-        String systemProperty = System.getProperty(Config.Namespace + "." + Config.Assets.toString(), "");
-        if (classLoaderCompatibleResourcePath(systemProperty).isEmpty()) {
-            return getProjectPath(mainScript);
+    private static File getBasePath(File mainScript) {
+        String string = QualifiedItem.of(Config.Assets).toString();
+        String overiddenAssetPath = System.getProperty(string, "");
+        if (classLoaderCompatibleResourcePath(overiddenAssetPath).isEmpty()) {
+            return mainScript;
         } else {
-            return new File(classLoaderCompatibleResourcePath(systemProperty));
+            return new File(classLoaderCompatibleResourcePath(overiddenAssetPath));
         }
     }
 
@@ -80,7 +82,7 @@ public class ResourceLoader {
     }
 
     public ResourceLoader(File basePath, String resourceRoot) {
-        this.basePath = basePath;
+        this.basePath = getBasePath(basePath);
         this.resourceRoot = classLoaderCompatibleResourcePath(pathToFolder(resourceRoot));
         logger.info("Using basepath='" + basePath.getAbsolutePath() + "'");
         try {

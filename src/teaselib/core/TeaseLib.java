@@ -56,7 +56,7 @@ public class TeaseLib {
     public final TeaseLibLogger transcript;
     private final StateMaps stateMaps = new StateMaps(this);
 
-    public final Configuration configuration;
+    public final Configuration config;
 
     public final ObjectMap globals = new ObjectMap();
 
@@ -73,7 +73,7 @@ public class TeaseLib {
         }
         this.host = host;
         this.persistence = new PersistenceLogger(persistence);
-        this.configuration = new Configuration();
+        this.config = new Configuration();
 
         logJavaVersion();
         logJavaProperties();
@@ -91,10 +91,10 @@ public class TeaseLib {
     }
 
     private void integrateConfigurationFiles(Host host) throws FileNotFoundException, IOException {
-        configuration.addConfigFile(new File(host.getLocation(Location.TeaseLib), "defaults/defaults.properties"));
-        configuration.addUserFile(new File(host.getLocation(Location.TeaseLib), "defaults/defaults.template"),
-                new File(host.getLocation(Location.Host), "defaults.properties"));
-        configuration.addConfigFile(new File(host.getLocation(Location.Host), "defaults.properties"));
+        config.addConfigFile(new File(host.getLocation(Location.TeaseLib), "defaults/teaselib.properties"));
+        config.addUserFile(new File(host.getLocation(Location.TeaseLib), "defaults/teaselib.template"),
+                new File(host.getLocation(Location.Host), "teaselib.properties"));
+        config.addConfigFile(new File(host.getLocation(Location.Host), "teaselib.properties"));
     }
 
     private static void logJavaProperties() {
@@ -123,8 +123,8 @@ public class TeaseLib {
         TeaseLibLogger transcriptLogger = null;
 
         transcriptLogger = new TeaseLibLogger(new File(folder, TranscriptLogFileName),
-                getConfigSetting(Config.Debug.LogDetails) ? TeaseLibLogger.Level.Debug : TeaseLibLogger.Level.Info)
-                        .showTime(false).showThread(false);
+                Boolean.parseBoolean(config.get(QualifiedItem.of(Config.Debug.LogDetails))) ? TeaseLibLogger.Level.Debug
+                        : TeaseLibLogger.Level.Info).showTime(false).showThread(false);
         return transcriptLogger;
     }
 
@@ -839,15 +839,5 @@ public class TeaseLib {
 
     public Actor getDominant(Voice.Gender gender, Locale locale) {
         return persistence.getDominant(gender, locale);
-    }
-
-    public boolean getConfigSetting(Enum<?> name) {
-        String value = configuration.get(QualifiedItem.of(name));
-        return Boolean.parseBoolean(value);
-    }
-
-    public String getConfigString(Enum<?> name) {
-        String value = configuration.get(QualifiedItem.of(name));
-        return value;
     }
 }

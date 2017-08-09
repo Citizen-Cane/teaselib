@@ -10,10 +10,10 @@ import teaselib.Config;
 import teaselib.core.TeaseLib;
 import teaselib.core.speechrecognition.SpeechRecognition;
 import teaselib.core.speechrecognition.SpeechRecognizer;
+import teaselib.core.util.QualifiedItem;
 
 public abstract class RenderSpeech extends MediaRendererThread {
-    private static final Logger logger = LoggerFactory
-            .getLogger(RenderSpeech.class);
+    private static final Logger logger = LoggerFactory.getLogger(RenderSpeech.class);
 
     private final long pauseMillis;
 
@@ -25,19 +25,19 @@ public abstract class RenderSpeech extends MediaRendererThread {
     @Override
     public final void renderMedia() throws IOException, InterruptedException {
         logger.info(this + " started");
-        // Suspend speech recognition while speaking,
-        // to avoid wrong recognitions
-        // - and the mistress speech isn't to be interrupted anyway
+        // Suspend speech recognition while speaking, to avoid wrong
+        // recognitions - and the mistress speech isn't to be interrupted anyway
         SpeechRecognition.completeSpeechRecognitionInProgress();
-        Runnable resumeSpeechRecognition = SpeechRecognizer.instance
-                .pauseRecognition();
+        Runnable resumeSpeechRecognition = SpeechRecognizer.instance.pauseRecognition();
         startCompleted();
         try {
             try {
                 renderSpeech();
             } catch (IOException e) {
-                if (!teaseLib.getBoolean(Config.Namespace,
-                        Config.Debug.IgnoreMissingResources)) {
+                boolean ignoreMissingResources = Boolean
+                        .parseBoolean(teaseLib.config.get(QualifiedItem.of(Config.Debug.IgnoreMissingResources)));
+                if (!ignoreMissingResources) {
+                    throw e;
                 }
             } finally {
                 mandatoryCompleted();
@@ -51,6 +51,5 @@ public abstract class RenderSpeech extends MediaRendererThread {
         logger.info(this + " completed");
     }
 
-    protected abstract void renderSpeech()
-            throws IOException, InterruptedException;
+    protected abstract void renderSpeech() throws IOException, InterruptedException;
 }

@@ -203,9 +203,9 @@ public class DummyHost implements Host {
     @Override
     public File getLocation(Location folder) {
         if (folder == Location.Host)
-            return new File("./");
+            return new File("bin.test/");
         else if (folder == Location.TeaseLib)
-            return new File(getLocation(Location.Host), "TeaseLib" + File.separator);
+            return new File(".");
         else if (folder == Location.User)
             return getLocation(Location.Host);
         else

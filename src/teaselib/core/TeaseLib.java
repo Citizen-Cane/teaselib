@@ -67,7 +67,11 @@ public class TeaseLib {
     private long frozenTime = Long.MIN_VALUE;
     private long timeOffsetMillis = 0;
 
-    public TeaseLib(Host host, Persistence persistence) throws IOException {
+    public TeaseLib(final Host host, Persistence persistence) throws IOException {
+        this(host, persistence, new TeaseLibConfigSetup(host));
+    }
+
+    public TeaseLib(Host host, Persistence persistence, Configuration.Setup setup) throws IOException {
         if (host == null || persistence == null) {
             throw new IllegalArgumentException();
         }
@@ -78,7 +82,7 @@ public class TeaseLib {
         logJavaVersion();
         logJavaProperties();
 
-        integrateConfigurationFiles(host);
+        setup.applyTo(config);
 
         this.transcript = newTranscriptLogger(host.getLocation(Location.User));
         this.shower = new Shower(host);
@@ -88,13 +92,6 @@ public class TeaseLib {
         if (LocalNetworkDeviceDiscovery.isListeningForDeviceMessagesEnabled()) {
             LocalNetworkDevice.startDeviceDetection();
         }
-    }
-
-    private void integrateConfigurationFiles(Host host) throws FileNotFoundException, IOException {
-        config.addConfigFile(new File(host.getLocation(Location.TeaseLib), "defaults/teaselib.properties"));
-        config.addUserFile(new File(host.getLocation(Location.TeaseLib), "defaults/teaselib.template"),
-                new File(host.getLocation(Location.Host), "teaselib.properties"));
-        config.addConfigFile(new File(host.getLocation(Location.Host), "teaselib.properties"));
     }
 
     private static void logJavaProperties() {

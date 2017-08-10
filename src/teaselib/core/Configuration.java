@@ -14,11 +14,16 @@ import teaselib.core.util.QualifiedItem;
 
 public class Configuration {
     private final List<Properties> defaults = new ArrayList<Properties>();
-    Properties properties;
+    Properties persistentProperties;
 
-    Properties temporal = new Properties();
+    Properties sessionProperties = new Properties();
+
+    public static interface Setup {
+        void applyTo(Configuration config) throws IOException;
+    }
 
     public Configuration() {
+        persistentProperties = sessionProperties;
     }
 
     public void addUserFile(File preset, File userFile) throws IOException {
@@ -41,13 +46,13 @@ public class Configuration {
             fileInputStream.close();
         }
         defaults.add(configurationFile);
-        properties = configurationFile;
+        persistentProperties = configurationFile;
     }
 
     public String get(QualifiedItem<?> property) {
         String item = property.toString();
 
-        String value = temporal.getProperty(item);
+        String value = sessionProperties.getProperty(item);
         if (value != null) {
             return value;
         }
@@ -57,15 +62,15 @@ public class Configuration {
             return value;
         }
 
-        value = properties.getProperty(item);
+        value = persistentProperties.getProperty(item);
         if (value != null) {
             return value;
         }
 
-        throw new IllegalArgumentException("Property not found:" + item);
+        throw new IllegalArgumentException("Property not found: " + item);
     }
 
     public void set(QualifiedItem<?> property, String value) {
-        temporal.setProperty(property.toString(), value);
+        sessionProperties.setProperty(property.toString(), value);
     }
 }

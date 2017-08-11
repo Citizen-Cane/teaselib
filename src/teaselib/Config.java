@@ -24,19 +24,15 @@ public enum Config {
      */
     Assets;
 
-    /**
-     * The namespace for all TeaseLib configuration properties.
-     */
-    public static final String Namespace = "TeaseLib.Config";
-
     public enum Debug {
+        StopOnAssetNotFound,
         /**
-         * TeaseLib.Config.Debug.IgnoreMissingResources=true
+         * TeaseLib.Config.Debug.StopOnRenderError
          */
-        IgnoreMissingResources,
+        StopOnRenderError,
 
         /**
-         * TeaseLib.Config.Debug.LogDetails=true
+         * TeaseLib.Config.Debug.LogDetails
          */
         LogDetails;
     }

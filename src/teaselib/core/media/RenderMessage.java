@@ -14,7 +14,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import teaselib.Actor;
-import teaselib.Config;
 import teaselib.Message;
 import teaselib.Message.Part;
 import teaselib.Mood;
@@ -24,7 +23,7 @@ import teaselib.core.ResourceLoader;
 import teaselib.core.TeaseLib;
 import teaselib.core.texttospeech.TextToSpeech;
 import teaselib.core.texttospeech.TextToSpeechPlayer;
-import teaselib.core.util.QualifiedItem;
+import teaselib.core.util.ExceptionUtil;
 
 public class RenderMessage extends MediaRendererThread {
     private static final Logger logger = LoggerFactory.getLogger(RenderMessage.class);
@@ -76,11 +75,7 @@ public class RenderMessage extends MediaRendererThread {
                                 resource = RenderMessage.this.resources.getResource(path);
                                 imageBytes = convertInputStreamToByte(resource);
                             } catch (IOException e) {
-                                boolean ignoreMissingResources = Boolean.parseBoolean(
-                                        teaseLib.config.get(QualifiedItem.of(Config.Debug.IgnoreMissingResources)));
-                                if (!ignoreMissingResources) {
-                                    throw e;
-                                }
+                                handleIOException(ExceptionUtil.reduce(e));
                             } finally {
                                 if (resource != null) {
                                     resource.close();
@@ -332,11 +327,7 @@ public class RenderMessage extends MediaRendererThread {
             try {
                 imageBytes = imageFetcher.get(path);
             } catch (IOException e) {
-                boolean ignoreMissingResources = Boolean
-                        .parseBoolean(teaseLib.config.get(QualifiedItem.of(Config.Debug.IgnoreMissingResources)));
-                if (!ignoreMissingResources) {
-                    throw e;
-                }
+                handleIOException(ExceptionUtil.reduce(e));
             } finally {
                 synchronized (imageFetcher) {
                     if (!imageFetcher.isEmpty()) {

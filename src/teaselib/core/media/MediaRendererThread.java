@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -17,6 +16,7 @@ import teaselib.Replay;
 import teaselib.core.ScriptInterruptedException;
 import teaselib.core.TeaseLib;
 import teaselib.core.concurrency.NamedExecutorService;
+import teaselib.core.util.ExceptionUtil;
 import teaselib.core.util.QualifiedItem;
 
 /**
@@ -62,7 +62,7 @@ public abstract class MediaRendererThread implements MediaRenderer.Threaded, Rep
             startMillis = System.currentTimeMillis();
             task = Executor.submit(new Callable<Void>() {
                 @Override
-                public Void call() throws IOException {
+                public Void call() throws Exception {
                     setThreadName(nameForActiveThread());
                     try {
                         synchronized (MediaRendererThread.this) {
@@ -73,14 +73,9 @@ public abstract class MediaRendererThread implements MediaRenderer.Threaded, Rep
                         // Expected
                     } catch (ScriptInterruptedException e) {
                         // Expected
-                    } catch (IOException e) {
-                        boolean ignoreMissingResources = Boolean.parseBoolean(
-                                teaseLib.config.get(QualifiedItem.of(Config.Debug.IgnoreMissingResources)));
-                        if (!ignoreMissingResources) {
-                            throw e;
-                        }
-                    } catch (Throwable t) {
-                        logger.error(t.getMessage(), t);
+                    } catch (Exception e) {
+                        handleException(ExceptionUtil.reduce(e));
+                        logger.error(e.getMessage(), e);
                     } finally {
                         startCompleted();
                         mandatoryCompleted();
@@ -95,6 +90,28 @@ public abstract class MediaRendererThread implements MediaRenderer.Threaded, Rep
                 wait();
             } catch (InterruptedException e) {
                 throw new ScriptInterruptedException();
+            }
+        }
+    }
+
+    protected void handleException(Exception e) throws Exception {
+        if (e instanceof IOException) {
+            handleIOException(e);
+        } else {
+            boolean stopOnRenderError = Boolean
+                    .parseBoolean(teaseLib.config.get(QualifiedItem.of(Config.Debug.StopOnRenderError)));
+            if (stopOnRenderError) {
+                throw e;
+            }
+        }
+    }
+
+    protected void handleIOException(Exception e) throws IOException {
+        if (e instanceof IOException) {
+            boolean stopOnAssetNotFound = Boolean
+                    .parseBoolean(teaseLib.config.get(QualifiedItem.of(Config.Debug.StopOnAssetNotFound)));
+            if (stopOnAssetNotFound) {
+                throw (IOException) e;
             }
         }
     }
@@ -208,25 +225,12 @@ public abstract class MediaRendererThread implements MediaRenderer.Threaded, Rep
             // Expected
         } catch (InterruptedException e) {
             throw new ScriptInterruptedException();
-        } catch (ExecutionException e) {
-            Throwable cause = e.getCause();
-            if (cause instanceof IOException) {
-                boolean ignoreMissingResources = Boolean
-                        .parseBoolean(teaseLib.config.get(QualifiedItem.of(Config.Debug.IgnoreMissingResources)));
-                if (!ignoreMissingResources) {
-                    throw new RuntimeException(cause);
-                }
-            } else if (cause instanceof RuntimeException) {
-                throw (RuntimeException) cause;
-            } else if (cause instanceof Error) {
-                throw (Error) cause;
-            } else if (cause == null) {
-                throw new RuntimeException(e);
-            } else {
-                throw new RuntimeException(cause);
-            }
+        } catch (Exception e) {
+            Exception cause = ExceptionUtil.reduce(e);
+            throw ExceptionUtil.asRuntimeException(cause);
+        } finally {
+            logger.debug(getClass().getSimpleName() + " ended after " + String.format("%.2f", getElapsedSeconds()));
         }
-        logger.debug(getClass().getSimpleName() + " ended after " + String.format("%.2f", getElapsedSeconds()));
     }
 
     private double getElapsedSeconds() {

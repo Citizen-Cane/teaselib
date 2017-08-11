@@ -10,7 +10,8 @@ import teaselib.core.util.QualifiedItem;
 public final class DebugSetup implements Setup {
     @Override
     public void applyTo(Configuration config) throws IOException {
-        config.set(QualifiedItem.of(Config.Debug.IgnoreMissingResources), Boolean.toString(false));
+        config.set(QualifiedItem.of(Config.Debug.StopOnAssetNotFound), Boolean.toString(true));
+        config.set(QualifiedItem.of(Config.Debug.StopOnRenderError), Boolean.toString(true));
         config.set(QualifiedItem.of(Config.Debug.LogDetails), Boolean.toString(false));
     }
 }

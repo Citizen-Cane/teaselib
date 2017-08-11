@@ -5,10 +5,9 @@ import java.io.IOException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import teaselib.Config;
 import teaselib.core.ResourceLoader;
 import teaselib.core.TeaseLib;
-import teaselib.core.util.QualifiedItem;
+import teaselib.core.util.ExceptionUtil;
 
 public class RenderBackgroundSound implements MediaRenderer.Threaded {
     private static final Logger logger = LoggerFactory.getLogger(RenderBackgroundSound.class);
@@ -35,11 +34,8 @@ public class RenderBackgroundSound implements MediaRenderer.Threaded {
             audioHandle = teaseLib.host.playBackgroundSound(resources, soundFile);
         } catch (IOException e) {
             completedAll = true;
-            boolean ignoreMissingResources = Boolean
-                    .parseBoolean(teaseLib.config.get(QualifiedItem.of(Config.Debug.IgnoreMissingResources)));
-            if (!ignoreMissingResources) {
-                throw e;
-            }
+            Exception cause = ExceptionUtil.reduce(e);
+            logger.error(cause.getMessage(), cause);
         }
     }
 

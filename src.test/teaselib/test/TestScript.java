@@ -56,7 +56,8 @@ public class TestScript extends TeaseScript {
 
     TestScript(DummyHost dummyHost, DummyPersistence dummyPersistence, ResourceLoader resourceLoader)
             throws IOException {
-        super(new TeaseLib(dummyHost, dummyPersistence), resourceLoader, TestScriptActor, TestScriptNamespace);
+        super(new TeaseLib(dummyHost, dummyPersistence, new DebugSetup()), resourceLoader, TestScriptActor,
+                TestScriptNamespace);
         this.host = dummyHost;
         this.persistence = dummyPersistence;
         this.debugger = new Debugger(teaseLib, dummyHost);

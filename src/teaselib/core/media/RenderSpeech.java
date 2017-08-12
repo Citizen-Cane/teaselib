@@ -6,11 +6,10 @@ import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import teaselib.Config;
 import teaselib.core.TeaseLib;
 import teaselib.core.speechrecognition.SpeechRecognition;
 import teaselib.core.speechrecognition.SpeechRecognizer;
-import teaselib.core.util.QualifiedItem;
+import teaselib.core.util.ExceptionUtil;
 
 public abstract class RenderSpeech extends MediaRendererThread {
     private static final Logger logger = LoggerFactory.getLogger(RenderSpeech.class);
@@ -34,11 +33,7 @@ public abstract class RenderSpeech extends MediaRendererThread {
             try {
                 renderSpeech();
             } catch (IOException e) {
-                boolean ignoreMissingResources = Boolean
-                        .parseBoolean(teaseLib.config.get(QualifiedItem.of(Config.Debug.IgnoreMissingResources)));
-                if (!ignoreMissingResources) {
-                    throw e;
-                }
+                handleIOException(ExceptionUtil.reduce(e));
             } finally {
                 mandatoryCompleted();
                 resumeSpeechRecognition.run();

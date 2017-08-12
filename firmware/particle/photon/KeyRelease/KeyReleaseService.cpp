@@ -285,7 +285,7 @@ void KeyReleaseService::updatePulse(const Status status) {
   } else if (status == Active) {
     const unsigned int nextReleaseDuration = nextRelease();
     if (nextReleaseDuration > 0) {
-      ledTimer.changePeriod(500 + 200 * nextReleaseDuration);
+      ledTimer.changePeriod(500 + 3 * nextReleaseDuration);
       RGB.color(0, 0, 255);
     }
     else {

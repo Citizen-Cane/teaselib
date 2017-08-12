@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import teaselib.core.devices.BatteryLevel;
 import teaselib.core.devices.Device;
@@ -159,24 +160,24 @@ public class KeyRelease implements Device {
         }
     }
 
-    public Actuator getBestActuatorForTime(int timeMinutes) {
+    public Actuator getActuator(int duration, TimeUnit unit) {
         List<Actuator> releaseMechanisms = actuators();
-        List<Integer> durations = new ArrayList<Integer>(releaseMechanisms.size());
+        List<Long> durations = new ArrayList<Long>(releaseMechanisms.size());
         for (int actuator = 0; actuator < durations.size(); actuator++) {
-            durations.add(available(actuator));
+            durations.add(releaseMechanisms.get(actuator).available(unit));
         }
-        return releaseMechanisms.get(getBestActuator(timeMinutes, durations));
+        return releaseMechanisms.get(getActuatorIndex(duration, durations));
     }
 
-    public static int getBestActuator(int timeMinutes, List<Integer> durations) {
-        int bestDifferenceSoFar = Integer.MAX_VALUE;
+    static int getActuatorIndex(int duration, List<Long> durations) {
+        long bestDifferenceSoFar = Integer.MAX_VALUE;
         int unset = Integer.MIN_VALUE;
         int bestActuator = unset;
-        int maxDuration = unset;
+        long maxDuration = unset;
         int maxActuator = unset;
         for (int actuator = 0; actuator < durations.size(); actuator++) {
-            int availableDuration = durations.get(actuator);
-            int difference = availableDuration - timeMinutes;
+            long availableDuration = durations.get(actuator);
+            long difference = availableDuration - duration;
             if (0 <= difference && difference < bestDifferenceSoFar) {
                 bestActuator = actuator;
                 bestDifferenceSoFar = difference;
@@ -196,9 +197,9 @@ public class KeyRelease implements Device {
         return Ok.equals(ok.command);
     }
 
-    String start(int actuator, int timeMinutes) {
+    String start(int actuator, int seconds) {
         RemoteDeviceMessage key = remoteDevice.sendAndReceive(new RemoteDeviceMessage(DeviceClassName, Start,
-                Arrays.asList(Integer.toString(actuator), Integer.toString(timeMinutes))));
+                Arrays.asList(Integer.toString(actuator), Integer.toString(seconds))));
         if (ReleaseKey.equals(key.command)) {
             releaseKeys[actuator] = key.parameters.get(0);
             return releaseKeys[actuator];
@@ -207,13 +208,13 @@ public class KeyRelease implements Device {
         }
     }
 
-    public int sleep(int timeMinutes) {
-        return remoteDevice.sleep(timeMinutes);
+    int sleep(int seconds) {
+        return remoteDevice.sleep(seconds);
     }
 
-    boolean add(int actuator, int minutes) {
+    boolean add(int actuator, int seconds) {
         RemoteDeviceMessage ok = remoteDevice.sendAndReceive(new RemoteDeviceMessage(DeviceClassName, Add,
-                Arrays.asList(Integer.toString(actuator), Integer.toString(minutes))));
+                Arrays.asList(Integer.toString(actuator), Integer.toString(seconds))));
         return Ok.equals(ok.command);
     }
 

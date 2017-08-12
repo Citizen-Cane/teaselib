@@ -77,8 +77,8 @@ const char* const KeyReleaseService::Version = "0.01";
 */
 
 const int KeyReleaseService::DefaultSetupSize = 2;
-const KeyReleaseService::Actuator KeyReleaseService::ShortRelease = {TX, 30 /* minutes*/ , 60 /* minutes*/, 30, 150};
-const KeyReleaseService::Actuator KeyReleaseService::LongRelease = {RX, 60 /* minutes*/ , 120 /* minutes*/, 150, 30};
+const KeyReleaseService::Actuator KeyReleaseService::ShortRelease = {TX, 30 * 60, 60 * 60, 30, 150};
+const KeyReleaseService::Actuator KeyReleaseService::LongRelease = {RX, 60 * 60 , 120 * 60, 150, 30};
 const KeyReleaseService::Actuator* KeyReleaseService::DefaultSetup[] = {&ShortRelease, &LongRelease};
 
 KeyReleaseService::KeyReleaseService(const Actuator** actuators, const int actuatorCount)
@@ -88,7 +88,7 @@ KeyReleaseService::KeyReleaseService(const Actuator** actuators, const int actua
 , durations(new Duration[actuatorCount])
 , actuatorCount(actuatorCount)
 , sessionKey(createSessionKey())
-, releaseTimer(60 * 1000, &KeyReleaseService::releaseTimerCallback, *this)
+, releaseTimer(1 * 1000, &KeyReleaseService::releaseTimerCallback, *this)
 , ledTimer(1000, &KeyReleaseService::ledTimerCallback, *this)
 , status(Idle)
 {
@@ -122,10 +122,10 @@ void KeyReleaseService::setup() {
       Serial.print("Actuator ");
       Serial.print(i, DEC);
       Serial.print(": default=");
-      Serial.print(durations[i].actuator->defaultMinutes, DEC);
-      Serial.print("m, maximum=");
-      Serial.print(durations[i].actuator->maximumMinutes, DEC);
-      Serial.println("m");
+      Serial.print(durations[i].actuator->defaultSeconds, DEC);
+      Serial.print("s, maximum=");
+      Serial.print(durations[i].actuator->maximumSeconds, DEC);
+      Serial.println("s");
   }
   releaseTimer.start();
 }
@@ -152,35 +152,35 @@ unsigned int KeyReleaseService::process(const UDPMessage& received, char* buffer
     releaseTimer.start();
     return Ok.toBuffer(buffer);
   }
-  else if (isCommand(received, "start" /* actuator minutes */)) {
+  else if (isCommand(received, "start" /* actuator seconds */)) {
     releaseTimer.stop();
     const int index = atol(received.parameters[0]);
-    const int minutes = atol(received.parameters[1]);
-    durations[index].start(minutes);
+    const int seconds = atol(received.parameters[1]);
+    durations[index].start(seconds);
     updatePulse(Active);
     releaseTimer.start();
     const char* parameters[] = {sessionKey};
     return UDPMessage("releasekey", parameters, 1).toBuffer(buffer);
   }
-  else if (isCommand(received, "add" /* actuator minutes */)) {
+  else if (isCommand(received, "add" /* actuator seconds */)) {
     releaseTimer.stop();
     const int index = atol(received.parameters[0]);
-    const int minutes = atol(received.parameters[1]);
+    const int seconds = atol(received.parameters[1]);
     Duration& duration = durations[index];
-    duration.add(minutes);
+    duration.add(seconds);
     updatePulse(status);
     releaseTimer.start();
-    return createCountMessage(duration.remainingMinutes, buffer);
+    return createCountMessage(duration.remainingSeconds, buffer);
   }
   else if (isCommand(received, "available" /* actuator */)) {
     const int index = atol(received.parameters[0]);
     Duration& duration = durations[index];
-    return createCountMessage(duration.actuator->maximumMinutes - duration.elapsedMinutes, buffer);
+    return createCountMessage(duration.actuator->maximumSeconds - duration.elapsedSeconds, buffer);
   }
   else if (isCommand(received, "remaining" /* actuator */)) {
     const int index = atol(received.parameters[0]);
     Duration& duration = durations[index];
-    return createCountMessage(duration.remainingMinutes, buffer);
+    return createCountMessage(duration.remainingSeconds, buffer);
   }
   else if (isCommand(received, "running" /* actuator */)) {
     const int index = atol(received.parameters[0]);
@@ -210,17 +210,17 @@ unsigned int KeyReleaseService::createCountMessage(unsigned int count, char* buf
 }
 
 
-unsigned int KeyReleaseService::sleepRequested(const unsigned int requestedSleepDuration, SleepMode& sleepMode) {
+unsigned int KeyReleaseService::sleepRequested(const unsigned int durationSeconds, SleepMode& sleepMode) {
   const unsigned int n = runningReleases();
   if (n == 0) {
-    return requestedSleepDuration;
+    return durationSeconds;
   } else if (n == 1) {
     const unsigned int nextReleaseDuration = nextRelease();
-    if (sleepMode == DeepSleep && nextReleaseDuration <= requestedSleepDuration) {
+    if (sleepMode == DeepSleep && nextReleaseDuration <= durationSeconds) {
       return nextReleaseDuration;
     } else {
       sleepMode = LightSleep;
-      return requestedSleepDuration;
+      return durationSeconds;
     }
   } else {
       const unsigned int nextReleaseDuration = nextRelease();
@@ -260,7 +260,7 @@ void KeyReleaseService::releaseTimerCallback() {
 unsigned int KeyReleaseService::nextRelease() {
   unsigned int nextReleaseDuration = 0;
   for(int i = 0; i < actuatorCount; i++) {
-    nextReleaseDuration = max(nextReleaseDuration, durations[i].remainingMinutes);
+    nextReleaseDuration = max(nextReleaseDuration, durations[i].remainingSeconds);
   }
   return nextReleaseDuration;
 }
@@ -321,26 +321,26 @@ void KeyReleaseService::releaseKey(const int index) {
 
 const void KeyReleaseService::Duration::arm() {
   running = true;
-  elapsedMinutes = 0;
-  remainingMinutes = actuator->defaultMinutes;
+  elapsedSeconds = 0;
+  remainingSeconds = actuator->defaultSeconds;
 }
 
-const int KeyReleaseService::Duration::start(const int minutes) {
-  remainingMinutes = min(minutes, actuator->maximumMinutes - elapsedMinutes);
-  return remainingMinutes;
+const int KeyReleaseService::Duration::start(const int seconds) {
+  remainingSeconds = min(seconds, actuator->maximumSeconds - elapsedSeconds);
+  return remainingSeconds;
 }
 
-const int KeyReleaseService::Duration::add(const int minutes) {
-  remainingMinutes = min(remainingMinutes + minutes, actuator->maximumMinutes - elapsedMinutes);
-  return remainingMinutes;
+const int KeyReleaseService::Duration::add(const int seconds) {
+  remainingSeconds = min(remainingSeconds + seconds, actuator->maximumSeconds - elapsedSeconds);
+  return remainingSeconds;
 }
 
 const bool KeyReleaseService::Duration::advance() {
   if (running) {
-    if (remainingMinutes > 0 && elapsedMinutes < actuator->maximumMinutes) {
-      elapsedMinutes++;
-      remainingMinutes--;
-      if (remainingMinutes == 0) {
+    if (remainingSeconds > 0 && elapsedSeconds < actuator->maximumSeconds) {
+      elapsedSeconds++;
+      remainingSeconds--;
+      if (remainingSeconds == 0) {
         running = false;
       }
     }
@@ -350,8 +350,8 @@ const bool KeyReleaseService::Duration::advance() {
 
 const void KeyReleaseService::Duration::clear() {
   running = false;
-  elapsedMinutes = 0;
-  remainingMinutes = 0;
+  elapsedSeconds = 0;
+  remainingSeconds = 0;
 }
 
 

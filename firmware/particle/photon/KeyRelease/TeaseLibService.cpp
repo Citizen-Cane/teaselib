@@ -43,15 +43,15 @@ unsigned int TeaseLibService::processIdPacket(char* buffer) {
 }
 
 unsigned int TeaseLibService::processSleepPacket(const UDPMessage& received, SleepMode& sleepMode) {
-  unsigned int durationMinutes = atol(received.parameters[0]);
+  unsigned int durationSeconds = atol(received.parameters[0]);
   for(int i = 0; i < TeaseLibService::serviceCount ; i++) {
-    durationMinutes = TeaseLibService::services[i]->sleepRequested(durationMinutes, sleepMode);
+    durationSeconds = TeaseLibService::services[i]->sleepRequested(durationSeconds, sleepMode);
     if (sleepMode == None) {
-      durationMinutes = 0;
+      durationSeconds = 0;
       break;
     }
   }
-  return durationMinutes;
+  return durationSeconds;
 }
 
 unsigned int TeaseLibService::processPacket(const UDPMessage& received, char* buffer) {

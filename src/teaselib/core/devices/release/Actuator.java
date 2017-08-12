@@ -1,5 +1,7 @@
 package teaselib.core.devices.release;
 
+import java.util.concurrent.TimeUnit;
+
 import teaselib.core.devices.BatteryLevel;
 import teaselib.core.devices.Device;
 import teaselib.core.devices.DeviceCache;
@@ -60,16 +62,16 @@ public class Actuator implements Device {
         return keyRelease.arm(actuator);
     }
 
-    public String start(int timeMinutes) {
-        return keyRelease.start(actuator, timeMinutes);
+    public String start(long duration, TimeUnit unit) {
+        return keyRelease.start(actuator, (int) TimeUnit.SECONDS.convert(duration, unit));
     }
 
-    public int sleep(int timeMinutes) {
-        return keyRelease.sleep(timeMinutes);
+    public int sleep(long duration, TimeUnit unit) {
+        return keyRelease.sleep((int) TimeUnit.SECONDS.convert(duration, unit));
     }
 
-    public boolean add(int minutes) {
-        return keyRelease.add(actuator, minutes);
+    public boolean add(long duration, TimeUnit unit) {
+        return keyRelease.add(actuator, (int) TimeUnit.SECONDS.convert(duration, unit));
     }
 
     /**
@@ -87,15 +89,15 @@ public class Actuator implements Device {
      * 
      * @return The number of available minutes.
      */
-    public int available() {
-        return keyRelease.available(actuator);
+    public long available(TimeUnit unit) {
+        return unit.convert(keyRelease.available(actuator), TimeUnit.SECONDS);
     }
 
     /**
      * @return Duration minutes until release.
      */
-    public int remaining() {
-        return keyRelease.remaining(actuator);
+    public long remaining(TimeUnit unit) {
+        return unit.convert(keyRelease.remaining(actuator), TimeUnit.SECONDS);
     }
 
     /**

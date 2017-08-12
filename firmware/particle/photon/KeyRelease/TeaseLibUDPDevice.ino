@@ -82,18 +82,18 @@ void process(const UDPMessage& received, const int packetNumber) {
   }
   else if (strcmp(TeaseLibService::Sleep, received.command) == 0) {
     TeaseLibService::SleepMode sleepMode = TeaseLibService::DeepSleep;
-    const unsigned int sleepMinutes = TeaseLibService::processSleepPacket(received, sleepMode);
-    char minutes[4];
-    sprintf(minutes, "%d", sleepMinutes);
-    const char* parameters[] = {minutes};
+    const unsigned int sleepSeconds = TeaseLibService::processSleepPacket(received, sleepMode);
+    char seconds[4];
+    sprintf(seconds, "%d", sleepSeconds);
+    const char* parameters[] = {seconds};
     const int responseSize = UDPMessage("count", parameters, 1).toBuffer(&buffer[PacketHeaderSize]);
     send(buffer, responseSize, packetNumber);
     socket.flush();
-    if (sleepMinutes > 0) {
+    if (sleepSeconds > 0) {
       if (sleepMode == TeaseLibService::DeepSleep) {
-        System.sleep(SLEEP_MODE_DEEP, 60 * sleepMinutes);
+        System.sleep(SLEEP_MODE_DEEP, sleepSeconds);
       } else if (sleepMode == TeaseLibService::LightSleep) {
-        System.sleep(60 * sleepMinutes);
+        System.sleep(sleepSeconds);
       }
     }
   }

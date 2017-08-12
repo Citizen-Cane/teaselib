@@ -24,21 +24,21 @@ public:
 
   struct Actuator {
     const int pin;
-    const int defaultMinutes;
-    const int maximumMinutes;
+    const int defaultSeconds;
+    const int maximumSeconds;
     const int releasedAngle;
     const int armedAngle;
   };
 
   struct Duration {
       bool running;
-      int elapsedMinutes;
-      int remainingMinutes;
+      int elapsedSeconds;
+      int remainingSeconds;
 
       const Actuator* actuator;
       const void arm();
-      const int start(const int minutes);
-      const int add(const int minutes);
+      const int start(const int seconds);
+      const int add(const int seconds);
       const bool advance();
       const void clear();
   };

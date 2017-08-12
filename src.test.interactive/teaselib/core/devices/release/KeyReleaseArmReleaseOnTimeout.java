@@ -1,4 +1,4 @@
-package teaselib.core.devices.remote;
+package teaselib.core.devices.release;
 
 import static org.junit.Assert.*;
 
@@ -12,8 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import teaselib.core.concurrency.NamedExecutorService;
-import teaselib.core.devices.release.Actuator;
-import teaselib.core.devices.release.KeyRelease;
+import teaselib.core.devices.remote.LocalNetworkDevice;
 
 public class KeyReleaseArmReleaseOnTimeout {
     private static final Logger logger = LoggerFactory.getLogger(KeyReleaseArmReleaseOnTimeout.class);
@@ -46,7 +45,7 @@ public class KeyReleaseArmReleaseOnTimeout {
         // tolerable - the key release models "arm" by just starting to count
         // down from the default duration
 
-        KeyReleaseTest.sleepSeconds(10);
+        KeyReleaseTest.sleep(10, TimeUnit.SECONDS);
         assertTrue(keyRelease.connected());
         assertTrue(keyRelease.active());
         assertTrue(actuators.size() > 0);
@@ -60,12 +59,13 @@ public class KeyReleaseArmReleaseOnTimeout {
         // (60 minutes in default configuration)
 
         while (actuator.isRunning()) {
-            int remaining = actuator.remaining();
+            long remaining = actuator.remaining(TimeUnit.SECONDS);
             if (remaining == 0) {
                 break;
             }
-            logger.info("Actuator " + actuator + " has " + actuator.remaining() + " minutes until release");
-            KeyReleaseTest.sleepSeconds(60);
+            logger.info(
+                    "Actuator " + actuator + " has " + actuator.remaining(TimeUnit.MINUTES) + " minutes until release");
+            KeyReleaseTest.sleep(60, TimeUnit.SECONDS);
         }
 
         // Also Don't release, this should happen automatically

@@ -48,7 +48,7 @@ public class KeyReleaseTest {
         long available = actuator.available(TimeUnit.MINUTES);
         assertTrue(available > 0);
         actuator.arm();
-        sleep(1, TimeUnit.SECONDS);
+        sleep(5, TimeUnit.SECONDS);
         assertTrue(actuator.isRunning());
     }
 

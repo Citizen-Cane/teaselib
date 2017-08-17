@@ -81,6 +81,21 @@ const KeyReleaseService::Actuator KeyReleaseService::ShortRelease = {TX, 30 * 60
 const KeyReleaseService::Actuator KeyReleaseService::LongRelease = {RX, 60 * 60 , 120 * 60, 150, 30};
 const KeyReleaseService::Actuator* KeyReleaseService::DefaultSetup[] = {&ShortRelease, &LongRelease};
 
+// pulse every 0.5s @ 0s -> 500ms
+// pulse every 10.0s @ 3600s -> 10000ms
+// y = mx+b -> m = (y-b) / x
+// m = 10000ms-500ms / 3600s ~ 2.63888
+const unsigned int pulseFrequencyAt0s = 500;
+const unsigned int pulseFrequencyAt1h = 10000;
+const unsigned int secondsAt1h = 3600;
+
+// TODO LED Timer callback not called when period is changed to larger than 1000ms
+// - since release timer change from minutes to seconds, with firmware 0.62
+// - however the release timer works fine, so something's wrong here and needs to be fixed
+const unsigned int pulseFrequencyWhenIdleOrArming = 999;
+const unsigned int pulseLength = 100;
+
+
 KeyReleaseService::KeyReleaseService(const Actuator** actuators, const int actuatorCount)
 : TeaseLibService(Name, Description, Version)
 , actuators(actuators)
@@ -89,7 +104,8 @@ KeyReleaseService::KeyReleaseService(const Actuator** actuators, const int actua
 , actuatorCount(actuatorCount)
 , sessionKey(createSessionKey())
 , releaseTimer(1 * 1000, &KeyReleaseService::releaseTimerCallback, *this)
-, ledTimer(1000, &KeyReleaseService::ledTimerCallback, *this)
+, ledTimer(pulseFrequencyWhenIdleOrArming, &KeyReleaseService::ledTimerCallback, *this)
+, ledPulseOffTimer(pulseLength, &KeyReleaseService::ledTimerPulseOffCallback, *this, true)
 , status(Idle)
 {
 }
@@ -277,36 +293,43 @@ unsigned int KeyReleaseService::runningReleases() {
 
 void KeyReleaseService::updatePulse(const Status status) {
   this->status = status;
+
   if (status == Armed) {
-    ledTimer.changePeriod(3000);
+    ledTimer.changePeriod(pulseFrequencyWhenIdleOrArming);
     RGB.control(true);
-    RGB.color(0, 255, 0);
+    RGB.color(240, 100, 0);
     ledTimer.start();
   } else if (status == Active) {
     const unsigned int nextReleaseDuration = nextRelease();
     if (nextReleaseDuration > 0) {
-      ledTimer.changePeriod(500 + 3 * nextReleaseDuration);
+      ledTimer.changePeriod(pulsePeriod(nextReleaseDuration));
       RGB.color(0, 0, 255);
-    }
-    else {
+    } else {
       updatePulse(Idle);
     }
-  }
-  else if (status == Released) {
-    // TODO pulse is never blue, turns white / rose immediately
-    ledTimer.changePeriod(3000);
+  } else if (status == Released) {
+    ledTimer.changePeriod(pulseFrequencyWhenIdleOrArming);
     RGB.color(255, 0, 255);
-  }
-  else if (status == Idle) {
+  } else if (status == Idle) {
     ledTimer.stop();
     RGB.brightness(255);
     RGB.control(false);
   }
 }
 
+unsigned int KeyReleaseService::pulsePeriod(const unsigned int seconds) {
+  const unsigned int pulsePeriod = pulseFrequencyAt0s + (pulseFrequencyAt1h - pulseFrequencyAt0s) * seconds / secondsAt1h;
+  // timer period must be smaller than 65535 according to
+  // https://community.particle.io/t/scheduling-a-function-on-photon/18815/2
+  return min(pulsePeriod, 50000);
+}
+
 void KeyReleaseService::ledTimerCallback() {
   RGB.brightness(48);
-  delay(100);
+  ledPulseOffTimer.start();
+}
+
+void KeyReleaseService::ledTimerPulseOffCallback() {
   RGB.brightness(0);
 }
 

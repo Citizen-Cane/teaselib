@@ -74,10 +74,15 @@ private:
   const int actuatorCount;
   const char* const sessionKey;
   static const char* const createSessionKey();
+
   Timer releaseTimer;
   Timer ledTimer;
+  Timer ledPulseOffTimer;
   void releaseTimerCallback();
   void ledTimerCallback();
+  void ledTimerPulseOffCallback();
+  unsigned int pulsePeriod(const unsigned int seconds);
+
   void armKey(const int index);
   void releaseKey(const int index);
   enum Status {

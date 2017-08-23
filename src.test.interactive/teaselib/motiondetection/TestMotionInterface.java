@@ -3,17 +3,22 @@ package teaselib.motiondetection;
 import org.bytedeco.javacpp.opencv_core.Point;
 import org.junit.Test;
 
+import teaselib.core.Configuration;
 import teaselib.core.VideoRenderer;
 import teaselib.core.VideoRenderer.Type;
+import teaselib.core.devices.Devices;
 import teaselib.core.javacv.VideoRendererJavaCV;
 import teaselib.motiondetection.MotionDetector.MotionSensitivity;
+import teaselib.test.DebugSetup;
 
 public class TestMotionInterface {
 
     @Test
     public void testMotionStartStop() {
-        MotionDetector motionDetector = MotionDetection.Devices
-                .getDefaultDevice();
+        Configuration config = DebugSetup.getConfiguration();
+        Devices devices = new Devices(config);
+
+        MotionDetector motionDetector = devices.get(MotionDetector.class).getDefaultDevice();
         motionDetector.setViewPoint(ViewPoint.EyeLevel);
         motionDetector.setSensitivity(MotionSensitivity.High);
         VideoRenderer vr = new VideoRendererJavaCV(Type.CameraFeedback) {
@@ -25,7 +30,7 @@ public class TestMotionInterface {
         };
         motionDetector.setVideoRenderer(vr);
 
-        Movement movement = MotionDetection.movement(motionDetector);
+        Movement movement = MotionDetector.movement(motionDetector);
 
         System.out.println("Move!");
 

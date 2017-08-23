@@ -12,6 +12,7 @@ import org.junit.Test;
 
 import teaselib.hosts.DummyHost;
 import teaselib.hosts.DummyPersistence;
+import teaselib.test.DebugSetup;
 
 public class TeaseLibGlobalObjectsTest {
 
@@ -52,7 +53,7 @@ public class TeaseLibGlobalObjectsTest {
 
     @Test
     public void testTeaseLibGLobals() throws IOException {
-        TeaseLib teaseLib = new TeaseLib(new DummyHost(), new DummyPersistence());
+        TeaseLib teaseLib = new TeaseLib(new DummyHost(), new DummyPersistence(), new DebugSetup());
 
         teaseLib.globals.store(TestObject.Object1, value1);
         teaseLib.globals.store(TestObject.Object2, value2);

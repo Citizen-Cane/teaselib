@@ -112,7 +112,8 @@ public interface Host {
     enum Location {
         TeaseLib,
         Host,
-        User
+        User,
+        Log
     }
 
     File getLocation(Location folder);

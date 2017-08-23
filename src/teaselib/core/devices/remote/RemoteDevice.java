@@ -2,18 +2,30 @@ package teaselib.core.devices.remote;
 
 import java.util.Collections;
 
+import teaselib.core.Configuration;
 import teaselib.core.devices.Device;
+import teaselib.core.devices.DeviceCache;
+import teaselib.core.devices.Devices;
 
-public interface RemoteDevice extends Device {
+public abstract class RemoteDevice implements Device.Creatable {
 
-    static final RemoteDeviceMessage Id = new RemoteDeviceMessage("id",
-            Collections.EMPTY_LIST, new byte[] {});
+    private static DeviceCache<RemoteDevice> Instance;
 
-    static final RemoteDeviceMessage Timeout = new RemoteDeviceMessage(
-            "timeout", Collections.EMPTY_LIST, new byte[] {});
+    public static synchronized DeviceCache<RemoteDevice> getDeviceCache(Devices devices, Configuration configuration) {
+        if (Instance == null) {
+            Instance = new DeviceCache<RemoteDevice>()
+                    .addFactory(LocalNetworkDevice.getDeviceFactory(devices, configuration))
+                    .addFactory(BluetoothDevice.getDeviceFactory(devices, configuration));
+        }
+        return Instance;
+    }
 
-    static final RemoteDeviceMessage Error = new RemoteDeviceMessage("error",
-            Collections.EMPTY_LIST, new byte[] {});
+    static final RemoteDeviceMessage Id = new RemoteDeviceMessage("id", Collections.EMPTY_LIST, new byte[] {});
+
+    static final RemoteDeviceMessage Timeout = new RemoteDeviceMessage("timeout", Collections.EMPTY_LIST,
+            new byte[] {});
+
+    static final RemoteDeviceMessage Error = new RemoteDeviceMessage("error", Collections.EMPTY_LIST, new byte[] {});
 
     /**
      * Set the device to sleep
@@ -25,26 +37,24 @@ public interface RemoteDevice extends Device {
      */
     public static final String Count = "count";
 
-    String getServiceName();
+    public abstract String getServiceName();
 
-    String getDescription();
+    public abstract String getDescription();
 
-    String getVersion();
+    public abstract String getVersion();
 
-    RemoteDeviceMessage sendAndReceive(RemoteDeviceMessage message);
+    public abstract RemoteDeviceMessage sendAndReceive(RemoteDeviceMessage message);
 
-    void send(RemoteDeviceMessage message);
+    public abstract void send(RemoteDeviceMessage message);
 
     /**
-     * Sleep to save battery charge. During sleep mode the device may turn off
-     * network communications to save power. Therefore the device might not
-     * react to any commands sent to it.
+     * Sleep to save battery charge. During sleep mode the device may turn off network communications to save power.
+     * Therefore the device might not react to any commands sent to it.
      * 
      * @param durationMinutes
-     *            The requested sleep duration. The device may choose to sleep
-     *            less time in order to complete services. If possible the
-     *            device may enter deep sleep but this is not guaranteed.
+     *            The requested sleep duration. The device may choose to sleep less time in order to complete services.
+     *            If possible the device may enter deep sleep but this is not guaranteed.
      * @return The actual duration the device is going to sleep.
      */
-    int sleep(int durationMinutes);
+    public abstract int sleep(int durationMinutes);
 }

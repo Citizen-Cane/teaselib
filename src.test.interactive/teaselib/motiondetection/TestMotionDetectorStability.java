@@ -8,16 +8,18 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import teaselib.core.Configuration;
+import teaselib.core.devices.Devices;
 import teaselib.motiondetection.MotionDetector.MotionSensitivity;
 import teaselib.motiondetection.MotionDetector.Presence;
+import teaselib.test.DebugSetup;
 
 /**
  * @author someone
  *
  */
 public class TestMotionDetectorStability {
-    private static final Logger logger = LoggerFactory
-            .getLogger(TestMotionDetectorStability.class);
+    private static final Logger logger = LoggerFactory.getLogger(TestMotionDetectorStability.class);
 
     /**
      * @throws java.lang.Exception
@@ -28,7 +30,10 @@ public class TestMotionDetectorStability {
 
     @Test
     public void testPauseResume() {
-        MotionDetector md = MotionDetection.Devices.getDefaultDevice();
+        Configuration config = DebugSetup.getConfiguration();
+        Devices devices = new Devices(config);
+
+        MotionDetector md = devices.get(MotionDetector.class).getDefaultDevice();
         md.setSensitivity(MotionSensitivity.Normal);
 
         int durationMillis = 10 * 1000;

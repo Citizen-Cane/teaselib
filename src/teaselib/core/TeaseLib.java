@@ -25,8 +25,8 @@ import teaselib.Duration;
 import teaselib.State;
 import teaselib.core.Host.Location;
 import teaselib.core.devices.DeviceFactoryListener;
+import teaselib.core.devices.Devices;
 import teaselib.core.devices.remote.LocalNetworkDevice;
-import teaselib.core.devices.remote.LocalNetworkDeviceDiscovery;
 import teaselib.core.media.MediaRendererQueue;
 import teaselib.core.texttospeech.Voice;
 import teaselib.core.ui.HostInputMethod;
@@ -35,7 +35,6 @@ import teaselib.core.util.ObjectMap;
 import teaselib.core.util.PropertyNameMapping;
 import teaselib.core.util.QualifiedItem;
 import teaselib.core.util.ReflectionUtils;
-import teaselib.motiondetection.MotionDetection;
 import teaselib.motiondetection.MotionDetector;
 import teaselib.util.Item;
 import teaselib.util.Items;
@@ -60,6 +59,8 @@ public class TeaseLib {
 
     public final ObjectMap globals = new ObjectMap();
 
+    public final Devices devices;
+
     public final MediaRendererQueue renderQueue = new MediaRendererQueue();
     final Shower shower;
     final HostInputMethod hostInputMethod;
@@ -72,26 +73,24 @@ public class TeaseLib {
     }
 
     public TeaseLib(Host host, Persistence persistence, Configuration.Setup setup) throws IOException {
-        if (host == null || persistence == null) {
+        if (host == null || persistence == null || setup == null) {
             throw new IllegalArgumentException();
         }
-        this.host = host;
-        this.persistence = new PersistenceLogger(persistence);
-        this.config = new Configuration();
-
         logJavaVersion();
         logJavaProperties();
 
-        setup.applyTo(config);
+        this.host = host;
+        this.persistence = new PersistenceLogger(persistence);
 
-        this.transcript = newTranscriptLogger(host.getLocation(Location.User));
+        this.config = new Configuration(setup);
+        this.transcript = newTranscriptLogger(host.getLocation(Location.Log));
         this.shower = new Shower(host);
         this.hostInputMethod = new HostInputMethod(host);
 
-        bindMotionDetectorFeedback();
-        if (LocalNetworkDeviceDiscovery.isListeningForDeviceMessagesEnabled()) {
-            LocalNetworkDevice.startDeviceDetection();
-        }
+        devices = new Devices(config);
+
+        bindMotionDetectorToVideoRenderer();
+        bindNetworkProperties();
     }
 
     private static void logJavaProperties() {
@@ -120,18 +119,24 @@ public class TeaseLib {
         TeaseLibLogger transcriptLogger = null;
 
         transcriptLogger = new TeaseLibLogger(new File(folder, TranscriptLogFileName),
-                Boolean.parseBoolean(config.get(QualifiedItem.of(Config.Debug.LogDetails))) ? TeaseLibLogger.Level.Debug
+                Boolean.parseBoolean(config.get(Config.Debug.LogDetails)) ? TeaseLibLogger.Level.Debug
                         : TeaseLibLogger.Level.Info).showTime(false).showThread(false);
         return transcriptLogger;
     }
 
-    private void bindMotionDetectorFeedback() {
-        MotionDetection.Devices.addDeviceListener(new DeviceFactoryListener<MotionDetector>() {
+    private void bindMotionDetectorToVideoRenderer() {
+        devices.get(MotionDetector.class).addDeviceListener(new DeviceFactoryListener<MotionDetector>() {
             @Override
             public void deviceCreated(MotionDetector motionDetector) {
                 motionDetector.setVideoRenderer(TeaseLib.this.host.getDisplay(VideoRenderer.Type.CameraFeedback));
             }
         });
+    }
+
+    private void bindNetworkProperties() {
+        if (Boolean.parseBoolean(config.get(LocalNetworkDevice.Settings.EnableDeviceDiscovery))) {
+            devices.get(LocalNetworkDevice.class).getDevicePaths();
+        }
     }
 
     @SuppressWarnings("resource")
@@ -187,12 +192,10 @@ public class TeaseLib {
     }
 
     /**
-     * Preferred method to wait, since it allows us to overwrite this method
-     * with automated input.
+     * Preferred method to wait, since it allows us to overwrite this method with automated input.
      * 
-     * If interrupted, must throw a ScriptInterruptedException. It's a runtime
-     * exception so it doesn't have to be declared. This way simple scripts are
-     * safe, but script closures can be cancelled.
+     * If interrupted, must throw a ScriptInterruptedException. It's a runtime exception so it doesn't have to be
+     * declared. This way simple scripts are safe, but script closures can be cancelled.
      * 
      * @param milliseconds
      *            The time to sleep.

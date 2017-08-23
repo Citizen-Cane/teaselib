@@ -6,14 +6,11 @@ import java.util.Vector;
 import teaselib.core.devices.BatteryLevel;
 import teaselib.core.devices.Device;
 import teaselib.core.devices.DeviceCache;
+import teaselib.core.devices.Devices;
 
 public class RemoteDevices {
 
-    public static final DeviceCache<RemoteDevice> Instance = new DeviceCache<RemoteDevice>()
-            .addFactory(LocalNetworkDevice.Factory).addFactory(BluetoothDevice.Factory);
-
     public static final RemoteDevice WaitingForConnection = new RemoteDevice() {
-
         @Override
         public String getDevicePath() {
             return DeviceCache.createDevicePath(WaitingForConnection, WaitingForConnection);
@@ -79,11 +76,12 @@ public class RemoteDevices {
 
     };
 
-    public static List<RemoteDevice> devicesThatSupport(String serviceName) {
+    public static List<RemoteDevice> devicesThatSupport(String serviceName, Devices devices) {
         List<RemoteDevice> remoteDevices = new Vector<RemoteDevice>();
-        for (String devicePath : Instance.getDevicePaths()) {
+        DeviceCache<RemoteDevice> allRemoteDevices = devices.get(RemoteDevice.class);
+        for (String devicePath : allRemoteDevices.getDevicePaths()) {
             if (!Device.WaitingForConnection.equals(DeviceCache.getDeviceName(devicePath))) {
-                RemoteDevice device = Instance.getDevice(devicePath);
+                RemoteDevice device = allRemoteDevices.getDevice(devicePath);
                 if (serviceName.equals(device.getServiceName())) {
                     remoteDevices.add(device);
                 }

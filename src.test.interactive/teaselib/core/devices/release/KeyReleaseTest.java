@@ -3,20 +3,22 @@
  */
 package teaselib.core.devices.release;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.Assume;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import teaselib.core.devices.DeviceCache;
-import teaselib.core.devices.remote.LocalNetworkDevice;
+import teaselib.core.devices.Devices;
+import teaselib.test.DebugSetup;
 
 /**
  * @author Citizen-Cane
@@ -25,15 +27,18 @@ import teaselib.core.devices.remote.LocalNetworkDevice;
 public class KeyReleaseTest {
     private static final Logger logger = LoggerFactory.getLogger(KeyReleaseTest.class);
 
-    static final long HoldDuration = 1;
+    static final long HoldDuration = 1; // minutes
 
-    @BeforeClass
-    public static void beforeClass() {
-        System.setProperty(LocalNetworkDevice.EnableDeviceDiscovery, Boolean.TRUE.toString());
+    public static KeyRelease connectDefaultDevice() {
+        Devices devices = new Devices(DebugSetup.getConfiguration());
+        DeviceCache<KeyRelease> deviceCache = devices.get(KeyRelease.class);
+        KeyRelease keyRelease = deviceCache.getDefaultDevice();
+        connect(keyRelease);
+        return keyRelease;
     }
 
     public static List<Actuator> connect(KeyRelease keyRelease) {
-        Assume.assumeTrue(DeviceCache.connect(keyRelease, 10.0));
+        Assume.assumeTrue(DeviceCache.connect(keyRelease, 0.0));
         assertTrue(keyRelease.connected());
         logger.info(keyRelease.getName());
         assertTrue(keyRelease.active());
@@ -89,7 +94,8 @@ public class KeyReleaseTest {
 
     @Test
     public void testManualRelease() {
-        KeyRelease keyRelease = KeyRelease.Devices.getDefaultDevice();
+        KeyRelease keyRelease = connectDefaultDevice();
+
         for (Actuator actuator : connect(keyRelease)) {
             arm(actuator);
             start(actuator);
@@ -103,7 +109,8 @@ public class KeyReleaseTest {
 
     @Test
     public void testAutomaticRelease() {
-        KeyRelease keyRelease = KeyRelease.Devices.getDefaultDevice();
+        KeyRelease keyRelease = connectDefaultDevice();
+
         for (Actuator actuator : connect(keyRelease)) {
             arm(actuator);
             start(actuator);
@@ -115,7 +122,8 @@ public class KeyReleaseTest {
 
     @Test
     public void testDeepSleepRelease() {
-        KeyRelease keyRelease = KeyRelease.Devices.getDefaultDevice();
+        KeyRelease keyRelease = connectDefaultDevice();
+
         for (Actuator actuator : connect(keyRelease)) {
             arm(actuator);
             start(actuator);
@@ -132,7 +140,8 @@ public class KeyReleaseTest {
 
     @Test
     public void testDeepSleepPacket() {
-        KeyRelease keyRelease = KeyRelease.Devices.getDefaultDevice();
+        KeyRelease keyRelease = connectDefaultDevice();
+
         List<Actuator> actuators = connect(keyRelease);
         logger.info(keyRelease.getName() + ": " + actuators.size() + " actuators");
         Actuator actuator = actuators.get(0);
@@ -157,5 +166,4 @@ public class KeyReleaseTest {
         assertEquals(0, KeyRelease.getActuatorIndex(0, durations_60_120));
         assertEquals(0, KeyRelease.getActuatorIndex(-1, durations_60_120));
     }
-
 }

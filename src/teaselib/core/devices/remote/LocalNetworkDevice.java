@@ -5,48 +5,39 @@ package teaselib.core.devices.remote;
 
 import java.io.IOException;
 import java.net.SocketException;
-import java.net.UnknownHostException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
-
-import javax.swing.SwingUtilities;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import teaselib.core.Configuration;
 import teaselib.core.devices.BatteryLevel;
 import teaselib.core.devices.DeviceCache;
-import teaselib.core.devices.DeviceFactory;
+import teaselib.core.devices.Devices;
 
 /**
  * @author Citizen-Cane
  *
  */
-public class LocalNetworkDevice implements RemoteDevice {
-    private static final Logger logger = LoggerFactory.getLogger(LocalNetworkDevice.class);
+public class LocalNetworkDevice extends RemoteDevice {
+    static final Logger logger = LoggerFactory.getLogger(LocalNetworkDevice.class);
 
     private static final String DeviceClassName = "LocalNetworkDevice";
 
     static final int Port = 666;
 
-    /**
-     * Boolean property to enable discovery of TeaseLib local network devices.
-     * <p>
-     * Sends broadcast messages into all local networks every few seconds.
-     */
-    public static final String EnableDeviceDiscovery = LocalNetworkDevice.class.getName() + ".EnableDeviceDiscovery";
+    public enum Settings {
+        /**
+         * Search for devices via broadcast messages
+         */
+        EnableDeviceDiscovery,
 
-    /**
-     * Boolean property to enable discovery of TeaseLib local network devices.
-     * <p>
-     * Binds a broadcast listener for receiving devices startup messages to the
-     * meta-address 0.0.0.0. This speeds up device discovery, but - at least on
-     * Windows - it may pop-up a firewall notification.
-     */
-    public static final String EnableDeviceStatusListener = LocalNetworkDevice.class.getName()
-            + ".EnableDeviceStatusListener";
+        /**
+         * Listen to device status messages
+         */
+        EnableDeviceStatusListener
+    }
 
     /**
      * Local network devices have to respond in this time, plus some head room.
@@ -58,90 +49,15 @@ public class LocalNetworkDevice implements RemoteDevice {
      */
     private static final int SocketTimeoutMillis = 2000;
 
-    public static final DeviceFactory<LocalNetworkDevice> Factory = new DeviceFactory<LocalNetworkDevice>(
-            DeviceClassName) {
+    private static LocalNetworkDeviceFactory Factory;
 
-        private final LocalNetworkDeviceDiscovery deviceDiscovery;
-        private final List<LocalNetworkDevice> discoveredDevices = new ArrayList<LocalNetworkDevice>();
-
-        {
-            deviceDiscovery = new LocalNetworkDeviceDiscoveryBroadcast();
-            installDeviceListener();
+    public static synchronized LocalNetworkDeviceFactory getDeviceFactory(Devices devices,
+            Configuration configuration) {
+        if (Factory == null) {
+            Factory = new LocalNetworkDeviceFactory(DeviceClassName, devices, configuration);
         }
-
-        private void installDeviceListener() {
-            if (deviceDiscovery != null) {
-                deviceDiscovery.addRemoteDeviceDiscoveryListener(new RemoteDeviceListener() {
-                    @Override
-                    public void deviceAdded(String name, String address, String serviceName, String description,
-                            String version) {
-                        String devicePath = LocalNetworkDevice.createDevicePath(name, serviceName);
-                        if (!isDeviceCached(devicePath)) {
-                            try {
-                                LocalNetworkDevice device = new LocalNetworkDevice(name, new UDPConnection(address),
-                                        serviceName, description, version);
-                                synchronized (discoveredDevices) {
-                                    discoveredDevices.add(device);
-                                }
-                            } catch (NumberFormatException e) {
-                                logger.error(e.getMessage(), e);
-                            } catch (SocketException e) {
-                                logger.error(e.getMessage(), e);
-                            } catch (UnknownHostException e) {
-                                logger.error(e.getMessage(), e);
-                            }
-                        }
-                    }
-                });
-            }
-        }
-
-        @Override
-        public List<String> enumerateDevicePaths(Map<String, LocalNetworkDevice> deviceCache)
-                throws InterruptedException {
-            if (discoveredDevices.isEmpty()) {
-                deviceDiscovery.searchDevices();
-            }
-            publishDiscoveredDevices(deviceCache);
-            return new ArrayList<String>(deviceCache.keySet());
-        }
-
-        private void publishDiscoveredDevices(Map<String, LocalNetworkDevice> deviceCache) {
-            synchronized (discoveredDevices) {
-                for (LocalNetworkDevice device : discoveredDevices) {
-                    deviceCache.put(device.getDevicePath(), device);
-                }
-                discoveredDevices.clear();
-            }
-        }
-
-        @Override
-        public LocalNetworkDevice createDevice(String deviceName) {
-            if (WaitingForConnection.equals(deviceName)) {
-                throw new IllegalArgumentException(WaitingForConnection);
-            }
-            String[] deviceAndAddress = deviceName.split("@");
-            String[] deviceInfo = deviceAndAddress[0].split(",");
-            String name = deviceInfo[0];
-            String serviceName = deviceInfo[1];
-            String description = deviceInfo[2];
-            String version = deviceInfo[3];
-            String address = deviceAndAddress[1];
-            LocalNetworkDevice localNetworkDevice;
-            try {
-                localNetworkDevice = new LocalNetworkDevice(name, new UDPConnection(address), serviceName, description,
-                        version);
-            } catch (NumberFormatException e) {
-                throw new IllegalArgumentException(e);
-            } catch (SocketException e) {
-                throw new IllegalArgumentException(e);
-            } catch (UnknownHostException e) {
-                throw new IllegalArgumentException(e);
-            }
-            return localNetworkDevice;
-        }
-
-    };
+        return Factory;
+    }
 
     private final String name;
     private final String serviceName;
@@ -163,7 +79,7 @@ public class LocalNetworkDevice implements RemoteDevice {
         return createDevicePath(name, serviceName);
     }
 
-    private static String createDevicePath(String name, String serviceName) {
+    static String createDevicePath(String name, String serviceName) {
         return DeviceCache.createDevicePath(DeviceClassName, name + "->" + serviceName);
     }
 
@@ -308,14 +224,4 @@ public class LocalNetworkDevice implements RemoteDevice {
             logger.error(e.getMessage(), e);
         }
     }
-
-    public static void startDeviceDetection() {
-        SwingUtilities.invokeLater(new Runnable() {
-            @Override
-            public void run() {
-                Factory.getDevices();
-            }
-        });
-    }
-
 }

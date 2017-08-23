@@ -16,7 +16,9 @@ import java.util.List;
 
 public abstract class LocalNetworkDeviceDiscovery {
 
-    List<RemoteDeviceListener> remoteDeviceListeners = new ArrayList<RemoteDeviceListener>();
+    final List<RemoteDeviceListener> remoteDeviceListeners = new ArrayList<RemoteDeviceListener>();
+
+    public abstract void enableDeviceStatusListener(boolean enable);
 
     abstract void searchDevices() throws InterruptedException;
 
@@ -46,13 +48,13 @@ public abstract class LocalNetworkDeviceDiscovery {
             String serviceName = services.parameters.get(i++);
             String description = services.parameters.get(i++);
             String version = services.parameters.get(i++);
-            fireDeviceDiscovered(name, address.getHostAddress() + ":" + LocalNetworkDevice.Port,
-                    serviceName, description, version);
+            fireDeviceDiscovered(name, address.getHostAddress() + ":" + LocalNetworkDevice.Port, serviceName,
+                    description, version);
         }
     }
 
-    protected void fireDeviceDiscovered(String name, String address, String serviceName,
-            String description, String version) {
+    protected void fireDeviceDiscovered(String name, String address, String serviceName, String description,
+            String version) {
         for (RemoteDeviceListener remoteDeviceListener : remoteDeviceListeners) {
             remoteDeviceListener.deviceAdded(name, address, serviceName, description, version);
         }
@@ -64,18 +66,6 @@ public abstract class LocalNetworkDeviceDiscovery {
 
     public void removeRemoteDeviceDiscoveryListener(RemoteDeviceListener remoteDeviceListener) {
         remoteDeviceListeners.remove(remoteDeviceListener);
-    }
-
-    public static boolean isListeningForDeviceMessagesEnabled() {
-        String bindBroadcastListenerProperty = System
-                .getProperty(LocalNetworkDevice.EnableDeviceStatusListener, "false");
-        return Boolean.parseBoolean(bindBroadcastListenerProperty);
-    }
-
-    public static boolean isDeviceDiscoveryEnabled() {
-        String bindBroadcastListenerProperty = System
-                .getProperty(LocalNetworkDevice.EnableDeviceDiscovery, "false");
-        return Boolean.parseBoolean(bindBroadcastListenerProperty);
     }
 
 }

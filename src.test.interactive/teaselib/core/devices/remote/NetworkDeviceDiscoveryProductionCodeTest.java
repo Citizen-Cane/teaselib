@@ -16,15 +16,14 @@ import org.slf4j.LoggerFactory;
  *
  */
 public class NetworkDeviceDiscoveryProductionCodeTest {
-    private static final Logger logger = LoggerFactory
-            .getLogger(NetworkDeviceDiscoveryProductionCodeTest.class);
+    private static final Logger logger = LoggerFactory.getLogger(NetworkDeviceDiscoveryProductionCodeTest.class);
 
     static final int Minutes = 2;
 
     @Test
     public void testAwaitDeviceStartupServicesBroadcastMessage() throws Exception {
         logger.info("Awaiting device startup broadscast message:");
-        System.setProperty(LocalNetworkDevice.EnableDeviceStatusListener, Boolean.TRUE.toString());
+        // System.setProperty(LocalNetworkDevice.EnableDeviceStatusListener, Boolean.TRUE.toString());
 
         LocalNetworkDeviceDiscoveryBroadcast scanner = new LocalNetworkDeviceDiscoveryBroadcast();
         try {
@@ -33,10 +32,9 @@ public class NetworkDeviceDiscoveryProductionCodeTest {
             final CountDownLatch deviceConnected = new CountDownLatch(1);
             scanner.addRemoteDeviceDiscoveryListener(new RemoteDeviceListener() {
                 @Override
-                public void deviceAdded(String name, String address, String serviceName,
-                        String description, String version) {
-                    logger.info(name + ":" + serviceName + ", " + description + ", " + version + "@"
-                            + address);
+                public void deviceAdded(String name, String address, String serviceName, String description,
+                        String version) {
+                    logger.info(name + ":" + serviceName + ", " + description + ", " + version + "@" + address);
                     deviceConnected.countDown();
                 }
             });

@@ -14,12 +14,14 @@ import org.bytedeco.javacpp.opencv_core.Size;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import teaselib.core.Configuration;
 import teaselib.core.ScriptInterruptedException;
 import teaselib.core.VideoRenderer;
 import teaselib.core.concurrency.Signal;
+import teaselib.core.devices.BatteryLevel;
 import teaselib.core.devices.DeviceCache;
 import teaselib.core.devices.DeviceFactory;
-import teaselib.core.devices.WiredDevice;
+import teaselib.core.devices.Devices;
 import teaselib.core.javacv.Copy;
 import teaselib.core.javacv.Scale;
 import teaselib.core.javacv.ScaleAndMirror;
@@ -29,24 +31,19 @@ import teaselib.motiondetection.MotionDetector;
 import teaselib.motiondetection.ViewPoint;
 import teaselib.video.ResolutionList;
 import teaselib.video.VideoCaptureDevice;
-import teaselib.video.VideoCaptureDevices;
 
 /**
  * @author Citizen-Cane
  * 
  *         Bullet-Proof motion detector:
  *         <p>
- *         Motion is detected via motion contours from background subtraction.
- *         Sensitivity is implemented by applying a structuring element to the
- *         motion contours.
+ *         Motion is detected via motion contours from background subtraction. Sensitivity is implemented by applying a
+ *         structuring element to the motion contours.
  *         <p>
- *         Absence of motion is measured by measuring the distance of tracking
- *         points from positions set when motion last stopped. Motion is
- *         detected when the tracking points move too far away from their start
- *         points.
+ *         Absence of motion is measured by measuring the distance of tracking points from positions set when motion
+ *         last stopped. Motion is detected when the tracking points move too far away from their start points.
  *         <p>
- *         Blinking eyes are detected by removing small circular motion contours
- *         before calculating the motion region.
+ *         Blinking eyes are detected by removing small circular motion contours before calculating the motion region.
  *         <p>
  *         The camera should be placed on top of the monitor with no tilt.
  *         <p>
@@ -59,16 +56,20 @@ import teaselib.video.VideoCaptureDevices;
  *         light sources from moving cars or traffic lights.
  * 
  */
-public class MotionDetectorJavaCV extends WiredDevice implements MotionDetector {
+public class MotionDetectorJavaCV extends MotionDetector /* extends WiredDevice */ {
     private static final Logger logger = LoggerFactory.getLogger(MotionDetectorJavaCV.class);
 
     private static final String DeviceClassName = "MotionDetectorJavaCV";
 
-    public static final DeviceFactory<MotionDetector> Factory = new DeviceFactory<MotionDetector>(DeviceClassName) {
+    private static final class MyDeviceFactory extends DeviceFactory<MotionDetectorJavaCV> {
+        private MyDeviceFactory(String deviceClass, Devices devices, Configuration configuration) {
+            super(deviceClass, devices, configuration);
+        }
+
         @Override
-        public List<String> enumerateDevicePaths(Map<String, MotionDetector> deviceCache) {
+        public List<String> enumerateDevicePaths(Map<String, MotionDetectorJavaCV> deviceCache) {
             List<String> deviceNames = new ArrayList<String>();
-            Set<String> videoCaptureDevicePaths = VideoCaptureDevices.Instance.getDevicePaths();
+            Set<String> videoCaptureDevicePaths = devices.get(VideoCaptureDevice.class).getDevicePaths();
             for (String videoCaptureDevicePath : videoCaptureDevicePaths) {
                 deviceNames.add(DeviceCache.createDevicePath(DeviceClassName, videoCaptureDevicePath));
             }
@@ -76,11 +77,15 @@ public class MotionDetectorJavaCV extends WiredDevice implements MotionDetector 
         }
 
         @Override
-        public MotionDetector createDevice(String deviceName) {
-            return new MotionDetectorJavaCV(VideoCaptureDevices.Instance.getDevice(deviceName));
+        public MotionDetectorJavaCV createDevice(String deviceName) {
+            DeviceCache<VideoCaptureDevice> videoCaptureDevices = devices.get(VideoCaptureDevice.class);
+            return new MotionDetectorJavaCV(videoCaptureDevices.getDevice(deviceName));
         }
+    }
 
-    };
+    public static MyDeviceFactory getDeviceFactory(Devices devices, Configuration configuration) {
+        return new MyDeviceFactory(DeviceClassName, devices, configuration);
+    }
 
     public static final EnumSet<Feature> Features = EnumSet.of(Feature.Motion, Feature.Presence);
 
@@ -376,6 +381,16 @@ public class MotionDetectorJavaCV extends WiredDevice implements MotionDetector 
         } finally {
             eventThread.debugWindowTimeSpan = MotionRegionDefaultTimespan;
         }
+    }
+
+    @Override
+    public boolean isWireless() {
+        return eventThread.videoCaptureDevice.isWireless();
+    }
+
+    @Override
+    public BatteryLevel batteryLevel() {
+        return eventThread.videoCaptureDevice.batteryLevel();
     }
 
     protected double fps() {

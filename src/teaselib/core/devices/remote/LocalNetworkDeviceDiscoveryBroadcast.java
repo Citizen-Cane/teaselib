@@ -17,50 +17,50 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import teaselib.core.ScriptInterruptedException;
+
 class LocalNetworkDeviceDiscoveryBroadcast extends LocalNetworkDeviceDiscovery {
-    static final Logger logger = LoggerFactory
-            .getLogger(LocalNetworkDeviceDiscoveryBroadcast.class);
+    static final Logger logger = LoggerFactory.getLogger(LocalNetworkDeviceDiscoveryBroadcast.class);
 
     private final Map<InterfaceAddress, BroadcastListener> discoveryThreads = new HashMap<InterfaceAddress, BroadcastListener>();
-    private BroadcastListener globalBroadcastListener;
+    private BroadcastListener deviceSTatusMessageListener;
 
-    public LocalNetworkDeviceDiscoveryBroadcast() {
-        super();
-
-        if (isListeningForDeviceMessagesEnabled()) {
+    @Override
+    public void enableDeviceStatusListener(boolean enable) {
+        if (deviceSTatusMessageListener == null && enable) {
             installBroadcastListener();
+        } else if (deviceSTatusMessageListener != null && !enable) {
+            removeBroadcastListener();
         }
     }
 
     private void installBroadcastListener() {
         try {
-            globalBroadcastListener = new BroadcastListener();
-            globalBroadcastListener.start();
+            deviceSTatusMessageListener = new BroadcastListener();
+            deviceSTatusMessageListener.start();
         } catch (IOException e) {
             logger.error(e.getMessage(), e);
         }
     }
 
+    private void removeBroadcastListener() {
+        deviceSTatusMessageListener.end();
+        deviceSTatusMessageListener = null;
+    }
+
     @Override
     void searchDevices() throws InterruptedException {
-        if (isDeviceDiscoveryEnabled()) {
-            try {
-                List<InterfaceAddress> networks = networks();
-                updateInterfaceBroadcastListeners(networks);
-                broadcastToAllInterfaces(networks);
-            } catch (SocketException e) {
-                logger.error(e.getMessage(), e);
-            }
-            waitForDevicesToReply();
+        try {
+            List<InterfaceAddress> networks = networks();
+            updateInterfaceBroadcastListeners(networks);
+            broadcastToAllInterfaces(networks);
+        } catch (SocketException e) {
+            logger.error(e.getMessage(), e);
         }
+        waitForDevicesToReply();
     }
 
     void updateInterfaceBroadcastListeners(List<InterfaceAddress> networks) {
-        if (globalBroadcastListener == null) {
-            if (isListeningForDeviceMessagesEnabled()) {
-                installBroadcastListener();
-            }
-        }
         addSocketThreadsForNewNetworkInterfaces(networks);
         removeSocketThreadsForVanishedNetworks(networks);
     }
@@ -69,8 +69,8 @@ class LocalNetworkDeviceDiscoveryBroadcast extends LocalNetworkDeviceDiscovery {
         for (InterfaceAddress interfaceAddress : networks) {
             if (!discoveryThreads.containsKey(interfaceAddress)) {
                 try {
-                    BroadcastListener socketThread = new BroadcastListener(
-                            interfaceAddress.getBroadcast(), LocalNetworkDevice.Port);
+                    BroadcastListener socketThread = new BroadcastListener(interfaceAddress.getBroadcast(),
+                            LocalNetworkDevice.Port);
                     discoveryThreads.put(interfaceAddress, socketThread);
                     socketThread.start();
                 } catch (IOException e) {
@@ -119,8 +119,8 @@ class LocalNetworkDeviceDiscoveryBroadcast extends LocalNetworkDeviceDiscovery {
         }
 
         BroadcastListener() throws IOException {
-            InetSocketAddress address = new InetSocketAddress(
-                    InetAddress.getByAddress(new byte[] { 0, 0, 0, 0 }), LocalNetworkDevice.Port);
+            InetSocketAddress address = new InetSocketAddress(InetAddress.getByAddress(new byte[] { 0, 0, 0, 0 }),
+                    LocalNetworkDevice.Port);
             connection = new UDPConnection(address);
             connection.setCheckPacketNumber(false);
             initThread("Listening for broadcast packets on " + address.toString());
@@ -135,6 +135,15 @@ class LocalNetworkDeviceDiscoveryBroadcast extends LocalNetworkDeviceDiscovery {
         public synchronized void start() {
             super.start();
             isRunning.set(true);
+        }
+
+        public void end() {
+            interrupt();
+            try {
+                join();
+            } catch (InterruptedException e) {
+                throw new ScriptInterruptedException();
+            }
         }
 
         @Override
@@ -172,10 +181,10 @@ class LocalNetworkDeviceDiscoveryBroadcast extends LocalNetworkDeviceDiscovery {
 
     @Override
     void close() {
-        if (globalBroadcastListener != null) {
-            globalBroadcastListener.interrupt();
+        if (deviceSTatusMessageListener != null) {
+            deviceSTatusMessageListener.interrupt();
             try {
-                globalBroadcastListener.join();
+                deviceSTatusMessageListener.join();
             } catch (InterruptedException e) {
                 // ignore
             }

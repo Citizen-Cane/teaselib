@@ -2,8 +2,11 @@ package teaselib.motiondetection;
 
 import org.junit.Test;
 
+import teaselib.core.Configuration;
+import teaselib.core.devices.Devices;
 import teaselib.motiondetection.MotionDetector.MotionSensitivity;
 import teaselib.motiondetection.MotionDetector.Presence;
+import teaselib.test.DebugSetup;
 
 public class TestTechnicalInterface {
 
@@ -16,7 +19,10 @@ public class TestTechnicalInterface {
         // .getDevice(devicePath);
         // MotionDetector md = new MotionDetectorJavaCV(videoCaptureDevice);
 
-        MotionDetector md = MotionDetection.Devices.getDefaultDevice();
+        Configuration config = DebugSetup.getConfiguration();
+        Devices devices = new Devices(config);
+
+        MotionDetector md = devices.get(MotionDetector.class).getDefaultDevice();
 
         // using an amount < 1.0 ignores small pauses while moving
         // respectively ignores slight motions while standing still

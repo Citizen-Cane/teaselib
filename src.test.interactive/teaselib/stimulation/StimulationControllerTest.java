@@ -9,8 +9,12 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import teaselib.core.Configuration;
+import teaselib.core.devices.Devices;
+import teaselib.test.DebugSetup;
+
 /**
- * @author someone
+ * @author Citizen-Cane
  *
  */
 public class StimulationControllerTest {
@@ -18,7 +22,10 @@ public class StimulationControllerTest {
 
     @BeforeClass
     public static void openDefaultDevice() {
-        device = StimulationDevices.Devices.getDefaultDevice();
+        Configuration config = DebugSetup.getConfiguration();
+        Devices devices = new Devices(config);
+
+        device = devices.get(StimulationDevice.class).getDefaultDevice();
     }
 
     @AfterClass
@@ -40,8 +47,7 @@ public class StimulationControllerTest {
         assertNotNull(anus);
         Stimulator balls = getLeftStimulator();
         assertNotNull(balls);
-        StimulationController<StimulationType> stim = StimulationType
-                .stimulateAnusAndBalls(anus, balls);
+        StimulationController<StimulationType> stim = StimulationType.stimulateAnusAndBalls(anus, balls);
         testWhipStimulation(stim);
         testStimulation(stim);
     }
@@ -52,14 +58,12 @@ public class StimulationControllerTest {
         assertNotNull(cock);
         Stimulator balls = StimulationTest.getLeftStimulator();
         assertNotNull(balls);
-        StimulationController<StimulationType> stim = StimulationType
-                .stimulateCockAndAnus(cock, balls);
+        StimulationController<StimulationType> stim = StimulationType.stimulateCockAndAnus(cock, balls);
         testWhipStimulation(stim);
         testStimulation(stim);
     }
 
-    private static void testWhipStimulation(
-            StimulationController<StimulationType> stim) {
+    private static void testWhipStimulation(StimulationController<StimulationType> stim) {
         for (int i = 1; i < 10; i++) {
             stim.stimulate(StimulationType.Attention, 0);
             stim.complete();
@@ -69,8 +73,7 @@ public class StimulationControllerTest {
         }
     }
 
-    private static void testStimulation(
-            StimulationController<StimulationType> stim) {
+    private static void testStimulation(StimulationController<StimulationType> stim) {
         int durationSeconds = 10;
         for (int i = 1; i < 10; i++) {
             stim.stimulate(StimulationType.Attention, 0);

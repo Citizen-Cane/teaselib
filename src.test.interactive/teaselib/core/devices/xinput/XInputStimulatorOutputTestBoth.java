@@ -2,13 +2,19 @@ package teaselib.core.devices.xinput;
 
 import org.junit.Test;
 
+import teaselib.core.Configuration;
 import teaselib.core.devices.Device;
+import teaselib.core.devices.Devices;
+import teaselib.test.DebugSetup;
 
 public class XInputStimulatorOutputTestBoth {
 
     @Test
     public void testAlternate() throws InterruptedException {
-        XInputDevice xid = XInputDevices.Devices.getDefaultDevice();
+        Configuration config = DebugSetup.getConfiguration();
+        Devices devices = new Devices(config);
+
+        XInputDevice xid = devices.get(XInputDevice.class).getDefaultDevice();
         System.out.println(xid.getDevicePath() + (xid.connected() ? "" : ":" + Device.WaitingForConnection));
         try {
             for (int i = 0; i < 1000; i++) {

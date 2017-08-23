@@ -17,7 +17,6 @@ import teaselib.core.ScriptInterruptedException;
 import teaselib.core.TeaseLib;
 import teaselib.core.concurrency.NamedExecutorService;
 import teaselib.core.util.ExceptionUtil;
-import teaselib.core.util.QualifiedItem;
 
 /**
  * @author someone
@@ -98,8 +97,7 @@ public abstract class MediaRendererThread implements MediaRenderer.Threaded, Rep
         if (e instanceof IOException) {
             handleIOException(e);
         } else {
-            boolean stopOnRenderError = Boolean
-                    .parseBoolean(teaseLib.config.get(QualifiedItem.of(Config.Debug.StopOnRenderError)));
+            boolean stopOnRenderError = Boolean.parseBoolean(teaseLib.config.get(Config.Debug.StopOnRenderError));
             if (stopOnRenderError) {
                 throw e;
             }
@@ -108,8 +106,7 @@ public abstract class MediaRendererThread implements MediaRenderer.Threaded, Rep
 
     protected void handleIOException(Exception e) throws IOException {
         if (e instanceof IOException) {
-            boolean stopOnAssetNotFound = Boolean
-                    .parseBoolean(teaseLib.config.get(QualifiedItem.of(Config.Debug.StopOnAssetNotFound)));
+            boolean stopOnAssetNotFound = Boolean.parseBoolean(teaseLib.config.get(Config.Debug.StopOnAssetNotFound));
             if (stopOnAssetNotFound) {
                 throw (IOException) e;
             }

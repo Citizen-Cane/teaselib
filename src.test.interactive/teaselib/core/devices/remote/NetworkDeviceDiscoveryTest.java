@@ -13,6 +13,10 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import teaselib.core.Configuration;
+import teaselib.core.devices.Devices;
+import teaselib.test.DebugSetup;
+
 /**
  * @author Citizen Cane
  *
@@ -28,10 +32,8 @@ public class NetworkDeviceDiscoveryTest {
         Map<InetAddress, RemoteDeviceMessage> devices = new HashMap<InetAddress, RemoteDeviceMessage>();
         LocalNetworkDeviceDiscoveryBroadcast localNetworkDeviceDiscoveryBroadcast = new LocalNetworkDeviceDiscoveryBroadcast();
         try {
-            for (InterfaceAddress interfaceAddress : localNetworkDeviceDiscoveryBroadcast
-                    .networks()) {
-                logger.info("Sending broadcast message to "
-                        + interfaceAddress.getBroadcast().toString());
+            for (InterfaceAddress interfaceAddress : localNetworkDeviceDiscoveryBroadcast.networks()) {
+                logger.info("Sending broadcast message to " + interfaceAddress.getBroadcast().toString());
 
                 UDPConnection connection = new UDPConnection(interfaceAddress.getBroadcast(), 666);
                 try {
@@ -42,8 +44,7 @@ public class NetworkDeviceDiscoveryTest {
                             UDPMessage udpMessage = new UDPMessage(received);
                             RemoteDeviceMessage device = udpMessage.message;
                             if ("services".equals(device.command)) {
-                                devices.put(InetAddress.getByName(device.parameters.get(1)),
-                                        device);
+                                devices.put(InetAddress.getByName(device.parameters.get(1)), device);
                             }
                         } catch (SocketTimeoutException e) {
                             break;
@@ -72,14 +73,12 @@ public class NetworkDeviceDiscoveryTest {
         }
     }
 
-    private static void collectFoundDevices(LocalNetworkDeviceDiscovery scanner)
-            throws InterruptedException {
+    private static void collectFoundDevices(LocalNetworkDeviceDiscovery scanner) throws InterruptedException {
         scanner.addRemoteDeviceDiscoveryListener(new RemoteDeviceListener() {
             @Override
-            public void deviceAdded(String name, String address, String serviceName,
-                    String description, String version) {
-                logger.info(name + ":" + serviceName + ", " + description + ", " + version + "@"
-                        + address);
+            public void deviceAdded(String name, String address, String serviceName, String description,
+                    String version) {
+                logger.info(name + ":" + serviceName + ", " + description + ", " + version + "@" + address);
             }
         });
         scanner.searchDevices();
@@ -88,10 +87,12 @@ public class NetworkDeviceDiscoveryTest {
 
     @Test
     public void testDeviceClass() throws Exception {
-        logger.info("Device factory network scan (uses broadcast device discovery):");
-        System.setProperty(LocalNetworkDevice.EnableDeviceDiscovery, Boolean.TRUE.toString());
+        Configuration config = DebugSetup.getConfiguration();
+        Devices devices = new Devices(config);
 
-        for (String devicePath : LocalNetworkDevice.Factory.getDevices()) {
+        logger.info("Device factory network scan (uses broadcast device discovery):");
+
+        for (String devicePath : devices.get(LocalNetworkDevice.class).getDevicePaths()) {
             logger.info(devicePath);
         }
     }

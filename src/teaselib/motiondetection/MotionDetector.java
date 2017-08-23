@@ -2,18 +2,35 @@ package teaselib.motiondetection;
 
 import java.util.Set;
 
+import teaselib.core.Configuration;
 import teaselib.core.VideoRenderer;
 import teaselib.core.devices.Device;
+import teaselib.core.devices.DeviceCache;
+import teaselib.core.devices.Devices;
+import teaselib.core.devices.motiondetection.MotionDetectorJavaCV;
 
-public interface MotionDetector extends Device {
+public abstract class MotionDetector implements Device.Creatable {
+    public static synchronized DeviceCache<MotionDetector> getDeviceCache(Devices devices,
+            Configuration configuration) {
+        return new DeviceCache<MotionDetector>()
+                .addFactory(MotionDetectorJavaCV.getDeviceFactory(devices, configuration));
+    }
 
-    enum Feature {
+    public static Movement movement(MotionDetector motionDetector) {
+        return new Movement(motionDetector);
+    }
+
+    public static teaselib.motiondetection.Presence presence(MotionDetector motionDetector) {
+        return new teaselib.motiondetection.Presence(motionDetector);
+    }
+
+    public enum Feature {
         Motion,
         Presence,
         Posture
     }
 
-    enum MotionSensitivity {
+    public enum MotionSensitivity {
         /**
          * Ignores short movements
          */
@@ -30,10 +47,9 @@ public interface MotionDetector extends Device {
         High
     }
 
-    enum Presence {
+    public enum Presence {
         /**
-         * The center of the view, intersection of
-         * {@link Presence#CenterHorizontal} and {@link Presence#CenterVertical}
+         * The center of the view, intersection of {@link Presence#CenterHorizontal} and {@link Presence#CenterVertical}
          */
         Center,
         /**
@@ -88,23 +104,19 @@ public interface MotionDetector extends Device {
         NoBottomBorder,
 
         /**
-         * Calculated from capture input to indicate that there is ongoing
-         * motion
+         * Calculated from capture input to indicate that there is ongoing motion
          */
         Motion,
         /**
-         * Calculated from capture input to indicate that there is no ongoing
-         * motion
+         * Calculated from capture input to indicate that there is no ongoing motion
          */
         NoMotion,
         /**
-         * Calculated from capture input to indicate that the user touches the
-         * presence region
+         * Calculated from capture input to indicate that the user touches the presence region
          */
         Present,
         /**
-         * Calculated from capture input to indicate that the user doesn't touch
-         * the presence region
+         * Calculated from capture input to indicate that the user doesn't touch the presence region
          */
         Away,
         /**
@@ -119,23 +131,22 @@ public interface MotionDetector extends Device {
         PresenceExtendedVertically,
     }
 
-    static final double MotionRegionDefaultTimespan = 1.0;
-    static final double PresenceRegionDefaultTimespan = 1.0;
+    public static final double MotionRegionDefaultTimespan = 1.0;
+    public static final double PresenceRegionDefaultTimespan = 1.0;
 
-    void setSensitivity(MotionSensitivity motionSensivity);
+    public abstract void setSensitivity(MotionSensitivity motionSensivity);
 
-    void setViewPoint(ViewPoint pointOfView);
+    public abstract void setViewPoint(ViewPoint pointOfView);
 
-    void setVideoRenderer(VideoRenderer videoRenderer);
+    public abstract void setVideoRenderer(VideoRenderer videoRenderer);
 
-    void clearMotionHistory();
+    public abstract void clearMotionHistory();
 
-    Set<Feature> getFeatures();
+    public abstract Set<Feature> getFeatures();
 
-    public boolean awaitChange(double amount, Presence change,
-            double timeSpanSeconds, double timeoutSeconds);
+    public abstract boolean awaitChange(double amount, Presence change, double timeSpanSeconds, double timeoutSeconds);
 
-    public void stop();
+    public abstract void stop();
 
-    public void start();
+    public abstract void start();
 }

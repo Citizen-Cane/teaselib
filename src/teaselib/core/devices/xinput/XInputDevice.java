@@ -6,29 +6,55 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
+import teaselib.core.Configuration;
 import teaselib.core.devices.BatteryLevel;
 import teaselib.core.devices.Device;
 import teaselib.core.devices.DeviceCache;
 import teaselib.core.devices.DeviceFactory;
+import teaselib.core.devices.Devices;
 import teaselib.core.jni.LibraryLoader;
 
 /**
  * Represents all XInput devices registered in the system.
  *
- * @author Citizen-Cane, Based on work by Ivan "StrikerX3" Oliveira
+ * @author Citizen-Cane, based on work by Ivan "StrikerX3" Oliveira
  * @see XInputComponents
  * @see XInputComponentsDelta
  */
-public class XInputDevice implements Device {
+public class XInputDevice implements Device.Creatable {
     private static final String DeviceClassName = "XInput360GameController";
 
-    public static final DeviceFactory<XInputDevice> Factory = new DeviceFactory<XInputDevice>(
-            DeviceClassName) {
+    private static DeviceCache<XInputDevice> Instance;
+
+    public static synchronized DeviceCache<XInputDevice> getDeviceCache(Devices devices, Configuration configuration) {
+        if (Instance == null) {
+            Instance = new DeviceCache<XInputDevice>() {
+                @Override
+                public XInputDevice getDefaultDevice() {
+                    Set<String> devicePaths = getDevicePaths();
+                    for (String devicePath : devicePaths) {
+                        XInputDevice device = getDevice(devicePath);
+                        if (device.isWireless()) {
+                            return device;
+                        }
+                    }
+                    String defaultId = getLast(devicePaths);
+                    return getDevice(defaultId);
+                }
+            }.addFactory(XInputDevice.getDeviceFactory(devices, configuration));
+        }
+        return Instance;
+    }
+
+    private static final class MyDeviceFactory extends DeviceFactory<XInputDevice> {
+        private MyDeviceFactory(String deviceClass, Devices devices, Configuration configuration) {
+            super(deviceClass, devices, configuration);
+        }
 
         @Override
-        public List<String> enumerateDevicePaths(
-                Map<String, XInputDevice> deviceCache) {
+        public List<String> enumerateDevicePaths(Map<String, XInputDevice> deviceCache) {
             List<String> deviceNames = new ArrayList<String>();
             deviceNames.addAll(XInputDevice.getDevicePaths());
             return deviceNames;
@@ -42,7 +68,11 @@ public class XInputDevice implements Device {
                 return XInputDevice.getDeviceFor(Integer.parseInt(deviceName));
             }
         }
-    };
+    }
+
+    public static MyDeviceFactory getDeviceFactory(Devices devices, Configuration configuration) {
+        return new MyDeviceFactory(DeviceClassName, devices, configuration);
+    }
 
     private final int playerNum;
     private final ByteBuffer buffer; // Contains the XINPUT_STATE struct
@@ -88,8 +118,7 @@ public class XInputDevice implements Device {
     static XInputDevice getDeviceFor(int playerNum) {
         if (playerNum < 0 || playerNum >= MAX_PLAYERS) {
             throw new IllegalArgumentException(
-                    "Invalid player number: " + playerNum
-                            + ". Must be between 0 and " + (MAX_PLAYERS - 1));
+                    "Invalid player number: " + playerNum + ". Must be between 0 and " + (MAX_PLAYERS - 1));
         }
         if (!libLoaded) {
             LibraryLoader.load("TeaseLibx360c");
@@ -115,8 +144,7 @@ public class XInputDevice implements Device {
 
     @Override
     public String getDevicePath() {
-        return DeviceCache.createDevicePath(DeviceClassName,
-                Integer.toString(playerNum));
+        return DeviceCache.createDevicePath(DeviceClassName, Integer.toString(playerNum));
     }
 
     @Override
@@ -132,8 +160,7 @@ public class XInputDevice implements Device {
     /**
      * Returns a boolean indicating whether this device is connected.
      *
-     * @return <code>true</code> if the device is connected, <code>false</code>
-     *         otherwise
+     * @return <code>true</code> if the device is connected, <code>false</code> otherwise
      */
     @Override
     public boolean active() {
@@ -141,8 +168,7 @@ public class XInputDevice implements Device {
     }
 
     /**
-     * CLose the device. Turns off actuators, then shutdowns wireless device to
-     * save battery power.
+     * CLose the device. Turns off actuators, then shutdowns wireless device to save battery power.
      * 
      * @return Whether shutting down the device was successful.
      */
@@ -324,16 +350,14 @@ public class XInputDevice implements Device {
             for (final XInputAxis axis : XInputAxis.values()) {
                 final float delta = axes.getDelta(axis);
                 if (delta != 0f) {
-                    listener.axisChanged(axis, components.getAxes().get(axis),
-                            delta);
+                    listener.axisChanged(axis, components.getAxes().get(axis), delta);
                 }
             }
         }
     }
 
     /**
-     * Sets the vibration of the controller. Returns <code>false</code> if the
-     * device was not connected.
+     * Sets the vibration of the controller. Returns <code>false</code> if the device was not connected.
      *
      * @param leftMotor
      *            the left motor speed
@@ -356,8 +380,7 @@ public class XInputDevice implements Device {
     }
 
     /**
-     * Shutdown the device completely. First turn off actuators, then shutdown
-     * wireless device to save battery power.
+     * Shutdown the device completely. First turn off actuators, then shutdown wireless device to save battery power.
      * 
      * @return Whether shutting down the device was successful.
      */
@@ -366,11 +389,9 @@ public class XInputDevice implements Device {
     }
 
     /**
-     * Returns the state of the Xbox 360 controller components before the last
-     * poll.
+     * Returns the state of the Xbox 360 controller components before the last poll.
      *
-     * @return the state of the Xbox 360 controller components before the last
-     *         poll.
+     * @return the state of the Xbox 360 controller components before the last poll.
      */
     public XInputComponents getLastComponents() {
         return lastComponents;
@@ -386,11 +407,9 @@ public class XInputDevice implements Device {
     }
 
     /**
-     * Returns the difference between the last two states of the Xbox 360
-     * controller components.
+     * Returns the difference between the last two states of the Xbox 360 controller components.
      *
-     * @return the difference between the last two states of the Xbox 360
-     *         controller components.
+     * @return the difference between the last two states of the Xbox 360 controller components.
      */
     public XInputComponentsDelta getDelta() {
         return delta;
@@ -407,13 +426,11 @@ public class XInputDevice implements Device {
 
     private static native int pollDevice(int playerNum, ByteBuffer data);
 
-    private static native int getBatteryInformation(int playerNum,
-            ByteBuffer data);
+    private static native int getBatteryInformation(int playerNum, ByteBuffer data);
 
     private static native int getCapabilities(int playerNum, ByteBuffer data);
 
-    private static native int setVibration(int playerNum, int leftMotor,
-            int rightMotor);
+    private static native int setVibration(int playerNum, int leftMotor, int rightMotor);
 
     private static native boolean shutdownDevice(int playerNum);
 

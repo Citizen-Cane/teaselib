@@ -4,17 +4,20 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import teaselib.core.Configuration;
 import teaselib.core.devices.BatteryLevel;
+import teaselib.core.devices.DeviceCache;
 import teaselib.core.devices.DeviceFactory;
+import teaselib.core.devices.Devices;
 
-public class BluetoothDevice implements RemoteDevice {
-    private static final String DeviceClassName = "BluetoothDevice";
+public class BluetoothDevice extends RemoteDevice {
+    private static final class BluetoothDeviceFactory extends DeviceFactory<RemoteDevice> {
+        private BluetoothDeviceFactory(String deviceClass, Devices devices, Configuration configuration) {
+            super(deviceClass, devices, configuration);
+        }
 
-    public static final DeviceFactory<RemoteDevice> Factory = new DeviceFactory<RemoteDevice>(
-            DeviceClassName) {
         @Override
-        public List<String> enumerateDevicePaths(
-                Map<String, RemoteDevice> deviceCache) {
+        public List<String> enumerateDevicePaths(Map<String, RemoteDevice> deviceCache) {
             List<String> deviceNames = new ArrayList<String>();
             // TODO scan
             // TODO available devices
@@ -27,7 +30,22 @@ public class BluetoothDevice implements RemoteDevice {
         public RemoteDevice createDevice(String deviceName) {
             return new BluetoothDevice(deviceName);
         }
-    };
+    }
+
+    private static final String DeviceClassName = "BluetoothDevice";
+
+    private static BluetoothDeviceFactory Factory = new BluetoothDeviceFactory(DeviceClassName, null, null);
+
+    public static synchronized BluetoothDeviceFactory getDeviceFactory(Devices devices, Configuration configuration) {
+        if (Factory == null) {
+            Factory = new BluetoothDeviceFactory(DeviceClassName, devices, configuration);
+        }
+        return Factory;
+    }
+
+    public static synchronized DeviceCache<RemoteDevice> getDeviceCache(Devices devices, Configuration configuration) {
+        return devices.get(RemoteDevice.class);
+    }
 
     public BluetoothDevice(@SuppressWarnings("unused") String deviceName) {
         super();
@@ -35,50 +53,42 @@ public class BluetoothDevice implements RemoteDevice {
 
     @Override
     public String getDevicePath() {
-        throw new IllegalStateException(
-                "Bluetooth remote devices are not implemented yet");
+        throw new IllegalStateException("Bluetooth remote devices are not implemented yet");
     }
 
     @Override
     public String getName() {
-        throw new IllegalStateException(
-                "Bluetooth remote devices are not implemented yet");
+        throw new IllegalStateException("Bluetooth remote devices are not implemented yet");
     }
 
     @Override
     public boolean connected() {
-        throw new IllegalStateException(
-                "Bluetooth remote devices are not implemented yet");
+        throw new IllegalStateException("Bluetooth remote devices are not implemented yet");
     }
 
     @Override
     public boolean active() {
-        throw new IllegalStateException(
-                "Bluetooth remote devices are not implemented yet");
+        throw new IllegalStateException("Bluetooth remote devices are not implemented yet");
     }
 
     @Override
     public void close() {
-        throw new IllegalStateException(
-                "Bluetooth remote devices are not implemented yet");
+        throw new IllegalStateException("Bluetooth remote devices are not implemented yet");
     }
 
     @Override
     public String getServiceName() {
-        throw new IllegalStateException(
-                "Bluetooth remote devices are not implemented yet");
+        throw new IllegalStateException("Bluetooth remote devices are not implemented yet");
     }
 
     @Override
     public String getDescription() {
-        throw new IllegalStateException(
-                "Bluetooth remote devices are not implemented yet");
+        throw new IllegalStateException("Bluetooth remote devices are not implemented yet");
     }
 
     @Override
     public String getVersion() {
-        throw new IllegalStateException(
-                "Bluetooth remote devices are not implemented yet");
+        throw new IllegalStateException("Bluetooth remote devices are not implemented yet");
     }
 
     @Override
@@ -88,26 +98,22 @@ public class BluetoothDevice implements RemoteDevice {
 
     @Override
     public RemoteDeviceMessage sendAndReceive(RemoteDeviceMessage message) {
-        throw new IllegalStateException(
-                "Bluetooth remote devices are not implemented yet");
+        throw new IllegalStateException("Bluetooth remote devices are not implemented yet");
     }
 
     @Override
     public void send(RemoteDeviceMessage message) {
-        throw new IllegalStateException(
-                "Bluetooth remote devices are not implemented yet");
+        throw new IllegalStateException("Bluetooth remote devices are not implemented yet");
     }
 
     @Override
     public boolean isWireless() {
-        throw new IllegalStateException(
-                "Bluetooth remote devices are not implemented yet");
+        throw new IllegalStateException("Bluetooth remote devices are not implemented yet");
     }
 
     @Override
     public BatteryLevel batteryLevel() {
-        throw new IllegalStateException(
-                "Bluetooth remote devices are not implemented yet");
+        throw new IllegalStateException("Bluetooth remote devices are not implemented yet");
     }
 
 }

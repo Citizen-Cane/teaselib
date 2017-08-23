@@ -26,6 +26,10 @@ public class Configuration {
         persistentProperties = sessionProperties;
     }
 
+    public Configuration(Setup setup) throws IOException {
+        setup.applyTo(this);
+    }
+
     public void addUserFile(File preset, File userFile) throws IOException {
         if (!userFile.exists()) {
             FileUtilities.copyFile(preset, userFile);
@@ -49,6 +53,14 @@ public class Configuration {
         persistentProperties = configurationFile;
     }
 
+    public String get(String property) {
+        return get(QualifiedItem.of(property));
+    }
+
+    public String get(Enum<?> property) {
+        return get(QualifiedItem.of(property));
+    }
+
     public String get(QualifiedItem<?> property) {
         String item = property.toString();
 
@@ -70,7 +82,19 @@ public class Configuration {
         throw new IllegalArgumentException("Property not found: " + item);
     }
 
+    public void set(String property, String value) {
+        set(QualifiedItem.of(property), value);
+    }
+
+    public void set(Enum<?> property, String value) {
+        set(QualifiedItem.of(property), value);
+    }
+
     public void set(QualifiedItem<?> property, String value) {
         sessionProperties.setProperty(property.toString(), value);
+    }
+
+    public void setSystemProperty(QualifiedItem<?> property, String value) {
+        System.getProperties().setProperty(property.toString(), value);
     }
 }

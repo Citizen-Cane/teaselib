@@ -17,46 +17,45 @@ import org.bytedeco.javacpp.opencv_videoio.VideoCapture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import teaselib.core.Configuration;
+import teaselib.core.devices.BatteryLevel;
 import teaselib.core.devices.DeviceCache;
 import teaselib.core.devices.DeviceFactory;
-import teaselib.core.devices.WiredDevice;
+import teaselib.core.devices.Devices;
 import teaselib.video.ResolutionList;
 import teaselib.video.VideoCaptureDevice;
 import teaselib.video.VideoCaptureDevices;
 
-public class VideoCaptureDeviceCV extends WiredDevice
-        implements VideoCaptureDevice {
-    private static final Logger logger = LoggerFactory
-            .getLogger(VideoCaptureDeviceCV.class);
+// TODO upgrade to source level 1.8 -> change back to interface
+
+public class VideoCaptureDeviceCV extends VideoCaptureDevice /* extends WiredDevice */ {
+    private static final Logger logger = LoggerFactory.getLogger(VideoCaptureDeviceCV.class);
 
     private static final String DeviceClassName = "JavaCVVideoCapture";
 
     private final static boolean useVideoInput = Platform.isWindows();
 
-    public static final DeviceFactory<VideoCaptureDevice> Factory = new DeviceFactory<VideoCaptureDevice>(
-            DeviceClassName) {
+    private static final class MyDeviceFactory extends DeviceFactory<VideoCaptureDeviceCV> {
+        private MyDeviceFactory(String deviceClass, Devices devices, Configuration configuration) {
+            super(deviceClass, devices, configuration);
+        }
 
         @Override
-        public List<String> enumerateDevicePaths(
-                Map<String, VideoCaptureDevice> deviceCache) {
+        public List<String> enumerateDevicePaths(Map<String, VideoCaptureDeviceCV> deviceCache) {
             final List<String> devicePaths;
             if (useVideoInput) {
-                List<String> deviceNames = VideoCaptureDeviceVideoInput
-                        .enumerateVideoInputDevices();
+                List<String> deviceNames = VideoCaptureDeviceVideoInput.enumerateVideoInputDevices();
                 VideoCaptureDevices.sort(deviceNames);
                 devicePaths = new ArrayList<String>(deviceNames.size());
                 for (String deviceName : deviceNames) {
-                    devicePaths.add(DeviceCache
-                            .createDevicePath(DeviceClassName, deviceName));
+                    devicePaths.add(DeviceCache.createDevicePath(DeviceClassName, deviceName));
                 }
             } else {
                 int i = 0;
-                List<VideoCaptureDeviceCV> captureDevices = getCaptureDevices(
-                        deviceCache);
+                List<VideoCaptureDeviceCV> captureDevices = getCaptureDevices(deviceCache);
                 devicePaths = new ArrayList<String>(captureDevices.size());
                 for (VideoCaptureDeviceCV device : captureDevices) {
-                    String devicePath = DeviceCache.createDevicePath(
-                            VideoCaptureDeviceCV.DeviceClassName,
+                    String devicePath = DeviceCache.createDevicePath(VideoCaptureDeviceCV.DeviceClassName,
                             Integer.toString(i++));
                     deviceCache.put(device.getDevicePath(), device);
                     devicePaths.add(devicePath);
@@ -66,8 +65,7 @@ public class VideoCaptureDeviceCV extends WiredDevice
             return devicePaths;
         }
 
-        private List<VideoCaptureDeviceCV> getCaptureDevices(
-                Map<String, VideoCaptureDevice> deviceCache) {
+        private List<VideoCaptureDeviceCV> getCaptureDevices(Map<String, VideoCaptureDeviceCV> deviceCache) {
             int i = 0;
             List<VideoCaptureDeviceCV> devices = new Vector<VideoCaptureDeviceCV>();
             while (true) {
@@ -75,8 +73,7 @@ public class VideoCaptureDeviceCV extends WiredDevice
                 if (i >= deviceCache.size())
                     // Detect new devices
                     try {
-                        VideoCaptureDeviceCV videoCapture = new VideoCaptureDeviceCV(
-                                i);
+                        VideoCaptureDeviceCV videoCapture = new VideoCaptureDeviceCV(i, this);
                         try {
                             videoCapture.open();
                         } catch (IllegalArgumentException e) {
@@ -99,55 +96,69 @@ public class VideoCaptureDeviceCV extends WiredDevice
         }
 
         @Override
-        public VideoCaptureDevice createDevice(String deviceName) {
+        public VideoCaptureDeviceCV createDevice(String deviceName) {
             if (WaitingForConnection.equals(deviceName)) {
                 if (useVideoInput) {
-                    return new VideoCaptureDeviceCV(deviceName);
+                    return new VideoCaptureDeviceCV(deviceName, this);
                 } else {
-                    return new VideoCaptureDeviceCV(0);
+                    return new VideoCaptureDeviceCV(0, this);
                 }
             } else {
                 if (useVideoInput) {
-                    return new VideoCaptureDeviceCV(deviceName);
+                    return new VideoCaptureDeviceCV(deviceName, this);
                 } else {
                     throw new IllegalArgumentException(deviceName);
                 }
             }
         }
+    }
 
-    };
+    public static MyDeviceFactory getDeviceFactory(Devices devices, Configuration configuration) {
+        return new MyDeviceFactory(DeviceClassName, devices, configuration);
+    }
 
     private int deviceId;
     private String deviceName;
-    final VideoCapture videoCapture;
+    private final MyDeviceFactory factory;
+    private final VideoCapture videoCapture;
     Size captureSize = DefaultResolution;
     double fps = 0.0;
 
     final Mat mat = new Mat();
 
-    private VideoCaptureDeviceCV(String deviceName) {
-        this.videoCapture = new VideoCapture();
-        this.deviceId = useVideoInput
-                ? VideoCaptureDeviceVideoInput.getDeviceIDFromName(deviceName)
-                : Integer.parseInt(DeviceCache.getDeviceName(deviceName));
+    private VideoCaptureDeviceCV(String deviceName, MyDeviceFactory factory) {
         this.deviceName = deviceName;
+        this.factory = factory;
+        this.videoCapture = new VideoCapture();
+        this.deviceId = useVideoInput ? VideoCaptureDeviceVideoInput.getDeviceIDFromName(deviceName)
+                : Integer.parseInt(DeviceCache.getDeviceName(deviceName));
     }
 
-    private VideoCaptureDeviceCV(int deviceId) {
+    private VideoCaptureDeviceCV(int deviceId, MyDeviceFactory factory) {
+        this.deviceName = Integer.toString(deviceId);
+        this.factory = factory;
         this.videoCapture = new VideoCapture();
         this.deviceId = deviceId;
-        this.deviceName = Integer.toString(deviceId);
     }
 
     @Override
     public String getDevicePath() {
-        return DeviceCache.createDevicePath(DeviceClassName,
-                Integer.toString(deviceId));
+        return DeviceCache.createDevicePath(DeviceClassName, Integer.toString(deviceId));
     }
 
     @Override
     public String getName() {
         return "OpenCV Video Capture " + this.deviceName;
+    }
+
+    @Override
+    public boolean isWireless() {
+        return false;
+    }
+
+    @Override
+    public BatteryLevel batteryLevel() {
+        return BatteryLevel.High;
     }
 
     @Override
@@ -158,8 +169,7 @@ public class VideoCaptureDeviceCV extends WiredDevice
         if (connected()) {
             videoCapture.open(deviceId);
             if (!videoCapture.isOpened()) {
-                throw new IllegalArgumentException("Camera not opened: "
-                        + getClass().getName() + ":" + deviceId);
+                throw new IllegalArgumentException("Camera not opened: " + getClass().getName() + ":" + deviceId);
             }
             captureSize.width((int) videoCapture.get(CAP_PROP_FRAME_WIDTH));
             captureSize.height((int) videoCapture.get(CAP_PROP_FRAME_HEIGHT));
@@ -177,15 +187,14 @@ public class VideoCaptureDeviceCV extends WiredDevice
     }
 
     private boolean connect() {
-        List<String> devicePaths = Factory.getDevices();
+        List<String> devicePaths = factory.getDevices();
         if (devicePaths.size() > 0) {
             deviceName = DeviceCache.getDeviceName(devicePaths.get(0));
             if (WaitingForConnection.equals(deviceName)) {
                 return false;
             } else {
-                deviceId = VideoCaptureDeviceVideoInput
-                        .getDeviceIDFromName(deviceName);
-                Factory.connectDevice(this);
+                deviceId = VideoCaptureDeviceVideoInput.getDeviceIDFromName(deviceName);
+                factory.connectDevice(this);
                 return true;
             }
         } else {
@@ -299,4 +308,5 @@ public class VideoCaptureDeviceCV extends WiredDevice
             logger.error(e.getMessage(), e);
         }
     }
+
 }

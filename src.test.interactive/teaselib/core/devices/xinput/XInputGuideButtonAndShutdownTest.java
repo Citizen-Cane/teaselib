@@ -7,12 +7,18 @@ import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 
+import teaselib.core.Configuration;
+import teaselib.core.devices.Devices;
+import teaselib.test.DebugSetup;
+
 public class XInputGuideButtonAndShutdownTest {
 
     @Test
-    public void testPressGuideButtonFor1SecondAndShutdown()
-            throws InterruptedException {
-        XInputDevice xid = XInputDevices.Devices.getDefaultDevice();
+    public void testPressGuideButtonFor1SecondAndShutdown() throws InterruptedException {
+        Configuration config = DebugSetup.getConfiguration();
+        Devices devices = new Devices(config);
+
+        XInputDevice xid = devices.get(XInputDevice.class).getDefaultDevice();
         System.out.println(xid.getDevicePath());
         try {
             // Press guide button for one seconds
@@ -35,8 +41,7 @@ public class XInputGuideButtonAndShutdownTest {
                 break;
             }
             // Wait until guide button is released
-            xid.setVibration(XInputDevice.VIBRATION_MAX_VALUE,
-                    XInputDevice.VIBRATION_MAX_VALUE);
+            xid.setVibration(XInputDevice.VIBRATION_MAX_VALUE, XInputDevice.VIBRATION_MAX_VALUE);
             while (true) {
                 xid.poll();
                 XInputComponentsDelta xic = xid.getDelta();
@@ -48,8 +53,7 @@ public class XInputGuideButtonAndShutdownTest {
                 }
                 break;
             }
-            System.out.println(
-                    "Guide button pressed for one second - shutting down controller");
+            System.out.println("Guide button pressed for one second - shutting down controller");
         } finally {
             assertTrue(xid.shutdown());
         }

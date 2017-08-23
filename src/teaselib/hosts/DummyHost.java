@@ -208,6 +208,8 @@ public class DummyHost implements Host {
             return new File(".");
         else if (folder == Location.User)
             return getLocation(Location.Host);
+        else if (folder == Location.Log)
+            return getLocation(Location.Host);
         else
             throw new IllegalArgumentException(folder.toString());
     }

@@ -614,7 +614,9 @@ public class SexScriptsHost implements Host {
         else if (folder == Location.TeaseLib)
             return new File(getLocation(Location.Host), "lib" + File.separator + "TeaseLib" + File.separator);
         else if (folder == Location.User)
-            return getLocation(Location.Host).getAbsoluteFile();
+            return new File(getLocation(Location.Host).getAbsoluteFile(), "teaselib");
+        else if (folder == Location.Log)
+            return getLocation(Location.Host);
         else
             throw new IllegalArgumentException(folder.toString());
     }

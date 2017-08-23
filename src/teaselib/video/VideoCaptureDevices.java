@@ -4,21 +4,14 @@ import java.util.Comparator;
 import java.util.List;
 
 import teaselib.core.devices.DeviceCache;
-import teaselib.core.devices.video.VideoCaptureDeviceCV;
 
-public class VideoCaptureDevices {
-    public static final DeviceCache<VideoCaptureDevice> Instance = new DeviceCache<VideoCaptureDevice>()
-            .addFactory(VideoCaptureDeviceCV.Factory);
-    // .addFactory(VideoCaptureDeviceVideoInput.Factory);
-    // .addFactory(VideoCaptureDeviceWebcamCapture.Factory);
-
+public abstract class VideoCaptureDevices {
     private static final String Front = "front";
     private static final String Rear = "rear";
 
     /**
-     * Sort device names so that external video capture devices appear first in
-     * the list, and are thus chosen as the default device. Front cameras are
-     * sorted next, because we'll usually need to capture and see the screen
+     * Sort device names so that external video capture devices appear first in the list, and are thus chosen as the
+     * default device. Front cameras are sorted next, because we'll usually need to capture and see the screen
      * simultaneously.
      * 
      * @param devicePaths
@@ -33,14 +26,11 @@ public class VideoCaptureDevices {
                 String deviceNameB = DeviceCache.getDeviceName(b).toLowerCase();
                 if (deviceNameA.contains(Front) && deviceNameB.contains(Rear)) {
                     return -1;
-                } else if (deviceNameA.contains(Rear)
-                        && deviceNameB.contains(Front)) {
+                } else if (deviceNameA.contains(Rear) && deviceNameB.contains(Front)) {
                     return 1;
-                } else if (deviceNameA.contains(Front)
-                        && !deviceNameB.contains(Front)) {
+                } else if (deviceNameA.contains(Front) && !deviceNameB.contains(Front)) {
                     return 1;
-                } else if (deviceNameA.contains(Rear)
-                        && !deviceNameB.contains(Rear)) {
+                } else if (deviceNameA.contains(Rear) && !deviceNameB.contains(Rear)) {
                     return 1;
                 } else {
                     return a.compareTo(b);

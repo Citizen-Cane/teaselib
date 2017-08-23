@@ -5,14 +5,19 @@ import org.bytedeco.javacpp.opencv_core.Size;
 import org.bytedeco.javacpp.opencv_highgui;
 import org.junit.Test;
 
+import teaselib.core.Configuration;
+import teaselib.core.devices.Devices;
+import teaselib.test.DebugSetup;
 import teaselib.video.VideoCaptureDevice;
-import teaselib.video.VideoCaptureDevices;
 
 public class VideoCaptureDeviceJavaVCTests {
 
     @Test
     public void testVideoCapture() {
-        VideoCaptureDevice vc = VideoCaptureDevices.Instance.getDefaultDevice();
+        Configuration config = DebugSetup.getConfiguration();
+        Devices devices = new Devices(config);
+
+        VideoCaptureDevice vc = devices.get(VideoCaptureDevice.class).getDefaultDevice();
         Size size = new Size(320, 240);
         vc.open();
         vc.resolution(size);

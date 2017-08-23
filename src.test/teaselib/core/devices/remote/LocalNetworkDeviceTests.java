@@ -1,34 +1,36 @@
 package teaselib.core.devices.remote;
 
-import static org.junit.Assert.*;
-
-import java.util.List;
+import static org.junit.Assert.assertEquals;
 
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import teaselib.core.Configuration;
+import teaselib.core.devices.Devices;
+import teaselib.core.util.QualifiedItem;
+import teaselib.test.DebugSetup;
 
 public class LocalNetworkDeviceTests {
     private static final Logger logger = LoggerFactory.getLogger(LocalNetworkDeviceTests.class);
 
     @Test
     public void testResourceDeallocationQuiteLong() throws Exception {
-        System.setProperty(LocalNetworkDevice.EnableDeviceDiscovery, Boolean.TRUE.toString());
+        Configuration config = DebugSetup.getConfiguration();
+        Devices devices = new Devices(config);
 
         int j = 10;
-        testResourceDeallocation(j);
+        testResourceDeallocation(devices, j);
     }
 
-    private static void testResourceDeallocation(int j) throws Exception {
+    private static void testResourceDeallocation(Devices devices, int j) throws Exception {
         for (int i = 0; i < j; i++) {
             try {
-                List<String> devices = LocalNetworkDevice.Factory.getDevices();
-                for (String device : devices) {
+                for (String device : devices.get(LocalNetworkDevice.class).getDevicePaths()) {
                     logger.info("Found device: " + device);
                 }
             } catch (Exception e) {
-                logger.info(
-                        "Enumerating network devices failed after " + i + " iterations. Reason: ",
+                logger.error("Enumerating network devices failed after " + i + " iterations because of ",
                         e.getMessage());
                 throw e;
             }
@@ -36,10 +38,10 @@ public class LocalNetworkDeviceTests {
     }
 
     @Test
-    public void ensureConfigSettingChangeIsDetected() throws Exception {
-        assertEquals("teaselib.core.devices.remote.LocalNetworkDevice.EnableDeviceDiscovery",
-                LocalNetworkDevice.EnableDeviceDiscovery);
-        assertEquals("teaselib.core.devices.remote.LocalNetworkDevice.EnableDeviceStatusListener",
-                LocalNetworkDevice.EnableDeviceStatusListener);
+    public void ensureConfigSettingNameChangeIsDetected() throws Exception {
+        assertEquals("teaselib.core.devices.remote.LocalNetworkDevice.Settings.EnableDeviceDiscovery",
+                QualifiedItem.of(LocalNetworkDevice.Settings.EnableDeviceDiscovery).toString());
+        assertEquals("teaselib.core.devices.remote.LocalNetworkDevice.Settings.EnableDeviceStatusListener",
+                QualifiedItem.of(LocalNetworkDevice.Settings.EnableDeviceStatusListener).toString());
     }
 }

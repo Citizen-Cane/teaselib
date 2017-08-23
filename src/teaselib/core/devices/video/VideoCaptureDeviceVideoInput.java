@@ -12,10 +12,12 @@ import org.bytedeco.javacpp.videoInputLib.videoInput;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import teaselib.core.Configuration;
+import teaselib.core.devices.BatteryLevel;
 import teaselib.core.devices.Device;
 import teaselib.core.devices.DeviceCache;
 import teaselib.core.devices.DeviceFactory;
-import teaselib.core.devices.WiredDevice;
+import teaselib.core.devices.Devices;
 import teaselib.video.ResolutionList;
 import teaselib.video.VideoCaptureDevice;
 import teaselib.video.VideoCaptureDevices;
@@ -26,34 +28,36 @@ import teaselib.video.VideoCaptureDevices;
 // reconnect to same camera -> here
 // reconnect to new camera -> application
 
-public class VideoCaptureDeviceVideoInput extends WiredDevice
-        implements VideoCaptureDevice {
-    private static final Logger logger = LoggerFactory
-            .getLogger(VideoCaptureDeviceVideoInput.class);
+public class VideoCaptureDeviceVideoInput extends VideoCaptureDevice /* extends WiredDevice */ {
+    private static final Logger logger = LoggerFactory.getLogger(VideoCaptureDeviceVideoInput.class);
 
     private static final String DeviceClassName = "JavaCVVideoInput";
 
-    public static final DeviceFactory<VideoCaptureDevice> Factory = new DeviceFactory<VideoCaptureDevice>(
-            DeviceClassName) {
+    private static final class MyDeviceFactory extends DeviceFactory<VideoCaptureDeviceVideoInput> {
+        private MyDeviceFactory(String deviceClass, Devices devices, Configuration configuration) {
+            super(deviceClass, devices, configuration);
+        }
+
         @Override
-        public List<String> enumerateDevicePaths(
-                Map<String, VideoCaptureDevice> deviceCache) {
+        public List<String> enumerateDevicePaths(Map<String, VideoCaptureDeviceVideoInput> deviceCache) {
             List<String> deviceNames = enumerateVideoInputDevices();
             VideoCaptureDevices.sort(deviceNames);
-            List<String> devicePaths = new ArrayList<String>(
-                    deviceNames.size());
+            List<String> devicePaths = new ArrayList<String>(deviceNames.size());
             for (String deviceName : deviceNames) {
-                devicePaths.add(DeviceCache.createDevicePath(DeviceClassName,
-                        deviceName));
+                devicePaths.add(DeviceCache.createDevicePath(DeviceClassName, deviceName));
             }
             return devicePaths;
         }
 
         @Override
-        public VideoCaptureDevice createDevice(String deviceName) {
-            return new VideoCaptureDeviceVideoInput(deviceName);
+        public VideoCaptureDeviceVideoInput createDevice(String deviceName) {
+            return new VideoCaptureDeviceVideoInput(deviceName, this);
         }
-    };
+    }
+
+    public static MyDeviceFactory getDeviceFactory(Devices devices, Configuration configuration) {
+        return new MyDeviceFactory(DeviceClassName, devices, configuration);
+    }
 
     static List<String> enumerateVideoInputDevices() {
         videoInput.setVerbose(false);
@@ -81,18 +85,20 @@ public class VideoCaptureDeviceVideoInput extends WiredDevice
 
     private int deviceId;
     private String deviceName;
+    private final MyDeviceFactory factory;
     private videoInput vi = null;
     Mat mat = new Mat();
     Size captureSize = DefaultResolution;
     double fps = 0.0;
 
-    private VideoCaptureDeviceVideoInput(String deviceName) {
+    private VideoCaptureDeviceVideoInput(String deviceName, MyDeviceFactory factory) {
         if (deviceName.equals(Device.WaitingForConnection)) {
             this.deviceId = Integer.MIN_VALUE;
         } else {
             this.deviceId = getDeviceIDFromName(deviceName);
         }
         this.deviceName = deviceName;
+        this.factory = factory;
     }
 
     @Override
@@ -103,6 +109,16 @@ public class VideoCaptureDeviceVideoInput extends WiredDevice
     @Override
     public String getName() {
         return deviceName;
+    }
+
+    @Override
+    public boolean isWireless() {
+        return false;
+    }
+
+    @Override
+    public BatteryLevel batteryLevel() {
+        return BatteryLevel.High;
     }
 
     @Override
@@ -129,14 +145,14 @@ public class VideoCaptureDeviceVideoInput extends WiredDevice
     }
 
     private boolean connect() {
-        List<String> devicePaths = Factory.getDevices();
+        List<String> devicePaths = factory.getDevices();
         if (devicePaths.size() > 0) {
             deviceName = DeviceCache.getDeviceName(devicePaths.get(0));
             if (WaitingForConnection.equals(deviceName)) {
                 return false;
             } else {
                 deviceId = getDeviceIDFromName(deviceName);
-                Factory.connectDevice(this);
+                factory.connectDevice(this);
                 return true;
             }
         } else {
@@ -162,8 +178,7 @@ public class VideoCaptureDeviceVideoInput extends WiredDevice
     @Override
     public void resolution(Size size) {
         if (!getResolutions().contains(size)) {
-            throw new IllegalArgumentException(
-                    size.width() + "," + size.height());
+            throw new IllegalArgumentException(size.width() + "," + size.height());
         }
         if (size == DefaultResolution) {
             vi.setupDevice(deviceId);
@@ -171,8 +186,7 @@ public class VideoCaptureDeviceVideoInput extends WiredDevice
             vi.setupDevice(deviceId, size.width(), size.height());
         }
         if (!active()) {
-            throw new IllegalArgumentException(
-                    "Camera not opened: " + getDevicePath() + ":" + deviceId);
+            throw new IllegalArgumentException("Camera not opened: " + getDevicePath() + ":" + deviceId);
         }
         setExposure();
         setData(vi.getWidth(deviceId), vi.getHeight(deviceId));
@@ -180,8 +194,7 @@ public class VideoCaptureDeviceVideoInput extends WiredDevice
 
     private void setData(int width, int height) {
         captureSize = new Size(width, height);
-        mat = new Mat(captureSize.height(), captureSize.width(),
-                opencv_core.CV_8UC3);
+        mat = new Mat(captureSize.height(), captureSize.width(), opencv_core.CV_8UC3);
     }
 
     private void setExposure() {
@@ -212,8 +225,8 @@ public class VideoCaptureDeviceVideoInput extends WiredDevice
         int[] flags = { 0 };
         int[] defaultValue = { 0 };
 
-        vi.getVideoSettingCamera(deviceId, CameraControl_Exposure, min, max,
-                steppingDelta, currentValue, flags, defaultValue);
+        vi.getVideoSettingCamera(deviceId, CameraControl_Exposure, min, max, steppingDelta, currentValue, flags,
+                defaultValue);
 
         if (currentValue[0] > 0) {
             int exposure;
@@ -228,9 +241,7 @@ public class VideoCaptureDeviceVideoInput extends WiredDevice
                 exposure = currentValue[0];
             }
             vi.setVideoSettingCamera(deviceId, CameraControl_Exposure, exposure,
-                    exposure > 0 ? CameraControl_Flags_Manual
-                            : CameraControl_Flags_Auto,
-                    false);
+                    exposure > 0 ? CameraControl_Flags_Manual : CameraControl_Flags_Auto, false);
         }
     }
 

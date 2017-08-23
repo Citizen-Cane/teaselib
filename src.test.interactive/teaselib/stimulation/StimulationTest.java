@@ -4,7 +4,9 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import teaselib.core.Configuration;
 import teaselib.core.devices.Device;
+import teaselib.core.devices.Devices;
 import teaselib.stimulation.pattern.Attention;
 import teaselib.stimulation.pattern.Cum;
 import teaselib.stimulation.pattern.Punish;
@@ -13,13 +15,17 @@ import teaselib.stimulation.pattern.Tease;
 import teaselib.stimulation.pattern.Trot;
 import teaselib.stimulation.pattern.Walk;
 import teaselib.stimulation.pattern.Whip;
+import teaselib.test.DebugSetup;
 
 public class StimulationTest {
     private static StimulationDevice device;
 
     @BeforeClass
     public static void openDefaultDevice() {
-        device = StimulationDevices.Devices.getDefaultDevice();
+        Configuration config = DebugSetup.getConfiguration();
+        Devices devices = new Devices(config);
+
+        device = devices.get(StimulationDevice.class).getDefaultDevice();
     }
 
     @AfterClass
@@ -37,8 +43,7 @@ public class StimulationTest {
 
     @Test
     public void testEnumerateStimulators() {
-        System.out.println(device.getDevicePath() + (device.connected() ? ""
-                : ":" + Device.WaitingForConnection));
+        System.out.println(device.getDevicePath() + (device.connected() ? "" : ":" + Device.WaitingForConnection));
         for (Stimulator stimulator : device.stimulators()) {
             System.out.println(stimulator.getDeviceName());
         }
@@ -108,8 +113,7 @@ public class StimulationTest {
 
     static private void testStimulation(Stimulation stimulation) {
         for (int i = 1; i <= Stimulation.MaxIntensity; i++) {
-            final double durationSeconds = 5.0
-                    * stimulation.periodDurationSeconds;
+            final double durationSeconds = 5.0 * stimulation.periodDurationSeconds;
             stimulation.play(i, durationSeconds);
             try {
                 Thread.sleep((long) (durationSeconds * 1000));
@@ -124,10 +128,8 @@ public class StimulationTest {
         Stimulator a = getLeftStimulator();
         Stimulator c = getRightStimulator();
         final double durationSeconds = 10.0;
-        Stimulation[] r = { new Walk(a), new Trot(a), new Walk(a), new Run(a),
-                new Run(a), new Run(a), new Run(a) };
-        Stimulation[] l = { new Tease(c), new Cum(c), new Tease(c), new Cum(c),
-                new Cum(c), new Cum(c), new Cum(c) };
+        Stimulation[] r = { new Walk(a), new Trot(a), new Walk(a), new Run(a), new Run(a), new Run(a), new Run(a) };
+        Stimulation[] l = { new Tease(c), new Cum(c), new Tease(c), new Cum(c), new Cum(c), new Cum(c), new Cum(c) };
         for (int j = 0; j < r.length; j++) {
             for (int i = 1; i <= Stimulation.MaxIntensity; i++) {
                 Stimulation left = l[j];

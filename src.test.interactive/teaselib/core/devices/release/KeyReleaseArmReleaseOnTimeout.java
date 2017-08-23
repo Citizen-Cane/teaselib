@@ -1,30 +1,24 @@
 package teaselib.core.devices.release;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import teaselib.core.concurrency.NamedExecutorService;
-import teaselib.core.devices.remote.LocalNetworkDevice;
 
 public class KeyReleaseArmReleaseOnTimeout {
     private static final Logger logger = LoggerFactory.getLogger(KeyReleaseArmReleaseOnTimeout.class);
 
-    @BeforeClass
-    public static void beforeClass() {
-        System.setProperty(LocalNetworkDevice.EnableDeviceDiscovery, Boolean.TRUE.toString());
-    }
-
     @Test
     public void testThatArmWithoutStartReleasesKeyAfterRequestedDuration() throws InterruptedException {
-        final KeyRelease keyRelease = KeyRelease.Devices.getDefaultDevice();
+        final KeyRelease keyRelease = KeyReleaseTest.connectDefaultDevice();
         List<Actuator> actuators = KeyReleaseTest.connect(keyRelease);
 
         ExecutorService executor = NamedExecutorService.newFixedThreadPool(actuators.size(), "test", 0,

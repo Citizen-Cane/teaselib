@@ -12,7 +12,6 @@ import teaselib.Duration;
 import teaselib.State;
 import teaselib.core.StateMaps;
 import teaselib.core.TeaseLib;
-import teaselib.core.util.QualifiedItem;
 
 /**
  * @author someone
@@ -81,23 +80,10 @@ public class ItemImpl implements Item, StateMaps.Attributes {
             if (stateContainsAll(attributes)) {
                 return true;
             } else {
-                return hasAllAttributes(this.attributes, attributes);
+                return StateMaps.hasAllAttributes(this.attributes, attributes);
             }
         } else
             return false;
-    }
-
-    public static boolean hasAllAttributes(Set<Object> mine, Object[] others) {
-        attributeLoop: for (Object value : others) {
-            QualifiedItem<?> item = QualifiedItem.of(value);
-            for (Object attribute : mine) {
-                if (item.equals(attribute)) {
-                    continue attributeLoop;
-                }
-            }
-            return false;
-        }
-        return true;
     }
 
     private boolean stateContainsAll(Object... attributes) {
@@ -140,6 +126,11 @@ public class ItemImpl implements Item, StateMaps.Attributes {
     @Override
     public State.Options apply() {
         State state = teaseLib.state(domain, item);
+
+        for (Object peer : peers) {
+            teaseLib.state(domain, peer).applyTo(this);
+        }
+
         state.applyTo(peers);
         return applyTo();
     }
@@ -150,6 +141,7 @@ public class ItemImpl implements Item, StateMaps.Attributes {
             throw new IllegalArgumentException("Item without default peers must be applied with explicit peer list");
         }
         State state = teaseLib.state(domain, item);
+
         Object[] array = new Object[attributes.size()];
         ((StateMaps.Attributes) state).applyAttributes(attributes.toArray(array));
         return state.applyTo(items);
@@ -162,12 +154,73 @@ public class ItemImpl implements Item, StateMaps.Attributes {
 
     @Override
     public <S extends Object> Persistence removeFrom(S... peer) {
+
+        teaseLib.state(domain, item).removeFrom(this);
+
         return teaseLib.state(domain, item).removeFrom(peer);
     }
 
     @Override
     public void applyAttributes(Object... attributes) {
         ((StateMaps.Attributes) teaseLib.state(domain, item)).applyAttributes(attributes);
+    }
+
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + ((attributes == null) ? 0 : attributes.hashCode());
+        result = prime * result + ((displayName == null) ? 0 : displayName.hashCode());
+        result = prime * result + ((domain == null) ? 0 : domain.hashCode());
+        result = prime * result + ((item == null) ? 0 : item.hashCode());
+        result = prime * result + Arrays.hashCode(peers);
+        result = prime * result + ((teaseLib == null) ? 0 : teaseLib.hashCode());
+        result = prime * result + ((value == null) ? 0 : value.hashCode());
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        ItemImpl other = (ItemImpl) obj;
+        if (attributes == null) {
+            if (other.attributes != null)
+                return false;
+        } else if (!attributes.equals(other.attributes))
+            return false;
+        if (displayName == null) {
+            if (other.displayName != null)
+                return false;
+        } else if (!displayName.equals(other.displayName))
+            return false;
+        if (domain == null) {
+            if (other.domain != null)
+                return false;
+        } else if (!domain.equals(other.domain))
+            return false;
+        if (item == null) {
+            if (other.item != null)
+                return false;
+        } else if (!item.equals(other.item))
+            return false;
+        if (!Arrays.equals(peers, other.peers))
+            return false;
+        if (teaseLib == null) {
+            if (other.teaseLib != null)
+                return false;
+        } else if (!teaseLib.equals(other.teaseLib))
+            return false;
+        if (value == null) {
+            if (other.value != null)
+                return false;
+        } else if (!value.equals(other.value))
+            return false;
+        return true;
     }
 
 }

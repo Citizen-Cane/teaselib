@@ -9,14 +9,19 @@ public class Persist {
     private static final String SEPARATOR = ";";
     private static final String STRING_REPRESENTATION = "Value=";
 
-    public static String persist(Object toStringSerializable) {
-        String serializedObject = toStringSerializable.toString();
+    public interface Persistable {
+        String persistToString();
+
+        void restoreFromString();
+    }
+
+    public static String persist(Object persistable) {
+        String serializedObject = persistable instanceof Persistable ? ((Persistable) persistable).persistToString()
+                : persistable.toString();
         if (canPersistObject(serializedObject)) {
-            return CLASS_NAME + toStringSerializable.getClass().getName()
-                    + SEPARATOR + STRING_REPRESENTATION + serializedObject;
+            return CLASS_NAME + persistable.getClass().getName() + SEPARATOR + STRING_REPRESENTATION + serializedObject;
         } else {
-            throw new UnsupportedOperationException(
-                    "String serialized objects with white space aren't supported yet.");
+            throw new UnsupportedOperationException("String serialized objects with white space aren't supported yet.");
         }
     }
 
@@ -27,31 +32,26 @@ public class Persist {
     public static <T> T from(String serializedObject) {
         String className = serializedObject.substring(CLASS_NAME.length(),
                 serializedObject.indexOf(SEPARATOR + STRING_REPRESENTATION));
-        String stringRepresentation = serializedObject
-                .substring(CLASS_NAME.length() + className.length()
-                        + SEPARATOR.length() + STRING_REPRESENTATION.length());
+        String stringRepresentation = serializedObject.substring(
+                CLASS_NAME.length() + className.length() + SEPARATOR.length() + STRING_REPRESENTATION.length());
         return deserialize(className, stringRepresentation);
     }
 
     @SuppressWarnings("unchecked")
-    private static <T> T deserialize(String className,
-            String stringRepresentation) {
+    private static <T> T deserialize(String className, String stringRepresentation) {
         try {
             Class<?> clazz = Class.forName(className);
             if (clazz.isEnum()) {
                 @SuppressWarnings("rawtypes")
                 Class<Enum> enumClass = (Class<Enum>) clazz;
-                Enum<?> enumValue = Enum.valueOf(enumClass,
-                        stringRepresentation);
+                Enum<?> enumValue = Enum.valueOf(enumClass, stringRepresentation);
                 return (T) enumValue;
             } else {
                 Constructor<?> constructor = clazz.getConstructor(String.class);
                 return (T) constructor.newInstance(stringRepresentation);
             }
         } catch (ReflectiveOperationException e) {
-            throw new IllegalArgumentException(
-                    "Cannot restore " + className + ":" + stringRepresentation,
-                    e);
+            throw new IllegalArgumentException("Cannot restore " + className + ":" + stringRepresentation, e);
         }
     }
 }

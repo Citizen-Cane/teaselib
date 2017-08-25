@@ -13,9 +13,10 @@ import java.util.concurrent.TimeUnit;
 import teaselib.Duration;
 import teaselib.State;
 import teaselib.core.TeaseLib.PersistentString;
+import teaselib.core.state.StateProxy;
 import teaselib.core.util.Persist;
 import teaselib.core.util.QualifiedItem;
-import teaselib.util.ItemImpl;
+import teaselib.util.Item;
 
 public class StateMaps {
     final TeaseLib teaseLib;
@@ -92,11 +93,20 @@ public class StateMaps {
         private final Set<Object> attributes = new HashSet<Object>();
 
         protected StateImpl state(Object item) {
-            return (StateImpl) StateMaps.this.state(domain, item);
+            if (item instanceof StateImpl) {
+                return (StateImpl) item;
+            } else {
+                return (StateImpl) StateMaps.this.state(domain, item);
+            }
         }
 
         public StateImpl(String domain, Object item) {
             super();
+
+            if ((item instanceof State) && !(item instanceof Item)) {
+                throw new IllegalArgumentException(item.toString());
+            }
+
             this.domain = domain;
             this.item = item;
             this.durationStorage = persistentDuration(domain, item);
@@ -239,10 +249,6 @@ public class StateMaps {
 
         @Override
         public <A extends Object> State.Options applyTo(A... attributes) {
-            if (attributes.length == 1 && attributes[0] instanceof List<?>) {
-                throw new IllegalArgumentException();
-            }
-
             applyInternal(attributes);
             return this;
         }
@@ -293,7 +299,7 @@ public class StateMaps {
             all.addAll(myAttributesAndPeers());
             all.addAll(attributesOfDirectPeers());
 
-            return ItemImpl.hasAllAttributes(all, attributes);
+            return hasAllAttributes(all, attributes);
         }
 
         private Set<Object> myAttributesAndPeers() {
@@ -447,12 +453,107 @@ public class StateMaps {
 
         @Override
         public String toString() {
-            long limit = duration.limit(TimeUnit.SECONDS);
             String name = domain + " " + nameOfState(item);
+
             Date date = new Date(duration.start(TimeUnit.MILLISECONDS));
+
+            long limit = duration.limit(TimeUnit.SECONDS);
             String timespan = (limit > 0 ? "+" : " ") + limit2String(limit);
-            return name + " " + date + timespan + " " + peers;
+
+            return name + " " + date + timespan + " " + toStringWithoutRecursion(peers);
         }
+
+        @Override
+        public int hashCode() {
+            final int prime = 31;
+            int result = 1;
+            result = prime * result + getOuterType().hashCode();
+            result = prime * result + ((attributeStorage == null) ? 0 : attributeStorage.hashCode());
+            result = prime * result + ((attributes == null) ? 0 : attributes.hashCode());
+            result = prime * result + ((domain == null) ? 0 : domain.hashCode());
+            result = prime * result + ((duration == null) ? 0 : duration.hashCode());
+            result = prime * result + ((durationStorage == null) ? 0 : durationStorage.hashCode());
+            result = prime * result + ((item == null) ? 0 : item.hashCode());
+            result = prime * result + ((peerStorage == null) ? 0 : peerStorage.hashCode());
+            result = prime * result + ((peers == null) ? 0 : peers.hashCode());
+            return result;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj)
+                return true;
+            if (obj == null)
+                return false;
+            if (getClass() != obj.getClass())
+                return false;
+            StateImpl other = (StateImpl) obj;
+            if (!getOuterType().equals(other.getOuterType()))
+                return false;
+            if (attributeStorage == null) {
+                if (other.attributeStorage != null)
+                    return false;
+            } else if (!attributeStorage.equals(other.attributeStorage))
+                return false;
+            if (attributes == null) {
+                if (other.attributes != null)
+                    return false;
+            } else if (!attributes.equals(other.attributes))
+                return false;
+            if (domain == null) {
+                if (other.domain != null)
+                    return false;
+            } else if (!domain.equals(other.domain))
+                return false;
+            if (duration == null) {
+                if (other.duration != null)
+                    return false;
+            } else if (!duration.equals(other.duration))
+                return false;
+            if (durationStorage == null) {
+                if (other.durationStorage != null)
+                    return false;
+            } else if (!durationStorage.equals(other.durationStorage))
+                return false;
+            if (item == null) {
+                if (other.item != null)
+                    return false;
+            } else if (!item.equals(other.item))
+                return false;
+            if (peerStorage == null) {
+                if (other.peerStorage != null)
+                    return false;
+            } else if (!peerStorage.equals(other.peerStorage))
+                return false;
+            if (peers == null) {
+                if (other.peers != null)
+                    return false;
+            } else if (!peers.equals(other.peers))
+                return false;
+            return true;
+        }
+
+        private StateMaps getOuterType() {
+            return StateMaps.this;
+        }
+
+    }
+
+    private static String toStringWithoutRecursion(Set<Object> peers) {
+        StringBuilder toString = new StringBuilder();
+        for (Object object : peers) {
+            if (toString.length() == 0) {
+                toString.append("[");
+            } else {
+                toString.append(", ");
+            }
+            if (object instanceof StateImpl) {
+                StateImpl state = (StateImpl) object;
+                toString.append(state.item.toString());
+            }
+        }
+        toString.append("]");
+        return toString.toString();
     }
 
     /**
@@ -475,6 +576,33 @@ public class StateMaps {
             stateMap.put(item.toString().toLowerCase(), state);
         }
         return state;
+    }
+
+    public static boolean hasAllAttributes(Set<Object> mine, Object[] others) {
+        attributeLoop: for (Object value : others) {
+            QualifiedItem<?> item = QualifiedItem.of(stripState(value));
+            for (Object attribute : mine) {
+                if (item.equals(stripState(attribute))) {
+                    continue attributeLoop;
+                }
+            }
+            return false;
+        }
+        return true;
+    }
+
+    private static Object stripState(Object value) {
+        if (value instanceof StateImpl) {
+            return stripState((StateImpl) value);
+        } else if (value instanceof StateProxy) {
+            return stripState(((StateProxy) value).state);
+        } else {
+            return value;
+        }
+    }
+
+    private static Object stripState(StateImpl state) {
+        return state.item;
     }
 
     private StateMap stateMap(String domain, QualifiedItem<?> item) {

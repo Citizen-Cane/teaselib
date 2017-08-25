@@ -1,6 +1,6 @@
 package teaselib.core.devices.remote;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -16,7 +16,7 @@ public class LocalNetworkDeviceTests {
 
     @Test
     public void testResourceDeallocationQuiteLong() throws Exception {
-        Configuration config = DebugSetup.getConfiguration();
+        Configuration config = DebugSetup.getConfigurationWithRemoteDeviceAccess();
         Devices devices = new Devices(config);
 
         int j = 10;

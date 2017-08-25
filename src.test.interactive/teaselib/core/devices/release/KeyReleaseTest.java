@@ -3,9 +3,7 @@
  */
 package teaselib.core.devices.release;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import java.util.Arrays;
 import java.util.List;
@@ -30,7 +28,7 @@ public class KeyReleaseTest {
     static final long HoldDuration = 1; // minutes
 
     public static KeyRelease connectDefaultDevice() {
-        Devices devices = new Devices(DebugSetup.getConfiguration());
+        Devices devices = new Devices(DebugSetup.getConfigurationWithRemoteDeviceAccess());
         DeviceCache<KeyRelease> deviceCache = devices.get(KeyRelease.class);
         KeyRelease keyRelease = deviceCache.getDefaultDevice();
         connect(keyRelease);

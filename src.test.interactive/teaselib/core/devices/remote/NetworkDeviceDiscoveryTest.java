@@ -87,7 +87,7 @@ public class NetworkDeviceDiscoveryTest {
 
     @Test
     public void testDeviceClass() throws Exception {
-        Configuration config = DebugSetup.getConfiguration();
+        Configuration config = DebugSetup.getConfigurationWithRemoteDeviceAccess();
         Devices devices = new Devices(config);
 
         logger.info("Device factory network scan (uses broadcast device discovery):");

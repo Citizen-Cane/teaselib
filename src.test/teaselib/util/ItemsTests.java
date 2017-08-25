@@ -1,9 +1,6 @@
 package teaselib.util;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import java.util.concurrent.TimeUnit;
 
@@ -19,11 +16,12 @@ import teaselib.test.TestScript;
 public class ItemsTests {
 
     @Test
-    public void testIsAvailable() throws Exception {
+    public void testGetAvailableItemsFirst() throws Exception {
         TeaseScript script = TestScript.getOne();
         Items gags = script.items(Toys.Gag);
 
         assertFalse(gags.isAvailable());
+        assertFalse(gags.get(0).is(Toys.Gags.Ring_Gag));
 
         Item ringGag = gags.get(Toys.Gags.Ring_Gag);
         assertTrue(ringGag.is(Toys.Gags.Ring_Gag));
@@ -33,9 +31,20 @@ public class ItemsTests {
 
         Items sameGags = script.items(Toys.Gag);
         assertTrue(sameGags.isAvailable());
+        assertFalse(gags.get(0).is(Toys.Gags.Ring_Gag));
 
         Item sameRingGag = script.item(Toys.Gag);
         assertTrue(sameRingGag.isAvailable());
+        assertTrue(sameRingGag.is(Toys.Gags.Ring_Gag));
+
+        Item againTheSameGag = script.items(Toys.Gag).available().get(0);
+        assertTrue(againTheSameGag.isAvailable());
+        assertTrue(againTheSameGag.is(Toys.Gags.Ring_Gag));
+        assertFalse(gags.get(0).is(Toys.Gags.Ring_Gag));
+
+        // TODO Doesn't work because of TeaseScript interception proxies
+        // assertEquals(ringGag, sameRingGag);
+        // assertEquals(ringGag, againTheSameGag);
     }
 
     @Test

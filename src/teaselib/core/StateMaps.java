@@ -17,6 +17,7 @@ import teaselib.core.state.StateProxy;
 import teaselib.core.util.Persist;
 import teaselib.core.util.QualifiedItem;
 import teaselib.util.Item;
+import teaselib.util.ItemImpl;
 
 public class StateMaps {
     final TeaseLib teaseLib;
@@ -381,6 +382,7 @@ public class StateMaps {
             for (Object peer : peers.toArray(copyOfPeers)) {
                 state(peer).removeFrom(item);
             }
+
             peers.clear();
             attributes.clear();
             setRemoved();
@@ -401,6 +403,9 @@ public class StateMaps {
 
                 if (peers.contains(peer)) {
                     peers.remove(peer);
+                    if (!(peer instanceof ItemImpl)) {
+                        removeRepresentingItems(peer);
+                    }
                     state(peer).removeFrom(item);
                 }
 
@@ -419,6 +424,17 @@ public class StateMaps {
                 updatePersistence();
             }
             return this;
+        }
+
+        private void removeRepresentingItems(Object rawItem) {
+            for (Object object : new HashSet<Object>(peers)) {
+                if (object instanceof ItemImpl) {
+                    ItemImpl itemImpl = (ItemImpl) object;
+                    if (itemImpl.item == rawItem) {
+                        peers.remove(itemImpl);
+                    }
+                }
+            }
         }
 
         private void updatePersistence() {

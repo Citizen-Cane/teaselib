@@ -158,15 +158,16 @@ public class ItemImpl implements Item, StateMaps.Attributes {
         for (Object peer : state.peers()) {
             teaseLib.state(domain, peer).removeFrom(this);
         }
-
+        
+        for (Object peer : new HashSet<Object>(state.peers())) {
+            teaseLib.state(domain, peer).removeFrom(this.item);
+        }
+        
         return state.remove();
     }
 
     @Override
     public <S extends Object> Persistence removeFrom(S... peer) {
-        // TODO May be unnecessary, how should we handle removing this when removing specific parts
-        // teaseLib.state(domain, peer).removeFrom(this);
-
         return teaseLib.state(domain, item).removeFrom(peer);
     }
 

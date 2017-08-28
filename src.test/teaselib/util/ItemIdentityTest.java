@@ -7,12 +7,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-import java.util.concurrent.TimeUnit;
-
 import org.junit.Test;
 
 import teaselib.Body;
-import teaselib.Duration;
 import teaselib.State;
 import teaselib.TeaseScript;
 import teaselib.Toys;
@@ -70,33 +67,44 @@ public class ItemIdentityTest {
     }
 
     @Test
-    public void testItemInstanceRemoval() {
+    public void testItemInstanceRemoveSameInstance() {
         TestScript script = TestScript.getOne();
 
         Item chastityDevice = script.item(Toys.Chastity_Device);
         State onPenis = script.state(Body.OnPenis);
 
-        chastityDevice.apply().over(Duration.INFINITE, TimeUnit.MINUTES);
+        chastityDevice.apply();
 
         assertTrue(chastityDevice.applied());
-        assertFalse(chastityDevice.expired());
-        assertTrue(script.state(Toys.Chastity_Device).duration().limit(TimeUnit.SECONDS) == Long.MAX_VALUE);
-
         assertTrue(onPenis.applied());
-        assertFalse(onPenis.expired());
 
         chastityDevice.remove();
 
         assertFalse(chastityDevice.applied());
-        assertTrue(chastityDevice.expired());
-
         assertFalse(onPenis.applied());
-        assertTrue(onPenis.expired());
     }
 
-    // TODO Remove() should remove any item
+    @Test
+    public void testItemInstanceRemoveAnyInstance() {
+        TestScript script = TestScript.getOne();
+
+        Item chastityDevice = script.items(Toys.Chastity_Device).get(Toys.ChastityDevices.Gates_of_Hell);
+        State onPenis = script.state(Body.OnPenis);
+
+        chastityDevice.apply();
+
+        assertTrue(chastityDevice.applied());
+        assertTrue(onPenis.applied());
+
+        Item otherChastityDevice = script.items(Toys.Chastity_Device).get(Toys.ChastityDevices.Chastity_Belt);
+        otherChastityDevice.remove();
+
+        assertFalse(chastityDevice.applied());
+        assertFalse(onPenis.applied());
+    }
+
     // TODO Item Persistence
-    
+
     @Test
     public void testItemInstancePersistence() {
         TestScript script = TestScript.getOne();

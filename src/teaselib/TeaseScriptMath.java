@@ -68,17 +68,17 @@ public class TeaseScriptMath extends TeaseScriptPersistenceUtil {
 
     public <T> T random(List<T> items) {
         if (items == null)
-            return null;
+            throw new NullPointerException();
         if (items.size() == 0)
-            return null;
+            throw new IllegalArgumentException("Empty list");
         return items.get(random(0, items.size() - 1));
     }
 
     public <T> T random(Collection<T> items) {
         if (items == null)
-            return null;
+            throw new NullPointerException();
         if (items.size() == 0)
-            return null;
+            throw new IllegalArgumentException("Empty list");
         int s = random(0, items.size() - 1);
         Iterator<T> iterator = items.iterator();
         T item = null;
@@ -161,19 +161,9 @@ public class TeaseScriptMath extends TeaseScriptPersistenceUtil {
         return teaseLib.duration(limit, unit);
     }
 
-    public <T extends Enum<?>> Item any(T... items) {
-        Items available = items(items).available();
-        if (available.size() > 0) {
-            return available.get(random(0, available.size() - 1));
-        } else {
-            return Item.NotAvailable;
-        }
-    }
-
-    public Item any(String... items) {
-        Items available = items(items).available();
-        if (available.size() > 0) {
-            return available.get(random(0, available.size() - 1));
+    public Item random(Items items) {
+        if (items.size() > 0) {
+            return items.get(random(0, items.size() - 1));
         } else {
             return Item.NotAvailable;
         }

@@ -120,12 +120,12 @@ public class ItemsTests {
 
         assertEquals(Item.NotAvailable, collars.get());
 
-        assertEquals(Item.NotAvailable, script.any(Toys.Collar));
+        assertEquals(Item.NotAvailable, script.random(script.items(Toys.Collar).available()));
 
         Item postureCollar = collars.get(Toys.Collars.Posture_Collar);
         postureCollar.setAvailable(true);
 
-        assertEquals(postureCollar, script.any(Toys.Collar));
+        assertEquals(postureCollar, script.random(script.items(Toys.Collar).available()));
     }
 
     @Test

@@ -12,6 +12,8 @@ import java.util.concurrent.TimeUnit;
 import teaselib.core.ResourceLoader;
 import teaselib.core.TeaseLib;
 import teaselib.core.TeaseScriptBase;
+import teaselib.util.Item;
+import teaselib.util.Items;
 
 /**
  * @author someone
@@ -19,8 +21,7 @@ import teaselib.core.TeaseScriptBase;
  */
 public class TeaseScriptMath extends TeaseScriptPersistenceUtil {
 
-    protected TeaseScriptMath(TeaseLib teaseLib, ResourceLoader resources,
-            Actor actor, String namespace) {
+    protected TeaseScriptMath(TeaseLib teaseLib, ResourceLoader resources, Actor actor, String namespace) {
         super(teaseLib, resources, actor, namespace);
     }
 
@@ -92,27 +93,23 @@ public class TeaseScriptMath extends TeaseScriptPersistenceUtil {
     }
 
     /**
-     * Build a list with n randomized entries, starting with all the shuffled
-     * items in introduction, followed by random items of repetitions.
+     * Build a list with n randomized entries, starting with all the shuffled items in introduction, followed by random
+     * items of repetitions.
      * 
      * @param introduction
      * @param repetition
      * @param size
-     *            Requested size of the resulting list, at least
-     *            introduction.size()
-     * @return The list starting with all the shuffled items from the
-     *         introduction, followed by items from repetition until the
-     *         requested count is reached. Repetitions are never added one after
-     *         the other.
+     *            Requested size of the resulting list, at least introduction.size()
+     * @return The list starting with all the shuffled items from the introduction, followed by items from repetition
+     *         until the requested count is reached. Repetitions are never added one after the other.
      */
     public <T> List<T> randomized(T[] introduction, T[] repetition, int size) {
-        return randomized(introduction, introduction.length, repetition,
-                Math.max(0, size - introduction.length));
+        return randomized(introduction, introduction.length, repetition, Math.max(0, size - introduction.length));
     }
 
     /**
-     * Build a list with n randomized entries, starting with all the shuffled
-     * items in introduction, followed by random items of repetitions.
+     * Build a list with n randomized entries, starting with all the shuffled items in introduction, followed by random
+     * items of repetitions.
      * 
      * @param introduction
      * @param introductionElements
@@ -120,13 +117,11 @@ public class TeaseScriptMath extends TeaseScriptPersistenceUtil {
      * @param repetition
      * @param repetitionElements
      *            Number of randomized elements from the repetition.
-     * @return The list starting with some shuffled items from the introduction
-     *         until the requested count is reached, followed by some items from
-     *         repetition until the requested count is reached. Repetitions are
-     *         never added one after the other.
+     * @return The list starting with some shuffled items from the introduction until the requested count is reached,
+     *         followed by some items from repetition until the requested count is reached. Repetitions are never added
+     *         one after the other.
      */
-    public <T> List<T> randomized(T[] introduction, int introductionElements,
-            T[] repetition, int repetitionElements) {
+    public <T> List<T> randomized(T[] introduction, int introductionElements, T[] repetition, int repetitionElements) {
         List<T> out = new ArrayList<T>(repetitionElements);
         if (introduction != null) {
             if (introduction.length > 0) {
@@ -141,8 +136,7 @@ public class TeaseScriptMath extends TeaseScriptPersistenceUtil {
         return out;
     }
 
-    private <T> List<T> addRandomizedElements(List<T> list, T[] elements,
-            int n) {
+    private <T> List<T> addRandomizedElements(List<T> list, T[] elements, int n) {
         T last = list.size() > 0 ? list.get(list.size() - 1) : null;
         for (int i = 0; i < n; i++) {
             T t = null;
@@ -167,4 +161,21 @@ public class TeaseScriptMath extends TeaseScriptPersistenceUtil {
         return teaseLib.duration(limit, unit);
     }
 
+    public <T extends Enum<?>> Item any(T... items) {
+        Items available = items(items).available();
+        if (available.size() > 0) {
+            return available.get(random(0, available.size() - 1));
+        } else {
+            return Item.NotAvailable;
+        }
+    }
+
+    public Item any(String... items) {
+        Items available = items(items).available();
+        if (available.size() > 0) {
+            return available.get(random(0, available.size() - 1));
+        } else {
+            return Item.NotAvailable;
+        }
+    }
 }

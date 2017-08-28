@@ -103,6 +103,8 @@ public class ItemIdentityTest {
         assertFalse(onPenis.applied());
     }
 
+    // TODO Remove item instance via string
+
     // TODO Item Persistence
 
     @Test

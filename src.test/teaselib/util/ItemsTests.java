@@ -104,10 +104,28 @@ public class ItemsTests {
         assertTrue(collars.get(Toys.Collars.Posture_Collar).isAvailable());
 
         assertEquals(postureCollar, collars.get());
-        assertTrue(collars.like(Toys.Collars.Posture_Collar).isAvailable());
+        assertTrue(collars.get(Toys.Collars.Posture_Collar).isAvailable());
 
-        assertNotEquals(dogCollar, collars.like(Toys.Collars.Dog_Collar));
-        assertEquals(postureCollar, collars.like(Toys.Collars.Posture_Collar));
+        Item noDogCollar = collars.prefer(Toys.Collars.Dog_Collar);
+        assertEquals(postureCollar, noDogCollar);
+
+        Item availablePostureCollar = collars.prefer(Toys.Collars.Posture_Collar);
+        assertEquals(postureCollar, availablePostureCollar);
+    }
+
+    @Test
+    public void testAny() {
+        TeaseScript script = TestScript.getOne();
+        Items collars = script.items(Toys.Collar);
+
+        assertEquals(Item.NotAvailable, collars.get());
+
+        assertEquals(Item.NotAvailable, script.any(Toys.Collar));
+
+        Item postureCollar = collars.get(Toys.Collars.Posture_Collar);
+        postureCollar.setAvailable(true);
+
+        assertEquals(postureCollar, script.any(Toys.Collar));
     }
 
     @Test

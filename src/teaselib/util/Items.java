@@ -8,8 +8,6 @@ import java.util.Collection;
 
 import teaselib.core.state.ItemProxy;
 
-// TODO interface is a mess - work in progress -> turn orthogonal functions 
-
 /**
  * @author Citizen-Cane
  *
@@ -98,7 +96,15 @@ public class Items extends ArrayList<Item> {
         }
     }
 
-    public <S> Items all(S... attributes) {
+    public <S extends Item.Attribute> Items all(S... attributes) {
+        return allInternal(attributes);
+    }
+
+    public Items all(String... attributes) {
+        return allInternal(attributes);
+    }
+
+    public <S> Items allInternal(S... attributes) {
         if (attributes.length == 0) {
             return this;
         } else {
@@ -113,21 +119,16 @@ public class Items extends ArrayList<Item> {
     }
 
     /**
-     * First matching and available
+     * Get matching or available item.
      * 
      * @param attributes
-     * @return
+     * @return Prefer item matching attributes, but fall back to any other available
      */
-    public <S> Item like(S... attributes) {
-        if (attributes.length == 0) {
-            return Item.NotAvailable;
-        } else {
-            for (Item item : this) {
-                if (item.isAvailable() && item.is(attributes)) {
-                    return item;
-                }
-            }
-            return firstAvailableOrNotAvailable();
+    public <S> Item prefer(S... attributes) {
+        Items items = allInternal(attributes);
+        if (!items.isAvailable()) {
+            items = allInternal().available();
         }
+        return items.firstAvailableOrNotAvailable();
     }
 }

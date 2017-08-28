@@ -15,13 +15,11 @@ import teaselib.util.Item;
 /**
  * @author Citizen-Cane
  *
- *         A set of pre-defined items that models almost the toys available in
- *         SexScripts. This means most of the toys are mapped to their
- *         SexScripts-equivalent.
- *         <li>Items are a fixed set, e.g. they're not enumerated from host
- *         settings.
- *         <li>All toys specialization enumerations are created and mapped. As a
- *         result, these items can also be made available by a script.
+ *         A set of pre-defined items that models almost the toys available in SexScripts. This means most of the toys
+ *         are mapped to their SexScripts-equivalent.
+ *         <li>Items are a fixed set, e.g. they're not enumerated from host settings.
+ *         <li>All toys specialization enumerations are created and mapped. As a result, these items can also be made
+ *         available by a script.
  */
 public class PreDefinedItems extends AbstractUserItems {
     @Override
@@ -99,11 +97,13 @@ public class PreDefinedItems extends AbstractUserItems {
 
         } else if (item.equals(Toys.Chastity_Device)) {
             Item chastityCage = item(teaseLib, item, "Toys", "chastity_cage", "A chastity cage",
-                    defaults(item, Body.AroundCockBase), Features.Lockable);
+                    defaults(item, Body.AroundCockBase), Toys.ChastityDevices.Chastity_Cage, Features.Lockable);
             Item chastityBelt = item(teaseLib, item, "Toys", "chastity_belt", "A Chastity belt",
-                    defaults(item, Body.OnBalls), Material.Metal, Features.Lockable);
+                    defaults(item, Body.OnBalls), Toys.ChastityDevices.Chastity_Belt, Material.Metal,
+                    Features.Lockable);
             Item gatesOfHell = item(teaseLib, item, "Toys", "gates_of_hell", "Gates of Hell",
-                    new Enum<?>[] { Body.AroundCockBase, Body.OnPenis }, Material.Leather, Material.Metal);
+                    new Enum<?>[] { Body.AroundCockBase, Body.OnPenis }, Toys.ChastityDevices.Gates_of_Hell,
+                    Material.Leather, Material.Metal);
 
             return new Item[] { chastityCage, chastityBelt, gatesOfHell };
 

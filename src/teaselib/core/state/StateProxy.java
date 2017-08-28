@@ -9,13 +9,13 @@ import teaselib.Duration;
 import teaselib.State;
 import teaselib.core.StateMaps;
 
-public class StateProxy implements State, StateMaps.Attributes {
-    final String namespace;
-    public final State state;
-
+/**
+ * @author Citizen-Cane
+ *
+ */
+public class StateProxy extends AbstractProxy<State> implements State, StateMaps.Attributes {
     public StateProxy(String namespace, State state) {
-        this.namespace = namespace;
-        this.state = state;
+        super(namespace, state);
     }
 
     @Override
@@ -73,41 +73,4 @@ public class StateProxy implements State, StateMaps.Attributes {
     public void applyAttributes(Object... attributes) {
         ((StateMaps.Attributes) state).applyAttributes(attributes);
     }
-
-    @Override
-    public String toString() {
-        return state.toString();
-    }
-
-    @Override
-    public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        result = prime * result + ((namespace == null) ? 0 : namespace.hashCode());
-        result = prime * result + ((state == null) ? 0 : state.hashCode());
-        return result;
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj)
-            return true;
-        if (obj == null)
-            return false;
-        if (getClass() != obj.getClass())
-            return false;
-        StateProxy other = (StateProxy) obj;
-        if (namespace == null) {
-            if (other.namespace != null)
-                return false;
-        } else if (!namespace.equals(other.namespace))
-            return false;
-        if (state == null) {
-            if (other.state != null)
-                return false;
-        } else if (!state.equals(other.state))
-            return false;
-        return true;
-    }
-
 }

@@ -3,17 +3,23 @@
  */
 package teaselib.util;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
+import java.util.concurrent.TimeUnit;
 
 import org.junit.Test;
 
 import teaselib.Body;
+import teaselib.Duration;
+import teaselib.State;
 import teaselib.TeaseScript;
 import teaselib.Toys;
 import teaselib.test.TestScript;
 
 /**
- * @author someone
+ * @author Citizen-Cane
  *
  */
 public class ItemIdentityTest {
@@ -64,7 +70,35 @@ public class ItemIdentityTest {
     }
 
     @Test
-    public void testItemIntancePersistence() {
+    public void testItemInstanceRemoval() {
+        TestScript script = TestScript.getOne();
+
+        Item chastityDevice = script.item(Toys.Chastity_Device);
+        State onPenis = script.state(Body.OnPenis);
+
+        chastityDevice.apply().over(Duration.INFINITE, TimeUnit.MINUTES);
+
+        assertTrue(chastityDevice.applied());
+        assertFalse(chastityDevice.expired());
+        assertTrue(script.state(Toys.Chastity_Device).duration().limit(TimeUnit.SECONDS) == Long.MAX_VALUE);
+
+        assertTrue(onPenis.applied());
+        assertFalse(onPenis.expired());
+
+        chastityDevice.remove();
+
+        assertFalse(chastityDevice.applied());
+        assertTrue(chastityDevice.expired());
+
+        assertFalse(onPenis.applied());
+        assertTrue(onPenis.expired());
+    }
+
+    // TODO Remove() should remove any item
+    // TODO Item Persistence
+    
+    @Test
+    public void testItemInstancePersistence() {
         TestScript script = TestScript.getOne();
         Items gags = script.items(Toys.Gag);
         Item ringGag = gags.get(Toys.Gags.Ring_Gag);

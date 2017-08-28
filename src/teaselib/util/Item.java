@@ -5,6 +5,16 @@ import teaselib.State;
 
 public interface Item extends State {
 
+    /**
+     * Tag interface to distinguish peers and attributes
+     * 
+     * @author Citizen-Cane
+     *
+     */
+    interface Attribute {
+
+    }
+
     public static final Item NotAvailable = new Item() {
 
         @Override

@@ -395,7 +395,6 @@ public class StateMaps {
             }
 
             for (Object peer : peers2) {
-
                 if (peer instanceof List<?> || peer instanceof Object[]) {
                     throw new IllegalArgumentException();
                 }

@@ -6,8 +6,12 @@ package teaselib.util;
 import java.util.ArrayList;
 import java.util.Collection;
 
+import teaselib.core.state.ItemProxy;
+
+// TODO interface is a mess - work in progress -> turn orthogonal functions 
+
 /**
- * @author someone
+ * @author Citizen-Cane
  *
  */
 public class Items extends ArrayList<Item> {
@@ -42,23 +46,47 @@ public class Items extends ArrayList<Item> {
     }
 
     /**
+     * @return First item
+     */
+    public Item get() {
+        return getInternal();
+    }
+
+    /**
      * Get a suitable item matching all attributes
      * 
      * @param attributes
-     * @return An item that matches all attributes, or the first available, or
-     *         {@link Item#NotAvailable}.
+     * @return An item that matches all attributes, or the first available, or {@link Item#NotAvailable}.
      */
-    public <S> Item get(S... attributes) {
+    public <S extends Item.Attribute> Item get(S... attributes) {
+        return getInternal(attributes);
+    }
+
+    public Item get(String... attributes) {
+        return getInternal(attributes);
+    }
+
+    /**
+     * Get first matching
+     * 
+     * @return
+     */
+    private <S> Item getInternal(S... attributes) {
         if (attributes.length == 0) {
             return firstAvailableOrNotAvailable();
         } else {
             for (Item item : this) {
-                if (item.is(attributes)) {
+                if (item instanceof ItemProxy) {
+                    if (((ItemImpl) ((ItemProxy) item).item).has(attributes)) {
+                        return item;
+                    }
+                } else if (((ItemImpl) item).has(attributes)) {
                     return item;
                 }
             }
             return Item.NotAvailable;
         }
+
     }
 
     private Item firstAvailableOrNotAvailable() {
@@ -84,6 +112,12 @@ public class Items extends ArrayList<Item> {
         }
     }
 
+    /**
+     * First matching and available
+     * 
+     * @param attributes
+     * @return
+     */
     public <S> Item like(S... attributes) {
         if (attributes.length == 0) {
             return Item.NotAvailable;

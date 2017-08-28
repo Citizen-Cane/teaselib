@@ -1,14 +1,14 @@
 package teaselib;
 
+import teaselib.util.Item;
+
 /**
- * Toys are generalized, which means their names have been chosen not be too
- * specific.
+ * Toys are generalized, which means their names have been chosen not be too specific.
  * <p>
  * Toys are grouped by category, to make it possible to query a whole category.
  * <p>
- * I guess that because toys can be grouped (Gags, spanking implements, plugs,
- * clamps, restraints), there has to be a more advanced approach to organize
- * toys.
+ * I guess that because toys can be grouped (Gags, spanking implements, plugs, clamps, restraints), there has to be a
+ * more advanced approach to organize toys.
  * <p>
  * So for now, just the generalized version of something is added.
  * <p>
@@ -54,20 +54,20 @@ public enum Toys {
 
     ;
 
-    public enum ChastityDevices {
+    public enum ChastityDevices implements Item.Attribute {
         Chastity_Belt,
         Chastity_Cage,
         Gates_of_Hell,
     }
 
-    public enum Collars {
+    public enum Collars implements Item.Attribute {
         Dog_Collar,
         Maid_Collar,
         Posture_Collar,
         Slave_Collar,
     }
 
-    public enum Gags {
+    public enum Gags implements Item.Attribute {
         Ball_Gag,
         Bit_Gag,
         Muzzle_Gag,
@@ -75,7 +75,7 @@ public enum Toys {
         Ring_Gag,
     }
 
-    public enum Spanking_Implements {
+    public enum Spanking_Implements implements Item.Attribute {
         Cane,
         Crop,
         Flogger,
@@ -83,17 +83,17 @@ public enum Toys {
         Whip
     }
 
-    public enum Anal {
+    public enum Anal implements Item.Attribute {
         Beads,
         Plug
     }
 
-    public enum Vaginal {
+    public enum Vaginal implements Item.Attribute {
         Ben_Wa_Balls,
         VibratingEgg,
     }
 
-    public enum Vibrators {
+    public enum Vibrators implements Item.Attribute {
         HandsFree,
         Manual,
     }

@@ -1,6 +1,8 @@
 package teaselib;
 
-public enum Features {
+import teaselib.util.Item;
+
+public enum Features implements Item.Attribute {
     Inflatable,
     Vibrating,
     Detachable,

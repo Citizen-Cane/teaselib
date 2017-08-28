@@ -11,6 +11,7 @@ import java.util.Set;
 import teaselib.Duration;
 import teaselib.State;
 import teaselib.core.StateMaps;
+import teaselib.core.StateMaps.StateImpl;
 import teaselib.core.TeaseLib;
 
 /**
@@ -86,6 +87,10 @@ public class ItemImpl implements Item, StateMaps.Attributes {
             return false;
     }
 
+    public boolean has(Object... attributes) {
+        return StateMaps.hasAllAttributes(this.attributes, attributes);
+    }
+
     private boolean stateContainsAll(Object... attributes) {
         if (!applied()) {
             return false;
@@ -149,13 +154,18 @@ public class ItemImpl implements Item, StateMaps.Attributes {
 
     @Override
     public Persistence remove() {
-        return teaseLib.state(domain, item).remove();
+        StateImpl state = (StateImpl) teaseLib.state(domain, item);
+        for (Object peer : state.peers()) {
+            teaseLib.state(domain, peer).removeFrom(this);
+        }
+
+        return state.remove();
     }
 
     @Override
     public <S extends Object> Persistence removeFrom(S... peer) {
-
-        teaseLib.state(domain, item).removeFrom(this);
+        // TODO May be unnecessary, how should we handle removing this when removing specific parts
+        // teaseLib.state(domain, peer).removeFrom(this);
 
         return teaseLib.state(domain, item).removeFrom(peer);
     }

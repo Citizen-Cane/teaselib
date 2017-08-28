@@ -1,6 +1,9 @@
 package teaselib.util;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.util.concurrent.TimeUnit;
 
@@ -76,7 +79,9 @@ public class ItemsTests {
         assertEquals(1, allMetalAndLeather.size());
 
         Item ringGag = allMetalAndLeather.get(0);
-        assertEquals(gags.get(Toys.Gags.Ring_Gag), ringGag);
+        Item sameRingGag = gags.get(Toys.Gags.Ring_Gag);
+
+        assertEquals(sameRingGag, ringGag);
     }
 
     @Test
@@ -147,5 +152,8 @@ public class ItemsTests {
         assertFalse(script.state(Body.OnNipples).is(Toys.Nipple_Clamps));
         assertFalse(script.state(Toys.Nipple_Clamps).is(Body.OnNipples));
         assertFalse(script.state(Toys.Nipple_Clamps).is(script.namespace));
+
+        assertFalse(script.item(Toys.Nipple_Clamps).applied());
+        assertFalse(script.state(Body.OnNipples).applied());
     }
 }

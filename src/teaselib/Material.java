@@ -1,6 +1,8 @@
 package teaselib;
 
-public enum Material {
+import teaselib.util.Item;
+
+public enum Material implements Item.Attribute {
     Glass,
     Leather,
     Latex,

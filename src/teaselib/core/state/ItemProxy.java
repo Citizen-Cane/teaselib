@@ -7,12 +7,11 @@ import teaselib.Duration;
 import teaselib.core.StateMaps;
 import teaselib.util.Item;
 
-public class ItemProxy implements Item, StateMaps.Attributes {
-    final String namespace;
-    final Item item;
+public class ItemProxy extends AbstractProxy<Item> implements Item, StateMaps.Attributes {
+    public final Item item;
 
     public ItemProxy(String namespace, Item item) {
-        this.namespace = namespace;
+        super(namespace, item);
         this.item = item;
     }
 
@@ -86,41 +85,4 @@ public class ItemProxy implements Item, StateMaps.Attributes {
     public void applyAttributes(Object... attributes) {
         ((StateMaps.Attributes) item).applyAttributes(attributes);
     }
-
-    @Override
-    public String toString() {
-        return item.toString();
-    }
-
-    @Override
-    public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        result = prime * result + ((item == null) ? 0 : item.hashCode());
-        result = prime * result + ((namespace == null) ? 0 : namespace.hashCode());
-        return result;
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj)
-            return true;
-        if (obj == null)
-            return false;
-        if (getClass() != obj.getClass())
-            return false;
-        ItemProxy other = (ItemProxy) obj;
-        if (item == null) {
-            if (other.item != null)
-                return false;
-        } else if (!item.equals(other.item))
-            return false;
-        if (namespace == null) {
-            if (other.namespace != null)
-                return false;
-        } else if (!namespace.equals(other.namespace))
-            return false;
-        return true;
-    }
-
 }

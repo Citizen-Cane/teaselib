@@ -103,7 +103,26 @@ public class ItemIdentityTest {
         assertFalse(onPenis.applied());
     }
 
-    // TODO Remove item instance via string
+    @Test
+    public void testItemInstanceRemoveAnyInstanceStringBased() {
+        TestScript script = TestScript.getOne();
+
+        Item chastityDevice = script.items("teaselib.Toys.Chastity_Device")
+                .get("teaselib.Toys.ChastityDevices.Gates_of_Hell");
+        State onPenis = script.state("teaselib.Body.OnPenis");
+
+        chastityDevice.apply();
+
+        assertTrue(chastityDevice.applied());
+        assertTrue(onPenis.applied());
+
+        Item otherChastityDevice = script.items("teaselib.Toys.Chastity_Device")
+                .get("teaselib.Toys.ChastityDevices.Chastity_Belt");
+        otherChastityDevice.remove();
+
+        assertFalse(chastityDevice.applied());
+        assertFalse(onPenis.applied());
+    }
 
     // TODO Item Persistence
 

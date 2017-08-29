@@ -13,6 +13,7 @@ import java.util.concurrent.TimeUnit;
 import teaselib.Duration;
 import teaselib.State;
 import teaselib.core.TeaseLib.PersistentString;
+import teaselib.core.state.AbstractProxy;
 import teaselib.core.state.StateProxy;
 import teaselib.core.util.Persist;
 import teaselib.core.util.QualifiedItem;
@@ -94,7 +95,9 @@ public class StateMaps {
         private final Set<Object> attributes = new HashSet<Object>();
 
         protected StateImpl state(Object item) {
-            if (item instanceof StateImpl) {
+            if (item instanceof AbstractProxy<?>) {
+                return (StateImpl) ((AbstractProxy<?>) item).state;
+            } else if (item instanceof StateImpl) {
                 return (StateImpl) item;
             } else {
                 return (StateImpl) StateMaps.this.state(domain, item);

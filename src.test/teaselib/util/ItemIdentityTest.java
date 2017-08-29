@@ -7,12 +7,16 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import java.util.ArrayList;
+
 import org.junit.Test;
 
 import teaselib.Body;
+import teaselib.Household;
 import teaselib.State;
 import teaselib.TeaseScript;
 import teaselib.Toys;
+import teaselib.core.TeaseLib;
 import teaselib.test.TestScript;
 
 /**
@@ -50,7 +54,8 @@ public class ItemIdentityTest {
         assertTrue(script.state(Body.InMouth).is(Toys.Gags.Ring_Gag));
         assertTrue(ringGag.is(Body.InMouth));
 
-        assertTrue(script.state(Body.InMouth).is(ringGag));
+        State mouth = script.state(Body.InMouth);
+        assertTrue(mouth.is(ringGag));
     }
 
     @Test
@@ -123,6 +128,48 @@ public class ItemIdentityTest {
         assertFalse(chastityDevice.applied());
         assertFalse(onPenis.applied());
     }
+
+    @Test
+    public void testApplyAndRemoveLotsOfItemInstances() {
+        TestScript script = TestScript.getOne();
+
+        State nipples = script.state(Body.OnNipples);
+
+        int numberOfPegs = 10;
+        ArrayList<Item> clothesPegsOnNipples = getClothesPegs(script, numberOfPegs);
+
+        for (Item item : clothesPegsOnNipples) {
+            item.applyTo(Body.OnNipples);
+            assertTrue(item.applied());
+        }
+        assertTrue(nipples.applied());
+
+        for (Item peg : clothesPegsOnNipples) {
+            assertTrue(nipples.is(peg));
+            assertTrue(peg.is(nipples));
+        }
+
+        for (Item peg : clothesPegsOnNipples) {
+            peg.remove();
+            assertFalse(peg.applied());
+        }
+        assertFalse(nipples.applied());
+    }
+
+    private static ArrayList<Item> getClothesPegs(TestScript script, int numberOfPegs) {
+        ArrayList<Item> clothesPegs = new ArrayList<Item>(numberOfPegs);
+        for (int i = 0; i < numberOfPegs; i++) {
+            Item peg = new ItemImpl(script.teaseLib, TeaseLib.DefaultDomain, Household.Clothes_Pegs,
+                    script.teaseLib.new PersistentBoolean(TeaseLib.DefaultDomain, script.namespace, "Clothes_Peg_" + i),
+                    "Clothes Peg");
+            clothesPegs.add(peg);
+        }
+        return clothesPegs;
+    }
+
+    // TODO Accept state objects as arguments to applyTo()
+    // State nipples = script.state(Body.OnNipples);
+    // item.applyTo(nipples);
 
     // TODO Item Persistence
 

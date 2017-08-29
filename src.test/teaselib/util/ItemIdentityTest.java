@@ -130,30 +130,68 @@ public class ItemIdentityTest {
     }
 
     @Test
-    public void testApplyAndRemoveLotsOfItemInstances() {
+    public void testApplyLotsOfItemInstancesAndRemoveOneAfterAnother() {
         TestScript script = TestScript.getOne();
+        State nipples = script.state(Body.OnNipples);
+        ArrayList<Item> clothesPegsOnNipples = placeClothesPegs(script, nipples);
 
+        for (Item peg : clothesPegsOnNipples) {
+            peg.remove();
+        }
+
+        verifyAllPegsRemoved(script, nipples, clothesPegsOnNipples);
+    }
+
+    @Test
+    public void testApplyLotsOfItemInstancesAndRemoveAtOnce() {
+        TestScript script = TestScript.getOne();
+        State nipples = script.state(Body.OnNipples);
+        ArrayList<Item> clothesPegsOnNipples = placeClothesPegs(script, nipples);
+
+        script.item(Household.Clothes_Pegs).remove();
+
+        verifyAllPegsRemoved(script, nipples, clothesPegsOnNipples);
+    }
+
+    @Test
+    public void testApplyLotsOfItemInstancesAndRemovePegsAtOnce() {
+        TestScript script = TestScript.getOne();
         State nipples = script.state(Body.OnNipples);
 
+        ArrayList<Item> clothesPegsOnNipples = placeClothesPegs(script, nipples);
+
+        script.item(Household.Clothes_Pegs).removeFrom(Body.OnNipples);
+
+        verifyAllPegsRemoved(script, nipples, clothesPegsOnNipples);
+    }
+
+    @Test
+    public void testApplyLotsOfItemInstancesAndRemoveFromNipplesAtOnce() {
+        TestScript script = TestScript.getOne();
+        State nipples = script.state(Body.OnNipples);
+
+        ArrayList<Item> clothesPegsOnNipples = placeClothesPegs(script, nipples);
+
+        script.item(Body.OnNipples).removeFrom(Household.Clothes_Pegs);
+
+        verifyAllPegsRemoved(script, nipples, clothesPegsOnNipples);
+    }
+
+    private ArrayList<Item> placeClothesPegs(TestScript script, State nipples) {
         int numberOfPegs = 10;
         ArrayList<Item> clothesPegsOnNipples = getClothesPegs(script, numberOfPegs);
 
-        for (Item item : clothesPegsOnNipples) {
-            item.applyTo(Body.OnNipples);
-            assertTrue(item.applied());
+        for (Item peg : clothesPegsOnNipples) {
+            peg.applyTo(Body.OnNipples);
         }
         assertTrue(nipples.applied());
 
         for (Item peg : clothesPegsOnNipples) {
+            assertTrue(peg.applied());
             assertTrue(nipples.is(peg));
             assertTrue(peg.is(nipples));
         }
-
-        for (Item peg : clothesPegsOnNipples) {
-            peg.remove();
-            assertFalse(peg.applied());
-        }
-        assertFalse(nipples.applied());
+        return clothesPegsOnNipples;
     }
 
     private static ArrayList<Item> getClothesPegs(TestScript script, int numberOfPegs) {
@@ -167,9 +205,14 @@ public class ItemIdentityTest {
         return clothesPegs;
     }
 
-    // TODO Accept state objects as arguments to applyTo()
-    // State nipples = script.state(Body.OnNipples);
-    // item.applyTo(nipples);
+    private static void verifyAllPegsRemoved(TestScript script, State nipples, ArrayList<Item> clothesPegsOnNipples) {
+        assertFalse(script.item(Household.Clothes_Pegs).applied());
+        assertFalse(nipples.applied());
+
+        for (Item peg : clothesPegsOnNipples) {
+            assertFalse(peg.applied());
+        }
+    }
 
     // TODO Item Persistence
 

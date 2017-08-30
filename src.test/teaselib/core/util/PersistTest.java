@@ -7,12 +7,12 @@ import org.junit.Test;
 public class PersistTest {
 
     @Test
-    public void testPersistToString() throws Exception {
-        String test = "foobar";
-        String serialized = Persist.persist(test);
-
-        assertEquals("Class=java.lang.String;Value=foobar", serialized);
-    }
+        public void testPersisted() throws Exception {
+            String test = "foobar";
+            String serialized = Persist.persist(test);
+    
+            assertEquals("Class=java.lang.String;Value=foobar", serialized);
+        }
 
     @Test
     public void testPersistFromString() throws Exception {

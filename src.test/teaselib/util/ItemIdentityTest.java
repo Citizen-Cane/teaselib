@@ -17,6 +17,7 @@ import teaselib.State;
 import teaselib.TeaseScript;
 import teaselib.Toys;
 import teaselib.core.TeaseLib;
+import teaselib.core.util.Persist;
 import teaselib.test.TestScript;
 
 /**
@@ -177,7 +178,7 @@ public class ItemIdentityTest {
         verifyAllPegsRemoved(script, nipples, clothesPegsOnNipples);
     }
 
-    private ArrayList<Item> placeClothesPegs(TestScript script, State nipples) {
+    private static ArrayList<Item> placeClothesPegs(TestScript script, State nipples) {
         int numberOfPegs = 10;
         ArrayList<Item> clothesPegsOnNipples = getClothesPegs(script, numberOfPegs);
 
@@ -197,12 +198,17 @@ public class ItemIdentityTest {
     private static ArrayList<Item> getClothesPegs(TestScript script, int numberOfPegs) {
         ArrayList<Item> clothesPegs = new ArrayList<Item>(numberOfPegs);
         for (int i = 0; i < numberOfPegs; i++) {
-            Item peg = new ItemImpl(script.teaseLib, TeaseLib.DefaultDomain, Household.Clothes_Pegs,
-                    script.teaseLib.new PersistentBoolean(TeaseLib.DefaultDomain, script.namespace, "Clothes_Peg_" + i),
-                    "Clothes Peg");
+            String name = "Clothes_Peg_" + i;
+            Item peg = createPeg(script, name);
             clothesPegs.add(peg);
         }
         return clothesPegs;
+    }
+
+    private static ItemImpl createPeg(TestScript script, String name) {
+        // TODO Improve serialization to allow for white space
+        return new ItemImpl(script.teaseLib, Household.Clothes_Pegs, TeaseLib.DefaultDomain, script.namespace, name,
+                "A_Clothes_Peg");
     }
 
     private static void verifyAllPegsRemoved(TestScript script, State nipples, ArrayList<Item> clothesPegsOnNipples) {
@@ -214,10 +220,19 @@ public class ItemIdentityTest {
         }
     }
 
-    // TODO Item Persistence
-
     @Test
     public void testItemInstancePersistence() {
+        TestScript script = TestScript.getOne();
+        ItemImpl peg = createPeg(script, "test_peg");
+
+        String serialized = Persist.persist(peg);
+        ItemImpl restoredPeg = new ItemImpl(script.teaseLib, new Persist.Persisted(serialized));
+
+        assertEquals(peg, restoredPeg);
+    }
+
+    @Test
+    public void testItemInstancePersistAndRestore() {
         TestScript script = TestScript.getOne();
         Items gags = script.items(Toys.Gag);
         Item ringGag = gags.get(Toys.Gags.Ring_Gag);
@@ -229,5 +244,7 @@ public class ItemIdentityTest {
         assertTrue(ringGag.is(script.state(Body.InMouth)));
 
         script.persistence.printStorage();
+
+        // TODO clear state map, restore from storage
     }
 }

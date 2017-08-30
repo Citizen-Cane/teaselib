@@ -1,28 +1,74 @@
 package teaselib.core.util;
 
 import java.lang.reflect.Constructor;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
 
 public class Persist {
     public static final String PERSISTED_STRING_SEPARATOR = " ";
 
     private static final String CLASS_NAME = "Class=";
-    private static final String SEPARATOR = ";";
+    private static final String ELEMENT_SEPARATOR = " ";
+    private static final String CLASS_VALUE_SEPARATOR = ";";
     private static final String STRING_REPRESENTATION = "Value=";
 
     public interface Persistable {
-        String persistToString();
+        List<String> persisted();
+    }
 
-        void restoreFromString();
+    public static class Persisted {
+        private final Iterator<String> elements;
+
+        public Persisted(List<String> elements) {
+            super();
+            this.elements = elements.iterator();
+        }
+
+        public Persisted(String serialized) {
+            this(split(serialized));
+        }
+
+        public <T> T next() {
+            return Persist.from(elements.next());
+        }
     }
 
     public static String persist(Object persistable) {
-        String serializedObject = persistable instanceof Persistable ? ((Persistable) persistable).persistToString()
-                : persistable.toString();
+        String serializedObject = persistable instanceof Persistable
+                ? join(((Persistable) persistable).persisted()) : persistElement(persistable);
         if (canPersistObject(serializedObject)) {
-            return CLASS_NAME + persistable.getClass().getName() + SEPARATOR + STRING_REPRESENTATION + serializedObject;
+            return CLASS_NAME + persistable.getClass().getName() + CLASS_VALUE_SEPARATOR + STRING_REPRESENTATION
+                    + serializedObject;
         } else {
             throw new UnsupportedOperationException("String serialized objects with white space aren't supported yet.");
         }
+    }
+
+    private static String persistElement(Object persistable) {
+        if (persistable instanceof Collection) {
+            throw new UnsupportedOperationException("TODO recursive collection persistence");
+        } else {
+            return persistable.toString();
+        }
+    }
+
+    private static String join(List<String> persistToString) {
+        StringBuilder serialized = new StringBuilder();
+        boolean insertSeparator = false;
+        for (String string : persistToString) {
+            if (insertSeparator) {
+                serialized.append(ELEMENT_SEPARATOR);
+            }
+            serialized.append(string);
+            insertSeparator = true;
+        }
+        return serialized.toString();
+    }
+
+    private static List<String> split(String serialized) {
+        return Arrays.asList(serialized.split(" "));
     }
 
     private static boolean canPersistObject(String serializedObject) {
@@ -31,9 +77,9 @@ public class Persist {
 
     public static <T> T from(String serializedObject) {
         String className = serializedObject.substring(CLASS_NAME.length(),
-                serializedObject.indexOf(SEPARATOR + STRING_REPRESENTATION));
-        String stringRepresentation = serializedObject.substring(
-                CLASS_NAME.length() + className.length() + SEPARATOR.length() + STRING_REPRESENTATION.length());
+                serializedObject.indexOf(CLASS_VALUE_SEPARATOR + STRING_REPRESENTATION));
+        String stringRepresentation = serializedObject.substring(CLASS_NAME.length() + className.length()
+                + CLASS_VALUE_SEPARATOR.length() + STRING_REPRESENTATION.length());
         return deserialize(className, stringRepresentation);
     }
 

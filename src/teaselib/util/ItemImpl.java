@@ -60,7 +60,7 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
                 Persist.persist(attributes));
     }
 
-    public ItemImpl(TeaseLib teaseLib, Persist.Persisted persisted) {
+    public ItemImpl(TeaseLib teaseLib, Persist.Storage persisted) {
         this.teaseLib = teaseLib;
         this.item = persisted.next();
         this.domain = persisted.next();
@@ -209,7 +209,7 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
     }
 
     @Override
-    public Persistence remove() {
+    public State.Persistence remove() {
         StateImpl state = (StateImpl) teaseLib.state(domain, item);
         for (Object peer : state.peers()) {
             teaseLib.state(domain, peer).removeFrom(this);
@@ -223,7 +223,7 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
     }
 
     @Override
-    public <S extends Object> Persistence removeFrom(S... peer) {
+    public <S extends Object> State.Persistence removeFrom(S... peer) {
         return teaseLib.state(domain, item).removeFrom(peer);
     }
 

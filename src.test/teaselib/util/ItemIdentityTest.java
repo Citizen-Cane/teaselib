@@ -3,9 +3,7 @@
  */
 package teaselib.util;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import java.util.ArrayList;
 
@@ -225,8 +223,11 @@ public class ItemIdentityTest {
         TestScript script = TestScript.getOne();
         ItemImpl peg = createPeg(script, "test_peg");
 
+        // TODO Rename Persist to Persistence - collision with State.Persistence interface
         String serialized = Persist.persist(peg);
-        ItemImpl restoredPeg = new ItemImpl(script.teaseLib, new Persist.Persisted(serialized));
+
+        // TODO In production, we may be able to instanciate ItemImpl from cache
+        ItemImpl restoredPeg = new ItemImpl(script.teaseLib, new Persist.Storage(serialized));
 
         assertEquals(peg, restoredPeg);
     }

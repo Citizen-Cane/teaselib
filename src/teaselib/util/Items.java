@@ -96,6 +96,10 @@ public class Items extends ArrayList<Item> {
         }
     }
 
+    public Items all() {
+        return allInternal();
+    }
+
     public <S extends Item.Attribute> Items all(S... attributes) {
         return allInternal(attributes);
     }

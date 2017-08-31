@@ -16,17 +16,16 @@ import teaselib.core.StateMaps.StateImpl;
 import teaselib.core.TeaseLib;
 import teaselib.core.util.Persist;
 import teaselib.core.util.Persist.Persistable;
-import teaselib.core.util.QualifiedItem;
 
 /**
- * @author someone
+ * @author Citizen-Cane
  *
  */
 public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
     final TeaseLib teaseLib;
     public final String domain;
     public final String namespace;
-    public final String name;
+    public final String guid;
     public final Object item;
     public final TeaseLib.PersistentBoolean value;
     public final String displayName;
@@ -41,22 +40,22 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
         this(teaseLib, item, domain, namespace, name, displayName, new Object[] {}, new Object[] {});
     }
 
-    public ItemImpl(TeaseLib teaseLib, Object item, String domain, String namespace, String name, String displayName,
+    public ItemImpl(TeaseLib teaseLib, Object item, String domain, String namespace, String guid, String displayName,
             Object[] peers, Object[] attributes) {
         this.teaseLib = teaseLib;
         this.item = item;
         this.domain = domain;
         this.namespace = namespace;
-        this.name = name;
+        this.guid = guid;
         this.displayName = displayName;
-        this.value = teaseLib.new PersistentBoolean(domain, namespace, name);
+        this.value = teaseLib.new PersistentBoolean(domain, namespace, guid);
         this.peers = peers;
         this.attributes = attributes(item, attributes);
     }
 
     @Override
     public List<String> persisted() {
-        return Arrays.asList(Persist.persist(item), domain, namespace, name, displayName, Persist.persist(peers),
+        return Arrays.asList(Persist.persist(item), domain, namespace, guid, displayName, Persist.persist(peers),
                 Persist.persist(attributes));
     }
 
@@ -65,36 +64,11 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
         this.item = persisted.next();
         this.domain = persisted.next();
         this.namespace = persisted.next();
-        this.name = persisted.next();
+        this.guid = persisted.next();
         this.displayName = persisted.next();
-        this.value = teaseLib.new PersistentBoolean(domain, namespace, name);
+        this.value = teaseLib.new PersistentBoolean(domain, namespace, guid);
         this.peers = persisted.next();
         this.attributes = persisted.next();
-    }
-
-    @Deprecated
-    public ItemImpl(TeaseLib teaseLib, String domain, Object item, TeaseLib.PersistentBoolean value) {
-        this(teaseLib, domain, item, value, createDisplayName(item));
-    }
-
-    @Deprecated
-    public ItemImpl(TeaseLib teaseLib, String domain, Object item, TeaseLib.PersistentBoolean value,
-            String displayName) {
-        this(teaseLib, domain, item, value, displayName, new Object[] {}, new Object[] {});
-    }
-
-    @Deprecated
-    public ItemImpl(TeaseLib teaseLib, String domain, Object item, TeaseLib.PersistentBoolean value, String displayName,
-            Object[] peers, Object[] attributes) {
-        this.teaseLib = teaseLib;
-        this.domain = domain;
-        this.namespace = QualifiedItem.of(item).namespace();
-        this.name = value.name;
-        this.item = item;
-        this.value = value;
-        this.displayName = displayName;
-        this.peers = peers;
-        this.attributes = attributes(item, attributes);
     }
 
     private static Set<Object> attributes(Object item, Object[] attributes) {

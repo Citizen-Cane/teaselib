@@ -23,7 +23,8 @@ public class ItemImplTest {
     public void testAvailable() throws Exception {
         TeaseScript script = TestScript.getOne();
         TeaseLib.PersistentBoolean foobar = script.teaseLib.new PersistentBoolean(TeaseLib.DefaultDomain, "Foo", "Bar");
-        Item item = new ItemImpl(script.teaseLib, TeaseLib.DefaultDomain, "test", foobar);
+        Item item = new ItemImpl(script.teaseLib, "item", TeaseLib.DefaultDomain, "Foo", "Bar",
+                ItemImpl.createDisplayName("item"));
 
         item.setAvailable(false);
         assertEquals(false, item.isAvailable());
@@ -41,9 +42,8 @@ public class ItemImplTest {
     @Test
     public void testIs() throws Exception {
         TeaseScript script = TestScript.getOne();
-        TeaseLib.PersistentBoolean foobar = script.teaseLib.new PersistentBoolean(TeaseLib.DefaultDomain, "Foo", "Bar");
         Foo[] peers = new Foo[] {};
-        Item item = new ItemImpl(script.teaseLib, TeaseLib.DefaultDomain, Foo.Bar, foobar, "Foo Bar", peers,
+        Item item = new ItemImpl(script.teaseLib, Foo.Bar, TeaseLib.DefaultDomain, "Foo", "Bar", "Foo Bar", peers,
                 new Object[] { Size.Large, Length.Long });
 
         assertTrue(item.is(Size.Large));
@@ -58,9 +58,8 @@ public class ItemImplTest {
     @Test
     public void testIs_EmptyArg() throws Exception {
         TeaseScript script = TestScript.getOne();
-        TeaseLib.PersistentBoolean foobar = script.teaseLib.new PersistentBoolean(TeaseLib.DefaultDomain, "Foo", "Bar");
         Foo[] peers = new Foo[] {};
-        Item item = new ItemImpl(script.teaseLib, TeaseLib.DefaultDomain, Foo.Bar, foobar, "Foo Bar", peers,
+        Item item = new ItemImpl(script.teaseLib, Foo.Bar, TeaseLib.DefaultDomain, "Foo", "Bar", "Foo Bar", peers,
                 new Object[] { Size.Large, Length.Long });
 
         assertFalse(item.is());
@@ -69,9 +68,8 @@ public class ItemImplTest {
     @Test
     public void testIsHandlesArrays() throws Exception {
         TeaseScript script = TestScript.getOne();
-        TeaseLib.PersistentBoolean foobar = script.teaseLib.new PersistentBoolean(TeaseLib.DefaultDomain, "Foo", "Bar");
         Foo[] peers = new Foo[] {};
-        Item item = new ItemImpl(script.teaseLib, TeaseLib.DefaultDomain, Foo.Bar, foobar, "Foo Bar", peers,
+        Item item = new ItemImpl(script.teaseLib, Foo.Bar, TeaseLib.DefaultDomain, "Foo", "Bar", "Foo Bar", peers,
                 new Object[] { Size.Large, Length.Long });
 
         assertTrue(item.is(new Object[] { Size.Large }));

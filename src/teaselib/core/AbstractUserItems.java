@@ -22,8 +22,8 @@ public abstract class AbstractUserItems implements UserItems {
     }
 
     protected Item[] onlyTheOriginalItem(TeaseLib teaseLib, String domain, QualifiedItem<?> item) {
-        return new Item[] { new ItemImpl(teaseLib, domain, item,
-                teaseLib.new PersistentBoolean(domain, item.namespace(), item.name())) };
+        return new Item[] {
+                new ItemImpl(teaseLib, item, domain, item.namespace(), item.name(), ItemImpl.createDisplayName(item)) };
     }
 
     Map<String, ItemMap> userItems = new HashMap<String, ItemMap>();
@@ -62,8 +62,7 @@ public abstract class AbstractUserItems implements UserItems {
 
     protected Item item(TeaseLib teaseLib, String domain, String namespace, String name, String displayName,
             QualifiedItem<?> item, Enum<?>[] peers, Enum<?>... attributes) {
-        return new ItemImpl(teaseLib, domain, item.value, teaseLib.new PersistentBoolean(domain, namespace, name),
-                displayName, peers, attributes);
+        return new ItemImpl(teaseLib, item.value, domain, namespace, name, displayName, peers, attributes);
     }
 
     public Enum<?>[] array(Enum<?>[] defaults, Enum<?>... additional) {

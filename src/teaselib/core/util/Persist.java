@@ -18,15 +18,15 @@ public class Persist {
         List<String> persisted();
     }
 
-    public static class Persisted {
+    public static class Storage {
         private final Iterator<String> elements;
 
-        public Persisted(List<String> elements) {
+        public Storage(List<String> elements) {
             super();
             this.elements = elements.iterator();
         }
 
-        public Persisted(String serialized) {
+        public Storage(String serialized) {
             this(split(serialized));
         }
 

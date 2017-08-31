@@ -15,6 +15,7 @@ import teaselib.State;
 import teaselib.TeaseScript;
 import teaselib.Toys;
 import teaselib.core.TeaseLib;
+import teaselib.core.util.QualifiedItem;
 import teaselib.test.TestScript;
 
 public class ItemImplTest {
@@ -22,17 +23,20 @@ public class ItemImplTest {
     @Test
     public void testAvailable() throws Exception {
         TeaseScript script = TestScript.getOne();
-        TeaseLib.PersistentBoolean foobar = script.teaseLib.new PersistentBoolean(TeaseLib.DefaultDomain, "Foo", "Bar");
-        Item item = new ItemImpl(script.teaseLib, "item", TeaseLib.DefaultDomain, "Foo", "Bar",
-                ItemImpl.createDisplayName("item"));
+        QualifiedItem<?> fooBar = QualifiedItem.of("Foo.Bar");
+        String storageName = fooBar.name();
+        TeaseLib.PersistentBoolean value = script.teaseLib.new PersistentBoolean(TeaseLib.DefaultDomain,
+                fooBar.namespace(), storageName);
+        Item item = new ItemImpl(script.teaseLib, fooBar, TeaseLib.DefaultDomain, storageName,
+                ItemImpl.createDisplayName(fooBar.name()));
 
         item.setAvailable(false);
         assertEquals(false, item.isAvailable());
-        assertEquals(false, foobar.value());
+        assertEquals(false, value.value());
 
         item.setAvailable(true);
         assertEquals(true, item.isAvailable());
-        assertEquals(true, foobar.value());
+        assertEquals(true, value.value());
     }
 
     enum Foo {
@@ -43,7 +47,7 @@ public class ItemImplTest {
     public void testIs() throws Exception {
         TeaseScript script = TestScript.getOne();
         Foo[] peers = new Foo[] {};
-        Item item = new ItemImpl(script.teaseLib, Foo.Bar, TeaseLib.DefaultDomain, "Foo", "Bar", "Foo Bar", peers,
+        Item item = new ItemImpl(script.teaseLib, Foo.Bar, TeaseLib.DefaultDomain, "Foo.Bar", "Foo Bar", peers,
                 new Object[] { Size.Large, Length.Long });
 
         assertTrue(item.is(Size.Large));
@@ -59,7 +63,7 @@ public class ItemImplTest {
     public void testIs_EmptyArg() throws Exception {
         TeaseScript script = TestScript.getOne();
         Foo[] peers = new Foo[] {};
-        Item item = new ItemImpl(script.teaseLib, Foo.Bar, TeaseLib.DefaultDomain, "Foo", "Bar", "Foo Bar", peers,
+        Item item = new ItemImpl(script.teaseLib, Foo.Bar, TeaseLib.DefaultDomain, "Foo.Bar", "Foo Bar", peers,
                 new Object[] { Size.Large, Length.Long });
 
         assertFalse(item.is());
@@ -69,7 +73,7 @@ public class ItemImplTest {
     public void testIsHandlesArrays() throws Exception {
         TeaseScript script = TestScript.getOne();
         Foo[] peers = new Foo[] {};
-        Item item = new ItemImpl(script.teaseLib, Foo.Bar, TeaseLib.DefaultDomain, "Foo", "Bar", "Foo Bar", peers,
+        Item item = new ItemImpl(script.teaseLib, Foo.Bar, TeaseLib.DefaultDomain, "Foo.Bar", "Foo Bar", peers,
                 new Object[] { Size.Large, Length.Long });
 
         assertTrue(item.is(new Object[] { Size.Large }));

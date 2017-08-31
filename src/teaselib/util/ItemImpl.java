@@ -16,6 +16,7 @@ import teaselib.core.StateMaps.StateImpl;
 import teaselib.core.TeaseLib;
 import teaselib.core.util.Persist;
 import teaselib.core.util.Persist.Persistable;
+import teaselib.core.util.QualifiedItem;
 
 /**
  * @author Citizen-Cane
@@ -24,7 +25,6 @@ import teaselib.core.util.Persist.Persistable;
 public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
     final TeaseLib teaseLib;
     public final String domain;
-    public final String namespace;
     public final String guid;
     public final Object item;
     public final TeaseLib.PersistentBoolean value;
@@ -36,37 +36,35 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
         return item.toString().replace("_", " ");
     }
 
-    public ItemImpl(TeaseLib teaseLib, Object item, String domain, String namespace, String name, String displayName) {
-        this(teaseLib, item, domain, namespace, name, displayName, new Object[] {}, new Object[] {});
+    public ItemImpl(TeaseLib teaseLib, Object item, String domain, String guid, String displayName) {
+        this(teaseLib, item, domain, guid, displayName, new Object[] {}, new Object[] {});
     }
 
-    public ItemImpl(TeaseLib teaseLib, Object item, String domain, String namespace, String guid, String displayName,
-            Object[] peers, Object[] attributes) {
+    public ItemImpl(TeaseLib teaseLib, Object item, String domain, String guid, String displayName, Object[] peers,
+            Object[] attributes) {
         this.teaseLib = teaseLib;
         this.item = item;
         this.domain = domain;
-        this.namespace = namespace;
         this.guid = guid;
         this.displayName = displayName;
-        this.value = teaseLib.new PersistentBoolean(domain, namespace, guid);
+        this.value = teaseLib.new PersistentBoolean(domain, QualifiedItem.namespaceOf(item), guid);
         this.peers = peers;
         this.attributes = attributes(item, attributes);
     }
 
     @Override
     public List<String> persisted() {
-        return Arrays.asList(Persist.persist(item), domain, namespace, guid, displayName, Persist.persist(peers),
-                Persist.persist(attributes));
+        return Arrays.asList(Persist.persist(item), domain, QualifiedItem.namespaceOf(item), guid, displayName,
+                Persist.persist(peers), Persist.persist(attributes));
     }
 
     public ItemImpl(TeaseLib teaseLib, Persist.Persisted persisted) {
         this.teaseLib = teaseLib;
         this.item = persisted.next();
         this.domain = persisted.next();
-        this.namespace = persisted.next();
         this.guid = persisted.next();
         this.displayName = persisted.next();
-        this.value = teaseLib.new PersistentBoolean(domain, namespace, guid);
+        this.value = teaseLib.new PersistentBoolean(domain, QualifiedItem.namespaceOf(item), guid);
         this.peers = persisted.next();
         this.attributes = persisted.next();
     }

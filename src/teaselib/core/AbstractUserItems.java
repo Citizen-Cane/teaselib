@@ -22,8 +22,7 @@ public abstract class AbstractUserItems implements UserItems {
     }
 
     protected Item[] onlyTheOriginalItem(TeaseLib teaseLib, String domain, QualifiedItem<?> item) {
-        return new Item[] {
-                new ItemImpl(teaseLib, item, domain, item.namespace(), item.name(), ItemImpl.createDisplayName(item)) };
+        return new Item[] { new ItemImpl(teaseLib, item, domain, item.name(), ItemImpl.createDisplayName(item)) };
     }
 
     Map<String, ItemMap> userItems = new HashMap<String, ItemMap>();
@@ -50,19 +49,19 @@ public abstract class AbstractUserItems implements UserItems {
 
     protected abstract Item[] createUserItems(TeaseLib teaseLib, String domain, QualifiedItem<?> item);
 
-    protected Item item(TeaseLib teaseLib, QualifiedItem<?> item, String namespace, String name, String displayName,
+    protected Item item(TeaseLib teaseLib, QualifiedItem<?> item, String name, String displayName,
             Enum<?>... attributes) {
-        return item(teaseLib, TeaseLib.DefaultDomain, namespace, name, displayName, item, defaults(item), attributes);
+        return item(teaseLib, TeaseLib.DefaultDomain, name, displayName, item, defaults(item), attributes);
     }
 
-    protected Item item(TeaseLib teaseLib, QualifiedItem<?> item, String namespace, String name, String displayName,
+    protected Item item(TeaseLib teaseLib, QualifiedItem<?> item, String name, String displayName, Enum<?>[] peers,
+            Enum<?>... attributes) {
+        return item(teaseLib, TeaseLib.DefaultDomain, name, displayName, item, peers, attributes);
+    }
+
+    protected Item item(TeaseLib teaseLib, String domain, String name, String displayName, QualifiedItem<?> item,
             Enum<?>[] peers, Enum<?>... attributes) {
-        return item(teaseLib, TeaseLib.DefaultDomain, namespace, name, displayName, item, peers, attributes);
-    }
-
-    protected Item item(TeaseLib teaseLib, String domain, String namespace, String name, String displayName,
-            QualifiedItem<?> item, Enum<?>[] peers, Enum<?>... attributes) {
-        return new ItemImpl(teaseLib, item.value, domain, namespace, name, displayName, peers, attributes);
+        return new ItemImpl(teaseLib, item.value, domain, name, displayName, peers, attributes);
     }
 
     public Enum<?>[] array(Enum<?>[] defaults, Enum<?>... additional) {

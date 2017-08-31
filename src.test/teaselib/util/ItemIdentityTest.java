@@ -207,8 +207,7 @@ public class ItemIdentityTest {
 
     private static ItemImpl createPeg(TestScript script, String name) {
         // TODO Improve serialization to allow for white space
-        return new ItemImpl(script.teaseLib, Household.Clothes_Pegs, TeaseLib.DefaultDomain, script.namespace, name,
-                "A_Clothes_Peg");
+        return new ItemImpl(script.teaseLib, Household.Clothes_Pegs, TeaseLib.DefaultDomain, name, "A_Clothes_Peg");
     }
 
     private static void verifyAllPegsRemoved(TestScript script, State nipples, ArrayList<Item> clothesPegsOnNipples) {

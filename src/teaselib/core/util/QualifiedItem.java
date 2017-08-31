@@ -34,6 +34,8 @@ public abstract class QualifiedItem<T> {
             } else {
                 return string;
             }
+        } else if (item instanceof QualifiedItem<?>) {
+            return ((QualifiedItem<?>) item).namespace();
         } else {
             return ReflectionUtils.classParentName(item.toString());
         }
@@ -50,6 +52,8 @@ public abstract class QualifiedItem<T> {
             } else {
                 return string;
             }
+        } else if (item instanceof QualifiedItem<?>) {
+            return ((QualifiedItem<?>) item).name();
         } else {
             name = item.toString();
         }

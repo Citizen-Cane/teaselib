@@ -14,6 +14,7 @@ import teaselib.State;
 import teaselib.core.StateMaps;
 import teaselib.core.StateMaps.StateImpl;
 import teaselib.core.TeaseLib;
+import teaselib.core.state.AbstractProxy;
 import teaselib.core.util.Persist;
 import teaselib.core.util.Persist.Persistable;
 import teaselib.core.util.QualifiedItem;
@@ -29,7 +30,7 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
     public final Object item;
     public final TeaseLib.PersistentBoolean value;
     public final String displayName;
-    public final Object[] peers;
+    public final Object[] defaultPeers;
     public final Set<Object> attributes;
 
     public static String createDisplayName(Object item) {
@@ -40,22 +41,21 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
         this(teaseLib, item, domain, guid, displayName, new Object[] {}, new Object[] {});
     }
 
-    public ItemImpl(TeaseLib teaseLib, Object item, String domain, String guid, String displayName, Object[] peers,
-            Object[] attributes) {
+    public ItemImpl(TeaseLib teaseLib, Object item, String domain, String guid, String displayName,
+            Object[] defaultPeers, Object[] attributes) {
         this.teaseLib = teaseLib;
         this.item = item;
         this.domain = domain;
         this.guid = guid;
         this.displayName = displayName;
         this.value = teaseLib.new PersistentBoolean(domain, QualifiedItem.namespaceOf(item), guid);
-        this.peers = peers;
+        this.defaultPeers = defaultPeers;
         this.attributes = attributes(item, attributes);
     }
 
     @Override
     public List<String> persisted() {
-        return Arrays.asList(Persist.persist(item), domain, QualifiedItem.namespaceOf(item), guid, displayName,
-                Persist.persist(peers), Persist.persist(attributes));
+        return Arrays.asList(guid);
     }
 
     public ItemImpl(TeaseLib teaseLib, Persist.Storage persisted) {
@@ -65,7 +65,7 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
         this.guid = persisted.next();
         this.displayName = persisted.next();
         this.value = teaseLib.new PersistentBoolean(domain, QualifiedItem.namespaceOf(item), guid);
-        this.peers = persisted.next();
+        this.defaultPeers = persisted.next();
         this.attributes = persisted.next();
     }
 
@@ -122,12 +122,12 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
     }
 
     public Set<Object> peers() {
-        return new HashSet<Object>(Arrays.asList(peers));
+        return new HashSet<Object>(Arrays.asList(defaultPeers));
     }
 
     @Override
     public boolean canApply() {
-        for (Object peer : peers) {
+        for (Object peer : defaultPeers) {
             if (teaseLib.state(domain, peer).applied()) {
                 return false;
             }
@@ -152,16 +152,16 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
 
     @Override
     public State.Options apply() {
-        applyInstanceTo(peers);
+        applyInstanceTo(defaultPeers);
 
         State state = teaseLib.state(domain, item);
-        state.applyTo(peers);
+        state.applyTo(defaultPeers);
         return applyTo();
     }
 
     @Override
     public <S extends Object> State.Options applyTo(S... items) {
-        if (items.length == 0 && peers.length == 0) {
+        if (items.length == 0 && defaultPeers.length == 0) {
             throw new IllegalArgumentException("Item without default peers must be applied with explicit peer list");
         }
 
@@ -212,7 +212,7 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
         result = prime * result + ((displayName == null) ? 0 : displayName.hashCode());
         result = prime * result + ((domain == null) ? 0 : domain.hashCode());
         result = prime * result + ((item == null) ? 0 : item.hashCode());
-        result = prime * result + Arrays.hashCode(peers);
+        result = prime * result + Arrays.hashCode(defaultPeers);
         result = prime * result + ((teaseLib == null) ? 0 : teaseLib.hashCode());
         result = prime * result + ((value == null) ? 0 : value.hashCode());
         return result;
@@ -220,6 +220,14 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
 
     @Override
     public boolean equals(Object obj) {
+        if (obj instanceof AbstractProxy<?>) {
+            return equals(((AbstractProxy<?>) obj).state);
+        } else {
+            return generatedEqualsMethod(obj);
+        }
+    }
+
+    private boolean generatedEqualsMethod(Object obj) {
         if (this == obj)
             return true;
         if (obj == null)
@@ -247,7 +255,7 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
                 return false;
         } else if (!item.equals(other.item))
             return false;
-        if (!Arrays.equals(peers, other.peers))
+        if (!Arrays.equals(defaultPeers, other.defaultPeers))
             return false;
         if (teaseLib == null) {
             if (other.teaseLib != null)
@@ -261,5 +269,4 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
             return false;
         return true;
     }
-
 }

@@ -47,4 +47,8 @@ public class Debugger {
     public void addResponse(String match, Response response) {
         responses.put(match, response);
     }
+
+    public void clearStateMaps() {
+        teaseLib.stateMaps.clear();
+    }
 }

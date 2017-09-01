@@ -163,7 +163,7 @@ public class StateMaps {
             if (peerStorage.available()) {
                 String[] serializedPeers = peerStorage.value().split(Persist.PERSISTED_STRING_SEPARATOR);
                 for (String serializedPeer : serializedPeers) {
-                    addAppliedOrPersistedPeer(Persist.<Object> from(serializedPeer));
+                    restorePersistedPeer(serializedPeer);
                 }
 
                 if (peers.isEmpty()) {
@@ -172,17 +172,34 @@ public class StateMaps {
             }
         }
 
-        private void addAppliedOrPersistedPeer(Object peer) {
-            QualifiedItem<?> qualifiedPeer = QualifiedItem.of(peer);
+        private void restorePersistedPeer(String persistedPeer) {
+            if (Persist.className(persistedPeer).equals(ItemImpl.class.getName())) {
+                String guid = Persist.persistedValue(persistedPeer);
+                ItemImpl peer = (ItemImpl) teaseLib.item(domain, guid);
 
-            if (stateMap(domain, qualifiedPeer.namespace().toLowerCase())
-                    .contains(qualifiedPeer.name().toLowerCase())) {
+                addPeerThatHasBeenPersistedWithMe(peer, QualifiedItem.of(peer.item));
+            } else {
+                addAppliedOrPersistedPeer(Persist.<Object> from(persistedPeer));
+            }
+        }
+
+        private void addAppliedOrPersistedPeer(Object peer) {
+            addPeerThatHasBeenPersistedWithMe(peer, QualifiedItem.of(peer));
+        }
+
+        private void addPeerThatHasBeenPersistedWithMe(Object peer, QualifiedItem<?> qualifiedPeer) {
+            if (isCached(qualifiedPeer)) {
                 if (state(peer).applied()) {
                     peers.add(peer);
                 }
             } else if (persistentDuration(domain, peer).available()) {
                 peers.add(peer);
             }
+        }
+
+        private boolean isCached(QualifiedItem<?> qualifiedPeer) {
+            return stateMap(domain, qualifiedPeer.namespace().toLowerCase())
+                    .contains(qualifiedPeer.name().toLowerCase());
         }
 
         private void restoreAttributes() {
@@ -499,6 +516,14 @@ public class StateMaps {
 
         @Override
         public boolean equals(Object obj) {
+            if (obj instanceof AbstractProxy<?>) {
+                return equals(((AbstractProxy<?>) obj).state);
+            } else {
+                return generatedEqualsMethod(obj);
+            }
+        }
+
+        private boolean generatedEqualsMethod(Object obj) {
             if (this == obj)
                 return true;
             if (obj == null)

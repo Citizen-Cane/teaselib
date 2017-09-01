@@ -37,6 +37,7 @@ import teaselib.core.util.QualifiedItem;
 import teaselib.core.util.ReflectionUtils;
 import teaselib.motiondetection.MotionDetector;
 import teaselib.util.Item;
+import teaselib.util.ItemImpl;
 import teaselib.util.Items;
 import teaselib.util.PersistenceLogger;
 import teaselib.util.TeaseLibLogger;
@@ -54,10 +55,10 @@ public class TeaseLib {
     private final Persistence persistence;
     private final UserItems userItems;
     public final TeaseLibLogger transcript;
-    
+
     public final Configuration config;
     public final ObjectMap globals = new ObjectMap();
-    private final StateMaps stateMaps = new StateMaps(this);
+    final StateMaps stateMaps = new StateMaps(this);
     public final Devices devices;
 
     final Shower shower;
@@ -835,6 +836,16 @@ public class TeaseLib {
         } else {
             return Item.NotAvailable;
         }
+    }
+
+    public Item getByGuid(String domain, Object item, String guid) {
+        Items items = items(domain, item);
+        for (Item i : items) {
+            if (((ItemImpl) i).guid.equals(guid)) {
+                return i;
+            }
+        }
+        throw new IllegalArgumentException("Item " + domain + "." + QualifiedItem.of(item) + ":" + guid + " not found");
     }
 
     public Actor getDominant(Voice.Gender gender, Locale locale) {

@@ -33,7 +33,6 @@ public abstract class AbstractUserItems implements UserItems {
         return new Item[] { new ItemImpl(teaseLib, item, domain, item.name(), ItemImpl.createDisplayName(item)) };
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public List<Item> get(String domain, QualifiedItem<?> item) {
         ItemMap itemMap = userItems.get(domain);
@@ -47,9 +46,7 @@ public abstract class AbstractUserItems implements UserItems {
             itemMap.put(item, items);
             return items;
         } else {
-            @SuppressWarnings("rawtypes")
-            List items = itemMap.get(item);
-            return items;
+            return itemMap.get(item);
         }
     }
 
@@ -59,14 +56,14 @@ public abstract class AbstractUserItems implements UserItems {
         return item(TeaseLib.DefaultDomain, name, displayName, item, defaults(item), attributes);
     }
 
-    protected Item item(QualifiedItem<?> item, String name, String displayName, Enum<?>[] peers,
+    protected Item item(QualifiedItem<?> item, String name, String displayName, Enum<?>[] defaultPeers,
             Enum<?>... attributes) {
-        return item(TeaseLib.DefaultDomain, name, displayName, item, peers, attributes);
+        return item(TeaseLib.DefaultDomain, name, displayName, item, defaultPeers, attributes);
     }
 
-    protected Item item(String domain, String name, String displayName, QualifiedItem<?> item, Enum<?>[] peers,
+    protected Item item(String domain, String name, String displayName, QualifiedItem<?> item, Enum<?>[] defaultPeers,
             Enum<?>... attributes) {
-        return new ItemImpl(teaseLib, item.value, domain, name, displayName, peers, attributes);
+        return new ItemImpl(teaseLib, item.value, domain, name, displayName, defaultPeers, attributes);
     }
 
     public Enum<?>[] array(Enum<?>[] defaults, Enum<?>... additional) {

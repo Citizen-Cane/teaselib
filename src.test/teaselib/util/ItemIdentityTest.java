@@ -3,10 +3,13 @@
  */
 package teaselib.util;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import teaselib.Body;
@@ -218,6 +221,8 @@ public class ItemIdentityTest {
     }
 
     @Test
+    @Ignore
+    // TODO Wrong, can't just call constructor -> construct via teaselib user items
     public void testItemInstancePersistence() {
         TestScript script = TestScript.getOne();
         ItemImpl peg = createPeg(script, "test_peg");
@@ -232,19 +237,65 @@ public class ItemIdentityTest {
     }
 
     @Test
+    public void testUserItemsInstanciatingAndCaching() {
+        TestScript script = TestScript.getOne();
+
+        Items gags = script.items(Toys.Gag);
+        Item ringGag = gags.get(Toys.Gags.Ring_Gag);
+
+        Item sameRingGag = script.teaseLib.getByGuid(TeaseLib.DefaultDomain, Toys.Gag, "ring_gag");
+
+        assertEquals(ringGag, sameRingGag);
+        assertEquals(sameRingGag, ringGag);
+
+        assertFalse(ringGag == sameRingGag);
+    }
+
+    @Test
     public void testItemInstancePersistAndRestore() {
         TestScript script = TestScript.getOne();
+
+        Item ringGag = applyRingGagAndRemember(script);
+        verifyApplied(script, ringGag);
+
+        script.debugger.clearStateMaps();
+
+        Items gags = script.items(Toys.Gag);
+        ringGag = gags.get(Toys.Gags.Ring_Gag);
+
+        verifyApplied(script, ringGag);
+    }
+
+    @Test
+    public void testItemRestoreSequenceWhenReferencedToysHaveBeenRealizedFirst() {
+        TestScript script = TestScript.getOne();
+
+        Item ringGag = applyRingGagAndRemember(script);
+        verifyApplied(script, ringGag);
+
+        script.debugger.clearStateMaps();
+
+        State inMouth = script.state(Body.InMouth);
+        assertTrue(inMouth.applied());
+
+        Items gags = script.items(Toys.Gag);
+        ringGag = gags.get(Toys.Gags.Ring_Gag);
+
+        verifyApplied(script, ringGag);
+    }
+
+    private static Item applyRingGagAndRemember(TestScript script) {
         Items gags = script.items(Toys.Gag);
         Item ringGag = gags.get(Toys.Gags.Ring_Gag);
 
         assertFalse(ringGag.is(Body.InMouth));
         ringGag.apply().remember();
+        return ringGag;
+    }
 
+    private static void verifyApplied(TestScript script, Item ringGag) {
+        assertTrue(ringGag.applied());
         assertTrue(ringGag.is(Body.InMouth));
         assertTrue(ringGag.is(script.state(Body.InMouth)));
-
-        script.persistence.printStorage();
-
-        // TODO clear state map, restore from storage
     }
 }

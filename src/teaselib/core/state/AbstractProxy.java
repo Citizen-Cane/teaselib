@@ -20,7 +20,7 @@ public class AbstractProxy<T> {
         if (obj instanceof AbstractProxy<?>) {
             return state.equals(((AbstractProxy<?>) obj).state);
         } else {
-            return super.equals(state);
+            return state.equals(obj);
         }
     }
 

@@ -36,8 +36,8 @@ public class Persist {
     }
 
     public static String persist(Object persistable) {
-        String serializedObject = persistable instanceof Persistable
-                ? join(((Persistable) persistable).persisted()) : persistElement(persistable);
+        String serializedObject = persistable instanceof Persistable ? join(((Persistable) persistable).persisted())
+                : persistElement(persistable);
         if (canPersistObject(serializedObject)) {
             return CLASS_NAME + persistable.getClass().getName() + CLASS_VALUE_SEPARATOR + STRING_REPRESENTATION
                     + serializedObject;
@@ -75,12 +75,22 @@ public class Persist {
         return !serializedObject.contains(PERSISTED_STRING_SEPARATOR);
     }
 
-    public static <T> T from(String serializedObject) {
-        String className = serializedObject.substring(CLASS_NAME.length(),
-                serializedObject.indexOf(CLASS_VALUE_SEPARATOR + STRING_REPRESENTATION));
-        String stringRepresentation = serializedObject.substring(CLASS_NAME.length() + className.length()
-                + CLASS_VALUE_SEPARATOR.length() + STRING_REPRESENTATION.length());
+    public static <T> T from(String persisted) {
+        String className = className(persisted);
+        String stringRepresentation = persistedValue(persisted);
         return deserialize(className, stringRepresentation);
+    }
+
+    public static String className(String persisted) {
+        String className = persisted.substring(CLASS_NAME.length(),
+                persisted.indexOf(CLASS_VALUE_SEPARATOR + STRING_REPRESENTATION));
+        return className;
+    }
+
+    public static String persistedValue(String persisted) {
+        String stringRepresentation = persisted.substring(CLASS_NAME.length() + className(persisted).length()
+                + CLASS_VALUE_SEPARATOR.length() + STRING_REPRESENTATION.length());
+        return stringRepresentation;
     }
 
     @SuppressWarnings("unchecked")

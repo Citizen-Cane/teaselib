@@ -52,18 +52,17 @@ public class TeaseLib {
 
     public final Host host;
     private final Persistence persistence;
+    private final UserItems userItems;
     public final TeaseLibLogger transcript;
-    private final StateMaps stateMaps = new StateMaps(this);
-
+    
     public final Configuration config;
-
     public final ObjectMap globals = new ObjectMap();
-
+    private final StateMaps stateMaps = new StateMaps(this);
     public final Devices devices;
 
-    public final MediaRendererQueue renderQueue = new MediaRendererQueue();
     final Shower shower;
     final HostInputMethod hostInputMethod;
+    public final MediaRendererQueue renderQueue = new MediaRendererQueue();
 
     private long frozenTime = Long.MIN_VALUE;
     private long timeOffsetMillis = 0;
@@ -81,6 +80,7 @@ public class TeaseLib {
 
         this.host = host;
         this.persistence = new PersistenceLogger(persistence);
+        this.userItems = persistence.getUserItems(this);
 
         this.config = new Configuration(setup);
         this.transcript = newTranscriptLogger(host.getLocation(Location.Log));
@@ -810,7 +810,7 @@ public class TeaseLib {
     public <T extends Object> Items items(String domain, T... values) {
         Items items = new Items(values.length);
         for (T item : values) {
-            items.addAll(persistence.getUserItems().get(this, domain, QualifiedItem.of(item)));
+            items.addAll(userItems.get(domain, QualifiedItem.of(item)));
         }
         return items;
     }

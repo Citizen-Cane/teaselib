@@ -14,6 +14,9 @@ import teaselib.util.Item;
 import teaselib.util.ItemImpl;
 
 public abstract class AbstractUserItems implements UserItems {
+    final protected TeaseLib teaseLib;
+    final Map<String, ItemMap> userItems = new HashMap<String, ItemMap>();
+
     class ItemMap extends HashMap<Object, List<Item>> {
         private static final long serialVersionUID = 1L;
 
@@ -21,15 +24,18 @@ public abstract class AbstractUserItems implements UserItems {
         }
     }
 
-    protected Item[] onlyTheOriginalItem(TeaseLib teaseLib, String domain, QualifiedItem<?> item) {
+    public AbstractUserItems(TeaseLib teaseLib) {
+        super();
+        this.teaseLib = teaseLib;
+    }
+
+    protected Item[] getDefaultItem(String domain, QualifiedItem<?> item) {
         return new Item[] { new ItemImpl(teaseLib, item, domain, item.name(), ItemImpl.createDisplayName(item)) };
     }
 
-    Map<String, ItemMap> userItems = new HashMap<String, ItemMap>();
-
     @SuppressWarnings("unchecked")
     @Override
-    public List<Item> get(TeaseLib teaseLib, String domain, QualifiedItem<?> item) {
+    public List<Item> get(String domain, QualifiedItem<?> item) {
         ItemMap itemMap = userItems.get(domain);
         if (itemMap == null) {
             itemMap = new ItemMap();
@@ -37,7 +43,7 @@ public abstract class AbstractUserItems implements UserItems {
         }
 
         if (!itemMap.containsKey(item)) {
-            List<Item> items = Arrays.asList(createUserItems(teaseLib, domain, item));
+            List<Item> items = Arrays.asList(createUserItems(domain, item));
             itemMap.put(item, items);
             return items;
         } else {
@@ -47,20 +53,19 @@ public abstract class AbstractUserItems implements UserItems {
         }
     }
 
-    protected abstract Item[] createUserItems(TeaseLib teaseLib, String domain, QualifiedItem<?> item);
+    protected abstract Item[] createUserItems(String domain, QualifiedItem<?> item);
 
-    protected Item item(TeaseLib teaseLib, QualifiedItem<?> item, String name, String displayName,
-            Enum<?>... attributes) {
-        return item(teaseLib, TeaseLib.DefaultDomain, name, displayName, item, defaults(item), attributes);
+    protected Item item(QualifiedItem<?> item, String name, String displayName, Enum<?>... attributes) {
+        return item(TeaseLib.DefaultDomain, name, displayName, item, defaults(item), attributes);
     }
 
-    protected Item item(TeaseLib teaseLib, QualifiedItem<?> item, String name, String displayName, Enum<?>[] peers,
+    protected Item item(QualifiedItem<?> item, String name, String displayName, Enum<?>[] peers,
             Enum<?>... attributes) {
-        return item(teaseLib, TeaseLib.DefaultDomain, name, displayName, item, peers, attributes);
+        return item(TeaseLib.DefaultDomain, name, displayName, item, peers, attributes);
     }
 
-    protected Item item(TeaseLib teaseLib, String domain, String name, String displayName, QualifiedItem<?> item,
-            Enum<?>[] peers, Enum<?>... attributes) {
+    protected Item item(String domain, String name, String displayName, QualifiedItem<?> item, Enum<?>[] peers,
+            Enum<?>... attributes) {
         return new ItemImpl(teaseLib, item.value, domain, name, displayName, peers, attributes);
     }
 

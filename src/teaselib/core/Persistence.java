@@ -11,7 +11,7 @@ public interface Persistence {
 
     PropertyNameMapping getNameMapping();
 
-    UserItems getUserItems();
+    UserItems getUserItems(TeaseLib teaseLib);
 
     boolean has(String name);
 

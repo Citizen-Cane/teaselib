@@ -11,6 +11,7 @@ import ss.IScript;
 import teaselib.Actor;
 import teaselib.Images;
 import teaselib.core.Persistence;
+import teaselib.core.TeaseLib;
 import teaselib.core.UserItems;
 import teaselib.core.texttospeech.Voice;
 import teaselib.core.util.PropertyNameMapping;
@@ -27,7 +28,6 @@ public class SexScriptsStatePersistence implements Persistence {
 
     private final ss.IScript host;
     private final PropertyNameMapping nameMapping = new SexScriptsPropertyNameMapping();
-    private UserItems sexScriptsUserItems = new PreDefinedItems();
 
     public SexScriptsStatePersistence(IScript host) {
         this.host = host;
@@ -38,10 +38,8 @@ public class SexScriptsStatePersistence implements Persistence {
 
     private static void makeDataPropertiesBackup() {
         try {
-            FileInputStream dataProperties = new FileInputStream(
-                    new File(DATA_PROPERTIES));
-            FileOutputStream dataPropertiesBackup = new FileOutputStream(
-                    new File(DATA_PROPERTIES_BACKUP));
+            FileInputStream dataProperties = new FileInputStream(new File(DATA_PROPERTIES));
+            FileOutputStream dataPropertiesBackup = new FileOutputStream(new File(DATA_PROPERTIES_BACKUP));
             try {
                 Stream.copy(dataProperties, dataPropertiesBackup);
             } finally {
@@ -59,8 +57,8 @@ public class SexScriptsStatePersistence implements Persistence {
     }
 
     @Override
-    public UserItems getUserItems() {
-        return sexScriptsUserItems;
+    public UserItems getUserItems(TeaseLib teaseLib) {
+        return new PreDefinedItems(teaseLib);
     }
 
     @Override
@@ -80,37 +78,32 @@ public class SexScriptsStatePersistence implements Persistence {
 
     @Override
     public String get(String name) {
-        name = getNameMapping().mapName(PropertyNameMapping.None,
-                PropertyNameMapping.None, name);
+        name = getNameMapping().mapName(PropertyNameMapping.None, PropertyNameMapping.None, name);
         return host.loadString(name);
     }
 
     @Override
     public void set(String name, String value) {
-        name = getNameMapping().mapName(PropertyNameMapping.None,
-                PropertyNameMapping.None, name);
+        name = getNameMapping().mapName(PropertyNameMapping.None, PropertyNameMapping.None, name);
         host.save(name, value);
     }
 
     @Override
     public void set(String name, boolean value) {
-        name = getNameMapping().mapName(PropertyNameMapping.None,
-                PropertyNameMapping.None, name);
+        name = getNameMapping().mapName(PropertyNameMapping.None, PropertyNameMapping.None, name);
         set(name, value ? TRUE : FALSE);
     }
 
     @Override
     public void clear(String name) {
-        name = getNameMapping().mapName(PropertyNameMapping.None,
-                PropertyNameMapping.None, name);
+        name = getNameMapping().mapName(PropertyNameMapping.None, PropertyNameMapping.None, name);
         host.save(name, null);
     }
 
     @Override
     public TextVariables getTextVariables(Locale locale) {
         TextVariables variables = new TextVariables();
-        variables.put(TextVariables.Names.Slave,
-                getLocalized("intro.name", locale));
+        variables.put(TextVariables.Names.Slave, getLocalized("intro.name", locale));
         return variables;
     }
 
@@ -131,11 +124,9 @@ public class SexScriptsStatePersistence implements Persistence {
     public Actor getDominant(Voice.Gender gender, Locale locale) {
         switch (gender) {
         case Female:
-            return new Actor("Mistress", "Miss", Voice.Gender.Female, locale,
-                    Actor.Key.DominantFemale, Images.None);
+            return new Actor("Mistress", "Miss", Voice.Gender.Female, locale, Actor.Key.DominantFemale, Images.None);
         case Male:
-            return new Actor("Master", "Sir", Voice.Gender.Male, locale,
-                    Actor.Key.DominantMale, Images.None);
+            return new Actor("Master", "Sir", Voice.Gender.Male, locale, Actor.Key.DominantMale, Images.None);
         default:
             throw new IllegalArgumentException(gender.toString());
         }

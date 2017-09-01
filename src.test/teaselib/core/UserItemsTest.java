@@ -21,10 +21,11 @@ public class UserItemsTest {
 
     @Test
     public void testToyDefaults() throws Exception {
-        UserItems items = new AbstractUserItems() {
+        TestScript script = TestScript.getOne();
 
+        UserItems items = new AbstractUserItems(script.teaseLib) {
             @Override
-            protected Item[] createUserItems(TeaseLib teaseLib, String domain, QualifiedItem<?> item) {
+            protected Item[] createUserItems(String domain, QualifiedItem<?> item) {
                 throw new UnsupportedOperationException();
             }
         };
@@ -45,23 +46,23 @@ public class UserItemsTest {
     @Test
     public void testToyItems() throws Exception {
         TestScript script = TestScript.getOne();
-        UserItems items = new PreDefinedItems();
+        UserItems items = new PreDefinedItems(script.teaseLib);
 
         for (Household item : Household.values()) {
-            testItem(script, items, item);
+            testItem(items, item);
         }
 
         for (Clothes item : Clothes.values()) {
-            testItem(script, items, item);
+            testItem(items, item);
         }
 
         for (Toys item : Toys.values()) {
-            testItem(script, items, item);
+            testItem(items, item);
         }
     }
 
-    private static void testItem(TestScript script, UserItems items, Enum<?> item) {
-        List<Item> predefined = items.get(script.teaseLib, TeaseLib.DefaultDomain, new QualifiedEnum(item));
+    private static void testItem(UserItems items, Enum<?> item) {
+        List<Item> predefined = items.get(TeaseLib.DefaultDomain, new QualifiedEnum(item));
         assertNotNull(predefined);
         assertTrue(predefined.size() > 0);
     }
@@ -70,22 +71,27 @@ public class UserItemsTest {
     public void testPredefinedItems() throws Exception {
 
         class TestablePredefinedItems extends PreDefinedItems {
-            public Item[] createItems(TeaseLib teaseLib, String domain, QualifiedItem<?> item) {
-                return createUserItems(teaseLib, domain, item);
+
+            public TestablePredefinedItems(TeaseLib teaseLib) {
+                super(teaseLib);
+            }
+
+            public Item[] createItems(String domain, QualifiedItem<?> item) {
+                return createUserItems(domain, item);
             }
 
             @Override
-            public Item[] onlyTheOriginalItem(TeaseLib teaseLib, String domain, QualifiedItem<?> item) {
+            public Item[] getDefaultItem(String domain, QualifiedItem<?> item) {
                 return new Item[] { Item.NotAvailable };
             }
 
         }
 
         TestScript script = TestScript.getOne();
-        TestablePredefinedItems items = new TestablePredefinedItems();
+        TestablePredefinedItems items = new TestablePredefinedItems(script.teaseLib);
 
         for (Toys item : Toys.values()) {
-            Item[] predefined = items.createItems(script.teaseLib, TeaseLib.DefaultDomain, new QualifiedEnum(item));
+            Item[] predefined = items.createItems(TeaseLib.DefaultDomain, new QualifiedEnum(item));
             assertNotNull(predefined);
             assertTrue(predefined.length > 0);
             assertNotEquals("Expected defined item for " + item.name(), Item.NotAvailable, predefined[0]);

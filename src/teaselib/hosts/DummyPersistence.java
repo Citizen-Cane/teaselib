@@ -15,6 +15,7 @@ import org.slf4j.LoggerFactory;
 import teaselib.Actor;
 import teaselib.Images;
 import teaselib.core.Persistence;
+import teaselib.core.TeaseLib;
 import teaselib.core.UserItems;
 import teaselib.core.texttospeech.Voice;
 import teaselib.core.util.PropertyNameMapping;
@@ -29,19 +30,13 @@ public class DummyPersistence implements Persistence {
     public final Map<String, String> storage = new HashMap<String, String>();
 
     private final PropertyNameMapping nameMapping;
-    private final UserItems userItems;
 
     public DummyPersistence() {
         this(new PropertyNameMapping());
     }
 
     public DummyPersistence(PropertyNameMapping propertyNameMapping) {
-        this(propertyNameMapping, new PreDefinedItems());
-    }
-
-    public DummyPersistence(PropertyNameMapping propertyNameMapping, UserItems userItems) {
         this.nameMapping = propertyNameMapping;
-        this.userItems = userItems;
     }
 
     @Override
@@ -50,8 +45,8 @@ public class DummyPersistence implements Persistence {
     }
 
     @Override
-    public UserItems getUserItems() {
-        return userItems;
+    public UserItems getUserItems(TeaseLib teaseLib) {
+        return new PreDefinedItems(teaseLib);
     }
 
     @Override
@@ -102,19 +97,16 @@ public class DummyPersistence implements Persistence {
     public Actor getDominant(Voice.Gender gender, Locale locale) {
         switch (gender) {
         case Female:
-            return new Actor("Mistress", "Miss", Voice.Gender.Female, locale,
-                    Actor.Key.DominantFemale, Images.None);
+            return new Actor("Mistress", "Miss", Voice.Gender.Female, locale, Actor.Key.DominantFemale, Images.None);
         case Male:
-            return new Actor("Master", "Sir", Voice.Gender.Male, locale, Actor.Key.DominantMale,
-                    Images.None);
+            return new Actor("Master", "Sir", Voice.Gender.Male, locale, Actor.Key.DominantMale, Images.None);
         default:
             throw new IllegalArgumentException(gender.toString());
         }
     }
 
     public void printStorage() {
-        List<Entry<String, String>> entryList = new ArrayList<Entry<String, String>>(
-                storage.entrySet());
+        List<Entry<String, String>> entryList = new ArrayList<Entry<String, String>>(storage.entrySet());
         Collections.sort(entryList, new Comparator<Entry<String, String>>() {
             @Override
             public int compare(Entry<String, String> o1, Entry<String, String> o2) {

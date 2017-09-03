@@ -9,7 +9,7 @@ import teaselib.core.ShowChoicesTestErrorHandling;
 import teaselib.core.ShowChoicesTestScriptFunctionReply;
 import teaselib.core.ShowChoicesTestThrowScriptInterruptedException;
 
-@RunWith(Suite.class)
+@RunWith(Categories.class)
 @Categories.IncludeCategory({ IntegrationTests.class })
 @Suite.SuiteClasses({ ShowChoicesTest.class, ShowChoicesTestErrorHandling.class,
         ShowChoicesTestScriptFunctionReply.class, ShowChoicesTestThrowScriptInterruptedException.class })

@@ -1,20 +1,23 @@
 package teaselib.core;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 import java.util.Arrays;
 import java.util.List;
 
 import org.junit.FixMethodOrder;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.MethodSorters;
 import org.junit.runners.Parameterized;
 
 import teaselib.ScriptFunction;
 import teaselib.TeaseScript;
+import teaselib.test.IntegrationTests;
 import teaselib.test.TestScript;
 
+@Category(IntegrationTests.class)
 @RunWith(Parameterized.class)
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class ShowChoicesTestScriptFunctionReply {

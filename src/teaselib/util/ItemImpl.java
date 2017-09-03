@@ -4,6 +4,7 @@
 package teaselib.util;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -156,7 +157,9 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
 
         State state = teaseLib.state(domain, item);
         state.applyTo(defaultPeers);
-        return applyTo();
+        applyMyAttributesTo(state);
+
+        return (State.Options) state;
     }
 
     @Override
@@ -168,10 +171,14 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
         applyInstanceTo(items);
 
         State state = teaseLib.state(domain, item);
+        applyMyAttributesTo(state);
 
+        return state.applyTo(items);
+    }
+
+    private void applyMyAttributesTo(State state) {
         Object[] array = new Object[attributes.size()];
         ((StateMaps.Attributes) state).applyAttributes(attributes.toArray(array));
-        return state.applyTo(items);
     }
 
     private void applyInstanceTo(Object... items) {
@@ -180,14 +187,23 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
         }
     }
 
+    public Collection<Object> attributesAndPeers() {
+        Collection<Object> attributesAndPeers = new HashSet<Object>();
+        attributesAndPeers.addAll(attributes);
+        attributesAndPeers.addAll(Arrays.asList(defaultPeers));
+        return attributesAndPeers;
+    }
+
     @Override
     public State.Persistence remove() {
         StateImpl state = (StateImpl) teaseLib.state(domain, item);
-        for (Object peer : state.peers()) {
-            teaseLib.state(domain, peer).removeFrom(this);
-        }
 
-        for (Object peer : new HashSet<Object>(state.peers())) {
+        HashSet<Object> relevantPeers = new HashSet<Object>(state.peers());
+        relevantPeers.addAll(Arrays.asList(defaultPeers));
+        relevantPeers.addAll(attributes);
+
+        for (Object peer : relevantPeers) {
+            teaseLib.state(domain, peer).removeFrom(this);
             teaseLib.state(domain, peer).removeFrom(this.item);
         }
 

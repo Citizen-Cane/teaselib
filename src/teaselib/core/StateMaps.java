@@ -316,11 +316,20 @@ public class StateMaps {
                 throw new IllegalArgumentException();
             }
 
+            return hasAllAttributes(attributesAndPeers(), attributes);
+        }
+
+        private Set<Object> attributesAndPeers() {
             Set<Object> all = new HashSet<Object>();
             all.addAll(myAttributesAndPeers());
             all.addAll(attributesOfDirectPeers());
 
-            return hasAllAttributes(all, attributes);
+            for (Object item : myAttributesAndPeers()) {
+                if (item instanceof ItemImpl) {
+                    all.addAll(((ItemImpl) item).attributesAndPeers());
+                }
+            }
+            return all;
         }
 
         private Set<Object> myAttributesAndPeers() {

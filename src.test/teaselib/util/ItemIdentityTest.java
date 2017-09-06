@@ -9,7 +9,6 @@ import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
 
-import org.junit.Ignore;
 import org.junit.Test;
 
 import teaselib.Body;
@@ -18,7 +17,6 @@ import teaselib.State;
 import teaselib.TeaseScript;
 import teaselib.Toys;
 import teaselib.core.TeaseLib;
-import teaselib.core.util.Persist;
 import teaselib.test.TestScript;
 
 /**
@@ -227,22 +225,6 @@ public class ItemIdentityTest {
     }
 
     @Test
-    @Ignore
-    // TODO Wrong, can't just call constructor -> construct via teaselib user items
-    public void testItemInstancePersistence() {
-        TestScript script = TestScript.getOne();
-        ItemImpl peg = createPeg(script, "test_peg");
-
-        // TODO Rename Persist to Persistence - collision with State.Persistence interface
-        String serialized = Persist.persist(peg);
-
-        // TODO In production, we may be able to instanciate ItemImpl from cache
-        ItemImpl restoredPeg = new ItemImpl(script.teaseLib, new Persist.Storage(serialized));
-
-        assertEquals(peg, restoredPeg);
-    }
-
-    @Test
     public void testUserItemsInstanciatingAndCaching() {
         TestScript script = TestScript.getOne();
 
@@ -315,6 +297,7 @@ public class ItemIdentityTest {
             assertTrue(peg.canApply());
             peg.applyTo(Body.OnNipples);
 
+            @SuppressWarnings("unused")
             State pegs = script.state(Household.Clothes_Pegs);
 
             assertTrue(peg.applied());

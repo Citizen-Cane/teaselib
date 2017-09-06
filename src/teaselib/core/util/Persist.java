@@ -36,19 +36,24 @@ public class Persist {
     }
 
     public static String persist(Object persistable) {
-        String serializedObject = persistable instanceof Persistable ? join(((Persistable) persistable).persisted())
-                : persistElement(persistable);
-        if (canPersistObject(serializedObject)) {
-            return CLASS_NAME + persistable.getClass().getName() + CLASS_VALUE_SEPARATOR + STRING_REPRESENTATION
-                    + serializedObject;
+        if (persistable instanceof Persistable) {
+            return join(((Persistable) persistable).persisted());
         } else {
-            throw new UnsupportedOperationException("String serialized objects with white space aren't supported yet.");
+            String serializedObject = persistElement(persistable);
+            if (canPersistObject(serializedObject)) {
+                return CLASS_NAME + persistable.getClass().getName() + CLASS_VALUE_SEPARATOR + STRING_REPRESENTATION
+                        + serializedObject;
+            } else {
+                throw new UnsupportedOperationException(
+                        "String serialized objects with white space aren't supported yet.");
+            }
         }
+
     }
 
     private static String persistElement(Object persistable) {
         if (persistable instanceof Collection) {
-            throw new UnsupportedOperationException("TODO recursive collection persistence");
+            throw new UnsupportedOperationException("Collections are not supported");
         } else {
             return persistable.toString();
         }

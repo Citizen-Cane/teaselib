@@ -56,18 +56,7 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
 
     @Override
     public List<String> persisted() {
-        return Arrays.asList(guid);
-    }
-
-    public ItemImpl(TeaseLib teaseLib, Persist.Storage persisted) {
-        this.teaseLib = teaseLib;
-        this.item = persisted.next();
-        this.domain = persisted.next();
-        this.guid = persisted.next();
-        this.displayName = persisted.next();
-        this.value = teaseLib.new PersistentBoolean(domain, QualifiedItem.namespaceOf(item), guid);
-        this.defaultPeers = persisted.next();
-        this.attributes = persisted.next();
+        return Arrays.asList(Persist.persist(guid));
     }
 
     private static Set<Object> attributes(Object item, Object[] attributes) {
@@ -168,7 +157,7 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
         if (items.length == 0 && defaultPeers.length == 0) {
             throw new IllegalArgumentException("Item without default peers must be applied with explicit peer list");
         }
-        
+
         applyInstanceTo(defaultPeers);
         applyInstanceTo(items);
 

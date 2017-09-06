@@ -3,7 +3,9 @@
  */
 package teaselib.util;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
 
@@ -153,27 +155,33 @@ public class ItemIdentityTest {
         verifyAllPegsRemoved(script, nipples, clothesPegsOnNipples);
     }
 
-    @Test
-    public void testApplyLotsOfItemInstancesAndRemovePegsAtOnce() {
+    @Test(expected = AssertionError.class)
+    public void testApplyLotsOfItemInstancesAndRemovePegsAtOnceDoesntWork() {
         TestScript script = TestScript.getOne();
         State nipples = script.state(Body.OnNipples);
-
         ArrayList<Item> clothesPegsOnNipples = placeClothesPegs(script, nipples);
 
+        // Doesn't work because the specific {@code item(Household.Clothes_Pegs)} instance has ever been added
+        // When adding specific instances, those have to be removed explicitly or all at once
         script.item(Household.Clothes_Pegs).removeFrom(Body.OnNipples);
 
+        @SuppressWarnings("unused")
+        State pegs = script.state(Household.Clothes_Pegs);
         verifyAllPegsRemoved(script, nipples, clothesPegsOnNipples);
     }
 
-    @Test
-    public void testApplyLotsOfItemInstancesAndRemoveFromNipplesAtOnce() {
+    @Test(expected = AssertionError.class)
+    public void testApplyLotsOfItemInstancesAndRemoveFromNipplesAtOnceDoesntWork() {
         TestScript script = TestScript.getOne();
         State nipples = script.state(Body.OnNipples);
-
         ArrayList<Item> clothesPegsOnNipples = placeClothesPegs(script, nipples);
 
+        // Doesn't work because no Body.OnNipples instance has ever been added,
+        // and Body.OnNipples isn't an item anyway - trying to remove the wrong way
         script.item(Body.OnNipples).removeFrom(Household.Clothes_Pegs);
 
+        @SuppressWarnings("unused")
+        State pegs = script.state(Household.Clothes_Pegs);
         verifyAllPegsRemoved(script, nipples, clothesPegsOnNipples);
     }
 
@@ -296,14 +304,6 @@ public class ItemIdentityTest {
         assertTrue(ringGag.is(Body.InMouth));
         assertTrue(ringGag.is(script.state(Body.InMouth)));
     }
-
-    // TODO Changed default of wrist restraints to no defaults
-    // -> test canApply with no defaults() (changed to check for instance applied to its own state)
-    // canApply() changed to check whether the instance has been applied - correct since you can apply each instance
-    // only
-    // once
-    //
-    // -> change Mine to apply wrist restraints to TiedInFront
 
     @Test
     public void testCanApplyMultipleInstances() {

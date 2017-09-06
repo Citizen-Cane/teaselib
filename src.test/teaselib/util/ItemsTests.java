@@ -1,9 +1,6 @@
 package teaselib.util;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import java.util.concurrent.TimeUnit;
 
@@ -158,20 +155,23 @@ public class ItemsTests {
     public void showThatNamespaceAttributeIsSymetric() {
         TestScript script = TestScript.getOne();
 
-        script.item(Toys.Nipple_Clamps).apply();
-        assertTrue(script.state(Body.OnNipples).is(script.namespace));
-        assertTrue(script.state(Body.OnNipples).is(Toys.Nipple_Clamps));
-        assertTrue(script.item(Toys.Nipple_Clamps).is(Body.OnNipples));
-        assertTrue(script.item(Toys.Nipple_Clamps).is(script.namespace));
+        Item nippleClamps = script.item(Toys.Nipple_Clamps);
+        nippleClamps.apply();
+        State onNipples = script.state(Body.OnNipples);
 
-        script.item(Toys.Nipple_Clamps).remove();
+        assertTrue(onNipples.is(script.namespace));
+        assertTrue(onNipples.is(Toys.Nipple_Clamps));
+        assertTrue(nippleClamps.is(Body.OnNipples));
+        assertTrue(nippleClamps.is(script.namespace));
 
-        assertFalse(script.state(Body.OnNipples).is(script.namespace));
-        assertFalse(script.state(Body.OnNipples).is(Toys.Nipple_Clamps));
+        nippleClamps.remove();
+
+        assertFalse(onNipples.is(script.namespace));
+        assertFalse(onNipples.is(Toys.Nipple_Clamps));
         assertFalse(script.state(Toys.Nipple_Clamps).is(Body.OnNipples));
         assertFalse(script.state(Toys.Nipple_Clamps).is(script.namespace));
 
-        assertFalse(script.item(Toys.Nipple_Clamps).applied());
-        assertFalse(script.state(Body.OnNipples).applied());
+        assertFalse(nippleClamps.applied());
+        assertFalse(onNipples.applied());
     }
 }

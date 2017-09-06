@@ -96,7 +96,9 @@ public class StateMaps {
 
         protected StateImpl state(Object item) {
             if (item instanceof AbstractProxy<?>) {
-                return (StateImpl) ((AbstractProxy<?>) item).state;
+                return state(((AbstractProxy<?>) item).state);
+            } else if (item instanceof ItemImpl) {
+                return state(((ItemImpl) item).item);
             } else if (item instanceof StateImpl) {
                 return (StateImpl) item;
             } else {

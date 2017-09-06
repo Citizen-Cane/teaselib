@@ -133,7 +133,8 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
                 return false;
             }
         }
-        return true;
+        State state = teaseLib.state(domain, item);
+        return !state.is(this);
     }
 
     @Override
@@ -156,7 +157,8 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
         applyInstanceTo(defaultPeers);
 
         State state = teaseLib.state(domain, item);
-        state.applyTo(defaultPeers);
+        // TODO Necessary to succeed test testCanApplyWithoutDefaults, testCanApplyWitDefaults
+        state.applyTo(this);
         applyMyAttributesTo(state);
 
         return (State.Options) state;
@@ -167,10 +169,17 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
         if (items.length == 0 && defaultPeers.length == 0) {
             throw new IllegalArgumentException("Item without default peers must be applied with explicit peer list");
         }
+        applyInstanceTo(defaultPeers);
 
         applyInstanceTo(items);
 
         State state = teaseLib.state(domain, item);
+        // TODO Necessary to succeed testCanApplyMultipleInstances() because apply and applyTo should behave the same
+        // - we use it to detect whether a specific instance has been applied
+        // but fails applyLotsOfItemsAndRemoveMultipleInstances because ItemImpl.remove(Clothes_Pegs) doesn't remove
+        // instances of clothes peg state
+        state.applyTo(this);
+
         applyMyAttributesTo(state);
 
         return state.applyTo(items);
@@ -207,11 +216,14 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
             teaseLib.state(domain, peer).removeFrom(this.item);
         }
 
+        // state.removeFrom(this);
         return state.remove();
     }
 
     @Override
     public <S extends Object> State.Persistence removeFrom(S... peer) {
+        // TODO Seems reasonable to remove item, but maybe it's removed automatically already -> review
+        // teaseLib.state(domain, item).removeFrom(this);
         return teaseLib.state(domain, item).removeFrom(peer);
     }
 

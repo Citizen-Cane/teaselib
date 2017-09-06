@@ -3,9 +3,7 @@
  */
 package teaselib.util;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import java.util.ArrayList;
 
@@ -297,5 +295,31 @@ public class ItemIdentityTest {
         assertTrue(ringGag.applied());
         assertTrue(ringGag.is(Body.InMouth));
         assertTrue(ringGag.is(script.state(Body.InMouth)));
+    }
+
+    // TODO Changed default of wrist restraints to no defaults
+    // -> test canApply with no defaults() (changed to check for instance applied to its own state)
+    // canApply() changed to check whether the instance has been applied - correct since you can apply each instance
+    // only
+    // once
+    //
+    // -> change Mine to apply wrist restraints to TiedInFront
+
+    @Test
+    public void testCanApplyMultipleInstances() {
+        TestScript script = TestScript.getOne();
+
+        ArrayList<Item> clothesPegsOnNipples = getClothesPegs(script, 10);
+
+        for (Item peg : clothesPegsOnNipples) {
+            assertTrue(peg.canApply());
+            peg.applyTo(Body.OnNipples);
+
+            State pegs = script.state(Household.Clothes_Pegs);
+
+            assertTrue(peg.applied());
+            assertFalse(peg.canApply());
+            assertTrue(peg.is(peg));
+        }
     }
 }

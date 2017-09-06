@@ -1,12 +1,13 @@
 package teaselib.core;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 import org.junit.FixMethodOrder;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -19,6 +20,7 @@ import teaselib.TeaseScript;
 import teaselib.test.IntegrationTests;
 import teaselib.test.TestScript;
 
+@Ignore
 @Category(IntegrationTests.class)
 @RunWith(Parameterized.class)
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)

@@ -94,13 +94,24 @@ public abstract class AbstractUserItems implements UserItems {
         return new Body[] {};
     }
 
+    /**
+     * Get system default peers for items. The defaults depend on the meaning of the item. Item have defaults if they
+     * have a clear application or are applied to a distinct spot, like putting a collar around one's neck. Same for
+     * ankle restraints.
+     * <p>
+     * On the other hand wrist restraints don't have a default, since wrists can be tied before and behind the body.
+     * 
+     * @param item
+     *            The item to get defaults for.
+     * @return The defaults for the item. An item may not have defaults, in this case the returned array is empty.
+     */
     private static Enum<?>[] getToyDefaults(QualifiedItem<?> item) {
         if (item.equals(Toys.Buttplug)) {
             return new Body[] { Body.InButt };
         } else if (item.equals(Toys.Ankle_Restraints)) {
             return new Body[] { Body.AnklesTied };
         } else if (item.equals(Toys.Wrist_Restraints)) {
-            return new Body[] { Body.WristsTied };
+            return new Body[] {};
         } else if (item.equals(Toys.Gag)) {
             return new Body[] { Body.InMouth };
         } else if (item.equals(Toys.Spanking_Implement)) {

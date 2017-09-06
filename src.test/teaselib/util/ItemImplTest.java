@@ -1,8 +1,6 @@
 package teaselib.util;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import org.junit.Test;
 
@@ -172,21 +170,72 @@ public class ItemImplTest {
     }
 
     @Test
-    public void testCanApply() throws Exception {
+    public void testCanApplyWithoutDefaultsSimulation() {
+        TeaseScript script = TestScript.getOne();
+        State wristRestraints = script.state(Toys.Wrist_Restraints);
+
+        wristRestraints.apply();
+
+        assertTrue(wristRestraints.applied());
+        assertFalse(wristRestraints.is(Toys.Wrist_Restraints));
+    }
+
+    @Test
+    public void testCanApplyWithDefaultsSimulation() {
+        TeaseScript script = TestScript.getOne();
+        State gag = script.state(Toys.Gag);
+
+        gag.applyTo(Body.InMouth);
+
+        assertTrue(gag.applied());
+        assertFalse(gag.is(Toys.Gag));
+    }
+
+    @Test
+    public void testCanApplyWithoutDefaults() {
         TeaseScript script = TestScript.getOne();
 
         assertFalse(script.state(Toys.Wrist_Restraints).applied());
 
         Item wristRestraints = script.items(Toys.Wrist_Restraints).get(Material.Leather);
 
+        assertFalse(wristRestraints.applied());
         assertTrue(wristRestraints.canApply());
-        wristRestraints.apply();
-        assertFalse(wristRestraints.canApply());
+        assertFalse(wristRestraints.is(wristRestraints));
 
-        // Bend the rules, for when we have custom toys, scripts should also be
-        // flexible
+        // Perfectly legal for detachable restraints
         wristRestraints.apply();
+
+        assertTrue(wristRestraints.applied());
         assertFalse(wristRestraints.canApply());
+        assertTrue(wristRestraints.is(wristRestraints));
+
+        // Apply should work even if applied already, since after an item has been applied,
+        // applying it again results in a correctly modeled setup
+        wristRestraints.apply();
+    }
+
+    @Test
+    public void testCanApplyWithDefaults() {
+        TeaseScript script = TestScript.getOne();
+
+        assertFalse(script.state(Toys.Gag).applied());
+
+        Item gag = script.items(Toys.Gag).get(Material.Leather);
+
+        assertFalse(gag.applied());
+        assertTrue(gag.canApply());
+        assertFalse(gag.is(gag));
+
+        gag.apply();
+
+        assertTrue(gag.applied());
+        assertFalse(gag.canApply());
+        assertTrue(gag.is(gag));
+
+        // Apply should work even if applied already, since after an item has been applied,
+        // applying it again results in a correctly modeled setup
+        gag.apply();
     }
 
     @Test

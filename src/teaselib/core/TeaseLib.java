@@ -87,8 +87,7 @@ public class TeaseLib {
         this.transcript = newTranscriptLogger(host.getLocation(Location.Log));
         this.shower = new Shower(host);
         this.hostInputMethod = new HostInputMethod(host);
-
-        devices = new Devices(config);
+        this.devices = new Devices(config);
 
         bindMotionDetectorToVideoRenderer();
         bindNetworkProperties();

@@ -1,6 +1,6 @@
 package teaselib.core;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 import org.junit.Test;
 
@@ -8,6 +8,7 @@ import teaselib.Message;
 import teaselib.Message.Parts;
 import teaselib.Message.Type;
 import teaselib.Mood;
+import teaselib.test.DebugSetup;
 import teaselib.test.TestScript;
 
 public class TeaseScriptBaseTest {
@@ -27,7 +28,7 @@ public class TeaseScriptBaseTest {
 
     @Test
     public void testInjectionOfInlineResources() {
-        TestScript script = TestScript.getOne(getClass());
+        TestScript script = TestScript.getOne(new DebugSetup().withOutput());
 
         Message message = new Message(script.actor);
         message.add("Some text.");
@@ -66,7 +67,7 @@ public class TeaseScriptBaseTest {
 
     @Test
     public void testInjectionOfMood() {
-        TestScript script = TestScript.getOne(getClass());
+        TestScript script = TestScript.getOne(new DebugSetup().withOutput());
 
         script.setMood(Mood.Friendly);
 
@@ -133,7 +134,7 @@ public class TeaseScriptBaseTest {
 
     @Test
     public void testInjectionOfScriptImage() {
-        TestScript script = TestScript.getOne(getClass());
+        TestScript script = TestScript.getOne(new DebugSetup().withOutput());
 
         Message message = new Message(script.actor);
         message.add("Some text.");
@@ -145,6 +146,25 @@ public class TeaseScriptBaseTest {
         assertEquals(Type.Mood, parts.get(n++).type);
         assertEquals(Type.Image, parts.get(n).type);
         assertEquals("foo.jpg", parts.get(n++).value);
+        assertEquals(Type.Text, parts.get(n++).type);
+
+        assertEquals(parts.size(), n);
+    }
+
+    @Test
+    public void testInjectionOfNoImage() {
+        TestScript script = TestScript.getOne(new DebugSetup());
+
+        Message message = new Message(script.actor);
+        message.add("Some text.");
+        script.setImage("foo.jpg");
+
+        Message parsed = script.injectImagesAndExpandTextVariables(message);
+        Parts parts = parsed.getParts();
+        int n = 0;
+        assertEquals(Type.Mood, parts.get(n++).type);
+        assertEquals(Type.Image, parts.get(n).type);
+        assertEquals(Message.NoImage, parts.get(n++).value);
         assertEquals(Type.Text, parts.get(n++).type);
 
         assertEquals(parts.size(), n);

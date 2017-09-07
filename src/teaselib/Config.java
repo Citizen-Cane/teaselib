@@ -6,11 +6,10 @@ package teaselib;
 /**
  * This class lists up all configuration properties.
  * 
- * The default value is always {@code false}, and chosen to maximize the user
- * experience.
+ * The default value is always {@code false}, and chosen to maximize the user experience.
  * <P>
- * Values are written via the TeaseLib {@code getXXX(...)/set(...)} methods, as
- * a result the TeaseLib settings are maintained by the host.
+ * Values are written via the TeaseLib {@code getXXX(...)/set(...)} methods, as a result the TeaseLib settings are
+ * maintained by the host.
  * <P>
  * Examples:
  * <P>
@@ -26,14 +25,20 @@ public enum Config {
 
     public enum Debug {
         StopOnAssetNotFound,
-        /**
-         * TeaseLib.Config.Debug.StopOnRenderError
-         */
         StopOnRenderError,
+        LogDetails,
+    }
 
-        /**
-         * TeaseLib.Config.Debug.LogDetails
-         */
-        LogDetails;
+    public enum Render {
+        Speech,
+        Sound,
+        ActorImages,
+        InstructionalImages
+    }
+
+    public enum InputMethod {
+        SpeechRecognition,
+        GameController,
+        HeadGestures,
     }
 }

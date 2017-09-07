@@ -5,6 +5,7 @@ import java.util.Locale;
 
 import teaselib.Actor;
 import teaselib.TeaseScript;
+import teaselib.core.Configuration.Setup;
 import teaselib.core.Debugger;
 import teaselib.core.ResourceLoader;
 import teaselib.core.TeaseLib;
@@ -29,6 +30,14 @@ public class TestScript extends TeaseScript {
         }
     }
 
+    public static TestScript getOne(Setup setup) {
+        try {
+            return new TestScript(new DummyHost(), new DummyPersistence(), setup);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public static TestScript getOne(PropertyNameMapping propertyNameMapping) {
         try {
             return new TestScript(new DummyHost(), new DummyPersistence(propertyNameMapping));
@@ -46,18 +55,22 @@ public class TestScript extends TeaseScript {
     }
 
     TestScript(DummyHost dummyHost, DummyPersistence dummyPersistence) throws IOException {
-        this(dummyHost, dummyPersistence,
-                new ResourceLoader(TestScript.class, ResourceLoader.ResourcesInProjectFolder));
+        this(dummyHost, dummyPersistence, new ResourceLoader(TestScript.class, ResourceLoader.ResourcesInProjectFolder),
+                new DebugSetup());
+    }
+
+    TestScript(DummyHost dummyHost, DummyPersistence dummyPersistence, Setup setup) throws IOException {
+        this(dummyHost, dummyPersistence, new ResourceLoader(TestScript.class, ResourceLoader.ResourcesInProjectFolder),
+                setup);
     }
 
     TestScript(DummyHost dummyHost, DummyPersistence dummyPersistence, Class<?> resourceRoot) throws IOException {
-        this(dummyHost, dummyPersistence, new ResourceLoader(resourceRoot));
+        this(dummyHost, dummyPersistence, new ResourceLoader(resourceRoot), new DebugSetup());
     }
 
-    TestScript(DummyHost dummyHost, DummyPersistence dummyPersistence, ResourceLoader resourceLoader)
+    TestScript(DummyHost dummyHost, DummyPersistence dummyPersistence, ResourceLoader resourceLoader, Setup setup)
             throws IOException {
-        super(new TeaseLib(dummyHost, dummyPersistence, new DebugSetup()), resourceLoader, TestScriptActor,
-                TestScriptNamespace);
+        super(new TeaseLib(dummyHost, dummyPersistence, setup), resourceLoader, TestScriptActor, TestScriptNamespace);
         this.host = dummyHost;
         this.persistence = dummyPersistence;
         this.debugger = new Debugger(teaseLib, dummyHost);

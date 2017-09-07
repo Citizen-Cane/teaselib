@@ -21,8 +21,7 @@ import teaselib.Message.Part;
 import teaselib.core.ResourceLoader;
 
 public class TextToSpeechPlayer {
-    private static final Logger logger = LoggerFactory
-            .getLogger(TextToSpeechPlayer.class);
+    private static final Logger logger = LoggerFactory.getLogger(TextToSpeechPlayer.class);
 
     public final TextToSpeech textToSpeech;
     private final Set<ResourceLoader> loadedActorVoiceProperties = new HashSet<ResourceLoader>();
@@ -54,6 +53,11 @@ public class TextToSpeechPlayer {
 
     private static TextToSpeechPlayer instance = null;
 
+    // TODO TextToSpeech Windows implementation calls System.exit() when instanciated too often in a short time
+    // - This breaks tests but using a singleton also results in lazy initialization which does the trick most times
+    // - this might be the cause for the problems with the Speech-related tests
+    // TODO make this class a TeaseLib member to resolve singleton issue and then lazy-init when actually using it
+
     public static TextToSpeechPlayer instance() {
         synchronized (TextToSpeechPlayer.class) {
             if (instance == null) {
@@ -65,7 +69,7 @@ public class TextToSpeechPlayer {
 
     private TextToSpeechPlayer() {
         this.textToSpeech = new TextToSpeech();
-        // TTS might not be available
+
         if (textToSpeech.isReady()) {
             voices = textToSpeech.getVoices();
         } else {
@@ -81,14 +85,13 @@ public class TextToSpeechPlayer {
     }
 
     /**
-     * Actors may have preferred voices or pre-recorded voices. These are stored
-     * in the resources section of each project.
+     * Actors may have preferred voices or pre-recorded voices. These are stored in the resources section of each
+     * project.
      * 
      * The configuration has to be loaded for each resource loader instance.
      * 
      * @param resources
-     *            The resource object that contains the assignments and/or
-     *            pre-recorded speech.
+     *            The resource object that contains the assignments and/or pre-recorded speech.
      */
     public void loadActorVoiceProperties(ResourceLoader resources) {
         if (!loadedActorVoiceProperties.contains(resources)) {
@@ -101,13 +104,11 @@ public class TextToSpeechPlayer {
                 PreRecordedVoice preRecordedVoice;
                 try {
                     preRecordedVoice = new PreRecordedVoice(
-                            resources.getResource(PreRecordedVoice
-                                    .getResourcePath(actorKey, voiceGuid)));
+                            resources.getResource(PreRecordedVoice.getResourcePath(actorKey, voiceGuid)));
                 } catch (IOException e) {
                     preRecordedVoice = null;
                 }
-                if (!actorKey2TTSVoice.containsKey(actorKey)
-                        && preRecordedVoice != null) {
+                if (!actorKey2TTSVoice.containsKey(actorKey) && preRecordedVoice != null) {
                     usePrerecordedVoice(actorKey, voiceGuid);
                 } else {
                     useTTSVoice(actorKey, voiceGuid);
@@ -119,25 +120,20 @@ public class TextToSpeechPlayer {
     private void usePrerecordedVoice(String actorKey, String voiceGuid) {
         actorKey2PrerecordedVoiceGuid.put(actorKey, voiceGuid);
         usedVoices.add(voiceGuid);
-        String speechResources = PrerecordedSpeechStorage.SpeechDirName + "/"
-                + actorKey + "/" + voiceGuid + "/";
+        String speechResources = PrerecordedSpeechStorage.SpeechDirName + "/" + actorKey + "/" + voiceGuid + "/";
         actorKey2SpeechResourcesLocation.put(actorKey, speechResources);
-        logger.info("Actor " + actorKey + ": using prerecorded voice '"
-                + voiceGuid + "'");
+        logger.info("Actor " + actorKey + ": using prerecorded voice '" + voiceGuid + "'");
     }
 
     private void useTTSVoice(String actorKey, String voiceGuid) {
-        logger.info("Actor key=" + actorKey + ": prerecorded voice '"
-                + voiceGuid + "' not available");
+        logger.info("Actor key=" + actorKey + ": prerecorded voice '" + voiceGuid + "' not available");
         Voice voice = voices.get(voiceGuid);
         if (voice != null) {
-            logger.info("Actor key=" + actorKey + ": using TTS voice '"
-                    + voiceGuid + "'");
+            logger.info("Actor key=" + actorKey + ": using TTS voice '" + voiceGuid + "'");
             actorKey2TTSVoice.put(actorKey, voice);
             usedVoices.add(voiceGuid);
         } else {
-            logger.info("Actor key=" + actorKey + ": assigned voice '"
-                    + voiceGuid + "' not available");
+            logger.info("Actor key=" + actorKey + ": assigned voice '" + voiceGuid + "' not available");
         }
     }
 
@@ -182,8 +178,7 @@ public class TextToSpeechPlayer {
         }
         // Full match: language and region
         for (Voice voice : genderFilteredVoices) {
-            if (voice.matches(actor.getLocale())
-                    && !usedVoices.contains(voice.guid)) {
+            if (voice.matches(actor.getLocale()) && !usedVoices.contains(voice.guid)) {
                 useVoice(actor, voice);
                 return voice;
             }
@@ -192,23 +187,20 @@ public class TextToSpeechPlayer {
         for (Voice voice : genderFilteredVoices) {
             String voiceLanguage = voice.locale.substring(0, 2);
             String actorLanguage = actor.getLocale().getLanguage();
-            if (voiceLanguage.equals(actorLanguage)
-                    && !usedVoices.contains(voice.guid)) {
+            if (voiceLanguage.equals(actorLanguage) && !usedVoices.contains(voice.guid)) {
                 useVoice(actor, voice);
                 return voice;
             }
         }
         // Reuse voice of first non-dominant actor
         for (String actorName : actorKey2TTSVoice.keySet()) {
-            if (!isDominantActor(actorName) && actorKey2TTSVoice
-                    .get(actorName).gender == actor.gender) {
+            if (!isDominantActor(actorName) && actorKey2TTSVoice.get(actorName).gender == actor.gender) {
                 return reuseVoice(actor, actorName);
             }
         }
         // voice of default dominant actor
         for (String actorName : actorKey2TTSVoice.keySet()) {
-            if (isDominantActor(actorName) && actorKey2TTSVoice
-                    .get(actorName).gender == actor.gender) {
+            if (isDominantActor(actorName) && actorKey2TTSVoice.get(actorName).gender == actor.gender) {
                 return reuseVoice(actor, actorName);
             }
         }
@@ -223,8 +215,7 @@ public class TextToSpeechPlayer {
 
     private Voice reuseVoice(Actor actor, String actorName) {
         Voice voice = actorKey2TTSVoice.get(actorName);
-        logger.warn("Actor " + actor.toString() + " re-uses voice " + voice.guid
-                + " of actor " + actorName);
+        logger.warn("Actor " + actor.toString() + " re-uses voice " + voice.guid + " of actor " + actorName);
         return voice;
     }
 
@@ -251,8 +242,7 @@ public class TextToSpeechPlayer {
      * @param teaseLib
      *            instance to call sleep on
      */
-    public void speak(Actor actor, String prompt, String mood)
-            throws InterruptedException {
+    public void speak(Actor actor, String prompt, String mood) throws InterruptedException {
         boolean useTTS = textToSpeech.isReady();
         if (useTTS) {
             Voice voice = getVoiceFor(actor);
@@ -281,8 +271,7 @@ public class TextToSpeechPlayer {
      * 
      * @param prompt
      */
-    private static void waitEstimatedSpeechDuration(String prompt)
-            throws InterruptedException {
+    private static void waitEstimatedSpeechDuration(String prompt) throws InterruptedException {
         Thread.sleep(TextToSpeech.getEstimatedSpeechDuration(prompt));
     }
 
@@ -290,20 +279,17 @@ public class TextToSpeechPlayer {
         return actorKey2PrerecordedVoiceGuid.containsKey(actor.key);
     }
 
-    public Message createPrerenderedSpeechMessage(Message message,
-            ResourceLoader resources) {
+    public Message createPrerenderedSpeechMessage(Message message, ResourceLoader resources) {
         if (message.toPrerecordedSpeechHashString().isEmpty()) {
             return message;
         } else {
             try {
-                Iterator<String> prerenderedSpeechFiles = getSpeechResources(
-                        message, resources).iterator();
+                Iterator<String> prerenderedSpeechFiles = getSpeechResources(message, resources).iterator();
                 // Render pre-recorded speech as sound
                 Message preRenderedSpeechMessage = new Message(message.actor);
                 for (Part part : message.getParts()) {
                     if (part.type == Message.Type.Text) {
-                        preRenderedSpeechMessage.add(Message.Type.Speech,
-                                prerenderedSpeechFiles.next());
+                        preRenderedSpeechMessage.add(Message.Type.Speech, prerenderedSpeechFiles.next());
                         preRenderedSpeechMessage.add(part);
                     } else {
                         preRenderedSpeechMessage.add(part);
@@ -317,10 +303,9 @@ public class TextToSpeechPlayer {
                 for (Part part : message.getParts()) {
                     if (part.type == Message.Type.Text) {
                         preRenderedSpeechMessage.add(part);
-                        int durationSeconds = Math.toIntExact(TextToSpeech
-                                .getEstimatedSpeechDuration(part.value) / 1000);
-                        preRenderedSpeechMessage.add(Message.Type.Delay,
-                                Integer.toString(durationSeconds));
+                        int durationSeconds = Math
+                                .toIntExact(TextToSpeech.getEstimatedSpeechDuration(part.value) / 1000);
+                        preRenderedSpeechMessage.add(Message.Type.Delay, Integer.toString(durationSeconds));
                     } else {
                         preRenderedSpeechMessage.add(part);
                     }
@@ -337,21 +322,18 @@ public class TextToSpeechPlayer {
      * @return
      * @throws IOException
      */
-    private List<String> getSpeechResources(Message message,
-            ResourceLoader resources) throws IOException {
+    private List<String> getSpeechResources(Message message, ResourceLoader resources) throws IOException {
         String key = message.actor.key;
         String voice = actorKey2PrerecordedVoiceGuid.get(key);
         if (voice == null) {
             return null;
         } else {
-            String path = actorKey2SpeechResourcesLocation.get(key)
-                    + TextToSpeechRecorder.getHash(message) + "/";
+            String path = actorKey2SpeechResourcesLocation.get(key) + TextToSpeechRecorder.getHash(message) + "/";
             BufferedReader reader = null;
             List<String> speechResources = new Vector<String>();
             try {
                 reader = new BufferedReader(
-                        new InputStreamReader(resources.getResource(path
-                                + TextToSpeechRecorder.ResourcesFilename)));
+                        new InputStreamReader(resources.getResource(path + TextToSpeechRecorder.ResourcesFilename)));
                 String soundFile = null;
                 while ((soundFile = reader.readLine()) != null) {
                     speechResources.add(path + soundFile);

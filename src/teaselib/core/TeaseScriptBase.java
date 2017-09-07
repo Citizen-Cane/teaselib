@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import teaselib.Actor;
+import teaselib.Config;
 import teaselib.Message;
 import teaselib.Mood;
 import teaselib.Replay;
@@ -81,9 +82,10 @@ public abstract class TeaseScriptBase {
         this.actor = actor;
         this.namespace = namespace.replace(" ", "_");
 
-        TextToSpeechPlayer ttsPlayer = TextToSpeechPlayer.instance();
-        ttsPlayer.loadActorVoiceProperties(resources);
-        ttsPlayer.acquireVoice(actor);
+        TextToSpeechPlayer textToSpeech = TextToSpeechPlayer.instance();
+        // TODO Does nothing if already loaded, so we could merge the constructors
+        textToSpeech.loadActorVoiceProperties(resources);
+        textToSpeech.acquireVoice(actor);
     }
 
     /**
@@ -98,8 +100,8 @@ public abstract class TeaseScriptBase {
         this.actor = actor;
         this.namespace = script.namespace;
 
-        TextToSpeechPlayer ttsPlayer = TextToSpeechPlayer.instance();
-        ttsPlayer.acquireVoice(actor);
+        TextToSpeechPlayer textToSpeech = TextToSpeechPlayer.instance();
+        textToSpeech.acquireVoice(actor);
     }
 
     protected static List<String> buildChoicesFromArray(String choice, String... more) {
@@ -118,11 +120,10 @@ public abstract class TeaseScriptBase {
     }
 
     /**
-     * Just wait for everything to be rendered (messages displayed, sounds
-     * played, delay expired), and continue execution of the script.
+     * Just wait for everything to be rendered (messages displayed, sounds played, delay expired), and continue
+     * execution of the script.
      * <p>
-     * This won't display a button, it just waits. Background threads will
-     * continue to run.
+     * This won't display a button, it just waits. Background threads will continue to run.
      */
     public void completeAll() {
         teaseLib.renderQueue.completeAll();
@@ -230,8 +231,8 @@ public abstract class TeaseScriptBase {
                             parsedMessage.add(Message.Type.Mood, currentMood);
                             lastMood = currentMood;
                         }
-                        imageType = nextImage = part.value;
-                        parsedMessage.add(part);
+                        imageType = nextImage = getActorOrDisplayImage(part.value, currentMood);
+                        parsedMessage.add(part.type, nextImage);
                     }
                 } else if (Message.Type.FileTypes.contains(part.type)) {
                     parsedMessage.add(part.type, part.value);
@@ -281,7 +282,13 @@ public abstract class TeaseScriptBase {
 
     private String getActorOrDisplayImage(String imageType, String currentMood) {
         final String nextImage;
-        if (imageType == Message.ActorImage) {
+        if (imageType == Message.ActorImage
+                && Boolean.parseBoolean(teaseLib.config.get(Config.Render.ActorImages)) == false) {
+            nextImage = Message.NoImage;
+        } else if (imageType != Message.NoImage
+                && Boolean.parseBoolean(teaseLib.config.get(Config.Render.InstructionalImages)) == false) {
+            nextImage = Message.NoImage;
+        } else if (imageType == Message.ActorImage) {
             if (actor.images.hasNext()) {
                 actor.images.hint(currentMood);
                 nextImage = actor.images.next();
@@ -352,18 +359,15 @@ public abstract class TeaseScriptBase {
      * Shows choices.
      * 
      * @param scriptFunction
-     *            The script function to executed while waiting for the user
-     *            input. This parameter may be null, in this case the choices
-     *            are only shown after all renderers have completed their
-     *            mandatory parts
+     *            The script function to executed while waiting for the user input. This parameter may be null, in this
+     *            case the choices are only shown after all renderers have completed their mandatory parts
      * @param recognitionConfidence
      *            The confidence threshold used for speech recognition.
      * @param choice
-     *            The first choice. This function doesn't make sense without
-     *            showing at least one item, so one choice is mandatory
-     * @return The choice made by the user, {@link ScriptFunction#Timeout} if
-     *         the function has ended, or a custom result value set by the
-     *         script function.
+     *            The first choice. This function doesn't make sense without showing at least one item, so one choice is
+     *            mandatory
+     * @return The choice made by the user, {@link ScriptFunction#Timeout} if the function has ended, or a custom result
+     *         value set by the script function.
      */
     protected String showChoices(ScriptFunction scriptFunction, Confidence recognitionConfidence,
             List<String> choices) {
@@ -381,7 +385,7 @@ public abstract class TeaseScriptBase {
         inputMethods.add(teaseLib.hostInputMethod);
 
         SpeechRecognition sR = SpeechRecognizer.instance.get(actor.getLocale());
-        if (sR.isReady()) {
+        if (sR.isReady() && Boolean.parseBoolean(teaseLib.config.get(Config.InputMethod.SpeechRecognition))) {
             inputMethods.add(new SpeechRecognitionInputMethod(this, sR, recognitionConfidence));
         }
 

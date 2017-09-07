@@ -14,6 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import teaselib.Actor;
+import teaselib.Config;
 import teaselib.Message;
 import teaselib.Message.Part;
 import teaselib.Mood;
@@ -225,8 +226,10 @@ public class RenderMessage extends MediaRendererThread {
             }
         } else if (part.type == Message.Type.Speech) {
             if (speakText) {
-                speechRenderer = new RenderPrerecordedSpeech(part.value,
-                        getParagraphPause(accumulatedText, lastParagraph), resources, teaseLib);
+                long paragraphPause = getParagraphPause(accumulatedText, lastParagraph);
+                speechRenderer = isSpeechOutputEnabled()
+                        ? new RenderPrerecordedSpeech(part.value, paragraphPause, resources, teaseLib)
+                        : new RenderSpeechDelay(paragraphPause, teaseLib, part.value);
             }
         } else if (part.type == Message.Type.DesktopItem) {
             // Finish the current text part
@@ -264,8 +267,10 @@ public class RenderMessage extends MediaRendererThread {
         show(accumulatedText.toString(), mood);
         if (ttsPlayer != null && speechRenderer == null) {
             if (speakText) {
-                speechRenderer = new RenderTTSSpeech(ttsPlayer, actor, part.value, mood,
-                        getParagraphPause(accumulatedText, lastParagraph), teaseLib);
+                long paragraphPause = getParagraphPause(accumulatedText, lastParagraph);
+                speechRenderer = isSpeechOutputEnabled()
+                        ? new RenderTTSSpeech(ttsPlayer, actor, part.value, mood, paragraphPause, teaseLib)
+                        : new RenderSpeechDelay(paragraphPause, teaseLib, part.value);
             }
         }
         teaseLib.transcript.info(part.value);
@@ -437,5 +442,9 @@ public class RenderMessage extends MediaRendererThread {
             }
         }
         super.interrupt();
+    }
+
+    private boolean isSpeechOutputEnabled() {
+        return Boolean.parseBoolean(teaseLib.config.get(Config.Render.Speech));
     }
 }

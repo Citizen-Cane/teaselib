@@ -5,6 +5,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+import teaselib.core.Configuration.Setup;
 import teaselib.hosts.DummyHost;
 import teaselib.hosts.DummyPersistence;
 
@@ -24,6 +25,10 @@ public class Debugger {
 
     public Debugger(DummyHost dummyHost, DummyPersistence dummyPersistence) throws IOException {
         this(new TeaseLib(dummyHost, dummyPersistence), dummyHost);
+    }
+
+    public Debugger(DummyHost dummyHost, DummyPersistence dummyPersistence, Setup setup) throws IOException {
+        this(new TeaseLib(dummyHost, dummyPersistence, setup), dummyHost);
     }
 
     public Debugger(TeaseLib teaseLib, DummyHost dummyHost) {

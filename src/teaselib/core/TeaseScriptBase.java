@@ -396,6 +396,8 @@ public abstract class TeaseScriptBase {
         }
         String choice = teaseLib.shower.show(this, prompt);
 
+        endAll();
+
         logger.debug("Reply finished");
         teaseLib.transcript.info("< " + choice);
         return choice;

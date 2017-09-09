@@ -5,6 +5,7 @@ import static org.junit.Assert.*;
 import java.util.Arrays;
 import java.util.List;
 
+import org.junit.Before;
 import org.junit.FixMethodOrder;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -15,6 +16,7 @@ import org.junit.runners.Parameterized;
 
 import teaselib.ScriptFunction;
 import teaselib.TeaseScript;
+import teaselib.test.DebugSetup;
 import teaselib.test.IntegrationTests;
 import teaselib.test.TestScript;
 
@@ -23,7 +25,7 @@ import teaselib.test.TestScript;
 @RunWith(Parameterized.class)
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class ShowChoicesTest {
-
+    static final DebugSetup DEBUG_SETUP = new DebugSetup().withOutput().withInput();
     static final int ITERATIONS = 1;
 
     @Parameterized.Parameters
@@ -39,13 +41,18 @@ public class ShowChoicesTest {
         }
     }
 
+    TestScript script;
+    Debugger debugger;
+
+    @Before
+    public void initTestScript() {
+        script = TestScript.getOne(DEBUG_SETUP);
+        debugger = script.debugger;
+        debugger.freezeTime();
+    }
+
     @Test
     public void testSimpleReply() throws Exception {
-        final TestScript script = TestScript.getOne();
-        Debugger debugger = script.debugger;
-
-        debugger.freezeTime();
-
         debugger.addResponse("No", Debugger.Response.Choose);
 
         script.say("Main script start.");
@@ -55,11 +62,6 @@ public class ShowChoicesTest {
 
     @Test
     public void testSingleScriptFunction() throws Exception {
-        final TestScript script = TestScript.getOne();
-        Debugger debugger = script.debugger;
-
-        debugger.freezeTime();
-
         debugger.addResponse("Stop", Debugger.Response.Ignore);
         debugger.addResponse("No", Debugger.Response.Choose);
 
@@ -75,11 +77,6 @@ public class ShowChoicesTest {
 
     @Test
     public void testSingleScriptFunctionWithInnerReply() throws Exception {
-        final TestScript script = TestScript.getOne();
-        Debugger debugger = script.debugger;
-
-        debugger.freezeTime();
-
         debugger.addResponse("Stop", Debugger.Response.Ignore);
         debugger.addResponse("No", Debugger.Response.Choose);
 
@@ -97,11 +94,6 @@ public class ShowChoicesTest {
 
     @Test
     public void testTwoScriptFunctionsEachWithInnerReply() throws Exception {
-        final TestScript script = TestScript.getOne();
-        Debugger debugger = script.debugger;
-
-        debugger.freezeTime();
-
         debugger.addResponse("Stop*", Debugger.Response.Ignore);
         debugger.addResponse("No*", Debugger.Response.Choose);
         debugger.addResponse("Wow*", Debugger.Response.Choose);
@@ -132,11 +124,6 @@ public class ShowChoicesTest {
 
     @Test
     public void testThreeScriptFunctionsEachWithInnerReply() throws Exception {
-        final TestScript script = TestScript.getOne();
-        Debugger debugger = script.debugger;
-
-        debugger.freezeTime();
-
         debugger.addResponse("Stop*", Debugger.Response.Ignore);
         debugger.addResponse("No*", Debugger.Response.Choose);
         debugger.addResponse("Wow*", Debugger.Response.Choose);

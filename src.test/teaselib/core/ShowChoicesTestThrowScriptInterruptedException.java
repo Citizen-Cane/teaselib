@@ -5,6 +5,7 @@ import static org.junit.Assert.*;
 import java.util.Arrays;
 import java.util.List;
 
+import org.junit.Before;
 import org.junit.FixMethodOrder;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -15,6 +16,7 @@ import org.junit.runners.Parameterized;
 
 import teaselib.ScriptFunction;
 import teaselib.TeaseScript;
+import teaselib.test.DebugSetup;
 import teaselib.test.IntegrationTests;
 import teaselib.test.TestScript;
 
@@ -23,12 +25,22 @@ import teaselib.test.TestScript;
 @RunWith(Parameterized.class)
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class ShowChoicesTestThrowScriptInterruptedException {
-
+    static final DebugSetup DEBUG_SETUP = new DebugSetup().withOutput().withInput();
     static final int ITERATIONS = 1;
 
     @Parameterized.Parameters
     public static List<Object[]> data() {
         return Arrays.asList(new Object[ITERATIONS][0]);
+    }
+
+    TestScript script;
+    Debugger debugger;
+
+    @Before
+    public void initTestScript() {
+        script = TestScript.getOne(DEBUG_SETUP);
+        debugger = script.debugger;
+        debugger.freezeTime();
     }
 
     class TestException extends RuntimeException {
@@ -41,11 +53,6 @@ public class ShowChoicesTestThrowScriptInterruptedException {
 
     @Test(expected = ScriptInterruptedException.class)
     public void testSingleScriptFunctionErrorHandling() throws Exception {
-        final TestScript script = TestScript.getOne();
-        Debugger debugger = script.debugger;
-
-        debugger.freezeTime();
-
         debugger.addResponse("Ignore", Debugger.Response.Ignore);
 
         script.say("In main script.");
@@ -53,14 +60,6 @@ public class ShowChoicesTestThrowScriptInterruptedException {
             @Override
             public void run() {
                 script.say("Inside script function.");
-
-                // script.completeAll();
-                // TODO Blocks when thrown right away
-                // -> show() hasn't called yet, or not realized by host input
-                // method future task
-                // - therefore all dismissed code has been passed, and the
-                // prompt is never dismissed
-                // - same with RuntimeException
 
                 throwScriptInterruptedException();
             }
@@ -70,11 +69,6 @@ public class ShowChoicesTestThrowScriptInterruptedException {
 
     @Test(expected = ScriptInterruptedException.class)
     public void testSingleScriptFunctionWithInnerReplyErrorHandling() throws Exception {
-        final TestScript script = TestScript.getOne();
-        Debugger debugger = script.debugger;
-
-        debugger.freezeTime();
-
         debugger.addResponse("Ignore", Debugger.Response.Ignore);
         debugger.addResponse("No", Debugger.Response.Choose);
 
@@ -93,11 +87,6 @@ public class ShowChoicesTestThrowScriptInterruptedException {
 
     @Test(expected = ScriptInterruptedException.class)
     public void testTwoScriptFunctionsEachWithInnerReplyErrorHandling() throws Exception {
-        final TestScript script = TestScript.getOne();
-        Debugger debugger = script.debugger;
-
-        debugger.freezeTime();
-
         debugger.addResponse("Ignore*", Debugger.Response.Ignore);
         debugger.addResponse("No*", Debugger.Response.Choose);
         debugger.addResponse("Wow*", Debugger.Response.Choose);
@@ -129,11 +118,6 @@ public class ShowChoicesTestThrowScriptInterruptedException {
 
     @Test(expected = ScriptInterruptedException.class)
     public void testThreeScriptFunctionsEachWithInnerReplyErrorHandling() throws Exception {
-        final TestScript script = TestScript.getOne();
-        Debugger debugger = script.debugger;
-
-        debugger.freezeTime();
-
         debugger.addResponse("Ignore*", Debugger.Response.Ignore);
         debugger.addResponse("No*", Debugger.Response.Choose);
         debugger.addResponse("Wow*", Debugger.Response.Choose);

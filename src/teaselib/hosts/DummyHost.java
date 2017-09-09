@@ -107,8 +107,7 @@ public class DummyHost implements Host {
             }
 
             if (!replySection.hasWaiters(click)) {
-                // throw new IllegalStateException("Dismiss called on latch
-                // already counted down: " + choices);
+                logger.warn("Dismiss called on latch already counted down: " + choices);
             }
 
             for (Delegate delegate : getClickableChoices(choices)) {
@@ -149,7 +148,7 @@ public class DummyHost implements Host {
                         if (choice.matcher(choices.get(i)).matches()) {
                             if (entry.getValue().equals(Debugger.Response.Ignore)) {
                                 try {
-                                    logger.info("Awaiting dismiss for" + choices.get(i));
+                                    logger.info("Awaiting dismiss for " + choices.get(i));
                                     click.await();
                                     break allChoices;
                                 } catch (InterruptedException e) {

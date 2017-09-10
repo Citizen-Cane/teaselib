@@ -39,6 +39,9 @@ public class HostInputMethod implements InputMethod {
                             if (prompt.paused.get() == false) {
                                 prompt.setResultOnce(reply);
                             }
+                        } else if (prompt.result() == Prompt.DISMISSED) {
+                            // Mainly in debug, without script output - just ignore
+                            // logger.warn("prompt " + prompt + " already dismissed");
                         } else {
                             throw new IllegalStateException(
                                     "Prompt " + prompt + ": result already set to " + prompt.result());
@@ -50,11 +53,13 @@ public class HostInputMethod implements InputMethod {
                         try {
                             if (prompt.paused.get() == false) {
                                 prompt.click.signalAll();
+                            } else {
+                                throw new IllegalStateException("Prompt click not signaled for " + prompt);
                             }
                         } finally {
                             prompt.lock.unlock();
+                            replySection.unlock();
                         }
-                        replySection.unlock();
                     }
                 }
                 return prompt.result();

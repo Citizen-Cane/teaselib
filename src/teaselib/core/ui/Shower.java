@@ -41,13 +41,10 @@ public class Shower {
 
     private String showNew(TeaseScriptBase script, Prompt prompt) throws InterruptedException {
         stack.push(prompt);
-        if (prompt.scriptFunction != null) {
-            prompt.executeScriptTask(script, promptQueue.getDismissCallable(prompt));
-        }
 
         while (true) {
             if (stack.peek() == prompt) {
-                int resultIndex = promptQueue.show(prompt);
+                int resultIndex = promptQueue.show(script, prompt);
                 // TODO replace index with choice -> pause handlers can be
                 // called via unique string identifiers
                 if (resultIndex == Prompt.DISMISSED) {

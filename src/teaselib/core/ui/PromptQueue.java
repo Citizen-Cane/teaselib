@@ -6,6 +6,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicReference;
 
 import teaselib.core.ScriptInterruptedException;
+import teaselib.core.TeaseScriptBase;
 
 /**
  * @author Citizen-Cane
@@ -15,7 +16,7 @@ public class PromptQueue {
     private final AtomicReference<Prompt> active = new AtomicReference<Prompt>();
     private final Set<Prompt> dismissedPermanent = new HashSet<Prompt>();
 
-    public int show(Prompt prompt) throws InterruptedException {
+    public int show(TeaseScriptBase script, Prompt prompt) throws InterruptedException {
         prompt.lock.lockInterruptibly();
         try {
             synchronized (dismissedPermanent) {
@@ -36,6 +37,10 @@ public class PromptQueue {
 
             try {
                 makePromptActive(prompt);
+
+                if (prompt.scriptFunction != null) {
+                    prompt.executeScriptTask(script, getDismissCallable(prompt));
+                }
 
                 prompt.click.await();
             } finally {

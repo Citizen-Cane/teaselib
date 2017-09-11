@@ -16,32 +16,50 @@ public class PromptQueue {
     private final AtomicReference<Prompt> active = new AtomicReference<Prompt>();
     private final Set<Prompt> dismissedPermanent = new HashSet<Prompt>();
 
-    public int show(TeaseScriptBase script, Prompt prompt) throws InterruptedException {
-        prompt.lock.lockInterruptibly();
+    public int show(TeaseScriptBase script, Prompt prompt) {
         try {
-            synchronized (dismissedPermanent) {
-                if (dismissedPermanent.contains(prompt)) {
-                    return Prompt.DISMISSED;
+            // Prevent multiple entry while initializing prompt
+            synchronized (this) {
+                prompt.lock.lockInterruptibly();
+                synchronized (dismissedPermanent) {
+                    if (dismissedPermanent.contains(prompt)) {
+                        return Prompt.DISMISSED;
+                    }
                 }
-            }
 
-            Prompt activePrompt = active.get();
+                Prompt activePrompt = active.get();
 
-            if (activePrompt != null && prompt == activePrompt) {
-                throw new IllegalStateException("Prompt " + prompt + " already showing");
-            }
+                if (activePrompt != null && prompt == activePrompt) {
+                    throw new IllegalStateException("Prompt " + prompt + " already showing");
+                }
 
-            if (activePrompt != null) {
-                pause(activePrompt);
-            }
+                if (activePrompt != null) {
+                    // host input method waiting for dismissing "stop"
+                    // -> "stop" is never dismissed because active prompt == null -> future is executing
+                    // -> Yes/No future is blocked since future "stop" is still running - thread pool size == 1
+                    // There is a "Reply [stop]" log entry after TeaseScriptBase prompts "Yes/No"
+                    // This suggests that thread "Script Function 1" thread and thread "dummy host" have a concurrency
+                    // issue
+                    // -> PromptQueue.show() is indeed not protected
 
-            try {
+                    // TODO
+                    // Make sure dummy-host thread "stop" comes before Script-function 1 thread "Yes/No"
+                    pause(activePrompt);
+                }
+
                 makePromptActive(prompt);
 
                 if (prompt.scriptFunction != null) {
                     prompt.executeScriptTask(script, getDismissCallable(prompt));
+                    // script task waits until prompt queue is awaiting the click
+                    // - still not good enough - however works with 1000ms delay
+                    // TODO wait until all host input methods have realized prompt in makePromptActive
+                    // Waiting for the callable to be ready seems to do the trick
+                    // -> what about stress tests? -> ?
                 }
+            }
 
+            try {
                 prompt.click.await();
             } finally {
                 for (InputMethod inputMethod : prompt.inputMethods) {
@@ -69,44 +87,46 @@ public class PromptQueue {
     }
 
     public void resume(Prompt prompt) throws InterruptedException {
-        prompt.lock.lockInterruptibly();
-        try {
-            synchronized (dismissedPermanent) {
-                if (dismissedPermanent.contains(prompt)) {
-                    return;
+        synchronized (this) {
+            prompt.lock.lockInterruptibly();
+            try {
+                synchronized (dismissedPermanent) {
+                    if (dismissedPermanent.contains(prompt)) {
+                        return;
+                    }
                 }
+
+                Prompt activePrompt = active.get();
+
+                if (activePrompt != null && prompt == activePrompt) {
+                    throw new IllegalStateException("Prompt " + prompt + " already showing");
+                }
+
+                if (activePrompt != null) {
+                    dismiss(activePrompt);
+                }
+
+                if (prompt.result() != Prompt.UNDEFINED)
+                    return;
+
+                makePromptActive(prompt);
+                prompt.paused.set(false);
+
+                // Were're just resuming, no need to wait or cleanup
+            } finally {
+                prompt.lock.unlock();
             }
-
-            Prompt activePrompt = active.get();
-
-            if (activePrompt != null && prompt == activePrompt) {
-                throw new IllegalStateException("Prompt " + prompt + " already showing");
-            }
-
-            if (activePrompt != null) {
-                dismiss(activePrompt);
-            }
-
-            if (prompt.result() != Prompt.UNDEFINED)
-                return;
-
-            prompt.paused.set(false);
-
-            makePromptActive(prompt);
-            // Were're just resuming, no need to wait or cleanup
-        } finally {
-            prompt.lock.unlock();
         }
     }
 
-    private void makePromptActive(Prompt prompt) {
+    private void makePromptActive(Prompt prompt) throws InterruptedException {
         active.set(prompt);
         for (InputMethod inputMethod : prompt.inputMethods) {
             inputMethod.show(prompt);
         }
     }
 
-    private boolean dismissUntilLater(Prompt prompt) throws InterruptedException {
+    private synchronized boolean dismissUntilLater(Prompt prompt) throws InterruptedException {
         prompt.lock.lockInterruptibly();
         try {
             synchronized (dismissedPermanent) {
@@ -118,7 +138,7 @@ public class PromptQueue {
         }
     }
 
-    public boolean dismiss(Prompt prompt) throws InterruptedException {
+    public synchronized boolean dismiss(Prompt prompt) throws InterruptedException {
         prompt.lock.lockInterruptibly();
         try {
             prompt.setResultOnce(Prompt.DISMISSED);
@@ -128,7 +148,7 @@ public class PromptQueue {
         }
     }
 
-    public boolean pause(Prompt prompt) throws InterruptedException {
+    public synchronized boolean pause(Prompt prompt) throws InterruptedException {
         prompt.lock.lockInterruptibly();
         try {
             prompt.paused.set(true);
@@ -138,7 +158,22 @@ public class PromptQueue {
         }
     }
 
-    private boolean dismissPrompt(Prompt prompt) {
+    private synchronized boolean dismissPrompt(Prompt prompt) {
+        // TODO DummyHost dismisses anything
+        // - test what prompt is currently active (don't burden that to the input method
+        // - all tests succeed without this check, but that leaves a code smell
+        // - tests with "inner reply" succeed often, but may still hang nevertheless (seldom)
+        // -> condition must be handled!
+
+        // TODO dismiss only active prompt
+        if (prompt != active.get()) {
+            throw new IllegalStateException("Can only dismiss active prompt");
+        }
+
+        // TODO only dismiss input methods that haven't been dismisseed already
+        // - if timed out all need to be dismissed
+        // - after user selection the input method that signaled theuser input has been dismissed already
+        // TODO dismiss only the input methods that haven't signaled user interaction
         try {
             boolean dismissed = false;
             for (InputMethod inputMethod : prompt.inputMethods) {

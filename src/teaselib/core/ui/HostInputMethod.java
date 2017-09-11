@@ -27,13 +27,16 @@ public class HostInputMethod implements InputMethod {
     }
 
     @Override
-    public void show(final Prompt prompt) {
+    public void show(final Prompt prompt) throws InterruptedException {
         Callable<Integer> callable = new Callable<Integer>() {
             @Override
             public Integer call() throws Exception {
                 synchronized (HostInputMethod.this) {
                     replySection.lockInterruptibly();
                     try {
+                        synchronized (this) {
+                            notifyAll();
+                        }
                         if (prompt.result() == Prompt.UNDEFINED) {
                             int reply = host.reply(prompt.derived);
                             if (prompt.paused.get() == false) {
@@ -42,6 +45,7 @@ public class HostInputMethod implements InputMethod {
                         } else if (prompt.result() == Prompt.DISMISSED) {
                             // Mainly in debug, without script output - just ignore
                             // logger.warn("prompt " + prompt + " already dismissed");
+                            throw new IllegalStateException("Prompt " + prompt + " has been dismissed already");
                         } else {
                             throw new IllegalStateException(
                                     "Prompt " + prompt + ": result already set to " + prompt.result());
@@ -66,7 +70,10 @@ public class HostInputMethod implements InputMethod {
             }
         };
 
-        workerThread.submit(callable);
+        synchronized (callable) {
+            workerThread.submit(callable);
+            callable.wait();
+        }
     }
 
     @Override

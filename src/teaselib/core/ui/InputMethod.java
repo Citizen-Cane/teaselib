@@ -8,7 +8,7 @@ import java.util.Map;
  */
 public interface InputMethod {
 
-    void show(Prompt prompt);
+    void show(Prompt prompt) throws InterruptedException;
 
     boolean dismiss(Prompt prompt) throws InterruptedException;
 

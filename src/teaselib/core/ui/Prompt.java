@@ -27,7 +27,7 @@ public class Prompt {
 
     ScriptFutureTask scriptTask;
 
-    final ReentrantLock lock;
+    public final ReentrantLock lock;
     final Condition click;
 
     final AtomicBoolean paused = new AtomicBoolean(false);
@@ -52,8 +52,7 @@ public class Prompt {
     }
 
     void executeScriptTask(TeaseScriptBase script, final Callable<Boolean> dismiss) {
-        scriptTask = new ScriptFutureTask(script, scriptFunction, derived, new ScriptFutureTask.TimeoutClick(),
-                dismiss);
+        scriptTask = new ScriptFutureTask(script, scriptFunction, this, new ScriptFutureTask.TimeoutClick(), dismiss);
         scriptTask.execute();
     }
 

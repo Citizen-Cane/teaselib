@@ -3,7 +3,6 @@
  */
 package teaselib.core;
 
-import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -16,6 +15,7 @@ import org.slf4j.LoggerFactory;
 
 import teaselib.ScriptFunction;
 import teaselib.core.concurrency.NamedExecutorService;
+import teaselib.core.ui.Prompt;
 
 public class ScriptFutureTask extends FutureTask<String> {
     private static final Logger logger = LoggerFactory.getLogger(ScriptFutureTask.class);
@@ -28,7 +28,7 @@ public class ScriptFutureTask extends FutureTask<String> {
     private final TimeoutClick timeout;
     private Throwable throwable = null;
 
-    private final List<String> derivedChoices;
+    private final Prompt prompt;
     private final Callable<Boolean> dismissChoices;
 
     private AtomicBoolean dismissed = new AtomicBoolean(false);
@@ -38,8 +38,8 @@ public class ScriptFutureTask extends FutureTask<String> {
     private final static ExecutorService Executor = NamedExecutorService.newFixedThreadPool(Integer.MAX_VALUE,
             "Script Function", 1, TimeUnit.HOURS);
 
-    public ScriptFutureTask(final TeaseScriptBase script, final ScriptFunction scriptFunction,
-            final List<String> derivedChoices, final TimeoutClick timeout, Callable<Boolean> dismissChoices) {
+    public ScriptFutureTask(final TeaseScriptBase script, final ScriptFunction scriptFunction, final Prompt prompt,
+            final TimeoutClick timeout, Callable<Boolean> dismissChoices) {
         super(new Callable<String>() {
             @Override
             public String call() throws Exception {
@@ -63,27 +63,37 @@ public class ScriptFutureTask extends FutureTask<String> {
         this.timeout = timeout;
 
         this.dismissChoices = dismissChoices;
-        this.derivedChoices = derivedChoices;
+        this.prompt = prompt;
     }
 
     @Override
     public void run() {
         try {
+            // A good sleep makes most tests succeed, add sync here
+            // TODO Wait until prompt queue starts waiting for the signal condition
+            // - this is just before the prompt is realized
+            prompt.lock.lockInterruptibly();
+            try {
+                // Wait until prompt queue is ready to be signaled
+            } finally {
+                prompt.lock.unlock();
+            }
+
             super.run();
         } catch (ScriptInterruptedException e) {
             // Expected
-            logger.info("Script task " + derivedChoices + " interrupted");
+            logger.info("Script task " + prompt + " interrupted");
         } catch (Throwable t) {
             setException(t);
         } finally {
             try {
                 // TODO This can be set much earlier...
-                logger.info("Script task " + derivedChoices + " is finishing");
+                logger.info("Script task " + prompt + " is finishing");
                 finishing.countDown();
                 timeout.clicked = dismissChoices.call();
             } catch (ScriptInterruptedException e) {
                 // Expected
-                logger.info("Script task " + derivedChoices + " interrupted");
+                logger.info("Script task " + prompt + " interrupted");
             } catch (Exception e) {
                 if (throwable == null) {
                     setException(e);
@@ -92,7 +102,7 @@ public class ScriptFutureTask extends FutureTask<String> {
                 }
             } finally {
                 finished.countDown();
-                logger.info("Script task " + derivedChoices + " finished");
+                logger.info("Script task " + prompt + " finished");
             }
         }
     }
@@ -114,7 +124,7 @@ public class ScriptFutureTask extends FutureTask<String> {
     @Override
     protected void setException(Throwable t) {
         if (dismissed.get() && t instanceof ScriptInterruptedException) {
-            logger.info("Script task " + derivedChoices + " already dismissed");
+            logger.info("Script task " + prompt + " already dismissed");
         } else {
             throwable = t;
             logger.info(t.getClass().getSimpleName() + ":@" + t.hashCode() + " stored - will be forwarded");
@@ -131,7 +141,7 @@ public class ScriptFutureTask extends FutureTask<String> {
     }
 
     public void execute() {
-        logger.info("Execute script task " + derivedChoices);
+        logger.info("Execute script task " + prompt);
         finishing = new CountDownLatch(1);
         finished = new CountDownLatch(1);
         Executor.execute(this);
@@ -139,13 +149,13 @@ public class ScriptFutureTask extends FutureTask<String> {
 
     public void join() {
         try {
-            logger.info("Waiting for script task " + derivedChoices + " to join");
+            logger.info("Waiting for script task " + prompt + " to join");
             finishing.await();
             finished.await();
         } catch (InterruptedException e) {
             throw new ScriptInterruptedException();
         } finally {
-            logger.info("Joined script task " + derivedChoices);
+            logger.info("Joined script task " + prompt);
         }
     }
 
@@ -177,7 +187,7 @@ public class ScriptFutureTask extends FutureTask<String> {
     }
 
     private void throwException(Throwable t) throws Error {
-        logger.info("Forwarding script task error of " + derivedChoices);
+        logger.info("Forwarding script task error of " + prompt);
         if (t instanceof ScriptInterruptedException) {
             throw (ScriptInterruptedException) t;
         } else if (t instanceof RuntimeException) {

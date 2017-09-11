@@ -7,7 +7,6 @@ import java.util.List;
 
 import org.junit.Before;
 import org.junit.FixMethodOrder;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -16,31 +15,20 @@ import org.junit.runners.Parameterized;
 
 import teaselib.ScriptFunction;
 import teaselib.TeaseScript;
-import teaselib.test.DebugSetup;
 import teaselib.test.IntegrationTests;
-import teaselib.test.TestScript;
 
-@Ignore
 @Category(IntegrationTests.class)
 @RunWith(Parameterized.class)
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
-public class ShowChoicesTestScriptFunctionReply {
-    static final DebugSetup DEBUG_SETUP = new DebugSetup().withOutput().withInput();
-    static final int ITERATIONS = 1;
-
+public class ShowChoicesTestScriptFunctionReply extends ShowChoicesAbstractTest {
     @Parameterized.Parameters
     public static List<Object[]> data() {
         return Arrays.asList(new Object[ITERATIONS][0]);
     }
 
-    TestScript script;
-    Debugger debugger;
-
     @Before
     public void initTestScript() {
-        script = TestScript.getOne(DEBUG_SETUP);
-        debugger = script.debugger;
-        debugger.freezeTime();
+        init();
     }
 
     class TestException extends RuntimeException {

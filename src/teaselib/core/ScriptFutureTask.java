@@ -17,15 +17,11 @@ import teaselib.ScriptFunction;
 import teaselib.core.concurrency.NamedExecutorService;
 import teaselib.core.ui.Prompt;
 
-public class ScriptFutureTask extends FutureTask<String> {
+public class ScriptFutureTask extends FutureTask<Void> {
     private static final Logger logger = LoggerFactory.getLogger(ScriptFutureTask.class);
 
-    public static class TimeoutClick {
-        public boolean clicked = false;
-    }
-
     private final ScriptFunction scriptFunction;
-    private final TimeoutClick timeout;
+    private final AtomicBoolean timedOut = new AtomicBoolean(false);
     private Throwable throwable = null;
 
     private final Prompt prompt;
@@ -38,11 +34,11 @@ public class ScriptFutureTask extends FutureTask<String> {
     private final static ExecutorService Executor = NamedExecutorService.newFixedThreadPool(Integer.MAX_VALUE,
             "Script Function", 1, TimeUnit.HOURS);
 
-    public ScriptFutureTask(final TeaseScriptBase script, final ScriptFunction scriptFunction, final Prompt prompt,
-            final TimeoutClick timeout, Callable<Boolean> dismissChoices) {
-        super(new Callable<String>() {
+    public ScriptFutureTask(final TeaseScriptBase script, final ScriptFunction scriptFunction, Prompt prompt,
+            Callable<Boolean> dismissChoices) {
+        super(new Callable<Void>() {
             @Override
-            public String call() throws Exception {
+            public Void call() throws Exception {
                 try {
                     scriptFunction.run();
                     // Keep choices available until the last part of
@@ -60,10 +56,8 @@ public class ScriptFutureTask extends FutureTask<String> {
             }
         });
         this.scriptFunction = scriptFunction;
-        this.timeout = timeout;
-
-        this.dismissChoices = dismissChoices;
         this.prompt = prompt;
+        this.dismissChoices = dismissChoices;
     }
 
     @Override
@@ -90,7 +84,7 @@ public class ScriptFutureTask extends FutureTask<String> {
                 // TODO This can be set much earlier...
                 logger.info("Script task " + prompt + " is finishing");
                 finishing.countDown();
-                timeout.clicked = dismissChoices.call();
+                timedOut.set(dismissChoices.call());
             } catch (ScriptInterruptedException e) {
                 // Expected
                 logger.info("Script task " + prompt + " interrupted");
@@ -160,7 +154,7 @@ public class ScriptFutureTask extends FutureTask<String> {
     }
 
     public boolean timedOut() {
-        return timeout.clicked;
+        return timedOut.get();
     }
 
     public ScriptFunction.Relation getRelation() {

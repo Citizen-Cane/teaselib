@@ -52,7 +52,7 @@ public class Prompt {
     }
 
     void executeScriptTask(TeaseScriptBase script, final Callable<Boolean> dismiss) {
-        scriptTask = new ScriptFutureTask(script, scriptFunction, this, new ScriptFutureTask.TimeoutClick(), dismiss);
+        scriptTask = new ScriptFutureTask(script, scriptFunction, this, dismiss);
         scriptTask.execute();
     }
 

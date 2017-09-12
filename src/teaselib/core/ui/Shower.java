@@ -22,19 +22,19 @@ public class Shower {
     public String show(TeaseScriptBase script, Prompt prompt) {
         try {
             pauseCurrent();
-        } catch (InterruptedException e1) {
-            throw new ScriptInterruptedException();
+        } catch (InterruptedException e) {
+            throw new ScriptInterruptedException(e);
         }
 
         try {
             return showNew(script, prompt);
         } catch (InterruptedException e) {
-            throw new ScriptInterruptedException();
+            throw new ScriptInterruptedException(e);
         } finally {
             try {
                 resumePrevious();
             } catch (InterruptedException e) {
-                throw new ScriptInterruptedException();
+                throw new ScriptInterruptedException(e);
             }
         }
     }

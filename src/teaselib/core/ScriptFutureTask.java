@@ -84,7 +84,29 @@ public class ScriptFutureTask extends FutureTask<Void> {
                 // TODO This can be set much earlier...
                 logger.info("Script task " + prompt + " is finishing");
                 finishing.countDown();
-                timedOut.set(dismissChoices.call());
+
+                // Resolved failing tests with debug setup regarding "Timeout instead of reply:stop"
+                // - the test is always correct since the script function is just so fast that there is no time to click
+                // TODO ensure input method can click on stop before the script function times out (it's just too fast)
+                // Thread.sleep(1000);
+
+                // Better, but of course not perfect
+                // Thread.yield();
+
+                // TODO same as in dismissChoices.call()
+                prompt.lock.lockInterruptibly();
+                try {
+                    if (prompt.result() == Prompt.UNDEFINED) {
+                        timedOut.set(dismissChoices.call());
+                    } else {
+                        timedOut.set(false);
+                    }
+                } finally {
+                    prompt.lock.unlock();
+                }
+            } catch (InterruptedException e) {
+                // Ignore interrupt while dismissing prompt since the script function is finishing already,
+                // and either has been stopped already or will be dismissed (all good states)
             } catch (ScriptInterruptedException e) {
                 // Expected
                 logger.info("Script task " + prompt + " interrupted");
@@ -147,7 +169,7 @@ public class ScriptFutureTask extends FutureTask<Void> {
             finishing.await();
             finished.await();
         } catch (InterruptedException e) {
-            throw new ScriptInterruptedException();
+            throw new ScriptInterruptedException(e);
         } finally {
             logger.info("Joined script task " + prompt);
         }
@@ -173,17 +195,19 @@ public class ScriptFutureTask extends FutureTask<Void> {
                     throwException(t);
                 }
             } catch (InterruptedException e) {
-                throw new ScriptInterruptedException();
+                throw new ScriptInterruptedException(e);
             }
         } catch (ScriptInterruptedException e) {
             throwOnlyIfNotTimedOut(e);
         }
     }
 
-    private void throwException(Throwable t) throws Error {
+    private void throwException(Throwable t) {
         logger.info("Forwarding script task error of " + prompt);
         if (t instanceof ScriptInterruptedException) {
             throw (ScriptInterruptedException) t;
+        } else if (t instanceof InterruptedException) {
+            throw new ScriptInterruptedException((InterruptedException) t);
         } else if (t instanceof RuntimeException) {
             throw (RuntimeException) t;
         } else if (t instanceof Error) {

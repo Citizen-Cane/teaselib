@@ -16,7 +16,7 @@ public class PromptQueue {
     private final AtomicReference<Prompt> active = new AtomicReference<Prompt>();
     private final Set<Prompt> dismissedPermanent = new HashSet<Prompt>();
 
-    public int show(TeaseScriptBase script, Prompt prompt) {
+    public int show(TeaseScriptBase script, Prompt prompt) throws InterruptedException {
         try {
             // Prevent multiple entry while initializing prompt
             synchronized (this) {
@@ -79,8 +79,6 @@ public class PromptQueue {
             } else {
                 return prompt.result();
             }
-        } catch (InterruptedException e) {
-            throw new ScriptInterruptedException();
         } finally {
             prompt.lock.unlock();
         }
@@ -141,8 +139,12 @@ public class PromptQueue {
     public synchronized boolean dismiss(Prompt prompt) throws InterruptedException {
         prompt.lock.lockInterruptibly();
         try {
-            prompt.setResultOnce(Prompt.DISMISSED);
-            return dismissPrompt(prompt);
+            if (prompt.result() == Prompt.UNDEFINED) {
+                prompt.setResultOnce(Prompt.DISMISSED);
+                return dismissPrompt(prompt);
+            } else {
+                return false;
+            }
         } finally {
             prompt.lock.unlock();
         }
@@ -152,7 +154,11 @@ public class PromptQueue {
         prompt.lock.lockInterruptibly();
         try {
             prompt.paused.set(true);
-            return dismissPrompt(prompt);
+            if (prompt.result() == Prompt.UNDEFINED) {
+                return dismissPrompt(prompt);
+            } else {
+                return false;
+            }
         } finally {
             prompt.lock.unlock();
         }
@@ -172,21 +178,21 @@ public class PromptQueue {
 
         // TODO only dismiss input methods that haven't been dismisseed already
         // - if timed out all need to be dismissed
-        // - after user selection the input method that signaled theuser input has been dismissed already
+        // - after user selection the input method that signaled the user input has been dismissed already
         // TODO dismiss only the input methods that haven't signaled user interaction
         try {
             boolean dismissed = false;
             for (InputMethod inputMethod : prompt.inputMethods) {
-                dismissed |= inputMethod.dismiss(prompt);
+                dismissed &= inputMethod.dismiss(prompt);
             }
             active.set(null);
             return dismissed;
+        } catch (InterruptedException e) {
+            throw new ScriptInterruptedException(e);
         } catch (Error e) {
             throw e;
         } catch (RuntimeException e) {
             throw e;
-        } catch (InterruptedException e) {
-            throw new ScriptInterruptedException();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -200,7 +206,18 @@ public class PromptQueue {
         Callable<Boolean> dismiss = new Callable<Boolean>() {
             @Override
             public Boolean call() throws Exception {
-                return dismissUntilLater(prompt);
+                prompt.lock.lockInterruptibly();
+                try {
+                    // Resolves something but is evil in itself
+                    // TODO Just cleanup input methods once
+                    if (prompt.result() == Prompt.UNDEFINED) {
+                        return dismissUntilLater(prompt);
+                    } else {
+                        return false;
+                    }
+                } finally {
+                    prompt.lock.unlock();
+                }
                 // TODO remove method dismissUntilLater()
                 // TODO also remove dismissedPermaent map
                 // return dismiss(prompt);

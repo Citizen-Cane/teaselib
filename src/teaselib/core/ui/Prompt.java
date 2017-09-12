@@ -16,7 +16,7 @@ import teaselib.core.TeaseScriptBase;
 
 public class Prompt {
     static final int DISMISSED = -1;
-    static final int UNDEFINED = Integer.MIN_VALUE;
+    public static final int UNDEFINED = Integer.MIN_VALUE;
 
     static final String NONE = "None";
 

@@ -58,8 +58,7 @@ public class DeviceCache<T extends Device> {
     private T create(String devicePath) {
         try {
             String deviceClassName = getDeviceClass(devicePath);
-            DeviceFactory<? extends T> deviceFactory = factories
-                    .get(deviceClassName);
+            DeviceFactory<? extends T> deviceFactory = factories.get(deviceClassName);
             T device = deviceFactory.getDevice(devicePath);
             if (device == null) {
                 throw new IllegalArgumentException(devicePath);
@@ -72,14 +71,12 @@ public class DeviceCache<T extends Device> {
 
     public Set<String> getDevicePaths() {
         Set<String> devicePaths = new LinkedHashSet<String>();
-        for (Map.Entry<String, DeviceFactory<? extends T>> entry : factories
-                .entrySet())
+        for (Map.Entry<String, DeviceFactory<? extends T>> entry : factories.entrySet())
             devicePaths.addAll(entry.getValue().getDevices());
         return devicePaths;
     }
 
-    public static String createDevicePath(String deviceClassName,
-            String deviceName) {
+    public static String createDevicePath(String deviceClassName, String deviceName) {
         return deviceClassName + PathSeparator + deviceName;
     }
 
@@ -96,11 +93,9 @@ public class DeviceCache<T extends Device> {
     }
 
     /**
-     * Poll for connection until the device is connected or the timeout duration
-     * is exceeded.
+     * Poll for connection until the device is connected or the timeout duration is exceeded.
      * <p>
-     * The poll frequency depends on the the runtime duration of each connect
-     * call, but will be at least 1 second.
+     * The poll frequency depends on the the runtime duration of each connect call, but will be at least 1 second.
      * 
      * @param device
      *            The device to connect
@@ -109,10 +104,8 @@ public class DeviceCache<T extends Device> {
      * @return True if the device is connected.
      * @throws ScriptInterruptedException
      */
-    public static boolean connect(Device device, double timeoutSeconds)
-            throws ScriptInterruptedException {
-        long timeoutMillis = timeoutSeconds >= 0 ? (long) timeoutSeconds * 1000
-                : Long.MAX_VALUE;
+    public static boolean connect(Device device, double timeoutSeconds) throws ScriptInterruptedException {
+        long timeoutMillis = timeoutSeconds >= 0 ? (long) timeoutSeconds * 1000 : Long.MAX_VALUE;
         while (timeoutMillis >= 0) {
             long now = System.currentTimeMillis();
             if (device.connected()) {
@@ -122,13 +115,12 @@ public class DeviceCache<T extends Device> {
             if (elapsed > timeoutMillis) {
                 return false;
             }
-            long duration = Math.min(timeoutMillis,
-                    Math.max(1000, elapsed * 10));
+            long duration = Math.min(timeoutMillis, Math.max(1000, elapsed * 10));
             try {
                 Thread.sleep(duration);
                 timeoutMillis -= duration;
             } catch (InterruptedException e) {
-                throw new ScriptInterruptedException();
+                throw new ScriptInterruptedException(e);
             }
         }
         return device.connected();

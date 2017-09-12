@@ -78,7 +78,7 @@ public class TextToSpeech {
             };
             delegateThread.run(delegate);
         } catch (InterruptedException e) {
-            throw new ScriptInterruptedException();
+            throw new ScriptInterruptedException(e);
         } catch (Throwable t) {
             logger.error(t.getMessage(), t);
         }
@@ -104,7 +104,7 @@ public class TextToSpeech {
             try {
                 delegateThread.run(delegate);
             } catch (InterruptedException e) {
-                throw new ScriptInterruptedException();
+                throw new ScriptInterruptedException(e);
             } catch (Throwable t) {
                 logger.error(t.getMessage(), t);
             }
@@ -141,7 +141,7 @@ public class TextToSpeech {
             try {
                 delegateThread.run(delegate);
             } catch (InterruptedException e) {
-                throw new ScriptInterruptedException();
+                throw new ScriptInterruptedException(e);
             } catch (Throwable t) {
                 logger.error(t.getMessage(), t);
             }
@@ -151,8 +151,7 @@ public class TextToSpeech {
     }
 
     /**
-     * Set hints for the next call to speak(...). Hints are cleared after each
-     * call to speak.
+     * Set hints for the next call to speak(...). Hints are cleared after each call to speak.
      * 
      * @param hints
      *            The hints to consider for the next call to speak(..)
@@ -168,7 +167,7 @@ public class TextToSpeech {
             try {
                 delegateThread.run(delegate);
             } catch (InterruptedException e) {
-                throw new ScriptInterruptedException();
+                throw new ScriptInterruptedException(e);
             } catch (Throwable t) {
                 logger.error(t.getMessage(), t);
             }
@@ -220,7 +219,7 @@ public class TextToSpeech {
             try {
                 delegateThread.run(delegate);
             } catch (InterruptedException e) {
-                throw new ScriptInterruptedException();
+                throw new ScriptInterruptedException(e);
             } catch (RuntimeException e) {
                 throw e;
             } catch (Throwable t) {
@@ -241,8 +240,7 @@ public class TextToSpeech {
     }
 
     /**
-     * Estimate the duration for displaying the text when not spoken by speech
-     * synthesis.
+     * Estimate the duration for displaying the text when not spoken by speech synthesis.
      * 
      * @param text
      *            Text to estimate the time needed to speak for

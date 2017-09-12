@@ -15,8 +15,7 @@ import teaselib.core.ScriptInterruptedException;
  *
  */
 public abstract class Stimulation {
-    private static final Logger logger = LoggerFactory
-            .getLogger(Stimulation.class);
+    private static final Logger logger = LoggerFactory.getLogger(Stimulation.class);
 
     protected final static int MaxIntensity = 10;
     protected final static double maxStrength = 1.0;
@@ -29,8 +28,7 @@ public abstract class Stimulation {
     public Stimulation(Stimulator stimulator, double periodDurationSeconds) {
         super();
         this.stimulator = stimulator;
-        this.periodDurationSeconds = Math.max(periodDurationSeconds,
-                stimulator.minimalSignalDuration());
+        this.periodDurationSeconds = Math.max(periodDurationSeconds, stimulator.minimalSignalDuration());
     }
 
     public void play(final int intensity, final double durationSeconds) {
@@ -39,17 +37,15 @@ public abstract class Stimulation {
             @Override
             public void run() {
                 try {
-                    waveform(intensity).play(stimulator, durationSeconds,
-                            Stimulation.maxStrength);
+                    waveform(intensity).play(stimulator, durationSeconds, Stimulation.maxStrength);
                 } catch (InterruptedException e) {
                     stimulator.set(0);
                 }
             }
         });
         final String simpleName = getClass().getSimpleName();
-        logger.info(simpleName + ": intensity=" + intensity + " duration="
-                + durationSeconds + " on " + stimulator.getDeviceName() + ", "
-                + stimulator.getLocation());
+        logger.info(simpleName + ": intensity=" + intensity + " duration=" + durationSeconds + " on "
+                + stimulator.getDeviceName() + ", " + stimulator.getLocation());
         stim.setName(simpleName);
         stim.start();
     }
@@ -74,7 +70,7 @@ public abstract class Stimulation {
                 stim.join();
             } catch (InterruptedException e) {
                 stop();
-                throw new ScriptInterruptedException();
+                throw new ScriptInterruptedException(e);
             }
         }
     }

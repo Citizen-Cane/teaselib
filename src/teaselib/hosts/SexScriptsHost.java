@@ -46,14 +46,11 @@ import teaselib.core.javacv.VideoRendererJavaCV;
 import teaselib.util.Interval;
 
 /**
- * SexScripts renderer: Workarounds some of SS shortcomings (or it's just my
- * taste :^) TODO sounds are not playable from stream in SS - workarounded by
- * playing sounds myself - same for prerendered speech TODO UI layout wastes a
- * lot of screen estate, sub optimal for portrait images TODO TExt pane is noit
- * fixed, I liked it better the way CM did it - workarounded by adding pixels
- * left and right of portrait images TODO Invisible progress bar eats screen
- * estate TODO Buttons should be layouted vertically, better for longer button
- * texts
+ * SexScripts renderer: Workarounds some of SS shortcomings (or it's just my taste :^) TODO sounds are not playable from
+ * stream in SS - workarounded by playing sounds myself - same for prerendered speech TODO UI layout wastes a lot of
+ * screen estate, sub optimal for portrait images TODO TExt pane is noit fixed, I liked it better the way CM did it -
+ * workarounded by adding pixels left and right of portrait images TODO Invisible progress bar eats screen estate TODO
+ * Buttons should be layouted vertically, better for longer button texts
  * 
  * @author someone
  * 
@@ -356,7 +353,7 @@ public class SexScriptsHost implements Host {
             try {
                 results = ss.getBooleans(caption, texts, values);
             } catch (InterruptedException e) {
-                throw new ScriptInterruptedException();
+                throw new ScriptInterruptedException(e);
             }
             // Loop until the user pressed OK -> != null
         } while (results == null && !allowCancel);
@@ -578,7 +575,7 @@ public class SexScriptsHost implements Host {
                     }
                 }
             }
-            throw new ScriptInterruptedException();
+            throw new ScriptInterruptedException(e);
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
             result = -1;

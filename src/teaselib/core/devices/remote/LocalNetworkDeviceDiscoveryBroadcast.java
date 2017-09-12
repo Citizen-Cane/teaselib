@@ -142,7 +142,7 @@ class LocalNetworkDeviceDiscoveryBroadcast extends LocalNetworkDeviceDiscovery {
             try {
                 join();
             } catch (InterruptedException e) {
-                throw new ScriptInterruptedException();
+                throw new ScriptInterruptedException(e);
             }
         }
 

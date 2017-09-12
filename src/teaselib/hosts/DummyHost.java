@@ -121,7 +121,7 @@ public class DummyHost implements Host {
 
             return true;
         } catch (InterruptedException e) {
-            throw new ScriptInterruptedException();
+            throw new ScriptInterruptedException(e);
         } finally {
             replySection.unlock();
         }
@@ -152,7 +152,7 @@ public class DummyHost implements Host {
                                     click.await();
                                     break allChoices;
                                 } catch (InterruptedException e) {
-                                    throw new ScriptInterruptedException();
+                                    throw new ScriptInterruptedException(e);
                                 }
                             } else {
                                 return i;
@@ -174,7 +174,7 @@ public class DummyHost implements Host {
                 throw new IllegalStateException("No rule to dismiss buttons matched for " + choices);
             }
         } catch (InterruptedException e) {
-            throw new ScriptInterruptedException();
+            throw new ScriptInterruptedException(e);
         } finally {
             replySection.unlock();
         }

@@ -34,16 +34,14 @@ public class SpeechRecognition {
         InDubioContraReum("In Dubio Contra Reum"),
 
         /**
-         * Be indulgent and let the user finish speaking before deciding about
-         * timeout. A recognized prompt will cancel the timeout, even if time is
-         * up, and return the recognized choice instead of a timeout.
+         * Be indulgent and let the user finish speaking before deciding about timeout. A recognized prompt will cancel
+         * the timeout, even if time is up, and return the recognized choice instead of a timeout.
          */
         InDubioProDuriore("In Dubio Pro Duriore"),
 
         /**
-         * Give the benefit of the doubt and stop the timeout on the first
-         * attempt to answer via speech recognition, even if that recognition
-         * result will be rejected.
+         * Give the benefit of the doubt and stop the timeout on the first attempt to answer via speech recognition,
+         * even if that recognition result will be rejected.
          * 
          * The prompt has of course still to be answered.
          */
@@ -80,8 +78,8 @@ public class SpeechRecognition {
     private SpeechRecognitionImplementation sr;
 
     /**
-     * Locked if a recognition is in progress, e.g. a start event has been
-     * fired, but the the recognition has neither been rejected or completed
+     * Locked if a recognition is in progress, e.g. a start event has been fired, but the the recognition has neither
+     * been rejected or completed
      */
     private static final ReentrantLock SpeechRecognitionInProgress = new ReentrantLock();
 
@@ -91,8 +89,7 @@ public class SpeechRecognition {
     }
 
     /**
-     * Speech recognition has been started or resumed and is listening for voice
-     * input
+     * Speech recognition has been started or resumed and is listening for voice input
      */
     private boolean speechRecognitionActive = false;
 
@@ -130,7 +127,7 @@ public class SpeechRecognition {
         try {
             delegateThread.run(delegate);
         } catch (InterruptedException e) {
-            throw new ScriptInterruptedException();
+            throw new ScriptInterruptedException(e);
         } catch (Throwable t) {
             logger.error(t.getMessage(), t);
         }
@@ -157,7 +154,7 @@ public class SpeechRecognition {
         try {
             delegateThread.run(delegate);
         } catch (InterruptedException e) {
-            throw new ScriptInterruptedException();
+            throw new ScriptInterruptedException(e);
         } catch (Throwable t) {
             logger.error(t.getMessage(), t);
         }
@@ -187,7 +184,7 @@ public class SpeechRecognition {
             };
             delegateThread.run(delegate);
         } catch (InterruptedException e) {
-            throw new ScriptInterruptedException();
+            throw new ScriptInterruptedException(e);
         } catch (Throwable t) {
             logger.error(t.getMessage(), t);
         }
@@ -228,7 +225,7 @@ public class SpeechRecognition {
             } catch (InterruptedException e) {
                 hypothesisEventHandler.enable(false);
                 SpeechRecognition.this.speechRecognitionActive = false;
-                throw new ScriptInterruptedException();
+                throw new ScriptInterruptedException(e);
             } catch (Throwable t) {
                 hypothesisEventHandler.enable(false);
                 SpeechRecognition.this.speechRecognitionActive = false;
@@ -253,7 +250,7 @@ public class SpeechRecognition {
             } catch (InterruptedException e) {
                 hypothesisEventHandler.enable(false);
                 SpeechRecognition.this.speechRecognitionActive = false;
-                throw new ScriptInterruptedException();
+                throw new ScriptInterruptedException(e);
             } catch (Throwable t) {
                 hypothesisEventHandler.enable(false);
                 SpeechRecognition.this.speechRecognitionActive = false;
@@ -281,7 +278,7 @@ public class SpeechRecognition {
             try {
                 delegateThread.run(stopRecognition);
             } catch (InterruptedException e) {
-                throw new ScriptInterruptedException();
+                throw new ScriptInterruptedException(e);
             } catch (Throwable t) {
                 logger.error(t.getMessage(), t);
             } finally {
@@ -325,7 +322,7 @@ public class SpeechRecognition {
             try {
                 SpeechRecognitionInProgress.lockInterruptibly();
             } catch (InterruptedException e) {
-                throw new ScriptInterruptedException();
+                throw new ScriptInterruptedException(e);
             } finally {
                 if (SpeechRecognitionInProgress.isHeldByCurrentThread()) {
                     SpeechRecognitionInProgress.unlock();

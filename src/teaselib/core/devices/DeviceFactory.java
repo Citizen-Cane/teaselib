@@ -41,7 +41,7 @@ public abstract class DeviceFactory<T extends Device> {
             deviceCache.putAll(updatedDeviceCache);
             return devicePaths;
         } catch (InterruptedException e) {
-            throw new ScriptInterruptedException();
+            throw new ScriptInterruptedException(e);
         }
     }
 

@@ -368,7 +368,7 @@ public class MotionDetectorJavaCV extends MotionDetector /* extends WiredDevice 
             try {
                 Thread.sleep((long) (timeoutSeconds * 1000));
             } catch (InterruptedException e) {
-                throw new ScriptInterruptedException();
+                throw new ScriptInterruptedException(e);
             }
             return false;
         }
@@ -377,7 +377,7 @@ public class MotionDetectorJavaCV extends MotionDetector /* extends WiredDevice 
             return eventThread.detectionResult.awaitChange(eventThread.presenceChanged, amount, change, timeSpanSeconds,
                     timeoutSeconds);
         } catch (InterruptedException e) {
-            throw new ScriptInterruptedException();
+            throw new ScriptInterruptedException(e);
         } finally {
             eventThread.debugWindowTimeSpan = MotionRegionDefaultTimespan;
         }

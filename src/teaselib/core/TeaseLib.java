@@ -209,7 +209,7 @@ public class TeaseLib {
                     unit.sleep(duration);
                 }
             } catch (InterruptedException e) {
-                throw new ScriptInterruptedException();
+                throw new ScriptInterruptedException(e);
             }
         }
     }

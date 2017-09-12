@@ -88,7 +88,7 @@ public abstract class MediaRendererThread implements MediaRenderer.Threaded, Rep
                 // Wait until the renderer has started
                 wait();
             } catch (InterruptedException e) {
-                throw new ScriptInterruptedException();
+                throw new ScriptInterruptedException(e);
             }
         }
     }
@@ -156,7 +156,7 @@ public abstract class MediaRendererThread implements MediaRenderer.Threaded, Rep
             try {
                 completedStart.await();
             } catch (InterruptedException e) {
-                throw new ScriptInterruptedException();
+                throw new ScriptInterruptedException(e);
             }
         }
     }
@@ -167,7 +167,7 @@ public abstract class MediaRendererThread implements MediaRenderer.Threaded, Rep
             try {
                 completedMandatory.await();
             } catch (InterruptedException e) {
-                throw new ScriptInterruptedException();
+                throw new ScriptInterruptedException(e);
             }
         }
     }
@@ -179,7 +179,7 @@ public abstract class MediaRendererThread implements MediaRenderer.Threaded, Rep
                 completedAll.await();
                 join();
             } catch (InterruptedException e) {
-                throw new ScriptInterruptedException();
+                throw new ScriptInterruptedException(e);
             }
         }
     }
@@ -221,7 +221,7 @@ public abstract class MediaRendererThread implements MediaRenderer.Threaded, Rep
         } catch (CancellationException e) {
             // Expected
         } catch (InterruptedException e) {
-            throw new ScriptInterruptedException();
+            throw new ScriptInterruptedException(e);
         } catch (Exception e) {
             Exception cause = ExceptionUtil.reduce(e);
             throw ExceptionUtil.asRuntimeException(cause);

@@ -28,7 +28,7 @@ public class Prompt {
     ScriptFutureTask scriptTask;
 
     public final ReentrantLock lock;
-    final Condition click;
+    public final Condition click;
 
     final AtomicBoolean paused = new AtomicBoolean(false);
 

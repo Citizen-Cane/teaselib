@@ -93,17 +93,15 @@ public class ScriptFutureTask extends FutureTask<Void> {
                 // Better, but of course not perfect
                 // Thread.yield();
 
-                // TODO same as in dismissChoices.call()
+                // resume parent thread
                 prompt.lock.lockInterruptibly();
                 try {
-                    if (prompt.result() == Prompt.UNDEFINED) {
-                        timedOut.set(dismissChoices.call());
-                    } else {
-                        timedOut.set(false);
-                    }
+                    timedOut.set(prompt.result() == Prompt.UNDEFINED);
+                    prompt.click.signalAll();
                 } finally {
                     prompt.lock.unlock();
                 }
+
             } catch (InterruptedException e) {
                 // Ignore interrupt while dismissing prompt since the script function is finishing already,
                 // and either has been stopped already or will be dismissed (all good states)
@@ -189,16 +187,12 @@ public class ScriptFutureTask extends FutureTask<Void> {
 
     public void forwardErrorsAsRuntimeException() {
         try {
-            try {
-                Throwable t = getException();
-                if (t != null) {
-                    throwException(t);
-                }
-            } catch (InterruptedException e) {
-                throw new ScriptInterruptedException(e);
+            Throwable t = getException();
+            if (t != null) {
+                throwException(t);
             }
-        } catch (ScriptInterruptedException e) {
-            throwOnlyIfNotTimedOut(e);
+        } catch (InterruptedException e) {
+            throw new ScriptInterruptedException(e);
         }
     }
 
@@ -214,12 +208,6 @@ public class ScriptFutureTask extends FutureTask<Void> {
             throw (Error) t;
         } else {
             throw new RuntimeException(t);
-        }
-    }
-
-    private void throwOnlyIfNotTimedOut(ScriptInterruptedException e) {
-        if (getScriptFunctionResult() != ScriptFunction.Timeout && !timedOut()) {
-            throw e;
         }
     }
 }

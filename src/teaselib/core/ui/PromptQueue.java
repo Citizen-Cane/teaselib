@@ -17,10 +17,10 @@ public class PromptQueue {
     private final Set<Prompt> dismissedPermanent = new HashSet<Prompt>();
 
     public int show(TeaseScriptBase script, Prompt prompt) throws InterruptedException {
+        prompt.lock.lockInterruptibly();
         try {
             // Prevent multiple entry while initializing prompt
             synchronized (this) {
-                prompt.lock.lockInterruptibly();
                 synchronized (dismissedPermanent) {
                     if (dismissedPermanent.contains(prompt)) {
                         return Prompt.DISMISSED;
@@ -62,11 +62,7 @@ public class PromptQueue {
             try {
                 prompt.click.await();
             } finally {
-                for (InputMethod inputMethod : prompt.inputMethods) {
-                    inputMethod.dismiss(prompt);
-                }
-
-                active.set(null);
+                dismissPrompt(prompt);
             }
             if (prompt.exception != null) {
                 if (prompt.exception instanceof RuntimeException) {

@@ -52,14 +52,12 @@ public class Shower {
                     prompt.forwardErrorsAsRuntimeException();
                     return prompt.choice(resultIndex);
                 } else if (prompt.inputHandlerKey != Prompt.NONE) {
-                    synchronized (prompt) {
-                        try {
-                            if (notExecutedYet(prompt.inputHandlerKey)) {
-                                prompt.executeInputMethodHandler();
-                            }
-                        } finally {
-                            prompt.inputHandlerKey = Prompt.NONE;
+                    try {
+                        if (notExecutedYet(prompt.inputHandlerKey)) {
+                            prompt.executeInputMethodHandler();
                         }
+                    } finally {
+                        prompt.inputHandlerKey = Prompt.NONE;
                     }
                 } else {
                     prompt.completeScriptTask();
@@ -95,13 +93,12 @@ public class Shower {
     private void resumePrevious() throws InterruptedException {
         if (!stack.isEmpty()) {
             Prompt prompt = stack.peek();
-            synchronized (prompt) {
-                // TODO Possibly not necessary
-                if (promptQueue.getActive() == prompt) {
-                    promptQueue.dismiss(prompt);
-                }
-                stack.pop();
+
+            // TODO Possibly not necessary
+            if (promptQueue.getActive() == prompt) {
+                promptQueue.dismiss(prompt);
             }
+            stack.pop();
         } else {
             throw new IllegalStateException("Prompt stack empty");
         }

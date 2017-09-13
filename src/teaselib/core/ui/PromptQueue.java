@@ -71,29 +71,27 @@ public class PromptQueue {
     }
 
     public void resume(Prompt prompt) throws InterruptedException {
-        synchronized (this) {
-            prompt.lock.lockInterruptibly();
-            try {
-                Prompt activePrompt = active.get();
+        prompt.lock.lockInterruptibly();
+        try {
+            Prompt activePrompt = active.get();
 
-                if (activePrompt != null && prompt == activePrompt) {
-                    throw new IllegalStateException("Prompt " + prompt + " already showing");
-                }
-
-                if (activePrompt != null) {
-                    dismiss(activePrompt);
-                }
-
-                if (prompt.result() != Prompt.UNDEFINED)
-                    return;
-
-                makePromptActive(prompt);
-                prompt.paused.set(false);
-
-                // Were're just resuming, no need to wait or cleanup
-            } finally {
-                prompt.lock.unlock();
+            if (activePrompt != null && prompt == activePrompt) {
+                throw new IllegalStateException("Prompt " + prompt + " already showing");
             }
+
+            if (activePrompt != null) {
+                dismiss(activePrompt);
+            }
+
+            if (prompt.result() != Prompt.UNDEFINED)
+                return;
+
+            makePromptActive(prompt);
+            prompt.paused.set(false);
+
+            // Were're just resuming, no need to wait or cleanup
+        } finally {
+            prompt.lock.unlock();
         }
     }
 
@@ -104,7 +102,7 @@ public class PromptQueue {
         }
     }
 
-    public synchronized boolean dismiss(Prompt prompt) throws InterruptedException {
+    public boolean dismiss(Prompt prompt) throws InterruptedException {
         prompt.lock.lockInterruptibly();
         try {
             if (prompt.result() == Prompt.UNDEFINED) {
@@ -118,7 +116,7 @@ public class PromptQueue {
         }
     }
 
-    public synchronized boolean pause(Prompt prompt) throws InterruptedException {
+    public boolean pause(Prompt prompt) throws InterruptedException {
         prompt.lock.lockInterruptibly();
         try {
             prompt.paused.set(true);
@@ -132,7 +130,7 @@ public class PromptQueue {
         }
     }
 
-    private synchronized boolean dismissPrompt(Prompt prompt) {
+    private boolean dismissPrompt(Prompt prompt) {
         // TODO DummyHost dismisses anything
         // - test what prompt is currently active (don't burden that to the input method
         // - all tests succeed without this check, but that leaves a code smell

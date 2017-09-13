@@ -107,13 +107,9 @@ public class HostInputMethod implements InputMethod {
             }
         } catch (InterruptedException e) {
             throw e;
-        } catch (Exception e) {
-            throw new RuntimeException(e);
         } finally {
-            synchronized (prompt) {
-                if (replySection.isHeldByCurrentThread()) {
-                    replySection.unlock();
-                }
+            if (replySection.isHeldByCurrentThread()) {
+                replySection.unlock();
             }
         }
         return dismissChoices;

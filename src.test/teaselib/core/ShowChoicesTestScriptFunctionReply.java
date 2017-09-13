@@ -1,6 +1,6 @@
 package teaselib.core;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 import java.util.Arrays;
 import java.util.List;
@@ -15,6 +15,7 @@ import org.junit.runners.Parameterized;
 
 import teaselib.ScriptFunction;
 import teaselib.TeaseScript;
+import teaselib.core.media.MediaRendererThread;
 import teaselib.test.IntegrationTests;
 
 @Category(IntegrationTests.class)
@@ -39,6 +40,23 @@ public class ShowChoicesTestScriptFunctionReply extends ShowChoicesAbstractTest 
         }
     }
 
+    static class DebugInfiniteDelay extends MediaRendererThread {
+        public DebugInfiniteDelay(TeaseLib teaseLib) {
+            super(teaseLib);
+        }
+
+        @Override
+        protected void renderMedia() throws InterruptedException {
+            startCompleted();
+            mandatoryCompleted();
+            allCompleted();
+
+            synchronized (this) {
+                wait();
+            }
+        }
+    }
+
     @Test
     public void testSingleScriptFunction() throws Exception {
         debugger.addResponse("Stop", Debugger.Response.Choose);
@@ -47,6 +65,7 @@ public class ShowChoicesTestScriptFunctionReply extends ShowChoicesAbstractTest 
         assertEquals("Stop", script.reply(new ScriptFunction() {
             @Override
             public void run() {
+                script.queueRenderer(new DebugInfiniteDelay(script.teaseLib));
                 script.say("Inside script function.");
             }
         }, "Stop"));
@@ -62,10 +81,13 @@ public class ShowChoicesTestScriptFunctionReply extends ShowChoicesAbstractTest 
         assertEquals("Stop", script.reply(new ScriptFunction() {
             @Override
             public void run() {
+                // TODO Why needed to resolve sporadic failure?
+                // script.queueRenderer(new DebugInfiniteDelay(script.teaseLib));
                 script.say("Start of script function.");
                 assertEquals("No", script.reply("Yes", "No"));
-                script.say("End of script function.");
 
+                script.queueRenderer(new DebugInfiniteDelay(script.teaseLib));
+                script.say("End of script function.");
             }
         }, "Stop"));
         script.say("Resuming main script");
@@ -88,13 +110,15 @@ public class ShowChoicesTestScriptFunctionReply extends ShowChoicesAbstractTest 
                     @Override
                     public void run() {
                         script.say("Start of script function 2.");
+                        assertEquals("No Level 2", script.reply("Yes Level 2", "No Level 2"));
+
+                        script.queueRenderer(new DebugInfiniteDelay(script.teaseLib));
                         script.say("End of script function 2");
 
                     }
                 }, "Stop script function 2"));
 
                 script.say("End of script function 1.");
-
             }
         }, "Ignore script function 1"));
         script.say("Resuming main script");
@@ -122,18 +146,19 @@ public class ShowChoicesTestScriptFunctionReply extends ShowChoicesAbstractTest 
                             @Override
                             public void run() {
                                 script.say("Start of script function 3.");
+                                assertEquals("Wow Level 3", script.reply("Wow Level 3", "Oh Level 3"));
+
+                                script.queueRenderer(new DebugInfiniteDelay(script.teaseLib));
                                 script.say("End of script function 3");
 
                             }
                         }, "Stop script function 3"));
 
                         script.say("End of script function 2");
-
                     }
                 }, "Ignore script function 2"));
 
                 script.say("End of script function 1.");
-
             }
         }, "Ignore script function 1"));
         script.say("Resuming main script");

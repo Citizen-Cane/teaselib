@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import teaselib.Replay;
+import teaselib.core.ScriptInterruptedException;
 import teaselib.core.media.MediaRenderer.Threaded;
 
 public class MediaRendererQueue {
@@ -19,12 +20,10 @@ public class MediaRendererQueue {
     }
 
     /**
-     * Start a batch of renderers. This is reentrant and called from multiple
-     * threads. Frequent users are the main script thread and script function
-     * threads.
+     * Start a batch of renderers. This is reentrant and called from multiple threads. Frequent users are the main
+     * script thread and script function threads.
      * 
-     * The functions waits for running renderers to complete, then starts the
-     * renderers suppplied in {@code renderers}.
+     * The functions waits for running renderers to complete, then starts the renderers suppplied in {@code renderers}.
      * 
      * @param renderers
      *            The renderers to start.
@@ -39,6 +38,8 @@ public class MediaRendererQueue {
                 }
                 try {
                     r.render();
+                } catch (ScriptInterruptedException e) {
+                    throw e;
                 } catch (Exception e) {
                     logger.error(e.getMessage(), e);
                 }
@@ -94,8 +95,8 @@ public class MediaRendererQueue {
     }
 
     /**
-     * Completes rendering of all currently running renderers. Returns after all
-     * renderers that running at the start of this method have been finished.
+     * Completes rendering of all currently running renderers. Returns after all renderers that running at the start of
+     * this method have been finished.
      */
     public void completeAll() {
         Map<Class<?>, Threaded> renderers = getThreadedRenderers();
@@ -110,8 +111,8 @@ public class MediaRendererQueue {
     }
 
     /**
-     * Ends rendering of all currently running renderers. Each renderer thread
-     * is interrupted and should end as soon as possible.
+     * Ends rendering of all currently running renderers. Each renderer thread is interrupted and should end as soon as
+     * possible.
      */
     public void endAll() {
         Map<Class<?>, Threaded> renderers = getThreadedRenderers();

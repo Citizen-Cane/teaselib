@@ -52,6 +52,9 @@ public class ScriptFutureTask extends FutureTask<Void> {
                 } catch (ScriptInterruptedException e) {
                     script.endAll();
                     throw e;
+                } catch (Exception e) {
+                    script.endAll();
+                    throw e;
                 }
             }
         });

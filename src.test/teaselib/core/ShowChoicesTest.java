@@ -51,7 +51,6 @@ public class ShowChoicesTest extends ShowChoicesAbstractTest {
     @Test
     public void testSingleScriptFunction() throws Exception {
         debugger.addResponse("Stop", Debugger.Response.Ignore);
-        debugger.addResponse("No", Debugger.Response.Choose);
 
         script.say("In main script.");
         assertEquals(TeaseScript.Timeout, script.reply(new ScriptFunction() {

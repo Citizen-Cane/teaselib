@@ -1,6 +1,6 @@
 package teaselib.core;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 import java.util.Arrays;
 import java.util.List;
@@ -58,7 +58,7 @@ public class ShowChoicesTestScriptFunctionReply extends ShowChoicesAbstractTest 
     }
 
     @Test
-    public void testSingleScriptFunction() throws Exception {
+    public void testSingleScriptFunctionDismiss() throws Exception {
         debugger.addResponse("Stop", Debugger.Response.Choose);
 
         script.say("In main script.");
@@ -73,28 +73,7 @@ public class ShowChoicesTestScriptFunctionReply extends ShowChoicesAbstractTest 
     }
 
     @Test
-    public void testSingleScriptFunctionWithInnerReply() throws Exception {
-        debugger.addResponse("Stop", Debugger.Response.Choose);
-        debugger.addResponse("No", Debugger.Response.Choose);
-
-        script.say("In main script.");
-        assertEquals("Stop", script.reply(new ScriptFunction() {
-            @Override
-            public void run() {
-                // TODO Why needed to resolve sporadic failure?
-                // script.queueRenderer(new DebugInfiniteDelay(script.teaseLib));
-                script.say("Start of script function.");
-                assertEquals("No", script.reply("Yes", "No"));
-
-                script.queueRenderer(new DebugInfiniteDelay(script.teaseLib));
-                script.say("End of script function.");
-            }
-        }, "Stop"));
-        script.say("Resuming main script");
-    }
-
-    @Test
-    public void testTwoScriptFunctionsEachWithInnerReply() throws Exception {
+    public void testTwoScriptFunctionsDismiss() throws Exception {
         debugger.addResponse("No*", Debugger.Response.Choose);
         debugger.addResponse("Ignore*", Debugger.Response.Ignore);
         debugger.addResponse("Stop*", Debugger.Response.Choose);
@@ -109,12 +88,8 @@ public class ShowChoicesTestScriptFunctionReply extends ShowChoicesAbstractTest 
                 assertEquals("Stop script function 2", script.reply(new ScriptFunction() {
                     @Override
                     public void run() {
-                        script.say("Start of script function 2.");
-                        assertEquals("No Level 2", script.reply("Yes Level 2", "No Level 2"));
-
                         script.queueRenderer(new DebugInfiniteDelay(script.teaseLib));
-                        script.say("End of script function 2");
-
+                        script.say("Inside script function 2.");
                     }
                 }, "Stop script function 2"));
 
@@ -126,7 +101,7 @@ public class ShowChoicesTestScriptFunctionReply extends ShowChoicesAbstractTest 
 
     @Test
     public void testThreeScriptFunctionsEachWithInnerReply() throws Exception {
-        debugger.addResponse("Wow*", Debugger.Response.Choose);
+        debugger.addResponse("No*", Debugger.Response.Choose);
         debugger.addResponse("Ignore*", Debugger.Response.Ignore);
         debugger.addResponse("Stop*", Debugger.Response.Choose);
 
@@ -140,17 +115,13 @@ public class ShowChoicesTestScriptFunctionReply extends ShowChoicesAbstractTest 
                     @Override
                     public void run() {
                         script.say("Start of script function 2.");
-                        assertEquals("Wow Level 2", script.reply("Wow Level 2", "Oh Level 2"));
+                        assertEquals("No Level 2", script.reply("No Level 2", "Yes Level 2"));
 
                         assertEquals("Stop script function 3", script.reply(new ScriptFunction() {
                             @Override
                             public void run() {
-                                script.say("Start of script function 3.");
-                                assertEquals("Wow Level 3", script.reply("Wow Level 3", "Oh Level 3"));
-
                                 script.queueRenderer(new DebugInfiniteDelay(script.teaseLib));
-                                script.say("End of script function 3");
-
+                                script.say("Inside script function 3.");
                             }
                         }, "Stop script function 3"));
 

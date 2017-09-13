@@ -96,8 +96,8 @@ public class DummyHost implements Host {
     public boolean dismissChoices(List<String> choices) {
         logger.info("Dismiss " + choices + " @ " + Thread.currentThread().getStackTrace()[1].toString());
 
+        replySection.lock();
         try {
-            replySection.lockInterruptibly();
             if (currentChoices.isEmpty()) {
                 if (replySection.hasWaiters(click)) {
                     throw new IllegalStateException("Trying to dismiss without current choices: " + choices);
@@ -120,8 +120,6 @@ public class DummyHost implements Host {
             }
 
             return true;
-        } catch (InterruptedException e) {
-            throw new ScriptInterruptedException(e);
         } finally {
             replySection.unlock();
         }

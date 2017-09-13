@@ -1,6 +1,3 @@
-/**
- * 
- */
 package teaselib.core;
 
 import java.util.concurrent.Callable;
@@ -25,7 +22,6 @@ public class ScriptFutureTask extends FutureTask<Void> {
     private Throwable throwable = null;
 
     private final Prompt prompt;
-    private final Callable<Boolean> dismissChoices;
 
     private AtomicBoolean dismissed = new AtomicBoolean(false);
     private CountDownLatch finishing;
@@ -34,8 +30,7 @@ public class ScriptFutureTask extends FutureTask<Void> {
     private final static ExecutorService Executor = NamedExecutorService.newFixedThreadPool(Integer.MAX_VALUE,
             "Script Function", 1, TimeUnit.HOURS);
 
-    public ScriptFutureTask(final TeaseScriptBase script, final ScriptFunction scriptFunction, Prompt prompt,
-            Callable<Boolean> dismissChoices) {
+    public ScriptFutureTask(final TeaseScriptBase script, final ScriptFunction scriptFunction, Prompt prompt) {
         super(new Callable<Void>() {
             @Override
             public Void call() throws Exception {
@@ -60,7 +55,6 @@ public class ScriptFutureTask extends FutureTask<Void> {
         });
         this.scriptFunction = scriptFunction;
         this.prompt = prompt;
-        this.dismissChoices = dismissChoices;
     }
 
     @Override

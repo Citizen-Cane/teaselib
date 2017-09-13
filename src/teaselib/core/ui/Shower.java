@@ -57,7 +57,6 @@ public class Shower {
                             if (notExecutedYet(prompt.inputHandlerKey)) {
                                 prompt.executeInputMethodHandler();
                             }
-                            promptQueue.clear(prompt);
                         } finally {
                             prompt.inputHandlerKey = Prompt.NONE;
                         }
@@ -102,7 +101,6 @@ public class Shower {
                     promptQueue.dismiss(prompt);
                 }
                 stack.pop();
-                promptQueue.clear(prompt);
             }
         } else {
             throw new IllegalStateException("Prompt stack empty");

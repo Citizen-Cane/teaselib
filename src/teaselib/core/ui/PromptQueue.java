@@ -1,8 +1,5 @@
 package teaselib.core.ui;
 
-import java.util.HashSet;
-import java.util.Set;
-import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicReference;
 
 import teaselib.core.ScriptInterruptedException;
@@ -14,19 +11,12 @@ import teaselib.core.TeaseScriptBase;
  */
 public class PromptQueue {
     private final AtomicReference<Prompt> active = new AtomicReference<Prompt>();
-    private final Set<Prompt> dismissedPermanent = new HashSet<Prompt>();
 
     public int show(TeaseScriptBase script, Prompt prompt) throws InterruptedException {
         prompt.lock.lockInterruptibly();
         try {
             // Prevent multiple entry while initializing prompt
             synchronized (this) {
-                synchronized (dismissedPermanent) {
-                    if (dismissedPermanent.contains(prompt)) {
-                        return Prompt.DISMISSED;
-                    }
-                }
-
                 Prompt activePrompt = active.get();
 
                 if (activePrompt != null && prompt == activePrompt) {
@@ -50,7 +40,7 @@ public class PromptQueue {
                 makePromptActive(prompt);
 
                 if (prompt.scriptFunction != null) {
-                    prompt.executeScriptTask(script, getDismissCallable(prompt));
+                    prompt.executeScriptTask(script);
                     // script task waits until prompt queue is awaiting the click
                     // - still not good enough - however works with 1000ms delay
                     // TODO wait until all host input methods have realized prompt in makePromptActive
@@ -84,12 +74,6 @@ public class PromptQueue {
         synchronized (this) {
             prompt.lock.lockInterruptibly();
             try {
-                synchronized (dismissedPermanent) {
-                    if (dismissedPermanent.contains(prompt)) {
-                        return;
-                    }
-                }
-
                 Prompt activePrompt = active.get();
 
                 if (activePrompt != null && prompt == activePrompt) {
@@ -117,18 +101,6 @@ public class PromptQueue {
         active.set(prompt);
         for (InputMethod inputMethod : prompt.inputMethods) {
             inputMethod.show(prompt);
-        }
-    }
-
-    private synchronized boolean dismissUntilLater(Prompt prompt) throws InterruptedException {
-        prompt.lock.lockInterruptibly();
-        try {
-            synchronized (dismissedPermanent) {
-                dismissedPermanent.add(prompt);
-            }
-            return dismiss(prompt);
-        } finally {
-            prompt.lock.unlock();
         }
     }
 
@@ -196,33 +168,5 @@ public class PromptQueue {
 
     public Prompt getActive() {
         return active.get();
-    }
-
-    public Callable<Boolean> getDismissCallable(final Prompt prompt) {
-        Callable<Boolean> dismiss = new Callable<Boolean>() {
-            @Override
-            public Boolean call() throws Exception {
-                prompt.lock.lockInterruptibly();
-                try {
-                    // Resolves something but is evil in itself
-                    // TODO Just cleanup input methods once
-                    if (prompt.result() == Prompt.UNDEFINED) {
-                        return dismissUntilLater(prompt);
-                    } else {
-                        return false;
-                    }
-                } finally {
-                    prompt.lock.unlock();
-                }
-                // TODO remove method dismissUntilLater()
-                // TODO also remove dismissedPermaent map
-                // return dismiss(prompt);
-            }
-        };
-        return dismiss;
-    }
-
-    public void clear(Prompt prompt) {
-        dismissedPermanent.remove(prompt);
     }
 }

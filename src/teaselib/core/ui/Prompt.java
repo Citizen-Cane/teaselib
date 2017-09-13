@@ -5,7 +5,6 @@ package teaselib.core.ui;
 
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
@@ -51,8 +50,8 @@ public class Prompt {
         this.result = Prompt.UNDEFINED;
     }
 
-    void executeScriptTask(TeaseScriptBase script, final Callable<Boolean> dismiss) {
-        scriptTask = new ScriptFutureTask(script, scriptFunction, this, dismiss);
+    void executeScriptTask(TeaseScriptBase script) {
+        scriptTask = new ScriptFutureTask(script, scriptFunction, this);
         scriptTask.execute();
     }
 

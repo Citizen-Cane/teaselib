@@ -155,8 +155,8 @@ public abstract class TeaseScriptBase {
             // This has to be done first as subsequent parse steps
             // inject moods and thus change the message hash
             if (ttsPlayer != null) {
-                if (ttsPlayer.prerenderedSpeechAvailable(message.actor)) {
-                    // Don't use TTS, even if pre-recorded speech is missing
+                if (ttsPlayer.prerenderedSpeechAvailable(message.actor)
+                        && Boolean.parseBoolean(teaseLib.config.get(Config.Render.Speech))) {
                     message = ttsPlayer.createPrerenderedSpeechMessage(message, resources);
                 }
             }

@@ -205,24 +205,27 @@ public class RenderMessage extends MediaRendererThread {
         } else if (part.type == Message.Type.BackgroundSound) {
             // Play sound, continue message execution
             completeSpeech(lastParagraph);
-            synchronized (interuptableAudio) {
-                soundRenderer = new RenderSound(resources, part.value, teaseLib);
-                soundRenderer.render();
-                interuptableAudio.add(soundRenderer);
+            if (isSoundOutputEnabled()) {
+                synchronized (interuptableAudio) {
+                    soundRenderer = new RenderSound(resources, part.value, teaseLib);
+                    soundRenderer.render();
+                    interuptableAudio.add(soundRenderer);
+                }
             }
-            // use awaitSoundCompletion keyword to wait for sound
-            // completion
+            // use awaitSoundCompletion keyword to wait for sound completion
         } else if (part.type == Message.Type.Sound) {
             // Play sound, wait until finished
             completeSpeech(lastParagraph);
-            RenderSound sound = new RenderSound(resources, part.value, teaseLib);
-            synchronized (interuptableAudio) {
-                sound.render();
-                interuptableAudio.add(sound);
-            }
-            sound.completeAll();
-            synchronized (interuptableAudio) {
-                interuptableAudio.remove(sound);
+            if (isSoundOutputEnabled()) {
+                RenderSound sound = new RenderSound(resources, part.value, teaseLib);
+                synchronized (interuptableAudio) {
+                    sound.render();
+                    interuptableAudio.add(sound);
+                }
+                sound.completeAll();
+                synchronized (interuptableAudio) {
+                    interuptableAudio.remove(sound);
+                }
             }
         } else if (part.type == Message.Type.Speech) {
             if (speakText) {
@@ -232,17 +235,18 @@ public class RenderMessage extends MediaRendererThread {
                         : new RenderSpeechDelay(paragraphPause, teaseLib, part.value);
             }
         } else if (part.type == Message.Type.DesktopItem) {
-            // Finish the current text part
-            try {
-                final RenderDesktopItem renderDesktopItem = new RenderDesktopItem(
-                        resources.unpackEnclosingFolder(part.value), teaseLib);
-                completeSpeech(lastParagraph);
-                renderDesktopItem.render();
-            } catch (IOException e) {
-                logger.error(e.getMessage(), e);
-                accumulatedText.add(new Part(Message.Type.Text, e.getMessage()));
-                show(accumulatedText.toString(), mood);
-                throw e;
+            if (isInstructionalImageOutputEnabled()) {
+                try {
+                    final RenderDesktopItem renderDesktopItem = new RenderDesktopItem(
+                            resources.unpackEnclosingFolder(part.value), teaseLib);
+                    completeSpeech(lastParagraph);
+                    renderDesktopItem.render();
+                } catch (IOException e) {
+                    logger.error(e.getMessage(), e);
+                    accumulatedText.add(new Part(Message.Type.Text, e.getMessage()));
+                    show(accumulatedText.toString(), mood);
+                    throw e;
+                }
             }
         } else if (part.type == Message.Type.Mood) {
             // Mood
@@ -446,5 +450,13 @@ public class RenderMessage extends MediaRendererThread {
 
     private boolean isSpeechOutputEnabled() {
         return Boolean.parseBoolean(teaseLib.config.get(Config.Render.Speech));
+    }
+
+    private boolean isSoundOutputEnabled() {
+        return Boolean.parseBoolean(teaseLib.config.get(Config.Render.Sound));
+    }
+
+    private boolean isInstructionalImageOutputEnabled() {
+        return Boolean.parseBoolean(teaseLib.config.get(Config.Render.InstructionalImages));
     }
 }

@@ -140,7 +140,7 @@ public class DummyHost implements Host {
             currentChoices = new ArrayList<String>(choices);
             selectedIndex = 0;
             try {
-                allChoices: for (Entry<String, Response> entry : responses.entrySet()) {
+                for (Entry<String, Response> entry : responses.entrySet()) {
                     Pattern choice = WildcardPattern.compile(entry.getKey());
                     for (int i = 0; i < choices.size(); i++) {
                         if (choice.matcher(choices.get(i)).matches()) {
@@ -148,7 +148,8 @@ public class DummyHost implements Host {
                                 try {
                                     logger.info("Awaiting dismiss for " + choices.get(i));
                                     click.await();
-                                    break allChoices;
+                                    // break allChoices;
+                                    return i;
                                 } catch (InterruptedException e) {
                                     throw new ScriptInterruptedException(e);
                                 }

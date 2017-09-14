@@ -54,8 +54,7 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
      * @param script
      *            The script to share resources with
      * @param actor
-     *            If both script and actor have the same locale, the speech
-     *            recognizer is shared by both scripts
+     *            If both script and actor have the same locale, the speech recognizer is shared by both scripts
      */
     public TeaseScript(TeaseScript script, Actor actor) {
         super(script, actor);
@@ -73,10 +72,8 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
     }
 
     /**
-     * Renders the image denoted by the resource path. The image will not be
-     * displayed immediately but during the next message rendering. This is
-     * because if no image is specified, an image of the dominant character will
-     * be used.
+     * Renders the image denoted by the resource path. The image will not be displayed immediately but during the next
+     * message rendering. This is because if no image is specified, an image of the dominant character will be used.
      * 
      * @param path
      *            The resource path to the image
@@ -94,26 +91,39 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
     }
 
     public void showDesktopItem(String path) {
-        MediaRenderer desktopItem;
-        try {
-            desktopItem = new RenderDesktopItem(resources.unpackEnclosingFolder(path), teaseLib);
-            queueRenderer(desktopItem);
-        } catch (IOException e) {
-            logger.error(e.getMessage(), e);
+        if (Boolean.parseBoolean(teaseLib.config.get(Config.Render.InstructionalImages))) {
+            try {
+                MediaRenderer desktopItem = new RenderDesktopItem(resources.unpackEnclosingFolder(path), teaseLib);
+                queueRenderer(desktopItem);
+            } catch (IOException e) {
+                if (Boolean.parseBoolean(teaseLib.config.get(Config.Debug.StopOnRenderError))) {
+                    throw new RuntimeException(e);
+                } else {
+                    logger.error(e.getMessage(), e);
+                }
+            }
         }
     }
 
     public Object setBackgroundSound(String path) {
-        RenderBackgroundSound audioHandle = new RenderBackgroundSound(resources, path, teaseLib);
-        queueBackgropundRenderer(audioHandle);
-        return audioHandle;
+        if (Boolean.parseBoolean(teaseLib.config.get(Config.Render.Sound))) {
+            RenderBackgroundSound audioHandle = new RenderBackgroundSound(resources, path, teaseLib);
+            queueBackgropundRenderer(audioHandle);
+            return audioHandle;
+        } else {
+            return null;
+        }
     }
 
     public Object setSound(String path) {
-        RenderSound soundRenderer = new RenderSound(resources, path, teaseLib);
-        queueRenderer(soundRenderer);
-        Object audioHandle = soundRenderer;
-        return audioHandle;
+        if (Boolean.parseBoolean(teaseLib.config.get(Config.Render.Sound))) {
+            RenderSound soundRenderer = new RenderSound(resources, path, teaseLib);
+            queueRenderer(soundRenderer);
+            Object audioHandle = soundRenderer;
+            return audioHandle;
+        } else {
+            return null;
+        }
     }
 
     public void stopSound(Object audioHandle) {
@@ -175,16 +185,14 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
     }
 
     /**
-     * Show an intertitle ({@link https://en.wikipedia.org/wiki/Intertitle}) to
-     * reveal information or give instructions that are encessary to bring the
-     * script foraward, but aren't suitable to be given by a character.
+     * Show an intertitle ({@link https://en.wikipedia.org/wiki/Intertitle}) to reveal information or give instructions
+     * that are encessary to bring the script foraward, but aren't suitable to be given by a character.
      * <p>
-     * For instance if you are to accidently spill coffee on the floor, the
-     * command to do shouldn't be given by any of the actors you're interacting
-     * with, as that would break their character.
+     * For instance if you are to accidently spill coffee on the floor, the command to do shouldn't be given by any of
+     * the actors you're interacting with, as that would break their character.
      * 
-     * The command works the same as the {@link #show(String ...)} command, but
-     * there will be no image associated with it.
+     * The command works the same as the {@link #show(String ...)} command, but there will be no image associated with
+     * it.
      * 
      * @param text
      *            The text to show with the intertitle.
@@ -194,9 +202,8 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
     }
 
     /**
-     * Displays the requested choices in the user interface after the mandatory
-     * parts of all renderers have been completed. This means especially that
-     * all text has been displayed and spoken.
+     * Displays the requested choices in the user interface after the mandatory parts of all renderers have been
+     * completed. This means especially that all text has been displayed and spoken.
      * 
      * @param choices
      *            The prompts to be displayed in the user interface
@@ -211,9 +218,8 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
     }
 
     /**
-     * Displays the requested choices in the user interface after the mandatory
-     * parts of all renderers have been completed. This means especially that
-     * all text has been displayed and spoken.
+     * Displays the requested choices in the user interface after the mandatory parts of all renderers have been
+     * completed. This means especially that all text has been displayed and spoken.
      * 
      * @param choice
      *            The first prompt to be displayed by the user interface.
@@ -227,30 +233,28 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
     }
 
     /**
-     * Displays the requested choices in the user interface after the mandatory
-     * parts of all renderers have been completed. This means especially that
-     * all text has been displayed and spoken.
+     * Displays the requested choices in the user interface after the mandatory parts of all renderers have been
+     * completed. This means especially that all text has been displayed and spoken.
      * 
      * @param choices
      *            The prompts to be displayed in the user interface
-     * @return The choice object that has been selected by the user, or
-     *         {@link TeaseScript#Timeout} if the script function completes.
+     * @return The choice object that has been selected by the user, or {@link TeaseScript#Timeout} if the script
+     *         function completes.
      */
     public final String reply(ScriptFunction scriptFunction, List<String> choices) {
         return showChoices(scriptFunction, choices);
     }
 
     /**
-     * Displays the requested choices in the user interface after the mandatory
-     * parts of all renderers have been completed. This means especially that
-     * all text has been displayed and spoken.
+     * Displays the requested choices in the user interface after the mandatory parts of all renderers have been
+     * completed. This means especially that all text has been displayed and spoken.
      * 
      * @param choice
      *            The first prompt to be displayed by the user interface.
      * @param more
      *            More prompts to be displayed by the user interface
-     * @return The choice object that has been selected by the user, or
-     *         {@link TeaseScript#Timeout} if the script function completes.
+     * @return The choice object that has been selected by the user, or {@link TeaseScript#Timeout} if the script
+     *         function completes.
      */
     public final String reply(ScriptFunction scriptFunction, String choice, String... more) {
         List<String> choices = buildChoicesFromArray(choice, more);
@@ -310,24 +314,20 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
     }
 
     /**
-     * Wait until the timeout duration has elapsed, wait for ongoing speech
-     * recognition to complete, dismiss the buttons and return
-     * {@link teaselib.ScriptFunction#Timeout} instead of a choice
+     * Wait until the timeout duration has elapsed, wait for ongoing speech recognition to complete, dismiss the buttons
+     * and return {@link teaselib.ScriptFunction#Timeout} instead of a choice
      * 
-     * The function waits until speech recognition is completed before marking
-     * the choice as "Timed out", because the user has usually completed the
-     * requested action before uttering a choice, and because speaking takes
-     * more time than pressing a button.
+     * The function waits until speech recognition is completed before marking the choice as "Timed out", because the
+     * user has usually completed the requested action before uttering a choice, and because speaking takes more time
+     * than pressing a button.
      * 
      * @param seconds
      *            The timeout duration
      * @param timoutBehavior
-     *            How speech recognition is handled when the timeout has been
-     *            reached
+     *            How speech recognition is handled when the timeout has been reached
      * @return A script function that accomplishes the described behavior.
      */
-    public ScriptFunction timeout(long seconds,
-            final SpeechRecognition.TimeoutBehavior timoutBehavior) {
+    public ScriptFunction timeout(long seconds, final SpeechRecognition.TimeoutBehavior timoutBehavior) {
         return new SpeechRecognitionAwareTimeoutScriptFunction(seconds, Relation.Autonomous) {
             @Override
             public void run() {
@@ -337,22 +337,17 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
     }
 
     /**
-     * Wait until the timeout duration has elapsed, wait for ongoing speech
-     * recognition to complete, then wait until the user makes a choice and
-     * return {@link teaselib.ScriptFunction#Timeout} instead of the users'
-     * choice.
+     * Wait until the timeout duration has elapsed, wait for ongoing speech recognition to complete, then wait until the
+     * user makes a choice and return {@link teaselib.ScriptFunction#Timeout} instead of the users' choice.
      * <p>
-     * While this behavior can be implemented with a standard button, the
-     * function waits until speech recognition is completed before marking the
-     * choice as "Timed out", because the user has usually completed the
-     * requested action before uttering a choice, and because speaking takes
-     * more time than pressing a button.
+     * While this behavior can be implemented with a standard button, the function waits until speech recognition is
+     * completed before marking the choice as "Timed out", because the user has usually completed the requested action
+     * before uttering a choice, and because speaking takes more time than pressing a button.
      * 
      * @param seconds
      *            The timeout duration
      * @param timoutBehavior
-     *            How speech recognition is handled when the timeout has been
-     *            reached
+     *            How speech recognition is handled when the timeout has been reached
      * @return A script function that accomplishes the described behavior.
      */
     public ScriptFunction timeoutWithConfirmation(long seconds,
@@ -367,20 +362,16 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
     }
 
     /**
-     * Wait until the timeout duration has elapsed, and wait for ongoing speech
-     * recognition to complete. If the duration elapses, return
-     * {@link teaselib.ScriptFunction#Timeout} instead of waiting for user
-     * input.
+     * Wait until the timeout duration has elapsed, and wait for ongoing speech recognition to complete. If the duration
+     * elapses, return {@link teaselib.ScriptFunction#Timeout} instead of waiting for user input.
      * <p>
      * 
-     * The function behaves like a normal prompt, but the buttons are
-     * automatically dismissed when the duration expires.
+     * The function behaves like a normal prompt, but the buttons are automatically dismissed when the duration expires.
      * 
      * @param seconds
      *            The timeout duration
      * @param timoutBehavior
-     *            How speech recognition is handled when the timeout has been
-     *            reached
+     *            How speech recognition is handled when the timeout has been reached
      * @return A script function that accomplishes the described behavior.
      */
     public ScriptFunction timeoutWithAutoConfirmation(long seconds,
@@ -394,16 +385,14 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
     }
 
     /**
-     * Displays the requested choices in the user interface after the mandatory
-     * parts of all renderers have been completed. This means especially that
-     * all text has been displayed and spoken.
+     * Displays the requested choices in the user interface after the mandatory parts of all renderers have been
+     * completed. This means especially that all text has been displayed and spoken.
      * 
      * @param choice
      *            The first prompt to be displayed by the user interface.
      * @param more
      *            More prompts to be displayed by the user interface
-     * @return The index of the choice object in the argument list that has been
-     *         selected by the user.
+     * @return The index of the choice object in the argument list that has been selected by the user.
      */
     public final int replyIndex(String choice, String... more) {
         List<String> choices = buildChoicesFromArray(choice, more);
@@ -411,14 +400,12 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
     }
 
     /**
-     * Displays the requested choices in the user interface after the mandatory
-     * parts of all renderers have been completed. This means especially that
-     * all text has been displayed and spoken.
+     * Displays the requested choices in the user interface after the mandatory parts of all renderers have been
+     * completed. This means especially that all text has been displayed and spoken.
      * 
      * @param choices
      *            The prompts to be displayed in the user interface
-     * @return The index of the choice object in the {@code choices} list that
-     *         has been selected by the user.
+     * @return The index of the choice object in the {@code choices} list that has been selected by the user.
      */
     public final int replyIndex(List<String> choices) {
         String answer = reply(choices);
@@ -426,30 +413,26 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
     }
 
     /**
-     * Displays the requested choices in the user interface after the mandatory
-     * parts of all renderers have been completed. This means especially that
-     * all text has been displayed and spoken.
+     * Displays the requested choices in the user interface after the mandatory parts of all renderers have been
+     * completed. This means especially that all text has been displayed and spoken.
      * 
      * @param yes
      *            The first prompt.
      * @param no
      *            The second prompt.
-     * @return True if {@code yes} has been selected, false if {@code no} has
-     *         been selected.
+     * @return True if {@code yes} has been selected, false if {@code no} has been selected.
      */
     public final boolean askYN(String yes, String no) {
         return reply(yes, no) == yes;
     }
 
     /**
-     * If the reply should be non-blocking, e.g. not interrupt the flow of the
-     * script, the recognition accuracy might be lowered to become less picky.
+     * If the reply should be non-blocking, e.g. not interrupt the flow of the script, the recognition accuracy might be
+     * lowered to become less picky.
      * 
-     * Best used for replies that can be easily dismissed without consequences,
-     * like in conversations.
+     * Best used for replies that can be easily dismissed without consequences, like in conversations.
      * 
-     * Or in situations that involve timing, where a quick reply is necessary,
-     * but the actual words don't matter.
+     * Or in situations that involve timing, where a quick reply is necessary, but the actual words don't matter.
      * 
      * @param choice
      *            The prompt to be displayed by the user interface.
@@ -463,9 +446,8 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
     }
 
     /**
-     * Displays the requested choices in the user interface after the mandatory
-     * parts of all renderers have been completed. This means especially that
-     * all text has been displayed and spoken.
+     * Displays the requested choices in the user interface after the mandatory parts of all renderers have been
+     * completed. This means especially that all text has been displayed and spoken.
      * 
      * @param recognitionConfidence
      *            The confidence threshold used for speech recognition.
@@ -474,11 +456,10 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
      * @param more
      *            More prompts to be displayed by the user interface
      * 
-     * @return The choice object that has been selected by the user, or
-     *         {@link TeaseScript#Timeout} if the script function completes.
+     * @return The choice object that has been selected by the user, or {@link TeaseScript#Timeout} if the script
+     *         function completes.
      */
-    public final String reply(ScriptFunction scriptFunction, Confidence recognitionConfidence,
-            List<String> choices) {
+    public final String reply(ScriptFunction scriptFunction, Confidence recognitionConfidence, List<String> choices) {
         return showChoices(scriptFunction, recognitionConfidence, choices);
     }
 
@@ -490,12 +471,10 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
      * @param choices
      *            The labels of the check boxes
      * @param values
-     *            Indicates whether each item is set or unset by setting the
-     *            corresponding index to false or true.
+     *            Indicates whether each item is set or unset by setting the corresponding index to false or true.
      * @return
      */
-    public List<Boolean> showItems(String caption, List<String> choices, List<Boolean> values,
-            boolean allowCancel) {
+    public List<Boolean> showItems(String caption, List<String> choices, List<Boolean> values, boolean allowCancel) {
         completeMandatory();
         List<Boolean> results = teaseLib.host.showCheckboxes(caption, choices, values, allowCancel);
         endAll();
@@ -523,21 +502,17 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
      * Build a list of resource strings from a {@link WildcardPattern}.
      * 
      * @param wildcardPattern
-     *            The wildcard pattern ("?" replaces a single, "*" multiple
-     *            characters).
+     *            The wildcard pattern ("?" replaces a single, "*" multiple characters).
      * @return A list of resources that matches the wildcard pattern.
      */
     public List<String> resources(String wildcardPattern) {
-        Pattern pattern = WildcardPattern
-                .compile(resources.getClassLoaderAbsoluteResourcePath(wildcardPattern));
+        Pattern pattern = WildcardPattern.compile(resources.getClassLoaderAbsoluteResourcePath(wildcardPattern));
         Collection<String> items = resources.resources(pattern);
         final int size = items.size();
         if (size > 0) {
-            logger.info(getClass().getSimpleName() + ": '" + wildcardPattern + "' yields " + size
-                    + " resources");
+            logger.info(getClass().getSimpleName() + ": '" + wildcardPattern + "' yields " + size + " resources");
         } else {
-            logger.info(getClass().getSimpleName() + ": '" + wildcardPattern
-                    + "' doesn't yield any resources");
+            logger.info(getClass().getSimpleName() + ": '" + wildcardPattern + "' doesn't yield any resources");
         }
         return new ArrayList<String>(items);
     }

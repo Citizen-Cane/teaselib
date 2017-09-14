@@ -146,7 +146,8 @@ public class DummyHost implements Host {
                         if (choice.matcher(choices.get(i)).matches()) {
                             if (entry.getValue().equals(Debugger.Response.Ignore)) {
                                 try {
-                                    logger.info("Awaiting dismiss for " + choices.get(i));
+                                    logger.info(
+                                            "Matched " + entry.getKey() + " - Awaiting dismiss for " + choices.get(i));
                                     click.await();
                                     // break allChoices;
                                     return i;

@@ -10,6 +10,7 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Locale;
 import java.util.Map.Entry;
@@ -67,6 +68,7 @@ public class TeaseLib {
 
     private long frozenTime = Long.MIN_VALUE;
     private long timeOffsetMillis = 0;
+    private final Set<TimeAdvancedListener> timeAdvanceListeners = new HashSet<TimeAdvancedListener>();
 
     public TeaseLib(final Host host, Persistence persistence) throws IOException {
         this(host, persistence, new TeaseLibConfigSetup(host));
@@ -192,25 +194,39 @@ public class TeaseLib {
     }
 
     /**
-     * Preferred method to wait, since it allows us to overwrite this method with automated input.
-     * 
-     * If interrupted, must throw a ScriptInterruptedException. It's a runtime exception so it doesn't have to be
-     * declared. This way simple scripts are safe, but script closures can be cancelled.
+     * Preferred method to wait, since it allows us to test script with automated input and time advance.
      * 
      * @param milliseconds
      *            The time to sleep.
+     * @throws ScriptInterruptedException
      */
     public void sleep(long duration, TimeUnit unit) {
-        if (isTimeFrozen()) {
-            advanceTime(duration, unit);
-        } else {
-            try {
-                if (duration > 0) {
+        if (duration > 0) {
+            if (isTimeFrozen()) {
+                advanceTime(duration, unit);
+                fireTimeAdvanced();
+            } else {
+                try {
                     unit.sleep(duration);
+                    fireTimeAdvanced();
+                } catch (InterruptedException e) {
+                    throw new ScriptInterruptedException(e);
                 }
-            } catch (InterruptedException e) {
-                throw new ScriptInterruptedException(e);
             }
+        }
+    }
+
+    void addTimeAdvancedListener(TimeAdvancedListener listener) {
+        timeAdvanceListeners.add(listener);
+    }
+
+    void removeTimeAdvancedListener(TimeAdvancedListener listener) {
+        timeAdvanceListeners.remove(listener);
+    }
+
+    private void fireTimeAdvanced() {
+        for (TimeAdvancedListener timeAdvancedListener : timeAdvanceListeners) {
+            timeAdvancedListener.timeAdvanced(new TimeAdvancedEvent(this));
         }
     }
 
@@ -228,7 +244,7 @@ public class TeaseLib {
         return unit.convert(time, TimeUnit.MILLISECONDS);
     }
 
-    private boolean isTimeFrozen() {
+    boolean isTimeFrozen() {
         return frozenTime > Long.MIN_VALUE;
     }
 

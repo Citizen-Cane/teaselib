@@ -406,9 +406,29 @@ public abstract class TeaseScriptBase {
         for (InputMethod inputMethod : inputMethods) {
             logger.info(inputMethod.getClass().getSimpleName() + " " + inputMethod.toString());
         }
-        String choice = teaseLib.shower.show(this, prompt);
 
-        endAll();
+        String choice;
+        TimeAdvancedListener timeAdvanceListener;
+        if (scriptFunction != null && teaseLib.isTimeFrozen()) {
+            timeAdvanceListener = new TimeAdvancedListener() {
+                @Override
+                public void timeAdvanced(TimeAdvancedEvent e) {
+                    // TODO check response rules and dismiss immediately
+                }
+            };
+            teaseLib.addTimeAdvancedListener(timeAdvanceListener);
+        } else {
+            timeAdvanceListener = null;
+        }
+
+        try {
+            choice = teaseLib.shower.show(this, prompt);
+            endAll();
+        } finally {
+            if (timeAdvanceListener != null) {
+                teaseLib.removeTimeAdvancedListener(timeAdvanceListener);
+            }
+        }
 
         logger.debug("Reply finished");
         teaseLib.transcript.info("< " + choice);

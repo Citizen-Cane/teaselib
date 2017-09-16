@@ -125,11 +125,24 @@ public class DummyHost implements Host {
         }
     }
 
+    static class Reply {
+        final int index;
+        final Debugger.Response response;
+        final String match;
+
+        Reply(int index, Response response, String match) {
+            this.index = index;
+            this.response = response;
+            this.match = match;
+        }
+    }
+
     @Override
     public int reply(List<String> choices) throws ScriptInterruptedException {
         logger.info("Reply " + choices + " @ " + Thread.currentThread().getStackTrace()[1].toString());
 
         try {
+            currentChoices = new ArrayList<String>(choices);
             replySection.lockInterruptibly();
             if (replySection.hasWaiters(click)) {
                 throw new IllegalStateException("Reply not dismissed: " + choices);
@@ -137,46 +150,56 @@ public class DummyHost implements Host {
             if (Thread.interrupted()) {
                 throw new ScriptInterruptedException();
             }
-            currentChoices = new ArrayList<String>(choices);
-            selectedIndex = 0;
-            try {
-                for (Entry<String, Response> entry : responses.entrySet()) {
-                    Pattern choice = WildcardPattern.compile(entry.getKey());
-                    for (int i = 0; i < choices.size(); i++) {
-                        if (choice.matcher(choices.get(i)).matches()) {
-                            if (entry.getValue().equals(Debugger.Response.Ignore)) {
-                                try {
-                                    logger.info(
-                                            "Matched " + entry.getKey() + " - Awaiting dismiss for " + choices.get(i));
-                                    click.await();
-                                    // break allChoices;
-                                    return i;
-                                } catch (InterruptedException e) {
-                                    throw new ScriptInterruptedException(e);
-                                }
-                            } else {
-                                return i;
-                            }
-                        }
-                    }
-                }
-            } finally {
-                currentChoices = Collections.emptyList();
-            }
 
-            if (replySection.hasWaiters(click)) {
-                throw new IllegalStateException("Reply - still waiting on click");
-            }
-
-            if (choices.size() == 1) {
-                return 0;
-            } else {
-                throw new IllegalStateException("No rule to dismiss buttons matched for " + choices);
-            }
+            return processResponseRules(choices);
         } catch (InterruptedException e) {
             throw new ScriptInterruptedException(e);
         } finally {
-            replySection.unlock();
+            currentChoices = Collections.emptyList();
+
+            try {
+                if (replySection.hasWaiters(click)) {
+                    throw new IllegalStateException("Reply - still waiting on click");
+                }
+            } finally {
+                replySection.unlock();
+            }
+        }
+    }
+
+    protected int processResponseRules(List<String> choices) {
+        Reply reply = getResopnse(choices);
+        if (reply.response == Debugger.Response.Ignore) {
+            try {
+                logger.info("Matched " + reply.match + " - Awaiting dismiss for " + choices.get(reply.index));
+                click.await();
+                return reply.index;
+            } catch (InterruptedException e) {
+                throw new ScriptInterruptedException(e);
+            }
+        } else if (reply.response == Debugger.Response.Choose) {
+            return reply.index;
+        } else {
+            throw new IllegalArgumentException(reply.response.toString());
+        }
+
+    }
+
+    Reply getResopnse(List<String> choices) {
+        for (Entry<String, Response> entry : responses.entrySet()) {
+            Pattern choice = WildcardPattern.compile(entry.getKey());
+            for (int i = 0; i < choices.size(); i++) {
+                if (choice.matcher(choices.get(i)).matches()) {
+                    logger.info("Matched " + entry.getKey() + " for " + choices.get(i));
+                    return new Reply(i, entry.getValue(), entry.getKey());
+                }
+            }
+        }
+
+        if (choices.size() == 1) {
+            return new Reply(0, Debugger.Response.Choose, "*");
+        } else {
+            throw new IllegalStateException("No response rule defined for " + choices);
         }
     }
 

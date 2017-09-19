@@ -5,11 +5,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.regex.Pattern;
 
 import org.bytedeco.javacpp.opencv_core.Point;
 import org.slf4j.Logger;
@@ -24,14 +21,13 @@ import teaselib.core.VideoRenderer;
 import teaselib.core.VideoRenderer.Type;
 import teaselib.core.events.Delegate;
 import teaselib.core.javacv.VideoRendererJavaCV;
-import teaselib.core.util.WildcardPattern;
+import teaselib.core.ui.Prompt;
 
 public class DummyHost implements Host {
     private static final Logger logger = LoggerFactory.getLogger(DummyHost.class);
 
     static final Point javacvDebugWindow = new Point(80, 80);
 
-    private Map<String, Response> responses;
     private List<String> currentChoices = Collections.emptyList();
 
     public DummyHost() {
@@ -108,15 +104,15 @@ public class DummyHost implements Host {
 
             if (!replySection.hasWaiters(click)) {
                 logger.warn("Dismiss called on latch already counted down: " + choices);
-            }
+            } else {
+                for (Delegate delegate : getClickableChoices(choices)) {
+                    delegate.run();
+                }
+                currentChoices = Collections.emptyList();
 
-            for (Delegate delegate : getClickableChoices(choices)) {
-                delegate.run();
-            }
-            currentChoices = Collections.emptyList();
-
-            if (replySection.hasWaiters(click)) {
-                throw new IllegalStateException("Dismiss failed to dismiss click condition: " + choices);
+                if (replySection.hasWaiters(click)) {
+                    throw new IllegalStateException("Dismiss failed to dismiss click condition: " + choices);
+                }
             }
 
             return true;
@@ -151,7 +147,8 @@ public class DummyHost implements Host {
                 throw new ScriptInterruptedException();
             }
 
-            return processResponseRules(choices);
+            click.await();
+            return Prompt.DISMISSED;
         } catch (InterruptedException e) {
             throw new ScriptInterruptedException(e);
         } finally {
@@ -164,42 +161,6 @@ public class DummyHost implements Host {
             } finally {
                 replySection.unlock();
             }
-        }
-    }
-
-    protected int processResponseRules(List<String> choices) {
-        Reply reply = getResopnse(choices);
-        if (reply.response == Debugger.Response.Ignore) {
-            try {
-                logger.info("Matched " + reply.match + " - Awaiting dismiss for " + choices.get(reply.index));
-                click.await();
-                return reply.index;
-            } catch (InterruptedException e) {
-                throw new ScriptInterruptedException(e);
-            }
-        } else if (reply.response == Debugger.Response.Choose) {
-            return reply.index;
-        } else {
-            throw new IllegalArgumentException(reply.response.toString());
-        }
-
-    }
-
-    Reply getResopnse(List<String> choices) {
-        for (Entry<String, Response> entry : responses.entrySet()) {
-            Pattern choice = WildcardPattern.compile(entry.getKey());
-            for (int i = 0; i < choices.size(); i++) {
-                if (choice.matcher(choices.get(i)).matches()) {
-                    logger.info("Matched " + entry.getKey() + " for " + choices.get(i));
-                    return new Reply(i, entry.getValue(), entry.getKey());
-                }
-            }
-        }
-
-        if (choices.size() == 1) {
-            return new Reply(0, Debugger.Response.Choose, "*");
-        } else {
-            throw new IllegalStateException("No response rule defined for " + choices);
         }
     }
 
@@ -216,10 +177,6 @@ public class DummyHost implements Host {
                 return javacvDebugWindow;
             }
         };
-    }
-
-    public void setResponses(Map<String, Response> responses) {
-        this.responses = responses;
     }
 
     @Override

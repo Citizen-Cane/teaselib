@@ -12,7 +12,7 @@ import teaselib.test.TestScript;
  */
 public class ShowChoicesAbstractTest {
     protected static final DebugSetup DEBUG_SETUP = new DebugSetup();// .withOutput().withInput();
-    protected static final int ITERATIONS = 1;
+    protected static final int ITERATIONS = 1000;
 
     protected TestScript script;
     protected Debugger debugger;

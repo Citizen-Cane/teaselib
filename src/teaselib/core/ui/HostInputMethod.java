@@ -42,15 +42,8 @@ public class HostInputMethod implements InputMethod {
                             if (prompt.paused.get() == false) {
                                 prompt.setResultOnce(reply);
                             }
-                        } else if (prompt.result() == Prompt.DISMISSED) {
-                            // Mainly in debug, without script output - just ignore
-                            // logger.warn("prompt " + prompt + " already dismissed");
-                            // Here's a small loop hole, since there is no sync on the prompt
-                            // - cannot be here since we need to call reply on the host and wait there
-                            // throw new IllegalStateException("Prompt " + prompt + " has been dismissed already");
                         } else {
-                            throw new IllegalStateException(
-                                    "Prompt " + prompt + ": result already set to " + prompt.result());
+                            // Ignored because another input method might have dismissed the prompt
                         }
                     } catch (Throwable t) {
                         prompt.exception = t;
@@ -75,15 +68,6 @@ public class HostInputMethod implements InputMethod {
         synchronized (callable) {
             workerThread.submit(callable);
             callable.wait();
-
-            // Failing tests in debug setup : Give the host input method some time to initialize
-            // + seems to decrease probability of failures in "testSingleScriptFunction":
-            // - hang (nothing to dismiss but replySection seems to be locked)
-            // - failing test in debug setup: ScriptInterruptedException when script function is finishing already
-            // - failing test in debug setup: org.junit.ComparisonFailure: expected:<[Stop]> but was:<[Timeout]>
-
-            // TODO replace with multi-threading solution
-            // Thread.yield();
         }
     }
 
@@ -124,5 +108,4 @@ public class HostInputMethod implements InputMethod {
     public String toString() {
         return host.toString();
     }
-
 }

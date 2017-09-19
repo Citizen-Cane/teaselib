@@ -14,13 +14,13 @@ import teaselib.core.ScriptFutureTask;
 import teaselib.core.TeaseScriptBase;
 
 public class Prompt {
-    static final int DISMISSED = -1;
+    public static final int DISMISSED = -1;
     public static final int UNDEFINED = Integer.MIN_VALUE;
 
     static final String NONE = "None";
 
-    final Choices choices;
-    final Choices derived;
+    public final Choices choices;
+    public final Choices derived;
     final ScriptFunction scriptFunction;
     final List<InputMethod> inputMethods;
 

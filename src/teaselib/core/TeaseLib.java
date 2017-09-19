@@ -8,10 +8,12 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -31,6 +33,7 @@ import teaselib.core.devices.remote.LocalNetworkDevice;
 import teaselib.core.media.MediaRendererQueue;
 import teaselib.core.texttospeech.Voice;
 import teaselib.core.ui.HostInputMethod;
+import teaselib.core.ui.InputMethod;
 import teaselib.core.ui.Shower;
 import teaselib.core.util.ObjectMap;
 import teaselib.core.util.PropertyNameMapping;
@@ -63,12 +66,12 @@ public class TeaseLib {
     public final Devices devices;
 
     final Shower shower;
-    final HostInputMethod hostInputMethod;
+    final List<InputMethod> hostInputMethods;
     public final MediaRendererQueue renderQueue = new MediaRendererQueue();
 
     private long frozenTime = Long.MIN_VALUE;
     private long timeOffsetMillis = 0;
-    private final Set<TimeAdvancedListener> timeAdvanceListeners = new HashSet<TimeAdvancedListener>();
+    private final Set<TimeAdvanceListener> timeAdvanceListeners = new HashSet<TimeAdvanceListener>();
 
     public TeaseLib(final Host host, Persistence persistence) throws IOException {
         this(host, persistence, new TeaseLibConfigSetup(host));
@@ -88,7 +91,8 @@ public class TeaseLib {
         this.config = new Configuration(setup);
         this.transcript = newTranscriptLogger(host.getLocation(Location.Log));
         this.shower = new Shower(host);
-        this.hostInputMethod = new HostInputMethod(host);
+        this.hostInputMethods = new ArrayList<InputMethod>();
+        this.hostInputMethods.add(new HostInputMethod(host));
         this.devices = new Devices(config);
 
         bindMotionDetectorToVideoRenderer();
@@ -216,16 +220,16 @@ public class TeaseLib {
         }
     }
 
-    void addTimeAdvancedListener(TimeAdvancedListener listener) {
+    void addTimeAdvancedListener(TimeAdvanceListener listener) {
         timeAdvanceListeners.add(listener);
     }
 
-    void removeTimeAdvancedListener(TimeAdvancedListener listener) {
+    void removeTimeAdvancedListener(TimeAdvanceListener listener) {
         timeAdvanceListeners.remove(listener);
     }
 
     private void fireTimeAdvanced() {
-        for (TimeAdvancedListener timeAdvancedListener : timeAdvanceListeners) {
+        for (TimeAdvanceListener timeAdvancedListener : timeAdvanceListeners) {
             timeAdvancedListener.timeAdvanced(new TimeAdvancedEvent(this));
         }
     }

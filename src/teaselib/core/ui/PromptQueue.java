@@ -50,7 +50,9 @@ public class PromptQueue {
             }
 
             try {
-                prompt.click.await();
+                if (prompt.result() == Prompt.UNDEFINED) {
+                    prompt.click.await();
+                }
             } finally {
                 dismissPrompt(prompt);
             }

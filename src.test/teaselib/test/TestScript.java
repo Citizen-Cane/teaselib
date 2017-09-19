@@ -73,7 +73,7 @@ public class TestScript extends TeaseScript {
         super(new TeaseLib(dummyHost, dummyPersistence, setup), resourceLoader, TestScriptActor, TestScriptNamespace);
         this.host = dummyHost;
         this.persistence = dummyPersistence;
-        this.debugger = new Debugger(teaseLib, dummyHost);
+        this.debugger = new Debugger(teaseLib);
     }
 
     @Override

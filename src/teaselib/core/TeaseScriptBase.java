@@ -393,8 +393,7 @@ public abstract class TeaseScriptBase {
             stopBackgroundRenderers();
         }
 
-        List<InputMethod> inputMethods = new ArrayList<InputMethod>();
-        inputMethods.add(teaseLib.hostInputMethod);
+        List<InputMethod> inputMethods = new ArrayList<InputMethod>(teaseLib.hostInputMethods);
 
         SpeechRecognition sR = SpeechRecognizer.instance.get(actor.getLocale());
         if (sR.isReady() && Boolean.parseBoolean(teaseLib.config.get(Config.InputMethod.SpeechRecognition))) {
@@ -407,28 +406,8 @@ public abstract class TeaseScriptBase {
             logger.info(inputMethod.getClass().getSimpleName() + " " + inputMethod.toString());
         }
 
-        String choice;
-        TimeAdvancedListener timeAdvanceListener;
-        if (scriptFunction != null && teaseLib.isTimeFrozen()) {
-            timeAdvanceListener = new TimeAdvancedListener() {
-                @Override
-                public void timeAdvanced(TimeAdvancedEvent e) {
-                    // TODO check response rules and dismiss immediately
-                }
-            };
-            teaseLib.addTimeAdvancedListener(timeAdvanceListener);
-        } else {
-            timeAdvanceListener = null;
-        }
-
-        try {
-            choice = teaseLib.shower.show(this, prompt);
-            endAll();
-        } finally {
-            if (timeAdvanceListener != null) {
-                teaseLib.removeTimeAdvancedListener(timeAdvanceListener);
-            }
-        }
+        String choice = teaseLib.shower.show(this, prompt);
+        endAll();
 
         logger.debug("Reply finished");
         teaseLib.transcript.info("< " + choice);

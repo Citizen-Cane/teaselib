@@ -1,14 +1,9 @@
 package teaselib.core;
 
-import java.io.IOException;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-
-import teaselib.core.Configuration.Setup;
-import teaselib.hosts.DummyHost;
-import teaselib.hosts.DummyPersistence;
 
 public class Debugger {
     public final TeaseLib teaseLib;
@@ -29,24 +24,23 @@ public class Debugger {
         Ignore
     }
 
-    private Map<String, Response> responses = new LinkedHashMap<String, Response>();
+    private final Map<String, Response> responses = new LinkedHashMap<String, Response>();
+    private final DebugInputMethod debugInputMethod;
 
     public Debugger(TeaseLib teaseLib) {
         this.teaseLib = teaseLib;
+        this.debugInputMethod = new DebugInputMethod();
+        attach();
     }
 
-    public Debugger(DummyHost dummyHost, DummyPersistence dummyPersistence) throws IOException {
-        this(new TeaseLib(dummyHost, dummyPersistence), dummyHost);
+    public void attach() {
+        freezeTime();
+        teaseLib.hostInputMethods.add(debugInputMethod);
     }
 
-    public Debugger(DummyHost dummyHost, DummyPersistence dummyPersistence, Setup setup) throws IOException {
-        this(new TeaseLib(dummyHost, dummyPersistence, setup), dummyHost);
-    }
-
-    public Debugger(TeaseLib teaseLib, DummyHost dummyHost) {
-        this.teaseLib = teaseLib;
-
-        dummyHost.setResponses(responses);
+    public void detach() {
+        resumeTime();
+        teaseLib.hostInputMethods.remove(debugInputMethod);
     }
 
     public void freezeTime() {
@@ -63,10 +57,12 @@ public class Debugger {
 
     public void addResponse(String match, Response response) {
         responses.put(match, response);
+        debugInputMethod.getResponses().add(match,
+                response == Response.Choose ? DebugResponses.IMMEDIATELY : DebugResponses.NEVER);
     }
 
     public void addResponse(ResponseAction responseAction) {
-        responses.put(responseAction.match, responseAction.response);
+        addResponse(responseAction.match, responseAction.response);
     }
 
     public void clearStateMaps() {

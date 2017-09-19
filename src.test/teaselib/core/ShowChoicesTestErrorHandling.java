@@ -132,8 +132,9 @@ public class ShowChoicesTestErrorHandling extends ShowChoicesAbstractTest {
     @Test(expected = TestException.class)
     public void testThreeScriptFunctionsEachWithInnerReplyErrorHandling() throws Exception {
         debugger.addResponse("Stop*", Debugger.Response.Ignore);
-        debugger.addResponse("No*", Debugger.Response.Choose);
-        debugger.addResponse("Wow*", Debugger.Response.Choose);
+        debugger.addResponse("No*1", Debugger.Response.Choose);
+        debugger.addResponse("Wow*2", Debugger.Response.Choose);
+        debugger.addResponse("Oh*3", Debugger.Response.Choose);
 
         script.say("In main script.");
         assertEquals(TeaseScript.Timeout, script.reply(new ScriptFunction() {
@@ -154,7 +155,7 @@ public class ShowChoicesTestErrorHandling extends ShowChoicesAbstractTest {
                                 script.say("Start of script function 3.");
                                 if (throwWhen == THROW_RIGHT_AT_START)
                                     throwTestException();
-                                assertEquals("No Level 3", script.reply("No Level 3", "Wow Level 3", "Oh Level 3"));
+                                assertEquals("Oh Level 3", script.reply("No Level 3", "Wow Level 3", "Oh Level 3"));
                                 if (throwWhen == THROW_AFTER_FIRST_QUESTION)
                                     throwTestException();
                                 script.say("End of script function 3");

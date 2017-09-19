@@ -113,7 +113,7 @@ public class ShowChoicesTest extends ShowChoicesAbstractTest {
     public void testThreeScriptFunctionsEachWithInnerReply() throws Exception {
         debugger.addResponse("Stop*", Debugger.Response.Ignore);
         debugger.addResponse("No*", Debugger.Response.Choose);
-        debugger.addResponse("Wow*", Debugger.Response.Choose);
+        debugger.addResponse("Wow*2", Debugger.Response.Choose);
 
         script.say("In main script.");
         assertEquals(TeaseScript.Timeout, script.reply(new ScriptFunction() {

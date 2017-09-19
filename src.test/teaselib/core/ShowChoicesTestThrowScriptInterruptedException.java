@@ -107,8 +107,9 @@ public class ShowChoicesTestThrowScriptInterruptedException extends ShowChoicesA
     @Test(expected = ScriptInterruptedException.class)
     public void testThreeScriptFunctionsEachWithInnerReplyErrorHandling() throws Exception {
         debugger.addResponse("Ignore*", Debugger.Response.Ignore);
-        debugger.addResponse("No*", Debugger.Response.Choose);
-        debugger.addResponse("Wow*", Debugger.Response.Choose);
+        debugger.addResponse("No*1", Debugger.Response.Choose);
+        debugger.addResponse("Wow*2", Debugger.Response.Choose);
+        debugger.addResponse("Oh*3", Debugger.Response.Choose);
 
         script.say("In main script.");
         assertEquals(TeaseScript.Timeout, script.reply(new ScriptFunction() {
@@ -127,7 +128,7 @@ public class ShowChoicesTestThrowScriptInterruptedException extends ShowChoicesA
                             @Override
                             public void run() {
                                 script.say("Start of script function 3.");
-                                assertEquals("No Level 3", script.reply("No Level 3", "Wow Level 3", "Oh Level 3"));
+                                assertEquals("Oh Level 3", script.reply("No Level 3", "Wow Level 3", "Oh Level 3"));
                                 throwScriptInterruptedException();
                                 script.say("End of script function 3");
 

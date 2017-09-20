@@ -6,6 +6,7 @@ import java.io.InputStreamReader;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -47,6 +48,11 @@ public class TextToSpeechPlayer {
     private final Map<String, Voice> actorKey2TTSVoice = new HashMap<String, Voice>();
 
     /**
+     * guids of reserved voices
+     */
+    private final Map<String, String> actorKey2ReservedVoiceGuid = new LinkedHashMap<String, String>();
+
+    /**
      * guids of used voices
      */
     private final Set<String> usedVoices = new HashSet<String>();
@@ -85,8 +91,7 @@ public class TextToSpeechPlayer {
     }
 
     /**
-     * Actors may have preferred voices or pre-recorded voices. These are stored in the resources section of each
-     * project.
+     * Actors may have preferred or pre-recorded voices. These are stored in the resources section of each project.
      * 
      * The configuration has to be loaded for each resource loader instance.
      * 
@@ -111,10 +116,21 @@ public class TextToSpeechPlayer {
                 if (!actorKey2TTSVoice.containsKey(actorKey) && preRecordedVoice != null) {
                     usePrerecordedVoice(actorKey, voiceGuid);
                 } else {
-                    useTTSVoice(actorKey, voiceGuid);
+                    reserveVoice(actorKey, voiceGuid);
                 }
             }
         }
+    }
+
+    private void reserveVoice(String actorKey, String voiceGuid) {
+        if (actorKey2PrerecordedVoiceGuid.containsKey(actorKey))
+            return;
+        if (actorKey2TTSVoice.containsKey(actorKey))
+            return;
+        if (actorKey2ReservedVoiceGuid.containsKey(actorKey))
+            return;
+
+        actorKey2ReservedVoiceGuid.put(actorKey, voiceGuid);
     }
 
     private void usePrerecordedVoice(String actorKey, String voiceGuid) {
@@ -127,6 +143,7 @@ public class TextToSpeechPlayer {
 
     private void useTTSVoice(String actorKey, String voiceGuid) {
         logger.info("Actor key=" + actorKey + ": prerecorded voice '" + voiceGuid + "' not available");
+        // TODO Just remember voice guid
         Voice voice = voices.get(voiceGuid);
         if (voice != null) {
             logger.info("Actor key=" + actorKey + ": using TTS voice '" + voiceGuid + "'");
@@ -143,9 +160,24 @@ public class TextToSpeechPlayer {
         }
         if (actorKey2TTSVoice.containsKey(actor.key)) {
             return actorKey2TTSVoice.get(actor.key);
+        } else if (actorKey2ReservedVoiceGuid.containsKey(actor.key)) {
+            return reservedVoice(actor);
         } else {
             return getMatchingOrBestVoiceFor(actor);
         }
+    }
+
+    private Voice reservedVoice(Actor actor) {
+        String voiceGuid = actorKey2ReservedVoiceGuid.get(actor.key);
+        Voice voice;
+        if (voiceGuid != null) {
+            useTTSVoice(actor.key, voiceGuid);
+            voice = getVoiceFor(actor);
+        } else {
+            voice = getMatchingOrBestVoiceFor(actor);
+        }
+        actorKey2ReservedVoiceGuid.remove(actor.key);
+        return voice;
     }
 
     String getAssignedVoiceFor(Actor actor) {
@@ -178,7 +210,7 @@ public class TextToSpeechPlayer {
         }
         // Full match: language and region
         for (Voice voice : genderFilteredVoices) {
-            if (voice.matches(actor.getLocale()) && !usedVoices.contains(voice.guid)) {
+            if (voice.matches(actor.getLocale()) && !voiceInUse(voice)) {
                 useVoice(actor, voice);
                 return voice;
             }
@@ -187,7 +219,7 @@ public class TextToSpeechPlayer {
         for (Voice voice : genderFilteredVoices) {
             String voiceLanguage = voice.locale.substring(0, 2);
             String actorLanguage = actor.getLocale().getLanguage();
-            if (voiceLanguage.equals(actorLanguage) && !usedVoices.contains(voice.guid)) {
+            if (voiceLanguage.equals(actorLanguage) && !voiceInUse(voice)) {
                 useVoice(actor, voice);
                 return voice;
             }
@@ -199,9 +231,9 @@ public class TextToSpeechPlayer {
             }
         }
         // voice of default dominant actor
-        for (String actorName : actorKey2TTSVoice.keySet()) {
-            if (isDominantActor(actorName) && actorKey2TTSVoice.get(actorName).gender == actor.gender) {
-                return reuseVoice(actor, actorName);
+        for (String actorKey : actorKey2TTSVoice.keySet()) {
+            if (isDominantActor(actorKey) && actorKey2TTSVoice.get(actorKey).gender == actor.gender) {
+                return reuseVoice(actor, actorKey);
             }
         }
         // No voice
@@ -209,13 +241,18 @@ public class TextToSpeechPlayer {
         return null;
     }
 
+    private boolean voiceInUse(Voice voice) {
+        return usedVoices.contains(voice.guid);
+    }
+
     private static void useVoice(Actor actor, Voice voice) {
         logger.info("Actor " + actor.toString() + " uses voice " + voice.guid);
     }
 
-    private Voice reuseVoice(Actor actor, String actorName) {
-        Voice voice = actorKey2TTSVoice.get(actorName);
-        logger.warn("Actor " + actor.toString() + " re-uses voice " + voice.guid + " of actor " + actorName);
+    private Voice reuseVoice(Actor actor, String reusedActorKey) {
+        Voice voice = actorKey2TTSVoice.get(reusedActorKey);
+        actorKey2TTSVoice.put(actor.key, voice);
+        logger.warn("Actor " + actor.toString() + " re-uses voice " + voice.guid + " of actor " + reusedActorKey);
         return voice;
     }
 
@@ -224,11 +261,9 @@ public class TextToSpeechPlayer {
                 || actorName.compareToIgnoreCase(Actor.Key.DominantMale) == 0;
     }
 
-    public Voice acquireVoice(Actor actor) {
-        if (prerenderedSpeechAvailable(actor)) {
-            return null;
-        } else {
-            return getVoiceFor(actor);
+    public void acquireVoice(Actor actor) {
+        if (!prerenderedSpeechAvailable(actor)) {
+            reserveVoice(actor.key, null);
         }
     }
 

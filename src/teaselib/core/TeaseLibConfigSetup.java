@@ -14,6 +14,8 @@ final class TeaseLibConfigSetup implements Configuration.Setup {
 
     private static final String NETWORK_PROPERTIES = "network.properties";
 
+    public static final String VOICES_PROPERTIES = "voices.properties";
+
     private final File teaseLibDefaultsPath;
     private final File userPath;
 
@@ -28,6 +30,7 @@ final class TeaseLibConfigSetup implements Configuration.Setup {
 
         addTeaseLibDefaults(config);
         addNetworkDefaults(config);
+        addOtherDefaults(config);
     }
 
     private void addTeaseLibDefaults(Configuration config) throws IOException, FileNotFoundException {
@@ -35,10 +38,15 @@ final class TeaseLibConfigSetup implements Configuration.Setup {
 
         config.addConfigFile(new File(teaseLibDefaultsPath, TEASELIB_PROPERTIES));
         config.addConfigFile(new File(userPath, TEASELIB_PROPERTIES));
+
     }
 
     private void addNetworkDefaults(Configuration config) throws IOException {
         config.addUserFile(new File(teaseLibDefaultsPath, NETWORK_PROPERTIES), new File(userPath, NETWORK_PROPERTIES));
         config.addConfigFile(new File(userPath, NETWORK_PROPERTIES));
+    }
+
+    private void addOtherDefaults(Configuration config) throws IOException {
+        config.addUserFile(new File(teaseLibDefaultsPath, VOICES_PROPERTIES), new File(userPath, VOICES_PROPERTIES));
     }
 }

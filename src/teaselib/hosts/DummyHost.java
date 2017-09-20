@@ -182,9 +182,9 @@ public class DummyHost implements Host {
     @Override
     public File getLocation(Location folder) {
         if (folder == Location.Host)
-            return new File("bin.test/");
+            return new File("bin");
         else if (folder == Location.TeaseLib)
-            return new File(".");
+            return getLocation(Location.Host);
         else if (folder == Location.User)
             return getLocation(Location.Host);
         else if (folder == Location.Log)
@@ -192,5 +192,4 @@ public class DummyHost implements Host {
         else
             throw new IllegalArgumentException(folder.toString());
     }
-
 }

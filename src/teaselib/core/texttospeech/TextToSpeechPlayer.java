@@ -143,7 +143,6 @@ public class TextToSpeechPlayer {
 
     private void useTTSVoice(String actorKey, String voiceGuid) {
         logger.info("Actor key=" + actorKey + ": prerecorded voice '" + voiceGuid + "' not available");
-        // TODO Just remember voice guid
         Voice voice = voices.get(voiceGuid);
         if (voice != null) {
             logger.info("Actor key=" + actorKey + ": using TTS voice '" + voiceGuid + "'");

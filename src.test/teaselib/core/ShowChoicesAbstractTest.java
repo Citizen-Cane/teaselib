@@ -7,12 +7,12 @@ import teaselib.test.DebugSetup;
 import teaselib.test.TestScript;
 
 /**
- * @author someone
+ * @author Citizen-Cane
  *
  */
 public class ShowChoicesAbstractTest {
     protected static final DebugSetup DEBUG_SETUP = new DebugSetup();// .withOutput().withInput();
-    protected static final int ITERATIONS = 1000;
+    protected static final int ITERATIONS = 1;
 
     protected TestScript script;
     protected Debugger debugger;
@@ -26,5 +26,4 @@ public class ShowChoicesAbstractTest {
         debugger = script.debugger;
         debugger.freezeTime();
     }
-
 }

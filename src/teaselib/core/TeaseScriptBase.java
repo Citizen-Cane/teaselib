@@ -20,7 +20,6 @@ import teaselib.core.media.RenderMessage;
 import teaselib.core.speechrecognition.SpeechRecognition;
 import teaselib.core.speechrecognition.SpeechRecognitionResult.Confidence;
 import teaselib.core.speechrecognition.SpeechRecognizer;
-import teaselib.core.texttospeech.TextToSpeechPlayer;
 import teaselib.core.ui.Choices;
 import teaselib.core.ui.InputMethod;
 import teaselib.core.ui.Prompt;
@@ -82,10 +81,7 @@ public abstract class TeaseScriptBase {
         this.actor = actor;
         this.namespace = namespace.replace(" ", "_");
 
-        TextToSpeechPlayer textToSpeech = TextToSpeechPlayer.instance();
-        // TODO Does nothing if already loaded, so we could merge the constructors
-        textToSpeech.loadActorVoiceProperties(resources);
-        textToSpeech.acquireVoice(actor);
+        teaseLib.textToSpeech.acquireVoice(actor, resources);
     }
 
     /**
@@ -95,13 +91,7 @@ public abstract class TeaseScriptBase {
      * @param actor
      */
     protected TeaseScriptBase(TeaseScriptBase script, Actor actor) {
-        this.teaseLib = script.teaseLib;
-        this.resources = script.resources;
-        this.actor = actor;
-        this.namespace = script.namespace;
-
-        TextToSpeechPlayer textToSpeech = TextToSpeechPlayer.instance();
-        textToSpeech.acquireVoice(actor);
+        this(script.teaseLib, script.resources, actor, script.namespace);
     }
 
     protected static List<String> buildChoicesFromArray(String choice, String... more) {
@@ -149,19 +139,19 @@ public abstract class TeaseScriptBase {
         }
     }
 
-    protected void renderMessage(Message message, TextToSpeechPlayer ttsPlayer) {
+    protected void renderMessage(Message message, boolean useTTS) {
         try {
             // inject speech parts to replay pre-recorded speech or use TTS
             // This has to be done first as subsequent parse steps
             // inject moods and thus change the message hash
-            if (ttsPlayer != null) {
-                if (ttsPlayer.prerenderedSpeechAvailable(message.actor)
+            if (useTTS) {
+                if (teaseLib.textToSpeech.prerenderedSpeechAvailable(message.actor)
                         && Boolean.parseBoolean(teaseLib.config.get(Config.Render.Speech))) {
-                    message = ttsPlayer.createPrerenderedSpeechMessage(message, resources);
+                    message = teaseLib.textToSpeech.createPrerenderedSpeechMessage(message, resources);
                 }
             }
             Message parsedMessage = injectImagesAndExpandTextVariables(message);
-            renderMessage(new RenderMessage(resources, parsedMessage, ttsPlayer, teaseLib));
+            renderMessage(new RenderMessage(resources, parsedMessage, useTTS ? teaseLib.textToSpeech : null, teaseLib));
         } finally {
             displayImage = Message.ActorImage;
             mood = Mood.Neutral;

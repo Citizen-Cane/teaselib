@@ -10,8 +10,8 @@ import teaselib.core.jni.NativeObject;
  */
 public class Voice extends NativeObject {
     /**
-     * A unique identifier for the voice. Only alphanumeric characters and dots
-     * are allowed. Avoid file system characters like '/', '\', ':'.
+     * A unique identifier for the voice. Only alphanumeric characters and dots are allowed. Avoid file system
+     * characters like '/', '\', ':'.
      */
     public final String guid;
     public final String locale;
@@ -26,8 +26,8 @@ public class Voice extends NativeObject {
         Robot
     }
 
-    public Voice(long nativeObject, String guid, String locale, String language,
-            Gender gender, String name, String vendor) {
+    public Voice(long nativeObject, String guid, String locale, String language, Gender gender, String name,
+            String vendor) {
         super(nativeObject);
         this.guid = guid;
         this.gender = gender;
@@ -38,13 +38,12 @@ public class Voice extends NativeObject {
     }
 
     public boolean matches(Locale locale) {
-        return this.locale.replace("-", "_").equals(locale.toString());
+        return this.locale.replace("-", "_").equalsIgnoreCase(locale.toString());
     }
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + ": guid=" + guid + " , gender= "
-                + gender + " , locale=" + locale + " , language=" + language
-                + " , name=" + name + " , vendor=" + vendor;
+        return "[guid=" + guid + ", gender= " + gender + ", locale=" + locale + ", language=" + language + ", name="
+                + name + ", vendor=" + vendor + "]";
     }
 }

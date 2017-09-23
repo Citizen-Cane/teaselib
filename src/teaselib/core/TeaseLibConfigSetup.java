@@ -5,6 +5,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 
 import teaselib.core.Host.Location;
+import teaselib.core.texttospeech.TextToSpeechPlayer;
 
 final class TeaseLibConfigSetup implements Configuration.Setup {
     private static final String DEFAULTS = "defaults";
@@ -47,6 +48,7 @@ final class TeaseLibConfigSetup implements Configuration.Setup {
     }
 
     private void addOtherDefaults(Configuration config) throws IOException {
-        config.addUserFile(new File(teaseLibDefaultsPath, VOICES_PROPERTIES), new File(userPath, VOICES_PROPERTIES));
+        config.addUserFile(TextToSpeechPlayer.Settings.Voices, new File(teaseLibDefaultsPath, VOICES_PROPERTIES),
+                new File(userPath, VOICES_PROPERTIES));
     }
 }

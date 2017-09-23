@@ -6,6 +6,14 @@ import teaselib.core.texttospeech.TextToSpeechImplementation;
 import teaselib.core.texttospeech.Voice;
 
 public class TeaseLibTTS extends TextToSpeechImplementation {
+    private static TeaseLibTTS instance = null;
+
+    public static synchronized TeaseLibTTS getInstance() {
+        if (instance == null) {
+            instance = new TeaseLibTTS();
+        }
+        return instance;
+    }
 
     private long nativeObject;
 

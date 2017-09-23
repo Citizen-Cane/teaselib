@@ -26,12 +26,13 @@ import teaselib.Actor;
 import teaselib.Message;
 import teaselib.Message.Part;
 import teaselib.Mood;
+import teaselib.core.Configuration;
 import teaselib.core.ResourceLoader;
+import teaselib.test.DebugSetup;
 import teaselib.util.TextVariables;
 
 public class TextToSpeechRecorder {
-    private static final Logger logger = LoggerFactory
-            .getLogger(TextToSpeechRecorder.class);
+    private static final Logger logger = LoggerFactory.getLogger(TextToSpeechRecorder.class);
 
     public final static String MessageFilename = "message.txt";
     public final static String ResourcesFilename = "inventory.txt";
@@ -56,12 +57,12 @@ public class TextToSpeechRecorder {
 
     int numberOfPasses = 0;
 
-    public TextToSpeechRecorder(File path, String resourcesRoot,
-            ResourceLoader resources, TextVariables textVariables)
+    public TextToSpeechRecorder(File path, String resourcesRoot, ResourceLoader resources, TextVariables textVariables)
             throws IOException {
         this.resources = resources;
         this.textVariables = textVariables;
-        this.ttsPlayer = TextToSpeechPlayer.instance();
+        this.ttsPlayer = new TextToSpeechPlayer(new Configuration(new DebugSetup()));
+        this.ttsPlayer.initTextToSpeech(new TextToSpeech());
         this.voices = ttsPlayer.textToSpeech.getVoices();
         // storage = new TextToSpeechRecorderFileStorage(
         // resources.getAssetPath(""));
@@ -74,8 +75,7 @@ public class TextToSpeechRecorder {
 
     public void preparePass(Entry<String, String> entry) {
         this.numberOfPasses++;
-        logger.info("Pass " + numberOfPasses + " for symbol " + entry.getKey()
-                + "=" + entry.getValue());
+        logger.info("Pass " + numberOfPasses + " for symbol " + entry.getKey() + "=" + entry.getValue());
         logger.info("using text variables: '" + textVariables.toString() + "'");
     }
 
@@ -94,15 +94,13 @@ public class TextToSpeechRecorder {
         }
     }
 
-    private String processMessage(Actor actor, final Voice voice,
-            Message message) throws IOException {
+    private String processMessage(Actor actor, final Voice voice, Message message) throws IOException {
         String hash = getHash(message);
         String newMessageHash = message.toPrerecordedSpeechHashString();
         if (!newMessageHash.isEmpty()) {
             if (storage.haveMessage(actor, voice, hash)) {
                 long lastModified = storage.lastModified(actor, voice, hash);
-                String oldMessageHash = storage.getMessageHash(actor, voice,
-                        hash);
+                String oldMessageHash = storage.getMessageHash(actor, voice, hash);
                 if (oldMessageHash.equals(newMessageHash)) {
                     keepOrReuseMessage(actor, voice, hash, lastModified);
                 } else if (lastModified > buildStart) {
@@ -117,8 +115,7 @@ public class TextToSpeechRecorder {
         return hash;
     }
 
-    private void keepOrReuseMessage(Actor actor, final Voice voice, String hash,
-            long lastModified) throws IOException {
+    private void keepOrReuseMessage(Actor actor, final Voice voice, String hash, long lastModified) throws IOException {
         if (lastModified > buildStart) {
             logger.info(hash + " is reused");
             reusedDuplicates++;
@@ -129,8 +126,7 @@ public class TextToSpeechRecorder {
         }
     }
 
-    private static void handleCollision(String hash, String oldMessageHash,
-            String newMessageHash) {
+    private static void handleCollision(String hash, String oldMessageHash, String newMessageHash) {
         logger.info(hash + " collision!");
         logger.info("Old:");
         logger.info(oldMessageHash);
@@ -139,24 +135,21 @@ public class TextToSpeechRecorder {
         throw new IllegalStateException("Collision");
     }
 
-    private void updateMessage(Actor actor, final Voice voice, Message message,
-            String hash, String newMessageHash) throws IOException {
+    private void updateMessage(Actor actor, final Voice voice, Message message, String hash, String newMessageHash)
+            throws IOException {
         logger.info(hash + " has changed");
         storage.deleteMessage(actor, voice, hash);
         create(actor, voice, message, hash, newMessageHash);
         changedEntries++;
     }
 
-    private void createNewMessage(Actor actor, final Voice voice,
-            Message message, String hash) throws IOException {
+    private void createNewMessage(Actor actor, final Voice voice, Message message, String hash) throws IOException {
         logger.info(hash + " is new");
-        create(actor, voice, message, hash,
-                message.toPrerecordedSpeechHashString());
+        create(actor, voice, message, hash, message.toPrerecordedSpeechHashString());
         newEntries++;
     }
 
-    private void createActorEntry(Actor actor, final Voice voice)
-            throws IOException {
+    private void createActorEntry(Actor actor, final Voice voice) throws IOException {
         actors.add(actor.key);
         PreRecordedVoice prerecordedVoice = new PreRecordedVoice(actor, voice);
         storage.createActorEntry(actor, voice, prerecordedVoice);
@@ -188,8 +181,8 @@ public class TextToSpeechRecorder {
             voice = voices.get(voiceGuid);
         }
         if (voice == null) {
-            throw new IllegalArgumentException("Voice for actor '" + actor
-                    + "' not found in " + ActorVoices.VoicesFilename);
+            throw new IllegalArgumentException(
+                    "Voice for actor '" + actor + "' not found in " + ActorVoices.VoicesFilename);
         }
         return voice;
     }
@@ -198,25 +191,21 @@ public class TextToSpeechRecorder {
         storage.close();
 
         if (numberOfPasses > 1) {
-            logger.info(
-                    "Generating speech files for all symbols generates a lot of reused entries");
+            logger.info("Generating speech files for all symbols generates a lot of reused entries");
         }
 
         long now = System.currentTimeMillis();
         long seconds = (now - buildStart) / 1000;
-        String duration = String.format("%d:%02d:%02d", seconds / 3600,
-                (seconds % 3600) / 60, (seconds % 60));
+        String duration = String.format("%d:%02d:%02d", seconds / 3600, (seconds % 3600) / 60, (seconds % 60));
         logger.info("Finished - Build time : " + duration);
 
-        logger.info(upToDateEntries + " up to date, " + reusedDuplicates
-                + " reused, " + changedEntries + " changed, " + newEntries
-                + " new");
+        logger.info(upToDateEntries + " up to date, " + reusedDuplicates + " reused, " + changedEntries + " changed, "
+                + newEntries + " new");
     }
 
     static String readMessage(InputStream inputStream) throws IOException {
         StringBuilder message = new StringBuilder();
-        BufferedReader reader = new BufferedReader(
-                new InputStreamReader(inputStream));
+        BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
         String line = null;
         try {
             while ((line = reader.readLine()) != null) {
@@ -231,17 +220,14 @@ public class TextToSpeechRecorder {
         return message.toString();
     }
 
-    public void create(Actor actor, Voice voice, Message message, String hash,
-            String messageHash) throws IOException {
-        List<String> soundFiles = writeSpeechResources(actor, voice, message,
-                hash, messageHash);
+    public void create(Actor actor, Voice voice, Message message, String hash, String messageHash) throws IOException {
+        List<String> soundFiles = writeSpeechResources(actor, voice, message, hash, messageHash);
         writeInventory(actor, voice, hash, soundFiles);
         writeMessageHash(actor, voice, hash, messageHash);
     }
 
-    private List<String> writeSpeechResources(Actor actor, Voice voice,
-            Message message, String hash, String messageHash)
-            throws IOException, FileNotFoundException {
+    private List<String> writeSpeechResources(Actor actor, Voice voice, Message message, String hash,
+            String messageHash) throws IOException, FileNotFoundException {
         logger.info("Recording message:\n" + messageHash);
         List<String> soundFiles = new Vector<String>();
         String mood = Mood.Neutral;
@@ -252,37 +238,30 @@ public class TextToSpeechRecorder {
             } else if (part.type == Message.Type.Text) {
                 int index = soundFiles.size();
                 logger.info("Recording part " + index);
-                String soundFileName = writeSpeechResource(actor, voice, hash,
-                        index, mood, part.value);
+                String soundFileName = writeSpeechResource(actor, voice, hash, index, mood, part.value);
                 soundFiles.add(soundFileName);
             }
         }
         return soundFiles;
     }
 
-    private String writeSpeechResource(Actor actor, Voice voice, String hash,
-            int index, String mood, String text)
+    private String writeSpeechResource(Actor actor, Voice voice, String hash, int index, String mood, String text)
             throws IOException, FileNotFoundException {
         String soundFileName = Integer.toString(index);
-        File soundFile = createTempFileName(
-                SpeechResourceTempFilePrefix + "_" + soundFileName + "_", "");
+        File soundFile = createTempFileName(SpeechResourceTempFilePrefix + "_" + soundFileName + "_", "");
         TextToSpeech textToSpeech = ttsPlayer.textToSpeech;
         textToSpeech.setVoice(voice);
         textToSpeech.setHint(mood);
         String recordedSoundFile = textToSpeech.speak(text, soundFile);
         if (!recordedSoundFile.endsWith(SpeechResourceFileTypeExtension)) {
-            String encodedSoundFile = recordedSoundFile.replace(".wav",
-                    SpeechResourceFileTypeExtension);
+            String encodedSoundFile = recordedSoundFile.replace(".wav", SpeechResourceFileTypeExtension);
             // sampling frequency is read from the wav audio file
-            String[] argv = { recordedSoundFile, encodedSoundFile, "--preset",
-                    "standard" };
+            String[] argv = { recordedSoundFile, encodedSoundFile, "--preset", "standard" };
             try {
                 mp3Encoder.run(argv);
             } finally {
                 if (!new File(recordedSoundFile).delete()) {
-                    throw new IllegalStateException(
-                            "Can't delete temporary speech file "
-                                    + recordedSoundFile);
+                    throw new IllegalStateException("Can't delete temporary speech file " + recordedSoundFile);
                 }
             }
             recordedSoundFile = encodedSoundFile;
@@ -294,35 +273,27 @@ public class TextToSpeechRecorder {
         } finally {
             inputStream.close();
             if (!new File(recordedSoundFile).delete()) {
-                throw new IllegalStateException(
-                        "Can't delete temporary encoded speech file "
-                                + recordedSoundFile);
+                throw new IllegalStateException("Can't delete temporary encoded speech file " + recordedSoundFile);
             }
         }
-        return new File(soundFileName + SpeechResourceFileTypeExtension)
-                .getName();
+        return new File(soundFileName + SpeechResourceFileTypeExtension).getName();
     }
 
-    private void writeInventory(Actor actor, Voice voice, String hash,
-            List<String> soundFiles) throws IOException {
+    private void writeInventory(Actor actor, Voice voice, String hash, List<String> soundFiles) throws IOException {
         StringBuilder inventory = new StringBuilder();
         for (String soundFile : soundFiles) {
             inventory.append(soundFile);
             inventory.append("\n");
         }
-        storage.writeStringResource(actor, voice, hash,
-                TextToSpeechRecorder.ResourcesFilename, inventory.toString());
+        storage.writeStringResource(actor, voice, hash, TextToSpeechRecorder.ResourcesFilename, inventory.toString());
     }
 
-    private void writeMessageHash(Actor actor, Voice voice, String hash,
-            String messageHash) throws IOException {
-        storage.writeStringResource(actor, voice, hash,
-                TextToSpeechRecorder.MessageFilename, messageHash);
+    private void writeMessageHash(Actor actor, Voice voice, String hash, String messageHash) throws IOException {
+        storage.writeStringResource(actor, voice, hash, TextToSpeechRecorder.MessageFilename, messageHash);
     }
 
     private static File createTempFileName(String prefix, String suffix) {
-        return new File(System.getProperty("java.io.tmpdir"),
-                prefix + UUID.randomUUID() + suffix);
+        return new File(System.getProperty("java.io.tmpdir"), prefix + UUID.randomUUID() + suffix);
     }
 
     public static String getHash(Message message) {

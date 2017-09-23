@@ -17,7 +17,6 @@ import teaselib.core.util.Environment;
 
 // TODO on Windows fails to cleanup and
 // crashes the test suite while executing a subsequent test
-@Ignore
 public class TextToSpeechTest {
     private static final Logger logger = LoggerFactory.getLogger(TextToSpeechTest.class);
 
@@ -34,6 +33,7 @@ public class TextToSpeechTest {
     }
 
     @Test
+    @Ignore
     public void testEachVoice() throws InterruptedException {
         Assume.assumeTrue(Environment.SYSTEM == Environment.Windows);
         TextToSpeech textToSpeech = new TextToSpeech();

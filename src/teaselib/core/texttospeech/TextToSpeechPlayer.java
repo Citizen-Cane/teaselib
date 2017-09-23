@@ -1,15 +1,18 @@
 package teaselib.core.texttospeech;
 
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.Vector;
 
@@ -19,18 +22,19 @@ import org.slf4j.LoggerFactory;
 import teaselib.Actor;
 import teaselib.Message;
 import teaselib.Message.Part;
+import teaselib.core.Configuration;
 import teaselib.core.ResourceLoader;
 
 public class TextToSpeechPlayer {
     private static final Logger logger = LoggerFactory.getLogger(TextToSpeechPlayer.class);
 
-    public final TextToSpeech textToSpeech;
+    public TextToSpeech textToSpeech;
     private final Set<ResourceLoader> loadedActorVoiceProperties = new HashSet<ResourceLoader>();
 
     /**
      * voice guid to voice
      */
-    private final Map<String, Voice> voices;
+    private final Map<String, Voice> voices = new LinkedHashMap<String, Voice>();
 
     /**
      * Actor key to prerecorded voice guid
@@ -57,41 +61,117 @@ public class TextToSpeechPlayer {
      */
     private final Set<String> usedVoices = new HashSet<String>();
 
-    private static TextToSpeechPlayer instance = null;
+    public enum Settings {
+        Voices;
+    }
 
-    // TODO TextToSpeech Windows implementation calls System.exit() when instanciated too often in a short time
-    // - This breaks tests but using a singleton also results in lazy initialization which does the trick most times
-    // - this might be the cause for the problems with the Speech-related tests
-    // TODO make this class a TeaseLib member to resolve singleton issue and then lazy-init when actually using it
+    private final Configuration config;
+    private final PreferredVoices preferredVoices;
 
-    public static TextToSpeechPlayer instance() {
-        synchronized (TextToSpeechPlayer.class) {
-            if (instance == null) {
-                instance = new TextToSpeechPlayer();
-            }
-            return instance;
+    public TextToSpeechPlayer(Configuration config) {
+        this.config = config;
+        preferredVoices = new PreferredVoices();
+    }
+
+    public TextToSpeechPlayer(Configuration config, TextToSpeechImplementation textToSpeechImplementation) {
+        this(config);
+        initTextToSpeech(new TextToSpeech(textToSpeechImplementation));
+    }
+
+    private void lazyInitTTS() {
+        if (this.textToSpeech == null) {
+            initTextToSpeech(new TextToSpeech());
         }
     }
 
-    private TextToSpeechPlayer() {
-        this.textToSpeech = new TextToSpeech();
+    void reload() {
+        preferredVoices.clear();
+        actorKey2TTSVoice.clear();
+        voices.clear();
+        usedVoices.clear();
 
-        if (textToSpeech.isReady()) {
-            voices = textToSpeech.getVoices();
-        } else {
-            voices = new HashMap<String, Voice>();
+        initTextToSpeech();
+    }
+
+    public void initTextToSpeech(TextToSpeech textToSpeech) {
+        this.textToSpeech = textToSpeech;
+        initTextToSpeech();
+    }
+
+    void initTextToSpeech() {
+        try {
+            readPreferredVoices();
+        } catch (FileNotFoundException e) {
+            logger.warn(e.getMessage(), e);
+        } catch (IOException e) {
+            logger.warn(e.getMessage(), e);
         }
-        // Write list of installed voices to log file in order to provide data
-        // for the Actor to Voices mapping properties file
-        logger.info("Installed voices:");
-        InstalledVoices installedVoices = new InstalledVoices(voices);
-        for (String key : installedVoices.keySet()) {
-            logger.info(key + ".guid=" + installedVoices.getGuid(key));
+
+        if (this.textToSpeech.isReady()) {
+            Map<String, String> preferredVoiceGuids = preferredVoices.getPreferredVoiceGuids();
+            Set<String> ignoredVoiceGuids = preferredVoices.getDisabledVoiceGuids();
+
+            Map<String, Voice> allVoices = this.textToSpeech.getVoices();
+            voices.putAll(sortedVoicesAccordingToSettings(allVoices, preferredVoiceGuids, ignoredVoiceGuids));
+
+            if (logger.isInfoEnabled()) {
+                logPreferredVoices(voices, preferredVoiceGuids);
+                logOtherVoices(voices, preferredVoiceGuids, ignoredVoiceGuids);
+                logIgnoredVoices(allVoices, ignoredVoiceGuids);
+            }
         }
+    }
+
+    public void readPreferredVoices() throws FileNotFoundException, IOException {
+        if (config.has(Settings.Voices)) {
+            preferredVoices.load(new File(config.get(Settings.Voices)));
+        }
+    }
+
+    private static void logPreferredVoices(Map<String, Voice> voices, Map<String, String> preferredVoiceGuids) {
+        for (Entry<String, String> entry : preferredVoiceGuids.entrySet()) {
+            logger.info("Preferring voice " + voices.get(entry.getKey()) + "=" + entry.getValue());
+        }
+    }
+
+    public static void logOtherVoices(Map<String, Voice> voices, Map<String, String> preferredVoiceGuids,
+            Set<String> ignoredVoiceGuids) {
+        for (String key : voices.keySet()) {
+            if (!preferredVoiceGuids.containsKey(key) && !ignoredVoiceGuids.contains(key)) {
+                logger.info("Using voice " + voices.get(key).toString());
+            }
+        }
+    }
+
+    private static void logIgnoredVoices(Map<String, Voice> voices, Set<String> ignoredVoiceGuids) {
+        for (String guid : ignoredVoiceGuids) {
+            logger.info("Ignoring voice " + voices.get(guid));
+        }
+    }
+
+    public Map<String, Voice> sortedVoicesAccordingToSettings(Map<String, Voice> voices,
+            Map<String, String> preferredVoiceGuids, Set<String> ignoredVoiceGuids) {
+        Map<String, Voice> sorted = new LinkedHashMap<String, Voice>();
+
+        for (Entry<String, String> preferred : preferredVoiceGuids.entrySet()) {
+            Voice voice = voices.get(preferred.getKey());
+            if (voice != null) {
+                sorted.put(preferred.getKey(), voice);
+            }
+        }
+
+        for (Entry<String, Voice> entry : voices.entrySet()) {
+            String guid = entry.getKey();
+            if (!preferredVoiceGuids.containsKey(guid) && !ignoredVoiceGuids.contains(guid)) {
+                sorted.put(guid, entry.getValue());
+            }
+        }
+
+        return sorted;
     }
 
     /**
-     * Actors may have preferred or pre-recorded voices. These are stored in the resources section of each project.
+     * Actors may have assigned or pre-recorded voices. These are stored in the resources section of each project.
      * 
      * The configuration has to be loaded for each resource loader instance.
      * 
@@ -116,6 +196,7 @@ public class TextToSpeechPlayer {
                 if (!actorKey2TTSVoice.containsKey(actorKey) && preRecordedVoice != null) {
                     usePrerecordedVoice(actorKey, voiceGuid);
                 } else {
+                    logger.info("Actor key=" + actorKey + ": prerecorded voice '" + voiceGuid + "' not available");
                     reserveVoice(actorKey, voiceGuid);
                 }
             }
@@ -142,7 +223,6 @@ public class TextToSpeechPlayer {
     }
 
     private void useTTSVoice(String actorKey, String voiceGuid) {
-        logger.info("Actor key=" + actorKey + ": prerecorded voice '" + voiceGuid + "' not available");
         Voice voice = voices.get(voiceGuid);
         if (voice != null) {
             logger.info("Actor key=" + actorKey + ": using TTS voice '" + voiceGuid + "'");
@@ -154,29 +234,28 @@ public class TextToSpeechPlayer {
     }
 
     Voice getVoiceFor(Actor actor) {
+        lazyInitTTS();
+
         if (actorKey2PrerecordedVoiceGuid.containsKey(actor.key)) {
             throw new IllegalStateException("Prerecorded voice available");
         }
         if (actorKey2TTSVoice.containsKey(actor.key)) {
             return actorKey2TTSVoice.get(actor.key);
         } else if (actorKey2ReservedVoiceGuid.containsKey(actor.key)) {
-            return reservedVoice(actor);
+            return getReservedVoice(actor);
         } else {
             return getMatchingOrBestVoiceFor(actor);
         }
     }
 
-    private Voice reservedVoice(Actor actor) {
+    private Voice getReservedVoice(Actor actor) {
         String voiceGuid = actorKey2ReservedVoiceGuid.get(actor.key);
-        Voice voice;
         if (voiceGuid != null) {
             useTTSVoice(actor.key, voiceGuid);
-            voice = getVoiceFor(actor);
+            return getVoiceFor(actor);
         } else {
-            voice = getMatchingOrBestVoiceFor(actor);
+            return getMatchingOrBestVoiceFor(actor);
         }
-        actorKey2ReservedVoiceGuid.remove(actor.key);
-        return voice;
     }
 
     String getAssignedVoiceFor(Actor actor) {
@@ -191,20 +270,22 @@ public class TextToSpeechPlayer {
         }
         if (voice == null && voices.size() > 0) {
             voice = getMatchingVoiceFor(actor);
-            if (voice != null) {
-                actorKey2TTSVoice.put(actor.key, voice);
-                usedVoices.add(voice.guid);
-            }
         }
+
+        if (voice != null) {
+            actorKey2TTSVoice.put(actor.key, voice);
+            usedVoices.add(voice.guid);
+        }
+
         return voice;
     }
 
     private Voice getMatchingVoiceFor(Actor actor) {
         // Filter the actor's gender
-        Set<Voice> genderFilteredVoices = new LinkedHashSet<Voice>();
-        for (Voice voice : voices.values()) {
-            if (actor.gender == voice.gender) {
-                genderFilteredVoices.add(voice);
+        List<Voice> genderFilteredVoices = new ArrayList<Voice>();
+        for (Entry<String, Voice> voice : voices.entrySet()) {
+            if (actor.gender == voice.getValue().gender) {
+                genderFilteredVoices.add(voice.getValue());
             }
         }
         // Full match: language and region
@@ -260,7 +341,8 @@ public class TextToSpeechPlayer {
                 || actorName.compareToIgnoreCase(Actor.Key.DominantMale) == 0;
     }
 
-    public void acquireVoice(Actor actor) {
+    public void acquireVoice(Actor actor, ResourceLoader resources) {
+        loadActorVoiceProperties(resources);
         if (!prerenderedSpeechAvailable(actor)) {
             reserveVoice(actor.key, null);
         }
@@ -277,6 +359,8 @@ public class TextToSpeechPlayer {
      *            instance to call sleep on
      */
     public void speak(Actor actor, String prompt, String mood) throws InterruptedException {
+        lazyInitTTS();
+
         boolean useTTS = textToSpeech.isReady();
         if (useTTS) {
             Voice voice = getVoiceFor(actor);
@@ -297,7 +381,9 @@ public class TextToSpeechPlayer {
     }
 
     public void stop() {
-        textToSpeech.stop();
+        if (textToSpeech != null) {
+            textToSpeech.stop();
+        }
     }
 
     /**

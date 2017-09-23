@@ -16,7 +16,7 @@ public class Configuration {
     private final List<Properties> defaults = new ArrayList<Properties>();
     Properties persistentProperties;
 
-    Properties sessionProperties = new Properties();
+    final Properties sessionProperties = new Properties();
 
     public static interface Setup {
         void applyTo(Configuration config) throws IOException;
@@ -27,6 +27,7 @@ public class Configuration {
     }
 
     public Configuration(Setup setup) throws IOException {
+        this();
         setup.applyTo(this);
     }
 

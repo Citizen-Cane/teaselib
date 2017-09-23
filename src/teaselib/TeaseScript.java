@@ -26,7 +26,6 @@ import teaselib.core.speechrecognition.SpeechRecognitionImplementation;
 import teaselib.core.speechrecognition.SpeechRecognitionResult.Confidence;
 import teaselib.core.speechrecognition.SpeechRecognizer;
 import teaselib.core.speechrecognition.events.SpeechRecognitionStartedEventArgs;
-import teaselib.core.texttospeech.TextToSpeechPlayer;
 import teaselib.core.util.WildcardPattern;
 import teaselib.util.Items;
 
@@ -157,7 +156,7 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
     }
 
     public void say(Message message) {
-        renderMessage(message, TextToSpeechPlayer.instance());
+        renderMessage(message, true);
     }
 
     /**
@@ -181,7 +180,7 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
     }
 
     public void show(Message message) {
-        renderMessage(message, null);
+        renderMessage(message, false);
     }
 
     /**

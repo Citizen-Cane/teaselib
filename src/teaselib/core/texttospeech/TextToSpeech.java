@@ -1,9 +1,10 @@
 package teaselib.core.texttospeech;
 
 import java.io.File;
+import java.lang.reflect.Method;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.locks.Lock;
@@ -38,10 +39,12 @@ public class TextToSpeech {
     public TextToSpeech() {
         Set<String> names = getImplementations();
         if (!names.isEmpty()) {
-            // Just use the first (as there will be usually just one per
-            // platform)
             setImplementation(names.iterator().next());
         }
+    }
+
+    public TextToSpeech(TextToSpeechImplementation ttsImpl) {
+        this.tts = ttsImpl;
     }
 
     static private Set<String> getImplementations() {
@@ -59,20 +62,24 @@ public class TextToSpeech {
             Delegate delegate = new Delegate() {
                 @Override
                 public void run() {
-                    TextToSpeechImplementation currentTTS = tts;
-                    TextToSpeechImplementation newTTS = null;
                     try {
                         Class<? extends Object> ttsClass = getClass().getClassLoader().loadClass(className);
-                        newTTS = (TextToSpeechImplementation) ttsClass.newInstance();
-                        // tts = new TeaseLibTTS();
+                        Method singleton = ttsClass.getDeclaredMethod("getInstance");
+
+                        TextToSpeechImplementation newTTS = null;
+                        if (singleton != null) {
+                            newTTS = (TextToSpeechImplementation) singleton.invoke(this);
+                        } else {
+                            newTTS = (TextToSpeechImplementation) ttsClass.newInstance();
+                        }
+
+                        if (tts != null) {
+                            tts.dispose();
+                        }
+
+                        tts = new TextToSpeechImplementationDebugProxy(newTTS);
                     } catch (Throwable t) {
                         setError(t);
-                    } finally {
-                        tts = new TextToSpeechImplementationDebugProxy(newTTS);
-                        if (currentTTS != null) {
-                            currentTTS.dispose();
-                            currentTTS = null;
-                        }
                     }
                 }
             };
@@ -92,7 +99,7 @@ public class TextToSpeech {
     }
 
     public Map<String, Voice> getVoices() {
-        final Map<String, Voice> voices = new HashMap<String, Voice>();
+        final Map<String, Voice> voices = new LinkedHashMap<String, Voice>();
 
         if (tts != null) {
             Delegate delegate = new Delegate() {

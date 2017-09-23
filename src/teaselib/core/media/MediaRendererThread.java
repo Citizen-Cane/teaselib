@@ -74,7 +74,6 @@ public abstract class MediaRendererThread implements MediaRenderer.Threaded, Rep
                         // Expected
                     } catch (Exception e) {
                         handleException(ExceptionUtil.reduce(e));
-                        logger.error(e.getMessage(), e);
                     } finally {
                         startCompleted();
                         mandatoryCompleted();
@@ -82,6 +81,22 @@ public abstract class MediaRendererThread implements MediaRenderer.Threaded, Rep
                         setThreadName(nameForSleepingThread());
                     }
                     return null;
+                }
+
+                private void handleException(Exception e) throws Exception {
+                    if (e instanceof IOException) {
+                        handleIOException(e);
+                    } else {
+                        boolean stopOnRenderError = Boolean
+                                .parseBoolean(teaseLib.config.get(Config.Debug.StopOnRenderError));
+                        if (stopOnRenderError) {
+                            // TODO Error is not (always) forwarded to script thread
+                            logger.error(e.getMessage(), e);
+                            throw e;
+                        } else {
+                            logger.warn(e.getMessage(), e);
+                        }
+                    }
                 }
             });
             try {
@@ -93,22 +108,15 @@ public abstract class MediaRendererThread implements MediaRenderer.Threaded, Rep
         }
     }
 
-    protected void handleException(Exception e) throws Exception {
-        if (e instanceof IOException) {
-            handleIOException(e);
-        } else {
-            boolean stopOnRenderError = Boolean.parseBoolean(teaseLib.config.get(Config.Debug.StopOnRenderError));
-            if (stopOnRenderError) {
-                throw e;
-            }
-        }
-    }
-
     protected void handleIOException(Exception e) throws IOException {
         if (e instanceof IOException) {
             boolean stopOnAssetNotFound = Boolean.parseBoolean(teaseLib.config.get(Config.Debug.StopOnAssetNotFound));
             if (stopOnAssetNotFound) {
+                logger.error(e.getMessage(), e);
+                // TODO Error is not (always) forwarded to script thread
                 throw (IOException) e;
+            } else {
+                logger.warn(e.getMessage(), e);
             }
         }
     }

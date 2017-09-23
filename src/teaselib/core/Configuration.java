@@ -30,6 +30,11 @@ public class Configuration {
         setup.applyTo(this);
     }
 
+    public void addUserFile(Enum<?> setting, File preset, File userFile) throws IOException {
+        set(setting, userFile.getAbsolutePath());
+        addUserFile(preset, userFile);
+    }
+
     public void addUserFile(File preset, File userFile) throws IOException {
         if (!userFile.exists()) {
             FileUtilities.copyFile(preset, userFile);
@@ -51,6 +56,25 @@ public class Configuration {
         }
         defaults.add(configurationFile);
         persistentProperties = configurationFile;
+    }
+
+    public boolean has(String property) {
+        return has(QualifiedItem.of(property));
+    }
+
+    public boolean has(Enum<?> property) {
+        return has(QualifiedItem.of(property));
+    }
+
+    public boolean has(QualifiedItem<?> property) {
+        String item = property.toString();
+        if (sessionProperties.containsKey(item))
+            return true;
+        if (System.getProperties().containsKey(item))
+            return true;
+        if (persistentProperties.containsKey(item))
+            return true;
+        return false;
     }
 
     public String get(String property) {

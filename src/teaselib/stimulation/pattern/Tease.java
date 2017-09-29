@@ -1,35 +1,34 @@
-/**
- * 
- */
 package teaselib.stimulation.pattern;
 
-import teaselib.stimulation.BurstSquareWave;
+import teaselib.stimulation.SquareWave;
 import teaselib.stimulation.Stimulation;
 import teaselib.stimulation.Stimulator;
 import teaselib.stimulation.WaveForm;
 
 /**
- * @author someone Periodic bursts
+ * Periodic bursts up to 25 of the period duration. Meant to distract - longer periods work great with stronger signals.
+ * Stimulations works best when turned on/off regularly.
+ * 
+ * @author Citizen-Cane
  */
 public class Tease extends Stimulation {
+    static final double DurationSeconds = 2.0;
 
-    private final double burstOnOffSeconds;
+    private final double periodDurationSeconds;
 
     public Tease(Stimulator stimulator) {
-        this(stimulator, 1.0, 0.1);
+        this(stimulator, DurationSeconds);
     }
 
-    public Tease(Stimulator stimulator, double periodDurationSeconds,
-            double burstOnOffSeconds) {
-        super(stimulator, periodDurationSeconds);
-        this.burstOnOffSeconds = burstOnOffSeconds;
+    public Tease(Stimulator stimulator, double periodDuration) {
+        super(stimulator);
+        this.periodDurationSeconds = periodDuration;
     }
 
     @Override
     public WaveForm waveform(int intensity) {
-        double onTimeMillis = periodDurationSeconds * intensity / MaxIntensity;
-        return new BurstSquareWave(periodDurationSeconds * 1000,
-                onTimeMillis * 1000, burstOnOffSeconds * 1000);
+        double onTime = spreadRange(Math.max(0.1, stimulator.minimalSignalDuration()), periodDurationSeconds * 0.25,
+                intensity);
+        return new SquareWave(onTime, periodDurationSeconds - onTime);
     }
-
 }

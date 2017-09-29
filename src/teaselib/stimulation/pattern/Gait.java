@@ -1,6 +1,3 @@
-/**
- * 
- */
 package teaselib.stimulation.pattern;
 
 import teaselib.stimulation.SquareWave;
@@ -9,24 +6,20 @@ import teaselib.stimulation.Stimulator;
 import teaselib.stimulation.WaveForm;
 
 /**
- * @author someone
+ * @author Citizen-Cane
  *
  */
 public class Gait extends Stimulation {
+    final double periodDurationSeconds;
 
-    final double onTimeBaseSeconds;
-
-    public Gait(Stimulator stimulator, double periodDurationSeconds,
-            double onTimeBaseSeconds) {
-        super(stimulator, periodDurationSeconds);
-        this.onTimeBaseSeconds = onTimeBaseSeconds;
+    public Gait(Stimulator stimulator, double periodDurationSeconds) {
+        super(stimulator);
+        this.periodDurationSeconds = periodDurationSeconds;
     }
 
     @Override
     public WaveForm waveform(int intensity) {
-        double onTimeMillis = onTimeBaseSeconds
-                + periodDurationSeconds * intensity / MaxIntensity * 0.4;
-        return new SquareWave(periodDurationSeconds * 1000,
-                onTimeMillis * 1000);
+        double onTimeSeconds = spreadRange(Math.max(0.1, stimulator.minimalSignalDuration()), 0.5, intensity);
+        return new SquareWave(onTimeSeconds, periodDurationSeconds - onTimeSeconds);
     }
 }

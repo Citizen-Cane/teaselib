@@ -1,16 +1,13 @@
-/**
- * 
- */
 package teaselib.stimulation.pattern;
 
 import teaselib.stimulation.Stimulator;
 
 /**
- * @author someone
+ * @author Citizen-Cane
  *
  */
 public class Walk extends Gait {
     public Walk(Stimulator stimulator) {
-        super(stimulator, 1.4, 0.0);
+        super(stimulator, 2.0);
     }
 }

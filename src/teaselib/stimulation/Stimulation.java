@@ -6,74 +6,62 @@ package teaselib.stimulation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import teaselib.core.ScriptInterruptedException;
-
 /**
- * Assign a specific stimulation to a stimulator.
+ * Base class for stimulations. Links meaning of a stimulation to a specific stimulator.
  * 
- * @author someone
+ * @author Citizen-Cane
  *
  */
 public abstract class Stimulation {
     private static final Logger logger = LoggerFactory.getLogger(Stimulation.class);
 
-    protected final static int MaxIntensity = 10;
-    protected final static double maxStrength = 1.0;
+    protected static final int MinIntensity = 0;
+    protected static final int MaxIntensity = 10;
 
-    final Stimulator stimulator;
+    protected static final double maxStrength = 1.0;
 
-    private Thread stim = null;
-    public final double periodDurationSeconds;
+    protected Stimulator stimulator;
+    int priority;
 
-    public Stimulation(Stimulator stimulator, double periodDurationSeconds) {
-        super();
-        this.stimulator = stimulator;
-        this.periodDurationSeconds = Math.max(periodDurationSeconds, stimulator.minimalSignalDuration());
+    public class Priority {
+        public static final int OneShotShort = 300;
+        public static final int OneShot = 200;
+        public static final int Normal = 100;
     }
 
-    public void play(final int intensity, final double durationSeconds) {
-        // TODO Thread pool, Future
-        stim = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    waveform(intensity).play(stimulator, durationSeconds, Stimulation.maxStrength);
-                } catch (InterruptedException e) {
-                    stimulator.set(0);
-                }
-            }
-        });
-        final String simpleName = getClass().getSimpleName();
-        logger.info(simpleName + ": intensity=" + intensity + " duration=" + durationSeconds + " on "
-                + stimulator.getDeviceName() + ", " + stimulator.getLocation());
-        stim.setName(simpleName);
-        stim.start();
+    public Stimulation(Stimulator stimulator) {
+        this(stimulator, Priority.Normal);
+    }
+
+    public Stimulation(Stimulator stimulator, int priority) {
+        super();
+        this.stimulator = stimulator;
+        this.priority = priority;
+    }
+
+    public void play(double durationSeconds, int intensity) {
+        if (logger.isInfoEnabled()) {
+            logger.info(getClass().getSimpleName() + ": intensity=" + intensity + " duration=" + durationSeconds
+                    + " on " + stimulator.getDeviceName() + ", " + stimulator.getLocation());
+        }
+        stimulator.play(waveform(intensity), durationSeconds, Stimulation.maxStrength);
+    }
+
+    public void extend(double durationSeconds) {
+        stimulator.extend(durationSeconds);
     }
 
     public void stop() {
-        stim.interrupt();
-        while (stim.isAlive()) {
-            try {
-                stim.join();
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
-        }
-        if (Thread.interrupted()) {
-            throw new ScriptInterruptedException();
-        }
+        stimulator.stop();
     }
 
     public void complete() {
-        while (stim.isAlive()) {
-            try {
-                stim.join();
-            } catch (InterruptedException e) {
-                stop();
-                throw new ScriptInterruptedException(e);
-            }
-        }
+        stimulator.complete();
     }
 
     protected abstract WaveForm waveform(int intensity);
+
+    public static double spreadRange(double from, double to, int intensity) {
+        return from + (to - from) * intensity / MaxIntensity;
+    }
 }

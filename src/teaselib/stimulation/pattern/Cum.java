@@ -1,34 +1,30 @@
-/**
- * 
- */
 package teaselib.stimulation.pattern;
 
-import teaselib.stimulation.BurstSquareWave;
+import teaselib.stimulation.SquareWave;
 import teaselib.stimulation.Stimulation;
 import teaselib.stimulation.Stimulator;
 import teaselib.stimulation.WaveForm;
 
 /**
- * @author someone
+ * The long and increasing on-interval guarantees a good amount of stimulation, whereas the slightly increasing off-time
+ * provides room for delayed stimulation - that is the body gets stimulated by the signal being turned off.
+ * 
+ * @author Citizen-Cane
  *
  */
 public class Cum extends Stimulation {
+    static final double MinOnDurationSeconds = 2.0;
+    static final double IntensityFactor = 2.0;
+    static final double OffSeconds = 2.0;
 
     public Cum(Stimulator stimulator) {
-        super(stimulator, 1.0);
+        super(stimulator);
     }
 
     @Override
     public WaveForm waveform(int intensity) {
-        double onTimeMillis = periodDurationSeconds * 0.9;
-        double burstBase = 0.3;
-        double onFactor = (double) intensity
-                / (double) Stimulation.MaxIntensity;
-        double burstOnSeconds = burstBase * onFactor;
-        double burstOffSeconds = burstBase * (1.0 - onFactor);
-        return new BurstSquareWave(periodDurationSeconds * 1000,
-                onTimeMillis * 1000, burstOnSeconds * 1000,
-                burstOffSeconds * 1000);
+        double onTimeSeconds = MinOnDurationSeconds + IntensityFactor * intensity;
+        double offTimeSeconds = OffSeconds * spreadRange(1.0, 2.0, intensity);
+        return new SquareWave(onTimeSeconds, offTimeSeconds);
     }
-
 }

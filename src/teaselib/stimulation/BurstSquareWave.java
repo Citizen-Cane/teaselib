@@ -1,76 +1,15 @@
-/**
- * 
- */
 package teaselib.stimulation;
 
 /**
- * @author someone
+ * @author Citizen-Cane
  *
  */
 public class BurstSquareWave extends WaveForm {
-    final long periodTimeMillis;
-    final long onTimeMillis;
-    final long burstOnMillis;
-    final long burstOffMillis;
+    public BurstSquareWave(int n, double onTimeSeconds, double offTimeSeconds) {
+        super();
 
-    /**
-     * @param periodTimeMillis
-     *            Duration of a period
-     * @param onTimeMillis
-     *            The on-time during each period
-     * @param burstOnOffMillis
-     *            Period of the bursts during the on-time
-     */
-    public BurstSquareWave(double periodTimeMillis, double onTimeMillis,
-            double burstOnOffMillis) {
-        this.periodTimeMillis = (long) periodTimeMillis;
-        this.onTimeMillis = (long) onTimeMillis;
-        this.burstOnMillis = (long) burstOnOffMillis;
-        this.burstOffMillis = (long) burstOnOffMillis;
-    }
-
-    /**
-     * @param periodTimeMillis
-     *            Duration of a period
-     * @param onTimeMillis
-     *            The on-time during each period
-     * @param burstOnMillis
-     *            The on-time of each burst during the on-time of the period
-     * @param burstOffMillis
-     *            The off-time of each burst during the on-time of the period
-     */
-    public BurstSquareWave(double periodTimeMillis, double onTimeMillis,
-            double burstOnMillis, double burstOffMillis) {
-        this.periodTimeMillis = (long) periodTimeMillis;
-        this.onTimeMillis = (long) onTimeMillis;
-        this.burstOnMillis = (long) burstOnMillis;
-        this.burstOffMillis = (long) burstOffMillis;
-    }
-
-    /*
-     * (non-Javadoc)
-     * 
-     * @see teaselib.stimulation.StimulationPattern#play(teaselib.stimulation.
-     * Stimulator , int, double)
-     */
-    @Override
-    public void play(Stimulator stimumlator, double seconds, double strength)
-            throws InterruptedException {
-        long startTime = System.currentTimeMillis();
-        durationMillis.set((long) (seconds * 1000));
-        do {
-            long t = 0;
-            while (t <= onTimeMillis) {
-                stimumlator.set(strength);
-                Thread.sleep(burstOnMillis);
-                t += burstOnMillis;
-                stimumlator.set(0.0);
-                Thread.sleep(burstOffMillis);
-                t += burstOffMillis;
-            }
-            if (t < periodTimeMillis) {
-                Thread.sleep(periodTimeMillis - t);
-            }
-        } while (System.currentTimeMillis() - startTime < durationMillis.get());
+        for (int i = 0; i < n; i++) {
+            add(new Entry(MAX, toMillis(onTimeSeconds)), new Entry(MIN, toMillis(offTimeSeconds)));
+        }
     }
 }

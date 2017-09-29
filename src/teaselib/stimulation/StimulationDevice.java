@@ -9,21 +9,19 @@ import teaselib.core.devices.Devices;
 import teaselib.core.devices.xinput.stimulation.XInputStimulationDevice;
 
 /**
+ * 
+ * TODO map actions to motors and patterns
+ * 
+ * actions: tease, punish, walk,run, etc. patterns are different depending on what is connected (and where)
+ * 
+ * for instance: "tease tip estim" will be different from "tease tip vibrator" because of the different sensitivity of
+ * the area.
+ * 
+ * Then there's the intensity of the stimulation: For a vibrator, you may want to render intensity by adjusting the
+ * motor voltage, but for controlling an e-stim current via a relay, the choice are on or off. So for relays, intensity
+ * maps to on/off time.
+ *  
  * @author Citizen-Cane
- * 
- *         todo map actions to motors and patterns
- * 
- *         actions: tease, punish, walk,run, etc. patterns are different depending on what is connected (and where)
- * 
- *         for instance: "tease tip estim" will be different from "tease tip vibrator" because of the different
- *         sensitivity of the area.
- * 
- *         Then there's the intensity of the stimulation: For a vibrator, you may want to render intensity by adjusting
- *         the motor voltage, but for controlling an e-stim current via a relay, the choice are on or off. So for
- *         relays, intensity maps to on/off time.
- * 
- * 
- * 
  */
 public abstract class StimulationDevice implements Device.Creatable {
     public static synchronized DeviceCache<StimulationDevice> getDeviceCache(Devices devices,

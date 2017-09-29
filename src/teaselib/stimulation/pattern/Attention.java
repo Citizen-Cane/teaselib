@@ -1,32 +1,25 @@
-/**
- * 
- */
 package teaselib.stimulation.pattern;
 
-import teaselib.stimulation.SquareWave;
+import teaselib.stimulation.ConstantWave;
 import teaselib.stimulation.Stimulation;
 import teaselib.stimulation.Stimulator;
 import teaselib.stimulation.WaveForm;
 
 /**
- * @author someone
+ * @author Citizen-Cane
  *
  */
 public class Attention extends Stimulation {
+    static final double MinOnDurationSeconds = 5.0;
+    static final double IntensityFactor = 1.0;
 
     public Attention(Stimulator stimulator) {
-        super(stimulator, 0.0);
+        super(stimulator);
     }
 
     @Override
     public WaveForm waveform(int intensity) {
-        // Attention duration depends on intensity only
-        double attentionSeconds = Attention.getSeconds(intensity);
-        // A constant signal
-        return new SquareWave(attentionSeconds * 1000, attentionSeconds * 1000);
-    }
-
-    public static double getSeconds(int intensity) {
-        return 2.0 + 8.0 * intensity / MaxIntensity;
+        double onTimeSeconds = MinOnDurationSeconds + IntensityFactor * intensity;
+        return new ConstantWave(onTimeSeconds);
     }
 }

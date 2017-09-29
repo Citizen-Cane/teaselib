@@ -3,6 +3,8 @@ package teaselib.stimulation;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import teaselib.core.Configuration;
 import teaselib.core.devices.Device;
@@ -18,6 +20,8 @@ import teaselib.stimulation.pattern.Whip;
 import teaselib.test.DebugSetup;
 
 public class StimulationTest {
+    private static final Logger logger = LoggerFactory.getLogger(StimulationTest.class);
+
     private static StimulationDevice device;
 
     @BeforeClass
@@ -26,10 +30,15 @@ public class StimulationTest {
         Devices devices = new Devices(config);
 
         device = devices.get(StimulationDevice.class).getDefaultDevice();
+
+        logger.info("Battery-Level is " + device.batteryLevel().toString());
     }
 
     @AfterClass
     public static void closeDefaultDevice() {
+        for (Stimulator stimulator : device.stimulators()) {
+            stimulator.stop();
+        }
         device.close();
     }
 
@@ -50,95 +59,97 @@ public class StimulationTest {
     }
 
     @Test
-    public void testGaits() {
+    public void testWalk() throws InterruptedException {
         Stimulator stimulator = getRightStimulator();
         testStimulation(new Walk(stimulator));
+    }
+
+    @Test
+    public void testTrot() throws InterruptedException {
+        Stimulator stimulator = getRightStimulator();
         testStimulation(new Trot(stimulator));
+    }
+
+    @Test
+    public void testRun() throws InterruptedException {
+        Stimulator stimulator = getRightStimulator();
         testStimulation(new Run(stimulator));
     }
 
     @Test
-    public void testTease() {
+    public void testTease() throws InterruptedException {
         Stimulator stimulator = getRightStimulator();
         testStimulation(new Tease(stimulator));
     }
 
     @Test
-    public void testAttention() {
+    public void testAttention() throws InterruptedException {
         Stimulator stimulator = getRightStimulator();
         Stimulation stimulation = new Attention(stimulator);
-        for (int i = 1; i <= Stimulation.MaxIntensity; i++) {
-            stimulation.play(i, 0);
-            try {
-                Thread.sleep((long) (1000 * (1.0 + Attention.getSeconds(i))));
-            } catch (InterruptedException e) {
-                break;
-            }
+        for (int i = Stimulation.MinIntensity; i <= Stimulation.MaxIntensity; i++) {
+            stimulation.play(0, i);
+            stimulation.complete();
+            Thread.sleep(5000);
         }
     }
 
     @Test
-    public void testPunish() {
+    public void testPunish() throws InterruptedException {
         Stimulator stimulator = getLeftStimulator();
         Stimulation stimulation = new Punish(stimulator);
-        for (int i = 1; i <= Stimulation.MaxIntensity; i++) {
-            stimulation.play(i, 0);
-            try {
-                Thread.sleep((long) (1000 * (1.0 + Punish.getSeconds(i))));
-            } catch (InterruptedException e) {
-                break;
-            }
+        for (int i = Stimulation.MinIntensity; i <= Stimulation.MaxIntensity; i++) {
+            stimulation.play(0, i);
+            stimulation.complete();
+            Thread.sleep(5000);
         }
     }
 
     @Test
-    public void testWhip() {
+    public void testWhip() throws InterruptedException {
         Stimulator stimulator = getLeftStimulator();
         Stimulation stimulation = new Whip(stimulator);
-        for (int i = 1; i <= Stimulation.MaxIntensity; i++) {
-            stimulation.play(i, 0);
-            try {
-                Thread.sleep(1000 * 3);
-            } catch (InterruptedException e) {
-                break;
-            }
+        for (int i = Stimulation.MinIntensity; i <= Stimulation.MaxIntensity; i++) {
+            stimulation.play(0, i);
+            stimulation.complete();
+            Thread.sleep(5000);
         }
     }
 
     @Test
-    public void testCum() {
+    public void testCum() throws InterruptedException {
         Stimulator stimulator = getRightStimulator();
         testStimulation(new Cum(stimulator));
     }
 
-    static private void testStimulation(Stimulation stimulation) {
-        for (int i = 1; i <= Stimulation.MaxIntensity; i++) {
-            final double durationSeconds = 5.0 * stimulation.periodDurationSeconds;
-            stimulation.play(i, durationSeconds);
-            try {
-                Thread.sleep((long) (durationSeconds * 1000));
-            } catch (InterruptedException e) {
-                break;
-            }
+    static private void testStimulation(Stimulation stimulation) throws InterruptedException {
+        double durationSeconds = 30.0;
+        for (int i = Stimulation.MinIntensity; i <= Stimulation.MaxIntensity; i++) {
+            stimulation.play(durationSeconds, i);
+            stimulation.complete();
+            Thread.sleep(5000);
         }
     }
 
     @Test
-    public void testAll() {
+    public void testAll() throws InterruptedException {
         Stimulator a = getLeftStimulator();
         Stimulator c = getRightStimulator();
         final double durationSeconds = 10.0;
         Stimulation[] r = { new Walk(a), new Trot(a), new Walk(a), new Run(a), new Run(a), new Run(a), new Run(a) };
         Stimulation[] l = { new Tease(c), new Cum(c), new Tease(c), new Cum(c), new Cum(c), new Cum(c), new Cum(c) };
         for (int j = 0; j < r.length; j++) {
-            for (int i = 1; i <= Stimulation.MaxIntensity; i++) {
+            for (int i = Stimulation.MinIntensity; i <= Stimulation.MaxIntensity; i++) {
                 Stimulation left = l[j];
                 Stimulation right = r[j];
                 System.out.println(left.toString() + " " + right.toString());
-                right.play(i, durationSeconds);
-                left.play(i, durationSeconds);
+
+                right.play(durationSeconds, i);
+                left.play(durationSeconds, i);
+
                 right.complete();
                 left.complete();
+
+                Thread.sleep(5000);
             }
         }
     }

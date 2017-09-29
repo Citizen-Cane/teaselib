@@ -3,32 +3,45 @@
  */
 package teaselib.stimulation;
 
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.Arrays;
+import java.util.List;
 
 /**
- * @author someone
+ * @author Citizen-Cane
  *
  */
-public abstract class WaveForm {
+public class WaveForm {
+    static final double MIN = 0.0;
+    static final double MAX = 1.0;
 
-    final AtomicLong durationMillis = new AtomicLong();
+    public static class Entry {
+        public final double amplitude;
+        public final long durationMillis;
 
-    /**
-     * Play a waveform for the given duration on the provided stimulator with
-     * the given strength.
-     * 
-     * @param stim
-     *            The stimulator to play the waveform on.
-     * @param seconds
-     *            The time to play the waveform.
-     * @param strength
-     *            The strength the waveform is played with.
-     * @throws InterruptedException
-     */
-    abstract public void play(Stimulator stim, double seconds, double strength)
-            throws InterruptedException;
+        public Entry(double amplitude, long durationMillis) {
+            super();
+            this.amplitude = amplitude;
+            this.durationMillis = durationMillis;
+        }
+    }
 
-    public void extend(double additonalSeconds) {
-        durationMillis.addAndGet((long) (additonalSeconds * 1000));
+    public final List<Entry> values;
+
+    public WaveForm(Entry... values) {
+        this.values = Arrays.asList(values);
+    }
+
+    public void add(Entry... entries) {
+        for (Entry entry : entries) {
+            values.add(entry);
+        }
+    }
+
+    static long toMillis(double seconds) {
+        return (int) (seconds * 1000);
+    }
+
+    public static double clamp(double value) {
+        return Math.max(0.0, Math.min(value, 1.0));
     }
 }

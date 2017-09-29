@@ -40,7 +40,6 @@ public class PersistTest {
 
     @Test(expected = UnsupportedOperationException.class)
     public void testPersistCollection() throws Exception {
-        @SuppressWarnings("unchecked")
         Collection<?> test = Arrays.asList("Foo", 1, 2L, 2.7f, 3.14159, false, true);
         assertEquals(test, Persist.from(Persist.persist(test)));
     }
@@ -53,7 +52,7 @@ public class PersistTest {
         Persist.Persistable persistable = new Persist.Persistable() {
             @Override
             public List<String> persisted() {
-                ArrayList<String> persistedElements = new ArrayList<String>(values.size());
+                ArrayList<String> persistedElements = new ArrayList<>(values.size());
                 for (Object value : values) {
                     persistedElements.add(Persist.persist(value));
                 }
@@ -65,15 +64,15 @@ public class PersistTest {
         Persist.Storage storage = new Persist.Storage(persisted);
 
         assertEquals("Foo", storage.next());
-        assertEquals(1, storage.next());
-        assertEquals(2L, storage.next());
-        assertEquals(2.7f, storage.next());
-        assertEquals(3.14159d, storage.next());
+        assertEquals(Integer.valueOf(1), storage.next());
+        assertEquals(Long.valueOf(2L), storage.next());
+        assertEquals(Float.valueOf(2.7f), storage.next());
+        assertEquals(Double.valueOf(3.14159d), storage.next());
         assertEquals(false, storage.next());
         assertEquals(true, storage.next());
 
         storage = new Persist.Storage(persisted);
-        List<Object> restored = new ArrayList<Object>(7);
+        List<Object> restored = new ArrayList<>(7);
         for (int i = 0; i < 7; i++) {
             restored.add(storage.next());
         }

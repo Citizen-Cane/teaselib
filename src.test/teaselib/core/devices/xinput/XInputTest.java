@@ -9,7 +9,6 @@ import static org.junit.Assert.assertNotEquals;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Vector;
 
 import org.junit.Test;
 
@@ -67,7 +66,7 @@ public class XInputTest {
             }
         }
         Collection<String> devicePaths = devices.get(StimulationDevice.class).getDevicePaths();
-        List<StimulationDevice> stimulationDevices = new Vector<StimulationDevice>();
+        List<StimulationDevice> stimulationDevices = new ArrayList<>();
         for (String devicePath : devicePaths) {
             StimulationDevice stimulationDevice = devices.get(StimulationDevice.class).getDevice(devicePath);
             if (stimulationDevice instanceof XInputStimulationDevice) {

@@ -1,7 +1,7 @@
 package teaselib.core.javacv.util;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 public class FramesPerSecond {
     private final int capacity;
@@ -32,7 +32,7 @@ public class FramesPerSecond {
 
     public FramesPerSecond(int capacity) {
         this.capacity = capacity;
-        frameTimes = new Vector<Long>(capacity);
+        frameTimes = new ArrayList<>(capacity);
     }
 
     public void start() {

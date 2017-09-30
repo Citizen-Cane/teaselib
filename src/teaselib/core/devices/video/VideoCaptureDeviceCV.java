@@ -7,7 +7,6 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Vector;
 
 import org.bridj.Platform;
 import org.bytedeco.javacpp.opencv_core.Mat;
@@ -67,7 +66,7 @@ public class VideoCaptureDeviceCV extends VideoCaptureDevice /* extends WiredDev
 
         private List<VideoCaptureDeviceCV> getCaptureDevices(Map<String, VideoCaptureDeviceCV> deviceCache) {
             int i = 0;
-            List<VideoCaptureDeviceCV> devices = new Vector<VideoCaptureDeviceCV>();
+            List<VideoCaptureDeviceCV> devices = new ArrayList<>();
             while (true) {
                 // Only add new devices, because we want them to be singletons
                 if (i >= deviceCache.size())

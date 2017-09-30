@@ -14,7 +14,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.Vector;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -450,7 +449,7 @@ public class TextToSpeechPlayer {
         } else {
             String path = actorKey2SpeechResourcesLocation.get(key) + TextToSpeechRecorder.getHash(message) + "/";
             BufferedReader reader = null;
-            List<String> speechResources = new Vector<String>();
+            List<String> speechResources = new ArrayList<>();
             try {
                 reader = new BufferedReader(
                         new InputStreamReader(resources.getResource(path + TextToSpeechRecorder.ResourcesFilename)));

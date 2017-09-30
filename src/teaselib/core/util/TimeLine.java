@@ -3,18 +3,16 @@
  */
 package teaselib.core.util;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Vector;
 
 /**
- * Associates objects with time stamps. Objects can be retrieved based on the
- * elapsed duration.
+ * Associates objects with time stamps. Objects can be retrieved based on the elapsed duration.
  * <p>
- * New items are only added if they're different from the last. If they're the
- * same, only the time span is updated.
+ * New items are only added if they're different from the last. If they're the same, only the time span is updated.
  */
 public class TimeLine<T> {
     private final LinkedList<T> items = new LinkedList<T>();
@@ -62,8 +60,7 @@ public class TimeLine<T> {
 
     public boolean add(T item, long timeStamp) {
         boolean different = head == null && item == null ? false
-                : (head == null && item != null)
-                        || (head != null && item == null) || !item.equals(head);
+                : (head == null && item != null) || (head != null && item == null) || !item.equals(head);
         if (different) {
             items.add(item);
             timeSpans.add(timeStamp - tailTimeMillis);
@@ -74,8 +71,7 @@ public class TimeLine<T> {
                 timeSpans.add(timeStamp - tailTimeMillis);
             } else {
                 int headIndex = size - 1;
-                timeSpans.set(headIndex,
-                        timeSpans.get(headIndex) + timeStamp - tailTimeMillis);
+                timeSpans.set(headIndex, timeSpans.get(headIndex) + timeStamp - tailTimeMillis);
             }
             // Capacity doesn't change
         }
@@ -126,7 +122,7 @@ public class TimeLine<T> {
     }
 
     public List<T> getTimeSpan(double timeSpanSeconds) {
-        List<T> tail = new Vector<T>(10);
+        List<T> tail = new ArrayList<>();
         Iterator<T> item = items.descendingIterator();
         Iterator<Long> timeSpan = timeSpans.descendingIterator();
         long timeSpanMillis = (long) (timeSpanSeconds * 1000);
@@ -157,7 +153,7 @@ public class TimeLine<T> {
         if (timeSpanSeconds == 0.0) {
             return Collections.EMPTY_LIST;
         }
-        List<Slice<T>> tail = new Vector<Slice<T>>(10);
+        List<Slice<T>> tail = new ArrayList<>(10);
         Iterator<T> item = items.descendingIterator();
         Iterator<Long> timeSpan = timeSpans.descendingIterator();
         long timeSpanMillis = (long) (timeSpanSeconds * 1000);

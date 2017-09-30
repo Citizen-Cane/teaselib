@@ -10,11 +10,11 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.Vector;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
@@ -25,12 +25,10 @@ import teaselib.core.util.FileUtilities;
  * Synchronizes a set of files to encrypted versions and back.
  * <p>
  * 
- * Only the encrypted files have to be checked in, they're restored on checkout
- * when the project is updated.
+ * Only the encrypted files have to be checked in, they're restored on checkout when the project is updated.
  * <p>
- * As a result, the images cannot be inspected by nosy snoops, and can safely be
- * stored on public servers. The encryption also prevents the images from being
- * indexed by robots.
+ * As a result, the images cannot be inspected by nosy snoops, and can safely be stored on public servers. The
+ * encryption also prevents the images from being indexed by robots.
  * <p>
  * The private TeaseLib RSA key is used to restore the images.
  * 
@@ -59,11 +57,10 @@ public class CryptoSync extends CipherUtility {
      */
     private static final String ENCODED_KEY = "encodedKey";
 
-    public static void main(String[] argv) throws GeneralSecurityException,
-            IOException {
+    public static void main(String[] argv) throws GeneralSecurityException, IOException {
         if (argv.length < 2) {
-            throw new IllegalArgumentException(CryptoSync.class.getSimpleName()
-                    + ": decryptedDir encryptedDir extensions...");
+            throw new IllegalArgumentException(
+                    CryptoSync.class.getSimpleName() + ": decryptedDir encryptedDir extensions...");
         }
         int argi = 0;
         File decryptedFiles = new File(argv[argi++]);
@@ -71,24 +68,20 @@ public class CryptoSync extends CipherUtility {
         System.out.println("Decrypted files: " + decryptedFiles);
         System.out.println("Encrypted files: " + encryptedFiles);
         final CryptoSync sync;
-        Set<String> availableOptions = new HashSet<String>(Arrays.asList(
-                RECURSIVE, FLAT));
+        Set<String> availableOptions = new HashSet<String>(Arrays.asList(RECURSIVE, FLAT));
         Set<String> options = new HashSet<String>();
         while (availableOptions.contains(argv[argi].toLowerCase())) {
             options.add(argv[argi++].toLowerCase());
         }
-        EnumerationMode mode = options.contains(RECURSIVE) ? EnumerationMode.Recursive
-                : EnumerationMode.Flat;
+        EnumerationMode mode = options.contains(RECURSIVE) ? EnumerationMode.Recursive : EnumerationMode.Flat;
         System.out.print("Scan mode = " + mode.toString());
         if (argv.length > argi) {
             String[] extensions = Arrays.copyOfRange(argv, argi, argv.length);
             decryptedFiles.mkdirs();
-            sync = new CryptoSync(decryptedFiles, encryptedFiles,
-                    FileUtilities.getFileFilter(extensions), mode);
+            sync = new CryptoSync(decryptedFiles, encryptedFiles, FileUtilities.getFileFilter(extensions), mode);
             System.out.print(", " + extensions.length + " extensions (");
             for (String extension : extensions) {
-                System.out.print((extension == extensions[0] ? "" : ",")
-                        + extension);
+                System.out.print((extension == extensions[0] ? "" : ",") + extension);
             }
             System.out.print("), resulting in ");
         } else {
@@ -106,18 +99,15 @@ public class CryptoSync extends CipherUtility {
     private final EnumerationMode mode;
     private final Collection<String> files;
 
-    private final byte[] publicKey = CipherUtility
-            .readKey(getKey(KeyStore.TeaseLibGeneralPublicKey));
-    private final byte[] privateKey = CipherUtility
-            .readKey(getKey(KeyStore.TeaseLibGeneralPrivateKey));
+    private final byte[] publicKey = CipherUtility.readKey(getKey(KeyStore.TeaseLibGeneralPublicKey));
+    private final byte[] privateKey = CipherUtility.readKey(getKey(KeyStore.TeaseLibGeneralPrivateKey));
 
     public CryptoSync(File decryptedDir, File encryptedDir, FileFilter filter)
             throws IOException, GeneralSecurityException {
         this(decryptedDir, encryptedDir, filter, EnumerationMode.Recursive);
     }
 
-    public CryptoSync(File decryptedDir, File encryptedDir) throws IOException,
-            GeneralSecurityException {
+    public CryptoSync(File decryptedDir, File encryptedDir) throws IOException, GeneralSecurityException {
         this(decryptedDir, encryptedDir, EnumerationMode.Recursive);
     }
 
@@ -130,8 +120,8 @@ public class CryptoSync extends CipherUtility {
      * @throws IOException
      * @throws GeneralSecurityException
      */
-    public CryptoSync(File decryptedDir, File encryptedDir, FileFilter filter,
-            EnumerationMode mode) throws IOException, GeneralSecurityException {
+    public CryptoSync(File decryptedDir, File encryptedDir, FileFilter filter, EnumerationMode mode)
+            throws IOException, GeneralSecurityException {
         checkValidOrThrow(decryptedDir);
         checkValidOrThrow(encryptedDir);
         this.decryptedDir = decryptedDir;
@@ -157,8 +147,7 @@ public class CryptoSync extends CipherUtility {
         this.files = fromFilter(decryptedDir, encryptedDir);
     }
 
-    private static File checkValidOrThrow(File path)
-            throws FileNotFoundException, IOException {
+    private static File checkValidOrThrow(File path) throws FileNotFoundException, IOException {
         if (!path.exists())
             throw new FileNotFoundException(path.getPath());
         if (!path.isDirectory())
@@ -181,8 +170,7 @@ public class CryptoSync extends CipherUtility {
     private Set<String> enumFiles(File root, String path) {
         Set<String> files = new HashSet<String>();
         for (File file : new File(root, path).listFiles()) {
-            final String element = (path.isEmpty() ? "" : path + File.separator)
-                    + file.getName();
+            final String element = (path.isEmpty() ? "" : path + File.separator) + file.getName();
             if (file.isDirectory()) {
                 if (mode == EnumerationMode.Recursive) {
                     files.addAll(enumFiles(root, element));
@@ -190,10 +178,8 @@ public class CryptoSync extends CipherUtility {
             } else {
                 File decryptedSubDir = new File(decryptedDir, element);
                 File encryptedSubDir = new File(encryptedDir, element);
-                if (!decryptedSubDir.equals(encryptedDir)
-                        && !encryptedSubDir.equals(decryptedDir)
-                        && filter.accept(new File(root,
-                                getDecryptedName(element)))) {
+                if (!decryptedSubDir.equals(encryptedDir) && !encryptedSubDir.equals(decryptedDir)
+                        && filter.accept(new File(root, getDecryptedName(element)))) {
                     files.add(getDecryptedName(element));
                 }
             }
@@ -223,11 +209,10 @@ public class CryptoSync extends CipherUtility {
     }
 
     private Collection<String> filesToDecrypt() {
-        Collection<String> filesToDecrypt = new Vector<String>();
+        Collection<String> filesToDecrypt = new ArrayList<>();
         for (String name : files) {
             File encryptedFile = getEncryptedFile(name);
-            if (getDecryptedFile(name).lastModified() < encryptedFile
-                    .lastModified()) {
+            if (getDecryptedFile(name).lastModified() < encryptedFile.lastModified()) {
                 filesToDecrypt.add(name);
             }
         }
@@ -235,47 +220,39 @@ public class CryptoSync extends CipherUtility {
     }
 
     private Collection<String> filesToEncrypt() {
-        Collection<String> filesToEncrypt = new Vector<String>();
+        Collection<String> filesToEncrypt = new ArrayList<>();
         for (String name : files) {
             final File decryptedFile = getDecryptedFile(name);
-            if (decryptedFile.lastModified() > getEncryptedFile(name)
-                    .lastModified()) {
+            if (decryptedFile.lastModified() > getEncryptedFile(name).lastModified()) {
                 filesToEncrypt.add(name);
             }
         }
         return filesToEncrypt;
     }
 
-    private void decrypt(Collection<String> filesToDecrypt)
-            throws GeneralSecurityException, IOException {
+    private void decrypt(Collection<String> filesToDecrypt) throws GeneralSecurityException, IOException {
         if (filesToDecrypt.size() > 0) {
-            System.out.println("Decrypting " + filesToDecrypt.size()
-                    + " items to " + decryptedDir);
+            System.out.println("Decrypting " + filesToDecrypt.size() + " items to " + decryptedDir);
             for (String name : filesToDecrypt) {
                 decrypt(name);
             }
         } else {
-            System.out.println("Decrypted files in " + decryptedDir
-                    + " are up to date");
+            System.out.println("Decrypted files in " + decryptedDir + " are up to date");
         }
     }
 
-    private void encrypt(Collection<String> filesToEncrypt)
-            throws GeneralSecurityException, IOException {
+    private void encrypt(Collection<String> filesToEncrypt) throws GeneralSecurityException, IOException {
         if (filesToEncrypt.size() > 0) {
-            System.out.println("Encrypting " + filesToEncrypt.size()
-                    + " items to " + encryptedDir);
+            System.out.println("Encrypting " + filesToEncrypt.size() + " items to " + encryptedDir);
             for (String name : filesToEncrypt) {
                 encrypt(name);
             }
         } else {
-            System.out.println("Encrypted files in " + encryptedDir
-                    + "  are up to date");
+            System.out.println("Encrypted files in " + encryptedDir + "  are up to date");
         }
     }
 
-    private void decrypt(String name) throws GeneralSecurityException,
-            IOException {
+    private void decrypt(String name) throws GeneralSecurityException, IOException {
         System.out.println("<< " + name);
         Decoder decoder = new Decoder();
         File zipFile = getEncryptedFile(name);
@@ -296,8 +273,7 @@ public class CryptoSync extends CipherUtility {
         decryptedFile.setLastModified(zipFile.lastModified());
     }
 
-    private void encrypt(String name) throws GeneralSecurityException,
-            IOException {
+    private void encrypt(String name) throws GeneralSecurityException, IOException {
         System.out.println(">> " + name);
         Encoder encoder = new Encoder();
         File zipFile = getEncryptedFile(name);
@@ -332,8 +308,7 @@ public class CryptoSync extends CipherUtility {
 
     private static String getDecryptedName(String name) {
         if (name.endsWith(EncryptedFileExtension)) {
-            return name.substring(0,
-                    name.length() - EncryptedFileExtension.length() - 1);
+            return name.substring(0, name.length() - EncryptedFileExtension.length() - 1);
         } else {
             return name;
         }

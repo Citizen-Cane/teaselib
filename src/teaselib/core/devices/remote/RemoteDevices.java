@@ -1,7 +1,7 @@
 package teaselib.core.devices.remote;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 import teaselib.core.devices.BatteryLevel;
 import teaselib.core.devices.Device;
@@ -77,7 +77,7 @@ public class RemoteDevices {
     };
 
     public static List<RemoteDevice> devicesThatSupport(String serviceName, Devices devices) {
-        List<RemoteDevice> remoteDevices = new Vector<RemoteDevice>();
+        List<RemoteDevice> remoteDevices = new ArrayList<>();
         DeviceCache<RemoteDevice> allRemoteDevices = devices.get(RemoteDevice.class);
         for (String devicePath : allRemoteDevices.getDevicePaths()) {
             if (!Device.WaitingForConnection.equals(DeviceCache.getDeviceName(devicePath))) {

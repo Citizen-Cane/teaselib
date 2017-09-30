@@ -1,7 +1,7 @@
 package teaselib.util;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 import teaselib.Mood;
 
@@ -46,7 +46,7 @@ public class MoodImages extends RandomImages {
     }
 
     private List<String> getMatches(String mood) {
-        List<String> matches = new Vector<String>();
+        List<String> matches = new ArrayList<>();
         for (String resource : images) {
             if (resource.toLowerCase().contains(mood)) {
                 matches.add(resource);

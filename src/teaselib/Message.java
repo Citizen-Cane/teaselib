@@ -150,7 +150,7 @@ public class Message {
 
     /**
      * @param message
-     *            The message to render, or null or an empty vector to display no message
+     *            The message to render, or null or an empty list to display no message
      */
     public Message(Actor actor, String... message) {
         parts = new Parts();
@@ -162,7 +162,7 @@ public class Message {
 
     /**
      * @param message
-     *            The message to render, or null or an empty vector to display no message
+     *            The message to render, or null or an empty list to display no message
      */
     public Message(Actor actor, List<String> message) {
         this.parts = new Parts();

@@ -10,6 +10,7 @@ import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
@@ -17,7 +18,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.UUID;
-import java.util.Vector;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -229,7 +229,7 @@ public class TextToSpeechRecorder {
     private List<String> writeSpeechResources(Actor actor, Voice voice, Message message, String hash,
             String messageHash) throws IOException, FileNotFoundException {
         logger.info("Recording message:\n" + messageHash);
-        List<String> soundFiles = new Vector<String>();
+        List<String> soundFiles = new ArrayList<>();
         String mood = Mood.Neutral;
         storage.createNewEntry(actor, voice, hash, messageHash);
         for (Part part : message.getParts()) {
@@ -246,7 +246,7 @@ public class TextToSpeechRecorder {
     }
 
     private String writeSpeechResource(Actor actor, Voice voice, String hash, int index, String mood, String text)
-            throws IOException, FileNotFoundException {
+            throws IOException {
         String soundFileName = Integer.toString(index);
         File soundFile = createTempFileName(SpeechResourceTempFilePrefix + "_" + soundFileName + "_", "");
         TextToSpeech textToSpeech = ttsPlayer.textToSpeech;

@@ -1,9 +1,9 @@
 package teaselib.util.math;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Vector;
 
 public class Partition<K> {
     public static interface Members<K> {
@@ -20,7 +20,7 @@ public class Partition<K> {
 
     public class Group {
         K orderingElement;
-        public final List<K> items = new Vector<K>();
+        public final List<K> items = new ArrayList<>();
 
         Group(K item) {
             items.add(item);
@@ -28,17 +28,15 @@ public class Partition<K> {
         }
 
         void join(Group group) {
-            orderingElement = order.group(orderingElement,
-                    group.orderingElement);
+            orderingElement = order.group(orderingElement, group.orderingElement);
             items.addAll(group.items);
         }
     }
 
-    public Partition(List<K> items, Members<K> measure, Order<K> order,
-            final Comparator<K> comperator) {
+    public Partition(List<K> items, Members<K> measure, Order<K> order, final Comparator<K> comperator) {
         this.measure = measure;
         this.order = order;
-        groups = new Vector<Group>();
+        groups = new ArrayList<>();
         // First iteration - create initial groups
         for (K item : items) {
             boolean grouped = false;
@@ -73,12 +71,8 @@ public class Partition<K> {
             }
         } while (groupsJoined && groups.size() > 1);
         // Sort groups, with largest ordering element first
-        Comparator<Group> groupComperator = new Comparator<Group>() {
-            @Override
-            public int compare(Group g1, Group g2) {
-                return -comperator.compare(g1.orderingElement,
-                        g2.orderingElement);
-            }
+        Comparator<Group> groupComperator = (Group g1, Group g2) -> {
+            return -comperator.compare(g1.orderingElement, g2.orderingElement);
         };
         Collections.sort(groups, groupComperator);
     }

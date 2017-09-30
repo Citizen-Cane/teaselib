@@ -7,14 +7,12 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
-import java.util.Vector;
 
 public class Message {
 
     /**
      * Message types.
      */
-    @SuppressWarnings("hiding")
     public enum Type {
         /**
          * Text
@@ -29,13 +27,11 @@ public class Message {
          */
         BackgroundSound,
         /**
-         * Foreground audio, message rendering is paused until the sound
-         * completes.
+         * Foreground audio, message rendering is paused until the sound completes.
          */
         Sound,
         /**
-         * Similar to {@link Type#BackgroundSoundSound} but disables speech
-         * recognition to avoid wrong recognitions.
+         * Similar to {@link Type#BackgroundSoundSound} but disables speech recognition to avoid wrong recognitions.
          */
         Speech,
         /**
@@ -126,10 +122,9 @@ public class Message {
     public final static String ShowOnDesktop = "showondesktop";
 
     /**
-     * Declare he mandatory part of the message to be completed. If the message
-     * is followed by a choice, the choice buttons are displayed, but the
-     * message will continue to render its optional part. Nice to comment
-     * actions when the slave is busy for a longer duration.
+     * Declare he mandatory part of the message to be completed. If the message is followed by a choice, the choice
+     * buttons are displayed, but the message will continue to render its optional part. Nice to comment actions when
+     * the slave is busy for a longer duration.
      */
     public final static String ShowChoices = "showChoices";
 
@@ -155,8 +150,7 @@ public class Message {
 
     /**
      * @param message
-     *            The message to render, or null or an empty vector to display
-     *            no message
+     *            The message to render, or null or an empty vector to display no message
      */
     public Message(Actor actor, String... message) {
         parts = new Parts();
@@ -168,8 +162,7 @@ public class Message {
 
     /**
      * @param message
-     *            The message to render, or null or an empty vector to display
-     *            no message
+     *            The message to render, or null or an empty vector to display no message
      */
     public Message(Actor actor, List<String> message) {
         this.parts = new Parts();
@@ -188,9 +181,8 @@ public class Message {
     }
 
     /**
-     * Add text to the message. Text is automatically appended to the last
-     * paragraph until a sentence is completed. To add multiple sentences to a
-     * single paragraph, add text containing the two sentences.
+     * Add text to the message. Text is automatically appended to the last paragraph until a sentence is completed. To
+     * add multiple sentences to a single paragraph, add text containing the two sentences.
      * 
      * File names and keywords are added as separate paragraphs.
      * 
@@ -215,8 +207,8 @@ public class Message {
     }
 
     /**
-     * Use with caution, since parts are not concatenated to sentences, which
-     * may result in collisions when prerecording speech
+     * Use with caution, since parts are not concatenated to sentences, which may result in collisions when prerecording
+     * speech
      * 
      * @param part
      */
@@ -243,9 +235,8 @@ public class Message {
     }
 
     /**
-     * Converts the message to a hash string suitable for speech pre-recording.
-     * The string contains only the message parts that are relevant for
-     * pre-rendering speech - all other media hints are removed.
+     * Converts the message to a hash string suitable for speech pre-recording. The string contains only the message
+     * parts that are relevant for pre-rendering speech - all other media hints are removed.
      * 
      * @return
      */
@@ -463,7 +454,7 @@ public class Message {
 
     public class Parts implements Iterable<Part> {
 
-        private final List<Part> p = new Vector<Part>();
+        private final List<Part> p = new ArrayList<Part>();
 
         public boolean isEmpty() {
             return p.isEmpty();
@@ -529,6 +520,10 @@ public class Message {
 
         public int size() {
             return p.size();
+        }
+
+        public boolean contains(Part part) {
+            return p.contains(part);
         }
 
         public Part get(int index) {

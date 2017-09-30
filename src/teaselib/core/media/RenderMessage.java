@@ -154,7 +154,7 @@ public class RenderMessage extends MediaRendererThread {
             } else if (part.type == Message.Type.Delay && !afterText) {
                 // skip
             } else {
-                lastSection.add(new Message.Part(part.type, part.value));
+                lastSection.add(part);
             }
             if (part.type == Message.Type.Text) {
                 afterText = true;
@@ -170,10 +170,12 @@ public class RenderMessage extends MediaRendererThread {
         } else {
             MessageTextAccumulator accumulatedText = new MessageTextAccumulator();
             String mood = Mood.Neutral;
+            Message lastSection = getLastSection(message);
             // Process message parts
             for (Iterator<Part> it = message.iterator(); it.hasNext();) {
                 Part part = it.next();
-                boolean lastParagraph = !it.hasNext();
+                boolean lastParagraph = lastSection.getParts().contains(part);
+                boolean lastPart = !it.hasNext();
                 if (!ManuallyLoggedMessageTypes.contains(part.type)) {
                     teaseLib.transcript.info("" + part.type.name() + " = " + part.value);
                 }
@@ -182,14 +184,11 @@ public class RenderMessage extends MediaRendererThread {
                 mood = renderMessagePart(part, accumulatedText, mood, speakText, lastParagraph);
                 if (part.type == Message.Type.Text) {
                     show(message.actor, part, accumulatedText, mood, speakText, lastParagraph);
-                } else if (lastParagraph) {
+                } else if (lastPart) {
                     show(accumulatedText.toString());
                 }
 
                 if (task.isCancelled()) {
-                    break;
-                }
-                if (lastParagraph) {
                     break;
                 }
             }

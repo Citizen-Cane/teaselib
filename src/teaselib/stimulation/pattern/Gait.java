@@ -19,7 +19,7 @@ public class Gait extends Stimulation {
 
     @Override
     public WaveForm waveform(int intensity) {
-        double onTimeSeconds = spreadRange(Math.max(0.1, stimulator.minimalSignalDuration()), 0.5, intensity);
+        double onTimeSeconds = spreadRange(Math.max(0.2, stimulator.minimalSignalDuration()), 0.5, intensity);
         return new SquareWave(onTimeSeconds, periodDurationSeconds - onTimeSeconds);
     }
 }

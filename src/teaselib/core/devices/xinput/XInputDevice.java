@@ -5,14 +5,12 @@ import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import teaselib.core.Configuration;
 import teaselib.core.devices.BatteryLevel;
 import teaselib.core.devices.Device;
 import teaselib.core.devices.DeviceCache;
-import teaselib.core.devices.DeviceFactory;
 import teaselib.core.devices.Devices;
 import teaselib.core.jni.LibraryLoader;
 
@@ -48,30 +46,8 @@ public class XInputDevice implements Device.Creatable {
         return Instance;
     }
 
-    private static final class MyDeviceFactory extends DeviceFactory<XInputDevice> {
-        private MyDeviceFactory(String deviceClass, Devices devices, Configuration configuration) {
-            super(deviceClass, devices, configuration);
-        }
-
-        @Override
-        public List<String> enumerateDevicePaths(Map<String, XInputDevice> deviceCache) {
-            List<String> deviceNames = new ArrayList<String>();
-            deviceNames.addAll(XInputDevice.getDevicePaths());
-            return deviceNames;
-        }
-
-        @Override
-        public XInputDevice createDevice(String deviceName) {
-            if (WaitingForConnection.equals(deviceName)) {
-                return XInputDevice.getDeviceFor(0);
-            } else {
-                return XInputDevice.getDeviceFor(Integer.parseInt(deviceName));
-            }
-        }
-    }
-
-    public static MyDeviceFactory getDeviceFactory(Devices devices, Configuration configuration) {
-        return new MyDeviceFactory(DeviceClassName, devices, configuration);
+    public static XInputDeviceFactory getDeviceFactory(Devices devices, Configuration configuration) {
+        return new XInputDeviceFactory(DeviceClassName, devices, configuration);
     }
 
     private final int playerNum;
@@ -81,7 +57,6 @@ public class XInputDevice implements Device.Creatable {
     private final XInputComponents components;
     private final XInputComponentsDelta delta;
 
-    private boolean lastConnected;
     private boolean connected;
     private boolean isWireless = true; // true if disconnected :^)
 
@@ -325,7 +300,7 @@ public class XInputDevice implements Device.Creatable {
     }
 
     private void setConnected(final boolean state) {
-        lastConnected = connected;
+        boolean lastConnected = connected;
         connected = state;
         for (final XInputDeviceListener listener : listeners) {
             if (connected && !lastConnected) {

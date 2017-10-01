@@ -27,8 +27,9 @@ import teaselib.core.ResourceLoader;
 public class TextToSpeechPlayer {
     private static final Logger logger = LoggerFactory.getLogger(TextToSpeechPlayer.class);
 
-    public TextToSpeech textToSpeech;
-    private final Set<ResourceLoader> loadedActorVoiceProperties = new HashSet<ResourceLoader>();
+    TextToSpeech textToSpeech;
+    private final Set<ResourceLoader> loadedActorVoiceProperties = new HashSet<>();
+    private final PronounciationDictionary pronounciationDictionary;
 
     /**
      * voice guid to voice
@@ -61,7 +62,8 @@ public class TextToSpeechPlayer {
     private final Set<String> usedVoices = new HashSet<String>();
 
     public enum Settings {
-        Voices;
+        Voices,
+        Pronountiation;
     }
 
     private final Configuration config;
@@ -69,6 +71,11 @@ public class TextToSpeechPlayer {
 
     public TextToSpeechPlayer(Configuration config) {
         this.config = config;
+        if (config.has(Settings.Pronountiation)) {
+            this.pronounciationDictionary = new PronounciationDictionary(new File(config.get(Settings.Pronountiation)));
+        } else {
+            this.pronounciationDictionary = PronounciationDictionary.empty();
+        }
         preferredVoices = new PreferredVoices();
     }
 
@@ -367,11 +374,11 @@ public class TextToSpeechPlayer {
             textToSpeech.setVoice(voice);
             textToSpeech.setHint(mood);
             try {
-                textToSpeech.speak(prompt);
-            } catch (InterruptedException e) {
-                throw e;
-            } catch (Throwable t) {
-                logger.error(t.getMessage(), t);
+                textToSpeech.speak(pronounciationDictionary.correct(voice, prompt));
+            } catch (IOException e) {
+                logger.warn(e.getMessage(), e);
+            } catch (RuntimeException e) {
+                logger.error(e.getMessage(), e);
                 waitEstimatedSpeechDuration(prompt);
             }
         } else {

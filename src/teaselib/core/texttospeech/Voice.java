@@ -19,6 +19,7 @@ public class Voice extends NativeObject {
     public final Gender gender;
     public final String name;
     public final String vendor;
+    public final String api;
 
     public enum Gender {
         Male,
@@ -27,7 +28,7 @@ public class Voice extends NativeObject {
     }
 
     public Voice(long nativeObject, String guid, String locale, String language, Gender gender, String name,
-            String vendor) {
+            String vendor, String api) {
         super(nativeObject);
         this.guid = guid;
         this.gender = gender;
@@ -35,6 +36,7 @@ public class Voice extends NativeObject {
         this.language = language;
         this.name = name;
         this.vendor = vendor;
+        this.api = api;
     }
 
     public boolean matches(Locale locale) {
@@ -44,6 +46,6 @@ public class Voice extends NativeObject {
     @Override
     public String toString() {
         return "[guid=" + guid + ", gender= " + gender + ", locale=" + locale + ", language=" + language + ", name="
-                + name + ", vendor=" + vendor + "]";
+                + name + ", vendor=" + vendor + ", api=" + api + "]";
     }
 }

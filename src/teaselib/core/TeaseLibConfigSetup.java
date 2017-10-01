@@ -16,6 +16,7 @@ final class TeaseLibConfigSetup implements Configuration.Setup {
     private static final String NETWORK_PROPERTIES = "network.properties";
 
     public static final String VOICES_PROPERTIES = "voices.properties";
+    public static final String PRONOUNCIATION_DIRECTORY = "pronounciation";
 
     private final File teaseLibDefaultsPath;
     private final File userPath;
@@ -31,7 +32,7 @@ final class TeaseLibConfigSetup implements Configuration.Setup {
 
         addTeaseLibDefaults(config);
         addNetworkDefaults(config);
-        addOtherDefaults(config);
+        addSpeechDefaults(config);
     }
 
     private void addTeaseLibDefaults(Configuration config) throws IOException, FileNotFoundException {
@@ -47,8 +48,10 @@ final class TeaseLibConfigSetup implements Configuration.Setup {
         config.addConfigFile(new File(userPath, NETWORK_PROPERTIES));
     }
 
-    private void addOtherDefaults(Configuration config) throws IOException {
+    private void addSpeechDefaults(Configuration config) throws IOException {
         config.addUserFile(TextToSpeechPlayer.Settings.Voices, new File(teaseLibDefaultsPath, VOICES_PROPERTIES),
                 new File(userPath, VOICES_PROPERTIES));
+        config.set(TextToSpeechPlayer.Settings.Pronountiation,
+                new File(teaseLibDefaultsPath, PRONOUNCIATION_DIRECTORY).getAbsolutePath());
     }
 }

@@ -38,65 +38,66 @@ Voice::Voice(JNIEnv* env, ISpObjectToken* pVoiceToken)
     : NativeObject(env)
     , pVoiceToken(pVoiceToken) {
     pVoiceToken->AddRef();
+
+	// Guid
     LPWSTR id;
     HRESULT hr = pVoiceToken->GetId(&id);
     guid = ::PathFindFileName(id);
-    if (FAILED(hr)) {
-        throw new COMException(hr);
-    }
-    LANGID langID;
+	if (FAILED(hr)) throw new COMException(hr);
+	
+	LANGID langID;
     hr = SpGetLanguageFromToken(pVoiceToken, &langID);
-    if (FAILED(hr)) {
-        throw new COMException(hr);
-    }
-    // en-AU
+	if (FAILED(hr)) throw new COMException(hr);
+	
+	// locale e.g. "en-AU"
     TCHAR locale[MAX_PATH];
     wcscpy_s(locale, L"??-??");
     GetLocaleInfo(MAKELCID(langID, 0), LOCALE_SNAME, locale, MAX_PATH);
-    // English (Australia)
+
+    // Language name, e.g. "English (Australia)"
     TCHAR language[MAX_PATH];
     wcscpy_s(language, L"Unknown");
     GetLocaleInfo(MAKELCID(langID, 0), LOCALE_SLOCALIZEDDISPLAYNAME, language, MAX_PATH);
-    if (FAILED(hr)) {
-        throw new COMException(hr);
-    }
-    // Gender
+	if (FAILED(hr)) throw new COMException(hr);
+
+	// Gender
     LPWSTR gender;
-    // pVoiceToken->GetStringValue(L"Gender", &genderString);
     hr = SpGetAttribute(pVoiceToken, L"Gender", &gender);
-    jobject jgender = getGenderField(env, gender);
-    if (env->ExceptionCheck()) {
-        throw new JNIException(env);
-    }
-    // Name
+	if (FAILED(hr)) throw new COMException(hr);
+	jobject jgender = getGenderField(env, gender);
+    if (env->ExceptionCheck()) throw new JNIException(env);
+
+	// Name
     LPWSTR name;
     hr = pVoiceToken->GetStringValue(NULL, &name);
-    if (FAILED(hr)) {
-        throw new COMException(hr);
-    }
-    // Full name (Vendor, version, Name)
-    // hr = SpGetDescription(pVoiceToken, &name, GetUserDefaultUILanguage());
-    // if (FAILED(hr)) throw new COMException(hr);
+	if (FAILED(hr)) throw new COMException(hr);
+	
+	// Full name (Vendor, version, Name)
     LPWSTR vendor;
     hr = SpGetAttribute(pVoiceToken, L"Vendor", &vendor);
+    if (FAILED(hr)) throw new COMException(hr);
+
+	// api name
+	LPWSTR api = L"sapi";
+
+    jclass clazz = env->FindClass("teaselib/core/texttospeech/Voice");
+    if (env->ExceptionCheck()) throw new JNIException(env);
     jlong thisPtr = reinterpret_cast<jlong>(this);
-    static const char* voiceClass = "teaselib/core/texttospeech/Voice";
-    jclass clazz = env->FindClass(voiceClass);
-    if (env->ExceptionCheck()) {
-        throw new JNIException(env);
-    }
-    jthis = env->NewObject(
+	const char* signature = "(JLjava/lang/String;Ljava/lang/String;Ljava/lang/String;Lteaselib/core/texttospeech/Voice$Gender;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V";
+
+	jthis = env->NewObject(
                 clazz,
-                JNIClass::getMethodID(env, clazz, "<init>",
-                                      "(JLjava/lang/String;Ljava/lang/String;Ljava/lang/String;Lteaselib/core/texttospeech/Voice$Gender;Ljava/lang/String;Ljava/lang/String;)V"),
+                JNIClass::getMethodID(env, clazz, "<init>", signature),
                 thisPtr,
                 JNIString(env, guid.c_str()).operator jstring(),
                 JNIString(env, locale).operator jstring(),
                 JNIString(env, language).operator jstring(),
                 jgender,
                 JNIString(env, name).operator jstring(),
-                JNIString(env, vendor).operator jstring());
-    env->DeleteLocalRef(jgender);
+	        	JNIString(env, vendor).operator jstring(),
+	            JNIString(env, api).operator jstring());
+
+	env->DeleteLocalRef(jgender);
     if (env->ExceptionCheck()) {
         throw new JNIException(env);
     }

@@ -118,7 +118,7 @@ wstring createPromptWitthHints(const wchar_t * prompt)
 
 void SpeechSynthesizer::speak(const wchar_t *prompt) {
 	cancelSpeech = false;
-	HRESULT hr = pVoice->Speak(createPromptWitthHints(prompt).c_str(), SPF_ASYNC | SPF_PURGEBEFORESPEAK, NULL);
+	HRESULT hr = pVoice->Speak(createPromptWitthHints(prompt).c_str(), SPF_ASYNC | SPF_PURGEBEFORESPEAK | SPF_IS_XML, NULL);
     assert(SUCCEEDED(hr));
     if (SUCCEEDED(hr)) {
 		while(pVoice->WaitUntilDone(100) == S_FALSE) {
@@ -159,7 +159,7 @@ std::wstring SpeechSynthesizer::speak(const wchar_t *prompt, const wchar_t* path
             assert(SUCCEEDED(hr));
             //Speak the text "hello world" synchronously
             if (SUCCEEDED(hr)) {
-				hr = pVoice->Speak(createPromptWitthHints(prompt).c_str(), SPF_DEFAULT, NULL);
+				hr = pVoice->Speak(createPromptWitthHints(prompt).c_str(), SPF_DEFAULT | SPF_PARSE_SAPI | SPF_IS_XML, NULL);
                 assert(SUCCEEDED(hr));
             }
             cpStream->Close();

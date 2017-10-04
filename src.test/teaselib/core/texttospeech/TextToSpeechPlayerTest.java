@@ -1,7 +1,6 @@
 package teaselib.core.texttospeech;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
 
 import java.io.File;
 import java.io.IOException;
@@ -97,7 +96,7 @@ public class TextToSpeechPlayerTest {
 
         Voice voice = new Voice(0, "MSZira", "en-us", "American English", Voice.Gender.Female, "MS Zira", "Microsoft",
                 "sapi");
-        assertNotEquals("The quick brown fox.", dict.correct(voice, "That quieck bruown animal."));
+        assertEquals("the quick brown fox.", dict.correct(voice, "That quieck bruown animal."));
         assertEquals("The quick brown fox.".toLowerCase(), dict.correct(voice, "That quieck bruown animal."));
     }
 }

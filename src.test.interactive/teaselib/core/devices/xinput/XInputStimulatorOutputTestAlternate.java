@@ -1,13 +1,18 @@
 package teaselib.core.devices.xinput;
 
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import teaselib.core.Configuration;
 import teaselib.core.devices.Device;
+import teaselib.core.devices.DeviceCache;
 import teaselib.core.devices.Devices;
+import teaselib.stimulation.StimulationTest;
 import teaselib.test.DebugSetup;
 
 public class XInputStimulatorOutputTestAlternate {
+    private static final Logger logger = LoggerFactory.getLogger(StimulationTest.class);
 
     @Test
     public void testAlternate() throws InterruptedException {
@@ -15,7 +20,13 @@ public class XInputStimulatorOutputTestAlternate {
         Devices devices = new Devices(config);
 
         XInputDevice xid = devices.get(XInputDevice.class).getDefaultDevice();
-        System.out.println(xid.getDevicePath() + (xid.connected() ? "" : ":" + Device.WaitingForConnection));
+        DeviceCache.connect(xid);
+
+        if (logger.isInfoEnabled()) {
+            logger.info("Battery-Level is " + xid.batteryLevel().toString());
+            logger.info(xid.getDevicePath() + (xid.connected() ? "" : ":" + Device.WaitingForConnection));
+        }
+
         try {
             for (int i = 0; i < 1000; i++) {
                 testVibration(xid, XInputDevice.VIBRATION_MAX_VALUE, XInputDevice.VIBRATION_MIN_VALUE);

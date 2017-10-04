@@ -116,6 +116,17 @@ public class StimulationTest {
     }
 
     @Test
+    public void testBallMassage() throws InterruptedException {
+        Stimulator stimulator = getLeftStimulator();
+        Stimulation stimulation = new Cum(stimulator);
+        for (int i = Stimulation.MinIntensity; i <= Stimulation.MaxIntensity; i++) {
+            stimulation.play(0, i);
+            stimulation.complete();
+            Thread.sleep(5000);
+        }
+    }
+
+    @Test
     public void testCum() throws InterruptedException {
         Stimulator stimulator = getRightStimulator();
         testStimulation(new Cum(stimulator));

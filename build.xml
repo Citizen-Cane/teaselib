@@ -28,8 +28,8 @@
         <copy todir="${destination}/lib/TeaseLib/defaults/">
             <fileset dir="${DeployTeaseLib.basedir}/defaults/" includes="*.properties,*.template"/>
         </copy>
-        <copy todir="${destination}/lib/TeaseLib/defaults/pronounciation">
-            <fileset dir="${DeployTeaseLib.basedir}/defaults/pronounciation"/>
+        <copy todir="${destination}/lib/TeaseLib/defaults/pronunciation">
+            <fileset dir="${DeployTeaseLib.basedir}/defaults/pronunciation"/>
         </copy>
         <copy todir="${destination}/lib/TeaseLib/presets">
             <fileset dir="${DeployTeaseLib.basedir}/presets/" includes="*.properties"/>

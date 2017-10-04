@@ -16,7 +16,7 @@ final class TeaseLibConfigSetup implements Configuration.Setup {
     private static final String NETWORK_PROPERTIES = "network.properties";
 
     public static final String VOICES_PROPERTIES = "voices.properties";
-    public static final String PRONOUNCIATION_DIRECTORY = "pronounciation";
+    public static final String PRONUNCIATION_DIRECTORY = "pronunciation";
 
     private final File teaseLibDefaultsPath;
     private final File userPath;
@@ -52,6 +52,6 @@ final class TeaseLibConfigSetup implements Configuration.Setup {
         config.addUserFile(TextToSpeechPlayer.Settings.Voices, new File(teaseLibDefaultsPath, VOICES_PROPERTIES),
                 new File(userPath, VOICES_PROPERTIES));
         config.set(TextToSpeechPlayer.Settings.Pronountiation,
-                new File(teaseLibDefaultsPath, PRONOUNCIATION_DIRECTORY).getAbsolutePath());
+                new File(teaseLibDefaultsPath, PRONUNCIATION_DIRECTORY).getAbsolutePath());
     }
 }

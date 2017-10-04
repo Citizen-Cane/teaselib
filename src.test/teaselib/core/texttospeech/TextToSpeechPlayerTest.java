@@ -1,6 +1,6 @@
 package teaselib.core.texttospeech;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 import java.io.File;
 import java.io.IOException;
@@ -71,7 +71,7 @@ public class TextToSpeechPlayerTest {
     @Test
     public void testPronountiationConfig() throws IOException {
         Configuration config = DebugSetup.getConfiguration();
-        config.set(TextToSpeechPlayer.Settings.Voices, getClass().getResource("pronounciation").getPath());
+        config.set(TextToSpeechPlayer.Settings.Voices, getClass().getResource("pronunciation").getPath());
 
         PronounciationDictionary dict = new PronounciationDictionary(
                 new File(config.get(TextToSpeechPlayer.Settings.Voices)));
@@ -89,7 +89,7 @@ public class TextToSpeechPlayerTest {
     @Test
     public void testPronountiationCorrection() throws IOException {
         Configuration config = DebugSetup.getConfiguration();
-        config.set(TextToSpeechPlayer.Settings.Voices, getClass().getResource("pronounciation").getPath());
+        config.set(TextToSpeechPlayer.Settings.Voices, getClass().getResource("pronunciation").getPath());
 
         PronounciationDictionary dict = new PronounciationDictionary(
                 new File(config.get(TextToSpeechPlayer.Settings.Voices)));

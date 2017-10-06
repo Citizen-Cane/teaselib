@@ -5,11 +5,12 @@ import java.util.Deque;
 
 import org.slf4j.LoggerFactory;
 
+// TODO Forward all exceptions to caller
+// TODO Resolve throwing Throwable, instead just throw exceptions
 public class DelegateThread extends Thread {
-    private static final org.slf4j.Logger logger = LoggerFactory
-            .getLogger(DelegateThread.class);
+    private static final org.slf4j.Logger logger = LoggerFactory.getLogger(DelegateThread.class);
 
-    private final Deque<Delegate> queue = new ArrayDeque<Delegate>();
+    private final Deque<Delegate> queue = new ArrayDeque<>();
     private boolean endThread = false;
 
     public DelegateThread(String name) {
@@ -53,14 +54,12 @@ public class DelegateThread extends Thread {
     }
 
     /**
-     * Execute the delegate synchronized. The current thread waits until the
-     * delegates has completed execution.
+     * Execute the delegate synchronized. The current thread waits until the delegates has completed execution.
      * 
      * @param delegate
      *            The delegate to execute in the delegate thread.
      * @throws Throwable
-     *             If the delegate throws, the throwable is forwarded to the
-     *             current thread.
+     *             If the delegate throws, the throwable is forwarded to the current thread.
      */
     public void run(Delegate delegate) throws InterruptedException, Throwable {
         synchronized (delegate) {

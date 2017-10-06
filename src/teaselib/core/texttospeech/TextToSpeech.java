@@ -18,6 +18,7 @@ import teaselib.core.events.Delegate;
 import teaselib.core.events.DelegateThread;
 import teaselib.core.texttospeech.implementation.TeaseLibTTS;
 import teaselib.core.texttospeech.implementation.TextToSpeechImplementationDebugProxy;
+import teaselib.core.util.ExceptionUtil;
 
 public class TextToSpeech {
     private static final Logger logger = LoggerFactory.getLogger(TextToSpeech.class);
@@ -201,10 +202,18 @@ public class TextToSpeech {
                 delegateThread.run(delegate);
             } catch (InterruptedException e) {
                 throw e;
-            } catch (Throwable t) {
-                logger.error(t.getMessage(), t);
+            } catch (RuntimeException e) {
+                throw e;
+            } catch (Exception e) {
+                throw ExceptionUtil.asRuntimeException(ExceptionUtil.reduce(e));
+            } catch (Error e) {
+                throw e;
+            } catch (Throwable e) {
+                throw new RuntimeException(e);
             }
-        } else {
+        } else
+
+        {
             ttsEngineNotInitialized();
         }
     }
@@ -229,8 +238,12 @@ public class TextToSpeech {
                 throw new ScriptInterruptedException(e);
             } catch (RuntimeException e) {
                 throw e;
-            } catch (Throwable t) {
-                throw new RuntimeException(t);
+            } catch (Exception e) {
+                throw ExceptionUtil.asRuntimeException(ExceptionUtil.reduce(e));
+            } catch (Error e) {
+                throw e;
+            } catch (Throwable e) {
+                throw new RuntimeException(e);
             }
         } else {
             ttsEngineNotInitialized();

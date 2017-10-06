@@ -1,0 +1,146 @@
+package teaselib.core.textotspeech;
+
+import static org.junit.Assert.*;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+
+import org.junit.Assume;
+import org.junit.BeforeClass;
+import org.junit.FixMethodOrder;
+import org.junit.Ignore;
+import org.junit.Test;
+import org.junit.runners.MethodSorters;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import teaselib.core.speechrecognition.SpeechDetectionEventHandler;
+import teaselib.core.speechrecognition.SpeechRecognition;
+import teaselib.core.speechrecognition.SpeechRecognitionResult.Confidence;
+import teaselib.core.speechrecognition.SpeechRecognizer;
+import teaselib.core.texttospeech.TextToSpeech;
+import teaselib.core.texttospeech.TextToSpeechTest;
+import teaselib.core.texttospeech.Voice;
+import teaselib.core.util.Environment;
+
+@FixMethodOrder(MethodSorters.NAME_ASCENDING)
+public class MicrosoftSapiCustomPronunciationTestEnglish {
+    private static final Logger logger = LoggerFactory.getLogger(TextToSpeechTest.class);
+
+    static final String VOICE = "TTS_MS_en-US_ZiraPro_11.0";
+
+    static TextToSpeech textToSpeech;
+
+    @BeforeClass
+    public static void initSpeech() {
+        Assume.assumeTrue(Environment.SYSTEM == Environment.Windows);
+        textToSpeech = new TextToSpeech();
+        assertTrue(textToSpeech.isReady());
+
+        Map<String, Voice> voices = textToSpeech.getVoices();
+        assertTrue(voices.size() > 0);
+        logger.info(voices.keySet().toString());
+
+        Voice voice = voices.get(VOICE);
+        textToSpeech.setVoice(voice);
+    }
+
+    @Test
+    public void testPronunciationOfCum() throws InterruptedException {
+        // Cum with "u" -> wrong but can be replaced by "Come".
+        // TODO Try whole sentence and phonemes and check whether the melody of the speech is preserved
+        textToSpeech.speak("Cum.");
+    }
+
+    @Test
+    public void testPronunciationDifferencesOfCumWithSSML() throws InterruptedException {
+        // Cum with "u" -> wrong but can be replaced by "Come".
+        // TODO Try whole sentence and phonemes and check whether the melody of the speech is preserved
+        textToSpeech.speak("You aren't allowed to cum without permission.");
+        textToSpeech.speak(
+                "<speak version=\"1.0\" xml:lang=\"en\">You aren't allowed to <phoneme alphabet=\"ipa\" ph=\"kʌm\"> cum </phoneme> without permission. </speak>");
+        textToSpeech.speak("You aren't allowed to come without permission.");
+        // -> corrections are similar
+    }
+
+    @Test
+    public void testPronunciationOfCunt() throws InterruptedException {
+        textToSpeech.speak("Stupid cunt!");
+    }
+
+    @Test
+    public void testPronunciationOfCuntEmphasized() throws InterruptedException {
+        textToSpeech.speak("Stupid <emph>cunt</emph>!");
+    }
+
+    @Test(expected = RuntimeException.class)
+    public void revealPronunciationPronAmpersandProblem() throws InterruptedException {
+        // TODO Word boundary operator causes error, &amp doesn't solve the issue
+        textToSpeech.speak("<pron sym=\"H EH 1 L OW & W ER 1 L D\"> replaced </pron> ");
+    }
+
+    @Test
+    public void testPronunciationSapiPron() throws InterruptedException {
+        // https://msdn.microsoft.com/en-us/library/ms717077(VS.85).aspx#Custom_Pronunciation
+        // https://en.wikipedia.org/wiki/Help:Pronunciation_respelling_key
+        // https://msdn.microsoft.com/en-us/library/ms717239(v=vs.85).aspx
+        // textToSpeech.speak("<pron sym=\"H EH 1 L OW W ER 1 L D\"> replaced </pron> ");
+        textToSpeech.speak("<pron sym=\"h eh 1 l ow   w er 1 l d\"> replaced </pron> ");
+    }
+
+    @Test
+    public void testPronunciationSAPIPronTag() throws InterruptedException {
+        // https://msdn.microsoft.com/en-us/library/ms717077(VS.85).aspx#Custom_Pronunciation
+        // https://en.wikipedia.org/wiki/Help:Pronunciation_respelling_key
+        // https://msdn.microsoft.com/en-us/library/ms717239(v=vs.85).aspx
+        // textToSpeech.speak("<pron sym=\"H EH 1 L OW W ER 1 L D\"> replaced </pron> ");
+        textToSpeech.speak("<pron sym=\"h eh 1 l ow   w er 1 l d\"> replaced </pron> ");
+    }
+
+    @Test
+    @Ignore
+    public void testPronunciationSAPIDISPTag() throws InterruptedException {
+        // https://msdn.microsoft.com/en-us/library/ms717077(VS.85).aspx#Custom_Pronunciation
+        // TODO Not for TTS, maybe just for recognition?
+        textToSpeech.speak("<P DISP=\"replace\" PRON=\"H EH 1 L OW  W ER 1 L D\"> replace </P> ");
+        textToSpeech.speak("<P>/replace/replace/H EH 1 L OW;</P>");
+    }
+
+    @Test
+    public void testPronunciationSSMLPhonemeTagIPA() throws InterruptedException {
+        // https://www.w3.org/TR/speech-synthesis/#S3.1.9
+        // http://lingorado.com/ipa/
+        textToSpeech.speak(
+                "<speak version=\"1.0\" xml:lang=\"en\"><phoneme alphabet=\"ipa\" ph=\"hɛˈləʊ wɜːld\"> replaced. </phoneme> </speak>");
+    }
+
+    @Test
+    public void testPronunciationSSMLPhonemeTagIPAOtherLanguage() throws InterruptedException {
+        // https://www.w3.org/TR/speech-synthesis/#S3.1.9
+        // http://lingorado.com/ipa/
+        textToSpeech.speak(
+                "<speak version=\"1.0\" xml:lang=\"en\"><phoneme alphabet=\"ipa\" ph=\"hɛˈləʊ wɜːld\"> replaced. </phoneme> </speak>");
+    }
+
+    @Test
+    public void testPronunciationSAPIPronTagSpeechRecognition() throws InterruptedException {
+        SpeechRecognition speechRecognition = SpeechRecognizer.instance.get(Locale.US);
+        CountDownLatch completed = new CountDownLatch(1);
+        // List<String> choices = Arrays.asList("<P DISP=\"replace\" PRON=\"H EH 1 L OW W ER 1 L D\"> replace </P>");
+        List<String> choices = Arrays.asList("<P>/Display/Word/H EH 1 L OW;</P>");
+
+        SpeechDetectionEventHandler speechDetectionEventHandler = new SpeechDetectionEventHandler(speechRecognition);
+        try {
+            speechDetectionEventHandler.addEventListeners();
+            speechRecognition.startRecognition(choices, Confidence.Normal);
+            completed.await();
+        } finally {
+            SpeechRecognition.completeSpeechRecognitionInProgress();
+            speechDetectionEventHandler.addEventListeners();
+        }
+    }
+
+}

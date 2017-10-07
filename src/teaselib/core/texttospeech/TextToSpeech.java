@@ -1,11 +1,13 @@
 package teaselib.core.texttospeech;
 
 import java.io.File;
+import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -272,4 +274,17 @@ public class TextToSpeech {
         return text.length() * millisecondsPerLetter + pauseAfterParagraph;
     }
 
+    public void initPhoneticDictionary(PronunciationDictionary pronounciationDictionary) throws IOException {
+        Map<String, Map<String, String>> phonemes = pronounciationDictionary.pronunciations(tts.sdkName(),
+                tts.phonemeAlphabetName());
+        for (Entry<String, Map<String, String>> entry : phonemes.entrySet()) {
+            String locale = entry.getKey();
+            Map<String, String> locale2Dictionary = entry.getValue();
+            for (Entry<String, String> dictionary : locale2Dictionary.entrySet()) {
+                String word = dictionary.getKey();
+                String pronunciation = dictionary.getValue();
+                tts.addLexiconEntry(locale, word, pronunciation);
+            }
+        }
+    }
 }

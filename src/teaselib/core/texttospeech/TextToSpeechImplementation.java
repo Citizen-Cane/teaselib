@@ -42,4 +42,10 @@ public abstract class TextToSpeechImplementation {
         }
         super.finalize();
     }
+
+    public abstract String sdkName();
+
+    public abstract void addLexiconEntry(String locale, String word, String pronunciation);
+
+    public abstract String phonemeAlphabetName();
 }

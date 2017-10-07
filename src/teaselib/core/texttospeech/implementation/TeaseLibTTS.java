@@ -22,6 +22,19 @@ public class TeaseLibTTS extends TextToSpeechImplementation {
     }
 
     @Override
+    public String sdkName() {
+        return "sapi";
+    }
+
+    @Override
+    public String phonemeAlphabetName() {
+        return "ups";
+    }
+
+    @Override
+    public native void addLexiconEntry(String locale, String word, String pronunciation);
+
+    @Override
     public native void getVoices(Map<String, Voice> voices);
 
     @Override

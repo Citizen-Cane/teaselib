@@ -20,6 +20,21 @@ public class TextToSpeechImplementationDebugProxy extends TextToSpeechImplementa
     }
 
     @Override
+    public String sdkName() {
+        return tts.sdkName();
+    }
+
+    @Override
+    public String phonemeAlphabetName() {
+        return tts.phonemeAlphabetName();
+    }
+
+    @Override
+    public void addLexiconEntry(String locale, String word, String pronunciation) {
+        tts.addLexiconEntry(locale, word, pronunciation);
+    }
+
+    @Override
     public void setHints(String... hints) {
         tts.setHints(hints);
     }
@@ -27,11 +42,6 @@ public class TextToSpeechImplementationDebugProxy extends TextToSpeechImplementa
     @Override
     public String[] getHints() {
         return tts.getHints();
-    }
-
-    @Override
-    protected void finalize() throws Throwable {
-        tts.dispose();
     }
 
     @Override

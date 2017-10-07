@@ -51,7 +51,7 @@ final class TeaseLibConfigSetup implements Configuration.Setup {
     private void addSpeechDefaults(Configuration config) throws IOException {
         config.addUserFile(TextToSpeechPlayer.Settings.Voices, new File(teaseLibDefaultsPath, VOICES_PROPERTIES),
                 new File(userPath, VOICES_PROPERTIES));
-        config.set(TextToSpeechPlayer.Settings.Pronountiation,
+        config.set(TextToSpeechPlayer.Settings.Pronunciation,
                 new File(teaseLibDefaultsPath, PRONUNCIATION_DIRECTORY).getAbsolutePath());
     }
 }

@@ -1,6 +1,7 @@
 package teaselib.core.texttospeech;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 import java.io.File;
 import java.io.IOException;
@@ -71,12 +72,12 @@ public class TextToSpeechPlayerTest {
     @Test
     public void testPronountiationConfig() throws IOException {
         Configuration config = DebugSetup.getConfiguration();
-        config.set(TextToSpeechPlayer.Settings.Voices, getClass().getResource("pronunciation").getPath());
+        config.set(TextToSpeechPlayer.Settings.Pronunciation, getClass().getResource("pronunciation").getPath());
 
-        PronounciationDictionary dict = new PronounciationDictionary(
-                new File(config.get(TextToSpeechPlayer.Settings.Voices)));
+        PronunciationDictionary dict = new PronunciationDictionary(
+                new File(config.get(TextToSpeechPlayer.Settings.Pronunciation)));
 
-        Map<String, String> test = dict.pronounciations("sapi", "Microsoft", "en-en", "MSZira");
+        Map<String, String> test = dict.pronunciations(TestTTS.SDK_NAME, "Microsoft", "en-en", "MSZira");
 
         assertEquals("topLevelValue", test.get("languageTopLevelKey"));
         assertEquals("sapiValue", test.get("languageSapiKey"));
@@ -89,14 +90,29 @@ public class TextToSpeechPlayerTest {
     @Test
     public void testPronountiationCorrection() throws IOException {
         Configuration config = DebugSetup.getConfiguration();
-        config.set(TextToSpeechPlayer.Settings.Voices, getClass().getResource("pronunciation").getPath());
+        config.set(TextToSpeechPlayer.Settings.Pronunciation, getClass().getResource("pronunciation").getPath());
 
-        PronounciationDictionary dict = new PronounciationDictionary(
-                new File(config.get(TextToSpeechPlayer.Settings.Voices)));
+        PronunciationDictionary dict = new PronunciationDictionary(
+                new File(config.get(TextToSpeechPlayer.Settings.Pronunciation)));
 
         Voice voice = new Voice(0, "MSZira", "en-us", "American English", Voice.Gender.Female, "MS Zira", "Microsoft",
-                "sapi");
+                TestTTS.SDK_NAME);
         assertEquals("the quick brown fox.", dict.correct(voice, "That quieck bruown animal."));
         assertEquals("The quick brown fox.".toLowerCase(), dict.correct(voice, "That quieck bruown animal."));
+    }
+
+    @Test
+    public void testPhonemeDictionarySetup() throws IOException {
+        Configuration config = DebugSetup.getConfiguration();
+        config.set(TextToSpeechPlayer.Settings.Pronunciation, getClass().getResource("pronunciation").getPath());
+
+        new TextToSpeechPlayer(config, testTTS);
+
+        assertEquals("madam", testTTS.getEntry("fr", "Madame"));
+        assertEquals("madam", testTTS.getEntry("fr-fr", "Madame"));
+        assertNull("H EH 1 L OW", testTTS.getEntry("en", "Hello"));
+        assertEquals("H EH 1 L OW", testTTS.getEntry("en-au", "Hello"));
+        assertNull(testTTS.getEntry("en-uk", "Hello world"));
+        assertNull(testTTS.getEntry("fr", "UPS-Ignored"));
     }
 }

@@ -29,41 +29,41 @@ public class TextToSpeechPlayer {
 
     TextToSpeech textToSpeech;
     private final Set<ResourceLoader> loadedActorVoiceProperties = new HashSet<>();
-    private final PronounciationDictionary pronounciationDictionary;
+    private final PronunciationDictionary pronounciationDictionary;
 
     /**
      * voice guid to voice
      */
-    private final Map<String, Voice> voices = new LinkedHashMap<String, Voice>();
+    private final Map<String, Voice> voices = new LinkedHashMap<>();
 
     /**
      * Actor key to prerecorded voice guid
      */
-    private final Map<String, String> actorKey2PrerecordedVoiceGuid = new HashMap<String, String>();
+    private final Map<String, String> actorKey2PrerecordedVoiceGuid = new HashMap<>();
 
     /**
      * Actor key to speech resources location
      */
-    private final Map<String, String> actorKey2SpeechResourcesLocation = new HashMap<String, String>();
+    private final Map<String, String> actorKey2SpeechResourcesLocation = new HashMap<>();
 
     /**
      * Actor key to TTS voice
      */
-    private final Map<String, Voice> actorKey2TTSVoice = new HashMap<String, Voice>();
+    private final Map<String, Voice> actorKey2TTSVoice = new HashMap<>();
 
     /**
      * guids of reserved voices
      */
-    private final Map<String, String> actorKey2ReservedVoiceGuid = new LinkedHashMap<String, String>();
+    private final Map<String, String> actorKey2ReservedVoiceGuid = new LinkedHashMap<>();
 
     /**
      * guids of used voices
      */
-    private final Set<String> usedVoices = new HashSet<String>();
+    private final Set<String> usedVoices = new HashSet<>();
 
     public enum Settings {
         Voices,
-        Pronountiation;
+        Pronunciation;
     }
 
     private final Configuration config;
@@ -71,10 +71,10 @@ public class TextToSpeechPlayer {
 
     public TextToSpeechPlayer(Configuration config) {
         this.config = config;
-        if (config.has(Settings.Pronountiation)) {
-            this.pronounciationDictionary = new PronounciationDictionary(new File(config.get(Settings.Pronountiation)));
+        if (config.has(Settings.Pronunciation)) {
+            this.pronounciationDictionary = new PronunciationDictionary(new File(config.get(Settings.Pronunciation)));
         } else {
-            this.pronounciationDictionary = PronounciationDictionary.empty();
+            this.pronounciationDictionary = PronunciationDictionary.empty();
         }
         preferredVoices = new PreferredVoices();
     }
@@ -107,8 +107,6 @@ public class TextToSpeechPlayer {
     void initTextToSpeech() {
         try {
             readPreferredVoices();
-        } catch (FileNotFoundException e) {
-            logger.warn(e.getMessage(), e);
         } catch (IOException e) {
             logger.warn(e.getMessage(), e);
         }
@@ -116,6 +114,12 @@ public class TextToSpeechPlayer {
         if (this.textToSpeech.isReady()) {
             Map<String, String> preferredVoiceGuids = preferredVoices.getPreferredVoiceGuids();
             Set<String> ignoredVoiceGuids = preferredVoices.getDisabledVoiceGuids();
+
+            try {
+                this.textToSpeech.initPhoneticDictionary(pronounciationDictionary);
+            } catch (IOException e) {
+                logger.warn(e.getMessage(), e);
+            }
 
             Map<String, Voice> allVoices = this.textToSpeech.getVoices();
             voices.putAll(sortedVoicesAccordingToSettings(allVoices, preferredVoiceGuids, ignoredVoiceGuids));
@@ -157,7 +161,7 @@ public class TextToSpeechPlayer {
 
     public Map<String, Voice> sortedVoicesAccordingToSettings(Map<String, Voice> voices,
             Map<String, String> preferredVoiceGuids, Set<String> ignoredVoiceGuids) {
-        Map<String, Voice> sorted = new LinkedHashMap<String, Voice>();
+        Map<String, Voice> sorted = new LinkedHashMap<>();
 
         for (Entry<String, String> preferred : preferredVoiceGuids.entrySet()) {
             Voice voice = voices.get(preferred.getKey());

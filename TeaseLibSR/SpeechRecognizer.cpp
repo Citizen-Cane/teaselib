@@ -366,7 +366,7 @@ HRESULT SpeechRecognizer::resetGrammar() {
 }
 
 void SpeechRecognizer::checkRecogizerStatus() {
-	assert(recognizerStatus);
+	assert(SUCCEEDED(recognizerStatus));
 	if (FAILED(recognizerStatus)) {
 		throw new COMException(recognizerStatus);
 	}

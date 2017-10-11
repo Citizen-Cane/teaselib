@@ -1,0 +1,68 @@
+#include "stdafx.h"
+
+#include <assert.h>
+#include <locale.h>
+#include <sapi.h>
+
+#include "COMException.h"
+
+#include "Language.h"
+
+Language::Language(ISpObjectToken* pVoiceToken) : langID(getLangID(pVoiceToken)) {
+	getName(langID, name, 6);
+	getDisplayName(langID, displayName, MAX_PATH);
+}
+
+Language::Language(LANGID langId) : langID(langID) {
+	getName(langID, name, 6);
+	getDisplayName(langID, displayName, MAX_PATH);
+}
+
+Language::~Language() {
+}
+
+LANGID Language::getLangID(ISpObjectToken * pVoiceToken) {
+	LANGID langID;
+	HRESULT hr = SpGetLanguageFromToken(pVoiceToken, &langID);
+	if (FAILED(hr)) throw new COMException(hr);
+	return langID;
+}
+
+LANGID Language::getLangID(const wchar_t* locale) {
+	TCHAR languageID[MAX_PATH];
+	const int charSize = GetLocaleInfoEx(locale, LOCALE_ILANGUAGE, languageID, MAX_PATH);
+	assert(charSize > 0);
+	if (charSize == 0) throw new COMException(E_INVALIDARG);
+
+	return wcstol(languageID, nullptr, 16);
+}
+
+std::wstring Language::getLangIDStringWithoutLeadingZeros(const wchar_t* locale) {
+	TCHAR languageID[MAX_PATH];
+	const int charSize = GetLocaleInfoEx(locale, LOCALE_ILANGUAGE, languageID, MAX_PATH);
+	assert(charSize > 0);
+	if (charSize == 0) throw new COMException(E_INVALIDARG);
+
+	const wchar_t* langIDWithoutTrailingZeros = languageID;
+	while (*langIDWithoutTrailingZeros == '0') {
+		langIDWithoutTrailingZeros++;
+	}
+
+	return langIDWithoutTrailingZeros;
+}
+
+void Language::getName(LANGID langID, wchar_t * name, size_t size) {
+	// locale e.g. "en-AU"
+	wcscpy_s(name, size, L"??-??");
+	int charSize = GetLocaleInfo(MAKELCID(langID, 0), LOCALE_SNAME, name, size);
+	assert(charSize > 0);
+	if (charSize == 0) throw new COMException(E_INVALIDARG);
+}
+
+void Language::getDisplayName(LANGID langID, wchar_t * displayName, size_t size) {
+	// locale e.g. "en-AU"
+	wcscpy_s(displayName, size, L"Unknown");
+	int charSize = GetLocaleInfo(MAKELCID(langID, 0), LOCALE_SLOCALIZEDDISPLAYNAME, displayName, size);
+	assert(charSize > 0);
+	if (charSize == 0) throw new COMException(E_INVALIDARG);
+}

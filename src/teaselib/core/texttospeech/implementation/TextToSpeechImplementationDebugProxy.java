@@ -30,8 +30,8 @@ public class TextToSpeechImplementationDebugProxy extends TextToSpeechImplementa
     }
 
     @Override
-    public void addLexiconEntry(String locale, String word, String pronunciation) {
-        tts.addLexiconEntry(locale, word, pronunciation);
+    public void addLexiconEntry(String locale, String word, int partOfSpeech, String pronunciation) {
+        tts.addLexiconEntry(locale, word, partOfSpeech, pronunciation);
     }
 
     @Override

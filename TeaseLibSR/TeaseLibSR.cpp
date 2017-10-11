@@ -160,12 +160,20 @@ extern "C"
     * Signature: (Ljava/lang/String;)V
     */
     JNIEXPORT void JNICALL Java_teaselib_core_speechrecognition_implementation_TeaseLibSR_emulateRecognition
-    (JNIEnv *env, jobject jthis, jstring) {
-        // TODO Implement
-        assert(false);
-        SpeechRecognizer* speechRecognizer = static_cast<SpeechRecognizer*>(NativeObject::get(env, jthis));
-        NativeObject::checkInitializedOrThrow(speechRecognizer);
-    }
+    (JNIEnv *env, jobject jthis, jstring emulatedRecognitionResult) {
+		try {
+			SpeechRecognizer* speechRecognizer = static_cast<SpeechRecognizer*>(NativeObject::get(env, jthis));
+			NativeObject::checkInitializedOrThrow(speechRecognizer);
+
+			speechRecognizer->emulateRecognition(JNIString(env,emulatedRecognitionResult));
+		}
+		catch (NativeException *e) {
+			JNIException::throwNew(env, e);
+		}
+		catch (JNIException /**e*/) {
+			// Forwarded automatically
+		}
+	}
 
     /*
     * Class:     teaselib_speechrecognition_implementation_TeaseLibSR

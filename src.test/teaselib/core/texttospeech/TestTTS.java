@@ -42,7 +42,7 @@ public class TestTTS extends TextToSpeechImplementation {
     }
 
     @Override
-    public void addLexiconEntry(String locale, String word, String pronunciation) {
+    public void addLexiconEntry(String locale, String word, int partOfSpeech, String pronunciation) {
         phonemes.put(normalized(locale) + "." + word, pronunciation);
     }
 

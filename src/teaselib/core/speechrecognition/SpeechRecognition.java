@@ -163,8 +163,7 @@ public class SpeechRecognition {
     public SpeechRecognition(Locale locale) {
         // First add the progress events, because we don't want to get events
         // consumed before setting the in-progress state
-        this.events = new SpeechRecognitionEvents<SpeechRecognitionImplementation>(lockSpeechRecognitionInProgress,
-                unlockSpeechRecognitionInProgress);
+        this.events = new SpeechRecognitionEvents<>(lockSpeechRecognitionInProgress, unlockSpeechRecognitionInProgress);
         this.locale = locale;
         try {
             Delegate delegate = new Delegate() {
@@ -340,5 +339,26 @@ public class SpeechRecognition {
      */
     public boolean isActive() {
         return speechRecognitionActive && isReady();
+    }
+
+    public void emulateRecogntion(String emulatedRecognitionResult) {
+        if (sr != null) {
+            Delegate emulateRecognition = new Delegate() {
+                @Override
+                public void run() {
+                    sr.emulateRecognition(emulatedRecognitionResult);
+                    logger.info("Emulating recognition for '" + emulatedRecognitionResult + "'");
+                }
+            };
+            try {
+                delegateThread.run(emulateRecognition);
+            } catch (InterruptedException e) {
+                throw new ScriptInterruptedException(e);
+            } catch (Throwable t) {
+                logger.error(t.getMessage(), t);
+            }
+        } else {
+            recognizerNotInitialized();
+        }
     }
 }

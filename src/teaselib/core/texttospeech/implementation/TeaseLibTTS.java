@@ -32,7 +32,7 @@ public class TeaseLibTTS extends TextToSpeechImplementation {
     }
 
     @Override
-    public native void addLexiconEntry(String locale, String word, String pronunciation);
+    public native void addLexiconEntry(String locale, String word, int partOfSpeech, String pronunciation);
 
     @Override
     public native void getVoices(Map<String, Voice> voices);

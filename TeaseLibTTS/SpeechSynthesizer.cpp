@@ -9,6 +9,7 @@
 #include <sphelper.h>
 
 #include "COMException.h"
+#include "Language.h"
 
 #include "SpeechSynthesizer.h"
 #include "Voice.h"
@@ -31,18 +32,19 @@ using namespace std;
 #endif
 
 SpeechSynthesizer::SpeechSynthesizer(JNIEnv *env, jobject jthis)
-    : NativeObject(env, jthis), cancelSpeech(false) {
+    : NativeObject(env, jthis), pVoice(nullptr), cancelSpeech(false) {
     HRESULT hr = CoCreateInstance(CLSID_SpVoice, NULL, CLSCTX_ALL, IID_ISpVoice, (void **)&pVoice);
     assert(SUCCEEDED(hr));
     if (FAILED(hr)) {
         throw new COMException(hr);
     }
+
 }
 
 
 SpeechSynthesizer::~SpeechSynthesizer() {
     pVoice->Release();
-    pVoice = NULL;
+    pVoice = nullptr;
 }
 
 // Well, I didn't have much luck with the XML tags,
@@ -51,6 +53,29 @@ SpeechSynthesizer::~SpeechSynthesizer() {
 // but nevertheless prooved unreliable while setting values via COM worked. Good luck!
 wstring hintsPromptPrefix;
 wstring hintsPromptPostfix;
+
+void SpeechSynthesizer::addLexiconEntry(const wchar_t const * locale, const wchar_t const * word, const SPPARTOFSPEECH partOfSpeech, const wchar_t const * pronunciation) {
+	throw new COMException(E_NOTIMPL);
+	
+	// TODO This has issues as long as entries are added to SpLexicon,
+	// since it adds entries to the user lexicon, and those are persisted
+
+	LANGID langID = Language::getLangID(locale);
+	CComPtr<ISpPhoneConverter> cpPhoneConv;
+
+	HRESULT hr = SpCreatePhoneConverter(langID, NULL, NULL, &cpPhoneConv);
+	assert(SUCCEEDED(hr));
+	if (FAILED(hr)) throw new COMException(hr);
+	
+	SPPHONEID wszId[SP_MAX_PRON_LENGTH];
+	hr = cpPhoneConv->PhoneToId(pronunciation, wszId);
+	assert(SUCCEEDED(hr));
+	if (FAILED(hr)) throw new COMException(hr);
+
+	hr = lexicon.pLexicon->AddPronunciation(word, langID, partOfSpeech, wszId);
+	assert(SUCCEEDED(hr));
+	if (FAILED(hr)) throw new COMException(hr);
+}
 
 void SpeechSynthesizer::setVoice(Voice * voice) {
 	if (voice) {

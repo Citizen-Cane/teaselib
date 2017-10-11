@@ -4,6 +4,7 @@
 
 #include <NativeObject.h>
 #include <COMUser.h>
+#include <Lexicon.h>
 
 struct ISpVoice;
 
@@ -14,6 +15,7 @@ public:
     SpeechSynthesizer(JNIEnv *env, jobject jthis);
     virtual ~SpeechSynthesizer();
 
+	void addLexiconEntry(const wchar_t const * locale, const wchar_t const * word, const SPPARTOFSPEECH partOfSpeech, const wchar_t const * pronunciation);
 	void setVoice(Voice *voice);
 	void applyHints(const std::vector<std::wstring>& hints);
     void speak(const wchar_t *prompt);
@@ -23,4 +25,6 @@ public:
 private:
     ISpVoice *pVoice;
 	volatile bool cancelSpeech;
+
+	Lexicon lexicon;
 };

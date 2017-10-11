@@ -27,7 +27,7 @@ public:
 	void setMaxAlternates(const int maxAlternates);
 	void startRecognition();
 	void stopRecognition();
-
+	void emulateRecognition(const wchar_t const * emulatedRecognitionResult);
 private:
 	std::thread speechRecognitionThread;
 	HANDLE hExitEvent;

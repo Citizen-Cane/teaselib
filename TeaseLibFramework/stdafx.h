@@ -9,9 +9,8 @@
 
 #define WIN32_LEAN_AND_MEAN             // Exclude rarely-used stuff from Windows headers
 
-
-
-// TODO: reference additional headers your program requires here
+// Windows Header Files:
+#include <windows.h>
 
 
 #define _ATL_APARTMENT_THREADED
@@ -21,3 +20,4 @@
 //but do not change the name of _Module
 extern CComModule _Module;
 #include <atlcom.h>
+

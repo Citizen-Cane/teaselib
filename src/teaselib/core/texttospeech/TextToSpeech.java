@@ -274,8 +274,8 @@ public class TextToSpeech {
         return text.length() * millisecondsPerLetter + pauseAfterParagraph;
     }
 
-    public void initPhoneticDictionary(PronunciationDictionary pronounciationDictionary) throws IOException {
-        Map<String, Map<String, String>> phonemes = pronounciationDictionary.pronunciations(tts.sdkName(),
+    public void initPhoneticDictionary(PronunciationDictionary pronunciationDictionary) throws IOException {
+        Map<String, Map<String, String>> phonemes = pronunciationDictionary.pronunciations(tts.sdkName(),
                 tts.phonemeAlphabetName());
         for (Entry<String, Map<String, String>> entry : phonemes.entrySet()) {
             String locale = entry.getKey();
@@ -283,7 +283,9 @@ public class TextToSpeech {
             for (Entry<String, String> dictionary : locale2Dictionary.entrySet()) {
                 String word = dictionary.getKey();
                 String pronunciation = dictionary.getValue();
-                tts.addLexiconEntry(locale, word, pronunciation);
+                int partOfSpeech = TextToSpeechImplementation.SPPS_Noun | TextToSpeechImplementation.SPPS_Verb
+                        | TextToSpeechImplementation.SPPS_Modifier | TextToSpeechImplementation.SPPS_Function;
+                tts.addLexiconEntry(locale, word, partOfSpeech, pronunciation);
             }
         }
     }

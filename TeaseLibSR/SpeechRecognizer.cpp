@@ -356,6 +356,20 @@ void SpeechRecognizer::stopRecognition() {
 	//}
 }
 
+void SpeechRecognizer::emulateRecognition(const wchar_t const * emulatedRecognitionResult) {
+	checkRecogizerStatus();
+
+	CComPtr<ISpPhraseBuilder> cpPhrase;
+	HRESULT hr = CreatePhraseFromText(emulatedRecognitionResult, &cpPhrase, langID);
+	assert(SUCCEEDED(hr));
+	if (FAILED(hr)) throw new COMException(hr);
+
+	hr = cpRecognizer->EmulateRecognition(cpPhrase);
+	assert(SUCCEEDED(hr));
+	if (FAILED(hr)) throw new COMException(hr);
+
+}
+
 HRESULT SpeechRecognizer::resetGrammar() {
 	// Surprisingly just releasing the grammar may take a lot of time,
 	// but the grammar can also be reset, using the langID of the recognizer token
@@ -367,9 +381,7 @@ HRESULT SpeechRecognizer::resetGrammar() {
 
 void SpeechRecognizer::checkRecogizerStatus() {
 	assert(SUCCEEDED(recognizerStatus));
-	if (FAILED(recognizerStatus)) {
-		throw new COMException(recognizerStatus);
-	}
+	if (FAILED(recognizerStatus)) throw new COMException(recognizerStatus);
 
 	if (!cpContext) {
 		throw new COMException(E_UNEXPECTED);

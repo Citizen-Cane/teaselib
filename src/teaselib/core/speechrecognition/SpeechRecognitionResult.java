@@ -4,8 +4,8 @@ import java.util.List;
 
 public class SpeechRecognitionResult {
     /**
-     * Defines the confidence the result was recognized with. Each confidence
-     * enum value comes with a predefined default probability.
+     * Defines the confidence the result was recognized with. Each confidence enum value comes with a predefined default
+     * probability.
      *
      */
     public enum Confidence {
@@ -22,9 +22,8 @@ public class SpeechRecognitionResult {
         public static Confidence Default = Normal;
 
         /**
-         * The default probability of the recognition confidence. The actual
-         * implementation may return a probability value higher than the
-         * default, but still rate the confidence lower.
+         * The default probability of the recognition confidence. The actual implementation may return a probability
+         * value higher than the default, but still rate the confidence lower.
          */
         public final double probability;
 
@@ -66,8 +65,7 @@ public class SpeechRecognitionResult {
     public final double probability;
     public final Confidence confidence;
 
-    public SpeechRecognitionResult(int index, String text, double propability,
-            Confidence confidence) {
+    public SpeechRecognitionResult(int index, String text, double propability, Confidence confidence) {
         super();
         this.index = index;
         this.text = text;
@@ -79,15 +77,14 @@ public class SpeechRecognitionResult {
         return UNKNOWN_PHRASE_INDEX < index && index < choices.size();
     }
 
-    public boolean hasHigherProbabilityThan(
-            SpeechRecognitionResult recognitionResult) {
+    public boolean hasHigherProbabilityThan(SpeechRecognitionResult recognitionResult) {
         return probability > recognitionResult.probability
                 || confidence.probability > recognitionResult.confidence.probability;
     }
 
     @Override
     public String toString() {
-        return "#" + index + ": " + text + " (%" + probability
-                + ") -> confidence is " + confidence.toString().toLowerCase();
+        return "#" + index + ": " + text + " (" + probability + ") -> confidence is "
+                + confidence.toString().toLowerCase();
     }
 }

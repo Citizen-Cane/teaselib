@@ -28,13 +28,13 @@ public class PronunciationDictionary {
         this.rootDirectory = root;
     }
 
-    public Map<String, String> pronounciations(Voice voice) throws IOException {
+    public Map<String, String> pronunciations(Voice voice) throws IOException {
         if (cache.containsKey(voice)) {
             return cache.get(voice);
         } else {
-            Map<String, String> pronounciations = pronunciations(voice.api, voice.vendor, voice.locale, voice.guid);
-            cache.put(voice, pronounciations);
-            return pronounciations;
+            Map<String, String> pronunciations = pronunciations(voice.api, voice.vendor, voice.locale, voice.guid);
+            cache.put(voice, pronunciations);
+            return pronunciations;
         }
     }
 
@@ -128,7 +128,7 @@ public class PronunciationDictionary {
     }
 
     public String correct(Voice voice, String prompt) throws IOException {
-        Map<String, String> pronounciations = pronounciations(voice);
+        Map<String, String> pronounciations = pronunciations(voice);
         String correctedPrompt = prompt;
         for (Entry<String, String> entry : pronounciations.entrySet()) {
             String regex = "\\b" + entry.getKey() + "\\b";

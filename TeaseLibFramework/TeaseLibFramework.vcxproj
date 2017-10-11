@@ -172,6 +172,7 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="COMException.h" />
     <ClInclude Include="COMUser.h" />
     <ClInclude Include="Event.h" />
     <ClInclude Include="JNIClass.h" />
@@ -180,6 +181,8 @@
     <ClInclude Include="JNIObjectSibling.h" />
     <ClInclude Include="JNIString.h" />
     <ClInclude Include="JNIUtilities.h" />
+    <ClInclude Include="Language.h" />
+    <ClInclude Include="Lexicon.h" />
     <ClInclude Include="NativeException.h" />
     <ClInclude Include="NativeObject.h" />
     <ClInclude Include="sphelper.h" />
@@ -196,6 +199,8 @@
     <ClCompile Include="JNIObjectSibling.cpp" />
     <ClCompile Include="JNIString.cpp" />
     <ClCompile Include="JNIUtilities.cpp" />
+    <ClCompile Include="Language.cpp" />
+    <ClCompile Include="Lexicon.cpp" />
     <ClCompile Include="NativeException.cpp" />
     <ClCompile Include="NativeObject.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>

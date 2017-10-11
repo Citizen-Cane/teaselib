@@ -37,6 +37,31 @@ extern "C"
 	void buildVoiceMap(const std::vector<Voice*>& voices, JNIEnv *env, jobject voiceMap);
 
 	/*
+	* Class:     teaselib_core_texttospeech_implementation_TeaseLibTTS
+	* Method:	 addLexiconEntry
+	* Signature: (Ljava / lang / String; Ljava / lang / String; Ljava / lang / String;)V
+	*/
+
+	JNIEXPORT void JNICALL Java_teaselib_core_texttospeech_implementation_TeaseLibTTS_addLexiconEntry
+		(JNIEnv *env, jobject jthis, jstring locale, jstring word,  jint partOfSpeech, jstring pronunciation) {
+			try {
+				COMUser comUser;
+	
+				SpeechSynthesizer* speechSynthesizer = static_cast<SpeechSynthesizer*>(NativeObject::get(env, jthis));
+				if (!speechSynthesizer) {
+					speechSynthesizer = new SpeechSynthesizer(env, jthis);
+				}
+				speechSynthesizer->addLexiconEntry(JNIString(env, locale), JNIString(env, word), static_cast<SPPARTOFSPEECH>(partOfSpeech), JNIString(env, pronunciation));
+			}
+			catch (NativeException *e) {
+				JNIException::throwNew(env, e);
+			}
+			catch (JNIException /**e*/) {
+				// Forwarded automatically
+			}
+		}
+
+	/*
 	* Class:     teaselib_texttospeech_implementation_TeaseLibTTS
 	* Method:    getInstalledVoices
 	* Signature: (Ljava/util/Map;)V

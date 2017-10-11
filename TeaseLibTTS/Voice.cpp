@@ -8,6 +8,7 @@
 
 #include <COMException.h>
 #include <JNIString.h>
+#include <Language.h>
 
 #include "Voice.h"
 
@@ -45,20 +46,7 @@ Voice::Voice(JNIEnv* env, ISpObjectToken* pVoiceToken)
     guid = ::PathFindFileName(id);
 	if (FAILED(hr)) throw new COMException(hr);
 	
-	LANGID langID;
-    hr = SpGetLanguageFromToken(pVoiceToken, &langID);
-	if (FAILED(hr)) throw new COMException(hr);
-	
-	// locale e.g. "en-AU"
-    TCHAR locale[MAX_PATH];
-    wcscpy_s(locale, L"??-??");
-    GetLocaleInfo(MAKELCID(langID, 0), LOCALE_SNAME, locale, MAX_PATH);
-
-    // Language name, e.g. "English (Australia)"
-    TCHAR language[MAX_PATH];
-    wcscpy_s(language, L"Unknown");
-    GetLocaleInfo(MAKELCID(langID, 0), LOCALE_SLOCALIZEDDISPLAYNAME, language, MAX_PATH);
-	if (FAILED(hr)) throw new COMException(hr);
+	Language language(pVoiceToken);
 
 	// Gender
     LPWSTR gender;
@@ -68,8 +56,8 @@ Voice::Voice(JNIEnv* env, ISpObjectToken* pVoiceToken)
     if (env->ExceptionCheck()) throw new JNIException(env);
 
 	// Name
-    LPWSTR name;
-    hr = pVoiceToken->GetStringValue(NULL, &name);
+    LPWSTR voiceName;
+    hr = pVoiceToken->GetStringValue(NULL, &voiceName);
 	if (FAILED(hr)) throw new COMException(hr);
 	
 	// Full name (Vendor, version, Name)
@@ -90,10 +78,10 @@ Voice::Voice(JNIEnv* env, ISpObjectToken* pVoiceToken)
                 JNIClass::getMethodID(env, clazz, "<init>", signature),
                 thisPtr,
                 JNIString(env, guid.c_str()).operator jstring(),
-                JNIString(env, locale).operator jstring(),
-                JNIString(env, language).operator jstring(),
+                JNIString(env, language.name).operator jstring(),
+                JNIString(env, language.displayName).operator jstring(),
                 jgender,
-                JNIString(env, name).operator jstring(),
+                JNIString(env, voiceName).operator jstring(),
 	        	JNIString(env, vendor).operator jstring(),
 	            JNIString(env, api).operator jstring());
 

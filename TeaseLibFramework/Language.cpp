@@ -8,6 +8,8 @@
 
 #include "Language.h"
 
+const wchar_t* Language::Unknown = L"??-??";
+
 Language::Language(ISpObjectToken* pVoiceToken) : langID(getLangID(pVoiceToken)) {
 	getName(langID, name, 6);
 	getDisplayName(langID, displayName, MAX_PATH);
@@ -54,15 +56,11 @@ std::wstring Language::getLangIDStringWithoutLeadingZeros(const wchar_t* locale)
 void Language::getName(LANGID langID, wchar_t * name, size_t size) {
 	// locale e.g. "en-AU"
 	wcscpy_s(name, size, L"??-??");
-	int charSize = GetLocaleInfo(MAKELCID(langID, 0), LOCALE_SNAME, name, size);
-	assert(charSize > 0);
-	if (charSize == 0) throw new COMException(E_INVALIDARG);
+	GetLocaleInfo(MAKELCID(langID, 0), LOCALE_SNAME, name, size);
 }
 
 void Language::getDisplayName(LANGID langID, wchar_t * displayName, size_t size) {
 	// locale e.g. "en-AU"
 	wcscpy_s(displayName, size, L"Unknown");
-	int charSize = GetLocaleInfo(MAKELCID(langID, 0), LOCALE_SLOCALIZEDDISPLAYNAME, displayName, size);
-	assert(charSize > 0);
-	if (charSize == 0) throw new COMException(E_INVALIDARG);
+	GetLocaleInfo(MAKELCID(langID, 0), LOCALE_SLOCALIZEDDISPLAYNAME, displayName, size);
 }

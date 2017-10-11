@@ -4,6 +4,8 @@
 
 class Language {
 public:
+	static const wchar_t* Language::Unknown;
+
 	Language(ISpObjectToken * pVoiceToken);
 	Language(LANGID langId);
 	~Language();

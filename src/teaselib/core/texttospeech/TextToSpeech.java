@@ -17,7 +17,7 @@ import org.slf4j.LoggerFactory;
 
 import teaselib.core.ScriptInterruptedException;
 import teaselib.core.events.Delegate;
-import teaselib.core.events.DelegateThread;
+import teaselib.core.events.DelegateExecutor;
 import teaselib.core.texttospeech.implementation.TeaseLibTTS;
 import teaselib.core.texttospeech.implementation.TextToSpeechImplementationDebugProxy;
 import teaselib.core.util.ExceptionUtil;
@@ -27,7 +27,7 @@ public class TextToSpeech {
 
     private TextToSpeechImplementation tts;
 
-    private DelegateThread delegateThread = new DelegateThread("Speech Recognition dispatcher thread");
+    private DelegateExecutor delegateThread = new DelegateExecutor("Speech Recognition dispatcher thread");
 
     private String[] NoHints = null;
 

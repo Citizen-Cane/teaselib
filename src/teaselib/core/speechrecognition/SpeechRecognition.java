@@ -9,7 +9,7 @@ import org.slf4j.LoggerFactory;
 
 import teaselib.core.ScriptInterruptedException;
 import teaselib.core.events.Delegate;
-import teaselib.core.events.DelegateThread;
+import teaselib.core.events.DelegateExecutor;
 import teaselib.core.events.Event;
 import teaselib.core.speechrecognition.SpeechRecognitionResult.Confidence;
 import teaselib.core.speechrecognition.events.SpeechRecognitionStartedEventArgs;
@@ -73,7 +73,7 @@ public class SpeechRecognition {
 
     private final Locale locale;
     private final SpeechDetectionEventHandler hypothesisEventHandler;
-    private final DelegateThread delegateThread = new DelegateThread("Text-To-Speech dispatcher thread");
+    private final DelegateExecutor delegateThread = new DelegateExecutor("Text-To-Speech dispatcher thread");
 
     private SpeechRecognitionImplementation sr;
 

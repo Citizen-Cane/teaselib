@@ -7,10 +7,10 @@ import java.util.concurrent.Future;
 import teaselib.core.concurrency.NamedExecutorService;
 import teaselib.core.util.ExceptionUtil;
 
-public class DelegateThread {
+public class DelegateExecutor {
     private final ExecutorService workerThread;
 
-    public DelegateThread(String name) {
+    public DelegateExecutor(String name) {
         workerThread = NamedExecutorService.singleThreadedQueue(name);
     }
 

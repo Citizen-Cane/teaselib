@@ -2,7 +2,7 @@
 <classpath>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="src" output="bin.test" path="src.test"/>
-	<classpathentry kind="src" path="src.test.interactive"/>
+	<classpathentry kind="src" output="bin.test.interactive" path="src.test.interactive"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/4"/>
 	<classpathentry kind="lib" path="lib/jump3r-1.0.3.jar"/>

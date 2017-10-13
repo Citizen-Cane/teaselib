@@ -1,6 +1,6 @@
 package teaselib.core.textotspeech;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertTrue;
 
 import java.util.Arrays;
 import java.util.List;
@@ -51,7 +51,6 @@ public class MicrosoftSapiCustomPronunciationTestEnglish {
     @Test
     public void testPronunciationOfCum() throws InterruptedException {
         // Cum with "u" -> wrong but can be replaced by "Come".
-        // TODO Try whole sentence and phonemes and check whether the melody of the speech is preserved
         textToSpeech.speak("Cum.");
     }
 

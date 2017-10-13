@@ -270,7 +270,7 @@ public class TextToSpeech {
      */
     public static long getEstimatedSpeechDuration(String text) {
         long millisecondsPerLetter = 70;
-        long pauseAfterParagraph = 1 * 1000;
+        long pauseAfterParagraph = 1 * 1000L;
         return text.length() * millisecondsPerLetter + pauseAfterParagraph;
     }
 
@@ -283,8 +283,10 @@ public class TextToSpeech {
             for (Entry<String, String> dictionary : locale2Dictionary.entrySet()) {
                 String word = dictionary.getKey();
                 String pronunciation = dictionary.getValue();
+                // TODO Define part of speech in phoneme dictionary instead of setting all flags
                 int partOfSpeech = TextToSpeechImplementation.SPPS_Noun | TextToSpeechImplementation.SPPS_Verb
-                        | TextToSpeechImplementation.SPPS_Modifier | TextToSpeechImplementation.SPPS_Function;
+                        | TextToSpeechImplementation.SPPS_Modifier | TextToSpeechImplementation.SPPS_Function
+                        | TextToSpeechImplementation.SPPS_Interjection;
                 tts.addLexiconEntry(locale, word, partOfSpeech, pronunciation);
             }
         }

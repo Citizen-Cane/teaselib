@@ -22,7 +22,7 @@ using namespace std;
 #ifdef _DEBUG
 	int volumeNeutral = 40;
 	int volumeReading = volumeNeutral + 60;
-	int rateNeutral = 10;
+	int rateNeutral = 0;
 	int rateReading = -5;
 #else
 	int volumeNeutral = 50;
@@ -41,7 +41,6 @@ SpeechSynthesizer::SpeechSynthesizer(JNIEnv *env, jobject jthis)
 
 }
 
-
 SpeechSynthesizer::~SpeechSynthesizer() {
     pVoice->Release();
     pVoice = nullptr;
@@ -55,11 +54,6 @@ wstring hintsPromptPrefix;
 wstring hintsPromptPostfix;
 
 void SpeechSynthesizer::addLexiconEntry(const wchar_t const * locale, const wchar_t const * word, const SPPARTOFSPEECH partOfSpeech, const wchar_t const * pronunciation) {
-	throw new COMException(E_NOTIMPL);
-	
-	// TODO This has issues as long as entries are added to SpLexicon,
-	// since it adds entries to the user lexicon, and those are persisted
-
 	LANGID langID = Language::getLangID(locale);
 	CComPtr<ISpPhoneConverter> cpPhoneConv;
 
@@ -92,8 +86,7 @@ void SpeechSynthesizer::setVoice(Voice * voice) {
 	}
 }
 
-void SpeechSynthesizer::applyHints(const vector<wstring>& hints)
-{
+void SpeechSynthesizer::applyHints(const vector<wstring>& hints) {
 	hintsPromptPrefix.empty();
 	hintsPromptPostfix.empty();
 	// Changing the volume via xml tags didn't work as expected, because for a fraction of a second the voice sounded at normal volume
@@ -136,8 +129,7 @@ void SpeechSynthesizer::applyHints(const vector<wstring>& hints)
 	}
 }
 
-wstring createPromptWitthHints(const wchar_t * prompt)
-{
+wstring createPromptWitthHints(const wchar_t * prompt) {
 	return (hintsPromptPrefix + prompt + hintsPromptPostfix);
 }
 

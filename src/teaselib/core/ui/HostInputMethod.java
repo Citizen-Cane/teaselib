@@ -16,13 +16,10 @@ import teaselib.core.concurrency.NamedExecutorService;
  */
 public class HostInputMethod implements InputMethod {
     private final Host host;
-
-    ExecutorService workerThread = NamedExecutorService.singleThreadedQueue(getClass().getName());
-
+    private final ExecutorService workerThread = NamedExecutorService.singleThreadedQueue(getClass().getName());
     private final ReentrantLock replySection = new ReentrantLock(true);
 
     public HostInputMethod(Host host) {
-        super();
         this.host = host;
     }
 
@@ -101,7 +98,7 @@ public class HostInputMethod implements InputMethod {
 
     @Override
     public Map<String, Runnable> getHandlers() {
-        return Collections.EMPTY_MAP;
+        return Collections.emptyMap();
     }
 
     @Override

@@ -12,8 +12,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * @author http://stackoverflow.com/questions/5740478/how-to-name-the-threads-
- *         of- a-thread-pool-in-java
+ * @author http://stackoverflow.com/questions/5740478/how-to-name-the-threads- of- a-thread-pool-in-java
  *
  */
 public class NamedExecutorService extends ThreadPoolExecutor {
@@ -44,11 +43,12 @@ public class NamedExecutorService extends ThreadPoolExecutor {
                 });
     }
 
-    private NamedExecutorService(final String name) {
-        super(1, 1, 1, TimeUnit.HOURS, new LinkedBlockingQueue<Runnable>(), new ThreadFactory() {
+    private NamedExecutorService(final String name, long keepAliveTime, TimeUnit unit) {
+        super(1, 1, keepAliveTime, unit, new LinkedBlockingQueue<Runnable>(), new ThreadFactory() {
             @Override
             public Thread newThread(Runnable r) {
                 String namePattern = SINGLETHREADED_NAME_PATTERN;
+                // TODO Name formatting is the only difference -> factor out and join code
                 String threadName = String.format(namePattern, name);
                 return new Thread(r, threadName);
             }
@@ -61,6 +61,6 @@ public class NamedExecutorService extends ThreadPoolExecutor {
     }
 
     public static ExecutorService singleThreadedQueue(String namePrefix) {
-        return new NamedExecutorService(namePrefix);
+        return new NamedExecutorService(namePrefix, Long.MAX_VALUE, TimeUnit.SECONDS);
     }
 }

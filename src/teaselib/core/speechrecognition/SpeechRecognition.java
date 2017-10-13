@@ -127,9 +127,8 @@ public class SpeechRecognition {
         try {
             delegateThread.run(delegate);
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             throw new ScriptInterruptedException(e);
-        } catch (Throwable t) {
-            logger.error(t.getMessage(), t);
         }
     }
 
@@ -154,9 +153,8 @@ public class SpeechRecognition {
         try {
             delegateThread.run(delegate);
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             throw new ScriptInterruptedException(e);
-        } catch (Throwable t) {
-            logger.error(t.getMessage(), t);
         }
     }
 
@@ -183,9 +181,8 @@ public class SpeechRecognition {
             };
             delegateThread.run(delegate);
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             throw new ScriptInterruptedException(e);
-        } catch (Throwable t) {
-            logger.error(t.getMessage(), t);
         }
         // add the SpeechDetectionEventHandler listeners now to ensure
         // other listeners downstream receive only the correct event,
@@ -222,13 +219,11 @@ public class SpeechRecognition {
             try {
                 delegateThread.run(startRecognition);
             } catch (InterruptedException e) {
-                hypothesisEventHandler.enable(false);
-                SpeechRecognition.this.speechRecognitionActive = false;
+                Thread.currentThread().interrupt();
                 throw new ScriptInterruptedException(e);
-            } catch (Throwable t) {
+            } finally {
                 hypothesisEventHandler.enable(false);
                 SpeechRecognition.this.speechRecognitionActive = false;
-                logger.error(t.getMessage(), t);
             }
         } else {
             recognizerNotInitialized();
@@ -247,13 +242,11 @@ public class SpeechRecognition {
             try {
                 delegateThread.run(resumeRecognition);
             } catch (InterruptedException e) {
-                hypothesisEventHandler.enable(false);
-                SpeechRecognition.this.speechRecognitionActive = false;
+                Thread.currentThread().interrupt();
                 throw new ScriptInterruptedException(e);
-            } catch (Throwable t) {
+            } finally {
                 hypothesisEventHandler.enable(false);
                 SpeechRecognition.this.speechRecognitionActive = false;
-                logger.error(t.getMessage(), t);
             }
         } else {
             recognizerNotInitialized();
@@ -277,9 +270,8 @@ public class SpeechRecognition {
             try {
                 delegateThread.run(stopRecognition);
             } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
                 throw new ScriptInterruptedException(e);
-            } catch (Throwable t) {
-                logger.error(t.getMessage(), t);
             } finally {
                 // Unlock explicitly since after stopping we won't receive
                 // events anymore
@@ -347,15 +339,16 @@ public class SpeechRecognition {
                 @Override
                 public void run() {
                     sr.emulateRecognition(emulatedRecognitionResult);
-                    logger.info("Emulating recognition for '" + emulatedRecognitionResult + "'");
+                    if (logger.isInfoEnabled()) {
+                        logger.info("Emulating recognition for '" + emulatedRecognitionResult + "'");
+                    }
                 }
             };
             try {
                 delegateThread.run(emulateRecognition);
             } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
                 throw new ScriptInterruptedException(e);
-            } catch (Throwable t) {
-                logger.error(t.getMessage(), t);
             }
         } else {
             recognizerNotInitialized();

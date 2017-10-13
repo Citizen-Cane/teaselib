@@ -1,56 +1,17 @@
 package teaselib.core.events;
 
-import java.util.ArrayDeque;
-import java.util.Deque;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 
-import org.slf4j.LoggerFactory;
+import teaselib.core.concurrency.NamedExecutorService;
+import teaselib.core.util.ExceptionUtil;
 
-// TODO Forward all exceptions to caller
-// TODO Resolve throwing Throwable, instead just throw exceptions
-public class DelegateThread extends Thread {
-    private static final org.slf4j.Logger logger = LoggerFactory.getLogger(DelegateThread.class);
-
-    private final Deque<Delegate> queue = new ArrayDeque<>();
-    private boolean endThread = false;
+public class DelegateThread {
+    private final ExecutorService workerThread;
 
     public DelegateThread(String name) {
-        setName(name);
-        start();
-    }
-
-    @Override
-    public void run() {
-        // TOOD Don't lock the whole queue! (but doing so prevents dead locks)
-        while (true) {
-            try {
-                Delegate delegate;
-                synchronized (queue) {
-                    while (queue.isEmpty()) {
-                        try {
-                            queue.wait();
-                        } catch (InterruptedException ignored) {
-                        }
-                        if (endThread) {
-                            break;
-                        }
-                    }
-                    delegate = queue.removeFirst();
-                }
-                synchronized (delegate) {
-                    try {
-                        delegate.run();
-                    } catch (Throwable t) {
-                        delegate.setError(t);
-                    }
-                    delegate.notifyAll();
-                }
-            } catch (Throwable t) {
-                logger.error(t.getMessage(), t);
-            }
-            if (endThread) {
-                break;
-            }
-        }
+        workerThread = NamedExecutorService.singleThreadedQueue(name);
     }
 
     /**
@@ -61,17 +22,14 @@ public class DelegateThread extends Thread {
      * @throws Throwable
      *             If the delegate throws, the throwable is forwarded to the current thread.
      */
-    public void run(Delegate delegate) throws InterruptedException, Throwable {
-        synchronized (delegate) {
-            synchronized (queue) {
-                queue.addLast(delegate);
-                queue.notify();
-            }
-            delegate.wait();
-        }
-        Throwable t = delegate.getError();
-        if (t != null) {
-            throw t;
+    public void run(Delegate delegate) throws InterruptedException {
+        try {
+            Future<?> future = workerThread.submit(() -> delegate.run());
+            future.get();
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (ExecutionException e) {
+            throw ExceptionUtil.asRuntimeException(ExceptionUtil.reduce(e));
         }
     }
 }

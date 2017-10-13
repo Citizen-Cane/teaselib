@@ -93,7 +93,7 @@ public class MicrosoftSapiPronunciationDictionaryTest {
         logger.info(voices.keySet().toString());
     }
 
-    // Cum with "u" -> wrong but can be replaced by "Come".
+    // Cum with "u" -> wrong but can be replaced with "Come".
     @Test
     public void testPronunciationOfCum() throws InterruptedException {
         textToSpeech.setVoice(textToSpeech.getVoices().get(VOICE_ENGLISH_WINDOWS_DESKTOP_CORRECT));

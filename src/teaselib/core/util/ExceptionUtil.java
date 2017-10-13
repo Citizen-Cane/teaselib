@@ -4,6 +4,9 @@ import java.util.concurrent.ExecutionException;
 
 public class ExceptionUtil {
 
+    private ExceptionUtil() {
+    }
+
     public static Exception reduce(Exception e) {
         if (canReduce(e)) {
             Throwable cause = e.getCause();
@@ -15,7 +18,7 @@ public class ExceptionUtil {
     }
 
     private static boolean canReduce(Exception e) {
-        return e instanceof ExecutionException || e instanceof RuntimeException;
+        return e instanceof ExecutionException;
     }
 
     public static RuntimeException asRuntimeException(Exception e) {

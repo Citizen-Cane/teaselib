@@ -50,7 +50,7 @@ public class TextToSpeech {
         this.tts = ttsImpl;
     }
 
-    static private Set<String> getImplementations() {
+    private static Set<String> getImplementations() {
         Set<String> names = new HashSet<String>();
         names.add(TeaseLibTTS.class.getName());
         return names;
@@ -114,9 +114,8 @@ public class TextToSpeech {
             try {
                 delegateThread.run(delegate);
             } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
                 throw new ScriptInterruptedException(e);
-            } catch (Throwable t) {
-                logger.error(t.getMessage(), t);
             }
         } else {
             ttsEngineNotInitialized();
@@ -151,9 +150,8 @@ public class TextToSpeech {
             try {
                 delegateThread.run(delegate);
             } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
                 throw new ScriptInterruptedException(e);
-            } catch (Throwable t) {
-                logger.error(t.getMessage(), t);
             }
         } else {
             ttsEngineNotInitialized();
@@ -177,9 +175,8 @@ public class TextToSpeech {
             try {
                 delegateThread.run(delegate);
             } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
                 throw new ScriptInterruptedException(e);
-            } catch (Throwable t) {
-                logger.error(t.getMessage(), t);
             }
         } else {
             ttsEngineNotInitialized();
@@ -204,14 +201,8 @@ public class TextToSpeech {
                 delegateThread.run(delegate);
             } catch (InterruptedException e) {
                 throw e;
-            } catch (RuntimeException e) {
-                throw e;
             } catch (Exception e) {
                 throw ExceptionUtil.asRuntimeException(ExceptionUtil.reduce(e));
-            } catch (Error e) {
-                throw e;
-            } catch (Throwable e) {
-                throw new RuntimeException(e);
             }
         } else
 
@@ -237,15 +228,10 @@ public class TextToSpeech {
             try {
                 delegateThread.run(delegate);
             } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
                 throw new ScriptInterruptedException(e);
-            } catch (RuntimeException e) {
-                throw e;
             } catch (Exception e) {
                 throw ExceptionUtil.asRuntimeException(ExceptionUtil.reduce(e));
-            } catch (Error e) {
-                throw e;
-            } catch (Throwable e) {
-                throw new RuntimeException(e);
             }
         } else {
             ttsEngineNotInitialized();

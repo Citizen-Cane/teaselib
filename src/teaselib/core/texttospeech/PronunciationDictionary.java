@@ -13,9 +13,14 @@ import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.regex.Pattern;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import teaselib.core.util.WildcardPattern;
 
 public class PronunciationDictionary {
+    private static final Logger logger = LoggerFactory.getLogger(PronunciationDictionary.class);
+
     final File rootDirectory;
     final Map<Voice, Map<String, String>> cache = new HashMap<>();
 
@@ -24,7 +29,9 @@ public class PronunciationDictionary {
     }
 
     public PronunciationDictionary(File root) {
-        super();
+        if (logger.isInfoEnabled()) {
+            logger.info("Using pronunciation lexicon folder " + root.toString());
+        }
         this.rootDirectory = root;
     }
 
@@ -38,13 +45,16 @@ public class PronunciationDictionary {
         }
     }
 
-    public Map<String, Map<String, String>> pronunciations(String sdkName, String phonemeFormat) throws IOException {
-        Map<String, File> languageDictionaries = joinSDKPhonecticDictionaries(sdkName, phonemeFormat);
+    public Map<String, Map<String, String>> pronunciations(String api, String phonemeFormat) throws IOException {
+        if (logger.isInfoEnabled()) {
+            logger.info("Gathering phonetic pronunciations for " + api + " as " + phonemeFormat);
+        }
+        Map<String, File> languageDictionaries = joinSDKPhonecticDictionaries(api, phonemeFormat);
         return dictionariesByLanguage(languageDictionaries);
     }
 
     private Map<String, Map<String, String>> dictionariesByLanguage(Map<String, File> languageDictionaries)
-            throws IOException, FileNotFoundException {
+            throws IOException {
         Map<String, Map<String, String>> phoneticDictionary = new HashMap<>();
         for (Entry<String, File> languageDictionary : languageDictionaries.entrySet()) {
             Map<String, String> entries = new HashMap<>();
@@ -71,28 +81,42 @@ public class PronunciationDictionary {
     private File[] listSDKPhonecticDictionaries(String sdkName, String wildcard) {
         File sdk = new File(rootDirectory, sdkName);
         Pattern pattern = WildcardPattern.compile(wildcard);
+
         File[] dictionaries = sdk.listFiles((File dir, String name) -> {
             return pattern.matcher(name).matches();
         });
+
         if (dictionaries == null) {
             dictionaries = new File[] {};
         }
+
         return dictionaries;
     }
 
     Map<String, String> pronunciations(String api, String vendor, String locale, String voiceGuid) throws IOException {
+        if (logger.isInfoEnabled()) {
+            logger.info("Gathering pronunciations for " + api + "/" + vendor + "/" + locale + "/" + voiceGuid);
+        }
         return pronunciations(dictionaries(api, vendor, locale, voiceGuid));
     }
 
     private Map<String, String> pronunciations(List<File> dictionaries) throws IOException {
-        Map<String, String> all = new HashMap<>();
-        for (File file : dictionaries) {
-            if (file.exists()) {
-                readProperties(all, file);
+        if (!dictionaries.isEmpty()) {
+            Map<String, String> all = new HashMap<>();
+            for (File file : dictionaries) {
+                if (file.exists()) {
+                    if (logger.isInfoEnabled()) {
+                        logger.info("   Lexicon " + file.toString());
+                    }
+                    readProperties(all, file);
+                }
             }
-        }
 
-        return all;
+            return all;
+        } else {
+            logger.warn("   No lexicons found");
+            return Collections.emptyMap();
+        }
     }
 
     private void readProperties(Map<String, String> all, File file) throws IOException, FileNotFoundException {
@@ -137,5 +161,4 @@ public class PronunciationDictionary {
         }
         return correctedPrompt;
     }
-
 }

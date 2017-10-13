@@ -41,10 +41,12 @@ public class MicrosoftSapiPronunciationDictionaryTest {
     private static final Logger logger = LoggerFactory.getLogger(MicrosoftSapiPronunciationDictionaryTest.class);
 
     // MS SAPI voices issues:
-    // - Loquendo voices ignore any hints about pronunciation (SSML, Loquendop tags etc.)
+    // - Loquendo voices ignore any hints about pronunciation (SSML, Loquendo tags etc.)
     // - MS mobile voices (added via extra category) ignore user dictionary
     // - only official SAPI voices consult the user dictionary
     // - creating pronunciation with UPS is tedious
+    // - Speech Server Zira Pro pronounces "cum" wrong (because it's older?) but sounds better.
+
     // MS Speech recognition issues:
     // - Cannot use UPS phonemes in AddWordTransition - interpreted as lexical
     // - Cannot compile SRGS xml at runtime - only static
@@ -66,10 +68,18 @@ public class MicrosoftSapiPronunciationDictionaryTest {
     // So far the only way seems to implement .NET Microsoft.Speech and use SRGS xml.
 
     static final String VOICE_GERMAN = "TTS_MS_DE-DE_HEDDA_11.0";
-    // static final String VOICE = "LQTTSKate";
+
+    // Windows 10
+    static final String VOICE_ENGLISH_WINDOWS_DESKTOP_CORRECT = "TTS_MS_EN-US_ZIRA_11.0";
+    static final String VOICE_ENGLISH_WINDOWS_MOBILE_CORRECT = "MSTTS_V110_enUS_ZiraM";
+
+    // Available via Speech Server 11 (older)
+    static final String VOICE_ENGLISH_SPPECH_SERVER_WRONG_BUT_BETTER_QUALITY = "TTS_MS_en-US_ZiraPro_11.0";
+
+    // Loquendo
+    static final String VOICE_LOQUENDO_WRONG_BUT_BUT_WRONG = "LTTS7Kate";
 
     static TextToSpeech textToSpeech;
-    static Voice voice;
 
     @BeforeClass
     public static void initSpeech() {
@@ -81,19 +91,26 @@ public class MicrosoftSapiPronunciationDictionaryTest {
         Map<String, Voice> voices = textToSpeech.getVoices();
         assertTrue(voices.size() > 0);
         logger.info(voices.keySet().toString());
-
-        voice = voices.get(VOICE_GERMAN);
-        textToSpeech.setVoice(voice);
     }
 
     // Cum with "u" -> wrong but can be replaced by "Come".
     @Test
     public void testPronunciationOfCum() throws InterruptedException {
+        textToSpeech.setVoice(textToSpeech.getVoices().get(VOICE_ENGLISH_WINDOWS_DESKTOP_CORRECT));
+        textToSpeech.speak("Cum.");
+
+        textToSpeech.setVoice(textToSpeech.getVoices().get(VOICE_ENGLISH_WINDOWS_MOBILE_CORRECT));
+        textToSpeech.speak("Cum.");
+
+        textToSpeech.setVoice(textToSpeech.getVoices().get(VOICE_ENGLISH_SPPECH_SERVER_WRONG_BUT_BETTER_QUALITY));
+        textToSpeech.speak("Cum.");
+
+        textToSpeech.setVoice(textToSpeech.getVoices().get(VOICE_LOQUENDO_WRONG_BUT_BUT_WRONG));
         textToSpeech.speak("Cum.");
     }
 
     @Test
-    public void testPronunciationOfCumCorrected() throws InterruptedException {
+    public void testPronunciationCorrection() throws InterruptedException {
         Configuration config = DebugSetup.getConfiguration();
         config.set(TextToSpeechPlayer.Settings.Pronunciation, getClass().getResource("pronunciation").getPath());
 
@@ -101,19 +118,34 @@ public class MicrosoftSapiPronunciationDictionaryTest {
         Actor actor = new Actor("Mrs.Foo", Gender.Female, Locale.forLanguageTag("en-uk"));
 
         tts.acquireVoice(actor, new ResourceLoader(getClass()));
-        tts.speak(actor, "Cum!", Mood.Neutral);
+        tts.speak(actor, "Cum.", Mood.Neutral);
+    }
+
+    @Test
+    public void testPronunciationDefaultsForZiraPro() throws InterruptedException {
+        Configuration config = DebugSetup.getConfiguration();
+        config.set(TextToSpeechPlayer.Settings.Pronunciation, new File("defaults/pronunciation").getAbsolutePath());
+
+        TextToSpeechPlayer tts = new TextToSpeechPlayer(config);
+        Actor actor = new Actor("Mrs.Foo", Gender.Female, Locale.forLanguageTag("en-uk"));
+
+        tts.acquireVoice(actor, new ResourceLoader(getClass()));
+        tts.speak(actor, "Cum.", Mood.Neutral);
     }
 
     @Test
     public void testSAPIPronuncuation() throws InterruptedException, IOException {
+        textToSpeech.setVoice(textToSpeech.getVoices().get(VOICE_GERMAN));
+
         PronunciationDictionary pronunciationDictionary = new PronunciationDictionary(
                 new File(getClass().getResource("pronunciation").getPath()));
         textToSpeech.initPhoneticDictionary(pronunciationDictionary);
+        // Speaks "Madame" as "Hello" as defined in the dictionary
         textToSpeech.speak("Jawohl, Madame.");
     }
 
     @Test
-    public void testSRPronuncuation() throws InterruptedException, IOException {
+    public void testSpeechRecognitionPronuncuation() throws InterruptedException, IOException {
         PronunciationDictionary pronunciationDictionary = new PronunciationDictionary(
                 new File(getClass().getResource("pronunciation").getPath()));
         textToSpeech.initPhoneticDictionary(pronunciationDictionary);
@@ -128,6 +160,7 @@ public class MicrosoftSapiPronunciationDictionaryTest {
                 completed.countDown();
             }
         };
+
         speechRecognition.events.recognitionCompleted.add(speechRecognized);
         try {
             speechRecognition.startRecognition(choices, Confidence.Normal);

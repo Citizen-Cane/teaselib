@@ -25,7 +25,11 @@ public class PronunciationDictionary {
     final Map<Voice, Map<String, String>> cache = new HashMap<>();
 
     public static PronunciationDictionary empty() {
-        return new PronunciationDictionary(null);
+        return new PronunciationDictionary();
+    }
+
+    private PronunciationDictionary() {
+        rootDirectory = null;
     }
 
     public PronunciationDictionary(File root) {

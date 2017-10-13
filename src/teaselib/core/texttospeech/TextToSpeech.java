@@ -60,12 +60,11 @@ public class TextToSpeech {
         // Create class here
         if (tts != null && tts.getClass().getName().equals(className)) {
             return;
-        }
-        try {
-            Delegate delegate = new Delegate() {
-                @Override
-                public void run() {
-                    try {
+        } else {
+            try {
+                Delegate delegate = new Delegate() {
+                    @Override
+                    public void run() throws ReflectiveOperationException {
                         Class<? extends Object> ttsClass = getClass().getClassLoader().loadClass(className);
                         Method singleton = ttsClass.getDeclaredMethod("getInstance");
 
@@ -81,16 +80,13 @@ public class TextToSpeech {
                         }
 
                         tts = new TextToSpeechImplementationDebugProxy(newTTS);
-                    } catch (Throwable t) {
-                        setError(t);
                     }
-                }
-            };
-            delegateThread.run(delegate);
-        } catch (InterruptedException e) {
-            throw new ScriptInterruptedException(e);
-        } catch (Throwable t) {
-            logger.error(t.getMessage(), t);
+                };
+                delegateThread.run(delegate);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new ScriptInterruptedException(e);
+            }
         }
     }
 

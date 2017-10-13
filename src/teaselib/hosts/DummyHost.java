@@ -22,6 +22,7 @@ import teaselib.core.VideoRenderer.Type;
 import teaselib.core.events.Delegate;
 import teaselib.core.javacv.VideoRendererJavaCV;
 import teaselib.core.ui.Prompt;
+import teaselib.core.util.ExceptionUtil;
 
 public class DummyHost implements Host {
     private static final Logger logger = LoggerFactory.getLogger(DummyHost.class);
@@ -106,7 +107,11 @@ public class DummyHost implements Host {
                 logger.warn("Dismiss called on latch already counted down: " + choices);
             } else {
                 for (Delegate delegate : getClickableChoices(choices)) {
-                    delegate.run();
+                    try {
+                        delegate.run();
+                    } catch (Exception e) {
+                        throw ExceptionUtil.asRuntimeException(e);
+                    }
                 }
                 currentChoices = Collections.emptyList();
 

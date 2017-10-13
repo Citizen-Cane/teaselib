@@ -1,5 +1,6 @@
 package teaselib.core.events;
 
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
@@ -19,12 +20,17 @@ public class DelegateExecutor {
      * 
      * @param delegate
      *            The delegate to execute in the delegate thread.
-     * @throws Throwable
-     *             If the delegate throws, the throwable is forwarded to the current thread.
      */
     public void run(Delegate delegate) throws InterruptedException {
         try {
-            Future<?> future = workerThread.submit(() -> delegate.run());
+            Future<?> future = workerThread.submit(new Callable<Void>() {
+                @Override
+                public Void call() throws Exception {
+                    delegate.run();
+                    return null;
+                }
+            });
+
             future.get();
         } catch (RuntimeException e) {
             throw e;

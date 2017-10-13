@@ -43,6 +43,7 @@ import teaselib.core.VideoRenderer.Type;
 import teaselib.core.concurrency.NamedExecutorService;
 import teaselib.core.events.Delegate;
 import teaselib.core.javacv.VideoRendererJavaCV;
+import teaselib.core.util.ExceptionUtil;
 import teaselib.util.Interval;
 
 /**
@@ -448,11 +449,15 @@ public class SexScriptsHost implements Host {
     @Override
     public boolean dismissChoices(List<String> choices) {
         // Just click any choice
-        final List<Delegate> clickableChoices = getClickableChoices(choices);
+        List<Delegate> clickableChoices = getClickableChoices(choices);
         if (clickableChoices != null) {
             final Delegate delegate = clickableChoices.get(0);
             if (delegate != null) {
-                delegate.run();
+                try {
+                    delegate.run();
+                } catch (Exception e1) {
+                    throw ExceptionUtil.asRuntimeException(e1);
+                }
                 return true;
             }
         }
@@ -568,13 +573,20 @@ public class SexScriptsHost implements Host {
                     if (showPopupTask.comboBox.isVisible()) {
                         showPopupTask.showPopup();
                     }
-                    delegate.run();
+
+                    try {
+                        delegate.run();
+                    } catch (Exception e1) {
+                        throw ExceptionUtil.asRuntimeException(e1);
+                    }
+
                     try {
                         Thread.sleep(100);
-                    } catch (InterruptedException ignored) {
+                    } catch (InterruptedException ignored) { // Ignore
                     }
                 }
             }
+            Thread.currentThread().interrupt();
             throw new ScriptInterruptedException(e);
         } catch (Exception e) {
             logger.error(e.getMessage(), e);

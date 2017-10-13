@@ -23,17 +23,20 @@ public class Shower {
         try {
             pauseCurrent();
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             throw new ScriptInterruptedException(e);
         }
 
         try {
             return showNew(script, prompt);
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             throw new ScriptInterruptedException(e);
         } finally {
             try {
                 resumePrevious();
             } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
                 throw new ScriptInterruptedException(e);
             }
         }

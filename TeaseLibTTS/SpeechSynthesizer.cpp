@@ -72,60 +72,47 @@ void SpeechSynthesizer::addLexiconEntry(const wchar_t const * locale, const wcha
 }
 
 void SpeechSynthesizer::setVoice(Voice * voice) {
-	if (voice) {
-		HRESULT hr = pVoice->SetVoice(*voice);
-		if (FAILED(hr)) {
-			throw new COMException(hr);
-		}
-		else {
-			hr = pVoice->SetVolume(volumeNeutral);
-			if (FAILED(hr)) {
-				throw new COMException(hr);
-			}
-		}
-	}
+	if (voice == nullptr) throw new COMException(E_POINTER);
+
+	HRESULT hr = pVoice->SetVoice(*voice);
+	assert(SUCCEEDED(hr));
+	if (FAILED(hr)) throw new COMException(hr);
+	hr = pVoice->SetVolume(volumeNeutral);
+	assert(SUCCEEDED(hr));
+	if (FAILED(hr)) throw new COMException(hr);
 }
 
 void SpeechSynthesizer::applyHints(const vector<wstring>& hints) {
 	hintsPromptPrefix.empty();
 	hintsPromptPostfix.empty();
-	// Changing the volume via xml tags didn't work as expected, because for a fraction of a second the voice sounded at normal volume
+
+	// Changing the volume via xml tags didn't work as expected,
+	// because for a fraction of a second the voice sounded at normal volume
 	bool volumeChanged = false;
 	bool rateChanged = false;
-	for_each(hints.begin(), hints.end(), [&](const wstring& hint)
-	{
+	for_each(hints.begin(), hints.end(), [&](const wstring& hint) {
 		HRESULT hr = S_OK;
-		if (hint.compare(L"<mood=reading>") == 0)
-		{
+		if (hint.compare(L"<mood=reading>") == 0) {
 			hr = pVoice->SetVolume(volumeReading);
-			if (SUCCEEDED(hr))
-			{
+			if (SUCCEEDED(hr)) {
 				volumeChanged = true;
 				hr = pVoice->SetRate(rateReading);
-				if (SUCCEEDED(hr))
-				{
+				if (SUCCEEDED(hr)) {
 					rateChanged = true;
 				}
 			}
 		}
-		if (FAILED(hr)) {
-			throw new COMException(hr);
-		}
+		if (FAILED(hr)) throw new COMException(hr);	
 	});
+
 	// Defaults
-	if (!volumeChanged)
-	{
+	if (!volumeChanged)	{
 		HRESULT hr = pVoice->SetVolume(volumeNeutral);
-		if (FAILED(hr)) {
-			throw new COMException(hr);
-		}
+		if (FAILED(hr)) throw new COMException(hr);
 	}
-	if (!rateChanged)
-	{
+	if (!rateChanged) {
 		HRESULT hr = pVoice->SetRate(rateNeutral);
-		if (FAILED(hr)) {
-			throw new COMException(hr);
-		}
+		if (FAILED(hr)) throw new COMException(hr);
 	}
 }
 

@@ -19,15 +19,15 @@ import teaselib.core.ScriptInterruptedException;
 import teaselib.core.events.Delegate;
 import teaselib.core.events.DelegateExecutor;
 import teaselib.core.texttospeech.implementation.TeaseLibTTS;
-import teaselib.core.texttospeech.implementation.TextToSpeechImplementationDebugProxy;
 import teaselib.core.util.ExceptionUtil;
 
 public class TextToSpeech {
     private static final Logger logger = LoggerFactory.getLogger(TextToSpeech.class);
 
-    private TextToSpeechImplementation tts;
+    private final Map<String, TextToSpeechImplementation> ttsSDKs = new LinkedHashMap<>();
+    private final Map<String, DelegateExecutor> ttsExecutors = new LinkedHashMap<>();
 
-    private DelegateExecutor delegateThread = new DelegateExecutor("Speech Recognition dispatcher thread");
+    private final Map<String, Voice> voices = new LinkedHashMap<>();
 
     private String[] NoHints = null;
 
@@ -37,87 +37,89 @@ public class TextToSpeech {
 
     public static final Lock AudioOutput = new ReentrantLock();
 
-    public static final Set<String> BlackList = new HashSet<String>(Arrays.asList("LTTS7Ludoviko", "MSMary", "MSMike"));
+    public static final Set<String> BlackList = new HashSet<>(Arrays.asList("LTTS7Ludoviko", "MSMary", "MSMike"));
 
     public TextToSpeech() {
         Set<String> names = getImplementations();
         if (!names.isEmpty()) {
-            setImplementation(names.iterator().next());
+            addImplementation(names.iterator().next());
         }
     }
 
     public TextToSpeech(TextToSpeechImplementation ttsImpl) {
-        this.tts = ttsImpl;
+        addSDK(ttsImpl, newDelegateExecutor());
+    }
+
+    public TextToSpeech(Class<TextToSpeechImplementation> ttsClass) {
+        addImplementation(ttsClass);
     }
 
     private static Set<String> getImplementations() {
-        Set<String> names = new HashSet<String>();
+        Set<String> names = new HashSet<>();
         names.add(TeaseLibTTS.class.getName());
         return names;
     }
 
-    private void setImplementation(final String className) {
-        // Create class here
-        if (tts != null && tts.getClass().getName().equals(className)) {
-            return;
-        } else {
-            try {
-                Delegate delegate = new Delegate() {
-                    @Override
-                    public void run() throws ReflectiveOperationException {
-                        Class<? extends Object> ttsClass = getClass().getClassLoader().loadClass(className);
-                        Method singleton = ttsClass.getDeclaredMethod("getInstance");
-
-                        TextToSpeechImplementation newTTS = null;
-                        if (singleton != null) {
-                            newTTS = (TextToSpeechImplementation) singleton.invoke(this);
-                        } else {
-                            newTTS = (TextToSpeechImplementation) ttsClass.newInstance();
-                        }
-
-                        if (tts != null) {
-                            tts.dispose();
-                        }
-
-                        tts = new TextToSpeechImplementationDebugProxy(newTTS);
-                    }
-                };
-                delegateThread.run(delegate);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new ScriptInterruptedException(e);
-            }
+    private void addImplementation(String className) {
+        try {
+            Class<?> ttsClass = getClass().getClassLoader().loadClass(className);
+            addImplementation(ttsClass);
+        } catch (ReflectiveOperationException e) {
+            throw ExceptionUtil.asRuntimeException(e);
         }
+    }
+
+    private void addImplementation(Class<?> ttsClass) {
+        DelegateExecutor delegateThread = newDelegateExecutor();
+
+        Delegate delegate = new Delegate() {
+            @Override
+            public void run() throws ReflectiveOperationException {
+                Method getInstance = ttsClass.getDeclaredMethod("getInstance");
+                TextToSpeechImplementation newTTS = null;
+                if (getInstance != null) {
+                    newTTS = (TextToSpeechImplementation) getInstance.invoke(this);
+                } else {
+                    newTTS = (TextToSpeechImplementation) ttsClass.newInstance();
+                }
+
+                addSDK(newTTS, delegateThread);
+            }
+        };
+
+        try {
+            delegateThread.run(delegate);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new ScriptInterruptedException(e);
+        }
+    }
+
+    private void addSDK(TextToSpeechImplementation ttsImpl, DelegateExecutor executor) {
+        Map<String, Voice> newVoices = new LinkedHashMap<>();
+        ttsImpl.getVoices(newVoices);
+        removeBlackListed(newVoices);
+        if (!newVoices.isEmpty()) {
+            voices.putAll(newVoices);
+            ttsSDKs.put(ttsImpl.sdkName(), ttsImpl);
+            ttsExecutors.put(ttsImpl.sdkName(), executor);
+        } else {
+            ttsImpl.dispose();
+        }
+    }
+
+    private DelegateExecutor newDelegateExecutor() {
+        return new DelegateExecutor("Speech Synthesis dispatcher thread");
     }
 
     /**
      * @return Whether TextToSpeech is ready to render speech
      */
     public boolean isReady() {
-        return tts != null;
+        return !ttsSDKs.isEmpty();
     }
 
     public Map<String, Voice> getVoices() {
-        final Map<String, Voice> voices = new LinkedHashMap<String, Voice>();
-
-        if (tts != null) {
-            Delegate delegate = new Delegate() {
-                @Override
-                public void run() {
-                    tts.getVoices(voices);
-                }
-            };
-            try {
-                delegateThread.run(delegate);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new ScriptInterruptedException(e);
-            }
-        } else {
-            ttsEngineNotInitialized();
-        }
-
-        removeBlackListed(voices);
         return voices;
     }
 
@@ -130,62 +132,28 @@ public class TextToSpeech {
         }
     }
 
+    public void speak(Voice voice, String prompt) throws InterruptedException {
+        speak(voice, prompt, new String[] {});
+    }
+
     /**
-     * Set a specific voice, or null for system default voice
-     * 
      * @param voice
-     */
-    public void setVoice(final Voice voice) {
-        if (tts != null) {
-            Delegate delegate = new Delegate() {
-                @Override
-                public void run() {
-                    tts.setVoice(voice);
-                }
-            };
-            try {
-                delegateThread.run(delegate);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new ScriptInterruptedException(e);
-            }
-        } else {
-            ttsEngineNotInitialized();
-        }
-    }
-
-    /**
-     * Set hints for the next call to speak(...). Hints are cleared after each call to speak.
-     * 
+     * @param prompt
      * @param hints
-     *            The hints to consider for the next call to speak(..)
+     *            Mood or other hints that might affect the prompt
+     * @throws InterruptedException
      */
-    public void setHint(final String... hints) {
-        if (tts != null) {
-            Delegate delegate = new Delegate() {
-                @Override
-                public void run() {
-                    tts.setHints(hints);
-                }
-            };
-            try {
-                delegateThread.run(delegate);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new ScriptInterruptedException(e);
-            }
-        } else {
-            ttsEngineNotInitialized();
-        }
-    }
+    public void speak(Voice voice, String prompt, String[] hints) throws InterruptedException {
+        TextToSpeechImplementation tts = voice.ttsImpl;
 
-    public void speak(final String prompt) throws InterruptedException {
-        if (tts != null) {
+        if (tts != null && ttsSDKs.containsKey(tts.sdkName())) {
             Delegate delegate = new Delegate() {
                 @Override
                 public void run() {
                     synchronized (AudioOutput) {
                         try {
+                            tts.setVoice(voice);
+                            tts.setHints(hints);
                             tts.speak(prompt);
                         } finally {
                             tts.setHints(NoHints);
@@ -193,27 +161,28 @@ public class TextToSpeech {
                     }
                 }
             };
-            try {
-                delegateThread.run(delegate);
-            } catch (InterruptedException e) {
-                throw e;
-            } catch (Exception e) {
-                throw ExceptionUtil.asRuntimeException(ExceptionUtil.reduce(e));
-            }
-        } else
 
-        {
+            run(tts, delegate);
+        } else {
             ttsEngineNotInitialized();
         }
     }
 
-    public String speak(final String prompt, final File file) {
-        final StringBuilder soundFilePath = new StringBuilder();
-        if (tts != null) {
+    public String speak(Voice voice, String prompt, File file) throws InterruptedException {
+        return speak(voice, prompt, file, new String[] {});
+    }
+
+    public String speak(Voice voice, String prompt, File file, String[] hints) throws InterruptedException {
+        StringBuilder soundFilePath = new StringBuilder();
+        TextToSpeechImplementation tts = voice.ttsImpl;
+
+        if (tts != null && ttsSDKs.containsKey(tts.sdkName())) {
             Delegate delegate = new Delegate() {
                 @Override
                 public void run() {
                     try {
+                        tts.setVoice(voice);
+                        tts.setHints(hints);
                         String actualPath = tts.speak(prompt, file.getAbsolutePath());
                         soundFilePath.append(actualPath);
                     } finally {
@@ -221,22 +190,30 @@ public class TextToSpeech {
                     }
                 }
             };
-            try {
-                delegateThread.run(delegate);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new ScriptInterruptedException(e);
-            } catch (Exception e) {
-                throw ExceptionUtil.asRuntimeException(ExceptionUtil.reduce(e));
-            }
+
+            run(tts, delegate);
         } else {
             ttsEngineNotInitialized();
         }
+
         return soundFilePath.toString();
     }
 
-    public void stop() {
-        if (tts != null) {
+    private void run(TextToSpeechImplementation tts, Delegate delegate) throws InterruptedException {
+        try {
+            DelegateExecutor delegateExecutor = ttsExecutors.get(tts.sdkName());
+            delegateExecutor.run(delegate);
+        } catch (InterruptedException e) {
+            throw e;
+        } catch (Exception e) {
+            throw ExceptionUtil.asRuntimeException(ExceptionUtil.reduce(e));
+        }
+    }
+
+    public void stop(Voice voice) {
+        TextToSpeechImplementation tts = voice.ttsImpl;
+
+        if (tts != null && ttsSDKs.containsKey(tts.sdkName())) {
             tts.stop();
         } else {
             ttsEngineNotInitialized();
@@ -257,19 +234,23 @@ public class TextToSpeech {
     }
 
     public void initPhoneticDictionary(PronunciationDictionary pronunciationDictionary) throws IOException {
-        Map<String, Map<String, String>> phonemes = pronunciationDictionary.pronunciations(tts.sdkName(),
-                tts.phonemeAlphabetName());
-        for (Entry<String, Map<String, String>> entry : phonemes.entrySet()) {
-            String locale = entry.getKey();
-            Map<String, String> locale2Dictionary = entry.getValue();
-            for (Entry<String, String> dictionary : locale2Dictionary.entrySet()) {
-                String word = dictionary.getKey();
-                String pronunciation = dictionary.getValue();
-                // TODO Define part of speech in phoneme dictionary instead of setting all flags
-                int partOfSpeech = TextToSpeechImplementation.SPPS_Noun | TextToSpeechImplementation.SPPS_Verb
-                        | TextToSpeechImplementation.SPPS_Modifier | TextToSpeechImplementation.SPPS_Function
-                        | TextToSpeechImplementation.SPPS_Interjection;
-                tts.addLexiconEntry(locale, word, partOfSpeech, pronunciation);
+        for (Entry<String, TextToSpeechImplementation> ttsSDK : ttsSDKs.entrySet()) {
+            TextToSpeechImplementation tts = ttsSDK.getValue();
+
+            Map<String, Map<String, String>> phonemes = pronunciationDictionary.pronunciations(tts.sdkName(),
+                    tts.phonemeAlphabetName());
+            for (Entry<String, Map<String, String>> entry : phonemes.entrySet()) {
+                String locale = entry.getKey();
+                Map<String, String> locale2Dictionary = entry.getValue();
+                for (Entry<String, String> dictionary : locale2Dictionary.entrySet()) {
+                    String word = dictionary.getKey();
+                    String pronunciation = dictionary.getValue();
+                    // TODO Define part of speech in phoneme dictionary instead of setting all flags
+                    int partOfSpeech = TextToSpeechImplementation.SPPS_Noun | TextToSpeechImplementation.SPPS_Verb
+                            | TextToSpeechImplementation.SPPS_Modifier | TextToSpeechImplementation.SPPS_Function
+                            | TextToSpeechImplementation.SPPS_Interjection;
+                    tts.addLexiconEntry(locale, word, partOfSpeech, pronunciation);
+                }
             }
         }
     }

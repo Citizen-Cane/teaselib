@@ -11,12 +11,12 @@
 const wchar_t* Language::Unknown = L"??-??";
 
 Language::Language(ISpObjectToken* pVoiceToken) : langID(getLangID(pVoiceToken)) {
-	getName(langID, name, 6);
+	getName(langID, sname, 6);
 	getDisplayName(langID, displayName, MAX_PATH);
 }
 
 Language::Language(LANGID langId) : langID(langID) {
-	getName(langID, name, 6);
+	getName(langID, sname, 6);
 	getDisplayName(langID, displayName, MAX_PATH);
 }
 
@@ -53,10 +53,10 @@ std::wstring Language::getLangIDStringWithoutLeadingZeros(const wchar_t* locale)
 	return langIDWithoutTrailingZeros;
 }
 
-void Language::getName(LANGID langID, wchar_t * name, size_t size) {
+void Language::getName(LANGID langID, wchar_t * sname, size_t size) {
 	// locale e.g. "en-AU"
-	wcscpy_s(name, size, L"??-??");
-	GetLocaleInfo(MAKELCID(langID, 0), LOCALE_SNAME, name, size);
+	wcscpy_s(sname, size, L"??-??");
+	GetLocaleInfo(MAKELCID(langID, 0), LOCALE_SNAME, sname, size);
 }
 
 void Language::getDisplayName(LANGID langID, wchar_t * displayName, size_t size) {

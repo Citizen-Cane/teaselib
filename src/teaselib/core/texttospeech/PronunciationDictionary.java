@@ -43,7 +43,8 @@ public class PronunciationDictionary {
         if (cache.containsKey(voice)) {
             return cache.get(voice);
         } else {
-            Map<String, String> pronunciations = pronunciations(voice.api, voice.vendor, voice.locale, voice.guid);
+            Map<String, String> pronunciations = pronunciations(voice.ttsImpl.sdkName(), voice.vendor, voice.locale,
+                    voice.guid);
             cache.put(voice, pronunciations);
             return pronunciations;
         }

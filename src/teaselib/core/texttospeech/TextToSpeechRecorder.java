@@ -3,7 +3,6 @@ package teaselib.core.texttospeech;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -79,7 +78,7 @@ public class TextToSpeechRecorder {
         logger.info("using text variables: '" + textVariables.toString() + "'");
     }
 
-    public void create(ScriptScanner scanner) throws IOException {
+    public void create(ScriptScanner scanner) throws IOException, InterruptedException {
         logger.info("Scanning script '" + scanner.getScriptName() + "'");
         Set<String> created = new HashSet<String>();
         for (Message message : scanner) {
@@ -94,7 +93,8 @@ public class TextToSpeechRecorder {
         }
     }
 
-    private String processMessage(Actor actor, final Voice voice, Message message) throws IOException {
+    private String processMessage(Actor actor, final Voice voice, Message message)
+            throws IOException, InterruptedException {
         String hash = getHash(message);
         String newMessageHash = message.toPrerecordedSpeechHashString();
         if (!newMessageHash.isEmpty()) {
@@ -136,14 +136,15 @@ public class TextToSpeechRecorder {
     }
 
     private void updateMessage(Actor actor, final Voice voice, Message message, String hash, String newMessageHash)
-            throws IOException {
+            throws IOException, InterruptedException {
         logger.info(hash + " has changed");
         storage.deleteMessage(actor, voice, hash);
         create(actor, voice, message, hash, newMessageHash);
         changedEntries++;
     }
 
-    private void createNewMessage(Actor actor, final Voice voice, Message message, String hash) throws IOException {
+    private void createNewMessage(Actor actor, final Voice voice, Message message, String hash)
+            throws IOException, InterruptedException {
         logger.info(hash + " is new");
         create(actor, voice, message, hash, message.toPrerecordedSpeechHashString());
         newEntries++;
@@ -220,14 +221,15 @@ public class TextToSpeechRecorder {
         return message.toString();
     }
 
-    public void create(Actor actor, Voice voice, Message message, String hash, String messageHash) throws IOException {
+    public void create(Actor actor, Voice voice, Message message, String hash, String messageHash)
+            throws IOException, InterruptedException {
         List<String> soundFiles = writeSpeechResources(actor, voice, message, hash, messageHash);
         writeInventory(actor, voice, hash, soundFiles);
         writeMessageHash(actor, voice, hash, messageHash);
     }
 
     private List<String> writeSpeechResources(Actor actor, Voice voice, Message message, String hash,
-            String messageHash) throws IOException, FileNotFoundException {
+            String messageHash) throws IOException, InterruptedException {
         logger.info("Recording message:\n" + messageHash);
         List<String> soundFiles = new ArrayList<>();
         String mood = Mood.Neutral;
@@ -246,13 +248,11 @@ public class TextToSpeechRecorder {
     }
 
     private String writeSpeechResource(Actor actor, Voice voice, String hash, int index, String mood, String text)
-            throws IOException {
+            throws IOException, InterruptedException {
         String soundFileName = Integer.toString(index);
         File soundFile = createTempFileName(SpeechResourceTempFilePrefix + "_" + soundFileName + "_", "");
         TextToSpeech textToSpeech = ttsPlayer.textToSpeech;
-        textToSpeech.setVoice(voice);
-        textToSpeech.setHint(mood);
-        String recordedSoundFile = textToSpeech.speak(text, soundFile);
+        String recordedSoundFile = textToSpeech.speak(voice, text, soundFile, new String[] { mood });
         if (!recordedSoundFile.endsWith(SpeechResourceFileTypeExtension)) {
             String encodedSoundFile = recordedSoundFile.replace(".wav", SpeechResourceFileTypeExtension);
             // sampling frequency is read from the wav audio file

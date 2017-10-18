@@ -96,17 +96,13 @@ public class MicrosoftSapiPronunciationDictionaryTest {
     // Cum with "u" -> wrong but can be replaced with "Come".
     @Test
     public void testPronunciationOfCum() throws InterruptedException {
-        textToSpeech.setVoice(textToSpeech.getVoices().get(VOICE_ENGLISH_WINDOWS_DESKTOP_CORRECT));
-        textToSpeech.speak("Cum.");
+        textToSpeech.speak(textToSpeech.getVoices().get(VOICE_ENGLISH_WINDOWS_DESKTOP_CORRECT), "Cum.");
 
-        textToSpeech.setVoice(textToSpeech.getVoices().get(VOICE_ENGLISH_WINDOWS_MOBILE_CORRECT));
-        textToSpeech.speak("Cum.");
+        textToSpeech.speak(textToSpeech.getVoices().get(VOICE_ENGLISH_WINDOWS_MOBILE_CORRECT), "Cum.");
 
-        textToSpeech.setVoice(textToSpeech.getVoices().get(VOICE_ENGLISH_SPPECH_SERVER_WRONG_BUT_BETTER_QUALITY));
-        textToSpeech.speak("Cum.");
+        textToSpeech.speak(textToSpeech.getVoices().get(VOICE_ENGLISH_SPPECH_SERVER_WRONG_BUT_BETTER_QUALITY), "Cum.");
 
-        textToSpeech.setVoice(textToSpeech.getVoices().get(VOICE_LOQUENDO_WRONG_BUT_BUT_WRONG));
-        textToSpeech.speak("Cum.");
+        textToSpeech.speak(textToSpeech.getVoices().get(VOICE_LOQUENDO_WRONG_BUT_BUT_WRONG), "Cum.");
     }
 
     @Test
@@ -135,13 +131,11 @@ public class MicrosoftSapiPronunciationDictionaryTest {
 
     @Test
     public void testSAPIPronuncuation() throws InterruptedException, IOException {
-        textToSpeech.setVoice(textToSpeech.getVoices().get(VOICE_GERMAN));
-
         PronunciationDictionary pronunciationDictionary = new PronunciationDictionary(
                 new File(getClass().getResource("pronunciation").getPath()));
         textToSpeech.initPhoneticDictionary(pronunciationDictionary);
         // Speaks "Madame" as "Hello" as defined in the dictionary
-        textToSpeech.speak("Jawohl, Madame.");
+        textToSpeech.speak(textToSpeech.getVoices().get(VOICE_GERMAN), "Jawohl, Madame.");
     }
 
     @Test

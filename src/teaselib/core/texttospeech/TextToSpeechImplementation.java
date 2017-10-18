@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 public abstract class TextToSpeechImplementation {
     private static final Logger logger = LoggerFactory.getLogger(TextToSpeechImplementation.class);
 
+    // TODO Generalize this copy of Windows SAPI flags
     static int SPPS_Unknown = 0;
     static int SPPS_Noun = 0x1000;
     static int SPPS_Verb = 0x2000;

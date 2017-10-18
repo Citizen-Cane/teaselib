@@ -33,7 +33,6 @@ extern "C"
 
 	const wchar_t* voiceCategories[] = { SPCAT_VOICES_ONECORE, SPCAT_VOICES_SPEECH_SERVER,  SPCAT_VOICES };
 
-	HRESULT addVoices(const wchar_t* pszCatName, std::vector<Voice*>& voices, JNIEnv *env);
 	void buildVoiceMap(const std::vector<Voice*>& voices, JNIEnv *env, jobject voiceMap);
 
 	/*
@@ -79,7 +78,7 @@ extern "C"
 
 			std::vector<Voice*> voices;
 			for (int i = 0; i < sizeof(voiceCategories) / sizeof(wchar_t*); i++) {
-				hr = addVoices(voiceCategories[i], voices, env);
+				hr = speechSynthesizer->addVoices(voiceCategories[i], voices);
 				if (FAILED(hr)) break;
 			}
 			buildVoiceMap(voices, env, voiceMap);
@@ -89,34 +88,6 @@ extern "C"
 		}
 		catch (JNIException /**e*/) {
 			// Forwarded automatically
-		}
-	}
-
-	HRESULT addVoices(const wchar_t* pszCatName, std::vector<Voice*>& voices, JNIEnv *env) {
-		CComPtr<IEnumSpObjectTokens> cpEnum;
-		HRESULT hr = SpEnumTokens(pszCatName, NULL, NULL, &cpEnum);
-		const bool succeeded = SUCCEEDED(hr);
-		const bool notAvailable = hr == SPERR_NOT_FOUND;
-		assert(succeeded || notAvailable);
-		if (notAvailable) return S_FALSE;
-		if (succeeded) {
-			CComPtr<ISpObjectToken> cpVoiceToken;
-			if (SUCCEEDED(hr)) {
-				ULONG ulCount = 0;
-				hr = cpEnum->GetCount(&ulCount);
-				if (SUCCEEDED(hr)) {
-					while (ulCount--) {
-						hr = cpEnum->Next(1, &cpVoiceToken, NULL);
-						if (SUCCEEDED(hr)) {
-							voices.push_back(new Voice(env, cpVoiceToken));
-							cpVoiceToken.Release();
-						}
-						else {
-							break;
-						}
-					}
-				}
-			}
 		}
 	}
 

@@ -30,9 +30,11 @@ import teaselib.core.util.Environment;
 public class MicrosoftSapiCustomPronunciationTestEnglish {
     private static final Logger logger = LoggerFactory.getLogger(TextToSpeechTest.class);
 
-    static final String VOICE = "TTS_MS_en-US_ZiraPro_11.0";
+    static final String VOICE_GUID = "TTS_MS_en-US_ZiraPro_11.0";
 
     static TextToSpeech textToSpeech;
+
+    private static Voice voice;
 
     @BeforeClass
     public static void initSpeech() {
@@ -44,41 +46,40 @@ public class MicrosoftSapiCustomPronunciationTestEnglish {
         assertTrue(voices.size() > 0);
         logger.info(voices.keySet().toString());
 
-        Voice voice = voices.get(VOICE);
-        textToSpeech.setVoice(voice);
+        voice = voices.get(VOICE_GUID);
     }
 
     @Test
     public void testPronunciationOfCum() throws InterruptedException {
         // Cum with "u" -> wrong but can be replaced by "Come".
-        textToSpeech.speak("Cum.");
+        textToSpeech.speak(voice, "Cum.");
     }
 
     @Test
     public void testPronunciationDifferencesOfCumWithSSML() throws InterruptedException {
         // Cum with "u" -> wrong but can be replaced by "Come".
         // TODO Try whole sentence and phonemes and check whether the melody of the speech is preserved
-        textToSpeech.speak("You aren't allowed to cum without permission.");
-        textToSpeech.speak(
+        textToSpeech.speak(voice, "You aren't allowed to cum without permission.");
+        textToSpeech.speak(voice,
                 "<speak version=\"1.0\" xml:lang=\"en\">You aren't allowed to <phoneme alphabet=\"ipa\" ph=\"kʌm\"> cum </phoneme> without permission. </speak>");
-        textToSpeech.speak("You aren't allowed to come without permission.");
+        textToSpeech.speak(voice, "You aren't allowed to come without permission.");
         // -> corrections are similar
     }
 
     @Test
     public void testPronunciationOfCunt() throws InterruptedException {
-        textToSpeech.speak("Stupid cunt!");
+        textToSpeech.speak(voice, "Stupid cunt!");
     }
 
     @Test
     public void testPronunciationOfCuntEmphasized() throws InterruptedException {
-        textToSpeech.speak("Stupid <emph>cunt</emph>!");
+        textToSpeech.speak(voice, "Stupid <emph>cunt</emph>!");
     }
 
     @Test(expected = RuntimeException.class)
     public void revealPronunciationPronAmpersandProblem() throws InterruptedException {
         // TODO Word boundary operator causes error, &amp doesn't solve the issue
-        textToSpeech.speak("<pron sym=\"H EH 1 L OW & W ER 1 L D\"> replaced </pron> ");
+        textToSpeech.speak(voice, "<pron sym=\"H EH 1 L OW & W ER 1 L D\"> replaced </pron> ");
     }
 
     @Test
@@ -87,7 +88,7 @@ public class MicrosoftSapiCustomPronunciationTestEnglish {
         // https://en.wikipedia.org/wiki/Help:Pronunciation_respelling_key
         // https://msdn.microsoft.com/en-us/library/ms717239(v=vs.85).aspx
         // textToSpeech.speak("<pron sym=\"H EH 1 L OW W ER 1 L D\"> replaced </pron> ");
-        textToSpeech.speak("<pron sym=\"h eh 1 l ow   w er 1 l d\"> replaced </pron> ");
+        textToSpeech.speak(voice, "<pron sym=\"h eh 1 l ow   w er 1 l d\"> replaced </pron> ");
     }
 
     @Test
@@ -96,7 +97,7 @@ public class MicrosoftSapiCustomPronunciationTestEnglish {
         // https://en.wikipedia.org/wiki/Help:Pronunciation_respelling_key
         // https://msdn.microsoft.com/en-us/library/ms717239(v=vs.85).aspx
         // textToSpeech.speak("<pron sym=\"H EH 1 L OW W ER 1 L D\"> replaced </pron> ");
-        textToSpeech.speak("<pron sym=\"h eh 1 l ow   w er 1 l d\"> replaced </pron> ");
+        textToSpeech.speak(voice, "<pron sym=\"h eh 1 l ow   w er 1 l d\"> replaced </pron> ");
     }
 
     @Test
@@ -104,15 +105,15 @@ public class MicrosoftSapiCustomPronunciationTestEnglish {
     public void testPronunciationSAPIDISPTag() throws InterruptedException {
         // https://msdn.microsoft.com/en-us/library/ms717077(VS.85).aspx#Custom_Pronunciation
         // TODO Not for TTS, maybe just for recognition?
-        textToSpeech.speak("<P DISP=\"replace\" PRON=\"H EH 1 L OW  W ER 1 L D\"> replace </P> ");
-        textToSpeech.speak("<P>/replace/replace/H EH 1 L OW;</P>");
+        textToSpeech.speak(voice, "<P DISP=\"replace\" PRON=\"H EH 1 L OW  W ER 1 L D\"> replace </P> ");
+        textToSpeech.speak(voice, "<P>/replace/replace/H EH 1 L OW;</P>");
     }
 
     @Test
     public void testPronunciationSSMLPhonemeTagIPA() throws InterruptedException {
         // https://www.w3.org/TR/speech-synthesis/#S3.1.9
         // http://lingorado.com/ipa/
-        textToSpeech.speak(
+        textToSpeech.speak(voice,
                 "<speak version=\"1.0\" xml:lang=\"en\"><phoneme alphabet=\"ipa\" ph=\"hɛˈləʊ wɜːld\"> replaced. </phoneme> </speak>");
     }
 
@@ -120,7 +121,7 @@ public class MicrosoftSapiCustomPronunciationTestEnglish {
     public void testPronunciationSSMLPhonemeTagIPAOtherLanguage() throws InterruptedException {
         // https://www.w3.org/TR/speech-synthesis/#S3.1.9
         // http://lingorado.com/ipa/
-        textToSpeech.speak(
+        textToSpeech.speak(voice,
                 "<speak version=\"1.0\" xml:lang=\"en\"><phoneme alphabet=\"ipa\" ph=\"hɛˈləʊ wɜːld\"> replaced. </phoneme> </speak>");
     }
 

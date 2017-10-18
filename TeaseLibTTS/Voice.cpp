@@ -35,56 +35,67 @@ jobject getGenderField(JNIEnv *env, const wchar_t* gender) {
     return genderValue;
 }
 
-Voice::Voice(JNIEnv* env, ISpObjectToken* pVoiceToken)
-    : NativeObject(env)
-    , pVoiceToken(pVoiceToken) {
-    pVoiceToken->AddRef();
+Voice::Voice(JNIEnv* env, ISpObjectToken* pVoiceToken, jobject ttsImpl)
+	: NativeObject(env)
+	, pVoiceToken(pVoiceToken) {
+	pVoiceToken->AddRef();
 
 	// Guid
-    LPWSTR id;
-    HRESULT hr = pVoiceToken->GetId(&id);
-    guid = ::PathFindFileName(id);
+	LPWSTR id;
+	HRESULT hr = pVoiceToken->GetId(&id);
+	guid = ::PathFindFileName(id);
 	if (FAILED(hr)) throw new COMException(hr);
-	
+
 	Language language(pVoiceToken);
 
 	// Gender
-    LPWSTR gender;
-    hr = SpGetAttribute(pVoiceToken, L"Gender", &gender);
+	LPWSTR gender;
+	hr = SpGetAttribute(pVoiceToken, L"Gender", &gender);
 	if (FAILED(hr)) throw new COMException(hr);
 	jobject jgender = getGenderField(env, gender);
-    if (env->ExceptionCheck()) throw new JNIException(env);
+	if (env->ExceptionCheck()) throw new JNIException(env);
 
-	// Name
-    LPWSTR voiceName;
-    hr = pVoiceToken->GetStringValue(NULL, &voiceName);
-	if (FAILED(hr)) throw new COMException(hr);
-	
-	// Full name (Vendor, version, Name)
-    LPWSTR vendor;
-    hr = SpGetAttribute(pVoiceToken, L"Vendor", &vendor);
-    if (FAILED(hr)) throw new COMException(hr);
 
-	// api name
-	LPWSTR api = L"sapi";
+	jobject jvoiceInfo; {
+		// Full name (Vendor, version, Name)
+		LPWSTR vendor;
+		hr = SpGetAttribute(pVoiceToken, L"Vendor", &vendor);
+		if (FAILED(hr)) throw new COMException(hr);
 
-    jclass clazz = env->FindClass("teaselib/core/texttospeech/Voice");
-    if (env->ExceptionCheck()) throw new JNIException(env);
-    jlong thisPtr = reinterpret_cast<jlong>(this);
-	const char* signature = "(JLjava/lang/String;Ljava/lang/String;Ljava/lang/String;Lteaselib/core/texttospeech/Voice$Gender;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V";
+		// Name
+		LPWSTR voiceName;
+		hr = pVoiceToken->GetStringValue(NULL, &voiceName);
+		if (FAILED(hr)) throw new COMException(hr);
 
-	jthis = env->NewObject(
-                clazz,
-                JNIClass::getMethodID(env, clazz, "<init>", signature),
-                thisPtr,
-                JNIString(env, guid.c_str()).operator jstring(),
-                JNIString(env, language.name).operator jstring(),
-                JNIString(env, language.displayName).operator jstring(),
-                jgender,
-                JNIString(env, voiceName).operator jstring(),
-	        	JNIString(env, vendor).operator jstring(),
-	            JNIString(env, api).operator jstring());
+		jclass clazz = env->FindClass("teaselib/core/texttospeech/VoiceInfo");
+		if (env->ExceptionCheck()) throw new JNIException(env);
+		const char* signature = "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V";
 
+		jvoiceInfo = env->NewObject(
+			clazz,
+			JNIClass::getMethodID(env, clazz, "<init>", signature),
+			JNIString(env, vendor).operator jstring(),
+			JNIString(env, language.displayName).operator jstring(),
+			JNIString(env, voiceName).operator jstring());
+		if (env->ExceptionCheck()) throw new JNIException(env);
+	}
+
+	{
+		jclass clazz = env->FindClass("teaselib/core/texttospeech/Voice");
+		if (env->ExceptionCheck()) throw new JNIException(env);
+		const char* signature = "(JLteaselib/core/texttospeech/TextToSpeechImplementation;Ljava/lang/String;Ljava/lang/String;Lteaselib/core/texttospeech/Voice$Gender;Lteaselib/core/texttospeech/VoiceInfo;)V";
+
+		jthis = env->NewObject(
+			clazz,
+			JNIClass::getMethodID(env, clazz, "<init>", signature),
+			reinterpret_cast<jlong>(this),
+			ttsImpl,
+			JNIString(env, guid.c_str()).operator jstring(),
+			JNIString(env, language.sname).operator jstring(),
+			jgender,
+			jvoiceInfo);
+		if (env->ExceptionCheck()) throw new JNIException(env);
+	}
 	env->DeleteLocalRef(jgender);
     if (env->ExceptionCheck()) {
         throw new JNIException(env);

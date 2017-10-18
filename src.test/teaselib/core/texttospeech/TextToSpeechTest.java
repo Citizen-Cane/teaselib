@@ -41,8 +41,7 @@ public class TextToSpeechTest {
         for (Entry<String, Voice> entry : voices.entrySet()) {
             String testPrompt = "Test.";
             logger.info("Testing voice " + entry.getKey() + " - prompt =  '" + testPrompt + "'");
-            textToSpeech.setVoice(entry.getValue());
-            textToSpeech.speak(testPrompt);
+            textToSpeech.speak(entry.getValue(), testPrompt);
         }
     }
 }

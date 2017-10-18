@@ -436,7 +436,7 @@ public class RenderMessage extends MediaRendererThread {
         // Cancel TTS speech
         if (!hasCompletedMandatory()) {
             if (ttsPlayer != null) {
-                ttsPlayer.stop();
+                ttsPlayer.stop(message.actor);
             }
         }
         synchronized (interuptableAudio) {

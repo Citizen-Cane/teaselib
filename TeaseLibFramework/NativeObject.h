@@ -8,14 +8,10 @@
 class NativeObject
 {
 public:
-	NativeObject(JNIEnv *env)
-		: env(env)
-	{
+	NativeObject(JNIEnv *env) : env(env) {
 	}
 
-	NativeObject(JNIEnv *env, jobject jthis)
-		: env(env)
-	{
+	NativeObject(JNIEnv *env, jobject jthis) : env(env), jthis(jthis) {
 		jclass nativeObjectClass = env->GetObjectClass(jthis);
 		if (env->ExceptionCheck()) throw new JNIException(env);
 		const jlong nativeObject = reinterpret_cast<jlong>(this);
@@ -23,66 +19,53 @@ public:
 		if (env->ExceptionCheck()) throw new JNIException(env);
 	}
 
-	virtual ~NativeObject()
-	{
+	virtual ~NativeObject()	{
 	}
 
-	operator jobject() const
-	{
+	operator jobject() const {
 		return jthis;
 	}
 
-	NativeObject &operator=(jobject rvalue)
-	{
+	NativeObject &operator=(jobject rvalue) {
 		this->jthis = rvalue;
 		return *this;
 	}
 
-	static NativeObject* get(JNIEnv * env, jobject jthis)
-	{
+	static NativeObject* get(JNIEnv * env, jobject jthis) {
 		if (jthis == NULL) return NULL;
 		// Won't get the private field from the base class, but from the derived class
 		jclass nativeObjectClass = env->GetObjectClass(jthis);
 		if (env->ExceptionCheck()) throw new JNIException(env);
 		jlong x = env->GetLongField(jthis, env->GetFieldID(nativeObjectClass, "nativeObject", "J"));
 		if (env->ExceptionCheck()) throw new JNIException(env);
-		if (x)
-		{
+		if (x) {
 			NativeObject* nativeObject = reinterpret_cast<NativeObject*>(x);
 			*nativeObject = jthis;
 			return nativeObject;
 		}
-		else
-		{
+		else {
 			return NULL;
 		}
 	}
 
-	static void dispose(JNIEnv * env, jobject jthis)
-	{
-		try
-		{
+	static void dispose(JNIEnv * env, jobject jthis) {
+		try {
 			NativeObject* nativeObject = get(env, jthis);
 			delete nativeObject;
 		}
-		catch (NativeException* e)
-		{
+		catch (NativeException* e) {
 			JNIException::throwNew(env, e);
 		}
-		catch (JNIException* /*e*/)
-		{
+		catch (JNIException* /*e*/)	{
 			// Forwarded automatically
 		}
-		catch (...)
-		{
+		catch (...)	{
 			// Ignore
 		}
 	}
 
-	static void checkInitializedOrThrow(const NativeObject* nativeObject)
-	{
-		if (nativeObject == NULL)
-		{
+	static void checkInitializedOrThrow(const NativeObject* nativeObject) {
+		if (nativeObject == NULL) {
 			assert(false);
 			throw new NativeException(E_POINTER, L"Unitialized native object");
 		}

@@ -2,7 +2,6 @@ package teaselib.core.texttospeech;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
@@ -79,7 +78,7 @@ public class TextToSpeechPlayer {
         preferredVoices = new PreferredVoices();
     }
 
-    public TextToSpeechPlayer(Configuration config, TextToSpeechImplementation textToSpeechImplementation) {
+    TextToSpeechPlayer(Configuration config, TextToSpeechImplementation textToSpeechImplementation) {
         this(config);
         initTextToSpeech(new TextToSpeech(textToSpeechImplementation));
     }
@@ -132,7 +131,7 @@ public class TextToSpeechPlayer {
         }
     }
 
-    public void readPreferredVoices() throws FileNotFoundException, IOException {
+    public void readPreferredVoices() throws IOException {
         if (config.has(Settings.Voices)) {
             preferredVoices.load(new File(config.get(Settings.Voices)));
         }
@@ -292,7 +291,7 @@ public class TextToSpeechPlayer {
 
     private Voice getMatchingVoiceFor(Actor actor) {
         // Filter the actor's gender
-        List<Voice> genderFilteredVoices = new ArrayList<Voice>();
+        List<Voice> genderFilteredVoices = new ArrayList<>();
         for (Entry<String, Voice> voice : voices.entrySet()) {
             if (actor.gender == voice.getValue().gender) {
                 genderFilteredVoices.add(voice.getValue());
@@ -374,11 +373,8 @@ public class TextToSpeechPlayer {
         boolean useTTS = textToSpeech.isReady();
         if (useTTS) {
             Voice voice = getVoiceFor(actor);
-            // Synchronize speaking, only one actor can speak at a time
-            textToSpeech.setVoice(voice);
-            textToSpeech.setHint(mood);
             try {
-                textToSpeech.speak(pronounciationDictionary.correct(voice, prompt));
+                textToSpeech.speak(voice, pronounciationDictionary.correct(voice, prompt), new String[] { mood });
             } catch (IOException e) {
                 logger.warn(e.getMessage(), e);
             } catch (RuntimeException e) {
@@ -390,9 +386,9 @@ public class TextToSpeechPlayer {
         }
     }
 
-    public void stop() {
+    public void stop(Actor actor) {
         if (textToSpeech != null) {
-            textToSpeech.stop();
+            textToSpeech.stop(getVoiceFor(actor));
         }
     }
 

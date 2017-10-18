@@ -21,7 +21,13 @@ public class TestTTS extends TextToSpeechImplementation {
     final Map<String, String> phonemes = new HashMap<>();
 
     public TestTTS(Voice... voices) {
-        this.voices = new LinkedHashSet<Voice>(Arrays.asList(voices));
+        this.voices = new LinkedHashSet<>(Arrays.asList(voices));
+    }
+
+    public void addVoices(Voice... voices) {
+        for (Voice voice : voices) {
+            this.voices.add(voice);
+        }
     }
 
     @Override

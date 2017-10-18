@@ -3,23 +3,24 @@ package teaselib.core.texttospeech;
 import java.util.Locale;
 
 import teaselib.core.jni.NativeObject;
+import teaselib.core.texttospeech.implementation.TextToSpeechImplementationDebugProxy;
 
 /**
- * @author someone
+ * @author Citizen-Cane
  * 
  */
 public class Voice extends NativeObject {
+    final TextToSpeechImplementation ttsImpl;
     /**
      * A unique identifier for the voice. Only alphanumeric characters and dots are allowed. Avoid file system
      * characters like '/', '\', ':'.
      */
     public final String guid;
+    public final Gender gender;
     public final String locale;
     public final String language;
-    public final Gender gender;
     public final String name;
     public final String vendor;
-    public final String api;
 
     public enum Gender {
         Male,
@@ -27,16 +28,17 @@ public class Voice extends NativeObject {
         Robot
     }
 
-    public Voice(long nativeObject, String guid, String locale, String language, Gender gender, String name,
-            String vendor, String api) {
+    public Voice(long nativeObject, TextToSpeechImplementation ttsImpl, String guid, String locale, Gender gender,
+            VoiceInfo voiceInfo) {
         super(nativeObject);
+        this.ttsImpl = new TextToSpeechImplementationDebugProxy(ttsImpl);
+
         this.guid = guid;
         this.gender = gender;
         this.locale = locale;
-        this.language = language;
-        this.name = name;
-        this.vendor = vendor;
-        this.api = api;
+        this.language = voiceInfo.language;
+        this.name = voiceInfo.name;
+        this.vendor = voiceInfo.vendor;
     }
 
     public boolean matches(Locale locale) {
@@ -46,6 +48,6 @@ public class Voice extends NativeObject {
     @Override
     public String toString() {
         return "[guid=" + guid + ", gender= " + gender + ", locale=" + locale + ", language=" + language + ", name="
-                + name + ", vendor=" + vendor + ", api=" + api + "]";
+                + name + ", vendor=" + vendor + ", sdk=" + ttsImpl.sdkName() + "]";
     }
 }

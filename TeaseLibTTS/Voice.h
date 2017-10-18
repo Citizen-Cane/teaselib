@@ -6,7 +6,7 @@
 class Voice : public NativeObject, protected COMUser
 {
 public:
-	Voice(JNIEnv* env, ISpObjectToken* pVoiceToken);
+	Voice(JNIEnv* env, ISpObjectToken* pVoiceToken, jobject ttsImpl);
 	virtual ~Voice();
 	operator ISpObjectToken*() const;
 	std::wstring guid;

@@ -31,8 +31,8 @@ using namespace std;
 	int rateReading = -2;
 #endif
 
-SpeechSynthesizer::SpeechSynthesizer(JNIEnv *env, jobject jthis)
-    : NativeObject(env, jthis), pVoice(nullptr), cancelSpeech(false) {
+SpeechSynthesizer::SpeechSynthesizer(JNIEnv *env, jobject ttsImpl)
+    : NativeObject(env, ttsImpl), pVoice(nullptr), cancelSpeech(false) {
     HRESULT hr = CoCreateInstance(CLSID_SpVoice, NULL, CLSCTX_ALL, IID_ISpVoice, (void **)&pVoice);
     assert(SUCCEEDED(hr));
     if (FAILED(hr)) {
@@ -44,6 +44,34 @@ SpeechSynthesizer::SpeechSynthesizer(JNIEnv *env, jobject jthis)
 SpeechSynthesizer::~SpeechSynthesizer() {
     pVoice->Release();
     pVoice = nullptr;
+}
+
+HRESULT SpeechSynthesizer::addVoices(const wchar_t* pszCatName, std::vector<Voice*>& voices) {
+	CComPtr<IEnumSpObjectTokens> cpEnum;
+	HRESULT hr = SpEnumTokens(pszCatName, NULL, NULL, &cpEnum);
+	const bool succeeded = SUCCEEDED(hr);
+	const bool notAvailable = hr == SPERR_NOT_FOUND;
+	assert(succeeded || notAvailable);
+	if (notAvailable) return S_FALSE;
+	if (succeeded) {
+		CComPtr<ISpObjectToken> cpVoiceToken;
+		if (SUCCEEDED(hr)) {
+			ULONG ulCount = 0;
+			hr = cpEnum->GetCount(&ulCount);
+			if (SUCCEEDED(hr)) {
+				while (ulCount--) {
+					hr = cpEnum->Next(1, &cpVoiceToken, NULL);
+					if (SUCCEEDED(hr)) {
+						voices.push_back(new Voice(env, cpVoiceToken, jthis));
+						cpVoiceToken.Release();
+					}
+					else {
+						break;
+					}
+				}
+			}
+		}
+	}
 }
 
 // Well, I didn't have much luck with the XML tags,

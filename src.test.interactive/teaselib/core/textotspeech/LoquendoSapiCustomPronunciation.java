@@ -1,6 +1,6 @@
 package teaselib.core.textotspeech;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertTrue;
 
 import java.util.Map;
 
@@ -30,6 +30,7 @@ public class LoquendoSapiCustomPronunciation {
     static final String PROMPT0b = "<emph>cunt</emph>!";
 
     // IPA pronunciation ignored
+    // Unlike 4e, "cunt" is pronounced correctly inside the tag
     static final String PROMPT1a = "<P DISP=\"cunt\" PRON=\"H EH 1 L OW & W ER 1 L D\"> cunt </P> ";
     static final String PROMPT1b = "<P DISP=\"cunt\" PRON=\"h eh 1 l ow\"> cunt</P> ";
     // not recognized as pronunciation, maybe only for recognition?
@@ -51,14 +52,16 @@ public class LoquendoSapiCustomPronunciation {
     static final String PROMPT3g = "\\ipa(le g&#640;&#712;&#593;&#771;&#658;) ";
 
     // TODO phonemes ignored in 4a for both
-    static final String PROMPT4a = "<speak version=“1.0” xml:lang=“en”><phoneme ph=“t&#x259;mei&#x325;&#x27E;ou&#x325;”>cunt</phoneme> </speak>";
+    static final String PROMPT4a = "<speak version=â€œ1.0â€� xml:lang=â€œenâ€�><phoneme ph=â€œt&#x259;mei&#x325;&#x27E;ou&#x325;â€�>cunt</phoneme> </speak>";
     // - 4b works with MS, COM-error with LQ voices, maybe because the & is not preceeded by a letter
     static final String PROMPT4b = "<speak version=\"1.0\" xml:lang=\"en\"><phoneme  ph=\"&#x2A7;&#xe6;&#x254;&#x2C8;&#x2D0;\">cunt</phoneme> </speak>";
     // Tomato example from https://www.w3.org/TR/speech-synthesis11/#S3.1.10 -> speaks tomato for MS voices -> Right!
     // Phoneme ignored by Loquendo, must activate something, look into programmer guide
+    // In Prompt 4c-4e, "cunt" inside the phoneme tag is pronounced wrong by Loquendo,"cunt" outside the phoneme tag is
+    // pronounced better, but not yet correct, MS pronounces both occurrences correctly
     static final String PROMPT4c = "<speak version=\"1.0\" xml:lang=\"en\"><phoneme alphabet=\"ipa\" ph=\"t&#x259;mei&#x325;&#x27E;ou&#x325;\"> cunt </phoneme> cunt </speak>";
     static final String PROMPT4d = "<speak version=\"1.1\" xml:lang=\"en\"><phoneme alphabet=\"ipa\" ph=\"t&#x259;mei&#x325;&#x27E;ou&#x325;\"> cunt </phoneme> cunt </speak>";
-    static final String PROMPT4e = "<speak version=\"1.1\" xml:lang=\"en\"><phoneme alphabet=\"ipa\" ph=\"təmei̥ɾou̥\"> cunt </phoneme> cunt </speak>";
+    static final String PROMPT4e = "<speak version=\"1.1\" xml:lang=\"en\"><phoneme alphabet=\"ipa\" ph=\"tÉ™meiÌ¥É¾ouÌ¥\"> cunt </phoneme> cunt </speak>";
 
     static final String PROMPT4f = "<speak version=\"1.0\" xml:lang=\"en\"> \\SAMPA=(k A n t) hello </speak>";
     static final String PROMPT4g = "<speak version=\"1.1\" xml:lang=\"en\"> \\SAMPA=(k A n t) hello </speak>";
@@ -80,13 +83,13 @@ public class LoquendoSapiCustomPronunciation {
 
     // Loquendo still has the best voices (at least of the ones I have).
     // - Controls and effects of Loquendo Director are nice
-    // - \ipa(...) workds without a newline (unlike >sampa(...) which seems to have a parsing bug)
-    // -> replacing words with ipa pronounciation breaks sentences nevertheless because the TTS engine doesn't know
-    // which exact word is pronounced - that information is missing, so in fact \ipa(ˈstjuːpɪd kʌnt) improves
-    // pronounciation but makes the sentence sound less good.
+    // - \ipa(...) words without a newline (unlike >sampa(...) which seems to have a parsing bug)
+    // -> replacing words with ipa pronunciation breaks sentences nevertheless because the TTS engine doesn't know
+    // which exact word is pronounced - that information is missing, so in fact \ipa(ËˆstjuË�pÉªd kÊŒnt) improves
+    // pronunciation but makes the sentence sound less good.
 
-    String prompt = PROMPT7a;
-    String voiceGuid = LQ_VOICE;
+    String prompt = PROMPT4e;
+    String voiceGuid = MS_VOICE;
 
     @Test
     public void testCustomPronunciation() throws InterruptedException {
@@ -100,8 +103,7 @@ public class LoquendoSapiCustomPronunciation {
         Voice voice = voices.get(voiceGuid);
         logger.info(voice + " -> " + prompt);
 
-        textToSpeech.setVoice(voice);
-        textToSpeech.speak(prompt);
+        textToSpeech.speak(voice, prompt);
     }
 
 }

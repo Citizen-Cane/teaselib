@@ -1,6 +1,6 @@
 package teaselib.core.textotspeech;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertTrue;
 
 import java.util.Map;
 
@@ -21,7 +21,8 @@ import teaselib.core.util.Environment;
 public class MicrosoftSapiCustomPronunciationTestGerman {
     private static final Logger logger = LoggerFactory.getLogger(TextToSpeechTest.class);
 
-    static final String VOICE = "MSTTS_V110_deDE_Katja";
+    static final String VOICE_SAPI = "TTS_MS_DE-DE_HEDDA_11.0";
+    static final String VOICE_MSSPEECH = "MSTTS_V110_deDE_KatjaM";
 
     static TextToSpeech textToSpeech;
     static Voice voice;
@@ -36,16 +37,15 @@ public class MicrosoftSapiCustomPronunciationTestGerman {
         assertTrue(voices.size() > 0);
         logger.info(voices.keySet().toString());
 
-        voice = voices.get(VOICE);
-        textToSpeech.setVoice(voice);
+        voice = voices.get(VOICE_SAPI);
     }
 
     @Test
     public void testPronunciationSSMLPhonemeTagIPAOtherLanguage() throws InterruptedException {
         // https://www.w3.org/TR/speech-synthesis/#S3.1.9
         // https://easypronunciation.com/de/french-phonetic-transcription-converter#result
-        textToSpeech.speak("<speak version=\"1.0\" xml:lang=\"de\">Jawohl, Madame.</speak>");
-        textToSpeech.speak(
+        textToSpeech.speak(voice, "<speak version=\"1.0\" xml:lang=\"de\">Jawohl, Madame.</speak>");
+        textToSpeech.speak(voice,
                 "<speak version=\"1.0\" xml:lang=\"de\">Jawohl, <phoneme alphabet=\"ipa\" ph=\"madam\"> Madame. </phoneme> </speak>");
     }
 

@@ -221,3 +221,4 @@ lib/TeaseLib.jar
 lib/TeaseLib_tests.jar
 /bin.test/
 /bin.test.interactive/
+/.vs/

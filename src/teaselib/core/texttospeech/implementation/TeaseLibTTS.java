@@ -1,6 +1,6 @@
 package teaselib.core.texttospeech.implementation;
 
-import java.util.Map;
+import java.util.List;
 
 import teaselib.core.texttospeech.TextToSpeechImplementation;
 import teaselib.core.texttospeech.Voice;
@@ -35,7 +35,7 @@ public class TeaseLibTTS extends TextToSpeechImplementation {
     public native void addLexiconEntry(String locale, String word, int partOfSpeech, String pronunciation);
 
     @Override
-    public native void getVoices(Map<String, Voice> voices);
+    public native List<Voice> getVoices();
 
     @Override
     public native void setVoice(Voice voice);

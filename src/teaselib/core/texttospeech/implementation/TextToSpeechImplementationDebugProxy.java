@@ -3,7 +3,7 @@
  */
 package teaselib.core.texttospeech.implementation;
 
-import java.util.Map;
+import java.util.List;
 
 import teaselib.core.texttospeech.TextToSpeechImplementation;
 import teaselib.core.texttospeech.Voice;
@@ -45,8 +45,8 @@ public class TextToSpeechImplementationDebugProxy extends TextToSpeechImplementa
     }
 
     @Override
-    public void getVoices(Map<String, Voice> voices) {
-        tts.getVoices(voices);
+    public List<Voice> getVoices() {
+        return tts.getVoices();
     }
 
     @Override

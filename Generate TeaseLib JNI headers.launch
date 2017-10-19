@@ -6,6 +6,6 @@
 <listEntry value="org.eclipse.ui.externaltools.launchGroup"/>
 </listAttribute>
 <stringAttribute key="org.eclipse.ui.externaltools.ATTR_LOCATION" value="C:\Program Files\Java\jdk1.8.0_144\bin\javah.exe"/>
-<stringAttribute key="org.eclipse.ui.externaltools.ATTR_TOOL_ARGUMENTS" value="-classpath ${project_loc}\src\ -v -d include teaselib.core.jni.NativeObject teaselib.core.texttospeech.implementation.TeaseLibTTS teaselib.core.speechrecognition.implementation.TeaseLibSR teaselib.core.devices.xinput.XInputDevice"/>
+<stringAttribute key="org.eclipse.ui.externaltools.ATTR_TOOL_ARGUMENTS" value="-classpath src\ -v -d include teaselib.core.jni.NativeObject teaselib.core.texttospeech.implementation.TeaseLibTTS teaselib.core.speechrecognition.implementation.TeaseLibSR teaselib.core.devices.xinput.XInputDevice"/>
 <stringAttribute key="org.eclipse.ui.externaltools.ATTR_WORKING_DIRECTORY" value="${workspace_loc:/TeaseLib}"/>
 </launchConfiguration>

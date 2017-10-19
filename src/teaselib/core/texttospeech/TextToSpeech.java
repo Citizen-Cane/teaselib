@@ -12,9 +12,6 @@ import java.util.Set;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import teaselib.core.ScriptInterruptedException;
 import teaselib.core.events.Delegate;
 import teaselib.core.events.DelegateExecutor;
@@ -22,8 +19,6 @@ import teaselib.core.texttospeech.implementation.TeaseLibTTS;
 import teaselib.core.util.ExceptionUtil;
 
 public class TextToSpeech {
-    private static final Logger logger = LoggerFactory.getLogger(TextToSpeech.class);
-
     private final Map<String, TextToSpeechImplementation> ttsSDKs = new LinkedHashMap<>();
     private final Map<String, DelegateExecutor> ttsExecutors = new LinkedHashMap<>();
 
@@ -97,8 +92,12 @@ public class TextToSpeech {
 
     private void addSDK(TextToSpeechImplementation ttsImpl, DelegateExecutor executor) {
         Map<String, Voice> newVoices = new LinkedHashMap<>();
-        ttsImpl.getVoices(newVoices);
-        removeBlackListed(newVoices);
+        for (Voice voice : ttsImpl.getVoices()) {
+            if (!isBlackListed(voice)) {
+                newVoices.put(voice.guid, voice);
+            }
+        }
+
         if (!newVoices.isEmpty()) {
             voices.putAll(newVoices);
             ttsSDKs.put(ttsImpl.sdkName(), ttsImpl);
@@ -108,7 +107,7 @@ public class TextToSpeech {
         }
     }
 
-    private DelegateExecutor newDelegateExecutor() {
+    private static DelegateExecutor newDelegateExecutor() {
         return new DelegateExecutor("Speech Synthesis dispatcher thread");
     }
 
@@ -126,10 +125,8 @@ public class TextToSpeech {
     /**
      * @param voices
      */
-    private static void removeBlackListed(Map<String, Voice> voices) {
-        for (String blackListed : BlackList) {
-            voices.remove(blackListed);
-        }
+    private static boolean isBlackListed(Voice voice) {
+        return BlackList.contains(voice.guid);
     }
 
     public void speak(Voice voice, String prompt) throws InterruptedException {
@@ -235,23 +232,8 @@ public class TextToSpeech {
 
     public void initPhoneticDictionary(PronunciationDictionary pronunciationDictionary) throws IOException {
         for (Entry<String, TextToSpeechImplementation> ttsSDK : ttsSDKs.entrySet()) {
-            TextToSpeechImplementation tts = ttsSDK.getValue();
-
-            Map<String, Map<String, String>> phonemes = pronunciationDictionary.pronunciations(tts.sdkName(),
-                    tts.phonemeAlphabetName());
-            for (Entry<String, Map<String, String>> entry : phonemes.entrySet()) {
-                String locale = entry.getKey();
-                Map<String, String> locale2Dictionary = entry.getValue();
-                for (Entry<String, String> dictionary : locale2Dictionary.entrySet()) {
-                    String word = dictionary.getKey();
-                    String pronunciation = dictionary.getValue();
-                    // TODO Define part of speech in phoneme dictionary instead of setting all flags
-                    int partOfSpeech = TextToSpeechImplementation.SPPS_Noun | TextToSpeechImplementation.SPPS_Verb
-                            | TextToSpeechImplementation.SPPS_Modifier | TextToSpeechImplementation.SPPS_Function
-                            | TextToSpeechImplementation.SPPS_Interjection;
-                    tts.addLexiconEntry(locale, word, partOfSpeech, pronunciation);
-                }
-            }
+            ttsSDK.getValue().setPhoneticDictionary(pronunciationDictionary);
         }
     }
+
 }

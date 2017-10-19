@@ -18,10 +18,10 @@ JNIEXPORT void JNICALL Java_teaselib_core_texttospeech_implementation_TeaseLibTT
 /*
  * Class:     teaselib_core_texttospeech_implementation_TeaseLibTTS
  * Method:    getVoices
- * Signature: (Ljava/util/Map;)V
+ * Signature: ()Ljava/util/List;
  */
-JNIEXPORT void JNICALL Java_teaselib_core_texttospeech_implementation_TeaseLibTTS_getVoices
-  (JNIEnv *, jobject, jobject);
+JNIEXPORT jobject JNICALL Java_teaselib_core_texttospeech_implementation_TeaseLibTTS_getVoices
+  (JNIEnv *, jobject);
 
 /*
  * Class:     teaselib_core_texttospeech_implementation_TeaseLibTTS

@@ -33,7 +33,7 @@ extern "C"
 
 	const wchar_t* voiceCategories[] = { SPCAT_VOICES_ONECORE, SPCAT_VOICES_SPEECH_SERVER,  SPCAT_VOICES };
 
-	void buildVoiceMap(const std::vector<Voice*>& voices, JNIEnv *env, jobject voiceMap);
+	jobject jvoiceList(const std::vector<Voice*>& voices, JNIEnv *env);
 
 	/*
 	* Class:     teaselib_core_texttospeech_implementation_TeaseLibTTS
@@ -65,8 +65,8 @@ extern "C"
 	* Method:    getInstalledVoices
 	* Signature: (Ljava/util/Map;)V
 	*/
-	JNIEXPORT void JNICALL Java_teaselib_core_texttospeech_implementation_TeaseLibTTS_getVoices
-		(JNIEnv *env, jobject jthis, jobject voiceMap) {
+	JNIEXPORT jobject JNICALL Java_teaselib_core_texttospeech_implementation_TeaseLibTTS_getVoices
+		(JNIEnv *env, jobject jthis) {
 		try {
 			COMUser comUser;
 			HRESULT hr = S_OK;
@@ -81,7 +81,7 @@ extern "C"
 				hr = speechSynthesizer->addVoices(voiceCategories[i], voices);
 				if (FAILED(hr)) break;
 			}
-			buildVoiceMap(voices, env, voiceMap);
+			return jvoiceList(voices, env);
 		}
 		catch (NativeException *e) {
 			JNIException::throwNew(env, e);
@@ -91,18 +91,24 @@ extern "C"
 		}
 	}
 
-	void buildVoiceMap(const std::vector<Voice*>& voices, JNIEnv *env, jobject voiceMap) {
-		jclass mapClass = JNIClass::getClass(env, "java/util/HashMap");
+	jobject jvoiceList(const std::vector<Voice*>& voices, JNIEnv *env) {
+		jclass listClass = JNIClass::getClass(env, "java/util/ArrayList");
+		jobject jvoiceList = env->NewObject(
+			listClass,
+			JNIClass::getMethodID(env, listClass, "<init>", "(I)V"),
+			voices.size());
+		if (env->ExceptionCheck()) throw new JNIException(env);
+
 		std::for_each(voices.begin(), voices.end(), [&](const Voice * voice) {
 			JNIString key(env, voice->guid.c_str());
 			jobject jvoice = *voice;
 			env->CallObjectMethod(
-				voiceMap,
-				env->GetMethodID(mapClass, "put", "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;"), key.operator jstring(), jvoice);
-			if (env->ExceptionCheck()) {
-				throw new JNIException(env);
-			}
+				jvoiceList,
+				env->GetMethodID(listClass, "add", "(Ljava/lang/Object;)Z"), jvoice);
+			if (env->ExceptionCheck()) throw new JNIException(env);
 		});
+
+		return jvoiceList;
 	}
 
     /*

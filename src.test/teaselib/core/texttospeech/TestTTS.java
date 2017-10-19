@@ -1,13 +1,10 @@
-/**
- * 
- */
 package teaselib.core.texttospeech;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * @author Citizen-Cane
@@ -16,12 +13,12 @@ import java.util.Set;
 public class TestTTS extends TextToSpeechImplementation {
     static final String SDK_NAME = "testtts";
 
-    final Set<Voice> voices;
+    final List<Voice> voices;
 
     final Map<String, String> phonemes = new HashMap<>();
 
     public TestTTS(Voice... voices) {
-        this.voices = new LinkedHashSet<>(Arrays.asList(voices));
+        this.voices = new ArrayList<>(Arrays.asList(voices));
     }
 
     public void addVoices(Voice... voices) {
@@ -31,10 +28,8 @@ public class TestTTS extends TextToSpeechImplementation {
     }
 
     @Override
-    public void getVoices(Map<String, Voice> voices) {
-        for (Voice voice : this.voices) {
-            voices.put(voice.guid, voice);
-        }
+    public List<Voice> getVoices() {
+        return voices;
     }
 
     @Override
@@ -56,7 +51,7 @@ public class TestTTS extends TextToSpeechImplementation {
         return phonemes.get(normalized(locale) + "." + word);
     }
 
-    private String normalized(String locale) {
+    private static String normalized(String locale) {
         if (locale.contains("-")) {
             return locale;
         } else {

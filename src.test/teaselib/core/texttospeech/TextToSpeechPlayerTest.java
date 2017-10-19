@@ -1,11 +1,12 @@
 package teaselib.core.texttospeech;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static teaselib.core.texttospeech.Voice.Gender.Male;
+import static org.junit.Assert.*;
+import static teaselib.core.texttospeech.Voice.Gender.*;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
@@ -13,7 +14,9 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import teaselib.Actor;
+import teaselib.Mood;
 import teaselib.core.Configuration;
+import teaselib.core.texttospeech.implementation.TextToSpeechImplementationDebugProxy;
 import teaselib.test.DebugSetup;
 
 public class TextToSpeechPlayerTest {
@@ -111,10 +114,8 @@ public class TextToSpeechPlayerTest {
 
     @Test
     public void testPhonemeDictionarySetup() throws IOException {
-        Configuration config = DebugSetup.getConfiguration();
-        config.set(TextToSpeechPlayer.Settings.Pronunciation, getClass().getResource("pronunciation").getPath());
-
-        new TextToSpeechPlayer(config, testTTS);
+        testTTS.setPhoneticDictionary(
+                new PronunciationDictionary(new File(getClass().getResource("pronunciation").getPath())));
 
         assertEquals("madam", testTTS.getEntry("fr", "Madame"));
         assertEquals("madam", testTTS.getEntry("fr-fr", "Madame"));
@@ -122,5 +123,27 @@ public class TextToSpeechPlayerTest {
         assertEquals("H EH 1 L OW", testTTS.getEntry("en-au", "Hello"));
         assertNull(testTTS.getEntry("en-uk", "Hello world"));
         assertNull(testTTS.getEntry("fr", "UPS-Ignored"));
+    }
+
+    @Test
+    public void testTextTOSpeechPlayerPhonemeDictionarySetup() throws InterruptedException {
+        Configuration config = DebugSetup.getConfiguration();
+        config.set(TextToSpeechPlayer.Settings.Pronunciation, getClass().getResource("pronunciation").getPath());
+
+        TextToSpeechImplementation tts = new TextToSpeechImplementationDebugProxy(new TestTTS() {
+            @Override
+            public List<Voice> getVoices() {
+                return Arrays.asList(
+                        new Voice(0, this, "Foo", "en-au", Male, new VoiceInfo("Test", "English-AU", "Mr.Foo")));
+            }
+
+            @Override
+            public void speak(String prompt) {
+                assertEquals("H EH 1 L OW", getEntry("en-au", prompt));
+            }
+        });
+
+        TextToSpeechPlayer textToSpeechPlayer = new TextToSpeechPlayer(config, tts);
+        textToSpeechPlayer.speak(new Actor("Mr.Foo", Male, Locale.forLanguageTag("en-au")), "Hello", Mood.Neutral);
     }
 }

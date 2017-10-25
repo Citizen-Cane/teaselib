@@ -20,6 +20,7 @@ import java.util.zip.ZipFile;
  * list resources available from the class path @ *
  */
 public class ResourceList {
+    public static final String PathDelimiter = "/";
 
     private final String resourceRoot;
 
@@ -28,15 +29,14 @@ public class ResourceList {
     }
 
     /**
-     * for all elements of java.class.path get a Collection of resources Pattern
-     * pattern = Pattern.compile(".*"); gets all resources
+     * for all elements of java.class.path get a Collection of resources Pattern pattern = Pattern.compile(".*"); gets
+     * all resources
      * 
      * @param pattern
      *            the pattern to match
      * @return the resources in the order they are found
      */
-    public Collection<String> getResources(final URI basePath,
-            final Pattern pattern) {
+    public Collection<String> getResources(final URI basePath, final Pattern pattern) {
         final ArrayList<String> retval = new ArrayList<String>();
         final File file = new File(basePath.getPath());
         if (file.isDirectory()) {
@@ -47,8 +47,7 @@ public class ResourceList {
         return retval;
     }
 
-    private Collection<String> getResourcesFromJarFile(File file,
-            Pattern pattern) {
+    private Collection<String> getResourcesFromJarFile(File file, Pattern pattern) {
         ArrayList<String> retval = new ArrayList<String>();
         ZipFile zf;
         try {
@@ -73,14 +72,12 @@ public class ResourceList {
         return retval;
     }
 
-    private Collection<String> getResourcesFromDirectory(URI basePath,
-            File directory, Pattern pattern) {
+    private Collection<String> getResourcesFromDirectory(URI basePath, File directory, Pattern pattern) {
         ArrayList<String> retval = new ArrayList<String>();
         File[] fileList = directory.listFiles();
         for (final File file : fileList) {
             if (file.isDirectory()) {
-                retval.addAll(
-                        getResourcesFromDirectory(basePath, file, pattern));
+                retval.addAll(getResourcesFromDirectory(basePath, file, pattern));
             } else {
                 URI absolute = file.toURI();
                 URI relative = basePath.relativize(absolute);
@@ -91,8 +88,7 @@ public class ResourceList {
         return retval;
     }
 
-    private void addMatchingEntry(Pattern pattern, Collection<String> retval,
-            String resourcePath) {
+    private void addMatchingEntry(Pattern pattern, Collection<String> retval, String resourcePath) {
         if (resourcePath.startsWith(resourceRoot)) {
             if (pattern.matcher(resourcePath).matches()) {
                 retval.add(resourcePath);

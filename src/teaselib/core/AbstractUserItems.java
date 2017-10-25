@@ -141,7 +141,7 @@ public abstract class AbstractUserItems implements UserItems {
         } else if (item.equals(Toys.Humbler)) {
             return new Body[] { Body.OnBalls, Body.CantStand, Body.CantSitOnChair };
         } else if (item.equals(Toys.Pussy_Clamps)) {
-            return new Body[] { Body.OnLabia };
+            return new Body[] { Body.OnLabia, Body.OnBalls };
         } else if (item.equals(Toys.Spreader_Bar)) {
             return new Body[] {};
         } else if (item.equals(Toys.EStim_Device)) {

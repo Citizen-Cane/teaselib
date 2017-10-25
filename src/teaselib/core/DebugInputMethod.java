@@ -9,7 +9,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
-import teaselib.core.DebugResponses.Result;
+import teaselib.core.debug.DebugResponses;
+import teaselib.core.debug.TimeAdvanceListener;
+import teaselib.core.debug.DebugResponses.Result;
 import teaselib.core.ui.InputMethod;
 import teaselib.core.ui.Prompt;
 
@@ -18,30 +20,27 @@ import teaselib.core.ui.Prompt;
  *
  */
 public class DebugInputMethod implements InputMethod {
-    final AtomicReference<Prompt> activePrompt = new AtomicReference<Prompt>();
+    final AtomicReference<Prompt> activePrompt = new AtomicReference<>();
     final AtomicLong elapsed = new AtomicLong();
 
-    private final TimeAdvanceListener timeAdvanceListener = new TimeAdvanceListener() {
-        @Override
-        public void timeAdvanced(TimeAdvancedEvent e) {
-            Prompt prompt = activePrompt.get();
-            if (prompt != null) {
-                // TODO Wait the actual duration, not just to the first sleep() call
-                if (responses.getResponse(prompt.choices).delay < Long.MAX_VALUE) {
-                    prompt.lock.lock();
-                    try {
-                        prompt.click.signalAll();
-                    } finally {
-                        prompt.lock.unlock();
-                    }
+    private final DebugResponses responses = new DebugResponses();
+
+    private final TimeAdvanceListener timeAdvanceListener = e -> {
+        Prompt prompt = activePrompt.get();
+        if (prompt != null) {
+            // TODO Wait the actual duration, not just to the first sleep() call
+            if (responses.getResponse(prompt.choices).delay < Long.MAX_VALUE) {
+                prompt.lock.lock();
+                try {
+                    prompt.click.signalAll();
+                } finally {
+                    prompt.lock.unlock();
                 }
-                // TODO offset from last call to show() needed (elapsed starts at 0, getTime() is absolute
-                elapsed.set(elapsed.get() + e.teaseLib.getTime(TimeUnit.MILLISECONDS));
             }
+            // TODO offset from last call to show() needed (elapsed starts at 0, getTime() is absolute
+            elapsed.set(elapsed.get() + e.teaseLib.getTime(TimeUnit.MILLISECONDS));
         }
     };
-
-    private final DebugResponses responses = new DebugResponses();
 
     @Override
     public void show(Prompt prompt) throws InterruptedException {
@@ -68,18 +67,18 @@ public class DebugInputMethod implements InputMethod {
 
     @Override
     public Map<String, Runnable> getHandlers() {
-        return Collections.EMPTY_MAP;
+        return Collections.emptyMap();
     }
 
-    DebugResponses getResponses() {
+    public DebugResponses getResponses() {
         return responses;
     }
 
-    void attach(TeaseLib teaseLib) {
+    public void attach(TeaseLib teaseLib) {
         teaseLib.addTimeAdvancedListener(timeAdvanceListener);
     }
 
-    void detach(TeaseLib teaseLib) {
+    public void detach(TeaseLib teaseLib) {
         teaseLib.removeTimeAdvancedListener(timeAdvanceListener);
     }
 }

@@ -10,7 +10,7 @@ import org.junit.Test;
 
 import teaselib.core.TeaseLib;
 import teaselib.core.TeaseLib.PersistentEnum;
-import teaselib.hosts.DummyPersistence;
+import teaselib.core.debug.DebugPersistence;
 import teaselib.test.TestScript;
 
 /**
@@ -31,8 +31,8 @@ public class PersistenceTest {
                 script.namespace, name));
         assertTrue(b.value() == false);
         b.set();
-        assertEquals(DummyPersistence.True, script.getString(name));
-        assertEquals(DummyPersistence.True, script.teaseLib
+        assertEquals(DebugPersistence.True, script.getString(name));
+        assertEquals(DebugPersistence.True, script.teaseLib
                 .getString(TeaseLib.DefaultDomain, script.namespace, name));
         assertTrue(b.available() == true);
         b.clear();
@@ -41,8 +41,8 @@ public class PersistenceTest {
                 script.namespace, name));
         assertTrue(b.available() == false);
         b.set(false);
-        assertEquals(DummyPersistence.False, script.getString(name));
-        assertEquals(DummyPersistence.False, script.teaseLib
+        assertEquals(DebugPersistence.False, script.getString(name));
+        assertEquals(DebugPersistence.False, script.teaseLib
                 .getString(TeaseLib.DefaultDomain, script.namespace, name));
         assertTrue(b.available() == true);
         script.teaseLib.clear(TeaseLib.DefaultDomain, script.namespace, name);
@@ -63,12 +63,12 @@ public class PersistenceTest {
                 script.namespace, name));
         b.set(false);
         assertTrue(b.available() == true);
-        assertEquals(DummyPersistence.False, script.getString(name));
-        assertEquals(DummyPersistence.False, script.teaseLib
+        assertEquals(DebugPersistence.False, script.getString(name));
+        assertEquals(DebugPersistence.False, script.teaseLib
                 .getString(TeaseLib.DefaultDomain, script.namespace, name));
         b.set();
-        assertEquals(DummyPersistence.True, script.getString(name));
-        assertEquals(DummyPersistence.True, script.teaseLib
+        assertEquals(DebugPersistence.True, script.getString(name));
+        assertEquals(DebugPersistence.True, script.teaseLib
                 .getString(TeaseLib.DefaultDomain, script.namespace, name));
         assertTrue(b.available() == true);
         b.clear();

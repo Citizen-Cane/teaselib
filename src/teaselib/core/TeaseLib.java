@@ -27,6 +27,8 @@ import teaselib.Config;
 import teaselib.Duration;
 import teaselib.State;
 import teaselib.core.Host.Location;
+import teaselib.core.debug.TimeAdvanceListener;
+import teaselib.core.debug.TimeAdvancedEvent;
 import teaselib.core.devices.DeviceFactoryListener;
 import teaselib.core.devices.Devices;
 import teaselib.core.devices.remote.LocalNetworkDevice;
@@ -72,7 +74,7 @@ public class TeaseLib {
 
     private long frozenTime = Long.MIN_VALUE;
     private long timeOffsetMillis = 0;
-    private final Set<TimeAdvanceListener> timeAdvanceListeners = new HashSet<TimeAdvanceListener>();
+    private final Set<TimeAdvanceListener> timeAdvanceListeners = new HashSet<>();
 
     final TextToSpeechPlayer textToSpeech;
 
@@ -94,7 +96,7 @@ public class TeaseLib {
         this.config = new Configuration(setup);
         this.transcript = newTranscriptLogger(host.getLocation(Location.Log));
         this.shower = new Shower(host);
-        this.hostInputMethods = new ArrayList<InputMethod>();
+        this.hostInputMethods = new ArrayList<>();
         this.hostInputMethods.add(new HostInputMethod(host));
         this.devices = new Devices(config);
         this.textToSpeech = new TextToSpeechPlayer(config);
@@ -110,7 +112,14 @@ public class TeaseLib {
     }
 
     private static void logJavaVersion() {
-        Set<String> javaProperties = new LinkedHashSet<String>(
+        if (logger.isInfoEnabled()) {
+            StringBuilder javaVersion = getJavaVersionString();
+            logger.info(javaVersion.toString());
+        }
+    }
+
+    private static StringBuilder getJavaVersionString() {
+        Set<String> javaProperties = new LinkedHashSet<>(
                 Arrays.asList("java.vm.name", "java.runtime.version", "os.name", "os.arch"));
 
         StringBuilder javaVersion = new StringBuilder();
@@ -122,7 +131,7 @@ public class TeaseLib {
                 javaVersion.append(property);
             }
         }
-        logger.info(javaVersion.toString());
+        return javaVersion;
     }
 
     private TeaseLibLogger newTranscriptLogger(File folder) throws IOException {
@@ -155,23 +164,22 @@ public class TeaseLib {
         if (!classPath.exists()) {
             throw new FileNotFoundException(classPath.getAbsolutePath());
         }
+
         host.showInterTitle("");
+
         URLClassLoader classLoader = (URLClassLoader) ClassLoader.getSystemClassLoader();
         Class<?> classLoaderClass = URLClassLoader.class;
         try {
-            Method method = classLoaderClass.getDeclaredMethod("addURL", new Class[] { URL.class });
+            Method method = classLoaderClass.getDeclaredMethod("addURL", (Class<?>) URL.class);
             method.setAccessible(true);
-            method.invoke(classLoader, new Object[] { classPath.toURI().toURL() });
+            method.invoke(classLoader, classPath.toURI().toURL());
             logger.info("Added class path " + classPath.getAbsolutePath());
-        } catch (IOException e) {
-            throw e;
-        } catch (Error e) {
-            throw e;
-        } catch (RuntimeException e) {
+        } catch (IOException | RuntimeException e) {
             throw e;
         } catch (Exception e) {
-            throw new ReflectiveOperationException("Error, could not add URL to system classloader");
+            throw new ReflectiveOperationException("Could not add URL to system classloader");
         }
+
         run(host, persistence, script);
     }
 
@@ -181,7 +189,9 @@ public class TeaseLib {
     }
 
     private void run(String script) throws ReflectiveOperationException {
-        logger.info("Running script " + script);
+        if (logger.isInfoEnabled()) {
+            logger.info("Running script " + script);
+        }
         Class<?> scriptClass = getClass().getClassLoader().loadClass(script);
         run(scriptClass);
     }
@@ -218,6 +228,7 @@ public class TeaseLib {
                     unit.sleep(duration);
                     fireTimeAdvanced();
                 } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
                     throw new ScriptInterruptedException(e);
                 }
             }
@@ -400,7 +411,7 @@ public class TeaseLib {
      *         A persistent boolean value, start value is false
      */
     public class PersistentBoolean extends PersistentValue<Boolean> {
-        public final static boolean DefaultValue = false;
+        public static final boolean DefaultValue = false;
 
         public PersistentBoolean(String domain, String namespace, String name) {
             super(domain, namespace, name, DefaultValue);
@@ -435,11 +446,11 @@ public class TeaseLib {
         }
 
         public boolean isTrue() {
-            return value() == true;
+            return value();
         }
 
         public boolean isFalse() {
-            return value() == false;
+            return !value();
         }
     }
 
@@ -449,7 +460,7 @@ public class TeaseLib {
      *         A persistent integer value, start value is 0
      */
     public class PersistentInteger extends PersistentValue<Integer> {
-        public final static int DefaultValue = 0;
+        public static final int DefaultValue = 0;
 
         public PersistentInteger(String domain, String namespace, String name) {
             super(domain, namespace, name, DefaultValue);
@@ -493,7 +504,7 @@ public class TeaseLib {
      *         The long value can be used to store dates and time.
      */
     public class PersistentLong extends PersistentValue<Long> {
-        public final static long DefaultValue = 0;
+        public static final long DefaultValue = 0;
 
         public PersistentLong(String domain, String namespace, String name) {
             super(domain, namespace, name, DefaultValue);
@@ -535,7 +546,7 @@ public class TeaseLib {
      *         A persistent float value, start value is 0.0
      */
     public class PersistentFloat extends PersistentValue<Double> {
-        public final static double DefaultValue = 0.0;
+        public static final double DefaultValue = 0.0;
 
         public PersistentFloat(String domain, String namespace, String name) {
             super(domain, namespace, name, DefaultValue);
@@ -577,7 +588,7 @@ public class TeaseLib {
      *         A persistent String value, start value is the empty string
      */
     public class PersistentString extends PersistentValue<String> {
-        public final static String DefaultValue = "";
+        public static final String DefaultValue = "";
 
         public PersistentString(String domain, String namespace, String name) {
             super(domain, namespace, name, DefaultValue);

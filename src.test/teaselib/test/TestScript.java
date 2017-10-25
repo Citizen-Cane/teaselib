@@ -6,17 +6,17 @@ import java.util.Locale;
 import teaselib.Actor;
 import teaselib.TeaseScript;
 import teaselib.core.Configuration.Setup;
+import teaselib.core.debug.DebugHost;
+import teaselib.core.debug.DebugPersistence;
 import teaselib.core.Debugger;
 import teaselib.core.ResourceLoader;
 import teaselib.core.TeaseLib;
 import teaselib.core.texttospeech.Voice;
 import teaselib.core.util.PropertyNameMapping;
-import teaselib.hosts.DummyHost;
-import teaselib.hosts.DummyPersistence;
 
 public class TestScript extends TeaseScript {
-    public final DummyHost host;
-    public final DummyPersistence persistence;
+    public final DebugHost host;
+    public final DebugPersistence persistence;
     public final Debugger debugger;
 
     public static final String TestScriptNamespace = TestScript.class.getSimpleName() + " " + "Namespace";
@@ -24,7 +24,7 @@ public class TestScript extends TeaseScript {
 
     public static TestScript getOne() {
         try {
-            return new TestScript(new DummyHost(), new DummyPersistence());
+            return new TestScript(new DebugHost(), new DebugPersistence());
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -32,7 +32,7 @@ public class TestScript extends TeaseScript {
 
     public static TestScript getOne(Setup setup) {
         try {
-            return new TestScript(new DummyHost(), new DummyPersistence(), setup);
+            return new TestScript(new DebugHost(), new DebugPersistence(), setup);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -40,7 +40,7 @@ public class TestScript extends TeaseScript {
 
     public static TestScript getOne(PropertyNameMapping propertyNameMapping) {
         try {
-            return new TestScript(new DummyHost(), new DummyPersistence(propertyNameMapping));
+            return new TestScript(new DebugHost(), new DebugPersistence(propertyNameMapping));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -48,27 +48,27 @@ public class TestScript extends TeaseScript {
 
     public static TestScript getOne(Class<?> resourceRoot) {
         try {
-            return new TestScript(new DummyHost(), new DummyPersistence(), resourceRoot);
+            return new TestScript(new DebugHost(), new DebugPersistence(), resourceRoot);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
-    TestScript(DummyHost dummyHost, DummyPersistence dummyPersistence) throws IOException {
+    TestScript(DebugHost dummyHost, DebugPersistence dummyPersistence) throws IOException {
         this(dummyHost, dummyPersistence, new ResourceLoader(TestScript.class, ResourceLoader.ResourcesInProjectFolder),
                 new DebugSetup());
     }
 
-    TestScript(DummyHost dummyHost, DummyPersistence dummyPersistence, Setup setup) throws IOException {
+    TestScript(DebugHost dummyHost, DebugPersistence dummyPersistence, Setup setup) throws IOException {
         this(dummyHost, dummyPersistence, new ResourceLoader(TestScript.class, ResourceLoader.ResourcesInProjectFolder),
                 setup);
     }
 
-    TestScript(DummyHost dummyHost, DummyPersistence dummyPersistence, Class<?> resourceRoot) throws IOException {
+    TestScript(DebugHost dummyHost, DebugPersistence dummyPersistence, Class<?> resourceRoot) throws IOException {
         this(dummyHost, dummyPersistence, new ResourceLoader(resourceRoot), new DebugSetup());
     }
 
-    TestScript(DummyHost dummyHost, DummyPersistence dummyPersistence, ResourceLoader resourceLoader, Setup setup)
+    TestScript(DebugHost dummyHost, DebugPersistence dummyPersistence, ResourceLoader resourceLoader, Setup setup)
             throws IOException {
         super(new TeaseLib(dummyHost, dummyPersistence, setup), resourceLoader, TestScriptActor, TestScriptNamespace);
         this.host = dummyHost;

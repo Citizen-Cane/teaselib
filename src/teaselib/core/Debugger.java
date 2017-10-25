@@ -5,6 +5,8 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+import teaselib.core.debug.DebugResponses;
+
 public class Debugger {
     public final TeaseLib teaseLib;
 
@@ -24,7 +26,7 @@ public class Debugger {
         Ignore
     }
 
-    private final Map<String, Response> responses = new LinkedHashMap<String, Response>();
+    private final Map<String, Response> responses = new LinkedHashMap<>();
     private final DebugInputMethod debugInputMethod;
 
     public Debugger(TeaseLib teaseLib) {
@@ -36,11 +38,13 @@ public class Debugger {
     public void attach() {
         freezeTime();
         teaseLib.hostInputMethods.add(debugInputMethod);
+        debugInputMethod.attach(teaseLib);
     }
 
     public void detach() {
-        resumeTime();
+        debugInputMethod.detach(teaseLib);
         teaseLib.hostInputMethods.remove(debugInputMethod);
+        resumeTime();
     }
 
     public void freezeTime() {

@@ -10,8 +10,8 @@ import java.util.Map;
 
 import org.junit.Test;
 
-import teaselib.hosts.DummyHost;
-import teaselib.hosts.DummyPersistence;
+import teaselib.core.debug.DebugHost;
+import teaselib.core.debug.DebugPersistence;
 import teaselib.test.DebugSetup;
 
 public class TeaseLibGlobalObjectsTest {
@@ -53,7 +53,7 @@ public class TeaseLibGlobalObjectsTest {
 
     @Test
     public void testTeaseLibGLobals() throws IOException {
-        TeaseLib teaseLib = new TeaseLib(new DummyHost(), new DummyPersistence(), new DebugSetup());
+        TeaseLib teaseLib = new TeaseLib(new DebugHost(), new DebugPersistence(), new DebugSetup());
 
         teaseLib.globals.store(TestObject.Object1, value1);
         teaseLib.globals.store(TestObject.Object2, value2);

@@ -1,4 +1,4 @@
-package teaselib.core;
+package teaselib.core.debug;
 
 /**
  * @author Citizen-Cane

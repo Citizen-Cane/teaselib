@@ -1,7 +1,7 @@
 /**
  * 
  */
-package teaselib.core;
+package teaselib.core.debug;
 
 import java.util.HashMap;
 import java.util.List;
@@ -19,12 +19,12 @@ public class DebugResponses {
     public static final long IMMEDIATELY = 0;
     public static final long NEVER = Long.MAX_VALUE;
 
-    private Map<String, Long> responses = new HashMap<String, Long>();
+    private Map<String, Long> responses = new HashMap<>();
 
     public static class Result {
-        String match;
-        int index;
-        long delay;
+        public final String match;
+        public final int index;
+        public final long delay;
 
         public Result(String match, int index, long delay) {
             super();
@@ -43,7 +43,7 @@ public class DebugResponses {
         responses.put(match, delaySeconds);
     }
 
-    Result getResponse(List<String> choices) {
+    public Result getResponse(List<String> choices) {
         for (Entry<String, Long> entry : responses.entrySet()) {
             Pattern choice = WildcardPattern.compile(entry.getKey());
             for (int i = 0; i < choices.size(); i++) {

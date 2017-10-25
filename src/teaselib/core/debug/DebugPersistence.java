@@ -1,4 +1,4 @@
-package teaselib.hosts;
+package teaselib.core.debug;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -19,10 +19,11 @@ import teaselib.core.TeaseLib;
 import teaselib.core.UserItems;
 import teaselib.core.texttospeech.Voice;
 import teaselib.core.util.PropertyNameMapping;
+import teaselib.hosts.PreDefinedItems;
 import teaselib.util.TextVariables;
 
-public class DummyPersistence implements Persistence {
-    private static final Logger logger = LoggerFactory.getLogger(DummyPersistence.class);
+public class DebugPersistence implements Persistence {
+    private static final Logger logger = LoggerFactory.getLogger(DebugPersistence.class);
 
     public final static String True = "true";
     public final static String False = "false";
@@ -31,11 +32,11 @@ public class DummyPersistence implements Persistence {
 
     private final PropertyNameMapping nameMapping;
 
-    public DummyPersistence() {
+    public DebugPersistence() {
         this(new PropertyNameMapping());
     }
 
-    public DummyPersistence(PropertyNameMapping propertyNameMapping) {
+    public DebugPersistence(PropertyNameMapping propertyNameMapping) {
         this.nameMapping = propertyNameMapping;
     }
 

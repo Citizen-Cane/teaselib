@@ -18,7 +18,7 @@ import org.junit.runners.Parameterized.Parameters;
 import teaselib.Duration;
 import teaselib.State;
 import teaselib.Toys;
-import teaselib.hosts.DummyPersistence;
+import teaselib.core.debug.DebugPersistence;
 import teaselib.test.TestScript;
 
 @RunWith(Parameterized.class)
@@ -41,7 +41,7 @@ public class StateMapsPersistenceTest extends StateMaps {
     }
 
     final TestScript script;
-    final DummyPersistence persistence;
+    final DebugPersistence persistence;
     final TestParameter rememberState;
 
     enum TestParameter {

@@ -1,11 +1,13 @@
-package teaselib.core;
+package teaselib.core.debug;
+
+import teaselib.core.TeaseLib;
 
 /**
  * @author Citizen-Cane
  *
  */
 public class TimeAdvancedEvent {
-    TeaseLib teaseLib;
+    public TeaseLib teaseLib;
 
     public TimeAdvancedEvent(TeaseLib teaseLib) {
         this.teaseLib = teaseLib;

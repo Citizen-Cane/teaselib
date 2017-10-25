@@ -11,7 +11,7 @@ import org.junit.Test;
 import teaselib.Body;
 import teaselib.State;
 import teaselib.Toys;
-import teaselib.hosts.DummyPersistence;
+import teaselib.core.debug.DebugPersistence;
 import teaselib.test.TestScript;
 
 public class StateMapsTestRemember extends StateMaps {
@@ -21,7 +21,7 @@ public class StateMapsTestRemember extends StateMaps {
         Chastity_Device_Lock
     }
 
-    final DummyPersistence persistence;
+    final DebugPersistence persistence;
 
     public StateMapsTestRemember() {
         this(TestScript.getOne());

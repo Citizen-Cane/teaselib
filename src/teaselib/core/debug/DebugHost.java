@@ -1,4 +1,4 @@
-package teaselib.hosts;
+package teaselib.core.debug;
 
 import java.io.File;
 import java.io.IOException;
@@ -24,14 +24,14 @@ import teaselib.core.javacv.VideoRendererJavaCV;
 import teaselib.core.ui.Prompt;
 import teaselib.core.util.ExceptionUtil;
 
-public class DummyHost implements Host {
-    private static final Logger logger = LoggerFactory.getLogger(DummyHost.class);
+public class DebugHost implements Host {
+    private static final Logger logger = LoggerFactory.getLogger(DebugHost.class);
 
     static final Point javacvDebugWindow = new Point(80, 80);
 
     private List<String> currentChoices = Collections.emptyList();
 
-    public DummyHost() {
+    public DebugHost() {
         super();
         Thread.currentThread().setName(getClass().getSimpleName() + " Script");
     }

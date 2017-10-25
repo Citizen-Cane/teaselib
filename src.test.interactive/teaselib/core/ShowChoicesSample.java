@@ -9,8 +9,8 @@ import org.junit.Test;
 
 import teaselib.ScriptFunction;
 import teaselib.TeaseScript;
-import teaselib.hosts.DummyHost;
-import teaselib.hosts.DummyPersistence;
+import teaselib.core.debug.DebugHost;
+import teaselib.core.debug.DebugPersistence;
 import teaselib.test.TestScript;
 
 /**
@@ -29,7 +29,7 @@ public class ShowChoicesSample extends TeaseScript {
      * @param namespace
      */
     public ShowChoicesSample() throws IOException {
-        super(new TeaseLib(new DummyHost(), new DummyPersistence()), new ResourceLoader(ShowChoicesSample.class),
+        super(new TeaseLib(new DebugHost(), new DebugPersistence()), new ResourceLoader(ShowChoicesSample.class),
                 TestScript.TestScriptActor, TestScript.TestScriptNamespace);
     }
 

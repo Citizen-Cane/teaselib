@@ -135,4 +135,19 @@ public class Items extends ArrayList<Item> {
         }
         return items.firstAvailableOrNotAvailable();
     }
+
+    public Items allApplied() {
+        Items applied = new Items();
+        for (Item item : this) {
+            if (item.applied()) {
+                applied.add(item);
+            }
+        }
+
+        return applied;
+    }
+
+    public boolean applied() {
+        return !allApplied().isEmpty();
+    }
 }

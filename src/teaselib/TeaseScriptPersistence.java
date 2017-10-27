@@ -46,7 +46,8 @@ public abstract class TeaseScriptPersistence extends TeaseScriptBase {
             this.domain = domain;
         }
 
-        public <T extends Enum<?>> Items items(T... values) {
+        @SafeVarargs
+        public final <T extends Enum<?>> Items items(T... values) {
             if (values.length > 0) {
                 return proxiesOf(teaseLib.items(domain, values));
             } else {
@@ -70,7 +71,8 @@ public abstract class TeaseScriptPersistence extends TeaseScriptBase {
             return new ItemProxy(namespace, teaseLib.item(domain, value));
         }
 
-        public <T extends Enum<?>> Items items(T[]... values) {
+        @SafeVarargs
+        public final <T extends Enum<?>> Items items(T[]... values) {
             Items items = new Items();
             for (T[] s : values) {
                 items.addAll(items(s));
@@ -106,7 +108,8 @@ public abstract class TeaseScriptPersistence extends TeaseScriptBase {
      * @param values
      * @return A list of items whose names are based on the enumeration members
      */
-    public <T extends Enum<?>> Items items(T... values) {
+    @SafeVarargs
+    public final <T extends Enum<?>> Items items(T... values) {
         return defaultDomain.items(values);
     }
 
@@ -130,7 +133,8 @@ public abstract class TeaseScriptPersistence extends TeaseScriptBase {
         return defaultDomain.item(value);
     }
 
-    public <T extends Enum<?>> Items items(T[]... values) {
+    @SafeVarargs
+    public final <T extends Enum<?>> Items items(T[]... values) {
         return defaultDomain.items(values);
     }
 
@@ -147,15 +151,15 @@ public abstract class TeaseScriptPersistence extends TeaseScriptBase {
     }
 
     public <T extends Enum<?>> TeaseLib.PersistentEnum<T> persistentEnum(String name, Class<T> enumClass) {
-        return teaseLib.new PersistentEnum<T>(TeaseLib.DefaultDomain, namespace, name, enumClass);
+        return teaseLib.new PersistentEnum<>(TeaseLib.DefaultDomain, namespace, name, enumClass);
     }
 
     public <T extends Enum<?>> TeaseLib.PersistentEnum<T> persistentEnum(Enum<?> name, Class<T> enumClass) {
-        return teaseLib.new PersistentEnum<T>(TeaseLib.DefaultDomain, name, enumClass);
+        return teaseLib.new PersistentEnum<>(TeaseLib.DefaultDomain, name, enumClass);
     }
 
     public <T extends Enum<?>> TeaseLib.PersistentEnum<T> persistentEnum(Class<T> enumClass) {
-        return teaseLib.new PersistentEnum<T>(TeaseLib.DefaultDomain, enumClass);
+        return teaseLib.new PersistentEnum<>(TeaseLib.DefaultDomain, enumClass);
     }
 
     public TeaseLib.PersistentInteger persistentInteger(String name) {
@@ -175,7 +179,7 @@ public abstract class TeaseScriptPersistence extends TeaseScriptBase {
     }
 
     public <T extends Enum<T>> TeaseLib.PersistentSequence<T> persistentSequence(String name, T[] values) {
-        return teaseLib.new PersistentSequence<T>(TeaseLib.DefaultDomain, namespace, name, values);
+        return teaseLib.new PersistentSequence<>(TeaseLib.DefaultDomain, namespace, name, values);
     }
 
     public <T extends Enum<?>> State state(T item) {

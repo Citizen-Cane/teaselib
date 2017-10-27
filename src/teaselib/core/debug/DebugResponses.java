@@ -39,6 +39,11 @@ public class DebugResponses {
         }
     }
 
+    public DebugResponses() {
+        super();
+        // TODO Auto-generated constructor stub
+    }
+
     public void add(String match, long delaySeconds) {
         responses.put(match, delaySeconds);
     }
@@ -58,6 +63,11 @@ public class DebugResponses {
         } else {
             throw new IllegalStateException("No response rule defined for " + choices);
         }
+    }
+
+    @Override
+    public String toString() {
+        return responses.toString();
     }
 
 }

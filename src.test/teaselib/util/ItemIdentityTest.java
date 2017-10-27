@@ -3,9 +3,7 @@
  */
 package teaselib.util;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import java.util.ArrayList;
 
@@ -17,6 +15,7 @@ import teaselib.State;
 import teaselib.TeaseScript;
 import teaselib.Toys;
 import teaselib.core.TeaseLib;
+import teaselib.core.state.ItemProxy;
 import teaselib.test.TestScript;
 
 /**
@@ -201,7 +200,7 @@ public class ItemIdentityTest {
     }
 
     private static ArrayList<Item> getClothesPegs(TestScript script, int numberOfPegs) {
-        ArrayList<Item> clothesPegs = new ArrayList<Item>(numberOfPegs);
+        ArrayList<Item> clothesPegs = new ArrayList<>(numberOfPegs);
         for (int i = 0; i < numberOfPegs; i++) {
             String name = "Clothes_Peg_" + i;
             Item peg = createPeg(script, name);
@@ -304,5 +303,16 @@ public class ItemIdentityTest {
             assertFalse(peg.canApply());
             assertTrue(peg.is(peg));
         }
+    }
+
+    @Test
+    public void testItemIdentity() {
+        TestScript script = TestScript.getOne();
+
+        Item clothesPegsByEnum = script.item(Household.Clothes_Pegs);
+        Item clothesPegsByString = script.item("teaselib.household.clothes_pegs");
+
+        assertEquals(clothesPegsByEnum, clothesPegsByString);
+        assertTrue(((ItemProxy) clothesPegsByEnum).state == ((ItemProxy) clothesPegsByString).state);
     }
 }

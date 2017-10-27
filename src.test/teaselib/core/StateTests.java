@@ -255,4 +255,15 @@ public class StateTests {
                 "teaselib.HouseHold.Weight"));
     }
 
+    @Test
+    public void testStateIdentity() {
+        TestScript script = TestScript.getOne();
+        script.teaseLib.freezeTime();
+
+        State clothesPegsByEnum = script.state(Household.Clothes_Pegs);
+        State clothesPegsByString = script.state("teaselib.household.clothes_pegs");
+
+        assertEquals(clothesPegsByEnum, clothesPegsByString);
+        assertTrue(((StateProxy) clothesPegsByEnum).state == ((StateProxy) clothesPegsByString).state);
+    }
 }

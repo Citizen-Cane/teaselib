@@ -2,7 +2,6 @@ package teaselib.core.debug;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -25,10 +24,14 @@ import teaselib.util.TextVariables;
 public class DebugPersistence implements Persistence {
     private static final Logger logger = LoggerFactory.getLogger(DebugPersistence.class);
 
-    public final static String True = "true";
-    public final static String False = "false";
+    public static final String True = "true";
+    public static final String False = "false";
 
-    public final Map<String, String> storage = new HashMap<String, String>();
+    public static final class Storage extends HashMap<String, String> {
+        private static final long serialVersionUID = 1L;
+    }
+
+    public final Map<String, String> storage;
 
     private final PropertyNameMapping nameMapping;
 
@@ -36,7 +39,16 @@ public class DebugPersistence implements Persistence {
         this(new PropertyNameMapping());
     }
 
+    public DebugPersistence(Map<String, String> storage) {
+        this(storage, new PropertyNameMapping());
+    }
+
     public DebugPersistence(PropertyNameMapping propertyNameMapping) {
+        this(new Storage(), propertyNameMapping);
+    }
+
+    public DebugPersistence(Map<String, String> storage, PropertyNameMapping propertyNameMapping) {
+        this.storage = storage;
         this.nameMapping = propertyNameMapping;
     }
 
@@ -107,16 +119,13 @@ public class DebugPersistence implements Persistence {
     }
 
     public void printStorage() {
-        List<Entry<String, String>> entryList = new ArrayList<Entry<String, String>>(storage.entrySet());
-        Collections.sort(entryList, new Comparator<Entry<String, String>>() {
-            @Override
-            public int compare(Entry<String, String> o1, Entry<String, String> o2) {
-                return o1.getKey().compareTo(o2.getKey());
+        List<Entry<String, String>> entryList = new ArrayList<>(storage.entrySet());
+        Collections.sort(entryList, (o1, o2) -> o1.getKey().compareTo(o2.getKey()));
+        if (logger.isInfoEnabled()) {
+            logger.info("Storage: " + storage.size() + " entries");
+            for (Entry<String, String> entry : entryList) {
+                logger.info(entry.getKey() + "=" + entry.getValue());
             }
-        });
-        logger.info("Storage: " + storage.size() + " entries");
-        for (Entry<String, String> entry : entryList) {
-            logger.info(entry.getKey() + "=" + entry.getValue());
         }
     }
 

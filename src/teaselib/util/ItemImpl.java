@@ -60,11 +60,10 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
     }
 
     private static Set<Object> attributes(Object item, Object[] attributes) {
-        Set<Object> all = new HashSet<Object>();
+        Set<Object> all = new HashSet<>();
         all.add(item);
         all.addAll(Arrays.asList(attributes));
-        Set<Object> unmodifiableSet = Collections.unmodifiableSet(all);
-        return unmodifiableSet;
+        return Collections.unmodifiableSet(all);
     }
 
     @Override
@@ -84,7 +83,7 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
 
     @Override
     public String toString() {
-        return value.name + " " + attributes + " " + teaseLib.state(domain, value).toString();
+        return guid + " " + attributes + " " + teaseLib.state(domain, item).toString();
     }
 
     @Override
@@ -112,7 +111,7 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
     }
 
     public Set<Object> peers() {
-        return new HashSet<Object>(Arrays.asList(defaultPeers));
+        return new HashSet<>(Arrays.asList(defaultPeers));
     }
 
     @Override
@@ -153,7 +152,8 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
     }
 
     @Override
-    public <S extends Object> State.Options applyTo(S... items) {
+    @SafeVarargs
+    public final <S extends Object> State.Options applyTo(S... items) {
         if (items.length == 0 && defaultPeers.length == 0) {
             throw new IllegalArgumentException("Item without default peers must be applied with explicit peer list");
         }
@@ -180,7 +180,7 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
     }
 
     public Collection<Object> attributesAndPeers() {
-        Collection<Object> attributesAndPeers = new HashSet<Object>();
+        Collection<Object> attributesAndPeers = new HashSet<>();
         attributesAndPeers.addAll(attributes);
         attributesAndPeers.addAll(Arrays.asList(defaultPeers));
         return attributesAndPeers;
@@ -203,7 +203,8 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
     }
 
     @Override
-    public <S extends Object> State.Persistence removeFrom(S... peer) {
+    @SafeVarargs
+    public final <S extends Object> State.Persistence removeFrom(S... peer) {
         return teaseLib.state(domain, item).removeFrom(peer);
     }
 

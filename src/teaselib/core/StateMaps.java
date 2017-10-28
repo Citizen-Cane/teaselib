@@ -47,7 +47,7 @@ public class StateMaps {
 
     public class StateMap {
         final String domain;
-        final Map<Object, State> states = new HashMap<Object, State>();
+        final Map<Object, State> states = new HashMap<>();
 
         public StateMap(String domain) {
             this.domain = domain;
@@ -74,11 +74,6 @@ public class StateMaps {
         }
     }
 
-    static String nameOfState(Object item) {
-        String name = QualifiedItem.nameOf(item);
-        return name + ".state";
-    }
-
     public class StateImpl implements State, State.Options, Attributes {
         private static final String TEMPORARY_KEYWORD = "TEMPORARY";
         private static final String REMOVED_KEYWORD = "REMOVED";
@@ -91,8 +86,8 @@ public class StateMaps {
         private final PersistentString attributeStorage;
 
         private Duration duration = teaseLib.new DurationImpl(0, REMOVED, TimeUnit.SECONDS);
-        private final Set<Object> peers = new HashSet<Object>();
-        private final Set<Object> attributes = new HashSet<Object>();
+        private final Set<Object> peers = new HashSet<>();
+        private final Set<Object> attributes = new HashSet<>();
 
         protected StateImpl state(Object item) {
             if (item instanceof AbstractProxy<?>) {
@@ -124,18 +119,20 @@ public class StateMaps {
         }
 
         private TeaseLib.PersistentString persistentDuration(String domain, Object item) {
-            return teaseLib.new PersistentString(domain, QualifiedItem.namespaceOf(item),
-                    nameOfState(item) + "." + "duration");
+            return persistentString(domain, item, "duration");
         }
 
         private PersistentString persistentPeers(String domain, Object item) {
-            return teaseLib.new PersistentString(domain, QualifiedItem.namespaceOf(item),
-                    nameOfState(item) + "." + "peers");
+            return persistentString(domain, item, "peers");
         }
 
         private PersistentString persistentAttributes(String domain, Object item) {
+            return persistentString(domain, item, "attributes");
+        }
+
+        private PersistentString persistentString(String domain, Object item, String name) {
             return teaseLib.new PersistentString(domain, QualifiedItem.namespaceOf(item),
-                    nameOfState(item) + "." + "attributes");
+                    QualifiedItem.nameOf(item) + ".state" + "." + name);
         }
 
         private void restoreDuration() {
@@ -267,16 +264,18 @@ public class StateMaps {
 
         @Override
         public Options apply() {
-            return applyTo(new Object[0]);
+            return applyTo();
         }
 
         @Override
-        public <A extends Object> State.Options applyTo(A... attributes) {
+        @SafeVarargs
+        public final <A extends Object> State.Options applyTo(A... attributes) {
             applyInternal(attributes);
             return this;
         }
 
-        protected <A extends Object> State applyInternal(A... attributes) {
+        @SafeVarargs
+        protected final <A extends Object> State applyInternal(A... attributes) {
             if (attributes.length == 1 && attributes[0] instanceof List<?>) {
                 throw new IllegalArgumentException();
             }
@@ -322,27 +321,27 @@ public class StateMaps {
         }
 
         private Set<Object> attributesAndPeers() {
-            Set<Object> all = new HashSet<Object>();
+            Set<Object> all = new HashSet<>();
             all.addAll(myAttributesAndPeers());
             all.addAll(attributesOfDirectPeers());
 
-            for (Object item : myAttributesAndPeers()) {
-                if (item instanceof ItemImpl) {
-                    all.addAll(((ItemImpl) item).attributesAndPeers());
+            for (Object peer : myAttributesAndPeers()) {
+                if (peer instanceof ItemImpl) {
+                    all.addAll(((ItemImpl) peer).attributesAndPeers());
                 }
             }
             return all;
         }
 
         private Set<Object> myAttributesAndPeers() {
-            Set<Object> myAttributesAndPeers = new HashSet<Object>();
+            Set<Object> myAttributesAndPeers = new HashSet<>();
             myAttributesAndPeers.addAll(this.peers);
             myAttributesAndPeers.addAll(this.attributes);
             return myAttributesAndPeers;
         }
 
         private Set<Object> attributesOfDirectPeers() {
-            Set<Object> attributesOfDirectPeers = new HashSet<Object>();
+            Set<Object> attributesOfDirectPeers = new HashSet<>();
             for (Object peer : this.peers) {
                 StateImpl peerState = state(peer);
                 attributesOfDirectPeers.addAll(peerState.attributes);
@@ -422,7 +421,8 @@ public class StateMaps {
         }
 
         @Override
-        public <S extends Object> Persistence removeFrom(S... peers2) {
+        @SafeVarargs
+        public final <S extends Object> Persistence removeFrom(S... peers2) {
             if (peers2.length == 0) {
                 throw new IllegalArgumentException("removeFrom requires at least one peer");
             }
@@ -458,7 +458,7 @@ public class StateMaps {
         }
 
         private void removeRepresentingItems(Object rawItem) {
-            for (Object object : new HashSet<Object>(peers)) {
+            for (Object object : new HashSet<>(peers)) {
                 if (object instanceof ItemImpl) {
                     ItemImpl itemImpl = (ItemImpl) object;
                     if (itemImpl.item == rawItem) {
@@ -499,14 +499,14 @@ public class StateMaps {
 
         @Override
         public String toString() {
-            String name = domain + " " + nameOfState(item);
+            String name = "name=" + (domain.isEmpty() ? "" : domain) + QualifiedItem.nameOf(item);
 
             Date date = new Date(duration.start(TimeUnit.MILLISECONDS));
 
             long limit = duration.limit(TimeUnit.SECONDS);
             String timespan = (limit > 0 ? "+" : " ") + limit2String(limit);
 
-            return name + " " + date + timespan + " " + toStringWithoutRecursion(peers);
+            return name + " " + date + timespan + " peers=" + toStringWithoutRecursion(peers);
         }
 
         @Override

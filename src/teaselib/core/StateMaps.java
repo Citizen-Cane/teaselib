@@ -603,7 +603,12 @@ public class StateMaps {
             }
             if (object instanceof StateImpl) {
                 StateImpl state = (StateImpl) object;
-                toString.append(state.item.toString());
+                toString.append("state:" + state.item.toString());
+            } else if (object instanceof ItemImpl) {
+                ItemImpl item = (ItemImpl) object;
+                toString.append("item:" + item.item.toString());
+            } else {
+                toString.append(QualifiedItem.of(object).toString());
             }
         }
         toString.append("]");

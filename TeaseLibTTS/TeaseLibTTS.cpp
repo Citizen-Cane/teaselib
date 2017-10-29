@@ -122,7 +122,7 @@ extern "C"
 			SpeechSynthesizer* speechSynthesizer = static_cast<SpeechSynthesizer*>(NativeObject::get(env, jthis));
 			NativeObject::checkInitializedOrThrow(speechSynthesizer);
 
-			Voice* voice = static_cast<Voice*>(NativeObject::get(env, jvoice));
+			const Voice* voice = static_cast<const Voice*>(NativeObject::get(env, jvoice));
             // A null voice is a valid value, it denotes the system default voice
 			speechSynthesizer->setVoice(voice);
         } catch (NativeException *e) {

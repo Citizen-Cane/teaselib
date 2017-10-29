@@ -53,6 +53,7 @@ HRESULT SpeechSynthesizer::addVoices(const wchar_t* pszCatName, std::vector<Voic
 	const bool notAvailable = hr == SPERR_NOT_FOUND;
 	assert(succeeded || notAvailable);
 	if (notAvailable) return S_FALSE;
+
 	if (succeeded) {
 		CComPtr<ISpObjectToken> cpVoiceToken;
 		if (SUCCEEDED(hr)) {
@@ -72,6 +73,8 @@ HRESULT SpeechSynthesizer::addVoices(const wchar_t* pszCatName, std::vector<Voic
 			}
 		}
 	}
+
+	return hr;
 }
 
 // Well, I didn't have much luck with the XML tags,
@@ -81,7 +84,7 @@ HRESULT SpeechSynthesizer::addVoices(const wchar_t* pszCatName, std::vector<Voic
 wstring hintsPromptPrefix;
 wstring hintsPromptPostfix;
 
-void SpeechSynthesizer::addLexiconEntry(const wchar_t const * locale, const wchar_t const * word, const SPPARTOFSPEECH partOfSpeech, const wchar_t const * pronunciation) {
+void SpeechSynthesizer::addLexiconEntry(const wchar_t * const  locale, const wchar_t * const  word, const SPPARTOFSPEECH partOfSpeech, const wchar_t * const  pronunciation) {
 	LANGID langID = Language::getLangID(locale);
 	CComPtr<ISpPhoneConverter> cpPhoneConv;
 
@@ -99,13 +102,14 @@ void SpeechSynthesizer::addLexiconEntry(const wchar_t const * locale, const wcha
 	if (FAILED(hr)) throw new COMException(hr);
 }
 
-void SpeechSynthesizer::setVoice(Voice * voice) {
+void SpeechSynthesizer::setVoice(const Voice * voice) {
 	if (voice == nullptr) throw new COMException(E_POINTER);
 
 	HRESULT hr = pVoice->SetVoice(*voice);
 	assert(SUCCEEDED(hr));
 	if (FAILED(hr)) throw new COMException(hr);
-	hr = pVoice->SetVolume(volumeNeutral);
+
+	hr = pVoice->SetVolume(static_cast<USHORT>(volumeNeutral));
 	assert(SUCCEEDED(hr));
 	if (FAILED(hr)) throw new COMException(hr);
 }
@@ -121,7 +125,7 @@ void SpeechSynthesizer::applyHints(const vector<wstring>& hints) {
 	for_each(hints.begin(), hints.end(), [&](const wstring& hint) {
 		HRESULT hr = S_OK;
 		if (hint.compare(L"<mood=reading>") == 0) {
-			hr = pVoice->SetVolume(volumeReading);
+			hr = pVoice->SetVolume(static_cast<USHORT>(volumeReading));
 			if (SUCCEEDED(hr)) {
 				volumeChanged = true;
 				hr = pVoice->SetRate(rateReading);
@@ -135,7 +139,7 @@ void SpeechSynthesizer::applyHints(const vector<wstring>& hints) {
 
 	// Defaults
 	if (!volumeChanged)	{
-		HRESULT hr = pVoice->SetVolume(volumeNeutral);
+		HRESULT hr = pVoice->SetVolume(static_cast<USHORT>(volumeNeutral));
 		if (FAILED(hr)) throw new COMException(hr);
 	}
 	if (!rateChanged) {

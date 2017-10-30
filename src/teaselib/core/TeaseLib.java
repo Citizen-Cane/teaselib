@@ -86,6 +86,8 @@ public class TeaseLib {
         if (host == null || persistence == null || setup == null) {
             throw new IllegalArgumentException();
         }
+        
+        logDateTime();
         logJavaVersion();
         logJavaProperties();
 
@@ -103,6 +105,10 @@ public class TeaseLib {
 
         bindMotionDetectorToVideoRenderer();
         bindNetworkProperties();
+    }
+
+    private static void logDateTime() {
+        logger.info(new Date(System.currentTimeMillis()).toString());
     }
 
     private static void logJavaProperties() {
@@ -842,7 +848,8 @@ public class TeaseLib {
      * 
      * @return A list of items whose names are based on the enumeration members
      */
-    public <T extends Object> Items items(String domain, T... values) {
+    @SafeVarargs
+    public final <T extends Object> Items items(String domain, T... values) {
         Items items = new Items(values.length);
         for (T item : values) {
             items.addAll(userItems.get(domain, QualifiedItem.of(item)));
@@ -860,7 +867,6 @@ public class TeaseLib {
      * @return The item that corresponds to the value.
      */
     public <T extends Object> Item item(String domain, T item) {
-        @SuppressWarnings("unchecked")
         Items items = items(domain, item);
         Items available = items.available();
         if (!available.isEmpty()) {

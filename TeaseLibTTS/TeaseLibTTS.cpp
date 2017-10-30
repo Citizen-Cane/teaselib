@@ -28,13 +28,6 @@
 
 extern "C"
 {
-	const wchar_t* SPCAT_VOICES_ONECORE = L"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Speech_OneCore\\Voices";
-	const wchar_t* SPCAT_VOICES_SPEECH_SERVER = L"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Speech Server\\v11.0\\Voices";
-
-	const wchar_t* voiceCategories[] = { SPCAT_VOICES_ONECORE, SPCAT_VOICES_SPEECH_SERVER,  SPCAT_VOICES };
-
-	jobject jvoiceList(const std::vector<Voice*>& voices, JNIEnv *env);
-
 	/*
 	* Class:     teaselib_core_texttospeech_implementation_TeaseLibTTS
 	* Method:	 addLexiconEntry
@@ -69,19 +62,13 @@ extern "C"
 		(JNIEnv *env, jobject jthis) {
 		try {
 			COMUser comUser;
-			HRESULT hr = S_OK;
 
 			SpeechSynthesizer* speechSynthesizer = static_cast<SpeechSynthesizer*>(NativeObject::get(env, jthis));
 			if (!speechSynthesizer) {
 				speechSynthesizer = new SpeechSynthesizer(env, jthis);
 			}
 
-			std::vector<Voice*> voices;
-			for (int i = 0; i < sizeof(voiceCategories) / sizeof(wchar_t*); i++) {
-				hr = speechSynthesizer->addVoices(voiceCategories[i], voices);
-				if (FAILED(hr)) break;
-			}
-			return jvoiceList(voices, env);
+			return speechSynthesizer->voiceList();
 		}
 		catch (NativeException *e) {
 			JNIException::throwNew(env, e);
@@ -89,26 +76,6 @@ extern "C"
 		catch (JNIException /**e*/) {
 			// Forwarded automatically
 		}
-	}
-
-	jobject jvoiceList(const std::vector<Voice*>& voices, JNIEnv *env) {
-		jclass listClass = JNIClass::getClass(env, "java/util/ArrayList");
-		jobject jvoiceList = env->NewObject(
-			listClass,
-			JNIClass::getMethodID(env, listClass, "<init>", "(I)V"),
-			voices.size());
-		if (env->ExceptionCheck()) throw new JNIException(env);
-
-		std::for_each(voices.begin(), voices.end(), [&](const Voice * voice) {
-			JNIString key(env, voice->guid.c_str());
-			jobject jvoice = *voice;
-			env->CallObjectMethod(
-				jvoiceList,
-				env->GetMethodID(listClass, "add", "(Ljava/lang/Object;)Z"), jvoice);
-			if (env->ExceptionCheck()) throw new JNIException(env);
-		});
-
-		return jvoiceList;
 	}
 
     /*
@@ -172,7 +139,7 @@ extern "C"
             SpeechSynthesizer* speechSynthesizer = static_cast<SpeechSynthesizer*>(NativeObject::get(env, jthis));
             NativeObject::checkInitializedOrThrow(speechSynthesizer);
             speechSynthesizer->applyHints(JNIUtilities::stringArray(env, getHints(env, jthis)));
-            std::wstring soundFile = speechSynthesizer->speak(JNIString(env, prompt), JNIString(env, path));
+            const std::wstring soundFile = speechSynthesizer->speak(JNIString(env, prompt), JNIString(env, path));
             actualPath = JNIString(env, soundFile.c_str()).detach();
         } catch (NativeException *e) {
             JNIException::throwNew(env, e);

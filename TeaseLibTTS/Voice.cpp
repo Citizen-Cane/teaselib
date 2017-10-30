@@ -31,7 +31,8 @@ jobject getGenderField(JNIEnv *env, const wchar_t* gender) {
     jclass genderClass = JNIClass::getClass(env, "teaselib/core/texttospeech/Voice$Gender");
     jobject genderValue = env->GetStaticObjectField(
                               genderClass,
-                              JNIClass::getStaticFieldID(env, genderClass, genderFieldName, "Lteaselib/core/texttospeech/Voice$Gender;"));
+                              JNIClass::getStaticFieldID(
+								  env, genderClass, genderFieldName, "Lteaselib/core/texttospeech/Voice$Gender;"));
     return genderValue;
 }
 
@@ -85,7 +86,7 @@ Voice::Voice(JNIEnv* env, ISpObjectToken* pVoiceToken, jobject ttsImpl)
 		if (env->ExceptionCheck()) throw new JNIException(env);
 		const char* signature = "(JLteaselib/core/texttospeech/TextToSpeechImplementation;Ljava/lang/String;Ljava/lang/String;Lteaselib/core/texttospeech/Voice$Gender;Lteaselib/core/texttospeech/VoiceInfo;)V";
 
-		jthis = env->NewObject(
+		jthis = env->NewGlobalRef(env->NewObject(
 			clazz,
 			JNIClass::getMethodID(env, clazz, "<init>", signature),
 			reinterpret_cast<jlong>(this),
@@ -93,11 +94,11 @@ Voice::Voice(JNIEnv* env, ISpObjectToken* pVoiceToken, jobject ttsImpl)
 			JNIString(env, guid.c_str()).operator jstring(),
 			JNIString(env, language.sname).operator jstring(),
 			jgender,
-			jvoiceInfo);
+			jvoiceInfo));
 		if (env->ExceptionCheck()) throw new JNIException(env);
 	}
-	env->DeleteLocalRef(jgender);
-    if (env->ExceptionCheck()) {
+
+	if (env->ExceptionCheck()) {
         throw new JNIException(env);
     }
 }

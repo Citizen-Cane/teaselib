@@ -1,6 +1,6 @@
 package teaselib.core.textotspeech;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import java.util.Map;
 
@@ -13,13 +13,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import teaselib.core.texttospeech.TextToSpeech;
-import teaselib.core.texttospeech.TextToSpeechTest;
 import teaselib.core.texttospeech.Voice;
 import teaselib.core.util.Environment;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class MicrosoftSapiCustomPronunciationTestGerman {
-    private static final Logger logger = LoggerFactory.getLogger(TextToSpeechTest.class);
+    private static final Logger logger = LoggerFactory.getLogger(MicrosoftSapiCustomPronunciationTestGerman.class);
 
     static final String VOICE_SAPI = "TTS_MS_DE-DE_HEDDA_11.0";
     static final String VOICE_MSSPEECH = "MSTTS_V110_deDE_KatjaM";

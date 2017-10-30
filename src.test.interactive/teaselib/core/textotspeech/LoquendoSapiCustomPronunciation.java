@@ -1,6 +1,6 @@
 package teaselib.core.textotspeech;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import java.util.Map;
 
@@ -10,13 +10,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import teaselib.core.texttospeech.TextToSpeech;
-import teaselib.core.texttospeech.TextToSpeechTest;
 import teaselib.core.texttospeech.Voice;
 import teaselib.core.util.Environment;
 
 public class LoquendoSapiCustomPronunciation {
 
-    private static final Logger logger = LoggerFactory.getLogger(TextToSpeechTest.class);
+    private static final Logger logger = LoggerFactory.getLogger(LoquendoSapiCustomPronunciation.class);
 
     // Cum with "u" -> wrong
     // Cunt right

@@ -16,6 +16,11 @@
 
 using namespace std;
 
+const wchar_t* SPCAT_VOICES_ONECORE = L"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Speech_OneCore\\Voices";
+const wchar_t* SPCAT_VOICES_SPEECH_SERVER = L"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Speech Server\\v11.0\\Voices";
+
+const wchar_t* voiceCategories[] = { SPCAT_VOICES_ONECORE, SPCAT_VOICES_SPEECH_SERVER,  SPCAT_VOICES };
+
 // The debug version speaks very fast without a mood hint, in order to be able to distinguish mood hints from neutral
 // The release version values are chosen to be barely noticable, they're supposed to be subtile
 
@@ -32,7 +37,7 @@ using namespace std;
 #endif
 
 SpeechSynthesizer::SpeechSynthesizer(JNIEnv *env, jobject ttsImpl)
-    : NativeObject(env, ttsImpl), pVoice(nullptr), cancelSpeech(false) {
+    : NativeObject(env, ttsImpl), pVoice(nullptr), cancelSpeech(false), jvoices(nullptr) {
     HRESULT hr = CoCreateInstance(CLSID_SpVoice, NULL, CLSCTX_ALL, IID_ISpVoice, (void **)&pVoice);
     assert(SUCCEEDED(hr));
     if (FAILED(hr)) {
@@ -44,6 +49,19 @@ SpeechSynthesizer::SpeechSynthesizer(JNIEnv *env, jobject ttsImpl)
 SpeechSynthesizer::~SpeechSynthesizer() {
     pVoice->Release();
     pVoice = nullptr;
+}
+
+jobject SpeechSynthesizer::voiceList() {
+	if (!jvoices) {
+		std::vector<Voice*> voices;
+		for (int i = 0; i < sizeof(voiceCategories) / sizeof(wchar_t*); i++) {
+			HRESULT hr = addVoices(voiceCategories[i], voices);
+			if (FAILED(hr)) throw new COMException(hr);
+		}
+		jvoices = env->NewGlobalRef(jvoiceList(voices));
+	}
+
+	return jvoices;
 }
 
 HRESULT SpeechSynthesizer::addVoices(const wchar_t* pszCatName, std::vector<Voice*>& voices) {
@@ -76,6 +94,25 @@ HRESULT SpeechSynthesizer::addVoices(const wchar_t* pszCatName, std::vector<Voic
 
 	return hr;
 }
+
+jobject SpeechSynthesizer::jvoiceList(const std::vector<Voice*>& voices) {
+	jclass listClass = JNIClass::getClass(env, "java/util/ArrayList");
+	jobject jvoiceList = env->NewObject(
+		listClass,
+		JNIClass::getMethodID(env, listClass, "<init>", "(I)V"),
+		voices.size());
+	if (env->ExceptionCheck()) throw new JNIException(env);
+
+	std::for_each(voices.begin(), voices.end(), [&](const Voice * voice) {
+		env->CallObjectMethod(
+			jvoiceList,
+			env->GetMethodID(listClass, "add", "(Ljava/lang/Object;)Z"), voice->operator jobject());
+		if (env->ExceptionCheck()) throw new JNIException(env);
+	});
+
+	return jvoiceList;
+}
+
 
 // Well, I didn't have much luck with the XML tags,
 // because I couldn't reset values in the postfix part of the final prompt
@@ -172,10 +209,14 @@ void SpeechSynthesizer::speak(const wchar_t *prompt) {
     }
 }
 
+bool hasSuffix(const std::wstring &str, const std::wstring &suffix) {
+	return str.size() >= suffix.size() && str.compare(str.size() - suffix.size(), suffix.size(), suffix) == 0;
+}
+
 std::wstring SpeechSynthesizer::speak(const wchar_t *prompt, const wchar_t* path) {
     HRESULT hr = S_OK;
     HRESULT hr2 = S_OK;
-    const std::wstring soundFile = std::wstring(path) + L".wav";
+    const std::wstring soundFile = std::wstring(path) + (hasSuffix(path, L".wav") ? L"" :  L".wav");
     //Set the audio format
     CSpStreamFormat cAudioFmt;
     hr = cAudioFmt.AssignFormat(SPSF_22kHz16BitMono);

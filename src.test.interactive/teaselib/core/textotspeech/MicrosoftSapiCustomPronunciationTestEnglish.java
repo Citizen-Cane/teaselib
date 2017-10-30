@@ -1,6 +1,6 @@
 package teaselib.core.textotspeech;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import java.util.Arrays;
 import java.util.List;
@@ -22,13 +22,12 @@ import teaselib.core.speechrecognition.SpeechRecognition;
 import teaselib.core.speechrecognition.SpeechRecognitionResult.Confidence;
 import teaselib.core.speechrecognition.SpeechRecognizer;
 import teaselib.core.texttospeech.TextToSpeech;
-import teaselib.core.texttospeech.TextToSpeechTest;
 import teaselib.core.texttospeech.Voice;
 import teaselib.core.util.Environment;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class MicrosoftSapiCustomPronunciationTestEnglish {
-    private static final Logger logger = LoggerFactory.getLogger(TextToSpeechTest.class);
+    private static final Logger logger = LoggerFactory.getLogger(MicrosoftSapiCustomPronunciationTestEnglish.class);
 
     static final String VOICE_GUID = "TTS_MS_en-US_ZiraPro_11.0";
 

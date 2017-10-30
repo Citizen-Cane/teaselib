@@ -73,7 +73,6 @@ public class TextToSpeechImplementationDebugProxy extends TextToSpeechImplementa
 
     @Override
     public void dispose() {
-        tts.dispose();
+        // Dispose only this, otherwise finalize() would dispose tts impl twice
     }
-
 }

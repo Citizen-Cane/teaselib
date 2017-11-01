@@ -55,13 +55,13 @@ public class Prompt {
         scriptTask.execute();
     }
 
-    void dismissScriptTask() {
+    void joinScriptTask() {
         if (scriptTask != null) {
             scriptTask.join();
         }
     }
 
-    void completeScriptTask() {
+    void cancelScriptTask() {
         if (scriptTask != null) {
             if (!scriptTask.finishing() && !scriptTask.isDone()) {
                 scriptTask.cancel(true);

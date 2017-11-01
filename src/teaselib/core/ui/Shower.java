@@ -10,7 +10,7 @@ public class Shower {
     static final int PAUSED = -1;
 
     final Host host;
-    final Stack<Prompt> stack = new Stack<Prompt>();
+    final Stack<Prompt> stack = new Stack<>();
 
     private final PromptQueue promptQueue;
 
@@ -51,7 +51,7 @@ public class Shower {
                 // TODO replace index with choice -> pause handlers can be
                 // called via unique string identifiers
                 if (resultIndex == Prompt.DISMISSED) {
-                    prompt.dismissScriptTask();
+                    prompt.joinScriptTask();
                     prompt.forwardErrorsAsRuntimeException();
                     return prompt.choice(resultIndex);
                 } else if (prompt.inputHandlerKey != Prompt.NONE) {
@@ -63,7 +63,7 @@ public class Shower {
                         prompt.inputHandlerKey = Prompt.NONE;
                     }
                 } else {
-                    prompt.completeScriptTask();
+                    prompt.cancelScriptTask();
                     prompt.forwardErrorsAsRuntimeException();
                     return prompt.choice(resultIndex);
                 }

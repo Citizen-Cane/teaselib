@@ -1,8 +1,6 @@
-/**
- * 
- */
 package teaselib.core.debug;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -39,25 +37,42 @@ public class DebugResponses {
         }
     }
 
-    public DebugResponses() {
-        super();
-        // TODO Auto-generated constructor stub
-    }
-
     public void add(String match, long delaySeconds) {
+        Pattern choice = WildcardPattern.compile(match);
+        List<String> remove = new ArrayList<>();
+        for (Entry<String, Long> entry : responses.entrySet()) {
+            if (choice.matcher(entry.getKey()).matches()) {
+                remove.add(entry.getKey());
+            }
+        }
+
+        for (String key : remove) {
+            responses.remove(key);
+        }
+
         responses.put(match, delaySeconds);
     }
 
     public Result getResponse(List<String> choices) {
+        Result bestResult = null;
         for (Entry<String, Long> entry : responses.entrySet()) {
             Pattern choice = WildcardPattern.compile(entry.getKey());
             for (int i = 0; i < choices.size(); i++) {
-                if (choice.matcher(choices.get(i)).matches()) {
-                    return new Result(entry.getKey(), i, entry.getValue());
+                if (choice.matcher(choices.get(i)).matches()
+                        && (bestResult == null || bestResult.delay > entry.getValue())) {
+                    bestResult = new Result(entry.getKey(), i, entry.getValue());
                 }
             }
         }
 
+        if (bestResult != null) {
+            return bestResult;
+        } else {
+            return defaultResponse(choices);
+        }
+    }
+
+    public Result defaultResponse(List<String> choices) {
         if (choices.size() == 1) {
             return new Result("*", 0, DebugResponses.IMMEDIATELY);
         } else {

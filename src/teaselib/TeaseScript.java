@@ -273,7 +273,7 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
         protected void awaitTimeout(final SpeechRecognition.TimeoutBehavior timeoutBehavior) {
             final Event<SpeechRecognitionImplementation, SpeechRecognitionStartedEventArgs> recognitionStarted;
             final EventSource<SpeechRecognitionImplementation, SpeechRecognitionStartedEventArgs> recognitionStartedEvents = SpeechRecognizer.instance
-                    .get(actor.getLocale()).events.recognitionStarted;
+                    .get(actor.locale()).events.recognitionStarted;
             if (timeoutBehavior == TimeoutBehavior.InDubioMitius) {
                 // disable timeout on first speech recognition event
                 // (non-audio)
@@ -481,8 +481,8 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
     }
 
     public boolean showItems(String caption, Items items, boolean allowCancel) {
-        List<String> choices = new ArrayList<String>(items.size());
-        List<Boolean> values = new ArrayList<Boolean>(items.size());
+        List<String> choices = new ArrayList<>(items.size());
+        List<Boolean> values = new ArrayList<>(items.size());
         for (int i = 0; i < items.size(); i++) {
             choices.add(items.get(i).displayName());
             values.add(items.get(i).isAvailable());
@@ -513,7 +513,7 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
         } else {
             logger.info(getClass().getSimpleName() + ": '" + wildcardPattern + "' doesn't yield any resources");
         }
-        return new ArrayList<String>(items);
+        return new ArrayList<>(items);
     }
 
 }

@@ -43,7 +43,7 @@ public class TextToSpeechVoicesTest {
 
     @Test
     public void testEachVoice() throws InterruptedException, IOException {
-        File testFile = testFolder.newFile(voice.guid + ".wav");
+        File testFile = testFolder.newFile(voice.guid() + ".wav");
 
         String file = textToSpeech.speak(voice, "Test.", testFile);
         assertEquals(testFile.getAbsolutePath(), file);

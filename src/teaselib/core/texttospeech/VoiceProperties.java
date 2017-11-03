@@ -13,8 +13,7 @@ import org.slf4j.LoggerFactory;
 import teaselib.core.util.SortedProperties;
 
 public class VoiceProperties {
-    private static final Logger logger = LoggerFactory
-            .getLogger(VoiceProperties.class);
+    private static final Logger logger = LoggerFactory.getLogger(VoiceProperties.class);
 
     protected final SortedProperties properties = new SortedProperties();
 
@@ -27,15 +26,15 @@ public class VoiceProperties {
     }
 
     public void putGuid(String key, Voice voice) {
-        properties.put(key + ".guid", voice.guid);
+        properties.put(key + ".guid", voice.guid());
     }
 
     public void put(String key, Voice voice) {
-        properties.put(key + ".guid", voice.guid);
-        properties.put(key + ".name", voice.name);
-        properties.put(key + ".locale", voice.locale);
-        properties.put(key + ".language", voice.language);
-        properties.put(key + ".gender", voice.gender.toString());
+        properties.put(key + ".guid", voice.guid());
+        properties.put(key + ".name", voice.info().name);
+        properties.put(key + ".locale", voice.locale());
+        properties.put(key + ".language", voice.info().language);
+        properties.put(key + ".gender", voice.gender().toString());
     }
 
     public String getGuid(String key) {
@@ -55,7 +54,7 @@ public class VoiceProperties {
     }
 
     public Set<String> keySet() {
-        Set<String> keys = new HashSet<String>();
+        Set<String> keys = new HashSet<>();
         for (Object k : properties.keySet()) {
             String key = (String) k;
             int pos = key.lastIndexOf(".");

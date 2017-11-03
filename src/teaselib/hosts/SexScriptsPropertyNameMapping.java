@@ -7,17 +7,17 @@ import java.util.Set;
 import teaselib.Clothes;
 import teaselib.Household;
 import teaselib.Sexuality;
+import teaselib.Sexuality.Sex;
 import teaselib.Toys;
 import teaselib.core.Persistence;
 import teaselib.core.util.PropertyNameMapping;
 
 /**
- * Map TeaseLib enumerations to SexSripts state, and correct a few naming
- * issues, precisely the use of british vs us english.
+ * Map TeaseLib enumerations to SexSripts state, and correct a few naming issues, precisely the use of british vs us
+ * english.
  * 
- * All code and comments in teaselib is written (or at least supposed to be
- * written) in american english, but everything relevant to the user is uk
- * english, as a tribute to "english discipline".
+ * All code and comments in teaselib is written (or at least supposed to be written) in american english, but everything
+ * relevant to the user is uk english, as a tribute to "english discipline".
  * 
  * @author Citizen-Cane
  *
@@ -25,8 +25,7 @@ import teaselib.core.util.PropertyNameMapping;
 public class SexScriptsPropertyNameMapping extends PropertyNameMapping {
     private static final String SEXUALITY_SEX = "Sexuality.Sex";
     private static final String INTRO_FEMALE = "intro.female";
-    private static final Set<String> LOWER_CASE_NAMES = new HashSet<String>(
-            Arrays.asList("Toys", "Clothes", "Household"));
+    private static final Set<String> LOWER_CASE_NAMES = new HashSet<>(Arrays.asList("Toys", "Clothes", "Household"));
 
     @Override
     public String mapDomain(String domain, String path, String name) {
@@ -87,9 +86,9 @@ public class SexScriptsPropertyNameMapping extends PropertyNameMapping {
     public String get(String name, Persistence persistence) {
         if (SEXUALITY_SEX.equals(name)) {
             if ("true".equals(persistence.get(INTRO_FEMALE))) {
-                return Sexuality.Sex.Female.name();
+                return Sex.Female.name();
             } else {
-                return Sexuality.Sex.Male.name();
+                return Sex.Male.name();
             }
         } else {
             return super.get(name, persistence);

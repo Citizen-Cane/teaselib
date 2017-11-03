@@ -1,6 +1,6 @@
 package teaselib.core.textotspeech;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import java.io.File;
 import java.io.IOException;
@@ -32,7 +32,6 @@ import teaselib.core.texttospeech.PronunciationDictionary;
 import teaselib.core.texttospeech.TextToSpeech;
 import teaselib.core.texttospeech.TextToSpeechPlayer;
 import teaselib.core.texttospeech.Voice;
-import teaselib.core.texttospeech.Voice.Gender;
 import teaselib.core.util.Environment;
 import teaselib.test.DebugSetup;
 
@@ -111,7 +110,7 @@ public class MicrosoftSapiPronunciationDictionaryTest {
         config.set(TextToSpeechPlayer.Settings.Pronunciation, getClass().getResource("pronunciation").getPath());
 
         TextToSpeechPlayer tts = new TextToSpeechPlayer(config);
-        Actor actor = new Actor("Mrs.Foo", Gender.Female, Locale.forLanguageTag("en-uk"));
+        Actor actor = new Actor("Mrs.Foo", Voice.Female, Locale.forLanguageTag("en-uk"));
 
         tts.acquireVoice(actor, new ResourceLoader(getClass()));
         tts.speak(actor, "Cum.", Mood.Neutral);
@@ -123,7 +122,7 @@ public class MicrosoftSapiPronunciationDictionaryTest {
         config.set(TextToSpeechPlayer.Settings.Pronunciation, new File("defaults/pronunciation").getAbsolutePath());
 
         TextToSpeechPlayer tts = new TextToSpeechPlayer(config);
-        Actor actor = new Actor("Mrs.Foo", Gender.Female, Locale.forLanguageTag("en-uk"));
+        Actor actor = new Actor("Mrs.Foo", Voice.Female, Locale.forLanguageTag("en-uk"));
 
         tts.acquireVoice(actor, new ResourceLoader(getClass()));
         tts.speak(actor, "Cum.", Mood.Neutral);

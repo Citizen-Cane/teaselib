@@ -5,10 +5,10 @@ import java.util.Locale;
 import org.slf4j.LoggerFactory;
 
 import teaselib.Actor;
+import teaselib.Sexuality.Gender;
 import teaselib.core.Persistence;
 import teaselib.core.TeaseLib;
 import teaselib.core.UserItems;
-import teaselib.core.texttospeech.Voice.Gender;
 import teaselib.core.util.PropertyNameMapping;
 
 public class PersistenceLogger implements Persistence {

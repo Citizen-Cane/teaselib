@@ -4,14 +4,14 @@ import java.io.IOException;
 import java.util.Locale;
 
 import teaselib.Actor;
+import teaselib.Sexuality.Gender;
 import teaselib.TeaseScript;
 import teaselib.core.Configuration.Setup;
-import teaselib.core.debug.DebugHost;
-import teaselib.core.debug.DebugPersistence;
 import teaselib.core.Debugger;
 import teaselib.core.ResourceLoader;
 import teaselib.core.TeaseLib;
-import teaselib.core.texttospeech.Voice;
+import teaselib.core.debug.DebugHost;
+import teaselib.core.debug.DebugPersistence;
 import teaselib.core.util.PropertyNameMapping;
 
 public class TestScript extends TeaseScript {
@@ -20,7 +20,7 @@ public class TestScript extends TeaseScript {
     public final Debugger debugger;
 
     public static final String TestScriptNamespace = TestScript.class.getSimpleName() + " " + "Namespace";
-    public static final Actor TestScriptActor = new Actor("Test", Voice.Gender.Female, Locale.US);
+    public static final Actor TestScriptActor = new Actor("Test", Gender.Feminine, Locale.US);
 
     public static TestScript getOne() {
         try {

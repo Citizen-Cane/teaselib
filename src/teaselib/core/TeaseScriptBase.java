@@ -40,8 +40,8 @@ public abstract class TeaseScriptBase {
 
     protected static final int NoTimeout = 0;
 
-    private final List<MediaRenderer> queuedRenderers = new ArrayList<MediaRenderer>();
-    private final List<MediaRenderer.Threaded> backgroundRenderers = new ArrayList<MediaRenderer.Threaded>();
+    private final List<MediaRenderer> queuedRenderers = new ArrayList<>();
+    private final List<MediaRenderer.Threaded> backgroundRenderers = new ArrayList<>();
 
     private List<MediaRenderer> playedRenderers = null;
 
@@ -51,7 +51,7 @@ public abstract class TeaseScriptBase {
         public ReplayImpl(List<MediaRenderer> renderers) {
             super();
             logger.info("Remembering renderers in replay " + this);
-            this.renderers = new ArrayList<MediaRenderer>(renderers);
+            this.renderers = new ArrayList<>(renderers);
         }
 
         @Override
@@ -95,7 +95,7 @@ public abstract class TeaseScriptBase {
     }
 
     protected static List<String> buildChoicesFromArray(String choice, String... more) {
-        List<String> choices = new ArrayList<String>(1 + more.length);
+        List<String> choices = new ArrayList<>(1 + more.length);
         choices.add(choice);
         choices.addAll(Arrays.asList(more));
         return choices;
@@ -163,10 +163,10 @@ public abstract class TeaseScriptBase {
             synchronized (queuedRenderers) {
                 queueRenderer(renderMessage);
                 // Remember this set for replay
-                playedRenderers = new ArrayList<MediaRenderer>(queuedRenderers);
+                playedRenderers = new ArrayList<>(queuedRenderers);
                 // Remember in order to clear queued before completing
                 // previous set
-                List<MediaRenderer> nextSet = new ArrayList<MediaRenderer>(queuedRenderers);
+                List<MediaRenderer> nextSet = new ArrayList<>(queuedRenderers);
                 // Must clear queue for next set before completing current,
                 // because if the current set is cancelled,
                 // the next set must be discarded
@@ -383,9 +383,9 @@ public abstract class TeaseScriptBase {
             stopBackgroundRenderers();
         }
 
-        List<InputMethod> inputMethods = new ArrayList<InputMethod>(teaseLib.hostInputMethods);
+        List<InputMethod> inputMethods = new ArrayList<>(teaseLib.hostInputMethods);
 
-        SpeechRecognition sR = SpeechRecognizer.instance.get(actor.getLocale());
+        SpeechRecognition sR = SpeechRecognizer.instance.get(actor.locale());
         if (sR.isReady() && Boolean.parseBoolean(teaseLib.config.get(Config.InputMethod.SpeechRecognition))) {
             inputMethods.add(new SpeechRecognitionInputMethod(this, sR, recognitionConfidence));
         }
@@ -439,7 +439,7 @@ public abstract class TeaseScriptBase {
     }
 
     private TextVariables allTextVariables() {
-        return new TextVariables(TextVariables.Defaults, teaseLib.getTextVariables(actor.getLocale()),
+        return new TextVariables(TextVariables.Defaults, teaseLib.getTextVariables(actor.locale()),
                 actor.textVariables);
     }
 }

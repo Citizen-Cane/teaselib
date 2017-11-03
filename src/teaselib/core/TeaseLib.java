@@ -25,6 +25,7 @@ import org.slf4j.LoggerFactory;
 import teaselib.Actor;
 import teaselib.Config;
 import teaselib.Duration;
+import teaselib.Sexuality.Gender;
 import teaselib.State;
 import teaselib.core.Host.Location;
 import teaselib.core.debug.TimeAdvanceListener;
@@ -34,7 +35,6 @@ import teaselib.core.devices.Devices;
 import teaselib.core.devices.remote.LocalNetworkDevice;
 import teaselib.core.media.MediaRendererQueue;
 import teaselib.core.texttospeech.TextToSpeechPlayer;
-import teaselib.core.texttospeech.Voice;
 import teaselib.core.ui.HostInputMethod;
 import teaselib.core.ui.InputMethod;
 import teaselib.core.ui.Shower;
@@ -86,7 +86,7 @@ public class TeaseLib {
         if (host == null || persistence == null || setup == null) {
             throw new IllegalArgumentException();
         }
-        
+
         logDateTime();
         logJavaVersion();
         logJavaProperties();
@@ -888,7 +888,7 @@ public class TeaseLib {
         throw new IllegalArgumentException("Item " + domain + "." + QualifiedItem.of(item) + ":" + guid + " not found");
     }
 
-    public Actor getDominant(Voice.Gender gender, Locale locale) {
+    public Actor getDominant(Gender gender, Locale locale) {
         return persistence.getDominant(gender, locale);
     }
 }

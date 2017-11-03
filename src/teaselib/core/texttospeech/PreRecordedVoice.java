@@ -22,12 +22,12 @@ public class PreRecordedVoice extends VoiceProperties {
     }
 
     public static String getResourcePath(Actor actor, Voice voice) {
-        return getResourcePath(actor.key, voice.guid);
+        return getResourcePath(actor.key, voice.guid());
     }
 
     public static String getResourcePath(String actorKey, String voiceGuid) {
-        return PrerecordedSpeechStorage.SpeechDirName + "/" + actorKey + "/"
-                + voiceGuid + "/" + ActorPropertiesFilename;
+        return PrerecordedSpeechStorage.SpeechDirName + "/" + actorKey + "/" + voiceGuid + "/"
+                + ActorPropertiesFilename;
     }
 
     public boolean available() {

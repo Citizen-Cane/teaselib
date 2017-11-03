@@ -27,18 +27,16 @@ public class PrerecordedSpeechZipStorage implements PrerecordedSpeechStorage {
     private final ZipFile current;
     private final ZipOutputStream updated;
 
-    private final Map<String, Long> processed = new HashMap<String, Long>();
-    private final Map<String, String> messageHashes = new HashMap<String, String>();
+    private final Map<String, Long> processed = new HashMap<>();
+    private final Map<String, String> messageHashes = new HashMap<>();
     private final File zipFileUpdated;
     private final File zipFileCurrent;
 
-    public PrerecordedSpeechZipStorage(File path, String resourcesRoot)
-            throws IOException {
+    public PrerecordedSpeechZipStorage(File path, String resourcesRoot) throws IOException {
         this.resourcesRoot = resourcesRoot;
         this.archiveName = resourcesRoot + " " + "Speech";
         zipFileCurrent = new File(path, archiveName + Zip).getAbsoluteFile();
-        zipFileUpdated = new File(path, archiveName + Updated + Zip)
-                .getAbsoluteFile();
+        zipFileUpdated = new File(path, archiveName + Updated + Zip).getAbsoluteFile();
         current = getCurrent();
         updated = new ZipOutputStream(new FileOutputStream(zipFileUpdated));
     }
@@ -57,10 +55,8 @@ public class PrerecordedSpeechZipStorage implements PrerecordedSpeechStorage {
     }
 
     @Override
-    public void createActorEntry(Actor actor, Voice voice,
-            VoiceProperties properties) throws IOException {
-        String voicePath = getPath(actor, voice,
-                PreRecordedVoice.ActorPropertiesFilename);
+    public void createActorEntry(Actor actor, Voice voice, VoiceProperties properties) throws IOException {
+        String voicePath = getPath(actor, voice, PreRecordedVoice.ActorPropertiesFilename);
         ZipEntry actorEntry = new ZipEntry(voicePath);
         updated.putNextEntry(actorEntry);
         properties.store(updated, "");
@@ -68,8 +64,7 @@ public class PrerecordedSpeechZipStorage implements PrerecordedSpeechStorage {
     }
 
     private String getPath(Actor actor, Voice voice, String name) {
-        return resourcesRoot + "/" + SpeechDirName + "/" + actor.key + "/"
-                + voice.guid + "/" + name;
+        return resourcesRoot + "/" + SpeechDirName + "/" + actor.key + "/" + voice.guid() + "/" + name;
     }
 
     private String getPath(Actor actor, Voice voice, String hash, String name) {
@@ -81,8 +76,7 @@ public class PrerecordedSpeechZipStorage implements PrerecordedSpeechStorage {
         if (processed.containsKey(processHash(actor, voice, hash))) {
             return true;
         }
-        ZipEntry entry = current.getEntry(getPath(actor, voice, hash,
-                TextToSpeechRecorder.ResourcesFilename));
+        ZipEntry entry = current.getEntry(getPath(actor, voice, hash, TextToSpeechRecorder.ResourcesFilename));
         return entry != null;
     }
 
@@ -96,18 +90,15 @@ public class PrerecordedSpeechZipStorage implements PrerecordedSpeechStorage {
         if (lastModified != null) {
             return lastModified;
         }
-        ZipEntry entry = current.getEntry(getPath(actor, voice, hash,
-                TextToSpeechRecorder.ResourcesFilename));
+        ZipEntry entry = current.getEntry(getPath(actor, voice, hash, TextToSpeechRecorder.ResourcesFilename));
         return entry.getTime();
     }
 
     @Override
-    public String getMessageHash(Actor actor, Voice voice, String hash)
-            throws IOException {
+    public String getMessageHash(Actor actor, Voice voice, String hash) throws IOException {
         String messageHash = messageHashes.get(processHash(actor, voice, hash));
         if (messageHash == null) {
-            ZipEntry entry = current.getEntry(getPath(actor, voice, hash,
-                    TextToSpeechRecorder.MessageFilename));
+            ZipEntry entry = current.getEntry(getPath(actor, voice, hash, TextToSpeechRecorder.MessageFilename));
             InputStream inputStream = current.getInputStream(entry);
             try {
                 messageHash = TextToSpeechRecorder.readMessage(inputStream);
@@ -127,19 +118,16 @@ public class PrerecordedSpeechZipStorage implements PrerecordedSpeechStorage {
     }
 
     @Override
-    public void storeSpeechResource(Actor actor, Voice voice, String hash,
-            InputStream inputStream, String name) throws IOException {
-        storeSpeechResource(actor, voice, hash, inputStream, name,
-                ZipOutputStream.DEFLATED);
+    public void storeSpeechResource(Actor actor, Voice voice, String hash, InputStream inputStream, String name)
+            throws IOException {
+        storeSpeechResource(actor, voice, hash, inputStream, name, ZipOutputStream.DEFLATED);
         // TODO use ZipOutputStream.STORED, but according to exception message,
         // size, compressed size and/or CRC is needed
     }
 
-    private void storeSpeechResource(Actor actor, Voice voice, String hash,
-            InputStream inputStream, String name, int zipStorageMethod)
-            throws IOException {
-        ZipEntry resourceEntry = new ZipEntry(
-                getPath(actor, voice, hash, name));
+    private void storeSpeechResource(Actor actor, Voice voice, String hash, InputStream inputStream, String name,
+            int zipStorageMethod) throws IOException {
+        ZipEntry resourceEntry = new ZipEntry(getPath(actor, voice, hash, name));
         resourceEntry.setMethod(zipStorageMethod);
         updated.putNextEntry(resourceEntry);
         Stream.copy(inputStream, updated);
@@ -148,26 +136,20 @@ public class PrerecordedSpeechZipStorage implements PrerecordedSpeechStorage {
     }
 
     @Override
-    public void createNewEntry(Actor actor, Voice voice, String hash,
-            String messageHash) {
+    public void createNewEntry(Actor actor, Voice voice, String hash, String messageHash) {
         String key = processHash(actor, voice, hash);
         processed.put(key, System.currentTimeMillis());
         messageHashes.put(key, messageHash);
     }
 
     @Override
-    public void keepMessage(Actor actor, Voice voice, String hash)
-            throws IOException {
-        String messageHash = getStringResource(actor, voice, hash,
-                TextToSpeechRecorder.MessageFilename);
+    public void keepMessage(Actor actor, Voice voice, String hash) throws IOException {
+        String messageHash = getStringResource(actor, voice, hash, TextToSpeechRecorder.MessageFilename);
         messageHashes.put(processHash(actor, voice, hash), messageHash);
-        writeStringResource(actor, voice, hash,
-                TextToSpeechRecorder.MessageFilename, messageHash);
+        writeStringResource(actor, voice, hash, TextToSpeechRecorder.MessageFilename, messageHash);
 
-        String inventory = getStringResource(actor, voice, hash,
-                TextToSpeechRecorder.ResourcesFilename);
-        writeStringResource(actor, voice, hash,
-                TextToSpeechRecorder.ResourcesFilename, inventory);
+        String inventory = getStringResource(actor, voice, hash, TextToSpeechRecorder.ResourcesFilename);
+        writeStringResource(actor, voice, hash, TextToSpeechRecorder.ResourcesFilename, inventory);
 
         if (!inventory.isEmpty()) {
             for (String speechResource : inventory.split("\n")) {
@@ -179,8 +161,7 @@ public class PrerecordedSpeechZipStorage implements PrerecordedSpeechStorage {
         processed.put(processHash(actor, voice, hash), lastModified);
     }
 
-    private void copyEntry(Actor actor, Voice voice, String hash, String name)
-            throws IOException {
+    private void copyEntry(Actor actor, Voice voice, String hash, String name) throws IOException {
         ZipEntry entry = current.getEntry(getPath(actor, voice, hash, name));
         InputStream inputStream = current.getInputStream(entry);
         storeSpeechResource(actor, voice, hash, inputStream, name);
@@ -188,8 +169,7 @@ public class PrerecordedSpeechZipStorage implements PrerecordedSpeechStorage {
         inputStream.close();
     }
 
-    private String getStringResource(Actor actor, Voice voice, String hash,
-            String name) throws IOException {
+    private String getStringResource(Actor actor, Voice voice, String hash, String name) throws IOException {
         ZipEntry entry = current.getEntry(getPath(actor, voice, hash, name));
         InputStream inputStream;
         ByteArrayOutputStream bos;
@@ -202,12 +182,10 @@ public class PrerecordedSpeechZipStorage implements PrerecordedSpeechStorage {
     }
 
     @Override
-    public void writeStringResource(Actor actor, Voice voice, String hash,
-            String name, String value) throws IOException {
-        InputStream inputStream = new ByteArrayInputStream(
-                value.toString().getBytes(StandardCharsets.UTF_8));
-        storeSpeechResource(actor, voice, hash, inputStream, name,
-                ZipOutputStream.DEFLATED);
+    public void writeStringResource(Actor actor, Voice voice, String hash, String name, String value)
+            throws IOException {
+        InputStream inputStream = new ByteArrayInputStream(value.toString().getBytes(StandardCharsets.UTF_8));
+        storeSpeechResource(actor, voice, hash, inputStream, name, ZipOutputStream.DEFLATED);
     }
 
     @Override

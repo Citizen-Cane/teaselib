@@ -28,11 +28,11 @@ jobject getGenderField(JNIEnv *env, const wchar_t* gender) {
     } else {
         genderFieldName = "Robot";
     }
-    jclass genderClass = JNIClass::getClass(env, "teaselib/core/texttospeech/Voice$Gender");
+    jclass voiceClass = JNIClass::getClass(env, "teaselib/core/texttospeech/Voice");
     jobject genderValue = env->GetStaticObjectField(
-                              genderClass,
+                              voiceClass,
                               JNIClass::getStaticFieldID(
-								  env, genderClass, genderFieldName, "Lteaselib/core/texttospeech/Voice$Gender;"));
+								  env, voiceClass, genderFieldName, "Lteaselib/Sexuality$Gender;"));
     return genderValue;
 }
 
@@ -82,10 +82,10 @@ Voice::Voice(JNIEnv* env, ISpObjectToken* pVoiceToken, jobject ttsImpl)
 	}
 
 	{
-		jclass clazz = env->FindClass("teaselib/core/texttospeech/Voice");
+		jclass clazz = env->FindClass("teaselib/core/texttospeech/NativeVoice");
 		if (env->ExceptionCheck()) throw new JNIException(env);
-		const char* signature = "(JLteaselib/core/texttospeech/TextToSpeechImplementation;Ljava/lang/String;Ljava/lang/String;Lteaselib/core/texttospeech/Voice$Gender;Lteaselib/core/texttospeech/VoiceInfo;)V";
 
+		const char* signature = "(JLteaselib/core/texttospeech/TextToSpeechImplementation;Ljava/lang/String;Ljava/lang/String;Lteaselib/Sexuality$Gender;Lteaselib/core/texttospeech/VoiceInfo;)V";
 		jthis = env->NewGlobalRef(env->NewObject(
 			clazz,
 			JNIClass::getMethodID(env, clazz, "<init>", signature),

@@ -1,7 +1,6 @@
 package teaselib.core.texttospeech;
 
 import static org.junit.Assert.*;
-import static teaselib.core.texttospeech.Voice.Gender.*;
 
 import java.io.File;
 import java.io.IOException;
@@ -15,6 +14,7 @@ import org.junit.Test;
 
 import teaselib.Actor;
 import teaselib.Mood;
+import teaselib.Sexuality.Gender;
 import teaselib.core.Configuration;
 import teaselib.core.texttospeech.implementation.TextToSpeechImplementationDebugProxy;
 import teaselib.test.DebugSetup;
@@ -22,17 +22,17 @@ import teaselib.test.DebugSetup;
 public class TextToSpeechPlayerTest {
     static final TestTTS testTTS = new TestTTS();
 
-    private static final Voice MR_FOO = new Voice(0, testTTS, "Foo", "en-uk", Male,
+    private static final Voice MR_FOO = new NativeVoice(0, testTTS, "Foo", "en-uk", Voice.Male,
             new VoiceInfo("Test", "English-UK", "Mr.Foo"));
-    private static final Voice MR_FOO2 = new Voice(0, testTTS, "Foo2", "en-uk", Male,
+    private static final Voice MR_FOO2 = new NativeVoice(0, testTTS, "Foo2", "en-uk", Voice.Male,
             new VoiceInfo("Test", "English-UK", "Mr.Foo2"));
-    private static final Voice MR_FOO3 = new Voice(0, testTTS, "Foo3", "en-uk", Male,
+    private static final Voice MR_FOO3 = new NativeVoice(0, testTTS, "Foo3", "en-uk", Voice.Male,
             new VoiceInfo("Test", "English-UK", "Mr.Foo3"));
-    private static final Voice MR_BAR = new Voice(0, testTTS, "Bar", "en-in", Male,
+    private static final Voice MR_BAR = new NativeVoice(0, testTTS, "Bar", "en-in", Voice.Male,
             new VoiceInfo("Test", "English-IN", "Mr.Bar"));
-    private static final Voice MR_BAR2 = new Voice(0, testTTS, "Bar2", "en-in", Male,
+    private static final Voice MR_BAR2 = new NativeVoice(0, testTTS, "Bar2", "en-in", Voice.Male,
             new VoiceInfo("Test", "English-IN", "Mr.Bar2"));
-    private static final Voice MR_FOOBAR = new Voice(0, testTTS, "Foobar", "en", Male,
+    private static final Voice MR_FOOBAR = new NativeVoice(0, testTTS, "Foobar", "en", Voice.Male,
             new VoiceInfo("Test", "English", "Mr.Foobar"));
 
     @BeforeClass
@@ -45,9 +45,9 @@ public class TextToSpeechPlayerTest {
         Configuration config = DebugSetup.getConfiguration();
         TextToSpeechPlayer tts = new TextToSpeechPlayer(config, testTTS);
 
-        assertEquals(MR_FOO, tts.getVoiceFor(new Actor("Mr.Foo", Male, Locale.forLanguageTag("en-uk"))));
-        assertEquals(MR_BAR, tts.getVoiceFor(new Actor("Mr.Bar", Male, Locale.forLanguageTag("en-in"))));
-        assertEquals(MR_FOOBAR, tts.getVoiceFor(new Actor("Mr.FooBar", Male, Locale.ENGLISH)));
+        assertEquals(MR_FOO, tts.getVoiceFor(new Actor("Mr.Foo", Voice.Male, Locale.forLanguageTag("en-uk"))));
+        assertEquals(MR_BAR, tts.getVoiceFor(new Actor("Mr.Bar", Voice.Male, Locale.forLanguageTag("en-in"))));
+        assertEquals(MR_FOOBAR, tts.getVoiceFor(new Actor("Mr.FooBar", Voice.Male, Locale.ENGLISH)));
     }
 
     @Test
@@ -56,9 +56,9 @@ public class TextToSpeechPlayerTest {
         config.set(TextToSpeechPlayer.Settings.Voices, getClass().getResource("voices.properties").getPath());
         TextToSpeechPlayer tts = new TextToSpeechPlayer(config, testTTS);
 
-        assertEquals(MR_FOO3, tts.getVoiceFor(new Actor("Mr.Foo", Male, Locale.forLanguageTag("en-uk"))));
-        assertEquals(MR_BAR2, tts.getVoiceFor(new Actor("Mr.Bar", Male, Locale.forLanguageTag("en-in"))));
-        assertEquals(MR_FOOBAR, tts.getVoiceFor(new Actor("Mr.FooBar", Male, Locale.ENGLISH)));
+        assertEquals(MR_FOO3, tts.getVoiceFor(new Actor("Mr.Foo", Voice.Male, Locale.forLanguageTag("en-uk"))));
+        assertEquals(MR_BAR2, tts.getVoiceFor(new Actor("Mr.Bar", Voice.Male, Locale.forLanguageTag("en-in"))));
+        assertEquals(MR_FOOBAR, tts.getVoiceFor(new Actor("Mr.FooBar", Voice.Male, Locale.ENGLISH)));
     }
 
     @Test
@@ -67,16 +67,16 @@ public class TextToSpeechPlayerTest {
         config.set(TextToSpeechPlayer.Settings.Voices, getClass().getResource("voices.properties").getPath());
         TextToSpeechPlayer tts = new TextToSpeechPlayer(config, testTTS);
 
-        assertEquals(MR_FOO3, tts.getVoiceFor(new Actor("Mr.Foo", Male, Locale.forLanguageTag("en-uk"))));
-        assertEquals(MR_BAR2, tts.getVoiceFor(new Actor("Mr.Bar", Male, Locale.forLanguageTag("en-in"))));
-        assertEquals(MR_FOOBAR, tts.getVoiceFor(new Actor("Mr.FooBar", Male, Locale.ENGLISH)));
+        assertEquals(MR_FOO3, tts.getVoiceFor(new Actor("Mr.Foo", Voice.Male, Locale.forLanguageTag("en-uk"))));
+        assertEquals(MR_BAR2, tts.getVoiceFor(new Actor("Mr.Bar", Voice.Male, Locale.forLanguageTag("en-in"))));
+        assertEquals(MR_FOOBAR, tts.getVoiceFor(new Actor("Mr.FooBar", Voice.Male, Locale.ENGLISH)));
 
         config.set(TextToSpeechPlayer.Settings.Voices, getClass().getResource("voices2.properties").getPath());
         tts.reload();
 
-        assertEquals(MR_FOO2, tts.getVoiceFor(new Actor("Mr.Foo", Male, Locale.forLanguageTag("en-uk"))));
-        assertEquals(MR_BAR, tts.getVoiceFor(new Actor("Mr.Bar", Male, Locale.forLanguageTag("en-in"))));
-        assertEquals(MR_FOOBAR, tts.getVoiceFor(new Actor("Mr.FooBar", Male, Locale.ENGLISH)));
+        assertEquals(MR_FOO2, tts.getVoiceFor(new Actor("Mr.Foo", Voice.Male, Locale.forLanguageTag("en-uk"))));
+        assertEquals(MR_BAR, tts.getVoiceFor(new Actor("Mr.Bar", Voice.Male, Locale.forLanguageTag("en-in"))));
+        assertEquals(MR_FOOBAR, tts.getVoiceFor(new Actor("Mr.FooBar", Voice.Male, Locale.ENGLISH)));
     }
 
     @Test
@@ -105,7 +105,7 @@ public class TextToSpeechPlayerTest {
         PronunciationDictionary dict = new PronunciationDictionary(
                 new File(config.get(TextToSpeechPlayer.Settings.Pronunciation)));
 
-        Voice voice = new Voice(0, testTTS, "MSZira", "en-us", Voice.Gender.Female,
+        Voice voice = new NativeVoice(0, testTTS, "MSZira", "en-us", Gender.Feminine,
                 new VoiceInfo("Microsoft", "American English", "MS Zira"));
 
         assertEquals("the quick brown fox.", dict.correct(voice, "That quieck bruown animal."));
@@ -133,8 +133,8 @@ public class TextToSpeechPlayerTest {
         TextToSpeechImplementation tts = new TextToSpeechImplementationDebugProxy(new TestTTS() {
             @Override
             public List<Voice> getVoices() {
-                return Arrays.asList(
-                        new Voice(0, this, "Foo", "en-au", Male, new VoiceInfo("Test", "English-AU", "Mr.Foo")));
+                return Arrays.asList(new NativeVoice(0, this, "Foo", "en-au", Voice.Male,
+                        new VoiceInfo("Test", "English-AU", "Mr.Foo")));
             }
 
             @Override
@@ -144,6 +144,7 @@ public class TextToSpeechPlayerTest {
         });
 
         TextToSpeechPlayer textToSpeechPlayer = new TextToSpeechPlayer(config, tts);
-        textToSpeechPlayer.speak(new Actor("Mr.Foo", Male, Locale.forLanguageTag("en-au")), "Hello", Mood.Neutral);
+        textToSpeechPlayer.speak(new Actor("Mr.Foo", Voice.Male, Locale.forLanguageTag("en-au")), "Hello",
+                Mood.Neutral);
     }
 }

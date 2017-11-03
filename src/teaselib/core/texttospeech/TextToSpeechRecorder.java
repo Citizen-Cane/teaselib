@@ -42,7 +42,7 @@ public class TextToSpeechRecorder {
     private final ResourceLoader resources;
     private final PrerecordedSpeechStorage storage;
     private final Map<String, Voice> voices;
-    private final Set<String> actors = new HashSet<String>();
+    private final Set<String> actors = new HashSet<>();
     private final ActorVoices actorVoices;
     private final TextToSpeechPlayer ttsPlayer;
     private final mp3.Main mp3Encoder;
@@ -80,11 +80,11 @@ public class TextToSpeechRecorder {
 
     public void create(ScriptScanner scanner) throws IOException, InterruptedException {
         logger.info("Scanning script '" + scanner.getScriptName() + "'");
-        Set<String> created = new HashSet<String>();
+        Set<String> created = new HashSet<>();
         for (Message message : scanner) {
             Actor actor = message.actor;
             Voice voice = getVoice(actor);
-            logger.info("Voice: " + voice.name);
+            logger.info("Voice: " + voice.info().name);
             if (!actors.contains(actor.key)) {
                 createActorEntry(actor, voice);
             }
@@ -93,8 +93,7 @@ public class TextToSpeechRecorder {
         }
     }
 
-    private String processMessage(Actor actor, final Voice voice, Message message)
-            throws IOException, InterruptedException {
+    private String processMessage(Actor actor, Voice voice, Message message) throws IOException, InterruptedException {
         String hash = getHash(message);
         String newMessageHash = message.toPrerecordedSpeechHashString();
         if (!newMessageHash.isEmpty()) {
@@ -135,7 +134,7 @@ public class TextToSpeechRecorder {
         throw new IllegalStateException("Collision");
     }
 
-    private void updateMessage(Actor actor, final Voice voice, Message message, String hash, String newMessageHash)
+    private void updateMessage(Actor actor, Voice voice, Message message, String hash, String newMessageHash)
             throws IOException, InterruptedException {
         logger.info(hash + " has changed");
         storage.deleteMessage(actor, voice, hash);
@@ -143,14 +142,14 @@ public class TextToSpeechRecorder {
         changedEntries++;
     }
 
-    private void createNewMessage(Actor actor, final Voice voice, Message message, String hash)
+    private void createNewMessage(Actor actor, Voice voice, Message message, String hash)
             throws IOException, InterruptedException {
         logger.info(hash + " is new");
         create(actor, voice, message, hash, message.toPrerecordedSpeechHashString());
         newEntries++;
     }
 
-    private void createActorEntry(Actor actor, final Voice voice) throws IOException {
+    private void createActorEntry(Actor actor, Voice voice) throws IOException {
         actors.add(actor.key);
         PreRecordedVoice prerecordedVoice = new PreRecordedVoice(actor, voice);
         storage.createActorEntry(actor, voice, prerecordedVoice);
@@ -175,12 +174,14 @@ public class TextToSpeechRecorder {
 
     private Voice getVoice(Actor actor) {
         final Voice voice;
+
         String voiceGuid = ttsPlayer.getAssignedVoiceFor(actor);
         if (voiceGuid == null) {
             voice = ttsPlayer.getVoiceFor(actor);
         } else {
             voice = voices.get(voiceGuid);
         }
+
         if (voice == null) {
             throw new IllegalArgumentException(
                     "Voice for actor '" + actor + "' not found in " + ActorVoices.VoicesFilename);

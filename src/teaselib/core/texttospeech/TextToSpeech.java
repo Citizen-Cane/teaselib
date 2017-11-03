@@ -94,7 +94,7 @@ public class TextToSpeech {
         Map<String, Voice> newVoices = new LinkedHashMap<>();
         for (Voice voice : ttsImpl.getVoices()) {
             if (!isBlackListed(voice)) {
-                newVoices.put(voice.guid, voice);
+                newVoices.put(voice.guid(), voice);
             }
         }
 
@@ -126,7 +126,7 @@ public class TextToSpeech {
      * @param voices
      */
     private static boolean isBlackListed(Voice voice) {
-        return BlackList.contains(voice.guid);
+        return BlackList.contains(voice.guid());
     }
 
     public void speak(Voice voice, String prompt) throws InterruptedException {
@@ -141,7 +141,7 @@ public class TextToSpeech {
      * @throws InterruptedException
      */
     public void speak(Voice voice, String prompt, String[] hints) throws InterruptedException {
-        TextToSpeechImplementation tts = voice.ttsImpl;
+        TextToSpeechImplementation tts = voice.tts();
 
         if (tts != null && ttsSDKs.containsKey(tts.sdkName())) {
             Delegate delegate = new Delegate() {
@@ -171,7 +171,7 @@ public class TextToSpeech {
 
     public String speak(Voice voice, String prompt, File file, String[] hints) throws InterruptedException {
         StringBuilder soundFilePath = new StringBuilder();
-        TextToSpeechImplementation tts = voice.ttsImpl;
+        TextToSpeechImplementation tts = voice.tts();
 
         if (tts != null && ttsSDKs.containsKey(tts.sdkName())) {
             Delegate delegate = new Delegate() {
@@ -208,7 +208,7 @@ public class TextToSpeech {
     }
 
     public void stop(Voice voice) {
-        TextToSpeechImplementation tts = voice.ttsImpl;
+        TextToSpeechImplementation tts = voice.tts();
 
         if (tts != null && ttsSDKs.containsKey(tts.sdkName())) {
             tts.stop();

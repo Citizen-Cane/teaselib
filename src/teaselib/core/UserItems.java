@@ -8,7 +8,7 @@ import teaselib.core.util.QualifiedItem;
 import teaselib.util.Item;
 
 public interface UserItems {
-    Map<Object, List<Item>> userItems = new HashMap<Object, List<Item>>();
+    Map<Object, List<Item>> userItems = new HashMap<>();
 
     List<Item> get(String domain, QualifiedItem<?> item);
 

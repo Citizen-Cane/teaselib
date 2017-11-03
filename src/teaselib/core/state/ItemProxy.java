@@ -36,7 +36,8 @@ public class ItemProxy extends AbstractProxy<Item> implements Item, StateMaps.At
     }
 
     @Override
-    public <S> Options applyTo(S... items) {
+    @SafeVarargs
+    public final <S> Options applyTo(S... items) {
         injectNamespace();
         return new StateOptionsProxy(namespace, item.applyTo(items));
     }
@@ -57,7 +58,8 @@ public class ItemProxy extends AbstractProxy<Item> implements Item, StateMaps.At
     }
 
     @Override
-    public <S extends Object> Persistence removeFrom(S... peer) {
+    @SafeVarargs
+    public final <S extends Object> Persistence removeFrom(S... peer) {
         return new StatePersistenceProxy(namespace, item.removeFrom(peer));
     }
 

@@ -32,7 +32,7 @@ public class ResourceLoader {
 
     private final ClassLoader classLoader = getClass().getClassLoader();
     private final Method addURL;
-    private final Set<URI> resourceLocations = new HashSet<URI>();
+    private final Set<URI> resourceLocations = new HashSet<>();
     private final File basePath;
     private final String resourceRoot;
 
@@ -150,8 +150,8 @@ public class ResourceLoader {
     }
 
     /**
-     * {@link java.net.URL} paths have white space is escaped ({@code %20}), so
-     * to work with resources, these decorations must be removed.
+     * {@link java.net.URL} paths have white space is escaped ({@code %20}), so to work with resources, these
+     * decorations must be removed.
      * 
      * @param url
      *            The url to retrieve the undecorated path from.
@@ -293,11 +293,11 @@ public class ResourceLoader {
      * 
      * @param pattern
      *            RegEx pattern for resource selection.
-     * @return List of resource paths matching the pattern. All resources in all
-     *         asset paths are enumerated, then matched against the pattern.
+     * @return List of resource paths matching the pattern. All resources in all asset paths are enumerated, then
+     *         matched against the pattern.
      */
     public Collection<String> resources(Pattern pattern) {
-        Collection<String> resources = new LinkedHashSet<String>();
+        Collection<String> resources = new LinkedHashSet<>();
         for (URI classsPathEntry : resourceLocations) {
             Collection<String> matches = new ResourceList(resourceRoot).getResources(classsPathEntry, pattern);
             resources.addAll(matches);
@@ -306,12 +306,10 @@ public class ResourceLoader {
     }
 
     /**
-     * Get the absolute file path of a resource. Good for creating a File or URL
-     * object. The path denotes a directory or file in the file system, not in a
-     * jar or zip.
+     * Get the absolute file path of a resource. Good for creating a File or URL object. The path denotes a directory or
+     * file in the file system, not in a jar or zip.
      * <p>
-     * The directory is writable in order to cache resources that must exist as
-     * a file.
+     * The directory is writable in order to cache resources that must exist as a file.
      * 
      * @param classLoaderCompatibleResourcePath(resourcePath)
      *            The path to the resource relative to the asset root directory.
@@ -322,8 +320,7 @@ public class ResourceLoader {
     }
 
     /**
-     * Unpacks the enclosing folder of the requested resource, including all
-     * other resources and all sub folders.
+     * Unpacks the enclosing folder of the requested resource, including all other resources and all sub folders.
      * 
      * @param classLoaderCompatibleResourcePath(path)
      *            The path to the requested resource
@@ -349,13 +346,11 @@ public class ResourceLoader {
     }
 
     /**
-     * Unpacks a resource into the file system. If the file already, the method
-     * just returns the absolute file path.
+     * Unpacks a resource into the file system. If the file already, the method just returns the absolute file path.
      * 
      * @param classLoaderCompatibleResourcePath(resourcePath)
      *            A resource path.
-     * @return Absolute file path to the resource denoted by the {@code path}
-     *         parameter.
+     * @return Absolute file path to the resource denoted by the {@code path} parameter.
      * @throws IOException
      */
     public File unpackToFile(String resourcePath) throws IOException {

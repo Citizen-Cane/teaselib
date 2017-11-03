@@ -22,7 +22,7 @@ import teaselib.core.ScriptInterruptedException;
 class LocalNetworkDeviceDiscoveryBroadcast extends LocalNetworkDeviceDiscovery {
     static final Logger logger = LoggerFactory.getLogger(LocalNetworkDeviceDiscoveryBroadcast.class);
 
-    private final Map<InterfaceAddress, BroadcastListener> discoveryThreads = new HashMap<InterfaceAddress, BroadcastListener>();
+    private final Map<InterfaceAddress, BroadcastListener> discoveryThreads = new HashMap<>();
     private BroadcastListener deviceSTatusMessageListener;
 
     @Override

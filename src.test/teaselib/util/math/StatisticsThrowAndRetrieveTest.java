@@ -50,8 +50,8 @@ public class StatisticsThrowAndRetrieveTest {
     }
 
     private static List<String> simulateThrowAndRetrieveTiming(Double[] values) {
-        Statistics<Double> statistics = new Statistics<Double>(new ArrayList<Double>());
-        List<String> actual = new ArrayList<String>();
+        Statistics<Double> statistics = new Statistics<>(new ArrayList<Double>());
+        List<String> actual = new ArrayList<>();
         for (Double value : values) {
             String result = getResult(statistics, value);
             addResult(statistics, actual, value, result);

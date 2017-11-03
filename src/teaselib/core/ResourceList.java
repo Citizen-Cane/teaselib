@@ -8,8 +8,9 @@ import java.util.Collection;
 import java.util.Enumeration;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
-import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
+
+import teaselib.core.util.ExceptionUtil;
 
 // Pasted from
 // http://stackoverflow.com/questions/3923129/get-a-list-of-resources-from-classpath-directory
@@ -37,8 +38,8 @@ public class ResourceList {
      * @return the resources in the order they are found
      */
     public Collection<String> getResources(final URI basePath, final Pattern pattern) {
-        final ArrayList<String> retval = new ArrayList<String>();
-        final File file = new File(basePath.getPath());
+        ArrayList<String> retval = new ArrayList<>();
+        File file = new File(basePath.getPath());
         if (file.isDirectory()) {
             retval.addAll(getResourcesFromDirectory(basePath, file, pattern));
         } else {
@@ -48,14 +49,12 @@ public class ResourceList {
     }
 
     private Collection<String> getResourcesFromJarFile(File file, Pattern pattern) {
-        ArrayList<String> retval = new ArrayList<String>();
+        ArrayList<String> retval = new ArrayList<>();
         ZipFile zf;
         try {
             zf = new ZipFile(file);
-        } catch (final ZipException e) {
-            throw new Error(e);
-        } catch (final IOException e) {
-            throw new Error(e);
+        } catch (IOException e) {
+            throw ExceptionUtil.asRuntimeException(e);
         }
         Enumeration<? extends ZipEntry> e = zf.entries();
         while (e.hasMoreElements()) {
@@ -67,13 +66,13 @@ public class ResourceList {
         try {
             zf.close();
         } catch (final IOException e1) {
-            throw new Error(e1);
+            throw ExceptionUtil.asRuntimeException(e1);
         }
         return retval;
     }
 
     private Collection<String> getResourcesFromDirectory(URI basePath, File directory, Pattern pattern) {
-        ArrayList<String> retval = new ArrayList<String>();
+        ArrayList<String> retval = new ArrayList<>();
         File[] fileList = directory.listFiles();
         for (final File file : fileList) {
             if (file.isDirectory()) {

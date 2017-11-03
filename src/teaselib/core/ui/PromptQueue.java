@@ -4,13 +4,14 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import teaselib.core.ScriptInterruptedException;
 import teaselib.core.TeaseScriptBase;
+import teaselib.core.util.ExceptionUtil;
 
 /**
  * @author Citizen-Cane
  *
  */
 public class PromptQueue {
-    private final AtomicReference<Prompt> active = new AtomicReference<Prompt>();
+    private final AtomicReference<Prompt> active = new AtomicReference<>();
 
     public int show(TeaseScriptBase script, Prompt prompt) throws InterruptedException {
         prompt.lock.lockInterruptibly();
@@ -156,13 +157,12 @@ public class PromptQueue {
             active.set(null);
             return dismissed;
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             throw new ScriptInterruptedException(e);
-        } catch (Error e) {
-            throw e;
         } catch (RuntimeException e) {
             throw e;
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            throw ExceptionUtil.asRuntimeException(e);
         }
     }
 

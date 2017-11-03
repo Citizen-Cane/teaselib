@@ -31,7 +31,7 @@ public final class LocalNetworkDeviceFactory extends DeviceFactory<LocalNetworkD
 
     private final LocalNetworkDeviceDiscovery deviceDiscovery;
 
-    private final List<LocalNetworkDevice> discoveredDevices = new ArrayList<LocalNetworkDevice>();
+    private final List<LocalNetworkDevice> discoveredDevices = new ArrayList<>();
 
     public LocalNetworkDeviceFactory(String deviceClass, Devices devices, Configuration configuration) {
         super(deviceClass, devices, configuration);
@@ -46,25 +46,21 @@ public final class LocalNetworkDeviceFactory extends DeviceFactory<LocalNetworkD
     }
 
     private void installDeviceDiscoveryListener() {
-        deviceDiscovery.addRemoteDeviceDiscoveryListener(new RemoteDeviceListener() {
-            @Override
-            public void deviceAdded(String name, String address, String serviceName, String description,
-                    String version) {
-                String devicePath = LocalNetworkDevice.createDevicePath(name, serviceName);
-                if (!isDeviceCached(devicePath)) {
-                    try {
-                        LocalNetworkDevice device = new LocalNetworkDevice(name, new UDPConnection(address),
-                                serviceName, description, version);
-                        synchronized (discoveredDevices) {
-                            discoveredDevices.add(device);
-                        }
-                    } catch (NumberFormatException e) {
-                        LocalNetworkDevice.logger.error(e.getMessage(), e);
-                    } catch (SocketException e) {
-                        LocalNetworkDevice.logger.error(e.getMessage(), e);
-                    } catch (UnknownHostException e) {
-                        LocalNetworkDevice.logger.error(e.getMessage(), e);
+        deviceDiscovery.addRemoteDeviceDiscoveryListener((name, address, serviceName, description, version) -> {
+            String devicePath = LocalNetworkDevice.createDevicePath(name, serviceName);
+            if (!isDeviceCached(devicePath)) {
+                try {
+                    LocalNetworkDevice device = new LocalNetworkDevice(name, new UDPConnection(address), serviceName,
+                            description, version);
+                    synchronized (discoveredDevices) {
+                        discoveredDevices.add(device);
                     }
+                } catch (NumberFormatException e1) {
+                    LocalNetworkDevice.logger.error(e1.getMessage(), e1);
+                } catch (SocketException e2) {
+                    LocalNetworkDevice.logger.error(e2.getMessage(), e2);
+                } catch (UnknownHostException e3) {
+                    LocalNetworkDevice.logger.error(e3.getMessage(), e3);
                 }
             }
         });
@@ -78,7 +74,7 @@ public final class LocalNetworkDeviceFactory extends DeviceFactory<LocalNetworkD
             logger.warn("Network device discovery disabled - devices will not be detected");
         }
         publishDiscoveredDevices(deviceCache);
-        return new ArrayList<String>(deviceCache.keySet());
+        return new ArrayList<>(deviceCache.keySet());
     }
 
     private void publishDiscoveredDevices(Map<String, LocalNetworkDevice> deviceCache) {

@@ -11,8 +11,8 @@ import teaselib.core.ScriptInterruptedException;
 
 public class DeviceCache<T extends Device> {
     private static final int CONNECTION_WAIT_UNTIL_CONNECTED = -1;
-    private final Map<String, DeviceFactory<? extends T>> factories = new LinkedHashMap<String, DeviceFactory<? extends T>>();
-    private final Set<DeviceFactoryListener<T>> deviceListeners = new LinkedHashSet<DeviceFactoryListener<T>>();
+    private final Map<String, DeviceFactory<? extends T>> factories = new LinkedHashMap<>();
+    private final Set<DeviceFactoryListener<T>> deviceListeners = new LinkedHashSet<>();
 
     private static final String PathSeparator = "/";
 
@@ -24,7 +24,7 @@ public class DeviceCache<T extends Device> {
         return this;
     }
 
-    private Map<String, T> devices = new LinkedHashMap<String, T>();
+    private Map<String, T> devices = new LinkedHashMap<>();
 
     public T getDefaultDevice() {
         String defaultId = getFirst(getDevicePaths());
@@ -70,7 +70,7 @@ public class DeviceCache<T extends Device> {
     }
 
     public Set<String> getDevicePaths() {
-        Set<String> devicePaths = new LinkedHashSet<String>();
+        Set<String> devicePaths = new LinkedHashSet<>();
         for (Map.Entry<String, DeviceFactory<? extends T>> entry : factories.entrySet())
             devicePaths.addAll(entry.getValue().getDevices());
         return devicePaths;

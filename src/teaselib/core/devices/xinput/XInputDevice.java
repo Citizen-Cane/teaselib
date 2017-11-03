@@ -73,7 +73,7 @@ public class XInputDevice implements Device.Creatable {
      * @return All connected devices
      */
     public static List<String> getDevicePaths() {
-        List<String> devicePaths = new ArrayList<String>(4);
+        List<String> devicePaths = new ArrayList<>(4);
         for (int i = 0; i < XInputDevice.MAX_PLAYERS; i++) {
             XInputDevice device = XInputDevice.getDeviceFor(i);
             if (device.connected()) {
@@ -113,7 +113,7 @@ public class XInputDevice implements Device.Creatable {
         lastComponents = new XInputComponents();
         components = new XInputComponents();
         delta = new XInputComponentsDelta(lastComponents, components);
-        listeners = new LinkedList<XInputDeviceListener>();
+        listeners = new LinkedList<>();
         poll();
     }
 

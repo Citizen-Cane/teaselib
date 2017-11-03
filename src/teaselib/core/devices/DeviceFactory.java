@@ -17,7 +17,7 @@ public abstract class DeviceFactory<T extends Device> {
         this.deviceClass = deviceClass;
         this.devices = devices;
         this.configuration = configuration;
-        this.deviceCache = new LinkedHashMap<String, T>();
+        this.deviceCache = new LinkedHashMap<>();
     }
 
     public String getDeviceClass() {
@@ -31,7 +31,7 @@ public abstract class DeviceFactory<T extends Device> {
                 devicePaths.add(DeviceCache.createDevicePath(deviceClass, Device.WaitingForConnection));
             }
             // remove disconnected
-            Map<String, T> updatedDeviceCache = new LinkedHashMap<String, T>();
+            Map<String, T> updatedDeviceCache = new LinkedHashMap<>();
             for (String devicePath : devicePaths) {
                 if (deviceCache.containsKey(devicePath)) {
                     updatedDeviceCache.put(devicePath, deviceCache.get(devicePath));

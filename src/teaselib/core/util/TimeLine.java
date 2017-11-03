@@ -15,8 +15,8 @@ import java.util.List;
  * New items are only added if they're different from the last. If they're the same, only the time span is updated.
  */
 public class TimeLine<T> {
-    private final LinkedList<T> items = new LinkedList<T>();
-    private final LinkedList<Long> timeSpans = new LinkedList<Long>();
+    private final LinkedList<T> items = new LinkedList<>();
+    private final LinkedList<Long> timeSpans = new LinkedList<>();
     private int maxItems = 1000;
     private long maxTimeSpanMillis = 60 * 1000;
 
@@ -151,7 +151,7 @@ public class TimeLine<T> {
 
     public List<Slice<T>> getTimeSpanSlices(double timeSpanSeconds) {
         if (timeSpanSeconds == 0.0) {
-            return Collections.EMPTY_LIST;
+            return Collections.emptyList();
         }
         List<Slice<T>> tail = new ArrayList<>(10);
         Iterator<T> item = items.descendingIterator();
@@ -159,7 +159,7 @@ public class TimeLine<T> {
         long timeSpanMillis = (long) (timeSpanSeconds * 1000);
         while (item.hasNext()) {
             long t = timeSpan.next();
-            tail.add(new Slice<T>(Math.min(timeSpanMillis, t), item.next()));
+            tail.add(new Slice<>(Math.min(timeSpanMillis, t), item.next()));
             if (t < timeSpanMillis) {
                 timeSpanMillis -= t;
             } else {
@@ -172,7 +172,7 @@ public class TimeLine<T> {
     public List<T> last(int n) {
         int size = items.size();
         if (size == 0)
-            return Collections.EMPTY_LIST;
+            return Collections.emptyList();
         else
             return items.subList(Math.max(0, size - n), size);
     }

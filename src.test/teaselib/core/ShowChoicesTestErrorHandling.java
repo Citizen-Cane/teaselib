@@ -31,7 +31,7 @@ public class ShowChoicesTestErrorHandling extends ShowChoicesAbstractTest {
     @Parameters(name = "{0}")
     public static Iterable<String> data() {
         List<String> variations = Arrays.asList(THROW_RIGHT_AT_START, THROW_AFTER_FIRST_QUESTION);
-        List<String> parameters = new ArrayList<String>(ITERATIONS * variations.size());
+        List<String> parameters = new ArrayList<>(ITERATIONS * variations.size());
         for (int i = 0; i < ITERATIONS; i++) {
             parameters.addAll(variations);
         }

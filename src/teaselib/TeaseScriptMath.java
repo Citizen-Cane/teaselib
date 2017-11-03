@@ -58,7 +58,8 @@ public class TeaseScriptMath extends TeaseScriptPersistenceUtil {
         return teaseLib.random(min, max);
     }
 
-    public <T> T random(T... items) {
+    @SafeVarargs
+    public final <T> T random(T... items) {
         if (items == null)
             return null;
         if (items.length == 0)
@@ -69,16 +70,18 @@ public class TeaseScriptMath extends TeaseScriptPersistenceUtil {
     public <T> T random(List<T> items) {
         if (items == null)
             throw new NullPointerException();
-        if (items.size() == 0)
+        else if (items.isEmpty())
             throw new IllegalArgumentException("Empty list");
+
         return items.get(random(0, items.size() - 1));
     }
 
     public <T> T random(Collection<T> items) {
         if (items == null)
             throw new NullPointerException();
-        if (items.size() == 0)
+        else if (items.isEmpty())
             throw new IllegalArgumentException("Empty list");
+
         int s = random(0, items.size() - 1);
         Iterator<T> iterator = items.iterator();
         T item = null;
@@ -122,7 +125,7 @@ public class TeaseScriptMath extends TeaseScriptPersistenceUtil {
      *         one after the other.
      */
     public <T> List<T> randomized(T[] introduction, int introductionElements, T[] repetition, int repetitionElements) {
-        List<T> out = new ArrayList<T>(repetitionElements);
+        List<T> out = new ArrayList<>(repetitionElements);
         if (introduction != null) {
             if (introduction.length > 0) {
                 addRandomizedElements(out, introduction, introductionElements);

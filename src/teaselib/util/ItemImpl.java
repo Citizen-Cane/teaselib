@@ -190,7 +190,7 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
     public State.Persistence remove() {
         StateImpl state = (StateImpl) teaseLib.state(domain, item);
 
-        HashSet<Object> relevantPeers = new HashSet<Object>(state.peers());
+        HashSet<Object> relevantPeers = new HashSet<>(state.peers());
         relevantPeers.addAll(Arrays.asList(defaultPeers));
         relevantPeers.addAll(attributes);
 

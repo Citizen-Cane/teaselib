@@ -13,7 +13,7 @@ import teaselib.core.util.FileUtilities;
 import teaselib.core.util.QualifiedItem;
 
 public class Configuration {
-    private final List<Properties> defaults = new ArrayList<Properties>();
+    private final List<Properties> defaults = new ArrayList<>();
     Properties persistentProperties;
 
     final Properties sessionProperties = new Properties();

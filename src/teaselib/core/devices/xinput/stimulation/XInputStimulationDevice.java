@@ -95,7 +95,7 @@ public class XInputStimulationDevice extends StimulationDevice {
 
         @Override
         public List<String> enumerateDevicePaths(Map<String, StimulationDevice> deviceCache) {
-            List<String> devicePaths = new ArrayList<String>(4);
+            List<String> devicePaths = new ArrayList<>(4);
             for (String devicePath : devices.get(XInputDevice.class).getDevicePaths()) {
                 DeviceCache<XInputDevice> xinputDevces = devices.get(XInputDevice.class);
                 XInputDevice controller = xinputDevces.getDevice(devicePath); // TODO device path or deviceName ?
@@ -123,7 +123,7 @@ public class XInputStimulationDevice extends StimulationDevice {
     public XInputStimulationDevice(XInputDevice device) {
         super();
         this.device = device;
-        this.stimulators = new ArrayList<Stimulator>(2);
+        this.stimulators = new ArrayList<>(2);
         this.stimulators.addAll(XInputStimulator.getStimulators(this));
     }
 

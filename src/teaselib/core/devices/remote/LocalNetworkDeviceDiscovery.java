@@ -16,7 +16,7 @@ import java.util.List;
 
 public abstract class LocalNetworkDeviceDiscovery {
 
-    final List<RemoteDeviceListener> remoteDeviceListeners = new ArrayList<RemoteDeviceListener>();
+    final List<RemoteDeviceListener> remoteDeviceListeners = new ArrayList<>();
 
     public abstract void enableDeviceStatusListener(boolean enable);
 
@@ -25,7 +25,7 @@ public abstract class LocalNetworkDeviceDiscovery {
     abstract void close();
 
     List<InterfaceAddress> networks() throws SocketException {
-        List<InterfaceAddress> interfaceAddresses = new ArrayList<InterfaceAddress>();
+        List<InterfaceAddress> interfaceAddresses = new ArrayList<>();
         Enumeration<NetworkInterface> networkInterfaces = NetworkInterface.getNetworkInterfaces();
         for (NetworkInterface netint : Collections.list(networkInterfaces)) {
             if (netint.isUp() && !netint.isVirtual() && !netint.isLoopback()) {

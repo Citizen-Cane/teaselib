@@ -29,7 +29,7 @@ public class WindowedMean {
         TOO_HIGH,
     }
 
-    private final Statistics<Double> statistics = new Statistics<Double>();
+    private final Statistics<Double> statistics = new Statistics<>();
     Result result = Result.ADJUSTING;
 
     int adjustingSize = ADJUSTING_SIZE_DEFAULT;

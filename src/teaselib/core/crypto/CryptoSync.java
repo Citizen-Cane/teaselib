@@ -68,8 +68,8 @@ public class CryptoSync extends CipherUtility {
         System.out.println("Decrypted files: " + decryptedFiles);
         System.out.println("Encrypted files: " + encryptedFiles);
         final CryptoSync sync;
-        Set<String> availableOptions = new HashSet<String>(Arrays.asList(RECURSIVE, FLAT));
-        Set<String> options = new HashSet<String>();
+        Set<String> availableOptions = new HashSet<>(Arrays.asList(RECURSIVE, FLAT));
+        Set<String> options = new HashSet<>();
         while (availableOptions.contains(argv[argi].toLowerCase())) {
             options.add(argv[argi++].toLowerCase());
         }
@@ -161,14 +161,14 @@ public class CryptoSync extends CipherUtility {
     }
 
     private Set<String> fromFilter(File decryptedDir, File encryptedDir) {
-        Set<String> files = new HashSet<String>();
+        Set<String> files = new HashSet<>();
         files.addAll(enumFiles(decryptedDir, ""));
         files.addAll(enumFiles(encryptedDir, ""));
         return files;
     }
 
     private Set<String> enumFiles(File root, String path) {
-        Set<String> files = new HashSet<String>();
+        Set<String> files = new HashSet<>();
         for (File file : new File(root, path).listFiles()) {
             final String element = (path.isEmpty() ? "" : path + File.separator) + file.getName();
             if (file.isDirectory()) {

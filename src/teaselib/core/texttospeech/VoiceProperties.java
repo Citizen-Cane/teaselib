@@ -30,7 +30,7 @@ public class VoiceProperties {
     }
 
     public void put(String key, Voice voice) {
-        properties.put(key + ".guid", voice.guid());
+        putGuid(key, voice);
         properties.put(key + ".name", voice.info().name);
         properties.put(key + ".locale", voice.locale());
         properties.put(key + ".language", voice.info().language);
@@ -57,13 +57,11 @@ public class VoiceProperties {
         Set<String> keys = new HashSet<>();
         for (Object k : properties.keySet()) {
             String key = (String) k;
-            int pos = key.lastIndexOf(".");
-            {
-                if (pos < 0) {
-                    keys.add(key);
-                } else {
-                    keys.add(key.substring(0, pos));
-                }
+            int pos = key.lastIndexOf('.');
+            if (pos < 0) {
+                keys.add(key);
+            } else {
+                keys.add(key.substring(0, pos));
             }
         }
         return keys;
@@ -72,13 +70,8 @@ public class VoiceProperties {
     protected void store(File path, String fileName) throws IOException {
         File file = new File(path, fileName);
         logger.info("Saving " + file.toString());
-        FileOutputStream fileOutputStream = null;
-        try {
-            fileOutputStream = new FileOutputStream(file);
+        try (FileOutputStream fileOutputStream = new FileOutputStream(file);) {
             store(fileOutputStream, "");
-        } finally {
-            if (fileOutputStream != null)
-                fileOutputStream.close();
         }
     }
 

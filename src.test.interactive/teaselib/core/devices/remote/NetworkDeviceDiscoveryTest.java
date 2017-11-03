@@ -29,7 +29,7 @@ public class NetworkDeviceDiscoveryTest {
     @Test
     public void testBroadcastConnectProcedure() throws Exception {
         logger.info("Manual device discovery broadcast:");
-        Map<InetAddress, RemoteDeviceMessage> devices = new HashMap<InetAddress, RemoteDeviceMessage>();
+        Map<InetAddress, RemoteDeviceMessage> devices = new HashMap<>();
         LocalNetworkDeviceDiscoveryBroadcast localNetworkDeviceDiscoveryBroadcast = new LocalNetworkDeviceDiscoveryBroadcast();
         try {
             for (InterfaceAddress interfaceAddress : localNetworkDeviceDiscoveryBroadcast.networks()) {

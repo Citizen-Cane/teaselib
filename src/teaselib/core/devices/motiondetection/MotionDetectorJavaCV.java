@@ -68,7 +68,7 @@ public class MotionDetectorJavaCV extends MotionDetector /* extends WiredDevice 
 
         @Override
         public List<String> enumerateDevicePaths(Map<String, MotionDetectorJavaCV> deviceCache) {
-            List<String> deviceNames = new ArrayList<String>();
+            List<String> deviceNames = new ArrayList<>();
             Set<String> videoCaptureDevicePaths = devices.get(VideoCaptureDevice.class).getDevicePaths();
             for (String videoCaptureDevicePath : videoCaptureDevicePaths) {
                 deviceNames.add(DeviceCache.createDevicePath(DeviceClassName, videoCaptureDevicePath));
@@ -114,7 +114,7 @@ public class MotionDetectorJavaCV extends MotionDetector /* extends WiredDevice 
         private static final Size DesiredProcessingSize = new Size(320, 240);
         private static final boolean mirror = true;
 
-        private static final Map<MotionSensitivity, Integer> motionSensitivities = new HashMap<MotionSensitivity, Integer>(
+        private static final Map<MotionSensitivity, Integer> motionSensitivities = new HashMap<>(
                 initStructuringElementSizes());
 
         private VideoCaptureDevice videoCaptureDevice;
@@ -184,7 +184,7 @@ public class MotionDetectorJavaCV extends MotionDetector /* extends WiredDevice 
         }
 
         private static Map<MotionSensitivity, Integer> initStructuringElementSizes() {
-            Map<MotionSensitivity, Integer> map = new HashMap<MotionSensitivity, Integer>();
+            Map<MotionSensitivity, Integer> map = new HashMap<>();
             map.put(MotionSensitivity.High, 12);
             map.put(MotionSensitivity.Normal, 24);
             map.put(MotionSensitivity.Low, 36);
@@ -283,7 +283,7 @@ public class MotionDetectorJavaCV extends MotionDetector /* extends WiredDevice 
 
         private Set<Presence> getIndicatorHistory(double timeSpan) {
             List<Set<Presence>> indicatorHistory = detectionResult.indicatorHistory.getTimeSpan(timeSpan);
-            LinkedHashSet<Presence> indicators = new LinkedHashSet<Presence>();
+            LinkedHashSet<Presence> indicators = new LinkedHashSet<>();
             for (Set<Presence> set : indicatorHistory) {
                 for (Presence item : set) {
                     // Add non-existing elements only

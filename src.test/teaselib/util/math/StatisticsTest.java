@@ -17,7 +17,7 @@ public class StatisticsTest {
 
     @Test
     public void testBasics() {
-        Statistics<Double> statistics = new Statistics<Double>(new ArrayList<Double>());
+        Statistics<Double> statistics = new Statistics<>(new ArrayList<>());
         assertTrue(statistics.isEmpty());
 
         statistics.add(10.0);
@@ -57,7 +57,7 @@ public class StatisticsTest {
 
     @Test
     public void testMediaDoesntChangeValueOrder() {
-        Statistics<Double> statistics = new Statistics<Double>(new ArrayList<Double>());
+        Statistics<Double> statistics = new Statistics<>(new ArrayList<>());
 
         statistics.add(10.0);
         statistics.add(20.0);
@@ -68,7 +68,7 @@ public class StatisticsTest {
 
     @Test
     public void testRemove() {
-        Statistics<Double> statistics = new Statistics<Double>(new ArrayList<Double>());
+        Statistics<Double> statistics = new Statistics<>(new ArrayList<Double>());
 
         statistics.add(10.0);
         statistics.add(20.0);

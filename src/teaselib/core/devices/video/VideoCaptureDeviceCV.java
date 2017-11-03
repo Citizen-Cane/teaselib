@@ -1,7 +1,6 @@
 package teaselib.core.devices.video;
 
-import static org.bytedeco.javacpp.opencv_videoio.CAP_PROP_FRAME_HEIGHT;
-import static org.bytedeco.javacpp.opencv_videoio.CAP_PROP_FRAME_WIDTH;
+import static org.bytedeco.javacpp.opencv_videoio.*;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -45,14 +44,14 @@ public class VideoCaptureDeviceCV extends VideoCaptureDevice /* extends WiredDev
             if (useVideoInput) {
                 List<String> deviceNames = VideoCaptureDeviceVideoInput.enumerateVideoInputDevices();
                 VideoCaptureDevices.sort(deviceNames);
-                devicePaths = new ArrayList<String>(deviceNames.size());
+                devicePaths = new ArrayList<>(deviceNames.size());
                 for (String deviceName : deviceNames) {
                     devicePaths.add(DeviceCache.createDevicePath(DeviceClassName, deviceName));
                 }
             } else {
                 int i = 0;
                 List<VideoCaptureDeviceCV> captureDevices = getCaptureDevices(deviceCache);
-                devicePaths = new ArrayList<String>(captureDevices.size());
+                devicePaths = new ArrayList<>(captureDevices.size());
                 for (VideoCaptureDeviceCV device : captureDevices) {
                     String devicePath = DeviceCache.createDevicePath(VideoCaptureDeviceCV.DeviceClassName,
                             Integer.toString(i++));

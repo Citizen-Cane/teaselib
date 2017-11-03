@@ -29,10 +29,10 @@ import teaselib.core.util.ExceptionUtil;
 public class RenderMessage extends MediaRendererThread {
     private static final Logger logger = LoggerFactory.getLogger(RenderMessage.class);
 
-    private final static long DELAY_BETWEEN_PARAGRAPHS = 500;
-    private final static long DELAY_AT_END_OF_MESSAGE = 2000;
+    private static final long DELAY_BETWEEN_PARAGRAPHS = 500;
+    private static final long DELAY_AT_END_OF_MESSAGE = 2000;
 
-    static final Set<Message.Type> ManuallyLoggedMessageTypes = new HashSet<Message.Type>(
+    static final Set<Message.Type> ManuallyLoggedMessageTypes = new HashSet<>(
             Arrays.asList(Message.Type.Text, Message.Type.Image, Message.Type.Mood, Message.Type.Speech));
 
     private final ResourceLoader resources;
@@ -43,9 +43,9 @@ public class RenderMessage extends MediaRendererThread {
     RenderSound soundRenderer = null;
 
     private String displayImage = null;
-    private final Prefetcher<byte[]> imageFetcher = new Prefetcher<byte[]>();
+    private final Prefetcher<byte[]> imageFetcher = new Prefetcher<>();
 
-    private final Set<MediaRendererThread> interuptableAudio = new HashSet<MediaRendererThread>();
+    private final Set<MediaRendererThread> interuptableAudio = new HashSet<>();
 
     public RenderMessage(ResourceLoader resources, Message message, TextToSpeechPlayer ttsPlayer, TeaseLib teaseLib) {
         super(teaseLib);

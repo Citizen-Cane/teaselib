@@ -38,7 +38,7 @@ public class WindowedMeanTest {
     private static List<WindowedMean.Result> simulateThrowAndRetrieveTiming(Double[] values) {
         WindowedMean stats = new WindowedMean();
 
-        List<WindowedMean.Result> actual = new ArrayList<WindowedMean.Result>();
+        List<WindowedMean.Result> actual = new ArrayList<>();
         for (Double value : values) {
             actual.add(stats.add(value));
         }

@@ -25,7 +25,8 @@ public class StateProxy extends AbstractProxy<State> implements State, StateMaps
     }
 
     @Override
-    public <S> Options applyTo(S... items) {
+    @SafeVarargs
+    public final <S> Options applyTo(S... items) {
         injectNamespace();
         return new StateOptionsProxy(namespace, state.applyTo(items));
     }
@@ -65,7 +66,8 @@ public class StateProxy extends AbstractProxy<State> implements State, StateMaps
     }
 
     @Override
-    public <S extends Object> Persistence removeFrom(S... peer) {
+    @SafeVarargs
+    public final <S extends Object> Persistence removeFrom(S... peer) {
         return new StatePersistenceProxy(namespace, state.removeFrom(peer));
     }
 

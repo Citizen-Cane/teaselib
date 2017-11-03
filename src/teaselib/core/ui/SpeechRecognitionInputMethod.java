@@ -37,7 +37,7 @@ public class SpeechRecognitionInputMethod implements InputMethod {
     private final Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs> recognitionRejected;
     private Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs> recognitionCompleted;
 
-    private final AtomicReference<Prompt> active = new AtomicReference<Prompt>();
+    private final AtomicReference<Prompt> active = new AtomicReference<>();
 
     public SpeechRecognitionInputMethod(final TeaseScriptBase script, SpeechRecognition speechRecognizer,
             final Confidence recognitionConfidence) {
@@ -195,7 +195,7 @@ public class SpeechRecognitionInputMethod implements InputMethod {
 
     @Override
     public Map<String, Runnable> getHandlers() {
-        HashMap<String, Runnable> handlers = new HashMap<String, Runnable>();
+        HashMap<String, Runnable> handlers = new HashMap<>();
         handlers.put(RECOGNITION_REJECTED_HNADLER_KEY, new Runnable() {
 
             @Override

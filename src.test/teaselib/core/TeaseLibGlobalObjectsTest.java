@@ -1,6 +1,6 @@
 package teaselib.core;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -16,7 +16,7 @@ import teaselib.test.DebugSetup;
 
 public class TeaseLibGlobalObjectsTest {
 
-    private final Map<Object, Object> globals = new HashMap<Object, Object>();
+    private final Map<Object, Object> globals = new HashMap<>();
 
     enum TestObject {
         Object1,

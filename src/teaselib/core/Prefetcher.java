@@ -14,12 +14,11 @@ import teaselib.core.concurrency.NamedExecutorService;
 
 public class Prefetcher<T> {
 
-    private final static ExecutorService fetcher = NamedExecutorService
-            .singleThreadedQueue("Resource Prefetcher");
+    private final static ExecutorService fetcher = NamedExecutorService.singleThreadedQueue("Resource Prefetcher");
 
-    private final Queue<String> resources = new ArrayDeque<String>();
-    private final Map<String, Callable<T>> toFetch = new HashMap<String, Callable<T>>();
-    private final Map<String, Future<T>> fetched = new HashMap<String, Future<T>>();
+    private final Queue<String> resources = new ArrayDeque<>();
+    private final Map<String, Callable<T>> toFetch = new HashMap<>();
+    private final Map<String, Future<T>> fetched = new HashMap<>();
 
     public Prefetcher() {
     }

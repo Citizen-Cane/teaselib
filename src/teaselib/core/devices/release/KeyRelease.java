@@ -26,7 +26,7 @@ public class KeyRelease implements Device, Device.Creatable {
 
         @Override
         public List<String> enumerateDevicePaths(Map<String, KeyRelease> deviceCache) {
-            List<String> devicePaths = new ArrayList<String>();
+            List<String> devicePaths = new ArrayList<>();
             for (RemoteDevice remoteDevice : RemoteDevices.devicesThatSupport(DeviceClassName, devices)) {
                 devicePaths.add(DeviceCache.createDevicePath(DeviceClassName, remoteDevice.getDevicePath()));
             }
@@ -168,7 +168,7 @@ public class KeyRelease implements Device, Device.Creatable {
         if (RemoteDevice.Count.equals(count.command)) {
             int actuators = Integer.parseInt(count.parameters.get(0));
             releaseKeys = new String[actuators];
-            List<Actuator> releaseMchanisms = new ArrayList<Actuator>(actuators);
+            List<Actuator> releaseMchanisms = new ArrayList<>(actuators);
             for (int i = 0; i < releaseKeys.length; i++) {
                 releaseMchanisms.add(new Actuator(this, i));
                 releaseKeys[i] = "";
@@ -181,7 +181,7 @@ public class KeyRelease implements Device, Device.Creatable {
 
     public Actuator getActuator(int duration, TimeUnit unit) {
         List<Actuator> releaseMechanisms = actuators();
-        List<Long> durations = new ArrayList<Long>(releaseMechanisms.size());
+        List<Long> durations = new ArrayList<>(releaseMechanisms.size());
         for (int actuator = 0; actuator < durations.size(); actuator++) {
             durations.add(releaseMechanisms.get(actuator).available(unit));
         }

@@ -19,8 +19,7 @@ import java.util.List;
 public class Subnet implements Iterable<InetAddress> {
     private final InterfaceAddress interfaceAddress;
 
-    public static InetAddress subnetAddress(InterfaceAddress interfaceAddress)
-            throws UnknownHostException {
+    public static InetAddress subnetAddress(InterfaceAddress interfaceAddress) throws UnknownHostException {
         InetAddress address = interfaceAddress.getAddress();
         if (!(address instanceof Inet4Address)) {
             throw new IllegalArgumentException(interfaceAddress.toString());
@@ -37,17 +36,14 @@ public class Subnet implements Iterable<InetAddress> {
     @Override
     public Iterator<InetAddress> iterator() {
         if (!(interfaceAddress.getAddress() instanceof Inet4Address)) {
-            throw new IllegalArgumentException(
-                    "Only IP 4 networks are supported");
+            throw new IllegalArgumentException("Only IP 4 networks are supported");
         }
         if (interfaceAddress.getNetworkPrefixLength() != 24) {
-            throw new IllegalArgumentException(
-                    "Only IP4 class C networks are supported");
+            throw new IllegalArgumentException("Only IP4 class C networks are supported");
         }
         final int start = 1;
         final int end = 254;
-        List<InetAddress> subnetAddresses = new ArrayList<InetAddress>(
-                end - start);
+        List<InetAddress> subnetAddresses = new ArrayList<>(end - start);
         byte[] ip = interfaceAddress.getAddress().getAddress();
         for (int i = start; i <= end; i++) {
             ip[3] = (byte) i;

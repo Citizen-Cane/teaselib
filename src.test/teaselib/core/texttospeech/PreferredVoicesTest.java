@@ -13,15 +13,15 @@ import org.junit.Test;
 public class PreferredVoicesTest {
     @Test
     public void testSortingReverse() {
-        Map<String, String> values = new LinkedHashMap<String, String>();
+        Map<String, String> values = new LinkedHashMap<>();
         values.put("a", "1");
         values.put("b", "2");
         values.put("c", "3");
-        List<Entry<String, String>> list = new ArrayList<Entry<String, String>>(values.entrySet());
+        List<Entry<String, String>> list = new ArrayList<>(values.entrySet());
 
         Map<String, String> sorted = PreferredVoices.sortByValue(list);
 
-        List<Entry<String, String>> result = new ArrayList<Entry<String, String>>(sorted.entrySet());
+        List<Entry<String, String>> result = new ArrayList<>(sorted.entrySet());
 
         assertEquals("3", result.get(0).getValue());
         assertEquals("2", result.get(1).getValue());
@@ -30,15 +30,15 @@ public class PreferredVoicesTest {
 
     @Test
     public void testAlreadySorted() {
-        Map<String, String> values = new LinkedHashMap<String, String>();
+        Map<String, String> values = new LinkedHashMap<>();
         values.put("c", "3");
         values.put("b", "2");
         values.put("a", "1");
-        List<Entry<String, String>> list = new ArrayList<Entry<String, String>>(values.entrySet());
+        List<Entry<String, String>> list = new ArrayList<>(values.entrySet());
 
         Map<String, String> sorted = PreferredVoices.sortByValue(list);
 
-        List<Entry<String, String>> result = new ArrayList<Entry<String, String>>(sorted.entrySet());
+        List<Entry<String, String>> result = new ArrayList<>(sorted.entrySet());
 
         assertEquals("3", result.get(0).getValue());
         assertEquals("2", result.get(1).getValue());
@@ -47,15 +47,15 @@ public class PreferredVoicesTest {
 
     @Test
     public void testSortingRandom() {
-        Map<String, String> values = new LinkedHashMap<String, String>();
+        Map<String, String> values = new LinkedHashMap<>();
         values.put("b", "2");
         values.put("c", "3");
         values.put("a", "1");
-        List<Entry<String, String>> list = new ArrayList<Entry<String, String>>(values.entrySet());
+        List<Entry<String, String>> list = new ArrayList<>(values.entrySet());
 
         Map<String, String> sorted = PreferredVoices.sortByValue(list);
 
-        List<Entry<String, String>> result = new ArrayList<Entry<String, String>>(sorted.entrySet());
+        List<Entry<String, String>> result = new ArrayList<>(sorted.entrySet());
 
         assertEquals("3", result.get(0).getValue());
         assertEquals("2", result.get(1).getValue());

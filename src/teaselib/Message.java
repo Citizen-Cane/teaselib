@@ -56,10 +56,10 @@ public class Message {
         Item
 
         ;
-        public final static Set<Message.Type> AudioTypes = new HashSet<Message.Type>(
+        public final static Set<Message.Type> AudioTypes = new HashSet<>(
                 Arrays.asList(Message.Type.Sound, Message.Type.BackgroundSound, Message.Type.Speech));
 
-        public final static Set<Type> FileTypes = new HashSet<Type>(
+        public final static Set<Type> FileTypes = new HashSet<>(
                 Arrays.asList(Type.BackgroundSound, Type.Sound, Type.Speech, Type.Image, Type.DesktopItem));
     }
 
@@ -137,8 +137,8 @@ public class Message {
 
     public final Actor actor;
 
-    public final static Set<String> EndOfSentenceCharacters = new HashSet<String>(Arrays.asList(":", ".", "!", "?"));
-    public final static Set<String> MainClauseAppendableCharacters = new HashSet<String>(
+    public final static Set<String> EndOfSentenceCharacters = new HashSet<>(Arrays.asList(":", ".", "!", "?"));
+    public final static Set<String> MainClauseAppendableCharacters = new HashSet<>(
             Arrays.asList("\"", ">", ",", ";", "-"));
 
     private final Parts parts;
@@ -454,7 +454,7 @@ public class Message {
 
     public class Parts implements Iterable<Part> {
 
-        private final List<Part> p = new ArrayList<Part>();
+        private final List<Part> p = new ArrayList<>();
 
         public boolean isEmpty() {
             return p.isEmpty();
@@ -599,7 +599,7 @@ public class Message {
     }
 
     public List<String> resources() {
-        List<String> resources = new ArrayList<String>();
+        List<String> resources = new ArrayList<>();
         for (Part part : parts) {
             if (isFile(part.type)) {
                 resources.add(part.value);

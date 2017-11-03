@@ -17,7 +17,7 @@ public class TextVariables implements Iterable<Enum<?>> {
         Slave,
     }
 
-    public final static TextVariables Defaults = createDefaults();
+    public static final TextVariables Defaults = createDefaults();
 
     private static TextVariables createDefaults() {
         TextVariables defaults = new TextVariables();
@@ -25,11 +25,11 @@ public class TextVariables implements Iterable<Enum<?>> {
         return defaults;
     }
 
-    private final static Pattern textVariablePattern = Pattern.compile(
-            "(?i)#\\w+", Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE);
+    private static final Pattern textVariablePattern = Pattern.compile("(?i)#\\w+",
+            Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE);
 
-    private final Map<Enum<?>, String> entries = new HashMap<Enum<?>, String>();
-    private final Map<String, String> keys2names = new HashMap<String, String>();
+    private final Map<Enum<?>, String> entries = new HashMap<>();
+    private final Map<String, String> keys2names = new HashMap<>();
 
     public TextVariables(TextVariables... textVariables) {
         for (TextVariables tV : textVariables) {
@@ -75,7 +75,7 @@ public class TextVariables implements Iterable<Enum<?>> {
     }
 
     public List<String> expand(List<String> texts) {
-        List<String> expanded = new ArrayList<String>(texts.size());
+        List<String> expanded = new ArrayList<>(texts.size());
         for (String text : texts) {
             Matcher m = textVariablePattern.matcher(text);
             StringBuffer sb = new StringBuffer();

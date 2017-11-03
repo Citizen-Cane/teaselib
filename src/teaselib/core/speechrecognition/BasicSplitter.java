@@ -25,9 +25,7 @@ public abstract class BasicSplitter implements PromptSplitter {
     /*
      * (non-Javadoc)
      * 
-     * @see
-     * teaselib.core.speechrecognition.PromptSplitter#getHypothesisMinimumCount(
-     * java.util.List)
+     * @see teaselib.core.speechrecognition.PromptSplitter#getHypothesisMinimumCount( java.util.List)
      */
     @Override
     public int getMinimumForHypothesisRecognition(List<String> choices) {
@@ -39,7 +37,7 @@ public abstract class BasicSplitter implements PromptSplitter {
             return 0;
 
         // Split words first in order to not loose consonant infomation
-        List<String[]> list = new ArrayList<String[]>();
+        List<String[]> list = new ArrayList<>();
         for (String choice : choices) {
             String lowerCase = removePunctation(choice).toLowerCase();
             list.add(splitWords(lowerCase));
@@ -70,7 +68,7 @@ public abstract class BasicSplitter implements PromptSplitter {
     }
 
     List<String> commonStartSequence(String[] list1, String[] list2) {
-        List<String> sequence = new ArrayList<String>();
+        List<String> sequence = new ArrayList<>();
         for (int i = 0; i < list1.length; i++) {
             if (i >= list1.length || i >= list2.length)
                 return sequence;

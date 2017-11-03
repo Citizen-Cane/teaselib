@@ -22,27 +22,14 @@ import teaselib.util.math.Statistics;
 public class Geom {
     public static List<Partition<Rect>.Group> partition(List<Rect> rectangles, int distance) {
         final int distance2 = distance * distance;
-        Partition.Members<Rect> members = new Partition.Members<Rect>() {
-            @Override
-            public boolean similar(Rect rect1, Rect rect2) {
-                return distance2(rect1, rect2) < distance2;
-            }
+        Partition.Members<Rect> members = (rect1, rect2) -> distance2(rect1, rect2) < distance2;
+        Partition.Order<Rect> order = (rect1, rect2) -> {
+            Rect group = new Rect(rect1);
+            join(group, rect2, group);
+            return group;
         };
-        Partition.Order<Rect> order = new Partition.Order<Rect>() {
-            @Override
-            public Rect group(Rect rect1, Rect rect2) {
-                Rect group = new Rect(rect1);
-                join(group, rect2, group);
-                return group;
-            }
-        };
-        Comparator<Rect> comperator = new Comparator<Rect>() {
-            @Override
-            public int compare(Rect r1, Rect r2) {
-                return r1.area() - r2.area();
-            }
-        };
-        Partition<Rect> partition = new Partition<Rect>(rectangles, members, order, comperator);
+        Comparator<Rect> comperator = (r1, r2) -> r1.area() - r2.area();
+        Partition<Rect> partition = new Partition<>(rectangles, members, order, comperator);
         return partition.groups;
     }
 
@@ -120,7 +107,7 @@ public class Geom {
     public static List<Rect> rectangles(MatVector contours) {
         Mat p = new Mat();
         int size = (int) contours.size();
-        List<Rect> rectangles = new ArrayList<Rect>(size);
+        List<Rect> rectangles = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
             approxPolyDP(contours.get(i), p, 3, true);
             @SuppressWarnings("resource")
@@ -138,21 +125,18 @@ public class Geom {
     }
 
     /**
-     * Determine how much a list of distances from a given center define a
-     * circle
+     * Determine how much a list of distances from a given center define a circle
      * 
      * @param distance2Center
      *            A list of distances from the object center
      * @param circularity
-     *            The required amount of "circularness" to pass as circular. 1
-     *            is a perfect circle, higher values allow for non-perfect
-     *            circles (ellipses, dished objects, etc.)
-     * @return Whether the object defined by the list passes through as
-     *         circular.
+     *            The required amount of "circularness" to pass as circular. 1 is a perfect circle, higher values allow
+     *            for non-perfect circles (ellipses, dished objects, etc.)
+     * @return Whether the object defined by the list passes through as circular.
      */
     public static boolean isCircular(List<Integer> distance2Center, double circularity) {
         Collections.sort(distance2Center);
-        Statistics<Integer> statistics = new Statistics<Integer>(distance2Center);
+        Statistics<Integer> statistics = new Statistics<>(distance2Center);
         int max = distance2Center.get(distance2Center.size() - 1);
         double mean = statistics.mean();
         double contourCircularity = max / mean;
@@ -172,7 +156,7 @@ public class Geom {
         cx /= s;
         cy /= s;
         Point center = new Point(cx, cy);
-        List<Integer> distance2Center = new ArrayList<Integer>(s);
+        List<Integer> distance2Center = new ArrayList<>(s);
         for (int i = 0; i < s; i++) {
             int x = points.get(i, 0);
             int y = points.get(i, 1);

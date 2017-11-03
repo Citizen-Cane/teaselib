@@ -14,7 +14,7 @@ import teaselib.core.media.MediaRenderer.Threaded;
 public class MediaRendererQueue {
     private static final Logger logger = LoggerFactory.getLogger(MediaRendererQueue.class);
 
-    private final HashMap<Class<?>, MediaRenderer.Threaded> threadedMediaRenderers = new HashMap<Class<?>, MediaRenderer.Threaded>();
+    private final HashMap<Class<?>, MediaRenderer.Threaded> threadedMediaRenderers = new HashMap<>();
 
     public MediaRendererQueue() {
     }
@@ -66,7 +66,7 @@ public class MediaRendererQueue {
 
     private Map<Class<?>, Threaded> getThreadedRenderers() {
         synchronized (threadedMediaRenderers) {
-            return new HashMap<Class<?>, Threaded>(threadedMediaRenderers);
+            return new HashMap<>(threadedMediaRenderers);
         }
     }
 

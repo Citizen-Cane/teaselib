@@ -66,7 +66,7 @@ public class DebugHost implements Host {
     @Override
     public List<Boolean> showCheckboxes(String caption, List<String> choices, List<Boolean> values,
             boolean allowCancel) {
-        return new ArrayList<Boolean>(values);
+        return new ArrayList<>(values);
     }
 
     int selectedIndex = 0;
@@ -75,7 +75,7 @@ public class DebugHost implements Host {
     final Condition click = replySection.newCondition();
 
     private List<Delegate> getClickableChoices(List<String> choices) {
-        List<Delegate> clickables = new ArrayList<Delegate>(choices.size());
+        List<Delegate> clickables = new ArrayList<>(choices.size());
         for (int i = 0; i < choices.size(); i++) {
             final int j = i;
             clickables.add(new Delegate() {
@@ -143,7 +143,7 @@ public class DebugHost implements Host {
         logger.info("Reply " + choices + " @ " + Thread.currentThread().getStackTrace()[1].toString());
 
         try {
-            currentChoices = new ArrayList<String>(choices);
+            currentChoices = new ArrayList<>(choices);
             replySection.lockInterruptibly();
             if (replySection.hasWaiters(click)) {
                 throw new IllegalStateException("Reply not dismissed: " + choices);

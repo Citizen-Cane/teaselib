@@ -18,7 +18,7 @@ public class BluetoothDevice extends RemoteDevice {
 
         @Override
         public List<String> enumerateDevicePaths(Map<String, RemoteDevice> deviceCache) {
-            List<String> deviceNames = new ArrayList<String>();
+            List<String> deviceNames = new ArrayList<>();
             // TODO scan
             // TODO available devices
             // TODO available services on the device

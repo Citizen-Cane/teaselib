@@ -3,7 +3,7 @@
  */
 package teaselib.core.devices.motiondetection;
 
-import static teaselib.core.javacv.util.Geom.intersects;
+import static teaselib.core.javacv.util.Geom.*;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -194,7 +194,7 @@ public class MotionDetectionResultImplementation extends MotionDetectionResultDa
 
     private Set<Presence> shakePresence() {
         // Keep last state, to avoid signaling changes during shakes
-        Set<Presence> last = new LinkedHashSet<Presence>(indicatorHistory.tail());
+        Set<Presence> last = new LinkedHashSet<>(indicatorHistory.tail());
         last.remove(Presence.NoShake);
         last.add(Presence.Shake);
         return last;
@@ -204,7 +204,7 @@ public class MotionDetectionResultImplementation extends MotionDetectionResultDa
         boolean presenceInsidePresenceRect = intersects(presenceRegion, presenceRect);
         boolean motionDetected = motionAreaHistory.tail() > 0.0;
         Presence presenceState = motionDetected || presenceInsidePresenceRect ? Presence.Present : Presence.Away;
-        Set<Presence> directions = new LinkedHashSet<Presence>();
+        Set<Presence> directions = new LinkedHashSet<>();
         directions.add(presenceState);
         if (motionDetected) {
             directions.add(Presence.Motion);

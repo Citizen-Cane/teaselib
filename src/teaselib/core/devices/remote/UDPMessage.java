@@ -16,13 +16,11 @@ import java.util.Scanner;
  *         Message format:
  *         <p>
  *         <ul>
- *         <li>short text part size : the size of the text part (without this
- *         size info)
+ *         <li>short text part size : the size of the text part (without this size info)
  *         <li>byte parameter count : number of parameters after the name
  *         <li>String command: the command name, null-terminated
  *         <li>List<String> parameters: all parameters, null-terminated
- *         <li>short binary size: The size of the binary part of the message
- *         (without this size info)
+ *         <li>short binary size: The size of the binary part of the message (without this size info)
  *         <li>byte[size] binary data: the binary data of the message
  *         </ul>
  *         <p>
@@ -34,8 +32,7 @@ public class UDPMessage {
 
     static boolean isValid(byte[] data, int startIndex) {
         int offset = 0;
-        int textSize = 256 * data[startIndex + offset++]
-                + data[startIndex + offset++];
+        int textSize = 256 * data[startIndex + offset++] + data[startIndex + offset++];
         int parameterCount = data[startIndex + offset++];
         int commandNameLength = strlen(data, startIndex + offset);
         offset += commandNameLength + 1;
@@ -47,8 +44,7 @@ public class UDPMessage {
             return false;
         }
         if (data.length >= offset + 2) {
-            int binarySize = 256 * data[startIndex + offset++]
-                    + data[startIndex + offset++];
+            int binarySize = 256 * data[startIndex + offset++] + data[startIndex + offset++];
             if (data.length < offset + binarySize) {
                 return false;
             }
@@ -94,12 +90,11 @@ public class UDPMessage {
         byte[] textData = new byte[textDataSize - 1];
         int parameterCount = dataInputStream.readByte();
         dataInputStream.readFully(textData);
-        Scanner scanner = new Scanner(new ByteArrayInputStream(textData),
-                Encoding);
+        Scanner scanner = new Scanner(new ByteArrayInputStream(textData), Encoding);
         try {
             scanner.useDelimiter("\u0000");
             String name = scanner.next();
-            List<String> parameters = new ArrayList<String>(parameterCount);
+            List<String> parameters = new ArrayList<>(parameterCount);
             while (scanner.hasNext() && parameters.size() < parameterCount) {
                 parameters.add(scanner.next());
             }

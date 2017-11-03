@@ -16,7 +16,7 @@ public class Statistics<N extends Number & Comparable<N>> {
     final List<N> values;
 
     public Statistics() {
-        this.values = new ArrayList<N>();
+        this.values = new ArrayList<>();
     }
 
     public Statistics(N[] values) {
@@ -87,7 +87,7 @@ public class Statistics<N extends Number & Comparable<N>> {
      * @return
      */
     public double median() {
-        ArrayList<N> sorted = new ArrayList<N>(values);
+        ArrayList<N> sorted = new ArrayList<>(values);
         Collections.sort(sorted);
         int size = sorted.size();
         if (size % 2 == 0) {

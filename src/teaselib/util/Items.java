@@ -56,7 +56,8 @@ public class Items extends ArrayList<Item> {
      * @param attributes
      * @return An item that matches all attributes, or the first available, or {@link Item#NotAvailable}.
      */
-    public <S extends Item.Attribute> Item get(S... attributes) {
+    @SafeVarargs
+    public final <S extends Item.Attribute> Item get(S... attributes) {
         return getInternal(attributes);
     }
 
@@ -69,7 +70,8 @@ public class Items extends ArrayList<Item> {
      * 
      * @return
      */
-    private <S> Item getInternal(S... attributes) {
+    @SafeVarargs
+    private final <S> Item getInternal(S... attributes) {
         if (attributes.length == 0) {
             return firstAvailableOrNotAvailable();
         } else {
@@ -100,7 +102,8 @@ public class Items extends ArrayList<Item> {
         return allInternal();
     }
 
-    public <S extends Item.Attribute> Items all(S... attributes) {
+    @SafeVarargs
+    public final <S extends Item.Attribute> Items all(S... attributes) {
         return allInternal(attributes);
     }
 
@@ -108,7 +111,8 @@ public class Items extends ArrayList<Item> {
         return allInternal(attributes);
     }
 
-    public <S> Items allInternal(S... attributes) {
+    @SafeVarargs
+    public final <S> Items allInternal(S... attributes) {
         if (attributes.length == 0) {
             return this;
         } else {
@@ -128,7 +132,8 @@ public class Items extends ArrayList<Item> {
      * @param attributes
      * @return Prefer item matching attributes, but fall back to any other available
      */
-    public <S> Item prefer(S... attributes) {
+    @SafeVarargs
+    public final <S> Item prefer(S... attributes) {
         Items items = allInternal(attributes);
         if (!items.isAvailable()) {
             items = allInternal().available();

@@ -15,16 +15,13 @@ import teaselib.core.speechrecognition.events.SpeechRecognitionStartedEventArgs;
 import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
 
 /**
- * This was started as an approach to get along with low-quality microphones,
- * but for microphones/speaker configurations it starts to recognize noise as
- * speech - sooner or later.
+ * This was started as an approach to get along with low-quality microphones, but for microphones/speaker configurations
+ * it starts to recognize noise as speech - sooner or later.
  * <p>
- * Might still be useful for headphones with integrated microphones, but this
- * claim has yet to be tested.
+ * Might still be useful for headphones with integrated microphones, but this claim has yet to be tested.
  * <p>
- * Well, there's one use for un-exactly recognizing phrases: when we don't care
- * about the exact phrase. This is how it is used by the speech recognizer, to
- * fetch results with low confidence for long prompts.
+ * Well, there's one use for un-exactly recognizing phrases: when we don't care about the exact phrase. This is how it
+ * is used by the speech recognizer, to fetch results with low confidence for long prompts.
  * 
  * @author Citizen-Cane
  *
@@ -32,18 +29,16 @@ import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
 @SuppressWarnings("deprecation")
 @Deprecated
 public class SpeechRecognitionHypothesisEventHandler {
-    static final Logger logger = LoggerFactory
-            .getLogger(SpeechRecognitionHypothesisEventHandler.class);
+    static final Logger logger = LoggerFactory.getLogger(SpeechRecognitionHypothesisEventHandler.class);
     /**
-     * Hypothesis speech recognition is used for longer sentences, as short
-     * sentences or single word recognitions are prone to error. In fact, for
-     * single word phrases, the recognizer may recognize anything.
+     * Hypothesis speech recognition is used for longer sentences, as short sentences or single word recognitions are
+     * prone to error. In fact, for single word phrases, the recognizer may recognize anything.
      */
     private final static int HypothesisMinimumNumberOfWordsDefault = 6;
 
     /**
-     * This adjusts the sensibility of the hypothesis rating. The better the
-     * microphone, the higher this value should be.
+     * This adjusts the sensibility of the hypothesis rating. The better the microphone, the higher this value should
+     * be.
      */
     final static double HypothesisMinimumAccumulatedWeight = 1.0;
 
@@ -60,8 +55,7 @@ public class SpeechRecognitionHypothesisEventHandler {
     private Confidence recognitionConfidence = Confidence.Default;
     private boolean enabled = false;
 
-    public SpeechRecognitionHypothesisEventHandler(
-            SpeechRecognition speechRecognizer) {
+    public SpeechRecognitionHypothesisEventHandler(SpeechRecognition speechRecognizer) {
         super();
         this.speechRecognizer = speechRecognizer;
         this.recognitionStarted = recognitionStarted();
@@ -100,8 +94,7 @@ public class SpeechRecognitionHypothesisEventHandler {
     private Event<SpeechRecognitionImplementation, SpeechRecognitionStartedEventArgs> recognitionStarted() {
         return new Event<SpeechRecognitionImplementation, SpeechRecognitionStartedEventArgs>() {
             @Override
-            public void run(SpeechRecognitionImplementation sender,
-                    SpeechRecognitionStartedEventArgs eventArgs) {
+            public void run(SpeechRecognitionImplementation sender, SpeechRecognitionStartedEventArgs eventArgs) {
                 if (!enabled)
                     return;
                 final int size = choices.size();
@@ -118,8 +111,7 @@ public class SpeechRecognitionHypothesisEventHandler {
     private Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs> speechDetected() {
         return new Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs>() {
             @Override
-            public void run(SpeechRecognitionImplementation sender,
-                    SpeechRecognizedEventArgs eventArgs) {
+            public void run(SpeechRecognitionImplementation sender, SpeechRecognizedEventArgs eventArgs) {
                 if (!enabled)
                     return;
                 // The Microsoft SAPI based SR is supposed to return
@@ -132,39 +124,32 @@ public class SpeechRecognitionHypothesisEventHandler {
                     // hypothesis, and add the probability weight for each
                     SpeechRecognitionResult hypothesis = eventArgs.result[0];
                     String hypothesisText = hypothesis.text;
-                    final double propabilityWeight = propabilityWeight(
-                            hypothesis);
+                    final double propabilityWeight = propabilityWeight(hypothesis);
                     for (int index = 0; index < choices.size(); index++) {
                         String choice = choices.get(index).toLowerCase();
                         if (choice.startsWith(hypothesisText.toLowerCase())) {
-                            updateHypothesisProgress(index, hypothesisText,
-                                    propabilityWeight);
+                            updateHypothesisProgress(index, hypothesisText, propabilityWeight);
                         }
                     }
                 } else {
                     for (SpeechRecognitionResult hypothesis : recognitionResults) {
                         // The first word(s) are usually incorrect,
                         // whereas later hypothesis usually match better
-                        double propabilityWeight = propabilityWeight(
-                                hypothesis);
+                        double propabilityWeight = propabilityWeight(hypothesis);
                         int index = hypothesis.index;
-                        updateHypothesisProgress(index, hypothesis.text,
-                                propabilityWeight);
+                        updateHypothesisProgress(index, hypothesis.text, propabilityWeight);
                     }
                 }
             }
 
-            private void updateHypothesisProgress(int index,
-                    String hypothesisText, double propabilityWeight) {
+            private void updateHypothesisProgress(int index, String hypothesisText, double propabilityWeight) {
                 // Only update if the hypothesis is progressing,
                 // e.g. sort out detection duplicates
                 if (hypothesisText.startsWith(hypothesisProgress[index])
-                        && hypothesisText.length() > hypothesisProgress[index]
-                                .length()) {
+                        && hypothesisText.length() > hypothesisProgress[index].length()) {
                     hypothesisAccumulatedWeights[index] += propabilityWeight;
                     hypothesisProgress[index] = hypothesisText;
-                    logger.info(
-                            "'" + hypothesisText + "' + " + propabilityWeight);
+                    logger.info("'" + hypothesisText + "' + " + propabilityWeight);
                 } else {
                     logger.info("Ignoring hypothesis '" + hypothesisText);
                 }
@@ -177,15 +162,13 @@ public class SpeechRecognitionHypothesisEventHandler {
     }
 
     int getHypothesisMinimumNumberOfWords(List<String> choices) {
-        return getMinimumNumberOfWordsForHypothesisRecognition()
-                + numberOfSameWordsInAnyTwoChoicesAtStart(choices);
+        return getMinimumNumberOfWordsForHypothesisRecognition() + numberOfSameWordsInAnyTwoChoicesAtStart(choices);
     }
 
-    private static int numberOfSameWordsInAnyTwoChoicesAtStart(
-            List<String> choices) {
+    private static int numberOfSameWordsInAnyTwoChoicesAtStart(List<String> choices) {
         if (choices.size() == 1)
             return 0;
-        List<String[]> list = new ArrayList<String[]>();
+        List<String[]> list = new ArrayList<>();
         for (String choice : choices) {
             list.add(removePunctation(choice).toLowerCase().split(" "));
         }
@@ -212,17 +195,14 @@ public class SpeechRecognitionHypothesisEventHandler {
     private Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs> recognitionRejected() {
         return new Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs>() {
             @Override
-            public void run(SpeechRecognitionImplementation sender,
-                    SpeechRecognizedEventArgs eventArgs) {
+            public void run(SpeechRecognitionImplementation sender, SpeechRecognizedEventArgs eventArgs) {
                 if (!enabled)
                     return;
                 // choose the choice with the highest hypothesis weight
                 SpeechRecognitionHypothesisResult hypothesisResult = attemptToCreateHypothesisResult();
                 if (hypothesisResult != null) {
-                    if (hypothesisResult
-                            .recognizedWith(recognitionConfidence)) {
-                        consumeRejectedEventAndFireRecognizedEventInstead(
-                                sender, eventArgs, hypothesisResult);
+                    if (hypothesisResult.recognizedWith(recognitionConfidence)) {
+                        consumeRejectedEventAndFireRecognizedEventInstead(sender, eventArgs, hypothesisResult);
                     }
                 } else {
                     logger.info("Speech recognition hypothesis dropped - "
@@ -230,20 +210,13 @@ public class SpeechRecognitionHypothesisEventHandler {
                 }
             }
 
-            private void consumeRejectedEventAndFireRecognizedEventInstead(
-                    SpeechRecognitionImplementation sender,
-                    SpeechRecognizedEventArgs eventArgs,
-                    SpeechRecognitionHypothesisResult hypothesisResult) {
+            private void consumeRejectedEventAndFireRecognizedEventInstead(SpeechRecognitionImplementation sender,
+                    SpeechRecognizedEventArgs eventArgs, SpeechRecognitionHypothesisResult hypothesisResult) {
                 eventArgs.consumed = true;
-                SpeechRecognitionResult[] results = {
-                        new SpeechRecognitionResult(hypothesisResult.index,
-                                hypothesisResult.choice,
-                                recognitionConfidence.probability,
-                                recognitionConfidence) };
-                SpeechRecognizedEventArgs recognitionCompletedEventArgs = new SpeechRecognizedEventArgs(
-                        results);
-                speechRecognizer.events.recognitionCompleted.run(sender,
-                        recognitionCompletedEventArgs);
+                SpeechRecognitionResult[] results = { new SpeechRecognitionResult(hypothesisResult.index,
+                        hypothesisResult.choice, recognitionConfidence.probability, recognitionConfidence) };
+                SpeechRecognizedEventArgs recognitionCompletedEventArgs = new SpeechRecognizedEventArgs(results);
+                speechRecognizer.events.recognitionCompleted.run(sender, recognitionCompletedEventArgs);
             }
         };
     }
@@ -253,8 +226,8 @@ public class SpeechRecognitionHypothesisEventHandler {
         int choiceWithMaxProbabilityIndex = 0;
         for (int i = 0; i < hypothesisAccumulatedWeights.length; i++) {
             double value = hypothesisAccumulatedWeights[i];
-            SpeechRecognitionHypothesisEventHandler.logger.info("Result " + i
-                    + ": '" + choices.get(i) + "' hypothesisCount=" + value);
+            SpeechRecognitionHypothesisEventHandler.logger
+                    .info("Result " + i + ": '" + choices.get(i) + "' hypothesisCount=" + value);
             if (value > maxValue) {
                 maxValue = value;
                 choiceWithMaxProbabilityIndex = i;
@@ -265,10 +238,8 @@ public class SpeechRecognitionHypothesisEventHandler {
         // or (although unlikely) when the weighted sums add up to the same
         // value.
         if (numberOfHypothesisResults(maxValue) == 1) {
-            return new SpeechRecognitionHypothesisResult(choices,
-                    hypothesisProgress[choiceWithMaxProbabilityIndex], maxValue,
-                    choiceWithMaxProbabilityIndex,
-                    getHypothesisMinimumNumberOfWords(choices));
+            return new SpeechRecognitionHypothesisResult(choices, hypothesisProgress[choiceWithMaxProbabilityIndex],
+                    maxValue, choiceWithMaxProbabilityIndex, getHypothesisMinimumNumberOfWords(choices));
         } else {
             return null;
         }
@@ -310,8 +281,7 @@ public class SpeechRecognitionHypothesisEventHandler {
         return minimumNumberOfWordsForHypothesisRecognition;
     }
 
-    public void setMinimumNumberOfWordsForHypothesisRecognition(
-            int minimumNumberOfWordsForHypothesisRecognition) {
+    public void setMinimumNumberOfWordsForHypothesisRecognition(int minimumNumberOfWordsForHypothesisRecognition) {
         this.minimumNumberOfWordsForHypothesisRecognition = minimumNumberOfWordsForHypothesisRecognition;
     }
 }

@@ -2,7 +2,6 @@ package teaselib.core.texttospeech;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
@@ -58,7 +57,7 @@ public class PronunciationDictionary {
         return dictionariesByLanguage(languageDictionaries);
     }
 
-    private Map<String, Map<String, String>> dictionariesByLanguage(Map<String, File> languageDictionaries)
+    private static Map<String, Map<String, String>> dictionariesByLanguage(Map<String, File> languageDictionaries)
             throws IOException {
         Map<String, Map<String, String>> phoneticDictionary = new HashMap<>();
         for (Entry<String, File> languageDictionary : languageDictionaries.entrySet()) {
@@ -105,7 +104,7 @@ public class PronunciationDictionary {
         return pronunciations(dictionaries(api, vendor, locale, voiceGuid));
     }
 
-    private Map<String, String> pronunciations(List<File> dictionaries) throws IOException {
+    private static Map<String, String> pronunciations(List<File> dictionaries) throws IOException {
         if (!dictionaries.isEmpty()) {
             Map<String, String> all = new HashMap<>();
             for (File file : dictionaries) {
@@ -124,7 +123,7 @@ public class PronunciationDictionary {
         }
     }
 
-    private void readProperties(Map<String, String> all, File file) throws IOException, FileNotFoundException {
+    private static void readProperties(Map<String, String> all, File file) throws IOException {
         Properties p = new Properties();
         try (FileInputStream fis = new FileInputStream(file)) {
             p.load(fis);
@@ -152,7 +151,7 @@ public class PronunciationDictionary {
         return new File(file.getAbsolutePath() + ".properties");
     }
 
-    private String language(String locale) {
+    private static String language(String locale) {
         return locale.substring(0, 2);
     }
 

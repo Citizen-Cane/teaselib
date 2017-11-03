@@ -66,7 +66,7 @@ public class PreferredVoices {
 
     @SuppressWarnings("unchecked")
     private <K, V extends Comparable<? super V>> List<Map.Entry<K, V>> get(Filter filter) {
-        List<Map.Entry<K, V>> list = new LinkedList<Map.Entry<K, V>>();
+        List<Map.Entry<K, V>> list = new LinkedList<>();
         for (Entry<Object, Object> entry : voices.entrySet()) {
             if (filter.equals(Filter.Ignored)) {
                 if (Integer.parseInt(entry.getValue().toString()) < 0) {
@@ -93,7 +93,7 @@ public class PreferredVoices {
             }
         });
 
-        Map<K, V> result = new LinkedHashMap<K, V>();
+        Map<K, V> result = new LinkedHashMap<>();
         for (Map.Entry<K, V> entry : list) {
             result.put(entry.getKey(), entry.getValue());
         }

@@ -17,7 +17,7 @@ public class SpeechRecognizer {
 
     public static SpeechRecognizer instance = new SpeechRecognizer();
 
-    private final Map<Locale, SpeechRecognition> speechRecognitionInstances = new HashMap<Locale, SpeechRecognition>();
+    private final Map<Locale, SpeechRecognition> speechRecognitionInstances = new HashMap<>();
 
     private SpeechRecognizer() {
     }
@@ -27,8 +27,7 @@ public class SpeechRecognizer {
             if (speechRecognitionInstances.containsKey(locale)) {
                 return speechRecognitionInstances.get(locale);
             } else {
-                SpeechRecognition speechRecognition = new SpeechRecognition(
-                        locale);
+                SpeechRecognition speechRecognition = new SpeechRecognition(locale);
                 speechRecognitionInstances.put(locale, speechRecognition);
                 return speechRecognition;
             }
@@ -42,7 +41,7 @@ public class SpeechRecognizer {
      */
     public Runnable pauseRecognition() {
         synchronized (speechRecognitionInstances) {
-            final Collection<SpeechRecognition> stoppedInstances = new HashSet<SpeechRecognition>();
+            final Collection<SpeechRecognition> stoppedInstances = new HashSet<>();
             for (SpeechRecognition sR : speechRecognitionInstances.values()) {
                 if (sR.isActive()) {
                     sR.stopRecognition();

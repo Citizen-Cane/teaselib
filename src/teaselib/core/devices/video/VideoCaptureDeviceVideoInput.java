@@ -42,7 +42,7 @@ public class VideoCaptureDeviceVideoInput extends VideoCaptureDevice /* extends 
         public List<String> enumerateDevicePaths(Map<String, VideoCaptureDeviceVideoInput> deviceCache) {
             List<String> deviceNames = enumerateVideoInputDevices();
             VideoCaptureDevices.sort(deviceNames);
-            List<String> devicePaths = new ArrayList<String>(deviceNames.size());
+            List<String> devicePaths = new ArrayList<>(deviceNames.size());
             for (String deviceName : deviceNames) {
                 devicePaths.add(DeviceCache.createDevicePath(DeviceClassName, deviceName));
             }
@@ -63,7 +63,7 @@ public class VideoCaptureDeviceVideoInput extends VideoCaptureDevice /* extends 
         videoInput.setVerbose(false);
         videoInput.setComMultiThreaded(false);
         int n = videoInput.listDevices(true); // no debug output
-        List<String> deviceNames = new ArrayList<String>(n);
+        List<String> deviceNames = new ArrayList<>(n);
         for (int i = 0; i < n; i++) {
             String deviceName = videoInput.getDeviceName(i).getString();
             deviceNames.add(deviceName);

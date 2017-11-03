@@ -15,7 +15,7 @@ import teaselib.util.ItemImpl;
 
 public abstract class AbstractUserItems implements UserItems {
     final protected TeaseLib teaseLib;
-    final Map<String, ItemMap> userItems = new HashMap<String, ItemMap>();
+    final Map<String, ItemMap> userItems = new HashMap<>();
 
     class ItemMap extends HashMap<Object, List<Item>> {
         private static final long serialVersionUID = 1L;

@@ -1,6 +1,6 @@
 package teaselib;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -15,7 +15,7 @@ public class ClothesTests {
 
         Clothes[][] categories = { Clothes.MaleClothes, Clothes.MaleAccesoires, Clothes.FemaleClothes,
                 Clothes.FemaleAccesoires, Clothes.MaidAccesoires, Clothes.TrannyAccesoires, Clothes.FetishAccesoires };
-        Set<Clothes> all = new HashSet<Clothes>();
+        Set<Clothes> all = new HashSet<>();
         for (Clothes[] clothes : categories) {
             all.addAll(asSet(clothes));
         }
@@ -27,7 +27,8 @@ public class ClothesTests {
         // CLothing items can
     }
 
+    @SafeVarargs
     private static <T> Set<T> asSet(T... items) {
-        return new HashSet<T>(Arrays.asList(items));
+        return new HashSet<>(Arrays.asList(items));
     }
 }

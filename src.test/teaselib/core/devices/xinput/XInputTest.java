@@ -3,8 +3,7 @@
  */
 package teaselib.core.devices.xinput;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.*;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -28,7 +27,7 @@ public class XInputTest {
     private static List<XInputDevice> getXInputDevices(Devices devices) {
         DeviceCache<XInputDevice> deviceCache = devices.get(XInputDevice.class);
         Collection<String> devicePaths = deviceCache.getDevicePaths();
-        List<XInputDevice> xinputDevices = new ArrayList<XInputDevice>(4);
+        List<XInputDevice> xinputDevices = new ArrayList<>(4);
         for (String devicePath : devicePaths) {
             XInputDevice xinputDevice = deviceCache.getDevice(devicePath);
             xinputDevices.add(xinputDevice);

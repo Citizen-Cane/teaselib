@@ -339,10 +339,8 @@ public class SexScriptsHost implements Host {
             mainFrame.repaint();
             // Show white text, since the background is black
             ss.show("<p style=\"color:#e0e0e0\">" + text + "</p>");
-        } catch (NoSuchFieldException e) {
-            e.printStackTrace();
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
+        } catch (ReflectiveOperationException e) {
+            logger.error(e.getMessage(), e);
         }
     }
 
@@ -354,6 +352,7 @@ public class SexScriptsHost implements Host {
             try {
                 results = ss.getBooleans(caption, texts, values);
             } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
                 throw new ScriptInterruptedException(e);
             }
             // Loop until the user pressed OK -> != null
@@ -365,7 +364,7 @@ public class SexScriptsHost implements Host {
         try {
             // Get buttons
             Class<?> mainFrameClass = mainFrame.getClass();
-            List<Delegate> clickableChoices = new ArrayList<Delegate>(choices.size());
+            List<Delegate> clickableChoices = new ArrayList<>(choices.size());
             // Multiple choices are managed via an array of buttons,
             // whereas a single choice is implemented as a single button
             Field buttonsField = mainFrameClass.getDeclaredField("buttons");
@@ -375,7 +374,7 @@ public class SexScriptsHost implements Host {
             Field buttonField = mainFrameClass.getDeclaredField("button");
             buttonField.setAccessible(true);
             final javax.swing.JButton ssButton = (javax.swing.JButton) buttonField.get(mainFrame);
-            List<javax.swing.JButton> buttons = new ArrayList<javax.swing.JButton>(ssButtons.length + 1);
+            List<javax.swing.JButton> buttons = new ArrayList<>(ssButtons.length + 1);
             for (javax.swing.JButton button : ssButtons) {
                 if (button.isVisible()) {
                     buttons.add(button);
@@ -442,7 +441,7 @@ public class SexScriptsHost implements Host {
         } catch (SecurityException e) {
             logger.error(e.getMessage(), e);
         }
-        return new ArrayList<Delegate>();
+        return new ArrayList<>();
 
     }
 
@@ -475,7 +474,7 @@ public class SexScriptsHost implements Host {
     class ShowPopupTask {
         final FutureTask<Boolean> task;
         final AtomicBoolean resetPopupVisibility = new AtomicBoolean(false);
-        final static int PollIntervalMillis = 100;
+        static final int PollIntervalMillis = 100;
 
         JComboBox<String> comboBox = null;
 
@@ -487,7 +486,7 @@ public class SexScriptsHost implements Host {
             } catch (IllegalAccessException e) {
                 logger.error(e.getMessage(), e);
             }
-            task = new FutureTask<Boolean>(new Callable<Boolean>() {
+            task = new FutureTask<>(new Callable<Boolean>() {
                 @Override
                 public Boolean call() throws Exception {
                     // Poll a little
@@ -507,25 +506,19 @@ public class SexScriptsHost implements Host {
         }
 
         void showPopup() {
-            java.awt.EventQueue.invokeLater(new Runnable() {
-                @Override
-                public void run() {
-                    comboBox.requestFocus();
-                    comboBox.setPopupVisible(true);
-                    resetPopupVisibility.set(true);
-                }
+            java.awt.EventQueue.invokeLater(() -> {
+                comboBox.requestFocus();
+                comboBox.setPopupVisible(true);
+                resetPopupVisibility.set(true);
             });
         }
 
         void cleanup() {
-            java.awt.EventQueue.invokeLater(new Runnable() {
-                @Override
-                public void run() {
-                    if (resetPopupVisibility.get())
-                        if (comboBox.isPopupVisible()) {
-                            comboBox.setPopupVisible(false);
-                        }
-                }
+            java.awt.EventQueue.invokeLater(() -> {
+                if (resetPopupVisibility.get())
+                    if (comboBox.isPopupVisible()) {
+                        comboBox.setPopupVisible(false);
+                    }
             });
         }
     }
@@ -546,7 +539,7 @@ public class SexScriptsHost implements Host {
         // and won't clean up buttons
         // -> Execute it in a separate thread, and
         // cancel the same way as speech recognition
-        FutureTask<Integer> showChoices = new FutureTask<Integer>(new Callable<Integer>() {
+        FutureTask<Integer> showChoices = new FutureTask<>(new Callable<Integer>() {
             @Override
             public Integer call() throws Exception {
                 return ss.getSelectedValue(null, choices);

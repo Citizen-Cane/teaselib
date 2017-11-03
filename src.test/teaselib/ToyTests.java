@@ -13,21 +13,19 @@ public class ToyTests {
     @Test
     public void testToyCategoriesCompletness() {
 
-        Set<Toys> all = new HashSet<Toys>();
+        Set<Toys> all = new HashSet<>();
         for (Toys[] toys : Arrays.asList(Toys.Categories)) {
             all.addAll(asSet(toys));
         }
 
         for (Toys toy : Toys.values()) {
-            assertTrue("Toy " + toy + " not assigned to any catagory",
-                    all.contains(toy));
+            assertTrue("Toy " + toy + " not assigned to any catagory", all.contains(toy));
         }
 
-        assertEquals("There are items in more then one category",
-                Toys.values().length, all.size());
+        assertEquals("There are items in more then one category", Toys.values().length, all.size());
     }
 
     private static <T> Set<T> asSet(T... items) {
-        return new HashSet<T>(Arrays.asList(items));
+        return new HashSet<>(Arrays.asList(items));
     }
 }

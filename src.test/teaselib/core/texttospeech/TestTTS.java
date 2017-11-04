@@ -39,7 +39,7 @@ public class TestTTS extends TextToSpeechImplementation {
 
     @Override
     public String phonemeAlphabetName() {
-        return "ups";
+        return UPS;
     }
 
     @Override

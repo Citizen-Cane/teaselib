@@ -1,5 +1,7 @@
 package teaselib.core.texttospeech.implementation;
 
+import static teaselib.core.texttospeech.TextToSpeechImplementation.UPS;
+
 import java.util.List;
 
 import teaselib.core.texttospeech.TextToSpeechImplementation;
@@ -28,7 +30,7 @@ public class TeaseLibTTS extends TextToSpeechImplementation {
 
     @Override
     public String phonemeAlphabetName() {
-        return "ups";
+        return UPS;
     }
 
     @Override

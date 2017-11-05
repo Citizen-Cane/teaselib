@@ -1,10 +1,18 @@
 package teaselib.core.texttospeech.implementation.loquendo;
 
+import java.util.Collections;
+import java.util.Iterator;
+
 import org.bridj.BridJ;
 import org.bridj.CRuntime;
+import org.bridj.Callback;
+import org.bridj.FlagSet;
+import org.bridj.IntValuedEnum;
 import org.bridj.Pointer;
 import org.bridj.SizeT;
+import org.bridj.ann.Convention;
 import org.bridj.ann.Library;
+import org.bridj.ann.Name;
 import org.bridj.ann.Ptr;
 import org.bridj.ann.Runtime;
 
@@ -24,854 +32,2043 @@ public class LoquendoTTSLibrary {
     }
 
     /**
+     * enum values<br>
+     * <i>native declaration : loqtypes.h</i>
+     */
+    public enum ttsCallbackType implements IntValuedEnum<ttsCallbackType> {
+        TTSCALLBACKFUNCTION(0),
+        TTSCALLBACKWINDOW(1),
+        TTSCALLBACKEVENT(2),
+        TTSCALLBACKPASCALFUNCTION(3);
+        ttsCallbackType(long value) {
+            this.value = value;
+        }
+
+        public final long value;
+
+        public long value() {
+            return this.value;
+        }
+
+        public Iterator<ttsCallbackType> iterator() {
+            return Collections.singleton(this).iterator();
+        }
+
+        public static IntValuedEnum<ttsCallbackType> fromValue(int value) {
+            return FlagSet.fromValue(value, values());
+        }
+    };
+
+    /**
+     * enum values<br>
+     * <i>native declaration : loqtypes.h</i>
+     */
+    public enum ttsEventType implements IntValuedEnum<ttsEventType> {
+        TTSEVT_AUDIOSTART(0),
+        TTSEVT_ENDOFSPEECH(1),
+        TTSEVT_LANGUAGEPHONEME(2),
+        TTSEVT_VOICEPHONEME(3),
+        TTSEVT_DATA(4),
+        TTSEVT_TEXT(5),
+        TTSEVT_SENTENCE(6),
+        TTSEVT_BOOKMARK(7),
+        TTSEVT_TAG(8),
+        TTSEVT_PAUSE(9),
+        TTSEVT_RESUME(10),
+        TTSEVT_FREESPACE(11),
+        TTSEVT_NOTSENT(12),
+        TTSEVT_AUDIO(13),
+        TTSEVT_VOICECHANGE(14),
+        TTSEVT_LANGUAGECHANGE(15),
+        TTSEVT_ERROR(16),
+        TTSEVT_GETLESOUT(17),
+        TTSEVT_JUMP(18),
+        TTSEVT_UNIT_SELECTION(19),
+        TTSEVT_PARAGRAPH(20),
+        TTSEVT_TEXTENCODING(21),
+        TTSEVT_STYLECHANGE(22),
+        TTSEVT_PERSONACHANGE(23),
+        TTSEVT_SAYASCHANGE(24),
+        TTSEVT_RESERVED(100),
+        TTSEVT_DEBUG(113);
+        ttsEventType(long value) {
+            this.value = value;
+        }
+
+        public final long value;
+
+        public long value() {
+            return this.value;
+        }
+
+        public Iterator<ttsEventType> iterator() {
+            return Collections.singleton(this).iterator();
+        }
+
+        public static IntValuedEnum<ttsEventType> fromValue(int value) {
+            return FlagSet.fromValue(value, values());
+        }
+    };
+
+    /**
+     * enum values<br>
+     * <i>native declaration : loqtypes.h</i>
+     */
+    public enum ttsSkipType implements IntValuedEnum<ttsSkipType> {
+        TTSSKIP_SENTENCE(0),
+        TTSSKIP_PROMPT(1),
+        TTSSKIP_GOTOSENTENCE(2);
+        ttsSkipType(long value) {
+            this.value = value;
+        }
+
+        public final long value;
+
+        public long value() {
+            return this.value;
+        }
+
+        public Iterator<ttsSkipType> iterator() {
+            return Collections.singleton(this).iterator();
+        }
+
+        public static IntValuedEnum<ttsSkipType> fromValue(int value) {
+            return FlagSet.fromValue(value, values());
+        }
+    };
+
+    /**
+     * enum values<br>
+     * <i>native declaration : loqtypes.h</i>
+     */
+    public enum ttsQueryType implements IntValuedEnum<ttsQueryType> {
+        TTSOBJECTREADER(0),
+        TTSOBJECTVOICE(1),
+        TTSOBJECTLANGUAGE(2),
+        TTSOBJECTSTYLE(3);
+        ttsQueryType(long value) {
+            this.value = value;
+        }
+
+        public final long value;
+
+        public long value() {
+            return this.value;
+        }
+
+        public Iterator<ttsQueryType> iterator() {
+            return Collections.singleton(this).iterator();
+        }
+
+        public static IntValuedEnum<ttsQueryType> fromValue(int value) {
+            return FlagSet.fromValue(value, values());
+        }
+    };
+
+    /**
+     * enum values<br>
+     * <i>native declaration : loqtypes.h</i>
+     */
+    public enum ttsAudioSampleType implements IntValuedEnum<ttsAudioSampleType> {
+        tts_MONO(1),
+        tts_STEREO(2);
+        ttsAudioSampleType(long value) {
+            this.value = value;
+        }
+
+        public final long value;
+
+        public long value() {
+            return this.value;
+        }
+
+        public Iterator<ttsAudioSampleType> iterator() {
+            return Collections.singleton(this).iterator();
+        }
+
+        public static IntValuedEnum<ttsAudioSampleType> fromValue(int value) {
+            return FlagSet.fromValue(value, values());
+        }
+    };
+
+    /**
+     * enum values<br>
+     * <i>native declaration : loqtypes.h</i>
+     */
+    public enum ttsAudioEncodingType implements IntValuedEnum<ttsAudioEncodingType> {
+        tts_LINEAR(0),
+        tts_ALAW(1),
+        tts_ULAW(2);
+        ttsAudioEncodingType(long value) {
+            this.value = value;
+        }
+
+        public final long value;
+
+        public long value() {
+            return this.value;
+        }
+
+        public Iterator<ttsAudioEncodingType> iterator() {
+            return Collections.singleton(this).iterator();
+        }
+
+        public static IntValuedEnum<ttsAudioEncodingType> fromValue(int value) {
+            return FlagSet.fromValue(value, values());
+        }
+    };
+
+    /**
+     * enum values<br>
+     * <i>native declaration : loqtypes.h</i>
+     */
+    public enum ttsAudioCodingType implements IntValuedEnum<ttsAudioCodingType> {
+        tts_LINEAR(0),
+        tts_ALAW(1),
+        tts_ULAW(2);
+        ttsAudioCodingType(long value) {
+            this.value = value;
+        }
+
+        public final long value;
+
+        public long value() {
+            return this.value;
+        }
+
+        public Iterator<ttsAudioCodingType> iterator() {
+            return Collections.singleton(this).iterator();
+        }
+
+        public static IntValuedEnum<ttsAudioCodingType> fromValue(int value) {
+            return FlagSet.fromValue(value, values());
+        }
+    };
+
+    /**
+     * enum values<br>
+     * <i>native declaration : loqtypes.h</i>
+     */
+    public enum ttsGraphicEQBandType implements IntValuedEnum<ttsGraphicEQBandType> {
+        tts_30Hz(0),
+        tts_40Hz(1),
+        tts_50Hz(2),
+        tts_63Hz(3),
+        tts_80Hz(4),
+        tts_100Hz(5),
+        tts_125Hz(6),
+        tts_160Hz(7),
+        tts_200Hz(8),
+        tts_250Hz(9),
+        tts_315Hz(10),
+        tts_400Hz(11),
+        tts_500Hz(12),
+        tts_630Hz(13),
+        tts_800Hz(14),
+        tts_1000Hz(15),
+        tts_1250Hz(16),
+        tts_1600Hz(17),
+        tts_2000Hz(18),
+        tts_2500Hz(19),
+        tts_3150Hz(20),
+        tts_4000Hz(21),
+        tts_5000Hz(22),
+        tts_6300Hz(23),
+        tts_8000Hz(24),
+        tts_10000Hz(25),
+        tts_12500Hz(26),
+        tts_16000Hz(27),
+        tts_20000Hz(28),
+        tts_25000Hz(29);
+        ttsGraphicEQBandType(long value) {
+            this.value = value;
+        }
+
+        public final long value;
+
+        public long value() {
+            return this.value;
+        }
+
+        public Iterator<ttsGraphicEQBandType> iterator() {
+            return Collections.singleton(this).iterator();
+        }
+
+        public static IntValuedEnum<ttsGraphicEQBandType> fromValue(int value) {
+            return FlagSet.fromValue(value, values());
+        }
+    };
+
+    /**
+     * enum values<br>
+     * <i>native declaration : loqtypes.h</i>
+     */
+    public enum ttsGraphicEQPresetType implements IntValuedEnum<ttsGraphicEQPresetType> {
+        tts_GraphicEQPreset_BassBoost(0),
+        tts_GraphicEQPreset_LowFidelity(1),
+        tts_GraphicEQPreset_NotchTwoOfThree(2),
+        tts_GraphicEQPreset_ForbiddenPlanet(3),
+        tts_GraphicEQPreset_HighPass(4),
+        tts_GraphicEQPreset_LowPass(5),
+        tts_GraphicEQPreset_VoicePresence(6);
+        ttsGraphicEQPresetType(long value) {
+            this.value = value;
+        }
+
+        public final long value;
+
+        public long value() {
+            return this.value;
+        }
+
+        public Iterator<ttsGraphicEQPresetType> iterator() {
+            return Collections.singleton(this).iterator();
+        }
+
+        public static IntValuedEnum<ttsGraphicEQPresetType> fromValue(int value) {
+            return FlagSet.fromValue(value, values());
+        }
+    };
+
+    /**
+     * enum values<br>
+     * <i>native declaration : loqtypes.h</i>
+     */
+    public enum ttsTextEncodingType implements IntValuedEnum<ttsTextEncodingType> {
+        TTSDEFAULTENCODING(0),
+        TTSAUTODETECTENCODING(1),
+        TTSISO(2),
+        TTSANSI(3),
+        TTSOEM(4),
+        TTSUTF8(65001),
+        TTSUTF16(1200),
+        TTSUTF16BIGENDIAN(1201),
+        /** msdos-united-states */
+        TTSCP_437(437),
+        /** oem-western-european (including euro sign) */
+        TTSCP_858(858),
+        /** msdos-greek */
+        TTSCP_737(737),
+        /** msdos-central-european */
+        TTSCP_852(852),
+        /** msdos-cyrillic (old) */
+        TTSCP_855(855),
+        /** msdos-turkish */
+        TTSCP_857(857),
+        /** msdos-cyrillic */
+        TTSCP_866(866),
+        /** iso-western */
+        TTSISO_8859_1(28591),
+        /** iso-central-european */
+        TTSISO_8859_2(28592),
+        /** not yet implemented */
+        TTSISO_8859_3(28593),
+        /** not yet implemented */
+        TTSISO_8859_4(28594),
+        /** iso-cyrillic */
+        TTSISO_8859_5(28595),
+        /** iso-arabic */
+        TTSISO_8859_6(28596),
+        /** iso-greek */
+        TTSISO_8859_7(28597),
+        /** not yet implemented */
+        TTSISO_8859_8(28598),
+        /** iso-turkish */
+        TTSISO_8859_9(28599),
+        /** iso-latin-15 (including euro sign) */
+        TTSISO_8859_15(28605),
+        /** windows-central-european */
+        TTSWINDOWS_1250(1250),
+        /** windows-cyrillic */
+        TTSWINDOWS_1251(1251),
+        /** windows-ansi-western */
+        TTSWINDOWS_1252(1252),
+        /** windows-greek */
+        TTSWINDOWS_1253(1253),
+        /** windows-turkish */
+        TTSWINDOWS_1254(1254),
+        /** not yet implemented */
+        TTSWINDOWS_1255(1255),
+        /** windows-arabic */
+        TTSWINDOWS_1256(1256),
+        /** not yet implemented */
+        TTSWINDOWS_1257(1257),
+        /** not yet implemented */
+        TTSWINDOWS_1258(1258),
+        /** arabic transliteration */
+        TTSBUCKWALTER(9000);
+        ttsTextEncodingType(long value) {
+            this.value = value;
+        }
+
+        public final long value;
+
+        public long value() {
+            return this.value;
+        }
+
+        public Iterator<ttsTextEncodingType> iterator() {
+            return Collections.singleton(this).iterator();
+        }
+
+        public static IntValuedEnum<ttsTextEncodingType> fromValue(int value) {
+            return FlagSet.fromValue(value, values());
+        }
+    };
+
+    /**
+     * enum values<br>
+     * <i>native declaration : loqtypes.h</i>
+     */
+    public enum ttsTextFormatType implements IntValuedEnum<ttsTextFormatType> {
+        TTSAUTODETECTFORMAT(0),
+        TTSPLAINTEXT(1),
+        TTSSSML(2);
+        ttsTextFormatType(long value) {
+            this.value = value;
+        }
+
+        public final long value;
+
+        public long value() {
+            return this.value;
+        }
+
+        public Iterator<ttsTextFormatType> iterator() {
+            return Collections.singleton(this).iterator();
+        }
+
+        public static IntValuedEnum<ttsTextFormatType> fromValue(int value) {
+            return FlagSet.fromValue(value, values());
+        }
+    };
+
+    /** <i>native declaration : loqtypes.h</i> */
+    public static final int TTS_INT32_MAX = (int) 2147483647;
+    /** <i>native declaration : loqtypes.h</i> */
+    public static final long TTS_UINT32_MAX = (long) 4294967295L;
+    /** <i>native declaration : loqtypes.h</i> */
+    public static final int ttsTRUE = (int) 1;
+    /** <i>native declaration : loqtypes.h</i> */
+    public static final int ttsFALSE = (int) 0;
+    /** <i>native declaration : loqtypes.h</i> */
+    public static final int ttsSTRINGMAXLEN = (int) 512;
+    /** <i>native declaration : loqtypes.h</i> */
+    public static final long ttsINFINITE = (long) (-1);
+    /** <i>native declaration : loqtypes.h</i> */
+    public static final String tts_GET_VERSION = (String) "GetVersion";
+    /** <i>native declaration : loqtypes.h</i> */
+    public static final String tts_LOAD_UTIL_SYMBOLS = (String) "LoadUtilSymbols";
+    /** <i>native declaration : loqtypes.h</i> */
+    public static final int tts_OK = (int) 0;
+    /** <i>native declaration : loqtypes.h</i> */
+    public static final int ttsERROR_FILEWRITE = (int) 1;
+    /** <i>native declaration : loqtypes.h</i> */
+    public static final int ttsERROR_FILEREAD = (int) 2;
+    /** <i>native declaration : loqtypes.h</i> */
+    public static final int ttsERROR_NOTINIT = (int) 3;
+    /** <i>native declaration : loqtypes.h</i> */
+    public static final int ttsERROR_INTERNAL = (int) 4;
+    /** <i>native declaration : loqtypes.h</i> */
+    public static final int ttsERROR_OUTOFMEMORY = (int) 5;
+    /** <i>native declaration : loqtypes.h</i> */
+    public static final int ttsERROR_CONFIGURATION = (int) 6;
+    /** <i>native declaration : loqtypes.h</i> */
+    public static final int ttsERROR_ACCESSDENIED = (int) 7;
+    /** <i>native declaration : loqtypes.h</i> */
+    public static final int ttsERROR_SYNTAX = (int) 8;
+    /** <i>native declaration : loqtypes.h</i> */
+    public static final int ttsERROR_DEVICEBUSY = (int) 9;
+    /** <i>native declaration : loqtypes.h</i> */
+    public static final int ttsERROR_LICENSING = (int) 10;
+    /** <i>native declaration : loqtypes.h</i> */
+    public static final int ttsERROR_OBSOLETE = (int) 11;
+    /** <i>native declaration : loqtypes.h</i> */
+    public static final int ttsERROR_INVALIDPARAM = (int) 12;
+    /** <i>native declaration : loqtypes.h</i> */
+    public static final int ttsERROR_DATAOVERFLOW = (int) 13;
+    /** <i>native declaration : loqtypes.h</i> */
+    public static final int ttsERROR_EXTERNALPLUGIN = (int) 14;
+    /** <i>native declaration : loqtypes.h</i> */
+    public static final int ttsERROR_INCOMPATIBLE = (int) 15;
+    /** <i>native declaration : loqtypes.h</i> */
+    public static final int ttsERROR_TOOMANYITEMS = (int) 16;
+    /** <i>native declaration : loqtypes.h</i> */
+    public static final int ttsERROR_DUPLICATEITEM = (int) 17;
+    /** <i>native declaration : loqtypes.h</i> */
+    public static final int ttsERROR_UNSUPPORTED = (int) 18;
+    /** <i>native declaration : loqtypes.h</i> */
+    public static final String TTSAUDIO_OPEN = (String) "AudioOpen";
+    /** <i>native declaration : loqtypes.h</i> */
+    public static final String TTSAUDIO_CLOSE = (String) "AudioClose";
+    /** <i>native declaration : loqtypes.h</i> */
+    public static final String TTSAUDIO_PUTDATA = (String) "AudioPutData";
+    /** <i>native declaration : loqtypes.h</i> */
+    public static final String TTSAUDIO_STOP = (String) "AudioStop";
+    /** <i>native declaration : loqtypes.h</i> */
+    public static final String TTSAUDIO_PAUSE = (String) "AudioPause";
+    /** <i>native declaration : loqtypes.h</i> */
+    public static final String TTSAUDIO_RESUME = (String) "AudioResume";
+    /** <i>native declaration : loqtypes.h</i> */
+    public static final String TTSAUDIO_GETERRORMESSAGE = (String) "AudioGetError";
+    /** <i>native declaration : loqtypes.h</i> */
+    public static final int TTS_AUDIOFULL = (int) -1;
+    /** <i>native declaration : loqtypes.h</i> */
+    public static final String ttsNEED_C_LINKING = (String) "C";
+
+    /** <i>native declaration : loqtypes.h</i> */
+    public static abstract class ttsMagicNumberType extends Callback<ttsMagicNumberType> {
+        public abstract int apply();
+    };
+
+    // /** <i>native declaration : loqtypes.h</i> */
+    // public static abstract class ttsCallbackFunctionType extends Callback<ttsCallbackFunctionType> {
+    // public void apply(@Ptr long PromptID, IntValuedEnum<LoquendoTTSLibrary.ttsEventType> nReason, Pointer<?> lData,
+    // Pointer<?> pUser) {
+    // apply(PromptID, (int) nReason.value(), Pointer.getPeer(lData), Pointer.getPeer(pUser));
+    // }
+    //
+    // public void apply(@Ptr long PromptID, int nReason, @Ptr long lData, @Ptr long pUser) {
+    // apply(PromptID, FlagSet.fromValue(nReason, LoquendoTTSLibrary.ttsEventType.class),
+    // Pointer.pointerToAddress(lData), Pointer.pointerToAddress(pUser));
+    // }
+    // };
+
+    // /** <i>native declaration : loqtypes.h</i> */
+    // public static abstract class ttsCallbackPascalFunctionType extends Callback<ttsCallbackPascalFunctionType> {
+    // @Convention(Convention.Style.StdCall)
+    // public void apply(@Ptr long PromptID, IntValuedEnum<LoquendoTTSLibrary.ttsEventType> nReason, Pointer<?> lData,
+    // Pointer<?> pUser) {
+    // apply(PromptID, (int) nReason.value(), Pointer.getPeer(lData), Pointer.getPeer(pUser));
+    // }
+    //
+    // @Convention(Convention.Style.StdCall)
+    // public void apply(@Ptr long PromptID, int nReason, @Ptr long lData, @Ptr long pUser) {
+    // apply(PromptID, FlagSet.fromValue(nReason, LoquendoTTSLibrary.ttsEventType.class),
+    // Pointer.pointerToAddress(lData), Pointer.pointerToAddress(pUser));
+    // }
+    // };
+
+    // /** <i>native declaration : loqtypes.h</i> */
+    // public static abstract class ttsURLCallbackType extends Callback<ttsURLCallbackType> {
+    // public byte apply(Pointer<Byte> url, Pointer<Byte> info, Pointer<Byte> outfile, Pointer<?> pUser) {
+    // return apply(Pointer.getPeer(url), Pointer.getPeer(info), Pointer.getPeer(outfile), Pointer.getPeer(pUser));
+    // }
+    //
+    // public byte apply(@Ptr long url, @Ptr long info, @Ptr long outfile, @Ptr long pUser) {
+    // return apply((Pointer) Pointer.pointerToAddress(url, Byte.class),
+    // (Pointer) Pointer.pointerToAddress(info, Byte.class),
+    // (Pointer) Pointer.pointerToAddress(outfile, Byte.class), Pointer.pointerToAddress(pUser));
+    // }
+    // };
+
+    // /** <i>native declaration : loqtypes.h</i> */
+    // public static abstract class ttsOutputFunctionType extends Callback<ttsOutputFunctionType> {
+    // public Pointer<?> apply(Pointer<?> data, Pointer<?> destination) {
+    // return Pointer.pointerToAddress(apply(Pointer.getPeer(data), Pointer.getPeer(destination)));
+    // }
+    //
+    // @Ptr
+    // public long apply(@Ptr long data, @Ptr long destination) {
+    // return Pointer.getPeer(apply(Pointer.pointerToAddress(data), Pointer.pointerToAddress(destination)));
+    // }
+    // };
+
+    // /** <i>native declaration : loqtypes.h</i> */
+    // public static abstract class ttspFuncType extends Callback<ttspFuncType> {
+    // public Pointer<?> apply() {
+    // return Pointer.pointerToAddress(apply$2());
+    // }
+    //
+    // @Ptr
+    // public long apply$2() {
+    // return Pointer.getPeer(apply());
+    // }
+    // };
+
+    // /** <i>native declaration : loqtypes.h</i> */
+    // public static abstract class ttsAudioOpenType extends Callback<ttsAudioOpenType> {
+    // public int apply(Pointer<Pointer<?>> channel, Pointer<Byte> specification, @Ptr long SampleRate,
+    // IntValuedEnum<LoquendoTTSLibrary.ttsAudioEncodingType> coding,
+    // IntValuedEnum<LoquendoTTSLibrary.ttsAudioSampleType> nChannels, Pointer<Byte> bRealTime,
+    // Pointer<?> pUser) {
+    // return apply(Pointer.getPeer(channel), Pointer.getPeer(specification), SampleRate, (int) coding.value(),
+    // (int) nChannels.value(), Pointer.getPeer(bRealTime), Pointer.getPeer(pUser));
+    // }
+    //
+    // public int apply(@Ptr long channel, @Ptr long specification, @Ptr long SampleRate, int coding, int nChannels,
+    // @Ptr long bRealTime, @Ptr long pUser) {
+    // return apply(
+    // (Pointer) Pointer.pointerToAddress(channel,
+    // DefaultParameterizedType.paramType(Pointer.class, (Type) null)),
+    // (Pointer) Pointer.pointerToAddress(specification, Byte.class), SampleRate,
+    // FlagSet.fromValue(coding, LoquendoTTSLibrary.ttsAudioEncodingType.class),
+    // FlagSet.fromValue(nChannels, LoquendoTTSLibrary.ttsAudioSampleType.class),
+    // (Pointer) Pointer.pointerToAddress(bRealTime, Byte.class), Pointer.pointerToAddress(pUser));
+    // }
+    // };
+
+    // /** <i>native declaration : loqtypes.h</i> */
+    // public static abstract class ttsAudioCloseType extends Callback<ttsAudioCloseType> {
+    // public int apply(Pointer<?> channel) {
+    // return apply(Pointer.getPeer(channel));
+    // }
+    //
+    // public int apply(@Ptr long channel) {
+    // return apply(Pointer.pointerToAddress(channel));
+    // }
+    // };
+
+    /** <i>native declaration : loqtypes.h</i> */
+    // public static abstract class ttsAudioPutDataType extends Callback<ttsAudioPutDataType> {
+    // public int apply(Pointer<?> channel, Pointer<?> pData, @Ptr long nBytes, Pointer<SizeT> nSent) {
+    // return apply(Pointer.getPeer(channel), Pointer.getPeer(pData), nBytes, Pointer.getPeer(nSent));
+    // }
+    //
+    // public int apply(@Ptr long channel, @Ptr long pData, @Ptr long nBytes, @Ptr long nSent) {
+    // return apply(Pointer.pointerToAddress(channel), Pointer.pointerToAddress(pData), nBytes,
+    // (Pointer) Pointer.pointerToAddress(nSent, SizeT.class));
+    // }
+    // };
+
+    /** <i>native declaration : loqtypes.h</i> */
+    // public static abstract class ttsAudioStopType extends Callback<ttsAudioStopType> {
+    // public int apply(Pointer<?> channel) {
+    // return apply(Pointer.getPeer(channel));
+    // }
+    //
+    // public int apply(@Ptr long channel) {
+    // return apply(Pointer.pointerToAddress(channel));
+    // }
+    // };
+
+    // /** <i>native declaration : loqtypes.h</i> */
+    // public static abstract class ttsAudioPauseType extends Callback<ttsAudioPauseType> {
+    // public int apply(Pointer<?> channel) {
+    // return apply(Pointer.getPeer(channel));
+    // }
+    //
+    // public int apply(@Ptr long channel) {
+    // return apply(Pointer.pointerToAddress(channel));
+    // }
+    // };
+
+    // /** <i>native declaration : loqtypes.h</i> */
+    // public static abstract class ttsAudioResumeType extends Callback<ttsAudioResumeType> {
+    // public int apply(Pointer<?> channel) {
+    // return apply(Pointer.getPeer(channel));
+    // }
+    //
+    // public int apply(@Ptr long channel) {
+    // return apply(Pointer.pointerToAddress(channel));
+    // }
+    // };
+
+    // /** <i>native declaration : loqtypes.h</i> */
+    // public static abstract class ttsAudioGetErrorMessageType extends Callback<ttsAudioGetErrorMessageType> {
+    // public int apply(int ErrorCode, Pointer<Byte> message, @Ptr long size) {
+    // return apply(ErrorCode, Pointer.getPeer(message), size);
+    // }
+    //
+    // public int apply(int ErrorCode, @Ptr long message, @Ptr long size) {
+    // return apply(ErrorCode, (Pointer) Pointer.pointerToAddress(message, Byte.class), size);
+    // }
+    // };
+
+    // /** <i>native declaration : loqtypes.h</i> */
+    // public static abstract class ttsGetVersionType extends Callback<ttsGetVersionType> {
+    // public int apply(Pointer<Byte> Version) {
+    // return apply(Pointer.getPeer(Version));
+    // }
+    //
+    // public int apply(@Ptr long Version) {
+    // return apply((Pointer) Pointer.pointerToAddress(Version, Byte.class));
+    // }
+    // };
+
+    // /** <i>native declaration : loqtypes.h</i> */
+    // public static abstract class ttsLoadUtilSymbolsType extends Callback<ttsLoadUtilSymbolsType> {
+    // public byte apply(Pointer<?> hLibrary) {
+    // return apply(Pointer.getPeer(hLibrary));
+    // }
+    //
+    // public byte apply(@Ptr long hLibrary) {
+    // return apply(Pointer.pointerToAddress(hLibrary));
+    // }
+    // };
+
+    /**
      * BEGIN: C API DECLARATIONS<br>
      * Original signature :
-     * <code>tts_API_DEFINITION ttsRead(ttsHandleType, const void*, ttsBoolType, ttsBoolType, size_t*)</code><br>
-     * <i>native declaration : line 30</i>
+     * <code>__attribute__((dllimport)) ttsResultType ttsRead(ttsHandleType, const void*, ttsBoolType, ttsBoolType, size_t*)</code><br>
+     * <i>native declaration : loqtts.h:29</i>
      */
-    public static native LoquendoTTSLibrary.tts_API_DEFINITION ttsRead(LoquendoTTSLibrary.ttsHandleType hReader,
-            Pointer<?> Input, LoquendoTTSLibrary.ttsBoolType bAsync, LoquendoTTSLibrary.ttsBoolType bFromFile,
-            Pointer<SizeT> phPromptId);
+    @Convention(Convention.Style.StdCall)
+    public static int ttsRead(Pointer<?> hReader, Pointer<?> Input, byte bAsync, byte bFromFile,
+            Pointer<SizeT> phPromptId) {
+        return ttsRead(Pointer.getPeer(hReader), Pointer.getPeer(Input), bAsync, bFromFile,
+                Pointer.getPeer(phPromptId));
+    }
+
+    @Convention(Convention.Style.StdCall)
+    protected native static int ttsRead(@Ptr long hReader, @Ptr long Input, byte bAsync, byte bFromFile,
+            @Ptr long phPromptId);
 
     /**
      * Original signature :
-     * <code>tts_API_DEFINITION ttsReadSlice(ttsHandleType, const void*, ttsBoolType, size_t*)</code><br>
-     * <i>native declaration : line 39</i>
+     * <code>__attribute__((dllimport)) ttsResultType ttsReadSlice(ttsHandleType, const void*, ttsBoolType, size_t*)</code><br>
+     * <i>native declaration : loqtts.h:38</i>
      */
-    public static native LoquendoTTSLibrary.tts_API_DEFINITION ttsReadSlice(LoquendoTTSLibrary.ttsHandleType hReader,
-            Pointer<?> Input, LoquendoTTSLibrary.ttsBoolType bFromFile, Pointer<SizeT> phPromptId);
+    @Convention(Convention.Style.StdCall)
+    public static int ttsReadSlice(Pointer<?> hReader, Pointer<?> Input, byte bFromFile, Pointer<SizeT> phPromptId) {
+        return ttsReadSlice(Pointer.getPeer(hReader), Pointer.getPeer(Input), bFromFile, Pointer.getPeer(phPromptId));
+    }
 
-    /**
-     * Original signature : <code>tts_API_DEFINITION ttsReadNextSlice(ttsHandleType, ttsBoolType*)</code><br>
-     * <i>native declaration : line 47</i>
-     */
-    public static native LoquendoTTSLibrary.tts_API_DEFINITION ttsReadNextSlice(
-            LoquendoTTSLibrary.ttsHandleType hReader, Pointer<LoquendoTTSLibrary.ttsBoolType> pbEnd);
-
-    /**
-     * Original signature : <code>tts_API_DEFINITION ttsPause(ttsHandleType)</code><br>
-     * <i>native declaration : line 53</i>
-     */
-    public static native LoquendoTTSLibrary.tts_API_DEFINITION ttsPause(LoquendoTTSLibrary.ttsHandleType hReader);
-
-    /**
-     * Original signature : <code>tts_API_DEFINITION ttsResume(ttsHandleType)</code><br>
-     * <i>native declaration : line 57</i>
-     */
-    public static native LoquendoTTSLibrary.tts_API_DEFINITION ttsResume(LoquendoTTSLibrary.ttsHandleType hReader);
-
-    /**
-     * Original signature : <code>tts_API_DEFINITION ttsSkip(ttsHandleType, ttsSkipType, signed int)</code><br>
-     * <i>native declaration : line 61</i>
-     */
-    public static native LoquendoTTSLibrary.tts_API_DEFINITION ttsSkip(LoquendoTTSLibrary.ttsHandleType hReader,
-            LoquendoTTSLibrary.ttsSkipType Type, int nUtterances);
+    @Convention(Convention.Style.StdCall)
+    protected native static int ttsReadSlice(@Ptr long hReader, @Ptr long Input, byte bFromFile, @Ptr long phPromptId);
 
     /**
      * Original signature :
-     * <code>tts_API_DEFINITION ttsWaitForEndOfSpeech(ttsHandleType, unsigned int, ttsBoolType*)</code><br>
-     * <i>native declaration : line 67</i>
+     * <code>__attribute__((dllimport)) ttsResultType ttsReadNextSlice(ttsHandleType, ttsBoolType*)</code><br>
+     * <i>native declaration : loqtts.h:46</i>
      */
-    public static native LoquendoTTSLibrary.tts_API_DEFINITION ttsWaitForEndOfSpeech(
-            LoquendoTTSLibrary.ttsHandleType hReader, int TimeOutMsec,
-            Pointer<LoquendoTTSLibrary.ttsBoolType> bSignaled);
+    @Convention(Convention.Style.StdCall)
+    public static int ttsReadNextSlice(Pointer<?> hReader, Pointer<Byte> pbEnd) {
+        return ttsReadNextSlice(Pointer.getPeer(hReader), Pointer.getPeer(pbEnd));
+    }
+
+    @Convention(Convention.Style.StdCall)
+    protected native static int ttsReadNextSlice(@Ptr long hReader, @Ptr long pbEnd);
 
     /**
-     * Original signature : <code>tts_API_DEFINITION ttsStop(ttsHandleType)</code><br>
-     * <i>native declaration : line 73</i>
+     * Original signature : <code>__attribute__((dllimport)) ttsResultType ttsPause(ttsHandleType)</code><br>
+     * <i>native declaration : loqtts.h:52</i>
      */
-    public static native LoquendoTTSLibrary.tts_API_DEFINITION ttsStop(LoquendoTTSLibrary.ttsHandleType hReader);
+    @Convention(Convention.Style.StdCall)
+    public static int ttsPause(Pointer<?> hReader) {
+        return ttsPause(Pointer.getPeer(hReader));
+    }
+
+    @Convention(Convention.Style.StdCall)
+    protected native static int ttsPause(@Ptr long hReader);
 
     /**
-     * Original signature : <code>tts_API_DEFINITION ttsReset(ttsHandleType)</code><br>
-     * <i>native declaration : line 77</i>
+     * Original signature : <code>__attribute__((dllimport)) ttsResultType ttsResume(ttsHandleType)</code><br>
+     * <i>native declaration : loqtts.h:56</i>
      */
-    public static native LoquendoTTSLibrary.tts_API_DEFINITION ttsReset(LoquendoTTSLibrary.ttsHandleType hReader);
+    @Convention(Convention.Style.StdCall)
+    public static int ttsResume(Pointer<?> hReader) {
+        return ttsResume(Pointer.getPeer(hReader));
+    }
 
-    /**
-     * Original signature : <code>tts_API_DEFINITION ttsAudioFreeSpace(ttsHandleType, ttsBoolType*)</code><br>
-     * <i>native declaration : line 81</i>
-     */
-    public static native LoquendoTTSLibrary.tts_API_DEFINITION ttsAudioFreeSpace(
-            LoquendoTTSLibrary.ttsHandleType hReader, Pointer<LoquendoTTSLibrary.ttsBoolType> bFreeSpace);
-
-    /**
-     * Original signature :
-     * <code>tts_API_DEFINITION ttsNewLanguage(ttsHandleType*, ttsHandleType, const char*)</code><br>
-     * <i>native declaration : line 86</i>
-     */
-    public static native LoquendoTTSLibrary.tts_API_DEFINITION ttsNewLanguage(
-            Pointer<LoquendoTTSLibrary.ttsHandleType> phLanguage, LoquendoTTSLibrary.ttsHandleType hSession,
-            Pointer<Byte> Language);
-
-    /**
-     * Original signature : <code>tts_API_DEFINITION ttsSetLanguage(ttsHandleType, ttsHandleType)</code><br>
-     * <i>native declaration : line 92</i>
-     */
-    public static native LoquendoTTSLibrary.tts_API_DEFINITION ttsSetLanguage(LoquendoTTSLibrary.ttsHandleType hReader,
-            LoquendoTTSLibrary.ttsHandleType hLanguage);
-
-    /**
-     * Original signature : <code>tts_API_DEFINITION ttsDeleteLanguage(ttsHandleType)</code><br>
-     * <i>native declaration : line 97</i>
-     */
-    public static native LoquendoTTSLibrary.tts_API_DEFINITION ttsDeleteLanguage(
-            LoquendoTTSLibrary.ttsHandleType hLanguage);
-
-    /**
-     * Original signature : <code>tts_API_DEFINITION ttsNewStyle(ttsHandleType*, ttsHandleType, const char*)</code><br>
-     * <i>native declaration : line 101</i>
-     */
-    public static native LoquendoTTSLibrary.tts_API_DEFINITION ttsNewStyle(
-            Pointer<LoquendoTTSLibrary.ttsHandleType> phStyle, LoquendoTTSLibrary.ttsHandleType hSession,
-            Pointer<Byte> StyleName);
-
-    /**
-     * Original signature : <code>tts_API_DEFINITION ttsDeleteStyle(ttsHandleType)</code><br>
-     * <i>native declaration : line 107</i>
-     */
-    public static native LoquendoTTSLibrary.tts_API_DEFINITION ttsDeleteStyle(LoquendoTTSLibrary.ttsHandleType hStyle);
-
-    /**
-     * Original signature : <code>tts_API_DEFINITION ttsSetStyle(ttsHandleType, ttsHandleType)</code><br>
-     * <i>native declaration : line 111</i>
-     */
-    public static native LoquendoTTSLibrary.tts_API_DEFINITION ttsSetStyle(LoquendoTTSLibrary.ttsHandleType hReader,
-            LoquendoTTSLibrary.ttsHandleType hStyle);
+    @Convention(Convention.Style.StdCall)
+    protected native static int ttsResume(@Ptr long hReader);
 
     /**
      * Original signature :
-     * <code>tts_API_DEFINITION ttsOpenLexicon(ttsHandleType*, ttsHandleType, unsigned int, ttsBoolType, const char*, ttsBoolType)</code><br>
-     * <i>native declaration : line 116</i>
+     * <code>__attribute__((dllimport)) ttsResultType ttsSkip(ttsHandleType, ttsSkipType, signed int)</code><br>
+     * <i>native declaration : loqtts.h:60</i>
      */
-    public static native LoquendoTTSLibrary.tts_API_DEFINITION ttsOpenLexicon(
-            Pointer<LoquendoTTSLibrary.ttsHandleType> hLexicon, LoquendoTTSLibrary.ttsHandleType hReader, int nLex,
-            LoquendoTTSLibrary.ttsBoolType bReadOnly, Pointer<Byte> FileName, LoquendoTTSLibrary.ttsBoolType bActivate);
+    @Convention(Convention.Style.StdCall)
+    public static int ttsSkip(Pointer<?> hReader, IntValuedEnum<LoquendoTTSLibrary.ttsSkipType> Type, int nUtterances) {
+        return ttsSkip(Pointer.getPeer(hReader), (int) Type.value(), nUtterances);
+    }
 
-    /**
-     * Original signature : <code>tts_API_DEFINITION ttsActivateLexicon(ttsHandleType, ttsBoolType)</code><br>
-     * <i>native declaration : line 125</i>
-     */
-    public static native LoquendoTTSLibrary.tts_API_DEFINITION ttsActivateLexicon(
-            LoquendoTTSLibrary.ttsHandleType hLexicon, LoquendoTTSLibrary.ttsBoolType bActive);
-
-    /**
-     * Original signature : <code>tts_API_DEFINITION ttsCloseLexicon(ttsHandleType)</code><br>
-     * <i>native declaration : line 130</i>
-     */
-    public static native LoquendoTTSLibrary.tts_API_DEFINITION ttsCloseLexicon(
-            LoquendoTTSLibrary.ttsHandleType hLexicon);
+    @Convention(Convention.Style.StdCall)
+    protected native static int ttsSkip(@Ptr long hReader, int Type, int nUtterances);
 
     /**
      * Original signature :
-     * <code>tts_API_DEFINITION ttsFindLexiconEntry(ttsHandleType, const char*, ttsInfoStringType, const char*)</code><br>
-     * <i>native declaration : line 134</i>
+     * <code>__attribute__((dllimport)) ttsResultType ttsWaitForEndOfSpeech(ttsHandleType, unsigned int, ttsBoolType*)</code><br>
+     * <i>native declaration : loqtts.h:66</i>
      */
-    public static native LoquendoTTSLibrary.tts_API_DEFINITION ttsFindLexiconEntry(
-            LoquendoTTSLibrary.ttsHandleType hLexicon, Pointer<Byte> FindExpression,
-            LoquendoTTSLibrary.ttsInfoStringType ReplaceExpression, Pointer<Byte> LanguageID);
+    @Convention(Convention.Style.StdCall)
+    public static int ttsWaitForEndOfSpeech(Pointer<?> hReader, int TimeOutMsec, Pointer<Byte> bSignaled) {
+        return ttsWaitForEndOfSpeech(Pointer.getPeer(hReader), TimeOutMsec, Pointer.getPeer(bSignaled));
+    }
+
+    @Convention(Convention.Style.StdCall)
+    protected native static int ttsWaitForEndOfSpeech(@Ptr long hReader, int TimeOutMsec, @Ptr long bSignaled);
+
+    /**
+     * Original signature : <code>__attribute__((dllimport)) ttsResultType ttsStop(ttsHandleType)</code><br>
+     * <i>native declaration : loqtts.h:72</i>
+     */
+    @Convention(Convention.Style.StdCall)
+    public static int ttsStop(Pointer<?> hReader) {
+        return ttsStop(Pointer.getPeer(hReader));
+    }
+
+    @Convention(Convention.Style.StdCall)
+    protected native static int ttsStop(@Ptr long hReader);
+
+    /**
+     * Original signature : <code>__attribute__((dllimport)) ttsResultType ttsReset(ttsHandleType)</code><br>
+     * <i>native declaration : loqtts.h:76</i>
+     */
+    @Convention(Convention.Style.StdCall)
+    public static int ttsReset(Pointer<?> hReader) {
+        return ttsReset(Pointer.getPeer(hReader));
+    }
+
+    @Convention(Convention.Style.StdCall)
+    protected native static int ttsReset(@Ptr long hReader);
 
     /**
      * Original signature :
-     * <code>tts_API_DEFINITION ttsAddLexiconEntry(ttsHandleType, const char*, const char*, const char*)</code><br>
-     * <i>native declaration : line 141</i>
+     * <code>__attribute__((dllimport)) ttsResultType ttsAudioFreeSpace(ttsHandleType, ttsBoolType*)</code><br>
+     * <i>native declaration : loqtts.h:80</i>
      */
-    public static native LoquendoTTSLibrary.tts_API_DEFINITION ttsAddLexiconEntry(
-            LoquendoTTSLibrary.ttsHandleType hLexicon, Pointer<Byte> FindExpression, Pointer<Byte> ReplaceExpression,
-            Pointer<Byte> LanguageID);
+    @Convention(Convention.Style.StdCall)
+    public static int ttsAudioFreeSpace(Pointer<?> hReader, Pointer<Byte> bFreeSpace) {
+        return ttsAudioFreeSpace(Pointer.getPeer(hReader), Pointer.getPeer(bFreeSpace));
+    }
+
+    @Convention(Convention.Style.StdCall)
+    protected native static int ttsAudioFreeSpace(@Ptr long hReader, @Ptr long bFreeSpace);
 
     /**
      * Original signature :
-     * <code>tts_API_DEFINITION ttsRemoveLexiconEntry(ttsHandleType, const char*, const char*)</code><br>
-     * <i>native declaration : line 148</i>
+     * <code>__attribute__((dllimport)) ttsResultType ttsNewLanguage(ttsHandleType*, ttsHandleType, const char*)</code><br>
+     * <i>native declaration : loqtts.h:85</i>
      */
-    public static native LoquendoTTSLibrary.tts_API_DEFINITION ttsRemoveLexiconEntry(
-            LoquendoTTSLibrary.ttsHandleType hLexicon, Pointer<Byte> FindExpression, Pointer<Byte> LanguageID);
+    @Convention(Convention.Style.StdCall)
+    public static int ttsNewLanguage(Pointer<Pointer<?>> phLanguage, Pointer<?> hSession, Pointer<Byte> Language) {
+        return ttsNewLanguage(Pointer.getPeer(phLanguage), Pointer.getPeer(hSession), Pointer.getPeer(Language));
+    }
 
-    /**
-     * Original signature : <code>tts_API_DEFINITION ttsImportLexicon(ttsHandleType, const char*)</code><br>
-     * <i>native declaration : line 154</i>
-     */
-    public static native LoquendoTTSLibrary.tts_API_DEFINITION ttsImportLexicon(
-            LoquendoTTSLibrary.ttsHandleType hLexicon, Pointer<Byte> filename);
-
-    /**
-     * Original signature :
-     * <code>tts_API_DEFINITION ttsExportLexicon(ttsHandleType, const char*, const char*)</code><br>
-     * <i>native declaration : line 159</i>
-     */
-    public static native LoquendoTTSLibrary.tts_API_DEFINITION ttsExportLexicon(
-            LoquendoTTSLibrary.ttsHandleType hLexicon, Pointer<Byte> filename, Pointer<Byte> reserved);
+    @Convention(Convention.Style.StdCall)
+    protected native static int ttsNewLanguage(@Ptr long phLanguage, @Ptr long hSession, @Ptr long Language);
 
     /**
      * Original signature :
-     * <code>tts_API_DEFINITION ttsEnumLexiconEntryFirst(ttsHandleType*, ttsHandleType, const char**, const char*)</code><br>
-     * <i>native declaration : line 165</i>
+     * <code>__attribute__((dllimport)) ttsResultType ttsSetLanguage(ttsHandleType, ttsHandleType)</code><br>
+     * <i>native declaration : loqtts.h:91</i>
      */
-    public static native LoquendoTTSLibrary.tts_API_DEFINITION ttsEnumLexiconEntryFirst(
-            Pointer<LoquendoTTSLibrary.ttsHandleType> phEnum, LoquendoTTSLibrary.ttsHandleType hLexicon,
-            Pointer<Pointer<Byte>> pFindExpression, Pointer<Byte> LanguageID);
+    @Convention(Convention.Style.StdCall)
+    public static int ttsSetLanguage(Pointer<?> hReader, Pointer<?> hLanguage) {
+        return ttsSetLanguage(Pointer.getPeer(hReader), Pointer.getPeer(hLanguage));
+    }
+
+    @Convention(Convention.Style.StdCall)
+    protected native static int ttsSetLanguage(@Ptr long hReader, @Ptr long hLanguage);
 
     /**
-     * Original signature : <code>tts_API_DEFINITION ttsEnumLexiconEntryNext(ttsHandleType, const char**)</code><br>
-     * <i>native declaration : line 172</i>
+     * Original signature : <code>__attribute__((dllimport)) ttsResultType ttsDeleteLanguage(ttsHandleType)</code><br>
+     * <i>native declaration : loqtts.h:96</i>
      */
-    public static native LoquendoTTSLibrary.tts_API_DEFINITION ttsEnumLexiconEntryNext(
-            LoquendoTTSLibrary.ttsHandleType hEnum, Pointer<Pointer<Byte>> pFindExpression);
+    @Convention(Convention.Style.StdCall)
+    public static int ttsDeleteLanguage(Pointer<?> hLanguage) {
+        return ttsDeleteLanguage(Pointer.getPeer(hLanguage));
+    }
 
-    /**
-     * Original signature : <code>tts_API_DEFINITION ttsSetPitch(ttsHandleType, int)</code><br>
-     * <i>native declaration : line 177</i>
-     */
-    public static native LoquendoTTSLibrary.tts_API_DEFINITION ttsSetPitch(LoquendoTTSLibrary.ttsHandleType hReader,
-            int value);
-
-    /**
-     * Original signature : <code>tts_API_DEFINITION ttsGetPitch(ttsHandleType, int*)</code><br>
-     * <i>native declaration : line 182</i>
-     */
-    public static native LoquendoTTSLibrary.tts_API_DEFINITION ttsGetPitch(LoquendoTTSLibrary.ttsHandleType hReader,
-            Pointer<Integer> value);
-
-    /**
-     * Original signature : <code>tts_API_DEFINITION ttsSetSpeed(ttsHandleType, int)</code><br>
-     * <i>native declaration : line 187</i>
-     */
-    public static native LoquendoTTSLibrary.tts_API_DEFINITION ttsSetSpeed(LoquendoTTSLibrary.ttsHandleType hReader,
-            int value);
-
-    /**
-     * Original signature : <code>tts_API_DEFINITION ttsGetSpeed(ttsHandleType, int*)</code><br>
-     * <i>native declaration : line 192</i>
-     */
-    public static native LoquendoTTSLibrary.tts_API_DEFINITION ttsGetSpeed(LoquendoTTSLibrary.ttsHandleType hReader,
-            Pointer<Integer> value);
-
-    /**
-     * Original signature : <code>tts_API_DEFINITION ttsSetVolume(ttsHandleType, int)</code><br>
-     * <i>native declaration : line 197</i>
-     */
-    public static native LoquendoTTSLibrary.tts_API_DEFINITION ttsSetVolume(LoquendoTTSLibrary.ttsHandleType hReader,
-            int volume);
-
-    /**
-     * Original signature : <code>tts_API_DEFINITION ttsGetVolume(ttsHandleType, int*)</code><br>
-     * <i>native declaration : line 202</i>
-     */
-    public static native LoquendoTTSLibrary.tts_API_DEFINITION ttsGetVolume(LoquendoTTSLibrary.ttsHandleType hReader,
-            Pointer<Integer> volume);
-
-    /**
-     * Original signature : <code>tts_API_DEFINITION ttsSetTimbre(ttsHandleType, int)</code><br>
-     * <i>native declaration : line 207</i>
-     */
-    public static native LoquendoTTSLibrary.tts_API_DEFINITION ttsSetTimbre(LoquendoTTSLibrary.ttsHandleType hReader,
-            int value);
-
-    /**
-     * Original signature : <code>tts_API_DEFINITION ttsGetTimbre(ttsHandleType, int*)</code><br>
-     * <i>native declaration : line 212</i>
-     */
-    public static native LoquendoTTSLibrary.tts_API_DEFINITION ttsGetTimbre(LoquendoTTSLibrary.ttsHandleType hReader,
-            Pointer<Integer> value);
-
-    /**
-     * Original signature : <code>tts_API_DEFINITION ttsSetAbsolutePitch(ttsHandleType, int)</code><br>
-     * <i>native declaration : line 217</i>
-     */
-    public static native LoquendoTTSLibrary.tts_API_DEFINITION ttsSetAbsolutePitch(
-            LoquendoTTSLibrary.ttsHandleType hReader, int value);
-
-    /**
-     * Original signature : <code>tts_API_DEFINITION ttsGetAbsolutePitch(ttsHandleType, int*)</code><br>
-     * <i>native declaration : line 222</i>
-     */
-    public static native LoquendoTTSLibrary.tts_API_DEFINITION ttsGetAbsolutePitch(
-            LoquendoTTSLibrary.ttsHandleType hReader, Pointer<Integer> value);
-
-    /**
-     * Original signature : <code>tts_API_DEFINITION ttsSetAbsoluteSpeed(ttsHandleType, int)</code><br>
-     * <i>native declaration : line 227</i>
-     */
-    public static native LoquendoTTSLibrary.tts_API_DEFINITION ttsSetAbsoluteSpeed(
-            LoquendoTTSLibrary.ttsHandleType hReader, int value);
-
-    /**
-     * Original signature : <code>tts_API_DEFINITION ttsGetAbsoluteSpeed(ttsHandleType, int*)</code><br>
-     * <i>native declaration : line 232</i>
-     */
-    public static native LoquendoTTSLibrary.tts_API_DEFINITION ttsGetAbsoluteSpeed(
-            LoquendoTTSLibrary.ttsHandleType hReader, Pointer<Integer> value);
-
-    /**
-     * Original signature : <code>tts_API_DEFINITION ttsSetAbsoluteVolume(ttsHandleType, int)</code><br>
-     * <i>native declaration : line 237</i>
-     */
-    public static native LoquendoTTSLibrary.tts_API_DEFINITION ttsSetAbsoluteVolume(
-            LoquendoTTSLibrary.ttsHandleType hReader, int value);
-
-    /**
-     * Original signature : <code>tts_API_DEFINITION ttsGetAbsoluteVolume(ttsHandleType, int*)</code><br>
-     * <i>native declaration : line 242</i>
-     */
-    public static native LoquendoTTSLibrary.tts_API_DEFINITION ttsGetAbsoluteVolume(
-            LoquendoTTSLibrary.ttsHandleType hReader, Pointer<Integer> value);
-
-    /**
-     * Original signature : <code>tts_API_DEFINITION ttsSetReverb(ttsHandleType, int, int)</code><br>
-     * <i>native declaration : line 247</i>
-     */
-    public static native LoquendoTTSLibrary.tts_API_DEFINITION ttsSetReverb(LoquendoTTSLibrary.ttsHandleType hReader,
-            int gain, int delay);
-
-    /**
-     * Original signature : <code>tts_API_DEFINITION ttsGetReverb(ttsHandleType, int*, int*)</code><br>
-     * <i>native declaration : line 253</i>
-     */
-    public static native LoquendoTTSLibrary.tts_API_DEFINITION ttsGetReverb(LoquendoTTSLibrary.ttsHandleType hReader,
-            Pointer<Integer> gain, Pointer<Integer> delay);
-
-    /**
-     * Original signature : <code>tts_API_DEFINITION ttsSetBalance(ttsHandleType, int)</code><br>
-     * <i>native declaration : line 259</i>
-     */
-    public static native LoquendoTTSLibrary.tts_API_DEFINITION ttsSetBalance(LoquendoTTSLibrary.ttsHandleType hReader,
-            int value);
-
-    /**
-     * Original signature : <code>tts_API_DEFINITION ttsGetBalance(ttsHandleType, int*)</code><br>
-     * <i>native declaration : line 264</i>
-     */
-    public static native LoquendoTTSLibrary.tts_API_DEFINITION ttsGetBalance(LoquendoTTSLibrary.ttsHandleType hReader,
-            Pointer<Integer> value);
-
-    /**
-     * Original signature : <code>tts_API_DEFINITION ttsAddParametricEQ(ttsHandleType, float, float, float)</code><br>
-     * <i>native declaration : line 269</i>
-     */
-    public static native LoquendoTTSLibrary.tts_API_DEFINITION ttsAddParametricEQ(
-            LoquendoTTSLibrary.ttsHandleType hReader, float freq, float gain, float Q);
-
-    /**
-     * Original signature : <code>tts_API_DEFINITION ttsResetParametricEQ(ttsHandleType)</code><br>
-     * <i>native declaration : line 276</i>
-     */
-    public static native LoquendoTTSLibrary.tts_API_DEFINITION ttsResetParametricEQ(
-            LoquendoTTSLibrary.ttsHandleType hReader);
+    @Convention(Convention.Style.StdCall)
+    protected native static int ttsDeleteLanguage(@Ptr long hLanguage);
 
     /**
      * Original signature :
-     * <code>tts_API_DEFINITION ttsSetGraphicEQPreset(ttsHandleType, ttsGraphicEQPresetType)</code><br>
-     * <i>native declaration : line 280</i>
+     * <code>__attribute__((dllimport)) ttsResultType ttsNewStyle(ttsHandleType*, ttsHandleType, const char*)</code><br>
+     * <i>native declaration : loqtts.h:100</i>
      */
-    public static native LoquendoTTSLibrary.tts_API_DEFINITION ttsSetGraphicEQPreset(
-            LoquendoTTSLibrary.ttsHandleType hReader, LoquendoTTSLibrary.ttsGraphicEQPresetType Preset);
+    @Convention(Convention.Style.StdCall)
+    public static int ttsNewStyle(Pointer<Pointer<?>> phStyle, Pointer<?> hSession, Pointer<Byte> StyleName) {
+        return ttsNewStyle(Pointer.getPeer(phStyle), Pointer.getPeer(hSession), Pointer.getPeer(StyleName));
+    }
+
+    @Convention(Convention.Style.StdCall)
+    protected native static int ttsNewStyle(@Ptr long phStyle, @Ptr long hSession, @Ptr long StyleName);
+
+    /**
+     * Original signature : <code>__attribute__((dllimport)) ttsResultType ttsDeleteStyle(ttsHandleType)</code><br>
+     * <i>native declaration : loqtts.h:106</i>
+     */
+    @Convention(Convention.Style.StdCall)
+    public static int ttsDeleteStyle(Pointer<?> hStyle) {
+        return ttsDeleteStyle(Pointer.getPeer(hStyle));
+    }
+
+    @Convention(Convention.Style.StdCall)
+    protected native static int ttsDeleteStyle(@Ptr long hStyle);
 
     /**
      * Original signature :
-     * <code>tts_API_DEFINITION ttsSetGraphicEQBand(ttsHandleType, ttsGraphicEQBandType, float)</code><br>
-     * <i>native declaration : line 285</i>
+     * <code>__attribute__((dllimport)) ttsResultType ttsSetStyle(ttsHandleType, ttsHandleType)</code><br>
+     * <i>native declaration : loqtts.h:110</i>
      */
-    public static native LoquendoTTSLibrary.tts_API_DEFINITION ttsSetGraphicEQBand(
-            LoquendoTTSLibrary.ttsHandleType hReader, LoquendoTTSLibrary.ttsGraphicEQBandType Band, float Gain);
+    @Convention(Convention.Style.StdCall)
+    public static int ttsSetStyle(Pointer<?> hReader, Pointer<?> hStyle) {
+        return ttsSetStyle(Pointer.getPeer(hReader), Pointer.getPeer(hStyle));
+    }
+
+    @Convention(Convention.Style.StdCall)
+    protected native static int ttsSetStyle(@Ptr long hReader, @Ptr long hStyle);
 
     /**
      * Original signature :
-     * <code>tts_API_DEFINITION ttsGetGraphicEQBand(ttsHandleType, ttsGraphicEQBandType, float*)</code><br>
-     * <i>native declaration : line 291</i>
+     * <code>__attribute__((dllimport)) ttsResultType ttsOpenLexicon(ttsHandleType*, ttsHandleType, unsigned int, ttsBoolType, const char*, ttsBoolType)</code><br>
+     * <i>native declaration : loqtts.h:115</i>
      */
-    public static native LoquendoTTSLibrary.tts_API_DEFINITION ttsGetGraphicEQBand(
-            LoquendoTTSLibrary.ttsHandleType hReader, LoquendoTTSLibrary.ttsGraphicEQBandType Band,
-            Pointer<Float> Gain);
+    @Convention(Convention.Style.StdCall)
+    public static int ttsOpenLexicon(Pointer<Pointer<?>> hLexicon, Pointer<?> hReader, int nLex, byte bReadOnly,
+            Pointer<Byte> FileName, byte bActivate) {
+        return ttsOpenLexicon(Pointer.getPeer(hLexicon), Pointer.getPeer(hReader), nLex, bReadOnly,
+                Pointer.getPeer(FileName), bActivate);
+    }
 
-    /**
-     * Original signature : <code>tts_API_DEFINITION ttsResetGraphicEQ(ttsHandleType)</code><br>
-     * <i>native declaration : line 297</i>
-     */
-    public static native LoquendoTTSLibrary.tts_API_DEFINITION ttsResetGraphicEQ(
-            LoquendoTTSLibrary.ttsHandleType hReader);
-
-    /**
-     * Original signature : <code>tts_API_DEFINITION ttsNewVoice(ttsHandleType*, ttsHandleType, const char*)</code><br>
-     * <i>native declaration : line 301</i>
-     */
-    public static native LoquendoTTSLibrary.tts_API_DEFINITION ttsNewVoice(
-            Pointer<LoquendoTTSLibrary.ttsHandleType> phVoice, LoquendoTTSLibrary.ttsHandleType hSession,
-            Pointer<Byte> Speaker);
-
-    /**
-     * Original signature : <code>tts_API_DEFINITION ttsDeleteVoice(ttsHandleType)</code><br>
-     * <i>native declaration : line 307</i>
-     */
-    public static native LoquendoTTSLibrary.tts_API_DEFINITION ttsDeleteVoice(LoquendoTTSLibrary.ttsHandleType hVoice);
-
-    /**
-     * Original signature : <code>tts_API_DEFINITION ttsSetVoice(ttsHandleType, ttsHandleType)</code><br>
-     * <i>native declaration : line 311</i>
-     */
-    public static native LoquendoTTSLibrary.tts_API_DEFINITION ttsSetVoice(LoquendoTTSLibrary.ttsHandleType hReader,
-            LoquendoTTSLibrary.ttsHandleType hVoice);
+    @Convention(Convention.Style.StdCall)
+    protected native static int ttsOpenLexicon(@Ptr long hLexicon, @Ptr long hReader, int nLex, byte bReadOnly,
+            @Ptr long FileName, byte bActivate);
 
     /**
      * Original signature :
-     * <code>tts_API_DEFINITION ttsNewLexicon(ttsHandleType*, ttsHandleType, const char*)</code><br>
-     * <i>native declaration : line 316</i>
+     * <code>__attribute__((dllimport)) ttsResultType ttsActivateLexicon(ttsHandleType, ttsBoolType)</code><br>
+     * <i>native declaration : loqtts.h:124</i>
      */
-    public static native LoquendoTTSLibrary.tts_API_DEFINITION ttsNewLexicon(
-            Pointer<LoquendoTTSLibrary.ttsHandleType> phLexicon, LoquendoTTSLibrary.ttsHandleType hSession,
-            Pointer<Byte> LexiconName);
+    @Convention(Convention.Style.StdCall)
+    public static int ttsActivateLexicon(Pointer<?> hLexicon, byte bActive) {
+        return ttsActivateLexicon(Pointer.getPeer(hLexicon), bActive);
+    }
+
+    @Convention(Convention.Style.StdCall)
+    protected native static int ttsActivateLexicon(@Ptr long hLexicon, byte bActive);
 
     /**
-     * Original signature : <code>tts_API_DEFINITION ttsDeleteLexicon(ttsHandleType)</code><br>
-     * <i>native declaration : line 322</i>
+     * Original signature : <code>__attribute__((dllimport)) ttsResultType ttsCloseLexicon(ttsHandleType)</code><br>
+     * <i>native declaration : loqtts.h:129</i>
      */
-    public static native LoquendoTTSLibrary.tts_API_DEFINITION ttsDeleteLexicon(
-            LoquendoTTSLibrary.ttsHandleType hLexicon);
+    @Convention(Convention.Style.StdCall)
+    public static int ttsCloseLexicon(Pointer<?> hLexicon) {
+        return ttsCloseLexicon(Pointer.getPeer(hLexicon));
+    }
 
-    /**
-     * Original signature : <code>tts_API_DEFINITION ttsSetLexicon(ttsHandleType, ttsHandleType, size_t)</code><br>
-     * <i>native declaration : line 326</i>
-     */
-    public static native LoquendoTTSLibrary.tts_API_DEFINITION ttsSetLexicon(LoquendoTTSLibrary.ttsHandleType hReader,
-            LoquendoTTSLibrary.ttsHandleType hLexicon, @Ptr long LexiconIndex);
-
-    /**
-     * Original signature :
-     * <code>tts_API_DEFINITION ttsLoadPersona(ttsHandleType, const char*, const char*, const char*)</code><br>
-     * <i>native declaration : line 332</i>
-     */
-    public static native LoquendoTTSLibrary.tts_API_DEFINITION ttsLoadPersona(LoquendoTTSLibrary.ttsHandleType hReader,
-            Pointer<Byte> szVoice, Pointer<Byte> szLanguage, Pointer<Byte> szStyle);
-
-    /**
-     * Original signature : <code>tts_API_DEFINITION ttsLoadPersonaFromFile(ttsHandleType, const char*)</code><br>
-     * <i>native declaration : line 339</i>
-     */
-    public static native LoquendoTTSLibrary.tts_API_DEFINITION ttsLoadPersonaFromFile(
-            LoquendoTTSLibrary.ttsHandleType hReader, Pointer<Byte> szReader);
+    @Convention(Convention.Style.StdCall)
+    protected native static int ttsCloseLexicon(@Ptr long hLexicon);
 
     /**
      * Original signature :
-     * <code>tts_API_DEFINITION ttsSetCallback(ttsHandleType, void*, void*, ttsCallbackType)</code><br>
-     * <i>native declaration : line 344</i>
+     * <code>__attribute__((dllimport)) ttsResultType ttsFindLexiconEntry(ttsHandleType, const char*, ttsInfoStringType, const char*)</code><br>
+     * <i>native declaration : loqtts.h:133</i>
      */
-    public static native LoquendoTTSLibrary.tts_API_DEFINITION ttsSetCallback(LoquendoTTSLibrary.ttsHandleType hReader,
-            Pointer<?> pCallback, Pointer<?> pUser, LoquendoTTSLibrary.ttsCallbackType Type);
+    @Convention(Convention.Style.StdCall)
+    public static int ttsFindLexiconEntry(Pointer<?> hLexicon, Pointer<Byte> FindExpression,
+            Pointer<Byte> ReplaceExpression, Pointer<Byte> LanguageID) {
+        return ttsFindLexiconEntry(Pointer.getPeer(hLexicon), Pointer.getPeer(FindExpression),
+                Pointer.getPeer(ReplaceExpression), Pointer.getPeer(LanguageID));
+    }
 
-    /**
-     * Original signature : <code>tts_API_DEFINITION ttsGetVersionInfo(ttsInfoStringType)</code><br>
-     * <i>native declaration : line 351</i>
-     */
-    public static native LoquendoTTSLibrary.tts_API_DEFINITION ttsGetVersionInfo(
-            LoquendoTTSLibrary.ttsInfoStringType StrVer);
-
-    /**
-     * Original signature : <code>tts_API_DEFINITION_P ttsGetErrorMessage(ttsResultType)</code><br>
-     * <i>native declaration : line 355</i>
-     */
-    public static native LoquendoTTSLibrary.tts_API_DEFINITION_P ttsGetErrorMessage(
-            LoquendoTTSLibrary.ttsResultType ErrNo);
+    @Convention(Convention.Style.StdCall)
+    protected native static int ttsFindLexiconEntry(@Ptr long hLexicon, @Ptr long FindExpression,
+            @Ptr long ReplaceExpression, @Ptr long LanguageID);
 
     /**
      * Original signature :
-     * <code>tts_API_DEFINITION ttsTestPersona(ttsHandleType, const char*, const char*, const char*)</code><br>
-     * <i>native declaration : line 359</i>
+     * <code>__attribute__((dllimport)) ttsResultType ttsAddLexiconEntry(ttsHandleType, const char*, const char*, const char*)</code><br>
+     * <i>native declaration : loqtts.h:140</i>
      */
-    public static native LoquendoTTSLibrary.tts_API_DEFINITION ttsTestPersona(LoquendoTTSLibrary.ttsHandleType hSession,
-            Pointer<Byte> Speaker, Pointer<Byte> Language, Pointer<Byte> Style);
+    @Convention(Convention.Style.StdCall)
+    public static int ttsAddLexiconEntry(Pointer<?> hLexicon, Pointer<Byte> FindExpression,
+            Pointer<Byte> ReplaceExpression, Pointer<Byte> LanguageID) {
+        return ttsAddLexiconEntry(Pointer.getPeer(hLexicon), Pointer.getPeer(FindExpression),
+                Pointer.getPeer(ReplaceExpression), Pointer.getPeer(LanguageID));
+    }
 
-    /**
-     * Original signature : <code>tts_API_DEFINITION ttsInject(ttsHandleType, const char*)</code><br>
-     * <i>native declaration : line 366</i>
-     */
-    public static native LoquendoTTSLibrary.tts_API_DEFINITION ttsInject(LoquendoTTSLibrary.ttsHandleType hReader,
-            Pointer<Byte> command);
-
-    /**
-     * Original signature :
-     * <code>tts_API_DEFINITION ttsPhoneticTranscription(ttsHandleType, const void*, void*, const size_t, size_t*)</code><br>
-     * <i>native declaration : line 371</i>
-     */
-    public static native LoquendoTTSLibrary.tts_API_DEFINITION ttsPhoneticTranscription(
-            LoquendoTTSLibrary.ttsHandleType hReader, Pointer<?> text, Pointer<?> TranscriptionBuffer,
-            @Ptr long BufferLen, Pointer<SizeT> TranscriptionLen);
+    @Convention(Convention.Style.StdCall)
+    protected native static int ttsAddLexiconEntry(@Ptr long hLexicon, @Ptr long FindExpression,
+            @Ptr long ReplaceExpression, @Ptr long LanguageID);
 
     /**
      * Original signature :
-     * <code>tts_API_DEFINITION ttsSetAudio(ttsHandleType, const char*, const char*, unsigned int, ttsAudioEncodingType, ttsAudioSampleType, const void*)</code><br>
-     * <i>native declaration : line 379</i>
+     * <code>__attribute__((dllimport)) ttsResultType ttsRemoveLexiconEntry(ttsHandleType, const char*, const char*)</code><br>
+     * <i>native declaration : loqtts.h:147</i>
      */
-    public static native LoquendoTTSLibrary.tts_API_DEFINITION ttsSetAudio(LoquendoTTSLibrary.ttsHandleType hReader,
-            Pointer<Byte> AudioDestName, Pointer<Byte> AudioDeviceName, int SampleRate,
-            LoquendoTTSLibrary.ttsAudioEncodingType coding, LoquendoTTSLibrary.ttsAudioSampleType nChannels,
-            Pointer<?> pUser);
+    @Convention(Convention.Style.StdCall)
+    public static int ttsRemoveLexiconEntry(Pointer<?> hLexicon, Pointer<Byte> FindExpression,
+            Pointer<Byte> LanguageID) {
+        return ttsRemoveLexiconEntry(Pointer.getPeer(hLexicon), Pointer.getPeer(FindExpression),
+                Pointer.getPeer(LanguageID));
+    }
 
-    /**
-     * Original signature : <code>tts_API_DEFINITION ttsGetRobotsList(ttsInfoStringType)</code><br>
-     * <i>native declaration : line 389</i>
-     */
-    public static native LoquendoTTSLibrary.tts_API_DEFINITION ttsGetRobotsList(
-            LoquendoTTSLibrary.ttsInfoStringType list);
-
-    /**
-     * Original signature :
-     * <code>tts_API_DEFINITION ttsQuery(ttsHandleType, ttsQueryType, const char*, const char*, char*, size_t, ttsBoolType, ttsBoolType)</code><br>
-     * <i>native declaration : line 391</i>
-     */
-    public static native LoquendoTTSLibrary.tts_API_DEFINITION ttsQuery(LoquendoTTSLibrary.ttsHandleType hSession,
-            LoquendoTTSLibrary.ttsQueryType uObject, Pointer<Byte> sDataToRetrieve, Pointer<Byte> sFilter,
-            Pointer<Byte> sResultBuffer, @Ptr long uResultBufferSize, LoquendoTTSLibrary.ttsBoolType bLoadedOnly,
-            LoquendoTTSLibrary.ttsBoolType bRescanFileSystem);
+    @Convention(Convention.Style.StdCall)
+    protected native static int ttsRemoveLexiconEntry(@Ptr long hLexicon, @Ptr long FindExpression,
+            @Ptr long LanguageID);
 
     /**
      * Original signature :
-     * <code>tts_API_DEFINITION ttsQueryAttribute(ttsHandleType, ttsQueryType, const char*, const char*, char*, size_t)</code><br>
-     * <i>native declaration : line 402</i>
+     * <code>__attribute__((dllimport)) ttsResultType ttsImportLexicon(ttsHandleType, const char*)</code><br>
+     * <i>native declaration : loqtts.h:153</i>
      */
-    public static native LoquendoTTSLibrary.tts_API_DEFINITION ttsQueryAttribute(
-            LoquendoTTSLibrary.ttsHandleType hSession, LoquendoTTSLibrary.ttsQueryType uObject,
+    @Convention(Convention.Style.StdCall)
+    public static int ttsImportLexicon(Pointer<?> hLexicon, Pointer<Byte> filename) {
+        return ttsImportLexicon(Pointer.getPeer(hLexicon), Pointer.getPeer(filename));
+    }
+
+    @Convention(Convention.Style.StdCall)
+    protected native static int ttsImportLexicon(@Ptr long hLexicon, @Ptr long filename);
+
+    /**
+     * Original signature :
+     * <code>__attribute__((dllimport)) ttsResultType ttsExportLexicon(ttsHandleType, const char*, const char*)</code><br>
+     * <i>native declaration : loqtts.h:158</i>
+     */
+    @Convention(Convention.Style.StdCall)
+    public static int ttsExportLexicon(Pointer<?> hLexicon, Pointer<Byte> filename, Pointer<Byte> reserved) {
+        return ttsExportLexicon(Pointer.getPeer(hLexicon), Pointer.getPeer(filename), Pointer.getPeer(reserved));
+    }
+
+    @Convention(Convention.Style.StdCall)
+    protected native static int ttsExportLexicon(@Ptr long hLexicon, @Ptr long filename, @Ptr long reserved);
+
+    /**
+     * Original signature :
+     * <code>__attribute__((dllimport)) ttsResultType ttsEnumLexiconEntryFirst(ttsHandleType*, ttsHandleType, const char**, const char*)</code><br>
+     * <i>native declaration : loqtts.h:164</i>
+     */
+    @Convention(Convention.Style.StdCall)
+    public static int ttsEnumLexiconEntryFirst(Pointer<Pointer<?>> phEnum, Pointer<?> hLexicon,
+            Pointer<Pointer<Byte>> pFindExpression, Pointer<Byte> LanguageID) {
+        return ttsEnumLexiconEntryFirst(Pointer.getPeer(phEnum), Pointer.getPeer(hLexicon),
+                Pointer.getPeer(pFindExpression), Pointer.getPeer(LanguageID));
+    }
+
+    @Convention(Convention.Style.StdCall)
+    protected native static int ttsEnumLexiconEntryFirst(@Ptr long phEnum, @Ptr long hLexicon,
+            @Ptr long pFindExpression, @Ptr long LanguageID);
+
+    /**
+     * Original signature :
+     * <code>__attribute__((dllimport)) ttsResultType ttsEnumLexiconEntryNext(ttsHandleType, const char**)</code><br>
+     * <i>native declaration : loqtts.h:171</i>
+     */
+    @Convention(Convention.Style.StdCall)
+    public static int ttsEnumLexiconEntryNext(Pointer<?> hEnum, Pointer<Pointer<Byte>> pFindExpression) {
+        return ttsEnumLexiconEntryNext(Pointer.getPeer(hEnum), Pointer.getPeer(pFindExpression));
+    }
+
+    @Convention(Convention.Style.StdCall)
+    protected native static int ttsEnumLexiconEntryNext(@Ptr long hEnum, @Ptr long pFindExpression);
+
+    /**
+     * Original signature : <code>__attribute__((dllimport)) ttsResultType ttsSetPitch(ttsHandleType, int)</code><br>
+     * <i>native declaration : loqtts.h:176</i>
+     */
+    @Convention(Convention.Style.StdCall)
+    public static int ttsSetPitch(Pointer<?> hReader, int value) {
+        return ttsSetPitch(Pointer.getPeer(hReader), value);
+    }
+
+    @Convention(Convention.Style.StdCall)
+    protected native static int ttsSetPitch(@Ptr long hReader, int value);
+
+    /**
+     * Original signature : <code>__attribute__((dllimport)) ttsResultType ttsGetPitch(ttsHandleType, int*)</code><br>
+     * <i>native declaration : loqtts.h:181</i>
+     */
+    @Convention(Convention.Style.StdCall)
+    public static int ttsGetPitch(Pointer<?> hReader, Pointer<Integer> value) {
+        return ttsGetPitch(Pointer.getPeer(hReader), Pointer.getPeer(value));
+    }
+
+    @Convention(Convention.Style.StdCall)
+    protected native static int ttsGetPitch(@Ptr long hReader, @Ptr long value);
+
+    /**
+     * Original signature : <code>__attribute__((dllimport)) ttsResultType ttsSetSpeed(ttsHandleType, int)</code><br>
+     * <i>native declaration : loqtts.h:186</i>
+     */
+    @Convention(Convention.Style.StdCall)
+    public static int ttsSetSpeed(Pointer<?> hReader, int value) {
+        return ttsSetSpeed(Pointer.getPeer(hReader), value);
+    }
+
+    @Convention(Convention.Style.StdCall)
+    protected native static int ttsSetSpeed(@Ptr long hReader, int value);
+
+    /**
+     * Original signature : <code>__attribute__((dllimport)) ttsResultType ttsGetSpeed(ttsHandleType, int*)</code><br>
+     * <i>native declaration : loqtts.h:191</i>
+     */
+    @Convention(Convention.Style.StdCall)
+    public static int ttsGetSpeed(Pointer<?> hReader, Pointer<Integer> value) {
+        return ttsGetSpeed(Pointer.getPeer(hReader), Pointer.getPeer(value));
+    }
+
+    @Convention(Convention.Style.StdCall)
+    protected native static int ttsGetSpeed(@Ptr long hReader, @Ptr long value);
+
+    /**
+     * Original signature : <code>__attribute__((dllimport)) ttsResultType ttsSetVolume(ttsHandleType, int)</code><br>
+     * <i>native declaration : loqtts.h:196</i>
+     */
+    @Convention(Convention.Style.StdCall)
+    public static int ttsSetVolume(Pointer<?> hReader, int volume) {
+        return ttsSetVolume(Pointer.getPeer(hReader), volume);
+    }
+
+    @Convention(Convention.Style.StdCall)
+    protected native static int ttsSetVolume(@Ptr long hReader, int volume);
+
+    /**
+     * Original signature : <code>__attribute__((dllimport)) ttsResultType ttsGetVolume(ttsHandleType, int*)</code><br>
+     * <i>native declaration : loqtts.h:201</i>
+     */
+    @Convention(Convention.Style.StdCall)
+    public static int ttsGetVolume(Pointer<?> hReader, Pointer<Integer> volume) {
+        return ttsGetVolume(Pointer.getPeer(hReader), Pointer.getPeer(volume));
+    }
+
+    @Convention(Convention.Style.StdCall)
+    protected native static int ttsGetVolume(@Ptr long hReader, @Ptr long volume);
+
+    /**
+     * Original signature : <code>__attribute__((dllimport)) ttsResultType ttsSetTimbre(ttsHandleType, int)</code><br>
+     * <i>native declaration : loqtts.h:206</i>
+     */
+    @Convention(Convention.Style.StdCall)
+    public static int ttsSetTimbre(Pointer<?> hReader, int value) {
+        return ttsSetTimbre(Pointer.getPeer(hReader), value);
+    }
+
+    @Convention(Convention.Style.StdCall)
+    protected native static int ttsSetTimbre(@Ptr long hReader, int value);
+
+    /**
+     * Original signature : <code>__attribute__((dllimport)) ttsResultType ttsGetTimbre(ttsHandleType, int*)</code><br>
+     * <i>native declaration : loqtts.h:211</i>
+     */
+    @Convention(Convention.Style.StdCall)
+    public static int ttsGetTimbre(Pointer<?> hReader, Pointer<Integer> value) {
+        return ttsGetTimbre(Pointer.getPeer(hReader), Pointer.getPeer(value));
+    }
+
+    @Convention(Convention.Style.StdCall)
+    protected native static int ttsGetTimbre(@Ptr long hReader, @Ptr long value);
+
+    /**
+     * Original signature :
+     * <code>__attribute__((dllimport)) ttsResultType ttsSetAbsolutePitch(ttsHandleType, int)</code><br>
+     * <i>native declaration : loqtts.h:216</i>
+     */
+    @Convention(Convention.Style.StdCall)
+    public static int ttsSetAbsolutePitch(Pointer<?> hReader, int value) {
+        return ttsSetAbsolutePitch(Pointer.getPeer(hReader), value);
+    }
+
+    @Convention(Convention.Style.StdCall)
+    protected native static int ttsSetAbsolutePitch(@Ptr long hReader, int value);
+
+    /**
+     * Original signature :
+     * <code>__attribute__((dllimport)) ttsResultType ttsGetAbsolutePitch(ttsHandleType, int*)</code><br>
+     * <i>native declaration : loqtts.h:221</i>
+     */
+    @Convention(Convention.Style.StdCall)
+    public static int ttsGetAbsolutePitch(Pointer<?> hReader, Pointer<Integer> value) {
+        return ttsGetAbsolutePitch(Pointer.getPeer(hReader), Pointer.getPeer(value));
+    }
+
+    @Convention(Convention.Style.StdCall)
+    protected native static int ttsGetAbsolutePitch(@Ptr long hReader, @Ptr long value);
+
+    /**
+     * Original signature :
+     * <code>__attribute__((dllimport)) ttsResultType ttsSetAbsoluteSpeed(ttsHandleType, int)</code><br>
+     * <i>native declaration : loqtts.h:226</i>
+     */
+    @Convention(Convention.Style.StdCall)
+    public static int ttsSetAbsoluteSpeed(Pointer<?> hReader, int value) {
+        return ttsSetAbsoluteSpeed(Pointer.getPeer(hReader), value);
+    }
+
+    @Convention(Convention.Style.StdCall)
+    protected native static int ttsSetAbsoluteSpeed(@Ptr long hReader, int value);
+
+    /**
+     * Original signature :
+     * <code>__attribute__((dllimport)) ttsResultType ttsGetAbsoluteSpeed(ttsHandleType, int*)</code><br>
+     * <i>native declaration : loqtts.h:231</i>
+     */
+    @Convention(Convention.Style.StdCall)
+    public static int ttsGetAbsoluteSpeed(Pointer<?> hReader, Pointer<Integer> value) {
+        return ttsGetAbsoluteSpeed(Pointer.getPeer(hReader), Pointer.getPeer(value));
+    }
+
+    @Convention(Convention.Style.StdCall)
+    protected native static int ttsGetAbsoluteSpeed(@Ptr long hReader, @Ptr long value);
+
+    /**
+     * Original signature :
+     * <code>__attribute__((dllimport)) ttsResultType ttsSetAbsoluteVolume(ttsHandleType, int)</code><br>
+     * <i>native declaration : loqtts.h:236</i>
+     */
+    @Convention(Convention.Style.StdCall)
+    public static int ttsSetAbsoluteVolume(Pointer<?> hReader, int value) {
+        return ttsSetAbsoluteVolume(Pointer.getPeer(hReader), value);
+    }
+
+    @Convention(Convention.Style.StdCall)
+    protected native static int ttsSetAbsoluteVolume(@Ptr long hReader, int value);
+
+    /**
+     * Original signature :
+     * <code>__attribute__((dllimport)) ttsResultType ttsGetAbsoluteVolume(ttsHandleType, int*)</code><br>
+     * <i>native declaration : loqtts.h:241</i>
+     */
+    @Convention(Convention.Style.StdCall)
+    public static int ttsGetAbsoluteVolume(Pointer<?> hReader, Pointer<Integer> value) {
+        return ttsGetAbsoluteVolume(Pointer.getPeer(hReader), Pointer.getPeer(value));
+    }
+
+    @Convention(Convention.Style.StdCall)
+    protected native static int ttsGetAbsoluteVolume(@Ptr long hReader, @Ptr long value);
+
+    /**
+     * Original signature :
+     * <code>__attribute__((dllimport)) ttsResultType ttsSetReverb(ttsHandleType, int, int)</code><br>
+     * <i>native declaration : loqtts.h:246</i>
+     */
+    @Convention(Convention.Style.StdCall)
+    public static int ttsSetReverb(Pointer<?> hReader, int gain, int delay) {
+        return ttsSetReverb(Pointer.getPeer(hReader), gain, delay);
+    }
+
+    @Convention(Convention.Style.StdCall)
+    protected native static int ttsSetReverb(@Ptr long hReader, int gain, int delay);
+
+    /**
+     * Original signature :
+     * <code>__attribute__((dllimport)) ttsResultType ttsGetReverb(ttsHandleType, int*, int*)</code><br>
+     * <i>native declaration : loqtts.h:252</i>
+     */
+    @Convention(Convention.Style.StdCall)
+    public static int ttsGetReverb(Pointer<?> hReader, Pointer<Integer> gain, Pointer<Integer> delay) {
+        return ttsGetReverb(Pointer.getPeer(hReader), Pointer.getPeer(gain), Pointer.getPeer(delay));
+    }
+
+    @Convention(Convention.Style.StdCall)
+    protected native static int ttsGetReverb(@Ptr long hReader, @Ptr long gain, @Ptr long delay);
+
+    /**
+     * Original signature : <code>__attribute__((dllimport)) ttsResultType ttsSetBalance(ttsHandleType, int)</code><br>
+     * <i>native declaration : loqtts.h:258</i>
+     */
+    @Convention(Convention.Style.StdCall)
+    public static int ttsSetBalance(Pointer<?> hReader, int value) {
+        return ttsSetBalance(Pointer.getPeer(hReader), value);
+    }
+
+    @Convention(Convention.Style.StdCall)
+    protected native static int ttsSetBalance(@Ptr long hReader, int value);
+
+    /**
+     * Original signature : <code>__attribute__((dllimport)) ttsResultType ttsGetBalance(ttsHandleType, int*)</code><br>
+     * <i>native declaration : loqtts.h:263</i>
+     */
+    @Convention(Convention.Style.StdCall)
+    public static int ttsGetBalance(Pointer<?> hReader, Pointer<Integer> value) {
+        return ttsGetBalance(Pointer.getPeer(hReader), Pointer.getPeer(value));
+    }
+
+    @Convention(Convention.Style.StdCall)
+    protected native static int ttsGetBalance(@Ptr long hReader, @Ptr long value);
+
+    /**
+     * Original signature :
+     * <code>__attribute__((dllimport)) ttsResultType ttsAddParametricEQ(ttsHandleType, float, float, float)</code><br>
+     * <i>native declaration : loqtts.h:268</i>
+     */
+    @Convention(Convention.Style.StdCall)
+    public static int ttsAddParametricEQ(Pointer<?> hReader, float freq, float gain, float Q) {
+        return ttsAddParametricEQ(Pointer.getPeer(hReader), freq, gain, Q);
+    }
+
+    @Convention(Convention.Style.StdCall)
+    protected native static int ttsAddParametricEQ(@Ptr long hReader, float freq, float gain, float Q);
+
+    /**
+     * Original signature :
+     * <code>__attribute__((dllimport)) ttsResultType ttsResetParametricEQ(ttsHandleType)</code><br>
+     * <i>native declaration : loqtts.h:275</i>
+     */
+    @Convention(Convention.Style.StdCall)
+    public static int ttsResetParametricEQ(Pointer<?> hReader) {
+        return ttsResetParametricEQ(Pointer.getPeer(hReader));
+    }
+
+    @Convention(Convention.Style.StdCall)
+    protected native static int ttsResetParametricEQ(@Ptr long hReader);
+
+    /**
+     * Original signature :
+     * <code>__attribute__((dllimport)) ttsResultType ttsSetGraphicEQPreset(ttsHandleType, ttsGraphicEQPresetType)</code><br>
+     * <i>native declaration : loqtts.h:279</i>
+     */
+    @Convention(Convention.Style.StdCall)
+    public static int ttsSetGraphicEQPreset(Pointer<?> hReader,
+            IntValuedEnum<LoquendoTTSLibrary.ttsGraphicEQPresetType> Preset) {
+        return ttsSetGraphicEQPreset(Pointer.getPeer(hReader), (int) Preset.value());
+    }
+
+    @Convention(Convention.Style.StdCall)
+    protected native static int ttsSetGraphicEQPreset(@Ptr long hReader, int Preset);
+
+    /**
+     * Original signature :
+     * <code>__attribute__((dllimport)) ttsResultType ttsSetGraphicEQBand(ttsHandleType, ttsGraphicEQBandType, float)</code><br>
+     * <i>native declaration : loqtts.h:284</i>
+     */
+    @Convention(Convention.Style.StdCall)
+    public static int ttsSetGraphicEQBand(Pointer<?> hReader,
+            IntValuedEnum<LoquendoTTSLibrary.ttsGraphicEQBandType> Band, float Gain) {
+        return ttsSetGraphicEQBand(Pointer.getPeer(hReader), (int) Band.value(), Gain);
+    }
+
+    @Convention(Convention.Style.StdCall)
+    protected native static int ttsSetGraphicEQBand(@Ptr long hReader, int Band, float Gain);
+
+    /**
+     * Original signature :
+     * <code>__attribute__((dllimport)) ttsResultType ttsGetGraphicEQBand(ttsHandleType, ttsGraphicEQBandType, float*)</code><br>
+     * <i>native declaration : loqtts.h:290</i>
+     */
+    @Convention(Convention.Style.StdCall)
+    public static int ttsGetGraphicEQBand(Pointer<?> hReader,
+            IntValuedEnum<LoquendoTTSLibrary.ttsGraphicEQBandType> Band, Pointer<Float> Gain) {
+        return ttsGetGraphicEQBand(Pointer.getPeer(hReader), (int) Band.value(), Pointer.getPeer(Gain));
+    }
+
+    @Convention(Convention.Style.StdCall)
+    protected native static int ttsGetGraphicEQBand(@Ptr long hReader, int Band, @Ptr long Gain);
+
+    /**
+     * Original signature : <code>__attribute__((dllimport)) ttsResultType ttsResetGraphicEQ(ttsHandleType)</code><br>
+     * <i>native declaration : loqtts.h:296</i>
+     */
+    @Convention(Convention.Style.StdCall)
+    public static int ttsResetGraphicEQ(Pointer<?> hReader) {
+        return ttsResetGraphicEQ(Pointer.getPeer(hReader));
+    }
+
+    @Convention(Convention.Style.StdCall)
+    protected native static int ttsResetGraphicEQ(@Ptr long hReader);
+
+    /**
+     * Original signature :
+     * <code>__attribute__((dllimport)) ttsResultType ttsNewVoice(ttsHandleType*, ttsHandleType, const char*)</code><br>
+     * <i>native declaration : loqtts.h:300</i>
+     */
+    @Convention(Convention.Style.StdCall)
+    public static int ttsNewVoice(Pointer<Pointer<?>> phVoice, Pointer<?> hSession, Pointer<Byte> Speaker) {
+        return ttsNewVoice(Pointer.getPeer(phVoice), Pointer.getPeer(hSession), Pointer.getPeer(Speaker));
+    }
+
+    @Convention(Convention.Style.StdCall)
+    protected native static int ttsNewVoice(@Ptr long phVoice, @Ptr long hSession, @Ptr long Speaker);
+
+    /**
+     * Original signature : <code>__attribute__((dllimport)) ttsResultType ttsDeleteVoice(ttsHandleType)</code><br>
+     * <i>native declaration : loqtts.h:306</i>
+     */
+    @Convention(Convention.Style.StdCall)
+    public static int ttsDeleteVoice(Pointer<?> hVoice) {
+        return ttsDeleteVoice(Pointer.getPeer(hVoice));
+    }
+
+    @Convention(Convention.Style.StdCall)
+    protected native static int ttsDeleteVoice(@Ptr long hVoice);
+
+    /**
+     * Original signature :
+     * <code>__attribute__((dllimport)) ttsResultType ttsSetVoice(ttsHandleType, ttsHandleType)</code><br>
+     * <i>native declaration : loqtts.h:310</i>
+     */
+    @Convention(Convention.Style.StdCall)
+    public static int ttsSetVoice(Pointer<?> hReader, Pointer<?> hVoice) {
+        return ttsSetVoice(Pointer.getPeer(hReader), Pointer.getPeer(hVoice));
+    }
+
+    @Convention(Convention.Style.StdCall)
+    protected native static int ttsSetVoice(@Ptr long hReader, @Ptr long hVoice);
+
+    /**
+     * Original signature :
+     * <code>__attribute__((dllimport)) ttsResultType ttsNewLexicon(ttsHandleType*, ttsHandleType, const char*)</code><br>
+     * <i>native declaration : loqtts.h:315</i>
+     */
+    @Convention(Convention.Style.StdCall)
+    public static int ttsNewLexicon(Pointer<Pointer<?>> phLexicon, Pointer<?> hSession, Pointer<Byte> LexiconName) {
+        return ttsNewLexicon(Pointer.getPeer(phLexicon), Pointer.getPeer(hSession), Pointer.getPeer(LexiconName));
+    }
+
+    @Convention(Convention.Style.StdCall)
+    protected native static int ttsNewLexicon(@Ptr long phLexicon, @Ptr long hSession, @Ptr long LexiconName);
+
+    /**
+     * Original signature : <code>__attribute__((dllimport)) ttsResultType ttsDeleteLexicon(ttsHandleType)</code><br>
+     * <i>native declaration : loqtts.h:321</i>
+     */
+    @Convention(Convention.Style.StdCall)
+    public static int ttsDeleteLexicon(Pointer<?> hLexicon) {
+        return ttsDeleteLexicon(Pointer.getPeer(hLexicon));
+    }
+
+    @Convention(Convention.Style.StdCall)
+    protected native static int ttsDeleteLexicon(@Ptr long hLexicon);
+
+    /**
+     * Original signature :
+     * <code>__attribute__((dllimport)) ttsResultType ttsSetLexicon(ttsHandleType, ttsHandleType, size_t)</code><br>
+     * <i>native declaration : loqtts.h:325</i>
+     */
+    @Convention(Convention.Style.StdCall)
+    public static int ttsSetLexicon(Pointer<?> hReader, Pointer<?> hLexicon, @Ptr long LexiconIndex) {
+        return ttsSetLexicon(Pointer.getPeer(hReader), Pointer.getPeer(hLexicon), LexiconIndex);
+    }
+
+    @Convention(Convention.Style.StdCall)
+    protected native static int ttsSetLexicon(@Ptr long hReader, @Ptr long hLexicon, @Ptr long LexiconIndex);
+
+    /**
+     * Original signature :
+     * <code>__attribute__((dllimport)) ttsResultType ttsLoadPersona(ttsHandleType, const char*, const char*, const char*)</code><br>
+     * <i>native declaration : loqtts.h:331</i>
+     */
+    @Convention(Convention.Style.StdCall)
+    public static int ttsLoadPersona(Pointer<?> hReader, Pointer<Byte> szVoice, Pointer<Byte> szLanguage,
+            Pointer<Byte> szStyle) {
+        return ttsLoadPersona(Pointer.getPeer(hReader), Pointer.getPeer(szVoice), Pointer.getPeer(szLanguage),
+                Pointer.getPeer(szStyle));
+    }
+
+    @Convention(Convention.Style.StdCall)
+    protected native static int ttsLoadPersona(@Ptr long hReader, @Ptr long szVoice, @Ptr long szLanguage,
+            @Ptr long szStyle);
+
+    /**
+     * Original signature :
+     * <code>__attribute__((dllimport)) ttsResultType ttsLoadPersonaFromFile(ttsHandleType, const char*)</code><br>
+     * <i>native declaration : loqtts.h:338</i>
+     */
+    @Convention(Convention.Style.StdCall)
+    public static int ttsLoadPersonaFromFile(Pointer<?> hReader, Pointer<Byte> szReader) {
+        return ttsLoadPersonaFromFile(Pointer.getPeer(hReader), Pointer.getPeer(szReader));
+    }
+
+    @Convention(Convention.Style.StdCall)
+    protected native static int ttsLoadPersonaFromFile(@Ptr long hReader, @Ptr long szReader);
+
+    /**
+     * Original signature :
+     * <code>__attribute__((dllimport)) ttsResultType ttsSetCallback(ttsHandleType, void*, void*, ttsCallbackType)</code><br>
+     * <i>native declaration : loqtts.h:343</i>
+     */
+    @Convention(Convention.Style.StdCall)
+    public static int ttsSetCallback(Pointer<?> hReader, Pointer<?> pCallback, Pointer<?> pUser,
+            IntValuedEnum<LoquendoTTSLibrary.ttsCallbackType> Type) {
+        return ttsSetCallback(Pointer.getPeer(hReader), Pointer.getPeer(pCallback), Pointer.getPeer(pUser),
+                (int) Type.value());
+    }
+
+    @Convention(Convention.Style.StdCall)
+    protected native static int ttsSetCallback(@Ptr long hReader, @Ptr long pCallback, @Ptr long pUser, int Type);
+
+    /**
+     * Original signature :
+     * <code>__attribute__((dllimport)) ttsResultType ttsGetVersionInfo(ttsInfoStringType)</code><br>
+     * <i>native declaration : loqtts.h:350</i>
+     */
+    @Convention(Convention.Style.StdCall)
+    public static int ttsGetVersionInfo(Pointer<Byte> StrVer) {
+        return ttsGetVersionInfo(Pointer.getPeer(StrVer));
+    }
+
+    @Convention(Convention.Style.StdCall)
+    protected native static int ttsGetVersionInfo(@Ptr long StrVer);
+
+    /**
+     * Original signature : <code>__attribute__((dllimport)) char* ttsGetErrorMessage(ttsResultType)</code><br>
+     * <i>native declaration : loqtts.h:354</i>
+     */
+    @Convention(Convention.Style.StdCall)
+    public static Pointer<Byte> ttsGetErrorMessage(int ErrNo) {
+        return (Pointer) Pointer.pointerToAddress(ttsGetErrorMessage$2(ErrNo), Byte.class);
+    }
+
+    @Convention(Convention.Style.StdCall)
+    @Ptr
+    @Name("ttsGetErrorMessage")
+    protected native static long ttsGetErrorMessage$2(int ErrNo);
+
+    /**
+     * Original signature :
+     * <code>__attribute__((dllimport)) ttsBoolType ttsTestPersona(ttsHandleType, const char*, const char*, const char*)</code><br>
+     * <i>native declaration : loqtts.h:358</i>
+     */
+    @Convention(Convention.Style.StdCall)
+    public static byte ttsTestPersona(Pointer<?> hSession, Pointer<Byte> Speaker, Pointer<Byte> Language,
+            Pointer<Byte> Style) {
+        return ttsTestPersona(Pointer.getPeer(hSession), Pointer.getPeer(Speaker), Pointer.getPeer(Language),
+                Pointer.getPeer(Style));
+    }
+
+    @Convention(Convention.Style.StdCall)
+    protected native static byte ttsTestPersona(@Ptr long hSession, @Ptr long Speaker, @Ptr long Language,
+            @Ptr long Style);
+
+    /**
+     * Original signature :
+     * <code>__attribute__((dllimport)) ttsResultType ttsInject(ttsHandleType, const char*)</code><br>
+     * <i>native declaration : loqtts.h:365</i>
+     */
+    @Convention(Convention.Style.StdCall)
+    public static int ttsInject(Pointer<?> hReader, Pointer<Byte> command) {
+        return ttsInject(Pointer.getPeer(hReader), Pointer.getPeer(command));
+    }
+
+    @Convention(Convention.Style.StdCall)
+    protected native static int ttsInject(@Ptr long hReader, @Ptr long command);
+
+    /**
+     * Original signature :
+     * <code>__attribute__((dllimport)) ttsResultType ttsPhoneticTranscription(ttsHandleType, const void*, void*, const size_t, size_t*)</code><br>
+     * <i>native declaration : loqtts.h:370</i>
+     */
+    @Convention(Convention.Style.StdCall)
+    public static int ttsPhoneticTranscription(Pointer<?> hReader, Pointer<?> text, Pointer<?> TranscriptionBuffer,
+            @Ptr long BufferLen, Pointer<SizeT> TranscriptionLen) {
+        return ttsPhoneticTranscription(Pointer.getPeer(hReader), Pointer.getPeer(text),
+                Pointer.getPeer(TranscriptionBuffer), BufferLen, Pointer.getPeer(TranscriptionLen));
+    }
+
+    @Convention(Convention.Style.StdCall)
+    protected native static int ttsPhoneticTranscription(@Ptr long hReader, @Ptr long text,
+            @Ptr long TranscriptionBuffer, @Ptr long BufferLen, @Ptr long TranscriptionLen);
+
+    /**
+     * Original signature :
+     * <code>__attribute__((dllimport)) ttsResultType ttsSetAudio(ttsHandleType, const char*, const char*, unsigned int, ttsAudioEncodingType, ttsAudioSampleType, const void*)</code><br>
+     * <i>native declaration : loqtts.h:378</i>
+     */
+    @Convention(Convention.Style.StdCall)
+    public static int ttsSetAudio(Pointer<?> hReader, Pointer<Byte> AudioDestName, Pointer<Byte> AudioDeviceName,
+            int SampleRate, IntValuedEnum<LoquendoTTSLibrary.ttsAudioEncodingType> coding,
+            IntValuedEnum<LoquendoTTSLibrary.ttsAudioSampleType> nChannels, Pointer<?> pUser) {
+        return ttsSetAudio(Pointer.getPeer(hReader), Pointer.getPeer(AudioDestName), Pointer.getPeer(AudioDeviceName),
+                SampleRate, (int) coding.value(), (int) nChannels.value(), Pointer.getPeer(pUser));
+    }
+
+    @Convention(Convention.Style.StdCall)
+    protected native static int ttsSetAudio(@Ptr long hReader, @Ptr long AudioDestName, @Ptr long AudioDeviceName,
+            int SampleRate, int coding, int nChannels, @Ptr long pUser);
+
+    /**
+     * Original signature :
+     * <code>__attribute__((dllimport)) ttsResultType ttsGetRobotsList(ttsInfoStringType)</code><br>
+     * <i>native declaration : loqtts.h:388</i>
+     */
+    @Convention(Convention.Style.StdCall)
+    public static int ttsGetRobotsList(Pointer<Byte> list) {
+        return ttsGetRobotsList(Pointer.getPeer(list));
+    }
+
+    @Convention(Convention.Style.StdCall)
+    protected native static int ttsGetRobotsList(@Ptr long list);
+
+    /**
+     * Original signature :
+     * <code>__attribute__((dllimport)) ttsResultType ttsQuery(ttsHandleType, ttsQueryType, const char*, const char*, char*, size_t, ttsBoolType, ttsBoolType)</code><br>
+     * <i>native declaration : loqtts.h:390</i>
+     */
+    @Convention(Convention.Style.StdCall)
+    public static int ttsQuery(Pointer<?> hSession, IntValuedEnum<LoquendoTTSLibrary.ttsQueryType> uObject,
+            Pointer<Byte> sDataToRetrieve, Pointer<Byte> sFilter, Pointer<Byte> sResultBuffer,
+            @Ptr long uResultBufferSize, byte bLoadedOnly, byte bRescanFileSystem) {
+        return ttsQuery(Pointer.getPeer(hSession), (int) uObject.value(), Pointer.getPeer(sDataToRetrieve),
+                Pointer.getPeer(sFilter), Pointer.getPeer(sResultBuffer), uResultBufferSize, bLoadedOnly,
+                bRescanFileSystem);
+    }
+
+    @Convention(Convention.Style.StdCall)
+    protected native static int ttsQuery(@Ptr long hSession, int uObject, @Ptr long sDataToRetrieve, @Ptr long sFilter,
+            @Ptr long sResultBuffer, @Ptr long uResultBufferSize, byte bLoadedOnly, byte bRescanFileSystem);
+
+    /**
+     * Original signature :
+     * <code>__attribute__((dllimport)) ttsResultType ttsQueryAttribute(ttsHandleType, ttsQueryType, const char*, const char*, char*, size_t)</code><br>
+     * <i>native declaration : loqtts.h:401</i>
+     */
+    @Convention(Convention.Style.StdCall)
+    public static int ttsQueryAttribute(Pointer<?> hSession, IntValuedEnum<LoquendoTTSLibrary.ttsQueryType> uObject,
             Pointer<Byte> sAttribute, Pointer<Byte> sObjectId, Pointer<Byte> sResultBuffer,
-            @Ptr long uResultBufferSize);
+            @Ptr long uResultBufferSize) {
+        return ttsQueryAttribute(Pointer.getPeer(hSession), (int) uObject.value(), Pointer.getPeer(sAttribute),
+                Pointer.getPeer(sObjectId), Pointer.getPeer(sResultBuffer), uResultBufferSize);
+    }
+
+    @Convention(Convention.Style.StdCall)
+    protected native static int ttsQueryAttribute(@Ptr long hSession, int uObject, @Ptr long sAttribute,
+            @Ptr long sObjectId, @Ptr long sResultBuffer, @Ptr long uResultBufferSize);
 
     /**
      * Original signature :
-     * <code>tts_API_DEFINITION ttsEnumFirst(ttsHandleType*, ttsHandleType, ttsQueryType, const char*, char**)</code><br>
-     * <i>native declaration : line 411</i>
+     * <code>__attribute__((dllimport)) ttsResultType ttsEnumFirst(ttsHandleType*, ttsHandleType, ttsQueryType, const char*, char**)</code><br>
+     * <i>native declaration : loqtts.h:410</i>
      */
-    public static native LoquendoTTSLibrary.tts_API_DEFINITION ttsEnumFirst(
-            Pointer<LoquendoTTSLibrary.ttsHandleType> phEnum, LoquendoTTSLibrary.ttsHandleType hSession,
-            LoquendoTTSLibrary.ttsQueryType uObject, Pointer<Byte> sFilter, Pointer<Pointer<Byte>> pResult);
+    @Convention(Convention.Style.StdCall)
+    public static int ttsEnumFirst(Pointer<Pointer<?>> phEnum, Pointer<?> hSession,
+            IntValuedEnum<LoquendoTTSLibrary.ttsQueryType> uObject, Pointer<Byte> sFilter,
+            Pointer<Pointer<Byte>> pResult) {
+        return ttsEnumFirst(Pointer.getPeer(phEnum), Pointer.getPeer(hSession), (int) uObject.value(),
+                Pointer.getPeer(sFilter), Pointer.getPeer(pResult));
+    }
+
+    @Convention(Convention.Style.StdCall)
+    protected native static int ttsEnumFirst(@Ptr long phEnum, @Ptr long hSession, int uObject, @Ptr long sFilter,
+            @Ptr long pResult);
 
     /**
-     * Original signature : <code>tts_API_DEFINITION ttsEnumNext(ttsHandleType, char**)</code><br>
-     * <i>native declaration : line 419</i>
+     * Original signature : <code>__attribute__((dllimport)) ttsResultType ttsEnumNext(ttsHandleType, char**)</code><br>
+     * <i>native declaration : loqtts.h:418</i>
      */
-    public static native LoquendoTTSLibrary.tts_API_DEFINITION ttsEnumNext(LoquendoTTSLibrary.ttsHandleType hEnum,
-            Pointer<Pointer<Byte>> pResult);
+    @Convention(Convention.Style.StdCall)
+    public static int ttsEnumNext(Pointer<?> hEnum, Pointer<Pointer<Byte>> pResult) {
+        return ttsEnumNext(Pointer.getPeer(hEnum), Pointer.getPeer(pResult));
+    }
+
+    @Convention(Convention.Style.StdCall)
+    protected native static int ttsEnumNext(@Ptr long hEnum, @Ptr long pResult);
 
     /**
-     * Original signature : <code>tts_API_DEFINITION ttsEnumClose(ttsHandleType)</code><br>
-     * <i>native declaration : line 424</i>
+     * Original signature : <code>__attribute__((dllimport)) ttsResultType ttsEnumClose(ttsHandleType)</code><br>
+     * <i>native declaration : loqtts.h:423</i>
      */
-    public static native LoquendoTTSLibrary.tts_API_DEFINITION ttsEnumClose(LoquendoTTSLibrary.ttsHandleType hEnum);
+    @Convention(Convention.Style.StdCall)
+    public static int ttsEnumClose(Pointer<?> hEnum) {
+        return ttsEnumClose(Pointer.getPeer(hEnum));
+    }
 
-    /**
-     * Original signature :
-     * <code>tts_API_DEFINITION ttsLocateSpeechAtomInventory(ttsHandleType, ttsHandleType*, const char*)</code><br>
-     * <i>native declaration : line 428</i>
-     */
-    public static native LoquendoTTSLibrary.tts_API_DEFINITION ttsLocateSpeechAtomInventory(
-            LoquendoTTSLibrary.ttsHandleType hVoice, Pointer<LoquendoTTSLibrary.ttsHandleType> hInventory,
-            Pointer<Byte> path);
-
-    /**
-     * Original signature :
-     * <code>tts_API_DEFINITION ttsGetSpeechAtom(ttsHandleType*, ttsHandleType, const char**, const void**)</code><br>
-     * <i>native declaration : line 434</i>
-     */
-    public static native LoquendoTTSLibrary.tts_API_DEFINITION ttsGetSpeechAtom(
-            Pointer<LoquendoTTSLibrary.ttsHandleType> hNode, LoquendoTTSLibrary.ttsHandleType hParent,
-            Pointer<Pointer<Byte>> name, Pointer<Pointer<?>> info);
-
-    /**
-     * Original signature : <code>tts_API_DEFINITION ttsValidateXML(ttsHandleType, const void*, ttsBoolType)</code><br>
-     * <i>native declaration : line 441</i>
-     */
-    public static native LoquendoTTSLibrary.tts_API_DEFINITION ttsValidateXML(LoquendoTTSLibrary.ttsHandleType hReader,
-            Pointer<?> Input, LoquendoTTSLibrary.ttsBoolType bFromFile);
+    @Convention(Convention.Style.StdCall)
+    protected native static int ttsEnumClose(@Ptr long hEnum);
 
     /**
      * Original signature :
-     * <code>tts_API_DEFINITION ttsSSMLConvert(ttsHandleType, const void*, char**, ttsBoolType)</code><br>
-     * <i>native declaration : line 447</i>
+     * <code>__attribute__((dllimport)) ttsResultType ttsLocateSpeechAtomInventory(ttsHandleType, ttsHandleType*, const char*)</code><br>
+     * <i>native declaration : loqtts.h:427</i>
      */
-    public static native LoquendoTTSLibrary.tts_API_DEFINITION ttsSSMLConvert(LoquendoTTSLibrary.ttsHandleType hReader,
-            Pointer<?> Input, Pointer<Pointer<Byte>> Output, LoquendoTTSLibrary.ttsBoolType bFromFile);
+    @Convention(Convention.Style.StdCall)
+    public static int ttsLocateSpeechAtomInventory(Pointer<?> hVoice, Pointer<Pointer<?>> hInventory,
+            Pointer<Byte> path) {
+        return ttsLocateSpeechAtomInventory(Pointer.getPeer(hVoice), Pointer.getPeer(hInventory),
+                Pointer.getPeer(path));
+    }
 
-    /**
-     * Original signature : <code>tts_API_DEFINITION ttsNewSession(ttsHandleType*, const char*)</code><br>
-     * <i>native declaration : line 454</i>
-     */
-    public static native LoquendoTTSLibrary.tts_API_DEFINITION ttsNewSession(
-            Pointer<LoquendoTTSLibrary.ttsHandleType> phSession, Pointer<Byte> IniFile);
-
-    /**
-     * Original signature : <code>tts_API_DEFINITION ttsDeleteSession(ttsHandleType)</code><br>
-     * <i>native declaration : line 459</i>
-     */
-    public static native LoquendoTTSLibrary.tts_API_DEFINITION ttsDeleteSession(
-            LoquendoTTSLibrary.ttsHandleType hSession);
-
-    /**
-     * Original signature : <code>tts_API_DEFINITION ttsNewReader(ttsHandleType*, ttsHandleType)</code><br>
-     * <i>native declaration : line 463</i>
-     */
-    public static native LoquendoTTSLibrary.tts_API_DEFINITION ttsNewReader(
-            Pointer<LoquendoTTSLibrary.ttsHandleType> phReader, LoquendoTTSLibrary.ttsHandleType hSession);
-
-    /**
-     * Original signature : <code>tts_API_DEFINITION ttsDeleteReader(ttsHandleType)</code><br>
-     * <i>native declaration : line 468</i>
-     */
-    public static native LoquendoTTSLibrary.tts_API_DEFINITION ttsDeleteReader(
-            LoquendoTTSLibrary.ttsHandleType hReader);
+    @Convention(Convention.Style.StdCall)
+    protected native static int ttsLocateSpeechAtomInventory(@Ptr long hVoice, @Ptr long hInventory, @Ptr long path);
 
     /**
      * Original signature :
-     * <code>tts_API_DEFINITION ttsLanguageGuess(ttsHandleType, const void*, ttsInfoStringType, ttsBoolType)</code><br>
-     * <i>native declaration : line 472</i>
+     * <code>__attribute__((dllimport)) ttsResultType ttsGetSpeechAtom(ttsHandleType*, ttsHandleType, const char**, const void**)</code><br>
+     * <i>native declaration : loqtts.h:433</i>
      */
-    public static native LoquendoTTSLibrary.tts_API_DEFINITION ttsLanguageGuess(
-            LoquendoTTSLibrary.ttsHandleType hReader, Pointer<?> Input,
-            LoquendoTTSLibrary.ttsInfoStringType GuessedLanguage, LoquendoTTSLibrary.ttsBoolType bFromFile);
+    @Convention(Convention.Style.StdCall)
+    public static int ttsGetSpeechAtom(Pointer<Pointer<?>> hNode, Pointer<?> hParent, Pointer<Pointer<Byte>> name,
+            Pointer<Pointer<?>> info) {
+        return ttsGetSpeechAtom(Pointer.getPeer(hNode), Pointer.getPeer(hParent), Pointer.getPeer(name),
+                Pointer.getPeer(info));
+    }
 
-    /**
-     * Original signature : <code>tts_API_DEFINITION ttsSetParam(ttsHandleType, const char*, const char*)</code><br>
-     * <i>native declaration : line 479</i>
-     */
-    public static native LoquendoTTSLibrary.tts_API_DEFINITION ttsSetParam(LoquendoTTSLibrary.ttsHandleType hObject,
-            Pointer<Byte> sName, Pointer<Byte> sValue);
-
-    /**
-     * Original signature :
-     * <code>tts_API_DEFINITION ttsGetParam(ttsHandleType, const char*, ttsInfoStringType)</code><br>
-     * <i>native declaration : line 485</i>
-     */
-    public static native LoquendoTTSLibrary.tts_API_DEFINITION ttsGetParam(LoquendoTTSLibrary.ttsHandleType hObject,
-            Pointer<Byte> sName, LoquendoTTSLibrary.ttsInfoStringType sValue);
-
-    /**
-     * Original signature : <code>tts_API_DEFINITION ttsSetTextEncoding(ttsHandleType, ttsTextEncodingType)</code><br>
-     * <i>native declaration : line 491</i>
-     */
-    public static native LoquendoTTSLibrary.tts_API_DEFINITION ttsSetTextEncoding(
-            LoquendoTTSLibrary.ttsHandleType hReader, LoquendoTTSLibrary.ttsTextEncodingType encoding);
-
-    /**
-     * Original signature : <code>tts_API_DEFINITION ttsGetTextEncoding(ttsHandleType, ttsTextEncodingType*)</code><br>
-     * <i>native declaration : line 496</i>
-     */
-    public static native LoquendoTTSLibrary.tts_API_DEFINITION ttsGetTextEncoding(
-            LoquendoTTSLibrary.ttsHandleType hReader, Pointer<LoquendoTTSLibrary.ttsTextEncodingType> encoding);
-
-    /**
-     * Original signature : <code>tts_API_DEFINITION ttsSetTextFormat(ttsHandleType, ttsTextFormatType)</code><br>
-     * <i>native declaration : line 501</i>
-     */
-    public static native LoquendoTTSLibrary.tts_API_DEFINITION ttsSetTextFormat(
-            LoquendoTTSLibrary.ttsHandleType hReader, LoquendoTTSLibrary.ttsTextFormatType format);
-
-    /**
-     * Original signature : <code>tts_API_DEFINITION ttsGetTextFormat(ttsHandleType, ttsTextFormatType*)</code><br>
-     * <i>native declaration : line 506</i>
-     */
-    public static native LoquendoTTSLibrary.tts_API_DEFINITION ttsGetTextFormat(
-            LoquendoTTSLibrary.ttsHandleType hReader, Pointer<LoquendoTTSLibrary.ttsTextFormatType> format);
-
-    /**
-     * Original signature : <code>tts_API_DEFINITION ttsSaveCF(ttsHandleType, const char*)</code><br>
-     * <i>native declaration : line 511</i>
-     */
-    public static native LoquendoTTSLibrary.tts_API_DEFINITION ttsSaveCF(LoquendoTTSLibrary.ttsHandleType hObject,
-            Pointer<Byte> sFileName);
-
-    /**
-     * Original signature : <code>tts_API_DEFINITION ttsClone(ttsHandleType*, ttsHandleType, const char*)</code><br>
-     * <i>native declaration : line 516</i>
-     */
-    public static native LoquendoTTSLibrary.tts_API_DEFINITION ttsClone(
-            Pointer<LoquendoTTSLibrary.ttsHandleType> hNewObject, LoquendoTTSLibrary.ttsHandleType hObject,
-            Pointer<Byte> sNewId);
+    @Convention(Convention.Style.StdCall)
+    protected native static int ttsGetSpeechAtom(@Ptr long hNode, @Ptr long hParent, @Ptr long name, @Ptr long info);
 
     /**
      * Original signature :
-     * <code>tts_API_DEFINITION ttsSaveConfigurationParam(const char*, const char*, const char*)</code><br>
-     * <i>native declaration : line 522</i>
+     * <code>__attribute__((dllimport)) ttsResultType ttsValidateXML(ttsHandleType, const void*, ttsBoolType)</code><br>
+     * <i>native declaration : loqtts.h:440</i>
      */
-    public static native LoquendoTTSLibrary.tts_API_DEFINITION ttsSaveConfigurationParam(Pointer<Byte> area,
-            Pointer<Byte> key, Pointer<Byte> value);
+    @Convention(Convention.Style.StdCall)
+    public static int ttsValidateXML(Pointer<?> hReader, Pointer<?> Input, byte bFromFile) {
+        return ttsValidateXML(Pointer.getPeer(hReader), Pointer.getPeer(Input), bFromFile);
+    }
+
+    @Convention(Convention.Style.StdCall)
+    protected native static int ttsValidateXML(@Ptr long hReader, @Ptr long Input, byte bFromFile);
 
     /**
      * Original signature :
-     * <code>tts_API_DEFINITION ttsLoadConfigurationParam(const char*, const char*, ttsInfoStringType)</code><br>
-     * <i>native declaration : line 528</i>
+     * <code>__attribute__((dllimport)) ttsResultType ttsSSMLConvert(ttsHandleType, const void*, char**, ttsBoolType)</code><br>
+     * <i>native declaration : loqtts.h:446</i>
      */
-    public static native LoquendoTTSLibrary.tts_API_DEFINITION ttsLoadConfigurationParam(Pointer<Byte> area,
-            Pointer<Byte> key, LoquendoTTSLibrary.ttsInfoStringType value);
+    @Convention(Convention.Style.StdCall)
+    public static int ttsSSMLConvert(Pointer<?> hReader, Pointer<?> Input, Pointer<Pointer<Byte>> Output,
+            byte bFromFile) {
+        return ttsSSMLConvert(Pointer.getPeer(hReader), Pointer.getPeer(Input), Pointer.getPeer(Output), bFromFile);
+    }
 
-    /**
-     * Original signature : <code>tts_API_DEFINITION ttsDeleteConfiguration(const char*)</code><br>
-     * <i>native declaration : line 534</i>
-     */
-    public static native LoquendoTTSLibrary.tts_API_DEFINITION ttsDeleteConfiguration(Pointer<Byte> area);
-
-    /**
-     * Original signature :
-     * <code>tts_API_DEFINITION ttsGetPhonemeInfo(ttsHandleType, const char**, unsigned int*)</code><br>
-     * <i>native declaration : line 538</i>
-     */
-    public static native LoquendoTTSLibrary.tts_API_DEFINITION ttsGetPhonemeInfo(
-            LoquendoTTSLibrary.ttsHandleType hObject, Pointer<Pointer<Byte>> pLabel, Pointer<Integer> pDuration);
+    @Convention(Convention.Style.StdCall)
+    protected native static int ttsSSMLConvert(@Ptr long hReader, @Ptr long Input, @Ptr long Output, byte bFromFile);
 
     /**
      * Original signature :
-     * <code>tts_API_DEFINITION ttsGetPCM(ttsHandleType, const void**, size_t*, ttsBoolType*)</code><br>
-     * <i>native declaration : line 544</i>
+     * <code>__attribute__((dllimport)) ttsResultType ttsNewSession(ttsHandleType*, const char*)</code><br>
+     * <i>native declaration : loqtts.h:453</i>
      */
-    public static native LoquendoTTSLibrary.tts_API_DEFINITION ttsGetPCM(LoquendoTTSLibrary.ttsHandleType hObject,
-            Pointer<Pointer<?>> pBuffer, Pointer<SizeT> pnSamples, Pointer<LoquendoTTSLibrary.ttsBoolType> bComplete);
+    @Convention(Convention.Style.StdCall)
+    public static int ttsNewSession(Pointer<Pointer<?>> phSession, Pointer<Byte> IniFile) {
+        return ttsNewSession(Pointer.getPeer(phSession), Pointer.getPeer(IniFile));
+    }
+
+    @Convention(Convention.Style.StdCall)
+    protected native static int ttsNewSession(@Ptr long phSession, @Ptr long IniFile);
 
     /**
-     * Original signature : <code>tts_API_DEFINITION ttsGetTag(ttsHandleType, const char**)</code><br>
-     * <i>native declaration : line 551</i>
+     * Original signature : <code>__attribute__((dllimport)) ttsResultType ttsDeleteSession(ttsHandleType)</code><br>
+     * <i>native declaration : loqtts.h:458</i>
      */
-    public static native LoquendoTTSLibrary.tts_API_DEFINITION ttsGetTag(LoquendoTTSLibrary.ttsHandleType hObject,
-            Pointer<Pointer<Byte>> tag);
+    @Convention(Convention.Style.StdCall)
+    public static int ttsDeleteSession(Pointer<?> hSession) {
+        return ttsDeleteSession(Pointer.getPeer(hSession));
+    }
 
-    /**
-     * Original signature :
-     * <code>tts_API_DEFINITION ttsCheckPhoneticTranscription(ttsHandleType, const char*)</code><br>
-     * <i>native declaration : line 556</i>
-     */
-    public static native LoquendoTTSLibrary.tts_API_DEFINITION ttsCheckPhoneticTranscription(
-            LoquendoTTSLibrary.ttsHandleType hReader, Pointer<Byte> PhoneticString);
-
-    /**
-     * Original signature : <code>tts_API_DEFINITION ttsClaimLicense(ttsHandleType, unsigned int*)</code><br>
-     * <i>native declaration : line 561</i>
-     */
-    public static native LoquendoTTSLibrary.tts_API_DEFINITION ttsClaimLicense(LoquendoTTSLibrary.ttsHandleType hReader,
-            Pointer<Integer> time2wait);
-
-    /**
-     * Original signature : <code>tts_API_DEFINITION ttsUnclaimLicense(ttsHandleType, unsigned int*)</code><br>
-     * <i>native declaration : line 566</i>
-     */
-    public static native LoquendoTTSLibrary.tts_API_DEFINITION ttsUnclaimLicense(
-            LoquendoTTSLibrary.ttsHandleType hReader, Pointer<Integer> time2wait);
-
-    /**
-     * Original signature : <code>tts_API_DEFINITION ttsEnableEvent(ttsHandleType, ttsEventType, ttsBoolType)</code><br>
-     * <i>native declaration : line 571</i>
-     */
-    public static native LoquendoTTSLibrary.tts_API_DEFINITION ttsEnableEvent(LoquendoTTSLibrary.ttsHandleType hReader,
-            LoquendoTTSLibrary.ttsEventType evt, LoquendoTTSLibrary.ttsBoolType bEnabled);
+    @Convention(Convention.Style.StdCall)
+    protected native static int ttsDeleteSession(@Ptr long hSession);
 
     /**
      * Original signature :
-     * <code>tts_API_DEFINITION ttsSetURLCallback(ttsHandleType, ttsURLCallbackType, void*)</code><br>
-     * <i>native declaration : line 577</i>
+     * <code>__attribute__((dllimport)) ttsResultType ttsNewReader(ttsHandleType*, ttsHandleType)</code><br>
+     * <i>native declaration : loqtts.h:462</i>
      */
-    public static native LoquendoTTSLibrary.tts_API_DEFINITION ttsSetURLCallback(
-            LoquendoTTSLibrary.ttsHandleType hReader, LoquendoTTSLibrary.ttsURLCallbackType pfnCallback,
-            Pointer<?> pUser);
+    @Convention(Convention.Style.StdCall)
+    public static int ttsNewReader(Pointer<Pointer<?>> phReader, Pointer<?> hSession) {
+        return ttsNewReader(Pointer.getPeer(phReader), Pointer.getPeer(hSession));
+    }
+
+    @Convention(Convention.Style.StdCall)
+    protected native static int ttsNewReader(@Ptr long phReader, @Ptr long hSession);
+
+    /**
+     * Original signature : <code>__attribute__((dllimport)) ttsResultType ttsDeleteReader(ttsHandleType)</code><br>
+     * <i>native declaration : loqtts.h:467</i>
+     */
+    @Convention(Convention.Style.StdCall)
+    public static int ttsDeleteReader(Pointer<?> hReader) {
+        return ttsDeleteReader(Pointer.getPeer(hReader));
+    }
+
+    @Convention(Convention.Style.StdCall)
+    protected native static int ttsDeleteReader(@Ptr long hReader);
 
     /**
      * Original signature :
-     * <code>tts_API_DEFINITION ttsEnumConfigurationParameterFirst(ttsHandleType*, ttsBoolType, const char**, const char**)</code><br>
-     * <i>native declaration : line 583</i>
+     * <code>__attribute__((dllimport)) ttsResultType ttsLanguageGuess(ttsHandleType, const void*, ttsInfoStringType, ttsBoolType)</code><br>
+     * <i>native declaration : loqtts.h:471</i>
      */
-    public static native LoquendoTTSLibrary.tts_API_DEFINITION ttsEnumConfigurationParameterFirst(
-            Pointer<LoquendoTTSLibrary.ttsHandleType> phEnum, LoquendoTTSLibrary.ttsBoolType bReadOnly,
-            Pointer<Pointer<Byte>> pKey, Pointer<Pointer<Byte>> pDesc);
+    @Convention(Convention.Style.StdCall)
+    public static int ttsLanguageGuess(Pointer<?> hReader, Pointer<?> Input, Pointer<Byte> GuessedLanguage,
+            byte bFromFile) {
+        return ttsLanguageGuess(Pointer.getPeer(hReader), Pointer.getPeer(Input), Pointer.getPeer(GuessedLanguage),
+                bFromFile);
+    }
+
+    @Convention(Convention.Style.StdCall)
+    protected native static int ttsLanguageGuess(@Ptr long hReader, @Ptr long Input, @Ptr long GuessedLanguage,
+            byte bFromFile);
 
     /**
      * Original signature :
-     * <code>tts_API_DEFINITION ttsEnumConfigurationParameterNext(ttsHandleType, const char**, const char**)</code><br>
-     * <i>native declaration : line 590</i>
+     * <code>__attribute__((dllimport)) ttsResultType ttsSetParam(ttsHandleType, const char*, const char*)</code><br>
+     * <i>native declaration : loqtts.h:478</i>
      */
-    public static native LoquendoTTSLibrary.tts_API_DEFINITION ttsEnumConfigurationParameterNext(
-            LoquendoTTSLibrary.ttsHandleType hEnum, Pointer<Pointer<Byte>> pKey, Pointer<Pointer<Byte>> pDesc);
+    @Convention(Convention.Style.StdCall)
+    public static int ttsSetParam(Pointer<?> hObject, Pointer<Byte> sName, Pointer<Byte> sValue) {
+        return ttsSetParam(Pointer.getPeer(hObject), Pointer.getPeer(sName), Pointer.getPeer(sValue));
+    }
+
+    @Convention(Convention.Style.StdCall)
+    protected native static int ttsSetParam(@Ptr long hObject, @Ptr long sName, @Ptr long sValue);
 
     /**
-     * Original signature : <code>tts_API_DEFINITION ttsIsMp3SupportInstalled(ttsInfoStringType)</code><br>
-     * <i>native declaration : line 596</i>
+     * Original signature :
+     * <code>__attribute__((dllimport)) ttsResultType ttsGetParam(ttsHandleType, const char*, ttsInfoStringType)</code><br>
+     * <i>native declaration : loqtts.h:484</i>
      */
-    public static native LoquendoTTSLibrary.tts_API_DEFINITION ttsIsMp3SupportInstalled(
-            LoquendoTTSLibrary.ttsInfoStringType libName);
+    @Convention(Convention.Style.StdCall)
+    public static int ttsGetParam(Pointer<?> hObject, Pointer<Byte> sName, Pointer<Byte> sValue) {
+        return ttsGetParam(Pointer.getPeer(hObject), Pointer.getPeer(sName), Pointer.getPeer(sValue));
+    }
 
-    /** Undefined type */
-    public static interface ttsInfoStringType {
+    @Convention(Convention.Style.StdCall)
+    protected native static int ttsGetParam(@Ptr long hObject, @Ptr long sName, @Ptr long sValue);
 
-    };
+    /**
+     * Original signature :
+     * <code>__attribute__((dllimport)) ttsResultType ttsSetTextEncoding(ttsHandleType, ttsTextEncodingType)</code><br>
+     * <i>native declaration : loqtts.h:490</i>
+     */
+    @Convention(Convention.Style.StdCall)
+    public static int ttsSetTextEncoding(Pointer<?> hReader,
+            IntValuedEnum<LoquendoTTSLibrary.ttsTextEncodingType> encoding) {
+        return ttsSetTextEncoding(Pointer.getPeer(hReader), (int) encoding.value());
+    }
 
-    /** Undefined type */
-    public static interface ttsCallbackType {
+    @Convention(Convention.Style.StdCall)
+    protected native static int ttsSetTextEncoding(@Ptr long hReader, int encoding);
 
-    };
+    /**
+     * Original signature :
+     * <code>__attribute__((dllimport)) ttsResultType ttsGetTextEncoding(ttsHandleType, ttsTextEncodingType*)</code><br>
+     * <i>native declaration : loqtts.h:495</i>
+     */
+    @Convention(Convention.Style.StdCall)
+    public static int ttsGetTextEncoding(Pointer<?> hReader,
+            Pointer<IntValuedEnum<LoquendoTTSLibrary.ttsTextEncodingType>> encoding) {
+        return ttsGetTextEncoding(Pointer.getPeer(hReader), Pointer.getPeer(encoding));
+    }
 
-    /** Undefined type */
-    public static interface ttsGraphicEQBandType {
+    @Convention(Convention.Style.StdCall)
+    protected native static int ttsGetTextEncoding(@Ptr long hReader, @Ptr long encoding);
 
-    };
+    /**
+     * Original signature :
+     * <code>__attribute__((dllimport)) ttsResultType ttsSetTextFormat(ttsHandleType, ttsTextFormatType)</code><br>
+     * <i>native declaration : loqtts.h:500</i>
+     */
+    @Convention(Convention.Style.StdCall)
+    public static int ttsSetTextFormat(Pointer<?> hReader, IntValuedEnum<LoquendoTTSLibrary.ttsTextFormatType> format) {
+        return ttsSetTextFormat(Pointer.getPeer(hReader), (int) format.value());
+    }
 
-    /** Undefined type */
-    public static interface ttsGraphicEQPresetType {
+    @Convention(Convention.Style.StdCall)
+    protected native static int ttsSetTextFormat(@Ptr long hReader, int format);
 
-    };
+    /**
+     * Original signature :
+     * <code>__attribute__((dllimport)) ttsResultType ttsGetTextFormat(ttsHandleType, ttsTextFormatType*)</code><br>
+     * <i>native declaration : loqtts.h:505</i>
+     */
+    @Convention(Convention.Style.StdCall)
+    public static int ttsGetTextFormat(Pointer<?> hReader,
+            Pointer<IntValuedEnum<LoquendoTTSLibrary.ttsTextFormatType>> format) {
+        return ttsGetTextFormat(Pointer.getPeer(hReader), Pointer.getPeer(format));
+    }
 
-    /** Undefined type */
-    public static interface tts_API_DEFINITION {
+    @Convention(Convention.Style.StdCall)
+    protected native static int ttsGetTextFormat(@Ptr long hReader, @Ptr long format);
 
-    };
+    /**
+     * Original signature :
+     * <code>__attribute__((dllimport)) ttsResultType ttsSaveCF(ttsHandleType, const char*)</code><br>
+     * <i>native declaration : loqtts.h:510</i>
+     */
+    @Convention(Convention.Style.StdCall)
+    public static int ttsSaveCF(Pointer<?> hObject, Pointer<Byte> sFileName) {
+        return ttsSaveCF(Pointer.getPeer(hObject), Pointer.getPeer(sFileName));
+    }
 
-    /** Undefined type */
-    public static interface ttsTextEncodingType {
+    @Convention(Convention.Style.StdCall)
+    protected native static int ttsSaveCF(@Ptr long hObject, @Ptr long sFileName);
 
-    };
+    /**
+     * Original signature :
+     * <code>__attribute__((dllimport)) ttsResultType ttsClone(ttsHandleType*, ttsHandleType, const char*)</code><br>
+     * <i>native declaration : loqtts.h:515</i>
+     */
+    @Convention(Convention.Style.StdCall)
+    public static int ttsClone(Pointer<Pointer<?>> hNewObject, Pointer<?> hObject, Pointer<Byte> sNewId) {
+        return ttsClone(Pointer.getPeer(hNewObject), Pointer.getPeer(hObject), Pointer.getPeer(sNewId));
+    }
 
-    /** Undefined type */
-    public static interface ttsURLCallbackType {
+    @Convention(Convention.Style.StdCall)
+    protected native static int ttsClone(@Ptr long hNewObject, @Ptr long hObject, @Ptr long sNewId);
 
-    };
+    /**
+     * Original signature :
+     * <code>__attribute__((dllimport)) ttsResultType ttsSaveConfigurationParam(const char*, const char*, const char*)</code><br>
+     * <i>native declaration : loqtts.h:521</i>
+     */
+    @Convention(Convention.Style.StdCall)
+    public static int ttsSaveConfigurationParam(Pointer<Byte> area, Pointer<Byte> key, Pointer<Byte> value) {
+        return ttsSaveConfigurationParam(Pointer.getPeer(area), Pointer.getPeer(key), Pointer.getPeer(value));
+    }
 
-    /** Undefined type */
-    public static interface ttsSkipType {
+    @Convention(Convention.Style.StdCall)
+    protected native static int ttsSaveConfigurationParam(@Ptr long area, @Ptr long key, @Ptr long value);
 
-    };
+    /**
+     * Original signature :
+     * <code>__attribute__((dllimport)) ttsResultType ttsLoadConfigurationParam(const char*, const char*, ttsInfoStringType)</code><br>
+     * <i>native declaration : loqtts.h:527</i>
+     */
+    @Convention(Convention.Style.StdCall)
+    public static int ttsLoadConfigurationParam(Pointer<Byte> area, Pointer<Byte> key, Pointer<Byte> value) {
+        return ttsLoadConfigurationParam(Pointer.getPeer(area), Pointer.getPeer(key), Pointer.getPeer(value));
+    }
 
-    /** Undefined type */
-    public static interface ttsTextFormatType {
+    @Convention(Convention.Style.StdCall)
+    protected native static int ttsLoadConfigurationParam(@Ptr long area, @Ptr long key, @Ptr long value);
 
-    };
+    /**
+     * Original signature :
+     * <code>__attribute__((dllimport)) ttsResultType ttsDeleteConfiguration(const char*)</code><br>
+     * <i>native declaration : loqtts.h:533</i>
+     */
+    @Convention(Convention.Style.StdCall)
+    public static int ttsDeleteConfiguration(Pointer<Byte> area) {
+        return ttsDeleteConfiguration(Pointer.getPeer(area));
+    }
 
-    /** Undefined type */
-    public static interface ttsEventType {
+    @Convention(Convention.Style.StdCall)
+    protected native static int ttsDeleteConfiguration(@Ptr long area);
 
-    };
+    /**
+     * Original signature :
+     * <code>__attribute__((dllimport)) ttsResultType ttsGetPhonemeInfo(ttsHandleType, const char**, unsigned int*)</code><br>
+     * <i>native declaration : loqtts.h:537</i>
+     */
+    @Convention(Convention.Style.StdCall)
+    public static int ttsGetPhonemeInfo(Pointer<?> hObject, Pointer<Pointer<Byte>> pLabel, Pointer<Integer> pDuration) {
+        return ttsGetPhonemeInfo(Pointer.getPeer(hObject), Pointer.getPeer(pLabel), Pointer.getPeer(pDuration));
+    }
 
-    /** Undefined type */
-    public static interface ttsAudioEncodingType {
+    @Convention(Convention.Style.StdCall)
+    protected native static int ttsGetPhonemeInfo(@Ptr long hObject, @Ptr long pLabel, @Ptr long pDuration);
 
-    };
+    /**
+     * Original signature :
+     * <code>__attribute__((dllimport)) ttsResultType ttsGetPCM(ttsHandleType, const void**, size_t*, ttsBoolType*)</code><br>
+     * <i>native declaration : loqtts.h:543</i>
+     */
+    @Convention(Convention.Style.StdCall)
+    public static int ttsGetPCM(Pointer<?> hObject, Pointer<Pointer<?>> pBuffer, Pointer<SizeT> pnSamples,
+            Pointer<Byte> bComplete) {
+        return ttsGetPCM(Pointer.getPeer(hObject), Pointer.getPeer(pBuffer), Pointer.getPeer(pnSamples),
+                Pointer.getPeer(bComplete));
+    }
 
-    /** Undefined type */
-    public static interface ttsQueryType {
+    @Convention(Convention.Style.StdCall)
+    protected native static int ttsGetPCM(@Ptr long hObject, @Ptr long pBuffer, @Ptr long pnSamples,
+            @Ptr long bComplete);
 
-    };
+    /**
+     * Original signature :
+     * <code>__attribute__((dllimport)) ttsResultType ttsGetTag(ttsHandleType, const char**)</code><br>
+     * <i>native declaration : loqtts.h:550</i>
+     */
+    @Convention(Convention.Style.StdCall)
+    public static int ttsGetTag(Pointer<?> hObject, Pointer<Pointer<Byte>> tag) {
+        return ttsGetTag(Pointer.getPeer(hObject), Pointer.getPeer(tag));
+    }
 
-    /** Undefined type */
-    public static interface ttsHandleType {
+    @Convention(Convention.Style.StdCall)
+    protected native static int ttsGetTag(@Ptr long hObject, @Ptr long tag);
 
-    };
+    /**
+     * Original signature :
+     * <code>__attribute__((dllimport)) ttsResultType ttsCheckPhoneticTranscription(ttsHandleType, const char*)</code><br>
+     * <i>native declaration : loqtts.h:555</i>
+     */
+    @Convention(Convention.Style.StdCall)
+    public static int ttsCheckPhoneticTranscription(Pointer<?> hReader, Pointer<Byte> PhoneticString) {
+        return ttsCheckPhoneticTranscription(Pointer.getPeer(hReader), Pointer.getPeer(PhoneticString));
+    }
 
-    /** Undefined type */
-    public static interface tts_API_DEFINITION_P {
+    @Convention(Convention.Style.StdCall)
+    protected native static int ttsCheckPhoneticTranscription(@Ptr long hReader, @Ptr long PhoneticString);
 
-    };
+    /**
+     * Original signature :
+     * <code>__attribute__((dllimport)) ttsResultType ttsClaimLicense(ttsHandleType, unsigned int*)</code><br>
+     * <i>native declaration : loqtts.h:560</i>
+     */
+    @Convention(Convention.Style.StdCall)
+    public static int ttsClaimLicense(Pointer<?> hReader, Pointer<Integer> time2wait) {
+        return ttsClaimLicense(Pointer.getPeer(hReader), Pointer.getPeer(time2wait));
+    }
 
-    /** Undefined type */
-    public static interface ttsAudioSampleType {
+    @Convention(Convention.Style.StdCall)
+    protected native static int ttsClaimLicense(@Ptr long hReader, @Ptr long time2wait);
 
-    };
+    /**
+     * Original signature :
+     * <code>__attribute__((dllimport)) ttsResultType ttsUnclaimLicense(ttsHandleType, unsigned int*)</code><br>
+     * <i>native declaration : loqtts.h:565</i>
+     */
+    @Convention(Convention.Style.StdCall)
+    public static int ttsUnclaimLicense(Pointer<?> hReader, Pointer<Integer> time2wait) {
+        return ttsUnclaimLicense(Pointer.getPeer(hReader), Pointer.getPeer(time2wait));
+    }
 
-    /** Undefined type */
-    public static interface ttsBoolType {
+    @Convention(Convention.Style.StdCall)
+    protected native static int ttsUnclaimLicense(@Ptr long hReader, @Ptr long time2wait);
 
-    };
+    /**
+     * Original signature :
+     * <code>__attribute__((dllimport)) ttsResultType ttsEnableEvent(ttsHandleType, ttsEventType, ttsBoolType)</code><br>
+     * <i>native declaration : loqtts.h:570</i>
+     */
+    @Convention(Convention.Style.StdCall)
+    public static int ttsEnableEvent(Pointer<?> hReader, IntValuedEnum<LoquendoTTSLibrary.ttsEventType> evt,
+            byte bEnabled) {
+        return ttsEnableEvent(Pointer.getPeer(hReader), (int) evt.value(), bEnabled);
+    }
 
-    /** Undefined type */
-    public static interface ttsResultType {
+    @Convention(Convention.Style.StdCall)
+    protected native static int ttsEnableEvent(@Ptr long hReader, int evt, byte bEnabled);
 
-    };
+    // /**
+    // * Original signature :
+    // * <code>__attribute__((dllimport)) ttsResultType ttsSetURLCallback(ttsHandleType, ttsURLCallbackType,
+    // void*)</code><br>
+    // * <i>native declaration : loqtts.h:576</i>
+    // */
+    // @Convention(Convention.Style.StdCall)
+    // public static int ttsSetURLCallback(Pointer<?> hReader, Pointer<LoquendoTTSLibrary.ttsURLCallbackType>
+    // pfnCallback,
+    // Pointer<?> pUser) {
+    // return ttsSetURLCallback(Pointer.getPeer(hReader), Pointer.getPeer(pfnCallback), Pointer.getPeer(pUser));
+    // }
+
+    // @Convention(Convention.Style.StdCall)
+    // protected native static int ttsSetURLCallback(@Ptr long hReader, @Ptr long pfnCallback, @Ptr long pUser);
+
+    /**
+     * Original signature :
+     * <code>__attribute__((dllimport)) ttsResultType ttsEnumConfigurationParameterFirst(ttsHandleType*, ttsBoolType, const char**, const char**)</code><br>
+     * <i>native declaration : loqtts.h:582</i>
+     */
+    @Convention(Convention.Style.StdCall)
+    public static int ttsEnumConfigurationParameterFirst(Pointer<Pointer<?>> phEnum, byte bReadOnly,
+            Pointer<Pointer<Byte>> pKey, Pointer<Pointer<Byte>> pDesc) {
+        return ttsEnumConfigurationParameterFirst(Pointer.getPeer(phEnum), bReadOnly, Pointer.getPeer(pKey),
+                Pointer.getPeer(pDesc));
+    }
+
+    @Convention(Convention.Style.StdCall)
+    protected native static int ttsEnumConfigurationParameterFirst(@Ptr long phEnum, byte bReadOnly, @Ptr long pKey,
+            @Ptr long pDesc);
+
+    /**
+     * Original signature :
+     * <code>__attribute__((dllimport)) ttsResultType ttsEnumConfigurationParameterNext(ttsHandleType, const char**, const char**)</code><br>
+     * <i>native declaration : loqtts.h:589</i>
+     */
+    @Convention(Convention.Style.StdCall)
+    public static int ttsEnumConfigurationParameterNext(Pointer<?> hEnum, Pointer<Pointer<Byte>> pKey,
+            Pointer<Pointer<Byte>> pDesc) {
+        return ttsEnumConfigurationParameterNext(Pointer.getPeer(hEnum), Pointer.getPeer(pKey), Pointer.getPeer(pDesc));
+    }
+
+    @Convention(Convention.Style.StdCall)
+    protected native static int ttsEnumConfigurationParameterNext(@Ptr long hEnum, @Ptr long pKey, @Ptr long pDesc);
+
+    /**
+     * Original signature :
+     * <code>__attribute__((dllimport)) ttsBoolType ttsIsMp3SupportInstalled(ttsInfoStringType)</code><br>
+     * <i>native declaration : loqtts.h:595</i>
+     */
+    @Convention(Convention.Style.StdCall)
+    public static byte ttsIsMp3SupportInstalled(Pointer<Byte> libName) {
+        return ttsIsMp3SupportInstalled(Pointer.getPeer(libName));
+    }
+
+    @Convention(Convention.Style.StdCall)
+    protected native static byte ttsIsMp3SupportInstalled(@Ptr long libName);
 }

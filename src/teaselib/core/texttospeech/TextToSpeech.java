@@ -16,6 +16,7 @@ import teaselib.core.ScriptInterruptedException;
 import teaselib.core.events.Delegate;
 import teaselib.core.events.DelegateExecutor;
 import teaselib.core.texttospeech.implementation.TeaseLibTTS;
+import teaselib.core.texttospeech.implementation.loquendo.LoquendoTTS;
 import teaselib.core.util.ExceptionUtil;
 
 public class TextToSpeech {
@@ -51,6 +52,7 @@ public class TextToSpeech {
 
     private static Set<String> getImplementations() {
         Set<String> names = new HashSet<>();
+        names.add(LoquendoTTS.class.getName());
         names.add(TeaseLibTTS.class.getName());
         return names;
     }
@@ -70,7 +72,13 @@ public class TextToSpeech {
         Delegate delegate = new Delegate() {
             @Override
             public void run() throws ReflectiveOperationException {
-                Method getInstance = ttsClass.getDeclaredMethod("getInstance");
+                Method getInstance;
+                try {
+                    getInstance = ttsClass.getDeclaredMethod("getInstance");
+                } catch (NoSuchMethodException e) {
+                    // getInstance = null;
+                    throw e;
+                }
                 TextToSpeechImplementation newTTS = null;
                 if (getInstance != null) {
                     newTTS = (TextToSpeechImplementation) getInstance.invoke(this);

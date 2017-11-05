@@ -1,41 +1,100 @@
 package teaselib.core.texttospeech.implementation.loquendo;
 
+import java.io.File;
+import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.bridj.BridJ;
 import org.bridj.Pointer;
 import org.bridj.Pointer.StringType;
 
 import teaselib.core.texttospeech.TextToSpeechImplementation;
 import teaselib.core.texttospeech.Voice;
-import teaselib.core.texttospeech.implementation.loquendo.LoquendoTTSLibrary.ttsHandleType;
-import teaselib.core.texttospeech.implementation.loquendo.LoquendoTTSLibrary.tts_API_DEFINITION;
+import teaselib.core.texttospeech.implementation.loquendo.LoquendoTTSLibrary.ttsQueryType;
 
 public class LoquendoTTS extends TextToSpeechImplementation {
+    private static LoquendoTTS instance = null;
+
+    public static synchronized LoquendoTTS getInstance() throws IOException {
+        if (instance == null) {
+            System.load("C:/Program Files/Loquendo/LTTS7/bin/LoqTTS7.dll");
+            BridJ.getNativeLibrary("LoquendoTTS", new File("C:/Program Files/Loquendo/LTTS7/bin/LoqTTS7.dll"));
+            instance = new LoquendoTTS();
+        }
+        return instance;
+    }
+
     private final List<Voice> voices;
 
-    ttsHandleType hSession;
-    ttsHandleType hReader;
+    Pointer<?> hSession;
+    Pointer<?> hReader;
 
     public LoquendoTTS() {
-        // TODO tts_API_DEFINITION must be ttsResultType - see hello example -> custom jaenerator script
-        // Include other include files to get the corret types
-        Pointer<ttsHandleType> phSession = Pointer.allocate(ttsHandleType.class);
-        tts_API_DEFINITION ttsNewSession = LoquendoTTSLibrary.ttsNewSession(phSession, null);
+        Pointer<Pointer<?>> phSession = Pointer.allocatePointer();
+        checkResult(LoquendoTTSLibrary.ttsNewSession(phSession, null));
         hSession = phSession.get();
 
-        Pointer<ttsHandleType> phReader = Pointer.allocate(ttsHandleType.class);
-        tts_API_DEFINITION ttsNewReader = LoquendoTTSLibrary.ttsNewReader(phReader, phSession.get());
+        Pointer<Pointer<?>> phReader = Pointer.allocatePointer();
+        checkResult(LoquendoTTSLibrary.ttsNewReader(phReader, hSession));
         hReader = phReader.get();
 
         voices = enumerateVoices();
     }
 
-    private List<Voice> enumerateVoices() {
-        List<Voice> voices = new ArrayList<>();
+    /**
+     * @param ttsNewSession
+     */
+    static void checkResult(int result) {
+        if (result != LoquendoTTSLibrary.tts_OK) {
+            throw new RuntimeException(LoquendoTTS.class.getSimpleName() + ": error" + Integer.toString(result));
+        }
+    }
 
-        return voices;
+    private List<Voice> enumerateVoices() {
+        List<Voice> list = new ArrayList<>();
+
+        Pointer<Pointer<Byte>> id = Pointer.allocatePointer(Byte.class);
+        Pointer<Pointer<?>> phEnum = Pointer.allocatePointer();
+
+        int r = LoquendoTTSLibrary.ttsEnumFirst(phEnum, hSession, LoquendoTTSLibrary.ttsQueryType.TTSOBJECTVOICE, null,
+                id);
+        if (r == LoquendoTTSLibrary.tts_OK && id.get() != null)
+            do {
+                String guid = id.get().getString(StringType.C);
+
+                Pointer<Pointer<?>> phVoice = Pointer.allocatePointer();
+                checkResult(LoquendoTTSLibrary.ttsNewVoice(phVoice, hSession, Pointer.pointerToCString(guid)));
+
+                Pointer<Pointer<?>> phLanguage = Pointer.allocatePointer();
+                String motherTongue = queryVoiceAttribute(id.get(), "MotherTongue");
+                checkResult(LoquendoTTSLibrary.ttsNewLanguage(phLanguage, hSession,
+                        Pointer.pointerToCString(motherTongue)));
+
+                list.add(new LoquendoVoice(this, phVoice.get(), phLanguage.get(), guid));
+            } while (LoquendoTTSLibrary.ttsEnumNext(phEnum.get(), id) == LoquendoTTSLibrary.tts_OK && id.get() != null);
+        LoquendoTTSLibrary.ttsEnumClose(phEnum.get());
+
+        return list;
+    }
+
+    String queryVoiceAttribute(Pointer<Byte> id, String attribute) {
+        ttsQueryType queryType = LoquendoTTSLibrary.ttsQueryType.TTSOBJECTVOICE;
+        return queryAttribute(queryType, id, attribute);
+    }
+
+    String queryLanguageAttribute(Pointer<Byte> id, String attribute) {
+        ttsQueryType queryType = LoquendoTTSLibrary.ttsQueryType.TTSOBJECTLANGUAGE;
+        return queryAttribute(queryType, id, attribute);
+    }
+
+    public String queryAttribute(ttsQueryType queryType, Pointer<Byte> id, String attribute) {
+        Pointer<Byte> sAttribute = Pointer.pointerToCString(attribute).as(Byte.class);
+        Pointer<Byte> pResultBuffer = Pointer.allocateBytes(LoquendoTTSLibrary.ttsSTRINGMAXLEN);
+        checkResult(LoquendoTTSLibrary.ttsQueryAttribute(hSession, queryType, sAttribute, id, pResultBuffer,
+                LoquendoTTSLibrary.ttsSTRINGMAXLEN));
+        return pResultBuffer.getCString();
     }
 
     @Override
@@ -45,16 +104,16 @@ public class LoquendoTTS extends TextToSpeechImplementation {
 
     @Override
     public void setVoice(Voice voice) {
-        LoquendoTTSLibrary.ttsSetVoice(hReader, ((LoquendoVoice) voice).hVoice);
+        checkResult(LoquendoTTSLibrary.ttsSetVoice(hReader, ((LoquendoVoice) voice).hVoice));
 
     }
 
     @Override
     public void speak(String prompt) {
-        // LoquendoTTSLibrary.ttsRead(hReader, Pointer.pointerToString(prompt, StringType.C, Charset.defaultCharset()),
-        // true, false, 0);
+        Pointer<?> pointerToString = Pointer.pointerToString(prompt, StringType.C, Charset.defaultCharset());
 
-        // TODO define Loquendo ttsBoolType as non-empty interface -> values true==1/false==0
+        LoquendoTTSLibrary.ttsRead(hReader, pointerToString, (byte) LoquendoTTSLibrary.ttsTRUE,
+                (byte) LoquendoTTSLibrary.ttsFALSE, null);
     }
 
     @Override

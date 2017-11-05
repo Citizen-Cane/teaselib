@@ -59,7 +59,6 @@ public class NativeVoice extends NativeObject implements Voice {
 
     @Override
     public String toString() {
-        return "[guid=" + guid + ", gender= " + gender + ", locale=" + locale + ", vendor=" + voiceInfo.vendor
-                + ", language=" + voiceInfo.language + ", name=" + voiceInfo.name + ", sdk=" + ttsImpl.sdkName() + "]";
+        return TextToSpeechImplementation.toString(this);
     }
 }

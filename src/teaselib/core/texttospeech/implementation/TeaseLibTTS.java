@@ -1,7 +1,5 @@
 package teaselib.core.texttospeech.implementation;
 
-import static teaselib.core.texttospeech.TextToSpeechImplementation.UPS;
-
 import java.util.List;
 
 import teaselib.core.texttospeech.TextToSpeechImplementation;

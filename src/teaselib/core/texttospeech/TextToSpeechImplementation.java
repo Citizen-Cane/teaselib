@@ -81,4 +81,10 @@ public abstract class TextToSpeechImplementation {
         }
     }
 
+    public static String toString(Voice voice) {
+        return "[guid=" + voice.guid() + ", gender=" + voice.gender() + ", locale=" + voice.locale() + ", vendor="
+                + voice.info().vendor + ", language=" + voice.info().language + ", name=" + voice.info().name + ", sdk="
+                + voice.tts().sdkName() + "]";
+    }
+
 }

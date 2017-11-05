@@ -27,12 +27,40 @@ public class LoquendoVoice implements Voice {
         this.gender = gender(tts.queryVoiceAttribute(Pointer.pointerToCString(id), "Gender"));
         String language = tts.queryVoiceAttribute(Pointer.pointerToCString(id), "MotherTongue");
 
-        // TODO Extract locale ??-??
-        this.locale = tts.queryLanguageAttribute(Pointer.pointerToCString(language), "Language");
+        String languageAliases = tts.queryLanguageAttribute(Pointer.pointerToCString(language), "Language");
+        this.locale = extractLocale(languageAliases);
 
-        this.info = new VoiceInfo("Loquendo",
-                // TODO remove "language" from description
-                tts.queryLanguageAttribute(Pointer.pointerToCString(language), "Description"), id);
+        String languageDescription = tts.queryLanguageAttribute(Pointer.pointerToCString(language), "Description");
+        int removeUnwantedTextIndex = languageDescription.lastIndexOf(" language");
+        if (removeUnwantedTextIndex >= 0) {
+            languageDescription = languageDescription.substring(0, removeUnwantedTextIndex);
+        }
+        this.info = new VoiceInfo("Loquendo", languageDescription, id);
+    }
+
+    public String extractLocale(String languageAliases) {
+        String locale = null;
+
+        String[] candidates = languageAliases.split(",");
+
+        for (String candidate : candidates) {
+            if (candidate.length() > 2 && candidate.substring(2, 3).equals("-")) {
+                locale = candidate;
+            }
+        }
+
+        if (locale == null) {
+            for (String candidate : candidates) {
+                if (candidate.length() == 2) {
+                    locale = candidate;
+                }
+            }
+        }
+
+        if (locale == null) {
+            locale = "??-??";
+        }
+        return locale;
     }
 
     private static Gender gender(String gender) {

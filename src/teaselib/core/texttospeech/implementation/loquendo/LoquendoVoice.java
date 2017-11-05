@@ -38,27 +38,39 @@ public class LoquendoVoice implements Voice {
         this.info = new VoiceInfo("Loquendo", languageDescription, id);
     }
 
-    public String extractLocale(String languageAliases) {
+    public static String extractLocale(String languageAliases) {
         String locale = null;
 
         String[] candidates = languageAliases.split(",");
-
-        for (String candidate : candidates) {
-            if (candidate.length() > 2 && candidate.substring(2, 3).equals("-")) {
-                locale = candidate;
-            }
-        }
+        locale = extractIETFLanguageTag(locale, candidates);
 
         if (locale == null) {
-            for (String candidate : candidates) {
-                if (candidate.length() == 2) {
-                    locale = candidate;
-                }
-            }
+            locale = extractLanguageCode(candidates);
         }
 
         if (locale == null) {
             locale = "??-??";
+        }
+
+        return locale;
+    }
+
+    public static String extractLanguageCode(String[] candidates) {
+        String languageCode = null;
+
+        for (String candidate : candidates) {
+            if (candidate.length() == 2) {
+                languageCode = candidate;
+            }
+        }
+        return languageCode;
+    }
+
+    public static String extractIETFLanguageTag(String locale, String[] candidates) {
+        for (String candidate : candidates) {
+            if (candidate.length() > 2 && candidate.substring(2, 3).equals("-")) {
+                locale = candidate;
+            }
         }
         return locale;
     }
@@ -71,7 +83,6 @@ public class LoquendoVoice implements Voice {
         } else {
             throw new IllegalArgumentException();
         }
-
     }
 
     @Override

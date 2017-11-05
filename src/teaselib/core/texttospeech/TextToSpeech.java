@@ -36,9 +36,8 @@ public class TextToSpeech {
     public static final Set<String> BlackList = new HashSet<>(Arrays.asList("LTTS7Ludoviko", "MSMary", "MSMike"));
 
     public TextToSpeech() {
-        Set<String> names = getImplementations();
-        if (!names.isEmpty()) {
-            addImplementation(names.iterator().next());
+        for (String name : implementations()) {
+            addImplementation(name);
         }
     }
 
@@ -50,7 +49,7 @@ public class TextToSpeech {
         addImplementation(ttsClass);
     }
 
-    private static Set<String> getImplementations() {
+    private static Set<String> implementations() {
         Set<String> names = new HashSet<>();
         names.add(LoquendoTTS.class.getName());
         names.add(TeaseLibTTS.class.getName());
@@ -76,8 +75,7 @@ public class TextToSpeech {
                 try {
                     getInstance = ttsClass.getDeclaredMethod("getInstance");
                 } catch (NoSuchMethodException e) {
-                    // getInstance = null;
-                    throw e;
+                    getInstance = null;
                 }
                 TextToSpeechImplementation newTTS = null;
                 if (getInstance != null) {

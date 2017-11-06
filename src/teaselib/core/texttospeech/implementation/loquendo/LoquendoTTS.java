@@ -2,7 +2,6 @@ package teaselib.core.texttospeech.implementation.loquendo;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -19,6 +18,8 @@ public class LoquendoTTS extends TextToSpeechImplementation {
 
     public static synchronized LoquendoTTS getInstance() throws IOException {
         if (instance == null) {
+            // TODO check Operating system
+            // TODO check x86 location
             System.load("C:/Program Files/Loquendo/LTTS7/bin/LoqTTS7.dll");
             BridJ.getNativeLibrary("LoquendoTTS", new File("C:/Program Files/Loquendo/LTTS7/bin/LoqTTS7.dll"));
             instance = new LoquendoTTS();
@@ -28,8 +29,10 @@ public class LoquendoTTS extends TextToSpeechImplementation {
 
     private final List<Voice> voices;
 
-    Pointer<?> hSession;
-    Pointer<?> hReader;
+    final Pointer<?> hSession;
+    Pointer<?> hReader = null;
+
+    private boolean cancelSpeech = false;
 
     public LoquendoTTS() {
         Pointer<Pointer<?>> phSession = Pointer.allocatePointer();
@@ -40,15 +43,21 @@ public class LoquendoTTS extends TextToSpeechImplementation {
         checkResult(LoquendoTTSLibrary.ttsNewReader(phReader, hSession));
         hReader = phReader.get();
 
+        speakToAudioBoard();
+
+        checkResult(
+                LoquendoTTSLibrary.ttsSetTextFormat(hReader, LoquendoTTSLibrary.ttsTextFormatType.TTSAUTODETECTFORMAT));
+
         voices = enumerateVoices();
     }
 
     /**
      * @param ttsNewSession
      */
-    static void checkResult(int result) {
-        if (result != LoquendoTTSLibrary.tts_OK) {
-            throw new RuntimeException(LoquendoTTS.class.getSimpleName() + ": error" + Integer.toString(result));
+    static void checkResult(int errNo) {
+        if (errNo != LoquendoTTSLibrary.tts_OK) {
+            Pointer<Byte> message = LoquendoTTSLibrary.ttsGetErrorMessage(errNo);
+            throw new LoquendoTTSException("Error #" + Integer.toString(errNo) + ": " + message.getCString());
         }
     }
 
@@ -105,30 +114,61 @@ public class LoquendoTTS extends TextToSpeechImplementation {
     @Override
     public void setVoice(Voice voice) {
         checkResult(LoquendoTTSLibrary.ttsSetVoice(hReader, ((LoquendoVoice) voice).hVoice));
-
+        checkResult(LoquendoTTSLibrary.ttsSetLanguage(hReader, ((LoquendoVoice) voice).hLanguage));
     }
 
     @Override
     public void speak(String prompt) {
-        Pointer<?> pointerToString = Pointer.pointerToString(prompt, StringType.C, Charset.defaultCharset());
+        checkResult(LoquendoTTSLibrary.ttsRead(hReader, Pointer.pointerToCString(prompt),
+                (byte) LoquendoTTSLibrary.ttsTRUE, (byte) LoquendoTTSLibrary.ttsFALSE, null));
 
-        LoquendoTTSLibrary.ttsRead(hReader, pointerToString, (byte) LoquendoTTSLibrary.ttsTRUE,
-                (byte) LoquendoTTSLibrary.ttsFALSE, null);
+        cancelSpeech = false;
+        Pointer<Byte> bSignaled = Pointer.allocate(Byte.class);
+        bSignaled.set((byte) 0);
+        while (bSignaled.getByte() == 0) {
+            if (cancelSpeech) {
+                checkResult(LoquendoTTSLibrary.ttsStop(hReader));
+                break;
+            } else {
+                checkResult(LoquendoTTSLibrary.ttsWaitForEndOfSpeech(hReader, 100, bSignaled));
+            }
+        }
+    }
+
+    public void speakToAudioBoard() {
+        checkResult(LoquendoTTSLibrary.ttsSetAudio(hReader, Pointer.pointerToCString("LTTS7AudioBoard"), null, 32000,
+                LoquendoTTSLibrary.ttsAudioEncodingType.tts_LINEAR, LoquendoTTSLibrary.ttsAudioSampleType.tts_MONO,
+                null));
     }
 
     @Override
     public String speak(String prompt, String wav) {
-        // TODO Auto-generated method stub
-        return null;
+        speakToFile(wav);
+
+        try {
+            checkResult(LoquendoTTSLibrary.ttsRead(hReader, Pointer.pointerToCString(prompt),
+                    (byte) LoquendoTTSLibrary.ttsFALSE, (byte) LoquendoTTSLibrary.ttsFALSE, null));
+        } finally {
+            speakToAudioBoard();
+        }
+
+        return wav;
+    }
+
+    public void speakToFile(String wav) {
+        checkResult(LoquendoTTSLibrary.ttsSetAudio(hReader, Pointer.pointerToCString("LTTS7AudioFile"),
+                Pointer.pointerToCString(wav), 32000, LoquendoTTSLibrary.ttsAudioEncodingType.tts_LINEAR,
+                LoquendoTTSLibrary.ttsAudioSampleType.tts_MONO, null));
     }
 
     @Override
     public void stop() {
-        LoquendoTTSLibrary.ttsStop(hReader);
+        cancelSpeech = true;
     }
 
     @Override
     public void dispose() {
+        stop();
     }
 
     @Override

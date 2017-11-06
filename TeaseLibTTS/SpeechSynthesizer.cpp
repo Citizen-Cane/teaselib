@@ -219,7 +219,7 @@ std::wstring SpeechSynthesizer::speak(const wchar_t *prompt, const wchar_t* path
     const std::wstring soundFile = std::wstring(path) + (hasSuffix(path, L".wav") ? L"" :  L".wav");
     //Set the audio format
     CSpStreamFormat cAudioFmt;
-    hr = cAudioFmt.AssignFormat(SPSF_22kHz16BitMono);
+    hr = cAudioFmt.AssignFormat(SPSF_32kHz16BitMono);
     assert(SUCCEEDED(hr));
     //Call SPBindToFile, a SAPI helper method, to bind the audio stream to the file
     if (SUCCEEDED(hr)) {

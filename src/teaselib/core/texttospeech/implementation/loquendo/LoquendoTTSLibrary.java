@@ -46,10 +46,12 @@ public class LoquendoTTSLibrary {
 
         public final long value;
 
+        @Override
         public long value() {
             return this.value;
         }
 
+        @Override
         public Iterator<ttsCallbackType> iterator() {
             return Collections.singleton(this).iterator();
         }
@@ -57,7 +59,7 @@ public class LoquendoTTSLibrary {
         public static IntValuedEnum<ttsCallbackType> fromValue(int value) {
             return FlagSet.fromValue(value, values());
         }
-    };
+    }
 
     /**
      * enum values<br>
@@ -97,10 +99,12 @@ public class LoquendoTTSLibrary {
 
         public final long value;
 
+        @Override
         public long value() {
             return this.value;
         }
 
+        @Override
         public Iterator<ttsEventType> iterator() {
             return Collections.singleton(this).iterator();
         }
@@ -108,7 +112,7 @@ public class LoquendoTTSLibrary {
         public static IntValuedEnum<ttsEventType> fromValue(int value) {
             return FlagSet.fromValue(value, values());
         }
-    };
+    }
 
     /**
      * enum values<br>
@@ -124,10 +128,12 @@ public class LoquendoTTSLibrary {
 
         public final long value;
 
+        @Override
         public long value() {
             return this.value;
         }
 
+        @Override
         public Iterator<ttsSkipType> iterator() {
             return Collections.singleton(this).iterator();
         }
@@ -135,7 +141,7 @@ public class LoquendoTTSLibrary {
         public static IntValuedEnum<ttsSkipType> fromValue(int value) {
             return FlagSet.fromValue(value, values());
         }
-    };
+    }
 
     /**
      * enum values<br>
@@ -152,10 +158,12 @@ public class LoquendoTTSLibrary {
 
         public final long value;
 
+        @Override
         public long value() {
             return this.value;
         }
 
+        @Override
         public Iterator<ttsQueryType> iterator() {
             return Collections.singleton(this).iterator();
         }
@@ -163,7 +171,7 @@ public class LoquendoTTSLibrary {
         public static IntValuedEnum<ttsQueryType> fromValue(int value) {
             return FlagSet.fromValue(value, values());
         }
-    };
+    }
 
     /**
      * enum values<br>
@@ -178,10 +186,12 @@ public class LoquendoTTSLibrary {
 
         public final long value;
 
+        @Override
         public long value() {
             return this.value;
         }
 
+        @Override
         public Iterator<ttsAudioSampleType> iterator() {
             return Collections.singleton(this).iterator();
         }
@@ -189,7 +199,7 @@ public class LoquendoTTSLibrary {
         public static IntValuedEnum<ttsAudioSampleType> fromValue(int value) {
             return FlagSet.fromValue(value, values());
         }
-    };
+    }
 
     /**
      * enum values<br>
@@ -205,10 +215,12 @@ public class LoquendoTTSLibrary {
 
         public final long value;
 
+        @Override
         public long value() {
             return this.value;
         }
 
+        @Override
         public Iterator<ttsAudioEncodingType> iterator() {
             return Collections.singleton(this).iterator();
         }
@@ -216,7 +228,7 @@ public class LoquendoTTSLibrary {
         public static IntValuedEnum<ttsAudioEncodingType> fromValue(int value) {
             return FlagSet.fromValue(value, values());
         }
-    };
+    }
 
     /**
      * enum values<br>
@@ -232,10 +244,12 @@ public class LoquendoTTSLibrary {
 
         public final long value;
 
+        @Override
         public long value() {
             return this.value;
         }
 
+        @Override
         public Iterator<ttsAudioCodingType> iterator() {
             return Collections.singleton(this).iterator();
         }
@@ -243,7 +257,7 @@ public class LoquendoTTSLibrary {
         public static IntValuedEnum<ttsAudioCodingType> fromValue(int value) {
             return FlagSet.fromValue(value, values());
         }
-    };
+    }
 
     /**
      * enum values<br>
@@ -286,10 +300,12 @@ public class LoquendoTTSLibrary {
 
         public final long value;
 
+        @Override
         public long value() {
             return this.value;
         }
 
+        @Override
         public Iterator<ttsGraphicEQBandType> iterator() {
             return Collections.singleton(this).iterator();
         }
@@ -297,7 +313,7 @@ public class LoquendoTTSLibrary {
         public static IntValuedEnum<ttsGraphicEQBandType> fromValue(int value) {
             return FlagSet.fromValue(value, values());
         }
-    };
+    }
 
     /**
      * enum values<br>
@@ -317,10 +333,12 @@ public class LoquendoTTSLibrary {
 
         public final long value;
 
+        @Override
         public long value() {
             return this.value;
         }
 
+        @Override
         public Iterator<ttsGraphicEQPresetType> iterator() {
             return Collections.singleton(this).iterator();
         }
@@ -328,7 +346,7 @@ public class LoquendoTTSLibrary {
         public static IntValuedEnum<ttsGraphicEQPresetType> fromValue(int value) {
             return FlagSet.fromValue(value, values());
         }
-    };
+    }
 
     /**
      * enum values<br>
@@ -403,10 +421,12 @@ public class LoquendoTTSLibrary {
 
         public final long value;
 
+        @Override
         public long value() {
             return this.value;
         }
 
+        @Override
         public Iterator<ttsTextEncodingType> iterator() {
             return Collections.singleton(this).iterator();
         }
@@ -414,7 +434,7 @@ public class LoquendoTTSLibrary {
         public static IntValuedEnum<ttsTextEncodingType> fromValue(int value) {
             return FlagSet.fromValue(value, values());
         }
-    };
+    }
 
     /**
      * enum values<br>
@@ -430,10 +450,12 @@ public class LoquendoTTSLibrary {
 
         public final long value;
 
+        @Override
         public long value() {
             return this.value;
         }
 
+        @Override
         public Iterator<ttsTextFormatType> iterator() {
             return Collections.singleton(this).iterator();
         }
@@ -441,261 +463,85 @@ public class LoquendoTTSLibrary {
         public static IntValuedEnum<ttsTextFormatType> fromValue(int value) {
             return FlagSet.fromValue(value, values());
         }
-    };
+    }
 
     /** <i>native declaration : loqtypes.h</i> */
-    public static final int TTS_INT32_MAX = (int) 2147483647;
+    public static final int TTS_INT32_MAX = 2147483647;
     /** <i>native declaration : loqtypes.h</i> */
-    public static final long TTS_UINT32_MAX = (long) 4294967295L;
+    public static final long TTS_UINT32_MAX = 4294967295L;
     /** <i>native declaration : loqtypes.h</i> */
-    public static final int ttsTRUE = (int) 1;
+    public static final int ttsTRUE = 1;
     /** <i>native declaration : loqtypes.h</i> */
-    public static final int ttsFALSE = (int) 0;
+    public static final int ttsFALSE = 0;
     /** <i>native declaration : loqtypes.h</i> */
-    public static final int ttsSTRINGMAXLEN = (int) 512;
+    public static final int ttsSTRINGMAXLEN = 512;
     /** <i>native declaration : loqtypes.h</i> */
-    public static final long ttsINFINITE = (long) (-1);
+    public static final long ttsINFINITE = (-1);
     /** <i>native declaration : loqtypes.h</i> */
-    public static final String tts_GET_VERSION = (String) "GetVersion";
+    public static final String tts_GET_VERSION = "GetVersion";
     /** <i>native declaration : loqtypes.h</i> */
-    public static final String tts_LOAD_UTIL_SYMBOLS = (String) "LoadUtilSymbols";
+    public static final String tts_LOAD_UTIL_SYMBOLS = "LoadUtilSymbols";
     /** <i>native declaration : loqtypes.h</i> */
-    public static final int tts_OK = (int) 0;
+    public static final int tts_OK = 0;
     /** <i>native declaration : loqtypes.h</i> */
-    public static final int ttsERROR_FILEWRITE = (int) 1;
+    public static final int ttsERROR_FILEWRITE = 1;
     /** <i>native declaration : loqtypes.h</i> */
-    public static final int ttsERROR_FILEREAD = (int) 2;
+    public static final int ttsERROR_FILEREAD = 2;
     /** <i>native declaration : loqtypes.h</i> */
-    public static final int ttsERROR_NOTINIT = (int) 3;
+    public static final int ttsERROR_NOTINIT = 3;
     /** <i>native declaration : loqtypes.h</i> */
-    public static final int ttsERROR_INTERNAL = (int) 4;
+    public static final int ttsERROR_INTERNAL = 4;
     /** <i>native declaration : loqtypes.h</i> */
-    public static final int ttsERROR_OUTOFMEMORY = (int) 5;
+    public static final int ttsERROR_OUTOFMEMORY = 5;
     /** <i>native declaration : loqtypes.h</i> */
-    public static final int ttsERROR_CONFIGURATION = (int) 6;
+    public static final int ttsERROR_CONFIGURATION = 6;
     /** <i>native declaration : loqtypes.h</i> */
-    public static final int ttsERROR_ACCESSDENIED = (int) 7;
+    public static final int ttsERROR_ACCESSDENIED = 7;
     /** <i>native declaration : loqtypes.h</i> */
-    public static final int ttsERROR_SYNTAX = (int) 8;
+    public static final int ttsERROR_SYNTAX = 8;
     /** <i>native declaration : loqtypes.h</i> */
-    public static final int ttsERROR_DEVICEBUSY = (int) 9;
+    public static final int ttsERROR_DEVICEBUSY = 9;
     /** <i>native declaration : loqtypes.h</i> */
-    public static final int ttsERROR_LICENSING = (int) 10;
+    public static final int ttsERROR_LICENSING = 10;
     /** <i>native declaration : loqtypes.h</i> */
-    public static final int ttsERROR_OBSOLETE = (int) 11;
+    public static final int ttsERROR_OBSOLETE = 11;
     /** <i>native declaration : loqtypes.h</i> */
-    public static final int ttsERROR_INVALIDPARAM = (int) 12;
+    public static final int ttsERROR_INVALIDPARAM = 12;
     /** <i>native declaration : loqtypes.h</i> */
-    public static final int ttsERROR_DATAOVERFLOW = (int) 13;
+    public static final int ttsERROR_DATAOVERFLOW = 13;
     /** <i>native declaration : loqtypes.h</i> */
-    public static final int ttsERROR_EXTERNALPLUGIN = (int) 14;
+    public static final int ttsERROR_EXTERNALPLUGIN = 14;
     /** <i>native declaration : loqtypes.h</i> */
-    public static final int ttsERROR_INCOMPATIBLE = (int) 15;
+    public static final int ttsERROR_INCOMPATIBLE = 15;
     /** <i>native declaration : loqtypes.h</i> */
-    public static final int ttsERROR_TOOMANYITEMS = (int) 16;
+    public static final int ttsERROR_TOOMANYITEMS = 16;
     /** <i>native declaration : loqtypes.h</i> */
-    public static final int ttsERROR_DUPLICATEITEM = (int) 17;
+    public static final int ttsERROR_DUPLICATEITEM = 17;
     /** <i>native declaration : loqtypes.h</i> */
-    public static final int ttsERROR_UNSUPPORTED = (int) 18;
+    public static final int ttsERROR_UNSUPPORTED = 18;
     /** <i>native declaration : loqtypes.h</i> */
-    public static final String TTSAUDIO_OPEN = (String) "AudioOpen";
+    public static final String TTSAUDIO_OPEN = "AudioOpen";
     /** <i>native declaration : loqtypes.h</i> */
-    public static final String TTSAUDIO_CLOSE = (String) "AudioClose";
+    public static final String TTSAUDIO_CLOSE = "AudioClose";
     /** <i>native declaration : loqtypes.h</i> */
-    public static final String TTSAUDIO_PUTDATA = (String) "AudioPutData";
+    public static final String TTSAUDIO_PUTDATA = "AudioPutData";
     /** <i>native declaration : loqtypes.h</i> */
-    public static final String TTSAUDIO_STOP = (String) "AudioStop";
+    public static final String TTSAUDIO_STOP = "AudioStop";
     /** <i>native declaration : loqtypes.h</i> */
-    public static final String TTSAUDIO_PAUSE = (String) "AudioPause";
+    public static final String TTSAUDIO_PAUSE = "AudioPause";
     /** <i>native declaration : loqtypes.h</i> */
-    public static final String TTSAUDIO_RESUME = (String) "AudioResume";
+    public static final String TTSAUDIO_RESUME = "AudioResume";
     /** <i>native declaration : loqtypes.h</i> */
-    public static final String TTSAUDIO_GETERRORMESSAGE = (String) "AudioGetError";
+    public static final String TTSAUDIO_GETERRORMESSAGE = "AudioGetError";
     /** <i>native declaration : loqtypes.h</i> */
-    public static final int TTS_AUDIOFULL = (int) -1;
+    public static final int TTS_AUDIOFULL = -1;
     /** <i>native declaration : loqtypes.h</i> */
-    public static final String ttsNEED_C_LINKING = (String) "C";
+    public static final String ttsNEED_C_LINKING = "C";
 
     /** <i>native declaration : loqtypes.h</i> */
     public static abstract class ttsMagicNumberType extends Callback<ttsMagicNumberType> {
         public abstract int apply();
-    };
-
-    // /** <i>native declaration : loqtypes.h</i> */
-    // public static abstract class ttsCallbackFunctionType extends Callback<ttsCallbackFunctionType> {
-    // public void apply(@Ptr long PromptID, IntValuedEnum<LoquendoTTSLibrary.ttsEventType> nReason, Pointer<?> lData,
-    // Pointer<?> pUser) {
-    // apply(PromptID, (int) nReason.value(), Pointer.getPeer(lData), Pointer.getPeer(pUser));
-    // }
-    //
-    // public void apply(@Ptr long PromptID, int nReason, @Ptr long lData, @Ptr long pUser) {
-    // apply(PromptID, FlagSet.fromValue(nReason, LoquendoTTSLibrary.ttsEventType.class),
-    // Pointer.pointerToAddress(lData), Pointer.pointerToAddress(pUser));
-    // }
-    // };
-
-    // /** <i>native declaration : loqtypes.h</i> */
-    // public static abstract class ttsCallbackPascalFunctionType extends Callback<ttsCallbackPascalFunctionType> {
-    // @Convention(Convention.Style.StdCall)
-    // public void apply(@Ptr long PromptID, IntValuedEnum<LoquendoTTSLibrary.ttsEventType> nReason, Pointer<?> lData,
-    // Pointer<?> pUser) {
-    // apply(PromptID, (int) nReason.value(), Pointer.getPeer(lData), Pointer.getPeer(pUser));
-    // }
-    //
-    // @Convention(Convention.Style.StdCall)
-    // public void apply(@Ptr long PromptID, int nReason, @Ptr long lData, @Ptr long pUser) {
-    // apply(PromptID, FlagSet.fromValue(nReason, LoquendoTTSLibrary.ttsEventType.class),
-    // Pointer.pointerToAddress(lData), Pointer.pointerToAddress(pUser));
-    // }
-    // };
-
-    // /** <i>native declaration : loqtypes.h</i> */
-    // public static abstract class ttsURLCallbackType extends Callback<ttsURLCallbackType> {
-    // public byte apply(Pointer<Byte> url, Pointer<Byte> info, Pointer<Byte> outfile, Pointer<?> pUser) {
-    // return apply(Pointer.getPeer(url), Pointer.getPeer(info), Pointer.getPeer(outfile), Pointer.getPeer(pUser));
-    // }
-    //
-    // public byte apply(@Ptr long url, @Ptr long info, @Ptr long outfile, @Ptr long pUser) {
-    // return apply((Pointer) Pointer.pointerToAddress(url, Byte.class),
-    // (Pointer) Pointer.pointerToAddress(info, Byte.class),
-    // (Pointer) Pointer.pointerToAddress(outfile, Byte.class), Pointer.pointerToAddress(pUser));
-    // }
-    // };
-
-    // /** <i>native declaration : loqtypes.h</i> */
-    // public static abstract class ttsOutputFunctionType extends Callback<ttsOutputFunctionType> {
-    // public Pointer<?> apply(Pointer<?> data, Pointer<?> destination) {
-    // return Pointer.pointerToAddress(apply(Pointer.getPeer(data), Pointer.getPeer(destination)));
-    // }
-    //
-    // @Ptr
-    // public long apply(@Ptr long data, @Ptr long destination) {
-    // return Pointer.getPeer(apply(Pointer.pointerToAddress(data), Pointer.pointerToAddress(destination)));
-    // }
-    // };
-
-    // /** <i>native declaration : loqtypes.h</i> */
-    // public static abstract class ttspFuncType extends Callback<ttspFuncType> {
-    // public Pointer<?> apply() {
-    // return Pointer.pointerToAddress(apply$2());
-    // }
-    //
-    // @Ptr
-    // public long apply$2() {
-    // return Pointer.getPeer(apply());
-    // }
-    // };
-
-    // /** <i>native declaration : loqtypes.h</i> */
-    // public static abstract class ttsAudioOpenType extends Callback<ttsAudioOpenType> {
-    // public int apply(Pointer<Pointer<?>> channel, Pointer<Byte> specification, @Ptr long SampleRate,
-    // IntValuedEnum<LoquendoTTSLibrary.ttsAudioEncodingType> coding,
-    // IntValuedEnum<LoquendoTTSLibrary.ttsAudioSampleType> nChannels, Pointer<Byte> bRealTime,
-    // Pointer<?> pUser) {
-    // return apply(Pointer.getPeer(channel), Pointer.getPeer(specification), SampleRate, (int) coding.value(),
-    // (int) nChannels.value(), Pointer.getPeer(bRealTime), Pointer.getPeer(pUser));
-    // }
-    //
-    // public int apply(@Ptr long channel, @Ptr long specification, @Ptr long SampleRate, int coding, int nChannels,
-    // @Ptr long bRealTime, @Ptr long pUser) {
-    // return apply(
-    // (Pointer) Pointer.pointerToAddress(channel,
-    // DefaultParameterizedType.paramType(Pointer.class, (Type) null)),
-    // (Pointer) Pointer.pointerToAddress(specification, Byte.class), SampleRate,
-    // FlagSet.fromValue(coding, LoquendoTTSLibrary.ttsAudioEncodingType.class),
-    // FlagSet.fromValue(nChannels, LoquendoTTSLibrary.ttsAudioSampleType.class),
-    // (Pointer) Pointer.pointerToAddress(bRealTime, Byte.class), Pointer.pointerToAddress(pUser));
-    // }
-    // };
-
-    // /** <i>native declaration : loqtypes.h</i> */
-    // public static abstract class ttsAudioCloseType extends Callback<ttsAudioCloseType> {
-    // public int apply(Pointer<?> channel) {
-    // return apply(Pointer.getPeer(channel));
-    // }
-    //
-    // public int apply(@Ptr long channel) {
-    // return apply(Pointer.pointerToAddress(channel));
-    // }
-    // };
-
-    /** <i>native declaration : loqtypes.h</i> */
-    // public static abstract class ttsAudioPutDataType extends Callback<ttsAudioPutDataType> {
-    // public int apply(Pointer<?> channel, Pointer<?> pData, @Ptr long nBytes, Pointer<SizeT> nSent) {
-    // return apply(Pointer.getPeer(channel), Pointer.getPeer(pData), nBytes, Pointer.getPeer(nSent));
-    // }
-    //
-    // public int apply(@Ptr long channel, @Ptr long pData, @Ptr long nBytes, @Ptr long nSent) {
-    // return apply(Pointer.pointerToAddress(channel), Pointer.pointerToAddress(pData), nBytes,
-    // (Pointer) Pointer.pointerToAddress(nSent, SizeT.class));
-    // }
-    // };
-
-    /** <i>native declaration : loqtypes.h</i> */
-    // public static abstract class ttsAudioStopType extends Callback<ttsAudioStopType> {
-    // public int apply(Pointer<?> channel) {
-    // return apply(Pointer.getPeer(channel));
-    // }
-    //
-    // public int apply(@Ptr long channel) {
-    // return apply(Pointer.pointerToAddress(channel));
-    // }
-    // };
-
-    // /** <i>native declaration : loqtypes.h</i> */
-    // public static abstract class ttsAudioPauseType extends Callback<ttsAudioPauseType> {
-    // public int apply(Pointer<?> channel) {
-    // return apply(Pointer.getPeer(channel));
-    // }
-    //
-    // public int apply(@Ptr long channel) {
-    // return apply(Pointer.pointerToAddress(channel));
-    // }
-    // };
-
-    // /** <i>native declaration : loqtypes.h</i> */
-    // public static abstract class ttsAudioResumeType extends Callback<ttsAudioResumeType> {
-    // public int apply(Pointer<?> channel) {
-    // return apply(Pointer.getPeer(channel));
-    // }
-    //
-    // public int apply(@Ptr long channel) {
-    // return apply(Pointer.pointerToAddress(channel));
-    // }
-    // };
-
-    // /** <i>native declaration : loqtypes.h</i> */
-    // public static abstract class ttsAudioGetErrorMessageType extends Callback<ttsAudioGetErrorMessageType> {
-    // public int apply(int ErrorCode, Pointer<Byte> message, @Ptr long size) {
-    // return apply(ErrorCode, Pointer.getPeer(message), size);
-    // }
-    //
-    // public int apply(int ErrorCode, @Ptr long message, @Ptr long size) {
-    // return apply(ErrorCode, (Pointer) Pointer.pointerToAddress(message, Byte.class), size);
-    // }
-    // };
-
-    // /** <i>native declaration : loqtypes.h</i> */
-    // public static abstract class ttsGetVersionType extends Callback<ttsGetVersionType> {
-    // public int apply(Pointer<Byte> Version) {
-    // return apply(Pointer.getPeer(Version));
-    // }
-    //
-    // public int apply(@Ptr long Version) {
-    // return apply((Pointer) Pointer.pointerToAddress(Version, Byte.class));
-    // }
-    // };
-
-    // /** <i>native declaration : loqtypes.h</i> */
-    // public static abstract class ttsLoadUtilSymbolsType extends Callback<ttsLoadUtilSymbolsType> {
-    // public byte apply(Pointer<?> hLibrary) {
-    // return apply(Pointer.getPeer(hLibrary));
-    // }
-    //
-    // public byte apply(@Ptr long hLibrary) {
-    // return apply(Pointer.pointerToAddress(hLibrary));
-    // }
-    // };
+    }
 
     /**
      * BEGIN: C API DECLARATIONS<br>
@@ -1488,9 +1334,10 @@ public class LoquendoTTSLibrary {
      * Original signature : <code>__attribute__((dllimport)) char* ttsGetErrorMessage(ttsResultType)</code><br>
      * <i>native declaration : loqtts.h:354</i>
      */
+    @SuppressWarnings("deprecation")
     @Convention(Convention.Style.StdCall)
     public static Pointer<Byte> ttsGetErrorMessage(int ErrNo) {
-        return (Pointer) Pointer.pointerToAddress(ttsGetErrorMessage$2(ErrNo), Byte.class);
+        return Pointer.pointerToAddress(ttsGetErrorMessage$2(ErrNo), Byte.class);
     }
 
     @Convention(Convention.Style.StdCall)
@@ -2012,22 +1859,6 @@ public class LoquendoTTSLibrary {
 
     @Convention(Convention.Style.StdCall)
     protected native static int ttsEnableEvent(@Ptr long hReader, int evt, byte bEnabled);
-
-    // /**
-    // * Original signature :
-    // * <code>__attribute__((dllimport)) ttsResultType ttsSetURLCallback(ttsHandleType, ttsURLCallbackType,
-    // void*)</code><br>
-    // * <i>native declaration : loqtts.h:576</i>
-    // */
-    // @Convention(Convention.Style.StdCall)
-    // public static int ttsSetURLCallback(Pointer<?> hReader, Pointer<LoquendoTTSLibrary.ttsURLCallbackType>
-    // pfnCallback,
-    // Pointer<?> pUser) {
-    // return ttsSetURLCallback(Pointer.getPeer(hReader), Pointer.getPeer(pfnCallback), Pointer.getPeer(pUser));
-    // }
-
-    // @Convention(Convention.Style.StdCall)
-    // protected native static int ttsSetURLCallback(@Ptr long hReader, @Ptr long pfnCallback, @Ptr long pUser);
 
     /**
      * Original signature :

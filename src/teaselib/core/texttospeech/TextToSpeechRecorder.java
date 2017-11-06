@@ -37,6 +37,8 @@ public class TextToSpeechRecorder {
     public final static String ResourcesFilename = "inventory.txt";
 
     private static final String SpeechResourceTempFilePrefix = "TeaseLib_SpeechRecorder";
+
+    private static final String SpeechResourceFileUncompressedFormat = ".wav";
     private static final String SpeechResourceFileTypeExtension = ".mp3";
 
     private final ResourceLoader resources;
@@ -251,12 +253,13 @@ public class TextToSpeechRecorder {
     private String writeSpeechResource(Actor actor, Voice voice, String hash, int index, String mood, String text)
             throws IOException, InterruptedException {
         String soundFileName = Integer.toString(index);
-        File soundFile = createTempFileName(SpeechResourceTempFilePrefix + "_" + soundFileName + "_", "");
+        File soundFile = createTempFileName(SpeechResourceTempFilePrefix + "_" + soundFileName + "_",
+                SpeechResourceFileUncompressedFormat);
         TextToSpeech textToSpeech = ttsPlayer.textToSpeech;
         String recordedSoundFile = textToSpeech.speak(voice, text, soundFile, new String[] { mood });
         if (!recordedSoundFile.endsWith(SpeechResourceFileTypeExtension)) {
-            String encodedSoundFile = recordedSoundFile.replace(".wav", SpeechResourceFileTypeExtension);
-            // sampling frequency is read from the wav audio file
+            String encodedSoundFile = recordedSoundFile.replace(SpeechResourceFileUncompressedFormat,
+                    SpeechResourceFileTypeExtension);
             String[] argv = { recordedSoundFile, encodedSoundFile, "--preset", "standard" };
             try {
                 mp3Encoder.run(argv);

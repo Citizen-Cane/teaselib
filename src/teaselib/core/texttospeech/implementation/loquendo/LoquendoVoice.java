@@ -23,7 +23,7 @@ public class LoquendoVoice implements Voice {
         this.hVoice = hVoice;
         this.hLanguage = hLanguage;
 
-        this.guid = tts.sdkName() + "_" + id;
+        this.guid = "LTTS7" + id;
         this.gender = gender(tts.queryVoiceAttribute(Pointer.pointerToCString(id), "Gender"));
         String language = tts.queryVoiceAttribute(Pointer.pointerToCString(id), "MotherTongue");
 

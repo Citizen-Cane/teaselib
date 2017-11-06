@@ -51,9 +51,17 @@ public class TextToSpeech {
 
     private static Set<String> implementations() {
         Set<String> names = new HashSet<>();
-        names.add(LoquendoTTS.class.getName());
-        names.add(TeaseLibTTS.class.getName());
+        addVendorSpecificSDKs(names);
+        addOperatingSpecificSDKs(names);
         return names;
+    }
+
+    public static void addOperatingSpecificSDKs(Set<String> names) {
+        names.add(TeaseLibTTS.class.getName());
+    }
+
+    public static void addVendorSpecificSDKs(Set<String> names) {
+        names.add(LoquendoTTS.class.getName());
     }
 
     private void addImplementation(String className) {
@@ -71,19 +79,8 @@ public class TextToSpeech {
         Delegate delegate = new Delegate() {
             @Override
             public void run() throws ReflectiveOperationException {
-                Method getInstance;
-                try {
-                    getInstance = ttsClass.getDeclaredMethod("getInstance");
-                } catch (NoSuchMethodException e) {
-                    getInstance = null;
-                }
-                TextToSpeechImplementation newTTS = null;
-                if (getInstance != null) {
-                    newTTS = (TextToSpeechImplementation) getInstance.invoke(this);
-                } else {
-                    newTTS = (TextToSpeechImplementation) ttsClass.newInstance();
-                }
-
+                Method getInstance = ttsClass.getDeclaredMethod("getInstance");
+                TextToSpeechImplementation newTTS = (TextToSpeechImplementation) getInstance.invoke(this);
                 addSDK(newTTS, delegateThread);
             }
         };
@@ -105,12 +102,24 @@ public class TextToSpeech {
         }
 
         if (!newVoices.isEmpty()) {
-            voices.putAll(newVoices);
+            addNewVoices(newVoices);
             ttsSDKs.put(ttsImpl.sdkName(), ttsImpl);
             ttsExecutors.put(ttsImpl.sdkName(), executor);
         } else {
             ttsImpl.dispose();
         }
+    }
+
+    public void addNewVoices(Map<String, Voice> newVoices) {
+        for (Entry<String, Voice> entry : newVoices.entrySet()) {
+            if (!notAlreadyAVailableByVendorSepcificSDK(entry)) {
+                voices.put(entry.getKey(), entry.getValue());
+            }
+        }
+    }
+
+    public boolean notAlreadyAVailableByVendorSepcificSDK(Entry<String, Voice> entry) {
+        return voices.containsKey(entry.getKey());
     }
 
     private static DelegateExecutor newDelegateExecutor() {

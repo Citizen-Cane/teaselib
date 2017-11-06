@@ -1,7 +1,6 @@
 package teaselib.core.events;
 
 import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
@@ -32,9 +31,9 @@ public class DelegateExecutor {
             });
 
             future.get();
-        } catch (RuntimeException e) {
+        } catch (RuntimeException | InterruptedException e) {
             throw e;
-        } catch (ExecutionException e) {
+        } catch (Exception e) {
             throw ExceptionUtil.asRuntimeException(ExceptionUtil.reduce(e));
         }
     }

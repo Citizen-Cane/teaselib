@@ -20,7 +20,7 @@ public:
 
 	SpeechRecognizer(JNIEnv *env, jobject jthis, jobject jevents, const wchar_t* recognizerAttributes);
 	virtual ~SpeechRecognizer();
-	HRESULT speechRecognitionInitContext();
+	void speechRecognitionInitContext();
 	void speechRecognitionEventHandlerThread(JNIEnv* threadEnv);
 
 	void setChoices(const Choices& choices);

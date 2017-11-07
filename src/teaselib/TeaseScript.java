@@ -432,14 +432,14 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
      * Best used for replies that can be easily dismissed without consequences, like in conversations.
      * 
      * Or in situations that involve timing, where a quick reply is necessary, but the actual words don't matter.
-     * 
-     * @param choice
-     *            The prompt to be displayed by the user interface.
      * @param recognitionConfidence
      *            The confidence threshold used for speech recognition.
+     * @param choice
+     *            The prompt to be displayed by the user interface.
+     * 
      * @return The choice object that has been selected by the user.
      */
-    public final String reply(String choice, Confidence recognitionConfidence) {
+    public final String reply(Confidence recognitionConfidence, String choice) {
         List<String> choices = buildChoicesFromArray(choice);
         return showChoices(null, recognitionConfidence, choices);
     }

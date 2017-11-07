@@ -61,9 +61,12 @@ public class LoquendoSapiCustomPronunciation {
     static final String PROMPT4c = "<speak version=\"1.0\" xml:lang=\"en\"><phoneme alphabet=\"ipa\" ph=\"t&#x259;mei&#x325;&#x27E;ou&#x325;\"> cunt </phoneme> cunt </speak>";
     static final String PROMPT4d = "<speak version=\"1.1\" xml:lang=\"en\"><phoneme alphabet=\"ipa\" ph=\"t&#x259;mei&#x325;&#x27E;ou&#x325;\"> cunt </phoneme> cunt </speak>";
     static final String PROMPT4e = "<speak version=\"1.1\" xml:lang=\"en\"><phoneme alphabet=\"ipa\" ph=\"tÉ™meiÌ¥É¾ouÌ¥\"> cunt </phoneme> cunt </speak>";
+    static final String PROMPT4f = "<speak version=\"1.1\" xml:lang=\"en\">You're a stupid <phoneme alphabet=\"ipa\" ph=\"kant\"> cunt</phoneme>, you know that?</speak>";
+    static final String PROMPT4f1 = "<speak version=\"1.1\" xml:lang=\"en\">You're a stupid cunt, you know that?</speak>";
+    static final String PROMPT4f2 = "You're a stupid cunt, you know that?";
 
-    static final String PROMPT4f = "<speak version=\"1.0\" xml:lang=\"en\"> \\SAMPA=(k A n t) hello </speak>";
-    static final String PROMPT4g = "<speak version=\"1.1\" xml:lang=\"en\"> \\SAMPA=(k A n t) hello </speak>";
+    static final String PROMPT4g = "<speak version=\"1.0\" xml:lang=\"en\"> You're a stupid \\SAMPA=(k A n t) cunt </speak>";
+    static final String PROMPT4h = "<speak version=\"1.1\" xml:lang=\"en\"> You're a stupid \\SAMPA=(k A n t) cunt </speak>";
 
     static final String PROMPT5a = "\\item=Aahh. This is \\speed=70\\pitch=30 a marked up text for \\spell=yes LTTS.";
 
@@ -87,8 +90,8 @@ public class LoquendoSapiCustomPronunciation {
     // which exact word is pronounced - that information is missing, so in fact \ipa(ËˆstjuË�pÉªd kÊŒnt) improves
     // pronunciation but makes the sentence sound less good.
 
-    String prompt = PROMPT4e;
-    String voiceGuid = MS_VOICE;
+    String prompt = PROMPT4f2;
+    String voiceGuid = LQ_VOICE;
 
     @Test
     public void testCustomPronunciation() throws InterruptedException {

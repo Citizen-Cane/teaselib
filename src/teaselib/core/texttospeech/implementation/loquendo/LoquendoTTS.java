@@ -3,26 +3,37 @@ package teaselib.core.texttospeech.implementation.loquendo;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 
 import org.bridj.BridJ;
 import org.bridj.Pointer;
 import org.bridj.Pointer.StringType;
 
+import teaselib.Mood;
 import teaselib.core.texttospeech.TextToSpeechImplementation;
 import teaselib.core.texttospeech.Voice;
+import teaselib.core.texttospeech.implementation.Unsupported;
 import teaselib.core.texttospeech.implementation.loquendo.LoquendoTTSLibrary.ttsQueryType;
+import teaselib.core.util.Environment;
 
 public class LoquendoTTS extends TextToSpeechImplementation {
     private static LoquendoTTS instance = null;
 
-    public static synchronized LoquendoTTS getInstance() throws IOException {
+    public static synchronized TextToSpeechImplementation getInstance() throws IOException {
         if (instance == null) {
-            // TODO check Operating system
-            // TODO check x86 location
-            System.load("C:/Program Files/Loquendo/LTTS7/bin/LoqTTS7.dll");
-            BridJ.getNativeLibrary("LoquendoTTS", new File("C:/Program Files/Loquendo/LTTS7/bin/LoqTTS7.dll"));
-            instance = new LoquendoTTS();
+            if (Environment.SYSTEM == Environment.Windows) {
+                File library = new File(System.getenv("ProgramFiles"), "Loquendo/LTTS7/bin/LoqTTS7.dll");
+                if (library.exists()) {
+                    BridJ.getNativeLibrary("LoquendoTTS", library);
+                    instance = new LoquendoTTS();
+                } else {
+                    return Unsupported.Instance;
+                }
+            } else {
+                return Unsupported.Instance;
+            }
         }
         return instance;
     }
@@ -119,6 +130,14 @@ public class LoquendoTTS extends TextToSpeechImplementation {
 
     @Override
     public void speak(String prompt) {
+        if (new HashSet<Object>(Arrays.asList(getHints())).contains(Mood.Reading)) {
+            checkResult(LoquendoTTSLibrary.ttsSetVolume(hReader, 15));
+            checkResult(LoquendoTTSLibrary.ttsSetSpeed(hReader, 40));
+        } else {
+            checkResult(LoquendoTTSLibrary.ttsSetVolume(hReader, 12));
+            checkResult(LoquendoTTSLibrary.ttsSetSpeed(hReader, 50));
+        }
+
         checkResult(LoquendoTTSLibrary.ttsRead(hReader, Pointer.pointerToCString(prompt),
                 (byte) LoquendoTTSLibrary.ttsTRUE, (byte) LoquendoTTSLibrary.ttsFALSE, null));
 
@@ -178,7 +197,7 @@ public class LoquendoTTS extends TextToSpeechImplementation {
 
     @Override
     public void addLexiconEntry(String locale, String word, int partOfSpeech, String pronunciation) {
-        // TODO Auto-generated method stub
+        // Can only load complete dictionaries, plus entries with phonemes distort the prosody
     }
 
     @Override

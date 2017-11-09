@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -21,6 +22,7 @@ import teaselib.core.VideoRenderer;
 import teaselib.core.VideoRenderer.Type;
 import teaselib.core.events.Delegate;
 import teaselib.core.javacv.VideoRendererJavaCV;
+import teaselib.core.ui.InputMethod;
 import teaselib.core.ui.Prompt;
 import teaselib.core.util.ExceptionUtil;
 
@@ -29,11 +31,29 @@ public class DebugHost implements Host {
 
     static final Point javacvDebugWindow = new Point(80, 80);
 
+    private final InputMethod inputMethod;
+
     private List<String> currentChoices = Collections.emptyList();
 
     public DebugHost() {
         super();
         Thread.currentThread().setName(getClass().getSimpleName() + " Script");
+        inputMethod = new InputMethod() {
+
+            @Override
+            public void show(Prompt prompt) throws InterruptedException {
+            }
+
+            @Override
+            public boolean dismiss(Prompt prompt) throws InterruptedException {
+                return false;
+            }
+
+            @Override
+            public Map<String, Runnable> getHandlers() {
+                return Collections.emptyMap();
+            }
+        };
     }
 
     @Override
@@ -89,7 +109,6 @@ public class DebugHost implements Host {
         return clickables;
     }
 
-    @Override
     public boolean dismissChoices(List<String> choices) {
         logger.info("Dismiss " + choices + " @ " + Thread.currentThread().getStackTrace()[1].toString());
 
@@ -139,6 +158,10 @@ public class DebugHost implements Host {
     }
 
     @Override
+    public InputMethod inputMethod() {
+        return inputMethod;
+    }
+
     public int reply(List<String> choices) throws ScriptInterruptedException {
         logger.info("Reply " + choices + " @ " + Thread.currentThread().getStackTrace()[1].toString());
 

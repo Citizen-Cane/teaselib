@@ -15,7 +15,9 @@ import teaselib.core.speechrecognition.SpeechRecognitionResult.Confidence;
 import teaselib.core.speechrecognition.events.SpeechRecognitionStartedEventArgs;
 import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
 import teaselib.core.speechrecognition.implementation.TeaseLibSR;
+import teaselib.core.speechrecognition.implementation.Unsupported;
 import teaselib.core.texttospeech.TextToSpeech;
+import teaselib.core.util.Environment;
 
 public class SpeechRecognition {
     private static final Logger logger = LoggerFactory.getLogger(SpeechRecognition.class);
@@ -168,8 +170,12 @@ public class SpeechRecognition {
                 @Override
                 public void run() {
                     try {
-                        sr = new TeaseLibSR();
-                        sr.init(events, SpeechRecognition.this.locale);
+                        if (Environment.SYSTEM == Environment.Windows) {
+                            sr = new TeaseLibSR();
+                            sr.init(events, SpeechRecognition.this.locale);
+                        } else {
+                            sr = Unsupported.Instance;
+                        }
                     } catch (UnsatisfiedLinkError e) {
                         logger.error(e.getMessage(), e);
                         sr = null;
@@ -195,13 +201,6 @@ public class SpeechRecognition {
     private static boolean enableSpeechHypothesisHandlerGlobally() {
         return Boolean.toString(true)
                 .compareToIgnoreCase(System.getProperty(EnableSpeechHypothesisHandlerGlobally, "true")) == 0;
-    }
-
-    /**
-     * @return Whether SpeechRecognition is ready to recognize speech
-     */
-    public boolean isReady() {
-        return sr != null;
     }
 
     public void startRecognition(List<String> choices, Confidence recognitionConfidence) {
@@ -330,7 +329,7 @@ public class SpeechRecognition {
      * @return True if speech recognition is listening to voice input
      */
     public boolean isActive() {
-        return speechRecognitionActive && isReady();
+        return speechRecognitionActive;
     }
 
     public void emulateRecogntion(String emulatedRecognitionResult) {

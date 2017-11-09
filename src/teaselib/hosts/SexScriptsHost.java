@@ -43,6 +43,8 @@ import teaselib.core.VideoRenderer.Type;
 import teaselib.core.concurrency.NamedExecutorService;
 import teaselib.core.events.Delegate;
 import teaselib.core.javacv.VideoRendererJavaCV;
+import teaselib.core.ui.HostInputMethod;
+import teaselib.core.ui.InputMethod;
 import teaselib.core.util.ExceptionUtil;
 import teaselib.util.Interval;
 
@@ -75,6 +77,8 @@ public class SexScriptsHost implements Host {
 
     private Runnable onQuitHandler = null;
 
+    private final InputMethod inputMethod;
+
     public SexScriptsHost(ss.IScript script) {
         this.ss = script;
         // Should be set by the host, but SexScript doesn't, so we do
@@ -99,9 +103,8 @@ public class SexScriptsHost implements Host {
             backgroundImage = null;
         }
         // automatically show popup
-        final int originalDefaultCloseoperation = mainFrame.getDefaultCloseOperation();
+        int originalDefaultCloseoperation = mainFrame.getDefaultCloseOperation();
         mainFrame.addWindowListener(new WindowListener() {
-
             @Override
             public void windowOpened(WindowEvent e) {
             }
@@ -134,12 +137,16 @@ public class SexScriptsHost implements Host {
 
             @Override
             public void windowClosed(WindowEvent e) {
+                // Ignore
             }
 
             @Override
             public void windowActivated(WindowEvent e) {
+                // Ignore
             }
         });
+
+        inputMethod = new HostInputMethod(this);
     }
 
     @Override
@@ -445,7 +452,6 @@ public class SexScriptsHost implements Host {
 
     }
 
-    @Override
     public boolean dismissChoices(List<String> choices) {
         // Just click any choice
         List<Delegate> clickableChoices = getClickableChoices(choices);
@@ -524,6 +530,10 @@ public class SexScriptsHost implements Host {
     }
 
     @Override
+    public InputMethod inputMethod() {
+        return inputMethod;
+    }
+
     public int reply(final List<String> choices) throws ScriptInterruptedException {
         if (Thread.interrupted()) {
             throw new ScriptInterruptedException();

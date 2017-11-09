@@ -17,9 +17,7 @@ import teaselib.ScriptFunction;
 import teaselib.core.media.MediaRenderer;
 import teaselib.core.media.RenderInterTitle;
 import teaselib.core.media.RenderMessage;
-import teaselib.core.speechrecognition.SpeechRecognition;
 import teaselib.core.speechrecognition.SpeechRecognitionResult.Confidence;
-import teaselib.core.speechrecognition.SpeechRecognizer;
 import teaselib.core.ui.Choices;
 import teaselib.core.ui.InputMethod;
 import teaselib.core.ui.Prompt;
@@ -383,12 +381,10 @@ public abstract class TeaseScriptBase {
             stopBackgroundRenderers();
         }
 
-        List<InputMethod> inputMethods = new ArrayList<>(teaseLib.hostInputMethods);
+        List<InputMethod> inputMethods = new ArrayList<>(teaseLib.inputMethods);
 
-        SpeechRecognition sR = SpeechRecognizer.instance.get(actor.locale());
-        if (sR.isReady() && Boolean.parseBoolean(teaseLib.config.get(Config.InputMethod.SpeechRecognition))) {
-            inputMethods.add(new SpeechRecognitionInputMethod(this, sR, recognitionConfidence));
-        }
+        inputMethods.add(teaseLib.host.inputMethod());
+        inputMethods.add(new SpeechRecognitionInputMethod(this, recognitionConfidence));
 
         Prompt prompt = new Prompt(new Choices(choices), new Choices(derivedChoices), scriptFunction, inputMethods);
         logger.info("Prompt: " + prompt);

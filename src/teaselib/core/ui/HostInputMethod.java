@@ -7,19 +7,19 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 
-import teaselib.core.Host;
 import teaselib.core.concurrency.NamedExecutorService;
+import teaselib.hosts.SexScriptsHost;
 
 /**
  * @author Citizen-Cane
  *
  */
 public class HostInputMethod implements InputMethod {
-    private final Host host;
+    private final SexScriptsHost host;
     private final ExecutorService workerThread = NamedExecutorService.singleThreadedQueue(getClass().getName());
     private final ReentrantLock replySection = new ReentrantLock(true);
 
-    public HostInputMethod(Host host) {
+    public HostInputMethod(SexScriptsHost host) {
         this.host = host;
     }
 

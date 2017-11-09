@@ -37,13 +37,13 @@ public class Debugger {
 
     public void attach() {
         freezeTime();
-        teaseLib.hostInputMethods.add(debugInputMethod);
+        teaseLib.inputMethods.add(debugInputMethod);
         debugInputMethod.attach(teaseLib);
     }
 
     public void detach() {
         debugInputMethod.detach(teaseLib);
-        teaseLib.hostInputMethods.remove(debugInputMethod);
+        teaseLib.inputMethods.remove(debugInputMethod);
         resumeTime();
     }
 

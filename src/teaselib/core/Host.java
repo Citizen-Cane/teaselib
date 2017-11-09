@@ -4,18 +4,18 @@ import java.io.File;
 import java.io.IOException;
 import java.util.List;
 
+import teaselib.core.ui.InputMethod;
+
 /**
- * Render target decouples the lib from the actual implementaiton of the host.
- * The interface is closely modeled to the SexSCripts ISCript interface See
- * http://ss.deviatenow.com/viewtopic.php?f=4&t=2
+ * Render target decouples the lib from the actual implementaiton of the host. The interface is closely modeled to the
+ * SexSCripts ISCript interface See http://ss.deviatenow.com/viewtopic.php?f=4&t=2
  * 
  * @author someone
  *
  */
 public interface Host {
     /**
-     * Play the sound denoted by path and wait until it's finished. Sound stops
-     * if the current thread is interrupted.
+     * Play the sound denoted by path and wait until it's finished. Sound stops if the current thread is interrupted.
      * 
      * @param resources
      *            The resource loader to be used for loading the sound.
@@ -44,8 +44,7 @@ public interface Host {
     void stopSound(Object handle);
 
     /**
-     * Show text and image. Since text and image determine the layout, they must
-     * be set simultanously.
+     * Show text and image. Since text and image determine the layout, they must be set simultanously.
      * 
      * @param image
      * @param text
@@ -58,8 +57,7 @@ public interface Host {
     // void showButton(String message);
 
     /**
-     * Show a list of textboxes. The key of all of the maps ued here is the name
-     * value to change.
+     * Show a list of textboxes. The key of all of the maps ued here is the name value to change.
      * 
      * @param message
      *            Message to be displayed, or null if none
@@ -69,38 +67,15 @@ public interface Host {
      */
     List<Boolean> showCheckboxes(String caption, List<String> choices, List<Boolean> values, boolean allowCancel);
 
-    /**
-     * Removes the current set of buttons and causes reply() to return
-     * {@code null}.
-     * 
-     * @return true if the choices have been dismissed.
-     */
-    boolean dismissChoices(List<String> choices);
+    InputMethod inputMethod();
 
     /**
-     * Choose one from a list of choices
+     * Install a handler being executed when the user quits the application or the main script is otherwise interrupted.
+     * The quit handler should be short, as the closing process cannot be cancelled. A final message and setting a flag
+     * to punish next time should be sufficient.
      * 
-     * @param choices
-     *            The choices to display
-     * @param timeout
-     *            The timeout after which the buttons should disappear
-     *            automatically
-     * @return The index of the chosen item, or TeaseScript.TimeOut = -1 if no
-     *         button was clicked
-     * @exception ScriptInterruptedException
-     *                If the thread is interrupted.
-     */
-    int reply(List<String> choices);
-
-    /**
-     * Install a handler being executed when the user quits the application or
-     * the main script is otherwise interrupted. The quit handler should be
-     * short, as the closing process cannot be cancelled. A final message and
-     * setting a flag to punish next time should be sufficient.
-     * 
-     * The script is just executed once, to prevent repeated execution, and to
-     * allow the application finally to quit. It is a wise idea to set flags
-     * immediately, just in case.
+     * The script is just executed once, to prevent repeated execution, and to allow the application finally to quit. It
+     * is a wise idea to set flags immediately, just in case.
      * 
      * @param onQuitHandler
      *            The script to execute when the slave quits the application.

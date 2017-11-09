@@ -35,7 +35,6 @@ import teaselib.core.devices.Devices;
 import teaselib.core.devices.remote.LocalNetworkDevice;
 import teaselib.core.media.MediaRendererQueue;
 import teaselib.core.texttospeech.TextToSpeechPlayer;
-import teaselib.core.ui.HostInputMethod;
 import teaselib.core.ui.InputMethod;
 import teaselib.core.ui.Shower;
 import teaselib.core.util.ObjectMap;
@@ -69,7 +68,7 @@ public class TeaseLib {
     public final Devices devices;
 
     final Shower shower;
-    final List<InputMethod> hostInputMethods;
+    final List<InputMethod> inputMethods;
     public final MediaRendererQueue renderQueue = new MediaRendererQueue();
 
     private long frozenTime = Long.MIN_VALUE;
@@ -98,8 +97,7 @@ public class TeaseLib {
         this.config = new Configuration(setup);
         this.transcript = newTranscriptLogger(host.getLocation(Location.Log));
         this.shower = new Shower(host);
-        this.hostInputMethods = new ArrayList<>();
-        this.hostInputMethods.add(new HostInputMethod(host));
+        this.inputMethods = new ArrayList<>();
         this.devices = new Devices(config);
         this.textToSpeech = new TextToSpeechPlayer(config);
 

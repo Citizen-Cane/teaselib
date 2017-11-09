@@ -28,35 +28,28 @@ public class HostInputMethod implements InputMethod {
         Callable<Integer> callable = new Callable<Integer>() {
             @Override
             public Integer call() throws Exception {
-                synchronized (HostInputMethod.this) {
-                    replySection.lockInterruptibly();
-                    try {
-                        synchronized (this) {
-                            notifyAll();
-                        }
-                        if (prompt.result() == Prompt.UNDEFINED) {
-                            int reply = host.reply(prompt.derived);
-                            if (prompt.paused.get() == false) {
-                                prompt.setResultOnce(reply);
-                            }
-                        } else {
-                            // Ignored because another input method might have dismissed the prompt
-                        }
-                    } catch (Throwable t) {
-                        prompt.exception = t;
-                    } finally {
-                        prompt.lock.lockInterruptibly();
-                        try {
-                            if (prompt.paused.get() == false) {
-                                prompt.click.signalAll();
-                            } else {
-                                throw new IllegalStateException("Prompt click not signaled for " + prompt);
-                            }
-                        } finally {
-                            prompt.lock.unlock();
-                            replySection.unlock();
-                        }
+                replySection.lockInterruptibly();
+                try {
+                    synchronized (this) {
+                        notifyAll();
                     }
+                    if (prompt.result() == Prompt.UNDEFINED) {
+                        int result = host.reply(prompt.derived);
+                        if (!prompt.paused()) {
+                            prompt.lock.lockInterruptibly();
+                            try {
+                                prompt.signalResult(result);
+                            } finally {
+                                prompt.lock.unlock();
+                            }
+                        }
+                    } else {
+                        // Ignored because another input method might have dismissed the prompt
+                    }
+                } catch (Throwable t) {
+                    prompt.exception = t;
+                } finally {
+                    replySection.unlock();
                 }
                 return prompt.result();
             }
@@ -86,8 +79,6 @@ public class HostInputMethod implements InputMethod {
                     prompt.lock.unlock();
                 }
             }
-        } catch (InterruptedException e) {
-            throw e;
         } finally {
             if (replySection.isHeldByCurrentThread()) {
                 replySection.unlock();

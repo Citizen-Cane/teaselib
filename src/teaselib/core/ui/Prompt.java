@@ -11,7 +11,9 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import teaselib.ScriptFunction;
 import teaselib.core.ScriptFutureTask;
+import teaselib.core.ScriptInterruptedException;
 import teaselib.core.TeaseScriptBase;
+import teaselib.core.util.ExceptionUtil;
 
 public class Prompt {
     public static final int DISMISSED = -1;
@@ -116,6 +118,51 @@ public class Prompt {
             // - however all tests pass
             // throw new IllegalStateException(
             // "Prompt result can be set only once");
+        }
+    }
+
+    public void signalResult(int resultIndex) {
+        setResultOnce(resultIndex);
+
+        if (!paused()) {
+            click.signalAll();
+        } else {
+            throw new IllegalStateException("Prompt click not signaled for " + this);
+        }
+    }
+
+    public void signalHandlerInvocation(String handlerKey) {
+        pause();
+        inputHandlerKey = handlerKey;
+        click.signalAll();
+    }
+
+    public void pause() {
+        paused.set(true);
+    }
+
+    public boolean paused() {
+        return paused.get();
+    }
+
+    public void resume() {
+        paused.set(false);
+    }
+
+    public boolean dismiss() {
+        try {
+            boolean dismissed = false;
+            for (InputMethod inputMethod : inputMethods) {
+                dismissed &= inputMethod.dismiss(this);
+            }
+            return dismissed;
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new ScriptInterruptedException(e);
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Exception e) {
+            throw ExceptionUtil.asRuntimeException(e);
         }
     }
 

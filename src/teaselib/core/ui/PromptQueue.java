@@ -2,9 +2,7 @@ package teaselib.core.ui;
 
 import java.util.concurrent.atomic.AtomicReference;
 
-import teaselib.core.ScriptInterruptedException;
 import teaselib.core.TeaseScriptBase;
-import teaselib.core.util.ExceptionUtil;
 
 /**
  * @author Citizen-Cane
@@ -90,7 +88,7 @@ public class PromptQueue {
                 return;
 
             makePromptActive(prompt);
-            prompt.paused.set(false);
+            prompt.resume();
 
             // Were're just resuming, no need to wait or cleanup
         } finally {
@@ -122,7 +120,7 @@ public class PromptQueue {
     public boolean pause(Prompt prompt) throws InterruptedException {
         prompt.lock.lockInterruptibly();
         try {
-            prompt.paused.set(true);
+            prompt.pause();
             if (prompt.result() == Prompt.UNDEFINED) {
                 return dismissPrompt(prompt);
             } else {
@@ -150,19 +148,9 @@ public class PromptQueue {
         // - after user selection the input method that signaled the user input has been dismissed already
         // TODO dismiss only the input methods that haven't signaled user interaction
         try {
-            boolean dismissed = false;
-            for (InputMethod inputMethod : prompt.inputMethods) {
-                dismissed &= inputMethod.dismiss(prompt);
-            }
+            return prompt.dismiss();
+        } finally {
             active.set(null);
-            return dismissed;
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new ScriptInterruptedException(e);
-        } catch (RuntimeException e) {
-            throw e;
-        } catch (Exception e) {
-            throw ExceptionUtil.asRuntimeException(e);
         }
     }
 

@@ -48,19 +48,16 @@ public class Shower {
         while (true) {
             if (stack.peek() == prompt) {
                 int resultIndex = promptQueue.show(script, prompt);
-                // TODO replace index with choice -> pause handlers can be
-                // called via unique string identifiers
                 if (resultIndex == Prompt.DISMISSED) {
                     prompt.joinScriptTask();
                     prompt.forwardErrorsAsRuntimeException();
                     return prompt.choice(resultIndex);
                 } else if (prompt.inputHandlerKey != Prompt.NONE) {
                     try {
-                        if (notExecutedYet(prompt.inputHandlerKey)) {
-                            prompt.executeInputMethodHandler();
-                        }
+                        invokeHandler(prompt);
                     } finally {
                         prompt.inputHandlerKey = Prompt.NONE;
+                        prompt.resume();
                     }
                 } else {
                     prompt.cancelScriptTask();
@@ -73,14 +70,28 @@ public class Shower {
         }
     }
 
-    private boolean notExecutedYet(String inputHandlerKey) {
+    private void invokeHandler(Prompt prompt) {
+        if (prompt.result() != Prompt.UNDEFINED) {
+            throw new IllegalStateException("Prompt selected while invoking handler: " + prompt);
+        }
+
+        if (!executingAlready(prompt.inputHandlerKey)) {
+            prompt.executeInputMethodHandler();
+        }
+
+        if (stack.peek() != prompt) {
+            throw new IllegalStateException("Not top-most: " + prompt);
+        }
+    }
+
+    private boolean executingAlready(String inputHandlerKey) {
         Prompt current = stack.peek();
         for (Prompt prompt : stack) {
             if (prompt != current && prompt.inputHandlerKey == inputHandlerKey) {
                 return true;
             }
         }
-        return true;
+        return false;
     }
 
     private void pauseCurrent() throws InterruptedException {

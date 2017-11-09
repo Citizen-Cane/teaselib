@@ -39,7 +39,7 @@ public class SpeechRecognitionInputMethod implements InputMethod {
 
     private final AtomicReference<Prompt> active = new AtomicReference<>();
 
-    public SpeechRecognitionInputMethod(final TeaseScriptBase script, SpeechRecognition speechRecognizer,
+    public SpeechRecognitionInputMethod(TeaseScriptBase script, SpeechRecognition speechRecognizer,
             final Confidence recognitionConfidence) {
         this.script = script;
         this.speechRecognizer = speechRecognizer;
@@ -68,10 +68,8 @@ public class SpeechRecognitionInputMethod implements InputMethod {
         recognitionRejected = new Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs>() {
             @Override
             public void run(SpeechRecognitionImplementation sender, SpeechRecognizedEventArgs eventArgs) {
-                synchronized (SpeechRecognitionInputMethod.this) {
-                    if (runSpeechRecognitionRejectedScript(script)) {
-                        signal(RECOGNITION_REJECTED);
-                    }
+                if (runSpeechRecognitionRejectedScript(script)) {
+                    signal(RECOGNITION_REJECTED);
                 }
             }
 
@@ -117,19 +115,16 @@ public class SpeechRecognitionInputMethod implements InputMethod {
         recognitionCompleted = new Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs>() {
             @Override
             public void run(SpeechRecognitionImplementation sender, SpeechRecognizedEventArgs eventArgs) {
-                synchronized (SpeechRecognitionInputMethod.this) {
-                    if (eventArgs.result.length == 1) {
-                        SpeechRecognitionResult result = eventArgs.result[0];
-                        if (confidenceIsHighEnough(result, recognitionConfidence)) {
-                            signal(result.index);
-                        } else {
-                            logger.info(
-                                    "Dropping result '" + result.toString() + "' due to lack of confidence (Confidence="
-                                            + recognitionConfidence + " expected)");
-                        }
+                if (eventArgs.result.length == 1) {
+                    SpeechRecognitionResult result = eventArgs.result[0];
+                    if (confidenceIsHighEnough(result, recognitionConfidence)) {
+                        signal(result.index);
                     } else {
-                        logger.info("Ignoring none or more than one result");
+                        logger.info("Dropping result '" + result.toString() + "' due to lack of confidence (Confidence="
+                                + recognitionConfidence + " expected)");
                     }
+                } else {
+                    logger.info("Ignoring none or more than one result");
                 }
             }
 
@@ -143,14 +138,11 @@ public class SpeechRecognitionInputMethod implements InputMethod {
         Prompt prompt = active.get();
         prompt.lock.lock();
 
-        if (resultIndex == RECOGNITION_REJECTED) {
-            prompt.inputHandlerKey = RECOGNITION_REJECTED_HNADLER_KEY;
-        } else {
-            prompt.setResultOnce(resultIndex);
-        }
         try {
-            if (prompt.paused.get() == false) {
-                prompt.click.signalAll();
+            if (resultIndex == RECOGNITION_REJECTED) {
+                prompt.signalHandlerInvocation(RECOGNITION_REJECTED_HNADLER_KEY);
+            } else {
+                prompt.signalResult(resultIndex);
             }
         } finally {
             prompt.lock.unlock();
@@ -165,7 +157,7 @@ public class SpeechRecognitionInputMethod implements InputMethod {
     }
 
     @Override
-    public synchronized boolean dismiss(Prompt prompt) throws InterruptedException {
+    public boolean dismiss(Prompt prompt) throws InterruptedException {
         Prompt activePrompt = active.get();
 
         if (activePrompt == null) {

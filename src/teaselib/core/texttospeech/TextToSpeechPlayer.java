@@ -27,6 +27,8 @@ import teaselib.core.ResourceLoader;
 public class TextToSpeechPlayer {
     private static final Logger logger = LoggerFactory.getLogger(TextToSpeechPlayer.class);
 
+    private static final String ACQUIRE_VOICE_ON_FIRST_USE = "ACQUIRE_VOICE_ON_FIRST_USE";
+
     TextToSpeech textToSpeech;
     private final Set<ResourceLoader> loadedActorVoiceProperties = new HashSet<>();
     private final PronunciationDictionary pronounciationDictionary;
@@ -260,7 +262,12 @@ public class TextToSpeechPlayer {
 
     private Voice getReservedVoice(Actor actor) {
         String voiceGuid = actorKey2ReservedVoiceGuid.get(actor.key);
-        if (voiceGuid != null) {
+
+        if (actorKey2TTSVoice.containsKey(voiceGuid)) {
+            throw new IllegalStateException(voiceGuid);
+        }
+
+        if (voiceGuid != null && voiceGuid != ACQUIRE_VOICE_ON_FIRST_USE) {
             useTTSVoice(actor.key, voiceGuid);
             return getVoiceFor(actor);
         } else {
@@ -358,7 +365,7 @@ public class TextToSpeechPlayer {
     public void acquireVoice(Actor actor, ResourceLoader resources) {
         loadActorVoiceProperties(resources);
         if (!prerenderedSpeechAvailable(actor)) {
-            reserveVoice(actor.key, null);
+            reserveVoice(actor.key, ACQUIRE_VOICE_ON_FIRST_USE);
         }
     }
 

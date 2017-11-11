@@ -5,6 +5,8 @@ import java.io.IOException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import teaselib.core.Audio;
+import teaselib.core.Audio.Mode;
 import teaselib.core.ResourceLoader;
 import teaselib.core.TeaseLib;
 import teaselib.core.util.ExceptionUtil;
@@ -12,15 +14,23 @@ import teaselib.core.util.ExceptionUtil;
 public class RenderSound extends MediaRendererThread {
     private static final Logger logger = LoggerFactory.getLogger(RenderSound.class);
 
-    private final ResourceLoader resources;
     private final String soundFile;
-
-    private Object audioHandle = null;
+    private final Audio audio;
 
     public RenderSound(ResourceLoader resources, String soundFile, TeaseLib teaseLib) {
         super(teaseLib);
-        this.resources = resources;
         this.soundFile = soundFile;
+        this.audio = teaseLib.host.audio(resources, soundFile, Mode.Synchronous);
+
+        try {
+            audio.load();
+        } catch (IOException e) {
+            try {
+                handleIOException(e);
+            } catch (IOException e1) {
+                ExceptionUtil.asRuntimeException(e1);
+            }
+        }
     }
 
     @Override
@@ -29,13 +39,8 @@ public class RenderSound extends MediaRendererThread {
             teaseLib.transcript.info("Message sound = " + soundFile);
             logger.info(this.getClass().getSimpleName() + ": " + soundFile);
             startCompleted();
-            try {
-                audioHandle = soundFile;
-                teaseLib.host.playSound(resources, soundFile);
-                logger.info(this.getClass().getSimpleName() + ": " + soundFile + " completed");
-            } catch (IOException e) {
-                handleIOException(ExceptionUtil.reduce(e));
-            }
+            audio.play();
+            logger.info(this.getClass().getSimpleName() + ": " + soundFile + " completed");
         } finally {
             mandatoryCompleted();
         }
@@ -48,9 +53,7 @@ public class RenderSound extends MediaRendererThread {
 
     @Override
     public void interrupt() {
-        if (audioHandle != null) {
-            teaseLib.host.stopSound(audioHandle);
-        }
+        audio.stop();
         super.interrupt();
     }
 }

@@ -1,9 +1,9 @@
 package teaselib.core;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.List;
 
+import teaselib.core.Audio.Mode;
 import teaselib.core.ui.InputMethod;
 
 /**
@@ -14,34 +14,7 @@ import teaselib.core.ui.InputMethod;
  *
  */
 public interface Host {
-    /**
-     * Play the sound denoted by path and wait until it's finished. Sound stops if the current thread is interrupted.
-     * 
-     * @param resources
-     *            The resource loader to be used for loading the sound.
-     * @param path
-     *            The resource path to the wav, mp3 or ogg sound.
-     */
-    void playSound(ResourceLoader resources, String path) throws IOException, InterruptedException;
-
-    /**
-     * Play the sound denoted by the resource path. Return immediately.
-     * 
-     * @param resources
-     *            The resource loader to be used for loading the sound.
-     * @param path
-     *            The resource path to the wav, mp3 or ogg sound.
-     * @return An opaque handle to the sound. Can be used to stop the sound.
-     */
-    Object playBackgroundSound(ResourceLoader resources, String path) throws IOException;
-
-    /**
-     * Stop the sound denoted by the resource path.
-     * 
-     * @param path
-     *            The path to the sound resource.
-     */
-    void stopSound(Object handle);
+    Audio audio(ResourceLoader resources, String path, Mode mode);
 
     /**
      * Show text and image. Since text and image determine the layout, they must be set simultanously.

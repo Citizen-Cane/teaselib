@@ -35,6 +35,8 @@ import org.slf4j.LoggerFactory;
 
 import ss.IScript;
 import ss.desktop.MainFrame;
+import teaselib.core.Audio;
+import teaselib.core.Audio.Mode;
 import teaselib.core.Host;
 import teaselib.core.ResourceLoader;
 import teaselib.core.ScriptInterruptedException;
@@ -150,25 +152,35 @@ public class SexScriptsHost implements Host {
     }
 
     @Override
-    public void playSound(ResourceLoader resources, String path) throws IOException, InterruptedException {
-        ss.playSound(resources.unpackToFile(path).getAbsolutePath());
-    }
+    public Audio audio(ResourceLoader resources, String path, Mode mode) {
+        return new Audio() {
+            String audioHandle = null;
 
-    @Override
-    public Object playBackgroundSound(ResourceLoader resources, String path) throws IOException {
-        ss.playBackgroundSound(resources.unpackToFile(path).getAbsolutePath());
-        return path;
-    }
+            @Override
+            public void load() throws IOException {
+                this.audioHandle = resources.unpackToFile(path).getAbsolutePath();
+            }
 
-    @Override
-    // TODO Just stop the sound denoted by the handle
-    public void stopSound(Object handle) {
-        try {
-            // Just stop all sounds for now
-            ss.stopSoundThreads();
-        } catch (Exception e) {
-            logger.error(e.getMessage(), e);
-        }
+            @Override
+            public void play() throws InterruptedException {
+                if (mode == Audio.Mode.Synchronous) {
+                    // TODO Cannot be interrupted
+                    // TODO Doesn't react to stop command
+                    ss.playSound(audioHandle);
+                } else if (mode == Audio.Mode.Background) {
+                    ss.playBackgroundSound(audioHandle);
+                }
+            }
+
+            @Override
+            public void stop() {
+                try {
+                    ss.stopSoundThreads();
+                } catch (Exception e) {
+                    logger.error(e.getMessage(), e);
+                }
+            }
+        };
     }
 
     private void setImage(byte[] imageBytes) {

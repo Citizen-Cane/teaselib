@@ -2,26 +2,27 @@ package teaselib.core.media;
 
 import java.io.IOException;
 
+import teaselib.core.Audio;
+import teaselib.core.Audio.Mode;
 import teaselib.core.ResourceLoader;
 import teaselib.core.TeaseLib;
 
 public class RenderPrerecordedSpeech extends RenderSpeech {
-    private final ResourceLoader resources;
     private final String speechSoundFile;
+    private final Audio audio;
 
-    private Object audioHandle = null;
-
-    public RenderPrerecordedSpeech(String speechSoundFile, long pauseMillis,
-            ResourceLoader resources, TeaseLib teaseLib) {
+    public RenderPrerecordedSpeech(String speechSoundFile, long pauseMillis, ResourceLoader resources,
+            TeaseLib teaseLib) throws IOException {
         super(pauseMillis, teaseLib);
-        this.resources = resources;
         this.speechSoundFile = speechSoundFile;
+        this.audio = teaseLib.host.audio(resources, speechSoundFile, Mode.Synchronous);
+
+        audio.load();
     }
 
     @Override
     protected void renderSpeech() throws IOException, InterruptedException {
-        audioHandle = speechSoundFile;
-        teaseLib.host.playSound(resources, speechSoundFile);
+        audio.play();
     }
 
     @Override
@@ -31,9 +32,7 @@ public class RenderPrerecordedSpeech extends RenderSpeech {
 
     @Override
     public void interrupt() {
-        if (audioHandle != null) {
-            teaseLib.host.stopSound(audioHandle);
-        }
+        audio.stop();
         super.interrupt();
     }
 }

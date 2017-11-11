@@ -106,7 +106,8 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
 
     public Object setBackgroundSound(String path) {
         if (Boolean.parseBoolean(teaseLib.config.get(Config.Render.Sound))) {
-            RenderBackgroundSound audioHandle = new RenderBackgroundSound(resources, path, teaseLib);
+            RenderBackgroundSound audioHandle;
+            audioHandle = new RenderBackgroundSound(resources, path, teaseLib);
             queueBackgropundRenderer(audioHandle);
             return audioHandle;
         } else {
@@ -122,14 +123,6 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
             return audioHandle;
         } else {
             return null;
-        }
-    }
-
-    public void stopSound(Object audioHandle) {
-        if (audioHandle instanceof MediaRenderer.Threaded) {
-            ((MediaRenderer.Threaded) audioHandle).interrupt();
-        } else {
-            teaseLib.host.stopSound(audioHandle);
         }
     }
 
@@ -432,6 +425,7 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
      * Best used for replies that can be easily dismissed without consequences, like in conversations.
      * 
      * Or in situations that involve timing, where a quick reply is necessary, but the actual words don't matter.
+     * 
      * @param recognitionConfidence
      *            The confidence threshold used for speech recognition.
      * @param choice

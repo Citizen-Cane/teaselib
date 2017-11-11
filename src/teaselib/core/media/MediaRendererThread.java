@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 
 import teaselib.Config;
 import teaselib.Replay;
+import teaselib.core.Configuration;
 import teaselib.core.ScriptInterruptedException;
 import teaselib.core.TeaseLib;
 import teaselib.core.concurrency.NamedExecutorService;
@@ -109,11 +110,14 @@ public abstract class MediaRendererThread implements MediaRenderer.Threaded, Rep
     }
 
     protected void handleIOException(Exception e) throws IOException {
+        handleIOException(teaseLib.config, e);
+    }
+
+    public static void handleIOException(Configuration config, Exception e) throws IOException {
         if (e instanceof IOException) {
-            boolean stopOnAssetNotFound = Boolean.parseBoolean(teaseLib.config.get(Config.Debug.StopOnAssetNotFound));
+            boolean stopOnAssetNotFound = Boolean.parseBoolean(config.get(Config.Debug.StopOnAssetNotFound));
             if (stopOnAssetNotFound) {
                 logger.error(e.getMessage(), e);
-                // TODO Error is not (always) forwarded to script thread
                 throw (IOException) e;
             } else {
                 logger.warn(e.getMessage(), e);

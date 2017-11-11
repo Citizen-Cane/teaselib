@@ -1,7 +1,6 @@
 package teaselib.core.debug;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -13,6 +12,8 @@ import org.bytedeco.javacpp.opencv_core.Point;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import teaselib.core.Audio;
+import teaselib.core.Audio.Mode;
 import teaselib.core.Debugger;
 import teaselib.core.Debugger.Response;
 import teaselib.core.Host;
@@ -57,19 +58,23 @@ public class DebugHost implements Host {
     }
 
     @Override
-    public void playSound(ResourceLoader resources, String path) throws IOException, InterruptedException {
-    }
+    public Audio audio(ResourceLoader resources, String path, Mode mode) {
+        return new Audio() {
+            @Override
+            public void load() {
+                // Ignore
+            }
 
-    @Override
-    public Object playBackgroundSound(ResourceLoader resources, String path) throws IOException {
-        // TODO Auto-generated method stub
-        return null;
-    }
+            @Override
+            public void play() {
+                // Ignore
+            }
 
-    @Override
-    public void stopSound(Object handle) {
-        // TODO Auto-generated method stub
-
+            @Override
+            public void stop() {
+                // Ignore
+            }
+        };
     }
 
     @Override

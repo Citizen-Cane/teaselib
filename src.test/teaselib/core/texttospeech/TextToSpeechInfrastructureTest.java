@@ -26,7 +26,7 @@ public class TextToSpeechInfrastructureTest {
     public void testVoiceEnumeration() {
         Assume.assumeTrue(Environment.SYSTEM == Environment.Windows);
         TextToSpeech textToSpeech = new TextToSpeech();
-        assertTrue(textToSpeech.isReady());
+
         Map<String, Voice> voices = textToSpeech.getVoices();
         assertTrue(voices.size() > 0);
         for (Entry<String, Voice> entry : voices.entrySet()) {

@@ -85,10 +85,9 @@ public class MicrosoftSapiPronunciationDictionaryTest {
         Assume.assumeTrue(Environment.SYSTEM == Environment.Windows);
 
         textToSpeech = new TextToSpeech();
-        assertTrue(textToSpeech.isReady());
 
         Map<String, Voice> voices = textToSpeech.getVoices();
-        assertTrue(voices.size() > 0);
+        assertTrue(voices.size() > 1);
         logger.info(voices.keySet().toString());
     }
 

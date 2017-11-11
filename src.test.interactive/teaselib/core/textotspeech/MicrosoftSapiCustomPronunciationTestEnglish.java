@@ -39,10 +39,9 @@ public class MicrosoftSapiCustomPronunciationTestEnglish {
     public static void initSpeech() {
         Assume.assumeTrue(Environment.SYSTEM == Environment.Windows);
         textToSpeech = new TextToSpeech();
-        assertTrue(textToSpeech.isReady());
 
         Map<String, Voice> voices = textToSpeech.getVoices();
-        assertTrue(voices.size() > 0);
+        assertTrue(voices.size() > 1);
         logger.info(voices.keySet().toString());
 
         voice = voices.get(VOICE_GUID);

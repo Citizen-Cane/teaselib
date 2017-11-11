@@ -28,9 +28,8 @@ public class TextToSpeechVoicesTest {
     public static Iterable<Voice> voices() {
         Assume.assumeTrue(Environment.SYSTEM == Environment.Windows);
 
-        assertTrue(textToSpeech.isReady());
         Map<String, Voice> voices = textToSpeech.getVoices();
-        assertTrue(voices.size() > 0);
+        assertTrue(voices.size() > 1);
 
         return voices.values();
     }

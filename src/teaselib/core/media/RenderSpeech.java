@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import teaselib.core.TeaseLib;
 import teaselib.core.speechrecognition.SpeechRecognition;
 import teaselib.core.speechrecognition.SpeechRecognizer;
+import teaselib.core.texttospeech.TextToSpeechPlayer;
 import teaselib.core.util.ExceptionUtil;
 
 public abstract class RenderSpeech extends MediaRendererThread {
@@ -19,6 +20,9 @@ public abstract class RenderSpeech extends MediaRendererThread {
     public RenderSpeech(long pauseMillis, TeaseLib teaseLib) {
         super(teaseLib);
         this.pauseMillis = pauseMillis;
+
+        TextToSpeechPlayer textToSpeech = teaseLib.globals.get(TextToSpeechPlayer.class);
+        textToSpeech.load();
     }
 
     @Override

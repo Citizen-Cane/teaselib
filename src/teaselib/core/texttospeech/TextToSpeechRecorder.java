@@ -63,7 +63,7 @@ public class TextToSpeechRecorder {
         this.resources = resources;
         this.textVariables = textVariables;
         this.ttsPlayer = new TextToSpeechPlayer(new Configuration(new DebugSetup()));
-        this.ttsPlayer.initTextToSpeech(new TextToSpeech());
+        this.ttsPlayer.load();
         this.voices = ttsPlayer.textToSpeech.getVoices();
         // storage = new TextToSpeechRecorderFileStorage(
         // resources.getAssetPath(""));

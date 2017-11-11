@@ -34,7 +34,6 @@ import teaselib.core.devices.DeviceFactoryListener;
 import teaselib.core.devices.Devices;
 import teaselib.core.devices.remote.LocalNetworkDevice;
 import teaselib.core.media.MediaRendererQueue;
-import teaselib.core.texttospeech.TextToSpeechPlayer;
 import teaselib.core.ui.InputMethod;
 import teaselib.core.ui.Shower;
 import teaselib.core.util.ObjectMap;
@@ -75,8 +74,6 @@ public class TeaseLib {
     private long timeOffsetMillis = 0;
     private final Set<TimeAdvanceListener> timeAdvanceListeners = new HashSet<>();
 
-    final TextToSpeechPlayer textToSpeech;
-
     public TeaseLib(final Host host, Persistence persistence) throws IOException {
         this(host, persistence, new TeaseLibConfigSetup(host));
     }
@@ -99,7 +96,6 @@ public class TeaseLib {
         this.shower = new Shower(host);
         this.inputMethods = new ArrayList<>();
         this.devices = new Devices(config);
-        this.textToSpeech = new TextToSpeechPlayer(config);
 
         bindMotionDetectorToVideoRenderer();
         bindNetworkProperties();

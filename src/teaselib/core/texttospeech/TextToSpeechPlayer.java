@@ -83,54 +83,49 @@ public class TextToSpeechPlayer {
 
     TextToSpeechPlayer(Configuration config, TextToSpeechImplementation textToSpeechImplementation) {
         this(config);
-        initTextToSpeech(new TextToSpeech(textToSpeechImplementation));
+        this.textToSpeech = new TextToSpeech(textToSpeechImplementation);
+        loadVoices();
     }
 
-    private void lazyInitTTS() {
+    public void load() {
         if (this.textToSpeech == null) {
-            initTextToSpeech(new TextToSpeech());
+            this.textToSpeech = new TextToSpeech();
+            loadVoices();
         }
     }
 
-    void reload() {
+    public void reload() {
         preferredVoices.clear();
         actorKey2TTSVoice.clear();
         voices.clear();
         usedVoices.clear();
 
-        initTextToSpeech();
+        loadVoices();
     }
 
-    public void initTextToSpeech(TextToSpeech textToSpeech) {
-        this.textToSpeech = textToSpeech;
-        initTextToSpeech();
-    }
-
-    void initTextToSpeech() {
+    private void loadVoices() {
         try {
             readPreferredVoices();
         } catch (IOException e) {
             logger.warn(e.getMessage(), e);
         }
 
-        if (this.textToSpeech.isReady()) {
-            Map<String, String> preferredVoiceGuids = preferredVoices.getPreferredVoiceGuids();
-            Set<String> ignoredVoiceGuids = preferredVoices.getDisabledVoiceGuids();
+        Map<String, String> preferredVoiceGuids = preferredVoices.getPreferredVoiceGuids();
+        Set<String> ignoredVoiceGuids = preferredVoices.getDisabledVoiceGuids();
 
-            try {
-                this.textToSpeech.initPhoneticDictionary(pronounciationDictionary);
-            } catch (IOException e) {
-                logger.warn(e.getMessage(), e);
-            }
+        try {
+            textToSpeech.initPhoneticDictionary(pronounciationDictionary);
+        } catch (IOException e) {
+            logger.warn(e.getMessage(), e);
+        }
 
-            Map<String, Voice> allVoices = this.textToSpeech.getVoices();
-            voices.putAll(sortedVoicesAccordingToSettings(allVoices, preferredVoiceGuids, ignoredVoiceGuids));
+        Map<String, Voice> allVoices = textToSpeech.getVoices();
+        voices.putAll(sortedVoicesAccordingToSettings(allVoices, preferredVoiceGuids, ignoredVoiceGuids));
 
-            if (logger.isInfoEnabled()) {
-                logPreferredVoices(voices, preferredVoiceGuids);
-                logOtherVoices(voices, preferredVoiceGuids, ignoredVoiceGuids);
-                logIgnoredVoices(allVoices, ignoredVoiceGuids);
-            }
+        if (logger.isInfoEnabled()) {
+            logPreferredVoices(voices, preferredVoiceGuids);
+            logOtherVoices(voices, preferredVoiceGuids, ignoredVoiceGuids);
+            logIgnoredVoices(allVoices, ignoredVoiceGuids);
         }
     }
 
@@ -246,8 +241,6 @@ public class TextToSpeechPlayer {
     }
 
     Voice getVoiceFor(Actor actor) {
-        lazyInitTTS();
-
         if (actorKey2PrerecordedVoiceGuid.containsKey(actor.key)) {
             throw new IllegalStateException("Prerecorded voice available");
         }
@@ -380,11 +373,8 @@ public class TextToSpeechPlayer {
      *            instance to call sleep on
      */
     public void speak(Actor actor, String prompt, String mood) throws InterruptedException {
-        lazyInitTTS();
-
-        boolean useTTS = textToSpeech.isReady();
-        if (useTTS) {
-            Voice voice = getVoiceFor(actor);
+        Voice voice = getVoiceFor(actor);
+        if (voice != TextToSpeech.None) {
             try {
                 textToSpeech.speak(voice, pronounciationDictionary.correct(voice, prompt), new String[] { mood });
             } catch (IOException e) {

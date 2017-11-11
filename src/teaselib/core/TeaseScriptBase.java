@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,6 +19,7 @@ import teaselib.core.media.MediaRenderer;
 import teaselib.core.media.RenderInterTitle;
 import teaselib.core.media.RenderMessage;
 import teaselib.core.speechrecognition.SpeechRecognitionResult.Confidence;
+import teaselib.core.texttospeech.TextToSpeechPlayer;
 import teaselib.core.ui.Choices;
 import teaselib.core.ui.InputMethod;
 import teaselib.core.ui.Prompt;
@@ -74,12 +76,9 @@ public abstract class TeaseScriptBase {
      * @param locale
      */
     protected TeaseScriptBase(TeaseLib teaseLib, ResourceLoader resources, Actor actor, String namespace) {
-        this.teaseLib = teaseLib;
-        this.resources = resources;
-        this.actor = actor;
-        this.namespace = namespace.replace(" ", "_");
-
-        teaseLib.textToSpeech.acquireVoice(actor, resources);
+        this(teaseLib, resources, actor, namespace,
+                teaseLib.globals.store(TextToSpeechPlayer.class, () -> new TextToSpeechPlayer(teaseLib.config))
+                        .get(TextToSpeechPlayer.class));
     }
 
     /**
@@ -89,7 +88,18 @@ public abstract class TeaseScriptBase {
      * @param actor
      */
     protected TeaseScriptBase(TeaseScriptBase script, Actor actor) {
-        this(script.teaseLib, script.resources, actor, script.namespace);
+        this(script.teaseLib, script.resources, actor, script.namespace,
+                script.teaseLib.globals.get(TextToSpeechPlayer.class));
+    }
+
+    private TeaseScriptBase(TeaseLib teaseLib, ResourceLoader resources, Actor actor, String namespace,
+            TextToSpeechPlayer textToSpeech) {
+        this.teaseLib = teaseLib;
+        this.resources = resources;
+        this.actor = actor;
+        this.namespace = namespace.replace(" ", "_");
+
+        textToSpeech.acquireVoice(actor, resources);
     }
 
     protected static List<String> buildChoicesFromArray(String choice, String... more) {
@@ -139,17 +149,20 @@ public abstract class TeaseScriptBase {
 
     protected void renderMessage(Message message, boolean useTTS) {
         try {
+            Optional<TextToSpeechPlayer> textToSpeech = useTTS
+                    ? Optional.of(teaseLib.globals.get(TextToSpeechPlayer.class))
+                    : Optional.empty();
             // inject speech parts to replay pre-recorded speech or use TTS
             // This has to be done first as subsequent parse steps
             // inject moods and thus change the message hash
-            if (useTTS) {
-                if (teaseLib.textToSpeech.prerenderedSpeechAvailable(message.actor)
+            if (textToSpeech.isPresent()) {
+                if (textToSpeech.get().prerenderedSpeechAvailable(message.actor)
                         && Boolean.parseBoolean(teaseLib.config.get(Config.Render.Speech))) {
-                    message = teaseLib.textToSpeech.createPrerenderedSpeechMessage(message, resources);
+                    message = textToSpeech.get().createPrerenderedSpeechMessage(message, resources);
                 }
             }
             Message parsedMessage = injectImagesAndExpandTextVariables(message);
-            renderMessage(new RenderMessage(resources, parsedMessage, useTTS ? teaseLib.textToSpeech : null, teaseLib));
+            renderMessage(new RenderMessage(resources, parsedMessage, textToSpeech, teaseLib));
         } finally {
             displayImage = Message.ActorImage;
             mood = Mood.Neutral;

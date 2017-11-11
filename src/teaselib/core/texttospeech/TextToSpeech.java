@@ -12,14 +12,44 @@ import java.util.Set;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+import teaselib.Sexuality.Gender;
 import teaselib.core.ScriptInterruptedException;
 import teaselib.core.events.Delegate;
 import teaselib.core.events.DelegateExecutor;
 import teaselib.core.texttospeech.implementation.TeaseLibTTS;
+import teaselib.core.texttospeech.implementation.Unsupported;
 import teaselib.core.texttospeech.implementation.loquendo.LoquendoTTS;
 import teaselib.core.util.ExceptionUtil;
 
 public class TextToSpeech {
+    public static final Voice None = new Voice() {
+
+        @Override
+        public TextToSpeechImplementation tts() {
+            return Unsupported.Instance;
+        }
+
+        @Override
+        public String guid() {
+            return "None";
+        }
+
+        @Override
+        public Gender gender() {
+            return Male;
+        }
+
+        @Override
+        public String locale() {
+            return "??-??";
+        }
+
+        @Override
+        public VoiceInfo info() {
+            return new VoiceInfo("None", "None", "None");
+        }
+
+    };
     private final Map<String, TextToSpeechImplementation> ttsSDKs = new LinkedHashMap<>();
     private final Map<String, DelegateExecutor> ttsExecutors = new LinkedHashMap<>();
 
@@ -124,13 +154,6 @@ public class TextToSpeech {
 
     private static DelegateExecutor newDelegateExecutor() {
         return new DelegateExecutor("Speech Synthesis dispatcher thread");
-    }
-
-    /**
-     * @return Whether TextToSpeech is ready to render speech
-     */
-    public boolean isReady() {
-        return !ttsSDKs.isEmpty();
     }
 
     public Map<String, Voice> getVoices() {

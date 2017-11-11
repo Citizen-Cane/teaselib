@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
@@ -37,7 +38,7 @@ public class RenderMessage extends MediaRendererThread {
 
     private final ResourceLoader resources;
     private final Message message;
-    private final TextToSpeechPlayer ttsPlayer;
+    private final Optional<TextToSpeechPlayer> ttsPlayer;
     MediaRendererThread speechRenderer = null;
     MediaRendererThread speechRendererInProgress = null;
     RenderSound soundRenderer = null;
@@ -47,14 +48,18 @@ public class RenderMessage extends MediaRendererThread {
 
     private final Set<MediaRendererThread> interuptableAudio = new HashSet<>();
 
-    public RenderMessage(ResourceLoader resources, Message message, TextToSpeechPlayer ttsPlayer, TeaseLib teaseLib) {
+    public RenderMessage(ResourceLoader resources, Message message, Optional<TextToSpeechPlayer> ttsPlayer,
+            TeaseLib teaseLib) {
         super(teaseLib);
+
         if (message == null) {
             throw new NullPointerException();
         }
+
         this.resources = resources;
         this.message = message;
         this.ttsPlayer = ttsPlayer;
+
         prefetchImages(message);
     }
 
@@ -248,7 +253,6 @@ public class RenderMessage extends MediaRendererThread {
                 }
             }
         } else if (part.type == Message.Type.Mood) {
-            // Mood
             mood = part.value;
         } else if (part.type == Message.Type.Keyword) {
             doKeyword(part);
@@ -268,14 +272,14 @@ public class RenderMessage extends MediaRendererThread {
     private void show(Actor actor, Part part, MessageTextAccumulator accumulatedText, String mood, boolean speakText,
             boolean lastParagraph) throws IOException, InterruptedException {
         show(accumulatedText.toString(), mood);
-        if (ttsPlayer != null && speechRenderer == null) {
-            if (speakText) {
-                long paragraphPause = getParagraphPause(accumulatedText, lastParagraph);
-                speechRenderer = isSpeechOutputEnabled()
-                        ? new RenderTTSSpeech(ttsPlayer, actor, part.value, mood, paragraphPause, teaseLib)
-                        : new RenderSpeechDelay(paragraphPause, teaseLib, part.value);
-            }
+        if (speakText && speechRenderer == null && ttsPlayer.isPresent()) {
+            long paragraphPause = getParagraphPause(accumulatedText, lastParagraph);
+            speechRenderer = isSpeechOutputEnabled()
+                    ? new RenderTTSSpeech(ttsPlayer.get(), actor, part.value, mood, paragraphPause, teaseLib)
+                    : new RenderSpeechDelay(paragraphPause, teaseLib, part.value);
+
         }
+
         teaseLib.transcript.info(part.value);
         if (speechRenderer != null) {
             speak();
@@ -284,12 +288,10 @@ public class RenderMessage extends MediaRendererThread {
 
     private void speak() {
         synchronized (interuptableAudio) {
-            // Play sound, wait until finished
             speechRenderer.render();
-            // Automatically interrupt
             interuptableAudio.add(speechRenderer);
+            speechRendererInProgress = speechRenderer;
         }
-        speechRendererInProgress = speechRenderer;
         speechRenderer = null;
     }
 
@@ -304,8 +306,8 @@ public class RenderMessage extends MediaRendererThread {
             speechRendererInProgress.completeAll();
             synchronized (interuptableAudio) {
                 interuptableAudio.remove(speechRendererInProgress);
+                speechRendererInProgress = null;
             }
-            speechRendererInProgress = null;
         }
     }
 
@@ -433,12 +435,10 @@ public class RenderMessage extends MediaRendererThread {
 
     @Override
     public void interrupt() {
-        // Cancel TTS speech
-        if (!hasCompletedMandatory()) {
-            if (ttsPlayer != null) {
-                ttsPlayer.stop(message.actor);
-            }
+        if (ttsPlayer.isPresent() && !hasCompletedMandatory()) {
+            ttsPlayer.get().stop(message.actor);
         }
+
         synchronized (interuptableAudio) {
             for (MediaRendererThread sound : interuptableAudio) {
                 sound.interrupt();

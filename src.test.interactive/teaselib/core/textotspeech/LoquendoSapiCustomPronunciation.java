@@ -97,9 +97,9 @@ public class LoquendoSapiCustomPronunciation {
     public void testCustomPronunciation() throws InterruptedException {
         Assume.assumeTrue(Environment.SYSTEM == Environment.Windows);
         TextToSpeech textToSpeech = new TextToSpeech();
-        assertTrue(textToSpeech.isReady());
+
         Map<String, Voice> voices = textToSpeech.getVoices();
-        assertTrue(voices.size() > 0);
+        assertTrue(voices.size() > 1);
         logger.info(voices.keySet().toString());
 
         Voice voice = voices.get(voiceGuid);

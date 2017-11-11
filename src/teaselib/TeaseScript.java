@@ -16,7 +16,6 @@ import teaselib.core.TeaseLib;
 import teaselib.core.events.Event;
 import teaselib.core.events.EventSource;
 import teaselib.core.media.MediaRenderer;
-import teaselib.core.media.RenderBackgroundSound;
 import teaselib.core.media.RenderDelay;
 import teaselib.core.media.RenderDesktopItem;
 import teaselib.core.media.RenderSound;
@@ -104,25 +103,15 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
         }
     }
 
-    public Object setBackgroundSound(String path) {
+    public void setBackgroundSound(String path) {
         if (Boolean.parseBoolean(teaseLib.config.get(Config.Render.Sound))) {
-            RenderBackgroundSound audioHandle;
-            audioHandle = new RenderBackgroundSound(resources, path, teaseLib);
-            queueBackgropundRenderer(audioHandle);
-            return audioHandle;
-        } else {
-            return null;
+            queueBackgropundRenderer(new RenderSound(resources, path, teaseLib));
         }
     }
 
-    public Object setSound(String path) {
+    public void setSound(String path) {
         if (Boolean.parseBoolean(teaseLib.config.get(Config.Render.Sound))) {
-            RenderSound soundRenderer = new RenderSound(resources, path, teaseLib);
-            queueRenderer(soundRenderer);
-            Object audioHandle = soundRenderer;
-            return audioHandle;
-        } else {
-            return null;
+            queueRenderer(new RenderSound(resources, path, teaseLib));
         }
     }
 

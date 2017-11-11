@@ -36,7 +36,6 @@ import org.slf4j.LoggerFactory;
 import ss.IScript;
 import ss.desktop.MainFrame;
 import teaselib.core.Audio;
-import teaselib.core.Audio.Mode;
 import teaselib.core.Host;
 import teaselib.core.ResourceLoader;
 import teaselib.core.ScriptInterruptedException;
@@ -51,15 +50,35 @@ import teaselib.core.util.ExceptionUtil;
 import teaselib.util.Interval;
 
 /**
- * SexScripts renderer: Workarounds some of SS shortcomings (or it's just my taste :^) TODO sounds are not playable from
- * stream in SS - workarounded by playing sounds myself - same for prerendered speech TODO UI layout wastes a lot of
- * screen estate, sub optimal for portrait images TODO TExt pane is noit fixed, I liked it better the way CM did it -
- * workarounded by adding pixels left and right of portrait images TODO Invisible progress bar eats screen estate TODO
- * Buttons should be layouted vertically, better for longer button texts
+ * SexScripts host:
+ * <p>
  * 
- * @author someone
+ * - same for * prerendered speech
+ * 
+ * texts
+ * 
+ * @author Citizen-Cane
  * 
  */
+
+// List of shortcomings of the user interface from TeaseLibs point of view
+// TODO sounds are not playable from stream directly - using file cache
+// TODO UI layout wastes a lot of screen estate, sub optimal for portrait images
+// TODO pre-allocated screen estate for progress bar eats screen estate
+// -> rendering images on the background image
+// TODO Buttons should be layouted vertically, better for longer prompts
+// TODO Text pane is not fixed size, I liked it better the way CM did it
+// -> workarounded by adding pixels left and right of portrait images
+
+// List of bugs:
+// TODO Only sounds in background may be stopped, but TeaseLib requires interruptible sound threads
+// because it usually waits on sounds and pre-recorded speech to be completed
+// As a result, pre-recorded speech and non-background sounds can't be interrupted,
+// which in turn makes the script response sluggish when canceling script functions or invoking the quit handler
+// -> This mostly affects Mine because that script uses pre-recorded speech
+// TODO Combobox doesn't respond to speech recognition reliably
+// - This is in fact not a speech recognition related problem,
+// but dismissing the combobox after showing the list programatically
 public class SexScriptsHost implements Host {
     private static final Logger logger = LoggerFactory.getLogger(SexScriptsHost.class);
 
@@ -152,7 +171,7 @@ public class SexScriptsHost implements Host {
     }
 
     @Override
-    public Audio audio(ResourceLoader resources, String path, Mode mode) {
+    public Audio audio(ResourceLoader resources, String path) {
         return new Audio() {
             String audioHandle = null;
 
@@ -163,13 +182,9 @@ public class SexScriptsHost implements Host {
 
             @Override
             public void play() throws InterruptedException {
-                if (mode == Audio.Mode.Synchronous) {
-                    // TODO Cannot be interrupted
-                    // TODO Doesn't react to stop command
-                    ss.playSound(audioHandle);
-                } else if (mode == Audio.Mode.Background) {
-                    ss.playBackgroundSound(audioHandle);
-                }
+                // TODO interrupting the thread has no effect
+                // TODO Doesn't react to stopSoundThreads() either
+                ss.playSound(audioHandle);
             }
 
             @Override

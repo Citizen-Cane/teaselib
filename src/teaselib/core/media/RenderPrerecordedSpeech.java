@@ -3,7 +3,6 @@ package teaselib.core.media;
 import java.io.IOException;
 
 import teaselib.core.Audio;
-import teaselib.core.Audio.Mode;
 import teaselib.core.ResourceLoader;
 import teaselib.core.TeaseLib;
 
@@ -15,7 +14,7 @@ public class RenderPrerecordedSpeech extends RenderSpeech {
             TeaseLib teaseLib) throws IOException {
         super(pauseMillis, teaseLib);
         this.speechSoundFile = speechSoundFile;
-        this.audio = teaseLib.host.audio(resources, speechSoundFile, Mode.Synchronous);
+        this.audio = teaseLib.host.audio(resources, speechSoundFile);
 
         audio.load();
     }

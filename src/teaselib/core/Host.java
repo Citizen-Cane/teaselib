@@ -3,7 +3,6 @@ package teaselib.core;
 import java.io.File;
 import java.util.List;
 
-import teaselib.core.Audio.Mode;
 import teaselib.core.ui.InputMethod;
 
 /**
@@ -14,7 +13,7 @@ import teaselib.core.ui.InputMethod;
  *
  */
 public interface Host {
-    Audio audio(ResourceLoader resources, String path, Mode mode);
+    Audio audio(ResourceLoader resources, String path);
 
     /**
      * Show text and image. Since text and image determine the layout, they must be set simultanously.

@@ -6,7 +6,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import teaselib.core.Audio;
-import teaselib.core.Audio.Mode;
 import teaselib.core.ResourceLoader;
 import teaselib.core.TeaseLib;
 import teaselib.core.util.ExceptionUtil;
@@ -20,7 +19,7 @@ public class RenderSound extends MediaRendererThread {
     public RenderSound(ResourceLoader resources, String soundFile, TeaseLib teaseLib) {
         super(teaseLib);
         this.soundFile = soundFile;
-        this.audio = teaseLib.host.audio(resources, soundFile, Mode.Synchronous);
+        this.audio = teaseLib.host.audio(resources, soundFile);
 
         try {
             audio.load();

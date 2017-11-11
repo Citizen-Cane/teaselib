@@ -13,7 +13,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import teaselib.core.Audio;
-import teaselib.core.Audio.Mode;
 import teaselib.core.Debugger;
 import teaselib.core.Debugger.Response;
 import teaselib.core.Host;
@@ -58,7 +57,7 @@ public class DebugHost implements Host {
     }
 
     @Override
-    public Audio audio(ResourceLoader resources, String path, Mode mode) {
+    public Audio audio(ResourceLoader resources, String path) {
         return new Audio() {
             @Override
             public void load() {

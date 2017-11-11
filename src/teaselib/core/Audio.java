@@ -7,11 +7,6 @@ import java.io.IOException;
  *
  */
 public interface Audio {
-    enum Mode {
-        Synchronous,
-        Background
-    }
-
     void load() throws IOException;
 
     void play() throws InterruptedException;

@@ -18,6 +18,10 @@ public class ObjectMap {
         return this;
     }
 
+    public <T> T get(Class<T> key) {
+        return get((Object) key);
+    }
+
     public <T> T get(Object key) {
         @SuppressWarnings("unchecked")
         T value = (T) realized.get(key);

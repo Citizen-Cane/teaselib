@@ -12,6 +12,7 @@ import teaselib.Replay;
 import teaselib.core.ScriptFutureTask;
 import teaselib.core.TeaseScriptBase;
 import teaselib.core.events.Event;
+import teaselib.core.media.MediaRendererQueue;
 import teaselib.core.speechrecognition.SpeechRecognition;
 import teaselib.core.speechrecognition.SpeechRecognitionImplementation;
 import teaselib.core.speechrecognition.SpeechRecognitionResult;
@@ -108,7 +109,7 @@ public class SpeechRecognitionInputMethod implements InputMethod {
                         logger.info(scriptTask.getRelation().toString() + " script functions running"
                                 + " - skipping RecognitionRejectedScript "
                                 + speechRecognitionRejectedScript.toString());
-                    } else if (!script.teaseLib.renderQueue.hasCompletedMandatory()) {
+                    } else if (!script.teaseLib.globals.get(MediaRendererQueue.class).hasCompletedMandatory()) {
                         // must complete all to avoid parallel rendering
                         // see {@link Message#ShowChoices}
                         logger.info(" message rendering still in progress" + " - skipping RecognitionRejectedScript "

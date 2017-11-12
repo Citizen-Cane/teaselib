@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import teaselib.core.debug.DebugResponses;
+import teaselib.core.ui.InputMethods;
 
 public class Debugger {
     public final TeaseLib teaseLib;
@@ -37,13 +38,13 @@ public class Debugger {
 
     public void attach() {
         freezeTime();
-        teaseLib.inputMethods.add(debugInputMethod);
+        teaseLib.globals.get(InputMethods.class).add(debugInputMethod);
         debugInputMethod.attach(teaseLib);
     }
 
     public void detach() {
         debugInputMethod.detach(teaseLib);
-        teaseLib.inputMethods.remove(debugInputMethod);
+        teaseLib.globals.get(InputMethods.class).remove(debugInputMethod);
         resumeTime();
     }
 

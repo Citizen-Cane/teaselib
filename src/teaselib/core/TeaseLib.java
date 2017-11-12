@@ -8,12 +8,10 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Locale;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -33,9 +31,6 @@ import teaselib.core.debug.TimeAdvancedEvent;
 import teaselib.core.devices.DeviceFactoryListener;
 import teaselib.core.devices.Devices;
 import teaselib.core.devices.remote.LocalNetworkDevice;
-import teaselib.core.media.MediaRendererQueue;
-import teaselib.core.ui.InputMethod;
-import teaselib.core.ui.Shower;
 import teaselib.core.util.ObjectMap;
 import teaselib.core.util.PropertyNameMapping;
 import teaselib.core.util.QualifiedItem;
@@ -66,10 +61,6 @@ public class TeaseLib {
     final StateMaps stateMaps = new StateMaps(this);
     public final Devices devices;
 
-    final Shower shower;
-    final List<InputMethod> inputMethods;
-    public final MediaRendererQueue renderQueue = new MediaRendererQueue();
-
     private long frozenTime = Long.MIN_VALUE;
     private long timeOffsetMillis = 0;
     private final Set<TimeAdvanceListener> timeAdvanceListeners = new HashSet<>();
@@ -93,8 +84,7 @@ public class TeaseLib {
 
         this.config = new Configuration(setup);
         this.transcript = newTranscriptLogger(host.getLocation(Location.Log));
-        this.shower = new Shower(host);
-        this.inputMethods = new ArrayList<>();
+
         this.devices = new Devices(config);
 
         bindMotionDetectorToVideoRenderer();

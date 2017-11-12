@@ -16,13 +16,16 @@ import teaselib.Mood;
 import teaselib.Replay;
 import teaselib.ScriptFunction;
 import teaselib.core.media.MediaRenderer;
+import teaselib.core.media.MediaRendererQueue;
 import teaselib.core.media.RenderInterTitle;
 import teaselib.core.media.RenderMessage;
 import teaselib.core.speechrecognition.SpeechRecognitionResult.Confidence;
 import teaselib.core.texttospeech.TextToSpeechPlayer;
 import teaselib.core.ui.Choices;
 import teaselib.core.ui.InputMethod;
+import teaselib.core.ui.InputMethods;
 import teaselib.core.ui.Prompt;
+import teaselib.core.ui.Shower;
 import teaselib.core.ui.SpeechRecognitionInputMethod;
 import teaselib.util.TextVariables;
 
@@ -40,6 +43,7 @@ public abstract class TeaseScriptBase {
 
     protected static final int NoTimeout = 0;
 
+    private final MediaRendererQueue renderQueue;
     private final List<MediaRenderer> queuedRenderers = new ArrayList<>();
     private final List<MediaRenderer.Threaded> backgroundRenderers = new ArrayList<>();
 
@@ -63,7 +67,7 @@ public abstract class TeaseScriptBase {
                 // Restore the prompt that caused running the SR-rejected script
                 // as soon as possible
                 endAll();
-                teaseLib.renderQueue.replay(renderers, replayPosition);
+                renderQueue.replay(renderers, replayPosition);
                 playedRenderers = renderers;
             }
         }
@@ -77,8 +81,12 @@ public abstract class TeaseScriptBase {
      */
     protected TeaseScriptBase(TeaseLib teaseLib, ResourceLoader resources, Actor actor, String namespace) {
         this(teaseLib, resources, actor, namespace,
+                teaseLib.globals.store(MediaRendererQueue.class, MediaRendererQueue::new).get(MediaRendererQueue.class),
                 teaseLib.globals.store(TextToSpeechPlayer.class, () -> new TextToSpeechPlayer(teaseLib.config))
                         .get(TextToSpeechPlayer.class));
+
+        teaseLib.globals.store(Shower.class, () -> new Shower(teaseLib.host));
+        teaseLib.globals.store(InputMethods.class, InputMethods::new);
     }
 
     /**
@@ -89,14 +97,16 @@ public abstract class TeaseScriptBase {
      */
     protected TeaseScriptBase(TeaseScriptBase script, Actor actor) {
         this(script.teaseLib, script.resources, actor, script.namespace,
+                script.teaseLib.globals.get(MediaRendererQueue.class),
                 script.teaseLib.globals.get(TextToSpeechPlayer.class));
     }
 
     private TeaseScriptBase(TeaseLib teaseLib, ResourceLoader resources, Actor actor, String namespace,
-            TextToSpeechPlayer textToSpeech) {
+            MediaRendererQueue renderQueue, TextToSpeechPlayer textToSpeech) {
         this.teaseLib = teaseLib;
         this.resources = resources;
         this.actor = actor;
+        this.renderQueue = renderQueue;
         this.namespace = namespace.replace(" ", "_");
 
         textToSpeech.acquireVoice(actor, resources);
@@ -110,11 +120,11 @@ public abstract class TeaseScriptBase {
     }
 
     public void completeStarts() {
-        teaseLib.renderQueue.completeStarts();
+        renderQueue.completeStarts();
     }
 
     public void completeMandatory() {
-        teaseLib.renderQueue.completeMandatories();
+        renderQueue.completeMandatories();
     }
 
     /**
@@ -124,15 +134,15 @@ public abstract class TeaseScriptBase {
      * This won't display a button, it just waits. Background threads will continue to run.
      */
     public void completeAll() {
-        teaseLib.renderQueue.completeAll();
-        teaseLib.renderQueue.endAll();
+        renderQueue.completeAll();
+        renderQueue.endAll();
     }
 
     /**
      * Stop rendering and end all render threads
      */
     public void endAll() {
-        teaseLib.renderQueue.endAll();
+        renderQueue.endAll();
         stopBackgroundRenderers();
     }
 
@@ -170,7 +180,7 @@ public abstract class TeaseScriptBase {
     }
 
     private void renderMessage(MediaRenderer renderMessage) {
-        synchronized (teaseLib.renderQueue) {
+        synchronized (renderQueue) {
             synchronized (queuedRenderers) {
                 queueRenderer(renderMessage);
                 // Remember this set for replay
@@ -187,10 +197,10 @@ public abstract class TeaseScriptBase {
                 completeAll();
                 // Start a new message in the log
                 teaseLib.transcript.info("");
-                teaseLib.renderQueue.start(nextSet);
+                renderQueue.start(nextSet);
             }
             startBackgroundRenderers();
-            teaseLib.renderQueue.completeStarts();
+            renderQueue.completeStarts();
         }
     }
 
@@ -394,8 +404,7 @@ public abstract class TeaseScriptBase {
             stopBackgroundRenderers();
         }
 
-        List<InputMethod> inputMethods = new ArrayList<>(teaseLib.inputMethods);
-
+        InputMethods inputMethods = new InputMethods(teaseLib.globals.get(InputMethods.class));
         inputMethods.add(teaseLib.host.inputMethod());
         inputMethods.add(new SpeechRecognitionInputMethod(this, recognitionConfidence));
 
@@ -405,7 +414,7 @@ public abstract class TeaseScriptBase {
             logger.info(inputMethod.getClass().getSimpleName() + " " + inputMethod.toString());
         }
 
-        String choice = teaseLib.shower.show(this, prompt);
+        String choice = teaseLib.globals.get(Shower.class).show(this, prompt);
         endAll();
 
         logger.debug("Reply finished");

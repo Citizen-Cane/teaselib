@@ -46,7 +46,7 @@ public class RenderMessage extends MediaRendererThread {
     private String displayImage = null;
     private final Prefetcher<byte[]> imageFetcher = new Prefetcher<>();
 
-    private final Set<MediaRendererThread> interuptableAudio = new HashSet<>();
+    private final Set<MediaRendererThread> interruptibleAudio = new HashSet<>();
 
     public RenderMessage(ResourceLoader resources, Message message, Optional<TextToSpeechPlayer> ttsPlayer,
             TeaseLib teaseLib) {
@@ -210,10 +210,10 @@ public class RenderMessage extends MediaRendererThread {
             // Play sound, continue message execution
             completeSpeech(lastParagraph);
             if (isSoundOutputEnabled()) {
-                synchronized (interuptableAudio) {
+                synchronized (interruptibleAudio) {
                     soundRenderer = new RenderSound(resources, part.value, teaseLib);
                     soundRenderer.render();
-                    interuptableAudio.add(soundRenderer);
+                    interruptibleAudio.add(soundRenderer);
                 }
             }
             // use awaitSoundCompletion keyword to wait for sound completion
@@ -222,13 +222,13 @@ public class RenderMessage extends MediaRendererThread {
             completeSpeech(lastParagraph);
             if (isSoundOutputEnabled()) {
                 RenderSound sound = new RenderSound(resources, part.value, teaseLib);
-                synchronized (interuptableAudio) {
+                synchronized (interruptibleAudio) {
                     sound.render();
-                    interuptableAudio.add(sound);
+                    interruptibleAudio.add(sound);
                 }
                 sound.completeAll();
-                synchronized (interuptableAudio) {
-                    interuptableAudio.remove(sound);
+                synchronized (interruptibleAudio) {
+                    interruptibleAudio.remove(sound);
                 }
             }
         } else if (part.type == Message.Type.Speech) {
@@ -287,9 +287,9 @@ public class RenderMessage extends MediaRendererThread {
     }
 
     private void speak() {
-        synchronized (interuptableAudio) {
+        synchronized (interruptibleAudio) {
             speechRenderer.render();
-            interuptableAudio.add(speechRenderer);
+            interruptibleAudio.add(speechRenderer);
             speechRendererInProgress = speechRenderer;
         }
         speechRenderer = null;
@@ -304,8 +304,8 @@ public class RenderMessage extends MediaRendererThread {
         }
         if (speechRendererInProgress != null) {
             speechRendererInProgress.completeAll();
-            synchronized (interuptableAudio) {
-                interuptableAudio.remove(speechRendererInProgress);
+            synchronized (interruptibleAudio) {
+                interruptibleAudio.remove(speechRendererInProgress);
                 speechRendererInProgress = null;
             }
         }
@@ -382,8 +382,8 @@ public class RenderMessage extends MediaRendererThread {
             mandatoryCompleted();
         } else if (keyword == Message.AwaitSoundCompletion) {
             soundRenderer.completeMandatory();
-            synchronized (interuptableAudio) {
-                interuptableAudio.remove(soundRenderer);
+            synchronized (interruptibleAudio) {
+                interruptibleAudio.remove(soundRenderer);
             }
         } else {
             // Unimplemented keyword
@@ -435,12 +435,8 @@ public class RenderMessage extends MediaRendererThread {
 
     @Override
     public void interrupt() {
-        if (ttsPlayer.isPresent() && !hasCompletedMandatory()) {
-            ttsPlayer.get().stop(message.actor);
-        }
-
-        synchronized (interuptableAudio) {
-            for (MediaRendererThread sound : interuptableAudio) {
+        synchronized (interruptibleAudio) {
+            for (MediaRendererThread sound : interruptibleAudio) {
                 sound.interrupt();
             }
         }

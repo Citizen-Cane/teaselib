@@ -16,9 +16,6 @@ public class MediaRendererQueue {
 
     private final HashMap<Class<?>, MediaRenderer.Threaded> threadedMediaRenderers = new HashMap<>();
 
-    public MediaRendererQueue() {
-    }
-
     /**
      * Start a batch of renderers. This is reentrant and called from multiple threads. Frequent users are the main
      * script thread and script function threads.
@@ -101,11 +98,13 @@ public class MediaRendererQueue {
     public void completeAll() {
         Map<Class<?>, Threaded> renderers = getThreadedRenderers();
         if (!renderers.isEmpty()) {
-            logger.debug("Completing all threaded renderers");
+            if (logger.isDebugEnabled()) {
+                logger.debug("Completing all threaded renderers " + renderers);
+            }
             for (MediaRenderer.Threaded renderer : renderers.values()) {
                 renderer.completeAll();
             }
-        } else {
+        } else if (logger.isDebugEnabled()) {
             logger.debug("Threaded Renderers completeAll: queue empty");
         }
     }
@@ -117,7 +116,9 @@ public class MediaRendererQueue {
     public void endAll() {
         Map<Class<?>, Threaded> renderers = getThreadedRenderers();
         if (!renderers.isEmpty()) {
-            logger.debug("Ending all threaded renderers");
+            if (logger.isDebugEnabled()) {
+                logger.debug("Ending all threaded renderers");
+            }
             // Interrupt them all
             RuntimeException exception = null;
             for (MediaRenderer.Threaded renderer : renderers.values()) {

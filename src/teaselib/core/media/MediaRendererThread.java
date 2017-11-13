@@ -27,8 +27,8 @@ public abstract class MediaRendererThread implements MediaRenderer.Threaded, Rep
     private static final Logger logger = LoggerFactory.getLogger(MediaRendererThread.class);
     protected final TeaseLib teaseLib;
 
-    private final static String RenderTaskBaseName = "RenderTask ";
-    private final static ExecutorService Executor = NamedExecutorService.newFixedThreadPool(Integer.MAX_VALUE,
+    private static final String RenderTaskBaseName = "RenderTask ";
+    private static final ExecutorService Executor = NamedExecutorService.newFixedThreadPool(Integer.MAX_VALUE,
             RenderTaskBaseName, 1, TimeUnit.HOURS);
 
     protected Future<?> task = null;
@@ -70,6 +70,7 @@ public abstract class MediaRendererThread implements MediaRenderer.Threaded, Rep
                         }
                         renderMedia();
                     } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
                         // Expected
                     } catch (ScriptInterruptedException e) {
                         // Expected
@@ -104,6 +105,7 @@ public abstract class MediaRendererThread implements MediaRenderer.Threaded, Rep
                 // Wait until the renderer has started
                 wait();
             } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
                 throw new ScriptInterruptedException(e);
             }
         }
@@ -147,19 +149,23 @@ public abstract class MediaRendererThread implements MediaRenderer.Threaded, Rep
 
     protected void startCompleted() {
         completedStart.countDown();
-        logger.debug(getClass().getSimpleName() + " completed start after "
-                + String.format("%.2f seconds", getElapsedSeconds()));
+        if (logger.isDebugEnabled()) {
+            logger.debug(getClass().getSimpleName() + " completed start after "
+                    + String.format("%.2f seconds", getElapsedSeconds()));
+        }
     }
 
     protected void mandatoryCompleted() {
         completedMandatory.countDown();
-        logger.debug(getClass().getSimpleName() + " completed mandatory after "
-                + String.format("%.2f seconds", getElapsedSeconds()));
+        if (logger.isDebugEnabled()) {
+            logger.debug(getClass().getSimpleName() + " completed mandatory after "
+                    + String.format("%.2f seconds", getElapsedSeconds()));
+        }
     }
 
     protected void allCompleted() {
         completedAll.countDown();
-        logger.debug(getClass().getSimpleName() + " completed all after " + String.format("%.2f", getElapsedSeconds()));
+        logger.debug(getClass().getSimpleName() + " completed all after " + getElapsedSecondsFormatted());
     }
 
     @Override
@@ -168,6 +174,7 @@ public abstract class MediaRendererThread implements MediaRenderer.Threaded, Rep
             try {
                 completedStart.await();
             } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
                 throw new ScriptInterruptedException(e);
             }
         }
@@ -179,6 +186,7 @@ public abstract class MediaRendererThread implements MediaRenderer.Threaded, Rep
             try {
                 completedMandatory.await();
             } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
                 throw new ScriptInterruptedException(e);
             }
         }
@@ -191,12 +199,13 @@ public abstract class MediaRendererThread implements MediaRenderer.Threaded, Rep
                 completedAll.await();
                 join();
             } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
                 throw new ScriptInterruptedException(e);
             }
         }
     }
 
-    private boolean isDoneOrCancelled() {
+    protected boolean isDoneOrCancelled() {
         Future<?> f = task;
         return f.isDone() || f.isCancelled();
     }
@@ -219,9 +228,11 @@ public abstract class MediaRendererThread implements MediaRenderer.Threaded, Rep
     @Override
     public void interrupt() {
         Future<?> f = task;
-        if (!f.isCancelled()) {
+        if (!isDoneOrCancelled()) {
             f.cancel(true);
-            logger.debug(getClass().getSimpleName() + " cancelled after " + String.format("%.2f", getElapsedSeconds()));
+            if (logger.isDebugEnabled()) {
+                logger.debug(getClass().getSimpleName() + " cancelled after " + getElapsedSecondsFormatted());
+            }
         }
     }
 
@@ -233,16 +244,23 @@ public abstract class MediaRendererThread implements MediaRenderer.Threaded, Rep
         } catch (CancellationException e) {
             // Expected
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             throw new ScriptInterruptedException(e);
         } catch (Exception e) {
             Exception cause = ExceptionUtil.reduce(e);
             throw ExceptionUtil.asRuntimeException(cause);
         } finally {
-            logger.debug(getClass().getSimpleName() + " ended after " + String.format("%.2f", getElapsedSeconds()));
+            if (logger.isDebugEnabled()) {
+                logger.debug(getClass().getSimpleName() + " ended after " + getElapsedSecondsFormatted());
+            }
         }
     }
 
+    public String getElapsedSecondsFormatted() {
+        return String.format("%.2f", getElapsedSeconds());
+    }
+
     private double getElapsedSeconds() {
-        return (System.currentTimeMillis() - startMillis) / 1000;
+        return (System.currentTimeMillis() - startMillis) / 1000.0;
     }
 }

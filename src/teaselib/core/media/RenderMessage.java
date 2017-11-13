@@ -169,36 +169,42 @@ public class RenderMessage extends MediaRendererThread {
     }
 
     private void renderMessage(Message message, boolean speakText) throws IOException, InterruptedException {
-        if (message.isEmpty()) {
-            // // Show image but no text
-            show(null, Mood.Neutral);
-        } else {
-            MessageTextAccumulator accumulatedText = new MessageTextAccumulator();
-            String mood = Mood.Neutral;
-            Message lastSection = getLastSection(message);
-            // Process message parts
-            for (Iterator<Part> it = message.iterator(); it.hasNext();) {
-                Part part = it.next();
-                boolean lastParagraph = lastSection.getParts().contains(part);
-                boolean lastPart = !it.hasNext();
-                if (!ManuallyLoggedMessageTypes.contains(part.type)) {
-                    teaseLib.transcript.info("" + part.type.name() + " = " + part.value);
-                }
-                logger.info(part.type.toString() + ": " + part.value);
+        try {
+            if (message.isEmpty()) {
+                // Show image but no text
+                show(null, Mood.Neutral);
+                mandatoryCompleted();
+            } else {
+                MessageTextAccumulator accumulatedText = new MessageTextAccumulator();
+                String mood = Mood.Neutral;
+                Message lastSection = getLastSection(message);
+                // Process message parts
+                for (Iterator<Part> it = message.iterator(); it.hasNext();) {
+                    Part part = it.next();
+                    boolean lastParagraph = lastSection.getParts().contains(part);
+                    boolean lastPart = !it.hasNext();
+                    if (!ManuallyLoggedMessageTypes.contains(part.type)) {
+                        teaseLib.transcript.info("" + part.type.name() + " = " + part.value);
+                    }
+                    logger.info(part.type.toString() + ": " + part.value);
 
-                mood = renderMessagePart(part, accumulatedText, mood, speakText, lastParagraph);
-                if (part.type == Message.Type.Text) {
-                    show(message.actor, part, accumulatedText, mood, speakText, lastParagraph);
-                } else if (lastPart) {
-                    show(accumulatedText.toString());
-                }
+                    mood = renderMessagePart(part, accumulatedText, mood, speakText, lastParagraph);
+                    if (part.type == Message.Type.Text) {
+                        show(message.actor, part, accumulatedText, mood, speakText, lastParagraph);
+                    } else if (lastPart) {
+                        show(accumulatedText.toString());
+                    }
 
-                if (task.isCancelled()) {
-                    break;
+                    if (isDoneOrCancelled()) {
+                        break;
+                    }
                 }
+                completeCurrentParagraph(true);
+                allCompleted();
             }
-            completeSpeech(true);
-            allCompleted();
+        } finally {
+            // TODO Add clear command to host interface -> end of section
+            teaseLib.host.show(null, null);
         }
     }
 
@@ -208,7 +214,7 @@ public class RenderMessage extends MediaRendererThread {
             displayImage = part.value;
         } else if (part.type == Message.Type.BackgroundSound) {
             // Play sound, continue message execution
-            completeSpeech(lastParagraph);
+            completeCurrentParagraph(lastParagraph);
             if (isSoundOutputEnabled()) {
                 synchronized (interruptibleAudio) {
                     soundRenderer = new RenderSound(resources, part.value, teaseLib);
@@ -219,7 +225,7 @@ public class RenderMessage extends MediaRendererThread {
             // use awaitSoundCompletion keyword to wait for sound completion
         } else if (part.type == Message.Type.Sound) {
             // Play sound, wait until finished
-            completeSpeech(lastParagraph);
+            completeCurrentParagraph(lastParagraph);
             if (isSoundOutputEnabled()) {
                 RenderSound sound = new RenderSound(resources, part.value, teaseLib);
                 synchronized (interruptibleAudio) {
@@ -243,7 +249,7 @@ public class RenderMessage extends MediaRendererThread {
                 try {
                     final RenderDesktopItem renderDesktopItem = new RenderDesktopItem(
                             resources.unpackEnclosingFolder(part.value), teaseLib);
-                    completeSpeech(lastParagraph);
+                    completeCurrentParagraph(lastParagraph);
                     renderDesktopItem.render();
                 } catch (IOException e) {
                     logger.error(e.getMessage(), e);
@@ -257,7 +263,7 @@ public class RenderMessage extends MediaRendererThread {
         } else if (part.type == Message.Type.Keyword) {
             doKeyword(part);
         } else if (part.type == Message.Type.Delay) {
-            completeSpeech(lastParagraph);
+            completeCurrentParagraph(lastParagraph);
             doDelay(part);
         } else if (part.type == Message.Type.Item) {
             accumulatedText.add(part);
@@ -271,17 +277,17 @@ public class RenderMessage extends MediaRendererThread {
 
     private void show(Actor actor, Part part, MessageTextAccumulator accumulatedText, String mood, boolean speakText,
             boolean lastParagraph) throws IOException, InterruptedException {
-        show(accumulatedText.toString(), mood);
-        if (speakText && speechRenderer == null && ttsPlayer.isPresent()) {
+        if (speechRenderer == null) {
             long paragraphPause = getParagraphPause(accumulatedText, lastParagraph);
-            speechRenderer = isSpeechOutputEnabled()
+            speechRenderer = speakText && ttsPlayer.isPresent() && isSpeechOutputEnabled()
                     ? new RenderTTSSpeech(ttsPlayer.get(), actor, part.value, mood, paragraphPause, teaseLib)
                     : new RenderSpeechDelay(paragraphPause, teaseLib, part.value);
-
         }
 
         teaseLib.transcript.info(part.value);
-        if (speechRenderer != null) {
+        show(accumulatedText.toString(), mood);
+
+        if (!isDoneOrCancelled()) {
             speak();
         }
     }
@@ -295,7 +301,7 @@ public class RenderMessage extends MediaRendererThread {
         speechRenderer = null;
     }
 
-    private void completeSpeech(final boolean lastParagraph) {
+    private void completeCurrentParagraph(final boolean lastParagraph) {
         if (speechRendererInProgress != null) {
             speechRendererInProgress.completeMandatory();
         }
@@ -346,19 +352,20 @@ public class RenderMessage extends MediaRendererThread {
                 }
             }
         }
-        // speech in progress never refers to the last paragraph
-        completeSpeech(false);
-        teaseLib.host.show(imageBytes, text);
-        // First message shown - start part completed
-        startCompleted();
+
+        completeCurrentParagraph(false);
+
+        if (!isDoneOrCancelled()) {
+            teaseLib.host.show(imageBytes, text);
+            // First message shown - start part completed
+            startCompleted();
+        }
     }
 
     private static long getParagraphPause(MessageTextAccumulator accumulatedText, boolean lastParagraph) {
         if (lastParagraph) {
             return DELAY_AT_END_OF_MESSAGE;
         } else if (accumulatedText.canAppend()) {
-            // TODO pause is imperfect with M$ TTS
-            // - different from speaking the whole sentence at once
             return 0;
         } else {
             return DELAY_BETWEEN_PARAGRAPHS;
@@ -386,15 +393,13 @@ public class RenderMessage extends MediaRendererThread {
                 interruptibleAudio.remove(soundRenderer);
             }
         } else {
-            // Unimplemented keyword
-            throw new IllegalArgumentException("Unimplemented keyword: " + keyword);
+            throw new UnsupportedOperationException(keyword);
         }
     }
 
     private void doDelay(Part part) {
         String args = part.value;
         if (args.isEmpty()) {
-            // Fixed pause
             teaseLib.sleep(DELAY_AT_END_OF_MESSAGE, TimeUnit.MILLISECONDS);
         } else {
             try {
@@ -408,7 +413,6 @@ public class RenderMessage extends MediaRendererThread {
                     teaseLib.sleep(teaseLib.random((int) delayFrom, (int) delayTo), TimeUnit.MILLISECONDS);
                 }
             } catch (NumberFormatException ignore) {
-                // Fixed pause
                 teaseLib.sleep(DELAY_AT_END_OF_MESSAGE, TimeUnit.MILLISECONDS);
             }
         }
@@ -439,7 +443,9 @@ public class RenderMessage extends MediaRendererThread {
             for (MediaRendererThread sound : interruptibleAudio) {
                 sound.interrupt();
             }
+            interruptibleAudio.clear();
         }
+
         super.interrupt();
     }
 

@@ -128,18 +128,22 @@ public class SexScriptsHost implements Host {
         mainFrame.addWindowListener(new WindowListener() {
             @Override
             public void windowOpened(WindowEvent e) {
+                // Ignore
             }
 
             @Override
             public void windowIconified(WindowEvent e) {
+                // Ignore
             }
 
             @Override
             public void windowDeiconified(WindowEvent e) {
+                // Ignore
             }
 
             @Override
             public void windowDeactivated(WindowEvent e) {
+                // Ignore
             }
 
             @Override
@@ -231,8 +235,6 @@ public class SexScriptsHost implements Host {
             // TODO SS scales down when expanding too much
             BufferedImage expanded = new BufferedImage(height, height, BufferedImage.TYPE_INT_ARGB);
             Graphics2D g2d = (Graphics2D) expanded.getGraphics();
-            // g2d.drawRect(0, 0, expanded.getWidth() - 1,
-            // expanded.getHeight() -1);
             g2d.drawImage(image, (expanded.getWidth() - width) / 2, 0, null);
             setImageInternal(expanded);
         } else {
@@ -284,13 +286,7 @@ public class SexScriptsHost implements Host {
             }
             // Update
             mainFrame.repaint();
-        } catch (NoSuchFieldException e) {
-            logger.error(e.getMessage(), e);
-        } catch (SecurityException e) {
-            logger.error(e.getMessage(), e);
-        } catch (IllegalArgumentException e) {
-            logger.error(e.getMessage(), e);
-        } catch (IllegalAccessException e) {
+        } catch (ReflectiveOperationException | SecurityException | IllegalArgumentException e) {
             logger.error(e.getMessage(), e);
         }
     }
@@ -334,10 +330,8 @@ public class SexScriptsHost implements Host {
      */
     @Override
     public void show(byte[] imageBytes, String text) {
-        // TODO
-        // Set image and text at once to overcome layout glitches
-        // (mostly the delay between displaying the new image
-        // and then displaying the text)
+        // TODO Set image and text at once to overcome layout glitches
+        // (mostly the delay between displaying the new image and then displaying the text)
         setImage(imageBytes);
         show(text);
     }
@@ -357,9 +351,8 @@ public class SexScriptsHost implements Host {
             g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
             // Draw original background image
             g2d.drawImage(image, 0, 0, bounds.width, bounds.height, null);
-            // Compensate for the text not being centered (causes the text area
-            // to be not centered anymore)
-            int offset = 0; // -bounds.height / 10;
+            // Compensate for the text not being centered (causes the text area to be not centered anymore)
+            int offset = 0;
             g2d.setColor(new Color(0.0f, 0.0f, 0.0f, 0.65f));
             int top = bounds.height / 4 + offset;
             int bottom = bounds.height * 3 / 4 + offset;
@@ -379,8 +372,12 @@ public class SexScriptsHost implements Host {
     }
 
     @Override
-    public List<Boolean> showCheckboxes(String caption, List<String> texts, List<Boolean> values, boolean allowCancel)
-            throws ScriptInterruptedException {
+    public void endScene() {
+        show(null, null);
+    }
+
+    @Override
+    public List<Boolean> showCheckboxes(String caption, List<String> texts, List<Boolean> values, boolean allowCancel) {
         List<Boolean> results;
         do {
             try {
@@ -466,13 +463,7 @@ public class SexScriptsHost implements Host {
             // If a choice wasn't found, the element at the corresponding index
             // would be null
             return clickableChoices;
-        } catch (
-
-        IllegalAccessException e) {
-            logger.error(e.getMessage(), e);
-        } catch (NoSuchFieldException e) {
-            logger.error(e.getMessage(), e);
-        } catch (SecurityException e) {
+        } catch (ReflectiveOperationException e) {
             logger.error(e.getMessage(), e);
         }
         return new ArrayList<>();
@@ -514,9 +505,7 @@ public class SexScriptsHost implements Host {
         public ShowPopupTask() {
             try {
                 comboBox = getComboBox();
-            } catch (NoSuchFieldException e) {
-                logger.error(e.getMessage(), e);
-            } catch (IllegalAccessException e) {
+            } catch (ReflectiveOperationException e) {
                 logger.error(e.getMessage(), e);
             }
             task = new FutureTask<>(new Callable<Boolean>() {
@@ -561,7 +550,7 @@ public class SexScriptsHost implements Host {
         return inputMethod;
     }
 
-    public int reply(final List<String> choices) throws ScriptInterruptedException {
+    public int reply(List<String> choices) {
         if (Thread.interrupted()) {
             throw new ScriptInterruptedException();
         }
@@ -613,6 +602,7 @@ public class SexScriptsHost implements Host {
                     try {
                         Thread.sleep(100);
                     } catch (InterruptedException ignored) { // Ignore
+                        Thread.currentThread().interrupt();
                     }
                 }
             }

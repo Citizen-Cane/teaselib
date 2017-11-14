@@ -20,6 +20,7 @@ import teaselib.core.media.MediaRendererQueue;
 import teaselib.core.media.RenderInterTitle;
 import teaselib.core.media.RenderMessage;
 import teaselib.core.speechrecognition.SpeechRecognitionResult.Confidence;
+import teaselib.core.speechrecognition.SpeechRecognizer;
 import teaselib.core.texttospeech.TextToSpeechPlayer;
 import teaselib.core.ui.Choices;
 import teaselib.core.ui.InputMethod;
@@ -87,6 +88,7 @@ public abstract class TeaseScriptBase {
 
         teaseLib.globals.store(Shower.class, () -> new Shower(teaseLib.host));
         teaseLib.globals.store(InputMethods.class, InputMethods::new);
+        teaseLib.globals.store(SpeechRecognizer.class, () -> new SpeechRecognizer(teaseLib.config));
     }
 
     /**
@@ -195,6 +197,11 @@ public abstract class TeaseScriptBase {
                 // Now the current set can be completed, and canceling the
                 // current set will result in an empty next set
                 completeAll();
+
+                // TODO Add clear command to host interface -> end of section
+                // clear completed section
+                teaseLib.host.endScene();
+
                 // Start a new message in the log
                 teaseLib.transcript.info("");
                 renderQueue.start(nextSet);

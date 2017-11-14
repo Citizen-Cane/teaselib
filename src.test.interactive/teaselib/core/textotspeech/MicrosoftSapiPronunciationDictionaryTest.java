@@ -142,7 +142,7 @@ public class MicrosoftSapiPronunciationDictionaryTest {
                 new File(getClass().getResource("pronunciation").getPath()));
         textToSpeech.initPhoneticDictionary(pronunciationDictionary);
 
-        SpeechRecognition speechRecognition = SpeechRecognizer.instance.get(Locale.US);
+        SpeechRecognition speechRecognition = new SpeechRecognizer(new Configuration()).get(Locale.US);
         CountDownLatch completed = new CountDownLatch(1);
         List<String> choices = Arrays.asList("Bereit", "Madame");
 

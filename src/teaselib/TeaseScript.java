@@ -148,13 +148,8 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
      *            The text to be displayed, or null to display no message at all
      */
     public void show(String text) {
-        final Message message;
-        if (text != null) {
-            message = new Message(actor, text);
-        } else {
-            message = new Message(actor);
-        }
-        show(message);
+        boolean emptyMessage = text == null || text.isEmpty();
+        show(emptyMessage ? new Message(actor) : new Message(actor, text));
     }
 
     public void show(String... message) {
@@ -254,8 +249,8 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
 
         protected void awaitTimeout(final SpeechRecognition.TimeoutBehavior timeoutBehavior) {
             final Event<SpeechRecognitionImplementation, SpeechRecognitionStartedEventArgs> recognitionStarted;
-            final EventSource<SpeechRecognitionImplementation, SpeechRecognitionStartedEventArgs> recognitionStartedEvents = SpeechRecognizer.instance
-                    .get(actor.locale()).events.recognitionStarted;
+            final EventSource<SpeechRecognitionImplementation, SpeechRecognitionStartedEventArgs> recognitionStartedEvents = teaseLib.globals
+                    .get(SpeechRecognizer.class).get(actor.locale()).events.recognitionStarted;
             if (timeoutBehavior == TimeoutBehavior.InDubioMitius) {
                 // disable timeout on first speech recognition event
                 // (non-audio)

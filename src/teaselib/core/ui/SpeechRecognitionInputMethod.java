@@ -43,7 +43,7 @@ public class SpeechRecognitionInputMethod implements InputMethod {
 
     public SpeechRecognitionInputMethod(TeaseScriptBase script, Confidence recognitionConfidence) {
         this.script = script;
-        this.speechRecognizer = SpeechRecognizer.instance.get(script.actor.locale());
+        this.speechRecognizer = script.teaseLib.globals.get(SpeechRecognizer.class).get(script.actor.locale());
         this.confidence = recognitionConfidence;
 
         if (Boolean.parseBoolean(script.teaseLib.config.get(Config.InputMethod.SpeechRecognition))) {
@@ -85,43 +85,45 @@ public class SpeechRecognitionInputMethod implements InputMethod {
                 }
             }
 
-            private boolean runSpeechRecognitionRejectedScript(final TeaseScriptBase script) {
+            private boolean runSpeechRecognitionRejectedScript(TeaseScriptBase script) {
                 SpeechRecognitionRejectedScript speechRecognitionRejectedScript = script.actor.speechRecognitionRejectedScript;
                 // run speech recognition rejected script?
                 if (speechRecognitionRejectedScript != null) {
                     Prompt prompt = active.get();
                     ScriptFutureTask scriptTask = prompt.scriptTask;
 
-                    // TODO Must search pause stack for speech recognition
-                    // rejected scripts - handlers of the same type shouldn't
-                    // stack up -> handle in Shower
+                    // TODO Must search pause stack for speech recognition rejected scripts
+                    // - handlers of the same type shouldn't stack up -> handle in Shower
                     boolean choicesStackContainsSRRejectedState = false;
 
                     if (choicesStackContainsSRRejectedState == true) {
-                        logger.info("The choices stack contains already another SR rejection script"
-                                + " - skipping RecognitionRejectedScript "
-                                + speechRecognitionRejectedScript.toString());
+                        log(speechRecognitionRejectedScript,
+                                "The choices stack contains already another SR rejection script");
                     } else if (scriptTask != null) {
-                        // This would work for the built-in confirmative
-                        // timeout script functions:
+                        // This would work for the built-in confirmative timeout script functions:
                         // - TimeoutBehavior.InDubioMitius and maybe also for
                         // - TimeoutBehavior.TimeoutBehavior.InDubioMitius
-                        logger.info(scriptTask.getRelation().toString() + " script functions running"
-                                + " - skipping RecognitionRejectedScript "
-                                + speechRecognitionRejectedScript.toString());
+                        log(speechRecognitionRejectedScript,
+                                scriptTask.getRelation().toString() + " script functions running");
                     } else if (!script.teaseLib.globals.get(MediaRendererQueue.class).hasCompletedMandatory()) {
-                        // must complete all to avoid parallel rendering
-                        // see {@link Message#ShowChoices}
-                        logger.info(" message rendering still in progress" + " - skipping RecognitionRejectedScript "
-                                + speechRecognitionRejectedScript.toString());
+                        // must complete all to avoid parallel rendering, see {@link Message#ShowChoices}
+                        log(speechRecognitionRejectedScript, "Message rendering still in progress");
                     } else if (speechRecognitionRejectedScript.canRun() == false) {
-                        logger.info("RecognitionRejectedScript " + speechRecognitionRejectedScript.toString()
-                                + ".canRun() returned false - skipping");
+                        log(speechRecognitionRejectedScript,
+                                "RecognitionRejectedScript  .canRun() returned false - skipping");
                     } else {
                         return true;
                     }
                 }
                 return false;
+            }
+
+            private void log(TeaseScriptBase speechRecognitionRejectedScript, String message) {
+                if (logger.isInfoEnabled()) {
+                    String skipping = " - skipping RecognitionRejectedScript "
+                            + speechRecognitionRejectedScript.toString();
+                    logger.info(message + skipping);
+                }
             }
         };
     }

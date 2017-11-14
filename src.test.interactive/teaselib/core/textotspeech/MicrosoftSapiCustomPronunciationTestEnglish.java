@@ -17,6 +17,7 @@ import org.junit.runners.MethodSorters;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import teaselib.core.Configuration;
 import teaselib.core.speechrecognition.SpeechDetectionEventHandler;
 import teaselib.core.speechrecognition.SpeechRecognition;
 import teaselib.core.speechrecognition.SpeechRecognitionResult.Confidence;
@@ -125,7 +126,7 @@ public class MicrosoftSapiCustomPronunciationTestEnglish {
 
     @Test
     public void testPronunciationSAPIPronTagSpeechRecognition() throws InterruptedException {
-        SpeechRecognition speechRecognition = SpeechRecognizer.instance.get(Locale.US);
+        SpeechRecognition speechRecognition = new SpeechRecognizer(new Configuration()).get(Locale.US);
         CountDownLatch completed = new CountDownLatch(1);
         // List<String> choices = Arrays.asList("<P DISP=\"replace\" PRON=\"H EH 1 L OW W ER 1 L D\"> replace </P>");
         List<String> choices = Arrays.asList("<P>/Display/Word/H EH 1 L OW;</P>");

@@ -42,6 +42,7 @@ public class DebugHost implements Host {
 
             @Override
             public void show(Prompt prompt) throws InterruptedException {
+                // Ignore
             }
 
             @Override
@@ -78,13 +79,17 @@ public class DebugHost implements Host {
 
     @Override
     public void show(byte[] imageBytes, String text) {
-        // TODO Auto-generated method stub
-
+        // Ignore
     }
 
     @Override
     public void showInterTitle(String text) {
-        // TODO Auto-generated method stub
+        // Ignore
+    }
+
+    @Override
+    public void endScene() {
+        // Ignore
     }
 
     @Override
@@ -182,6 +187,7 @@ public class DebugHost implements Host {
             click.await();
             return Prompt.DISMISSED;
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             throw new ScriptInterruptedException(e);
         } finally {
             currentChoices = Collections.emptyList();
@@ -198,7 +204,7 @@ public class DebugHost implements Host {
 
     @Override
     public void setQuitHandler(Runnable onQuit) {
-        // TODO Auto-generated method stub
+        // Ignore
     }
 
     @Override

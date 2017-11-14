@@ -203,8 +203,6 @@ public class RenderMessage extends MediaRendererThread {
                 allCompleted();
             }
         } finally {
-            // TODO Add clear command to host interface -> end of section
-            teaseLib.host.show(null, null);
         }
     }
 

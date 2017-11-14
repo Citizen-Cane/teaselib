@@ -1,6 +1,3 @@
-/**
- * 
- */
 package teaselib.core.speechrecognition;
 
 import java.util.Collection;
@@ -9,17 +6,19 @@ import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
 
+import teaselib.core.Configuration;
+
 /**
- * @author someone
+ * @author Citizen-Cane
  *
  */
 public class SpeechRecognizer {
-
-    public static SpeechRecognizer instance = new SpeechRecognizer();
-
     private final Map<Locale, SpeechRecognition> speechRecognitionInstances = new HashMap<>();
+    @SuppressWarnings("unused")
+    private final Configuration config;
 
-    private SpeechRecognizer() {
+    public SpeechRecognizer(Configuration config) {
+        this.config = config;
     }
 
     public SpeechRecognition get(Locale locale) {
@@ -48,12 +47,9 @@ public class SpeechRecognizer {
                     stoppedInstances.add(sR);
                 }
             }
-            return new Runnable() {
-                @Override
-                public void run() {
-                    for (SpeechRecognition sR : stoppedInstances) {
-                        sR.resumeRecognition();
-                    }
+            return () -> {
+                for (SpeechRecognition sR : stoppedInstances) {
+                    sR.resumeRecognition();
                 }
             };
         }

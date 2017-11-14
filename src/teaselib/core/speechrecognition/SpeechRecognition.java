@@ -160,7 +160,7 @@ public class SpeechRecognition {
         }
     }
 
-    public SpeechRecognition(Locale locale) {
+    SpeechRecognition(Locale locale) {
         // First add the progress events, because we don't want to get events
         // consumed before setting the in-progress state
         this.events = new SpeechRecognitionEvents<>(lockSpeechRecognitionInProgress, unlockSpeechRecognitionInProgress);

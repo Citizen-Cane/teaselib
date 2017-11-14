@@ -25,6 +25,7 @@ public class ToyTests {
         assertEquals("There are items in more then one category", Toys.values().length, all.size());
     }
 
+    @SafeVarargs
     private static <T> Set<T> asSet(T... items) {
         return new HashSet<>(Arrays.asList(items));
     }

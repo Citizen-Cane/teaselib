@@ -17,23 +17,15 @@ public enum Body {
     Blindfolded,
     Tethered,
 
-    AnklesTied,
-    WristsTied,
-    WristsTiedBehindBack,
-
     AroundCockBase,
     OnBalls,
     OnPenis,
+    CantJerkOff,
 
     InVagina,
     OnClit,
     OnLabia,
 
-    CantCrawl,
-    CantKneel,
-    CantJerkOff,
-    CantProne,
-    CantSitOnChair,
-    CantStand, // TODO if this means UpRight, then there's no difference to CantProne
-    CantTypeOrUseMouse,
+    AnklesTied,
+    WristsTied
 }

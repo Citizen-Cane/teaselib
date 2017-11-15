@@ -10,6 +10,7 @@ import org.junit.Test;
 
 import teaselib.Body;
 import teaselib.Duration;
+import teaselib.Posture;
 import teaselib.Toys;
 import teaselib.test.TestScript;
 
@@ -46,8 +47,8 @@ public class StateMapsDurationTest extends StateMaps {
     public void testLockDurationOnInfiniteToy() {
         assertApplyChastityCage();
 
-        state(TEST_DOMAIN, Toys.Chastity_Device).applyTo(Body.OnPenis, Body.CantJerkOff)
-                .over(Duration.INFINITE, TimeUnit.SECONDS);
+        state(TEST_DOMAIN, Toys.Chastity_Device).applyTo(Body.OnPenis, Body.CantJerkOff).over(Duration.INFINITE,
+                TimeUnit.SECONDS);
         assertFalse(state(TEST_DOMAIN, Toys.Chastity_Device).expired());
 
         state(TEST_DOMAIN, Locks.Chastity_Device_Lock).applyTo(Toys.Chastity_Device);
@@ -97,14 +98,13 @@ public class StateMapsDurationTest extends StateMaps {
     public void testDurationDependsOnPeers() {
         teaseLib.freezeTime();
 
-        state(TEST_DOMAIN, Toys.Chastity_Device).applyTo(Body.OnPenis, Body.CantJerkOff).over(1,
-                TimeUnit.HOURS);
+        state(TEST_DOMAIN, Toys.Chastity_Device).applyTo(Body.OnPenis, Body.CantJerkOff).over(1, TimeUnit.HOURS);
 
         assertEquals(1, state(TEST_DOMAIN, Toys.Chastity_Device).duration().remaining(TimeUnit.HOURS));
         assertEquals(1, state(TEST_DOMAIN, Body.OnPenis).duration().remaining(TimeUnit.HOURS));
         assertEquals(1, state(TEST_DOMAIN, Body.CantJerkOff).duration().remaining(TimeUnit.HOURS));
 
-        state(TEST_DOMAIN, Toys.Wrist_Restraints).applyTo(Body.WristsTiedBehindBack, Body.CantJerkOff).over(2,
+        state(TEST_DOMAIN, Toys.Wrist_Restraints).applyTo(Posture.WristsTiedBehindBack, Body.CantJerkOff).over(2,
                 TimeUnit.HOURS);
 
         assertEquals(1, state(TEST_DOMAIN, Toys.Chastity_Device).duration().remaining(TimeUnit.HOURS));

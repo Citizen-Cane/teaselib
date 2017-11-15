@@ -8,6 +8,7 @@ import java.util.Map;
 import teaselib.Body;
 import teaselib.Clothes;
 import teaselib.Household;
+import teaselib.Posture;
 import teaselib.Toys;
 import teaselib.core.util.QualifiedItem;
 import teaselib.util.Item;
@@ -86,11 +87,11 @@ public abstract class AbstractUserItems implements UserItems {
         }
     }
 
-    private static Enum<?>[] getClothesDefaults(@SuppressWarnings("unused") QualifiedItem<?> item) {
+    private static Enum<?>[] getClothesDefaults(QualifiedItem<?> item) {
         return new Body[] {};
     }
 
-    private static Enum<?>[] getHouseholdDefaults(@SuppressWarnings("unused") QualifiedItem<?> item) {
+    private static Enum<?>[] getHouseholdDefaults(QualifiedItem<?> item) {
         return new Body[] {};
     }
 
@@ -111,7 +112,7 @@ public abstract class AbstractUserItems implements UserItems {
         } else if (item.equals(Toys.Ankle_Restraints)) {
             return new Body[] { Body.AnklesTied };
         } else if (item.equals(Toys.Wrist_Restraints)) {
-            return new Body[] {};
+            return new Body[] { Body.WristsTied };
         } else if (item.equals(Toys.Gag)) {
             return new Body[] { Body.InMouth };
         } else if (item.equals(Toys.Spanking_Implement)) {
@@ -139,7 +140,7 @@ public abstract class AbstractUserItems implements UserItems {
         } else if (item.equals(Toys.Enema_Kit)) {
             return new Body[] { Body.InButt };
         } else if (item.equals(Toys.Humbler)) {
-            return new Body[] { Body.OnBalls, Body.CantStand, Body.CantSitOnChair };
+            return new Enum<?>[] { Body.OnBalls, Posture.CantStand, Posture.CantSitOnChair };
         } else if (item.equals(Toys.Pussy_Clamps)) {
             return new Body[] { Body.OnLabia, Body.OnBalls };
         } else if (item.equals(Toys.Spreader_Bar)) {

@@ -1,6 +1,8 @@
 package teaselib.util;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 
@@ -8,6 +10,7 @@ import teaselib.Body;
 import teaselib.Features;
 import teaselib.Length;
 import teaselib.Material;
+import teaselib.Posture;
 import teaselib.Size;
 import teaselib.State;
 import teaselib.TeaseScript;
@@ -146,16 +149,16 @@ public class ItemImplTest {
         assertFalse(script.state(Toys.Wrist_Restraints).applied());
 
         // Wrists are not only tied, but also tied behind back
-        script.items(Toys.Wrist_Restraints).get(Material.Leather).applyTo(Body.WristsTiedBehindBack);
+        script.items(Toys.Wrist_Restraints).get(Material.Leather).applyTo(Posture.WristsTiedBehindBack);
 
         assertTrue(script.state(Toys.Wrist_Restraints).applied());
         assertTrue(script.state(Toys.Wrist_Restraints).is(Material.Leather));
 
-        assertFalse(script.state(Body.WristsTied).applied());
-        assertTrue(script.state(Body.WristsTiedBehindBack).applied());
+        assertTrue(script.state(Body.WristsTied).applied());
+        assertTrue(script.state(Posture.WristsTiedBehindBack).applied());
 
-        assertFalse(script.state(Body.WristsTied).is(Toys.Wrist_Restraints));
-        assertTrue(script.state(Body.WristsTiedBehindBack).is(Toys.Wrist_Restraints));
+        assertTrue(script.state(Body.WristsTied).is(Toys.Wrist_Restraints));
+        assertTrue(script.state(Posture.WristsTiedBehindBack).is(Toys.Wrist_Restraints));
 
         // This is how to comment a certain item in a certain body location
         if (script.state(Body.WristsTied).is(Toys.Wrist_Restraints)) {
@@ -256,10 +259,10 @@ public class ItemImplTest {
         assertTrue(script.state(Toys_Wrist_Restraints).applied());
         assertTrue(script.state(Toys_Wrist_Restraints).is(leather));
 
-        assertFalse(script.state(Body_WristsTied).applied());
+        assertTrue(script.state(Body_WristsTied).applied());
         assertTrue(script.state(Body_WristsTiedBehindBack).applied());
 
-        assertFalse(script.state(Body_WristsTied).is(Toys_Wrist_Restraints));
+        assertTrue(script.state(Body_WristsTied).is(Toys_Wrist_Restraints));
         assertTrue(script.state(Body_WristsTiedBehindBack).is(Toys_Wrist_Restraints));
 
         // This is how to comment a certain item in a certain body location
@@ -276,7 +279,7 @@ public class ItemImplTest {
 
         String Toys_Wrist_Restraints = "teaselib.Toys.Wrist_Restraints";
         String Body_WristsTied = "teaselib.Body.WristsTied";
-        String Body_WristsTiedBehindBack = "teaselib.Body.WristsTiedBehindBack";
+        String Posture_WristsTiedBehindBack = "teaselib.Posture.WristsTiedBehindBack";
         String leather = "teaselib.Material.Leather";
 
         assertFalse(script.state(Toys.Wrist_Restraints).applied());
@@ -284,7 +287,7 @@ public class ItemImplTest {
 
         // Wrists are not only tied, but also tied behind back
 
-        script.items(Toys_Wrist_Restraints).get(leather).applyTo(Body_WristsTiedBehindBack);
+        script.items(Toys_Wrist_Restraints).get(leather).applyTo(Posture_WristsTiedBehindBack);
 
         assertTrue(script.state(Toys.Wrist_Restraints).applied());
         assertTrue(script.state(Toys_Wrist_Restraints).is(leather));
@@ -293,20 +296,20 @@ public class ItemImplTest {
         assertTrue(script.state(Toys_Wrist_Restraints).is(leather));
         assertTrue(script.state(Toys_Wrist_Restraints).is(Material.Leather));
 
-        assertFalse(script.state(Body_WristsTied).applied());
-        assertTrue(script.state(Body_WristsTiedBehindBack).applied());
-        assertFalse(script.state(Body.WristsTied).applied());
-        assertTrue(script.state(Body.WristsTiedBehindBack).applied());
+        assertTrue(script.state(Body_WristsTied).applied());
+        assertTrue(script.state(Posture_WristsTiedBehindBack).applied());
+        assertTrue(script.state(Body.WristsTied).applied());
+        assertTrue(script.state(Posture.WristsTiedBehindBack).applied());
 
-        assertFalse(script.state(Body.WristsTied).is(Toys_Wrist_Restraints));
-        assertTrue(script.state(Body.WristsTiedBehindBack).is(Toys.Wrist_Restraints));
-        assertFalse(script.state(Body_WristsTied).is(Toys.Wrist_Restraints));
-        assertTrue(script.state(Body_WristsTiedBehindBack).is(Toys.Wrist_Restraints));
+        assertTrue(script.state(Body.WristsTied).is(Toys_Wrist_Restraints));
+        assertTrue(script.state(Posture.WristsTiedBehindBack).is(Toys.Wrist_Restraints));
+        assertTrue(script.state(Body_WristsTied).is(Toys.Wrist_Restraints));
+        assertTrue(script.state(Posture_WristsTiedBehindBack).is(Toys.Wrist_Restraints));
 
-        assertFalse(script.state(Body.WristsTied).is(Toys_Wrist_Restraints));
-        assertTrue(script.state(Body.WristsTiedBehindBack).is(Toys_Wrist_Restraints));
-        assertFalse(script.state(Body_WristsTied).is(Toys_Wrist_Restraints));
-        assertTrue(script.state(Body_WristsTiedBehindBack).is(Toys_Wrist_Restraints));
+        assertTrue(script.state(Body.WristsTied).is(Toys_Wrist_Restraints));
+        assertTrue(script.state(Posture.WristsTiedBehindBack).is(Toys_Wrist_Restraints));
+        assertTrue(script.state(Body_WristsTied).is(Toys_Wrist_Restraints));
+        assertTrue(script.state(Posture_WristsTiedBehindBack).is(Toys_Wrist_Restraints));
 
         // This is how to comment an item in a certain body location
         if (script.state(Body_WristsTied).is(Toys_Wrist_Restraints)) {

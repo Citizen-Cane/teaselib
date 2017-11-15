@@ -10,6 +10,7 @@ import java.util.concurrent.TimeUnit;
 import org.junit.Test;
 
 import teaselib.Body;
+import teaselib.Posture;
 import teaselib.State;
 import teaselib.Toys;
 import teaselib.test.TestScript;
@@ -35,10 +36,10 @@ public class StateMapsApplyTest extends StateMaps {
 
         State somethingOnPenis = state(TEST_DOMAIN, Body.OnPenis);
         State cannotJerkOff = state(TEST_DOMAIN, Body.CantJerkOff);
-        State handsTiedBehindBack = state(TEST_DOMAIN, Body.WristsTiedBehindBack);
+        State handsTiedBehindBack = state(TEST_DOMAIN, Posture.WristsTiedBehindBack);
 
         chastityCage.applyTo(Body.OnPenis, Body.CantJerkOff);
-        wristRestraints.applyTo(Body.WristsTiedBehindBack, Body.CantJerkOff);
+        wristRestraints.applyTo(Posture.WristsTiedBehindBack, Body.CantJerkOff);
 
         assertTrue(chastityCage.applied());
         assertTrue(somethingOnPenis.applied());
@@ -126,11 +127,11 @@ public class StateMapsApplyTest extends StateMaps {
 
         State somethingOnPenis = state(TEST_DOMAIN, Body.OnPenis);
         State cannotJerkOff = state(TEST_DOMAIN, Body.CantJerkOff);
-        State handsTiedBehindBack = state(TEST_DOMAIN, Body.WristsTiedBehindBack);
+        State handsTiedBehindBack = state(TEST_DOMAIN, Posture.WristsTiedBehindBack);
 
         chastityCage.applyTo(Body.OnPenis, Body.CantJerkOff);
         key.applyTo(Toys.Chastity_Device);
-        wristRestraints.applyTo(Body.WristsTiedBehindBack, Body.CantJerkOff);
+        wristRestraints.applyTo(Posture.WristsTiedBehindBack, Body.CantJerkOff);
 
         assertTrue(chastityCage.applied());
         assertTrue(key.applied());

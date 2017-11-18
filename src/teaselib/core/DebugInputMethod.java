@@ -1,6 +1,3 @@
-/**
- * 
- */
 package teaselib.core;
 
 import java.util.Collections;
@@ -9,9 +6,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
+import teaselib.core.Debugger.Response;
 import teaselib.core.debug.DebugResponses;
-import teaselib.core.debug.TimeAdvanceListener;
 import teaselib.core.debug.DebugResponses.Result;
+import teaselib.core.debug.TimeAdvanceListener;
 import teaselib.core.ui.InputMethod;
 import teaselib.core.ui.Prompt;
 
@@ -28,8 +26,7 @@ public class DebugInputMethod implements InputMethod {
     private final TimeAdvanceListener timeAdvanceListener = e -> {
         Prompt prompt = activePrompt.get();
         if (prompt != null) {
-            // TODO Wait the actual duration, not just to the first sleep() call
-            if (responses.getResponse(prompt.choices).delay < Long.MAX_VALUE) {
+            if (responses.getResponse(prompt.choices).response == Response.Choose) {
                 prompt.lock.lock();
                 try {
                     prompt.click.signalAll();
@@ -37,7 +34,7 @@ public class DebugInputMethod implements InputMethod {
                     prompt.lock.unlock();
                 }
             }
-            // TODO offset from last call to show() needed (elapsed starts at 0, getTime() is absolute
+            
             elapsed.set(elapsed.get() + e.teaseLib.getTime(TimeUnit.MILLISECONDS));
         }
     };
@@ -46,9 +43,9 @@ public class DebugInputMethod implements InputMethod {
     public void show(Prompt prompt) throws InterruptedException {
         prompt.lock.lockInterruptibly();
         try {
-            Result response = responses.getResponse(prompt.choices);
-            if (response.delay == 0) {
-                prompt.setResultOnce(response.index);
+            Result result = responses.getResponse(prompt.choices);
+            if (result.response == Response.Choose) {
+                prompt.setResultOnce(result.index);
                 prompt.click.signalAll();
             } else {
                 activePrompt.set(prompt);

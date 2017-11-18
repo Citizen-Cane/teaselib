@@ -1,24 +1,32 @@
 package teaselib.core;
 
 import java.util.Collection;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
-import teaselib.core.debug.DebugResponses;
 import teaselib.core.ui.InputMethods;
 
 public class Debugger {
     public final TeaseLib teaseLib;
 
     public static class ResponseAction {
-        final String match;
-        final Response response;
+        public final String match;
+        private final Callable<Response> response;
 
         public ResponseAction(String match, Response response) {
             super();
             this.match = match;
+            this.response = () -> response;
+        }
+
+        public ResponseAction(String match, Callable<Response> response) {
+            super();
+            this.match = match;
             this.response = response;
+        }
+
+        public Callable<Response> getResponse() {
+            return response;
         }
     }
 
@@ -27,7 +35,6 @@ public class Debugger {
         Ignore
     }
 
-    private final Map<String, Response> responses = new LinkedHashMap<>();
     private final DebugInputMethod debugInputMethod;
 
     public Debugger(TeaseLib teaseLib) {
@@ -61,13 +68,11 @@ public class Debugger {
     }
 
     public void addResponse(String match, Response response) {
-        responses.put(match, response);
-        debugInputMethod.getResponses().add(match,
-                response == Response.Choose ? DebugResponses.IMMEDIATELY : DebugResponses.NEVER);
+        addResponse(new ResponseAction(match, response));
     }
 
     public void addResponse(ResponseAction responseAction) {
-        addResponse(responseAction.match, responseAction.response);
+        debugInputMethod.getResponses().add(responseAction);
     }
 
     public void clearStateMaps() {

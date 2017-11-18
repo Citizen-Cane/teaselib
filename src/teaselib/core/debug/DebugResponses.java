@@ -58,7 +58,8 @@ public class DebugResponses {
         for (ResponseAction entry : responses) {
             Pattern choice = WildcardPattern.compile(entry.match);
             for (int i = 0; i < choices.size(); i++) {
-                if (choice.matcher(choices.get(i)).matches() && (bestResult == null)) {
+                if (choice.matcher(choices.get(i)).matches()
+                        && (bestResult == null || bestResult.response == Response.Ignore)) {
                     try {
                         bestResult = new Result(entry.match, i, entry.getResponse().call());
                     } catch (Exception e) {

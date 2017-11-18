@@ -28,6 +28,16 @@ public class Debugger {
         public Callable<Response> getResponse() {
             return response;
         }
+
+        @Override
+        public String toString() {
+            String s = match + "->";
+            try {
+                return s + response.call();
+            } catch (Exception e) {
+                return s + e.getMessage();
+            }
+        }
     }
 
     public enum Response {

@@ -7,7 +7,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import teaselib.Config;
 import teaselib.Replay;
 import teaselib.core.ScriptFutureTask;
 import teaselib.core.TeaseScriptBase;
@@ -26,7 +25,6 @@ import teaselib.util.SpeechRecognitionRejectedScript;
  *
  */
 public class SpeechRecognitionInputMethod implements InputMethod {
-
     private static final Logger logger = LoggerFactory.getLogger(SpeechRecognitionInputMethod.class);
 
     private static final int RECOGNITION_REJECTED = -666;
@@ -45,14 +43,8 @@ public class SpeechRecognitionInputMethod implements InputMethod {
         this.script = script;
         this.speechRecognizer = script.teaseLib.globals.get(SpeechRecognizer.class).get(script.actor.locale());
         this.confidence = recognitionConfidence;
-
-        if (Boolean.parseBoolean(script.teaseLib.config.get(Config.InputMethod.SpeechRecognition))) {
-            recognitionRejected = recognitionRejected();
-            recognitionCompleted = recognitionCompleted();
-        } else {
-            recognitionRejected = null;
-            recognitionCompleted = null;
-        }
+        this.recognitionRejected = recognitionRejected();
+        this.recognitionCompleted = recognitionCompleted();
     }
 
     public Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs> recognitionRejected() {

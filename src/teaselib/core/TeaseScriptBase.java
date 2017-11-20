@@ -413,7 +413,9 @@ public abstract class TeaseScriptBase {
 
         InputMethods inputMethods = new InputMethods(teaseLib.globals.get(InputMethods.class));
         inputMethods.add(teaseLib.host.inputMethod());
-        inputMethods.add(new SpeechRecognitionInputMethod(this, recognitionConfidence));
+        if (Boolean.parseBoolean(teaseLib.config.get(Config.InputMethod.SpeechRecognition))) {
+            inputMethods.add(new SpeechRecognitionInputMethod(this, recognitionConfidence));
+        }
 
         Prompt prompt = new Prompt(new Choices(choices), new Choices(derivedChoices), scriptFunction, inputMethods);
         logger.info("Prompt: " + prompt);

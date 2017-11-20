@@ -13,6 +13,10 @@ public class Debugger {
         public final String match;
         private final Callable<Response> response;
 
+        public ResponseAction(String match) {
+            this(match, Response.Choose);
+        }
+
         public ResponseAction(String match, Response response) {
             super();
             this.match = match;

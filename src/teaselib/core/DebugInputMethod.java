@@ -6,6 +6,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import teaselib.core.Debugger.Response;
 import teaselib.core.debug.DebugResponses;
 import teaselib.core.debug.DebugResponses.Result;
@@ -18,6 +21,8 @@ import teaselib.core.ui.Prompt;
  *
  */
 public class DebugInputMethod implements InputMethod {
+    private static final Logger logger = LoggerFactory.getLogger(DebugInputMethod.class);
+
     final AtomicReference<Prompt> activePrompt = new AtomicReference<>();
     final AtomicLong elapsed = new AtomicLong();
 
@@ -26,25 +31,39 @@ public class DebugInputMethod implements InputMethod {
     private final TimeAdvanceListener timeAdvanceListener = e -> {
         Prompt prompt = activePrompt.get();
         if (prompt != null) {
-            if (responses.getResponse(prompt.choices).response == Response.Choose) {
-                prompt.lock.lock();
-                try {
-                    prompt.click.signalAll();
-                } finally {
-                    prompt.lock.unlock();
-                }
-            }
-            
+            dismissExpectedPromptOrIgnore(prompt);
+
             elapsed.set(elapsed.get() + e.teaseLib.getTime(TimeUnit.MILLISECONDS));
         }
     };
 
-    @Override
-    public void show(Prompt prompt) throws InterruptedException {
-        prompt.lock.lockInterruptibly();
+    private void dismissExpectedPromptOrIgnore(Prompt prompt) {
+        prompt.lock.lock();
         try {
             Result result = responses.getResponse(prompt.choices);
             if (result.response == Response.Choose) {
+                logger.info("Choosing " + result);
+                prompt.setResultOnce(result.index);
+                prompt.click.signalAll();
+            } else {
+                logger.info("Ignoring " + result);
+            }
+        } finally {
+            prompt.lock.unlock();
+        }
+    }
+
+    @Override
+    public void show(Prompt prompt) {
+        dismissExpectedPromptOrShow(prompt);
+    }
+
+    private void dismissExpectedPromptOrShow(Prompt prompt) {
+        prompt.lock.lock();
+        try {
+            Result result = responses.getResponse(prompt.choices);
+            if (result.response == Response.Choose) {
+                logger.info("Choosing " + result);
                 prompt.setResultOnce(result.index);
                 prompt.click.signalAll();
             } else {

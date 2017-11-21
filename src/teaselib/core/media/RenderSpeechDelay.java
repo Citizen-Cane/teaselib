@@ -9,7 +9,7 @@ import teaselib.core.texttospeech.TextToSpeech;
 final class RenderSpeechDelay extends RenderSpeech {
     private final String prompt;
 
-    RenderSpeechDelay(long pauseMillis, TeaseLib teaseLib, String prompt) {
+    RenderSpeechDelay(String prompt, long pauseMillis, TeaseLib teaseLib) {
         super(pauseMillis, teaseLib);
         this.prompt = prompt;
     }
@@ -17,5 +17,10 @@ final class RenderSpeechDelay extends RenderSpeech {
     @Override
     protected void renderSpeech() throws IOException, InterruptedException {
         teaseLib.sleep(TextToSpeech.getEstimatedSpeechDuration(prompt), TimeUnit.MILLISECONDS);
+    }
+
+    @Override
+    public String toString() {
+        return "Simulating speech for " + Long.toString(TextToSpeech.getEstimatedSpeechDuration(prompt) / 1000) + "s";
     }
 }

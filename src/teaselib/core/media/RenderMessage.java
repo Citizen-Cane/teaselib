@@ -190,7 +190,7 @@ public class RenderMessage extends MediaRendererThread {
 
                     mood = renderMessagePart(part, accumulatedText, mood, speakText, lastParagraph);
                     if (part.type == Message.Type.Text) {
-                        show(message.actor, part, accumulatedText, mood, speakText, lastParagraph);
+                        show(message.actor, part.value, accumulatedText, mood, speakText, lastParagraph);
                     } else if (lastPart) {
                         show(accumulatedText.toString());
                     }
@@ -240,7 +240,7 @@ public class RenderMessage extends MediaRendererThread {
                 long paragraphPause = getParagraphPause(accumulatedText, lastParagraph);
                 speechRenderer = isSpeechOutputEnabled()
                         ? new RenderPrerecordedSpeech(part.value, paragraphPause, resources, teaseLib)
-                        : new RenderSpeechDelay(paragraphPause, teaseLib, part.value);
+                        : new RenderSpeechDelay(part.value, paragraphPause, teaseLib);
             }
         } else if (part.type == Message.Type.DesktopItem) {
             if (isInstructionalImageOutputEnabled()) {
@@ -273,16 +273,16 @@ public class RenderMessage extends MediaRendererThread {
         return mood;
     }
 
-    private void show(Actor actor, Part part, MessageTextAccumulator accumulatedText, String mood, boolean speakText,
+    private void show(Actor actor, String text, MessageTextAccumulator accumulatedText, String mood, boolean speakText,
             boolean lastParagraph) throws IOException, InterruptedException {
         if (speechRenderer == null) {
             long paragraphPause = getParagraphPause(accumulatedText, lastParagraph);
             speechRenderer = speakText && ttsPlayer.isPresent() && isSpeechOutputEnabled()
-                    ? new RenderTTSSpeech(ttsPlayer.get(), actor, part.value, mood, paragraphPause, teaseLib)
-                    : new RenderSpeechDelay(paragraphPause, teaseLib, part.value);
+                    ? new RenderTTSSpeech(ttsPlayer.get(), actor, text, mood, paragraphPause, teaseLib)
+                    : new RenderSpeechDelay(text, paragraphPause, teaseLib);
         }
 
-        teaseLib.transcript.info(part.value);
+        teaseLib.transcript.info(text);
         show(accumulatedText.toString(), mood);
 
         if (!isDoneOrCancelled()) {
@@ -324,22 +324,31 @@ public class RenderMessage extends MediaRendererThread {
     }
 
     private void show(String text) throws IOException, InterruptedException {
-        String path = displayImage == Message.NoImage ? null : displayImage;
-        // log image to transcript if not an actor's image
-        if (path == null) {
-            teaseLib.transcript.info(Message.NoImage);
+        completeCurrentParagraph(false);
+
+        if (!isDoneOrCancelled()) {
+            teaseLib.host.show(getImageBytes(), text);
+            // First message shown - start part completed
+            startCompleted();
+        }
+    }
+
+    private byte[] getImageBytes() throws InterruptedException, IOException {
+        if (displayImage == Message.NoImage) {
+            if (!Boolean.parseBoolean(teaseLib.config.get(Config.Debug.StopOnAssetNotFound))) {
+                teaseLib.transcript.info(Message.NoImage);
+            }
         } else {
             if (message.actor.images.contains(displayImage)) {
-                teaseLib.transcript.debug("image = '" + path + "'");
+                teaseLib.transcript.debug("image = '" + displayImage + "'");
             } else {
-                teaseLib.transcript.info("image = '" + path + "'");
+                teaseLib.transcript.info("image = '" + displayImage + "'");
             }
         }
-        // Fetch the image bytes
-        byte[] imageBytes = null;
-        if (path != null) {
+
+        if (displayImage != null && displayImage != Message.NoImage) {
             try {
-                imageBytes = imageFetcher.get(path);
+                return imageFetcher.get(displayImage);
             } catch (IOException e) {
                 handleIOException(ExceptionUtil.reduce(e));
             } finally {
@@ -350,14 +359,7 @@ public class RenderMessage extends MediaRendererThread {
                 }
             }
         }
-
-        completeCurrentParagraph(false);
-
-        if (!isDoneOrCancelled()) {
-            teaseLib.host.show(imageBytes, text);
-            // First message shown - start part completed
-            startCompleted();
-        }
+        return null;
     }
 
     private static long getParagraphPause(MessageTextAccumulator accumulatedText, boolean lastParagraph) {

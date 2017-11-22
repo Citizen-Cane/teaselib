@@ -1,5 +1,8 @@
 #include "StdAfx.h"
 
+#include <sstream>
+#include <iomanip>
+
 #include <assert.h>
 
 #include "ComException.h"
@@ -27,14 +30,15 @@ std::wstring COMException::FormatMessage(HRESULT hr)
 		(LPTSTR)&errorText,  // output 
 		0, // minimum size for output buffer
 		NULL);   // arguments - see note 
-	if (NULL != errorText)
-	{
+
+	if (NULL != errorText) {
 		std::wstring message(errorText);
 		LocalFree(errorText);
 		return message;
 	}
-	else
-	{
-		return L"COM-Error";
+	else {
+		std::wstringstream message;
+		message << L"COM-Error " << L"0x" << std::uppercase << std::setfill(L'0') << std::setw(4) << std::hex << hr;
+		return message.str();
 	}
 }

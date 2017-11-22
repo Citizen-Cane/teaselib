@@ -157,7 +157,7 @@ public class TeaseLib {
 
         host.showInterTitle("");
 
-        URLClassLoader classLoader = (URLClassLoader) ClassLoader.getSystemClassLoader();
+        URLClassLoader classLoader = (URLClassLoader) Thread.currentThread().getContextClassLoader();
         Class<?> classLoaderClass = URLClassLoader.class;
         try {
             Method method = classLoaderClass.getDeclaredMethod("addURL", (Class<?>) URL.class);
@@ -182,7 +182,8 @@ public class TeaseLib {
         if (logger.isInfoEnabled()) {
             logger.info("Running script " + script);
         }
-        Class<?> scriptClass = getClass().getClassLoader().loadClass(script);
+
+        Class<?> scriptClass = Thread.currentThread().getContextClassLoader().loadClass(script);
         run(scriptClass);
     }
 

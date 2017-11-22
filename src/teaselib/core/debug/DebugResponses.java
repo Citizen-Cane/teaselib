@@ -33,7 +33,7 @@ public class DebugResponses {
 
         @Override
         public String toString() {
-            return match + " -> clicking choice " + index + " response=" + response;
+            return match + " -> choice " + index + " response=" + response;
         }
     }
 

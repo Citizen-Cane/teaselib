@@ -30,7 +30,7 @@ public class ResourceLoader {
 
     public static final String ResourcesInProjectFolder = "/";
 
-    private final ClassLoader classLoader = getClass().getClassLoader();
+    private final ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
     private final Method addURL;
     private final Set<URI> resourceLocations = new HashSet<>();
     private final File basePath;

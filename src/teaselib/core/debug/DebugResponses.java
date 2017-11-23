@@ -38,6 +38,10 @@ public class DebugResponses {
     }
 
     public void add(ResponseAction responseAction) {
+        responses.add(responseAction);
+    }
+
+    public void replace(ResponseAction responseAction) {
         Pattern choice = WildcardPattern.compile(responseAction.match);
         List<ResponseAction> remove = new ArrayList<>();
         for (ResponseAction entry : responses) {

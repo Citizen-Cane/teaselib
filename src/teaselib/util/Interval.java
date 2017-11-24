@@ -45,6 +45,10 @@ public class Interval implements Iterable<Integer> {
         };
     }
 
+    public boolean contains(Interval other) {
+        return start <= other.start && other.end <= end;
+    }
+
     public boolean contains(int n) {
         return start <= n && n <= end;
     }

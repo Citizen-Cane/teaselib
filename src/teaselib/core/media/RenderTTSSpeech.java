@@ -18,6 +18,8 @@ public class RenderTTSSpeech extends RenderSpeech {
         this.actor = actor;
         this.prompt = prompt;
         this.mood = mood;
+
+        teaseLib.globals.get(TextToSpeechPlayer.class).load();
     }
 
     @Override

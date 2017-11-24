@@ -286,16 +286,16 @@ public abstract class TeaseScriptBase {
                     // Replace text variables
                     parsedMessage.add(new Message.Part(part.type, expandTextVariables(part.value)));
                 } else if (part.type == Message.Type.DesktopItem
-                        && Boolean.parseBoolean(teaseLib.config.get(Config.Render.InstructionalImages)) == false) {
+                        && !Boolean.parseBoolean(teaseLib.config.get(Config.Render.InstructionalImages))) {
                     // Ignore
                 } else if (part.type == Message.Type.Sound
-                        && Boolean.parseBoolean(teaseLib.config.get(Config.Render.Sound)) == false) {
+                        && !Boolean.parseBoolean(teaseLib.config.get(Config.Render.Sound))) {
                     // Ignore
                 } else if (part.type == Message.Type.BackgroundSound
-                        && Boolean.parseBoolean(teaseLib.config.get(Config.Render.Sound)) == false) {
+                        && !Boolean.parseBoolean(teaseLib.config.get(Config.Render.Sound))) {
                     // Ignore
                 } else if (part.type == Message.Type.Speech
-                        && Boolean.parseBoolean(teaseLib.config.get(Config.Render.Speech)) == false) {
+                        && !Boolean.parseBoolean(teaseLib.config.get(Config.Render.Speech))) {
                     // Ignore
                 } else {
                     parsedMessage.add(part);

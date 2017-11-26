@@ -98,4 +98,8 @@ public class Debugger {
             addResponse(responseAction);
         }
     }
+
+    public void replyScriptFunction(String string) {
+        debugInputMethod.replyScriptFunction(string);
+    }
 }

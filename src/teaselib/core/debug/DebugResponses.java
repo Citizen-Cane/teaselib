@@ -60,17 +60,7 @@ public class DebugResponses {
     public Result getResponse(List<String> choices) {
         Result bestResult = null;
         for (ResponseAction entry : responses) {
-            Pattern choice = WildcardPattern.compile(entry.match);
-            for (int i = 0; i < choices.size(); i++) {
-                if (choice.matcher(choices.get(i)).matches()
-                        && (bestResult == null || bestResult.response == Response.Ignore)) {
-                    try {
-                        bestResult = new Result(entry.match, i, entry.getResponse().call());
-                    } catch (Exception e) {
-                        throw ExceptionUtil.asRuntimeException(ExceptionUtil.reduce(e));
-                    }
-                }
-            }
+            bestResult = getResponse(choices, entry, bestResult);
         }
 
         if (bestResult != null) {
@@ -78,6 +68,21 @@ public class DebugResponses {
         } else {
             return defaultResponse(choices);
         }
+    }
+
+    public static Result getResponse(List<String> choices, ResponseAction entry, Result bestResult) {
+        Pattern choice = WildcardPattern.compile(entry.match);
+        for (int i = 0; i < choices.size(); i++) {
+            if (choice.matcher(choices.get(i)).matches()
+                    && (bestResult == null || bestResult.response == Response.Ignore)) {
+                try {
+                    bestResult = new Result(entry.match, i, entry.getResponse().call());
+                } catch (Exception e) {
+                    throw ExceptionUtil.asRuntimeException(ExceptionUtil.reduce(e));
+                }
+            }
+        }
+        return bestResult;
     }
 
     public Result defaultResponse(List<String> choices) {

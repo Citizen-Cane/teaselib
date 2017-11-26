@@ -13,6 +13,11 @@ public class ObjectMap {
         return this;
     }
 
+    public <T> ObjectMap store(T value) {
+        realized.put(value.getClass(), value);
+        return this;
+    }
+
     public <T> ObjectMap store(Object key, T value) {
         realized.put(key, value);
         return this;

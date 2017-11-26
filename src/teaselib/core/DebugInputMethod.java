@@ -10,6 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import teaselib.core.Debugger.Response;
+import teaselib.core.Debugger.ResponseAction;
 import teaselib.core.debug.DebugResponses;
 import teaselib.core.debug.DebugResponses.Result;
 import teaselib.core.debug.TimeAdvanceListener;
@@ -96,5 +97,51 @@ public class DebugInputMethod implements InputMethod {
 
     public void detach(TeaseLib teaseLib) {
         teaseLib.removeTimeAdvancedListener(timeAdvanceListener);
+    }
+
+    public void replyScriptFunction(String match) {
+        Prompt prompt = activePrompt.get();
+        if (prompt == null) {
+            // TODO Resolve need for sleep() to avoid throwing IllegalStateException
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+
+            prompt = activePrompt.get();
+            if (prompt == null) {
+                throw new IllegalStateException("No active prompt: " + match);
+            }
+        } else {
+            prompt.lock.lock();
+            try {
+                Result result = DebugResponses.getResponse(prompt.choices, new ResponseAction(match), null);
+                if (result != null) {
+                    logger.info("Choosing " + result);
+                    prompt.setResultOnce(result.index);
+                    prompt.click.signalAll();
+                    try {
+                        prompt.click.await();
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                    }
+                } else {
+                    throw new IllegalArgumentException("Prompt " + prompt + " doesn't match '" + match + "'");
+                }
+            } finally {
+                prompt.lock.unlock();
+            }
+        }
+    }
+
+    @Override
+    public String toString() {
+        Prompt prompt = activePrompt.get();
+        if (prompt != null) {
+            return prompt.toString();
+        } else {
+            return "<no active prompt>";
+        }
     }
 }

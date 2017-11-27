@@ -18,6 +18,7 @@ import teaselib.Actor;
 import teaselib.Config;
 import teaselib.Message;
 import teaselib.Message.Part;
+import teaselib.Message.Type;
 import teaselib.Mood;
 import teaselib.Replay;
 import teaselib.core.Prefetcher;
@@ -26,6 +27,7 @@ import teaselib.core.TeaseLib;
 import teaselib.core.texttospeech.TextToSpeech;
 import teaselib.core.texttospeech.TextToSpeechPlayer;
 import teaselib.core.util.ExceptionUtil;
+import teaselib.util.Interval;
 
 public class RenderMessage extends MediaRendererThread {
     private static final Logger logger = LoggerFactory.getLogger(RenderMessage.class);
@@ -402,39 +404,42 @@ public class RenderMessage extends MediaRendererThread {
         if (args.isEmpty()) {
             teaseLib.sleep(DELAY_AT_END_OF_MESSAGE, TimeUnit.MILLISECONDS);
         } else {
-            try {
-                String[] argv = args.split(" ");
-                if (argv.length == 1) {
-                    double delay = Double.parseDouble(args) * 1000;
-                    teaseLib.sleep((int) delay, TimeUnit.MILLISECONDS);
-                } else {
-                    double delayFrom = Double.parseDouble(argv[0]) * 1000;
-                    double delayTo = Double.parseDouble(argv[1]) * 1000;
-                    teaseLib.sleep(teaseLib.random((int) delayFrom, (int) delayTo), TimeUnit.MILLISECONDS);
-                }
-            } catch (NumberFormatException ignore) {
-                teaseLib.sleep(DELAY_AT_END_OF_MESSAGE, TimeUnit.MILLISECONDS);
-            }
+            Interval delay = getDelay(part.value);
+            teaseLib.sleep(teaseLib.random(delay.start, delay.end), TimeUnit.MILLISECONDS);
+        }
+    }
+
+    private Interval getDelay(String args) {
+        String[] argv = args.split(" ");
+        if (argv.length == 1) {
+            int delay = (int) (Double.parseDouble(args) * 1000);
+            return new Interval(delay, delay);
+        } else {
+            double start = Double.parseDouble(argv[0]) * 1000;
+            double end = Double.parseDouble(argv[1]) * 1000;
+            return new Interval((int) start, (int) end);
         }
     }
 
     @Override
     public String toString() {
         long delay = 0;
+        MessageTextAccumulator accumulatedText = new MessageTextAccumulator();
         Message.Parts paragraphs = message.getParts();
         for (Iterator<Part> it = paragraphs.iterator(); it.hasNext();) {
-            Part paragraph = it.next();
-            delay += TextToSpeech.getEstimatedSpeechDuration(paragraph.value);
-            if (it.hasNext()) {
-                delay += DELAY_BETWEEN_PARAGRAPHS;
-            } else {
-                delay += DELAY_AT_END_OF_MESSAGE;
+            Part part = it.next();
+            accumulatedText.add(part);
+            if (part.type == Type.Text) {
+                delay += TextToSpeech.getEstimatedSpeechDuration(part.value);
+                delay += getParagraphPause(accumulatedText, !it.hasNext());
+            } else if (part.type == Type.Delay) {
+                delay += getDelay(part.value).start;
             }
         }
         String messageText = message.toPrerecordedSpeechHashString().replace("\n", " ");
         int length = 40;
-        return "Estimated delay = " + String.format("%.2f", (double) delay / 1000) + " Message = "
-                + (messageText.length() > length ? messageText.substring(0, length) + "..." : messageText);
+        return "Estimated delay=" + String.format("%.2f", (double) delay / 1000) + " Message='"
+                + (messageText.length() > length ? messageText.substring(0, length) + "..." : messageText + "'");
     }
 
     @Override

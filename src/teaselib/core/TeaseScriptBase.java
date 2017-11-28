@@ -198,10 +198,6 @@ public abstract class TeaseScriptBase {
                 // current set will result in an empty next set
                 completeAll();
 
-                // TODO Add clear command to host interface -> end of section
-                // clear completed section
-                teaseLib.host.endScene();
-
                 // Start a new message in the log
                 teaseLib.transcript.info("");
                 renderQueue.start(nextSet);
@@ -425,9 +421,11 @@ public abstract class TeaseScriptBase {
 
         String choice = teaseLib.globals.get(Shower.class).show(this, prompt);
         endAll();
+        teaseLib.host.endScene();
 
         logger.debug("Reply finished");
         teaseLib.transcript.info("< " + choice);
+
         return choice;
     }
 

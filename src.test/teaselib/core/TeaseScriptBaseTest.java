@@ -1,6 +1,9 @@
 package teaselib.core;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
+import java.util.concurrent.TimeUnit;
 
 import org.junit.Test;
 
@@ -152,7 +155,26 @@ public class TeaseScriptBaseTest {
     }
 
     @Test
-    public void testInjectionOfNoImage() {
+    public void testInjectionOfImage() {
+        TestScript script = TestScript.getOne(new DebugSetup().withInput());
+
+        Message message = new Message(script.actor);
+        message.add("Some text.");
+        script.setImage("foo.jpg");
+
+        Message parsed = script.injectImagesAndExpandTextVariables(message);
+        Parts parts = parsed.getParts();
+        int n = 0;
+        assertEquals(Type.Mood, parts.get(n++).type);
+        assertEquals(Type.Image, parts.get(n).type);
+        assertEquals(Message.NoImage, parts.get(n++).value);
+        assertEquals(Type.Text, parts.get(n++).type);
+
+        assertEquals(parts.size(), n);
+    }
+
+    @Test
+    public void testInjectionOfNoImageInDebugSetup() {
         TestScript script = TestScript.getOne(new DebugSetup());
 
         Message message = new Message(script.actor);
@@ -170,4 +192,65 @@ public class TeaseScriptBaseTest {
         assertEquals(parts.size(), n);
     }
 
+    @Test
+    public void testMessageRendersWithMidDelay() {
+        TestScript script = TestScript.getOne(new DebugSetup());
+        script.debugger.freezeTime();
+
+        Message message = new Message(script.actor);
+        message.add("Some text.");
+        message.add(Message.Delay120s);
+        message.add("Some text.");
+
+        Message parsed = script.injectImagesAndExpandTextVariables(message);
+        Parts parts = parsed.getParts();
+        int n = 0;
+
+        assertEquals(Type.Mood, parts.get(n++).type);
+        assertEquals(Type.Image, parts.get(n).type);
+        assertEquals(Message.NoImage, parts.get(n++).value);
+        assertEquals(Type.Text, parts.get(n++).type);
+        assertEquals(Type.Delay, parts.get(n++).type);
+        assertEquals(Type.Image, parts.get(n).type);
+        assertEquals(Message.NoImage, parts.get(n++).value);
+        assertEquals(Type.Text, parts.get(n++).type);
+
+        assertEquals(parts.size(), n);
+
+        assertMessageDuration(script, message, 120);
+    }
+
+    @Test
+    public void testMessageRendersWithEndDelay() {
+        TestScript script = TestScript.getOne(new DebugSetup());
+        script.debugger.freezeTime();
+
+        Message message = new Message(script.actor);
+        message.add("Some text.");
+        message.add(Message.Delay120s);
+
+        Message parsed = script.injectImagesAndExpandTextVariables(message);
+        Parts parts = parsed.getParts();
+        int n = 0;
+
+        assertEquals(Type.Mood, parts.get(n++).type);
+        assertEquals(Type.Image, parts.get(n).type);
+        assertEquals(Message.NoImage, parts.get(n++).value);
+        assertEquals(Type.Text, parts.get(n++).type);
+        assertEquals(Type.Delay, parts.get(n++).type);
+
+        assertEquals(parts.size(), n);
+
+        assertMessageDuration(script, message, 120);
+    }
+
+    private void assertMessageDuration(TestScript script, Message message, long minimumSeconds) {
+        long start = script.teaseLib.getTime(TimeUnit.SECONDS);
+        script.renderMessage(message, false);
+        script.completeAll();
+        long end = script.teaseLib.getTime(TimeUnit.SECONDS);
+
+        long duration = end - start;
+        assertTrue(duration >= minimumSeconds);
+    }
 }

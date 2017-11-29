@@ -247,7 +247,7 @@ public class TeaseScriptBaseTest {
     private void assertMessageDuration(TestScript script, Message message, long minimumSeconds) {
         long start = script.teaseLib.getTime(TimeUnit.SECONDS);
         script.renderMessage(message, false);
-        script.completeAll();
+        script.completeMandatory();
         long end = script.teaseLib.getTime(TimeUnit.SECONDS);
 
         long duration = end - start;

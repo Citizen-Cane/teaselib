@@ -263,8 +263,7 @@ public class RenderMessage extends MediaRendererThread {
         } else if (part.type == Message.Type.Keyword) {
             doKeyword(part);
         } else if (part.type == Message.Type.Delay) {
-            completeCurrentParagraph(lastParagraph);
-            doDelay(part);
+            doDelay(part, lastParagraph);
         } else if (part.type == Message.Type.Item) {
             accumulatedText.add(part);
         } else if (part.type == Message.Type.Text) {
@@ -301,13 +300,15 @@ public class RenderMessage extends MediaRendererThread {
         speechRenderer = null;
     }
 
-    private void completeCurrentParagraph(final boolean lastParagraph) {
+    private void completeCurrentParagraph(boolean lastParagraph) {
         if (speechRendererInProgress != null) {
             speechRendererInProgress.completeMandatory();
         }
+
         if (lastParagraph) {
             mandatoryCompleted();
         }
+
         if (speechRendererInProgress != null) {
             speechRendererInProgress.completeAll();
             synchronized (interruptibleAudio) {
@@ -399,13 +400,19 @@ public class RenderMessage extends MediaRendererThread {
         }
     }
 
-    private void doDelay(Part part) {
+    private void doDelay(Part part, boolean lastParagraph) {
+        completeCurrentParagraph(false);
+
         String args = part.value;
         if (args.isEmpty()) {
             teaseLib.sleep(DELAY_AT_END_OF_MESSAGE, TimeUnit.MILLISECONDS);
         } else {
             Interval delay = getDelay(part.value);
             teaseLib.sleep(teaseLib.random(delay.start, delay.end), TimeUnit.MILLISECONDS);
+        }
+
+        if (lastParagraph) {
+            mandatoryCompleted();
         }
     }
 

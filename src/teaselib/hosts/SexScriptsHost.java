@@ -42,7 +42,6 @@ import teaselib.core.ScriptInterruptedException;
 import teaselib.core.VideoRenderer;
 import teaselib.core.VideoRenderer.Type;
 import teaselib.core.concurrency.NamedExecutorService;
-import teaselib.core.events.Delegate;
 import teaselib.core.javacv.VideoRendererJavaCV;
 import teaselib.core.ui.HostInputMethod;
 import teaselib.core.ui.InputMethod;
@@ -391,11 +390,11 @@ public class SexScriptsHost implements Host {
         return results;
     }
 
-    private List<Delegate> getClickableChoices(List<String> choices) {
+    private List<Runnable> getClickableChoices(List<String> choices) {
         try {
             // Get buttons
             Class<?> mainFrameClass = mainFrame.getClass();
-            List<Delegate> clickableChoices = new ArrayList<>(choices.size());
+            List<Runnable> clickableChoices = new ArrayList<>(choices.size());
             // Multiple choices are managed via an array of buttons,
             // whereas a single choice is implemented as a single button
             Field buttonsField = mainFrameClass.getDeclaredField("buttons");
@@ -426,14 +425,7 @@ public class SexScriptsHost implements Host {
                 for (final int index : new Interval(choices)) {
                     final String text = model.getElementAt(j);
                     if (text.contains(choices.get(index))) {
-                        Delegate click = new Delegate() {
-                            @Override
-                            public void run() {
-                                // Selects but doesn't execute
-                                ssComboBox.setSelectedIndex(comboboxIndex);
-                            }
-                        };
-                        clickableChoices.set(index, click);
+                        clickableChoices.set(index, (Runnable) () -> ssComboBox.setSelectedIndex(comboboxIndex));
                     }
                 }
             }
@@ -445,15 +437,10 @@ public class SexScriptsHost implements Host {
                     String buttonText = button.getText();
                     final String choice = choices.get(index);
                     if (buttonText.contains(choice)) {
-                        Delegate click = new Delegate() {
-
-                            @Override
-                            public void run() {
-                                logger.info("Clicking on '" + choice + "'");
-                                button.doClick();
-                            }
-                        };
-                        clickableChoices.set(index, click);
+                        clickableChoices.set(index, () -> {
+                            logger.info("Clicking on '" + choice + "'");
+                            button.doClick();
+                        });
                     }
                 }
             }
@@ -472,9 +459,9 @@ public class SexScriptsHost implements Host {
 
     public boolean dismissChoices(List<String> choices) {
         // Just click any choice
-        List<Delegate> clickableChoices = getClickableChoices(choices);
+        List<Runnable> clickableChoices = getClickableChoices(choices);
         if (clickableChoices != null) {
-            final Delegate delegate = clickableChoices.get(0);
+            Runnable delegate = clickableChoices.get(0);
             if (delegate != null) {
                 try {
                     delegate.run();
@@ -583,10 +570,10 @@ public class SexScriptsHost implements Host {
                 }
             }
         } catch (InterruptedException e) {
-            List<Delegate> clickableChoices = getClickableChoices(choices);
+            List<Runnable> clickableChoices = getClickableChoices(choices);
             if (!clickableChoices.isEmpty()) {
                 // Click any button
-                Delegate delegate = clickableChoices.get(0);
+                Runnable delegate = clickableChoices.get(0);
                 while (!showChoices.isDone()) {
                     // Stupid trick to be able to actually click a combo item
                     if (showPopupTask.comboBox.isVisible()) {

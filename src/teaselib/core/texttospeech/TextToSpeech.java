@@ -14,7 +14,6 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import teaselib.Sexuality.Gender;
 import teaselib.core.ScriptInterruptedException;
-import teaselib.core.events.Delegate;
 import teaselib.core.events.DelegateExecutor;
 import teaselib.core.texttospeech.implementation.TeaseLibTTS;
 import teaselib.core.texttospeech.implementation.Unsupported;
@@ -106,17 +105,16 @@ public class TextToSpeech {
     private void addImplementation(Class<?> ttsClass) {
         DelegateExecutor delegateThread = newDelegateExecutor();
 
-        Delegate delegate = new Delegate() {
-            @Override
-            public void run() throws ReflectiveOperationException {
-                Method getInstance = ttsClass.getDeclaredMethod("getInstance");
-                TextToSpeechImplementation newTTS = (TextToSpeechImplementation) getInstance.invoke(this);
-                addSDK(newTTS, delegateThread);
-            }
-        };
-
         try {
-            delegateThread.run(delegate);
+            delegateThread.run(() -> {
+                try {
+                    Method getInstance = ttsClass.getDeclaredMethod("getInstance");
+                    TextToSpeechImplementation newTTS = (TextToSpeechImplementation) getInstance.invoke(this);
+                    addSDK(newTTS, delegateThread);
+                } catch (ReflectiveOperationException e) {
+                    throw ExceptionUtil.asRuntimeException(e);
+                }
+            });
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new ScriptInterruptedException(e);
@@ -182,22 +180,17 @@ public class TextToSpeech {
         TextToSpeechImplementation tts = voice.tts();
 
         if (tts != null && ttsSDKs.containsKey(tts.sdkName())) {
-            Delegate delegate = new Delegate() {
-                @Override
-                public void run() {
-                    synchronized (AudioOutput) {
-                        try {
-                            tts.setVoice(voice);
-                            tts.setHints(hints);
-                            tts.speak(prompt);
-                        } finally {
-                            tts.setHints(NoHints);
-                        }
+            run(tts, () -> {
+                synchronized (AudioOutput) {
+                    try {
+                        tts.setVoice(voice);
+                        tts.setHints(hints);
+                        tts.speak(prompt);
+                    } finally {
+                        tts.setHints(NoHints);
                     }
                 }
-            };
-
-            run(tts, delegate);
+            });
         } else {
             ttsEngineNotInitialized();
         }
@@ -212,21 +205,16 @@ public class TextToSpeech {
         TextToSpeechImplementation tts = voice.tts();
 
         if (tts != null && ttsSDKs.containsKey(tts.sdkName())) {
-            Delegate delegate = new Delegate() {
-                @Override
-                public void run() {
-                    try {
-                        tts.setVoice(voice);
-                        tts.setHints(hints);
-                        String actualPath = tts.speak(prompt, file.getAbsolutePath());
-                        soundFilePath.append(actualPath);
-                    } finally {
-                        tts.setHints(NoHints);
-                    }
+            run(tts, (Runnable) () -> {
+                try {
+                    tts.setVoice(voice);
+                    tts.setHints(hints);
+                    String actualPath = tts.speak(prompt, file.getAbsolutePath());
+                    soundFilePath.append(actualPath);
+                } finally {
+                    tts.setHints(NoHints);
                 }
-            };
-
-            run(tts, delegate);
+            });
         } else {
             ttsEngineNotInitialized();
         }
@@ -234,7 +222,7 @@ public class TextToSpeech {
         return soundFilePath.toString();
     }
 
-    private void run(TextToSpeechImplementation tts, Delegate delegate) throws InterruptedException {
+    private void run(TextToSpeechImplementation tts, Runnable delegate) throws InterruptedException {
         try {
             DelegateExecutor delegateExecutor = ttsExecutors.get(tts.sdkName());
             delegateExecutor.run(delegate);

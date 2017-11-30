@@ -20,7 +20,6 @@ import teaselib.core.ResourceLoader;
 import teaselib.core.ScriptInterruptedException;
 import teaselib.core.VideoRenderer;
 import teaselib.core.VideoRenderer.Type;
-import teaselib.core.events.Delegate;
 import teaselib.core.javacv.VideoRendererJavaCV;
 import teaselib.core.ui.InputMethod;
 import teaselib.core.ui.Prompt;
@@ -103,16 +102,13 @@ public class DebugHost implements Host {
     final ReentrantLock replySection = new ReentrantLock(true);
     final Condition click = replySection.newCondition();
 
-    private List<Delegate> getClickableChoices(List<String> choices) {
-        List<Delegate> clickables = new ArrayList<>(choices.size());
+    private List<Runnable> getClickableChoices(List<String> choices) {
+        List<Runnable> clickables = new ArrayList<>(choices.size());
         for (int i = 0; i < choices.size(); i++) {
             final int j = i;
-            clickables.add(new Delegate() {
-                @Override
-                public void run() {
-                    selectedIndex = j;
-                    click.signal();
-                }
+            clickables.add(() -> {
+                selectedIndex = j;
+                click.signal();
             });
         }
         return clickables;
@@ -134,12 +130,10 @@ public class DebugHost implements Host {
             if (!replySection.hasWaiters(click)) {
                 logger.warn("Dismiss called on latch already counted down: " + choices);
             } else {
-                for (Delegate delegate : getClickableChoices(choices)) {
-                    try {
-                        delegate.run();
-                    } catch (Exception e) {
-                        throw ExceptionUtil.asRuntimeException(e);
-                    }
+                try {
+                    getClickableChoices(choices).stream().forEach(Runnable::run);
+                } catch (Exception e) {
+                    throw ExceptionUtil.asRuntimeException(e);
                 }
                 currentChoices = Collections.emptyList();
 

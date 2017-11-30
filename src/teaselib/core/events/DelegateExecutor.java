@@ -20,7 +20,7 @@ public class DelegateExecutor {
      * @param delegate
      *            The delegate to execute in the delegate thread.
      */
-    public void run(Delegate delegate) throws InterruptedException {
+    public void run(Runnable delegate) throws InterruptedException {
         try {
             Future<?> future = workerThread.submit(new Callable<Void>() {
                 @Override

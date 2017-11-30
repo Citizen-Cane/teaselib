@@ -8,7 +8,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import teaselib.core.ScriptInterruptedException;
-import teaselib.core.events.Delegate;
 import teaselib.core.events.DelegateExecutor;
 import teaselib.core.events.Event;
 import teaselib.core.speechrecognition.SpeechRecognitionResult.Confidence;
@@ -115,19 +114,15 @@ public class SpeechRecognition {
     private List<String> choices;
 
     private void lockSpeechRecognitionInProgressSyncObject() {
-        Delegate delegate = new Delegate() {
-            @Override
-            public void run() {
+        try {
+            delegateThread.run(() -> {
                 try {
                     logger.debug("Locking speech recognition sync object");
                     SpeechRecognitionInProgress.lock();
                 } catch (Throwable t) {
                     logger.error(t.getMessage(), t);
                 }
-            }
-        };
-        try {
-            delegateThread.run(delegate);
+            });
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new ScriptInterruptedException(e);
@@ -135,25 +130,16 @@ public class SpeechRecognition {
     }
 
     private void unlockSpeechRecognitionInProgressSyncObject() {
-        Delegate delegate = new Delegate() {
-            @Override
-            public void run() {
-                try {
-                    // Check because this is called as a completion event by the
-                    // event source, and might be called twice because the
-                    // hypothesis
-                    // event handler may generate a Completion event
-                    if (SpeechRecognitionInProgress.isHeldByCurrentThread()) {
-                        logger.debug("Unlocking speech recognition sync object");
-                        SpeechRecognitionInProgress.unlock();
-                    }
-                } catch (Throwable t) {
-                    logger.error(t.getMessage(), t);
-                }
-            }
-        };
         try {
-            delegateThread.run(delegate);
+            delegateThread.run(() -> {
+                // Check because this is called as a completion event by the
+                // event source, and might be called twice when the
+                // hypothesis event handler generates a Completion event
+                if (SpeechRecognitionInProgress.isHeldByCurrentThread()) {
+                    logger.debug("Unlocking speech recognition sync object");
+                    SpeechRecognitionInProgress.unlock();
+                }
+            });
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new ScriptInterruptedException(e);
@@ -166,26 +152,22 @@ public class SpeechRecognition {
         this.events = new SpeechRecognitionEvents<>(lockSpeechRecognitionInProgress, unlockSpeechRecognitionInProgress);
         this.locale = locale;
         try {
-            Delegate delegate = new Delegate() {
-                @Override
-                public void run() {
-                    try {
-                        if (Environment.SYSTEM == Environment.Windows) {
-                            sr = new TeaseLibSR();
-                            sr.init(events, SpeechRecognition.this.locale);
-                        } else {
-                            sr = Unsupported.Instance;
-                        }
-                    } catch (UnsatisfiedLinkError e) {
-                        logger.error(e.getMessage(), e);
-                        sr = null;
-                    } catch (Throwable t) {
-                        logger.error(t.getMessage(), t);
-                        sr = null;
+            delegateThread.run(() -> {
+                try {
+                    if (Environment.SYSTEM == Environment.Windows) {
+                        sr = new TeaseLibSR();
+                        sr.init(events, SpeechRecognition.this.locale);
+                    } else {
+                        sr = Unsupported.Instance;
                     }
+                } catch (UnsatisfiedLinkError e) {
+                    logger.error(e.getMessage(), e);
+                    sr = null;
+                } catch (Throwable t) {
+                    logger.error(t.getMessage(), t);
+                    sr = null;
                 }
-            };
-            delegateThread.run(delegate);
+            });
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new ScriptInterruptedException(e);
@@ -207,16 +189,11 @@ public class SpeechRecognition {
         this.choices = choices;
         this.recognitionConfidence = recognitionConfidence;
         if (sr != null) {
-            Delegate startRecognition = new Delegate() {
-                @Override
-                public void run() {
+            try {
+                delegateThread.run(() -> {
                     setupAndStartSR(SpeechRecognition.this.choices);
                     logger.info("Speech recognition started");
-                }
-
-            };
-            try {
-                delegateThread.run(startRecognition);
+                });
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 throw new ScriptInterruptedException(e);
@@ -228,15 +205,11 @@ public class SpeechRecognition {
 
     public void resumeRecognition() {
         if (sr != null) {
-            Delegate resumeRecognition = new Delegate() {
-                @Override
-                public void run() {
+            try {
+                delegateThread.run(() -> {
                     setupAndStartSR(choices);
                     logger.info("Speech recognition resumed");
-                }
-            };
-            try {
-                delegateThread.run(resumeRecognition);
+                });
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 throw new ScriptInterruptedException(e);
@@ -248,15 +221,11 @@ public class SpeechRecognition {
 
     public void stopRecognition() {
         if (sr != null) {
-            Delegate stopRecognition = new Delegate() {
-                @Override
-                public void run() {
+            try {
+                delegateThread.run(() -> {
                     sr.stopRecognition();
                     logger.info("Speech recognition stopped");
-                }
-            };
-            try {
-                delegateThread.run(stopRecognition);
+                });
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 throw new ScriptInterruptedException(e);
@@ -323,17 +292,13 @@ public class SpeechRecognition {
 
     public void emulateRecogntion(String emulatedRecognitionResult) {
         if (sr != null) {
-            Delegate emulateRecognition = new Delegate() {
-                @Override
-                public void run() {
+            try {
+                delegateThread.run(() -> {
                     sr.emulateRecognition(emulatedRecognitionResult);
                     if (logger.isInfoEnabled()) {
                         logger.info("Emulating recognition for '" + emulatedRecognitionResult + "'");
                     }
-                }
-            };
-            try {
-                delegateThread.run(emulateRecognition);
+                });
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 throw new ScriptInterruptedException(e);

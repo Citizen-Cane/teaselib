@@ -9,7 +9,7 @@ import java.util.List;
 public class CommandLineParameters<T extends Enum<?>> extends HashMap<T, List<String>> {
     private static final long serialVersionUID = 1L;
 
-    public static final List<String> EMPTY = Collections.EMPTY_LIST;
+    public static final List<String> EMPTY = Collections.emptyList();
 
     protected T defaultKeyword;
 

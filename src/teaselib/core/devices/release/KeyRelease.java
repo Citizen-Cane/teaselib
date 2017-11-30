@@ -175,7 +175,7 @@ public class KeyRelease implements Device, Device.Creatable {
             }
             return releaseMchanisms;
         } else {
-            return Collections.EMPTY_LIST;
+            return Collections.emptyList();
         }
     }
 

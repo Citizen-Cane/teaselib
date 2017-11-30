@@ -20,12 +20,10 @@ public abstract class RemoteDevice implements Device.Creatable {
         return Instance;
     }
 
-    static final RemoteDeviceMessage Id = new RemoteDeviceMessage("id", Collections.EMPTY_LIST, new byte[] {});
-
-    static final RemoteDeviceMessage Timeout = new RemoteDeviceMessage("timeout", Collections.EMPTY_LIST,
+    static final RemoteDeviceMessage Id = new RemoteDeviceMessage("id", Collections.emptyList(), new byte[] {});
+    static final RemoteDeviceMessage Timeout = new RemoteDeviceMessage("timeout", Collections.emptyList(),
             new byte[] {});
-
-    static final RemoteDeviceMessage Error = new RemoteDeviceMessage("error", Collections.EMPTY_LIST, new byte[] {});
+    static final RemoteDeviceMessage Error = new RemoteDeviceMessage("error", Collections.emptyList(), new byte[] {});
 
     /**
      * Set the device to sleep

@@ -1,6 +1,6 @@
 package teaselib.core.textotspeech;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
@@ -146,12 +146,8 @@ public class MicrosoftSapiPronunciationDictionaryTest {
         CountDownLatch completed = new CountDownLatch(1);
         List<String> choices = Arrays.asList("Bereit", "Madame");
 
-        Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs> speechRecognized = new Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs>() {
-            @Override
-            public void run(SpeechRecognitionImplementation sender, SpeechRecognizedEventArgs eventArgs) {
-                completed.countDown();
-            }
-        };
+        Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs> speechRecognized = (sender,
+                eventArgs) -> completed.countDown();
 
         speechRecognition.events.recognitionCompleted.add(speechRecognized);
         try {

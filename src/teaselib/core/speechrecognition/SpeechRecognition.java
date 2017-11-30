@@ -95,19 +95,11 @@ public class SpeechRecognition {
     private boolean speechRecognitionActive = false;
 
     // Allow other threads to wait for speech recognition to complete
-    private Event<SpeechRecognitionImplementation, SpeechRecognitionStartedEventArgs> lockSpeechRecognitionInProgress = new Event<SpeechRecognitionImplementation, SpeechRecognitionStartedEventArgs>() {
-        @Override
-        public void run(SpeechRecognitionImplementation sender, SpeechRecognitionStartedEventArgs args) {
-            lockSpeechRecognitionInProgressSyncObject();
-        }
-    };
+    private Event<SpeechRecognitionImplementation, SpeechRecognitionStartedEventArgs> lockSpeechRecognitionInProgress = (
+            sender, args) -> lockSpeechRecognitionInProgressSyncObject();
 
-    private Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs> unlockSpeechRecognitionInProgress = new Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs>() {
-        @Override
-        public void run(SpeechRecognitionImplementation sender, SpeechRecognizedEventArgs args) {
-            unlockSpeechRecognitionInProgressSyncObject();
-        }
-    };
+    private Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs> unlockSpeechRecognitionInProgress = (
+            sender, args) -> unlockSpeechRecognitionInProgressSyncObject();
 
     private Confidence recognitionConfidence;
 

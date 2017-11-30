@@ -255,14 +255,10 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
                 // disable timeout on first speech recognition event
                 // (non-audio)
                 final Thread scriptFunctionThread = Thread.currentThread();
-                recognitionStarted = new Event<SpeechRecognitionImplementation, SpeechRecognitionStartedEventArgs>() {
-                    @Override
-                    public void run(SpeechRecognitionImplementation sender,
-                            SpeechRecognitionStartedEventArgs eventArgs) {
-                        logger.info("-" + scriptFunctionThread.getName() + " - : Disabling timeout "
-                                + timeoutBehavior.toString());
-                        inDubioMitius = true;
-                    }
+                recognitionStarted = (sender, eventArgs) -> {
+                    logger.info("-" + scriptFunctionThread.getName() + " - : Disabling timeout "
+                            + timeoutBehavior.toString());
+                    inDubioMitius = true;
                 };
                 recognitionStartedEvents.add(recognitionStarted);
             } else {

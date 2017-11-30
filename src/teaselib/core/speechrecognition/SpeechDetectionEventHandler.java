@@ -11,15 +11,13 @@ import teaselib.core.speechrecognition.events.SpeechRecognitionStartedEventArgs;
 import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
 
 /**
- * Improve speech recognition user experience by just recognizing the first n
- * words. Speaking a longer prompt often results in rejected speech recognition,
- * because the prompt is just too long.
+ * Improve speech recognition user experience by just recognizing the first n words. Speaking a longer prompt often
+ * results in rejected speech recognition, because the prompt is just too long.
  * <p>
- * By just attempting to recognize the first few words, longer prompts are
- * recognized, while keeping high accuracy.
+ * By just attempting to recognize the first few words, longer prompts are recognized, while keeping high accuracy.
  * <p>
- * Multiple prompts starting with the same words are taken into account, in
- * order to avoid the wrong prompt being recognized.
+ * Multiple prompts starting with the same words are taken into account, in order to avoid the wrong prompt being
+ * recognized.
  * <p>
  * The minimal word count
  * 
@@ -29,17 +27,15 @@ import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
 public class SpeechDetectionEventHandler {
     static final Logger logger = LoggerFactory.getLogger(SpeechDetectionEventHandler.class);
     /**
-     * The default number of words after which the handler will accept a
-     * hypothesis when the confidence is high enough.
+     * The default number of words after which the handler will accept a hypothesis when the confidence is high enough.
      * <p>
-     * The first three or four syllables of any prompt are usually detected with
-     * a high probability value, so the minimum value should be four.
+     * The first three or four syllables of any prompt are usually detected with a high probability value, so the
+     * minimum value should be four.
      */
     private final static int HypothesisMinimumNumberOfWordsDefault = 3;
 
     /**
-     * The default number of vowels after which the handler will accept a
-     * hypothesis when the confidence is high enough.
+     * The default number of vowels after which the handler will accept a hypothesis when the confidence is high enough.
      */
     private final static int HypothesisMinimumNumberOfVowelsDefault = 4;
 
@@ -107,14 +103,11 @@ public class SpeechDetectionEventHandler {
     }
 
     private Event<SpeechRecognitionImplementation, SpeechRecognitionStartedEventArgs> recognitionStarted() {
-        return new Event<SpeechRecognitionImplementation, SpeechRecognitionStartedEventArgs>() {
-            @Override
-            public void run(SpeechRecognitionImplementation sender, SpeechRecognitionStartedEventArgs eventArgs) {
-                if (!enabled) {
-                    return;
-                } else {
-                    hypothesisResult = null;
-                }
+        return (sender, eventArgs) -> {
+            if (!enabled) {
+                return;
+            } else {
+                hypothesisResult = null;
             }
         };
     }
@@ -240,5 +233,4 @@ public class SpeechDetectionEventHandler {
         SpeechRecognizedEventArgs recognitionCompletedEventArgs = new SpeechRecognizedEventArgs(results);
         speechRecognizer.events.recognitionCompleted.run(sender, recognitionCompletedEventArgs);
     }
-
 }

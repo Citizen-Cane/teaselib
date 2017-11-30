@@ -12,12 +12,7 @@ public class SpeechRecognitionResult {
         Noise(0.0),
         Low(0.25),
         Normal(0.5),
-        High(0.80);
-
-        // TODO automatically choose default confidence for script functions
-        // - high for script functions
-        // - low for PCM [] replies
-        // - normal for .pause and .yesno statements
+        High(0.75);
 
         public static Confidence Default = Normal;
 
@@ -39,6 +34,24 @@ public class SpeechRecognitionResult {
             return higher(this);
         }
 
+        public boolean isAsHighAs(Confidence confidence) {
+            if (this.higherThan(confidence))
+                return true;
+            if (this == confidence)
+                return true;
+            return false;
+        }
+
+        public boolean higherThan(Confidence confidence) {
+            if (this == Normal && confidence == Low)
+                return true;
+            if (this == High && confidence == Low)
+                return true;
+            if (this == High && confidence == Normal)
+                return true;
+            return false;
+        }
+
         public static Confidence lower(Confidence confidence) {
             if (confidence == High)
                 return Normal;
@@ -56,6 +69,7 @@ public class SpeechRecognitionResult {
             else
                 return confidence;
         }
+
     }
 
     public final static int UNKNOWN_PHRASE_INDEX = -1;

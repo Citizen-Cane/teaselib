@@ -220,9 +220,6 @@ public class SpeechRecognition {
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 throw new ScriptInterruptedException(e);
-            } finally {
-                hypothesisEventHandler.enable(false);
-                SpeechRecognition.this.speechRecognitionActive = false;
             }
         } else {
             recognizerNotInitialized();
@@ -243,9 +240,6 @@ public class SpeechRecognition {
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 throw new ScriptInterruptedException(e);
-            } finally {
-                hypothesisEventHandler.enable(false);
-                SpeechRecognition.this.speechRecognitionActive = false;
             }
         } else {
             recognizerNotInitialized();
@@ -257,13 +251,8 @@ public class SpeechRecognition {
             Delegate stopRecognition = new Delegate() {
                 @Override
                 public void run() {
-                    try {
-                        hypothesisEventHandler.enable(false);
-                        sr.stopRecognition();
-                    } finally {
-                        SpeechRecognition.this.speechRecognitionActive = false;
-                        logger.info("Speech recognition stopped");
-                    }
+                    sr.stopRecognition();
+                    logger.info("Speech recognition stopped");
                 }
             };
             try {
@@ -272,8 +261,8 @@ public class SpeechRecognition {
                 Thread.currentThread().interrupt();
                 throw new ScriptInterruptedException(e);
             } finally {
-                // Unlock explicitly since after stopping we won't receive
-                // events anymore
+                hypothesisEventHandler.enable(false);
+                SpeechRecognition.this.speechRecognitionActive = false;
                 unlockSpeechRecognitionInProgressSyncObject();
             }
         } else {

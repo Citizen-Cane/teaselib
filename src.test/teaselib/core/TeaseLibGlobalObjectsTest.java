@@ -66,4 +66,43 @@ public class TeaseLibGlobalObjectsTest {
         assertEquals(value2, retrieved2);
     }
 
+    @Test(expected = IllegalArgumentException.class)
+    public void testTeaseLibGlobalObjectsAreWriteOnceToEnsureIntegrityAndOwnership() throws IOException {
+        TeaseLib teaseLib = new TeaseLib(new DebugHost(), new DebugPersistence(), new DebugSetup());
+
+        teaseLib.globals.store(TestObject.Object1, value1);
+        teaseLib.globals.store(TestObject.Object1, value2);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testTeaseLibGlobalObjectSuppliersAreWriteOnceToEnsureIntegrityAndOwnership() throws IOException {
+        TeaseLib teaseLib = new TeaseLib(new DebugHost(), new DebugPersistence(), new DebugSetup());
+
+        teaseLib.globals.store(TestObject.Object1, () -> value1);
+        teaseLib.globals.store(TestObject.Object1, () -> value2);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testTeaseLibGlobalObjectSuppliersAreWriteOnceToEnsureIntegrityAndOwnership2() throws IOException {
+        TeaseLib teaseLib = new TeaseLib(new DebugHost(), new DebugPersistence(), new DebugSetup());
+
+        teaseLib.globals.store(TestObject.Object1, () -> value1);
+        teaseLib.globals.store(TestObject.Object1, value2);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testTeaseLibGlobalObjectSuppliersAreWriteOnceToEnsureIntegrityAndOwnership3() throws IOException {
+        TeaseLib teaseLib = new TeaseLib(new DebugHost(), new DebugPersistence(), new DebugSetup());
+
+        teaseLib.globals.store(TestObject.Object1, () -> value1);
+        teaseLib.globals.store(TestObject.Object1, value2);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testTeaseLibGlobalObjectSuppliersAreWriteOnceToEnsureIntegrityAndOwnership4() throws IOException {
+        TeaseLib teaseLib = new TeaseLib(new DebugHost(), new DebugPersistence(), new DebugSetup());
+
+        teaseLib.globals.store(TestObject.Object1, value1);
+        teaseLib.globals.store(TestObject.Object1, () -> value2);
+    }
 }

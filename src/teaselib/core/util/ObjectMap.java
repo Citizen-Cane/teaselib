@@ -8,19 +8,43 @@ public class ObjectMap {
     private final Map<Object, Supplier<?>> suppliers = new HashMap<>();
     private final Map<Object, Object> realized = new HashMap<>();
 
+    private final boolean writeOnce = true;
+
     public <T extends Supplier<?>> ObjectMap store(Object key, T value) {
+        dontOverwrite(key);
+        return storeInternal(key, value);
+    }
+
+    private <T extends Supplier<?>> ObjectMap storeInternal(Object key, T value) {
         suppliers.put(key, value);
         return this;
     }
 
     public <T> ObjectMap store(T value) {
-        realized.put(value.getClass(), value);
+        Class<? extends Object> key = value.getClass();
+        dontOverwrite(key);
+        return storeInternal(value, key);
+    }
+
+    private <T> ObjectMap storeInternal(T value, Class<? extends Object> key) {
+        realized.put(key, value);
         return this;
     }
 
     public <T> ObjectMap store(Object key, T value) {
+        dontOverwrite(key);
+        return storeInternal(key, value);
+    }
+
+    private <T> ObjectMap storeInternal(Object key, T value) {
         realized.put(key, value);
         return this;
+    }
+
+    private void dontOverwrite(Object key) {
+        if (writeOnce && (suppliers.containsKey(key) || realized.containsKey(key))) {
+            throw new IllegalArgumentException(key + " is read-only");
+        }
     }
 
     public <T> T get(Class<T> key) {
@@ -37,7 +61,7 @@ public class ObjectMap {
             Supplier<T> supplier = (Supplier<T>) suppliers.get(key);
             if (supplier != null) {
                 value = supplier.get();
-                store(key, value);
+                storeInternal(key, value);
                 return value;
             } else {
                 return null;

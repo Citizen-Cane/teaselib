@@ -155,6 +155,7 @@ public class MicrosoftSapiPronunciationDictionaryTest {
             speechRecognition.emulateRecogntion("Hello");
             completed.await();
         } finally {
+            speechRecognition.events.recognitionCompleted.remove(speechRecognized);
             SpeechRecognition.completeSpeechRecognitionInProgress();
         }
     }

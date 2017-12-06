@@ -1,18 +1,16 @@
 package teaselib.core.ui;
 
-import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import teaselib.core.events.Event;
+import teaselib.core.speechrecognition.AudioSignalProblems;
 import teaselib.core.speechrecognition.SpeechRecognition;
-import teaselib.core.speechrecognition.SpeechRecognition.AudioSignalProblem;
 import teaselib.core.speechrecognition.SpeechRecognitionImplementation;
 import teaselib.core.speechrecognition.SpeechRecognitionResult;
 import teaselib.core.speechrecognition.SpeechRecognitionResult.Confidence;
@@ -36,11 +34,11 @@ public class SpeechRecognitionInputMethod implements InputMethod {
     final Optional<SpeechRecognitionRejectedScript> speechRecognitionRejectedScript;
     final AudioSignalProblems audioSignalProblems;
 
-    private final SpeechRecognitionStartedEventHandler speechRecognitionStartedEventHandler;
-    private final AudioSignalProblemEventHandler audioSignalProblemEventHandler;
-    private final SpeechDetectedEventHandler speechDetectedEventHandler;
-    private final SpeechRecognitionRejectedEventHandler recognitionRejected;
-    private final SpeechRecognitionCompletedEventHandler recognitionCompleted;
+    private final Event<SpeechRecognitionImplementation, SpeechRecognitionStartedEventArgs> speechRecognitionStartedEventHandler;
+    private final Event<SpeechRecognitionImplementation, AudioSignalProblemOccuredEventArgs> audioSignalProblemEventHandler;
+    private final Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs> speechDetectedEventHandler;
+    private final Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs> recognitionRejected;
+    private final Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs> recognitionCompleted;
 
     private final AtomicReference<Prompt> active = new AtomicReference<>();
 
@@ -51,159 +49,55 @@ public class SpeechRecognitionInputMethod implements InputMethod {
         this.speechRecognitionRejectedScript = speechRecognitionRejectedScript;
         this.audioSignalProblems = new AudioSignalProblems();
 
-        this.speechRecognitionStartedEventHandler = new SpeechRecognitionStartedEventHandler(audioSignalProblems);
-        this.audioSignalProblemEventHandler = new AudioSignalProblemEventHandler(audioSignalProblems);
-        speechDetectedEventHandler = new SpeechDetectedEventHandler(speechRecognizer, audioSignalProblems);
-        this.recognitionRejected = new SpeechRecognitionRejectedEventHandler(this, speechRecognitionRejectedScript);
-        this.recognitionCompleted = new SpeechRecognitionCompletedEventHandler(this, confidence, audioSignalProblems);
+        this.speechRecognitionStartedEventHandler = (sender, eventArgs) -> audioSignalProblems.clear();
+        this.audioSignalProblemEventHandler = (sender, audioSignal) -> audioSignalProblems.add(audioSignal.problem);
+        this.speechDetectedEventHandler = this::handleSpeechDetected;
+        this.recognitionRejected = this::handleSpeechRecognitionRejected;
+        this.recognitionCompleted = this::handleSpeechRecognitionCompleted;
     }
 
-    static final class AudioSignalProblems {
-        Map<SpeechRecognition.AudioSignalProblem, AtomicInteger> problems = new EnumMap<>(AudioSignalProblem.class);
-
-        public AudioSignalProblems() {
-            clear();
-        }
-
-        void clear() {
-            problems.clear();
-            for (AudioSignalProblem audioSignalProblem : AudioSignalProblem.values()) {
-                problems.put(audioSignalProblem, new AtomicInteger(0));
-            }
-        }
-
-        void add(AudioSignalProblem audioSignalProblem) {
-            problems.get(audioSignalProblem).incrementAndGet();
-        }
-
-        public boolean occured() {
-            for (AtomicInteger value : problems.values()) {
-                if (value.get() > 0) {
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        @Override
-        public String toString() {
-            return problems.toString();
+    private void handleSpeechDetected(SpeechRecognitionImplementation sender, SpeechRecognizedEventArgs eventArgs) {
+        if (audioSignalProblems.occured() && speechRecognizer.isSpeechRecognitionInProgress()) {
+            SpeechRecognitionResult result = eventArgs.result[0];
+            logAudioSignalProblem(result);
+            speechRecognizer.stopRecognition();
+            speechRecognizer.resumeRecognition();
         }
     }
 
-    static final class SpeechRecognitionStartedEventHandler
-            implements Event<SpeechRecognitionImplementation, SpeechRecognitionStartedEventArgs> {
-        private final AudioSignalProblems audioSignalProblems;
-
-        public SpeechRecognitionStartedEventHandler(AudioSignalProblems audioSignalProblems) {
-            this.audioSignalProblems = audioSignalProblems;
-        }
-
-        @Override
-        public void run(SpeechRecognitionImplementation sender, SpeechRecognitionStartedEventArgs eventArgs) {
-            audioSignalProblems.clear();
+    private void handleSpeechRecognitionRejected(SpeechRecognitionImplementation sender,
+            SpeechRecognizedEventArgs eventArgs) {
+        if (speechRecognitionRejectedScript.isPresent() && speechRecognitionRejectedScript.get().canRun()) {
+            signal(RECOGNITION_REJECTED);
         }
     }
 
-    static final class AudioSignalProblemEventHandler
-            implements Event<SpeechRecognitionImplementation, AudioSignalProblemOccuredEventArgs> {
-        private final AudioSignalProblems audioSignalProblems;
-
-        public AudioSignalProblemEventHandler(AudioSignalProblems audioSignalProblems) {
-            this.audioSignalProblems = audioSignalProblems;
-        }
-
-        @Override
-        public void run(SpeechRecognitionImplementation sender, AudioSignalProblemOccuredEventArgs audioSignalProblem) {
-            audioSignalProblems.add(audioSignalProblem.problem);
-        }
-    }
-
-    static final class SpeechDetectedEventHandler
-            implements Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs> {
-
-        private final SpeechRecognition speechRecognizer;
-        private AudioSignalProblems audioSignalProblems;
-
-        public SpeechDetectedEventHandler(SpeechRecognition speechRecognizer, AudioSignalProblems audioSignalProblems) {
-            this.speechRecognizer = speechRecognizer;
-            this.audioSignalProblems = audioSignalProblems;
-        }
-
-        @Override
-        public void run(SpeechRecognitionImplementation sender, SpeechRecognizedEventArgs eventArgs) {
-            if (audioSignalProblems.occured() && speechRecognizer.isSpeechRecognitionInProgress()) {
-                SpeechRecognitionResult result = eventArgs.result[0];
+    private void handleSpeechRecognitionCompleted(SpeechRecognitionImplementation sender,
+            SpeechRecognizedEventArgs eventArgs) {
+        if (eventArgs.result.length == 1) {
+            SpeechRecognitionResult result = eventArgs.result[0];
+            if (audioSignalProblems.occured()) {
                 logAudioSignalProblem(result);
-                speechRecognizer.stopRecognition();
-                speechRecognizer.resumeRecognition();
-            }
-        }
-
-        private void logAudioSignalProblem(SpeechRecognitionResult result) {
-            logger.info("Dropping result '" + result + "' due to audio signal problems " + audioSignalProblems);
-        }
-    }
-
-    static final class SpeechRecognitionRejectedEventHandler
-            implements Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs> {
-        private final Optional<SpeechRecognitionRejectedScript> speechRecognitionRejectedScript;
-        private final SpeechRecognitionInputMethod inputMethod;
-
-        public SpeechRecognitionRejectedEventHandler(SpeechRecognitionInputMethod inputMethod,
-                Optional<SpeechRecognitionRejectedScript> speechRecognitionRejectedScript) {
-            this.inputMethod = inputMethod;
-            this.speechRecognitionRejectedScript = speechRecognitionRejectedScript;
-        }
-
-        @Override
-        public void run(SpeechRecognitionImplementation sender, SpeechRecognizedEventArgs eventArgs) {
-            if (speechRecognitionRejectedScript.isPresent() && speechRecognitionRejectedScript.get().canRun()) {
-                inputMethod.signal(RECOGNITION_REJECTED);
-            }
-        }
-    }
-
-    static final class SpeechRecognitionCompletedEventHandler
-            implements Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs> {
-        private final SpeechRecognitionInputMethod inputMethod;
-        private final Confidence confidence;
-        private final AudioSignalProblems audioSignalProblems;
-
-        public SpeechRecognitionCompletedEventHandler(SpeechRecognitionInputMethod inputMethod, Confidence confidence,
-                AudioSignalProblems audioSignalProblems) {
-            this.inputMethod = inputMethod;
-            this.audioSignalProblems = audioSignalProblems;
-            this.confidence = confidence;
-        }
-
-        @Override
-        public void run(SpeechRecognitionImplementation sender, SpeechRecognizedEventArgs eventArgs) {
-            if (eventArgs.result.length == 1) {
-                SpeechRecognitionResult result = eventArgs.result[0];
-                if (audioSignalProblems.occured()) {
-                    logAudioSignalProblem(result);
-                } else if (!confidenceIsHighEnough(result, confidence)) {
-                    logLackOfConfidence(result);
-                } else {
-                    inputMethod.signal(result.index);
-                }
+            } else if (!confidenceIsHighEnough(result, confidence)) {
+                logLackOfConfidence(result);
             } else {
-                logger.info("Ignoring none or more than one result");
+                signal(result.index);
             }
+        } else {
+            logger.info("Ignoring none or more than one result");
         }
+    }
 
-        private void logLackOfConfidence(SpeechRecognitionResult result) {
-            logger.info("Dropping result '" + result + "' due to lack of confidence (expected " + confidence + ")");
-        }
+    private void logLackOfConfidence(SpeechRecognitionResult result) {
+        logger.info("Dropping result '" + result + "' due to lack of confidence (expected " + confidence + ")");
+    }
 
-        private void logAudioSignalProblem(SpeechRecognitionResult result) {
-            logger.info("Dropping result '" + result + "' due to audio signal problems " + audioSignalProblems);
-        }
+    private void logAudioSignalProblem(SpeechRecognitionResult result) {
+        logger.info("Dropping result '" + result + "' due to audio signal problems " + audioSignalProblems);
+    }
 
-        private boolean confidenceIsHighEnough(SpeechRecognitionResult result, Confidence confidence) {
-            return result.probability >= confidence.probability || result.confidence.isAsHighAs(confidence);
-        }
+    private boolean confidenceIsHighEnough(SpeechRecognitionResult result, Confidence confidence) {
+        return result.probability >= confidence.probability || result.confidence.isAsHighAs(confidence);
     }
 
     private void signal(int resultIndex) {

@@ -23,10 +23,9 @@ public abstract class SpeechRecognitionRejectedScript extends TeaseScript {
     }
 
     /**
-     * Override to determine when the script should run. This could be done
-     * inside the script by just returning without doing anything at all, but
-     * would result in flickering in the ui, because the buttons get unrealized,
-     * the immediately realized again.
+     * Override to determine when the script should run. This could be done inside the script by just returning without
+     * doing anything at all, but would result in flickering in the ui, because the buttons get unrealized, the
+     * immediately realized again.
      * 
      * @return Whether to run the script.
      */
@@ -35,8 +34,8 @@ public abstract class SpeechRecognitionRejectedScript extends TeaseScript {
     }
 
     @Override
-    final protected String showChoices(ScriptFunction scriptFunction,
-            Confidence recognitionConfidence, List<String> choices) {
+    final protected String showChoices(ScriptFunction scriptFunction, Confidence recognitionConfidence,
+            List<String> choices) {
         // Always use low confidence for recognitions
         return super.showChoices(scriptFunction, confidence, choices);
     }

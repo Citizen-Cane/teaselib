@@ -98,7 +98,7 @@ public class SpeechRecognitionResult {
 
     @Override
     public String toString() {
-        return "#" + index + ": " + text + " (" + probability + ") -> confidence is "
+        return "#" + index + ": " + text + " (" + probability + ") -> confidence="
                 + confidence.toString().toLowerCase();
     }
 }

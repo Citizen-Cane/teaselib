@@ -252,7 +252,7 @@ public class SpeechRecognition {
         throw new IllegalStateException("Recognizer not initialized");
     }
 
-    public static boolean isSpeechRecognitionInProgress() {
+    public boolean isSpeechRecognitionInProgress() {
         return SpeechRecognitionInProgress.isLocked();
     }
 

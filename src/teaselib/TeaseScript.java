@@ -249,8 +249,8 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
 
         protected void awaitTimeout(final SpeechRecognition.TimeoutBehavior timeoutBehavior) {
             final Event<SpeechRecognitionImplementation, SpeechRecognitionStartedEventArgs> recognitionStarted;
-            final EventSource<SpeechRecognitionImplementation, SpeechRecognitionStartedEventArgs> recognitionStartedEvents = teaseLib.globals
-                    .get(SpeechRecognizer.class).get(actor.locale()).events.recognitionStarted;
+            SpeechRecognition speechRecognizer = teaseLib.globals.get(SpeechRecognizer.class).get(actor.locale());
+            final EventSource<SpeechRecognitionImplementation, SpeechRecognitionStartedEventArgs> recognitionStartedEvents = speechRecognizer.events.recognitionStarted;
             if (timeoutBehavior == TimeoutBehavior.InDubioMitius) {
                 // disable timeout on first speech recognition event
                 // (non-audio)
@@ -267,7 +267,7 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
             try {
                 teaseLib.sleep(seconds, TimeUnit.SECONDS);
                 if (timeoutBehavior != TimeoutBehavior.InDubioContraReum
-                        && SpeechRecognition.isSpeechRecognitionInProgress()) {
+                        && speechRecognizer.isSpeechRecognitionInProgress()) {
                     logger.info("Completing speech recognition " + timeoutBehavior.toString());
                     SpeechRecognition.completeSpeechRecognitionInProgress();
                 }

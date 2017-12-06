@@ -438,7 +438,7 @@ public abstract class TeaseScriptBase {
         return new SpeechRecognitionRejectedScript(null) {
             @Override
             public void run() {
-                TeaseScriptBase script = this;
+                TeaseScriptBase script = TeaseScriptBase.this;
                 script.endAll();
                 Replay beforeSpeechRecognitionRejected = script.getReplay();
                 script.actor.speechRecognitionRejectedScript.run();

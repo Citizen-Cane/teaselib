@@ -7,7 +7,7 @@ import java.util.List;
 
 import teaselib.ScriptFunction;
 import teaselib.TeaseScript;
-import teaselib.core.TeaseScriptBase;
+import teaselib.core.Script;
 import teaselib.core.speechrecognition.SpeechRecognitionResult.Confidence;
 
 /**
@@ -18,7 +18,7 @@ public abstract class SpeechRecognitionRejectedScript extends TeaseScript {
 
     private final Confidence confidence;
 
-    public SpeechRecognitionRejectedScript(TeaseScriptBase script) {
+    public SpeechRecognitionRejectedScript(Script script) {
         super(script);
         confidence = Confidence.Low;
     }

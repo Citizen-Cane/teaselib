@@ -2,7 +2,7 @@ package teaselib;
 
 import teaselib.core.ResourceLoader;
 import teaselib.core.TeaseLib;
-import teaselib.core.TeaseScriptBase;
+import teaselib.core.Script;
 
 /**
  * @author Citizen-Cane
@@ -16,7 +16,7 @@ public class TeaseScriptPersistenceUtil extends TeaseScriptPersistence {
         super(teaseLib, resources, actor, namespace);
     }
 
-    protected TeaseScriptPersistenceUtil(TeaseScriptBase script, Actor actor) {
+    protected TeaseScriptPersistenceUtil(Script script, Actor actor) {
         super(script, actor);
     }
 

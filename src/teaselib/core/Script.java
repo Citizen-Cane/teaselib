@@ -31,8 +31,8 @@ import teaselib.core.ui.SpeechRecognitionInputMethod;
 import teaselib.util.SpeechRecognitionRejectedScript;
 import teaselib.util.TextVariables;
 
-public abstract class TeaseScriptBase {
-    private static final Logger logger = LoggerFactory.getLogger(TeaseScriptBase.class);
+public abstract class Script {
+    private static final Logger logger = LoggerFactory.getLogger(Script.class);
 
     public final TeaseLib teaseLib;
     public final ResourceLoader resources;
@@ -81,7 +81,7 @@ public abstract class TeaseScriptBase {
      * @param teaseLib
      * @param locale
      */
-    protected TeaseScriptBase(TeaseLib teaseLib, ResourceLoader resources, Actor actor, String namespace) {
+    protected Script(TeaseLib teaseLib, ResourceLoader resources, Actor actor, String namespace) {
         this(teaseLib, resources, actor, namespace,
                 teaseLib.globals.store(MediaRendererQueue.class, MediaRendererQueue::new).get(MediaRendererQueue.class),
                 teaseLib.globals.store(TextToSpeechPlayer.class, () -> new TextToSpeechPlayer(teaseLib.config))
@@ -98,13 +98,13 @@ public abstract class TeaseScriptBase {
      * @param script
      * @param actor
      */
-    protected TeaseScriptBase(TeaseScriptBase script, Actor actor) {
+    protected Script(Script script, Actor actor) {
         this(script.teaseLib, script.resources, actor, script.namespace,
                 script.teaseLib.globals.get(MediaRendererQueue.class),
                 script.teaseLib.globals.get(TextToSpeechPlayer.class));
     }
 
-    private TeaseScriptBase(TeaseLib teaseLib, ResourceLoader resources, Actor actor, String namespace,
+    private Script(TeaseLib teaseLib, ResourceLoader resources, Actor actor, String namespace,
             MediaRendererQueue renderQueue, TextToSpeechPlayer textToSpeech) {
         this.teaseLib = teaseLib;
         this.resources = resources;
@@ -376,7 +376,7 @@ public abstract class TeaseScriptBase {
     /**
      * {@code recognitionConfidence} defaults to {@link Confidence#Default}
      * 
-     * @see TeaseScriptBase#showChoices(ScriptFunction, Confidence, List)
+     * @see Script#showChoices(ScriptFunction, Confidence, List)
      */
     protected final String showChoices(ScriptFunction scriptFunction, List<String> choices) {
         return showChoices(scriptFunction, Confidence.Default, choices);
@@ -438,7 +438,7 @@ public abstract class TeaseScriptBase {
         return new SpeechRecognitionRejectedScript(this) {
             @Override
             public void run() {
-                TeaseScriptBase script = TeaseScriptBase.this;
+                Script script = Script.this;
                 script.endAll();
                 Replay beforeSpeechRecognitionRejected = script.getReplay();
                 script.actor.speechRecognitionRejectedScript.run();
@@ -497,7 +497,7 @@ public abstract class TeaseScriptBase {
                 }
             }
 
-            private void log(TeaseScriptBase speechRecognitionRejectedScript, String message) {
+            private void log(Script speechRecognitionRejectedScript, String message) {
                 if (logger.isInfoEnabled()) {
                     String skipping = " - skipping RecognitionRejectedScript "
                             + speechRecognitionRejectedScript.toString();

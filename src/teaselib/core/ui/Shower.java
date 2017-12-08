@@ -4,7 +4,7 @@ import java.util.Stack;
 
 import teaselib.core.Host;
 import teaselib.core.ScriptInterruptedException;
-import teaselib.core.TeaseScriptBase;
+import teaselib.core.Script;
 
 public class Shower {
     static final int PAUSED = -1;
@@ -19,7 +19,7 @@ public class Shower {
         this.promptQueue = new PromptQueue();
     }
 
-    public String show(TeaseScriptBase script, Prompt prompt) {
+    public String show(Script script, Prompt prompt) {
         try {
             pauseCurrent();
         } catch (InterruptedException e) {
@@ -42,7 +42,7 @@ public class Shower {
         }
     }
 
-    private String showNew(TeaseScriptBase script, Prompt prompt) throws InterruptedException {
+    private String showNew(Script script, Prompt prompt) throws InterruptedException {
         stack.push(prompt);
 
         int resultIndex = promptQueue.show(script, prompt);

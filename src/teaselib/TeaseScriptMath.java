@@ -11,7 +11,7 @@ import java.util.concurrent.TimeUnit;
 
 import teaselib.core.ResourceLoader;
 import teaselib.core.TeaseLib;
-import teaselib.core.TeaseScriptBase;
+import teaselib.core.Script;
 import teaselib.util.Item;
 import teaselib.util.Items;
 
@@ -25,7 +25,7 @@ public class TeaseScriptMath extends TeaseScriptPersistenceUtil {
         super(teaseLib, resources, actor, namespace);
     }
 
-    protected TeaseScriptMath(TeaseScriptBase script, Actor actor) {
+    protected TeaseScriptMath(Script script, Actor actor) {
         super(script, actor);
     }
 

@@ -30,7 +30,7 @@ public class ScriptFutureTask extends FutureTask<Void> {
     private final static ExecutorService Executor = NamedExecutorService.newFixedThreadPool(Integer.MAX_VALUE,
             "Script Function", 1, TimeUnit.HOURS);
 
-    public ScriptFutureTask(final TeaseScriptBase script, final ScriptFunction scriptFunction, Prompt prompt) {
+    public ScriptFutureTask(final Script script, final ScriptFunction scriptFunction, Prompt prompt) {
         super(new Callable<Void>() {
             @Override
             public Void call() throws Exception {

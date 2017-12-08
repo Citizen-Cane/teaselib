@@ -2,7 +2,7 @@ package teaselib.core.ui;
 
 import java.util.concurrent.atomic.AtomicReference;
 
-import teaselib.core.TeaseScriptBase;
+import teaselib.core.Script;
 import teaselib.core.util.ExceptionUtil;
 
 /**
@@ -12,7 +12,7 @@ import teaselib.core.util.ExceptionUtil;
 public class PromptQueue {
     private final AtomicReference<Prompt> active = new AtomicReference<>();
 
-    public int show(TeaseScriptBase script, Prompt prompt) throws InterruptedException {
+    public int show(Script script, Prompt prompt) throws InterruptedException {
         prompt.lock.lockInterruptibly();
         try {
             // Prevent multiple entry while initializing prompt

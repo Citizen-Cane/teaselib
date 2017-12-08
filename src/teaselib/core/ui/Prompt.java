@@ -12,7 +12,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import teaselib.ScriptFunction;
 import teaselib.core.ScriptFutureTask;
 import teaselib.core.ScriptInterruptedException;
-import teaselib.core.TeaseScriptBase;
+import teaselib.core.Script;
 import teaselib.core.util.ExceptionUtil;
 
 public class Prompt {
@@ -52,7 +52,7 @@ public class Prompt {
         this.result = Prompt.UNDEFINED;
     }
 
-    void executeScriptTask(TeaseScriptBase script) {
+    void executeScriptTask(Script script) {
         scriptTask = new ScriptFutureTask(script, scriptFunction, this);
         scriptTask.execute();
     }

@@ -5,7 +5,7 @@ package teaselib;
 
 import teaselib.core.ResourceLoader;
 import teaselib.core.TeaseLib;
-import teaselib.core.TeaseScriptBase;
+import teaselib.core.Script;
 import teaselib.core.state.ItemProxy;
 import teaselib.core.state.StateProxy;
 import teaselib.util.Item;
@@ -17,13 +17,13 @@ import teaselib.util.Items;
  *         Implements object-oriented persistence.
  *
  */
-public abstract class TeaseScriptPersistence extends TeaseScriptBase {
+public abstract class TeaseScriptPersistence extends Script {
 
     protected TeaseScriptPersistence(TeaseLib teaseLib, ResourceLoader resources, Actor actor, String namespace) {
         super(teaseLib, resources, actor, namespace);
     }
 
-    protected TeaseScriptPersistence(TeaseScriptBase script, Actor actor) {
+    protected TeaseScriptPersistence(Script script, Actor actor) {
         super(script, actor);
     }
 

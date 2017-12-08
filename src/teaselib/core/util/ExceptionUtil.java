@@ -24,6 +24,14 @@ public class ExceptionUtil {
         return e instanceof ExecutionException || e instanceof InvocationTargetException;
     }
 
+    public static RuntimeException asRuntimeException(Throwable t) {
+        if (t instanceof RuntimeException) {
+            return (RuntimeException) t;
+        } else {
+            return new RuntimeException(t.getClass().getSimpleName() + ": " + t.getMessage(), t);
+        }
+    }
+
     public static RuntimeException asRuntimeException(Exception e) {
         if (e instanceof RuntimeException) {
             return (RuntimeException) e;

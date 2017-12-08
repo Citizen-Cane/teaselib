@@ -435,7 +435,7 @@ public abstract class TeaseScriptBase {
     }
 
     public SpeechRecognitionRejectedScript speechRecognitioneRejectedScript(ScriptFunction scriptFunction) {
-        return new SpeechRecognitionRejectedScript(null) {
+        return new SpeechRecognitionRejectedScript(this) {
             @Override
             public void run() {
                 TeaseScriptBase script = TeaseScriptBase.this;

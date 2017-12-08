@@ -86,7 +86,7 @@ public class Prompt {
             } else if (resultIndex == Prompt.DISMISSED) {
                 choice = ScriptFunction.Timeout;
             } else if (resultIndex == UNDEFINED) {
-                throw new IllegalStateException("Undefined prompt result");
+                throw new IllegalStateException("Undefined prompt result for " + this);
             } else {
                 choice = choices.get(resultIndex);
             }
@@ -103,7 +103,7 @@ public class Prompt {
                 return;
             }
         }
-        throw new IllegalArgumentException("No handler for " + key);
+        throw new IllegalArgumentException("No handler for " + key + " in " + this);
     }
 
     public synchronized int result() {
@@ -127,7 +127,7 @@ public class Prompt {
         if (!paused()) {
             click.signalAll();
         } else {
-            throw new IllegalStateException("Prompt click not signaled for " + this);
+            throw new IllegalStateException("Prompt click signaled for paused prompt " + this);
         }
     }
 

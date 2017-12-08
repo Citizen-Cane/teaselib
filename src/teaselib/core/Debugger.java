@@ -46,14 +46,20 @@ public class Debugger {
 
     public enum Response {
         Choose,
-        Ignore
+        Ignore,
+        Invoke
     }
 
     private final DebugInputMethod debugInputMethod;
 
     public Debugger(TeaseLib teaseLib) {
+        this(teaseLib, () -> {
+        });
+    }
+
+    public Debugger(TeaseLib teaseLib, Runnable debugInputMethodHandler) {
         this.teaseLib = teaseLib;
-        this.debugInputMethod = new DebugInputMethod();
+        this.debugInputMethod = new DebugInputMethod(debugInputMethodHandler);
         attach();
     }
 

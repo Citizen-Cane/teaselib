@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 import teaselib.ScriptFunction.Relation;
 import teaselib.core.ResourceLoader;
 import teaselib.core.TeaseLib;
+import teaselib.core.TeaseScriptBase;
 import teaselib.core.events.Event;
 import teaselib.core.events.EventSource;
 import teaselib.core.media.MediaRenderer;
@@ -42,7 +43,7 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
      * @param script
      *            The script to share resources with
      */
-    public TeaseScript(TeaseScript script) {
+    public TeaseScript(TeaseScriptBase script) {
         super(script, script.actor);
     }
 

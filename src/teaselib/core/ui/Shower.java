@@ -45,29 +45,28 @@ public class Shower {
     private String showNew(TeaseScriptBase script, Prompt prompt) throws InterruptedException {
         stack.push(prompt);
 
-        while (true) {
-            if (stack.peek() == prompt) {
-                int resultIndex = promptQueue.show(script, prompt);
-                if (resultIndex == Prompt.DISMISSED) {
-                    prompt.joinScriptTask();
-                    prompt.forwardErrorsAsRuntimeException();
-                    return prompt.choice(resultIndex);
-                } else if (prompt.inputHandlerKey != Prompt.NONE) {
-                    try {
-                        invokeHandler(prompt);
-                    } finally {
-                        prompt.inputHandlerKey = Prompt.NONE;
-                        prompt.resume();
-                    }
-                } else {
-                    prompt.cancelScriptTask();
-                    prompt.forwardErrorsAsRuntimeException();
-                    return prompt.choice(resultIndex);
-                }
-            } else {
-                throw new IllegalStateException("Explicit prompt pausing is deprecated");
+        int resultIndex = promptQueue.show(script, prompt);
+        return result(prompt, resultIndex);
+    }
+
+    private String result(Prompt prompt, int resultIndex) throws InterruptedException {
+        if (resultIndex == Prompt.DISMISSED) {
+            prompt.joinScriptTask();
+            prompt.forwardErrorsAsRuntimeException();
+        } else if (prompt.inputHandlerKey != Prompt.NONE) {
+            try {
+                invokeHandler(prompt);
+            } finally {
+                prompt.inputHandlerKey = Prompt.NONE;
+                prompt.resume();
             }
+            resultIndex = promptQueue.showExisting(prompt);
+        } else {
+            prompt.cancelScriptTask();
+            prompt.forwardErrorsAsRuntimeException();
         }
+
+        return prompt.choice(resultIndex);
     }
 
     private void invokeHandler(Prompt prompt) {
@@ -96,7 +95,10 @@ public class Shower {
 
     private void pauseCurrent() throws InterruptedException {
         if (!stack.empty()) {
-            pause(stack.peek());
+            Prompt prompt = stack.peek();
+            if (!prompt.paused()) {
+                pause(prompt);
+            }
         }
     }
 
@@ -108,9 +110,8 @@ public class Shower {
         if (!stack.isEmpty()) {
             Prompt prompt = stack.peek();
 
-            // TODO Possibly not necessary
             if (promptQueue.getActive() == prompt) {
-                promptQueue.dismiss(prompt);
+                throw new IllegalStateException("Prompt not dismissed: " + prompt);
             }
             stack.pop();
         } else {

@@ -26,8 +26,7 @@ import teaselib.util.SpeechRecognitionRejectedScript;
 public class SpeechRecognitionInputMethod implements InputMethod {
     private static final Logger logger = LoggerFactory.getLogger(SpeechRecognitionInputMethod.class);
 
-    private static final int RECOGNITION_REJECTED = -666;
-    private static final String RECOGNITION_REJECTED_HNADLER_KEY = "Recognition Rejected";
+    private static final String RECOGNITION_REJECTED_HANDLER_KEY = "Recognition Rejected";
 
     final SpeechRecognition speechRecognizer;
     final Confidence confidence;
@@ -68,7 +67,7 @@ public class SpeechRecognitionInputMethod implements InputMethod {
     private void handleSpeechRecognitionRejected(SpeechRecognitionImplementation sender,
             SpeechRecognizedEventArgs eventArgs) {
         if (speechRecognitionRejectedScript.isPresent() && speechRecognitionRejectedScript.get().canRun()) {
-            signal(RECOGNITION_REJECTED);
+            signalHandlerInvocation(RECOGNITION_REJECTED_HANDLER_KEY);
         }
     }
 
@@ -103,13 +102,18 @@ public class SpeechRecognitionInputMethod implements InputMethod {
     private void signal(int resultIndex) {
         Prompt prompt = active.get();
         prompt.lock.lock();
-
         try {
-            if (resultIndex == RECOGNITION_REJECTED) {
-                prompt.signalHandlerInvocation(RECOGNITION_REJECTED_HNADLER_KEY);
-            } else {
-                prompt.signalResult(resultIndex);
-            }
+            prompt.signalResult(resultIndex);
+        } finally {
+            prompt.lock.unlock();
+        }
+    }
+
+    private void signalHandlerInvocation(String key) {
+        Prompt prompt = active.get();
+        prompt.lock.lock();
+        try {
+            prompt.signalHandlerInvocation(RECOGNITION_REJECTED_HANDLER_KEY);
         } finally {
             prompt.lock.unlock();
         }
@@ -160,7 +164,7 @@ public class SpeechRecognitionInputMethod implements InputMethod {
     @Override
     public Map<String, Runnable> getHandlers() {
         HashMap<String, Runnable> handlers = new HashMap<>();
-        handlers.put(RECOGNITION_REJECTED_HNADLER_KEY, () -> {
+        handlers.put(RECOGNITION_REJECTED_HANDLER_KEY, () -> {
             if (speechRecognitionRejectedScript.isPresent()) {
                 speechRecognitionRejectedScript.get().run();
             }

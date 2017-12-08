@@ -1,6 +1,6 @@
 package teaselib.core;
 
-import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
@@ -24,6 +24,8 @@ import teaselib.core.ui.Prompt;
 public class DebugInputMethod implements InputMethod {
     private static final Logger logger = LoggerFactory.getLogger(DebugInputMethod.class);
 
+    private static final String DEBUG_INPUT_METHOD_HANDLER = "DebugInputMethodHandler";
+
     final AtomicReference<Prompt> activePrompt = new AtomicReference<>();
     final AtomicLong elapsed = new AtomicLong();
 
@@ -38,6 +40,12 @@ public class DebugInputMethod implements InputMethod {
         }
     };
 
+    private final Runnable debugInputMethodHandler;
+
+    public DebugInputMethod(Runnable debugInputMethodHandler) {
+        this.debugInputMethodHandler = debugInputMethodHandler;
+    }
+
     private void dismissExpectedPromptOrIgnore(Prompt prompt) {
         prompt.lock.lock();
         try {
@@ -46,6 +54,8 @@ public class DebugInputMethod implements InputMethod {
                 logger.info("Choosing " + result);
                 prompt.setResultOnce(result.index);
                 prompt.click.signalAll();
+            } else if (result.response == Response.Invoke) {
+                invokeHandlerOnce(prompt, result);
             } else {
                 logger.info("Ignoring " + result);
             }
@@ -67,6 +77,8 @@ public class DebugInputMethod implements InputMethod {
                 logger.info("Choosing " + result);
                 prompt.setResultOnce(result.index);
                 prompt.click.signalAll();
+            } else if (result.response == Response.Invoke) {
+                invokeHandlerOnce(prompt, result);
             } else {
                 activePrompt.set(prompt);
                 elapsed.set(0);
@@ -74,6 +86,19 @@ public class DebugInputMethod implements InputMethod {
         } finally {
             prompt.lock.unlock();
         }
+    }
+
+    private void invokeHandlerOnce(Prompt prompt, Result result) {
+        new Thread(() -> {
+            prompt.lock.lock();
+            try {
+                prompt.signalHandlerInvocation(DEBUG_INPUT_METHOD_HANDLER);
+                responses.replace(new ResponseAction(result.match, Response.Choose));
+            } finally {
+                prompt.lock.unlock();
+            }
+        }, "Debug Input Method Handler").start();
+        ;
     }
 
     @Override
@@ -84,7 +109,9 @@ public class DebugInputMethod implements InputMethod {
 
     @Override
     public Map<String, Runnable> getHandlers() {
-        return Collections.emptyMap();
+        HashMap<String, Runnable> handlers = new HashMap<>();
+        handlers.put(DEBUG_INPUT_METHOD_HANDLER, debugInputMethodHandler);
+        return handlers;
     }
 
     public DebugResponses getResponses() {

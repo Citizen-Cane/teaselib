@@ -1,6 +1,6 @@
 package teaselib.core;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -62,7 +62,7 @@ public class ShowChoicesInputMethodTest {
             @Override
             public void run() {
                 say("In Debug Handler");
-                reply("DebugConfirm1", "DebugConfirm2");
+                reply("DebugConfirm");
                 count.incrementAndGet();
             }
         };
@@ -74,7 +74,7 @@ public class ShowChoicesInputMethodTest {
     @Test
     public void testSingleReply() throws Exception {
         debugger.addResponse("No", Debugger.Response.Invoke);
-        debugger.addResponse("DebugConfirm1", Debugger.Response.Choose);
+        debugger.addResponse("DebugConfirm", Debugger.Response.Choose);
 
         script.say("Start.");
         assertEquals("No", script.reply("Yes", "No"));
@@ -87,13 +87,26 @@ public class ShowChoicesInputMethodTest {
     public void testDoubleReply() throws Exception {
         debugger.addResponse("No", Debugger.Response.Invoke);
         debugger.addResponse("Yes", Debugger.Response.Invoke);
-        debugger.addResponse("DebugConfirm1", Debugger.Response.Choose);
-        debugger.addResponse("DebugConfirm2", Debugger.Response.Choose);
+        debugger.addResponse("DebugConfirm", Debugger.Response.Choose);
 
         script.say("Start.");
         assertEquals("No", script.reply("Yes", "No"));
         script.say("End.");
 
         assertEquals(2, count.get());
+    }
+
+    @Test
+    public void testTripleReply() throws Exception {
+        debugger.addResponse("No", Debugger.Response.Invoke);
+        debugger.addResponse("Yes", Debugger.Response.Invoke);
+        debugger.addResponse("Maybe", Debugger.Response.Invoke);
+        debugger.addResponse("DebugConfirm", Debugger.Response.Choose);
+
+        script.say("Start.");
+        assertEquals("No", script.reply("Yes", "No", "Maybe"));
+        script.say("End.");
+
+        assertEquals(3, count.get());
     }
 }

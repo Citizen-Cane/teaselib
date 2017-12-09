@@ -26,10 +26,15 @@ public class DebugInputMethod implements InputMethod {
 
     private static final String DEBUG_INPUT_METHOD_HANDLER = "DebugInputMethodHandler";
 
-    final AtomicReference<Prompt> activePrompt = new AtomicReference<>();
-    final AtomicLong elapsed = new AtomicLong();
+    private final AtomicReference<Prompt> activePrompt = new AtomicReference<>();
+    private final AtomicLong elapsed = new AtomicLong();
 
     private final DebugResponses responses = new DebugResponses();
+    private final Runnable debugInputMethodHandler;
+
+    public DebugInputMethod(Runnable debugInputMethodHandler) {
+        this.debugInputMethodHandler = debugInputMethodHandler;
+    }
 
     private final TimeAdvanceListener timeAdvanceListener = e -> {
         Prompt prompt = activePrompt.get();
@@ -40,20 +45,12 @@ public class DebugInputMethod implements InputMethod {
         }
     };
 
-    private final Runnable debugInputMethodHandler;
-
-    public DebugInputMethod(Runnable debugInputMethodHandler) {
-        this.debugInputMethodHandler = debugInputMethodHandler;
-    }
-
     private void dismissExpectedPromptOrIgnore(Prompt prompt) {
         prompt.lock.lock();
         try {
             Result result = responses.getResponse(prompt.choices);
             if (result.response == Response.Choose) {
-                logger.info("Choosing " + result);
-                prompt.setResultOnce(result.index);
-                prompt.click.signalAll();
+                choose(prompt, result);
             } else if (result.response == Response.Invoke) {
                 invokeHandlerOnce(prompt, result);
             } else {
@@ -74,9 +71,7 @@ public class DebugInputMethod implements InputMethod {
         try {
             Result result = responses.getResponse(prompt.choices);
             if (result.response == Response.Choose) {
-                logger.info("Choosing " + result);
-                prompt.setResultOnce(result.index);
-                prompt.click.signalAll();
+                choose(prompt, result);
             } else if (result.response == Response.Invoke) {
                 invokeHandlerOnce(prompt, result);
             } else {
@@ -98,7 +93,6 @@ public class DebugInputMethod implements InputMethod {
                 prompt.lock.unlock();
             }
         }, "Debug Input Method Handler").start();
-        ;
     }
 
     @Override
@@ -145,9 +139,7 @@ public class DebugInputMethod implements InputMethod {
             try {
                 Result result = DebugResponses.getResponse(prompt.choices, new ResponseAction(match), null);
                 if (result != null) {
-                    logger.info("Choosing " + result);
-                    prompt.setResultOnce(result.index);
-                    prompt.click.signalAll();
+                    choose(prompt, result);
                     try {
                         prompt.click.await();
                     } catch (InterruptedException e) {
@@ -160,6 +152,11 @@ public class DebugInputMethod implements InputMethod {
                 prompt.lock.unlock();
             }
         }
+    }
+
+    private static void choose(Prompt prompt, Result result) {
+        logger.info("Choosing " + result);
+        prompt.signalResult(result.index);
     }
 
     @Override

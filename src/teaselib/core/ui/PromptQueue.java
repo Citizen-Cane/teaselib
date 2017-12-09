@@ -81,8 +81,8 @@ public class PromptQueue {
             if (prompt.result() != Prompt.UNDEFINED)
                 return;
 
-            makePromptActive(prompt);
             prompt.resume();
+            makePromptActive(prompt);
 
             // Were're just resuming, no need to wait or cleanup
         } finally {

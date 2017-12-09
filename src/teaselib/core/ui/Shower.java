@@ -58,7 +58,6 @@ public class Shower {
                 invokeHandler(prompt);
             } finally {
                 prompt.inputHandlerKey = Prompt.NONE;
-                prompt.resume();
             }
             resultIndex = promptQueue.showExisting(prompt);
             return result(prompt, resultIndex);

@@ -3,8 +3,8 @@ package teaselib.core.ui;
 import java.util.Stack;
 
 import teaselib.core.Host;
-import teaselib.core.ScriptInterruptedException;
 import teaselib.core.Script;
+import teaselib.core.ScriptInterruptedException;
 
 public class Shower {
     static final int PAUSED = -1;
@@ -61,6 +61,7 @@ public class Shower {
                 prompt.resume();
             }
             resultIndex = promptQueue.showExisting(prompt);
+            return result(prompt, resultIndex);
         } else {
             prompt.cancelScriptTask();
             prompt.forwardErrorsAsRuntimeException();

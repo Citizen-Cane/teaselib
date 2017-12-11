@@ -55,6 +55,12 @@ public class ShowChoicesTestScriptFunctionReply extends ShowChoicesAbstractTest 
                 wait();
             }
         }
+
+        @Override
+        public void completeAll() {
+            interrupt();
+            super.completeAll();
+        }
     }
 
     @Test

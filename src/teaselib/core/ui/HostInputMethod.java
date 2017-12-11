@@ -72,12 +72,7 @@ public class HostInputMethod implements InputMethod {
                 if (tryLock) {
                     break;
                 }
-                prompt.lock.lockInterruptibly();
-                try {
-                    prompt.click.await(100, TimeUnit.MILLISECONDS);
-                } finally {
-                    prompt.lock.unlock();
-                }
+                prompt.click.await(100, TimeUnit.MILLISECONDS);
             }
         } finally {
             if (replySection.isHeldByCurrentThread()) {

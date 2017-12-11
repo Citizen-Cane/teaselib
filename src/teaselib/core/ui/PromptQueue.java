@@ -13,81 +13,61 @@ public class PromptQueue {
     private final AtomicReference<Prompt> active = new AtomicReference<>();
 
     public int show(Script script, Prompt prompt) throws InterruptedException {
-        prompt.lock.lockInterruptibly();
-        try {
-            // Prevent multiple entry while initializing prompt
-            synchronized (this) {
-                Prompt activePrompt = active.get();
+        Prompt activePrompt = active.get();
 
-                if (activePrompt != null) {
-                    if (prompt != activePrompt) {
-                        throw new IllegalStateException("Prompt " + prompt + " already showing");
-                    } else {
-                        pause(activePrompt);
-                    }
-                }
-
-                makePromptActive(prompt);
-
-                if (prompt.scriptFunction != null) {
-                    prompt.executeScriptTask(script);
-                }
+        if (activePrompt != null) {
+            if (prompt != activePrompt) {
+                throw new IllegalStateException("Prompt " + prompt + " already showing");
+            } else {
+                pause(activePrompt);
             }
-
-            return showExisting(prompt);
-        } finally {
-            prompt.lock.unlock();
         }
+
+        makePromptActive(prompt);
+
+        if (prompt.scriptFunction != null) {
+            prompt.executeScriptTask(script);
+        }
+
+        return showExisting(prompt);
     }
 
     public int showExisting(Prompt prompt) throws InterruptedException {
-        prompt.lock.lockInterruptibly();
         try {
-            try {
-                if (prompt.result() == Prompt.UNDEFINED) {
-                    prompt.click.await();
-                }
-            } finally {
-                dismissPrompt(prompt);
-            }
-
-            if (prompt.exception != null) {
-                if (prompt.exception instanceof Error) {
-                    throw (Error) prompt.exception;
-                } else {
-                    throw ExceptionUtil.asRuntimeException(prompt.exception);
-                }
-            } else {
-                return prompt.result();
+            if (prompt.result() == Prompt.UNDEFINED) {
+                prompt.click.await();
             }
         } finally {
-            prompt.lock.unlock();
+            dismissPrompt(prompt);
+        }
+
+        if (prompt.exception != null) {
+            if (prompt.exception instanceof Error) {
+                throw (Error) prompt.exception;
+            } else {
+                throw ExceptionUtil.asRuntimeException(prompt.exception);
+            }
+        } else {
+            return prompt.result();
         }
     }
 
     public void resume(Prompt prompt) throws InterruptedException {
-        prompt.lock.lockInterruptibly();
-        try {
-            Prompt activePrompt = active.get();
+        Prompt activePrompt = active.get();
 
-            if (activePrompt != null) {
-                if (prompt == activePrompt) {
-                    throw new IllegalStateException("Prompt " + prompt + " already showing");
-                } else {
-                    dismiss(activePrompt);
-                }
+        if (activePrompt != null) {
+            if (prompt == activePrompt) {
+                throw new IllegalStateException("Prompt " + prompt + " already showing");
+            } else {
+                throw new IllegalStateException("Previous prompt " + activePrompt + " still showing");
             }
-
-            if (prompt.result() != Prompt.UNDEFINED)
-                return;
-
-            prompt.resume();
-            makePromptActive(prompt);
-
-            // Were're just resuming, no need to wait or cleanup
-        } finally {
-            prompt.lock.unlock();
         }
+
+        if (prompt.result() != Prompt.UNDEFINED)
+            return;
+
+        prompt.resume();
+        makePromptActive(prompt);
     }
 
     private void makePromptActive(Prompt prompt) throws InterruptedException {
@@ -97,31 +77,21 @@ public class PromptQueue {
         }
     }
 
-    public boolean dismiss(Prompt prompt) throws InterruptedException {
-        prompt.lock.lockInterruptibly();
-        try {
-            if (prompt.result() == Prompt.UNDEFINED) {
-                prompt.setResultOnce(Prompt.DISMISSED);
-                return dismissPrompt(prompt);
-            } else {
-                return false;
-            }
-        } finally {
-            prompt.lock.unlock();
+    public boolean dismiss(Prompt prompt) {
+        if (prompt.result() == Prompt.UNDEFINED) {
+            prompt.setResultOnce(Prompt.DISMISSED);
+            return dismissPrompt(prompt);
+        } else {
+            return false;
         }
     }
 
-    public boolean pause(Prompt prompt) throws InterruptedException {
-        prompt.lock.lockInterruptibly();
-        try {
-            prompt.pause();
-            if (prompt.result() == Prompt.UNDEFINED) {
-                return dismissPrompt(prompt);
-            } else {
-                return false;
-            }
-        } finally {
-            prompt.lock.unlock();
+    public boolean pause(Prompt prompt) {
+        prompt.pause();
+        if (prompt.result() == Prompt.UNDEFINED) {
+            return dismissPrompt(prompt);
+        } else {
+            return false;
         }
     }
 

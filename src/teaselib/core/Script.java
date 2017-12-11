@@ -424,7 +424,13 @@ public abstract class Script {
             logger.info(inputMethod.getClass().getSimpleName() + " " + inputMethod.toString());
         }
 
-        String choice = teaseLib.globals.get(Shower.class).show(this, prompt);
+        String choice;
+        try {
+            choice = teaseLib.globals.get(Shower.class).show(this, prompt);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new ScriptInterruptedException();
+        }
         endAll();
         teaseLib.host.endScene();
 

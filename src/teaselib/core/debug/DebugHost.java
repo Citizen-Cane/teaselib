@@ -38,20 +38,27 @@ public class DebugHost implements Host {
         super();
         Thread.currentThread().setName(getClass().getSimpleName() + " Script");
         inputMethod = new InputMethod() {
+            Prompt prompt;
 
             @Override
             public void show(Prompt prompt) throws InterruptedException {
-                // Ignore
+                this.prompt = prompt;
             }
 
             @Override
             public boolean dismiss(Prompt prompt) throws InterruptedException {
+                this.prompt = null;
                 return false;
             }
 
             @Override
             public Map<String, Runnable> getHandlers() {
                 return Collections.emptyMap();
+            }
+
+            @Override
+            public String toString() {
+                return prompt != null ? prompt.toString() : "<no active prompt>";
             }
         };
     }
@@ -169,30 +176,30 @@ public class DebugHost implements Host {
         logger.info("Reply " + choices + " @ " + Thread.currentThread().getStackTrace()[1].toString());
 
         try {
-            currentChoices = new ArrayList<>(choices);
             replySection.lockInterruptibly();
-            if (replySection.hasWaiters(click)) {
-                throw new IllegalStateException("Reply not dismissed: " + choices);
-            }
-            if (Thread.interrupted()) {
-                throw new ScriptInterruptedException();
-            }
-
-            click.await();
-            return Prompt.DISMISSED;
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new ScriptInterruptedException(e);
-        } finally {
-            currentChoices = Collections.emptyList();
-
             try {
+                currentChoices = new ArrayList<>(choices);
+                if (replySection.hasWaiters(click)) {
+                    throw new IllegalStateException("Reply not dismissed: " + choices);
+                }
+                if (Thread.interrupted()) {
+                    throw new ScriptInterruptedException();
+                }
+
+                click.await();
+
                 if (replySection.hasWaiters(click)) {
                     throw new IllegalStateException("Reply - still waiting on click");
                 }
+
+                return Prompt.DISMISSED;
             } finally {
                 replySection.unlock();
+                currentChoices = Collections.emptyList();
             }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new ScriptInterruptedException(e);
         }
     }
 

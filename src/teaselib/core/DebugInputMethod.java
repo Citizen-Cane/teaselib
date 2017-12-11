@@ -67,19 +67,14 @@ public class DebugInputMethod implements InputMethod {
     }
 
     private void dismissExpectedPromptOrShow(Prompt prompt) {
-        prompt.lock.lock();
-        try {
-            Result result = responses.getResponse(prompt.choices);
-            if (result.response == Response.Choose) {
-                choose(prompt, result);
-            } else if (result.response == Response.Invoke) {
-                invokeHandlerOnce(prompt, result);
-            } else {
-                activePrompt.set(prompt);
-                elapsed.set(0);
-            }
-        } finally {
-            prompt.lock.unlock();
+        Result result = responses.getResponse(prompt.choices);
+        if (result.response == Response.Choose) {
+            choose(prompt, result);
+        } else if (result.response == Response.Invoke) {
+            invokeHandlerOnce(prompt, result);
+        } else {
+            activePrompt.set(prompt);
+            elapsed.set(0);
         }
     }
 
@@ -123,17 +118,7 @@ public class DebugInputMethod implements InputMethod {
     public void replyScriptFunction(String match) {
         Prompt prompt = activePrompt.get();
         if (prompt == null) {
-            // TODO Resolve need for sleep() to avoid throwing IllegalStateException
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
-
-            prompt = activePrompt.get();
-            if (prompt == null) {
-                throw new IllegalStateException("No active prompt: " + match);
-            }
+            throw new IllegalStateException("No active prompt: " + match);
         } else {
             prompt.lock.lock();
             try {

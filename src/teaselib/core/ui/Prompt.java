@@ -10,9 +10,9 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
 import teaselib.ScriptFunction;
+import teaselib.core.Script;
 import teaselib.core.ScriptFutureTask;
 import teaselib.core.ScriptInterruptedException;
-import teaselib.core.Script;
 import teaselib.core.util.ExceptionUtil;
 
 public class Prompt {
@@ -65,7 +65,7 @@ public class Prompt {
 
     void cancelScriptTask() {
         if (scriptTask != null) {
-            if (!scriptTask.finishing() && !scriptTask.isDone()) {
+            if (!scriptTask.isCancelled() && !scriptTask.isDone()) {
                 scriptTask.cancel(true);
             }
             scriptTask.join();
@@ -114,10 +114,7 @@ public class Prompt {
         if (result == Prompt.UNDEFINED) {
             result = value;
         } else {
-            // TODO throws so the logic is not clean yet
-            // - however all tests pass
-            // throw new IllegalStateException(
-            // "Prompt result can be set only once");
+            throw new IllegalStateException("Prompt result can be set only once for " + this);
         }
     }
 

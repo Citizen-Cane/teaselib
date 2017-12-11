@@ -30,7 +30,7 @@ import teaselib.test.IntegrationTests;
 public class ShowChoicesInputMethodTest {
     @Parameterized.Parameters
     public static List<Object[]> data() {
-        return Arrays.asList(new Object[1][0]);
+        return Arrays.asList(new Object[ShowChoicesAbstractTest.ITERATIONS][0]);
     }
 
     class TestException extends RuntimeException {
@@ -72,7 +72,7 @@ public class ShowChoicesInputMethodTest {
     }
 
     @Test
-    public void testSingleReply() throws Exception {
+    public void testHandlerSingleInvocation() throws Exception {
         debugger.addResponse("No", Debugger.Response.Invoke);
         debugger.addResponse("DebugConfirm", Debugger.Response.Choose);
 
@@ -84,7 +84,7 @@ public class ShowChoicesInputMethodTest {
     }
 
     @Test
-    public void testDoubleReply() throws Exception {
+    public void testHandlerDoubleInvocation() throws Exception {
         debugger.addResponse("No", Debugger.Response.Invoke);
         debugger.addResponse("Yes", Debugger.Response.Invoke);
         debugger.addResponse("DebugConfirm", Debugger.Response.Choose);
@@ -97,7 +97,7 @@ public class ShowChoicesInputMethodTest {
     }
 
     @Test
-    public void testTripleReply() throws Exception {
+    public void testHandlerTripleInvocation() throws Exception {
         debugger.addResponse("No", Debugger.Response.Invoke);
         debugger.addResponse("Yes", Debugger.Response.Invoke);
         debugger.addResponse("Maybe", Debugger.Response.Invoke);
@@ -108,5 +108,20 @@ public class ShowChoicesInputMethodTest {
         script.say("End.");
 
         assertEquals(3, count.get());
+    }
+
+    @Test
+    public void testHandlerQuadInvocation() throws Exception {
+        debugger.addResponse("No", Debugger.Response.Invoke);
+        debugger.addResponse("Yes", Debugger.Response.Invoke);
+        debugger.addResponse("Maybe", Debugger.Response.Invoke);
+        debugger.addResponse("Later", Debugger.Response.Invoke);
+        debugger.addResponse("DebugConfirm", Debugger.Response.Choose);
+
+        script.say("Start.");
+        assertEquals("No", script.reply("Yes", "No", "Maybe", "Later"));
+        script.say("End.");
+
+        assertEquals(4, count.get());
     }
 }

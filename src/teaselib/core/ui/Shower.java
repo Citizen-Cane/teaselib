@@ -1,16 +1,16 @@
 package teaselib.core.ui;
 
-import java.util.Stack;
+import java.util.ArrayDeque;
+import java.util.Deque;
 
 import teaselib.core.Host;
 import teaselib.core.Script;
-import teaselib.core.ScriptInterruptedException;
 
 public class Shower {
     static final int PAUSED = -1;
 
     final Host host;
-    final Stack<Prompt> stack = new Stack<>();
+    final Deque<Prompt> stack = new ArrayDeque<>();
 
     private final PromptQueue promptQueue;
 
@@ -19,26 +19,17 @@ public class Shower {
         this.promptQueue = new PromptQueue();
     }
 
-    public String show(Script script, Prompt prompt) {
+    public String show(Script script, Prompt prompt) throws InterruptedException {
+        prompt.lock.lockInterruptibly();
         try {
             pauseCurrent();
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new ScriptInterruptedException(e);
-        }
-
-        try {
-            return showNew(script, prompt);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new ScriptInterruptedException(e);
-        } finally {
             try {
+                return showNew(script, prompt);
+            } finally {
                 resumePrevious();
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new ScriptInterruptedException(e);
             }
+        } finally {
+            prompt.lock.unlock();
         }
     }
 
@@ -59,8 +50,7 @@ public class Shower {
             } finally {
                 prompt.inputHandlerKey = Prompt.NONE;
             }
-            resultIndex = promptQueue.showExisting(prompt);
-            return result(prompt, resultIndex);
+            return result(prompt, promptQueue.showExisting(prompt));
         } else {
             prompt.cancelScriptTask();
             prompt.forwardErrorsAsRuntimeException();
@@ -93,8 +83,8 @@ public class Shower {
         return false;
     }
 
-    private void pauseCurrent() throws InterruptedException {
-        if (!stack.empty()) {
+    private void pauseCurrent() {
+        if (!stack.isEmpty()) {
             Prompt prompt = stack.peek();
             if (!prompt.paused()) {
                 pause(prompt);
@@ -102,7 +92,7 @@ public class Shower {
         }
     }
 
-    private void pause(Prompt prompt) throws InterruptedException {
+    private void pause(Prompt prompt) {
         promptQueue.pause(prompt);
     }
 

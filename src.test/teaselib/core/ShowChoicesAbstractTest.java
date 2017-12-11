@@ -1,6 +1,3 @@
-/**
- * 
- */
 package teaselib.core;
 
 import teaselib.test.DebugSetup;

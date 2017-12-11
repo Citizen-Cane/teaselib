@@ -55,7 +55,8 @@ public class SpeechRecognitionInputMethod implements InputMethod {
         this.recognitionCompleted = this::handleSpeechRecognitionCompleted;
     }
 
-    private void handleSpeechDetected(SpeechRecognitionImplementation sender, SpeechRecognizedEventArgs eventArgs) {
+    private void handleSpeechDetected(@SuppressWarnings("unused") SpeechRecognitionImplementation sender,
+            SpeechRecognizedEventArgs eventArgs) {
         if (audioSignalProblems.occured() && speechRecognizer.isSpeechRecognitionInProgress()) {
             SpeechRecognitionResult result = eventArgs.result[0];
             logAudioSignalProblem(result);
@@ -64,14 +65,14 @@ public class SpeechRecognitionInputMethod implements InputMethod {
         }
     }
 
-    private void handleSpeechRecognitionRejected(SpeechRecognitionImplementation sender,
-            SpeechRecognizedEventArgs eventArgs) {
+    private void handleSpeechRecognitionRejected(@SuppressWarnings("unused") SpeechRecognitionImplementation sender,
+            @SuppressWarnings("unused") SpeechRecognizedEventArgs eventArgs) {
         if (speechRecognitionRejectedScript.isPresent() && speechRecognitionRejectedScript.get().canRun()) {
             signalHandlerInvocation(RECOGNITION_REJECTED_HANDLER_KEY);
         }
     }
 
-    private void handleSpeechRecognitionCompleted(SpeechRecognitionImplementation sender,
+    private void handleSpeechRecognitionCompleted(@SuppressWarnings("unused") SpeechRecognitionImplementation sender,
             SpeechRecognizedEventArgs eventArgs) {
         if (eventArgs.result.length == 1) {
             SpeechRecognitionResult result = eventArgs.result[0];
@@ -95,7 +96,7 @@ public class SpeechRecognitionInputMethod implements InputMethod {
         logger.info("Dropping result '" + result + "' due to audio signal problems " + audioSignalProblems);
     }
 
-    private boolean confidenceIsHighEnough(SpeechRecognitionResult result, Confidence confidence) {
+    private static boolean confidenceIsHighEnough(SpeechRecognitionResult result, Confidence confidence) {
         return result.probability >= confidence.probability || result.confidence.isAsHighAs(confidence);
     }
 
@@ -109,11 +110,11 @@ public class SpeechRecognitionInputMethod implements InputMethod {
         }
     }
 
-    private void signalHandlerInvocation(String key) {
+    private void signalHandlerInvocation(String handlerKey) {
         Prompt prompt = active.get();
         prompt.lock.lock();
         try {
-            prompt.signalHandlerInvocation(RECOGNITION_REJECTED_HANDLER_KEY);
+            prompt.signalHandlerInvocation(handlerKey);
         } finally {
             prompt.lock.unlock();
         }

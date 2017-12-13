@@ -52,8 +52,6 @@ public class HostInputMethod implements InputMethod {
                     } else {
                         // Ignored because another input method might have dismissed the prompt
                     }
-                } catch (Throwable t) {
-                    prompt.exception = t;
                 } finally {
                     replySection.unlock();
                 }

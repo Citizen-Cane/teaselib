@@ -33,7 +33,6 @@ public class Prompt {
 
     final AtomicBoolean paused = new AtomicBoolean(false);
 
-    Throwable exception;
     private int result;
 
     String inputHandlerKey = NONE;

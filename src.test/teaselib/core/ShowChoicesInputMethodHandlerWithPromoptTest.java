@@ -27,7 +27,7 @@ import teaselib.test.IntegrationTests;
 @Category(IntegrationTests.class)
 @RunWith(Parameterized.class)
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
-public class ShowChoicesInputMethodTest {
+public class ShowChoicesInputMethodHandlerWithPromoptTest {
     @Parameterized.Parameters
     public static List<Object[]> data() {
         return Arrays.asList(new Object[ShowChoicesAbstractTest.ITERATIONS][0]);

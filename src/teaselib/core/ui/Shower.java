@@ -24,8 +24,11 @@ public class Shower {
         try {
             pauseCurrent();
             try {
-                return showNew(script, prompt);
+                String choice = showNew(script, prompt);
+                return choice;
             } finally {
+                // TODO Necessary to forward ScriptInterrrupedException,
+                // but would consume exceptions
                 resumePrevious();
             }
         } finally {
@@ -49,6 +52,9 @@ public class Shower {
                 invokeHandler(prompt);
             } finally {
                 prompt.inputHandlerKey = Prompt.NONE;
+            }
+            if (promptQueue.getActive() != prompt) {
+                promptQueue.resume(prompt);
             }
             return result(prompt, promptQueue.showExisting(prompt));
         } else {

@@ -78,7 +78,7 @@ import teaselib.util.Interval;
 // TODO Combobox doesn't respond to speech recognition reliably
 // - This is in fact not a speech recognition related problem,
 // but dismissing the combobox after showing the list programatically
-public class SexScriptsHost implements Host {
+public class SexScriptsHost implements Host, HostInputMethod.Backend {
     private static final Logger logger = LoggerFactory.getLogger(SexScriptsHost.class);
 
     private IScript ss;
@@ -457,17 +457,13 @@ public class SexScriptsHost implements Host {
 
     }
 
+    @Override
     public boolean dismissChoices(List<String> choices) {
-        // Just click any choice
         List<Runnable> clickableChoices = getClickableChoices(choices);
         if (clickableChoices != null) {
             Runnable delegate = clickableChoices.get(0);
             if (delegate != null) {
-                try {
-                    delegate.run();
-                } catch (Exception e1) {
-                    throw ExceptionUtil.asRuntimeException(e1);
-                }
+                delegate.run();
                 return true;
             }
         }
@@ -537,6 +533,7 @@ public class SexScriptsHost implements Host {
         return inputMethod;
     }
 
+    @Override
     public int reply(List<String> choices) {
         if (Thread.interrupted()) {
             throw new ScriptInterruptedException();

@@ -48,7 +48,6 @@ public class Prompt {
         this.lock = new ReentrantLock();
         this.click = lock.newCondition();
 
-        this.exception = null;
         this.result = Prompt.UNDEFINED;
     }
 

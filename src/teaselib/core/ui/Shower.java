@@ -3,10 +3,15 @@ package teaselib.core.ui;
 import java.util.ArrayDeque;
 import java.util.Deque;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import teaselib.core.Host;
 import teaselib.core.Script;
 
 public class Shower {
+    private static final Logger logger = LoggerFactory.getLogger(Shower.class);
+
     static final int PAUSED = -1;
 
     final Host host;
@@ -23,16 +28,27 @@ public class Shower {
         prompt.lock.lockInterruptibly();
         try {
             pauseCurrent();
+
+            String choice;
             try {
-                String choice = showNew(script, prompt);
-                return choice;
-            } finally {
-                // TODO Necessary to forward ScriptInterrrupedException,
-                // but would consume exceptions
-                resumePrevious();
+                choice = showNew(script, prompt);
+            } catch (Exception e) {
+                resumeAfterException();
+                throw e;
             }
+
+            resumePrevious();
+            return choice;
         } finally {
             prompt.lock.unlock();
+        }
+    }
+
+    private void resumeAfterException() throws InterruptedException {
+        try {
+            resumePrevious();
+        } catch (Exception e) {
+            logger.error(e.getMessage(), e);
         }
     }
 

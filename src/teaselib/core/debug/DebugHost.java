@@ -4,7 +4,6 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -21,11 +20,12 @@ import teaselib.core.ScriptInterruptedException;
 import teaselib.core.VideoRenderer;
 import teaselib.core.VideoRenderer.Type;
 import teaselib.core.javacv.VideoRendererJavaCV;
+import teaselib.core.ui.HostInputMethod;
 import teaselib.core.ui.InputMethod;
 import teaselib.core.ui.Prompt;
 import teaselib.core.util.ExceptionUtil;
 
-public class DebugHost implements Host {
+public class DebugHost implements Host, HostInputMethod.Backend {
     private static final Logger logger = LoggerFactory.getLogger(DebugHost.class);
 
     static final Point javacvDebugWindow = new Point(80, 80);
@@ -37,30 +37,7 @@ public class DebugHost implements Host {
     public DebugHost() {
         super();
         Thread.currentThread().setName(getClass().getSimpleName() + " Script");
-        inputMethod = new InputMethod() {
-            Prompt prompt;
-
-            @Override
-            public void show(Prompt prompt) throws InterruptedException {
-                this.prompt = prompt;
-            }
-
-            @Override
-            public boolean dismiss(Prompt prompt) throws InterruptedException {
-                this.prompt = null;
-                return false;
-            }
-
-            @Override
-            public Map<String, Runnable> getHandlers() {
-                return Collections.emptyMap();
-            }
-
-            @Override
-            public String toString() {
-                return prompt != null ? prompt.toString() : "<no active prompt>";
-            }
-        };
+        inputMethod = new HostInputMethod(this);
     }
 
     @Override
@@ -121,6 +98,7 @@ public class DebugHost implements Host {
         return clickables;
     }
 
+    @Override
     public boolean dismissChoices(List<String> choices) {
         logger.info("Dismiss " + choices + " @ " + Thread.currentThread().getStackTrace()[1].toString());
 
@@ -172,6 +150,7 @@ public class DebugHost implements Host {
         return inputMethod;
     }
 
+    @Override
     public int reply(List<String> choices) throws ScriptInterruptedException {
         logger.info("Reply " + choices + " @ " + Thread.currentThread().getStackTrace()[1].toString());
 

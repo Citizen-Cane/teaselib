@@ -3,7 +3,6 @@ package teaselib.core.ui;
 import java.util.concurrent.atomic.AtomicReference;
 
 import teaselib.core.Script;
-import teaselib.core.util.ExceptionUtil;
 
 /**
  * @author Citizen-Cane
@@ -33,23 +32,11 @@ public class PromptQueue {
     }
 
     public int showExisting(Prompt prompt) throws InterruptedException {
-        try {
-            if (prompt.result() == Prompt.UNDEFINED) {
-                prompt.click.await();
-            }
-        } finally {
-            dismissPrompt(prompt);
+        if (prompt.result() == Prompt.UNDEFINED) {
+            prompt.click.await();
         }
-
-        if (prompt.exception != null) {
-            if (prompt.exception instanceof Error) {
-                throw (Error) prompt.exception;
-            } else {
-                throw ExceptionUtil.asRuntimeException(prompt.exception);
-            }
-        } else {
-            return prompt.result();
-        }
+        dismissPrompt(prompt);
+        return prompt.result();
     }
 
     public void resume(Prompt prompt) throws InterruptedException {
@@ -99,7 +86,7 @@ public class PromptQueue {
         Prompt activePrompt = active.get();
 
         if (activePrompt == null) {
-            throw new IllegalArgumentException("Prompt already paused: " + prompt);
+            throw new IllegalArgumentException("Prompt already dismissed: " + prompt);
         }
         if (prompt != activePrompt) {
             throw new IllegalArgumentException("Can only dismiss active prompt: " + activePrompt);

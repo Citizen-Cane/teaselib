@@ -1,6 +1,7 @@
 package teaselib.core.ui;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
@@ -8,18 +9,23 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 
 import teaselib.core.concurrency.NamedExecutorService;
-import teaselib.hosts.SexScriptsHost;
 
 /**
  * @author Citizen-Cane
  *
  */
 public class HostInputMethod implements InputMethod {
-    private final SexScriptsHost host;
+    public interface Backend {
+        int reply(List<String> choices);
+
+        boolean dismissChoices(List<String> choices);
+    }
+
+    private final Backend host;
     private final ExecutorService workerThread = NamedExecutorService.singleThreadedQueue(getClass().getName());
     private final ReentrantLock replySection = new ReentrantLock(true);
 
-    public HostInputMethod(SexScriptsHost host) {
+    public HostInputMethod(Backend host) {
         this.host = host;
     }
 
@@ -35,13 +41,13 @@ public class HostInputMethod implements InputMethod {
                     }
                     if (prompt.result() == Prompt.UNDEFINED) {
                         int result = host.reply(prompt.derived);
-                        if (!prompt.paused()) {
-                            prompt.lock.lockInterruptibly();
-                            try {
+                        prompt.lock.lockInterruptibly();
+                        try {
+                            if (!prompt.paused() && prompt.result() == Prompt.UNDEFINED) {
                                 prompt.signalResult(result);
-                            } finally {
-                                prompt.lock.unlock();
                             }
+                        } finally {
+                            prompt.lock.unlock();
                         }
                     } else {
                         // Ignored because another input method might have dismissed the prompt
@@ -72,7 +78,12 @@ public class HostInputMethod implements InputMethod {
                 if (tryLock) {
                     break;
                 }
-                prompt.click.await(100, TimeUnit.MILLISECONDS);
+                prompt.lock.lockInterruptibly();
+                try {
+                    tryLock = prompt.click.await(100, TimeUnit.MILLISECONDS);
+                } finally {
+                    prompt.lock.unlock();
+                }
             }
         } finally {
             if (replySection.isHeldByCurrentThread()) {

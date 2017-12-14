@@ -12,8 +12,8 @@ import org.slf4j.LoggerFactory;
 
 import teaselib.ScriptFunction.Relation;
 import teaselib.core.ResourceLoader;
-import teaselib.core.TeaseLib;
 import teaselib.core.Script;
+import teaselib.core.TeaseLib;
 import teaselib.core.events.Event;
 import teaselib.core.events.EventSource;
 import teaselib.core.media.MediaRenderer;
@@ -25,7 +25,7 @@ import teaselib.core.speechrecognition.SpeechRecognition.TimeoutBehavior;
 import teaselib.core.speechrecognition.SpeechRecognitionImplementation;
 import teaselib.core.speechrecognition.SpeechRecognitionResult.Confidence;
 import teaselib.core.speechrecognition.SpeechRecognizer;
-import teaselib.core.speechrecognition.events.SpeechRecognitionStartedEventArgs;
+import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
 import teaselib.core.util.WildcardPattern;
 import teaselib.util.Items;
 
@@ -241,47 +241,46 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
     protected abstract class SpeechRecognitionAwareTimeoutScriptFunction extends ScriptFunction {
         final long seconds;
 
-        boolean inDubioMitius = false;
+        boolean ignoreTimeoutInDubioMitius = false;
 
         public SpeechRecognitionAwareTimeoutScriptFunction(long seconds, Relation relation) {
             super(relation);
             this.seconds = seconds;
         }
 
-        protected void awaitTimeout(final SpeechRecognition.TimeoutBehavior timeoutBehavior) {
-            final Event<SpeechRecognitionImplementation, SpeechRecognitionStartedEventArgs> recognitionStarted;
+        protected void awaitTimeout(SpeechRecognition.TimeoutBehavior timeoutBehavior) {
+            Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs> recognitionRejected;
             SpeechRecognition speechRecognizer = teaseLib.globals.get(SpeechRecognizer.class).get(actor.locale());
-            final EventSource<SpeechRecognitionImplementation, SpeechRecognitionStartedEventArgs> recognitionStartedEvents = speechRecognizer.events.recognitionStarted;
+            EventSource<SpeechRecognitionImplementation, SpeechRecognizedEventArgs> speechDetectedEvents = speechRecognizer.events.recognitionRejected;
             if (timeoutBehavior == TimeoutBehavior.InDubioMitius) {
-                // disable timeout on first speech recognition event
-                // (non-audio)
-                final Thread scriptFunctionThread = Thread.currentThread();
-                recognitionStarted = (sender, eventArgs) -> {
-                    logger.info("-" + scriptFunctionThread.getName() + " - : Disabling timeout "
-                            + timeoutBehavior.toString());
-                    inDubioMitius = true;
+                Thread scriptFunctionThread = Thread.currentThread();
+                recognitionRejected = (sender, eventArgs) -> {
+                    if (!ignoreTimeoutInDubioMitius) {
+                        logger.info("-" + scriptFunctionThread.getName() + " - : timeout disabled " + timeoutBehavior);
+                        ignoreTimeoutInDubioMitius = true;
+                    }
                 };
-                recognitionStartedEvents.add(recognitionStarted);
+                speechDetectedEvents.add(recognitionRejected);
             } else {
-                recognitionStarted = null;
+                recognitionRejected = null;
             }
             try {
                 teaseLib.sleep(seconds, TimeUnit.SECONDS);
                 if (timeoutBehavior != TimeoutBehavior.InDubioContraReum
                         && speechRecognizer.isSpeechRecognitionInProgress()) {
-                    logger.info("Completing speech recognition " + timeoutBehavior.toString());
+                    logger.info("Completing speech recognition " + timeoutBehavior);
                     SpeechRecognition.completeSpeechRecognitionInProgress();
                 }
             } finally {
-                if (recognitionStarted != null) {
-                    recognitionStartedEvents.remove(recognitionStarted);
+                if (recognitionRejected != null) {
+                    speechDetectedEvents.remove(recognitionRejected);
                 }
             }
-            if (!inDubioMitius) {
-                result = Timeout;
-                logger.info("Script function timeout triggered");
+            if (ignoreTimeoutInDubioMitius) {
+                logger.info(relation + " timeout ignored " + timeoutBehavior);
             } else {
-                logger.info("Timeout ignored " + timeoutBehavior.toString());
+                result = Timeout;
+                logger.info("Script function confirm timeout");
             }
         }
     }

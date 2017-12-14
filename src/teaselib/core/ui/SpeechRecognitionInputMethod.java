@@ -60,8 +60,7 @@ public class SpeechRecognitionInputMethod implements InputMethod {
         if (audioSignalProblems.occured() && speechRecognizer.isSpeechRecognitionInProgress()) {
             SpeechRecognitionResult result = eventArgs.result[0];
             logAudioSignalProblem(result);
-            speechRecognizer.stopRecognition();
-            speechRecognizer.resumeRecognition();
+            speechRecognizer.restartRecognition();
         }
     }
 

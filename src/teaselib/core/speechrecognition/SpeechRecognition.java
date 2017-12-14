@@ -211,6 +211,23 @@ public class SpeechRecognition {
         }
     }
 
+    public void restartRecognition() {
+        if (sr != null) {
+            try {
+                delegateThread.run(() -> {
+                    sr.stopRecognition();
+                    setupAndStartSR(SpeechRecognition.this.choices);
+                    logger.info("Speech recognition restarted");
+                });
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new ScriptInterruptedException(e);
+            }
+        } else {
+            recognizerNotInitialized();
+        }
+    }
+
     public void stopRecognition() {
         if (sr != null) {
             try {
@@ -266,6 +283,7 @@ public class SpeechRecognition {
             } finally {
                 if (SpeechRecognitionInProgress.isHeldByCurrentThread()) {
                     SpeechRecognitionInProgress.unlock();
+                    logger.info("Speech recognition in progress completed");
                 }
             }
         } else {

@@ -21,6 +21,7 @@ import teaselib.Message.Part;
 import teaselib.Message.Type;
 import teaselib.Mood;
 import teaselib.Replay;
+import teaselib.Replay.Position;
 import teaselib.core.Prefetcher;
 import teaselib.core.ResourceLoader;
 import teaselib.core.TeaseLib;
@@ -29,7 +30,7 @@ import teaselib.core.texttospeech.TextToSpeechPlayer;
 import teaselib.core.util.ExceptionUtil;
 import teaselib.util.Interval;
 
-public class RenderMessage extends MediaRendererThread {
+public class RenderMessage extends MediaRendererThread implements ReplayableMediaRenderer {
     private static final Logger logger = LoggerFactory.getLogger(RenderMessage.class);
 
     private static final long DELAY_BETWEEN_PARAGRAPHS = 500;
@@ -116,14 +117,18 @@ public class RenderMessage extends MediaRendererThread {
     public void renderMedia() throws IOException, InterruptedException {
         if (replayPosition == Replay.Position.FromStart) {
             renderMessage(message, true);
+        } else if (replayPosition == Replay.Position.FromMandatory) {
+            renderMessage(getLastSection(message), true);
+        } else if (replayPosition == Replay.Position.End) {
+            renderMessage(getLastSection(message), false);
         } else {
-            Message lastSection = getLastSection(message);
-            if (replayPosition == Replay.Position.FromMandatory) {
-                renderMessage(lastSection, true);
-            } else {
-                renderMessage(lastSection, false);
-            }
+            throw new IllegalStateException(replayPosition.toString());
         }
+    }
+
+    @Override
+    public void replay(Position replayPosition) {
+        super.replay(replayPosition);
     }
 
     private static Message getLastSection(Message message) {
@@ -151,8 +156,7 @@ public class RenderMessage extends MediaRendererThread {
         if (index < 0) {
             index = 0;
         }
-        // Copy message header (all but skip desktop items and delay before the
-        // text)
+        // Copy message header (all but skip desktop items and delay before the text)
         boolean afterText = false;
         for (int i = index; i < parts.size(); i++) {
             Message.Part part = parts.get(i);

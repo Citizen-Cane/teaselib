@@ -50,8 +50,7 @@ public class MediaRendererQueue {
             endAll();
             threadedMediaRenderers.clear();
             for (MediaRenderer r : renderers) {
-                // Play or replay?
-                if (r instanceof ReplayableMediaRenderer) {
+                if (r instanceof ReplayableMediaRenderer || replayPosition == Replay.Position.FromStart) {
                     if (r instanceof MediaRenderer.Threaded) {
                         threadedMediaRenderers.put(r.getClass(), (MediaRenderer.Threaded) r);
                     }

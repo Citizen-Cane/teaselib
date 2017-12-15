@@ -20,10 +20,10 @@ import teaselib.core.concurrency.NamedExecutorService;
 import teaselib.core.util.ExceptionUtil;
 
 /**
- * @author someone
+ * @author Citizen-Cane
  *
  */
-public abstract class MediaRendererThread implements MediaRenderer.Threaded, ReplayableMediaRenderer {
+public abstract class MediaRendererThread implements MediaRenderer.Threaded {
     private static final Logger logger = LoggerFactory.getLogger(MediaRendererThread.class);
     protected final TeaseLib teaseLib;
 
@@ -132,16 +132,22 @@ public abstract class MediaRendererThread implements MediaRenderer.Threaded, Rep
      */
     protected abstract void renderMedia() throws InterruptedException, IOException;
 
-    @Override
     public void replay(Replay.Position replayPosition) {
         this.replayPosition = replayPosition;
         if (replayPosition == Replay.Position.FromStart) {
-            // Skip
-        } else if (replayPosition == Replay.Position.FromStart) {
-            completedStart = new CountDownLatch(1);
-        } else {
             completedStart = new CountDownLatch(1);
             completedMandatory = new CountDownLatch(1);
+            completedAll = new CountDownLatch(1);
+        } else if (replayPosition == Replay.Position.FromMandatory) {
+            completedStart = new CountDownLatch(0);
+            completedMandatory = new CountDownLatch(1);
+            completedAll = new CountDownLatch(1);
+        } else if (replayPosition == Replay.Position.End) {
+            completedStart = new CountDownLatch(0);
+            completedMandatory = new CountDownLatch(0);
+            completedAll = new CountDownLatch(1);
+        } else {
+            throw new IllegalArgumentException(replayPosition.toString());
         }
         logger.info("Replay " + replayPosition.toString());
         render();

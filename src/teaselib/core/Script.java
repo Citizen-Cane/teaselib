@@ -165,17 +165,11 @@ public abstract class Script {
             Optional<TextToSpeechPlayer> textToSpeech = useTTS
                     ? Optional.of(teaseLib.globals.get(TextToSpeechPlayer.class))
                     : Optional.empty();
-            // inject speech parts to replay pre-recorded speech or use TTS
-            // This has to be done first as subsequent parse steps
-            // inject moods and thus change the message hash
-            if (textToSpeech.isPresent()) {
-                if (textToSpeech.get().prerenderedSpeechAvailable(message.actor)
-                        && Boolean.parseBoolean(teaseLib.config.get(Config.Render.Speech))) {
-                    message = textToSpeech.get().createPrerenderedSpeechMessage(message, resources);
-                }
-            }
-            Message parsedMessage = injectImagesAndExpandTextVariables(message);
-            renderMessage(new RenderMessage(resources, parsedMessage, textToSpeech, teaseLib));
+            // inject speech parts to play pre-recorded speech audio render TTS first
+            // as subsequent injections add mood thereby changing the message hash
+            boolean applySpeech = useTTS && textToSpeech.isPresent();
+            renderMessage(new RenderMessage(teaseLib, resources, textToSpeech, injectImagesAndExpandTextVariables(
+                    applySpeech ? textToSpeech.get().createSpeechMessage(message, resources) : message)));
         } finally {
             displayImage = Message.ActorImage;
             mood = Mood.Neutral;

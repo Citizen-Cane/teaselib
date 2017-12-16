@@ -19,12 +19,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import teaselib.Actor;
+import teaselib.Config;
 import teaselib.Message;
 import teaselib.Message.Part;
 import teaselib.core.Configuration;
 import teaselib.core.ResourceLoader;
 
 public class TextToSpeechPlayer {
+    private static final String SIMULATED_SPEECH_TAG = "SimulatedSpeech=";
+
     private static final Logger logger = LoggerFactory.getLogger(TextToSpeechPlayer.class);
 
     private static final String ACQUIRE_VOICE_ON_FIRST_USE = "ACQUIRE_VOICE_ON_FIRST_USE";
@@ -403,11 +406,65 @@ public class TextToSpeechPlayer {
         Thread.sleep(TextToSpeech.getEstimatedSpeechDuration(prompt));
     }
 
+    public Message createSpeechMessage(Message message, ResourceLoader resources) {
+        if (Boolean.parseBoolean(config.get(Config.Render.Speech))) {
+            if (prerenderedSpeechAvailable(message.actor)) {
+                return prerenderedSpeechMessage(message, resources);
+            } else {
+                return speechMessage(message);
+            }
+        } else {
+            return simulatedSpeechMessage(message);
+        }
+    }
+
+    private Message simulatedSpeechMessage(Message message) {
+        Message speechMessage = new Message(message.actor);
+        for (Part part : message.getParts()) {
+            if (part.type == Message.Type.Text) {
+                speechMessage.add(Message.Type.Speech, simulatedSpeech(part.value));
+                speechMessage.add(part);
+            } else {
+                speechMessage.add(part);
+            }
+        }
+        return speechMessage;
+    }
+
+    private static String simulatedSpeech(String prompt) {
+        return SIMULATED_SPEECH_TAG + prompt;
+    }
+
+    public static boolean isSimulatedSpeech(String value) {
+        return value.startsWith(SIMULATED_SPEECH_TAG);
+    }
+
+    public static String getSimulatedSpeechText(String prompt) {
+        if (!prompt.startsWith(SIMULATED_SPEECH_TAG)) {
+            throw new IllegalArgumentException(prompt);
+        }
+        return prompt.substring(SIMULATED_SPEECH_TAG.length());
+    }
+
+    private Message speechMessage(Message message) {
+        Message speechMessage = new Message(message.actor);
+        for (Part part : message.getParts()) {
+            if (part.type == Message.Type.Text) {
+                // TODO Process TTS-only dictionary entries here
+                speechMessage.add(Message.Type.Speech, part.value);
+                speechMessage.add(part);
+            } else {
+                speechMessage.add(part);
+            }
+        }
+        return speechMessage;
+    }
+
     public boolean prerenderedSpeechAvailable(Actor actor) {
         return actorKey2PrerecordedVoiceGuid.containsKey(actor.key);
     }
 
-    public Message createPrerenderedSpeechMessage(Message message, ResourceLoader resources) {
+    public Message prerenderedSpeechMessage(Message message, ResourceLoader resources) {
         if (message.toPrerecordedSpeechHashString().isEmpty()) {
             return message;
         } else {

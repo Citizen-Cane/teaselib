@@ -446,7 +446,7 @@ public class TextToSpeechPlayer {
         return prompt.substring(SIMULATED_SPEECH_TAG.length());
     }
 
-    private Message speechMessage(Message message) {
+    Message speechMessage(Message message) {
         Message speechMessage = new Message(message.actor);
         for (Part part : message.getParts()) {
             if (part.type == Message.Type.Text) {

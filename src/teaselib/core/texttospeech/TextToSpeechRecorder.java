@@ -237,10 +237,10 @@ public class TextToSpeechRecorder {
         List<String> soundFiles = new ArrayList<>();
         String mood = Mood.Neutral;
         storage.createNewEntry(actor, voice, hash, messageHash);
-        for (Part part : message.getParts()) {
+        for (Part part : ttsPlayer.speechMessage(message).getParts()) {
             if (part.type == Message.Type.Mood) {
                 mood = part.value;
-            } else if (part.type == Message.Type.Text) {
+            } else if (part.type == Message.Type.Speech) {
                 int index = soundFiles.size();
                 logger.info("Recording part " + index);
                 String soundFileName = writeSpeechResource(actor, voice, hash, index, mood, part.value);

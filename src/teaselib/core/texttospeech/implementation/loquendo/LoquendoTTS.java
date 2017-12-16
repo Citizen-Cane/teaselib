@@ -19,6 +19,10 @@ import teaselib.core.texttospeech.implementation.loquendo.LoquendoTTSLibrary.tts
 import teaselib.core.util.Environment;
 
 public class LoquendoTTS extends TextToSpeechImplementation {
+    private static final byte ASYNCHRONOUS = (byte) LoquendoTTSLibrary.ttsFALSE;
+
+    private static final byte SYNCHRONOUS = (byte) LoquendoTTSLibrary.ttsTRUE;
+
     private static LoquendoTTS instance = null;
 
     public static synchronized TextToSpeechImplementation getInstance() throws IOException {
@@ -130,17 +134,11 @@ public class LoquendoTTS extends TextToSpeechImplementation {
 
     @Override
     public void speak(String prompt) {
-        if (new HashSet<Object>(Arrays.asList(getHints())).contains(Mood.Reading)) {
-            checkResult(LoquendoTTSLibrary.ttsSetVolume(hReader, 15));
-            checkResult(LoquendoTTSLibrary.ttsSetSpeed(hReader, 40));
-        } else {
-            checkResult(LoquendoTTSLibrary.ttsSetVolume(hReader, 12));
-            checkResult(LoquendoTTSLibrary.ttsSetSpeed(hReader, 50));
-        }
+        applyHintsAndSpeak(prompt, SYNCHRONOUS);
+        waitForAsynchronousSpeech();
+    }
 
-        checkResult(LoquendoTTSLibrary.ttsRead(hReader, Pointer.pointerToCString(prompt),
-                (byte) LoquendoTTSLibrary.ttsTRUE, (byte) LoquendoTTSLibrary.ttsFALSE, null));
-
+    private void waitForAsynchronousSpeech() {
         cancelSpeech = false;
         Pointer<Byte> bSignaled = Pointer.allocate(Byte.class);
         bSignaled.set((byte) 0);
@@ -163,21 +161,34 @@ public class LoquendoTTS extends TextToSpeechImplementation {
     @Override
     public String speak(String prompt, String wav) {
         speakToFile(wav);
-
         try {
-            checkResult(LoquendoTTSLibrary.ttsRead(hReader, Pointer.pointerToCString(prompt),
-                    (byte) LoquendoTTSLibrary.ttsFALSE, (byte) LoquendoTTSLibrary.ttsFALSE, null));
+            applyHintsAndSpeak(prompt, ASYNCHRONOUS);
         } finally {
             speakToAudioBoard();
         }
-
         return wav;
+    }
+
+    private void applyHintsAndSpeak(String prompt, byte asynchronous) {
+        applyHints();
+        checkResult(LoquendoTTSLibrary.ttsRead(hReader, Pointer.pointerToCString(prompt), asynchronous, asynchronous,
+                null));
     }
 
     public void speakToFile(String wav) {
         checkResult(LoquendoTTSLibrary.ttsSetAudio(hReader, Pointer.pointerToCString("LTTS7AudioFile"),
                 Pointer.pointerToCString(wav), 32000, LoquendoTTSLibrary.ttsAudioEncodingType.tts_LINEAR,
                 LoquendoTTSLibrary.ttsAudioSampleType.tts_MONO, null));
+    }
+
+    private void applyHints() {
+        if (new HashSet<Object>(Arrays.asList(getHints())).contains(Mood.Reading)) {
+            checkResult(LoquendoTTSLibrary.ttsSetVolume(hReader, 15));
+            checkResult(LoquendoTTSLibrary.ttsSetSpeed(hReader, 40));
+        } else {
+            checkResult(LoquendoTTSLibrary.ttsSetVolume(hReader, 12));
+            checkResult(LoquendoTTSLibrary.ttsSetSpeed(hReader, 50));
+        }
     }
 
     @Override

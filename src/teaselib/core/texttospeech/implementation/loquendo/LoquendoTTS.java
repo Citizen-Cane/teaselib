@@ -171,8 +171,8 @@ public class LoquendoTTS extends TextToSpeechImplementation {
 
     private void applyHintsAndSpeak(String prompt, byte asynchronous) {
         applyHints();
-        checkResult(LoquendoTTSLibrary.ttsRead(hReader, Pointer.pointerToCString(prompt), asynchronous, asynchronous,
-                null));
+        checkResult(LoquendoTTSLibrary.ttsRead(hReader, Pointer.pointerToCString(prompt), asynchronous,
+                (byte) LoquendoTTSLibrary.ttsFALSE, null));
     }
 
     public void speakToFile(String wav) {

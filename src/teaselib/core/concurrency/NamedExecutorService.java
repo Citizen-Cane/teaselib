@@ -2,7 +2,6 @@ package teaselib.core.concurrency;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -10,7 +9,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author Citizen-Cane
- * @see http://stackoverflow.com/questions/5740478/how-to-name-the-threads- of- a-thread-pool-in-java
  *
  */
 public class NamedExecutorService extends ThreadPoolExecutor {
@@ -19,7 +17,7 @@ public class NamedExecutorService extends ThreadPoolExecutor {
 
     private NamedExecutorService(int corePoolSize, int maximumPoolSize, long keepAliveTime, TimeUnit unit,
             String name) {
-        super(corePoolSize, maximumPoolSize, keepAliveTime, unit, new SynchronousQueue<Runnable>(),
+        super(corePoolSize, maximumPoolSize, keepAliveTime, unit, new LinkedBlockingQueue<Runnable>(),
                 new ThreadFactory() {
                     private final AtomicInteger counter = new AtomicInteger();
 

@@ -10,10 +10,13 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.zip.CRC32;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
+
+import com.sun.xml.internal.messaging.saaj.util.ByteOutputStream;
 
 import teaselib.Actor;
 import teaselib.core.util.Stream;
@@ -72,7 +75,7 @@ public class PrerecordedSpeechZipStorage implements PrerecordedSpeechStorage {
     }
 
     @Override
-    public boolean haveMessage(Actor actor, Voice voice, String hash) {
+    public boolean hasMessage(Actor actor, Voice voice, String hash) {
         if (processed.containsKey(processHash(actor, voice, hash))) {
             return true;
         }
@@ -120,17 +123,30 @@ public class PrerecordedSpeechZipStorage implements PrerecordedSpeechStorage {
     @Override
     public void storeSpeechResource(Actor actor, Voice voice, String hash, InputStream inputStream, String name)
             throws IOException {
-        storeSpeechResource(actor, voice, hash, inputStream, name, ZipOutputStream.DEFLATED);
-        // TODO use ZipOutputStream.STORED, but according to exception message,
-        // size, compressed size and/or CRC is needed
+        storeSpeechResource(actor, voice, hash, inputStream, name, ZipOutputStream.STORED);
     }
 
     private void storeSpeechResource(Actor actor, Voice voice, String hash, InputStream inputStream, String name,
             int zipStorageMethod) throws IOException {
         ZipEntry resourceEntry = new ZipEntry(getPath(actor, voice, hash, name));
         resourceEntry.setMethod(zipStorageMethod);
-        updated.putNextEntry(resourceEntry);
-        Stream.copy(inputStream, updated);
+        if (zipStorageMethod == ZipOutputStream.STORED) {
+            try (ByteOutputStream bo = new ByteOutputStream()) {
+                Stream.copy(inputStream, bo);
+                byte[] buf = bo.getBytes();
+                resourceEntry.setSize(buf.length);
+                CRC32 crc = new CRC32();
+                crc.update(buf);
+                resourceEntry.setCrc(crc.getValue());
+                updated.putNextEntry(resourceEntry);
+                try (ByteArrayInputStream bi = new ByteArrayInputStream(buf)) {
+                    Stream.copy(inputStream, updated);
+                }
+            }
+        } else {
+            updated.putNextEntry(resourceEntry);
+            Stream.copy(inputStream, updated);
+        }
         updated.flush();
         updated.closeEntry();
     }

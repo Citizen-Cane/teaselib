@@ -2,7 +2,6 @@ package teaselib.core.texttospeech;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -18,9 +17,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -32,10 +29,10 @@ import teaselib.Message.Part;
 import teaselib.Mood;
 import teaselib.core.Configuration;
 import teaselib.core.ResourceLoader;
-import teaselib.core.concurrency.NamedExecutorService;
 import teaselib.test.DebugSetup;
 import teaselib.util.TextVariables;
 
+// TODO error handling of asynchronous futures
 public class TextToSpeechRecorder {
     private static final Logger logger = LoggerFactory.getLogger(TextToSpeechRecorder.class);
 
@@ -48,16 +45,13 @@ public class TextToSpeechRecorder {
     private static final String SpeechResourceFileTypeExtension = ".mp3";
 
     private final ResourceLoader resources;
-    private final PrerecordedSpeechStorage storage;
+    private final StorageSynchronizer storage;
     private final Map<String, Voice> voices;
     private final Set<String> actors = new HashSet<>();
     private final ActorVoices actorVoices;
     private final TextToSpeechPlayer ttsPlayer;
     private final long buildStart = System.currentTimeMillis();
     private final TextVariables textVariables;
-    private final ExecutorService encoding = NamedExecutorService
-            .newFixedThreadPool(Runtime.getRuntime().availableProcessors(), "Speech Encoder", 10, TimeUnit.SECONDS);
-    private final ExecutorService io = NamedExecutorService.singleThreadedQueue("Speech Recorder I/O");
 
     int newEntries = 0;
     int changedEntries = 0;
@@ -73,8 +67,8 @@ public class TextToSpeechRecorder {
         this.ttsPlayer = new TextToSpeechPlayer(new Configuration(new DebugSetup()));
         this.ttsPlayer.load();
         this.voices = ttsPlayer.textToSpeech.getVoices();
-        storage = new PrerecordedSpeechZipStorage(path, resourcesRoot);
-        actorVoices = new ActorVoices(resources);
+        this.storage = new StorageSynchronizer(new PrerecordedSpeechZipStorage(path, resourcesRoot));
+        this.actorVoices = new ActorVoices(resources);
         logger.info("Build start: " + new Date(buildStart).toString());
         ttsPlayer.loadActorVoiceProperties(resources);
     }
@@ -85,7 +79,7 @@ public class TextToSpeechRecorder {
         logger.info("using text variables: '" + textVariables.toString() + "'");
     }
 
-    public void create(ScriptScanner scanner) throws IOException, InterruptedException {
+    public void create(ScriptScanner scanner) throws IOException, InterruptedException, ExecutionException {
         logger.info("Scanning script '" + scanner.getScriptName() + "'");
         Set<String> created = new HashSet<>();
         for (Message message : scanner) {
@@ -100,11 +94,12 @@ public class TextToSpeechRecorder {
         }
     }
 
-    private String processMessage(Actor actor, Voice voice, Message message) throws IOException, InterruptedException {
+    private String processMessage(Actor actor, Voice voice, Message message)
+            throws InterruptedException, ExecutionException {
         String hash = getHash(message);
         String newMessageHash = message.toPrerecordedSpeechHashString();
         if (!newMessageHash.isEmpty()) {
-            if (storage.haveMessage(actor, voice, hash)) {
+            if (storage.hasMessage(actor, voice, hash)) {
                 long lastModified = storage.lastModified(actor, voice, hash);
                 String oldMessageHash = storage.getMessageHash(actor, voice, hash);
                 if (oldMessageHash.equals(newMessageHash)) {
@@ -121,12 +116,12 @@ public class TextToSpeechRecorder {
         return hash;
     }
 
-    private void keepOrReuseMessage(Actor actor, final Voice voice, String hash, long lastModified) throws IOException {
+    private void keepOrReuseMessage(Actor actor, final Voice voice, String hash, long lastModified) {
         if (lastModified > buildStart) {
             logger.info(hash + " is reused");
             reusedDuplicates++;
         } else {
-            logger.info(hash + " is up to date");
+            logger.info(hash + " is up to date as of " + new Date(lastModified));
             storage.keepMessage(actor, voice, hash);
             upToDateEntries++;
         }
@@ -142,15 +137,14 @@ public class TextToSpeechRecorder {
     }
 
     private void updateMessage(Actor actor, Voice voice, Message message, String hash, String newMessageHash)
-            throws IOException, InterruptedException {
+            throws InterruptedException {
         logger.info(hash + " has changed");
         storage.deleteMessage(actor, voice, hash);
         create(actor, voice, message, hash, newMessageHash);
         changedEntries++;
     }
 
-    private void createNewMessage(Actor actor, Voice voice, Message message, String hash)
-            throws IOException, InterruptedException {
+    private void createNewMessage(Actor actor, Voice voice, Message message, String hash) throws InterruptedException {
         logger.info(hash + " is new");
         create(actor, voice, message, hash, message.toPrerecordedSpeechHashString());
         newEntries++;
@@ -158,13 +152,14 @@ public class TextToSpeechRecorder {
 
     private void createActorEntry(Actor actor, Voice voice) throws IOException {
         actors.add(actor.key);
-        PreRecordedVoice prerecordedVoice = new PreRecordedVoice(actor, voice);
-        storage.createActorEntry(actor, voice, prerecordedVoice);
         actorVoices.putGuid(actor.key, voice);
 
         if (!haveActorVoicesFile()) {
             actorVoices.store(resources.getAssetPath(""));
         }
+
+        PreRecordedVoice prerecordedVoice = new PreRecordedVoice(actor, voice);
+        storage.createActorEntry(actor, voice, prerecordedVoice);
     }
 
     private boolean haveActorVoicesFile() throws IOException {
@@ -180,9 +175,9 @@ public class TextToSpeechRecorder {
     }
 
     private Voice getVoice(Actor actor) {
-        final Voice voice;
-
         String voiceGuid = ttsPlayer.getAssignedVoiceFor(actor);
+
+        final Voice voice;
         if (voiceGuid == null) {
             voice = ttsPlayer.getVoiceFor(actor);
         } else {
@@ -196,12 +191,7 @@ public class TextToSpeechRecorder {
         return voice;
     }
 
-    public void finish() throws IOException, InterruptedException {
-        encoding.shutdown();
-        io.shutdown();
-        encoding.awaitTermination(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
-        io.awaitTermination(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
-
+    public void finish() throws IOException, InterruptedException, ExecutionException {
         storage.close();
 
         if (numberOfPasses > 1) {
@@ -235,24 +225,23 @@ public class TextToSpeechRecorder {
     }
 
     public void create(Actor actor, Voice voice, Message message, String hash, String messageHash)
-            throws IOException, InterruptedException {
+            throws InterruptedException {
+        writeMessageHash(actor, voice, hash, messageHash);
+
         List<Future<String>> soundFileFutures = writeSpeechResources(actor, voice, message, hash, messageHash);
-        List<String> soundFiles = soundFileFutures.stream().map((future) -> {
+        List<String> soundFiles = soundFileFutures.stream().map(future -> {
             try {
                 return future.get();
             } catch (InterruptedException | ExecutionException e) {
                 throw new RuntimeException(e);
             }
         }).collect(Collectors.<String> toList());
-        io.submit(() -> {
-            writeInventory(actor, voice, hash, soundFiles);
-            writeMessageHash(actor, voice, hash, messageHash);
-            return true;
-        });
+
+        writeInventory(actor, voice, hash, soundFiles);
     }
 
     private List<Future<String>> writeSpeechResources(Actor actor, Voice voice, Message message, String hash,
-            String messageHash) throws IOException, InterruptedException {
+            String messageHash) throws InterruptedException {
         logger.info("Recording message:\n" + messageHash);
         List<Future<String>> soundFiles = new ArrayList<>();
         String mood = Mood.Neutral;
@@ -270,7 +259,7 @@ public class TextToSpeechRecorder {
     }
 
     private Future<String> writeSpeechResource(Actor actor, Voice voice, String hash, int index, String mood,
-            String text) throws IOException, InterruptedException {
+            String text) throws InterruptedException {
         String soundFileName = Integer.toString(index);
         File soundFile = createTempFileName(SpeechResourceTempFilePrefix + "_" + soundFileName + "_",
                 SpeechResourceFileUncompressedFormat);
@@ -278,7 +267,7 @@ public class TextToSpeechRecorder {
         String recordedSoundFile = textToSpeech.speak(voice, text, soundFile, new String[] { mood });
         String storedSoundFileName = new File(soundFileName + SpeechResourceFileTypeExtension).getName();
         if (!recordedSoundFile.endsWith(SpeechResourceFileTypeExtension)) {
-            return encoding.submit(() -> {
+            return storage.encode(() -> {
                 String encodedSoundFile = recordedSoundFile.replace(SpeechResourceFileUncompressedFormat,
                         SpeechResourceFileTypeExtension);
                 String[] argv = { recordedSoundFile, encodedSoundFile, "--preset", "standard" };
@@ -291,31 +280,15 @@ public class TextToSpeechRecorder {
                         throw new IllegalStateException("Can't delete temporary speech file " + recordedSoundFile);
                     }
                 }
-                storeRecordedSoundFile(actor, voice, hash, soundFileName, encodedSoundFile);
+                storage.storeRecordedSoundFile(actor, voice, hash, soundFileName, encodedSoundFile);
                 return storedSoundFileName;
             });
         } else {
-            return storeRecordedSoundFile(actor, voice, hash, storedSoundFileName, recordedSoundFile);
+            return storage.storeRecordedSoundFile(actor, voice, hash, storedSoundFileName, recordedSoundFile);
         }
     }
 
-    private Future<String> storeRecordedSoundFile(Actor actor, Voice voice, String hash, String storedSoundFileNane,
-            String recordedSoundFile) {
-        return io.submit(() -> {
-            FileInputStream inputStream = new FileInputStream(recordedSoundFile);
-            try {
-                storage.storeSpeechResource(actor, voice, hash, inputStream, storedSoundFileNane);
-            } finally {
-                inputStream.close();
-                if (!new File(recordedSoundFile).delete()) {
-                    throw new IllegalStateException("Can't delete temporary encoded speech file " + recordedSoundFile);
-                }
-            }
-            return storedSoundFileNane;
-        });
-    }
-
-    private void writeInventory(Actor actor, Voice voice, String hash, List<String> soundFiles) throws IOException {
+    private void writeInventory(Actor actor, Voice voice, String hash, List<String> soundFiles) {
         StringBuilder inventory = new StringBuilder();
         for (String soundFile : soundFiles) {
             inventory.append(soundFile);
@@ -324,7 +297,7 @@ public class TextToSpeechRecorder {
         storage.writeStringResource(actor, voice, hash, TextToSpeechRecorder.ResourcesFilename, inventory.toString());
     }
 
-    private void writeMessageHash(Actor actor, Voice voice, String hash, String messageHash) throws IOException {
+    private void writeMessageHash(Actor actor, Voice voice, String hash, String messageHash) {
         storage.writeStringResource(actor, voice, hash, TextToSpeechRecorder.MessageFilename, messageHash);
     }
 

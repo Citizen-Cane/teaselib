@@ -68,7 +68,7 @@ public class TextToSpeechRecorderFileStorage implements PrerecordedSpeechStorage
      * teaselib.core.texttospeech.Voice, java.lang.String)
      */
     @Override
-    public boolean haveMessage(Actor actor, Voice voice, String hash) {
+    public boolean hasMessage(Actor actor, Voice voice, String hash) {
         File messageDir = getMessageDir(actor, voice, hash);
         File messageFile = new File(messageDir, TextToSpeechRecorder.MessageFilename);
         return messageDir.exists() && messageFile.exists();

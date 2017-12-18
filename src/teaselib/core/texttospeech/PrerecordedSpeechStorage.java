@@ -11,7 +11,7 @@ public interface PrerecordedSpeechStorage {
 
     void createActorEntry(Actor actor, Voice voice, VoiceProperties properties) throws IOException;
 
-    boolean haveMessage(Actor actor, Voice voice, String hash);
+    boolean hasMessage(Actor actor, Voice voice, String hash);
 
     long lastModified(Actor actor, Voice voice, String hash);
 

@@ -8,9 +8,9 @@ import java.util.concurrent.TimeUnit;
 import org.junit.Test;
 
 import teaselib.Message;
-import teaselib.Message.Parts;
 import teaselib.Message.Type;
 import teaselib.Mood;
+import teaselib.MessageParts;
 import teaselib.test.DebugSetup;
 import teaselib.test.TestScript;
 
@@ -22,7 +22,7 @@ public class TeaseScriptBaseTest {
         Message message = new Message(script.actor);
         script.setImage("foobar.jpg");
         Message parsed = script.injectImagesAndExpandTextVariables(message);
-        Parts parts = parsed.getParts();
+        MessageParts parts = parsed.getParts();
         int n = 0;
         assertEquals(Type.Image, parts.get(n).type);
 
@@ -44,7 +44,7 @@ public class TeaseScriptBaseTest {
         message.add("bar.jpg");
 
         Message parsed = script.injectImagesAndExpandTextVariables(message);
-        Parts parts = parsed.getParts();
+        MessageParts parts = parsed.getParts();
         int n = 0;
         assertEquals(Type.Mood, parts.get(n++).type);
         assertEquals(Type.Image, parts.get(n).type);
@@ -97,7 +97,7 @@ public class TeaseScriptBaseTest {
         message.add("I'm happy.");
 
         Message parsed = script.injectImagesAndExpandTextVariables(message);
-        Parts parts = parsed.getParts();
+        MessageParts parts = parsed.getParts();
         int n = 0;
 
         assertEquals(Type.Mood, parts.get(n).type);
@@ -144,7 +144,7 @@ public class TeaseScriptBaseTest {
         script.setImage("foo.jpg");
 
         Message parsed = script.injectImagesAndExpandTextVariables(message);
-        Parts parts = parsed.getParts();
+        MessageParts parts = parsed.getParts();
         int n = 0;
         assertEquals(Type.Mood, parts.get(n++).type);
         assertEquals(Type.Image, parts.get(n).type);
@@ -163,7 +163,7 @@ public class TeaseScriptBaseTest {
         script.setImage("foo.jpg");
 
         Message parsed = script.injectImagesAndExpandTextVariables(message);
-        Parts parts = parsed.getParts();
+        MessageParts parts = parsed.getParts();
         int n = 0;
         assertEquals(Type.Mood, parts.get(n++).type);
         assertEquals(Type.Image, parts.get(n).type);
@@ -182,7 +182,7 @@ public class TeaseScriptBaseTest {
         script.setImage("foo.jpg");
 
         Message parsed = script.injectImagesAndExpandTextVariables(message);
-        Parts parts = parsed.getParts();
+        MessageParts parts = parsed.getParts();
         int n = 0;
         assertEquals(Type.Mood, parts.get(n++).type);
         assertEquals(Type.Image, parts.get(n).type);
@@ -203,7 +203,7 @@ public class TeaseScriptBaseTest {
         message.add("Some text.");
 
         Message parsed = script.injectImagesAndExpandTextVariables(message);
-        Parts parts = parsed.getParts();
+        MessageParts parts = parsed.getParts();
         int n = 0;
 
         assertEquals(Type.Mood, parts.get(n++).type);
@@ -230,7 +230,7 @@ public class TeaseScriptBaseTest {
         message.add(Message.Delay120s);
 
         Message parsed = script.injectImagesAndExpandTextVariables(message);
-        Parts parts = parsed.getParts();
+        MessageParts parts = parsed.getParts();
         int n = 0;
 
         assertEquals(Type.Mood, parts.get(n++).type);

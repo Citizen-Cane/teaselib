@@ -3,8 +3,14 @@
  */
 package teaselib;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static teaselib.Message.ActorImage;
+import static teaselib.Message.Delay10s;
+import static teaselib.Mood.Amused;
+import static teaselib.Mood.Angry;
 
+import java.util.List;
 import java.util.Locale;
 
 import org.junit.Test;
@@ -166,5 +172,74 @@ public class MessageTest {
         assertEquals(2, message.getParts().size());
         assertEquals(Message.Type.Text, message.getParts().get(0).type);
         assertEquals(Message.Type.Text, message.getParts().get(1).type);
+    }
+
+    @Test
+    public void testSplit() {
+        Message message = new Message(actor, "Foo.", "Bar.");
+
+        List<Message> messages = message.split();
+        assertEquals(2, messages.size());
+
+        Message joined = Message.join(messages);
+        assertEquals(message, joined);
+    }
+
+    @Test
+    public void testSplitMoodImage() {
+        Message message = new Message(actor, ActorImage, Amused, "Foo.", ActorImage, Mood.Angry, "Bar.");
+
+        List<Message> messages = message.split();
+        assertEquals(2, messages.size());
+
+        Message joined = Message.join(messages);
+        assertEquals(message, joined);
+    }
+
+    @Test
+    public void testSplitMoodMultipleImages() {
+        testMultipleImages(new Message(actor, ActorImage, Amused, "Foo.", "Foobar.wav", ActorImage, Angry, "Bar."));
+        testMultipleImages(new Message(actor, ActorImage, Amused, "Foo.", "Foobar.wav", ActorImage, Angry, "Bar."));
+        testMultipleImages(new Message(actor, "Foobar.jpg", Amused, "Foo.", "Foobar.wav", ActorImage, Angry, "Bar."));
+        testMultipleImages(new Message(actor, "Foo.jpg", Amused, "Foo.", "Foobar.wav", "Bar.jpg", Mood.Angry, "Bar."));
+
+        testMultipleImages(new Message(actor, Amused, ActorImage, "Foo.", "Foobar.wav", ActorImage, Angry, "Bar."));
+        testMultipleImages(new Message(actor, Amused, ActorImage, "Foo.", "Foobar.wav", Angry, ActorImage, "Bar."));
+        testMultipleImages(new Message(actor, "Foobar.jpg", Amused, "Foo.", "Foobar.wav", Angry, ActorImage, "Bar."));
+        testMultipleImages(new Message(actor, "Foo.jpg", Amused, "Foo.", "Foobar.wav", "Bar.jpg", Angry, "Bar."));
+
+        testMultipleImages(new Message(actor, Amused, ActorImage, Delay10s, "Foo.wav", "Foo.", Delay10s, "Bar.wav"));
+    }
+
+    @Test
+    public void testSplitTrickyMessages() {
+        List<Message> messages = new Message(actor, "Foo", "Foobar.jpg", "Bar", "Foobar").split();
+        assertEquals(3, messages.size());
+
+        assertEquals(1, messages.get(0).getParts().size());
+        assertEquals(2, messages.get(1).getParts().size());
+        assertEquals(1, messages.get(2).getParts().size());
+    }
+
+    @Test
+    public void testSplitNoText() {
+        List<Message> messages = new Message(actor, Delay10s, "Foo.wav", Delay10s, "Foobar.jpg", "").split();
+        assertEquals(2, messages.size());
+
+        assertEquals(3, messages.get(0).getParts().size());
+        assertEquals(2, messages.get(1).getParts().size());
+    }
+
+    private void testMultipleImages(Message message) {
+        List<Message> messages = message.split();
+        assertEquals(2, messages.size());
+
+        assertEquals(4, messages.get(0).getParts().size());
+        assertEquals(Message.Type.BackgroundSound, messages.get(0).getParts().get(3).type);
+
+        assertEquals(3, messages.get(1).getParts().size());
+
+        Message joined = Message.join(messages);
+        assertEquals(message, joined);
     }
 }

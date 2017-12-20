@@ -7,10 +7,8 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Stream;
 
 public class Message {
-
     /**
      * Message types.
      */
@@ -57,10 +55,10 @@ public class Message {
         Item
 
         ;
-        public final static Set<Message.Type> AudioTypes = new HashSet<>(
+        public static final Set<Message.Type> AudioTypes = new HashSet<>(
                 Arrays.asList(Message.Type.Sound, Message.Type.BackgroundSound, Message.Type.Speech));
 
-        public final static Set<Type> FileTypes = new HashSet<>(
+        public static final Set<Type> FileTypes = new HashSet<>(
                 Arrays.asList(Type.BackgroundSound, Type.Sound, Type.Speech, Type.Image, Type.DesktopItem));
 
         public static boolean isFile(Type t) {
@@ -82,7 +80,6 @@ public class Message {
         public static boolean isKeyword(String m) {
             return !endOf(m, EndOfSentenceCharacters) && keywordFrom(m) != null;
         }
-
     }
 
     /**
@@ -98,75 +95,80 @@ public class Message {
         return Delay + " " + n + " " + m;
     }
 
-    public final static String Delay2s = "delay 2";
-    public final static String Delay2to5s = "delay 2 5";
-    public final static String Delay3s = "delay 3";
-    public final static String Delay5s = "delay 5";
-    public final static String Delay5to10s = "delay 5 10";
-    public final static String Delay7s = "delay 7";
-    public final static String Delay10s = "delay 10";
-    public final static String Delay10to15s = "delay 10 15";
-    public final static String Delay10to20s = "delay 10 20";
-    public final static String Delay15s = "delay 15";
-    public final static String Delay15to30s = "delay 15 30";
-    public final static String Delay15to45s = "delay 15 45";
-    public final static String Delay20s = "delay 20";
-    public final static String Delay25s = "delay 25";
-    public final static String Delay30s = "delay 30";
-    public final static String Delay30to45s = "delay 30 45";
-    public final static String Delay30to50s = "delay 30 50";
-    public final static String Delay30to60s = "delay 30 60";
-    public final static String Delay35s = "delay 35";
-    public final static String Delay40s = "delay 40";
-    public final static String Delay45s = "delay 45";
-    public final static String Delay45to60s = "delay 45 60";
-    public final static String Delay50s = "delay 50";
-    public final static String Delay55s = "delay 55";
-    public final static String Delay60s = "delay 60";
-    public final static String Delay90s = "delay 90";
-    public final static String Delay60to120s = "delay 60 120";
-    public final static String Delay90to120s = "delay 90 120";
-    public final static String Delay120s = "delay 120";
+    public static final String Delay2s = "delay 2";
+    public static final String Delay2to5s = "delay 2 5";
+    public static final String Delay3s = "delay 3";
+    public static final String Delay5s = "delay 5";
+    public static final String Delay5to10s = "delay 5 10";
+    public static final String Delay7s = "delay 7";
+    public static final String Delay10s = "delay 10";
+    public static final String Delay10to15s = "delay 10 15";
+    public static final String Delay10to20s = "delay 10 20";
+    public static final String Delay15s = "delay 15";
+    public static final String Delay15to30s = "delay 15 30";
+    public static final String Delay15to45s = "delay 15 45";
+    public static final String Delay20s = "delay 20";
+    public static final String Delay25s = "delay 25";
+    public static final String Delay30s = "delay 30";
+    public static final String Delay30to45s = "delay 30 45";
+    public static final String Delay30to50s = "delay 30 50";
+    public static final String Delay30to60s = "delay 30 60";
+    public static final String Delay35s = "delay 35";
+    public static final String Delay40s = "delay 40";
+    public static final String Delay45s = "delay 45";
+    public static final String Delay45to60s = "delay 45 60";
+    public static final String Delay50s = "delay 50";
+    public static final String Delay55s = "delay 55";
+    public static final String Delay60s = "delay 60";
+    public static final String Delay90s = "delay 90";
+    public static final String Delay60to120s = "delay 60 120";
+    public static final String Delay90to120s = "delay 90 120";
+    public static final String Delay120s = "delay 120";
 
     /**
      * Don't display an image
      */
-    public final static String NoImage = "NoImage";
+    public static final String NoImage = "NoImage";
 
     /**
-     * Display an image of the dominant, the actor that speaks the message
+     * Display an image of the the actor that speaks the message
      */
-    public final static String ActorImage = "ActorImage";
+    public static final String ActorImage = "ActorImage";
 
     /**
      * Execute the desktop action
      */
-    public final static String ShowOnDesktop = "showondesktop";
+    public static final String ShowOnDesktop = "showondesktop";
 
     /**
-     * Declare he mandatory part of the message to be completed. If the message is followed by a choice, the choice
-     * buttons are displayed, but the message will continue to render its optional part. Nice to comment actions when
-     * the slave is busy for a longer duration.
+     * Declare he mandatory part of the message to be completed. If the message is followed by a prompt, the prompt's
+     * choices are realized, but the message will continue to render. Nice to comment actions while the player follows
+     * orders.
      */
-    public final static String ShowChoices = "showChoices";
+    public static final String ShowChoices = "showChoices";
 
-    public final static String AwaitSoundCompletion = "awaitSoundCompletion";
+    public static final String AwaitSoundCompletion = "awaitSoundCompletion";
 
-    public final static String Bullet = "°";
+    public static final String Bullet = "°";
 
-    public final static String[] Keywords = { Delay, ShowOnDesktop, ShowChoices, AwaitSoundCompletion, ActorImage,
-            NoImage, Bullet };
+    public static final String[] Keywords = { Delay, ShowOnDesktop, ShowChoices, AwaitSoundCompletion, Bullet };
 
     public final Actor actor;
 
-    public final static Set<String> EndOfSentenceCharacters = new HashSet<>(Arrays.asList(":", ".", "!", "?"));
-    public final static Set<String> MainClauseAppendableCharacters = new HashSet<>(
+    public static final Set<String> EndOfSentenceCharacters = new HashSet<>(Arrays.asList(":", ".", "!", "?"));
+    public static final Set<String> MainClauseAppendableCharacters = new HashSet<>(
             Arrays.asList("\"", ">", ",", ";", "-"));
 
-    private final Parts parts;
+    private static final Set<Type> ParagraphStart = new HashSet<>(
+            Arrays.asList(Type.Image, Type.Mood, Type.Text, Type.Speech));
+
+    private static final Set<String> ImageKeywords = new HashSet<>(
+            Arrays.asList(ActorImage.toLowerCase(), NoImage.toLowerCase()));
+
+    private final MessageParts parts;
 
     public Message(Actor actor) {
-        this.parts = new Parts();
+        this.parts = new MessageParts();
         this.actor = actor;
     }
 
@@ -175,7 +177,7 @@ public class Message {
      *            The message to render, or null or an empty list to display no message
      */
     public Message(Actor actor, String... message) {
-        parts = new Parts();
+        parts = new MessageParts();
         if (message != null) {
             parts.addAll(message);
         }
@@ -187,7 +189,7 @@ public class Message {
      *            The message to render, or null or an empty list to display no message
      */
     public Message(Actor actor, List<String> message) {
-        this.parts = new Parts();
+        this.parts = new MessageParts();
         if (message != null) {
             parts.addAll(message);
         }
@@ -291,7 +293,7 @@ public class Message {
         }
     }
 
-    public Parts getParts() {
+    public MessageParts getParts() {
         return parts;
     }
 
@@ -357,7 +359,9 @@ public class Message {
             return Type.Text;
         }
         String mToLower = m.toLowerCase();
-        if (Type.isMood(mToLower)) {
+        if (ImageKeywords.contains(mToLower)) {
+            return Type.Image;
+        } else if (Type.isMood(mToLower)) {
             return Type.Mood;
         } else if (Type.isKeyword(mToLower)) {
             // For commands with parameters, the command is stored in the type,
@@ -417,8 +421,8 @@ public class Message {
         public final String value;
 
         public Part(String text) {
-            Type type = determineType(text);
             text = text.trim();
+            Type type = determineType(text);
             if (type == Type.Keyword) {
                 text = keywordFrom(text);
             } else if (type == Type.DesktopItem) {
@@ -452,98 +456,38 @@ public class Message {
         public String toString() {
             return type.name() + "=" + value;
         }
-    }
 
-    public class Parts implements Iterable<Part> {
-
-        private final List<Part> p = new ArrayList<>();
-
-        public boolean isEmpty() {
-            return p.isEmpty();
-        }
-
-        public void clear() {
-            p.clear();
-        }
-
-        public void addAll(List<String> paragraphs) {
-            for (String s : paragraphs) {
-                add(s);
-            }
-        }
-
-        public void addAll(String[] paragraphs) {
-            for (String s : paragraphs) {
-                add(s);
-            }
-        }
-
-        public void addAll(Parts parts) {
-            for (Part part : parts) {
-                add(part);
-            }
+        @Override
+        public int hashCode() {
+            final int prime = 31;
+            int result = 1;
+            result = prime * result + ((type == null) ? 0 : type.hashCode());
+            result = prime * result + ((value == null) ? 0 : value.hashCode());
+            return result;
         }
 
         @Override
-        public Iterator<Part> iterator() {
-            return p.iterator();
-        }
-
-        private void add(Part part) {
-            if (part.type == Type.Text) {
-                p.add(part);
-            } else if (part.type == Type.Mood) {
-                if (!p.isEmpty()) {
-                    int i = p.size() - 1;
-                    Part previous = p.get(i);
-                    if (previous.type == Type.Mood) {
-                        p.set(i, part);
-                    } else {
-                        p.add(part);
-                    }
-                } else {
-                    p.add(part);
-                }
-            } else {
-                p.add(part);
-            }
-        }
-
-        public void add(String text) {
-            if (text == null)
-                throw new IllegalArgumentException(text);
-            Part part = new Part(text);
-            add(part);
-        }
-
-        public void add(Type type, String value) {
-            add(new Part(type, value));
-        }
-
-        public int size() {
-            return p.size();
-        }
-
-        public boolean contains(Part part) {
-            return p.contains(part);
-        }
-
-        public Part get(int index) {
-            return p.get(index);
-        }
-
-        @Override
-        public String toString() {
-            return "size=" + size() + ", " + p.toString();
-        }
-
-        public Stream<Part> stream() {
-            return p.stream();
+        public boolean equals(Object obj) {
+            if (this == obj)
+                return true;
+            if (obj == null)
+                return false;
+            if (getClass() != obj.getClass())
+                return false;
+            Part other = (Part) obj;
+            if (type != other.type)
+                return false;
+            if (value == null) {
+                if (other.value != null)
+                    return false;
+            } else if (!value.equals(other.value))
+                return false;
+            return true;
         }
     }
 
     public Message joinSentences() {
-        Parts newParts = new Parts();
+        MessageParts newParts = new MessageParts();
         Iterator<Part> parts = this.parts.iterator();
         Part sentence = null;
         while (parts.hasNext()) {
@@ -573,7 +517,7 @@ public class Message {
     }
 
     public Message readAloud() {
-        Parts newParts = new Parts();
+        MessageParts newParts = new MessageParts();
         Iterator<Part> parts = this.parts.iterator();
         boolean readAloud = false;
         while (parts.hasNext()) {
@@ -602,6 +546,79 @@ public class Message {
         this.parts.clear();
         this.parts.addAll(newParts);
         return this;
+    }
+
+    public List<Message> split() {
+        List<Message> paragraphs = new ArrayList<>();
+
+        Message current = new Message(actor);
+        paragraphs.add(current);
+
+        boolean header = true;
+
+        for (Part part : parts) {
+            boolean isHeaderType = ParagraphStart.contains(part.type);
+            boolean startNewHeader = !header && isHeaderType;
+            boolean headerTypeAlreadyInCurrent = current.getParts().contains(part.type) && isHeaderType;
+            boolean messageComplete = current.getParts().contains(Type.Text) && isHeaderType;
+            if (startNewHeader || headerTypeAlreadyInCurrent || messageComplete) {
+                current = new Message(actor);
+                paragraphs.add(current);
+                header = true;
+            } else if (header && !isHeaderType) {
+                header = false;
+            }
+            current.add(part);
+        }
+        return paragraphs;
+    }
+
+    // (containsImage(currentParts) && isImage(part)
+    // private boolean containsImage(MessageParts parts) {
+    // return parts.contains(Type.Image) || parts.contains(new Part(Type.Keyword, Message.ActorImage))
+    // || parts.contains(new Part(Type.Keyword, Message.NoImage));
+    // }
+    //
+    // private boolean isImage(Part part) {
+    // return part.type == Type.Image
+    // || (part.type == Type.Keyword && (part.value == Message.ActorImage || part.value == Message.NoImage));
+    // }
+
+    public static Message join(List<Message> messages) {
+        Message message = new Message(messages.get(0).actor);
+        messages.stream().forEach(message::add);
+        return message;
+    }
+
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + ((actor == null) ? 0 : actor.hashCode());
+        result = prime * result + ((parts == null) ? 0 : parts.hashCode());
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        Message other = (Message) obj;
+        if (actor == null) {
+            if (other.actor != null)
+                return false;
+        } else if (!actor.equals(other.actor))
+            return false;
+        if (parts == null) {
+            if (other.parts != null)
+                return false;
+        } else if (!parts.equals(other.parts))
+            return false;
+        return true;
     }
 
     public List<String> resources() {

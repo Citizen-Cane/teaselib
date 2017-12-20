@@ -246,13 +246,7 @@ public abstract class Script {
                 } else if (Message.Type.FileTypes.contains(part.type)) {
                     parsedMessage.add(part.type, part.value);
                 } else if (part.type == Message.Type.Keyword) {
-                    if (part.value == Message.ActorImage) {
-                        imageType = part.value;
-                    } else if (part.value == Message.NoImage) {
-                        imageType = part.value;
-                    } else {
-                        parsedMessage.add(part);
-                    }
+                    parsedMessage.add(part);
                 } else if (part.type == Message.Type.Mood) {
                     nextMood = part.value;
                 } else if (part.type == Message.Type.Text) {

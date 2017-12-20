@@ -18,6 +18,7 @@ import teaselib.Config;
 import teaselib.Message;
 import teaselib.Message.Part;
 import teaselib.Message.Type;
+import teaselib.MessageParts;
 import teaselib.Mood;
 import teaselib.Replay;
 import teaselib.Replay.Position;
@@ -119,13 +120,23 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
             renderMessage(message);
         } else if (replayPosition == Replay.Position.FromMandatory) {
             // TODO Remove all but last speech and delay parts
-            renderMessage(getLastSection(message));
+            renderMessage(getMandatory(message));
         } else if (replayPosition == Replay.Position.End) {
             // TODO Remove all speech and delay parts
-            renderMessage(getLastSection(message));
+            renderMessage(getEnd(message));
         } else {
             throw new IllegalStateException(replayPosition.toString());
         }
+    }
+
+    private static Message getMandatory(Message message) {
+        // TODO Auto-generated method stub
+        return getLastSection(message);
+    }
+
+    private static Message getEnd(Message message) {
+        // TODO Auto-generated method stub
+        return getLastSection(message);
     }
 
     @Override
@@ -135,7 +146,7 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
 
     private static Message getLastSection(Message message) {
         Message lastSection = new Message(message.actor);
-        Message.Parts parts = message.getParts();
+        MessageParts parts = message.getParts();
         int index = parts.size();
         while (index-- > 0) {
             if (parts.get(index).type == Message.Type.Text) {
@@ -383,11 +394,9 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
     private void doKeyword(Part part) {
         String keyword = part.value;
         if (keyword == Message.ActorImage) {
-            // Image has to be resolved in preprocessMessage
-            throw new IllegalStateException(keyword);
+            throw new IllegalStateException(keyword + " must be resolved in pre-parse");
         } else if (keyword == Message.NoImage) {
-            // No image
-            displayImage = Message.NoImage;
+            throw new IllegalStateException(keyword + " must be resolved in pre-parse");
         } else if (keyword == Message.ShowChoices) {
             // Complete the mandatory part of the message
             if (speechRendererInProgress != null) {
@@ -437,7 +446,7 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
     public String toString() {
         long delay = 0;
         MessageTextAccumulator accumulatedText = new MessageTextAccumulator();
-        Message.Parts paragraphs = message.getParts();
+        MessageParts paragraphs = message.getParts();
         for (Iterator<Part> it = paragraphs.iterator(); it.hasNext();) {
             Part part = it.next();
             accumulatedText.add(part);

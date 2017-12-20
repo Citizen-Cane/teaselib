@@ -68,7 +68,8 @@ public class TextToSpeechRecorder {
         this.voices = ttsPlayer.textToSpeech.getVoices();
         this.storage = new StorageSynchronizer(new PrerecordedSpeechZipStorage(path, resourcesRoot));
         this.actorVoices = new ActorVoices(resources);
-        logger.info("Build start: " + new Date(buildStart).toString());
+        logger.info("Build start: " + new Date(buildStart).toString() + " with " + storage.getEncodingThreads()
+                + " encoding threads");
         ttsPlayer.loadActorVoiceProperties(resources);
     }
 
@@ -85,7 +86,6 @@ public class TextToSpeechRecorder {
         for (Message message : scanner) {
             Actor actor = message.actor;
             Voice voice = getVoice(actor);
-            logger.info("Voice: " + voice.info().name);
             if (!actors.contains(actor.key)) {
                 createActorEntry(actor, voice);
             }
@@ -105,7 +105,7 @@ public class TextToSpeechRecorder {
                 if (oldMessageHash.equals(newMessageHash)) {
                     keepOrReuseMessage(actor, voice, hash, lastModified);
                 } else if (lastModified > buildStart) {
-                    handleCollision(hash, oldMessageHash, newMessageHash);
+                    handleCollision(actor, voice, hash, oldMessageHash, newMessageHash);
                 } else {
                     updateMessage(actor, voice, message, hash, newMessageHash);
                 }
@@ -118,17 +118,18 @@ public class TextToSpeechRecorder {
 
     private void keepOrReuseMessage(Actor actor, final Voice voice, String hash, long lastModified) {
         if (lastModified > buildStart) {
-            logger.info(hash + " is reused");
+            log(actor, voice, hash, "is reused");
             reusedDuplicates++;
         } else {
-            logger.info(hash + " is up to date as of " + new Date(lastModified));
+            log(actor, voice, hash, "is up to date");
             storage.keepMessage(actor, voice, hash);
             upToDateEntries++;
         }
     }
 
-    private static void handleCollision(String hash, String oldMessageHash, String newMessageHash) {
-        logger.info(hash + " collision!");
+    private static void handleCollision(Actor actor, Voice voice, String hash, String oldMessageHash,
+            String newMessageHash) {
+        log(actor, voice, hash, "collision!");
         logger.info("Old:");
         logger.info(oldMessageHash);
         logger.info("New:");
@@ -138,19 +139,24 @@ public class TextToSpeechRecorder {
 
     private void updateMessage(Actor actor, Voice voice, Message message, String hash, String newMessageHash)
             throws InterruptedException {
-        logger.info(hash + " has changed");
+        log(actor, voice, hash, "has changed");
         storage.deleteMessage(actor, voice, hash);
         create(actor, voice, message, hash, newMessageHash);
         changedEntries++;
     }
 
     private void createNewMessage(Actor actor, Voice voice, Message message, String hash) throws InterruptedException {
-        logger.info(hash + " is new");
+        log(actor, voice, hash, "is new");
         create(actor, voice, message, hash, message.toPrerecordedSpeechHashString());
         newEntries++;
     }
 
+    private static void log(Actor actor, final Voice voice, String hash, String message) {
+        logger.info(actor.key + " " + voice.info().name + " " + hash + " " + message);
+    }
+
     private void createActorEntry(Actor actor, Voice voice) throws IOException {
+        logger.info("Creating actor entry for " + voice.info().name);
         actors.add(actor.key);
         actorVoices.putGuid(actor.key, voice);
 
@@ -201,7 +207,8 @@ public class TextToSpeechRecorder {
         long now = System.currentTimeMillis();
         long seconds = (now - buildStart) / 1000;
         String duration = String.format("%d:%02d:%02d", seconds / 3600, (seconds % 3600) / 60, (seconds % 60));
-        logger.info("Finished - Build time : " + duration);
+        logger.info("Finished - Build time : " + duration + " using " + storage.getUsedEncodingThreads() + " of "
+                + storage.getEncodingThreads() + " encoding threads");
 
         logger.info(upToDateEntries + " up to date, " + reusedDuplicates + " reused, " + changedEntries + " changed, "
                 + newEntries + " new");

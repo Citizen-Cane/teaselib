@@ -5,7 +5,6 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
@@ -18,12 +17,15 @@ import teaselib.core.concurrency.NamedExecutorService;
  */
 class StorageSynchronizer {
     private final PrerecordedSpeechStorage storage;
-    private final ExecutorService encoding = NamedExecutorService.newFixedThreadPool(
-            Math.max(1, Runtime.getRuntime().availableProcessors() - 1), "Speech Encoder", 10, TimeUnit.SECONDS);
-    private final ExecutorService io = NamedExecutorService.singleThreadedQueue("Speech Recorder I/O");
+    private final int nThreads;
+    private final NamedExecutorService encoding;
+    private final NamedExecutorService io = NamedExecutorService.singleThreadedQueue("Speech Recorder I/O");
 
     StorageSynchronizer(PrerecordedSpeechStorage storage) {
         this.storage = storage;
+        nThreads = Math.max(1, Runtime.getRuntime().availableProcessors() - 1);
+        this.encoding = NamedExecutorService.newFixedThreadPool(getEncodingThreads(), "Speech Encoder",
+                Integer.MAX_VALUE, TimeUnit.SECONDS);
     }
 
     String getMessageHash(Actor actor, Voice voice, String hash) throws InterruptedException, ExecutionException {
@@ -107,5 +109,13 @@ class StorageSynchronizer {
      */
     public File assetPath() {
         return storage.assetPath();
+    }
+
+    public int getEncodingThreads() {
+        return nThreads;
+    }
+
+    public int getUsedEncodingThreads() {
+        return encoding.getActiveCount();
     }
 }

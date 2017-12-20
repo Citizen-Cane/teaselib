@@ -33,6 +33,10 @@ public final class ReflectionUtils {
         return "/" + className.replace(".", "/") + "/";
     }
 
+    public static String asAbsolutePath(Class<?> clazz) {
+        return "/" + clazz.getName().replace(".", "/") + "/";
+    }
+
     public static String asClassLoaderCompatiblePath(String className) {
         return className.replace(".", "/") + "/";
     }

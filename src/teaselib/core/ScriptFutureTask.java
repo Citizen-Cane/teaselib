@@ -1,11 +1,12 @@
 package teaselib.core;
 
+import static java.util.concurrent.TimeUnit.*;
+
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.FutureTask;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.slf4j.Logger;
@@ -19,8 +20,9 @@ import teaselib.core.util.ExceptionUtil;
 public class ScriptFutureTask extends FutureTask<Void> {
     private static final Logger logger = LoggerFactory.getLogger(ScriptFutureTask.class);
 
-    private static final ExecutorService Executor = NamedExecutorService.newFixedThreadPool(Integer.MAX_VALUE,
-            "Script Function", 1, TimeUnit.HOURS);
+    private static final ExecutorService Executor = NamedExecutorService.newUnlimitedThreadPool("Script task", 1,
+            HOURS);
+    // TODO Move to MediaRenderQueue
 
     private final ScriptFunction scriptFunction;
     private final AtomicBoolean timedOut = new AtomicBoolean(false);

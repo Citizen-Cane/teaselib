@@ -20,7 +20,6 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.FutureTask;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.imageio.ImageIO;
@@ -89,11 +88,8 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
     private final ImageIcon backgroundImageIcon;
     private final Image backgroundImage;
 
-    private final ExecutorService showPopupThreadPool = NamedExecutorService.newFixedThreadPool(1, "Show-Choices", 1,
-            TimeUnit.SECONDS);
-
-    private final ExecutorService showChoicesThreadPool = NamedExecutorService.newFixedThreadPool(1, "Show-Popup", 1,
-            TimeUnit.HOURS);
+    private final ExecutorService showPopupThreadPool = NamedExecutorService.singleThreadedQueue("Show-Choices");
+    private final ExecutorService showChoicesThreadPool = NamedExecutorService.singleThreadedQueue("Show-Popup");
 
     private Runnable onQuitHandler = null;
 

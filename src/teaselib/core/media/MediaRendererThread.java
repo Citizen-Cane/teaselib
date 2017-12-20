@@ -1,12 +1,13 @@
 package teaselib.core.media;
 
+import static java.util.concurrent.TimeUnit.*;
+
 import java.io.IOException;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,8 +29,9 @@ public abstract class MediaRendererThread implements MediaRenderer.Threaded {
     protected final TeaseLib teaseLib;
 
     private static final String RenderTaskBaseName = "RenderTask ";
-    private static final ExecutorService Executor = NamedExecutorService.newFixedThreadPool(Integer.MAX_VALUE,
-            RenderTaskBaseName, 1, TimeUnit.HOURS);
+    private static final ExecutorService Executor = NamedExecutorService.newUnlimitedThreadPool(RenderTaskBaseName, 1,
+            HOURS);
+    // TODO Move to MediaRenderQueue
 
     protected Future<?> task = null;
     protected Replay.Position replayPosition = Replay.Position.FromStart;

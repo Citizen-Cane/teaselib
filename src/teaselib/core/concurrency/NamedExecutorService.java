@@ -45,17 +45,17 @@ public class NamedExecutorService extends ThreadPoolExecutor {
                 new SynchronousQueue<Runnable>());
     }
 
-    public static ExecutorService newFixedThreadPool(int nThreads, String namePrefix, long keepAliveTime,
+    public static NamedExecutorService newFixedThreadPool(int nThreads, String namePrefix, long keepAliveTime,
             TimeUnit unit) {
         return new NamedExecutorService(0, nThreads, keepAliveTime, unit, namePrefix,
                 new LinkedBlockingQueue<Runnable>());
     }
 
-    public static ExecutorService singleThreadedQueue(String namePrefix) {
+    public static NamedExecutorService singleThreadedQueue(String namePrefix) {
         return new NamedExecutorService(namePrefix, Long.MAX_VALUE, TimeUnit.SECONDS);
     }
 
-    public static ExecutorService singleThreadedQueue(String namePrefix, long keepAliveTime, TimeUnit unit) {
+    public static NamedExecutorService singleThreadedQueue(String namePrefix, long keepAliveTime, TimeUnit unit) {
         return new NamedExecutorService(namePrefix, keepAliveTime, unit);
     }
 }

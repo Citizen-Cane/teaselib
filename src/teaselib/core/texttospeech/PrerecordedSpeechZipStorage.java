@@ -147,9 +147,7 @@ public class PrerecordedSpeechZipStorage implements PrerecordedSpeechStorage {
                 crc.update(buf, 0, buf.length);
                 resourceEntry.setCrc(crc.getValue());
                 updated.putNextEntry(resourceEntry);
-                try (ByteArrayInputStream bi = new ByteArrayInputStream(buf)) {
-                    Stream.copy(bi, updated);
-                }
+                Stream.copy(buf, updated);
             }
         } else {
             updated.putNextEntry(resourceEntry);

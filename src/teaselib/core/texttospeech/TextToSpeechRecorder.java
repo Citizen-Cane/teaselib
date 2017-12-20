@@ -32,7 +32,6 @@ import teaselib.core.util.ExceptionUtil;
 import teaselib.test.DebugSetup;
 import teaselib.util.TextVariables;
 
-// TODO error handling of asynchronous futures
 public class TextToSpeechRecorder {
     private static final Logger logger = LoggerFactory.getLogger(TextToSpeechRecorder.class);
 
@@ -283,7 +282,7 @@ public class TextToSpeechRecorder {
                         throw new IllegalStateException("Can't delete temporary speech file " + recordedSoundFile);
                     }
                 }
-                return storage.storeRecordedSoundFile(actor, voice, hash, soundFileName, encodedSoundFile).get();
+                return storage.storeRecordedSoundFile(actor, voice, hash, storedSoundFileName, encodedSoundFile).get();
             });
         } else {
             return storage.storeRecordedSoundFile(actor, voice, hash, storedSoundFileName, recordedSoundFile);

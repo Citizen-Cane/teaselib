@@ -7,6 +7,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Stream;
 
 public class Message {
 
@@ -61,12 +62,33 @@ public class Message {
 
         public final static Set<Type> FileTypes = new HashSet<>(
                 Arrays.asList(Type.BackgroundSound, Type.Sound, Type.Speech, Type.Image, Type.DesktopItem));
+
+        public static boolean isFile(Type t) {
+            return (Type.FileTypes.contains(t));
+        }
+
+        public static boolean isImage(String m) {
+            return m.endsWith(".png") || m.endsWith(".jpg");
+        }
+
+        public static boolean isSound(String m) {
+            return m.endsWith(".wav") || m.endsWith(".ogg") || m.endsWith(".mp3");
+        }
+
+        public static boolean isMood(String m) {
+            return teaselib.Mood.isMood(m);
+        }
+
+        public static boolean isKeyword(String m) {
+            return !endOf(m, EndOfSentenceCharacters) && keywordFrom(m) != null;
+        }
+
     }
 
     /**
      * Usage: Delay n Insert a pause, n seconds long
      */
-    public final static String Delay = "delay";
+    public static final String Delay = "delay";
 
     public static String delay(int n) {
         return Delay + " " + n;
@@ -299,26 +321,6 @@ public class Message {
         }
     }
 
-    public static boolean isFile(Type t) {
-        return (Type.FileTypes.contains(t));
-    }
-
-    public static boolean isImage(String m) {
-        return m.endsWith(".png") || m.endsWith(".jpg");
-    }
-
-    public static boolean isSound(String m) {
-        return m.endsWith(".wav") || m.endsWith(".ogg") || m.endsWith(".mp3");
-    }
-
-    public static boolean isMood(String m) {
-        return Mood.isMood(m);
-    }
-
-    public static boolean isKeyword(String m) {
-        return !endOf(m, EndOfSentenceCharacters) && keywordFrom(m) != null;
-    }
-
     public static String keywordFrom(String m) {
         final String candidate;
         int i = m.indexOf(' ');
@@ -355,9 +357,9 @@ public class Message {
             return Type.Text;
         }
         String mToLower = m.toLowerCase();
-        if (isMood(mToLower)) {
+        if (Type.isMood(mToLower)) {
             return Type.Mood;
-        } else if (isKeyword(mToLower)) {
+        } else if (Type.isKeyword(mToLower)) {
             // For commands with parameters, the command is stored in the type,
             // and the parameters as the text
             String keyword = keywordFrom(m);
@@ -373,9 +375,9 @@ public class Message {
             // keywords and commands must be processed before files,
             // since commands may contain file arguments
         } else if (isFile(mToLower)) {
-            if (isImage(mToLower)) {
+            if (Type.isImage(mToLower)) {
                 return Type.Image;
-            } else if (isSound(mToLower)) {
+            } else if (Type.isSound(mToLower)) {
                 return Type.BackgroundSound;
             } else {
                 return Type.DesktopItem;
@@ -443,7 +445,7 @@ public class Message {
         }
 
         public boolean isFile() {
-            return Message.isFile(type);
+            return Message.Type.isFile(type);
         }
 
         @Override
@@ -534,6 +536,10 @@ public class Message {
         public String toString() {
             return "size=" + size() + ", " + p.toString();
         }
+
+        public Stream<Part> stream() {
+            return p.stream();
+        }
     }
 
     public Message joinSentences() {
@@ -601,7 +607,7 @@ public class Message {
     public List<String> resources() {
         List<String> resources = new ArrayList<>();
         for (Part part : parts) {
-            if (isFile(part.type)) {
+            if (Type.isFile(part.type)) {
                 resources.add(part.value);
             }
         }

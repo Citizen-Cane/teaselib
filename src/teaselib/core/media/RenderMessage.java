@@ -245,7 +245,7 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
             }
         } else if (part.type == Message.Type.Speech) {
             long paragraphPause = getParagraphPause(accumulatedText, lastParagraph);
-            if (Message.isSound(part.value)) {
+            if (Message.Type.isSound(part.value)) {
                 speechRenderer = new RenderPrerecordedSpeech(part.value, paragraphPause, resources, teaseLib);
             } else if (TextToSpeechPlayer.isSimulatedSpeech(part.value)) {
                 speechRenderer = new RenderSpeechDelay(TextToSpeechPlayer.getSimulatedSpeechText(part.value),
@@ -421,7 +421,7 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
         }
     }
 
-    private Interval getDelay(String args) {
+    private static Interval getDelay(String args) {
         String[] argv = args.split(" ");
         if (argv.length == 1) {
             int delay = (int) (Double.parseDouble(args) * 1000);

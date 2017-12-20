@@ -44,6 +44,11 @@ public class PrerecordedSpeechZipStorage implements PrerecordedSpeechStorage {
         updated = new ZipOutputStream(new FileOutputStream(zipFileUpdated));
     }
 
+    @Override
+    public File assetPath() {
+        return zipFileCurrent;
+    }
+
     private ZipFile getCurrent() throws ZipException, IOException {
         try {
             return new ZipFile(zipFileCurrent);
@@ -123,7 +128,9 @@ public class PrerecordedSpeechZipStorage implements PrerecordedSpeechStorage {
     @Override
     public void storeSpeechResource(Actor actor, Voice voice, String hash, InputStream inputStream, String name)
             throws IOException {
-        storeSpeechResource(actor, voice, hash, inputStream, name, ZipOutputStream.STORED);
+        // TODO Resolve java.util.zip.ZipException: invalid entry crc-32 (expected 0x72d86182 but got 0x0)
+        // while updating archive with ZipEntry.STORED in release code for Mine (works in test -> reproduce)
+        storeSpeechResource(actor, voice, hash, inputStream, name, ZipEntry.DEFLATED);
     }
 
     private void storeSpeechResource(Actor actor, Voice voice, String hash, InputStream inputStream, String name,
@@ -135,19 +142,19 @@ public class PrerecordedSpeechZipStorage implements PrerecordedSpeechStorage {
                 Stream.copy(inputStream, bo);
                 byte[] buf = bo.getBytes();
                 resourceEntry.setSize(buf.length);
+                resourceEntry.setCompressedSize(buf.length);
                 CRC32 crc = new CRC32();
-                crc.update(buf);
+                crc.update(buf, 0, buf.length);
                 resourceEntry.setCrc(crc.getValue());
                 updated.putNextEntry(resourceEntry);
                 try (ByteArrayInputStream bi = new ByteArrayInputStream(buf)) {
-                    Stream.copy(inputStream, updated);
+                    Stream.copy(bi, updated);
                 }
             }
         } else {
             updated.putNextEntry(resourceEntry);
             Stream.copy(inputStream, updated);
         }
-        updated.flush();
         updated.closeEntry();
     }
 

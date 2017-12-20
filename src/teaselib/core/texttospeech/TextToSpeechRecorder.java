@@ -13,7 +13,6 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
@@ -29,6 +28,7 @@ import teaselib.Message.Part;
 import teaselib.Mood;
 import teaselib.core.Configuration;
 import teaselib.core.ResourceLoader;
+import teaselib.core.util.ExceptionUtil;
 import teaselib.test.DebugSetup;
 import teaselib.util.TextVariables;
 
@@ -73,13 +73,14 @@ public class TextToSpeechRecorder {
         ttsPlayer.loadActorVoiceProperties(resources);
     }
 
-    public void preparePass(Entry<String, String> entry) {
+    // TODO Add text variables to preparePass
+    public void preparePass(String key, String value) {
         this.numberOfPasses++;
-        logger.info("Pass " + numberOfPasses + " for symbol " + entry.getKey() + "=" + entry.getValue());
+        logger.info("Pass " + numberOfPasses + " for " + key + "=" + value);
         logger.info("using text variables: '" + textVariables.toString() + "'");
     }
 
-    public void create(ScriptScanner scanner) throws IOException, InterruptedException, ExecutionException {
+    public void run(ScriptScanner scanner) throws IOException, InterruptedException, ExecutionException {
         logger.info("Scanning script '" + scanner.getScriptName() + "'");
         Set<String> created = new HashSet<>();
         for (Message message : scanner) {
@@ -232,8 +233,10 @@ public class TextToSpeechRecorder {
         List<String> soundFiles = soundFileFutures.stream().map(future -> {
             try {
                 return future.get();
-            } catch (InterruptedException | ExecutionException e) {
-                throw new RuntimeException(e);
+            } catch (InterruptedException e) {
+                throw ExceptionUtil.asRuntimeException(e);
+            } catch (ExecutionException e) {
+                throw ExceptionUtil.asRuntimeException(ExceptionUtil.reduce(e));
             }
         }).collect(Collectors.<String> toList());
 
@@ -280,8 +283,7 @@ public class TextToSpeechRecorder {
                         throw new IllegalStateException("Can't delete temporary speech file " + recordedSoundFile);
                     }
                 }
-                storage.storeRecordedSoundFile(actor, voice, hash, soundFileName, encodedSoundFile);
-                return storedSoundFileName;
+                return storage.storeRecordedSoundFile(actor, voice, hash, soundFileName, encodedSoundFile).get();
             });
         } else {
             return storage.storeRecordedSoundFile(actor, voice, hash, storedSoundFileName, recordedSoundFile);
@@ -327,5 +329,9 @@ public class TextToSpeechRecorder {
             hexString.append(hex);
         }
         return hexString.toString();
+    }
+
+    public File assetPath() {
+        return storage.assetPath();
     }
 }

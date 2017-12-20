@@ -1,6 +1,3 @@
-/**
- * 
- */
 package teaselib.core.util;
 
 import java.io.ByteArrayOutputStream;
@@ -8,22 +5,33 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
+import com.sun.xml.internal.messaging.saaj.util.ByteInputStream;
+
 /**
- * @author someone
+ * @author Citizen-Cane
  *
  */
 public class Stream {
+
+    private Stream() {
+    }
+
     public static void copy(InputStream is, OutputStream os) throws IOException {
-        int i;
-        int size = 1024 * 1024;
-        byte[] b = new byte[size];
-        while ((i = is.read(b, 0, size)) != -1) {
-            os.write(b, 0, i);
+        if (is instanceof ByteInputStream) {
+            ByteInputStream bis = (ByteInputStream) is;
+            byte[] buf = bis.getBytes();
+            os.write(buf, 0, buf.length);
+        } else {
+            int i;
+            int size = 1024 * 1024;
+            byte[] b = new byte[size];
+            while ((i = is.read(b, 0, size)) != -1) {
+                os.write(b, 0, i);
+            }
         }
     }
 
-    public static void copy(InputStream is, OutputStream os, long s)
-            throws IOException {
+    public static void copy(InputStream is, OutputStream os, long s) throws IOException {
         int i;
         int bufferSize = 1024 * 1024;
         byte[] b = new byte[bufferSize];
@@ -36,8 +44,7 @@ public class Stream {
         }
     }
 
-    public static boolean sameContent(InputStream is1, InputStream is2)
-            throws IOException {
+    public static boolean sameContent(InputStream is1, InputStream is2) throws IOException {
         ByteArrayOutputStream bos1 = new ByteArrayOutputStream();
         ByteArrayOutputStream bos2 = new ByteArrayOutputStream();
         copy(is1, bos1);

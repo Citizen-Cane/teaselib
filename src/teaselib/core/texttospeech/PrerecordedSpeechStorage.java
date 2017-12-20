@@ -1,5 +1,6 @@
 package teaselib.core.texttospeech;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -31,4 +32,5 @@ public interface PrerecordedSpeechStorage {
 
     void writeStringResource(Actor actor, Voice voice, String hash, String name, String value) throws IOException;
 
+    File assetPath();
 }

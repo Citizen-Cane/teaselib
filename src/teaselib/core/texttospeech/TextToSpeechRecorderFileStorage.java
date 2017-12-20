@@ -17,9 +17,11 @@ import teaselib.core.util.Stream;
 public class TextToSpeechRecorderFileStorage implements PrerecordedSpeechStorage {
     private static final Logger logger = LoggerFactory.getLogger(TextToSpeechRecorderFileStorage.class);
 
+    private final File assetsDir;
     private final File speechDir;
 
     public TextToSpeechRecorderFileStorage(File assetsDir) {
+        this.assetsDir = assetsDir;
         this.speechDir = createSubDir(assetsDir, SpeechDirName);
     }
 
@@ -37,6 +39,11 @@ public class TextToSpeechRecorderFileStorage implements PrerecordedSpeechStorage
             logger.info("Using directory " + subDir.getAbsolutePath());
         }
         return subDir;
+    }
+
+    @Override
+    public File assetPath() {
+        return assetsDir;
     }
 
     /*

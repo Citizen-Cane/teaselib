@@ -18,8 +18,8 @@ import teaselib.core.concurrency.NamedExecutorService;
  */
 class StorageSynchronizer {
     private final PrerecordedSpeechStorage storage;
-    private final ExecutorService encoding = NamedExecutorService
-            .newFixedThreadPool(Runtime.getRuntime().availableProcessors(), "Speech Encoder", 10, TimeUnit.SECONDS);
+    private final ExecutorService encoding = NamedExecutorService.newFixedThreadPool(
+            Math.max(1, Runtime.getRuntime().availableProcessors() - 1), "Speech Encoder", 10, TimeUnit.SECONDS);
     private final ExecutorService io = NamedExecutorService.singleThreadedQueue("Speech Recorder I/O");
 
     StorageSynchronizer(PrerecordedSpeechStorage storage) {
@@ -73,14 +73,11 @@ class StorageSynchronizer {
     Future<String> storeRecordedSoundFile(Actor actor, Voice voice, String hash, String storedSoundFileNane,
             String recordedSoundFile) {
         return io.submit(() -> {
-            FileInputStream inputStream = new FileInputStream(recordedSoundFile);
-            try {
+            try (FileInputStream inputStream = new FileInputStream(recordedSoundFile);) {
                 storage.storeSpeechResource(actor, voice, hash, inputStream, storedSoundFileNane);
-            } finally {
-                inputStream.close();
-                if (!new File(recordedSoundFile).delete()) {
-                    throw new IllegalStateException("Can't delete temporary encoded speech file " + recordedSoundFile);
-                }
+            }
+            if (!new File(recordedSoundFile).delete()) {
+                throw new IllegalStateException("Can't delete temporary encoded speech file " + recordedSoundFile);
             }
             return storedSoundFileNane;
         });
@@ -103,5 +100,12 @@ class StorageSynchronizer {
         io.awaitTermination(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
 
         storage.close();
+    }
+
+    /**
+     * @return
+     */
+    public File assetPath() {
+        return storage.assetPath();
     }
 }

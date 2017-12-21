@@ -41,6 +41,10 @@ public final class ReflectionUtils {
         return className.replace(".", "/") + "/";
     }
 
+    public static String asPath(String className) {
+        return className.replace(".", "/");
+    }
+
     public static String getClass(String qualifiedName) {
         return qualifiedName.substring(0, qualifiedName.lastIndexOf("."));
     }

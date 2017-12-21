@@ -59,14 +59,14 @@ public class TextToSpeechRecorder {
 
     int numberOfPasses = 0;
 
-    public TextToSpeechRecorder(File path, String resourcesRoot, ResourceLoader resources, TextVariables textVariables)
-            throws IOException {
+    public TextToSpeechRecorder(File path, String resourcesRoot, String name, ResourceLoader resources,
+            TextVariables textVariables) throws IOException {
         this.resources = resources;
         this.textVariables = textVariables;
         this.ttsPlayer = new TextToSpeechPlayer(new Configuration(new DebugSetup()));
         this.ttsPlayer.load();
         this.voices = ttsPlayer.textToSpeech.getVoices();
-        this.storage = new StorageSynchronizer(new PrerecordedSpeechZipStorage(path, resourcesRoot));
+        this.storage = new StorageSynchronizer(new PrerecordedSpeechZipStorage(path, resourcesRoot, name));
         this.actorVoices = new ActorVoices(resources);
         logger.info("Build start: " + new Date(buildStart).toString() + " with " + storage.getEncodingThreads()
                 + " encoding threads");

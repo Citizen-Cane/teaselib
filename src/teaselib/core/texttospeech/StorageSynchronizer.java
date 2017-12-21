@@ -116,6 +116,6 @@ class StorageSynchronizer {
     }
 
     public int getUsedEncodingThreads() {
-        return encoding.getActiveCount();
+        return encoding.getLargestPoolSize();
     }
 }

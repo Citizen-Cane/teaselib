@@ -3,21 +3,28 @@ package teaselib.core.util;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 
-public class CommandLineParameters<T extends Enum<?>> extends HashMap<T, List<String>> {
+public class CommandLineParameters<T extends Enum<T>> extends EnumMap<T, List<String>> {
     private static final long serialVersionUID = 1L;
 
-    public static final List<String> EMPTY = Collections.emptyList();
+    protected static final List<String> EMPTY = Collections.emptyList();
 
     protected T defaultKeyword;
 
-    public CommandLineParameters(String[] args, T[] keywords) {
-        this(Arrays.asList(args), keywords);
+    public CommandLineParameters(Map<T, List<String>> args, Class<T> keyType) {
+        super(keyType);
+        putAll(args);
     }
 
-    public CommandLineParameters(List<String> args, T[] keywords) {
+    public CommandLineParameters(String[] args, T[] keywords, Class<T> keyType) {
+        this(Arrays.asList(args), keywords, keyType);
+    }
+
+    public CommandLineParameters(List<String> args, T[] keywords, Class<T> keyType) {
+        super(keyType);
         this.defaultKeyword = keywords[0];
         put(defaultKeyword, new ArrayList<String>());
         T currentKeyword = defaultKeyword;
@@ -33,13 +40,18 @@ public class CommandLineParameters<T extends Enum<?>> extends HashMap<T, List<St
     }
 
     @Override
-    public boolean containsKey(Object value) {
-        return get(value) != EMPTY;
+    public boolean containsKey(Object key) {
+        return get(key) != EMPTY;
     }
 
     @Override
-    public List<String> get(Object value) {
-        return super.getOrDefault(value, EMPTY);
+    public List<String> get(Object key) {
+        List<String> args = super.get(key);
+        if (args != null) {
+            return args;
+        } else {
+            return EMPTY;
+        }
     }
 
     public static <E extends Enum<?>> E getKeyword(String arg, E[] keywords) {
@@ -79,6 +91,8 @@ public class CommandLineParameters<T extends Enum<?>> extends HashMap<T, List<St
     public boolean equals(Object obj) {
         if (this == obj)
             return true;
+        if (obj == null)
+            return false;
         if (getClass() != obj.getClass())
             return false;
         CommandLineParameters<?> other = (CommandLineParameters<?>) obj;

@@ -121,6 +121,8 @@ public class TextToSpeechRecorderTest {
         assertEquals(2, recorder5.reusedDuplicates);
         assertEquals(0, recorder5.changedEntries);
         assertEquals(8, recorder5.upToDateEntries);
+
+        testAsets(recorder5, resources, updatedMessages);
     }
 
     @Test
@@ -136,14 +138,29 @@ public class TextToSpeechRecorderTest {
                 new Message(actor, "I dream of grey sheep standing on the lawn", "Certainly."),
                 new Message(actor, "I dream of grey sheep standing on the lawn.", "Certainly.", "Sure."));
         assertEquals(5, messages.size());
-        TextToSpeechRecorder recorder1 = recordVoices(new TestScriptScanner(messages), path, resourcesRoot, name,
+        TextToSpeechRecorder recorder = recordVoices(new TestScriptScanner(messages), path, resourcesRoot, name,
                 resources);
-        assertEquals(4, recorder1.newEntries);
-        assertEquals(1, recorder1.reusedDuplicates);
-        assertEquals(0, recorder1.changedEntries);
-        assertEquals(0, recorder1.upToDateEntries);
+        assertEquals(4, recorder.newEntries);
+        assertEquals(1, recorder.reusedDuplicates);
+        assertEquals(0, recorder.changedEntries);
+        assertEquals(0, recorder.upToDateEntries);
 
-        resources.addAssets(recorder1.assetPath().getAbsolutePath());
+        testAsets(recorder, resources, messages);
+    }
+
+    TextToSpeechRecorder recordVoices(ScriptScanner scriptScanner, File path, String resourcesRoot, String name,
+            ResourceLoader resources) throws IOException, InterruptedException, ExecutionException {
+        TextToSpeechRecorder recorder = new TextToSpeechRecorder(path, name, resources, new TextVariables());
+
+        recorder.preparePass("Test", "Test");
+        recorder.run(scriptScanner);
+        recorder.finish();
+
+        return recorder;
+    }
+
+    private void testAsets(TextToSpeechRecorder recorder, ResourceLoader resources, List<Message> messages) {
+        resources.addAssets(recorder.assetPath().getAbsolutePath());
 
         Configuration config = new Configuration();
         new DebugSetup().withInput().withOutput().applyTo(config);
@@ -152,18 +169,6 @@ public class TextToSpeechRecorderTest {
         tts.acquireVoice(actor, resources);
 
         testAssets(tts, resources, messages);
-    }
-
-    TextToSpeechRecorder recordVoices(ScriptScanner scriptScanner, File path, String resourcesRoot, String name,
-            ResourceLoader resources) throws IOException, InterruptedException, ExecutionException {
-        TextToSpeechRecorder recorder = new TextToSpeechRecorder(path, resourcesRoot, name, resources,
-                new TextVariables());
-
-        recorder.preparePass("Test", "Test");
-        recorder.run(scriptScanner);
-        recorder.finish();
-
-        return recorder;
     }
 
     private static void testAssets(TextToSpeechPlayer tts, ResourceLoader resources, List<Message> messages) {

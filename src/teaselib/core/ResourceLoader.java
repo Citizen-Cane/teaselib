@@ -382,4 +382,8 @@ public class ResourceLoader {
         }
         return file;
     }
+
+    public String getRoot() {
+        return resourceRoot;
+    }
 }

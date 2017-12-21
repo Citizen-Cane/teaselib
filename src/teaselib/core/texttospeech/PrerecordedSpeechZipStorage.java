@@ -12,7 +12,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.zip.CRC32;
 import java.util.zip.ZipEntry;
-import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
 
@@ -23,7 +22,7 @@ import teaselib.core.util.Stream;
 
 public class PrerecordedSpeechZipStorage implements PrerecordedSpeechStorage {
     private static final String Zip = ".zip";
-    private static final String Updated = " updated";
+    private static final String Temp = " temp";
 
     private final String resourcesRoot;
     private final String archiveName;
@@ -36,10 +35,11 @@ public class PrerecordedSpeechZipStorage implements PrerecordedSpeechStorage {
     private final File zipFileCurrent;
 
     public PrerecordedSpeechZipStorage(File path, String resourcesRoot, String name) throws IOException {
-        this.resourcesRoot = resourcesRoot;
+        this.resourcesRoot = resourcesRoot.endsWith("/") ? resourcesRoot.substring(0, resourcesRoot.length() - 1)
+                : resourcesRoot;
         this.archiveName = name + " " + "Speech";
         zipFileCurrent = new File(path, archiveName + Zip).getAbsoluteFile();
-        zipFileUpdated = new File(path, archiveName + Updated + Zip).getAbsoluteFile();
+        zipFileUpdated = new File(path, archiveName + Temp + Zip).getAbsoluteFile();
         current = getCurrent();
         updated = new ZipOutputStream(new FileOutputStream(zipFileUpdated));
     }
@@ -49,15 +49,14 @@ public class PrerecordedSpeechZipStorage implements PrerecordedSpeechStorage {
         return zipFileCurrent;
     }
 
-    private ZipFile getCurrent() throws ZipException, IOException {
+    private ZipFile getCurrent() throws IOException {
         try {
             return new ZipFile(zipFileCurrent);
         } catch (FileNotFoundException e) {
-            FileOutputStream fos = new FileOutputStream(zipFileCurrent);
-            ZipOutputStream zos = new ZipOutputStream(fos);
-            zos.flush();
-            zos.close();
-            fos.close();
+            try (FileOutputStream fos = new FileOutputStream(zipFileCurrent);
+                    ZipOutputStream zos = new ZipOutputStream(fos);) {
+                zos.flush();
+            }
             return new ZipFile(zipFileCurrent);
         }
     }

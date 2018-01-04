@@ -52,12 +52,74 @@ public class TextToSpeechRecorder {
     private final long buildStart = System.currentTimeMillis();
     private final TextVariables textVariables;
 
-    int newEntries = 0;
-    int changedEntries = 0;
-    int upToDateEntries = 0;
-    int reusedDuplicates = 0;
+    static class Pass {
+        class Symbol {
+            final String key;
+            final String value;
 
-    int numberOfPasses = 0;
+            public Symbol(String key, String value) {
+                super();
+                this.key = key;
+                this.value = value;
+            }
+
+            @Override
+            public String toString() {
+                return key + "=" + value;
+            }
+
+        }
+
+        final List<Symbol> symbols = new ArrayList<>();
+
+        int newEntries = 0;
+        int changedEntries = 0;
+        int upToDateEntries = 0;
+        int reusedDuplicates = 0;
+
+        public Pass(String key, String value) {
+            symbols.add(new Symbol(key, value));
+        }
+
+        public Pass(List<Symbol> symbols) {
+            this.symbols.addAll(symbols);
+        }
+
+        static Pass sum(List<Pass> passes) {
+            List<Symbol> symbols = new ArrayList<>();
+            for (Pass p : passes) {
+                symbols.addAll(p.symbols);
+            }
+
+            Pass sum = new Pass(symbols);
+            for (Pass p : passes) {
+                sum.newEntries += p.newEntries;
+                sum.changedEntries += p.changedEntries;
+                sum.upToDateEntries += p.upToDateEntries;
+                sum.reusedDuplicates += p.reusedDuplicates;
+            }
+            return sum;
+        }
+
+        private void log() {
+            StringBuilder processSymbols = new StringBuilder();
+            boolean first = true;
+            for (Symbol symbol : symbols) {
+                processSymbols.append(symbol.toString());
+                if (!first) {
+                    processSymbols.append(" ");
+                    first = false;
+                }
+            }
+            logger.info(processSymbols.toString() + ": " + upToDateEntries + " up to date, " + reusedDuplicates
+                    + " reused, " + changedEntries + " changed, " + newEntries + " new");
+        }
+
+    }
+
+    List<Pass> passes = new ArrayList<>();
+    Pass pass;
+    Pass sum;
 
     public TextToSpeechRecorder(File path, String name, ResourceLoader resources, TextVariables textVariables)
             throws IOException {
@@ -74,9 +136,11 @@ public class TextToSpeechRecorder {
     }
 
     // TODO Add text variables to preparePass
-    public void preparePass(String key, String value) {
-        this.numberOfPasses++;
-        logger.info("Pass " + numberOfPasses + " for " + key + "=" + value);
+    public void startPass(String key, String value) {
+        pass = new Pass(key, value);
+        passes.add(pass);
+
+        logger.info("Pass " + passes.size() + " for " + key + "=" + value);
         logger.info("using text variables: '" + textVariables.toString() + "'");
     }
 
@@ -119,11 +183,11 @@ public class TextToSpeechRecorder {
     private void keepOrReuseMessage(Actor actor, final Voice voice, String hash, long lastModified) {
         if (lastModified > buildStart) {
             log(actor, voice, hash, "is reused");
-            reusedDuplicates++;
+            pass.reusedDuplicates++;
         } else {
             log(actor, voice, hash, "is up to date");
             storage.keepMessage(actor, voice, hash);
-            upToDateEntries++;
+            pass.upToDateEntries++;
         }
     }
 
@@ -142,13 +206,13 @@ public class TextToSpeechRecorder {
         log(actor, voice, hash, "has changed");
         storage.deleteMessage(actor, voice, hash);
         create(actor, voice, message, hash, newMessageHash);
-        changedEntries++;
+        pass.changedEntries++;
     }
 
     private void createNewMessage(Actor actor, Voice voice, Message message, String hash) throws InterruptedException {
         log(actor, voice, hash, "is new");
         create(actor, voice, message, hash, message.toPrerecordedSpeechHashString());
-        newEntries++;
+        pass.newEntries++;
     }
 
     private static void log(Actor actor, final Voice voice, String hash, String message) {
@@ -200,9 +264,15 @@ public class TextToSpeechRecorder {
     public void finish() throws IOException, InterruptedException, ExecutionException {
         storage.close();
 
-        if (numberOfPasses > 1) {
+        if (passes.size() > 1) {
             logger.info("Generating speech files for all symbols generates a lot of reused entries");
         }
+
+        for (Pass p : passes) {
+            p.log();
+        }
+
+        sum = Pass.sum(passes);
 
         long now = System.currentTimeMillis();
         long seconds = (now - buildStart) / 1000;
@@ -210,8 +280,7 @@ public class TextToSpeechRecorder {
         logger.info("Finished - Build time : " + duration + " using " + storage.getUsedEncodingThreads() + " of "
                 + storage.getEncodingThreads() + " encoding threads");
 
-        logger.info(upToDateEntries + " up to date, " + reusedDuplicates + " reused, " + changedEntries + " changed, "
-                + newEntries + " new");
+        sum.log();
     }
 
     static String readMessage(InputStream inputStream) throws IOException {

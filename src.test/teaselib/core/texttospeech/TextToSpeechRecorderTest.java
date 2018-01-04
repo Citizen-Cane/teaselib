@@ -74,10 +74,10 @@ public class TextToSpeechRecorderTest {
         assertEquals(8, messages.size());
         TextToSpeechRecorder recorder1 = recordVoices(new TestScriptScanner(messages), path, resourcesRoot, name,
                 resources);
-        assertEquals(8, recorder1.newEntries);
-        assertEquals(0, recorder1.reusedDuplicates);
-        assertEquals(0, recorder1.changedEntries);
-        assertEquals(0, recorder1.upToDateEntries);
+        assertEquals(8, recorder1.sum.newEntries);
+        assertEquals(0, recorder1.sum.reusedDuplicates);
+        assertEquals(0, recorder1.sum.changedEntries);
+        assertEquals(0, recorder1.sum.upToDateEntries);
 
         List<Message> updatedMessages = new ArrayList<>(messages);
         Message update = new Message(actor, "I dream of grey sheep standing on the lawn");
@@ -85,27 +85,27 @@ public class TextToSpeechRecorderTest {
         assertEquals(9, updatedMessages.size());
         TextToSpeechRecorder recorder2 = recordVoices(new TestScriptScanner(updatedMessages), path, resourcesRoot, name,
                 resources);
-        assertEquals(1, recorder2.newEntries);
-        assertEquals(0, recorder2.reusedDuplicates);
-        assertEquals(0, recorder2.changedEntries);
-        assertEquals(8, recorder2.upToDateEntries);
+        assertEquals(1, recorder2.sum.newEntries);
+        assertEquals(0, recorder2.sum.reusedDuplicates);
+        assertEquals(0, recorder2.sum.changedEntries);
+        assertEquals(8, recorder2.sum.upToDateEntries);
 
         assertEquals(9, updatedMessages.size());
         TextToSpeechRecorder recorder3 = recordVoices(new TestScriptScanner(updatedMessages), path, resourcesRoot, name,
                 resources);
-        assertEquals(0, recorder3.newEntries);
-        assertEquals(0, recorder3.reusedDuplicates);
-        assertEquals(0, recorder3.changedEntries);
-        assertEquals(9, recorder3.upToDateEntries);
+        assertEquals(0, recorder3.sum.newEntries);
+        assertEquals(0, recorder3.sum.reusedDuplicates);
+        assertEquals(0, recorder3.sum.changedEntries);
+        assertEquals(9, recorder3.sum.upToDateEntries);
 
         updatedMessages.remove(0);
         assertEquals(8, updatedMessages.size());
         TextToSpeechRecorder recorder4 = recordVoices(new TestScriptScanner(updatedMessages), path, resourcesRoot, name,
                 resources);
-        assertEquals(0, recorder4.newEntries);
-        assertEquals(0, recorder4.reusedDuplicates);
-        assertEquals(0, recorder4.changedEntries);
-        assertEquals(8, recorder4.upToDateEntries);
+        assertEquals(0, recorder4.sum.newEntries);
+        assertEquals(0, recorder4.sum.reusedDuplicates);
+        assertEquals(0, recorder4.sum.changedEntries);
+        assertEquals(8, recorder4.sum.upToDateEntries);
 
         assertTrue(updatedMessages.contains(update));
         updatedMessages.add(update);
@@ -117,10 +117,10 @@ public class TextToSpeechRecorderTest {
         assertEquals(11, updatedMessages.size());
         TextToSpeechRecorder recorder5 = recordVoices(new TestScriptScanner(updatedMessages), path, resourcesRoot, name,
                 resources);
-        assertEquals(1, recorder5.newEntries);
-        assertEquals(2, recorder5.reusedDuplicates);
-        assertEquals(0, recorder5.changedEntries);
-        assertEquals(8, recorder5.upToDateEntries);
+        assertEquals(1, recorder5.sum.newEntries);
+        assertEquals(2, recorder5.sum.reusedDuplicates);
+        assertEquals(0, recorder5.sum.changedEntries);
+        assertEquals(8, recorder5.sum.upToDateEntries);
 
         testAsets(recorder5, resources, updatedMessages);
     }
@@ -140,10 +140,10 @@ public class TextToSpeechRecorderTest {
         assertEquals(5, messages.size());
         TextToSpeechRecorder recorder = recordVoices(new TestScriptScanner(messages), path, resourcesRoot, name,
                 resources);
-        assertEquals(4, recorder.newEntries);
-        assertEquals(1, recorder.reusedDuplicates);
-        assertEquals(0, recorder.changedEntries);
-        assertEquals(0, recorder.upToDateEntries);
+        assertEquals(4, recorder.sum.newEntries);
+        assertEquals(1, recorder.sum.reusedDuplicates);
+        assertEquals(0, recorder.sum.changedEntries);
+        assertEquals(0, recorder.sum.upToDateEntries);
 
         testAsets(recorder, resources, messages);
     }
@@ -152,7 +152,7 @@ public class TextToSpeechRecorderTest {
             ResourceLoader resources) throws IOException, InterruptedException, ExecutionException {
         TextToSpeechRecorder recorder = new TextToSpeechRecorder(path, name, resources, new TextVariables());
 
-        recorder.preparePass("Test", "Test");
+        recorder.startPass("Test", "Test");
         recorder.run(scriptScanner);
         recorder.finish();
 

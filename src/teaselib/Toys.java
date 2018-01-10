@@ -21,13 +21,14 @@ public enum Toys {
     Blindfold,
     Buttplug,
     Collar,
-    Enema_Bulb,
-    Enema_Kit,
     Gag,
     Nipple_Clamps,
     Spanking_Implement,
     Spreader_Bar,
     Wrist_Restraints,
+
+    Chains,
+    Rope,
 
     Ball_Stretcher,
     Chastity_Device,
@@ -36,17 +37,16 @@ public enum Toys {
 
     Dildo,
     Pussy_Clamps,
+    Clit_Clamp,
     VaginalInsert,
     Vibrator,
-
-    // Too BDSM like to be household items
-    Chains,
-    Rope,
-
-    // These toys below aren't used directly by the player,
-    // albeit they may have a huge influence on the play
-    EStim_Device,
     Strap_On,
+
+    Anal_Douche,
+    Enema_Kit,
+    Enema_Bulb,
+
+    EStim_Device,
 
     Doll,
     Husband,
@@ -98,13 +98,13 @@ public enum Toys {
         Manual,
     }
 
-    public final static Toys Basic[] = { Ankle_Restraints, Gag, Blindfold, Buttplug, Chains, Collar, Dildo,
-            Nipple_Clamps, Rope, Spanking_Implement, Wrist_Restraints };
+    public static final Toys Essential[] = { Gag, Blindfold, Collar, Nipple_Clamps, Spanking_Implement };
+    public static final Toys Bondage[] = { Ankle_Restraints, Wrist_Restraints, Rope, Chains, Spreader_Bar };
+    public static final Toys Insertable[] = { Buttplug, Dildo, Anal_Douche, Enema_Bulb, Enema_Kit };
+    public static final Toys Female[] = { Clit_Clamp, Pussy_Clamps, VaginalInsert };
+    public static final Toys Male[] = { Ball_Stretcher, Cockring, Humbler };
+    public static final Toys Stimulation[] = { Vibrator, EStim_Device };
+    public static final Toys Partner[] = { Doll, Husband, Wife, Chastity_Device, Strap_On };
 
-    public final static Toys Advanced[] = { Ball_Stretcher, Chastity_Device, Cockring, Enema_Bulb, Enema_Kit,
-            EStim_Device, Humbler, Pussy_Clamps, Spreader_Bar, VaginalInsert, Vibrator };
-
-    public final static Toys Other[] = { Doll, Husband, Strap_On, Wife };
-
-    public final static Toys[] Categories[] = { Basic, Advanced, Other };
+    public static final Toys[] Categories[] = { Essential, Bondage, Insertable, Female, Male, Stimulation, Partner };
 }

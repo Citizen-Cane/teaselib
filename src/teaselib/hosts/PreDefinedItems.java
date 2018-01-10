@@ -146,6 +146,9 @@ public class PreDefinedItems extends AbstractUserItems {
             return new Item[] { item(item, "cockring", "A tight cock ring"), item(item, "cockring_with_two_rings",
                     "A tight cock ring with an additional ring", defaults(item, Body.OnPenis)) };
 
+        } else if (item.equals(Toys.Anal_Douche)) {
+            return new Item[] { item(item, "anal_shower", "An anal douche") };
+
         } else if (item.equals(Toys.Enema_Kit)) {
             return new Item[] { item(item, "enema_kit", "An enema kit") };
 
@@ -157,6 +160,9 @@ public class PreDefinedItems extends AbstractUserItems {
 
         } else if (item.equals(Toys.Pussy_Clamps)) {
             return new Item[] { item(item, "pussy_clamps", "Pussy clamps") };
+
+        } else if (item.equals(Toys.Clit_Clamp)) {
+            return new Item[] { item(item, "clit_clamp", "Clit clamp") };
 
         } else if (item.equals(Toys.Spreader_Bar)) {
             return new Item[] { item(item, "spreader_bar", "A spreader bar") };

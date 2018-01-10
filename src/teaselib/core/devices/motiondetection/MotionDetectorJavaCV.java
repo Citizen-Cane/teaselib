@@ -1,8 +1,8 @@
 package teaselib.core.devices.motiondetection;
 
 import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.EnumSet;
-import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -111,11 +111,10 @@ public class MotionDetectorJavaCV extends MotionDetector /* extends WiredDevice 
     }
 
     static class CaptureThread extends Thread {
-        private static final Size DesiredProcessingSize = new Size(320, 240);
+        private static final Size DesiredProcessingSize = new Size(640, 480);
         private static final boolean mirror = true;
 
-        private static final Map<MotionSensitivity, Integer> motionSensitivities = new HashMap<>(
-                initStructuringElementSizes());
+        private static final Map<MotionSensitivity, Integer> motionSensitivities = initStructuringElementSizes();
 
         private VideoCaptureDevice videoCaptureDevice;
 
@@ -183,8 +182,8 @@ public class MotionDetectorJavaCV extends MotionDetector /* extends WiredDevice 
             debugInfo = new MotionDetectorJavaCVDebugRenderer(motionProcessor, processingSize);
         }
 
-        private static Map<MotionSensitivity, Integer> initStructuringElementSizes() {
-            Map<MotionSensitivity, Integer> map = new HashMap<>();
+        private static EnumMap<MotionSensitivity, Integer> initStructuringElementSizes() {
+            EnumMap<MotionSensitivity, Integer> map = new EnumMap<>(MotionSensitivity.class);
             map.put(MotionSensitivity.High, 12);
             map.put(MotionSensitivity.Normal, 24);
             map.put(MotionSensitivity.Low, 36);
@@ -218,40 +217,12 @@ public class MotionDetectorJavaCV extends MotionDetector /* extends WiredDevice 
                     fpsStatistics.start();
                     try {
                         for (Mat frame : videoCaptureDevice) {
-                            videoInputTransformation.update(frame);
-                            lockStartStop.lockInterruptibly();
-                            try {
-                                motionProcessor.update(input);
-                            } finally {
-                                lockStartStop.unlock();
-                            }
-                            // Resulting bounding boxes
-                            final long now = System.currentTimeMillis();
-                            presenceChanged.doLocked(new Runnable() {
-                                @Override
-                                public void run() {
-                                    boolean hasChanged = detectionResult.updateMotionState(input, motionProcessor, now);
-                                    if (hasChanged) {
-                                        presenceChanged.signal();
-                                    }
-                                    if (videoRenderer != null) {
-                                        Set<Presence> indicators = renderFeedback(input);
-                                        if (logDetails) {
-                                            logMotionState(indicators, motionProcessor,
-                                                    detectionResult.contourMotionDetected,
-                                                    detectionResult.trackerMotionDetected);
-                                        }
-                                    }
-                                }
-                            });
-                            if (videoRenderer != null) {
-                                videoRenderer.update(input);
-                            }
-                            long timeLeft = fpsStatistics.timeMillisLeft(desiredFrameTimeMillis, now);
-                            if (timeLeft > 0) {
-                                Thread.sleep(timeLeft);
-                            }
-                            fpsStatistics.updateFrame(now + timeLeft);
+                            processVideo(frame);
+                            handlePause();
+                            long now = System.currentTimeMillis();
+                            computeMotionAndPresence(now);
+                            renderVideo();
+                            handleFPS(now);
                         }
                     } catch (InterruptedException e) {
                         throw e;
@@ -267,10 +238,54 @@ public class MotionDetectorJavaCV extends MotionDetector /* extends WiredDevice 
                     }
                 }
             } catch (InterruptedException e) {
-                // Thread ends gracefully
+                Thread.currentThread().interrupt();
             } catch (Exception e) {
                 logger.error(e.getMessage(), e);
             }
+        }
+
+        private void processVideo(Mat frame) {
+            videoInputTransformation.update(frame);
+            motionProcessor.update(input);
+        }
+
+        private void handlePause() throws InterruptedException {
+            lockStartStop.lockInterruptibly();
+            try {
+            } finally {
+                lockStartStop.unlock();
+            }
+        }
+
+        private void renderVideo() {
+            if (videoRenderer != null) {
+                videoRenderer.update(input);
+            }
+        }
+
+        private void computeMotionAndPresence(long now) {
+            // Resulting bounding boxes
+            presenceChanged.doLocked(() -> {
+                boolean hasChanged = detectionResult.updateMotionState(input, motionProcessor, now);
+                if (hasChanged) {
+                    presenceChanged.signal();
+                }
+                if (videoRenderer != null) {
+                    Set<Presence> indicators = renderFeedback(input);
+                    if (logDetails) {
+                        logMotionState(indicators, motionProcessor, detectionResult.contourMotionDetected,
+                                detectionResult.trackerMotionDetected);
+                    }
+                }
+            });
+        }
+
+        private void handleFPS(long now) throws InterruptedException {
+            long timeLeft = fpsStatistics.timeMillisLeft(desiredFrameTimeMillis, now);
+            if (timeLeft > 0) {
+                Thread.sleep(timeLeft);
+            }
+            fpsStatistics.updateFrame(now + timeLeft);
         }
 
         private Set<Presence> renderFeedback(Mat image) {
@@ -308,8 +323,7 @@ public class MotionDetectorJavaCV extends MotionDetector /* extends WiredDevice 
                 boolean contourMotionDetected, boolean trackerMotionDetected) {
             // Log state
             logger.info("contourMotionDetected=" + contourMotionDetected + "  trackerMotionDetected="
-                    + trackerMotionDetected + "(distance="
-                    + motionProcessor.distanceTracker.distance2(motionProcessor.trackFeatures.keyPoints()) + "), "
+                    + trackerMotionDetected + "(distance=" + motionProcessor.distanceTracker.distance2() + "), "
                     + indicators.toString());
         }
 

@@ -30,8 +30,7 @@ import teaselib.core.javacv.Color;
 import teaselib.motiondetection.MotionDetector.Presence;
 
 /**
- * OpenCV imshow(...) isn't thread safe, it may hang (at least on windows) if
- * called from several threads.
+ * OpenCV imshow(...) isn't thread safe, it may hang (at least on windows) if called from several threads.
  */
 public class MotionDetectorJavaCVDebugRenderer {
     final private MotionProcessorJavaCV motionProcessor;
@@ -39,33 +38,28 @@ public class MotionDetectorJavaCVDebugRenderer {
 
     final Thread owner;
 
-    public MotionDetectorJavaCVDebugRenderer(
-            MotionProcessorJavaCV motionProcessor, Size windowSize) {
+    public MotionDetectorJavaCVDebugRenderer(MotionProcessorJavaCV motionProcessor, Size windowSize) {
         this.motionProcessor = motionProcessor;
         this.windowSize = windowSize;
         this.owner = Thread.currentThread();
     }
 
-    public void render(Mat debugOutput, Rect r,
-            Map<Presence, Rect> presenceIndicators, Set<Presence> indicators,
-            boolean contourMotionDetected, boolean trackerMotionDetected,
-            double fps) {
+    public void render(Mat debugOutput, Rect r, Map<Presence, Rect> presenceIndicators, Set<Presence> indicators,
+            boolean contourMotionDetected, boolean trackerMotionDetected, double fps) {
         if (Thread.currentThread() != owner) {
-            throw new ConcurrentModificationException(owner.toString() + "!="
-                    + Thread.currentThread().toString());
+            throw new ConcurrentModificationException(owner.toString() + "!=" + Thread.currentThread().toString());
         }
         boolean present = indicators.contains(Presence.Present);
         // Motion
         if (indicators.contains(Presence.Shake)) {
-            rectangle(debugOutput, presenceIndicators.get(Presence.Present),
-                    present ? Color.MidBlue : Color.DarkBlue, 15, 8, 0);
+            rectangle(debugOutput, presenceIndicators.get(Presence.Present), present ? Color.MidBlue : Color.DarkBlue,
+                    15, 8, 0);
         } else {
             if (r != null) {
                 renderMotionRegion(debugOutput, r, present);
             }
-            renderPresenceIndicators(debugOutput, r, presenceIndicators,
-                    indicators, present);
-            motionProcessor.trackFeatures.render(debugOutput, Green);
+            renderPresenceIndicators(debugOutput, r, presenceIndicators, indicators, present);
+            motionProcessor.distanceTracker.render(debugOutput, Green);
             if (contourMotionDetected) {
                 renderContourMotionRegion(debugOutput, r);
             }
@@ -77,8 +71,7 @@ public class MotionDetectorJavaCVDebugRenderer {
         renderFPS(debugOutput, fps);
     }
 
-    private static void renderMotionRegion(Mat debugOutput, Rect r,
-            boolean present) {
+    private static void renderMotionRegion(Mat debugOutput, Rect r, boolean present) {
         drawRect(debugOutput, r, "", present ? Green : Blue);
         circle(debugOutput, center(r), 2, present ? Green : Blue, 2, 8, 0);
     }
@@ -86,29 +79,24 @@ public class MotionDetectorJavaCVDebugRenderer {
     private void renderContourMotionRegion(Mat debugOutput, Rect rM) {
         motionProcessor.motionContours.render(debugOutput, -1, White);
         if (rM != null) {
-            Point p = new Point(debugOutput.cols() - 40,
-                    debugOutput.cols() - 20);
-            putText(debugOutput, rM.area() + "p2", p, FONT_HERSHEY_PLAIN, 2.75,
-                    White);
+            Point p = new Point(debugOutput.cols() - 40, debugOutput.cols() - 20);
+            putText(debugOutput, rM.area() + "p2", p, FONT_HERSHEY_PLAIN, 2.75, White);
             p.close();
         }
     }
 
     private void renderDistanceTrackerPoints(Mat debugOutput) {
-        if (motionProcessor.trackFeatures.haveFeatures()) {
-            motionProcessor.distanceTracker.renderDebug(debugOutput,
-                    motionProcessor.trackFeatures.keyPoints());
+        if (motionProcessor.distanceTracker.hasFeatures()) {
+            motionProcessor.distanceTracker.renderDebug(debugOutput);
         }
     }
 
-    private static void renderRegionList(Mat debugOutput,
-            Set<Presence> indicators) {
+    private static void renderRegionList(Mat debugOutput, Set<Presence> indicators) {
         int n = 0;
         int s = 14;
         for (Presence indicator : indicators) {
             Point p = new Point(0, n);
-            putText(debugOutput, indicator.toString(), p, FONT_HERSHEY_PLAIN,
-                    1.25, White);
+            putText(debugOutput, indicator.toString(), p, FONT_HERSHEY_PLAIN, 1.25, White);
             n += s;
             p.close();
         }
@@ -118,23 +106,19 @@ public class MotionDetectorJavaCVDebugRenderer {
         // fps
         String fpsFormatted = String.format("%1$.2f", fps);
         Point p = new Point(0, debugOutput.rows() - 10);
-        putText(debugOutput, fpsFormatted + "fps", p, FONT_HERSHEY_PLAIN, 1.75,
-                White);
+        putText(debugOutput, fpsFormatted + "fps", p, FONT_HERSHEY_PLAIN, 1.75, White);
         p.close();
     }
 
-    private void renderPresenceIndicators(Mat debugOutput, Rect rM,
-            Map<Presence, Rect> presenceIndicators, Set<Presence> indicators,
-            boolean present) {
+    private void renderPresenceIndicators(Mat debugOutput, Rect rM, Map<Presence, Rect> presenceIndicators,
+            Set<Presence> indicators, boolean present) {
         // Presence indicators
         for (Map.Entry<Presence, Rect> entry : presenceIndicators.entrySet()) {
             if (indicators.contains(entry.getKey())) {
                 if (entry.getKey() == Presence.Present) {
-                    circle(debugOutput, center(rM), windowSize.height() / 4,
-                            present ? MidGreen : MidBlue, 4, 4, 0);
+                    circle(debugOutput, center(rM), windowSize.height() / 4, present ? MidGreen : MidBlue, 4, 4, 0);
                 } else {
-                    rectangle(debugOutput, entry.getValue(),
-                            present ? DarkGreen : DarkBlue, 4, 8, 0);
+                    rectangle(debugOutput, entry.getValue(), present ? DarkGreen : DarkBlue, 4, 8, 0);
                 }
             }
         }

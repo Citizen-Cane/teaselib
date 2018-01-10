@@ -3,7 +3,7 @@
  */
 package teaselib.core.devices.motiondetection;
 
-import static teaselib.core.javacv.util.Geom.*;
+import static teaselib.core.javacv.util.Geom.intersects;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -91,13 +91,16 @@ public class MotionDetectionResultImplementation extends MotionDetectionResultDa
             motionRegionHistory.add(Geom.join(motionRegions), timeStamp);
         }
         // Contour motion
-        contourMotionDetected = motionRegions.size() > 0;
+        contourMotionDetected = !motionRegions.isEmpty();
         // Tracker motion
-        motionProcessor.distanceTracker.update(videoImage, contourMotionDetected, motionProcessor.trackFeatures);
-        double distance2 = motionProcessor.distanceTracker.distance2(motionProcessor.trackFeatures.keyPoints());
+        motionProcessor.distanceTracker.update(videoImage, contourMotionDetected);
+        double distance2 = motionProcessor.distanceTracker.distance2();
         trackerMotionDetected = distance2 > motionProcessor.distanceThreshold2;
         // All together combined
         motionDetected = contourMotionDetected || trackerMotionDetected;
+
+        motionProcessor.gestureTracker.update(videoImage, contourMotionDetected);
+
     }
 
     private void updateMotionTimeLine(long timeStamp, MotionProcessorJavaCV motionProcessor) {

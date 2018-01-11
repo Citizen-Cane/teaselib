@@ -11,7 +11,7 @@ import org.junit.Test;
 public class ToyTests {
 
     @Test
-    public void testToyCategoriesCompletness() {
+    public void testToyCategoriesCompleteness() {
 
         Set<Toys> all = new HashSet<>();
         for (Toys[] toys : Arrays.asList(Toys.Categories)) {

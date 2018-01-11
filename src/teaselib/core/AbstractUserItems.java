@@ -135,6 +135,8 @@ public abstract class AbstractUserItems implements UserItems {
             return new Body[] { Body.Blindfolded };
         } else if (item.equals(Toys.Cockring)) {
             return new Body[] { Body.AroundCockBase };
+        } else if (item.equals(Toys.Anal_Douche)) {
+            return new Body[] { Body.InButt };
         } else if (item.equals(Toys.Enema_Bulb)) {
             return new Body[] { Body.InButt };
         } else if (item.equals(Toys.Enema_Kit)) {
@@ -143,6 +145,8 @@ public abstract class AbstractUserItems implements UserItems {
             return new Enum<?>[] { Body.OnBalls, Posture.CantStand, Posture.CantSitOnChair };
         } else if (item.equals(Toys.Pussy_Clamps)) {
             return new Body[] { Body.OnLabia, Body.OnBalls };
+        } else if (item.equals(Toys.Clit_Clamp)) {
+            return new Body[] { Body.OnClit, Body.OnPenis };
         } else if (item.equals(Toys.Spreader_Bar)) {
             return new Body[] {};
         } else if (item.equals(Toys.EStim_Device)) {

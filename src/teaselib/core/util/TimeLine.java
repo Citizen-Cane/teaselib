@@ -121,6 +121,10 @@ public class TimeLine<T> {
         return items.getLast();
     }
 
+    public long tailTimeMillis() {
+        return tailTimeMillis;
+    }
+
     public List<T> getTimeSpan(double timeSpanSeconds) {
         List<T> tail = new ArrayList<>();
         Iterator<T> item = items.descendingIterator();
@@ -146,7 +150,6 @@ public class TimeLine<T> {
             this.t = t;
             this.item = item;
         }
-
     }
 
     public List<Slice<T>> getTimeSpanSlices(double timeSpanSeconds) {

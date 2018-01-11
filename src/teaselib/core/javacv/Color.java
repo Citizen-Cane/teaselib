@@ -23,4 +23,9 @@ public class Color {
     public static final Scalar VeryDarkRed = new Scalar(0, 0, 64, 0);
     public static final Scalar VeryDarkGreen = new Scalar(0, 64, 0, 0);
     public static final Scalar VeryDarkBlue = new Scalar(64, 0, 0, 0);
+
+    public static final Scalar Cyan = new Scalar(255, 255, 0, 0);
+    public static final Scalar MidCyan = new Scalar(192, 192, 0, 0);
+    public static final Scalar DarkCyan = new Scalar(128, 128, 0, 0);
+    public static final Scalar VeryCyan = new Scalar(64, 64, 0, 0);
 }

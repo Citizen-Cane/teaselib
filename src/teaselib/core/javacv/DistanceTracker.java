@@ -24,7 +24,7 @@ public class DistanceTracker {
         tracker.update(videoImage);
     }
 
-    public void update(Mat videoImage, boolean motionDetected) {
+    public void updateDistance(Mat videoImage, boolean motionDetected) {
         if (motionDetected) {
             resetTrackFeatures = true;
         } else if (resetTrackFeatures) {
@@ -33,12 +33,12 @@ public class DistanceTracker {
     }
 
     private void resetDistance(Mat videoImage) {
-        tracker.reset(videoImage, null);
+        tracker.start(videoImage, null);
         resetTrackFeatures = false;
         tracker.keyPoints().copyTo(keyPoints);
     }
 
-    public void reset() {
+    public void restart() {
         resetTrackFeatures = true;
     }
 
@@ -66,7 +66,7 @@ public class DistanceTracker {
         return points.rows();
     }
 
-    public void renderDebug(Mat output) {
+    public void render(Mat output) {
         Mat currentKeyPoints = tracker.keyPoints();
 
         FloatIndexer from = keyPoints.createIndexer();
@@ -85,9 +85,7 @@ public class DistanceTracker {
         p.close();
         from.release();
         to.release();
-    }
 
-    public void render(Mat debugOutput, Scalar color) {
-        tracker.render(debugOutput, color);
+        tracker.render(output, color);
     }
 }

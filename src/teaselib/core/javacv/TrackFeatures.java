@@ -38,27 +38,25 @@ public class TrackFeatures {
         }
         keyPoints.copyTo(keyPointsPrevious);
         size.close();
-        // update(input); // init current to be able to render something
     }
 
     public void update(Mat input) {
-        cvtColor(input, videoMatGray, COLOR_BGRA2GRAY);
         if (haveFeatures()) {
-            // TODO points not tracked if call to swap() is placed before calc(...)
+            swapPixels(input);
+            swapKeyPoints();
             calcOpticalFlowPyrLK(videoMatGrayPrevious, videoMatGray, keyPointsPrevious, keyPoints, status, error);
-            swapBuffers();
-            // opencv_video.calcOpticalFlowFarneback(arg0, arg1,
-            // arg2,
-            // arg3, arg4, arg5, arg6, arg7, arg8,
-            // arg9);
         }
     }
 
-    private void swapBuffers() {
+    private void swapPixels(Mat input) {
         Mat swap = videoMatGrayPrevious;
         videoMatGrayPrevious = videoMatGray;
         videoMatGray = swap;
-        swap = keyPointsPrevious;
+        cvtColor(input, videoMatGray, COLOR_BGRA2GRAY);
+    }
+
+    private void swapKeyPoints() {
+        Mat swap = keyPointsPrevious;
         keyPointsPrevious = keyPoints;
         keyPoints = swap;
     }

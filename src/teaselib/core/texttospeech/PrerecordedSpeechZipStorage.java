@@ -166,6 +166,9 @@ public class PrerecordedSpeechZipStorage implements PrerecordedSpeechStorage {
     public void keepMessage(Actor actor, Voice voice, String hash) throws IOException {
         String messageHash = getStringResource(actor, voice, hash, TextToSpeechRecorder.MessageFilename);
         messageHashes.put(processHash(actor, voice, hash), messageHash);
+        long lastModified = System.currentTimeMillis();
+        processed.put(processHash(actor, voice, hash), lastModified);
+
         writeStringResource(actor, voice, hash, TextToSpeechRecorder.MessageFilename, messageHash);
 
         String inventory = getStringResource(actor, voice, hash, TextToSpeechRecorder.ResourcesFilename);
@@ -176,9 +179,6 @@ public class PrerecordedSpeechZipStorage implements PrerecordedSpeechStorage {
                 copyEntry(actor, voice, hash, speechResource);
             }
         }
-
-        long lastModified = System.currentTimeMillis();
-        processed.put(processHash(actor, voice, hash), lastModified);
     }
 
     private void copyEntry(Actor actor, Voice voice, String hash, String name) throws IOException {
@@ -204,7 +204,7 @@ public class PrerecordedSpeechZipStorage implements PrerecordedSpeechStorage {
     @Override
     public void writeStringResource(Actor actor, Voice voice, String hash, String name, String value)
             throws IOException {
-        InputStream inputStream = new ByteArrayInputStream(value.toString().getBytes(StandardCharsets.UTF_8));
+        InputStream inputStream = new ByteArrayInputStream(value.getBytes(StandardCharsets.UTF_8));
         storeSpeechResource(actor, voice, hash, inputStream, name, ZipOutputStream.DEFLATED);
     }
 

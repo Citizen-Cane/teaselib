@@ -17,7 +17,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
-import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,7 +27,6 @@ import teaselib.Message.Part;
 import teaselib.Mood;
 import teaselib.core.Configuration;
 import teaselib.core.ResourceLoader;
-import teaselib.core.util.ExceptionUtil;
 import teaselib.test.DebugSetup;
 import teaselib.util.TextVariables;
 
@@ -103,13 +101,13 @@ public class TextToSpeechRecorder {
 
         private void log() {
             StringBuilder processSymbols = new StringBuilder();
-            boolean first = true;
+            boolean appendSeparator = false;
             for (Symbol symbol : symbols) {
-                processSymbols.append(symbol.toString());
-                if (!first) {
+                if (appendSeparator) {
                     processSymbols.append(" ");
-                    first = false;
                 }
+                processSymbols.append(symbol.toString());
+                appendSeparator = true;
             }
             logger.info(processSymbols.toString() + ": " + upToDateEntries + " up to date, " + reusedDuplicates
                     + " reused, " + changedEntries + " changed, " + newEntries + " new");
@@ -159,7 +157,7 @@ public class TextToSpeechRecorder {
     }
 
     private String processMessage(Actor actor, Voice voice, Message message)
-            throws InterruptedException, ExecutionException {
+            throws IOException, InterruptedException, ExecutionException {
         String hash = getHash(message);
         String newMessageHash = message.toPrerecordedSpeechHashString();
         if (!newMessageHash.isEmpty()) {
@@ -202,14 +200,15 @@ public class TextToSpeechRecorder {
     }
 
     private void updateMessage(Actor actor, Voice voice, Message message, String hash, String newMessageHash)
-            throws InterruptedException {
+            throws IOException, InterruptedException {
         log(actor, voice, hash, "has changed");
         storage.deleteMessage(actor, voice, hash);
         create(actor, voice, message, hash, newMessageHash);
         pass.changedEntries++;
     }
 
-    private void createNewMessage(Actor actor, Voice voice, Message message, String hash) throws InterruptedException {
+    private void createNewMessage(Actor actor, Voice voice, Message message, String hash)
+            throws IOException, InterruptedException {
         log(actor, voice, hash, "is new");
         create(actor, voice, message, hash, message.toPrerecordedSpeechHashString());
         pass.newEntries++;
@@ -301,25 +300,32 @@ public class TextToSpeechRecorder {
     }
 
     public void create(Actor actor, Voice voice, Message message, String hash, String messageHash)
-            throws InterruptedException {
+            throws IOException, InterruptedException {
+        List<Future<String>> soundFileFutures = writeSpeechResources(actor, voice, message, hash, messageHash);
+
         writeMessageHash(actor, voice, hash, messageHash);
 
-        List<Future<String>> soundFileFutures = writeSpeechResources(actor, voice, message, hash, messageHash);
-        List<String> soundFiles = soundFileFutures.stream().map(future -> {
-            try {
-                return future.get();
-            } catch (InterruptedException e) {
-                throw ExceptionUtil.asRuntimeException(e);
-            } catch (ExecutionException e) {
-                throw ExceptionUtil.asRuntimeException(ExceptionUtil.reduce(e));
-            }
-        }).collect(Collectors.<String> toList());
+        List<String> soundFilesPre = new ArrayList<>(soundFileFutures.size());
+        for (int i = 0; i < soundFileFutures.size(); i++) {
+            soundFilesPre.add(Integer.toString(i) + ".mp3");
+        }
+        writeInventory(actor, voice, hash, soundFilesPre);
 
-        writeInventory(actor, voice, hash, soundFiles);
+        // TODO Resolve 15% performance drop when checking for errors
+        // List<String> soundFiles = soundFileFutures.stream().map(soundFile -> {
+        // try {
+        // return soundFile.get();
+        // } catch (InterruptedException e) {
+        // Thread.currentThread().interrupt();
+        // throw ExceptionUtil.asRuntimeException(e);
+        // } catch (ExecutionException e) {
+        // throw ExceptionUtil.asRuntimeException(ExceptionUtil.reduce(e));
+        // }
+        // }).collect(Collectors.<String> toList());
     }
 
     private List<Future<String>> writeSpeechResources(Actor actor, Voice voice, Message message, String hash,
-            String messageHash) throws InterruptedException {
+            String messageHash) throws IOException, InterruptedException {
         logger.info("Recording message:\n" + messageHash);
         List<Future<String>> soundFiles = new ArrayList<>();
         String mood = Mood.Neutral;
@@ -337,7 +343,7 @@ public class TextToSpeechRecorder {
     }
 
     private Future<String> writeSpeechResource(Actor actor, Voice voice, String hash, int index, String mood,
-            String text) throws InterruptedException {
+            String text) throws IOException, InterruptedException {
         String soundFileName = Integer.toString(index);
         File soundFile = createTempFileName(SpeechResourceTempFilePrefix + "_" + soundFileName + "_",
                 SpeechResourceFileUncompressedFormat);

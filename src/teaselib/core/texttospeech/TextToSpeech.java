@@ -6,6 +6,7 @@ import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -49,20 +50,21 @@ public class TextToSpeech {
         }
 
     };
-    private final Map<String, TextToSpeechImplementation> ttsSDKs = new LinkedHashMap<>();
-    private final Map<String, DelegateExecutor> ttsExecutors = new LinkedHashMap<>();
+
+    static final Set<String> BlackList = new HashSet<>(Arrays.asList("LTTS7Ludoviko", "MSMary", "MSMike"));
+    private static final String[] NoHints = null;
+
+    private static final Set<Class<?>> ttsSDKClasses = new LinkedHashSet<>();
+    private static final Map<Class<? extends TextToSpeechImplementation>, TextToSpeechImplementation> ttsSDKCLass2Implementation = new LinkedHashMap<>();
+    private static final Map<String, TextToSpeechImplementation> ttsSDKs = new LinkedHashMap<>();
+    private static final Map<String, DelegateExecutor> ttsExecutors = new LinkedHashMap<>();
+    public static final Lock AudioOutput = new ReentrantLock();
 
     private final Map<String, Voice> voices = new LinkedHashMap<>();
-
-    private String[] NoHints = null;
 
     private static void ttsEngineNotInitialized() {
         throw new IllegalStateException("TTS engine not initialized");
     }
-
-    public static final Lock AudioOutput = new ReentrantLock();
-
-    public static final Set<String> BlackList = new HashSet<>(Arrays.asList("LTTS7Ludoviko", "MSMary", "MSMike"));
 
     public TextToSpeech() {
         for (String name : implementations()) {
@@ -96,7 +98,12 @@ public class TextToSpeech {
     private void addImplementation(String className) {
         try {
             Class<?> ttsClass = getClass().getClassLoader().loadClass(className);
-            addImplementation(ttsClass);
+            if (ttsSDKClasses.contains(ttsClass)) {
+                addNewVoices(getVoices(ttsSDKCLass2Implementation.get(ttsClass)));
+            } else {
+                addImplementation(ttsClass);
+                ttsSDKClasses.add(ttsClass);
+            }
         } catch (ReflectiveOperationException e) {
             throw ExceptionUtil.asRuntimeException(e);
         }
@@ -122,20 +129,26 @@ public class TextToSpeech {
     }
 
     private void addSDK(TextToSpeechImplementation ttsImpl, DelegateExecutor executor) {
+        Map<String, Voice> newVoices = getVoices(ttsImpl);
+
+        if (!newVoices.isEmpty()) {
+            addNewVoices(newVoices);
+            ttsSDKCLass2Implementation.put(ttsImpl.getClass(), ttsImpl);
+            ttsSDKs.put(ttsImpl.sdkName(), ttsImpl);
+            ttsExecutors.put(ttsImpl.sdkName(), executor);
+        } else {
+            ttsImpl.dispose();
+        }
+    }
+
+    private static Map<String, Voice> getVoices(TextToSpeechImplementation ttsImpl) {
         Map<String, Voice> newVoices = new LinkedHashMap<>();
         for (Voice voice : ttsImpl.getVoices()) {
             if (!isBlackListed(voice)) {
                 newVoices.put(voice.guid(), voice);
             }
         }
-
-        if (!newVoices.isEmpty()) {
-            addNewVoices(newVoices);
-            ttsSDKs.put(ttsImpl.sdkName(), ttsImpl);
-            ttsExecutors.put(ttsImpl.sdkName(), executor);
-        } else {
-            ttsImpl.dispose();
-        }
+        return newVoices;
     }
 
     public void addNewVoices(Map<String, Voice> newVoices) {
@@ -196,25 +209,32 @@ public class TextToSpeech {
         }
     }
 
-    public String speak(Voice voice, String prompt, File file) throws InterruptedException {
+    public String speak(Voice voice, String prompt, File file) throws IOException, InterruptedException {
         return speak(voice, prompt, file, new String[] {});
     }
 
-    public String speak(Voice voice, String prompt, File file, String[] hints) throws InterruptedException {
+    public String speak(Voice voice, String prompt, File file, String[] hints)
+            throws IOException, InterruptedException {
         StringBuilder soundFilePath = new StringBuilder();
         TextToSpeechImplementation tts = voice.tts();
 
         if (tts != null && ttsSDKs.containsKey(tts.sdkName())) {
-            run(tts, (Runnable) () -> {
-                try {
-                    tts.setVoice(voice);
-                    tts.setHints(hints);
-                    String actualPath = tts.speak(prompt, file.getAbsolutePath());
-                    soundFilePath.append(actualPath);
-                } finally {
-                    tts.setHints(NoHints);
-                }
-            });
+            try {
+                run(tts, (Runnable) () -> {
+                    try {
+                        tts.setVoice(voice);
+                        tts.setHints(hints);
+                        String actualPath = tts.speak(prompt, file.getAbsolutePath());
+                        soundFilePath.append(actualPath);
+                    } catch (IOException e) {
+                        throw ExceptionUtil.asRuntimeException(e);
+                    } finally {
+                        tts.setHints(NoHints);
+                    }
+                });
+            } catch (RuntimeException e) {
+                throwIOException(e);
+            }
         } else {
             ttsEngineNotInitialized();
         }
@@ -222,7 +242,16 @@ public class TextToSpeech {
         return soundFilePath.toString();
     }
 
-    private void run(TextToSpeechImplementation tts, Runnable delegate) throws InterruptedException {
+    private static void throwIOException(RuntimeException e) throws IOException {
+        Throwable cause = e.getCause();
+        if (cause instanceof IOException) {
+            throw (IOException) cause;
+        } else {
+            throw e;
+        }
+    }
+
+    private static void run(TextToSpeechImplementation tts, Runnable delegate) throws InterruptedException {
         try {
             DelegateExecutor delegateExecutor = ttsExecutors.get(tts.sdkName());
             delegateExecutor.run(delegate);
@@ -257,9 +286,21 @@ public class TextToSpeech {
     }
 
     public void initPhoneticDictionary(PronunciationDictionary pronunciationDictionary) throws IOException {
-        for (Entry<String, TextToSpeechImplementation> ttsSDK : ttsSDKs.entrySet()) {
-            ttsSDK.getValue().setPhoneticDictionary(pronunciationDictionary);
+        try {
+            for (Entry<String, TextToSpeechImplementation> ttsSDK : ttsSDKs.entrySet()) {
+                TextToSpeechImplementation ttsImpl = ttsSDK.getValue();
+                run(ttsImpl, () -> {
+                    try {
+                        ttsImpl.setPhoneticDictionary(pronunciationDictionary);
+                    } catch (IOException e) {
+                        throw ExceptionUtil.asRuntimeException(e);
+                    }
+                });
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        } catch (RuntimeException e) {
+            throwIOException(e);
         }
     }
-
 }

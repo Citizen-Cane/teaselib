@@ -19,14 +19,41 @@ public class TextToSpeechInfrastructureTest {
     public void testGetVoicesIsOrdered() {
         Assume.assumeTrue(Environment.SYSTEM == Environment.Windows);
 
-        assertEquals(new TextToSpeech().getVoices(), new TextToSpeech().getVoices());
+        Map<String, Voice> actual = new TextToSpeech().getVoices();
+        Map<String, Voice> expected = new TextToSpeech().getVoices();
+        assertEquals(expected, actual);
     }
 
     @Test
-    public void testVoiceEnumeration() {
+    public void testBlacklistedVoicesAreIgnored() {
+        Assume.assumeTrue(Environment.SYSTEM == Environment.Windows);
+
+        Map<String, Voice> voices = new TextToSpeech().getVoices();
+        for (Entry<String, Voice> voice : voices.entrySet()) {
+            for (String blackListed : TextToSpeech.BlackList) {
+                assertFalse(voice.getKey().equals(blackListed));
+            }
+        }
+    }
+
+    @Test
+    public void testVoiceEnumeration() throws InterruptedException {
         Assume.assumeTrue(Environment.SYSTEM == Environment.Windows);
         TextToSpeech textToSpeech = new TextToSpeech();
+        enumVoices(textToSpeech);
 
+        Thread thread = new Thread(() -> {
+            TextToSpeech textToSpeech2 = new TextToSpeech();
+            enumVoices(textToSpeech2);
+        });
+        thread.start();
+        thread.join();
+
+        TextToSpeech textToSpeech3 = new TextToSpeech();
+        enumVoices(textToSpeech3);
+    }
+
+    private static void enumVoices(TextToSpeech textToSpeech) {
         Map<String, Voice> voices = textToSpeech.getVoices();
         assertTrue(voices.size() > 0);
         for (Entry<String, Voice> entry : voices.entrySet()) {

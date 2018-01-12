@@ -26,8 +26,7 @@ import teaselib.test.DebugSetup;
 import teaselib.util.TextVariables;
 
 public class TextToSpeechRecorderTest {
-
-    protected Actor actor = new Actor("Mr. Foo", Gender.Masculine, Locale.US);
+    private final Actor actor = new Actor("Mr. Foo", Gender.Masculine, Locale.US);
 
     static class TestScriptScanner implements ScriptScanner {
         private final List<Message> messages;
@@ -115,7 +114,7 @@ public class TextToSpeechRecorderTest {
         assertEquals(0, recorder5.sum.changedEntries);
         assertEquals(8, recorder5.sum.upToDateEntries);
 
-        testAsets(recorder5, resources, updatedMessages);
+        testAssets(recorder5, resources, updatedMessages);
     }
 
     @Test
@@ -137,7 +136,7 @@ public class TextToSpeechRecorderTest {
         assertEquals(0, recorder.sum.changedEntries);
         assertEquals(0, recorder.sum.upToDateEntries);
 
-        testAsets(recorder, resources, messages);
+        testAssets(recorder, resources, messages);
     }
 
     TextToSpeechRecorder recordVoices(ScriptScanner scriptScanner, File path, String name, ResourceLoader resources)
@@ -151,7 +150,7 @@ public class TextToSpeechRecorderTest {
         return recorder;
     }
 
-    private void testAsets(TextToSpeechRecorder recorder, ResourceLoader resources, List<Message> messages) {
+    private void testAssets(TextToSpeechRecorder recorder, ResourceLoader resources, List<Message> messages) {
         resources.addAssets(recorder.assetPath().getAbsolutePath());
 
         Configuration config = new Configuration();

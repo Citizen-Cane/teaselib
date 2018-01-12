@@ -57,7 +57,8 @@ public enum Toys {
     public enum ChastityDevices implements Item.Attribute {
         Chastity_Belt,
         Chastity_Cage,
-        Gates_of_Hell,
+        Cone_of_Shame,
+        Gates_of_Hell
     }
 
     public enum Collars implements Item.Attribute {

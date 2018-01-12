@@ -17,7 +17,7 @@ public class TeaseLibTTS extends TextToSpeechImplementation {
 
     private long nativeObject;
 
-    public TeaseLibTTS() throws UnsatisfiedLinkError {
+    private TeaseLibTTS() throws UnsatisfiedLinkError {
         teaselib.core.jni.LibraryLoader.load("TeaseLibTTS");
     }
 

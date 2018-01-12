@@ -37,8 +37,6 @@ extern "C"
 	JNIEXPORT void JNICALL Java_teaselib_core_texttospeech_implementation_TeaseLibTTS_addLexiconEntry
 		(JNIEnv *env, jobject jthis, jstring locale, jstring word,  jint partOfSpeech, jstring pronunciation) {
 			try {
-				COMUser comUser;
-	
 				SpeechSynthesizer* speechSynthesizer = static_cast<SpeechSynthesizer*>(NativeObject::get(env, jthis));
 				if (!speechSynthesizer) {
 					speechSynthesizer = new SpeechSynthesizer(env, jthis);
@@ -61,13 +59,10 @@ extern "C"
 	JNIEXPORT jobject JNICALL Java_teaselib_core_texttospeech_implementation_TeaseLibTTS_getVoices
 		(JNIEnv *env, jobject jthis) {
 		try {
-			COMUser comUser;
-
 			SpeechSynthesizer* speechSynthesizer = static_cast<SpeechSynthesizer*>(NativeObject::get(env, jthis));
 			if (!speechSynthesizer) {
 				speechSynthesizer = new SpeechSynthesizer(env, jthis);
 			}
-
 			return speechSynthesizer->voiceList();
 		}
 		catch (NativeException *e) {

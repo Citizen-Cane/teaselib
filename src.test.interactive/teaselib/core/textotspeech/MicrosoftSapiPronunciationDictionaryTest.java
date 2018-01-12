@@ -1,6 +1,6 @@
 package teaselib.core.textotspeech;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import java.io.File;
 import java.io.IOException;
@@ -95,11 +95,8 @@ public class MicrosoftSapiPronunciationDictionaryTest {
     @Test
     public void testPronunciationOfCum() throws InterruptedException {
         textToSpeech.speak(textToSpeech.getVoices().get(VOICE_ENGLISH_WINDOWS_DESKTOP_CORRECT), "Cum.");
-
         textToSpeech.speak(textToSpeech.getVoices().get(VOICE_ENGLISH_WINDOWS_MOBILE_CORRECT), "Cum.");
-
         textToSpeech.speak(textToSpeech.getVoices().get(VOICE_ENGLISH_SPPECH_SERVER_WRONG_BUT_BETTER_QUALITY), "Cum.");
-
         textToSpeech.speak(textToSpeech.getVoices().get(VOICE_LOQUENDO_WRONG_BUT_BUT_WRONG), "Cum.");
     }
 
@@ -109,6 +106,7 @@ public class MicrosoftSapiPronunciationDictionaryTest {
         config.set(TextToSpeechPlayer.Settings.Pronunciation, getClass().getResource("pronunciation").getPath());
 
         TextToSpeechPlayer tts = new TextToSpeechPlayer(config);
+        tts.load();
         Actor actor = new Actor("Mrs.Foo", Voice.Female, Locale.forLanguageTag("en-uk"));
 
         tts.acquireVoice(actor, new ResourceLoader(getClass()));
@@ -121,6 +119,7 @@ public class MicrosoftSapiPronunciationDictionaryTest {
         config.set(TextToSpeechPlayer.Settings.Pronunciation, new File("defaults/pronunciation").getAbsolutePath());
 
         TextToSpeechPlayer tts = new TextToSpeechPlayer(config);
+        tts.load();
         Actor actor = new Actor("Mrs.Foo", Voice.Female, Locale.forLanguageTag("en-uk"));
 
         tts.acquireVoice(actor, new ResourceLoader(getClass()));
@@ -137,7 +136,7 @@ public class MicrosoftSapiPronunciationDictionaryTest {
     }
 
     @Test
-    public void testSpeechRecognitionPronuncuation() throws InterruptedException, IOException {
+    public void testSpeechRecognitionPronunciation() throws InterruptedException, IOException {
         PronunciationDictionary pronunciationDictionary = new PronunciationDictionary(
                 new File(getClass().getResource("pronunciation").getPath()));
         textToSpeech.initPhoneticDictionary(pronunciationDictionary);

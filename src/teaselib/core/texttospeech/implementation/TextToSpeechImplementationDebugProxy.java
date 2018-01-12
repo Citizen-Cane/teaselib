@@ -3,6 +3,7 @@
  */
 package teaselib.core.texttospeech.implementation;
 
+import java.io.IOException;
 import java.util.List;
 
 import teaselib.core.texttospeech.TextToSpeechImplementation;
@@ -62,7 +63,7 @@ public class TextToSpeechImplementationDebugProxy extends TextToSpeechImplementa
     }
 
     @Override
-    public String speak(String prompt, String wav) {
+    public String speak(String prompt, String wav) throws IOException {
         return tts.speak(prompt, wav);
     }
 
@@ -73,6 +74,7 @@ public class TextToSpeechImplementationDebugProxy extends TextToSpeechImplementa
 
     @Override
     public void dispose() {
+        return;
         // Dispose only this, otherwise finalize() would dispose tts impl twice
     }
 }

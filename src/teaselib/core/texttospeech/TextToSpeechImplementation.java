@@ -30,7 +30,7 @@ public abstract class TextToSpeechImplementation {
 
     public abstract void speak(String prompt);
 
-    public abstract String speak(String prompt, String wav);
+    public abstract String speak(String prompt, String wav) throws IOException;
 
     /**
      * Stop current speech (if any)

@@ -49,7 +49,7 @@ public class LoquendoTTS extends TextToSpeechImplementation {
 
     private boolean cancelSpeech = false;
 
-    public LoquendoTTS() {
+    private LoquendoTTS() {
         Pointer<Pointer<?>> phSession = Pointer.allocatePointer();
         checkResult(LoquendoTTSLibrary.ttsNewSession(phSession, null));
         hSession = phSession.get();

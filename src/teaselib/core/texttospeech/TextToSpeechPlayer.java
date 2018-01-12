@@ -240,6 +240,7 @@ public class TextToSpeechPlayer {
             usedVoices.add(voiceGuid);
         } else {
             logger.info("Actor key=" + actorKey + ": assigned voice '" + voiceGuid + "' not available");
+            throw new IllegalArgumentException(actorKey + "->" + voiceGuid);
         }
     }
 
@@ -418,7 +419,7 @@ public class TextToSpeechPlayer {
         }
     }
 
-    private Message simulatedSpeechMessage(Message message) {
+    private static Message simulatedSpeechMessage(Message message) {
         Message speechMessage = new Message(message.actor);
         for (Part part : message.getParts()) {
             if (part.type == Message.Type.Text) {

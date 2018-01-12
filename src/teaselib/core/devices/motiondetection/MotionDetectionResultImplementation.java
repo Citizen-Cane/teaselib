@@ -58,7 +58,7 @@ public class MotionDetectionResultImplementation extends MotionDetectionResultDa
 
     private void updateMotionAndPresence(Mat videoImage, MotionProcessorJavaCV motionProcessor, long timeStamp) {
         // Motion history
-        // TODO filter out Shakes (actual shakes, light changes)
+        // TODO filter out camera shaking (actual shakes, light changes)
         // so that we don't have to use a fixed time span
         List<Rect> presenceRegions = motionProcessor.motionContours.regions();
         // moving forward in time changes the presence and motion regions,
@@ -93,14 +93,11 @@ public class MotionDetectionResultImplementation extends MotionDetectionResultDa
         // Contour motion
         contourMotionDetected = !motionRegions.isEmpty();
         // Tracker motion
-        motionProcessor.distanceTracker.update(videoImage, contourMotionDetected);
+        motionProcessor.distanceTracker.updateDistance(videoImage, contourMotionDetected);
         double distance2 = motionProcessor.distanceTracker.distance2();
         trackerMotionDetected = distance2 > motionProcessor.distanceThreshold2;
         // All together combined
         motionDetected = contourMotionDetected || trackerMotionDetected;
-
-        motionProcessor.gestureTracker.update(videoImage, contourMotionDetected);
-
     }
 
     private void updateMotionTimeLine(long timeStamp, MotionProcessorJavaCV motionProcessor) {
@@ -109,7 +106,7 @@ public class MotionDetectionResultImplementation extends MotionDetectionResultDa
             motionArea = motionRegionHistory.tail().area();
         } else if (trackerMotionDetected) {
             motionArea = motionProcessor.distanceThreshold2 * motionProcessor.distanceThreshold2;
-            motionProcessor.distanceTracker.reset();
+            motionProcessor.distanceTracker.restart();
         } else {
             motionArea = 0;
         }
@@ -198,8 +195,8 @@ public class MotionDetectionResultImplementation extends MotionDetectionResultDa
     private Set<Presence> shakePresence() {
         // Keep last state, to avoid signaling changes during shakes
         Set<Presence> last = new LinkedHashSet<>(indicatorHistory.tail());
-        last.remove(Presence.NoShake);
-        last.add(Presence.Shake);
+        last.remove(Presence.NoCameraShake);
+        last.add(Presence.CameraShake);
         return last;
     }
 
@@ -227,7 +224,7 @@ public class MotionDetectionResultImplementation extends MotionDetectionResultDa
                 }
             }
         }
-        directions.add(Presence.NoShake);
+        directions.add(Presence.NoCameraShake);
         return directions;
     }
 }

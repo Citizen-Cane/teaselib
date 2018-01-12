@@ -122,8 +122,8 @@ public abstract class MotionDetector implements Device.Creatable {
         /**
          * Calculated from capture input to indicate camera shaking
          */
-        Shake,
-        NoShake,
+        CameraShake,
+        NoCameraShake,
 
         /**
          * The Presence region extended to the top and the bottom.

@@ -22,11 +22,14 @@ import teaselib.core.devices.BatteryLevel;
 import teaselib.core.devices.DeviceCache;
 import teaselib.core.devices.DeviceFactory;
 import teaselib.core.devices.Devices;
+import teaselib.core.javacv.Color;
 import teaselib.core.javacv.Copy;
+import teaselib.core.javacv.HeadGestureTracker;
 import teaselib.core.javacv.Scale;
 import teaselib.core.javacv.ScaleAndMirror;
 import teaselib.core.javacv.Transformation;
 import teaselib.core.javacv.util.FramesPerSecond;
+import teaselib.motiondetection.Gesture;
 import teaselib.motiondetection.MotionDetector;
 import teaselib.motiondetection.ViewPoint;
 import teaselib.video.ResolutionList;
@@ -123,6 +126,9 @@ public class MotionDetectorJavaCV extends MotionDetector /* extends WiredDevice 
         private MotionSensitivity motionSensitivity;
         private ViewPoint viewPoint;
         private MotionProcessorJavaCV motionProcessor;
+        HeadGestureTracker gestureTracker = new HeadGestureTracker(Color.Cyan);
+        protected Gesture gesture = Gesture.None;
+
         private Mat input = new Mat();
         // TODO Atomic reference
         private MotionDetectionResultImplementation detectionResult;
@@ -144,6 +150,7 @@ public class MotionDetectorJavaCV extends MotionDetector /* extends WiredDevice 
             super();
             this.desiredFps = desiredFps;
             this.videoCaptureDevice = videoCaptureDevice;
+            gestureTracker.reset();
         }
 
         private void openVideoCaptureDevice(VideoCaptureDevice videoCaptureDevice) {
@@ -221,6 +228,7 @@ public class MotionDetectorJavaCV extends MotionDetector /* extends WiredDevice 
                             handlePause();
                             long now = System.currentTimeMillis();
                             computeMotionAndPresence(now);
+                            computeGestures(now);
                             renderVideo();
                             handleFPS(now);
                         }
@@ -280,6 +288,15 @@ public class MotionDetectorJavaCV extends MotionDetector /* extends WiredDevice 
             });
         }
 
+        private void computeGestures(long now) {
+            if (detectionResult.presenceIndicators.containsKey(Presence.CameraShake)) {
+                gestureTracker.reset();
+            } else {
+                gestureTracker.update(input, detectionResult.motionDetected, now);
+            }
+            gesture = gestureTracker.getGesture();
+        }
+
         private void handleFPS(long now) throws InterruptedException {
             long timeLeft = fpsStatistics.timeMillisLeft(desiredFrameTimeMillis, now);
             if (timeLeft > 0) {
@@ -292,7 +309,7 @@ public class MotionDetectorJavaCV extends MotionDetector /* extends WiredDevice 
             Set<Presence> indicators = getIndicatorHistory(debugWindowTimeSpan);
             debugInfo.render(image, detectionResult.getPresenceRegion(debugWindowTimeSpan),
                     detectionResult.presenceIndicators, indicators, detectionResult.contourMotionDetected,
-                    detectionResult.trackerMotionDetected, fpsStatistics.value());
+                    detectionResult.trackerMotionDetected, gestureTracker, gesture, fpsStatistics.value());
             return indicators;
         }
 
@@ -328,18 +345,12 @@ public class MotionDetectorJavaCV extends MotionDetector /* extends WiredDevice 
         }
 
         public void clearMotionHistory() {
-            presenceChanged.doLocked(new Runnable() {
-                @Override
-                public void run() {
-                    detectionResult.clear();
-                }
-            });
+            presenceChanged.doLocked(() -> detectionResult.clear());
         }
 
         public double fps() {
             return fps;
         }
-
     }
 
     @Override
@@ -382,6 +393,7 @@ public class MotionDetectorJavaCV extends MotionDetector /* extends WiredDevice 
             try {
                 Thread.sleep((long) (timeoutSeconds * 1000));
             } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
                 throw new ScriptInterruptedException(e);
             }
             return false;
@@ -391,6 +403,7 @@ public class MotionDetectorJavaCV extends MotionDetector /* extends WiredDevice 
             return eventThread.detectionResult.awaitChange(eventThread.presenceChanged, amount, change, timeSpanSeconds,
                     timeoutSeconds);
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             throw new ScriptInterruptedException(e);
         } finally {
             eventThread.debugWindowTimeSpan = MotionRegionDefaultTimespan;
@@ -453,7 +466,7 @@ public class MotionDetectorJavaCV extends MotionDetector /* extends WiredDevice 
         try {
             eventThread.join();
         } catch (InterruptedException e) {
-            // Ignore
+            Thread.currentThread().interrupt();
         }
     }
 }

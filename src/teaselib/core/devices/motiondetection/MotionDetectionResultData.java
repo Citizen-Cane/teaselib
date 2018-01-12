@@ -4,9 +4,8 @@
 package teaselib.core.devices.motiondetection;
 
 import java.util.Arrays;
-import java.util.HashMap;
+import java.util.EnumMap;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -23,7 +22,7 @@ import teaselib.motiondetection.ViewPoint;
  */
 public abstract class MotionDetectionResultData implements MotionDetectionResult {
     // TODO size of one or two structuring elements
-    static final int cornerSize = 32;
+    static final int CornerSize = 32;
 
     protected boolean contourMotionDetected = false;
     protected boolean trackerMotionDetected = false;
@@ -36,10 +35,10 @@ public abstract class MotionDetectionResultData implements MotionDetectionResult
     protected final TimeLine<Integer> motionAreaHistory = new TimeLine<>();
     protected final TimeLine<Set<Presence>> indicatorHistory = new TimeLine<>();
 
-    protected final static Map<ViewPoint, Presence> viewPoint2PresenceRegion = getViewPointRegions();
+    protected static final Map<ViewPoint, Presence> viewPoint2PresenceRegion = getViewPointRegions();
 
     private static Map<ViewPoint, Presence> getViewPointRegions() {
-        Map<ViewPoint, Presence> m = new HashMap<>();
+        Map<ViewPoint, Presence> m = new EnumMap<>(ViewPoint.class);
         // Include border regions that are prone to body clipping
         // in the as presence region
         m.put(ViewPoint.EyeLevel, Presence.PresenceExtendedVertically);
@@ -60,16 +59,15 @@ public abstract class MotionDetectionResultData implements MotionDetectionResult
         clear();
     }
 
-    @SuppressWarnings("resource")
     protected Map<Presence, Rect> buildPresenceIndicatorMap(Size s) {
-        Map<Presence, Rect> map = new LinkedHashMap<>();
+        Map<Presence, Rect> map = new EnumMap<>(Presence.class);
         map.put(Presence.Present,
-                new Rect(cornerSize, cornerSize, s.width() - 2 * cornerSize, s.height() - 2 * cornerSize));
+                new Rect(CornerSize, CornerSize, s.width() - 2 * CornerSize, s.height() - 2 * CornerSize));
         // The extended region cannot touch the screen border,
         // since the presence region cannot touch the border because
         // findContours ignores a one pixel border around the input mat.
         map.put(Presence.PresenceExtendedVertically,
-                new Rect(cornerSize, 1, s.width() - 2 * cornerSize, s.height() - 2));
+                new Rect(CornerSize, 1, s.width() - 2 * CornerSize, s.height() - 2));
         // Define a center rectangle half the width
         // and third the height of the capture size
         int cl = s.width() / 2 - s.width() / 4;
@@ -86,15 +84,15 @@ public abstract class MotionDetectionResultData implements MotionDetectionResult
         map.put(Presence.Right, new Rect(cr, 0, s.width() - cr, s.height()));
         map.put(Presence.Bottom, new Rect(0, cb, s.width(), s.height() - cb));
         // Borders
-        map.put(Presence.LeftBorder, new Rect(0, 0, cornerSize, s.height()));
-        map.put(Presence.RightBorder, new Rect(s.width() - cornerSize, 0, cornerSize, s.height()));
-        map.put(Presence.TopBorder, new Rect(0, 0, s.width(), cornerSize));
-        map.put(Presence.BottomBorder, new Rect(0, s.height() - cornerSize, s.width(), cornerSize));
+        map.put(Presence.LeftBorder, new Rect(0, 0, CornerSize, s.height()));
+        map.put(Presence.RightBorder, new Rect(s.width() - CornerSize, 0, CornerSize, s.height()));
+        map.put(Presence.TopBorder, new Rect(0, 0, s.width(), CornerSize));
+        map.put(Presence.BottomBorder, new Rect(0, s.height() - CornerSize, s.width(), CornerSize));
         return map;
     }
 
     Map<Presence, Presence> buildNegatedRegions() {
-        Map<Presence, Presence> negatedRegions = new LinkedHashMap<>();
+        Map<Presence, Presence> negatedRegions = new EnumMap<>(Presence.class);
         negatedRegions.put(Presence.Left, Presence.NoLeft);
         negatedRegions.put(Presence.Right, Presence.NoRight);
         negatedRegions.put(Presence.Top, Presence.NoTop);
@@ -116,7 +114,7 @@ public abstract class MotionDetectionResultData implements MotionDetectionResult
         motionRegionHistory.add(all, timeStamp);
         presenceRegionHistory.add(all, timeStamp);
         motionAreaHistory.add(0, timeStamp);
-        indicatorHistory.add(new HashSet<>(Arrays.asList(Presence.Shake)), timeStamp);
+        indicatorHistory.add(new HashSet<>(Arrays.asList(Presence.CameraShake)), timeStamp);
     }
 
     @Override

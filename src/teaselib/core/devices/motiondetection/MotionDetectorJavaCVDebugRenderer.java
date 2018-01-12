@@ -27,6 +27,8 @@ import org.bytedeco.javacpp.opencv_core.Rect;
 import org.bytedeco.javacpp.opencv_core.Size;
 
 import teaselib.core.javacv.Color;
+import teaselib.core.javacv.HeadGestureTracker;
+import teaselib.motiondetection.Gesture;
 import teaselib.motiondetection.MotionDetector.Presence;
 
 /**
@@ -45,13 +47,14 @@ public class MotionDetectorJavaCVDebugRenderer {
     }
 
     public void render(Mat debugOutput, Rect r, Map<Presence, Rect> presenceIndicators, Set<Presence> indicators,
-            boolean contourMotionDetected, boolean trackerMotionDetected, double fps) {
+            boolean contourMotionDetected, boolean trackerMotionDetected, HeadGestureTracker gestureTracker,
+            Gesture gesture, double fps) {
         if (Thread.currentThread() != owner) {
             throw new ConcurrentModificationException(owner.toString() + "!=" + Thread.currentThread().toString());
         }
         boolean present = indicators.contains(Presence.Present);
         // Motion
-        if (indicators.contains(Presence.Shake)) {
+        if (indicators.contains(Presence.CameraShake)) {
             rectangle(debugOutput, presenceIndicators.get(Presence.Present), present ? Color.MidBlue : Color.DarkBlue,
                     15, 8, 0);
         } else {
@@ -59,12 +62,20 @@ public class MotionDetectorJavaCVDebugRenderer {
                 renderMotionRegion(debugOutput, r, present);
             }
             renderPresenceIndicators(debugOutput, r, presenceIndicators, indicators, present);
-            motionProcessor.distanceTracker.render(debugOutput, Green);
+
             if (contourMotionDetected) {
                 renderContourMotionRegion(debugOutput, r);
             }
             if (trackerMotionDetected) {
                 renderDistanceTrackerPoints(debugOutput);
+            }
+
+            if (gestureTracker.hasFeatures()) {
+                gestureTracker.render(debugOutput);
+            }
+
+            if (gesture != Gesture.None) {
+                renderGesture(debugOutput, gestureTracker, gesture);
             }
         }
         renderRegionList(debugOutput, indicators);
@@ -87,15 +98,23 @@ public class MotionDetectorJavaCVDebugRenderer {
 
     private void renderDistanceTrackerPoints(Mat debugOutput) {
         if (motionProcessor.distanceTracker.hasFeatures()) {
-            motionProcessor.distanceTracker.renderDebug(debugOutput);
+            motionProcessor.distanceTracker.render(debugOutput);
         }
+    }
+
+    private void renderGesture(Mat debugOutput, HeadGestureTracker gestureTracker, Gesture gesture) {
+        Point p = new Point(debugOutput.size().width() - 70, 30);
+        putText(debugOutput, gesture.toString(), p, FONT_HERSHEY_PLAIN, 2.5, gestureTracker.color);
+        p.close();
+
+        // TODO Render direction timeline
     }
 
     private static void renderRegionList(Mat debugOutput, Set<Presence> indicators) {
         int n = 0;
         int s = 14;
         for (Presence indicator : indicators) {
-            Point p = new Point(0, n);
+            Point p = new Point(0, 20 + n);
             putText(debugOutput, indicator.toString(), p, FONT_HERSHEY_PLAIN, 1.25, White);
             n += s;
             p.close();
@@ -112,18 +131,18 @@ public class MotionDetectorJavaCVDebugRenderer {
 
     private void renderPresenceIndicators(Mat debugOutput, Rect rM, Map<Presence, Rect> presenceIndicators,
             Set<Presence> indicators, boolean present) {
-        // Presence indicators
-        for (Map.Entry<Presence, Rect> entry : presenceIndicators.entrySet()) {
-            if (indicators.contains(entry.getKey())) {
-                if (entry.getKey() == Presence.Present) {
+        for (Presence key : Presence.values()) {
+            if (indicators.contains(key) && presenceIndicators.containsKey(key)) {
+                if (key == Presence.Present) {
                     circle(debugOutput, center(rM), windowSize.height() / 4, present ? MidGreen : MidBlue, 4, 4, 0);
                 } else {
-                    rectangle(debugOutput, entry.getValue(), present ? DarkGreen : DarkBlue, 4, 8, 0);
+                    rectangle(debugOutput, presenceIndicators.get(key), present ? DarkGreen : DarkBlue, 4, 8, 0);
                 }
             }
         }
     }
 
     public void close() {
+        windowSize.close();
     }
 }

@@ -6,6 +6,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -299,33 +301,20 @@ public class TextToSpeechRecorder {
         return message.toString();
     }
 
-    public void create(Actor actor, Voice voice, Message message, String hash, String messageHash)
-            throws IOException, InterruptedException {
+    public void create(Actor actor, Voice voice, Message message, String hash, String messageHash) {
         List<Future<String>> soundFileFutures = writeSpeechResources(actor, voice, message, hash, messageHash);
 
         writeMessageHash(actor, voice, hash, messageHash);
 
         List<String> soundFilesPre = new ArrayList<>(soundFileFutures.size());
         for (int i = 0; i < soundFileFutures.size(); i++) {
-            soundFilesPre.add(Integer.toString(i) + ".mp3");
+            soundFilesPre.add(Integer.toString(i) + SpeechResourceFileTypeExtension);
         }
         writeInventory(actor, voice, hash, soundFilesPre);
-
-        // TODO Resolve 15% performance drop when checking for errors
-        // List<String> soundFiles = soundFileFutures.stream().map(soundFile -> {
-        // try {
-        // return soundFile.get();
-        // } catch (InterruptedException e) {
-        // Thread.currentThread().interrupt();
-        // throw ExceptionUtil.asRuntimeException(e);
-        // } catch (ExecutionException e) {
-        // throw ExceptionUtil.asRuntimeException(ExceptionUtil.reduce(e));
-        // }
-        // }).collect(Collectors.<String> toList());
     }
 
     private List<Future<String>> writeSpeechResources(Actor actor, Voice voice, Message message, String hash,
-            String messageHash) throws IOException, InterruptedException {
+            String messageHash) {
         logger.info("Recording message:\n" + messageHash);
         List<Future<String>> soundFiles = new ArrayList<>();
         String mood = Mood.Neutral;
@@ -335,40 +324,31 @@ public class TextToSpeechRecorder {
                 mood = part.value;
             } else if (part.type == Message.Type.Speech) {
                 int index = soundFiles.size();
-                Future<String> soundFileName = writeSpeechResource(actor, voice, hash, index, mood, part.value);
-                soundFiles.add(soundFileName);
+                String name = Integer.toString(index);
+                soundFiles.add(writeSpeechResource(actor, voice, hash, name, mood, part.value));
             }
         }
         return soundFiles;
     }
 
-    private Future<String> writeSpeechResource(Actor actor, Voice voice, String hash, int index, String mood,
-            String text) throws IOException, InterruptedException {
-        String soundFileName = Integer.toString(index);
-        File soundFile = createTempFileName(SpeechResourceTempFilePrefix + "_" + soundFileName + "_",
-                SpeechResourceFileUncompressedFormat);
-        TextToSpeech textToSpeech = ttsPlayer.textToSpeech;
-        String recordedSoundFile = textToSpeech.speak(voice, text, soundFile, new String[] { mood });
-        String storedSoundFileName = new File(soundFileName + SpeechResourceFileTypeExtension).getName();
-        if (!recordedSoundFile.endsWith(SpeechResourceFileTypeExtension)) {
-            return storage.encode(() -> {
+    private Future<String> writeSpeechResource(Actor actor, Voice voice, String hash, String name, String mood,
+            String text) {
+        return storage.encode(() -> {
+            File soundFile = createTempFileName(SpeechResourceTempFilePrefix + "_" + name + "_",
+                    SpeechResourceFileUncompressedFormat);
+            String recordedSoundFile = ttsPlayer.textToSpeech.speak(voice, text, soundFile, new String[] { mood });
+            String storedSoundFileName = new File(name + SpeechResourceFileTypeExtension).getName();
+            if (!recordedSoundFile.endsWith(SpeechResourceFileTypeExtension)) {
                 String encodedSoundFile = recordedSoundFile.replace(SpeechResourceFileUncompressedFormat,
                         SpeechResourceFileTypeExtension);
                 String[] argv = { recordedSoundFile, encodedSoundFile, "--preset", "standard" };
-                try {
-                    logger.info("Recording part " + index);
-                    mp3.Main mp3Encoder = new mp3.Main();
-                    mp3Encoder.run(argv);
-                } finally {
-                    if (!new File(recordedSoundFile).delete()) {
-                        throw new IllegalStateException("Can't delete temporary speech file " + recordedSoundFile);
-                    }
-                }
-                return storage.storeRecordedSoundFile(actor, voice, hash, storedSoundFileName, encodedSoundFile).get();
-            });
-        } else {
-            return storage.storeRecordedSoundFile(actor, voice, hash, storedSoundFileName, recordedSoundFile);
-        }
+                logger.info("Recording part " + name);
+                mp3.Main mp3Encoder = new mp3.Main();
+                mp3Encoder.run(argv);
+                Files.delete(Paths.get(recordedSoundFile));
+            }
+            return storage.storeRecordedSoundFile(actor, voice, hash, storedSoundFileName, recordedSoundFile).get();
+        });
     }
 
     private void writeInventory(Actor actor, Voice voice, String hash, List<String> soundFiles) {

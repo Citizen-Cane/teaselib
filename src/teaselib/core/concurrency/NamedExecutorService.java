@@ -1,7 +1,6 @@
 package teaselib.core.concurrency;
 
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadFactory;
@@ -40,14 +39,14 @@ public class NamedExecutorService extends ThreadPoolExecutor {
         });
     }
 
-    public static ExecutorService newUnlimitedThreadPool(String namePrefix, long keepAliveTime, TimeUnit unit) {
+    public static NamedExecutorService newUnlimitedThreadPool(String namePrefix, long keepAliveTime, TimeUnit unit) {
         return new NamedExecutorService(0, Integer.MAX_VALUE, keepAliveTime, unit, namePrefix,
                 new SynchronousQueue<Runnable>());
     }
 
     public static NamedExecutorService newFixedThreadPool(int nThreads, String namePrefix, long keepAliveTime,
             TimeUnit unit) {
-        return new NamedExecutorService(0, nThreads, keepAliveTime, unit, namePrefix,
+        return new NamedExecutorService(nThreads, nThreads, keepAliveTime, unit, namePrefix,
                 new LinkedBlockingQueue<Runnable>());
     }
 

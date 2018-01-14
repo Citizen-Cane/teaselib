@@ -127,7 +127,7 @@ public class TextToSpeechRecorderTest {
         List<Message> messages = Arrays.asList(new Message(actor, "I have a dream."),
                 new Message(actor, "I dream of white sheep standing on the lawn."),
                 new Message(actor, "I dream of white sheep standing on the lawn."),
-                new Message(actor, "I dream of grey sheep standing on the lawn", "Certainly."),
+                new Message(actor, "I dream of grey sheep standing on the lawn.", "Certainly."),
                 new Message(actor, "I dream of grey sheep standing on the lawn.", "Certainly.", "Sure."));
         assertEquals(5, messages.size());
         TextToSpeechRecorder recorder = recordVoices(new TestScriptScanner(messages), path, name, resources);

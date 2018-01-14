@@ -1,26 +1,30 @@
 package teaselib.core.javacv;
 
 import java.util.EnumMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
 import org.bytedeco.javacpp.opencv_core.Mat;
 import org.bytedeco.javacpp.opencv_core.Point;
+import org.bytedeco.javacpp.opencv_core.Rect;
 import org.bytedeco.javacpp.opencv_core.Scalar;
 import org.bytedeco.javacpp.indexer.FloatIndexer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import teaselib.core.util.TimeLine;
+import teaselib.core.util.TimeLine.Slice;
 import teaselib.motiondetection.Gesture;
 
 public class HeadGestureTracker {
     private static final Logger logger = LoggerFactory.getLogger(HeadGestureTracker.class);
 
-    private static final long GesturePauseMillis = 500;
+    private static final long GesturePauseMillis = 1000;
 
     private final TrackFeatures tracker = new TrackFeatures();
     private final TimeLine<Direction> directionTimeLine = new TimeLine<>();
+    private final Mat startKeyPoints = new Mat();
 
     public final Scalar color;
 
@@ -30,13 +34,15 @@ public class HeadGestureTracker {
         this.color = color;
     }
 
-    public void update(Mat videoImage, boolean motionDetected, long timeStamp) {
-        if (!motionDetected && resetTrackFeatures) {
-            tracker.start(videoImage, null);
+    public void update(Mat videoImage, boolean motionDetected, Rect rect, long timeStamp) {
+        if (!motionDetected && timeStamp > directionTimeLine.tailTimeMillis() + GesturePauseMillis) {
+            resetTrackFeatures = true;
+        } else if (motionDetected && resetTrackFeatures) {
+            // TODO At startup, motion region is the whole image -> fix
+            tracker.start(videoImage, rect);
+            tracker.keyPoints().copyTo(startKeyPoints);
             directionTimeLine.clear();
             resetTrackFeatures = false;
-        } else if (!motionDetected && directionTimeLine.tailTimeMillis() + GesturePauseMillis > timeStamp) {
-            resetTrackFeatures = true;
         } else if (motionDetected && !resetTrackFeatures) {
             tracker.update(videoImage);
             directionTimeLine.add(direction(), timeStamp);
@@ -44,19 +50,15 @@ public class HeadGestureTracker {
     }
 
     private Direction direction() {
-        FloatIndexer from = tracker.previousKeyPoints().createIndexer();
+        FloatIndexer from = startKeyPoints.createIndexer();
         FloatIndexer to = tracker.keyPoints().createIndexer();
 
         Map<Direction, Integer> all = new EnumMap<>(Direction.class);
-
-        StringBuilder points = new StringBuilder();
 
         long n = Math.min(from.rows(), to.rows());
         for (int i = 0; i < n; i++) {
             Point p1 = new Point((int) from.get(i, 0), (int) from.get(i, 1));
             Point p2 = new Point((int) to.get(i, 0), (int) to.get(i, 1));
-
-            points.append(toString(p1) + "-" + toString(p2) + " ");
 
             Direction d = direction(p1, p2);
             if (d != Direction.None) {
@@ -71,12 +73,20 @@ public class HeadGestureTracker {
             p2.close();
         }
 
+        if (!all.isEmpty() && logger.isDebugEnabled()) {
+            StringBuilder points = new StringBuilder();
+            for (int i = 0; i < n; i++) {
+                Point p1 = new Point((int) from.get(i, 0), (int) from.get(i, 1));
+                Point p2 = new Point((int) to.get(i, 0), (int) to.get(i, 1));
+                points.append(toString(p1) + "-" + toString(p2) + " ");
+                p1.close();
+                p2.close();
+            }
+            logger.debug(points.toString());
+        }
+
         from.release();
         to.release();
-
-        if (!all.isEmpty()) {
-            logger.info(points.toString());
-        }
 
         return all.isEmpty() ? Direction.None : direction(all);
     }
@@ -120,7 +130,10 @@ public class HeadGestureTracker {
     }
 
     private Direction direction(Map<Direction, Integer> all) {
-        logger.info(all.toString());
+        if (logger.isDebugEnabled()) {
+            logger.debug(all.toString());
+        }
+
         int max = 0;
         Direction direction = Direction.None;
         for (Entry<Direction, Integer> entry : all.entrySet()) {
@@ -138,9 +151,45 @@ public class HeadGestureTracker {
         Direction direction = directionTimeLine.tail();
         if (direction == Direction.None)
             return Gesture.None;
-        if (direction == Direction.Right || direction == Direction.Left) {
+
+        int numberOfActions = 2;
+        long gestureMaxDuration = 5000;
+        long gestureMinDuration = 500;
+
+        List<Slice<Direction>> slices = directionTimeLine.lastSlices(2);
+        long duration = directionTimeLine.duration(slices);
+        if (slices.size() == numberOfActions && gestureMinDuration < duration && duration < gestureMaxDuration) {
+            long h = slices.stream().filter((slice) -> horizontal(slice.item)).count();
+            long v = slices.stream().filter((slice) -> vertical(slice.item)).count();
+            if (h >= numberOfActions * 2 && v == 0) {
+                return Gesture.Shake;
+            } else if (h == 0 && v >= numberOfActions * 2) {
+                return Gesture.Nod;
+            } else {
+                return Gesture.None;
+            }
+        } else {
+            return Gesture.None;
+        }
+    }
+
+    private boolean vertical(Direction direction) {
+        return direction == Direction.Up || direction == Direction.Down;
+    }
+
+    private boolean horizontal(Direction direction) {
+        return direction == Direction.Right || direction == Direction.Left;
+    }
+
+    public Gesture getGestureSimple() {
+        if (directionTimeLine.size() == 0)
+            return Gesture.None;
+        Direction direction = directionTimeLine.tail();
+        if (direction == Direction.None)
+            return Gesture.None;
+        if (horizontal(direction)) {
             return Gesture.Shake;
-        } else if (direction == Direction.Up || direction == Direction.Down) {
+        } else if (vertical(direction)) {
             return Gesture.Nod;
         } else {
             throw new IllegalStateException(directionTimeLine.toString());
@@ -160,22 +209,6 @@ public class HeadGestureTracker {
     }
 
     public void render(Mat output) {
-        // Mat currentKeyPoints = tracker.keyPoints();
-        //
-        // FloatIndexer from = keyPoints.createIndexer();
-        // FloatIndexer to = currentKeyPoints.createIndexer();
-        // long n = Math.min(from.rows(), to.rows());
-        // for (int i = 0; i < n; i++) {
-        // Point p1 = new Point((int) from.get(i, 0), (int) from.get(i, 1));
-        // Point p2 = new Point((int) to.get(i, 0), (int) to.get(i, 1));
-        // opencv_imgproc.line(output, p1, p2, color);
-        // p1.close();
-        // p2.close();
-        // }
-        //
-        // from.release();
-        // to.release();
-
         tracker.render(output, color);
     }
 }

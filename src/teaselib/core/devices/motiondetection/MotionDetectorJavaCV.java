@@ -141,6 +141,7 @@ public class MotionDetectorJavaCV extends MotionDetector /* extends WiredDevice 
         volatile double debugWindowTimeSpan = PresenceRegionDefaultTimespan;
         private final ReentrantLock lockStartStop = new ReentrantLock();
         private final Signal presenceChanged = new Signal();
+        private final Signal gestureChanged = new Signal();
 
         MotionDetectorJavaCVDebugRenderer debugInfo = null;
         VideoRenderer videoRenderer = null;
@@ -292,9 +293,10 @@ public class MotionDetectorJavaCV extends MotionDetector /* extends WiredDevice 
             if (detectionResult.presenceIndicators.containsKey(Presence.CameraShake)) {
                 gestureTracker.reset();
             } else {
-                gestureTracker.update(input, detectionResult.motionDetected, now);
+                gestureTracker.update(input, detectionResult.motionDetected, detectionResult.getMotionRegion(1.0), now);
             }
             gesture = gestureTracker.getGesture();
+            presenceChanged.signal();
         }
 
         private void handleFPS(long now) throws InterruptedException {
@@ -388,25 +390,54 @@ public class MotionDetectorJavaCV extends MotionDetector /* extends WiredDevice 
     }
 
     @Override
-    public boolean awaitChange(double amount, Presence change, double timeSpanSeconds, double timeoutSeconds) {
+    public boolean await(double amount, Presence change, double timeSpanSeconds, double timeoutSeconds) {
         if (!active()) {
-            try {
-                Thread.sleep((long) (timeoutSeconds * 1000));
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new ScriptInterruptedException(e);
-            }
+            awaitTimeout(timeoutSeconds);
             return false;
         }
         eventThread.debugWindowTimeSpan = timeSpanSeconds;
         try {
-            return eventThread.detectionResult.awaitChange(eventThread.presenceChanged, amount, change, timeSpanSeconds,
+            return eventThread.detectionResult.await(eventThread.presenceChanged, amount, change, timeSpanSeconds,
                     timeoutSeconds);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new ScriptInterruptedException(e);
         } finally {
             eventThread.debugWindowTimeSpan = MotionRegionDefaultTimespan;
+        }
+    }
+
+    public Gesture await(Gesture expected, double timeoutSeconds) {
+        if (!active()) {
+            awaitTimeout(timeoutSeconds);
+            return Gesture.None;
+        }
+
+        if (eventThread.gesture == expected) {
+            return eventThread.gesture;
+        }
+        try {
+            eventThread.gestureChanged.await(timeoutSeconds, (new Signal.HasChangedPredicate() {
+                @Override
+                public Boolean call() throws Exception {
+                    return eventThread.gesture == expected;
+                }
+            }));
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new ScriptInterruptedException(e);
+        } catch (Exception e) {
+            logger.error(e.getMessage(), e);
+        }
+        return eventThread.gesture;
+    }
+
+    private void awaitTimeout(double timeoutSeconds) {
+        try {
+            Thread.sleep((long) (timeoutSeconds * 1000));
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new ScriptInterruptedException(e);
         }
     }
 

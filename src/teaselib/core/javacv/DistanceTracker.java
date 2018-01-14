@@ -33,7 +33,7 @@ public class DistanceTracker {
     }
 
     private void resetDistance(Mat videoImage) {
-        tracker.start(videoImage, null);
+        tracker.start(videoImage);
         resetTrackFeatures = false;
         tracker.keyPoints().copyTo(keyPoints);
     }

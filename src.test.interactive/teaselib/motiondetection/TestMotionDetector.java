@@ -8,7 +8,7 @@ import teaselib.motiondetection.MotionDetector.MotionSensitivity;
 import teaselib.motiondetection.MotionDetector.Presence;
 import teaselib.test.DebugSetup;
 
-public class TestTechnicalInterface {
+public class TestMotionDetector {
 
     @Test
     public void testMotionStartStop() {
@@ -32,20 +32,20 @@ public class TestTechnicalInterface {
 
         System.out.println("Move!");
 
-        while (!md.awaitChange(amount, Presence.Motion, 1.0, 5.0)) {
+        while (!md.await(amount, Presence.Motion, 1.0, 5.0)) {
             System.out.println("I said 'Move'!");
         }
 
         System.out.println("Keep moving!");
         while (true) {
             // Triggers after not moving for about one second
-            if (md.awaitChange(amount, Presence.NoMotion, 1.0, 10.0)) {
+            if (md.await(amount, Presence.NoMotion, 1.0, 10.0)) {
                 System.out.println("I said 'Keep moving'!");
                 // Besides leaving the tester some time to move again
                 // the timeout greater than the trigger time span
                 // clears the history to avoid being triggered again
                 // and repeating the message too fast
-                md.awaitChange(amount, Presence.Motion, 1.0, 10.0);
+                md.await(amount, Presence.Motion, 1.0, 10.0);
             } else {
                 break;
             }
@@ -53,25 +53,25 @@ public class TestTechnicalInterface {
 
         System.out.println("Stop!");
         md.setSensitivity(MotionSensitivity.Low);
-        while (!md.awaitChange(amount, Presence.NoMotion, 1.0, 5.0)) {
+        while (!md.await(amount, Presence.NoMotion, 1.0, 5.0)) {
             System.out.println("I said 'Stop'!");
         }
 
         System.out.println("Now stay still.");
         // use the timeout to avoid repeating the message too fast
         while (true) {
-            if (md.awaitChange(amount, Presence.Motion, 0.5, 10.0)) {
+            if (md.await(amount, Presence.Motion, 0.5, 10.0)) {
                 System.out.println("I said 'Stay still'!");
                 // Besides leaving the tester some time to stand still
                 // the timeout greater than the trigger time span
                 // clears the history to avoid being triggered again
                 // and repeating the message too fast
-                md.awaitChange(amount, Presence.NoMotion, 1.0, 10.0);
+                md.await(amount, Presence.NoMotion, 1.0, 10.0);
             } else {
                 break;
             }
         }
         System.out.println("Very good.");
-        md.awaitChange(amount, Presence.Motion, 1.0, Double.MAX_VALUE);
+        md.await(amount, Presence.Motion, 1.0, Double.MAX_VALUE);
     }
 }

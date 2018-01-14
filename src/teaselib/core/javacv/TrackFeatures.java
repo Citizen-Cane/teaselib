@@ -9,6 +9,7 @@ import static org.bytedeco.javacpp.opencv_video.calcOpticalFlowPyrLK;
 
 import org.bytedeco.javacpp.opencv_core;
 import org.bytedeco.javacpp.opencv_core.Mat;
+import org.bytedeco.javacpp.opencv_core.Rect;
 import org.bytedeco.javacpp.opencv_core.Scalar;
 import org.bytedeco.javacpp.opencv_core.Size;
 import org.bytedeco.javacpp.indexer.FloatIndexer;
@@ -23,14 +24,32 @@ public class TrackFeatures {
     Mat status = new Mat(new Size(maxPoints, 1), CV_8UC1);
     Mat error = new Mat(new Size(maxPoints, 1), CV_8UC1);
 
+    public void start(Mat videoImage) {
+        start(videoImage, (Mat) null);
+    }
+
+    public void start(Mat videoImage, Rect rect) {
+        Mat mask = Mat.zeros(videoImage.size(), CV_8UC1).asMat();
+
+        Mat roi = new Mat(mask, rect);
+        roi.put(new Scalar(255, 255, 255, 255));
+
+        start(videoImage, mask);
+
+        roi.close();
+        mask.close();
+    }
+
     public void start(Mat input, Mat mask) {
         cvtColor(input, videoMatGray, COLOR_BGRA2GRAY);
         cvtColor(input, videoMatGrayPrevious, COLOR_BGRA2GRAY);
         Size size = new Size(maxPoints * 2, 2);
         keyPoints = new Mat(size, opencv_core.CV_8UC4);
         keyPointsPrevious = new Mat(size, opencv_core.CV_8UC4);
-        double qualityLevel = 0.10;
+
+        double qualityLevel = 0.20;
         double minDistance = input.cols() / 40.0;
+
         if (mask != null) {
             goodFeaturesToTrack(videoMatGray, keyPoints, maxPoints, qualityLevel, minDistance, mask, 3, false, 0.04);
         } else {

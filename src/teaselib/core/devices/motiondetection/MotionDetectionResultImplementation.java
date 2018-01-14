@@ -1,6 +1,3 @@
-/**
- * 
- */
 package teaselib.core.devices.motiondetection;
 
 import static teaselib.core.javacv.util.Geom.intersects;
@@ -28,11 +25,7 @@ import teaselib.motiondetection.MotionDetector.Presence;
 public class MotionDetectionResultImplementation extends MotionDetectionResultData {
     private static final Logger logger = LoggerFactory.getLogger(MotionDetectionResultImplementation.class);
 
-    private static final double CircularityVariance = 1.3; // 1.3 seems to
-                                                           // be necessary
-                                                           // to detect
-                                                           // blinking eye
-                                                           // balls
+    private static final double CircularityVariance = 1.3; // 1.3 seems to be necessary to detect blinking eyes
 
     MotionDetectionResultImplementation(Size size) {
         super(size);
@@ -49,10 +42,8 @@ public class MotionDetectionResultImplementation extends MotionDetectionResultDa
         updateMotionAndPresence(videoImage, motionProcessor, timeStamp);
         updateMotionTimeLine(timeStamp, motionProcessor);
         updateIndicatorTimeLine(timeStamp);
-        // The data might not have changed,
-        // but because the inspected time intervals aren't fixed anymore,
-        // the predicate used in await(...) might trigger because the time has
-        // advanced
+        // The data might not have changed, but because the inspected time intervals aren't fixed anymore,
+        // the predicate used in await(...) might trigger because time has advanced
         return true;
     }
 
@@ -132,11 +123,11 @@ public class MotionDetectionResultImplementation extends MotionDetectionResultDa
     }
 
     @Override
-    public boolean awaitChange(Signal signal, final double amount, final Presence change, final double timeSpanSeconds,
+    public boolean await(Signal signal, final double amount, final Presence change, final double timeSpanSeconds,
             final double timeoutSeconds) throws InterruptedException {
         // TODO clamp amount to [0,1] and handle > 0.0, >= 1.0
         try {
-            return signal.awaitChange(timeoutSeconds, (new Signal.HasChangedPredicate() {
+            return signal.await(timeoutSeconds, (new Signal.HasChangedPredicate() {
                 @Override
                 public Boolean call() throws Exception {
                     List<TimeLine.Slice<Set<Presence>>> timeSpanIndicatorHistory = indicatorHistory

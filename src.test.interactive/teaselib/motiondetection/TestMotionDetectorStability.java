@@ -40,7 +40,7 @@ public class TestMotionDetectorStability {
         long start = System.currentTimeMillis();
         int n = 0;
         for (long i = 0; i < durationMillis;) {
-            md.awaitChange(0.0, Presence.CameraShake, 0.0, 0.0);
+            md.await(0.0, Presence.CameraShake, 0.0, 0.0);
             md.stop();
             md.start();
             i = System.currentTimeMillis() - start;

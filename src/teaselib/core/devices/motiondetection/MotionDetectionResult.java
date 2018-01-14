@@ -23,7 +23,7 @@ interface MotionDetectionResult {
 
     Rect getMotionRegion(double seconds);
 
-    public boolean awaitChange(Signal signal, final double amount,
+    public boolean await(Signal signal, final double amount,
             final Presence change, final double timeSpanSeconds,
             final double timeoutSeconds) throws InterruptedException;
 

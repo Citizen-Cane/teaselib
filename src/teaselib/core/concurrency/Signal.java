@@ -52,7 +52,7 @@ public class Signal {
         });
     }
 
-    public boolean awaitChange(final double timeoutSeconds,
+    public boolean await(final double timeoutSeconds,
             final HasChangedPredicate hasChangedPredicate)
             throws InterruptedException, Exception {
         return doLocked(new Callable<Boolean>() {

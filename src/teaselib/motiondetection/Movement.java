@@ -30,11 +30,11 @@ public class Movement {
     }
 
     public boolean occurred(double timeSpanSeconds) {
-        return motionDetector.awaitChange(1.0, Presence.Motion, timeSpanSeconds, 0.0);
+        return motionDetector.await(1.0, Presence.Motion, timeSpanSeconds, 0.0);
     }
 
     public boolean occurredNot(double timeSpanSeconds) {
-        return motionDetector.awaitChange(1.0, Presence.NoMotion, timeSpanSeconds, 0.0);
+        return motionDetector.await(1.0, Presence.NoMotion, timeSpanSeconds, 0.0);
     }
 
     public boolean startedWithin(double timeoutSeconds) {
@@ -42,7 +42,7 @@ public class Movement {
     }
 
     public boolean startedWithin(double latencySeconds, double timeoutSeconds) {
-        return motionDetector.awaitChange(1.0, Presence.Motion, latencySeconds, timeoutSeconds);
+        return motionDetector.await(1.0, Presence.Motion, latencySeconds, timeoutSeconds);
     }
 
     public boolean stoppedWithin(double timeoutSeconds) {
@@ -50,6 +50,6 @@ public class Movement {
     }
 
     public boolean stoppedWithin(double latencySeconds, double timeoutSeconds) {
-        return motionDetector.awaitChange(1.0, Presence.NoMotion, latencySeconds, timeoutSeconds);
+        return motionDetector.await(1.0, Presence.NoMotion, latencySeconds, timeoutSeconds);
     }
 }

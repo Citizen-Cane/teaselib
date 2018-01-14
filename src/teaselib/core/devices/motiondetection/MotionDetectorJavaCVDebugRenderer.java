@@ -104,10 +104,8 @@ public class MotionDetectorJavaCVDebugRenderer {
 
     private void renderGesture(Mat debugOutput, HeadGestureTracker gestureTracker, Gesture gesture) {
         Point p = new Point(debugOutput.size().width() - 70, 30);
-        putText(debugOutput, gesture.toString(), p, FONT_HERSHEY_PLAIN, 2.5, gestureTracker.color);
+        putText(debugOutput, gesture.toString(), p, FONT_HERSHEY_PLAIN, 2.5, Color.Red /* gestureTracker.color */);
         p.close();
-
-        // TODO Render direction timeline
     }
 
     private static void renderRegionList(Mat debugOutput, Set<Presence> indicators) {

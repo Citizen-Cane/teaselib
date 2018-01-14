@@ -179,4 +179,28 @@ public class TimeLine<T> {
         else
             return items.subList(Math.max(0, size - n), size);
     }
+
+    public List<Slice<T>> lastSlices(int n) {
+        int size = items.size();
+        if (size == 0) {
+            return Collections.emptyList();
+        } else {
+            List<Slice<T>> tail = new ArrayList<>(n);
+            Iterator<T> item = items.descendingIterator();
+            Iterator<Long> timeSpan = timeSpans.descendingIterator();
+            for (int i = 0; item.hasNext() && i < n; i++) {
+                tail.add(new Slice<>(timeSpan.next(), item.next()));
+            }
+
+            return tail;
+        }
+    }
+
+    public long duration(List<Slice<T>> slices) {
+        long duration = 0;
+        for (Slice<?> slice : slices) {
+            duration += slice.t;
+        }
+        return duration;
+    }
 }

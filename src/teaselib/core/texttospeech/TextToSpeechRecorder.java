@@ -49,7 +49,7 @@ public class TextToSpeechRecorder {
     private final Set<String> actors = new HashSet<>();
     private final ActorVoices actorVoices;
     private final TextToSpeechPlayer ttsPlayer;
-    private final long buildStart = System.currentTimeMillis();
+    private final long buildStart;
     private final TextVariables textVariables;
 
     static class Pass {
@@ -127,6 +127,7 @@ public class TextToSpeechRecorder {
         this.textVariables = textVariables;
         this.ttsPlayer = new TextToSpeechPlayer(new Configuration(new DebugSetup()));
         this.ttsPlayer.load();
+        this.buildStart = System.currentTimeMillis();
         this.voices = ttsPlayer.textToSpeech.getVoices();
         this.storage = new StorageSynchronizer(new PrerecordedSpeechZipStorage(path, resources.getRoot(), name));
         this.actorVoices = new ActorVoices(resources);
@@ -159,7 +160,7 @@ public class TextToSpeechRecorder {
     }
 
     private String processMessage(Actor actor, Voice voice, Message message)
-            throws IOException, InterruptedException, ExecutionException {
+            throws InterruptedException, ExecutionException {
         String hash = getHash(message);
         String newMessageHash = message.toPrerecordedSpeechHashString();
         if (!newMessageHash.isEmpty()) {
@@ -201,16 +202,14 @@ public class TextToSpeechRecorder {
         throw new IllegalStateException("Collision");
     }
 
-    private void updateMessage(Actor actor, Voice voice, Message message, String hash, String newMessageHash)
-            throws IOException, InterruptedException {
+    private void updateMessage(Actor actor, Voice voice, Message message, String hash, String newMessageHash) {
         log(actor, voice, hash, "has changed");
         storage.deleteMessage(actor, voice, hash);
         create(actor, voice, message, hash, newMessageHash);
         pass.changedEntries++;
     }
 
-    private void createNewMessage(Actor actor, Voice voice, Message message, String hash)
-            throws IOException, InterruptedException {
+    private void createNewMessage(Actor actor, Voice voice, Message message, String hash) {
         log(actor, voice, hash, "is new");
         create(actor, voice, message, hash, message.toPrerecordedSpeechHashString());
         pass.newEntries++;

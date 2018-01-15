@@ -211,4 +211,12 @@ public class TimeLine<T> {
         }
         return duration;
     }
+
+    public long tailTimeSpan() {
+        return timeSpans.getLast();
+    }
+
+    public Slice<T> tailSlice() {
+        return new Slice<T>(tailTimeSpan(), tail());
+    }
 }

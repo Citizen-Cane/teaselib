@@ -293,7 +293,8 @@ public class MotionDetectorJavaCV extends MotionDetector /* extends WiredDevice 
             if (detectionResult.presenceIndicators.containsKey(Presence.CameraShake)) {
                 gestureTracker.reset();
             } else {
-                gestureTracker.update(input, detectionResult.motionDetected, detectionResult.getMotionRegion(1.0), now);
+                gestureTracker.update(input, detectionResult.motionDetected, detectionResult.getPresenceRegion(1.0),
+                        now);
             }
             gesture = gestureTracker.getGesture();
             presenceChanged.signal();

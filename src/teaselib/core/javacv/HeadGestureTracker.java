@@ -39,15 +39,20 @@ public class HeadGestureTracker {
     }
 
     public void update(Mat videoImage, boolean motionDetected, Rect rect, long timeStamp) {
-        if (!motionDetected && timeStamp > directionTimeLine.tailTimeMillis() + GesturePauseMillis) {
+        // TODO Tail time millis is updated each frame compare to last entry
+        if (!resetTrackFeatures && !motionDetected && timeStamp > directionTimeLine.tailTimeMillis()
+                - directionTimeLine.tailTimeSpan() + GesturePauseMillis) {
+            directionTimeLine.clear();
+            // TODO clearing time line may cause exception when querying in if-clause
             resetTrackFeatures = true;
         } else if (motionDetected && resetTrackFeatures) {
             // TODO At startup, motion region is the whole image -> fix
+            // TODO presence region may collapse to eyes - enlarge to motion region
             tracker.start(videoImage, rect);
             tracker.keyPoints().copyTo(startKeyPoints);
-            directionTimeLine.clear();
             resetTrackFeatures = false;
         } else if (!resetTrackFeatures) {
+            // TODO tracked points run off
             tracker.update(videoImage);
             directionTimeLine.add(direction(), timeStamp);
         }

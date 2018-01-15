@@ -4,12 +4,15 @@ import static org.junit.Assert.*;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 
 import org.junit.Rule;
 import org.junit.Test;
@@ -21,6 +24,7 @@ import teaselib.Message.Type;
 import teaselib.Sexuality.Gender;
 import teaselib.core.Configuration;
 import teaselib.core.ResourceLoader;
+import teaselib.core.concurrency.NamedExecutorService;
 import teaselib.core.util.ReflectionUtils;
 import teaselib.test.DebugSetup;
 import teaselib.util.TextVariables;
@@ -52,6 +56,48 @@ public class TextToSpeechRecorderTest {
 
     @Rule
     public TemporaryFolder tempFolder = new TemporaryFolder();
+
+    @Test
+    public void testMultiThreading() throws IOException, InterruptedException, ExecutionException {
+        Configuration config = new Configuration();
+        new DebugSetup().withInput().withOutput().applyTo(config);
+        TextToSpeechPlayer tts = new TextToSpeechPlayer(config);
+
+        ResourceLoader resources = new ResourceLoader(this.getClass(),
+                ReflectionUtils.asPath(ReflectionUtils.classParentName(this)));
+
+        tts.load();
+        tts.loadActorVoiceProperties(resources);
+        tts.acquireVoice(actor, resources);
+
+        File path = tempFolder.getRoot();
+
+        int n = 3;
+
+        NamedExecutorService executor = NamedExecutorService.newFixedThreadPool(n, "test speech");
+        List<Future<String>> futures = new ArrayList<>();
+
+        for (int i = 0; i < n; i++) {
+            String fileName = Integer.toString(i);
+            futures.add(executor.submit(
+                    () -> tts.textToSpeech.speak(tts.getVoiceFor(actor), "This is a test.", new File(path, fileName))));
+        }
+
+        List<String> fileNames = new ArrayList<>();
+
+        for (Future<String> future : futures) {
+            fileNames.add(future.get());
+        }
+
+        for (String fileName : fileNames) {
+            assertTrue(new File(fileName).exists());
+        }
+
+        for (int i = 0; i < n - 1; i++) {
+            assertArrayEquals(Files.readAllBytes(Paths.get(fileNames.get(i))),
+                    Files.readAllBytes(Paths.get(fileNames.get(i + 1))));
+        }
+    }
 
     @Test
     public void testRecording() throws IOException, InterruptedException, ExecutionException {

@@ -150,16 +150,24 @@ public class TimeLine<T> {
             this.t = t;
             this.item = item;
         }
+
+        @Override
+        public String toString() {
+            return t + "->" + item;
+        }
     }
 
     public List<Slice<T>> getTimeSpanSlices(double timeSpanSeconds) {
-        if (timeSpanSeconds == 0.0) {
+        return getTimeSpanSlices((long) (timeSpanSeconds * 1000));
+    }
+
+    public List<Slice<T>> getTimeSpanSlices(long timeSpanMillis) {
+        if (timeSpanMillis == 0.0) {
             return Collections.emptyList();
         }
-        List<Slice<T>> tail = new ArrayList<>(10);
+        List<Slice<T>> tail = new ArrayList<>();
         Iterator<T> item = items.descendingIterator();
         Iterator<Long> timeSpan = timeSpans.descendingIterator();
-        long timeSpanMillis = (long) (timeSpanSeconds * 1000);
         while (item.hasNext()) {
             long t = timeSpan.next();
             tail.add(new Slice<>(Math.min(timeSpanMillis, t), item.next()));

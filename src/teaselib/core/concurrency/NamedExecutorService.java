@@ -44,6 +44,11 @@ public class NamedExecutorService extends ThreadPoolExecutor {
                 new SynchronousQueue<Runnable>());
     }
 
+    public static NamedExecutorService newFixedThreadPool(int nThreads, String namePrefix) {
+        return new NamedExecutorService(nThreads, nThreads, 1, TimeUnit.MINUTES, namePrefix,
+                new LinkedBlockingQueue<Runnable>());
+    }
+
     public static NamedExecutorService newFixedThreadPool(int nThreads, String namePrefix, long keepAliveTime,
             TimeUnit unit) {
         return new NamedExecutorService(nThreads, nThreads, keepAliveTime, unit, namePrefix,

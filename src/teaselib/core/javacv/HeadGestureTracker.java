@@ -20,7 +20,11 @@ import teaselib.motiondetection.Gesture;
 public class HeadGestureTracker {
     private static final Logger logger = LoggerFactory.getLogger(HeadGestureTracker.class);
 
-    private static final long GesturePauseMillis = 1000;
+    static final long GesturePauseMillis = 1000;
+
+    static final int NumberOfDirections = 4;
+    static final long GestureMaxDuration = 5000;
+    static final long GestureMinDuration = 500;
 
     private final TrackFeatures tracker = new TrackFeatures();
     private final TimeLine<Direction> directionTimeLine = new TimeLine<>();
@@ -43,7 +47,7 @@ public class HeadGestureTracker {
             tracker.keyPoints().copyTo(startKeyPoints);
             directionTimeLine.clear();
             resetTrackFeatures = false;
-        } else if (motionDetected && !resetTrackFeatures) {
+        } else if (!resetTrackFeatures) {
             tracker.update(videoImage);
             directionTimeLine.add(direction(), timeStamp);
         }
@@ -53,27 +57,20 @@ public class HeadGestureTracker {
         FloatIndexer from = startKeyPoints.createIndexer();
         FloatIndexer to = tracker.keyPoints().createIndexer();
 
-        Map<Direction, Integer> all = new EnumMap<>(Direction.class);
+        Map<Direction, Integer> directions = new EnumMap<>(Direction.class);
 
         long n = Math.min(from.rows(), to.rows());
         for (int i = 0; i < n; i++) {
             Point p1 = new Point((int) from.get(i, 0), (int) from.get(i, 1));
             Point p2 = new Point((int) to.get(i, 0), (int) to.get(i, 1));
 
-            Direction d = direction(p1, p2);
-            if (d != Direction.None) {
-                Integer current = all.get(d);
-                if (current == null) {
-                    all.put(d, 1);
-                } else
-                    all.put(d, current + 1);
-            }
+            addDirection(directions, direction(p1, p2));
 
             p1.close();
             p2.close();
         }
 
-        if (!all.isEmpty() && logger.isDebugEnabled()) {
+        if (!directions.isEmpty() && logger.isDebugEnabled()) {
             StringBuilder points = new StringBuilder();
             for (int i = 0; i < n; i++) {
                 Point p1 = new Point((int) from.get(i, 0), (int) from.get(i, 1));
@@ -88,14 +85,40 @@ public class HeadGestureTracker {
         from.release();
         to.release();
 
-        return all.isEmpty() ? Direction.None : direction(all);
+        try {
+            from.close();
+        } catch (Exception e) {
+            logger.error(e.getMessage(), e);
+        }
+
+        try {
+            to.close();
+        } catch (Exception e) {
+            logger.error(e.getMessage(), e);
+        }
+
+        return directions.isEmpty() ? Direction.None : direction(directions);
+    }
+
+    static void addDirection(Map<Direction, Integer> directions, Direction d) {
+        addDirection(directions, d, 1);
+    }
+
+    static void addDirection(Map<Direction, Integer> directions, Direction d, int amount) {
+        if (d != Direction.None) {
+            Integer current = directions.get(d);
+            if (current == null) {
+                directions.put(d, amount);
+            } else
+                directions.put(d, current + amount);
+        }
     }
 
     private static String toString(Point p) {
         return p.x() + "x" + p.y();
     }
 
-    private Direction direction(Point p1, Point p2) {
+    static Direction direction(Point p1, Point p2) {
         int px = p2.x() - p1.x();
         int py = p2.y() - p1.y();
 
@@ -129,7 +152,7 @@ public class HeadGestureTracker {
         return x != Direction.None ? x : y;
     }
 
-    private Direction direction(Map<Direction, Integer> all) {
+    static Direction direction(Map<Direction, Integer> all) {
         if (logger.isDebugEnabled()) {
             logger.debug(all.toString());
         }
@@ -146,24 +169,25 @@ public class HeadGestureTracker {
     }
 
     public Gesture getGesture() {
+        return getGesture(directionTimeLine);
+    }
+
+    static Gesture getGesture(TimeLine<Direction> directionTimeLine) {
         if (directionTimeLine.size() == 0)
             return Gesture.None;
         Direction direction = directionTimeLine.tail();
         if (direction == Direction.None)
             return Gesture.None;
 
-        int numberOfActions = 2;
-        long gestureMaxDuration = 5000;
-        long gestureMinDuration = 500;
+        List<Slice<Direction>> slices = directionTimeLine.getTimeSpanSlices(GestureMaxDuration);
 
-        List<Slice<Direction>> slices = directionTimeLine.lastSlices(2);
         long duration = directionTimeLine.duration(slices);
-        if (slices.size() == numberOfActions && gestureMinDuration < duration && duration < gestureMaxDuration) {
+        if (slices.size() >= NumberOfDirections && GestureMinDuration <= duration && duration <= GestureMaxDuration) {
             long h = slices.stream().filter((slice) -> horizontal(slice.item)).count();
             long v = slices.stream().filter((slice) -> vertical(slice.item)).count();
-            if (h >= numberOfActions * 2 && v == 0) {
+            if (h > v && h >= NumberOfDirections && v <= 1) {
                 return Gesture.Shake;
-            } else if (h == 0 && v >= numberOfActions * 2) {
+            } else if (v > h && v >= NumberOfDirections && h <= 1) {
                 return Gesture.Nod;
             } else {
                 return Gesture.None;
@@ -173,11 +197,11 @@ public class HeadGestureTracker {
         }
     }
 
-    private boolean vertical(Direction direction) {
+    private static boolean vertical(Direction direction) {
         return direction == Direction.Up || direction == Direction.Down;
     }
 
-    private boolean horizontal(Direction direction) {
+    private static boolean horizontal(Direction direction) {
         return direction == Direction.Right || direction == Direction.Left;
     }
 

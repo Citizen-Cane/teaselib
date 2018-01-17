@@ -41,7 +41,8 @@ public class TrackFeatures {
 
     public void start(Mat input, Mat mask) {
         cvtColor(input, videoMatGray, COLOR_BGRA2GRAY);
-        cvtColor(input, videoMatGrayPrevious, COLOR_BGRA2GRAY);
+        videoMatGrayPrevious = new Mat(input.size(), opencv_core.CV_8UC1);
+
         Size size = new Size(maxPoints * 2, 2);
         keyPoints = new Mat(size, opencv_core.CV_8UC4);
         keyPointsPrevious = new Mat(size, opencv_core.CV_8UC4);

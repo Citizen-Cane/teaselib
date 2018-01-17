@@ -97,7 +97,7 @@ public class MotionDetectorJavaCV extends MotionDetector /* extends WiredDevice 
 
     public static final Set<Feature> Features = EnumSet.of(Feature.Motion, Feature.Presence);
 
-    private static final double DesiredFps = 15;
+    private static final double DesiredFps = 30;
     private static final double DesiredFps_Motion = 5;
 
     private final CaptureThread eventThread;
@@ -264,6 +264,9 @@ public class MotionDetectorJavaCV extends MotionDetector /* extends WiredDevice 
                     Buffer.Locked<Mat> lock = video.get(image);
                     lock.get();
 
+                    // TODO Extra thread, independent of motion
+                    frameTaskFutures.add(frameTasks.submit(() -> computeGestures(image, timeStamp)));
+
                     // TODO Extra thread, lower fps, handle distance tracker
                     if (motionAndPresence == null) {
                         motionAndPresence = perceptionTasks.submit(() -> {
@@ -276,9 +279,6 @@ public class MotionDetectorJavaCV extends MotionDetector /* extends WiredDevice 
                     } else if (motionAndPresence.isCancelled() || motionAndPresence.isDone()) {
                         motionAndPresence = null;
                     }
-
-                    // TODO Extra thread, independent of motion
-                    frameTaskFutures.add(frameTasks.submit(() -> computeGestures(image, timeStamp)));
 
                     long timeLeft = fpsStatistics.timeMillisLeft(desiredFrameTimeMillis, timeStamp);
                     if (timeLeft > 0) {

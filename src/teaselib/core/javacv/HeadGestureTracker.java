@@ -13,6 +13,7 @@ import org.bytedeco.javacpp.indexer.FloatIndexer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import teaselib.core.javacv.util.Geom;
 import teaselib.core.util.TimeLine;
 import teaselib.core.util.TimeLine.Slice;
 import teaselib.motiondetection.Gesture;
@@ -32,7 +33,7 @@ public class HeadGestureTracker {
 
     public final Scalar color;
 
-    private boolean resetTrackFeatures = false;
+    private boolean resetTrackFeatures = true;
 
     public HeadGestureTracker(Scalar color) {
         this.color = color;
@@ -43,7 +44,6 @@ public class HeadGestureTracker {
         if (!resetTrackFeatures && !motionDetected && timeStamp > directionTimeLine.tailTimeMillis()
                 - directionTimeLine.tailTimeSpan() + GesturePauseMillis) {
             directionTimeLine.clear();
-            // TODO clearing time line may cause exception when querying in if-clause
             resetTrackFeatures = true;
         } else if (motionDetected && resetTrackFeatures) {
             // TODO At startup, motion region is the whole image -> fix
@@ -52,24 +52,27 @@ public class HeadGestureTracker {
             tracker.keyPoints().copyTo(startKeyPoints);
             resetTrackFeatures = false;
         } else if (!resetTrackFeatures) {
-            // TODO tracked points run off
             tracker.update(videoImage);
-            directionTimeLine.add(direction(), timeStamp);
+
+            Direction direction = direction();
+            if (direction != Direction.None) {
+                directionTimeLine.add(direction, timeStamp);
+            }
         }
     }
 
     private Direction direction() {
-        FloatIndexer from = startKeyPoints.createIndexer();
+        FloatIndexer from = tracker.previousKeyPoints().createIndexer();
         FloatIndexer to = tracker.keyPoints().createIndexer();
 
-        Map<Direction, Integer> directions = new EnumMap<>(Direction.class);
+        Map<Direction, Float> directions = new EnumMap<>(Direction.class);
 
         long n = Math.min(from.rows(), to.rows());
         for (int i = 0; i < n; i++) {
             Point p1 = new Point((int) from.get(i, 0), (int) from.get(i, 1));
             Point p2 = new Point((int) to.get(i, 0), (int) to.get(i, 1));
 
-            addDirection(directions, direction(p1, p2));
+            addDirection(directions, direction(p1, p2), Geom.distance2(p1, p2));
 
             p1.close();
             p2.close();
@@ -105,13 +108,13 @@ public class HeadGestureTracker {
         return directions.isEmpty() ? Direction.None : direction(directions);
     }
 
-    static void addDirection(Map<Direction, Integer> directions, Direction d) {
+    static void addDirection(Map<Direction, Float> directions, Direction d) {
         addDirection(directions, d, 1);
     }
 
-    static void addDirection(Map<Direction, Integer> directions, Direction d, int amount) {
+    static void addDirection(Map<Direction, Float> directions, Direction d, float amount) {
         if (d != Direction.None) {
-            Integer current = directions.get(d);
+            Float current = directions.get(d);
             if (current == null) {
                 directions.put(d, amount);
             } else
@@ -157,24 +160,33 @@ public class HeadGestureTracker {
         return x != Direction.None ? x : y;
     }
 
-    static Direction direction(Map<Direction, Integer> all) {
-        if (logger.isInfoEnabled()) {
-            logger.info(all.toString());
+    static Direction direction(Map<Direction, Float> all) {
+        if (logger.isDebugEnabled()) {
+            logger.debug(all.toString());
         }
 
-        int max = 0;
+        float max = 0;
         Direction direction = Direction.None;
-        for (Entry<Direction, Integer> entry : all.entrySet()) {
+        for (Entry<Direction, Float> entry : all.entrySet()) {
             if (entry.getValue() > max) {
                 direction = entry.getKey();
                 max = entry.getValue();
             }
         }
-        return direction;
+
+        if (max > 10) {
+            return direction;
+        } else {
+            return Direction.None;
+        }
     }
 
     public Gesture getGesture() {
-        return getGesture(directionTimeLine);
+        Gesture gesture = getGesture(directionTimeLine);
+        if (logger.isDebugEnabled()) {
+            logger.debug(directionTimeLine.getTimeSpan(1.0).toString() + " ->" + gesture);
+        }
+        return gesture;
     }
 
     static Gesture getGesture(TimeLine<Direction> directionTimeLine) {

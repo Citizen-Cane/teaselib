@@ -41,7 +41,7 @@ public class HeadGestureTrackerTest {
 
     @Test
     public void testDirectionMap() {
-        Map<Direction, Integer> directions = new EnumMap<>(Direction.class);
+        Map<Direction, Float> directions = new EnumMap<>(Direction.class);
         HeadGestureTracker.addDirection(directions, Direction.None);
         assertEquals(0, directions.size());
 

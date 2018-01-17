@@ -49,7 +49,9 @@ public class MotionProcessorJavaCV {
     public void update(Mat videoImage) {
         motion.update(videoImage);
         motionContours.update(motion.output);
+    }
 
+    public void updateTrackerData(Mat videoImage) {
         if (distanceTracker.hasFeatures()) {
             distanceTracker.updateTrackerData(videoImage);
         }

@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 
 import org.bridj.Platform;
 import org.bytedeco.javacpp.opencv_core.Mat;
@@ -31,7 +32,7 @@ public class VideoCaptureDeviceCV extends VideoCaptureDevice /* extends WiredDev
 
     private static final String DeviceClassName = "JavaCVVideoCapture";
 
-    private final static boolean useVideoInput = Platform.isWindows();
+    private static final boolean UseVideoInput = Platform.isWindows();
 
     private static final class MyDeviceFactory extends DeviceFactory<VideoCaptureDeviceCV> {
         private MyDeviceFactory(String deviceClass, Devices devices, Configuration configuration) {
@@ -41,7 +42,7 @@ public class VideoCaptureDeviceCV extends VideoCaptureDevice /* extends WiredDev
         @Override
         public List<String> enumerateDevicePaths(Map<String, VideoCaptureDeviceCV> deviceCache) {
             final List<String> devicePaths;
-            if (useVideoInput) {
+            if (UseVideoInput) {
                 List<String> deviceNames = VideoCaptureDeviceVideoInput.enumerateVideoInputDevices();
                 VideoCaptureDevices.sort(deviceNames);
                 devicePaths = new ArrayList<>(deviceNames.size());
@@ -58,7 +59,6 @@ public class VideoCaptureDeviceCV extends VideoCaptureDevice /* extends WiredDev
                     deviceCache.put(device.getDevicePath(), device);
                     devicePaths.add(devicePath);
                 }
-                devicePaths.addAll(devicePaths);
             }
             return devicePaths;
         }
@@ -96,13 +96,13 @@ public class VideoCaptureDeviceCV extends VideoCaptureDevice /* extends WiredDev
         @Override
         public VideoCaptureDeviceCV createDevice(String deviceName) {
             if (WaitingForConnection.equals(deviceName)) {
-                if (useVideoInput) {
+                if (UseVideoInput) {
                     return new VideoCaptureDeviceCV(deviceName, this);
                 } else {
                     return new VideoCaptureDeviceCV(0, this);
                 }
             } else {
-                if (useVideoInput) {
+                if (UseVideoInput) {
                     return new VideoCaptureDeviceCV(deviceName, this);
                 } else {
                     throw new IllegalArgumentException(deviceName);
@@ -128,7 +128,7 @@ public class VideoCaptureDeviceCV extends VideoCaptureDevice /* extends WiredDev
         this.deviceName = deviceName;
         this.factory = factory;
         this.videoCapture = new VideoCapture();
-        this.deviceId = useVideoInput ? VideoCaptureDeviceVideoInput.getDeviceIDFromName(deviceName)
+        this.deviceId = UseVideoInput ? VideoCaptureDeviceVideoInput.getDeviceIDFromName(deviceName)
                 : Integer.parseInt(DeviceCache.getDeviceName(deviceName));
     }
 
@@ -186,7 +186,7 @@ public class VideoCaptureDeviceCV extends VideoCaptureDevice /* extends WiredDev
 
     private boolean connect() {
         List<String> devicePaths = factory.getDevices();
-        if (devicePaths.size() > 0) {
+        if (!devicePaths.isEmpty()) {
             deviceName = DeviceCache.getDeviceName(devicePaths.get(0));
             if (WaitingForConnection.equals(deviceName)) {
                 return false;
@@ -235,6 +235,7 @@ public class VideoCaptureDeviceCV extends VideoCaptureDevice /* extends WiredDev
         if (fps > 0.0) {
             // Try to set a fixed exposure time to
             // avoid frame rate drops due to exposure adjustment
+            videoCapture.set(opencv_videoio.CAP_PROP_FPS, fps);
             videoCapture.set(opencv_videoio.CAP_PROP_EXPOSURE, 1.0 / fps);
         }
     }
@@ -242,14 +243,6 @@ public class VideoCaptureDeviceCV extends VideoCaptureDevice /* extends WiredDev
     @Override
     public double fps() {
         return fps;
-    }
-
-    private Mat read() {
-        videoCapture.grab();
-        // hangs here on surprise removal
-        // but interrupting the thread still works
-        videoCapture.retrieve(mat);
-        return mat;
     }
 
     @Override
@@ -260,14 +253,17 @@ public class VideoCaptureDeviceCV extends VideoCaptureDevice /* extends WiredDev
     private class FrameIterator implements Iterator<Mat> {
         Mat f = null;
 
+        private Mat read() {
+            videoCapture.grab();
+            // hangs here on surprise removal
+            // but interrupting the thread still works
+            videoCapture.retrieve(mat);
+            return mat;
+        }
+
         private Mat getMat() {
-            while (true) {
+            while (f == null) {
                 f = read();
-                if (f != null) {
-                    break;
-                } else {
-                    continue;
-                }
             }
             return f;
         }
@@ -283,6 +279,10 @@ public class VideoCaptureDeviceCV extends VideoCaptureDevice /* extends WiredDev
 
         @Override
         public Mat next() {
+            if (!videoCapture.isOpened() || videoCapture.isNull()) {
+                throw new NoSuchElementException();
+            }
+
             if (f == null) {
                 return getMat();
             } else {
@@ -306,5 +306,4 @@ public class VideoCaptureDeviceCV extends VideoCaptureDevice /* extends WiredDev
             logger.error(e.getMessage(), e);
         }
     }
-
 }

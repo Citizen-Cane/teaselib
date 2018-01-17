@@ -1,7 +1,5 @@
 package teaselib.video;
 
-import java.util.Iterator;
-
 import org.bytedeco.javacpp.opencv_core.Mat;
 import org.bytedeco.javacpp.opencv_core.Size;
 
@@ -19,7 +17,6 @@ public abstract class VideoCaptureDevice implements Iterable<Mat>, Device.Creata
         if (Instance == null) {
             Instance = new DeviceCache<VideoCaptureDevice>()
                     .addFactory(VideoCaptureDeviceCV.getDeviceFactory(devices, configuration));
-            // .addFactory(VideoCaptureDeviceVideoInput.Factory);
         }
         return Instance;
     }
@@ -39,10 +36,4 @@ public abstract class VideoCaptureDevice implements Iterable<Mat>, Device.Creata
     public abstract void resolution(Size size);
 
     public abstract Size resolution();
-
-    @Override
-    public abstract Iterator<Mat> iterator();
-
-    @Override
-    public abstract void close();
 }

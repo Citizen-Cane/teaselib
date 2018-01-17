@@ -158,8 +158,8 @@ public class HeadGestureTracker {
     }
 
     static Direction direction(Map<Direction, Integer> all) {
-        if (logger.isDebugEnabled()) {
-            logger.debug(all.toString());
+        if (logger.isInfoEnabled()) {
+            logger.info(all.toString());
         }
 
         int max = 0;
@@ -188,8 +188,8 @@ public class HeadGestureTracker {
 
         long duration = directionTimeLine.duration(slices);
         if (slices.size() >= NumberOfDirections && GestureMinDuration <= duration && duration <= GestureMaxDuration) {
-            long h = slices.stream().filter((slice) -> horizontal(slice.item)).count();
-            long v = slices.stream().filter((slice) -> vertical(slice.item)).count();
+            long h = slices.stream().filter(slice -> horizontal(slice.item)).count();
+            long v = slices.stream().filter(slice -> vertical(slice.item)).count();
             if (h > v && h >= NumberOfDirections && v <= 1) {
                 return Gesture.Shake;
             } else if (v > h && v >= NumberOfDirections && h <= 1) {
@@ -230,7 +230,7 @@ public class HeadGestureTracker {
     }
 
     public boolean hasFeatures() {
-        return tracker.haveFeatures();
+        return tracker.hasFeatures();
     }
 
     public int size(Mat points) {

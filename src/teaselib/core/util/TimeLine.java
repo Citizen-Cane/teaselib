@@ -18,7 +18,7 @@ public class TimeLine<T> {
     private final LinkedList<T> items = new LinkedList<>();
     private final LinkedList<Long> timeSpans = new LinkedList<>();
     private int maxItems = 1000;
-    private long maxTimeSpanMillis = 60 * 1000;
+    private long maxTimeSpanMillis = 1000 * 60;
 
     private T head = null;
     private long tailTimeMillis;
@@ -106,7 +106,8 @@ public class TimeLine<T> {
     }
 
     private void removeFirstMillis(long timeSpanMillis) {
-        for (long i = 0; i < timeSpanMillis && i < items.size();) {
+        long i = 0;
+        while (i < timeSpanMillis && i < items.size()) {
             items.removeFirst();
             long d = timeSpans.removeFirst();
             i += d;
@@ -217,6 +218,6 @@ public class TimeLine<T> {
     }
 
     public Slice<T> tailSlice() {
-        return new Slice<T>(tailTimeSpan(), tail());
+        return new Slice<>(tailTimeSpan(), tail());
     }
 }

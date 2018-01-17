@@ -1,21 +1,29 @@
 package teaselib.core.javacv;
 
+import java.util.Iterator;
+
 import org.bytedeco.javacpp.opencv_core.Mat;
 
+import teaselib.core.javacv.util.Buffer;
+import teaselib.core.javacv.util.Buffer.Locked;
+
 public class Copy implements Transformation {
-    public final Mat output;
+    public final Iterator<Buffer.Locked<Mat>> output;
 
-    public Copy(Mat output) {
-        this.output = output;
-    }
-
-    public Copy() {
-        output = new Mat();
+    public Copy(Buffer<Mat> buffers) {
+        this.output = buffers.iterator();
     }
 
     @Override
     public Mat update(Mat input) {
-        input.copyTo(output);
-        return output;
+        Locked<Mat> buffer = output.next();
+        try {
+            Mat mat = buffer.get();
+            input.copyTo(mat);
+            return mat;
+        } finally {
+            buffer.release();
+        }
     }
+
 }

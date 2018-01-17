@@ -7,6 +7,9 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 
 import org.bytedeco.javacpp.opencv_core.Mat;
@@ -17,6 +20,7 @@ import org.slf4j.LoggerFactory;
 import teaselib.core.Configuration;
 import teaselib.core.ScriptInterruptedException;
 import teaselib.core.VideoRenderer;
+import teaselib.core.concurrency.NamedExecutorService;
 import teaselib.core.concurrency.Signal;
 import teaselib.core.devices.BatteryLevel;
 import teaselib.core.devices.DeviceCache;
@@ -28,11 +32,12 @@ import teaselib.core.javacv.HeadGestureTracker;
 import teaselib.core.javacv.Scale;
 import teaselib.core.javacv.ScaleAndMirror;
 import teaselib.core.javacv.Transformation;
+import teaselib.core.javacv.util.Buffer;
 import teaselib.core.javacv.util.FramesPerSecond;
+import teaselib.core.util.ExceptionUtil;
 import teaselib.motiondetection.Gesture;
 import teaselib.motiondetection.MotionDetector;
 import teaselib.motiondetection.ViewPoint;
-import teaselib.video.ResolutionList;
 import teaselib.video.VideoCaptureDevice;
 
 /**
@@ -90,9 +95,10 @@ public class MotionDetectorJavaCV extends MotionDetector /* extends WiredDevice 
         return new MyDeviceFactory(DeviceClassName, devices, configuration);
     }
 
-    public static final EnumSet<Feature> Features = EnumSet.of(Feature.Motion, Feature.Presence);
+    public static final Set<Feature> Features = EnumSet.of(Feature.Motion, Feature.Presence);
 
     private static final double DesiredFps = 15;
+    private static final double DesiredFps_Motion = 5;
 
     private final CaptureThread eventThread;
 
@@ -121,15 +127,15 @@ public class MotionDetectorJavaCV extends MotionDetector /* extends WiredDevice 
 
         private VideoCaptureDevice videoCaptureDevice;
 
+        private Buffer<Mat> video = new Buffer<>(Mat::new, (int) DesiredFps);
+
         private Transformation videoInputTransformation;
-        private Size processingSize;
         private MotionSensitivity motionSensitivity;
         private ViewPoint viewPoint;
         private MotionProcessorJavaCV motionProcessor;
         HeadGestureTracker gestureTracker = new HeadGestureTracker(Color.Cyan);
         protected Gesture gesture = Gesture.None;
 
-        private Mat input = new Mat();
         // TODO Atomic reference
         private MotionDetectionResultImplementation detectionResult;
 
@@ -155,39 +161,45 @@ public class MotionDetectorJavaCV extends MotionDetector /* extends WiredDevice 
         }
 
         private void openVideoCaptureDevice(VideoCaptureDevice videoCaptureDevice) {
-            videoCaptureDevice.open();
             videoCaptureDevice.fps(fps);
+            videoCaptureDevice.open();
             videoCaptureDevice
                     .resolution(videoCaptureDevice.getResolutions().getMatchingOrSimilar(DesiredProcessingSize));
             this.fps = FramesPerSecond.getFps(videoCaptureDevice.fps(), desiredFps);
             this.fpsStatistics = new FramesPerSecond((int) fps);
             this.desiredFrameTimeMillis = (long) (1000.0 / fps);
+            @SuppressWarnings("resource")
             Size resolution = videoCaptureDevice.resolution();
-            if (mirror) {
-                ScaleAndMirror scaleAndMirror = new ScaleAndMirror(resolution,
-                        ResolutionList.getSmallestFit(resolution, DesiredProcessingSize), input);
-                this.processingSize = new Size((int) (resolution.width() * scaleAndMirror.factor),
-                        (int) (resolution.height() * scaleAndMirror.factor));
-                this.videoInputTransformation = scaleAndMirror;
-            } else if (resolution.equals(DesiredProcessingSize)) {
-                // Copy source mat because when the video capture device
-                // frame rate drops below the desired frame rate,
-                // the debug renderer would mess up motion detection
-                // when rendering into the source mat - at least for
-                // javacv
-                this.videoInputTransformation = new Copy(input);
-                this.processingSize = resolution;
-            } else {
-                Scale scale = new Scale(resolution, DesiredProcessingSize, input);
-                this.processingSize = new Size((int) (resolution.width() * scale.factor),
-                        (int) (resolution.height() * scale.factor));
-                this.videoInputTransformation = scale;
-            }
+            @SuppressWarnings("resource")
+            Size processingSize = getProcessingSize(resolution);
+            this.videoInputTransformation = getVideoTransformation(resolution, processingSize);
             motionProcessor = new MotionProcessorJavaCV(resolution, processingSize);
             detectionResult = new MotionDetectionResultImplementation(processingSize);
             setSensitivity(motionSensitivity);
             setPointOfView(viewPoint);
             debugInfo = new MotionDetectorJavaCVDebugRenderer(motionProcessor, processingSize);
+        }
+
+        private static Size getProcessingSize(Size resolution) {
+            final Size processingSize;
+            if (resolution.equals(DesiredProcessingSize)) {
+                processingSize = new Size(resolution);
+            } else {
+                double factor = Scale.factor(resolution, DesiredProcessingSize);
+                processingSize = new Size((int) (resolution.width() * factor), (int) (resolution.height() * factor));
+            }
+            return processingSize;
+        }
+
+        private Transformation getVideoTransformation(Size resolution, Size processingSize) {
+            if (mirror) {
+                return new ScaleAndMirror(resolution, processingSize, video);
+            } else if (resolution.equals(processingSize)) {
+                // TODO Move buffers to video capture classes in order to save copies and scale/mirror on video hardware
+                return new Copy(video);
+            } else {
+                return new Scale(resolution, processingSize, video);
+            }
         }
 
         private static EnumMap<MotionSensitivity, Integer> initStructuringElementSizes() {
@@ -223,28 +235,7 @@ public class MotionDetectorJavaCV extends MotionDetector /* extends WiredDevice 
                     DeviceCache.connect(videoCaptureDevice);
                     openVideoCaptureDevice(videoCaptureDevice);
                     fpsStatistics.start();
-                    try {
-                        for (Mat frame : videoCaptureDevice) {
-                            processVideo(frame);
-                            handlePause();
-                            long now = System.currentTimeMillis();
-                            computeMotionAndPresence(now);
-                            computeGestures(now);
-                            renderVideo();
-                            handleFPS(now);
-                        }
-                    } catch (InterruptedException e) {
-                        throw e;
-                    } catch (Exception e) {
-                        logger.error(e.getMessage(), e);
-                    } finally {
-                        videoCaptureDevice.close();
-                        if (videoRenderer != null) {
-                            videoRenderer.close();
-                        }
-                        if (debugInfo != null)
-                            debugInfo.close();
-                    }
+                    processVideoCaptureStream();
                 }
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
@@ -253,9 +244,142 @@ public class MotionDetectorJavaCV extends MotionDetector /* extends WiredDevice 
             }
         }
 
-        private void processVideo(Mat frame) {
-            videoInputTransformation.update(frame);
-            motionProcessor.update(input);
+        NamedExecutorService frameTasks = NamedExecutorService.newUnlimitedThreadPool("frames", Long.MAX_VALUE,
+                TimeUnit.MILLISECONDS);
+        NamedExecutorService perceptionTasks = NamedExecutorService.singleThreadedQueue("Motion and Presence",
+                Long.MAX_VALUE, TimeUnit.MILLISECONDS);
+
+        Future<?> motionAndPresence = null;
+        List<Future<?>> frameTaskFutures = new ArrayList<>();
+
+        private void processVideoCaptureStream() throws InterruptedException {
+            try {
+                for (Mat frame : videoCaptureDevice) {
+                    long timeStamp = System.currentTimeMillis();
+
+                    // Main thread, has to be done anyway
+                    @SuppressWarnings("resource")
+                    Mat image = videoInputTransformation.update(frame);
+
+                    Buffer.Locked<Mat> lock = video.get(image);
+                    lock.get();
+
+                    // TODO Extra thread, lower fps, handle distance tracker
+                    if (motionAndPresence == null) {
+                        motionAndPresence = perceptionTasks.submit(() -> {
+                            computeMotionAndPresence(image, timeStamp);
+                            // TODO Increase semaphore count
+                            // lock.release();
+                        });
+                        // TODO Block access to motion features while not done
+                        motionAndPresence.get();
+                    } else if (motionAndPresence.isCancelled() || motionAndPresence.isDone()) {
+                        motionAndPresence = null;
+                    }
+
+                    // TODO Extra thread, independent of motion
+                    frameTaskFutures.add(frameTasks.submit(() -> computeGestures(image, timeStamp)));
+
+                    long timeLeft = fpsStatistics.timeMillisLeft(desiredFrameTimeMillis, timeStamp);
+                    if (timeLeft > 0) {
+                        Thread.sleep(timeLeft);
+                    }
+                    // TODO review frame statistics - may be wrong
+                    fpsStatistics.updateFrame(timeStamp + timeLeft);
+
+                    completeComputationAndRender(image, lock);
+                    // TODO Thread at end, lock videoImage
+                    // frameTasks.submit(() -> {
+                    // completeComputationAndRender(image, lock);
+                    // }).get();
+
+                    handlePause();
+                }
+            } catch (InterruptedException e) {
+                throw e;
+            } catch (Exception e) {
+                logger.error(e.getMessage(), e);
+            } finally {
+                videoCaptureDevice.close();
+                if (videoRenderer != null) {
+                    videoRenderer.close();
+                }
+                if (debugInfo != null)
+                    debugInfo.close();
+            }
+        }
+
+        private void computeMotionAndPresence(Mat video, long timeStamp) {
+            motionProcessor.update(video);
+            motionProcessor.updateTrackerData(video);
+
+            presenceChanged.doLocked(() -> {
+                boolean hasChanged = detectionResult.updateMotionState(video, motionProcessor, timeStamp);
+                if (hasChanged) {
+                    presenceChanged.signal();
+                }
+            });
+        }
+
+        private void computeGestures(Mat video, long timeStamp) {
+            if (detectionResult.presenceIndicators.containsKey(Presence.CameraShake)) {
+                gestureTracker.reset();
+            } else {
+                gestureTracker.update(video, detectionResult.motionDetected, detectionResult.getPresenceRegion(1.0),
+                        timeStamp);
+            }
+            Gesture newGesture = gestureTracker.getGesture();
+            boolean changed = gesture != newGesture;
+            gesture = newGesture;
+            if (changed) {
+                gestureChanged.signal();
+            }
+        }
+
+        private void completeComputationAndRender(Mat image, Buffer.Locked<Mat> lock) {
+            try {
+                for (Future<?> task : frameTaskFutures) {
+                    try {
+                        task.get();
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        return;
+                    } catch (ExecutionException e) {
+                        throw ExceptionUtil.asRuntimeException(e);
+                    }
+                }
+                render(image);
+            } finally {
+                lock.release();
+            }
+        }
+
+        private void render(Mat video) {
+            if (videoRenderer != null) {
+                Set<Presence> indicators = renderOverlays(video);
+                videoRenderer.update(video);
+
+                if (logDetails) {
+                    logMotionState(indicators, motionProcessor, detectionResult.contourMotionDetected,
+                            detectionResult.trackerMotionDetected);
+                }
+            }
+        }
+
+        private void computeFPSStatistics(long timeStamp) throws InterruptedException {
+            long timeLeft = fpsStatistics.timeMillisLeft(desiredFrameTimeMillis, timeStamp);
+            if (timeLeft > 0) {
+                Thread.sleep(timeLeft);
+            }
+            fpsStatistics.updateFrame(timeStamp + timeLeft);
+        }
+
+        private Set<Presence> renderOverlays(Mat image) {
+            Set<Presence> indicators = getIndicatorHistory(debugWindowTimeSpan);
+            debugInfo.render(image, detectionResult.getPresenceRegion(debugWindowTimeSpan),
+                    detectionResult.presenceIndicators, indicators, detectionResult.contourMotionDetected,
+                    detectionResult.trackerMotionDetected, gestureTracker, gesture, fpsStatistics.value());
+            return indicators;
         }
 
         private void handlePause() throws InterruptedException {
@@ -264,56 +388,6 @@ public class MotionDetectorJavaCV extends MotionDetector /* extends WiredDevice 
             } finally {
                 lockStartStop.unlock();
             }
-        }
-
-        private void renderVideo() {
-            if (videoRenderer != null) {
-                videoRenderer.update(input);
-            }
-        }
-
-        private void computeMotionAndPresence(long now) {
-            // Resulting bounding boxes
-            presenceChanged.doLocked(() -> {
-                boolean hasChanged = detectionResult.updateMotionState(input, motionProcessor, now);
-                if (hasChanged) {
-                    presenceChanged.signal();
-                }
-                if (videoRenderer != null) {
-                    Set<Presence> indicators = renderFeedback(input);
-                    if (logDetails) {
-                        logMotionState(indicators, motionProcessor, detectionResult.contourMotionDetected,
-                                detectionResult.trackerMotionDetected);
-                    }
-                }
-            });
-        }
-
-        private void computeGestures(long now) {
-            if (detectionResult.presenceIndicators.containsKey(Presence.CameraShake)) {
-                gestureTracker.reset();
-            } else {
-                gestureTracker.update(input, detectionResult.motionDetected, detectionResult.getPresenceRegion(1.0),
-                        now);
-            }
-            gesture = gestureTracker.getGesture();
-            presenceChanged.signal();
-        }
-
-        private void handleFPS(long now) throws InterruptedException {
-            long timeLeft = fpsStatistics.timeMillisLeft(desiredFrameTimeMillis, now);
-            if (timeLeft > 0) {
-                Thread.sleep(timeLeft);
-            }
-            fpsStatistics.updateFrame(now + timeLeft);
-        }
-
-        private Set<Presence> renderFeedback(Mat image) {
-            Set<Presence> indicators = getIndicatorHistory(debugWindowTimeSpan);
-            debugInfo.render(image, detectionResult.getPresenceRegion(debugWindowTimeSpan),
-                    detectionResult.presenceIndicators, indicators, detectionResult.contourMotionDetected,
-                    detectionResult.trackerMotionDetected, gestureTracker, gesture, fpsStatistics.value());
-            return indicators;
         }
 
         private Set<Presence> getIndicatorHistory(double timeSpan) {
@@ -386,7 +460,7 @@ public class MotionDetectorJavaCV extends MotionDetector /* extends WiredDevice 
     }
 
     @Override
-    public EnumSet<Feature> getFeatures() {
+    public Set<Feature> getFeatures() {
         return Features;
     }
 
@@ -408,6 +482,7 @@ public class MotionDetectorJavaCV extends MotionDetector /* extends WiredDevice 
         }
     }
 
+    @Override
     public Gesture await(Gesture expected, double timeoutSeconds) {
         if (!active()) {
             awaitTimeout(timeoutSeconds);
@@ -433,7 +508,7 @@ public class MotionDetectorJavaCV extends MotionDetector /* extends WiredDevice 
         return eventThread.gesture;
     }
 
-    private void awaitTimeout(double timeoutSeconds) {
+    private static void awaitTimeout(double timeoutSeconds) {
         try {
             Thread.sleep((long) (timeoutSeconds * 1000));
         } catch (InterruptedException e) {

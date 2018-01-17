@@ -3,19 +3,11 @@
  */
 package teaselib.core.devices.motiondetection;
 
-import static org.bytedeco.javacpp.opencv_core.FONT_HERSHEY_PLAIN;
-import static org.bytedeco.javacpp.opencv_imgproc.circle;
-import static org.bytedeco.javacpp.opencv_imgproc.putText;
-import static org.bytedeco.javacpp.opencv_imgproc.rectangle;
-import static teaselib.core.javacv.Color.Blue;
-import static teaselib.core.javacv.Color.DarkBlue;
-import static teaselib.core.javacv.Color.DarkGreen;
-import static teaselib.core.javacv.Color.Green;
-import static teaselib.core.javacv.Color.MidBlue;
-import static teaselib.core.javacv.Color.MidGreen;
-import static teaselib.core.javacv.Color.White;
-import static teaselib.core.javacv.util.Geom.center;
-import static teaselib.core.javacv.util.Gui.drawRect;
+import static org.bytedeco.javacpp.opencv_core.*;
+import static org.bytedeco.javacpp.opencv_imgproc.*;
+import static teaselib.core.javacv.Color.*;
+import static teaselib.core.javacv.util.Geom.*;
+import static teaselib.core.javacv.util.Gui.*;
 
 import java.util.ConcurrentModificationException;
 import java.util.Map;
@@ -35,8 +27,8 @@ import teaselib.motiondetection.MotionDetector.Presence;
  * OpenCV imshow(...) isn't thread safe, it may hang (at least on windows) if called from several threads.
  */
 public class MotionDetectorJavaCVDebugRenderer {
-    final private MotionProcessorJavaCV motionProcessor;
-    final private Size windowSize;
+    private final MotionProcessorJavaCV motionProcessor;
+    private final Size windowSize;
 
     final Thread owner;
 
@@ -50,7 +42,9 @@ public class MotionDetectorJavaCVDebugRenderer {
             boolean contourMotionDetected, boolean trackerMotionDetected, HeadGestureTracker gestureTracker,
             Gesture gesture, double fps) {
         if (Thread.currentThread() != owner) {
-            throw new ConcurrentModificationException(owner.toString() + "!=" + Thread.currentThread().toString());
+            throw new ConcurrentModificationException(
+                    "Rendering to Open CV window works only in the thread that created the window: " + owner.toString()
+                            + "!=" + Thread.currentThread().toString());
         }
         boolean present = indicators.contains(Presence.Present);
         // Motion

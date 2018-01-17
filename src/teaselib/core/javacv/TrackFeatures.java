@@ -1,11 +1,8 @@
 package teaselib.core.javacv;
 
-import static org.bytedeco.javacpp.opencv_core.CV_8UC1;
-import static org.bytedeco.javacpp.opencv_imgproc.COLOR_BGRA2GRAY;
-import static org.bytedeco.javacpp.opencv_imgproc.circle;
-import static org.bytedeco.javacpp.opencv_imgproc.cvtColor;
-import static org.bytedeco.javacpp.opencv_imgproc.goodFeaturesToTrack;
-import static org.bytedeco.javacpp.opencv_video.calcOpticalFlowPyrLK;
+import static org.bytedeco.javacpp.opencv_core.*;
+import static org.bytedeco.javacpp.opencv_imgproc.*;
+import static org.bytedeco.javacpp.opencv_video.*;
 
 import org.bytedeco.javacpp.opencv_core;
 import org.bytedeco.javacpp.opencv_core.Mat;
@@ -32,10 +29,12 @@ public class TrackFeatures {
         Mat mask = Mat.zeros(videoImage.size(), CV_8UC1).asMat();
 
         Mat roi = new Mat(mask, rect);
-        roi.put(new Scalar(255, 255, 255, 255));
+        Scalar scalar = new Scalar(255, 255, 255, 255);
+        roi.put(scalar);
 
         start(videoImage, mask);
 
+        scalar.close();
         roi.close();
         mask.close();
     }
@@ -60,7 +59,7 @@ public class TrackFeatures {
     }
 
     public void update(Mat input) {
-        if (haveFeatures()) {
+        if (hasFeatures()) {
             swapPixels(input);
             swapKeyPoints();
             calcOpticalFlowPyrLK(videoMatGrayPrevious, videoMatGray, keyPointsPrevious, keyPoints, status, error);
@@ -80,8 +79,8 @@ public class TrackFeatures {
         keyPoints = swap;
     }
 
-    public boolean haveFeatures() {
-        return keyPointsPrevious.rows() * keyPointsPrevious.cols() > 0;
+    public boolean hasFeatures() {
+        return keyPoints.rows() * keyPoints.cols() > 0;
     }
 
     public Mat previousKeyPoints() {
@@ -93,7 +92,7 @@ public class TrackFeatures {
     }
 
     public void render(Mat input, Scalar color) {
-        if (haveFeatures()) {
+        if (hasFeatures()) {
             FloatIndexer points = keyPoints.createIndexer();
             for (int i = 0; i < points.rows(); i++) {
                 opencv_core.Point p = new opencv_core.Point((int) points.get(i, 0), (int) points.get(i, 1));
@@ -103,6 +102,11 @@ public class TrackFeatures {
                 p.close();
             }
             points.release();
+
+            try {
+                points.close();
+            } catch (Exception e) { //
+            }
         }
     }
 }

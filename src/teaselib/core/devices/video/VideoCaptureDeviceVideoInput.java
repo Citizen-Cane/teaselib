@@ -72,8 +72,6 @@ public class VideoCaptureDeviceVideoInput extends VideoCaptureDevice /* extends 
     }
 
     static int getDeviceIDFromName(String deviceName) {
-        // returns always -1:
-        // videoInput.getDeviceIDFromName(deviceName);
         int n = videoInput.listDevices(false); // no debug output
         for (int i = 0; i < n; i++) {
             if (deviceName.equals(videoInput.getDeviceName(i).getString())) {
@@ -126,12 +124,10 @@ public class VideoCaptureDeviceVideoInput extends VideoCaptureDevice /* extends 
         if (!connected()) {
             connect();
         }
-        if (connected()) {
-            if (vi == null) {
-                vi = new videoInput();
-                vi.setUseCallback(true);
-                vi.setAutoReconnectOnFreeze(deviceId, true, 100);
-            }
+        if (connected() && vi == null) {
+            vi = new videoInput();
+            vi.setUseCallback(true);
+            vi.setAutoReconnectOnFreeze(deviceId, true, 100);
         }
     }
 
@@ -146,7 +142,7 @@ public class VideoCaptureDeviceVideoInput extends VideoCaptureDevice /* extends 
 
     private boolean connect() {
         List<String> devicePaths = factory.getDevices();
-        if (devicePaths.size() > 0) {
+        if (!devicePaths.isEmpty()) {
             deviceName = DeviceCache.getDeviceName(devicePaths.get(0));
             if (WaitingForConnection.equals(deviceName)) {
                 return false;
@@ -256,11 +252,6 @@ public class VideoCaptureDeviceVideoInput extends VideoCaptureDevice /* extends 
         return fps;
     }
 
-    private Mat read() {
-        mat.data(vi.getPixels(deviceId, false, true));
-        return mat;
-    }
-
     @Override
     public Iterator<Mat> iterator() {
         return new FrameIterator();
@@ -269,14 +260,14 @@ public class VideoCaptureDeviceVideoInput extends VideoCaptureDevice /* extends 
     private class FrameIterator implements Iterator<Mat> {
         Mat f = null;
 
+        private Mat read() {
+            mat.data(vi.getPixels(deviceId, false, true));
+            return mat;
+        }
+
         private Mat getMat() {
-            while (true) {
+            while (f == null) {
                 f = read();
-                if (f != null) {
-                    break;
-                } else {
-                    continue;
-                }
             }
             return f;
         }

@@ -1,7 +1,7 @@
 package teaselib.core.javacv;
 
-import static org.bytedeco.javacpp.opencv_core.FONT_HERSHEY_PLAIN;
-import static org.bytedeco.javacpp.opencv_imgproc.putText;
+import static org.bytedeco.javacpp.opencv_core.*;
+import static org.bytedeco.javacpp.opencv_imgproc.*;
 
 import org.bytedeco.javacpp.opencv_core.Mat;
 import org.bytedeco.javacpp.opencv_core.Point;
@@ -43,12 +43,14 @@ public class DistanceTracker {
     }
 
     public boolean hasFeatures() {
-        return tracker.haveFeatures();
+        return tracker.hasFeatures();
     }
 
+    @SuppressWarnings("resource")
     public double distance2() {
         Mat currentKeyPoints = tracker.keyPoints();
         double distance2 = 0.0;
+
         if (size(currentKeyPoints) > 0) {
             FloatIndexer from = keyPoints.createIndexer();
             FloatIndexer to = currentKeyPoints.createIndexer();
@@ -58,7 +60,20 @@ public class DistanceTracker {
                         teaselib.core.javacv.util.Geom.distance2(new Point((int) from.get(i, 0), (int) from.get(i, 1)),
                                 new Point((int) to.get(i, 0), (int) to.get(i, 1))));
             }
+
+            from.release();
+            to.release();
+
+            try {
+                from.close();
+            } catch (Exception e) { //
+            }
+            try {
+                to.close();
+            } catch (Exception e) { //
+            }
         }
+
         return distance2;
     }
 
@@ -67,10 +82,9 @@ public class DistanceTracker {
     }
 
     public void render(Mat output) {
-        Mat currentKeyPoints = tracker.keyPoints();
-
         FloatIndexer from = keyPoints.createIndexer();
-        FloatIndexer to = currentKeyPoints.createIndexer();
+        FloatIndexer to = tracker.keyPoints().createIndexer();
+
         long n = Math.min(from.rows(), to.rows());
         for (int i = 0; i < n; i++) {
             Point p1 = new Point((int) from.get(i, 0), (int) from.get(i, 1));
@@ -83,8 +97,18 @@ public class DistanceTracker {
         Point p = new Point(0, output.rows() - 20);
         putText(output, Integer.toString(distance), p, FONT_HERSHEY_PLAIN, 1.75, color);
         p.close();
+
         from.release();
         to.release();
+
+        try {
+            from.close();
+        } catch (Exception e) { //
+        }
+        try {
+            to.close();
+        } catch (Exception e) { //
+        }
 
         tracker.render(output, color);
     }

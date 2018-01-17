@@ -214,7 +214,11 @@ public class TimeLine<T> {
     }
 
     public long tailTimeSpan() {
-        return timeSpans.getLast();
+        if (timeSpans.isEmpty()) {
+            return 0;
+        } else {
+            return timeSpans.getLast();
+        }
     }
 
     public Slice<T> tailSlice() {

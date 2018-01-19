@@ -3,6 +3,7 @@ package teaselib.core.devices.motiondetection;
 import static teaselib.core.javacv.util.Geom.intersects;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -26,6 +27,34 @@ public class MotionDetectionResultImplementation extends MotionDetectionResultDa
     private static final Logger logger = LoggerFactory.getLogger(MotionDetectionResultImplementation.class);
 
     private static final double CircularityVariance = 1.3; // 1.3 seems to be necessary to detect blinking eyes
+
+    public class PresenceData {
+        final Map<Presence, Rect> presenceIndicators;
+
+        public PresenceData() {
+            presenceIndicators = MotionDetectionResultImplementation.this.presenceIndicators;
+        }
+
+        boolean trackerMotionDetected;
+        boolean contourMotionDetected;
+
+        Set<Presence> indicators = Collections.emptySet();
+        Set<Presence> debugIndicators = Collections.emptySet();
+        Rect presenceRegion;
+        Rect debugPresenceRegion;
+
+        public void update(double calculationTimeSpan, double debugWindowTimeSpan) {
+            trackerMotionDetected = MotionDetectionResultImplementation.this.trackerMotionDetected;
+            contourMotionDetected = MotionDetectionResultImplementation.this.contourMotionDetected;
+
+            indicators = getIndicatorHistory(calculationTimeSpan);
+            debugIndicators = getIndicatorHistory(debugWindowTimeSpan);
+            presenceRegion = getPresenceRegion(calculationTimeSpan);
+            debugPresenceRegion = getPresenceRegion(calculationTimeSpan);
+        }
+    }
+
+    public PresenceData presenceData = new PresenceData();
 
     MotionDetectionResultImplementation(Size size) {
         super(size);
@@ -108,8 +137,7 @@ public class MotionDetectionResultImplementation extends MotionDetectionResultDa
 
     private boolean updateIndicatorTimeLine(long timeStamp) {
         Set<Presence> indicators = getPresence(motionRegionHistory.tail(), presenceRegionHistory.tail());
-        boolean hasChanged = indicatorHistory.add(indicators, timeStamp);
-        return hasChanged;
+        return indicatorHistory.add(indicators, timeStamp);
     }
 
     @Override
@@ -217,5 +245,9 @@ public class MotionDetectionResultImplementation extends MotionDetectionResultDa
         }
         directions.add(Presence.NoCameraShake);
         return directions;
+    }
+
+    public void updateRenderData(double calculationTimeSpan, double debugWindowTimeSpan) {
+        presenceData.update(calculationTimeSpan, debugWindowTimeSpan);
     }
 }

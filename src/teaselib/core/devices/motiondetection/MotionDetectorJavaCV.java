@@ -3,7 +3,6 @@ package teaselib.core.devices.motiondetection;
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.EnumSet;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -13,6 +12,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 
 import org.bytedeco.javacpp.opencv_core.Mat;
+import org.bytedeco.javacpp.opencv_core.Rect;
 import org.bytedeco.javacpp.opencv_core.Size;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,6 +34,7 @@ import teaselib.core.javacv.ScaleAndMirror;
 import teaselib.core.javacv.Transformation;
 import teaselib.core.javacv.util.Buffer;
 import teaselib.core.javacv.util.FramesPerSecond;
+import teaselib.core.javacv.util.Geom;
 import teaselib.core.util.ExceptionUtil;
 import teaselib.motiondetection.Gesture;
 import teaselib.motiondetection.MotionDetector;
@@ -96,9 +97,7 @@ public class MotionDetectorJavaCV extends MotionDetector /* extends WiredDevice 
     }
 
     public static final Set<Feature> Features = EnumSet.of(Feature.Motion, Feature.Presence);
-
     private static final double DesiredFps = 30;
-    private static final double DesiredFps_Motion = 5;
 
     private final CaptureThread eventThread;
 
@@ -137,7 +136,7 @@ public class MotionDetectorJavaCV extends MotionDetector /* extends WiredDevice 
         protected Gesture gesture = Gesture.None;
 
         // TODO Atomic reference
-        private MotionDetectionResultImplementation detectionResult;
+        private MotionDetectionResultImplementation presenceResult;
 
         private final double desiredFps;
         private double fps;
@@ -174,10 +173,10 @@ public class MotionDetectorJavaCV extends MotionDetector /* extends WiredDevice 
             Size processingSize = getProcessingSize(resolution);
             this.videoInputTransformation = getVideoTransformation(resolution, processingSize);
             motionProcessor = new MotionProcessorJavaCV(resolution, processingSize);
-            detectionResult = new MotionDetectionResultImplementation(processingSize);
+            presenceResult = new MotionDetectionResultImplementation(processingSize);
             setSensitivity(motionSensitivity);
             setPointOfView(viewPoint);
-            debugInfo = new MotionDetectorJavaCVDebugRenderer(motionProcessor, processingSize);
+            debugInfo = new MotionDetectorJavaCVDebugRenderer(processingSize);
         }
 
         private static Size getProcessingSize(Size resolution) {
@@ -219,8 +218,8 @@ public class MotionDetectorJavaCV extends MotionDetector /* extends WiredDevice 
 
         public void setPointOfView(ViewPoint viewPoint) {
             this.viewPoint = viewPoint;
-            if (detectionResult != null) {
-                detectionResult.setViewPoint(viewPoint);
+            if (presenceResult != null) {
+                presenceResult.setViewPoint(viewPoint);
             }
         }
 
@@ -252,17 +251,20 @@ public class MotionDetectorJavaCV extends MotionDetector /* extends WiredDevice 
         Future<?> motionAndPresence = null;
         List<Future<?>> frameTaskFutures = new ArrayList<>();
 
+        private HeadGestureTracker.Parameters gestureResult = new HeadGestureTracker.Parameters();
+        Mat motionImageCopy = new Mat();
+
         private void processVideoCaptureStream() throws InterruptedException {
             try {
                 for (Mat frame : videoCaptureDevice) {
                     long timeStamp = System.currentTimeMillis();
 
-                    // Main thread, has to be done anyway
                     @SuppressWarnings("resource")
                     Mat image = videoInputTransformation.update(frame);
 
+                    // TODO Better make a pool, take and give buffers back
                     Buffer.Locked<Mat> lock = video.get(image);
-                    lock.get();
+                    Mat buffer = lock.get();
 
                     // TODO Extra thread, independent of motion
                     frameTaskFutures.add(frameTasks.submit(() -> computeGestures(image, timeStamp)));
@@ -270,25 +272,29 @@ public class MotionDetectorJavaCV extends MotionDetector /* extends WiredDevice 
                     // TODO Extra thread, lower fps, handle distance tracker
                     if (motionAndPresence == null) {
                         motionAndPresence = perceptionTasks.submit(() -> {
-                            computeMotionAndPresence(image, timeStamp);
+                            // TODO Save cpu-cycles by copying to tracker and KNN data directly
+                            image.copyTo(motionImageCopy);
+                            computeMotionAndPresence(motionImageCopy, timeStamp);
                             // TODO Increase semaphore count
                             // lock.release();
                         });
-                        // TODO Block access to motion features while not done
-                        motionAndPresence.get();
-                    } else if (motionAndPresence.isCancelled() || motionAndPresence.isDone()) {
+                        // motionAndPresence.get();
+                    } else if (motionAndPresence.isCancelled()) {
                         motionAndPresence = null;
+                    } else if (motionAndPresence.isDone()) {
+                        motionAndPresence = null;
+                        updatePresenceResult(buffer);
                     }
 
                     long timeLeft = fpsStatistics.timeMillisLeft(desiredFrameTimeMillis, timeStamp);
                     if (timeLeft > 0) {
                         Thread.sleep(timeLeft);
                     }
-                    // TODO review frame statistics - may be wrong
+                    // TODO review frame statistics class - may be wrong
                     fpsStatistics.updateFrame(timeStamp + timeLeft);
 
                     completeComputationAndRender(image, lock);
-                    // TODO Thread at end, lock videoImage
+                    // TODO resolve OpenCV lack of rendering to its windows in a different thread
                     // frameTasks.submit(() -> {
                     // completeComputationAndRender(image, lock);
                     // }).get();
@@ -309,12 +315,31 @@ public class MotionDetectorJavaCV extends MotionDetector /* extends WiredDevice 
             }
         }
 
+        private void updatePresenceResult(Mat video) {
+            motionProcessor.updateRenderData();
+            presenceResult.updateRenderData(1.0, debugWindowTimeSpan);
+
+            gestureResult.cameraShake = presenceResult.presenceData.indicators.contains(Presence.CameraShake);
+            gestureResult.motionDetected = presenceResult.motionDetected;
+            Rect presence = presenceResult.presenceData.presenceRegion;
+
+            // Enlarge gesture region based on the observation that when beginning the first nod the presence region
+            // starts with a horizontally wide but vertically narrow area around the eyes
+            if (presence.width() < video.rows() / 10 && presence.height() * 4 < presence.width()) {
+                presence = new Rect(presence.x(), presence.y() - presence.width() / 2, presence.width(),
+                        presence.width());
+            }
+
+            gestureResult.gestureRegion = Geom.intersect(presence,
+                    presenceResult.presenceData.presenceIndicators.get(Presence.Present));
+        }
+
         private void computeMotionAndPresence(Mat video, long timeStamp) {
             motionProcessor.update(video);
             motionProcessor.updateTrackerData(video);
 
             presenceChanged.doLocked(() -> {
-                boolean hasChanged = detectionResult.updateMotionState(video, motionProcessor, timeStamp);
+                boolean hasChanged = presenceResult.updateMotionState(video, motionProcessor, timeStamp);
                 if (hasChanged) {
                     presenceChanged.signal();
                 }
@@ -322,11 +347,10 @@ public class MotionDetectorJavaCV extends MotionDetector /* extends WiredDevice 
         }
 
         private void computeGestures(Mat video, long timeStamp) {
-            if (detectionResult.presenceIndicators.containsKey(Presence.CameraShake)) {
+            if (gestureResult.cameraShake) {
                 gestureTracker.reset();
             } else {
-                gestureTracker.update(video, detectionResult.motionDetected, detectionResult.getPresenceRegion(1.0),
-                        timeStamp);
+                gestureTracker.update(video, gestureResult.motionDetected, gestureResult.gestureRegion, timeStamp);
             }
             Gesture newGesture = gestureTracker.getGesture();
             boolean changed = gesture != newGesture;
@@ -343,11 +367,16 @@ public class MotionDetectorJavaCV extends MotionDetector /* extends WiredDevice 
                         task.get();
                     } catch (InterruptedException e) {
                         Thread.currentThread().interrupt();
-                        return;
                     } catch (ExecutionException e) {
                         throw ExceptionUtil.asRuntimeException(e);
                     }
                 }
+
+                if (Thread.interrupted()) {
+                    Thread.currentThread().interrupt();
+                    return;
+                }
+
                 render(image);
             } finally {
                 lock.release();
@@ -356,29 +385,23 @@ public class MotionDetectorJavaCV extends MotionDetector /* extends WiredDevice 
 
         private void render(Mat video) {
             if (videoRenderer != null) {
-                Set<Presence> indicators = renderOverlays(video);
+                renderOverlays(video);
                 videoRenderer.update(video);
-
-                if (logDetails) {
-                    logMotionState(indicators, motionProcessor, detectionResult.contourMotionDetected,
-                            detectionResult.trackerMotionDetected);
-                }
             }
-        }
-
-        private void computeFPSStatistics(long timeStamp) throws InterruptedException {
-            long timeLeft = fpsStatistics.timeMillisLeft(desiredFrameTimeMillis, timeStamp);
-            if (timeLeft > 0) {
-                Thread.sleep(timeLeft);
-            }
-            fpsStatistics.updateFrame(timeStamp + timeLeft);
         }
 
         private Set<Presence> renderOverlays(Mat image) {
-            Set<Presence> indicators = getIndicatorHistory(debugWindowTimeSpan);
-            debugInfo.render(image, detectionResult.getPresenceRegion(debugWindowTimeSpan),
-                    detectionResult.presenceIndicators, indicators, detectionResult.contourMotionDetected,
-                    detectionResult.trackerMotionDetected, gestureTracker, gesture, fpsStatistics.value());
+            Set<Presence> indicators = presenceResult.presenceData.debugIndicators;
+            debugInfo.render(image, motionProcessor.motionData, presenceResult.presenceData, gestureTracker, gesture,
+                    fpsStatistics.value());
+
+            if (logDetails) {
+                // Log state
+                logger.info("contourMotionDetected=" + presenceResult.presenceData.contourMotionDetected
+                        + "  trackerMotionDetected=" + presenceResult.presenceData.trackerMotionDetected + "(distance="
+                        + motionProcessor.motionData.distance2 + "), " + indicators.toString());
+            }
+
             return indicators;
         }
 
@@ -390,39 +413,8 @@ public class MotionDetectorJavaCV extends MotionDetector /* extends WiredDevice 
             }
         }
 
-        private Set<Presence> getIndicatorHistory(double timeSpan) {
-            List<Set<Presence>> indicatorHistory = detectionResult.indicatorHistory.getTimeSpan(timeSpan);
-            LinkedHashSet<Presence> indicators = new LinkedHashSet<>();
-            for (Set<Presence> set : indicatorHistory) {
-                for (Presence item : set) {
-                    // Add non-existing elements only
-                    // if not there already to keep the sequence
-                    // addAll wouldn't keep the sequence, because
-                    // it would add existing elements at the end
-                    if (!indicators.contains(item)) {
-                        indicators.add(item);
-                    }
-                }
-            }
-            // remove negated indicators in the result set
-            for (Map.Entry<Presence, Presence> entry : detectionResult.negatedRegions.entrySet()) {
-                if (indicators.contains(entry.getKey()) && indicators.contains(entry.getValue())) {
-                    indicators.remove(entry.getValue());
-                }
-            }
-            return indicators;
-        }
-
-        private static void logMotionState(Set<Presence> indicators, MotionProcessorJavaCV motionProcessor,
-                boolean contourMotionDetected, boolean trackerMotionDetected) {
-            // Log state
-            logger.info("contourMotionDetected=" + contourMotionDetected + "  trackerMotionDetected="
-                    + trackerMotionDetected + "(distance=" + motionProcessor.distanceTracker.distance2() + "), "
-                    + indicators.toString());
-        }
-
         public void clearMotionHistory() {
-            presenceChanged.doLocked(() -> detectionResult.clear());
+            presenceChanged.doLocked(() -> presenceResult.clear());
         }
 
         public double fps() {
@@ -472,7 +464,7 @@ public class MotionDetectorJavaCV extends MotionDetector /* extends WiredDevice 
         }
         eventThread.debugWindowTimeSpan = timeSpanSeconds;
         try {
-            return eventThread.detectionResult.await(eventThread.presenceChanged, amount, change, timeSpanSeconds,
+            return eventThread.presenceResult.await(eventThread.presenceChanged, amount, change, timeSpanSeconds,
                     timeoutSeconds);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
@@ -543,7 +535,7 @@ public class MotionDetectorJavaCV extends MotionDetector /* extends WiredDevice 
 
     @Override
     public boolean active() {
-        return eventThread.detectionResult != null && eventThread.videoCaptureDevice.active();
+        return eventThread.presenceResult != null && eventThread.videoCaptureDevice.active();
     }
 
     @Override

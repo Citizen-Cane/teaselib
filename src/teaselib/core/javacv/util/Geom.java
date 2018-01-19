@@ -1,6 +1,7 @@
 package teaselib.core.javacv.util;
 
-import static org.bytedeco.javacpp.opencv_imgproc.*;
+import static org.bytedeco.javacpp.opencv_imgproc.approxPolyDP;
+import static org.bytedeco.javacpp.opencv_imgproc.boundingRect;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -56,6 +57,19 @@ public class Geom {
 
     public static Point center(Rect r) {
         return new Point(r.x() + r.width() / 2, r.y() + r.height() / 2);
+    }
+
+    public static Rect intersect(Rect r1, Rect r2) {
+        int x = Math.max(r1.x(), r2.x());
+        int y = Math.max(r1.y(), r2.y());
+        int w = Math.min(r1.x() + r1.width(), r2.x() + r2.width()) - x;
+        int h = Math.min(r1.y() + r1.height(), r2.y() + r2.height()) - y;
+
+        if (w < 0 || h < 0) {
+            return null;
+        } else {
+            return new Rect(x, y, w, h);
+        }
     }
 
     public static boolean intersects(Rect r1, Rect r2) {

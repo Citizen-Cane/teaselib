@@ -35,6 +35,12 @@ public class HeadGestureTracker {
 
     private boolean resetTrackFeatures = true;
 
+    public static class Parameters {
+        public boolean cameraShake;
+        public boolean motionDetected;
+        public Rect gestureRegion;
+    }
+
     public HeadGestureTracker(Scalar color) {
         this.color = color;
     }
@@ -45,9 +51,7 @@ public class HeadGestureTracker {
                 - directionTimeLine.tailTimeSpan() + GesturePauseMillis) {
             directionTimeLine.clear();
             resetTrackFeatures = true;
-        } else if (motionDetected && resetTrackFeatures) {
-            // TODO At startup, motion region is the whole image -> fix
-            // TODO presence region may collapse to eyes - enlarge to motion region
+        } else if (motionDetected && resetTrackFeatures && rect != null) {
             tracker.start(videoImage, rect);
             tracker.keyPoints().copyTo(startKeyPoints);
             resetTrackFeatures = false;
@@ -62,6 +66,10 @@ public class HeadGestureTracker {
     }
 
     private Direction direction() {
+        if (tracker.previousKeyPoints().empty()) {
+            return Direction.None;
+        }
+
         FloatIndexer from = tracker.previousKeyPoints().createIndexer();
         FloatIndexer to = tracker.keyPoints().createIndexer();
 

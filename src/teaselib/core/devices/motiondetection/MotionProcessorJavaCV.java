@@ -1,13 +1,21 @@
 package teaselib.core.devices.motiondetection;
 
+import static org.bytedeco.javacpp.opencv_core.FONT_HERSHEY_PLAIN;
+import static org.bytedeco.javacpp.opencv_imgproc.putText;
+
 import org.bytedeco.javacpp.opencv_core.Mat;
+import org.bytedeco.javacpp.opencv_core.Point;
 import org.bytedeco.javacpp.opencv_core.Rect;
+import org.bytedeco.javacpp.opencv_core.Scalar;
 import org.bytedeco.javacpp.opencv_core.Size;
+import org.bytedeco.javacpp.opencv_imgproc;
+import org.bytedeco.javacpp.indexer.FloatIndexer;
 
 import teaselib.core.javacv.BackgroundSubtraction;
 import teaselib.core.javacv.Color;
 import teaselib.core.javacv.Contours;
 import teaselib.core.javacv.DistanceTracker;
+import teaselib.core.javacv.TrackFeatures;
 
 public class MotionProcessorJavaCV {
     public static final Rect None = new Rect(Integer.MAX_VALUE, Integer.MAX_VALUE, -Integer.MAX_VALUE,
@@ -24,6 +32,22 @@ public class MotionProcessorJavaCV {
     BackgroundSubtraction motion;
     Contours motionContours = new Contours();
     DistanceTracker distanceTracker = new DistanceTracker(Color.Green);
+
+    class MotionData {
+        final Scalar color = distanceTracker.color();
+
+        final Mat currentPoints = new Mat();
+        final Mat startPoints = new Mat();
+        double distance2 = 0;
+
+        public void update() {
+            distanceTracker.startPoints().copyTo(startPoints);
+            distanceTracker.currentPoints().copyTo(currentPoints);
+            distance2 = distanceTracker.distance2();
+        }
+    }
+
+    MotionData motionData = new MotionData();
 
     MotionProcessorJavaCV(Size captureSize, Size renderSize) {
         this.captureWidth = captureSize.width();
@@ -59,5 +83,48 @@ public class MotionProcessorJavaCV {
 
     public int pixels() {
         return motionContours.pixels();
+    }
+
+    public void updateRenderData() {
+        motionData.update();
+    }
+
+    public static void render(Mat output, MotionData renderData, Scalar color) {
+        if (hasFeatures(renderData.startPoints)) {
+            FloatIndexer from = renderData.startPoints.createIndexer();
+            FloatIndexer to = renderData.currentPoints.createIndexer();
+
+            long n = Math.min(from.rows(), to.rows());
+            for (int i = 0; i < n; i++) {
+                Point p1 = new Point((int) from.get(i, 0), (int) from.get(i, 1));
+                Point p2 = new Point((int) to.get(i, 0), (int) to.get(i, 1));
+                opencv_imgproc.line(output, p1, p2, color);
+                p1.close();
+                p2.close();
+            }
+
+            int distance = (int) Math.sqrt(renderData.distance2);
+            Point p = new Point(0, output.rows() - 20);
+            putText(output, Integer.toString(distance), p, FONT_HERSHEY_PLAIN, 1.75, color);
+            p.close();
+
+            from.release();
+            to.release();
+
+            try {
+                from.close();
+            } catch (Exception e) { //
+            }
+            try {
+                to.close();
+            } catch (Exception e) { //
+            }
+
+            TrackFeatures.render(output, color, renderData.currentPoints);
+        }
+    }
+
+    private static boolean hasFeatures(Mat points) {
+        return points.rows() > 0 && points.cols() > 0;
     }
 }

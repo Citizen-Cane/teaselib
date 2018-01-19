@@ -4,8 +4,11 @@
 package teaselib.core.devices.motiondetection;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.EnumMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -23,18 +26,6 @@ import teaselib.motiondetection.ViewPoint;
 public abstract class MotionDetectionResultData implements MotionDetectionResult {
     // TODO size of one or two structuring elements
     static final int CornerSize = 32;
-
-    protected boolean contourMotionDetected = false;
-    protected boolean trackerMotionDetected = false;
-    protected boolean motionDetected = false;
-    protected final Map<Presence, Rect> presenceIndicators;
-    protected final Map<Presence, Presence> negatedRegions;
-
-    protected final TimeLine<Rect> motionRegionHistory = new TimeLine<>();
-    protected final TimeLine<Rect> presenceRegionHistory = new TimeLine<>();
-    protected final TimeLine<Integer> motionAreaHistory = new TimeLine<>();
-    protected final TimeLine<Set<Presence>> indicatorHistory = new TimeLine<>();
-
     protected static final Map<ViewPoint, Presence> viewPoint2PresenceRegion = getViewPointRegions();
 
     private static Map<ViewPoint, Presence> getViewPointRegions() {
@@ -45,8 +36,20 @@ public abstract class MotionDetectionResultData implements MotionDetectionResult
         m.put(ViewPoint.EyeLevelFar, Presence.Present);
         m.put(ViewPoint.HighAngle, Presence.Present);
         m.put(ViewPoint.LowAngle, Presence.PresenceExtendedVertically);
-        return m;
+        return Collections.unmodifiableMap(m);
     }
+
+    protected final Map<Presence, Rect> presenceIndicators;
+    protected final Map<Presence, Presence> negatedRegions;
+
+    protected boolean contourMotionDetected = false;
+    protected boolean trackerMotionDetected = false;
+    protected boolean motionDetected = false;
+
+    protected final TimeLine<Rect> motionRegionHistory = new TimeLine<>();
+    protected final TimeLine<Rect> presenceRegionHistory = new TimeLine<>();
+    protected final TimeLine<Integer> motionAreaHistory = new TimeLine<>();
+    protected final TimeLine<Set<Presence>> indicatorHistory = new TimeLine<>();
 
     protected ViewPoint viewPoint = ViewPoint.EyeLevel;
 
@@ -55,7 +58,7 @@ public abstract class MotionDetectionResultData implements MotionDetectionResult
     protected MotionDetectionResultData(Size size) {
         presenceIndicators = buildPresenceIndicatorMap(size);
         negatedRegions = buildNegatedRegions();
-        all = new Rect(0, 0, size.width(), size.height());
+        all = presenceIndicators.get(Presence.Center);
         clear();
     }
 
@@ -88,10 +91,10 @@ public abstract class MotionDetectionResultData implements MotionDetectionResult
         map.put(Presence.RightBorder, new Rect(s.width() - CornerSize, 0, CornerSize, s.height()));
         map.put(Presence.TopBorder, new Rect(0, 0, s.width(), CornerSize));
         map.put(Presence.BottomBorder, new Rect(0, s.height() - CornerSize, s.width(), CornerSize));
-        return map;
+        return Collections.unmodifiableMap(map);
     }
 
-    Map<Presence, Presence> buildNegatedRegions() {
+    private static Map<Presence, Presence> buildNegatedRegions() {
         Map<Presence, Presence> negatedRegions = new EnumMap<>(Presence.class);
         negatedRegions.put(Presence.Left, Presence.NoLeft);
         negatedRegions.put(Presence.Right, Presence.NoRight);
@@ -101,7 +104,7 @@ public abstract class MotionDetectionResultData implements MotionDetectionResult
         negatedRegions.put(Presence.RightBorder, Presence.NoRightBorder);
         negatedRegions.put(Presence.TopBorder, Presence.NoTopBorder);
         negatedRegions.put(Presence.BottomBorder, Presence.NoBottomBorder);
-        return negatedRegions;
+        return Collections.unmodifiableMap(negatedRegions);
     }
 
     protected void clear() {
@@ -120,5 +123,28 @@ public abstract class MotionDetectionResultData implements MotionDetectionResult
     @Override
     public void setViewPoint(ViewPoint viewPoint) {
         this.viewPoint = viewPoint;
+    }
+
+    public Set<Presence> getIndicatorHistory(double timeSpan) {
+        List<Set<Presence>> presenceTimeline = indicatorHistory.getTimeSpan(timeSpan);
+        LinkedHashSet<Presence> indicators = new LinkedHashSet<>();
+        for (Set<Presence> set : presenceTimeline) {
+            for (Presence item : set) {
+                // Add non-existing elements only
+                // if not there already to keep the sequence
+                // addAll wouldn't keep the sequence, because
+                // it would add existing elements at the end
+                if (!indicators.contains(item)) {
+                    indicators.add(item);
+                }
+            }
+        }
+        // remove negated indicators in the result set
+        for (Map.Entry<Presence, Presence> entry : negatedRegions.entrySet()) {
+            if (indicators.contains(entry.getKey()) && indicators.contains(entry.getValue())) {
+                indicators.remove(entry.getValue());
+            }
+        }
+        return indicators;
     }
 }

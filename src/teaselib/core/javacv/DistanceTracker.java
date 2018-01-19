@@ -1,12 +1,8 @@
 package teaselib.core.javacv;
 
-import static org.bytedeco.javacpp.opencv_core.*;
-import static org.bytedeco.javacpp.opencv_imgproc.*;
-
 import org.bytedeco.javacpp.opencv_core.Mat;
 import org.bytedeco.javacpp.opencv_core.Point;
 import org.bytedeco.javacpp.opencv_core.Scalar;
-import org.bytedeco.javacpp.opencv_imgproc;
 import org.bytedeco.javacpp.indexer.FloatIndexer;
 
 public class DistanceTracker {
@@ -81,35 +77,15 @@ public class DistanceTracker {
         return points.rows();
     }
 
-    public void render(Mat output) {
-        FloatIndexer from = keyPoints.createIndexer();
-        FloatIndexer to = tracker.keyPoints().createIndexer();
+    public Mat startPoints() {
+        return keyPoints;
+    }
 
-        long n = Math.min(from.rows(), to.rows());
-        for (int i = 0; i < n; i++) {
-            Point p1 = new Point((int) from.get(i, 0), (int) from.get(i, 1));
-            Point p2 = new Point((int) to.get(i, 0), (int) to.get(i, 1));
-            opencv_imgproc.line(output, p1, p2, color);
-            p1.close();
-            p2.close();
-        }
-        int distance = (int) Math.sqrt(distance2());
-        Point p = new Point(0, output.rows() - 20);
-        putText(output, Integer.toString(distance), p, FONT_HERSHEY_PLAIN, 1.75, color);
-        p.close();
+    public Mat currentPoints() {
+        return tracker.keyPoints;
+    }
 
-        from.release();
-        to.release();
-
-        try {
-            from.close();
-        } catch (Exception e) { //
-        }
-        try {
-            to.close();
-        } catch (Exception e) { //
-        }
-
-        tracker.render(output, color);
+    public Scalar color() {
+        return color;
     }
 }

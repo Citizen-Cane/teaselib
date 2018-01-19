@@ -3,11 +3,19 @@
  */
 package teaselib.core.devices.motiondetection;
 
-import static org.bytedeco.javacpp.opencv_core.*;
-import static org.bytedeco.javacpp.opencv_imgproc.*;
-import static teaselib.core.javacv.Color.*;
-import static teaselib.core.javacv.util.Geom.*;
-import static teaselib.core.javacv.util.Gui.*;
+import static org.bytedeco.javacpp.opencv_core.FONT_HERSHEY_PLAIN;
+import static org.bytedeco.javacpp.opencv_imgproc.circle;
+import static org.bytedeco.javacpp.opencv_imgproc.putText;
+import static org.bytedeco.javacpp.opencv_imgproc.rectangle;
+import static teaselib.core.javacv.Color.Blue;
+import static teaselib.core.javacv.Color.DarkBlue;
+import static teaselib.core.javacv.Color.DarkGreen;
+import static teaselib.core.javacv.Color.Green;
+import static teaselib.core.javacv.Color.MidBlue;
+import static teaselib.core.javacv.Color.MidGreen;
+import static teaselib.core.javacv.Color.White;
+import static teaselib.core.javacv.util.Geom.center;
+import static teaselib.core.javacv.util.Gui.drawRect;
 
 import java.util.ConcurrentModificationException;
 import java.util.Map;
@@ -27,42 +35,43 @@ import teaselib.motiondetection.MotionDetector.Presence;
  * OpenCV imshow(...) isn't thread safe, it may hang (at least on windows) if called from several threads.
  */
 public class MotionDetectorJavaCVDebugRenderer {
-    private final MotionProcessorJavaCV motionProcessor;
     private final Size windowSize;
-
     final Thread owner;
 
-    public MotionDetectorJavaCVDebugRenderer(MotionProcessorJavaCV motionProcessor, Size windowSize) {
-        this.motionProcessor = motionProcessor;
+    public MotionDetectorJavaCVDebugRenderer(Size windowSize) {
         this.windowSize = windowSize;
         this.owner = Thread.currentThread();
     }
 
-    public void render(Mat debugOutput, Rect r, Map<Presence, Rect> presenceIndicators, Set<Presence> indicators,
-            boolean contourMotionDetected, boolean trackerMotionDetected, HeadGestureTracker gestureTracker,
+    public void render(Mat debugOutput, MotionProcessorJavaCV.MotionData pixelData,
+            MotionDetectionResultImplementation.PresenceData resultData, HeadGestureTracker gestureTracker,
             Gesture gesture, double fps) {
         if (Thread.currentThread() != owner) {
             throw new ConcurrentModificationException(
                     "Rendering to Open CV window works only in the thread that created the window: " + owner.toString()
                             + "!=" + Thread.currentThread().toString());
         }
-        boolean present = indicators.contains(Presence.Present);
+        boolean present = resultData.debugIndicators.contains(Presence.Present);
         // Motion
-        if (indicators.contains(Presence.CameraShake)) {
-            rectangle(debugOutput, presenceIndicators.get(Presence.Present), present ? Color.MidBlue : Color.DarkBlue,
-                    15, 8, 0);
+        if (resultData.debugIndicators.contains(Presence.CameraShake)) {
+            rectangle(debugOutput, resultData.presenceIndicators.get(Presence.Present),
+                    present ? Color.MidBlue : Color.DarkBlue, 15, 8, 0);
         } else {
-            if (r != null) {
-                renderMotionRegion(debugOutput, r, present);
+            if (resultData.debugPresenceRegion != null) {
+                renderMotionRegion(debugOutput, resultData.debugPresenceRegion, present);
             }
-            renderPresenceIndicators(debugOutput, r, presenceIndicators, indicators, present);
+            renderPresenceIndicators(debugOutput, resultData.debugPresenceRegion, resultData.presenceIndicators,
+                    resultData.debugIndicators, present);
 
-            if (contourMotionDetected) {
-                renderContourMotionRegion(debugOutput, r);
-            }
-            if (trackerMotionDetected) {
-                renderDistanceTrackerPoints(debugOutput);
-            }
+            // TODO Enable from detector
+            // if (renderData.contourMotionDetected) {
+            // renderContourMotionRegion(debugOutput, renderData.debugPresenceRegion);
+            // }
+
+            // TODO Enable from detector
+            // if (resultData.trackerMotionDetected) {
+            // renderDistanceTrackerPoints(debugOutput, pixelData);
+            // }
 
             if (gestureTracker.hasFeatures()) {
                 gestureTracker.render(debugOutput);
@@ -72,7 +81,7 @@ public class MotionDetectorJavaCVDebugRenderer {
                 renderGesture(debugOutput, gestureTracker, gesture);
             }
         }
-        renderRegionList(debugOutput, indicators);
+        renderRegionList(debugOutput, resultData.debugIndicators);
         renderFPS(debugOutput, fps);
     }
 
@@ -81,19 +90,17 @@ public class MotionDetectorJavaCVDebugRenderer {
         circle(debugOutput, center(r), 2, present ? Green : Blue, 2, 8, 0);
     }
 
-    private void renderContourMotionRegion(Mat debugOutput, Rect rM) {
-        motionProcessor.motionContours.render(debugOutput, -1, White);
-        if (rM != null) {
-            Point p = new Point(debugOutput.cols() - 40, debugOutput.cols() - 20);
-            putText(debugOutput, rM.area() + "p2", p, FONT_HERSHEY_PLAIN, 2.75, White);
-            p.close();
-        }
-    }
+    // private void renderContourMotionRegion(Mat debugOutput, Rect rM) {
+    // motionProcessor.motionContours.render(debugOutput, -1, White);
+    // if (rM != null) {
+    // Point p = new Point(debugOutput.cols() - 40, debugOutput.cols() - 20);
+    // putText(debugOutput, rM.area() + "p2", p, FONT_HERSHEY_PLAIN, 2.75, White);
+    // p.close();
+    // }
+    // }
 
-    private void renderDistanceTrackerPoints(Mat debugOutput) {
-        if (motionProcessor.distanceTracker.hasFeatures()) {
-            motionProcessor.distanceTracker.render(debugOutput);
-        }
+    private void renderDistanceTrackerPoints(Mat debugOutput, MotionProcessorJavaCV.MotionData motionData) {
+        MotionProcessorJavaCV.render(debugOutput, motionData, motionData.color);
     }
 
     private void renderGesture(Mat debugOutput, HeadGestureTracker gestureTracker, Gesture gesture) {

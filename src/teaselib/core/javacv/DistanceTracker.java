@@ -47,7 +47,7 @@ public class DistanceTracker {
         Mat currentKeyPoints = tracker.keyPoints();
         double distance2 = 0.0;
 
-        if (size(currentKeyPoints) > 0) {
+        if (size(keyPoints) > 0) {
             FloatIndexer from = keyPoints.createIndexer();
             FloatIndexer to = currentKeyPoints.createIndexer();
             long n = Math.min(from.rows(), to.rows());

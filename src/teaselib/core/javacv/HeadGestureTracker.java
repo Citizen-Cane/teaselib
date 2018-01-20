@@ -50,6 +50,7 @@ public class HeadGestureTracker {
         if (!resetTrackFeatures && !motionDetected && timeStamp > directionTimeLine.tailTimeMillis()
                 - directionTimeLine.tailTimeSpan() + GesturePauseMillis) {
             directionTimeLine.clear();
+            tracker.clear();
             resetTrackFeatures = true;
         } else if (motionDetected && resetTrackFeatures && rect != null) {
             tracker.start(videoImage, rect);

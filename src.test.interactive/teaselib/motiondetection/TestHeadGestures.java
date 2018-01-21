@@ -11,6 +11,8 @@ import teaselib.motiondetection.MotionDetector.MotionSensitivity;
 import teaselib.test.DebugSetup;
 
 public class TestHeadGestures {
+    MotionSensitivity AssumeSensitivity = MotionSensitivity.Low;
+    MotionSensitivity GestureSensitivity = MotionSensitivity.Normal;
 
     @Test
     public void testHeadGestures() {
@@ -19,7 +21,6 @@ public class TestHeadGestures {
 
         MotionDetector motionDetector = devices.get(MotionDetector.class).getDefaultDevice();
         motionDetector.setViewPoint(ViewPoint.EyeLevel);
-        motionDetector.setSensitivity(MotionSensitivity.High);
 
         motionDetector.setVideoRenderer(new VideoRendererJavaCV(Type.CameraFeedback) {
             @Override
@@ -31,24 +32,28 @@ public class TestHeadGestures {
 
         System.out.println("Assume the position!");
 
+        motionDetector.setSensitivity(AssumeSensitivity);
         while (!movement.stoppedWithin(1.0, 5.0)) {
             System.out.println("Freeze'!");
         }
 
         System.out.println("Nod!");
 
+        motionDetector.setSensitivity(GestureSensitivity);
         while (Gesture.Nod != motionDetector.await(Gesture.Nod, 5.0)) {
             System.out.println("I said 'Nod!'");
         }
 
         System.out.println("Very good! Now stay put until my next command");
 
+        motionDetector.setSensitivity(AssumeSensitivity);
         while (!movement.stoppedWithin(1.0, 5.0)) {
             System.out.println("Freeze'!");
         }
 
         System.out.println("Shake!");
 
+        motionDetector.setSensitivity(GestureSensitivity);
         while (Gesture.Shake != motionDetector.await(Gesture.Shake, 5.0)) {
             System.out.println("I said 'Shake!'");
         }

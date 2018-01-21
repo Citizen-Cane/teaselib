@@ -156,7 +156,7 @@ public class MotionDetectorJavaCV extends MotionDetector /* extends WiredDevice 
             super();
             this.desiredFps = desiredFps;
             this.videoCaptureDevice = videoCaptureDevice;
-            gestureTracker.reset();
+            gestureTracker.restart();
         }
 
         private void openVideoCaptureDevice(VideoCaptureDevice videoCaptureDevice) {
@@ -348,7 +348,7 @@ public class MotionDetectorJavaCV extends MotionDetector /* extends WiredDevice 
 
         private void computeGestures(Mat video, long timeStamp) {
             if (gestureResult.cameraShake) {
-                gestureTracker.reset();
+                gestureTracker.restart();
             } else {
                 gestureTracker.update(video, gestureResult.motionDetected, gestureResult.gestureRegion, timeStamp);
             }

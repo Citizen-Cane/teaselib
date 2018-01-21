@@ -24,7 +24,7 @@ public class HeadGestureTracker {
     static final long GesturePauseMillis = 1000;
 
     static final int NumberOfDirections = 4;
-    static final long GestureMaxDuration = 5000;
+    static final long GestureMaxDuration = 250 * NumberOfDirections;
     static final long GestureMinDuration = 500;
 
     private final TrackFeatures tracker = new TrackFeatures();
@@ -195,7 +195,16 @@ public class HeadGestureTracker {
         if (logger.isDebugEnabled()) {
             logger.debug(directionTimeLine.getTimeSpan(1.0).toString() + " ->" + gesture);
         }
+
+        if (gesture == Gesture.None && directionTimeLine.tailTimeSpan() > GesturePauseMillis) {
+            findNewFeaturesToTrack();
+        }
         return gesture;
+    }
+
+    private void findNewFeaturesToTrack() {
+        directionTimeLine.add(Direction.None, System.currentTimeMillis());
+        restart();
     }
 
     static Gesture getGesture(TimeLine<Direction> directionTimeLine) {
@@ -246,7 +255,7 @@ public class HeadGestureTracker {
         }
     }
 
-    public void reset() {
+    public void restart() {
         resetTrackFeatures = true;
     }
 

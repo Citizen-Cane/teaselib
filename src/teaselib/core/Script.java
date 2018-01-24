@@ -1,6 +1,7 @@
 package teaselib.core;
 
 import java.io.IOException;
+import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -28,6 +29,8 @@ import teaselib.core.ui.InputMethods;
 import teaselib.core.ui.Prompt;
 import teaselib.core.ui.Shower;
 import teaselib.core.ui.SpeechRecognitionInputMethod;
+import teaselib.core.util.ExceptionUtil;
+import teaselib.core.util.ObjectMap;
 import teaselib.util.SpeechRecognitionRejectedScript;
 import teaselib.util.TextVariables;
 
@@ -120,6 +123,50 @@ public abstract class Script {
         choices.add(choice);
         choices.addAll(Arrays.asList(more));
         return choices;
+    }
+
+    private static final String SCRIPT_INSTANCES = "ScriptInstances";
+
+    public <T extends Script> T script(Class<T> scriptClass) {
+        ObjectMap scripts = getScriptStorage();
+        return getScript(scriptClass, scripts);
+    }
+
+    private ObjectMap getScriptStorage() {
+        ObjectMap scripts = teaseLib.globals.get(SCRIPT_INSTANCES);
+        if (scripts == null) {
+            scripts = teaseLib.globals.store(SCRIPT_INSTANCES, new ObjectMap());
+        }
+        return scripts;
+    }
+
+    private <T extends Script> T getScript(Class<T> scriptClass, ObjectMap scripts) {
+        T script = scripts.get(scriptClass);
+        if (script == null) {
+            try {
+                Constructor<T> constructor = findScriptConstructor(scriptClass);
+                script = scripts.store(constructor.newInstance(this));
+            } catch (ReflectiveOperationException e) {
+                throw ExceptionUtil.asRuntimeException(e);
+            }
+        }
+        return script;
+    }
+
+    @SuppressWarnings("unchecked")
+    private <T extends Script> Constructor<T> findScriptConstructor(Class<T> scriptClass) {
+        Class<?> type = this.getClass();
+        while (type != null) {
+            for (Constructor<T> constructor : (Constructor<T>[]) scriptClass.getConstructors()) {
+                Class<?>[] parameterTypes = constructor.getParameterTypes();
+                if (parameterTypes.length == 1 && parameterTypes[0] == type) {
+                    return constructor;
+                }
+            }
+            type = type.getSuperclass();
+        }
+
+        throw new NoSuchMethodError("Constructor " + scriptClass.getName() + "(" + this.getClass().getName() + ")");
     }
 
     public void completeStarts() {

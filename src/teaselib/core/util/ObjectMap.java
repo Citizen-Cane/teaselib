@@ -10,35 +10,35 @@ public class ObjectMap {
 
     private final boolean writeOnce = true;
 
-    public <T extends Supplier<?>> ObjectMap store(Object key, T value) {
+    public <T extends Supplier<?>> ObjectMap store(Object key, T supplier) {
         dontOverwrite(key);
-        return storeInternal(key, value);
+        return storeInternal(key, supplier);
     }
 
-    private <T extends Supplier<?>> ObjectMap storeInternal(Object key, T value) {
-        suppliers.put(key, value);
+    private <T extends Supplier<?>> ObjectMap storeInternal(Object key, T supplier) {
+        suppliers.put(key, supplier);
         return this;
     }
 
-    public <T> ObjectMap store(T value) {
+    public <T> T store(T value) {
         Class<? extends Object> key = value.getClass();
         dontOverwrite(key);
         return storeInternal(value, key);
     }
 
-    private <T> ObjectMap storeInternal(T value, Class<? extends Object> key) {
+    private <T> T storeInternal(T value, Class<? extends Object> key) {
         realized.put(key, value);
-        return this;
+        return value;
     }
 
-    public <T> ObjectMap store(Object key, T value) {
+    public <T> T store(Object key, T value) {
         dontOverwrite(key);
         return storeInternal(key, value);
     }
 
-    private <T> ObjectMap storeInternal(Object key, T value) {
+    private <T> T storeInternal(Object key, T value) {
         realized.put(key, value);
-        return this;
+        return value;
     }
 
     private void dontOverwrite(Object key) {

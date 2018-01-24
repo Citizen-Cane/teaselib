@@ -4,8 +4,8 @@
 package teaselib;
 
 import teaselib.core.ResourceLoader;
-import teaselib.core.TeaseLib;
 import teaselib.core.Script;
+import teaselib.core.TeaseLib;
 import teaselib.core.state.ItemProxy;
 import teaselib.core.state.StateProxy;
 import teaselib.util.Item;
@@ -27,29 +27,17 @@ public abstract class TeaseScriptPersistence extends Script {
         super(script, actor);
     }
 
-    private Items proxiesOf(Items items) {
-        Items proxies = new Items();
-        for (Item item : items) {
-            if (item instanceof ItemProxy) {
-                proxies.add(item);
-            } else {
-                proxies.add(new ItemProxy(namespace, item));
-            }
-        }
-        return proxies;
-    }
-
     public class Domain {
-        final String domain;
+        final String name;
 
-        public Domain(String domain) {
-            this.domain = domain;
+        public Domain(String name) {
+            this.name = name;
         }
 
         @SafeVarargs
         public final <T extends Enum<?>> Items items(T... values) {
             if (values.length > 0) {
-                return proxiesOf(teaseLib.items(domain, values));
+                return proxiesOf(teaseLib.items(name, values));
             } else {
                 return Items.None;
             }
@@ -57,18 +45,18 @@ public abstract class TeaseScriptPersistence extends Script {
 
         public Items items(String... values) {
             if (values.length > 0) {
-                return proxiesOf(teaseLib.items(domain, values));
+                return proxiesOf(teaseLib.items(name, values));
             } else {
                 return Items.None;
             }
         }
 
         public <T extends Enum<?>> Item item(T value) {
-            return new ItemProxy(namespace, teaseLib.item(domain, value));
+            return new ItemProxy(namespace, teaseLib.item(name, value));
         }
 
         public Item item(String value) {
-            return new ItemProxy(namespace, teaseLib.item(domain, value));
+            return new ItemProxy(namespace, teaseLib.item(name, value));
         }
 
         @SafeVarargs
@@ -90,9 +78,20 @@ public abstract class TeaseScriptPersistence extends Script {
 
         @Override
         public String toString() {
-            return domain;
+            return name;
         }
 
+        private Items proxiesOf(Items items) {
+            Items proxies = new Items();
+            for (Item item : items) {
+                if (item instanceof ItemProxy) {
+                    proxies.add(item);
+                } else {
+                    proxies.add(new ItemProxy(namespace, item));
+                }
+            }
+            return proxies;
+        }
     }
 
     final Domain defaultDomain = new Domain(TeaseLib.DefaultDomain);

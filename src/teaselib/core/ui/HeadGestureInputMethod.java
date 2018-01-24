@@ -35,7 +35,7 @@ public class HeadGestureInputMethod implements InputMethod {
     private static final List<Gesture> SupportedGestures = Arrays.asList(Gesture.Nod, Gesture.Shake);
 
     @Override
-    public void show(final Prompt prompt) throws InterruptedException {
+    public void show(Prompt prompt) throws InterruptedException {
         Callable<Integer> callable = new Callable<Integer>() {
             @Override
             public Integer call() throws Exception {
@@ -45,10 +45,15 @@ public class HeadGestureInputMethod implements InputMethod {
                         notifyAll();
                     }
                     if (prompt.result() == Prompt.UNDEFINED) {
-                        Gesture gesture = Gesture.None;
-                        while (gesture == Gesture.None) {
-                            gesture = motionDetector.await(Gesture.Nod, Double.MAX_VALUE);
-                        }
+                        Gesture gesture = motionDetector.call(() -> {
+                            Gesture g = Gesture.None;
+                            while (g == Gesture.None) {
+                                // TODO Also await shake -> must wait for NotNone or multiple values
+                                g = motionDetector.await(Gesture.Nod, Double.MAX_VALUE);
+                            }
+                            return Gesture.None;
+                        });
+
                         prompt.lock.lockInterruptibly();
                         try {
                             if (!prompt.paused() && prompt.result() == Prompt.UNDEFINED) {

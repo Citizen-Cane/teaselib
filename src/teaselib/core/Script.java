@@ -6,12 +6,14 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import teaselib.Actor;
 import teaselib.Config;
+import teaselib.Gadgets;
 import teaselib.Message;
 import teaselib.Mood;
 import teaselib.Replay;
@@ -23,7 +25,9 @@ import teaselib.core.media.RenderMessage;
 import teaselib.core.speechrecognition.SpeechRecognitionResult.Confidence;
 import teaselib.core.speechrecognition.SpeechRecognizer;
 import teaselib.core.texttospeech.TextToSpeechPlayer;
+import teaselib.core.ui.Choice;
 import teaselib.core.ui.Choices;
+import teaselib.core.ui.HeadGestureInputMethod;
 import teaselib.core.ui.InputMethod;
 import teaselib.core.ui.InputMethods;
 import teaselib.core.ui.Prompt;
@@ -31,6 +35,8 @@ import teaselib.core.ui.Shower;
 import teaselib.core.ui.SpeechRecognitionInputMethod;
 import teaselib.core.util.ExceptionUtil;
 import teaselib.core.util.ObjectMap;
+import teaselib.motiondetection.Gesture;
+import teaselib.motiondetection.MotionDetector;
 import teaselib.util.SpeechRecognitionRejectedScript;
 import teaselib.util.TextVariables;
 
@@ -411,10 +417,10 @@ public abstract class Script {
     /**
      * {@code recognitionConfidence} defaults to {@link Confidence#Default}
      * 
-     * @see Script#showChoices(ScriptFunction, Confidence, List)
+     * @see Script#showChoices(List, ScriptFunction, Confidence)
      */
-    protected final String showChoices(ScriptFunction scriptFunction, List<String> choices) {
-        return showChoices(scriptFunction, Confidence.Default, choices);
+    protected final String showChoices(ScriptFunction scriptFunction, Choices choices) {
+        return showChoices(choices, scriptFunction, Confidence.Default);
     }
 
     /**
@@ -425,38 +431,32 @@ public abstract class Script {
      *            case the choices are only shown after all renderers have completed their mandatory parts
      * @param recognitionConfidence
      *            The confidence threshold used for speech recognition.
-     * @param choice
+     * @param text
      *            The first choice. This function doesn't make sense without showing at least one item, so one choice is
      *            mandatory
+     * 
      * @return The choice made by the user, {@link ScriptFunction#Timeout} if the function has ended, or a custom result
      *         value set by the script function.
      */
-    protected String showChoices(ScriptFunction scriptFunction, Confidence recognitionConfidence,
-            List<String> choices) {
-        // argument checking and text variable replacement
-        final List<String> derivedChoices = expandTextVariables(choices);
+    protected String showChoices(Choices choices, ScriptFunction scriptFunction, Confidence recognitionConfidence) {
+        Prompt prompt = getPrompt(scriptFunction, recognitionConfidence, choices);
+        return showPrompt(prompt, scriptFunction);
+    }
 
+    protected List<Choice> choices(List<String> choices) {
+        return choices.stream().map((choice) -> choice(Gesture.None, choice)).collect(Collectors.toList());
+    }
+
+    protected Choice choice(Gesture gesture, String yes) {
+        return new Choice(gesture, yes, expandTextVariables(yes));
+    }
+
+    private String showPrompt(Prompt prompt, ScriptFunction scriptFunction) {
         waitToStartScriptFunction(scriptFunction);
         if (scriptFunction == null) {
             stopBackgroundRenderers();
         } else if (scriptFunction.relation != ScriptFunction.Relation.Autonomous) {
             stopBackgroundRenderers();
-        }
-
-        InputMethods inputMethods = new InputMethods(teaseLib.globals.get(InputMethods.class));
-        inputMethods.add(teaseLib.host.inputMethod());
-        if (Boolean.parseBoolean(teaseLib.config.get(Config.InputMethod.SpeechRecognition))) {
-            inputMethods.add(new SpeechRecognitionInputMethod(
-                    teaseLib.globals.get(SpeechRecognizer.class).get(actor.locale()), recognitionConfidence,
-                    Optional.ofNullable(actor.speechRecognitionRejectedScript != null
-                            ? speechRecognitioneRejectedScript(scriptFunction)
-                            : null)));
-        }
-
-        Prompt prompt = new Prompt(new Choices(choices), new Choices(derivedChoices), scriptFunction, inputMethods);
-        logger.info("Prompt: " + prompt);
-        for (InputMethod inputMethod : inputMethods) {
-            logger.info(inputMethod.getClass().getSimpleName() + " " + inputMethod.toString());
         }
 
         String choice;
@@ -474,6 +474,31 @@ public abstract class Script {
 
         return choice;
     }
+
+    private Prompt getPrompt(ScriptFunction scriptFunction, Confidence recognitionConfidence, Choices choices) {
+        InputMethods inputMethods = new InputMethods(teaseLib.globals.get(InputMethods.class));
+        inputMethods.add(teaseLib.host.inputMethod());
+
+        if (Boolean.parseBoolean(teaseLib.config.get(Config.InputMethod.SpeechRecognition))) {
+            inputMethods.add(new SpeechRecognitionInputMethod(
+                    teaseLib.globals.get(SpeechRecognizer.class).get(actor.locale()), recognitionConfidence,
+                    Optional.ofNullable(actor.speechRecognitionRejectedScript != null
+                            ? speechRecognitioneRejectedScript(scriptFunction)
+                            : null)));
+        }
+
+        if (teaseLib.item(TeaseLib.DefaultDomain, Gadgets.Webcam).isAvailable()) {
+            MotionDetector motionDetector = teaseLib.devices.get(MotionDetector.class).getDefaultDevice();
+            inputMethods.add(new HeadGestureInputMethod(motionDetector));
+        }
+
+        Prompt prompt = new Prompt(choices, scriptFunction, inputMethods);
+        logger.info("Prompt: " + prompt);
+        for (InputMethod inputMethod : inputMethods) {
+            logger.info(inputMethod.getClass().getSimpleName() + " " + inputMethod.toString());
+        }
+        return prompt;
+        }
 
     public SpeechRecognitionRejectedScript speechRecognitioneRejectedScript(ScriptFunction scriptFunction) {
         return new SpeechRecognitionRejectedScript(this) {
@@ -578,7 +603,7 @@ public abstract class Script {
         return allTextVariables().expand(prompts);
     }
 
-    private String expandTextVariables(String s) {
+    protected String expandTextVariables(String s) {
         return allTextVariables().expand(s);
     }
 

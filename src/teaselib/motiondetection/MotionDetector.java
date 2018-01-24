@@ -1,13 +1,18 @@
 package teaselib.motiondetection;
 
 import java.util.Set;
+import java.util.function.Supplier;
+
+import org.bytedeco.javacpp.opencv_core.Point;
 
 import teaselib.core.Configuration;
 import teaselib.core.VideoRenderer;
+import teaselib.core.VideoRenderer.Type;
 import teaselib.core.devices.Device;
 import teaselib.core.devices.DeviceCache;
 import teaselib.core.devices.Devices;
 import teaselib.core.devices.motiondetection.MotionDetectorJavaCV;
+import teaselib.core.javacv.VideoRendererJavaCV;
 
 public abstract class MotionDetector implements Device.Creatable {
     public static synchronized DeviceCache<MotionDetector> getDeviceCache(Devices devices,
@@ -134,7 +139,11 @@ public abstract class MotionDetector implements Device.Creatable {
     public static final double MotionRegionDefaultTimespan = 1.0;
     public static final double PresenceRegionDefaultTimespan = 1.0;
 
+    public abstract MotionSensitivity getSensitivity();
+
     public abstract void setSensitivity(MotionSensitivity motionSensivity);
+
+    public abstract ViewPoint getViewPoint();
 
     public abstract void setViewPoint(ViewPoint pointOfView);
 
@@ -151,4 +160,34 @@ public abstract class MotionDetector implements Device.Creatable {
     public abstract void start();
 
     public abstract Gesture await(Gesture expected, double timeoutSeconds);
+
+    // TODO Define in device, implement in MotionDetector, set and restore values
+    public <T> T call(Supplier<T> function) {
+        boolean active = active();
+        MotionSensitivity sensitivity = getSensitivity();
+        ViewPoint viewPoint = getViewPoint();
+        try {
+            if (!active) {
+                // TODO delegate to host -> instanciate device in Script
+                setVideoRenderer(new VideoRendererJavaCV(Type.CameraFeedback) {
+                    @Override
+                    protected Point getPosition(Type type, int width, int height) {
+                        return new Point(0, 0);
+                    }
+                });
+            }
+            start();
+            return function.get();
+        } finally {
+            setSensitivity(sensitivity);
+            setViewPoint(viewPoint);
+
+            // TODO Close with delay so that consecutive calls don't result in camera indicator blinking
+            if (!active) {
+                close();
+            } else {
+                stop();
+            }
+        }
+    }
 }

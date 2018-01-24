@@ -20,6 +20,8 @@ import teaselib.core.ScriptInterruptedException;
 import teaselib.core.VideoRenderer;
 import teaselib.core.VideoRenderer.Type;
 import teaselib.core.javacv.VideoRendererJavaCV;
+import teaselib.core.ui.Choice;
+import teaselib.core.ui.Choices;
 import teaselib.core.ui.HostInputMethod;
 import teaselib.core.ui.InputMethod;
 import teaselib.core.ui.Prompt;
@@ -32,7 +34,7 @@ public class DebugHost implements Host, HostInputMethod.Backend {
 
     private final InputMethod inputMethod;
 
-    private List<String> currentChoices = Collections.emptyList();
+    private List<Choice> currentChoices = Collections.emptyList();
 
     public DebugHost() {
         super();
@@ -86,7 +88,7 @@ public class DebugHost implements Host, HostInputMethod.Backend {
     final ReentrantLock replySection = new ReentrantLock(true);
     final Condition click = replySection.newCondition();
 
-    private List<Runnable> getClickableChoices(List<String> choices) {
+    private List<Runnable> getClickableChoices(List<Choice> choices) {
         List<Runnable> clickables = new ArrayList<>(choices.size());
         for (int i = 0; i < choices.size(); i++) {
             final int j = i;
@@ -99,7 +101,7 @@ public class DebugHost implements Host, HostInputMethod.Backend {
     }
 
     @Override
-    public boolean dismissChoices(List<String> choices) {
+    public boolean dismissChoices(List<Choice> choices) {
         logger.info("Dismiss " + choices + " @ " + Thread.currentThread().getStackTrace()[1].toString());
 
         replySection.lock();
@@ -151,7 +153,7 @@ public class DebugHost implements Host, HostInputMethod.Backend {
     }
 
     @Override
-    public int reply(List<String> choices) throws ScriptInterruptedException {
+    public int reply(Choices choices) throws ScriptInterruptedException {
         logger.info("Reply " + choices + " @ " + Thread.currentThread().getStackTrace()[1].toString());
 
         try {

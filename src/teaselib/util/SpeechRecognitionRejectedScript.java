@@ -3,12 +3,11 @@
  */
 package teaselib.util;
 
-import java.util.List;
-
 import teaselib.ScriptFunction;
 import teaselib.TeaseScript;
 import teaselib.core.Script;
 import teaselib.core.speechrecognition.SpeechRecognitionResult.Confidence;
+import teaselib.core.ui.Choices;
 
 /**
  * @author someone
@@ -35,10 +34,9 @@ public abstract class SpeechRecognitionRejectedScript extends TeaseScript {
     }
 
     @Override
-    final protected String showChoices(ScriptFunction scriptFunction, Confidence recognitionConfidence,
-            List<String> choices) {
+    protected String showChoices(Choices choices, ScriptFunction scriptFunction, Confidence recognitionConfidence) {
         // Always use low confidence for recognitions
-        return super.showChoices(scriptFunction, confidence, choices);
+        return super.showChoices(choices, scriptFunction, confidence);
     }
 
 }

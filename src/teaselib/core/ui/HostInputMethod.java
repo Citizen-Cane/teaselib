@@ -16,9 +16,9 @@ import teaselib.core.concurrency.NamedExecutorService;
  */
 public class HostInputMethod implements InputMethod {
     public interface Backend {
-        int reply(List<String> choices);
+        int reply(Choices choices);
 
-        boolean dismissChoices(List<String> choices);
+        boolean dismissChoices(List<Choice> choices);
     }
 
     private final Backend host;
@@ -40,7 +40,7 @@ public class HostInputMethod implements InputMethod {
                         notifyAll();
                     }
                     if (prompt.result() == Prompt.UNDEFINED) {
-                        int result = host.reply(prompt.derived);
+                        int result = host.reply(prompt.choices);
                         prompt.lock.lockInterruptibly();
                         try {
                             if (!prompt.paused() && prompt.result() == Prompt.UNDEFINED) {
@@ -71,7 +71,7 @@ public class HostInputMethod implements InputMethod {
         try {
             boolean tryLock = replySection.tryLock();
             while (!tryLock) {
-                dismissChoices = host.dismissChoices(prompt.derived);
+                dismissChoices = host.dismissChoices(prompt.choices);
                 tryLock = replySection.tryLock();
                 if (tryLock) {
                     break;

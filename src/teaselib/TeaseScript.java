@@ -26,7 +26,9 @@ import teaselib.core.speechrecognition.SpeechRecognitionImplementation;
 import teaselib.core.speechrecognition.SpeechRecognitionResult.Confidence;
 import teaselib.core.speechrecognition.SpeechRecognizer;
 import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
+import teaselib.core.ui.Choices;
 import teaselib.core.util.WildcardPattern;
+import teaselib.motiondetection.Gesture;
 import teaselib.util.Items;
 
 public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
@@ -182,30 +184,30 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
      * Displays the requested choices in the user interface after the mandatory parts of all renderers have been
      * completed. This means especially that all text has been displayed and spoken.
      * 
-     * @param choices
+     * @param text
      *            The prompts to be displayed in the user interface
      * @return The choice object that has been selected by the user.
      */
-    public final String reply(List<String> choices) {
-        return showChoices(null, choices);
+    public final String reply(List<String> text) {
+        return showChoices(null, Choices.from(text));
     }
 
-    public final String reply(Confidence confidence, List<String> choices) {
-        return showChoices(null, confidence, choices);
+    public final String reply(Confidence confidence, List<String> text) {
+        return showChoices(Choices.from(text), null, confidence);
     }
 
     /**
      * Displays the requested choices in the user interface after the mandatory parts of all renderers have been
      * completed. This means especially that all text has been displayed and spoken.
      * 
-     * @param choice
+     * @param text
      *            The first prompt to be displayed by the user interface.
      * @param more
      *            More prompts to be displayed by the user interface
      * @return The choice object that has been selected by the user.
      */
-    public final String reply(String choice, String... more) {
-        List<String> choices = buildChoicesFromArray(choice, more);
+    public final String reply(String text, String... more) {
+        List<String> choices = buildChoicesFromArray(text, more);
         return reply(choices);
     }
 
@@ -213,28 +215,28 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
      * Displays the requested choices in the user interface after the mandatory parts of all renderers have been
      * completed. This means especially that all text has been displayed and spoken.
      * 
-     * @param choices
+     * @param text
      *            The prompts to be displayed in the user interface
      * @return The choice object that has been selected by the user, or {@link TeaseScript#Timeout} if the script
      *         function completes.
      */
-    public final String reply(ScriptFunction scriptFunction, List<String> choices) {
-        return showChoices(scriptFunction, choices);
+    public final String reply(ScriptFunction scriptFunction, List<String> text) {
+        return showChoices(scriptFunction, Choices.from(text));
     }
 
     /**
      * Displays the requested choices in the user interface after the mandatory parts of all renderers have been
      * completed. This means especially that all text has been displayed and spoken.
      * 
-     * @param choice
+     * @param text
      *            The first prompt to be displayed by the user interface.
      * @param more
      *            More prompts to be displayed by the user interface
      * @return The choice object that has been selected by the user, or {@link TeaseScript#Timeout} if the script
      *         function completes.
      */
-    public final String reply(ScriptFunction scriptFunction, String choice, String... more) {
-        List<String> choices = buildChoicesFromArray(choice, more);
+    public final String reply(ScriptFunction scriptFunction, String text, String... more) {
+        List<String> choices = buildChoicesFromArray(text, more);
         return reply(scriptFunction, choices);
     }
 
@@ -395,7 +397,8 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
      * @return True if {@code yes} has been selected, false if {@code no} has been selected.
      */
     public final boolean askYN(String yes, String no) {
-        return reply(yes, no) == yes;
+        Choices choices = Choices.from(choice(Gesture.Nod, yes), choice(Gesture.Shake, no));
+        return showChoices(null, choices) == yes;
     }
 
     /**
@@ -413,9 +416,8 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
      * 
      * @return The choice object that has been selected by the user.
      */
-    public final String reply(Confidence recognitionConfidence, String choice) {
-        List<String> choices = buildChoicesFromArray(choice);
-        return showChoices(null, recognitionConfidence, choices);
+    public final String reply(Confidence recognitionConfidence, String text) {
+        return showChoices(Choices.from(text), null, recognitionConfidence);
     }
 
     /**
@@ -424,7 +426,7 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
      * 
      * @param recognitionConfidence
      *            The confidence threshold used for speech recognition.
-     * @param choice
+     * @param text
      *            The first prompt to be displayed by the user interface.
      * @param more
      *            More prompts to be displayed by the user interface
@@ -432,8 +434,8 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
      * @return The choice object that has been selected by the user, or {@link TeaseScript#Timeout} if the script
      *         function completes.
      */
-    public final String reply(ScriptFunction scriptFunction, Confidence recognitionConfidence, List<String> choices) {
-        return showChoices(scriptFunction, recognitionConfidence, choices);
+    public final String reply(ScriptFunction scriptFunction, Confidence recognitionConfidence, List<String> text) {
+        return showChoices(Choices.from(text), scriptFunction, recognitionConfidence);
     }
 
     /**

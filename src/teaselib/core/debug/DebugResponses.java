@@ -6,6 +6,7 @@ import java.util.regex.Pattern;
 
 import teaselib.core.Debugger.Response;
 import teaselib.core.Debugger.ResponseAction;
+import teaselib.core.ui.Choice;
 import teaselib.core.util.ExceptionUtil;
 import teaselib.core.util.WildcardPattern;
 
@@ -57,7 +58,7 @@ public class DebugResponses {
         responses.add(responseAction);
     }
 
-    public Result getResponse(List<String> choices) {
+    public Result getResponse(List<Choice> choices) {
         Result bestResult = null;
         for (ResponseAction entry : responses) {
             bestResult = getResponse(choices, entry, bestResult);
@@ -70,10 +71,10 @@ public class DebugResponses {
         }
     }
 
-    public static Result getResponse(List<String> choices, ResponseAction entry, Result bestResult) {
+    public static Result getResponse(List<Choice> choices, ResponseAction entry, Result bestResult) {
         Pattern choice = WildcardPattern.compile(entry.match);
         for (int i = 0; i < choices.size(); i++) {
-            if (choice.matcher(choices.get(i)).matches()
+            if (choice.matcher(choices.get(i).text).matches()
                     && (bestResult == null || bestResult.response == Response.Ignore)) {
                 try {
                     bestResult = new Result(entry.match, i, entry.getResponse().call());
@@ -85,7 +86,7 @@ public class DebugResponses {
         return bestResult;
     }
 
-    public Result defaultResponse(List<String> choices) {
+    public Result defaultResponse(List<Choice> choices) {
         if (choices.size() == 1) {
             return new Result("*", 0, Response.Choose);
         } else {

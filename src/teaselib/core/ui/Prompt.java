@@ -22,10 +22,10 @@ public class Prompt {
     static final String NONE = "None";
 
     public final Choices choices;
-    public final Choices derived;
-    final ScriptFunction scriptFunction;
-    final List<InputMethod> inputMethods;
+    public final ScriptFunction scriptFunction;
 
+    final List<InputMethod> inputMethods;
+    // TODO script task can be final -> remove script function
     ScriptFutureTask scriptTask;
 
     public final ReentrantLock lock;
@@ -37,10 +37,9 @@ public class Prompt {
 
     String inputHandlerKey = NONE;
 
-    public Prompt(Choices choices, Choices derived, ScriptFunction scriptFunction, List<InputMethod> inputMethods) {
+    public Prompt(Choices choices, ScriptFunction scriptFunction, List<InputMethod> inputMethods) {
         super();
         this.choices = choices;
-        this.derived = derived;
         this.scriptFunction = scriptFunction;
 
         this.inputMethods = inputMethods;
@@ -86,7 +85,7 @@ public class Prompt {
             } else if (resultIndex == UNDEFINED) {
                 throw new IllegalStateException("Undefined prompt result for " + this);
             } else {
-                choice = choices.get(resultIndex);
+                choice = choices.get(resultIndex).text;
             }
         }
         return choice;

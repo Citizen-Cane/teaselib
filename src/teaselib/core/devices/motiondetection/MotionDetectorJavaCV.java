@@ -433,10 +433,20 @@ public class MotionDetectorJavaCV extends MotionDetector /* extends WiredDevice 
     }
 
     @Override
+    public MotionSensitivity getSensitivity() {
+        return eventThread.motionSensitivity;
+    }
+
+    @Override
     public void setSensitivity(MotionSensitivity motionSensivity) {
         stop();
         eventThread.setSensitivity(motionSensivity);
         start();
+    }
+
+    @Override
+    public ViewPoint getViewPoint() {
+        return eventThread.viewPoint;
     }
 
     @Override

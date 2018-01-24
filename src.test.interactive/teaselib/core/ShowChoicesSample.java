@@ -14,8 +14,8 @@ import teaselib.core.debug.DebugPersistence;
 import teaselib.test.TestScript;
 
 /**
- * Copy the contents of the run() method into a TeaseScript instance to test
- * interaction on a host with a real user interface.
+ * Copy the contents of the run() method into a TeaseScript instance to test interaction on a host with a real user
+ * interface.
  * 
  * @author Citizen-Cane
  *
@@ -30,7 +30,7 @@ public class ShowChoicesSample extends TeaseScript {
      */
     public ShowChoicesSample() throws IOException {
         super(new TeaseLib(new DebugHost(), new DebugPersistence()), new ResourceLoader(ShowChoicesSample.class),
-                TestScript.TestScriptActor, TestScript.TestScriptNamespace);
+                TestScript.newActor(), TestScript.TestScriptNamespace);
     }
 
     @Test

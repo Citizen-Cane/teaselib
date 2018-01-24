@@ -20,7 +20,10 @@ public class TestScript extends TeaseScript {
     public final Debugger debugger;
 
     public static final String TestScriptNamespace = TestScript.class.getSimpleName() + " " + "Namespace";
-    public static final Actor TestScriptActor = new Actor("Test", Gender.Feminine, Locale.US);
+
+    public static final Actor newActor() {
+        return new Actor("Test", Gender.Feminine, Locale.US);
+    }
 
     public static TestScript getOne() {
         try {
@@ -70,7 +73,7 @@ public class TestScript extends TeaseScript {
 
     TestScript(DebugHost dummyHost, DebugPersistence dummyPersistence, ResourceLoader resourceLoader, Setup setup)
             throws IOException {
-        super(new TeaseLib(dummyHost, dummyPersistence, setup), resourceLoader, TestScriptActor, TestScriptNamespace);
+        super(new TeaseLib(dummyHost, dummyPersistence, setup), resourceLoader, newActor(), TestScriptNamespace);
         this.host = dummyHost;
         this.persistence = dummyPersistence;
         this.debugger = new Debugger(teaseLib);

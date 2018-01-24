@@ -42,6 +42,8 @@ import teaselib.core.VideoRenderer;
 import teaselib.core.VideoRenderer.Type;
 import teaselib.core.concurrency.NamedExecutorService;
 import teaselib.core.javacv.VideoRendererJavaCV;
+import teaselib.core.ui.Choice;
+import teaselib.core.ui.Choices;
 import teaselib.core.ui.HostInputMethod;
 import teaselib.core.ui.InputMethod;
 import teaselib.core.util.ExceptionUtil;
@@ -386,7 +388,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
         return results;
     }
 
-    private List<Runnable> getClickableChoices(List<String> choices) {
+    private List<Runnable> getClickableChoices(List<Choice> choices) {
         try {
             // Get buttons
             Class<?> mainFrameClass = mainFrame.getClass();
@@ -420,7 +422,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
                 final int comboboxIndex = j;
                 for (final int index : new Interval(choices)) {
                     final String text = model.getElementAt(j);
-                    if (text.contains(choices.get(index))) {
+                    if (text.contains(choices.get(index).display)) {
                         clickableChoices.set(index, (Runnable) () -> ssComboBox.setSelectedIndex(comboboxIndex));
                     }
                 }
@@ -431,7 +433,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
             for (final javax.swing.JButton button : buttons) {
                 for (int index : new Interval(choices)) {
                     String buttonText = button.getText();
-                    final String choice = choices.get(index);
+                    final String choice = choices.get(index).display;
                     if (buttonText.contains(choice)) {
                         clickableChoices.set(index, () -> {
                             logger.info("Clicking on '" + choice + "'");
@@ -454,7 +456,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
     }
 
     @Override
-    public boolean dismissChoices(List<String> choices) {
+    public boolean dismissChoices(List<Choice> choices) {
         List<Runnable> clickableChoices = getClickableChoices(choices);
         if (clickableChoices != null) {
             Runnable delegate = clickableChoices.get(0);
@@ -530,7 +532,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
     }
 
     @Override
-    public int reply(List<String> choices) {
+    public int reply(Choices choices) {
         if (Thread.interrupted()) {
             throw new ScriptInterruptedException();
         }
@@ -548,7 +550,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
         FutureTask<Integer> showChoices = new FutureTask<>(new Callable<Integer>() {
             @Override
             public Integer call() throws Exception {
-                return ss.getSelectedValue(null, choices);
+                return ss.getSelectedValue(null, choices.toDisplay());
             }
         });
         int result;

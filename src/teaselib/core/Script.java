@@ -6,7 +6,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -443,10 +442,6 @@ public abstract class Script {
         return showPrompt(prompt, scriptFunction);
     }
 
-    protected List<Choice> choices(List<String> choices) {
-        return choices.stream().map((choice) -> choice(Gesture.None, choice)).collect(Collectors.toList());
-    }
-
     protected Choice choice(Gesture gesture, String yes) {
         return new Choice(gesture, yes, expandTextVariables(yes));
     }
@@ -498,7 +493,7 @@ public abstract class Script {
             logger.info(inputMethod.getClass().getSimpleName() + " " + inputMethod.toString());
         }
         return prompt;
-        }
+    }
 
     public SpeechRecognitionRejectedScript speechRecognitioneRejectedScript(ScriptFunction scriptFunction) {
         return new SpeechRecognitionRejectedScript(this) {

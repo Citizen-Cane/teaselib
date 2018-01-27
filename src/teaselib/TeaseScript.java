@@ -189,7 +189,7 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
      * @return The choice object that has been selected by the user.
      */
     public final String reply(List<String> text) {
-        return showChoices(null, Choices.from(text));
+        return showChoices(Choices.from(text), null);
     }
 
     public final String reply(Confidence confidence, List<String> text) {
@@ -221,7 +221,7 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
      *         function completes.
      */
     public final String reply(ScriptFunction scriptFunction, List<String> text) {
-        return showChoices(scriptFunction, Choices.from(text));
+        return showChoices(Choices.from(text), scriptFunction);
     }
 
     /**
@@ -397,8 +397,15 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
      * @return True if {@code yes} has been selected, false if {@code no} has been selected.
      */
     public final boolean askYN(String yes, String no) {
-        Choices choices = Choices.from(choice(Gesture.Nod, yes), choice(Gesture.Shake, no));
-        return showChoices(null, choices) == yes;
+        return showChoices(Choices.from(choice(Gesture.Nod, yes), choice(Gesture.Shake, no)), null) == yes;
+    }
+
+    public final void deny(String no) {
+        showChoices(Choices.from(choice(Gesture.Shake, no)));
+    }
+
+    public final void agree(String yes) {
+        showChoices(Choices.from(choice(Gesture.Nod, yes)));
     }
 
     /**

@@ -1,5 +1,6 @@
 package teaselib.motiondetection;
 
+import java.util.List;
 import java.util.Set;
 import java.util.function.Supplier;
 
@@ -159,9 +160,8 @@ public abstract class MotionDetector implements Device.Creatable {
 
     public abstract void start();
 
-    public abstract Gesture await(Gesture expected, double timeoutSeconds);
+    public abstract Gesture await(List<Gesture> gestures, double timeoutSeconds);
 
-    // TODO Define in device, implement in MotionDetector, set and restore values
     public <T> T call(Supplier<T> function) {
         boolean active = active();
         MotionSensitivity sensitivity = getSensitivity();
@@ -182,10 +182,7 @@ public abstract class MotionDetector implements Device.Creatable {
             setSensitivity(sensitivity);
             setViewPoint(viewPoint);
 
-            // TODO Close with delay so that consecutive calls don't result in camera indicator blinking
             if (!active) {
-                close();
-            } else {
                 stop();
             }
         }

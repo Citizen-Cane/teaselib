@@ -10,8 +10,7 @@ public class Signal {
     final Lock lock = new ReentrantLock();
     final Condition condition = lock.newCondition();
 
-    public static abstract class HasChangedPredicate
-            implements Callable<Boolean> {
+    public interface HasChangedPredicate extends Callable<Boolean> {
     }
 
     public void signal() {
@@ -41,19 +40,16 @@ public class Signal {
         }
     }
 
-    public boolean await(final double timeoutSeconds)
-            throws InterruptedException, Exception {
+    public boolean await(double timeoutSeconds) throws InterruptedException, Exception {
         return doLocked(new Callable<Boolean>() {
             @Override
             public Boolean call() throws Exception {
-                return condition.await((long) timeoutSeconds * 1000,
-                        TimeUnit.MILLISECONDS);
+                return condition.await((long) timeoutSeconds * 1000, TimeUnit.MILLISECONDS);
             }
         });
     }
 
-    public boolean await(final double timeoutSeconds,
-            final HasChangedPredicate hasChangedPredicate)
+    public boolean await(double timeoutSeconds, HasChangedPredicate hasChangedPredicate)
             throws InterruptedException, Exception {
         return doLocked(new Callable<Boolean>() {
             @Override
@@ -68,10 +64,11 @@ public class Signal {
             private boolean poll() throws InterruptedException, Exception {
                 long start = System.currentTimeMillis();
                 long elapsed = 0;
-                long timeoutMillis = (long) (timeoutSeconds) * 1000;
+                // TODO Double.MAX_Value overflow -> too much polling -> change to long + TimeUnit
+                long timeoutMillis = timeoutSeconds == Double.MAX_VALUE ? Long.MAX_VALUE
+                        : (long) (timeoutSeconds) * 1000;
                 do {
-                    boolean inTime = condition.await(timeoutMillis - elapsed,
-                            TimeUnit.MILLISECONDS);
+                    boolean inTime = condition.await(timeoutMillis - elapsed, TimeUnit.MILLISECONDS);
                     if (inTime) {
                         if (hasChangedPredicate.call()) {
                             // Condition changed

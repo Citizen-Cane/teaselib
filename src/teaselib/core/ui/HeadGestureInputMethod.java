@@ -45,22 +45,11 @@ public class HeadGestureInputMethod implements InputMethod {
                         notifyAll();
                     }
                     if (prompt.result() == Prompt.UNDEFINED) {
-                        Gesture gesture = motionDetector.call(() -> {
-                            Gesture g = Gesture.None;
-                            while (g == Gesture.None) {
-                                // TODO Also await shake -> must wait for NotNone or multiple values
-                                g = motionDetector.await(Gesture.Nod, Double.MAX_VALUE);
-                            }
-                            return Gesture.None;
-                        });
-
+                        int result = awaitGesture(prompt.choices.toGestures());
                         prompt.lock.lockInterruptibly();
                         try {
                             if (!prompt.paused() && prompt.result() == Prompt.UNDEFINED) {
-                                int result = SupportedGestures.indexOf(gesture);
-                                if (0 <= result && result < SupportedGestures.size()) {
-                                    prompt.signalResult(result);
-                                }
+                                prompt.signalResult(result);
                             }
                         } finally {
                             prompt.lock.unlock();
@@ -73,12 +62,34 @@ public class HeadGestureInputMethod implements InputMethod {
                 }
                 return prompt.result();
             }
+
+            private int awaitGesture(List<Gesture> gestures) {
+                return motionDetector.call(() -> {
+                    while (true) {
+                        Gesture gesture = motionDetector.await(gestures, Double.MAX_VALUE);
+                        if (supported(gesture)) {
+                            int result = gestures.indexOf(gesture);
+                            if (result >= 0 && result < prompt.choices.size()) {
+                                return result;
+                            }
+                        }
+                    }
+                });
+            }
+
         };
 
-        synchronized (callable) {
+        synchronized (callable)
+
+        {
             gestureResult = workerThread.submit(callable);
             callable.wait();
         }
+    }
+
+    private boolean supported(Gesture gesture) {
+        int result = SupportedGestures.indexOf(gesture);
+        return 0 <= result && result < SupportedGestures.size();
     }
 
     @Override

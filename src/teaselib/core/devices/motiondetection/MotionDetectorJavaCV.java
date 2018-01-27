@@ -9,7 +9,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.bytedeco.javacpp.opencv_core.Mat;
 import org.bytedeco.javacpp.opencv_core.Rect;
@@ -144,7 +144,7 @@ public class MotionDetectorJavaCV extends MotionDetector /* extends WiredDevice 
         private long desiredFrameTimeMillis;
 
         volatile double debugWindowTimeSpan = PresenceRegionDefaultTimespan;
-        private final ReentrantLock lockStartStop = new ReentrantLock();
+        private final AtomicBoolean active = new AtomicBoolean(false);
         private final Signal presenceChanged = new Signal();
         private final Signal gestureChanged = new Signal();
 
@@ -174,8 +174,8 @@ public class MotionDetectorJavaCV extends MotionDetector /* extends WiredDevice 
             this.videoInputTransformation = getVideoTransformation(resolution, processingSize);
             motionProcessor = new MotionProcessorJavaCV(resolution, processingSize);
             presenceResult = new MotionDetectionResultImplementation(processingSize);
-            setSensitivity(motionSensitivity);
-            setPointOfView(viewPoint);
+            applySensitivity(motionSensitivity);
+            applyPointOfView(viewPoint);
             debugInfo = new MotionDetectorJavaCVDebugRenderer(processingSize);
         }
 
@@ -209,18 +209,51 @@ public class MotionDetectorJavaCV extends MotionDetector /* extends WiredDevice 
             return map;
         }
 
-        public void setSensitivity(MotionSensitivity motionSensivity) {
-            this.motionSensitivity = motionSensivity;
+        public void setSensitivity(MotionSensitivity motionSensitivity) {
+            if (motionSensitivity == this.motionSensitivity)
+                return;
+
+            boolean isActive = active();
+            if (isActive) {
+                stopCapture();
+            }
+
+            this.motionSensitivity = motionSensitivity;
+
             if (motionProcessor != null) {
-                motionProcessor.setStructuringElementSize(motionSensitivities.get(motionSensivity));
+                applySensitivity(motionSensitivity);
+            }
+
+            if (isActive) {
+                startCapture();
             }
         }
 
+        private void applySensitivity(MotionSensitivity motionSensitivity) {
+            motionProcessor.setStructuringElementSize(motionSensitivities.get(motionSensitivity));
+        }
+
         public void setPointOfView(ViewPoint viewPoint) {
+            if (viewPoint == this.viewPoint)
+                return;
+
+            boolean isActive = active();
+            if (isActive) {
+                stopCapture();
+            }
+
             this.viewPoint = viewPoint;
             if (presenceResult != null) {
-                presenceResult.setViewPoint(viewPoint);
+                applyPointOfView(viewPoint);
             }
+
+            if (isActive) {
+                startCapture();
+            }
+        }
+
+        private void applyPointOfView(ViewPoint viewPoint) {
+            presenceResult.setViewPoint(viewPoint);
         }
 
         @Override
@@ -255,6 +288,13 @@ public class MotionDetectorJavaCV extends MotionDetector /* extends WiredDevice 
         Mat motionImageCopy = new Mat();
 
         private void processVideoCaptureStream() throws InterruptedException {
+            synchronized (active) {
+                active.notifyAll();
+                while (!active.get()) {
+                    active.wait();
+                }
+            }
+
             try {
                 for (Mat frame : videoCaptureDevice) {
                     long timeStamp = System.currentTimeMillis();
@@ -299,7 +339,9 @@ public class MotionDetectorJavaCV extends MotionDetector /* extends WiredDevice 
                     // completeComputationAndRender(image, lock);
                     // }).get();
 
-                    handlePause();
+                    if (active.get() == false) {
+                        break;
+                    }
                 }
             } catch (InterruptedException e) {
                 throw e;
@@ -405,20 +447,39 @@ public class MotionDetectorJavaCV extends MotionDetector /* extends WiredDevice 
             return indicators;
         }
 
-        private void handlePause() throws InterruptedException {
-            lockStartStop.lockInterruptibly();
-            try {
-            } finally {
-                lockStartStop.unlock();
-            }
-        }
-
         public void clearMotionHistory() {
             presenceChanged.doLocked(() -> presenceResult.clear());
         }
 
         public double fps() {
             return fps;
+        }
+
+        public boolean active() {
+            return active.get();
+        }
+
+        public void stopCapture() {
+            synchronized (active) {
+                active.set(false);
+                while (active.get()) {
+                    try {
+                        active.wait();
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        break;
+                    }
+                }
+            }
+        }
+
+        public void startCapture() {
+            synchronized (active) {
+                boolean isActive = active.getAndSet(true);
+                if (!isActive) {
+                    active.notifyAll();
+                }
+            }
         }
     }
 
@@ -438,10 +499,8 @@ public class MotionDetectorJavaCV extends MotionDetector /* extends WiredDevice 
     }
 
     @Override
-    public void setSensitivity(MotionSensitivity motionSensivity) {
-        stop();
-        eventThread.setSensitivity(motionSensivity);
-        start();
+    public void setSensitivity(MotionSensitivity motionSensitivity) {
+        eventThread.setSensitivity(motionSensitivity);
     }
 
     @Override
@@ -451,9 +510,7 @@ public class MotionDetectorJavaCV extends MotionDetector /* extends WiredDevice 
 
     @Override
     public void setViewPoint(ViewPoint pointOfView) {
-        stop();
         eventThread.setPointOfView(pointOfView);
-        start();
     }
 
     @Override
@@ -485,20 +542,20 @@ public class MotionDetectorJavaCV extends MotionDetector /* extends WiredDevice 
     }
 
     @Override
-    public Gesture await(Gesture expected, double timeoutSeconds) {
+    public Gesture await(List<Gesture> expected, double timeoutSeconds) {
         if (!active()) {
-            awaitTimeout(timeoutSeconds);
-            return Gesture.None;
+            throw new IllegalStateException(getClass().getName() + " not active");
         }
 
-        if (eventThread.gesture == expected) {
+        // TODO resolve duplicated code
+        if (expected.contains(eventThread.gesture)) {
             return eventThread.gesture;
         }
         try {
             eventThread.gestureChanged.await(timeoutSeconds, (new Signal.HasChangedPredicate() {
                 @Override
                 public Boolean call() throws Exception {
-                    return eventThread.gesture == expected;
+                    return expected.contains(eventThread.gesture);
                 }
             }));
         } catch (InterruptedException e) {
@@ -545,29 +602,18 @@ public class MotionDetectorJavaCV extends MotionDetector /* extends WiredDevice 
 
     @Override
     public boolean active() {
-        return eventThread.presenceResult != null && eventThread.videoCaptureDevice.active();
+        return eventThread.active();
     }
 
     @Override
     public void stop() {
-        if (!eventThread.lockStartStop.isHeldByCurrentThread()) {
-            eventThread.lockStartStop.lock();
-        }
+        eventThread.stopCapture();
     }
 
     @Override
     public void start() {
-        if (eventThread.lockStartStop.isHeldByCurrentThread()) {
-            eventThread.lockStartStop.unlock();
-        }
+        eventThread.startCapture();
     }
-
-    // TODO Start & stop should be the other way around:
-    // - init motion detector in stop mode (camera off, capture thread not
-    // started, etc.)
-    // - then start on request - allocate camera, start capture thread etc.
-    // - on stop, end capture thread, close camera, etc. - much like close()
-    // TODO start() and stop() should open and hide the output window
 
     @Override
     public void close() {

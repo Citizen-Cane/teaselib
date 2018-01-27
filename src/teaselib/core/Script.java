@@ -413,12 +413,16 @@ public abstract class Script {
         }
     }
 
+    protected final String showChoices(Choices choices) {
+        return showChoices(choices, null);
+    }
+
     /**
      * {@code recognitionConfidence} defaults to {@link Confidence#Default}
      * 
      * @see Script#showChoices(List, ScriptFunction, Confidence)
      */
-    protected final String showChoices(ScriptFunction scriptFunction, Choices choices) {
+    protected final String showChoices(Choices choices, ScriptFunction scriptFunction) {
         return showChoices(choices, scriptFunction, Confidence.Default);
     }
 

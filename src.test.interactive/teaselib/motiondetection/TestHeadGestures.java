@@ -1,5 +1,7 @@
 package teaselib.motiondetection;
 
+import java.util.Arrays;
+
 import org.bytedeco.javacpp.opencv_core.Point;
 import org.junit.Test;
 
@@ -40,7 +42,7 @@ public class TestHeadGestures {
         System.out.println("Nod!");
 
         motionDetector.setSensitivity(GestureSensitivity);
-        while (Gesture.Nod != motionDetector.await(Gesture.Nod, 5.0)) {
+        while (Gesture.Nod != motionDetector.await(Arrays.asList(Gesture.Nod), 5.0)) {
             System.out.println("I said 'Nod!'");
         }
 
@@ -54,7 +56,7 @@ public class TestHeadGestures {
         System.out.println("Shake!");
 
         motionDetector.setSensitivity(GestureSensitivity);
-        while (Gesture.Shake != motionDetector.await(Gesture.Shake, 5.0)) {
+        while (Gesture.Shake != motionDetector.await(Arrays.asList(Gesture.Shake), 5.0)) {
             System.out.println("I said 'Shake!'");
         }
 

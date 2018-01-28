@@ -14,13 +14,13 @@ import java.util.concurrent.locks.ReentrantLock;
 import teaselib.core.concurrency.NamedExecutorService;
 import teaselib.motiondetection.Gesture;
 import teaselib.motiondetection.MotionDetector;
+import teaselib.motiondetection.MotionDetector.MotionSensitivity;
 
 /**
  * @author Citizen-Cane
  *
  */
 public class HeadGestureInputMethod implements InputMethod {
-
     private final MotionDetector motionDetector;
 
     public HeadGestureInputMethod(MotionDetector motionDetector) {
@@ -65,6 +65,7 @@ public class HeadGestureInputMethod implements InputMethod {
 
             private int awaitGesture(List<Gesture> gestures) {
                 return motionDetector.call(() -> {
+                    motionDetector.setSensitivity(MotionSensitivity.High);
                     while (true) {
                         Gesture gesture = motionDetector.await(gestures, Double.MAX_VALUE);
                         if (supported(gesture)) {
@@ -76,12 +77,9 @@ public class HeadGestureInputMethod implements InputMethod {
                     }
                 });
             }
-
         };
 
-        synchronized (callable)
-
-        {
+        synchronized (callable) {
             gestureResult = workerThread.submit(callable);
             callable.wait();
         }

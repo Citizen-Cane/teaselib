@@ -14,10 +14,10 @@ import teaselib.test.DebugSetup;
 
 public class TestHeadGestures {
     MotionSensitivity AssumeSensitivity = MotionSensitivity.Low;
-    MotionSensitivity GestureSensitivity = MotionSensitivity.Normal;
+    MotionSensitivity GestureSensitivity = MotionSensitivity.High;
 
     @Test
-    public void testHeadGestures() {
+    public void testHeadGestures() throws InterruptedException {
         Configuration config = DebugSetup.getConfiguration();
         Devices devices = new Devices(config);
 
@@ -30,6 +30,9 @@ public class TestHeadGestures {
                 return new Point(0, 0);
             }
         });
+        motionDetector.start();
+        // TODO Resolve NPE when sleep is missing (wait for motion & presence data to be initialized)
+        Thread.sleep(1000);
         Movement movement = MotionDetector.movement(motionDetector);
 
         System.out.println("Assume the position!");

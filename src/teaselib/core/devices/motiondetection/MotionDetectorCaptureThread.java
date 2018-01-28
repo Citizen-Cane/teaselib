@@ -11,6 +11,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.bytedeco.javacpp.opencv_core.Mat;
+import org.bytedeco.javacpp.opencv_core.Point;
 import org.bytedeco.javacpp.opencv_core.Rect;
 import org.bytedeco.javacpp.opencv_core.Size;
 
@@ -29,9 +30,9 @@ import teaselib.core.javacv.util.FramesPerSecond;
 import teaselib.core.javacv.util.Geom;
 import teaselib.core.util.ExceptionUtil;
 import teaselib.motiondetection.Gesture;
-import teaselib.motiondetection.ViewPoint;
 import teaselib.motiondetection.MotionDetector.MotionSensitivity;
 import teaselib.motiondetection.MotionDetector.Presence;
+import teaselib.motiondetection.ViewPoint;
 import teaselib.video.VideoCaptureDevice;
 
 class MotionDetectorCaptureThread extends Thread {
@@ -78,8 +79,7 @@ class MotionDetectorCaptureThread extends Thread {
     private void openVideoCaptureDevice(VideoCaptureDevice videoCaptureDevice) {
         videoCaptureDevice.fps(fps);
         videoCaptureDevice.open();
-        videoCaptureDevice
-                .resolution(videoCaptureDevice.getResolutions().getMatchingOrSimilar(DesiredProcessingSize));
+        videoCaptureDevice.resolution(videoCaptureDevice.getResolutions().getMatchingOrSimilar(DesiredProcessingSize));
         this.fps = FramesPerSecond.getFps(videoCaptureDevice.fps(), desiredFps);
         this.fpsStatistics = new FramesPerSecond((int) fps);
         this.desiredFrameTimeMillis = (long) (1000.0 / fps);
@@ -283,9 +283,16 @@ class MotionDetectorCaptureThread extends Thread {
 
         // Enlarge gesture region based on the observation that when beginning the first nod the presence region
         // starts with a horizontally wide but vertically narrow area around the eyes
-        if (presence.width() < video.rows() / 10 && presence.height() * 4 < presence.width()) {
-            presence = new Rect(presence.x(), presence.y() - presence.width() / 2, presence.width(),
-                    presence.width());
+        int min = 10;
+        try (Size minSize = new Size(video.rows() / min, video.cols() / min)) {
+            if (presence.width() < minSize.width() || presence.height() < minSize.height()) {
+                Point center = Geom.center(presence);
+                try (Size size = new Size(Math.max(minSize.width(), presence.width()),
+                        Math.max(minSize.height(), presence.height()));) {
+                    presence = new Rect(center.x() + size.width(), center.y() + size.height(), size.width(),
+                            size.height());
+                }
+            }
         }
 
         gestureResult.gestureRegion = Geom.intersect(presence,
@@ -355,9 +362,10 @@ class MotionDetectorCaptureThread extends Thread {
 
         if (logDetails) {
             // Log state
-            MotionDetectorJavaCV.logger.info("contourMotionDetected=" + presenceResult.presenceData.contourMotionDetected
-                    + "  trackerMotionDetected=" + presenceResult.presenceData.trackerMotionDetected + "(distance="
-                    + motionProcessor.motionData.distance2 + "), " + indicators.toString());
+            MotionDetectorJavaCV.logger
+                    .info("contourMotionDetected=" + presenceResult.presenceData.contourMotionDetected
+                            + "  trackerMotionDetected=" + presenceResult.presenceData.trackerMotionDetected
+                            + "(distance=" + motionProcessor.motionData.distance2 + "), " + indicators.toString());
         }
 
         return indicators;

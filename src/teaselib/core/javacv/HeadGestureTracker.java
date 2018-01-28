@@ -240,21 +240,6 @@ public class HeadGestureTracker {
         return direction == Direction.Right || direction == Direction.Left;
     }
 
-    public Gesture getGestureSimple() {
-        if (directionTimeLine.size() == 0)
-            return Gesture.None;
-        Direction direction = directionTimeLine.tail();
-        if (direction == Direction.None)
-            return Gesture.None;
-        if (horizontal(direction)) {
-            return Gesture.Shake;
-        } else if (vertical(direction)) {
-            return Gesture.Nod;
-        } else {
-            throw new IllegalStateException(directionTimeLine.toString());
-        }
-    }
-
     public void restart() {
         resetTrackFeatures = true;
     }

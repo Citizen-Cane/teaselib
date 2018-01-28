@@ -142,7 +142,7 @@ public abstract class MotionDetector implements Device.Creatable {
 
     public abstract MotionSensitivity getSensitivity();
 
-    public abstract void setSensitivity(MotionSensitivity motionSensivity);
+    public abstract void setSensitivity(MotionSensitivity motionSensitivity);
 
     public abstract ViewPoint getViewPoint();
 

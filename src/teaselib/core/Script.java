@@ -26,7 +26,6 @@ import teaselib.core.speechrecognition.SpeechRecognizer;
 import teaselib.core.texttospeech.TextToSpeechPlayer;
 import teaselib.core.ui.Choice;
 import teaselib.core.ui.Choices;
-import teaselib.core.ui.HeadGestureInputMethod;
 import teaselib.core.ui.InputMethod;
 import teaselib.core.ui.InputMethods;
 import teaselib.core.ui.Prompt;
@@ -488,7 +487,7 @@ public abstract class Script {
 
         if (teaseLib.item(TeaseLib.DefaultDomain, Gadgets.Webcam).isAvailable()) {
             MotionDetector motionDetector = teaseLib.devices.get(MotionDetector.class).getDefaultDevice();
-            inputMethods.add(new HeadGestureInputMethod(motionDetector));
+            inputMethods.add(motionDetector.getInputMethod());
         }
 
         Prompt prompt = new Prompt(choices, scriptFunction, inputMethods);

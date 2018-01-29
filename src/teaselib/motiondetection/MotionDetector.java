@@ -14,6 +14,7 @@ import teaselib.core.devices.DeviceCache;
 import teaselib.core.devices.Devices;
 import teaselib.core.devices.motiondetection.MotionDetectorJavaCV;
 import teaselib.core.javacv.VideoRendererJavaCV;
+import teaselib.core.ui.HeadGestureInputMethod;
 
 public abstract class MotionDetector implements Device.Creatable {
     public static synchronized DeviceCache<MotionDetector> getDeviceCache(Devices devices,
@@ -139,6 +140,7 @@ public abstract class MotionDetector implements Device.Creatable {
 
     public static final double MotionRegionDefaultTimespan = 1.0;
     public static final double PresenceRegionDefaultTimespan = 1.0;
+    private HeadGestureInputMethod inputMethod = new HeadGestureInputMethod(this);
 
     public abstract MotionSensitivity getSensitivity();
 
@@ -186,5 +188,9 @@ public abstract class MotionDetector implements Device.Creatable {
                 stop();
             }
         }
+    }
+
+    public HeadGestureInputMethod getInputMethod() {
+        return inputMethod;
     }
 }

@@ -4,16 +4,12 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Supplier;
 
-import org.bytedeco.javacpp.opencv_core.Point;
-
 import teaselib.core.Configuration;
 import teaselib.core.VideoRenderer;
-import teaselib.core.VideoRenderer.Type;
 import teaselib.core.devices.Device;
 import teaselib.core.devices.DeviceCache;
 import teaselib.core.devices.Devices;
 import teaselib.core.devices.motiondetection.MotionDetectorJavaCV;
-import teaselib.core.javacv.VideoRendererJavaCV;
 import teaselib.core.ui.HeadGestureInputMethod;
 
 public abstract class MotionDetector implements Device.Creatable {
@@ -140,6 +136,7 @@ public abstract class MotionDetector implements Device.Creatable {
 
     public static final double MotionRegionDefaultTimespan = 1.0;
     public static final double PresenceRegionDefaultTimespan = 1.0;
+
     private HeadGestureInputMethod inputMethod = new HeadGestureInputMethod(this);
 
     public abstract MotionSensitivity getSensitivity();
@@ -149,6 +146,8 @@ public abstract class MotionDetector implements Device.Creatable {
     public abstract ViewPoint getViewPoint();
 
     public abstract void setViewPoint(ViewPoint pointOfView);
+
+    public abstract VideoRenderer getVideoRenderer();
 
     public abstract void setVideoRenderer(VideoRenderer videoRenderer);
 
@@ -169,15 +168,6 @@ public abstract class MotionDetector implements Device.Creatable {
         MotionSensitivity sensitivity = getSensitivity();
         ViewPoint viewPoint = getViewPoint();
         try {
-            if (!active) {
-                // TODO delegate to host -> instanciate device in Script
-                setVideoRenderer(new VideoRendererJavaCV(Type.CameraFeedback) {
-                    @Override
-                    protected Point getPosition(Type type, int width, int height) {
-                        return new Point(0, 0);
-                    }
-                });
-            }
             start();
             return function.get();
         } finally {

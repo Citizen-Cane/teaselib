@@ -130,6 +130,11 @@ public class MotionDetectorJavaCV extends MotionDetector /* extends WiredDevice 
     }
 
     @Override
+    public VideoRenderer getVideoRenderer() {
+        return eventThread.videoRenderer;
+    }
+
+    @Override
     public void setVideoRenderer(VideoRenderer videoRenderer) {
         eventThread.videoRenderer = videoRenderer;
     }

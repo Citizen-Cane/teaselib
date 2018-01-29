@@ -17,7 +17,6 @@ import static teaselib.core.javacv.Color.White;
 import static teaselib.core.javacv.util.Geom.center;
 import static teaselib.core.javacv.util.Gui.drawRect;
 
-import java.util.ConcurrentModificationException;
 import java.util.Map;
 import java.util.Set;
 
@@ -46,11 +45,6 @@ public class MotionDetectorJavaCVDebugRenderer {
     public void render(Mat debugOutput, MotionProcessorJavaCV.MotionData pixelData,
             MotionDetectionResultImplementation.PresenceData resultData, HeadGestureTracker gestureTracker,
             Gesture gesture, double fps) {
-        if (Thread.currentThread() != owner) {
-            throw new ConcurrentModificationException(
-                    "Rendering to Open CV window works only in the thread that created the window: " + owner.toString()
-                            + "!=" + Thread.currentThread().toString());
-        }
         boolean present = resultData.debugIndicators.contains(Presence.Present);
         // Motion
         if (resultData.debugIndicators.contains(Presence.CameraShake)) {

@@ -1,11 +1,17 @@
 package teaselib.core.javacv;
 
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.TimeUnit;
+
 import org.bytedeco.javacpp.opencv_core.Mat;
 import org.bytedeco.javacpp.opencv_core.Point;
 
 import teaselib.core.VideoRenderer;
+import teaselib.core.concurrency.NamedExecutorService;
 
 public abstract class VideoRendererJavaCV implements VideoRenderer {
+    private NamedExecutorService executor;
+    private SynchronousQueue<Runnable> handShake = new SynchronousQueue<>();
 
     private final Type type;
     private final String name;
@@ -13,9 +19,24 @@ public abstract class VideoRendererJavaCV implements VideoRenderer {
     private int y = Integer.MAX_VALUE;
 
     public VideoRendererJavaCV(Type type) {
-        super();
         this.type = type;
         this.name = type.toString();
+
+        executor = NamedExecutorService.singleThreadedQueue(getClass().getSimpleName() + ":" + name, 1,
+                TimeUnit.SECONDS);
+
+        executor.submit(this::processFrames);
+    }
+
+    private void processFrames() {
+        while (!Thread.currentThread().isInterrupted()) {
+            try {
+                handShake.take().run();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                break;
+            }
+        }
     }
 
     @Override
@@ -25,6 +46,14 @@ public abstract class VideoRendererJavaCV implements VideoRenderer {
 
     @Override
     public void update(Mat video) {
+        try {
+            handShake.put(() -> renderFrame(video));
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+    }
+
+    private void renderFrame(Mat video) {
         Point position = getPosition(type, video.cols(), video.rows());
         if (position.x() != x || position.y() != y) {
             x = position.x();
@@ -42,7 +71,11 @@ public abstract class VideoRendererJavaCV implements VideoRenderer {
 
     @Override
     public void close() {
-        org.bytedeco.javacpp.opencv_highgui.destroyWindow(name);
+        try {
+            handShake.put(() -> org.bytedeco.javacpp.opencv_highgui.destroyWindow(name));
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
     }
 
     protected abstract Point getPosition(Type type, int width, int height);

@@ -234,7 +234,6 @@ class MotionDetectorCaptureThread extends Thread {
                         // TODO Increase semaphore count
                         // lock.release();
                     });
-                    // motionAndPresence.get();
                 } else if (motionAndPresence.isCancelled()) {
                     motionAndPresence = null;
                 } else if (motionAndPresence.isDone()) {
@@ -249,11 +248,9 @@ class MotionDetectorCaptureThread extends Thread {
                 // TODO review frame statistics class - may be wrong
                 fpsStatistics.updateFrame(timeStamp + timeLeft);
 
-                completeComputationAndRender(image, lock);
-                // TODO resolve OpenCV lack of rendering to its windows in a different thread
-                // frameTasks.submit(() -> {
-                // completeComputationAndRender(image, lock);
-                // }).get();
+                frameTasks.submit(() -> {
+                    completeComputationAndRender(image, lock);
+                });
 
                 if (active.get() == false) {
                     break;

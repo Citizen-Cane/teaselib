@@ -168,24 +168,30 @@ public class MotionDetectorJavaCV extends MotionDetector /* extends WiredDevice 
             throw new IllegalStateException(getClass().getName() + " not active");
         }
 
-        // TODO resolve duplicated code
-        if (expected.contains(eventThread.gesture)) {
-            return eventThread.gesture;
-        }
         try {
-            eventThread.gestureChanged.await(timeoutSeconds, (new Signal.HasChangedPredicate() {
-                @Override
-                public Boolean call() throws Exception {
-                    return expected.contains(eventThread.gesture);
-                }
-            }));
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new ScriptInterruptedException(e);
-        } catch (Exception e) {
-            logger.error(e.getMessage(), e);
+            // TODO resolve duplicated code
+            if (expected.contains(eventThread.gesture)) {
+                return eventThread.gesture;
+            }
+            try {
+                eventThread.gestureChanged.await(timeoutSeconds, (new Signal.HasChangedPredicate() {
+                    @Override
+                    public Boolean call() throws Exception {
+                        return expected.contains(eventThread.gesture);
+                    }
+                }));
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new ScriptInterruptedException(e);
+            } catch (Exception e) {
+                logger.error(e.getMessage(), e);
+            }
+            return eventThread.gesture;
+        } finally {
+            // TODO make clear() multithreading safe
+            eventThread.gestureTracker.clear();
+            eventThread.gesture = Gesture.None;
         }
-        return eventThread.gesture;
     }
 
     private static void awaitTimeout(double timeoutSeconds) {

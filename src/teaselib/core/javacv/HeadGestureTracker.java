@@ -255,4 +255,8 @@ public class HeadGestureTracker {
     public void render(Mat output) {
         tracker.render(output, color);
     }
+
+    public void clear() {
+        directionTimeLine.clear();
+    }
 }

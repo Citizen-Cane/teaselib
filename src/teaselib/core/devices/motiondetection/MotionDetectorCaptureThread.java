@@ -297,13 +297,6 @@ class MotionDetectorCaptureThread extends Thread {
         gestureResult.gestureRegion = presenceResult.presenceData.presenceIndicators.get(Presence.Center);
     }
 
-    private void deferMotionSensingWhileCameraIsAdjustingSync(Mat frame) throws InterruptedException {
-        Mat image = videoInputTransformation.update(frame);
-        image.copyTo(motionImageCopy);
-        motionProcessor.update(motionImageCopy);
-        motionProcessor.updateTrackerData(motionImageCopy);
-    }
-
     private void updatePresenceResult() {
         motionProcessor.updateRenderData();
         presenceResult.updateRenderData(1.0, debugWindowTimeSpan);

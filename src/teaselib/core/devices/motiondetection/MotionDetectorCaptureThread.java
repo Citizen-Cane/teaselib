@@ -1,6 +1,7 @@
 package teaselib.core.devices.motiondetection;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
@@ -11,8 +12,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.bytedeco.javacpp.opencv_core.Mat;
-import org.bytedeco.javacpp.opencv_core.Point;
-import org.bytedeco.javacpp.opencv_core.Rect;
 import org.bytedeco.javacpp.opencv_core.Size;
 
 import teaselib.core.VideoRenderer;
@@ -36,6 +35,7 @@ import teaselib.motiondetection.ViewPoint;
 import teaselib.video.VideoCaptureDevice;
 
 class MotionDetectorCaptureThread extends Thread {
+    private static final double WARMUP_SECONDS = 0.5;
     private static final Size DesiredProcessingSize = new Size(640, 480);
     private static final boolean mirror = true;
 
@@ -211,7 +211,12 @@ class MotionDetectorCaptureThread extends Thread {
             }
         }
 
+        provideFakeMotionAndPresenceData();
+
         try {
+            boolean warmedUp = false;
+            int warmupFrames = (int) (1.0 / fps * WARMUP_SECONDS);
+
             for (Mat frame : videoCaptureDevice) {
                 long timeStamp = System.currentTimeMillis();
 
@@ -222,10 +227,8 @@ class MotionDetectorCaptureThread extends Thread {
                 Buffer.Locked<Mat> lock = video.get(image);
                 Mat buffer = lock.get();
 
-                // TODO Extra thread, independent of motion
                 frameTaskFutures.add(frameTasks.submit(() -> computeGestures(image, timeStamp)));
 
-                // TODO Extra thread, lower fps, handle distance tracker
                 if (motionAndPresence == null) {
                     motionAndPresence = perceptionTasks.submit(() -> {
                         // TODO Save cpu-cycles by copying to tracker and KNN data directly
@@ -238,7 +241,17 @@ class MotionDetectorCaptureThread extends Thread {
                     motionAndPresence = null;
                 } else if (motionAndPresence.isDone()) {
                     motionAndPresence = null;
-                    updatePresenceResult(buffer);
+                    if (!warmedUp) {
+                        if (warmupFrames > 0) {
+                            --warmupFrames;
+                        } else {
+                            warmedUp = presenceResult.getIndicatorHistory(0.0).contains(Presence.NoCameraShake);
+                        }
+                    }
+                    if (warmedUp) {
+                        updatePresenceResult();
+                        updateGestureResult(buffer);
+                    }
                 }
 
                 long timeLeft = fpsStatistics.timeMillisLeft(desiredFrameTimeMillis, timeStamp);
@@ -252,7 +265,7 @@ class MotionDetectorCaptureThread extends Thread {
                     completeComputationAndRender(image, lock);
                 });
 
-                if (active.get() == false) {
+                if (!active.get()) {
                     break;
                 }
             }
@@ -270,29 +283,37 @@ class MotionDetectorCaptureThread extends Thread {
         }
     }
 
-    private void updatePresenceResult(Mat video) {
+    private void provideFakeMotionAndPresenceData() {
+        presenceResult.presenceData.contourMotionDetected = true;
+        presenceResult.presenceData.trackerMotionDetected = true;
+        presenceResult.presenceData.indicators = Collections.singleton(Presence.Center);
+        presenceResult.presenceData.debugIndicators = Collections.singleton(Presence.Center);
+
+        presenceResult.presenceData.presenceRegion = presenceResult.presenceData.presenceIndicators
+                .get(Presence.Center);
+
+        gestureResult.cameraShake = false;
+        gestureResult.motionDetected = true;
+        gestureResult.gestureRegion = presenceResult.presenceData.presenceIndicators.get(Presence.Center);
+    }
+
+    private void deferMotionSensingWhileCameraIsAdjustingSync(Mat frame) throws InterruptedException {
+        Mat image = videoInputTransformation.update(frame);
+        image.copyTo(motionImageCopy);
+        motionProcessor.update(motionImageCopy);
+        motionProcessor.updateTrackerData(motionImageCopy);
+    }
+
+    private void updatePresenceResult() {
         motionProcessor.updateRenderData();
         presenceResult.updateRenderData(1.0, debugWindowTimeSpan);
+    }
 
+    private void updateGestureResult(Mat video) {
         gestureResult.cameraShake = presenceResult.presenceData.indicators.contains(Presence.CameraShake);
         gestureResult.motionDetected = presenceResult.motionDetected;
-        Rect presence = presenceResult.presenceData.presenceRegion;
-
-        // Enlarge gesture region based on the observation that when beginning the first nod the presence region
-        // starts with a horizontally wide but vertically narrow area around the eyes
-        int min = 10;
-        try (Size minSize = new Size(video.rows() / min, video.cols() / min)) {
-            if (presence.width() < minSize.width() || presence.height() < minSize.height()) {
-                Point center = Geom.center(presence);
-                try (Size size = new Size(Math.max(minSize.width(), presence.width()),
-                        Math.max(minSize.height(), presence.height()));) {
-                    presence = new Rect(center.x() + size.width(), center.y() + size.height(), size.width(),
-                            size.height());
-                }
-            }
-        }
-
-        gestureResult.gestureRegion = Geom.intersect(presence,
+        gestureResult.gestureRegion = Geom.intersect(
+                HeadGestureTracker.enlargePresenceRegionToFaceSize(video, presenceResult.presenceData.presenceRegion),
                 presenceResult.presenceData.presenceIndicators.get(Presence.Present));
     }
 

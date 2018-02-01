@@ -27,21 +27,21 @@ public class MotionDetectionResultImplementation extends MotionDetectionResultDa
     private static final Logger logger = LoggerFactory.getLogger(MotionDetectionResultImplementation.class);
 
     private static final double CircularityVariance = 1.3; // 1.3 seems to be necessary to detect blinking eyes
+    private static final Set<Presence> STARTUP_PRESENCE = Collections.singleton(Presence.CameraShake);
 
     public class PresenceData {
         final Map<Presence, Rect> presenceIndicators;
 
+        boolean trackerMotionDetected = false;
+        boolean contourMotionDetected = false;;
+        Set<Presence> indicators = STARTUP_PRESENCE;
+        Set<Presence> debugIndicators = STARTUP_PRESENCE;
+        Rect presenceRegion = null;
+        Rect debugPresenceRegion = null;
+
         public PresenceData() {
             presenceIndicators = MotionDetectionResultImplementation.this.presenceIndicators;
         }
-
-        boolean trackerMotionDetected;
-        boolean contourMotionDetected;
-
-        Set<Presence> indicators = Collections.emptySet();
-        Set<Presence> debugIndicators = Collections.emptySet();
-        Rect presenceRegion;
-        Rect debugPresenceRegion;
 
         public void update(double calculationTimeSpan, double debugWindowTimeSpan) {
             trackerMotionDetected = MotionDetectionResultImplementation.this.trackerMotionDetected;

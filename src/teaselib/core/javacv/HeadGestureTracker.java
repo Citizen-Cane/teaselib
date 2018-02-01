@@ -9,6 +9,7 @@ import org.bytedeco.javacpp.opencv_core.Mat;
 import org.bytedeco.javacpp.opencv_core.Point;
 import org.bytedeco.javacpp.opencv_core.Rect;
 import org.bytedeco.javacpp.opencv_core.Scalar;
+import org.bytedeco.javacpp.opencv_core.Size;
 import org.bytedeco.javacpp.indexer.FloatIndexer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,9 +24,9 @@ public class HeadGestureTracker {
 
     static final long GesturePauseMillis = 1000;
 
-    static final int NumberOfDirections = 4;
-    static final long GestureMaxDuration = 250 * NumberOfDirections;
-    static final long GestureMinDuration = 500;
+    static final int NumberOfDirections = 6;
+    static final long GestureMaxDuration = 350 * NumberOfDirections;
+    static final long GestureMinDuration = 300;
 
     private final TrackFeatures tracker = new TrackFeatures();
     private final TimeLine<Direction> directionTimeLine = new TimeLine<>();
@@ -34,31 +35,49 @@ public class HeadGestureTracker {
     public final Scalar color;
 
     private boolean resetTrackFeatures = true;
+    private Rect region;
 
     public static class Parameters {
-        public boolean cameraShake;
-        public boolean motionDetected;
-        public Rect gestureRegion;
+        public boolean cameraShake = true;
+        public boolean motionDetected = false;
+        public Rect gestureRegion = null;
     }
 
     public HeadGestureTracker(Scalar color) {
         this.color = color;
     }
 
-    public void update(Mat videoImage, boolean motionDetected, Rect rect, long timeStamp) {
-        // TODO Tail time millis is updated each frame compare to last entry
+    public static Rect enlargePresenceRegionToFaceSize(Mat video, Rect presence) {
+        // Enlarge gesture region based on the observation that when beginning the first nod the presence region
+        // starts with a horizontally wide but vertically narrow area around the eyes
+        // - if the region gets too large we might miss the face
+        int fraction = 5;
+        try (Size minSize = new Size(video.rows() / fraction, video.cols() / fraction)) {
+            if (presence.width() < minSize.width() || presence.height() < minSize.height()) {
+                Point center = Geom.center(presence);
+                try (Size size = new Size(Math.max(minSize.width(), presence.width()),
+                        Math.max(minSize.height(), presence.height()));) {
+                    presence = new Rect(center.x() + size.width(), center.y() + size.height(), size.width(),
+                            size.height());
+                }
+            }
+        }
+        return presence;
+    }
+
+    public void update(Mat videoImage, boolean motionDetected, Rect region, long timeStamp) {
         if (!resetTrackFeatures && !motionDetected && timeStamp > directionTimeLine.tailTimeMillis()
                 - directionTimeLine.tailTimeSpan() + GesturePauseMillis) {
             directionTimeLine.clear();
             tracker.clear();
             resetTrackFeatures = true;
-        } else if (motionDetected && resetTrackFeatures && rect != null) {
-            tracker.start(videoImage, rect);
+        } else if (motionDetected && resetTrackFeatures && region != null) {
+            this.region = region;
+            tracker.start(videoImage, region);
             tracker.keyPoints().copyTo(startKeyPoints);
             resetTrackFeatures = false;
         } else if (!resetTrackFeatures) {
             tracker.update(videoImage);
-
             Direction direction = direction();
             if (direction != Direction.None) {
                 directionTimeLine.add(direction, timeStamp);
@@ -258,5 +277,9 @@ public class HeadGestureTracker {
 
     public void clear() {
         directionTimeLine.clear();
+    }
+
+    public Rect getRegion() {
+        return region;
     }
 }

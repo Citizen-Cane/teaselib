@@ -4,17 +4,13 @@
 package teaselib.core.devices.motiondetection;
 
 import static org.bytedeco.javacpp.opencv_core.FONT_HERSHEY_PLAIN;
-import static org.bytedeco.javacpp.opencv_imgproc.circle;
 import static org.bytedeco.javacpp.opencv_imgproc.putText;
 import static org.bytedeco.javacpp.opencv_imgproc.rectangle;
 import static teaselib.core.javacv.Color.Blue;
 import static teaselib.core.javacv.Color.DarkBlue;
 import static teaselib.core.javacv.Color.DarkGreen;
 import static teaselib.core.javacv.Color.Green;
-import static teaselib.core.javacv.Color.MidBlue;
-import static teaselib.core.javacv.Color.MidGreen;
 import static teaselib.core.javacv.Color.White;
-import static teaselib.core.javacv.util.Geom.center;
 import static teaselib.core.javacv.util.Gui.drawRect;
 
 import java.util.Map;
@@ -71,9 +67,7 @@ public class MotionDetectorJavaCVDebugRenderer {
                 gestureTracker.render(debugOutput);
             }
 
-            if (gesture != Gesture.None) {
-                renderGesture(debugOutput, gestureTracker, gesture);
-            }
+            renderGesture(debugOutput, gestureTracker, gesture);
         }
         renderRegionList(debugOutput, resultData.debugIndicators);
         renderFPS(debugOutput, fps);
@@ -81,7 +75,6 @@ public class MotionDetectorJavaCVDebugRenderer {
 
     private static void renderMotionRegion(Mat debugOutput, Rect r, boolean present) {
         drawRect(debugOutput, r, "", present ? Green : Blue);
-        circle(debugOutput, center(r), 2, present ? Green : Blue, 2, 8, 0);
     }
 
     // private void renderContourMotionRegion(Mat debugOutput, Rect rM) {
@@ -93,14 +86,19 @@ public class MotionDetectorJavaCVDebugRenderer {
     // }
     // }
 
-    private void renderDistanceTrackerPoints(Mat debugOutput, MotionProcessorJavaCV.MotionData motionData) {
-        MotionProcessorJavaCV.render(debugOutput, motionData, motionData.color);
-    }
+    // private void renderDistanceTrackerPoints(Mat debugOutput, MotionProcessorJavaCV.MotionData motionData) {
+    //     MotionProcessorJavaCV.render(debugOutput, motionData, motionData.color);
+    // }
 
     private void renderGesture(Mat debugOutput, HeadGestureTracker gestureTracker, Gesture gesture) {
-        Point p = new Point(debugOutput.size().width() - 70, 30);
-        putText(debugOutput, gesture.toString(), p, FONT_HERSHEY_PLAIN, 2.5, Color.Red /* gestureTracker.color */);
-        p.close();
+        rectangle(debugOutput, gestureTracker.getRegion(), gesture == Gesture.None ? Color.MidCyan : Color.Cyan, 4, 8,
+                0);
+
+        if (gesture != Gesture.None) {
+            Point p = new Point(debugOutput.size().width() - 70, 30);
+            putText(debugOutput, gesture.toString(), p, FONT_HERSHEY_PLAIN, 2.5, Color.Red /* gestureTracker.color */);
+            p.close();
+        }
     }
 
     private static void renderRegionList(Mat debugOutput, Set<Presence> indicators) {
@@ -126,11 +124,7 @@ public class MotionDetectorJavaCVDebugRenderer {
             Set<Presence> indicators, boolean present) {
         for (Presence key : Presence.values()) {
             if (indicators.contains(key) && presenceIndicators.containsKey(key)) {
-                if (key == Presence.Present) {
-                    circle(debugOutput, center(rM), windowSize.height() / 4, present ? MidGreen : MidBlue, 4, 4, 0);
-                } else {
-                    rectangle(debugOutput, presenceIndicators.get(key), present ? DarkGreen : DarkBlue, 4, 8, 0);
-                }
+                rectangle(debugOutput, presenceIndicators.get(key), present ? DarkGreen : DarkBlue, 4, 8, 0);
             }
         }
     }

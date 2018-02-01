@@ -20,6 +20,10 @@ import teaselib.core.util.TimeLine.Slice;
 import teaselib.motiondetection.Gesture;
 
 public class HeadGestureTracker {
+    // TODO Should be a fraction of the video size
+    static final int MINIMUM_DIRECTION_VALUE = 20;
+    static final int MINIMUM_DIRECTION_SCALE = 4;
+
     private static final Logger logger = LoggerFactory.getLogger(HeadGestureTracker.class);
 
     static final long GesturePauseMillis = 500;
@@ -202,11 +206,22 @@ public class HeadGestureTracker {
             }
         }
 
-        if (max > 10) {
-            return direction;
+        if (max > MINIMUM_DIRECTION_VALUE) {
+            return dominatingDirectionOrNone(all, direction);
         } else {
             return Direction.None;
         }
+    }
+
+    private static Direction dominatingDirectionOrNone(Map<Direction, Float> all, Direction direction) {
+        Float maxValue = all.get(direction);
+        for (Entry<Direction, Float> entry : all.entrySet()) {
+            if (entry.getKey() != direction && entry.getValue() * MINIMUM_DIRECTION_SCALE > maxValue) {
+                direction = Direction.None;
+                break;
+            }
+        }
+        return direction;
     }
 
     public Gesture getGesture() {

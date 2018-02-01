@@ -22,10 +22,10 @@ import teaselib.motiondetection.Gesture;
 public class HeadGestureTracker {
     private static final Logger logger = LoggerFactory.getLogger(HeadGestureTracker.class);
 
-    static final long GesturePauseMillis = 1000;
+    static final long GesturePauseMillis = 500;
 
     static final int NumberOfDirections = 6;
-    static final long GestureMaxDuration = 350 * NumberOfDirections;
+    static final long GestureMaxDuration = 200 * NumberOfDirections;
     static final long GestureMinDuration = 300;
 
     private final TrackFeatures tracker = new TrackFeatures();

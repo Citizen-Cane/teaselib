@@ -92,8 +92,8 @@ public class HeadGestureTracker {
     }
 
     private void restartGesture(Mat videoImage, Rect region, long timeStamp, String string) {
-        if (logger.isInfoEnabled()) {
-            logger.info(string + " @" + timeStamp);
+        if (logger.isDebugEnabled()) {
+            logger.debug(string + " @" + timeStamp);
         }
         directionTimeLine.clear();
         tracker.clear();
@@ -107,7 +107,9 @@ public class HeadGestureTracker {
         if (direction != Direction.None) {
             directionTimeLine.add(direction, timeStamp);
         } else if (featuresAreOutdated(timeStamp)) {
-            logger.info("Updating outdated features" + " @" + timeStamp);
+            if (logger.isDebugEnabled()) {
+                logger.debug("Updating outdated features" + " @" + timeStamp);
+            }
             directionTimeLine.add(timeStamp);
             findNewFeatures(videoImage, region);
         }
@@ -260,16 +262,7 @@ public class HeadGestureTracker {
         if (logger.isDebugEnabled()) {
             logger.debug(directionTimeLine.getTimeSpan(1.0).toString() + " ->" + gesture);
         }
-
-        // if (gesture == Gesture.None && directionTimeLine.tailTimeSpan() > GesturePauseMillis) {
-        // findNewFeaturesToTrack();
-        // }
         return gesture;
-    }
-
-    private void findNewFeaturesToTrack() {
-        directionTimeLine.add(Direction.None, System.currentTimeMillis());
-        restart();
     }
 
     static Gesture getGesture(TimeLine<Direction> directionTimeLine) {

@@ -20,7 +20,7 @@ public class TimeLine<T> {
     private int maxItems = 1000;
     private long maxTimeSpanMillis = 1000 * 60;
 
-    private T head = null;
+    private T tail = null;
     private long tailTimeMillis;
 
     public TimeLine() {
@@ -51,7 +51,11 @@ public class TimeLine<T> {
     }
 
     public boolean add(double timeStamp) {
-        return add(head, timeStamp);
+        return add(tail, timeStamp);
+    }
+
+    public boolean add(long timeStamp) {
+        return add(tail, timeStamp);
     }
 
     public boolean add(T item, double timeStampSeconds) {
@@ -59,8 +63,8 @@ public class TimeLine<T> {
     }
 
     public boolean add(T item, long timeStamp) {
-        boolean different = head == null && item == null ? false
-                : (head == null && item != null) || (head != null && item == null) || !item.equals(head);
+        boolean different = tail == null && item == null ? false
+                : (tail == null && item != null) || (tail != null && item == null) || !item.equals(tail);
         if (different) {
             items.add(item);
             timeSpans.add(timeStamp - tailTimeMillis);
@@ -76,7 +80,7 @@ public class TimeLine<T> {
             // Capacity doesn't change
         }
         tailTimeMillis = timeStamp;
-        head = item;
+        tail = item;
         return different;
     }
 

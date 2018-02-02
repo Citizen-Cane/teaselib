@@ -29,7 +29,7 @@ public class HeadGestureTracker {
     static final long GesturePauseMillis = 500;
 
     static final int NumberOfDirections = 6;
-    static final long GestureMaxDuration = 200 * NumberOfDirections;
+    static final long GestureMaxDuration = 500 * NumberOfDirections;
     static final long GestureMinDuration = 300;
 
     private final TrackFeatures tracker = new TrackFeatures();
@@ -74,27 +74,43 @@ public class HeadGestureTracker {
             throw new NullPointerException("region");
         }
 
-        if (!resetTrackFeatures && !motionDetected && featuresAreOutdated(timeStamp)) {
-            directionTimeLine.clear();
-            tracker.clear();
-            findNewFeatures(videoImage, region);
-        } else if (motionDetected && resetTrackFeatures) {
-            findNewFeatures(videoImage, region);
-        } else if (!resetTrackFeatures) {
-            tracker.update(videoImage);
-            Direction direction = direction();
-            if (direction != Direction.None) {
-                directionTimeLine.add(direction, timeStamp);
-            } else if (featuresAreOutdated(timeStamp)) {
-                // TODO Updates too often, causes track point flickering
-                findNewFeatures(videoImage, region);
-                logger.info("Updating features");
-            }
+        if (resetTrackFeatures) {
+            restartGesture(videoImage, region, timeStamp, "Resetting timeline after no-motion timeout");
+        } else if (motionStopped(motionDetected, timeStamp)) {
+            restartGesture(videoImage, region, timeStamp, "Resetting timeline after motion ended & timeout");
+        } else {
+            updateGesture(videoImage, region, timeStamp);
         }
     }
 
+    private boolean motionStopped(boolean motionDetected, long timeStamp) {
+        return !motionDetected && featuresAreOutdated(timeStamp);
+    }
+
     private boolean featuresAreOutdated(long timeStamp) {
-        return timeStamp > directionTimeLine.tailTimeMillis() - directionTimeLine.tailTimeSpan() + GesturePauseMillis;
+        return timeStamp > directionTimeLine.tailTimeMillis() + GesturePauseMillis;
+    }
+
+    private void restartGesture(Mat videoImage, Rect region, long timeStamp, String string) {
+        if (logger.isInfoEnabled()) {
+            logger.info(string + " @" + timeStamp);
+        }
+        directionTimeLine.clear();
+        tracker.clear();
+        directionTimeLine.add(timeStamp);
+        findNewFeatures(videoImage, region);
+    }
+
+    private void updateGesture(Mat videoImage, Rect region, long timeStamp) {
+        tracker.update(videoImage);
+        Direction direction = direction();
+        if (direction != Direction.None) {
+            directionTimeLine.add(direction, timeStamp);
+        } else if (featuresAreOutdated(timeStamp)) {
+            logger.info("Updating outdated features" + " @" + timeStamp);
+            directionTimeLine.add(timeStamp);
+            findNewFeatures(videoImage, region);
+        }
     }
 
     private void findNewFeatures(Mat videoImage, Rect region) {
@@ -245,9 +261,9 @@ public class HeadGestureTracker {
             logger.debug(directionTimeLine.getTimeSpan(1.0).toString() + " ->" + gesture);
         }
 
-        if (gesture == Gesture.None && directionTimeLine.tailTimeSpan() > GesturePauseMillis) {
-            findNewFeaturesToTrack();
-        }
+        // if (gesture == Gesture.None && directionTimeLine.tailTimeSpan() > GesturePauseMillis) {
+        // findNewFeaturesToTrack();
+        // }
         return gesture;
     }
 

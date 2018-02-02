@@ -58,10 +58,10 @@ public class HeadGestureTracker {
         int fraction = 5;
         try (Size minSize = new Size(video.rows() / fraction, video.cols() / fraction)) {
             if (presence.width() < minSize.width() || presence.height() < minSize.height()) {
-                Point center = Geom.center(presence);
-                try (Size size = new Size(Math.max(minSize.width(), presence.width()),
-                        Math.max(minSize.height(), presence.height()));) {
-                    presence = new Rect(center.x() + size.width(), center.y() + size.height(), size.width(),
+                try (Point center = Geom.center(presence);
+                        Size size = new Size(Math.max(minSize.width(), presence.width()),
+                                Math.max(minSize.height(), presence.height()));) {
+                    presence = new Rect(center.x() - size.width() / 2, center.y() - size.height() / 2, size.width(),
                             size.height());
                 }
             }
@@ -70,23 +70,38 @@ public class HeadGestureTracker {
     }
 
     public void update(Mat videoImage, boolean motionDetected, Rect region, long timeStamp) {
-        if (!resetTrackFeatures && !motionDetected && timeStamp > directionTimeLine.tailTimeMillis()
-                - directionTimeLine.tailTimeSpan() + GesturePauseMillis) {
+        if (region == null) {
+            throw new NullPointerException("region");
+        }
+
+        if (!resetTrackFeatures && !motionDetected && featuresAreOutdated(timeStamp)) {
             directionTimeLine.clear();
             tracker.clear();
-            resetTrackFeatures = true;
-        } else if (motionDetected && resetTrackFeatures && region != null) {
-            this.region = region;
-            tracker.start(videoImage, region);
-            tracker.keyPoints().copyTo(startKeyPoints);
-            resetTrackFeatures = false;
+            findNewFeatures(videoImage, region);
+        } else if (motionDetected && resetTrackFeatures) {
+            findNewFeatures(videoImage, region);
         } else if (!resetTrackFeatures) {
             tracker.update(videoImage);
             Direction direction = direction();
             if (direction != Direction.None) {
                 directionTimeLine.add(direction, timeStamp);
+            } else if (featuresAreOutdated(timeStamp)) {
+                // TODO Updates too often, causes track point flickering
+                findNewFeatures(videoImage, region);
+                logger.info("Updating features");
             }
         }
+    }
+
+    private boolean featuresAreOutdated(long timeStamp) {
+        return timeStamp > directionTimeLine.tailTimeMillis() - directionTimeLine.tailTimeSpan() + GesturePauseMillis;
+    }
+
+    private void findNewFeatures(Mat videoImage, Rect region) {
+        this.region = region;
+        tracker.start(videoImage, region);
+        tracker.keyPoints().copyTo(startKeyPoints);
+        resetTrackFeatures = false;
     }
 
     private Direction direction() {

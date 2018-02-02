@@ -6,13 +6,15 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.bytedeco.javacpp.opencv_core.Mat;
+import org.bytedeco.javacpp.opencv_core.Rect;
 import org.bytedeco.javacpp.opencv_core.Size;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import teaselib.core.VideoRenderer;
 import teaselib.core.concurrency.NamedExecutorService;
@@ -27,7 +29,6 @@ import teaselib.core.javacv.Transformation;
 import teaselib.core.javacv.util.Buffer;
 import teaselib.core.javacv.util.FramesPerSecond;
 import teaselib.core.javacv.util.Geom;
-import teaselib.core.util.ExceptionUtil;
 import teaselib.motiondetection.Gesture;
 import teaselib.motiondetection.MotionDetector.MotionSensitivity;
 import teaselib.motiondetection.MotionDetector.Presence;
@@ -35,6 +36,8 @@ import teaselib.motiondetection.ViewPoint;
 import teaselib.video.VideoCaptureDevice;
 
 class MotionDetectorCaptureThread extends Thread {
+    static final Logger logger = LoggerFactory.getLogger(MotionDetectorJavaCV.class);
+
     private static final double WARMUP_SECONDS = 0.5;
     private static final Size DesiredProcessingSize = new Size(640, 480);
     private static final boolean mirror = true;
@@ -188,17 +191,16 @@ class MotionDetectorCaptureThread extends Thread {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         } catch (Exception e) {
-            MotionDetectorJavaCV.logger.error(e.getMessage(), e);
+            logger.error(e.getMessage(), e);
         }
     }
 
-    NamedExecutorService frameTasks = NamedExecutorService.newUnlimitedThreadPool("frames", Long.MAX_VALUE,
+    NamedExecutorService frameTasks = NamedExecutorService.newFixedThreadPool(2, "frame tasks", Long.MAX_VALUE,
             TimeUnit.MILLISECONDS);
     NamedExecutorService perceptionTasks = NamedExecutorService.singleThreadedQueue("Motion and Presence",
             Long.MAX_VALUE, TimeUnit.MILLISECONDS);
 
     Future<?> motionAndPresence = null;
-    List<Future<?>> frameTaskFutures = new ArrayList<>();
 
     private HeadGestureTracker.Parameters gestureResult = new HeadGestureTracker.Parameters();
     Mat motionImageCopy = new Mat();
@@ -223,10 +225,10 @@ class MotionDetectorCaptureThread extends Thread {
                 @SuppressWarnings("resource")
                 Mat image = videoInputTransformation.update(frame);
 
-                // TODO Better make a pool, take and give buffers back
                 Buffer.Locked<Mat> lock = video.get(image);
-                Mat buffer = lock.get();
+                // Mat buffer = lock.get();
 
+                List<Future<?>> frameTaskFutures = new ArrayList<>();
                 frameTaskFutures.add(frameTasks.submit(() -> computeGestures(image, timeStamp)));
 
                 if (motionAndPresence == null) {
@@ -250,7 +252,7 @@ class MotionDetectorCaptureThread extends Thread {
                     }
                     if (warmedUp) {
                         updatePresenceResult();
-                        updateGestureResult(buffer);
+                        updateGestureResult(image);
                     }
                 }
 
@@ -261,9 +263,7 @@ class MotionDetectorCaptureThread extends Thread {
                 // TODO review frame statistics class - may be wrong
                 fpsStatistics.updateFrame(timeStamp + timeLeft);
 
-                frameTasks.submit(() -> {
-                    completeComputationAndRender(image, lock);
-                });
+                completeComputationAndRender(image, lock, frameTaskFutures);
 
                 if (!active.get()) {
                     break;
@@ -272,7 +272,7 @@ class MotionDetectorCaptureThread extends Thread {
         } catch (InterruptedException e) {
             throw e;
         } catch (Exception e) {
-            MotionDetectorJavaCV.logger.error(e.getMessage(), e);
+            logger.error(e.getMessage(), e);
         } finally {
             videoCaptureDevice.close();
             if (videoRenderer != null) {
@@ -289,12 +289,11 @@ class MotionDetectorCaptureThread extends Thread {
         presenceResult.presenceData.indicators = Collections.singleton(Presence.Center);
         presenceResult.presenceData.debugIndicators = Collections.singleton(Presence.Center);
 
-        presenceResult.presenceData.presenceRegion = presenceResult.presenceData.presenceIndicators
-                .get(Presence.Center);
+        presenceResult.presenceData.presenceRegion = defaultHeadRegion();
 
         gestureResult.cameraShake = false;
         gestureResult.motionDetected = true;
-        gestureResult.gestureRegion = presenceResult.presenceData.presenceIndicators.get(Presence.Center);
+        gestureResult.gestureRegion = defaultHeadRegion();
     }
 
     private void updatePresenceResult() {
@@ -305,9 +304,16 @@ class MotionDetectorCaptureThread extends Thread {
     private void updateGestureResult(Mat video) {
         gestureResult.cameraShake = presenceResult.presenceData.indicators.contains(Presence.CameraShake);
         gestureResult.motionDetected = presenceResult.motionDetected;
-        gestureResult.gestureRegion = Geom.intersect(
+
+        Rect gestureRegion = Geom.intersect(
                 HeadGestureTracker.enlargePresenceRegionToFaceSize(video, presenceResult.presenceData.presenceRegion),
                 presenceResult.presenceData.presenceIndicators.get(Presence.Present));
+
+        gestureResult.gestureRegion = gestureRegion != null ? gestureRegion : defaultHeadRegion();
+    }
+
+    private Rect defaultHeadRegion() {
+        return presenceResult.presenceData.presenceIndicators.get(Presence.Center);
     }
 
     private void computeMotionAndPresence(Mat video, long timeStamp) {
@@ -336,27 +342,19 @@ class MotionDetectorCaptureThread extends Thread {
         }
     }
 
-    private void completeComputationAndRender(Mat image, Buffer.Locked<Mat> lock) {
-        try {
-            for (Future<?> task : frameTaskFutures) {
-                try {
+    private void completeComputationAndRender(Mat image, Buffer.Locked<Mat> lock, List<Future<?>> tasks) {
+        frameTasks.submit(() -> {
+            try {
+                for (Future<?> task : tasks) {
                     task.get();
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                } catch (ExecutionException e) {
-                    throw ExceptionUtil.asRuntimeException(e);
                 }
+                render(image);
+            } catch (Exception e) {
+                logger.error(e.getMessage(), e);
+            } finally {
+                lock.release();
             }
-
-            if (Thread.interrupted()) {
-                Thread.currentThread().interrupt();
-                return;
-            }
-
-            render(image);
-        } finally {
-            lock.release();
-        }
+        });
     }
 
     private void render(Mat video) {
@@ -373,10 +371,9 @@ class MotionDetectorCaptureThread extends Thread {
 
         if (logDetails) {
             // Log state
-            MotionDetectorJavaCV.logger
-                    .info("contourMotionDetected=" + presenceResult.presenceData.contourMotionDetected
-                            + "  trackerMotionDetected=" + presenceResult.presenceData.trackerMotionDetected
-                            + "(distance=" + motionProcessor.motionData.distance2 + "), " + indicators.toString());
+            logger.info("contourMotionDetected=" + presenceResult.presenceData.contourMotionDetected
+                    + "  trackerMotionDetected=" + presenceResult.presenceData.trackerMotionDetected + "(distance="
+                    + motionProcessor.motionData.distance2 + "), " + indicators.toString());
         }
 
         return indicators;

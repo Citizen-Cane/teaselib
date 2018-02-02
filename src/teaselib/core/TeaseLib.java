@@ -287,91 +287,14 @@ public class TeaseLib {
         return teaselib.util.math.Random.random(min, max);
     }
 
-    private static final TimeUnit DURATION_TIME_UNIT = TimeUnit.SECONDS;
-
-    class DurationImpl implements Duration {
-        private final long start;
-        private final long limits;
-
-        public DurationImpl() {
-            this(0, DURATION_TIME_UNIT);
-        }
-
-        public DurationImpl(long limit, TimeUnit unit) {
-            this.start = getTime(DURATION_TIME_UNIT);
-            this.limits = convertToMillis(limit, unit);
-        }
-
-        public DurationImpl(long start, long limit, TimeUnit unit) {
-            this.start = convertToMillis(start, unit);
-            this.limits = convertToMillis(limit, unit);
-        }
-
-        private long convertToMillis(long value, TimeUnit unit) {
-            if (value == Long.MIN_VALUE)
-                return Long.MIN_VALUE;
-            if (value == Long.MAX_VALUE)
-                return Long.MAX_VALUE;
-            else
-                return DURATION_TIME_UNIT.convert(value, unit);
-        }
-
-        public long convertToUnit(long value, TimeUnit unit) {
-            if (value == Long.MIN_VALUE)
-                return Long.MIN_VALUE;
-            if (value == Long.MAX_VALUE)
-                return Long.MAX_VALUE;
-            else
-                return unit.convert(value, DURATION_TIME_UNIT);
-        }
-
-        @Override
-        public long start(TimeUnit unit) {
-            return convertToUnit(start, unit);
-        }
-
-        @Override
-        public long limit(TimeUnit unit) {
-            return convertToUnit(limits, unit);
-        }
-
-        @Override
-        public long elapsed(TimeUnit unit) {
-            long now = getTime(DURATION_TIME_UNIT);
-            return convertToUnit(now - start, unit);
-        }
-
-        @Override
-        public long remaining(TimeUnit unit) {
-            return convertToUnit(limits - elapsed(DURATION_TIME_UNIT), unit);
-        }
-
-        @Override
-        public long end(TimeUnit unit) {
-            if (limits >= Long.MAX_VALUE - start) {
-                return Long.MAX_VALUE;
-            } else {
-                return convertToUnit(start + limits, unit);
-            }
-        }
-
-        @Override
-        public boolean expired() {
-            return getTime(DURATION_TIME_UNIT) - start >= limits;
-        }
-
-        @Override
-        public String toString() {
-            return new Date(start(TimeUnit.MILLISECONDS)) + "+" + limits;
-        }
-    }
+    static final TimeUnit DURATION_TIME_UNIT = TimeUnit.SECONDS;
 
     public Duration duration() {
-        return new DurationImpl();
+        return new DurationImpl(this);
     }
 
     public Duration duration(long limit, TimeUnit unit) {
-        return new DurationImpl(limit, unit);
+        return new DurationImpl(this, limit, unit);
     }
 
     protected abstract class PersistentValue<T> {

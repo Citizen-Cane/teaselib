@@ -7,6 +7,7 @@ import java.util.Set;
 
 import teaselib.Duration;
 import teaselib.State;
+import teaselib.core.StateImpl;
 import teaselib.core.StateMaps;
 
 /**
@@ -37,7 +38,7 @@ public class StateProxy extends AbstractProxy<State> implements State, StateMaps
     }
 
     public Set<Object> peers() {
-        return ((StateMaps.StateImpl) state).peers();
+        return ((StateImpl) state).peers();
     }
 
     @Override

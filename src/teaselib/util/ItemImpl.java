@@ -12,8 +12,8 @@ import java.util.Set;
 
 import teaselib.Duration;
 import teaselib.State;
+import teaselib.core.StateImpl;
 import teaselib.core.StateMaps;
-import teaselib.core.StateMaps.StateImpl;
 import teaselib.core.TeaseLib;
 import teaselib.core.state.AbstractProxy;
 import teaselib.core.util.Persist;

@@ -44,24 +44,37 @@ public class PersistTest {
         assertEquals(test, Persist.from(Persist.persist(test)));
     }
 
+    public final class PersistableImplementation implements Persist.Persistable {
+        private final List<Object> values;
+
+        private PersistableImplementation(List<Object> values) {
+            this.values = values;
+        }
+
+        // TODO Write a test that uses the Storage constructor
+        // public PersistableImplementation(Persist.Storage storage) {
+        // this.values = new ArrayList<>();
+        // }
+
+        @Override
+        public List<String> persisted() {
+            ArrayList<String> persistedElements = new ArrayList<>(values.size());
+            for (Object value : values) {
+                persistedElements.add(Persist.persist(value));
+            }
+            return persistedElements;
+        }
+    }
+
     @Test
     public void testPersistViaInterface() throws Exception {
         Object[] array = { "Foo", 1, 2L, 2.7f, 3.14159, false, true };
         final List<Object> values = Arrays.asList(array);
 
-        Persist.Persistable persistable = new Persist.Persistable() {
-            @Override
-            public List<String> persisted() {
-                ArrayList<String> persistedElements = new ArrayList<>(values.size());
-                for (Object value : values) {
-                    persistedElements.add(Persist.persist(value));
-                }
-                return persistedElements;
-            }
-        };
+        Persist.Persistable persistable = new PersistableImplementation(values);
         String persisted = Persist.persist(persistable);
 
-        Persist.Storage storage = new Persist.Storage(persisted);
+        Persist.Storage storage = new Persist.Storage(Persist.persistedValue(persisted));
 
         assertEquals("Foo", storage.next());
         assertEquals(Integer.valueOf(1), storage.next());
@@ -71,7 +84,7 @@ public class PersistTest {
         assertEquals(false, storage.next());
         assertEquals(true, storage.next());
 
-        storage = new Persist.Storage(persisted);
+        storage = new Persist.Storage(Persist.persistedValue(persisted));
         List<Object> restored = new ArrayList<>(7);
         for (int i = 0; i < 7; i++) {
             restored.add(storage.next());

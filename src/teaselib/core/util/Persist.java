@@ -21,34 +21,42 @@ public class Persist {
     public static class Storage {
         private final Iterator<String> elements;
 
-        public Storage(List<String> elements) {
-            super();
+        private Storage(List<String> elements) {
             this.elements = elements.iterator();
         }
 
-        public Storage(String serialized) {
+        // TODO private - used by PersistTest
+        Storage(String serialized) {
             this(split(serialized));
         }
 
         public <T> T next() {
             return Persist.from(elements.next());
         }
+
+        private static List<String> split(String serialized) {
+            return Arrays.asList(serialized.split(" "));
+        }
     }
 
     public static String persist(Object persistable) {
         if (persistable instanceof Persistable) {
-            return join(((Persistable) persistable).persisted());
+            return persistedInstance(persistable, join(((Persistable) persistable).persisted()));
         } else {
             String serializedObject = persistElement(persistable);
             if (canPersistObject(serializedObject)) {
-                return CLASS_NAME + persistable.getClass().getName() + CLASS_VALUE_SEPARATOR + STRING_REPRESENTATION
-                        + serializedObject;
+                return persistedInstance(persistable, serializedObject);
             } else {
                 throw new UnsupportedOperationException(
                         "String serialized objects with white space aren't supported yet.");
             }
         }
 
+    }
+
+    private static String persistedInstance(Object persisted, String serializedObject) {
+        String className = persisted.getClass().getName();
+        return CLASS_NAME + className + CLASS_VALUE_SEPARATOR + STRING_REPRESENTATION + serializedObject;
     }
 
     private static String persistElement(Object persistable) {
@@ -72,30 +80,25 @@ public class Persist {
         return serialized.toString();
     }
 
-    private static List<String> split(String serialized) {
-        return Arrays.asList(serialized.split(" "));
-    }
-
     private static boolean canPersistObject(String serializedObject) {
         return !serializedObject.contains(PERSISTED_STRING_SEPARATOR);
     }
 
     public static <T> T from(String persisted) {
-        String className = className(persisted);
-        String stringRepresentation = persistedValue(persisted);
-        return deserialize(className, stringRepresentation);
+        return deserialize(className(persisted), persistedValue(persisted));
     }
 
+    // TODO package or private - used by StateImpl
     public static String className(String persisted) {
         String className = persisted.substring(CLASS_NAME.length(),
                 persisted.indexOf(CLASS_VALUE_SEPARATOR + STRING_REPRESENTATION));
         return className;
     }
 
+    // TODO package or private - used by StateImpl
     public static String persistedValue(String persisted) {
-        String stringRepresentation = persisted.substring(CLASS_NAME.length() + className(persisted).length()
-                + CLASS_VALUE_SEPARATOR.length() + STRING_REPRESENTATION.length());
-        return stringRepresentation;
+        return persisted.substring(CLASS_NAME.length() + className(persisted).length() + CLASS_VALUE_SEPARATOR.length()
+                + STRING_REPRESENTATION.length());
     }
 
     @SuppressWarnings("unchecked")
@@ -107,8 +110,11 @@ public class Persist {
                 Class<Enum> enumClass = (Class<Enum>) clazz;
                 Enum<?> enumValue = Enum.valueOf(enumClass, stringRepresentation);
                 return (T) enumValue;
+            } else if (Persist.Persistable.class.isAssignableFrom(clazz)) {
+                Constructor<?> constructor = clazz.getDeclaredConstructor(Persist.Storage.class);
+                return (T) constructor.newInstance(new Storage(stringRepresentation));
             } else {
-                Constructor<?> constructor = clazz.getConstructor(String.class);
+                Constructor<?> constructor = clazz.getDeclaredConstructor(String.class);
                 return (T) constructor.newInstance(stringRepresentation);
             }
         } catch (ReflectiveOperationException e) {

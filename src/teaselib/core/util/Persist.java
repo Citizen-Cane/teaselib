@@ -19,10 +19,10 @@ public class Persist {
     }
 
     public static class Storage {
-        private final Iterator<String> elements;
+        private final Iterator<String> field;
 
         private Storage(List<String> elements) {
-            this.elements = elements.iterator();
+            this.field = elements.iterator();
         }
 
         // TODO private - used by PersistTest
@@ -31,11 +31,15 @@ public class Persist {
         }
 
         public <T> T next() {
-            return Persist.from(elements.next());
+            return Persist.from(field.next());
         }
 
         private static List<String> split(String serialized) {
             return Arrays.asList(serialized.split(" "));
+        }
+
+        public boolean hasNext() {
+            return field.hasNext();
         }
     }
 

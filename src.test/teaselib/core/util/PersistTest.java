@@ -10,7 +10,6 @@ import java.util.List;
 import org.junit.Test;
 
 public class PersistTest {
-
     @Test
     public void testPersisted() throws Exception {
         String test = "foobar";
@@ -44,22 +43,23 @@ public class PersistTest {
         assertEquals(test, Persist.from(Persist.persist(test)));
     }
 
-    public final class PersistableImplementation implements Persist.Persistable {
-        private final List<Object> values;
+    public static final class PersistableImplementation<T> extends ArrayList<T> implements Persist.Persistable {
+        private static final long serialVersionUID = 1L;
 
-        private PersistableImplementation(List<Object> values) {
-            this.values = values;
+        private PersistableImplementation(List<T> values) {
+            super(values);
         }
 
-        // TODO Write a test that uses the Storage constructor
-        // public PersistableImplementation(Persist.Storage storage) {
-        // this.values = new ArrayList<>();
-        // }
+        public PersistableImplementation(Persist.Storage storage) {
+            while (storage.hasNext()) {
+                add(storage.next());
+            }
+        }
 
         @Override
         public List<String> persisted() {
-            ArrayList<String> persistedElements = new ArrayList<>(values.size());
-            for (Object value : values) {
+            ArrayList<String> persistedElements = new ArrayList<>(size());
+            for (Object value : this) {
                 persistedElements.add(Persist.persist(value));
             }
             return persistedElements;
@@ -67,11 +67,10 @@ public class PersistTest {
     }
 
     @Test
-    public void testPersistViaInterface() throws Exception {
-        Object[] array = { "Foo", 1, 2L, 2.7f, 3.14159, false, true };
-        final List<Object> values = Arrays.asList(array);
+    public void testStorage() throws Exception {
+        List<Object> values = Arrays.asList(new Object[] { "Foo", 1, 2L, 2.7f, 3.14159, false, true });
 
-        Persist.Persistable persistable = new PersistableImplementation(values);
+        Persist.Persistable persistable = new PersistableImplementation<Object>(values);
         String persisted = Persist.persist(persistable);
 
         Persist.Storage storage = new Persist.Storage(Persist.persistedValue(persisted));
@@ -89,6 +88,17 @@ public class PersistTest {
         for (int i = 0; i < 7; i++) {
             restored.add(storage.next());
         }
+
+        assertEquals(values, restored);
+    }
+
+    @Test
+    public void testPersistRestore() throws Exception {
+        List<Object> values = Arrays.asList(new Object[] { "Foo", 1, 2L, 2.7f, 3.14159, false, true });
+
+        Persist.Persistable persistable = new PersistableImplementation<Object>(values);
+        String persisted = Persist.persist(persistable);
+        List<Object> restored = Persist.from(persisted);
 
         assertEquals(values, restored);
     }

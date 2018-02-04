@@ -10,6 +10,7 @@ public interface State {
 
     Options apply();
 
+    @SuppressWarnings("unchecked")
     <S extends Object> Options applyTo(S... items);
 
     boolean is(Object... objects);
@@ -22,6 +23,7 @@ public interface State {
 
     Persistence remove();
 
+    @SuppressWarnings("unchecked")
     <S extends Object> Persistence removeFrom(S... peers);
 
     interface Options extends State.Persistence {

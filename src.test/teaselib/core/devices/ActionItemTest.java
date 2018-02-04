@@ -9,34 +9,37 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.Test;
 
 import teaselib.Toys;
+import teaselib.core.StateImpl;
 import teaselib.core.TeaseLib;
 import teaselib.core.util.Persist;
 import teaselib.test.TestScript;
 import teaselib.util.Item;
-import teaselib.util.ItemImpl;
 
 public class ActionItemTest {
-    public static final class ActionItem extends ItemImpl implements Persist.Persistable {
-        final AtomicBoolean success = new AtomicBoolean(false);
+    public static final class ActionItem extends StateImpl implements Persist.Persistable {
+        static final AtomicBoolean Success = new AtomicBoolean(false);
 
         public ActionItem(TeaseLib teaseLib, String devicePath) {
-            super(teaseLib, devicePath, TeaseLib.DefaultDomain, devicePath, devicePath);
+            super(teaseLib, TeaseLib.DefaultDomain, devicePath);
         }
 
         @Override
         public List<String> persisted() {
-            return Arrays.asList(Persist.persist(item.toString()), Persist.persist(domain), Persist.persist(guid),
-                    Persist.persist(displayName));
+            return Arrays.asList(Persist.persist(domain), Persist.persist(item.toString()));
         }
 
         public ActionItem(Persist.Storage storage) {
-            super(storage.getInstance(TeaseLib.class), storage.next(), storage.next(), storage.next(), storage.next());
+            super(storage.getInstance(TeaseLib.class), storage.next(), storage.next());
+        }
+
+        public String devicePath() {
+            return item.toString();
         }
 
         @Override
         public Persistence remove() {
-            success.set(true);
-            return null;
+            Success.set(true);
+            return this;
         }
     }
 
@@ -48,7 +51,7 @@ public class ActionItemTest {
         ActionItem actionItem = new ActionItem(script.teaseLib, devicePath);
         String action = Persist.persist(actionItem);
         ActionItem restored = (ActionItem) Persist.from(action, clazz -> script.teaseLib);
-        assertEquals(devicePath, restored.displayName());
+        assertEquals(devicePath, restored.devicePath());
 
         Item restraints = script.item(Toys.Wrist_Restraints);
         restraints.apply();
@@ -58,7 +61,6 @@ public class ActionItemTest {
 
         restraints.remove();
 
-        // assertEquals(true, actionItem.success.get());
+        assertEquals(true, ActionItem.Success.getAndSet(false));
     }
-
 }

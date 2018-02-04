@@ -69,17 +69,23 @@ public class StateMaps {
     }
 
     private State state(String domain, QualifiedItem<?> item) {
-        StateMap stateMap = stateMap(domain, item);
-        State state = stateMap.get(item.toString().toLowerCase());
-        if (state == null) {
-            if (Persist.isPersistedString(item.toString())) {
-                state = Persist.from(item.toString(), clazz -> teaseLib);
-            } else {
-                state = new StateImpl(this, domain, item.value);
+        if (Persist.isPersistedString(item.toString())) {
+            State state = Persist.from(item.toString(), clazz -> teaseLib);
+            item = QualifiedItem.of(((StateImpl) state).item);
+            StateMap stateMap = stateMap(domain, item);
+            if (!stateMap.contains(item.toString().toLowerCase())) {
+                stateMap.put(item.toString().toLowerCase(), state);
             }
-            stateMap.put(item.toString().toLowerCase(), state);
+            return state;
+        } else {
+            StateMap stateMap = stateMap(domain, item);
+            State state = stateMap.get(item.toString().toLowerCase());
+            if (state == null) {
+                state = new StateImpl(this, domain, item.value);
+                stateMap.put(item.toString().toLowerCase(), state);
+            }
+            return state;
         }
-        return state;
     }
 
     public static boolean hasAllAttributes(Set<Object> mine, Object[] others) {

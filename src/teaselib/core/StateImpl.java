@@ -25,7 +25,8 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
 
     private final StateMaps stateMaps;
     protected final String domain;
-    final Object item;
+    protected final Object item;
+
     private final PersistentString durationStorage;
     private final PersistentString peerStorage;
     private final PersistentString attributeStorage;
@@ -65,6 +66,10 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
         restoreDuration();
         restoreAttributes();
         restorePeers();
+    }
+
+    public StateImpl(TeaseLib teaseLib, String domain, Object item) {
+        this(teaseLib.stateMaps, domain, item);
     }
 
     private TeaseLib.PersistentString persistentDuration(String domain, Object item) {
@@ -356,15 +361,19 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
 
     @Override
     public Persistence remove() {
-        Object[] copyOfPeers = new Object[peers.size()];
-        for (Object peer : peers.toArray(copyOfPeers)) {
-            state(peer).removeFrom(item);
+        if (!peers.isEmpty()) {
+            Object[] copyOfPeers = new Object[peers.size()];
+            for (Object peer : peers.toArray(copyOfPeers)) {
+                state(peer).removeFrom(item);
+            }
+            peers.clear();
         }
 
-        peers.clear();
         attributes.clear();
         setRemoved();
-        removePersistence();
+        if (isPersisted()) {
+            removePersistence();
+        }
         return this;
     }
 
@@ -394,11 +403,7 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
         }
 
         if (peers.isEmpty()) {
-            attributes.clear();
-            setRemoved();
-            if (isPersisted()) {
-                removePersistence();
-            }
+            remove();
         } else if (isPersisted()) {
             updatePersistence();
         }
@@ -461,7 +466,7 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
     public int hashCode() {
         final int prime = 31;
         int result = 1;
-        result = prime * result + getOuterType().hashCode();
+        result = prime * result + this.stateMaps.hashCode();
         result = prime * result + ((attributeStorage == null) ? 0 : attributeStorage.hashCode());
         result = prime * result + ((attributes == null) ? 0 : attributes.hashCode());
         result = prime * result + ((domain == null) ? 0 : domain.hashCode());
@@ -490,7 +495,7 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
         if (getClass() != obj.getClass())
             return false;
         StateImpl other = (StateImpl) obj;
-        if (!getOuterType().equals(other.getOuterType()))
+        if (!this.stateMaps.equals(other.stateMaps))
             return false;
         if (attributeStorage == null) {
             if (other.attributeStorage != null)
@@ -533,10 +538,6 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
         } else if (!peers.equals(other.peers))
             return false;
         return true;
-    }
-
-    private StateMaps getOuterType() {
-        return this.stateMaps;
     }
 
 }

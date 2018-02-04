@@ -32,4 +32,10 @@ public class StateMap {
     public boolean contains(Object item) {
         return states.containsKey(item);
     }
+
+    @Override
+    public String toString() {
+        return (domain != TeaseLib.DefaultDomain ? ("domain= + " + domain) : "") + states.toString();
+    }
+
 }

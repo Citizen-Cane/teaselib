@@ -48,7 +48,6 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
     }
 
     public StateImpl(StateMaps stateMaps, String domain, Object item) {
-        super();
         this.stateMaps = stateMaps;
 
         if ((item instanceof State) && !(item instanceof Item)) {
@@ -123,9 +122,8 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
 
     private void restorePersistedPeer(String persistedPeer) {
         if (Persist.className(persistedPeer).equals(ItemImpl.class.getName())) {
-            String guid = Persist.persistedValue(persistedPeer);
-            ItemImpl peer = (ItemImpl) this.stateMaps.teaseLib.item(domain, guid);
-
+            Persist.Storage storage = new Persist.Storage(Arrays.asList(Persist.persistedValue(persistedPeer)));
+            ItemImpl peer = ItemImpl.restore(stateMaps.teaseLib, domain, storage);
             addPeerThatHasBeenPersistedWithMe(peer, QualifiedItem.of(peer.item));
         } else {
             addAppliedOrPersistedPeer(Persist.<Object> from(persistedPeer));

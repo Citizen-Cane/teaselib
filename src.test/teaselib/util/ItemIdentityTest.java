@@ -3,7 +3,9 @@
  */
 package teaselib.util;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
 
@@ -239,7 +241,22 @@ public class ItemIdentityTest {
     }
 
     @Test
-    public void testItemInstancePersistAndRestore() {
+    public void testItemPersistanceAndRestoreSimple() {
+        TestScript script = TestScript.getOne();
+
+        Item gag = script.item(Toys.Gag);
+        gag.apply().remember();
+        assertTrue(gag.applied());
+
+        script.debugger.clearStateMaps();
+
+        Item restored = script.item(Toys.Gag);
+        assertTrue(restored.applied());
+        assertEquals(gag, restored);
+    }
+
+    @Test
+    public void testItemInstancePersistAndRestoreWithAttributes() {
         TestScript script = TestScript.getOne();
 
         Item ringGag = applyRingGagAndRemember(script);

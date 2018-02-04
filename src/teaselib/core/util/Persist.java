@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Optional;
 
 public class Persist {
     public static final String PERSISTED_STRING_SEPARATOR = " ";
@@ -18,28 +19,49 @@ public class Persist {
         List<String> persisted();
     }
 
+    @FunctionalInterface
+    public interface Factory {
+        Object get(Class<?> clazz);
+    }
+
     public static class Storage {
         private final Iterator<String> field;
+        private final Optional<Factory> factory;
 
-        private Storage(List<String> elements) {
-            this.field = elements.iterator();
+        public Storage(List<String> fields) {
+            this.field = fields.iterator();
+            this.factory = Optional.empty();
         }
 
-        // TODO private - used by PersistTest
+        public Storage(List<String> fields, Factory factory) {
+            this.field = fields.iterator();
+            this.factory = Optional.of(factory);
+        }
+
+        // TODO private - used by PersistTest - replace with call to other constructor
         Storage(String serialized) {
-            this(split(serialized));
+            this(fields(serialized));
         }
 
         public <T> T next() {
             return Persist.from(field.next());
         }
 
-        private static List<String> split(String serialized) {
+        private static List<String> fields(String serialized) {
             return Arrays.asList(serialized.split(" "));
         }
 
         public boolean hasNext() {
             return field.hasNext();
+        }
+
+        @SuppressWarnings("unchecked")
+        public <T> T getInstance(Class<T> clazz) {
+            if (factory.isPresent()) {
+                return (T) factory.get().get(clazz);
+            } else {
+                throw new IllegalArgumentException("Provide class factory for " + clazz.getName());
+            }
         }
     }
 
@@ -89,7 +111,11 @@ public class Persist {
     }
 
     public static <T> T from(String persisted) {
-        return deserialize(className(persisted), persistedValue(persisted));
+        return deserialize(className(persisted), persistedValue(persisted), Optional.empty());
+    }
+
+    public static <T> T from(String persisted, Factory factory) {
+        return deserialize(className(persisted), persistedValue(persisted), Optional.of(factory));
     }
 
     // TODO package or private - used by StateImpl
@@ -106,7 +132,7 @@ public class Persist {
     }
 
     @SuppressWarnings("unchecked")
-    private static <T> T deserialize(String className, String stringRepresentation) {
+    private static <T> T deserialize(String className, String stringRepresentation, Optional<Factory> factory) {
         try {
             Class<?> clazz = Class.forName(className);
             if (clazz.isEnum()) {
@@ -116,7 +142,9 @@ public class Persist {
                 return (T) enumValue;
             } else if (Persist.Persistable.class.isAssignableFrom(clazz)) {
                 Constructor<?> constructor = clazz.getDeclaredConstructor(Persist.Storage.class);
-                return (T) constructor.newInstance(new Storage(stringRepresentation));
+                List<String> fields = Storage.fields(stringRepresentation);
+                Storage storage = factory.isPresent() ? new Storage(fields, factory.get()) : new Storage(fields);
+                return (T) constructor.newInstance(storage);
             } else {
                 Constructor<?> constructor = clazz.getDeclaredConstructor(String.class);
                 return (T) constructor.newInstance(stringRepresentation);
@@ -124,5 +152,9 @@ public class Persist {
         } catch (ReflectiveOperationException e) {
             throw new IllegalArgumentException("Cannot restore " + className + ":" + stringRepresentation, e);
         }
+    }
+
+    public static boolean isPersistedString(String string) {
+        return string.startsWith(CLASS_NAME);
     }
 }

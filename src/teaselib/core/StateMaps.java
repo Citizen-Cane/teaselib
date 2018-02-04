@@ -5,6 +5,7 @@ import java.util.Set;
 
 import teaselib.State;
 import teaselib.core.state.StateProxy;
+import teaselib.core.util.Persist;
 import teaselib.core.util.QualifiedItem;
 import teaselib.util.ItemImpl;
 
@@ -71,7 +72,11 @@ public class StateMaps {
         StateMap stateMap = stateMap(domain, item);
         State state = stateMap.get(item.toString().toLowerCase());
         if (state == null) {
-            state = new StateImpl(this, domain, item.value);
+            if (Persist.isPersistedString(item.toString())) {
+                state = Persist.from(item.toString(), clazz -> teaseLib);
+            } else {
+                state = new StateImpl(this, domain, item.value);
+            }
             stateMap.put(item.toString().toLowerCase(), state);
         }
         return state;

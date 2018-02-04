@@ -3,7 +3,9 @@
  */
 package teaselib.core.devices.release;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.util.Arrays;
 import java.util.List;
@@ -14,9 +16,11 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import teaselib.Toys;
 import teaselib.core.devices.DeviceCache;
 import teaselib.core.devices.Devices;
 import teaselib.test.DebugSetup;
+import teaselib.test.TestScript;
 
 /**
  * @author Citizen-Cane
@@ -100,6 +104,32 @@ public class KeyReleaseTest {
             poll(actuator);
             // Release the key in the last minute
             actuator.release();
+            assertStoppedAfterRelease(actuator);
+        }
+        assertEndState(keyRelease);
+    }
+
+    @Test
+    public void testManualReleaseWithItem() {
+        TestScript script = TestScript.getOne(new DebugSetup().withRemoteDeviceAccess());
+        Devices devices = script.teaseLib.devices;
+        DeviceCache<KeyRelease> deviceCache = devices.get(KeyRelease.class);
+        KeyRelease keyRelease = deviceCache.getDefaultDevice();
+
+        for (Actuator actuator : connect(keyRelease)) {
+            arm(actuator);
+
+            script.item(Toys.Wrist_Restraints).apply();
+            script.item(Toys.Wrist_Restraints).applyTo(actuator);
+
+            start(actuator);
+
+            sleep(10, TimeUnit.SECONDS);
+            sleep(10, TimeUnit.SECONDS);
+            sleep(10, TimeUnit.SECONDS);
+
+            script.item(Toys.Wrist_Restraints).remove();
+
             assertStoppedAfterRelease(actuator);
         }
         assertEndState(keyRelease);

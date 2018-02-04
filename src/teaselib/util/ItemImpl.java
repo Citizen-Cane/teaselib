@@ -54,6 +54,11 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
         this.attributes = attributes(item, attributes);
     }
 
+    public static ItemImpl restore(TeaseLib teaseLib, String domain, Persist.Storage storage) {
+        String guid = storage.next();
+        return (ItemImpl) teaseLib.item(domain, guid);
+    }
+
     @Override
     public List<String> persisted() {
         return Arrays.asList(Persist.persist(guid));

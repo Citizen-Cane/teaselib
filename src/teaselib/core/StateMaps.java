@@ -77,6 +77,20 @@ public class StateMaps {
                 stateMap.put(item.toString().toLowerCase(), state);
             }
             return state;
+        } else if (item.value instanceof StateImpl) {
+            StateImpl stateImpl = (StateImpl) item.value;
+            StateMap stateMap = stateMap(domain, stateImpl.item.toString().toLowerCase());
+            State existing = stateMap.get(item.toString().toLowerCase());
+            if (existing == null) {
+                State state = new StateImpl(this, domain, stateImpl.item.toString().toLowerCase());
+                stateMap.put(stateImpl.item.toString().toLowerCase(), state);
+                return state;
+            } else if (!existing.equals(item.value)) {
+                throw new IllegalArgumentException(
+                        "States cannot be replaced: " + stateImpl.toString() + " -> " + existing.toString());
+            } else {
+                return stateImpl;
+            }
         } else {
             StateMap stateMap = stateMap(domain, item);
             State state = stateMap.get(item.toString().toLowerCase());

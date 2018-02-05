@@ -1,6 +1,7 @@
 package teaselib.core.devices;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.util.Arrays;
 import java.util.List;
@@ -11,6 +12,7 @@ import org.junit.Test;
 import teaselib.Toys;
 import teaselib.core.StateImpl;
 import teaselib.core.TeaseLib;
+import teaselib.core.devices.release.KeyRelease;
 import teaselib.core.util.Persist;
 import teaselib.test.TestScript;
 import teaselib.util.Item;
@@ -46,6 +48,49 @@ public class ActionItemTest {
     @Test
     public void testActionItemQualified() {
         TestScript script = TestScript.getOne();
+
+        String devicePath = "KeyRelease/MyPhoton/1";
+        ActionItem actionItem = new ActionItem(script.teaseLib, devicePath);
+        String action = Persist.persist(actionItem);
+        ActionItem restored = (ActionItem) Persist.from(action, clazz -> script.teaseLib);
+        assertEquals(devicePath, restored.devicePath());
+
+        Item restraints = script.item(Toys.Wrist_Restraints);
+        restraints.apply();
+        restraints.applyTo(action);
+
+        // start(action);
+
+        restraints.remove();
+
+        assertEquals(true, ActionItem.Success.getAndSet(false));
+    }
+
+    @Test
+    public void testActionItemInstance() {
+        TestScript script = TestScript.getOne();
+
+        String devicePath = "KeyRelease/MyPhoton/1";
+        ActionItem actionItem = new ActionItem(script.teaseLib, devicePath);
+
+        Item restraints = script.item(Toys.Wrist_Restraints);
+        restraints.apply();
+        restraints.applyTo(actionItem);
+
+        // start(action);
+
+        restraints.remove();
+
+        assertEquals(true, ActionItem.Success.getAndSet(false));
+    }
+
+    @Test
+    public void testActuatorActionItem() {
+        TestScript script = TestScript.getOne();
+
+        KeyRelease keyRelease = script.teaseLib.devices.get(KeyRelease.class).getDefaultDevice();
+
+        assertTrue(keyRelease.actuators().size() > 0);
 
         String devicePath = "KeyRelease/MyPhoton/1";
         ActionItem actionItem = new ActionItem(script.teaseLib, devicePath);

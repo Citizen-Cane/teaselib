@@ -1,10 +1,15 @@
 package teaselib.core.devices.release;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import teaselib.core.StateImpl;
+import teaselib.core.TeaseLib;
 import teaselib.core.devices.BatteryLevel;
 import teaselib.core.devices.Device;
 import teaselib.core.devices.DeviceCache;
+import teaselib.core.util.Persist;
 
 /**
  * @author Citizen-Cane
@@ -77,8 +82,7 @@ public class Actuator implements Device {
     /**
      * Whether the actuator is holding a key.
      * 
-     * @return True if the actuator holds a key and is counting down (not
-     *         armed).
+     * @return True if the actuator holds a key and is counting down (not armed).
      */
     public boolean isRunning() {
         return keyRelease.isRunning(actuator);
@@ -114,4 +118,44 @@ public class Actuator implements Device {
         return getName();
     }
 
+    public static final class RemoveActionItem extends StateImpl implements Persist.Persistable {
+        private final KeyRelease keyRelease;
+        private final int actuator;
+
+        public RemoveActionItem(TeaseLib teaseLib, String domain, String devicePath) {
+            super(teaseLib, TeaseLib.DefaultDomain, devicePath);
+            this.keyRelease = KeyRelease.getDeviceCache(teaseLib.devices, teaseLib.config).getDevice(devicePath);
+            // TODO improve getting the actuator device
+            this.actuator = getActuatorIndex(devicePath);
+        }
+
+        private int getActuatorIndex(String devicePath) {
+            return Integer.parseInt(devicePath.substring(devicePath.lastIndexOf("/")));
+        }
+
+        @Override
+        public List<String> persisted() {
+            return Arrays.asList(Persist.persist(domain), Persist.persist(item.toString()));
+        }
+
+        public RemoveActionItem(Persist.Storage storage) {
+            this(storage.getInstance(TeaseLib.class), storage.next(), storage.next());
+        }
+
+        public String devicePath() {
+            return item.toString();
+        }
+
+        @Override
+        public Persistence remove() {
+            DeviceCache.connect(keyRelease, 10.0);
+            keyRelease.actuators().get(actuator).release();
+            return this;
+        }
+    }
+
+    // TODO Could be the actual item, since it doesn't reveal internal state -> support via TeaseLib
+    public String releaseItem(TeaseLib teaseLib) {
+        return Persist.persist(new RemoveActionItem(teaseLib, TeaseLib.DefaultDomain, getDevicePath()));
+    }
 }

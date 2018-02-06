@@ -4,6 +4,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import teaselib.State;
 import teaselib.core.StateImpl;
 import teaselib.core.TeaseLib;
 import teaselib.core.devices.BatteryLevel;
@@ -118,19 +119,22 @@ public class Actuator implements Device {
         return getName();
     }
 
-    public static final class RemoveActionItem extends StateImpl implements Persist.Persistable {
+    // TODO Should be a private class but need to instanciate it when persistence is required
+    // - find out if constructor.setAccesible() does the trick
+    public static final class ReleaseAction extends StateImpl implements Persist.Persistable {
         private final KeyRelease keyRelease;
         private final int actuator;
 
-        public RemoveActionItem(TeaseLib teaseLib, String domain, String devicePath) {
-            super(teaseLib, TeaseLib.DefaultDomain, devicePath);
-            this.keyRelease = KeyRelease.getDeviceCache(teaseLib.devices, teaseLib.config).getDevice(devicePath);
-            // TODO improve getting the actuator device
+        public ReleaseAction(TeaseLib teaseLib, String domain, String devicePath) {
+            super(teaseLib, domain, devicePath);
+            String parentDevice = DeviceCache.getParentDevice(devicePath);
+            this.keyRelease = KeyRelease.getDeviceCache(teaseLib.devices, teaseLib.config).getDevice(parentDevice);
             this.actuator = getActuatorIndex(devicePath);
         }
 
         private int getActuatorIndex(String devicePath) {
-            return Integer.parseInt(devicePath.substring(devicePath.lastIndexOf("/")));
+            String actuatorIndex = devicePath.substring(devicePath.lastIndexOf('/') + 1);
+            return Integer.parseInt(actuatorIndex);
         }
 
         @Override
@@ -138,7 +142,7 @@ public class Actuator implements Device {
             return Arrays.asList(Persist.persist(domain), Persist.persist(item.toString()));
         }
 
-        public RemoveActionItem(Persist.Storage storage) {
+        public ReleaseAction(Persist.Storage storage) {
             this(storage.getInstance(TeaseLib.class), storage.next(), storage.next());
         }
 
@@ -152,10 +156,38 @@ public class Actuator implements Device {
             keyRelease.actuators().get(actuator).release();
             return this;
         }
+
+        @Override
+        public int hashCode() {
+            final int prime = 31;
+            int result = super.hashCode();
+            result = prime * result + actuator;
+            result = prime * result + ((keyRelease == null) ? 0 : keyRelease.hashCode());
+            return result;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj)
+                return true;
+            if (!super.equals(obj))
+                return false;
+            if (getClass() != obj.getClass())
+                return false;
+            ReleaseAction other = (ReleaseAction) obj;
+            if (actuator != other.actuator)
+                return false;
+            if (keyRelease == null) {
+                if (other.keyRelease != null)
+                    return false;
+            } else if (!keyRelease.equals(other.keyRelease))
+                return false;
+            return true;
+        }
+
     }
 
-    // TODO Could be the actual item, since it doesn't reveal internal state -> support via TeaseLib
-    public String releaseItem(TeaseLib teaseLib) {
-        return Persist.persist(new RemoveActionItem(teaseLib, TeaseLib.DefaultDomain, getDevicePath()));
+    public State releaseAction(TeaseLib teaseLib) {
+        return new ReleaseAction(teaseLib, TeaseLib.DefaultDomain, getDevicePath());
     }
 }

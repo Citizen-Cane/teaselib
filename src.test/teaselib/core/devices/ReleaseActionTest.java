@@ -1,27 +1,31 @@
 package teaselib.core.devices;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
+import teaselib.State;
 import teaselib.Toys;
 import teaselib.core.StateImpl;
 import teaselib.core.TeaseLib;
+import teaselib.core.devices.release.Actuator;
 import teaselib.core.devices.release.KeyRelease;
 import teaselib.core.util.Persist;
 import teaselib.test.TestScript;
 import teaselib.util.Item;
 
-public class ActionItemTest {
-    public static final class ActionItem extends StateImpl implements Persist.Persistable {
+public class ReleaseActionTest {
+    public static final class ReleaseActionState extends StateImpl implements Persist.Persistable {
         static final AtomicBoolean Success = new AtomicBoolean(false);
 
-        public ActionItem(TeaseLib teaseLib, String devicePath) {
+        public ReleaseActionState(TeaseLib teaseLib, String devicePath) {
             super(teaseLib, TeaseLib.DefaultDomain, devicePath);
         }
 
@@ -30,7 +34,7 @@ public class ActionItemTest {
             return Arrays.asList(Persist.persist(domain), Persist.persist(item.toString()));
         }
 
-        public ActionItem(Persist.Storage storage) {
+        public ReleaseActionState(Persist.Storage storage) {
             super(storage.getInstance(TeaseLib.class), storage.next(), storage.next());
         }
 
@@ -46,13 +50,13 @@ public class ActionItemTest {
     }
 
     @Test
-    public void testActionItemQualified() {
+    public void testReleasectionStateQualified() {
         TestScript script = TestScript.getOne();
 
         String devicePath = "KeyRelease/MyPhoton/1";
-        ActionItem actionItem = new ActionItem(script.teaseLib, devicePath);
+        ReleaseActionState actionItem = new ReleaseActionState(script.teaseLib, devicePath);
         String action = Persist.persist(actionItem);
-        ActionItem restored = (ActionItem) Persist.from(action, clazz -> script.teaseLib);
+        ReleaseActionState restored = (ReleaseActionState) Persist.from(action, clazz -> script.teaseLib);
         assertEquals(devicePath, restored.devicePath());
 
         Item restraints = script.item(Toys.Wrist_Restraints);
@@ -63,15 +67,15 @@ public class ActionItemTest {
 
         restraints.remove();
 
-        assertEquals(true, ActionItem.Success.getAndSet(false));
+        assertEquals(true, ReleaseActionState.Success.getAndSet(false));
     }
 
     @Test
-    public void testActionItemInstance() {
+    public void testReleaseActionInstance() {
         TestScript script = TestScript.getOne();
 
         String devicePath = "KeyRelease/MyPhoton/1";
-        ActionItem actionItem = new ActionItem(script.teaseLib, devicePath);
+        ReleaseActionState actionItem = new ReleaseActionState(script.teaseLib, devicePath);
 
         Item restraints = script.item(Toys.Wrist_Restraints);
         restraints.apply();
@@ -81,31 +85,34 @@ public class ActionItemTest {
 
         restraints.remove();
 
-        assertEquals(true, ActionItem.Success.getAndSet(false));
+        assertEquals(true, ReleaseActionState.Success.getAndSet(false));
     }
 
     @Test
-    public void testActuatorActionItem() {
+    @Ignore
+    // TODO simulate device
+    public void testActuatorReleaseAction() {
         TestScript script = TestScript.getOne();
 
-        KeyRelease keyRelease = script.teaseLib.devices.get(KeyRelease.class).getDefaultDevice();
+        KeyRelease device = script.teaseLib.devices.get(KeyRelease.class).getDefaultDevice();
 
-        assertTrue(keyRelease.actuators().size() > 0);
+        assertTrue(device.active());
+        assertTrue(device.actuators().size() > 0);
 
-        String devicePath = "KeyRelease/MyPhoton/1";
-        ActionItem actionItem = new ActionItem(script.teaseLib, devicePath);
-        String action = Persist.persist(actionItem);
-        ActionItem restored = (ActionItem) Persist.from(action, clazz -> script.teaseLib);
-        assertEquals(devicePath, restored.devicePath());
+        Actuator actuator = device.actuators().get(0);
+        State release = actuator.releaseAction(script.teaseLib);
 
         Item restraints = script.item(Toys.Wrist_Restraints);
         restraints.apply();
-        restraints.applyTo(action);
+        restraints.applyTo(release);
 
         // start(actuator);
 
+        assertTrue(device.active());
+        assertTrue(actuator.isRunning());
         restraints.remove();
+        assertFalse(actuator.isRunning());
 
-        assertEquals(true, ActionItem.Success.getAndSet(false));
+        assertEquals(true, ReleaseActionState.Success.getAndSet(false));
     }
 }

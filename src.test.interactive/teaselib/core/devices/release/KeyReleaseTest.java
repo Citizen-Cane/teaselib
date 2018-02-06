@@ -16,11 +16,9 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import teaselib.Toys;
 import teaselib.core.devices.DeviceCache;
 import teaselib.core.devices.Devices;
 import teaselib.test.DebugSetup;
-import teaselib.test.TestScript;
 
 /**
  * @author Citizen-Cane
@@ -40,7 +38,7 @@ public class KeyReleaseTest {
     }
 
     public static List<Actuator> connect(KeyRelease keyRelease) {
-        Assume.assumeTrue(DeviceCache.connect(keyRelease, 0.0));
+        assertTrue("No KeyRelease device found", DeviceCache.connect(keyRelease, 0.0));
         assertTrue(keyRelease.connected());
         logger.info(keyRelease.getName());
         assertTrue(keyRelease.active());
@@ -106,32 +104,7 @@ public class KeyReleaseTest {
             actuator.release();
             assertStoppedAfterRelease(actuator);
         }
-        assertEndState(keyRelease);
-    }
 
-    @Test
-    public void testManualReleaseWithItem() {
-        TestScript script = TestScript.getOne(new DebugSetup().withRemoteDeviceAccess());
-        Devices devices = script.teaseLib.devices;
-        DeviceCache<KeyRelease> deviceCache = devices.get(KeyRelease.class);
-        KeyRelease keyRelease = deviceCache.getDefaultDevice();
-
-        for (Actuator actuator : connect(keyRelease)) {
-            arm(actuator);
-
-            script.item(Toys.Wrist_Restraints).apply();
-            script.item(Toys.Wrist_Restraints).applyTo(actuator);
-
-            start(actuator);
-
-            sleep(10, TimeUnit.SECONDS);
-            sleep(10, TimeUnit.SECONDS);
-            sleep(10, TimeUnit.SECONDS);
-
-            script.item(Toys.Wrist_Restraints).remove();
-
-            assertStoppedAfterRelease(actuator);
-        }
         assertEndState(keyRelease);
     }
 
@@ -163,6 +136,7 @@ public class KeyReleaseTest {
             // The key should have been released automatically by now
             assertStoppedAfterRelease(actuator);
         }
+
         assertEndState(keyRelease);
     }
 

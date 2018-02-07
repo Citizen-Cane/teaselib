@@ -9,6 +9,9 @@ import java.awt.Rectangle;
 import java.awt.RenderingHints;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
+import java.awt.geom.AffineTransform;
+import java.awt.geom.NoninvertibleTransformException;
+import java.awt.geom.Point2D;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -610,7 +613,19 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
             @Override
             protected Point getPosition(Type type, int width, int height) {
                 if (type == VideoRenderer.Type.CameraFeedback) {
-                    return new Point(mainFrame.getX() + (mainFrame.getWidth() - width) / 2, mainFrame.getY());
+                    AffineTransform defaultTransform = mainFrame.getGraphicsConfiguration().getDefaultTransform();
+                    try {
+                        Point2D size = defaultTransform.inverseTransform( //
+                                new Point2D.Double(width, height), new Point2D.Double());
+                        int x = mainFrame.getX() + (int) (mainFrame.getWidth() - size.getX()) / 2;
+                        int y = mainFrame.getY();
+                        Point2D transform = defaultTransform.transform( //
+                                new Point2D.Double(x, y), new Point2D.Double());
+                        return new Point((int) transform.getX(), (int) transform.getY());
+                    } catch (NoninvertibleTransformException e) {
+                        logger.error(e.getMessage(), e);
+                        return new Point(0, 0);
+                    }
                 } else {
                     throw new UnsupportedOperationException();
                 }

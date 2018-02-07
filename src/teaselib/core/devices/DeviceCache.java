@@ -14,10 +14,7 @@ public class DeviceCache<T extends Device> {
     private final Map<String, DeviceFactory<? extends T>> factories = new LinkedHashMap<>();
     private final Set<DeviceFactoryListener<T>> deviceListeners = new LinkedHashSet<>();
 
-    private static final String PathSeparator = "/";
-
-    public DeviceCache() {
-    }
+    private static final char PathSeparator = '/';
 
     public DeviceCache<T> addFactory(DeviceFactory<? extends T> factory) {
         factories.put(factory.getDeviceClass(), factory);
@@ -88,6 +85,10 @@ public class DeviceCache<T extends Device> {
         return devicePath.substring(0, devicePath.indexOf(PathSeparator));
     }
 
+    public static String getParentDevice(String devicePath) {
+        return devicePath.substring(0, devicePath.lastIndexOf(PathSeparator));
+    }
+
     public static boolean connect(Device device) {
         return connect(device, CONNECTION_WAIT_UNTIL_CONNECTED);
     }
@@ -139,4 +140,5 @@ public class DeviceCache<T extends Device> {
     public void removeDeviceListener(DeviceFactoryListener<T> deviceListener) {
         deviceListeners.remove(deviceListener);
     }
+
 }

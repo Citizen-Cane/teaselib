@@ -34,6 +34,7 @@ public enum Toys {
     Chastity_Device,
     Cockring,
     Humbler,
+    Masturbator,
 
     Dildo,
     Pussy_Clamps,
@@ -53,6 +54,14 @@ public enum Toys {
     Wife,
 
     ;
+
+    public enum Masturbators {
+        Pussy,
+        Bumhole,
+        Feet,
+        Breasts,
+        Face,
+    }
 
     public enum ChastityDevices implements Item.Attribute {
         Chastity_Belt,
@@ -101,11 +110,11 @@ public enum Toys {
 
     public static final Toys Essential[] = { Gag, Blindfold, Collar, Nipple_Clamps, Spanking_Implement };
     public static final Toys Bondage[] = { Ankle_Restraints, Wrist_Restraints, Rope, Chains, Spreader_Bar };
-    public static final Toys Insertable[] = { Buttplug, Dildo, Anal_Douche, Enema_Bulb, Enema_Kit };
+    public static final Toys Backdoor[] = { Buttplug, Dildo, Anal_Douche, Enema_Bulb, Enema_Kit };
     public static final Toys Female[] = { Clit_Clamp, Pussy_Clamps, VaginalInsert };
-    public static final Toys Male[] = { Ball_Stretcher, Cockring, Humbler };
+    public static final Toys Male[] = { Ball_Stretcher, Cockring, Humbler, Masturbator };
     public static final Toys Stimulation[] = { Vibrator, EStim_Device };
     public static final Toys Partner[] = { Doll, Husband, Wife, Chastity_Device, Strap_On };
 
-    public static final Toys[] Categories[] = { Essential, Bondage, Insertable, Female, Male, Stimulation, Partner };
+    public static final Toys[] Categories[] = { Essential, Bondage, Backdoor, Female, Male, Stimulation, Partner };
 }

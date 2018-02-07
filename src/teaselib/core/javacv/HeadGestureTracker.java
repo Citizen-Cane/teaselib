@@ -97,7 +97,7 @@ public class HeadGestureTracker {
         }
         directionTimeLine.clear();
         tracker.clear();
-        directionTimeLine.add(timeStamp);
+        directionTimeLine.add(Direction.None, timeStamp);
         findNewFeatures(videoImage, region);
     }
 
@@ -110,7 +110,7 @@ public class HeadGestureTracker {
             if (logger.isDebugEnabled()) {
                 logger.debug("Updating outdated features" + " @" + timeStamp);
             }
-            directionTimeLine.add(timeStamp);
+            directionTimeLine.add(Direction.None, timeStamp);
             findNewFeatures(videoImage, region);
         }
     }
@@ -276,12 +276,17 @@ public class HeadGestureTracker {
 
         long duration = directionTimeLine.duration(slices);
         if (slices.size() >= NumberOfDirections && GestureMinDuration <= duration && duration <= GestureMaxDuration) {
-            long h = slices.stream().filter(slice -> horizontal(slice.item)).count();
-            long v = slices.stream().filter(slice -> vertical(slice.item)).count();
-            if (h > v && h >= NumberOfDirections && v <= 1) {
-                return Gesture.Shake;
-            } else if (v > h && v >= NumberOfDirections && h <= 1) {
-                return Gesture.Nod;
+            long n = slices.stream().filter(slice -> slice.item == Direction.None).count();
+            if (n == 0) {
+                long h = slices.stream().filter(slice -> horizontal(slice.item)).count();
+                long v = slices.stream().filter(slice -> vertical(slice.item)).count();
+                if (h > v && h >= NumberOfDirections && v <= 1) {
+                    return Gesture.Shake;
+                } else if (v > h && v >= NumberOfDirections && h <= 1) {
+                    return Gesture.Nod;
+                } else {
+                    return Gesture.None;
+                }
             } else {
                 return Gesture.None;
             }

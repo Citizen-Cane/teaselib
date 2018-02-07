@@ -485,7 +485,8 @@ public abstract class Script {
                             : null)));
         }
 
-        if (teaseLib.item(TeaseLib.DefaultDomain, Gadgets.Webcam).isAvailable()) {
+        if (teaseLib.item(TeaseLib.DefaultDomain, Gadgets.Webcam).isAvailable()
+                && choices.toGestures().stream().filter(gesture -> gesture != Gesture.None).count() > 0) {
             MotionDetector motionDetector = teaseLib.devices.get(MotionDetector.class).getDefaultDevice();
             inputMethods.add(motionDetector.getInputMethod());
         }

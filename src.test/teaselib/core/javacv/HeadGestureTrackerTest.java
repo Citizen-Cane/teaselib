@@ -134,14 +134,13 @@ public class HeadGestureTrackerTest {
     }
 
     @Test
-    public void testMidMoveShake() {
+    public void testNodFollowedByOptimalShake() {
         TimeLine<Direction> directionTimeLine = new TimeLine<>(0);
         assertEquals(Gesture.None, HeadGestureTracker.getGesture(directionTimeLine));
         assertTrue(HeadGestureTracker.NumberOfDirections <= 6);
 
         int i = 1;
 
-        // TODO This makes the test fail -> fix gesture tracking
         directionTimeLine.add(Direction.Up, SHAKETIME * i++);
         directionTimeLine.add(Direction.Down, SHAKETIME * i++);
         directionTimeLine.add(Direction.Up, SHAKETIME * i++);
@@ -154,6 +153,66 @@ public class HeadGestureTrackerTest {
         directionTimeLine.add(Direction.Right, SHAKETIME * i++);
         directionTimeLine.add(Direction.Left, SHAKETIME * i++);
 
+        // Fails because there's no pause between nodding and shaking
+        assertEquals(Gesture.None, HeadGestureTracker.getGesture(directionTimeLine));
+    }
+
+    @Test
+    public void testNodFollowedByLongShake() {
+        TimeLine<Direction> directionTimeLine = new TimeLine<>(0);
+        assertEquals(Gesture.None, HeadGestureTracker.getGesture(directionTimeLine));
+        assertTrue(HeadGestureTracker.NumberOfDirections <= 6);
+
+        int i = 1;
+
+        directionTimeLine.add(Direction.Up, SHAKETIME * i++);
+        directionTimeLine.add(Direction.Down, SHAKETIME * i++);
+        directionTimeLine.add(Direction.Up, SHAKETIME * i++);
+        directionTimeLine.add(Direction.Down, SHAKETIME * i++);
+
+        // Headroom for recognizing the shake
+        directionTimeLine.add(Direction.Right, SHAKETIME * i++);
+        directionTimeLine.add(Direction.Left, SHAKETIME * i++);
+        directionTimeLine.add(Direction.Right, SHAKETIME * i++);
+        directionTimeLine.add(Direction.Left, SHAKETIME * i++);
+
+        directionTimeLine.add(Direction.Right, SHAKETIME * i++);
+        directionTimeLine.add(Direction.Left, SHAKETIME * i++);
+        directionTimeLine.add(Direction.Right, SHAKETIME * i++);
+        directionTimeLine.add(Direction.Left, SHAKETIME * i++);
+        directionTimeLine.add(Direction.Right, SHAKETIME * i++);
+        directionTimeLine.add(Direction.Left, SHAKETIME * i++);
+
+        // Succeeds because there's a long shake after the node
+        assertEquals(Gesture.Shake, HeadGestureTracker.getGesture(directionTimeLine));
+    }
+
+    @Test
+    public void testNodPauseShake() {
+        TimeLine<Direction> directionTimeLine = new TimeLine<>(0);
+        assertEquals(Gesture.None, HeadGestureTracker.getGesture(directionTimeLine));
+        assertTrue(HeadGestureTracker.NumberOfDirections <= 6);
+
+        int i = 1;
+
+        directionTimeLine.add(Direction.Up, SHAKETIME * i++);
+        directionTimeLine.add(Direction.Down, SHAKETIME * i++);
+        directionTimeLine.add(Direction.Up, SHAKETIME * i++);
+        directionTimeLine.add(Direction.Down, SHAKETIME * i++);
+
+        directionTimeLine.add(Direction.None, SHAKETIME * i++);
+        directionTimeLine.add(Direction.None, SHAKETIME * i++);
+        directionTimeLine.add(Direction.None, SHAKETIME * i++);
+        directionTimeLine.add(Direction.None, SHAKETIME * i++);
+
+        directionTimeLine.add(Direction.Right, SHAKETIME * i++);
+        directionTimeLine.add(Direction.Left, SHAKETIME * i++);
+        directionTimeLine.add(Direction.Right, SHAKETIME * i++);
+        directionTimeLine.add(Direction.Left, SHAKETIME * i++);
+        directionTimeLine.add(Direction.Right, SHAKETIME * i++);
+        directionTimeLine.add(Direction.Left, SHAKETIME * i++);
+
+        // Succeeds because there's a long pause after the shake
         assertEquals(Gesture.Shake, HeadGestureTracker.getGesture(directionTimeLine));
     }
 
@@ -222,13 +281,15 @@ public class HeadGestureTrackerTest {
         int i = 1;
         directionTimeLine.add(Direction.Left, SHAKETIME * i++);
         directionTimeLine.add(Direction.Right, SHAKETIME * i++);
-        directionTimeLine.add(Direction.None, SHAKETIME * i++);
+        // directionTimeLine.add(Direction.None, SHAKETIME * i++);
         directionTimeLine.add(Direction.Right, SHAKETIME * i++);
         directionTimeLine.add(Direction.Left, SHAKETIME * i++);
-        directionTimeLine.add(Direction.None, SHAKETIME * i++);
+        // directionTimeLine.add(Direction.None, SHAKETIME * i++);
         directionTimeLine.add(Direction.Left, SHAKETIME * i++);
         directionTimeLine.add(Direction.Right, SHAKETIME * i++);
 
+        // Would recognize shake when the pause was enabled,
+        // but Direction.None is filtered out by {@link HeadGestureTracker#update}
         assertEquals(Gesture.None, HeadGestureTracker.getGesture(directionTimeLine));
     }
 }

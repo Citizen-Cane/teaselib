@@ -1,6 +1,3 @@
-/**
- * 
- */
 package teaselib.core.util;
 
 import java.util.ArrayList;
@@ -13,18 +10,21 @@ import java.util.List;
  * Associates objects with time stamps. Objects can be retrieved based on the elapsed duration.
  * <p>
  * New items are only added if they're different from the last. If they're the same, only the time span is updated.
+ * 
+ * @author Citizen-Cane
  */
 public class TimeLine<T> {
-    private final LinkedList<T> items = new LinkedList<>();
-    private final LinkedList<Long> timeSpans = new LinkedList<>();
     private int maxItems = 1000;
     private long maxTimeSpanMillis = 1000 * 60;
+
+    private final LinkedList<T> items = new LinkedList<>();
+    private final LinkedList<Long> timeSpans = new LinkedList<>();
 
     private T tail = null;
     private long tailTimeMillis;
 
     public TimeLine() {
-        tailTimeMillis = System.currentTimeMillis();
+        tailTimeMillis = 0;
     }
 
     public TimeLine(long startTimeMillis) {
@@ -38,6 +38,8 @@ public class TimeLine<T> {
     public void clear() {
         items.clear();
         timeSpans.clear();
+        tail = null;
+        tailTimeMillis = 0;
     }
 
     public void setCapacity(int items, double timeSpanSeconds) {

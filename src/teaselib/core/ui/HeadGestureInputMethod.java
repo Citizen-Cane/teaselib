@@ -66,7 +66,7 @@ public class HeadGestureInputMethod implements InputMethod {
             private int awaitGesture(List<Gesture> gestures) {
                 return motionDetector.call(() -> {
                     motionDetector.setSensitivity(MotionSensitivity.High);
-                    while (true) {
+                    while (!Thread.interrupted()) {
                         Gesture gesture = motionDetector.await(gestures, Double.MAX_VALUE);
                         if (supported(gesture)) {
                             int result = gestures.indexOf(gesture);
@@ -75,6 +75,8 @@ public class HeadGestureInputMethod implements InputMethod {
                             }
                         }
                     }
+                    Thread.currentThread().interrupt();
+                    return Prompt.UNDEFINED;
                 });
             }
         };

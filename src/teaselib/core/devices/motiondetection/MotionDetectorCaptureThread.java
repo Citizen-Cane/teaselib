@@ -6,6 +6,7 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -192,12 +193,27 @@ class MotionDetectorCaptureThread extends Thread {
             Thread.currentThread().interrupt();
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
+        } finally {
+            shutdown(frameTasks);
+            shutdown(perceptionTasks);
+            shutdown(overlayRenderer);
+        }
+    }
+
+    public void shutdown(ExecutorService executor) {
+        executor.shutdown();
+        try {
+            executor.awaitTermination(1, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
         }
     }
 
     NamedExecutorService frameTasks = NamedExecutorService.newFixedThreadPool(2, "frame tasks", Long.MAX_VALUE,
             TimeUnit.MILLISECONDS);
     NamedExecutorService perceptionTasks = NamedExecutorService.singleThreadedQueue("Motion and Presence",
+            Long.MAX_VALUE, TimeUnit.MILLISECONDS);
+    NamedExecutorService overlayRenderer = NamedExecutorService.singleThreadedQueue("Perception overlay renderer",
             Long.MAX_VALUE, TimeUnit.MILLISECONDS);
 
     Future<?> motionAndPresence = null;
@@ -228,6 +244,8 @@ class MotionDetectorCaptureThread extends Thread {
                 Buffer.Locked<Mat> lock = video.get(image);
                 // Mat buffer = lock.get();
 
+                // TODO move to after if-clause after resolving image mat copy issue
+                // - because copying the mat and computing gestures can be done parallel
                 List<Future<?>> frameTaskFutures = new ArrayList<>();
                 frameTaskFutures.add(frameTasks.submit(() -> computeGestures(image, timeStamp)));
 
@@ -343,7 +361,7 @@ class MotionDetectorCaptureThread extends Thread {
     }
 
     private void completeComputationAndRender(Mat image, Buffer.Locked<Mat> lock, List<Future<?>> tasks) {
-        frameTasks.submit(() -> {
+        overlayRenderer.submit(() -> {
             try {
                 for (Future<?> task : tasks) {
                     task.get();

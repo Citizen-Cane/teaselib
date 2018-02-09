@@ -6,8 +6,9 @@ import java.io.IOException;
 
 import teaselib.core.Host.Location;
 import teaselib.core.texttospeech.TextToSpeechPlayer;
+import teaselib.hosts.PreDefinedItems;
 
-final class TeaseLibConfigSetup implements Configuration.Setup {
+public final class TeaseLibConfigSetup implements Configuration.Setup {
     private static final String DEFAULTS = "defaults";
 
     private static final String TEASELIB_TEMPLATE = "teaselib.template";
@@ -17,6 +18,8 @@ final class TeaseLibConfigSetup implements Configuration.Setup {
 
     public static final String VOICES_PROPERTIES = "voices.properties";
     public static final String PRONUNCIATION_DIRECTORY = "pronunciation";
+
+    private static final String ITEM_STORE_FILENAME = "items.xml";
 
     private final File teaseLibDefaultsPath;
     private final File userPath;
@@ -41,6 +44,8 @@ final class TeaseLibConfigSetup implements Configuration.Setup {
         config.addConfigFile(new File(teaseLibDefaultsPath, TEASELIB_PROPERTIES));
         config.addConfigFile(new File(userPath, TEASELIB_PROPERTIES));
 
+        config.addUserFile(PreDefinedItems.Settings.ITEM_STORE, new File(teaseLibDefaultsPath, ITEM_STORE_FILENAME),
+                new File(userPath, ITEM_STORE_FILENAME));
     }
 
     private void addNetworkDefaults(Configuration config) throws IOException {

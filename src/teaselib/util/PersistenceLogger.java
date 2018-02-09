@@ -1,5 +1,6 @@
 package teaselib.util;
 
+import java.io.IOException;
 import java.util.Locale;
 
 import org.slf4j.LoggerFactory;
@@ -27,7 +28,7 @@ public class PersistenceLogger implements Persistence {
     }
 
     @Override
-    public UserItems getUserItems(TeaseLib teaseLib) {
+    public UserItems getUserItems(TeaseLib teaseLib) throws IOException {
         return persistence.getUserItems(teaseLib);
     }
 

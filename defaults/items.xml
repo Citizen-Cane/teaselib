@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE Items SYSTEM "items.dtd">
+
+<!--item defaults - defines default item set in TeaseLib -->
+
+<Items>
+	<Toys>
+		<Item item="Humbler" guid="humbler" displayName="Humbler" available="false">
+		</Item>
+	</Toys>
+
+	<Household>
+		<Item item="Wooden_Spoon" guid="wooden_spoon" displayName="Woodenspoon" available="false">
+			<Attribute> Material.Wood </Attribute>
+		</Item>
+	</Household>
+	
+	<Clothes>
+		<Item item="Catsuit" guid="catsuit" displayName="Catsuit" available="false">
+		</Item>
+	</Clothes>
+
+	<Gadgets>
+		<Item item="Computer_Controlled_EStim" guid="estim" displayName="Teaselib-enabled estim controller" available="false">
+		</Item>
+	</Gadgets>
+</Items>

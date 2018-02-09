@@ -80,9 +80,9 @@ public class TeaseLib {
 
         this.host = host;
         this.persistence = new PersistenceLogger(persistence);
-        this.userItems = persistence.getUserItems(this);
-
         this.config = new Configuration(setup);
+
+        this.userItems = persistence.getUserItems(this);
         this.transcript = newTranscriptLogger(host.getLocation(Location.Log));
 
         this.devices = new Devices(config);

@@ -1,5 +1,6 @@
 package teaselib.core;
 
+import java.io.IOException;
 import java.util.Locale;
 
 import teaselib.Actor;
@@ -11,7 +12,7 @@ public interface Persistence {
 
     PropertyNameMapping getNameMapping();
 
-    UserItems getUserItems(TeaseLib teaseLib);
+    UserItems getUserItems(TeaseLib teaseLib) throws IOException;
 
     boolean has(String name);
 

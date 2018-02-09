@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!ELEMENT Items (Toys,Household,Clothes,Gadgets)*>
+<!ELEMENT Toys (Item)*>
+<!ELEMENT Household (Item)*>
+<!ELEMENT Clothes (Item)*>
+<!ELEMENT Gadgets (Item)*>
+<!ELEMENT Item (Attribute)*>
+<!ATTLIST Item 
+	item CDATA #REQUIRED
+	guid CDATA #REQUIRED
+	displayName CDATA #REQUIRED
+	available CDATA #REQUIRED
+>
+<!ELEMENT Attribute (#PCDATA)>

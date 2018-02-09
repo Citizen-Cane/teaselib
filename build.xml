@@ -26,13 +26,10 @@
             <fileset dir="${DeployTeaseLib.basedir}/lib/" excludes="**.obj,**.iobj,**.pdb,**.ipdb,**.exp,**.ilk,**.lib"/>
         </copy>
         <copy todir="${destination}/lib/TeaseLib/defaults/">
-            <fileset dir="${DeployTeaseLib.basedir}/defaults/" includes="*.properties,*.template"/>
+            <fileset dir="${DeployTeaseLib.basedir}/defaults/" includes="*.properties,*.template,*.xml"/>
         </copy>
         <copy todir="${destination}/lib/TeaseLib/defaults/pronunciation">
             <fileset dir="${DeployTeaseLib.basedir}/defaults/pronunciation"/>
-        </copy>
-        <copy todir="${destination}/lib/TeaseLib/presets">
-            <fileset dir="${DeployTeaseLib.basedir}/presets/" includes="*.properties"/>
         </copy>
     </target>
 

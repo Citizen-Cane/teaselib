@@ -57,7 +57,7 @@ public class SexScriptsStatePersistence implements Persistence {
     }
 
     @Override
-    public UserItems getUserItems(TeaseLib teaseLib) {
+    public UserItems getUserItems(TeaseLib teaseLib) throws IOException {
         return new PreDefinedItems(teaseLib);
     }
 

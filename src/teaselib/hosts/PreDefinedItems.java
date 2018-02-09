@@ -1,11 +1,14 @@
 package teaselib.hosts;
 
+import java.io.IOException;
+
 import teaselib.Body;
 import teaselib.Features;
 import teaselib.Household;
 import teaselib.Material;
 import teaselib.Size;
 import teaselib.Toys;
+import teaselib.Toys.Masturbators;
 import teaselib.core.AbstractUserItems;
 import teaselib.core.TeaseLib;
 import teaselib.core.util.QualifiedEnum;
@@ -22,8 +25,7 @@ import teaselib.util.Item;
  *         available by a script.
  */
 public class PreDefinedItems extends AbstractUserItems {
-
-    public PreDefinedItems(TeaseLib teaseLib) {
+    public PreDefinedItems(TeaseLib teaseLib) throws IOException {
         super(teaseLib);
     }
 
@@ -158,6 +160,10 @@ public class PreDefinedItems extends AbstractUserItems {
         } else if (item.equals(Toys.Humbler)) {
             return new Item[] { item(item, "humbler", "A humbler") };
 
+        } else if (item.equals(Toys.Masturbator)) {
+            return new Item[] { item(item, "masturbator", "A fake pussy",
+                    defaults(item, Masturbators.Pussy, Masturbators.Bumhole, Material.Rubber)) };
+
         } else if (item.equals(Toys.Pussy_Clamps)) {
             return new Item[] { item(item, "pussy_clamps", "Pussy clamps") };
 
@@ -188,7 +194,7 @@ public class PreDefinedItems extends AbstractUserItems {
         }
     }
 
-    protected Enum<?>[] defaults(QualifiedItem<?> item, Enum<?> more) {
+    protected Enum<?>[] defaults(QualifiedItem<?> item, Enum<?>... more) {
         return array(defaults(item), more);
     }
 }

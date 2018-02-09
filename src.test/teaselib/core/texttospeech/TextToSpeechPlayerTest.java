@@ -53,7 +53,10 @@ public class TextToSpeechPlayerTest {
     @Test
     public void testPreferredAndIgnored() {
         Configuration config = DebugSetup.getConfiguration();
+
         config.set(TextToSpeechPlayer.Settings.Voices, getClass().getResource("voices.properties").getPath());
+        assertTrue(new File(config.get(TextToSpeechPlayer.Settings.Voices)).exists());
+
         TextToSpeechPlayer tts = new TextToSpeechPlayer(config, testTTS);
 
         assertEquals(MR_FOO3, tts.getVoiceFor(new Actor("Mr.Foo", Voice.Male, Locale.forLanguageTag("en-uk"))));
@@ -64,7 +67,10 @@ public class TextToSpeechPlayerTest {
     @Test
     public void testReload() {
         Configuration config = DebugSetup.getConfiguration();
+
         config.set(TextToSpeechPlayer.Settings.Voices, getClass().getResource("voices.properties").getPath());
+        assertTrue(new File(config.get(TextToSpeechPlayer.Settings.Voices)).exists());
+
         TextToSpeechPlayer tts = new TextToSpeechPlayer(config, testTTS);
 
         assertEquals(MR_FOO3, tts.getVoiceFor(new Actor("Mr.Foo", Voice.Male, Locale.forLanguageTag("en-uk"))));
@@ -72,6 +78,8 @@ public class TextToSpeechPlayerTest {
         assertEquals(MR_FOOBAR, tts.getVoiceFor(new Actor("Mr.FooBar", Voice.Male, Locale.ENGLISH)));
 
         config.set(TextToSpeechPlayer.Settings.Voices, getClass().getResource("voices2.properties").getPath());
+        assertTrue(new File(config.get(TextToSpeechPlayer.Settings.Voices)).exists());
+
         tts.reload();
 
         assertEquals(MR_FOO2, tts.getVoiceFor(new Actor("Mr.Foo", Voice.Male, Locale.forLanguageTag("en-uk"))));
@@ -83,6 +91,7 @@ public class TextToSpeechPlayerTest {
     public void testPronountiationConfig() throws IOException {
         Configuration config = DebugSetup.getConfiguration();
         config.set(TextToSpeechPlayer.Settings.Pronunciation, getClass().getResource("pronunciation").getPath());
+        assertTrue(new File(config.get(TextToSpeechPlayer.Settings.Pronunciation)).exists());
 
         PronunciationDictionary dict = new PronunciationDictionary(
                 new File(config.get(TextToSpeechPlayer.Settings.Pronunciation)));
@@ -100,7 +109,9 @@ public class TextToSpeechPlayerTest {
     @Test
     public void testPronountiationCorrection() throws IOException {
         Configuration config = DebugSetup.getConfiguration();
+
         config.set(TextToSpeechPlayer.Settings.Pronunciation, getClass().getResource("pronunciation").getPath());
+        assertTrue(new File(config.get(TextToSpeechPlayer.Settings.Pronunciation)).exists());
 
         PronunciationDictionary dict = new PronunciationDictionary(
                 new File(config.get(TextToSpeechPlayer.Settings.Pronunciation)));
@@ -128,7 +139,9 @@ public class TextToSpeechPlayerTest {
     @Test
     public void testTextTOSpeechPlayerPhonemeDictionarySetup() throws InterruptedException {
         Configuration config = DebugSetup.getConfiguration();
+
         config.set(TextToSpeechPlayer.Settings.Pronunciation, getClass().getResource("pronunciation").getPath());
+        assertTrue(new File(config.get(TextToSpeechPlayer.Settings.Pronunciation)).exists());
 
         TextToSpeechImplementation tts = new TextToSpeechImplementationDebugProxy(new TestTTS() {
             @Override

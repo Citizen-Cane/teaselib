@@ -1,5 +1,6 @@
 package teaselib.core.debug;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -58,7 +59,7 @@ public class DebugPersistence implements Persistence {
     }
 
     @Override
-    public UserItems getUserItems(TeaseLib teaseLib) {
+    public UserItems getUserItems(TeaseLib teaseLib) throws IOException {
         return new PreDefinedItems(teaseLib);
     }
 

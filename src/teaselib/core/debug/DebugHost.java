@@ -204,7 +204,7 @@ public class DebugHost implements Host, HostInputMethod.Backend {
         if (folder == Location.Host)
             return new File("bin");
         else if (folder == Location.TeaseLib)
-            return getLocation(Location.Host);
+            return new File(".");
         else if (folder == Location.User)
             return getLocation(Location.Host);
         else if (folder == Location.Log)

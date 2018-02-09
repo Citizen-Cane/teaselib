@@ -134,7 +134,7 @@ public class HeadGestureTrackerTest {
     }
 
     @Test
-    public void testNodFollowedByOptimalShake() {
+    public void testNodFollowedDirectlyByOptimalShake() {
         TimeLine<Direction> directionTimeLine = new TimeLine<>(0);
         assertEquals(Gesture.None, HeadGestureTracker.getGesture(directionTimeLine));
         assertTrue(HeadGestureTracker.NumberOfDirections <= 6);
@@ -158,7 +158,7 @@ public class HeadGestureTrackerTest {
     }
 
     @Test
-    public void testNodFollowedByLongShake() {
+    public void testNodPauseShakeOptimal() {
         TimeLine<Direction> directionTimeLine = new TimeLine<>(0);
         assertEquals(Gesture.None, HeadGestureTracker.getGesture(directionTimeLine));
         assertTrue(HeadGestureTracker.NumberOfDirections <= 6);
@@ -170,11 +170,33 @@ public class HeadGestureTrackerTest {
         directionTimeLine.add(Direction.Up, SHAKETIME * i++);
         directionTimeLine.add(Direction.Down, SHAKETIME * i++);
 
-        // Headroom for recognizing the shake
+        i += 4;
+
         directionTimeLine.add(Direction.Right, SHAKETIME * i++);
         directionTimeLine.add(Direction.Left, SHAKETIME * i++);
         directionTimeLine.add(Direction.Right, SHAKETIME * i++);
         directionTimeLine.add(Direction.Left, SHAKETIME * i++);
+        directionTimeLine.add(Direction.Right, SHAKETIME * i++);
+        directionTimeLine.add(Direction.Left, SHAKETIME * i++);
+
+        // Succeeds because there's a a timestamp gap before the shake
+        assertEquals(Gesture.Shake, HeadGestureTracker.getGesture(directionTimeLine));
+    }
+
+    @Test
+    public void testNodShakeWithoutPause() {
+        TimeLine<Direction> directionTimeLine = new TimeLine<>(0);
+        assertEquals(Gesture.None, HeadGestureTracker.getGesture(directionTimeLine));
+        assertTrue(HeadGestureTracker.NumberOfDirections <= 6);
+
+        int i = 1;
+
+        directionTimeLine.add(Direction.Up, SHAKETIME * i++);
+        directionTimeLine.add(Direction.Down, SHAKETIME * i++);
+        directionTimeLine.add(Direction.Up, SHAKETIME * i++);
+        directionTimeLine.add(Direction.Down, SHAKETIME * i++);
+
+        i += 4;
 
         directionTimeLine.add(Direction.Right, SHAKETIME * i++);
         directionTimeLine.add(Direction.Left, SHAKETIME * i++);
@@ -188,7 +210,7 @@ public class HeadGestureTrackerTest {
     }
 
     @Test
-    public void testNodPauseShake() {
+    public void testNodShakeWithInjection() {
         TimeLine<Direction> directionTimeLine = new TimeLine<>(0);
         assertEquals(Gesture.None, HeadGestureTracker.getGesture(directionTimeLine));
         assertTrue(HeadGestureTracker.NumberOfDirections <= 6);
@@ -201,10 +223,18 @@ public class HeadGestureTrackerTest {
         directionTimeLine.add(Direction.Down, SHAKETIME * i++);
 
         directionTimeLine.add(Direction.None, SHAKETIME * i++);
-        directionTimeLine.add(Direction.None, SHAKETIME * i++);
-        directionTimeLine.add(Direction.None, SHAKETIME * i++);
-        directionTimeLine.add(Direction.None, SHAKETIME * i++);
 
+        directionTimeLine.add(Direction.Right, SHAKETIME * i++);
+        directionTimeLine.add(Direction.Left, SHAKETIME * i++);
+        directionTimeLine.add(Direction.Right, SHAKETIME * i++);
+        directionTimeLine.add(Direction.Left, SHAKETIME * i++);
+        directionTimeLine.add(Direction.Right, SHAKETIME * i++);
+        directionTimeLine.add(Direction.Left, SHAKETIME * i++);
+
+        // None, since the illegal injection of Direction.None blocks recognition until it leaves the time slices window
+        assertEquals(Gesture.None, HeadGestureTracker.getGesture(directionTimeLine));
+
+        // Needs a long time to re-adjust
         directionTimeLine.add(Direction.Right, SHAKETIME * i++);
         directionTimeLine.add(Direction.Left, SHAKETIME * i++);
         directionTimeLine.add(Direction.Right, SHAKETIME * i++);
@@ -217,7 +247,7 @@ public class HeadGestureTrackerTest {
     }
 
     @Test
-    public void testSingleDistortedNod() {
+    public void testNodDistortedBySingleDirection() {
         TimeLine<Direction> directionTimeLine = new TimeLine<>(0);
         assertEquals(Gesture.None, HeadGestureTracker.getGesture(directionTimeLine));
         assertTrue(HeadGestureTracker.NumberOfDirections <= 6);
@@ -235,7 +265,7 @@ public class HeadGestureTrackerTest {
     }
 
     @Test
-    public void testNodMixedWithSingleShake() {
+    public void testNodDistortedByFullShake() {
         TimeLine<Direction> directionTimeLine = new TimeLine<>(0);
         assertEquals(Gesture.None, HeadGestureTracker.getGesture(directionTimeLine));
         assertTrue(HeadGestureTracker.NumberOfDirections <= 6);
@@ -251,10 +281,21 @@ public class HeadGestureTrackerTest {
         directionTimeLine.add(Direction.Up, SHAKETIME * i++);
 
         assertEquals(Gesture.None, HeadGestureTracker.getGesture(directionTimeLine));
+
+        i += 4;
+
+        directionTimeLine.add(Direction.Down, SHAKETIME * i++);
+        directionTimeLine.add(Direction.Up, SHAKETIME * i++);
+        directionTimeLine.add(Direction.Down, SHAKETIME * i++);
+        directionTimeLine.add(Direction.Up, SHAKETIME * i++);
+        directionTimeLine.add(Direction.Down, SHAKETIME * i++);
+        directionTimeLine.add(Direction.Up, SHAKETIME * i++);
+
+        assertEquals(Gesture.Nod, HeadGestureTracker.getGesture(directionTimeLine));
     }
 
     @Test
-    public void testNodWithPause() {
+    public void testNodWithIllegalInjection() {
         TimeLine<Direction> directionTimeLine = new TimeLine<>(0);
         assertEquals(Gesture.None, HeadGestureTracker.getGesture(directionTimeLine));
         assertTrue(HeadGestureTracker.NumberOfDirections <= 6);
@@ -262,10 +303,21 @@ public class HeadGestureTrackerTest {
         int i = 1;
         directionTimeLine.add(Direction.Left, SHAKETIME * i++);
         directionTimeLine.add(Direction.Right, SHAKETIME * i++);
-        directionTimeLine.add(Direction.None, SHAKETIME * i++);
         directionTimeLine.add(Direction.Left, SHAKETIME * i++);
         directionTimeLine.add(Direction.Right, SHAKETIME * i++);
         directionTimeLine.add(Direction.None, SHAKETIME * i++);
+        directionTimeLine.add(Direction.Left, SHAKETIME * i++);
+        directionTimeLine.add(Direction.Right, SHAKETIME * i++);
+
+        // None, since the nod was interrupted by the illegal injection of Direction.None
+        assertEquals(Gesture.None, HeadGestureTracker.getGesture(directionTimeLine));
+
+        i += 4;
+
+        directionTimeLine.add(Direction.Left, SHAKETIME * i++);
+        directionTimeLine.add(Direction.Right, SHAKETIME * i++);
+        directionTimeLine.add(Direction.Left, SHAKETIME * i++);
+        directionTimeLine.add(Direction.Right, SHAKETIME * i++);
         directionTimeLine.add(Direction.Left, SHAKETIME * i++);
         directionTimeLine.add(Direction.Right, SHAKETIME * i++);
 
@@ -273,7 +325,7 @@ public class HeadGestureTrackerTest {
     }
 
     @Test
-    public void testNodWithPauseAndRevertedDirection() {
+    public void testNodWithPauseAndInvertedDirection() {
         TimeLine<Direction> directionTimeLine = new TimeLine<>(0);
         assertEquals(Gesture.None, HeadGestureTracker.getGesture(directionTimeLine));
         assertTrue(HeadGestureTracker.NumberOfDirections <= NUMBER_OF_SUPPORTED_DIRECTIONS);
@@ -281,15 +333,18 @@ public class HeadGestureTrackerTest {
         int i = 1;
         directionTimeLine.add(Direction.Left, SHAKETIME * i++);
         directionTimeLine.add(Direction.Right, SHAKETIME * i++);
-        // directionTimeLine.add(Direction.None, SHAKETIME * i++);
+
         directionTimeLine.add(Direction.Right, SHAKETIME * i++);
         directionTimeLine.add(Direction.Left, SHAKETIME * i++);
-        // directionTimeLine.add(Direction.None, SHAKETIME * i++);
+
         directionTimeLine.add(Direction.Left, SHAKETIME * i++);
         directionTimeLine.add(Direction.Right, SHAKETIME * i++);
 
-        // Would recognize shake when the pause was enabled,
-        // but Direction.None is filtered out by {@link HeadGestureTracker#update}
         assertEquals(Gesture.None, HeadGestureTracker.getGesture(directionTimeLine));
+
+        directionTimeLine.add(Direction.Left, SHAKETIME * i++);
+        directionTimeLine.add(Direction.Right, SHAKETIME * i++);
+
+        assertEquals(Gesture.Shake, HeadGestureTracker.getGesture(directionTimeLine));
     }
 }

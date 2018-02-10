@@ -28,7 +28,7 @@ public class UserItemsTest {
 
         UserItems items = new AbstractUserItems(script.teaseLib) {
             @Override
-            protected Item[] createUserItems(String domain, QualifiedItem<?> item) {
+            protected Item[] createDefaultItems(String domain, QualifiedItem<?> item) {
                 throw new UnsupportedOperationException();
             }
         };
@@ -80,7 +80,7 @@ public class UserItemsTest {
             }
 
             public Item[] createItems(String domain, QualifiedItem<?> item) {
-                return createUserItems(domain, item);
+                return createDefaultItems(domain, item);
             }
 
             @Override

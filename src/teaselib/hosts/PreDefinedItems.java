@@ -33,7 +33,7 @@ public class PreDefinedItems extends AbstractUserItems {
     // TODO Create TeaseLib version with extended inventory and item guids for custom item creation
 
     @Override
-    protected Item[] createUserItems(String domain, QualifiedItem<?> item) {
+    protected Item[] createDefaultItems(String domain, QualifiedItem<?> item) {
         if (item.equals(Toys.Buttplug)) {
             Item standardButtplug = item(item, "buttplug", "A buttplug", Features.Anal, Toys.Anal.Plug);
             Item vibratingButtplug = item(item, "vibrating_buttplug", "A vibrating buttplug", Features.Vibrating,

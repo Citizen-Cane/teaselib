@@ -8,6 +8,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -146,19 +147,14 @@ public abstract class AbstractUserItems implements UserItems {
         }
 
         if (!itemMap.containsKey(item)) {
-            // Try to load items from xml first, fall back to default set
             List<Item> allItems = getUserItems();
-            if (!allItems.isEmpty()) {
-                List<Item> items = new ArrayList<>();
-                for (Item itemImpl : allItems) {
-                    if (item.equals(((ItemImpl) itemImpl).item)) {
-                        items.add(itemImpl);
-                    }
-                }
+            List<Item> items = allItems.stream().filter(itemImpl -> item.equals(((ItemImpl) itemImpl).item))
+                    .collect(Collectors.toList());
+            if (!items.isEmpty()) {
                 itemMap.put(item, items);
                 return items;
             } else {
-                List<Item> defaults = Arrays.asList(createUserItems(domain, item));
+                List<Item> defaults = Arrays.asList(createDefaultItems(domain, item));
                 itemMap.put(item, defaults);
                 return defaults;
             }
@@ -171,7 +167,7 @@ public abstract class AbstractUserItems implements UserItems {
         return userItems;
     }
 
-    protected abstract Item[] createUserItems(String domain, QualifiedItem<?> item);
+    protected abstract Item[] createDefaultItems(String domain, QualifiedItem<?> item);
 
     protected Item item(QualifiedItem<?> item, String name, String displayName, Enum<?>... attributes) {
         return item(TeaseLib.DefaultDomain, name, displayName, item, defaults(item), attributes);

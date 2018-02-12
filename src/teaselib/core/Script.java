@@ -416,8 +416,16 @@ public abstract class Script {
         }
     }
 
+    public final String reply(Answer... answers) {
+        return showChoices(Arrays.asList(answers));
+    }
+
     public final String reply(ScriptFunction scriptFunction, Answer... answers) {
         return showChoices(Arrays.asList(answers), scriptFunction);
+    }
+
+    public final String reply(Confidence confidence, Answer... answers) {
+        return showChoices(Arrays.asList(answers), null, confidence);
     }
 
     public final String reply(ScriptFunction scriptFunction, Confidence confidence, Answer... answers) {

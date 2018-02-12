@@ -1,25 +1,20 @@
-/**
- * 
- */
 package teaselib.util;
 
+import java.util.List;
+
+import teaselib.Answer;
 import teaselib.ScriptFunction;
 import teaselib.TeaseScript;
 import teaselib.core.Script;
 import teaselib.core.speechrecognition.SpeechRecognitionResult.Confidence;
-import teaselib.core.ui.Choices;
 
 /**
- * @author someone
+ * @author Citizen-Cane
  *
  */
 public abstract class SpeechRecognitionRejectedScript extends TeaseScript {
-
-    private final Confidence confidence;
-
     public SpeechRecognitionRejectedScript(Script script) {
         super(script);
-        confidence = Confidence.Low;
     }
 
     /**
@@ -34,9 +29,9 @@ public abstract class SpeechRecognitionRejectedScript extends TeaseScript {
     }
 
     @Override
-    protected String showChoices(Choices choices, ScriptFunction scriptFunction, Confidence recognitionConfidence) {
-        // Always use low confidence for recognitions
-        return super.showChoices(choices, scriptFunction, confidence);
+    protected String showChoices(List<Answer> answers, ScriptFunction scriptFunction,
+            Confidence recognitionConfidence) {
+        return super.showChoices(answers, scriptFunction, Confidence.Low);
     }
 
 }

@@ -12,8 +12,12 @@ import teaselib.core.speechrecognition.SpeechRecognizer;
 import teaselib.test.DebugSetup;
 
 public class SpeechRecognitionInputTest {
-    private static final Choices Choices = new Choices(Arrays.asList(new Choice("I've spurted off, Miss"),
-            new Choice("I give up, Miss"), new Choice("I have a dream")));
+    private static Choice choice(String text) {
+        return new Choice(text, text);
+    }
+
+    private static final Choices Choices = new Choices(
+            Arrays.asList(choice("I've spurted off, Miss"), choice("I give up, Miss"), choice("I have a dream")));
     private final Confidence confidence = Confidence.High;
 
     @Test

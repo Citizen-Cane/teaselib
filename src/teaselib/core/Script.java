@@ -6,11 +6,14 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import teaselib.Actor;
+import teaselib.Answer;
+import teaselib.Answer.Meaning;
 import teaselib.Config;
 import teaselib.Gadgets;
 import teaselib.Message;
@@ -412,8 +415,12 @@ public abstract class Script {
         }
     }
 
-    protected final String showChoices(Choices choices) {
-        return showChoices(choices, null);
+    public final String reply(List<Answer> answers, ScriptFunction scriptFunction, Confidence confidence) {
+        return showChoices(answers, scriptFunction, confidence);
+    }
+
+    protected final String showChoices(List<Answer> answers) {
+        return showChoices(answers, null);
     }
 
     /**
@@ -421,8 +428,8 @@ public abstract class Script {
      * 
      * @see Script#showChoices(List, ScriptFunction, Confidence)
      */
-    protected final String showChoices(Choices choices, ScriptFunction scriptFunction) {
-        return showChoices(choices, scriptFunction, Confidence.Default);
+    protected final String showChoices(List<Answer> answers, ScriptFunction scriptFunction) {
+        return showChoices(answers, scriptFunction, Confidence.Default);
     }
 
     /**
@@ -440,13 +447,26 @@ public abstract class Script {
      * @return The choice made by the user, {@link ScriptFunction#Timeout} if the function has ended, or a custom result
      *         value set by the script function.
      */
-    protected String showChoices(Choices choices, ScriptFunction scriptFunction, Confidence recognitionConfidence) {
-        Prompt prompt = getPrompt(scriptFunction, recognitionConfidence, choices);
+    protected String showChoices(List<Answer> answers, ScriptFunction scriptFunction,
+            Confidence recognitionConfidence) {
+        Prompt prompt = getPrompt(scriptFunction, recognitionConfidence, choices(answers));
         return showPrompt(prompt, scriptFunction);
     }
 
-    protected Choice choice(Gesture gesture, String yes) {
-        return new Choice(gesture, yes, expandTextVariables(yes));
+    private Choices choices(List<Answer> answers) {
+        List<Choice> choices = answers.stream()
+                .map(answer -> new Choice(gesture(answer), answer.text, expandTextVariables(answer.text)))
+                .collect(Collectors.toList());
+        return new Choices(choices);
+    }
+
+    private static Gesture gesture(Answer answer) {
+        if (answer.meaning == Meaning.YES)
+            return Gesture.Nod;
+        else if (answer.meaning == Meaning.NO)
+            return Gesture.Shake;
+        else
+            return Gesture.None;
     }
 
     private String showPrompt(Prompt prompt, ScriptFunction scriptFunction) {
@@ -602,7 +622,7 @@ public abstract class Script {
         return allTextVariables().expand(prompts);
     }
 
-    protected String expandTextVariables(String s) {
+    private String expandTextVariables(String s) {
         return allTextVariables().expand(s);
     }
 

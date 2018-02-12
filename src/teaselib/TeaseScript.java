@@ -2,6 +2,7 @@ package teaselib;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -26,9 +27,7 @@ import teaselib.core.speechrecognition.SpeechRecognitionImplementation;
 import teaselib.core.speechrecognition.SpeechRecognitionResult.Confidence;
 import teaselib.core.speechrecognition.SpeechRecognizer;
 import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
-import teaselib.core.ui.Choices;
 import teaselib.core.util.WildcardPattern;
-import teaselib.motiondetection.Gesture;
 import teaselib.util.Items;
 
 public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
@@ -189,11 +188,11 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
      * @return The choice object that has been selected by the user.
      */
     public final String reply(List<String> text) {
-        return showChoices(Choices.from(text), null);
+        return showChoices(Answer.all(text), null);
     }
 
     public final String reply(Confidence confidence, List<String> text) {
-        return showChoices(Choices.from(text), null, confidence);
+        return showChoices(Answer.all(text), null, confidence);
     }
 
     /**
@@ -221,7 +220,7 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
      *         function completes.
      */
     public final String reply(ScriptFunction scriptFunction, List<String> text) {
-        return showChoices(Choices.from(text), scriptFunction);
+        return showChoices(Answer.all(text), scriptFunction);
     }
 
     /**
@@ -397,15 +396,15 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
      * @return True if {@code yes} has been selected, false if {@code no} has been selected.
      */
     public final boolean askYN(String yes, String no) {
-        return showChoices(Choices.from(choice(Gesture.Nod, yes), choice(Gesture.Shake, no)), null) == yes;
+        return showChoices(Arrays.asList(Answer.yes(yes), Answer.no(no)), null) == yes;
     }
 
     public final void deny(String no) {
-        showChoices(Choices.from(choice(Gesture.Shake, no)));
+        showChoices(Arrays.asList(Answer.no(no)));
     }
 
     public final void agree(String yes) {
-        showChoices(Choices.from(choice(Gesture.Nod, yes)));
+        showChoices(Arrays.asList(Answer.yes(yes)));
     }
 
     /**
@@ -424,7 +423,7 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
      * @return The choice object that has been selected by the user.
      */
     public final String reply(Confidence recognitionConfidence, String text) {
-        return showChoices(Choices.from(text), null, recognitionConfidence);
+        return showChoices(Answer.all(text), null, recognitionConfidence);
     }
 
     /**
@@ -442,7 +441,7 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
      *         function completes.
      */
     public final String reply(ScriptFunction scriptFunction, Confidence recognitionConfidence, List<String> text) {
-        return showChoices(Choices.from(text), scriptFunction, recognitionConfidence);
+        return showChoices(Answer.all(text), scriptFunction, recognitionConfidence);
     }
 
     /**

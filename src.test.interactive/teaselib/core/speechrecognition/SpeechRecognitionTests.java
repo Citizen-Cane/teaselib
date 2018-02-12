@@ -14,9 +14,13 @@ import teaselib.core.ui.Prompt;
 import teaselib.core.ui.SpeechRecognitionInputMethod;
 
 public class SpeechRecognitionTests {
-    private static final Choices TestChoices = new Choices(Arrays.asList(new Choice("I've spurted off, Miss"),
-            new Choice("I give up, Miss"), new Choice("I have a dream")));
-    private final static Confidence TestConfidence = Confidence.High;
+    private static Choice choice(String text) {
+        return new Choice(text, text);
+    }
+
+    private static final Choices TestChoices = new Choices(
+            Arrays.asList(choice("I've spurted off, Miss"), choice("I give up, Miss"), choice("I have a dream")));
+    private static final Confidence TestConfidence = Confidence.High;
 
     private boolean enableSpeechHypothesisHandler = false;
 

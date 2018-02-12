@@ -3,11 +3,6 @@ package teaselib.core.ui;
 import teaselib.motiondetection.Gesture;
 
 public class Choice {
-    public enum Meaning {
-        Yes,
-        No,
-        Indifferent
-    }
 
     public final Gesture gesture;
     public final String text;
@@ -19,7 +14,7 @@ public class Choice {
         this.display = display;
     }
 
-    public Choice(String text) {
-        this(Gesture.None, text, text);
+    public Choice(String text, String display) {
+        this(Gesture.None, text, display);
     }
 }

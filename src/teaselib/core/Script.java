@@ -14,6 +14,7 @@ import org.slf4j.LoggerFactory;
 import teaselib.Actor;
 import teaselib.Answer;
 import teaselib.Answer.Meaning;
+import teaselib.Answers;
 import teaselib.Config;
 import teaselib.Gadgets;
 import teaselib.Message;
@@ -415,7 +416,15 @@ public abstract class Script {
         }
     }
 
-    public final String reply(List<Answer> answers, ScriptFunction scriptFunction, Confidence confidence) {
+    public final String reply(ScriptFunction scriptFunction, Answer... answers) {
+        return showChoices(Arrays.asList(answers), scriptFunction);
+    }
+
+    public final String reply(ScriptFunction scriptFunction, Confidence confidence, Answer... answers) {
+        return showChoices(Arrays.asList(answers), scriptFunction, confidence);
+    }
+
+    public final String reply(ScriptFunction scriptFunction, Confidence confidence, Answers answers) {
         return showChoices(answers, scriptFunction, confidence);
     }
 

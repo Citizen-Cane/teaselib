@@ -11,7 +11,7 @@ public class Answer {
     public enum Meaning {
         YES,
         NO,
-        INDIFFERENT
+        RESUME
     }
 
     public final String text;
@@ -28,7 +28,7 @@ public class Answer {
     public static List<Answer> all(List<String> answers) {
         List<Answer> all = new ArrayList<>(answers.size());
         for (String answer : answers) {
-            all.add(Answer.indifferent(answer));
+            all.add(Answer.resume(answer));
         }
         return all;
     }
@@ -36,17 +36,23 @@ public class Answer {
     public static List<Answer> all(String... answers) {
         List<Answer> all = new ArrayList<>(answers.length);
         for (String answer : answers) {
-            all.add(Answer.indifferent(answer));
+            all.add(Answer.resume(answer));
         }
         return all;
     }
 
-    public static Answer indifferent(String text) {
-        return new Answer(text, Meaning.INDIFFERENT);
+    public static Answer resume(String text) {
+        return new Answer(text, Meaning.RESUME);
     }
 
     public Answer(String text, Meaning meaning) {
         this.text = text;
         this.meaning = meaning;
     }
+
+    @Override
+    public String toString() {
+        return meaning + " -> " + text;
+    }
+
 }

@@ -263,6 +263,8 @@ public abstract class AbstractUserItems implements UserItems {
             return new Body[] { Body.InButt };
         } else if (item.equals(Toys.Enema_Kit)) {
             return new Body[] { Body.InButt };
+        } else if (item.equals(Toys.GlansRing)) {
+            return new Enum<?>[] { Body.OnPenis };
         } else if (item.equals(Toys.Humbler)) {
             return new Enum<?>[] { Body.OnBalls, Posture.CantStand, Posture.CantSitOnChair };
         } else if (item.equals(Toys.Masturbator)) {

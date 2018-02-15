@@ -160,6 +160,9 @@ public class PreDefinedItems extends AbstractUserItems {
         } else if (item.equals(Toys.Humbler)) {
             return new Item[] { item(item, "humbler", "A humbler") };
 
+        } else if (item.equals(Toys.GlansRing)) {
+            return new Item[] { item(item, "glansRing", "Glans ring") };
+
         } else if (item.equals(Toys.Masturbator)) {
             return new Item[] { item(item, "masturbator", "A fake pussy",
                     defaults(item, Masturbators.Pussy, Masturbators.Bumhole, Material.Rubber)) };

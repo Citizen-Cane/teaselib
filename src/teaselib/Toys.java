@@ -33,6 +33,7 @@ public enum Toys {
     Ball_Stretcher,
     Chastity_Device,
     Cockring,
+    GlansRing,
     Humbler,
     Masturbator,
 
@@ -112,7 +113,7 @@ public enum Toys {
     public static final Toys Bondage[] = { Ankle_Restraints, Wrist_Restraints, Rope, Chains, Spreader_Bar };
     public static final Toys Backdoor[] = { Buttplug, Dildo, Anal_Douche, Enema_Bulb, Enema_Kit };
     public static final Toys Female[] = { Clit_Clamp, Pussy_Clamps, VaginalInsert };
-    public static final Toys Male[] = { Ball_Stretcher, Cockring, Humbler, Masturbator };
+    public static final Toys Male[] = { Ball_Stretcher, Cockring, GlansRing, Humbler, Masturbator };
     public static final Toys Stimulation[] = { Vibrator, EStim_Device };
     public static final Toys Partner[] = { Doll, Husband, Wife, Chastity_Device, Strap_On };
 

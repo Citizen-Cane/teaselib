@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -87,20 +88,22 @@ public abstract class Script {
     }
 
     /**
-     * Construct a new script instance
+     * Construct a new main-script instance
      * 
      * @param teaseLib
      * @param locale
      */
     protected Script(TeaseLib teaseLib, ResourceLoader resources, Actor actor, String namespace) {
-        this(teaseLib, resources, actor, namespace,
-                teaseLib.globals.store(MediaRendererQueue.class, MediaRendererQueue::new).get(MediaRendererQueue.class),
-                teaseLib.globals.store(TextToSpeechPlayer.class, () -> new TextToSpeechPlayer(teaseLib.config))
-                        .get(TextToSpeechPlayer.class));
+        this(teaseLib, resources, actor, namespace, shared(teaseLib, MediaRendererQueue.class, MediaRendererQueue::new),
+                shared(teaseLib, TextToSpeechPlayer.class, () -> new TextToSpeechPlayer(teaseLib.config)));
+        shared(teaseLib, Shower.class, () -> new Shower(teaseLib.host));
+        shared(teaseLib, InputMethods.class, InputMethods::new);
+        shared(teaseLib, SpeechRecognizer.class, () -> new SpeechRecognizer(teaseLib.config));
+    }
 
-        teaseLib.globals.store(Shower.class, () -> new Shower(teaseLib.host));
-        teaseLib.globals.store(InputMethods.class, InputMethods::new);
-        teaseLib.globals.store(SpeechRecognizer.class, () -> new SpeechRecognizer(teaseLib.config));
+    private static <T> T shared(TeaseLib teaseLib, Class<T> clazz, Supplier<T> supplier) {
+        T t = teaseLib.globals.get(clazz);
+        return t != null ? t : teaseLib.globals.store(clazz, supplier).get(clazz);
     }
 
     /**

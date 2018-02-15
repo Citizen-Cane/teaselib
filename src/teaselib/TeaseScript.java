@@ -399,6 +399,10 @@ public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
         return showChoices(Arrays.asList(Answer.yes(yes), Answer.no(no)), null) == yes;
     }
 
+    public final boolean askYN(ScriptFunction scriptFunction, String yes, String no) {
+        return showChoices(Arrays.asList(Answer.yes(yes), Answer.no(no)), scriptFunction) == yes;
+    }
+
     public final void deny(String no) {
         showChoices(Arrays.asList(Answer.no(no)));
     }

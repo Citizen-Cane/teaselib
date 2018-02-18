@@ -301,6 +301,10 @@ public abstract class Script {
                         imageType = nextImage = getActorOrDisplayImage(part.value, currentMood);
                         parsedMessage.add(part.type, nextImage);
                     }
+                } else if (part.type == Message.Type.Speech && !Message.Type.isSound(part.value)) {
+                    if (Boolean.parseBoolean(teaseLib.config.get(Config.Render.Speech))) {
+                        parsedMessage.add(new Message.Part(part.type, expandTextVariables(part.value)));
+                    }
                 } else if (Message.Type.FileTypes.contains(part.type)) {
                     parsedMessage.add(part.type, part.value);
                 } else if (part.type == Message.Type.Keyword) {
@@ -336,9 +340,6 @@ public abstract class Script {
                     // Ignore
                 } else if (part.type == Message.Type.BackgroundSound
                         && !Boolean.parseBoolean(teaseLib.config.get(Config.Render.Sound))) {
-                    // Ignore
-                } else if (part.type == Message.Type.Speech
-                        && !Boolean.parseBoolean(teaseLib.config.get(Config.Render.Speech))) {
                     // Ignore
                 } else {
                     parsedMessage.add(part);

@@ -122,7 +122,8 @@ public class Message {
     public static final String Delay60s = "delay 60";
     public static final String Delay90s = "delay 90";
     public static final String Delay60to120s = "delay 60 120";
-    public static final String Delay90to120s = "delay 90 120";
+    public static final String Delay90to150s = "delay 90 120";
+    public static final String Delay90to180s = "delay 90 120";
     public static final String Delay120s = "delay 120";
 
     /**

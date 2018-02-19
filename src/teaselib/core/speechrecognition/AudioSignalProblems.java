@@ -11,31 +11,40 @@ public class AudioSignalProblems {
     private final Map<SpeechRecognition.AudioSignalProblem, AtomicInteger> problems = new EnumMap<>(
             AudioSignalProblem.class);
     private final Map<SpeechRecognition.AudioSignalProblem, Integer> limits = new EnumMap<>(AudioSignalProblem.class);
+    private final Map<SpeechRecognition.AudioSignalProblem, Double> penalties = new EnumMap<>(AudioSignalProblem.class);
 
     public AudioSignalProblems() {
         clear();
         setLimits();
+        setPenalties();
     }
 
     private void setLimits() {
         limits.put(AudioSignalProblem.None, Integer.MAX_VALUE);
-        limits.put(AudioSignalProblem.Noise, 0);
-        limits.put(AudioSignalProblem.NoSignal, 0);
-        limits.put(AudioSignalProblem.TooLoud, 0);
+        limits.put(AudioSignalProblem.Noise, 1);
+        limits.put(AudioSignalProblem.NoSignal, 1);
+        limits.put(AudioSignalProblem.TooLoud, 1);
         limits.put(AudioSignalProblem.TooQuiet, 1);
-        limits.put(AudioSignalProblem.TooFast, 0);
-        limits.put(AudioSignalProblem.TooSlow, 0);
+        limits.put(AudioSignalProblem.TooFast, 1);
+        limits.put(AudioSignalProblem.TooSlow, 1);
+    }
+
+    private void setPenalties() {
+        penalties.put(AudioSignalProblem.None, 0.0);
+        penalties.put(AudioSignalProblem.Noise, 1.0);
+        penalties.put(AudioSignalProblem.NoSignal, 1.0);
+        penalties.put(AudioSignalProblem.TooLoud, 1.0);
+        penalties.put(AudioSignalProblem.TooQuiet, 1.0);
+        penalties.put(AudioSignalProblem.TooFast, 1.0);
+        penalties.put(AudioSignalProblem.TooSlow, 1.0);
     }
 
     public void clear() {
         problems.clear();
-        for (AudioSignalProblem audioSignalProblem : AudioSignalProblem.values()) {
-            problems.put(audioSignalProblem, new AtomicInteger(0));
-        }
     }
 
     public void add(AudioSignalProblem audioSignalProblem) {
-        problems.get(audioSignalProblem).incrementAndGet();
+        problems.getOrDefault(audioSignalProblem, new AtomicInteger(0)).incrementAndGet();
     }
 
     public boolean occured() {
@@ -45,6 +54,14 @@ public class AudioSignalProblems {
             }
         }
         return false;
+    }
+
+    public double penalty() {
+        double penalty = 0.0;
+        for (Entry<AudioSignalProblem, AtomicInteger> problem : problems.entrySet()) {
+            penalty += penalties.get(problem.getKey()) * limits.get(problem.getKey());
+        }
+        return penalty;
     }
 
     @Override

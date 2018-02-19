@@ -24,12 +24,14 @@ import teaselib.util.SpeechRecognitionRejectedScript;
  *
  */
 public class SpeechRecognitionInputMethod implements InputMethod {
+    private static final double AUDIO_PROBLEM_PENALTY_WEIGHT = 0.005;
+
     private static final Logger logger = LoggerFactory.getLogger(SpeechRecognitionInputMethod.class);
 
     private static final String RECOGNITION_REJECTED_HANDLER_KEY = "Recognition Rejected";
 
     final SpeechRecognition speechRecognizer;
-    final Confidence confidence;
+    final Confidence expectedConfidence;
     final Optional<SpeechRecognitionRejectedScript> speechRecognitionRejectedScript;
     final AudioSignalProblems audioSignalProblems;
 
@@ -41,10 +43,10 @@ public class SpeechRecognitionInputMethod implements InputMethod {
 
     private final AtomicReference<Prompt> active = new AtomicReference<>();
 
-    public SpeechRecognitionInputMethod(SpeechRecognition speechRecognizer, Confidence recognitionConfidence,
+    public SpeechRecognitionInputMethod(SpeechRecognition speechRecognizer, Confidence expectedConfidence,
             Optional<SpeechRecognitionRejectedScript> speechRecognitionRejectedScript) {
         this.speechRecognizer = speechRecognizer;
-        this.confidence = recognitionConfidence;
+        this.expectedConfidence = expectedConfidence;
         this.speechRecognitionRejectedScript = speechRecognitionRejectedScript;
         this.audioSignalProblems = new AudioSignalProblems();
 
@@ -77,10 +79,17 @@ public class SpeechRecognitionInputMethod implements InputMethod {
             SpeechRecognitionResult result = eventArgs.result[0];
             if (audioSignalProblems.occured()) {
                 logAudioSignalProblem(result);
-            } else if (!confidenceIsHighEnough(result, confidence)) {
-                logLackOfConfidence(result);
             } else {
-                signal(result.index);
+                double penalty = audioSignalProblems.penalty();
+                if (!confidenceIsHighEnough(result, expectedConfidence, penalty)) {
+                    if (confidenceIsHighEnough(result, expectedConfidence, 0)) {
+                        logAudioSignalProblemPenalty(result, penalty);
+                    } else {
+                        logLackOfConfidence(result);
+                    }
+                } else {
+                    signal(result.index);
+                }
             }
         } else {
             logger.info("Ignoring none or more than one result");
@@ -88,15 +97,21 @@ public class SpeechRecognitionInputMethod implements InputMethod {
     }
 
     private void logLackOfConfidence(SpeechRecognitionResult result) {
-        logger.info("Dropping result '" + result + "' due to lack of confidence (expected " + confidence + ")");
+        logger.info("Dropping result '" + result + "' due to lack of confidence (expected " + expectedConfidence + ")");
     }
 
     private void logAudioSignalProblem(SpeechRecognitionResult result) {
         logger.info("Dropping result '" + result + "' due to audio signal problems " + audioSignalProblems);
     }
 
-    private static boolean confidenceIsHighEnough(SpeechRecognitionResult result, Confidence confidence) {
-        return result.probability >= confidence.probability || result.confidence.isAsHighAs(confidence);
+    private void logAudioSignalProblemPenalty(SpeechRecognitionResult result, double penalty) {
+        logger.info("Dropping result '" + result + "' due to audio signal problem penalty  (required "
+                + expectedConfidence + "+" + penalty + "= " + expectedConfidence + penalty + ")");
+    }
+
+    private static boolean confidenceIsHighEnough(SpeechRecognitionResult result, Confidence expected, double penalty) {
+        return result.probability - penalty * AUDIO_PROBLEM_PENALTY_WEIGHT >= expected.probability
+                && result.confidence.isAsHighAs(expected);
     }
 
     private void signal(int resultIndex) {
@@ -148,7 +163,7 @@ public class SpeechRecognitionInputMethod implements InputMethod {
         speechRecognizer.events.speechDetected.add(speechDetectedEventHandler);
         speechRecognizer.events.recognitionRejected.add(recognitionRejected);
         speechRecognizer.events.recognitionCompleted.add(recognitionCompleted);
-        speechRecognizer.startRecognition(active.get().choices.toDisplay(), confidence);
+        speechRecognizer.startRecognition(active.get().choices.toDisplay(), expectedConfidence);
     }
 
     private void disableSpeechRecognition() {
@@ -174,6 +189,6 @@ public class SpeechRecognitionInputMethod implements InputMethod {
 
     @Override
     public String toString() {
-        return "SpeechRecognizer=" + speechRecognizer + " confidence=" + confidence;
+        return "SpeechRecognizer=" + speechRecognizer + " confidence=" + expectedConfidence;
     }
 }

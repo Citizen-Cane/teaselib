@@ -251,15 +251,17 @@ public class SpeechRecognition {
     private void setupAndStartSR(final List<String> choices) {
         if (enableSpeechHypothesisHandlerGlobally() || SpeechRecognition.this.recognitionConfidence == Confidence.Low) {
             hypothesisEventHandler.setChoices(choices);
-            hypothesisEventHandler.setConfidence(SpeechRecognition.this.recognitionConfidence);
+            hypothesisEventHandler.setExpectedConfidence(SpeechRecognition.this.recognitionConfidence);
             hypothesisEventHandler.enable(true);
         } else {
             hypothesisEventHandler.enable(false);
         }
         sr.setChoices(SpeechRecognition.this.choices);
         SpeechRecognition.this.speechRecognitionActive = true;
-        // Don't try to recognize speech during speech synthesis or
-        // other speech related audio output
+        waitForPendingSpeechToComplete();
+    }
+
+    private void waitForPendingSpeechToComplete() {
         synchronized (TextToSpeech.AudioOutput) {
             sr.startRecognition();
         }

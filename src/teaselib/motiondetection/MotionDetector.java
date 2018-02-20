@@ -163,6 +163,13 @@ public abstract class MotionDetector implements Device.Creatable {
 
     public abstract Gesture await(List<Gesture> gestures, double timeoutSeconds);
 
+    public void run(Runnable runnable) {
+        call(() -> {
+            runnable.run();
+            return Void.class;
+        });
+    }
+
     public <T> T call(Supplier<T> function) {
         boolean active = active();
         MotionSensitivity sensitivity = getSensitivity();
@@ -183,4 +190,5 @@ public abstract class MotionDetector implements Device.Creatable {
     public HeadGestureInputMethod getInputMethod() {
         return inputMethod;
     }
+
 }

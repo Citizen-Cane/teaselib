@@ -3,7 +3,9 @@ package teaselib.stimulation;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 import org.slf4j.Logger;
@@ -80,6 +82,16 @@ public abstract class StimulationController<T> {
 
     public boolean canStimulate(StimulationRegion region) {
         return stimulators.containsKey(region);
+    }
+
+    public Set<T> getStimulations(StimulationRegion region) {
+        Set<T> stimulationsInRegion = new LinkedHashSet<>();
+        for (Entry<T, Stimulation> entry : stimulations.entrySet()) {
+            if (entry.getValue().stimulator == stimulator(region)) {
+                stimulationsInRegion.add(entry.getKey());
+            }
+        }
+        return stimulationsInRegion;
     }
 
     public void stimulate(T type) {

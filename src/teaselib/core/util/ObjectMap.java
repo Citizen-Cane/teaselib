@@ -47,8 +47,18 @@ public class ObjectMap {
         }
     }
 
-    public <T> T get(Class<T> key) {
-        return get((Object) key);
+    public <T> T getOrDefault(Class<T> clazz, Supplier<T> supplier) {
+        T t = get(clazz);
+        return t != null ? t : store(clazz, supplier).get(clazz);
+    }
+
+    public <T> T get(Class<T> clazz) {
+        return get((Object) clazz);
+    }
+
+    public <T> T getOrDefault(Object key, Supplier<T> supplier) {
+        T t = get(key);
+        return t != null ? t : store(key, supplier).get(key);
     }
 
     public <T> T get(Object key) {

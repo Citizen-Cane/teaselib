@@ -94,16 +94,17 @@ public abstract class Script {
      * @param locale
      */
     protected Script(TeaseLib teaseLib, ResourceLoader resources, Actor actor, String namespace) {
-        this(teaseLib, resources, actor, namespace, shared(teaseLib, MediaRendererQueue.class, MediaRendererQueue::new),
-                shared(teaseLib, TextToSpeechPlayer.class, () -> new TextToSpeechPlayer(teaseLib.config)));
-        shared(teaseLib, Shower.class, () -> new Shower(teaseLib.host));
-        shared(teaseLib, InputMethods.class, InputMethods::new);
-        shared(teaseLib, SpeechRecognizer.class, () -> new SpeechRecognizer(teaseLib.config));
+        this(teaseLib, resources, actor, namespace, //
+                getOrDefault(teaseLib, MediaRendererQueue.class, MediaRendererQueue::new),
+                getOrDefault(teaseLib, TextToSpeechPlayer.class, () -> new TextToSpeechPlayer(teaseLib.config)));
+
+        getOrDefault(teaseLib, Shower.class, () -> new Shower(teaseLib.host));
+        getOrDefault(teaseLib, InputMethods.class, InputMethods::new);
+        getOrDefault(teaseLib, SpeechRecognizer.class, () -> new SpeechRecognizer(teaseLib.config));
     }
 
-    private static <T> T shared(TeaseLib teaseLib, Class<T> clazz, Supplier<T> supplier) {
-        T t = teaseLib.globals.get(clazz);
-        return t != null ? t : teaseLib.globals.store(clazz, supplier).get(clazz);
+    private static <T> T getOrDefault(TeaseLib teaseLib, Class<T> clazz, Supplier<T> supplier) {
+        return teaseLib.globals.getOrDefault(clazz, supplier);
     }
 
     /**

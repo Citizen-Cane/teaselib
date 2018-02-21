@@ -1,5 +1,6 @@
 package teaselib.stimulation;
 
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -18,11 +19,11 @@ import teaselib.stimulation.Stimulator.ChannelDependency;
  * @author Citizen-Cane
  */
 public class StimulationController<T> {
-    private final static Logger logger = LoggerFactory.getLogger(StimulationController.class);
+    private static final Logger logger = LoggerFactory.getLogger(StimulationController.class);
 
     private static final int SleepTimeForPartiallyDependentStimChannels = 100;
 
-    private final Map<StimulationRegion, Stimulator> stimulators = new HashMap<>();
+    private final Map<StimulationRegion, Stimulator> stimulators = new EnumMap<>(StimulationRegion.class);
     private final Map<T, Stimulation> stimulations = new HashMap<>();
     private final Map<T, Stimulation> playing = new HashMap<>();
 
@@ -33,7 +34,10 @@ public class StimulationController<T> {
     }
 
     public void clear() {
+        stop();
         resetIntensity();
+        stimulators.clear();
+        stimulations.clear();
     }
 
     public void resetIntensity() {

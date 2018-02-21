@@ -47,7 +47,8 @@ public class StimulationControllerTest {
         assertNotNull(anus);
         Stimulator balls = getLeftStimulator();
         assertNotNull(balls);
-        StimulationController<StimulationType> stim = StimulationType.stimulateAnusAndBalls(anus, balls);
+        StimulationController<StimulationType> stim = new StimulationController<StimulationType>();
+        StimulationType.stimulateAnusAndBalls(stim, anus, balls);
         testWhipStimulation(stim);
         testStimulation(stim);
     }
@@ -58,7 +59,8 @@ public class StimulationControllerTest {
         assertNotNull(cock);
         Stimulator balls = StimulationTest.getLeftStimulator();
         assertNotNull(balls);
-        StimulationController<StimulationType> stim = StimulationType.stimulateCockAndAnus(cock, balls);
+        StimulationController<StimulationType> stim = new StimulationController<StimulationType>();
+        StimulationType.stimulateCockAndAnus(stim, cock, balls);
         testWhipStimulation(stim);
         testStimulation(stim);
     }

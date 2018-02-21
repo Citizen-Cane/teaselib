@@ -25,8 +25,8 @@ public enum StimulationType {
         return new StimulationController<>();
     }
 
-    public static StimulationController<StimulationType> stimulateAnusAndBalls(Stimulator anus, Stimulator balls) {
-        StimulationController<StimulationType> stim = new StimulationController<>();
+    public static StimulationController<StimulationType> stimulateAnusAndBalls(
+            StimulationController<StimulationType> stim, Stimulator anus, Stimulator balls) {
         stim.addRegion(StimulationRegion.Anus, anus);
         stim.addRegion(StimulationRegion.Balls, balls);
         stim.add(StimulationType.Walk, new Walk(stim.stimulator(StimulationRegion.Anus)));
@@ -39,8 +39,8 @@ public enum StimulationType {
         return stim;
     }
 
-    public static StimulationController<StimulationType> stimulateCockAndBalls(Stimulator cock, Stimulator balls) {
-        StimulationController<StimulationType> stim = new StimulationController<>();
+    public static StimulationController<StimulationType> stimulateCockAndBalls(
+            StimulationController<StimulationType> stim, Stimulator cock, Stimulator balls) {
         stim.addRegion(StimulationRegion.Cock, cock);
         stim.addRegion(StimulationRegion.Balls, balls);
         stim.add(StimulationType.Walk, new Walk(stim.stimulator(StimulationRegion.Cock)));
@@ -54,8 +54,8 @@ public enum StimulationType {
         return stim;
     }
 
-    public static StimulationController<StimulationType> stimulateCockAndAnus(Stimulator cock, Stimulator anus) {
-        StimulationController<StimulationType> stim = new StimulationController<>();
+    public static StimulationController<StimulationType> stimulateCockAndAnus(
+            StimulationController<StimulationType> stim, Stimulator cock, Stimulator anus) {
         stim.addRegion(StimulationRegion.Cock, cock);
         stim.addRegion(StimulationRegion.Anus, anus);
         stim.add(StimulationType.Walk, new Walk(stim.stimulator(StimulationRegion.Cock)));

@@ -6,6 +6,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import teaselib.core.Configuration;
 import teaselib.core.devices.BatteryLevel;
@@ -181,10 +182,8 @@ public class KeyRelease implements Device, Device.Creatable {
 
     public Actuator getActuator(int duration, TimeUnit unit) {
         List<Actuator> releaseMechanisms = actuators();
-        List<Long> durations = new ArrayList<>(releaseMechanisms.size());
-        for (int actuator = 0; actuator < durations.size(); actuator++) {
-            durations.add(releaseMechanisms.get(actuator).available(unit));
-        }
+        List<Long> durations = releaseMechanisms.stream().map(actuator -> actuator.available(unit))
+                .collect(Collectors.toList());
         return releaseMechanisms.get(getActuatorIndex(duration, durations));
     }
 

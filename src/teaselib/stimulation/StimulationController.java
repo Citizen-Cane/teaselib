@@ -18,7 +18,7 @@ import teaselib.stimulation.Stimulator.ChannelDependency;
  *
  * @author Citizen-Cane
  */
-public class StimulationController<T> {
+public abstract class StimulationController<T> {
     private static final Logger logger = LoggerFactory.getLogger(StimulationController.class);
 
     private static final int SleepTimeForPartiallyDependentStimChannels = 100;

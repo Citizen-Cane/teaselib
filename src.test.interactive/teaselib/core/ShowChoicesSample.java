@@ -38,7 +38,6 @@ public class ShowChoicesSample extends TeaseScript {
         run();
     }
 
-    @Override
     public void run() {
         say("In main ");
         if (reply(new ScriptFunction() {

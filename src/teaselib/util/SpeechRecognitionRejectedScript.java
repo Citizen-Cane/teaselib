@@ -12,7 +12,7 @@ import teaselib.core.speechrecognition.SpeechRecognitionResult.Confidence;
  * @author Citizen-Cane
  *
  */
-public abstract class SpeechRecognitionRejectedScript extends TeaseScript {
+public abstract class SpeechRecognitionRejectedScript extends TeaseScript implements Runnable {
     public SpeechRecognitionRejectedScript(Script script) {
         super(script);
     }

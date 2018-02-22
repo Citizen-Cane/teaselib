@@ -1,6 +1,6 @@
 package teaselib.core;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -33,6 +33,16 @@ public class ShowChoicesInputMethodHandlerWithPromptTest {
         return Arrays.asList(new Object[ShowChoicesAbstractTest.ITERATIONS][0]);
     }
 
+    private abstract class RunnableTestScript extends TeaseScript implements Runnable {
+        private RunnableTestScript(Script script) {
+            super(script);
+        }
+
+        public RunnableTestScript(TeaseLib teaseLib, ResourceLoader resourceLoader, Actor actor, String namespace) {
+            super(teaseLib, resourceLoader, actor, namespace);
+        }
+    }
+
     class TestException extends RuntimeException {
         private static final long serialVersionUID = 1L;
 
@@ -41,7 +51,7 @@ public class ShowChoicesInputMethodHandlerWithPromptTest {
         }
     }
 
-    TeaseScript script;
+    RunnableTestScript script;
     Debugger debugger;
     AtomicInteger count;
 
@@ -51,14 +61,14 @@ public class ShowChoicesInputMethodHandlerWithPromptTest {
         Actor actor = teaseLib.getDominant(Gender.Masculine, Locale.US);
         ResourceLoader resourceLoader = new ResourceLoader(this.getClass());
 
-        script = new TeaseScript(teaseLib, resourceLoader, actor, "foobar") {
+        script = new RunnableTestScript(teaseLib, resourceLoader, actor, "foobar") {
             @Override
             public void run() {
                 // Ignore
             }
         };
 
-        TeaseScript debugInputMethodHandler = new TeaseScript(script) {
+        RunnableTestScript debugInputMethodHandler = new RunnableTestScript(script) {
             @Override
             public void run() {
                 say("In Debug Handler");

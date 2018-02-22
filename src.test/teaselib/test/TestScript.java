@@ -80,11 +80,6 @@ public class TestScript extends TeaseScript {
     }
 
     @Override
-    public void run() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public String toString() {
         return "namespace=" + namespace + ", storage=" + persistence.storage.toString();
     }

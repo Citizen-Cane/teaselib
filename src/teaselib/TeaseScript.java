@@ -30,7 +30,7 @@ import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
 import teaselib.core.util.WildcardPattern;
 import teaselib.util.Items;
 
-public abstract class TeaseScript extends TeaseScriptMath implements Runnable {
+public abstract class TeaseScript extends TeaseScriptMath {
     private static final Logger logger = LoggerFactory.getLogger(TeaseScript.class);
 
     /**

@@ -180,14 +180,14 @@ public class KeyRelease implements Device, Device.Creatable {
         }
     }
 
-    public Actuator getActuator(int duration, TimeUnit unit) {
+    public Actuator getActuator(long duration, TimeUnit unit) {
         List<Actuator> releaseMechanisms = actuators();
         List<Long> durations = releaseMechanisms.stream().map(actuator -> actuator.available(unit))
                 .collect(Collectors.toList());
         return releaseMechanisms.get(getActuatorIndex(duration, durations));
     }
 
-    static int getActuatorIndex(int duration, List<Long> durations) {
+    static int getActuatorIndex(long duration, List<Long> durations) {
         long bestDifferenceSoFar = Integer.MAX_VALUE;
         int unset = Integer.MIN_VALUE;
         int bestActuator = unset;

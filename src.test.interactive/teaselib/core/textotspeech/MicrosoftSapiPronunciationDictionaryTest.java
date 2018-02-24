@@ -1,13 +1,10 @@
 package teaselib.core.textotspeech;
 
-import static org.junit.Assert.*;
-
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 
 import org.junit.Assume;
@@ -39,6 +36,11 @@ import teaselib.test.DebugSetup;
 public class MicrosoftSapiPronunciationDictionaryTest {
     private static final Logger logger = LoggerFactory.getLogger(MicrosoftSapiPronunciationDictionaryTest.class);
 
+    private static final Actor MS_ZIRA_PRO = new Actor("MS Zira Pro", Voice.Female, Locale.forLanguageTag("en-us"));
+    private static final Actor LOQUENDO_KATE = new Actor("Loquendo Kate", Voice.Female, Locale.forLanguageTag("en-uk"));
+    private static final Actor LOQUENDO_ALLISON = new Actor("Loquendo Allison", Voice.Female,
+            Locale.forLanguageTag("en-uk"));
+
     // MS SAPI voices issues:
     // - Loquendo voices ignore any hints about pronunciation (SSML, Loquendo tags etc.)
     // - MS mobile voices (added via extra category) ignore user dictionary
@@ -54,7 +56,7 @@ public class MicrosoftSapiPronunciationDictionaryTest {
     // So:
     // - must implement Loquendo TTS provider to correct Loquendo wrong pronunciations
     // - must implement .NET Microsoft.Speech TTS provider dll to correct pronunciation
-    // - At leasat .NET allows to use SSML
+    // - At least .NET allows to use SSML
 
     // SpLexicon User lexicon entries are applied to Microsoft non-mobile voices only,
     // but the user dictionary entries are persisted system wide per user
@@ -73,63 +75,68 @@ public class MicrosoftSapiPronunciationDictionaryTest {
     static final String VOICE_ENGLISH_WINDOWS_MOBILE_CORRECT = "MSTTS_V110_enUS_ZiraM";
 
     // Available via Speech Server 11 (older)
-    static final String VOICE_ENGLISH_SPPECH_SERVER_WRONG_BUT_BETTER_QUALITY = "TTS_MS_en-US_ZiraPro_11.0";
+    static final String VOICE_ENGLISH_SPPECH_SERVER_ZIRA_PRO_WRONG_BUT_BETTER_QUALITY = "TTS_MS_en-US_ZiraPro_11.0";
 
     // Loquendo
-    static final String VOICE_LOQUENDO_WRONG_BUT_BUT_WRONG = "LTTS7Kate";
-
-    static TextToSpeech textToSpeech;
+    static final String VOICE_LOQUENDO_UK = "LTTS7Kate";
+    static final String VOICE_LOQUENDO_CORRECT_US = "LTTS7Allison";
 
     @BeforeClass
     public static void initSpeech() {
         Assume.assumeTrue(Environment.SYSTEM == Environment.Windows);
-
-        textToSpeech = new TextToSpeech();
-
-        Map<String, Voice> voices = textToSpeech.getVoices();
-        assertTrue(voices.size() > 1);
-        logger.info(voices.keySet().toString());
     }
 
-    // Cum with "u" -> wrong but can be replaced with "Come".
+    // Cum pronounced with "u" -> not entirely wrong (en-uk?)- but usually pronounced as "Come"
     @Test
     public void testPronunciationOfCum() throws InterruptedException {
-        textToSpeech.speak(textToSpeech.getVoices().get(VOICE_ENGLISH_WINDOWS_DESKTOP_CORRECT), "Cum.");
-        textToSpeech.speak(textToSpeech.getVoices().get(VOICE_ENGLISH_WINDOWS_MOBILE_CORRECT), "Cum.");
-        textToSpeech.speak(textToSpeech.getVoices().get(VOICE_ENGLISH_SPPECH_SERVER_WRONG_BUT_BETTER_QUALITY), "Cum.");
-        textToSpeech.speak(textToSpeech.getVoices().get(VOICE_LOQUENDO_WRONG_BUT_BUT_WRONG), "Cum.");
+        String prompt = "Cum.";
+        TextToSpeech textToSpeech = new TextToSpeech();
+        textToSpeech.speak(textToSpeech.getVoices().get(VOICE_ENGLISH_WINDOWS_DESKTOP_CORRECT), prompt);
+        textToSpeech.speak(textToSpeech.getVoices().get(VOICE_ENGLISH_WINDOWS_MOBILE_CORRECT), prompt);
+        textToSpeech.speak(textToSpeech.getVoices().get(VOICE_ENGLISH_SPPECH_SERVER_ZIRA_PRO_WRONG_BUT_BETTER_QUALITY),
+                prompt);
+        textToSpeech.speak(textToSpeech.getVoices().get(VOICE_LOQUENDO_UK), prompt);
+        textToSpeech.speak(textToSpeech.getVoices().get(VOICE_LOQUENDO_CORRECT_US), prompt);
     }
 
     @Test
-    public void testPronunciationCorrection() throws InterruptedException {
-        Configuration config = DebugSetup.getConfiguration();
-        config.set(TextToSpeechPlayer.Settings.Pronunciation, getClass().getResource("pronunciation").getPath());
+    public void testPronunciationCorrectionWithTestDictionary() throws InterruptedException {
+        String prompt = "Cum.";
+        TextToSpeechPlayer tts = getTTSPlayer(getClass().getResource("pronunciation").getPath());
 
+        speak(MS_ZIRA_PRO, prompt, tts);
+        speak(LOQUENDO_KATE, prompt, tts);
+        speak(LOQUENDO_ALLISON, prompt, tts);
+    }
+
+    @Test
+    public void testPronunciationDefaultsWithProductionDictionary() throws InterruptedException {
+        String prompt = "Cum.";
+        TextToSpeechPlayer tts = getTTSPlayer(new File("defaults/pronunciation").getAbsolutePath());
+
+        speak(MS_ZIRA_PRO, prompt, tts);
+        speak(LOQUENDO_KATE, prompt, tts);
+        speak(LOQUENDO_ALLISON, prompt, tts);
+    }
+
+    private TextToSpeechPlayer getTTSPlayer(String path) {
+        Configuration config = DebugSetup.getConfiguration();
+        config.set(TextToSpeechPlayer.Settings.Pronunciation, path);
         TextToSpeechPlayer tts = new TextToSpeechPlayer(config);
         tts.load();
-        Actor actor = new Actor("Mrs.Foo", Voice.Female, Locale.forLanguageTag("en-uk"));
+        return tts;
+    }
 
+    private void speak(Actor actor, String prompt, TextToSpeechPlayer tts) throws InterruptedException {
         tts.acquireVoice(actor, new ResourceLoader(getClass()));
-        tts.speak(actor, "Cum.", Mood.Neutral);
+        tts.speak(actor, prompt, Mood.Neutral);
     }
 
     @Test
-    public void testPronunciationDefaultsForZiraPro() throws InterruptedException {
-        Configuration config = DebugSetup.getConfiguration();
-        config.set(TextToSpeechPlayer.Settings.Pronunciation, new File("defaults/pronunciation").getAbsolutePath());
-
-        TextToSpeechPlayer tts = new TextToSpeechPlayer(config);
-        tts.load();
-        Actor actor = new Actor("Mrs.Foo", Voice.Female, Locale.forLanguageTag("en-uk"));
-
-        tts.acquireVoice(actor, new ResourceLoader(getClass()));
-        tts.speak(actor, "Cum.", Mood.Neutral);
-    }
-
-    @Test
-    public void testSAPIPronuncuation() throws InterruptedException, IOException {
+    public void testSAPIPronuncuationWithPhoneticDictionary() throws InterruptedException, IOException {
         PronunciationDictionary pronunciationDictionary = new PronunciationDictionary(
                 new File(getClass().getResource("pronunciation").getPath()));
+        TextToSpeech textToSpeech = new TextToSpeech();
         textToSpeech.initPhoneticDictionary(pronunciationDictionary);
         // Speaks "Madame" as "Hello" as defined in the dictionary
         textToSpeech.speak(textToSpeech.getVoices().get(VOICE_GERMAN), "Jawohl, Madame.");
@@ -139,6 +146,7 @@ public class MicrosoftSapiPronunciationDictionaryTest {
     public void testSpeechRecognitionPronunciation() throws InterruptedException, IOException {
         PronunciationDictionary pronunciationDictionary = new PronunciationDictionary(
                 new File(getClass().getResource("pronunciation").getPath()));
+        TextToSpeech textToSpeech = new TextToSpeech();
         textToSpeech.initPhoneticDictionary(pronunciationDictionary);
 
         SpeechRecognition speechRecognition = new SpeechRecognizer(new Configuration()).get(Locale.US);

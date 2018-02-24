@@ -33,8 +33,8 @@ import teaselib.core.util.Environment;
 import teaselib.test.DebugSetup;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
-public class MicrosoftSapiPronunciationDictionaryTest {
-    private static final Logger logger = LoggerFactory.getLogger(MicrosoftSapiPronunciationDictionaryTest.class);
+public class PronunciationDictionaryTest {
+    private static final Logger logger = LoggerFactory.getLogger(PronunciationDictionaryTest.class);
 
     private static final Actor MS_ZIRA_PRO = new Actor("MS Zira Pro", Voice.Female, Locale.forLanguageTag("en-us"));
     private static final Actor LOQUENDO_KATE = new Actor("Loquendo Kate", Voice.Female, Locale.forLanguageTag("en-uk"));

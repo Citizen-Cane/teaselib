@@ -101,7 +101,7 @@ public class PronunciationDictionaryTest {
 
     @Test
     public void testPronunciationCorrectionWithTestDictionary() throws InterruptedException {
-        String prompt = "Cum.";
+        String prompt = "Sake.";
         TextToSpeechPlayer tts = getTTSPlayer(getClass().getResource("pronunciation").getPath());
 
         speak(MS_ZIRA_PRO, prompt, tts);
@@ -111,7 +111,7 @@ public class PronunciationDictionaryTest {
 
     @Test
     public void testPronunciationDefaultsWithProductionDictionary() throws InterruptedException {
-        String prompt = "Cum.";
+        String prompt = "Sake.";
         TextToSpeechPlayer tts = getTTSPlayer(new File("defaults/pronunciation").getAbsolutePath());
 
         speak(MS_ZIRA_PRO, prompt, tts);

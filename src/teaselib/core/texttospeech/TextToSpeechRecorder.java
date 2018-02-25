@@ -27,9 +27,10 @@ import teaselib.Actor;
 import teaselib.Message;
 import teaselib.Message.Part;
 import teaselib.Mood;
+import teaselib.core.CommandLineHost;
 import teaselib.core.Configuration;
 import teaselib.core.ResourceLoader;
-import teaselib.test.DebugSetup;
+import teaselib.core.TeaseLibConfigSetup;
 import teaselib.util.TextVariables;
 
 public class TextToSpeechRecorder {
@@ -125,7 +126,13 @@ public class TextToSpeechRecorder {
             throws IOException {
         this.resources = resources;
         this.textVariables = textVariables;
-        this.ttsPlayer = new TextToSpeechPlayer(new Configuration(new DebugSetup()));
+
+        Configuration config = new Configuration(new TeaseLibConfigSetup(new CommandLineHost()));
+        config.set(TextToSpeechPlayer.Settings.Pronunciation,
+                new File(new File("teaselib", TeaseLibConfigSetup.DEFAULTS),
+                        TeaseLibConfigSetup.PRONUNCIATION_DIRECTORY).getAbsolutePath());
+
+        this.ttsPlayer = new TextToSpeechPlayer(config);
         this.ttsPlayer.load();
         this.buildStart = System.currentTimeMillis();
         this.voices = ttsPlayer.textToSpeech.getVoices();
@@ -335,7 +342,7 @@ public class TextToSpeechRecorder {
         return storage.encode(() -> {
             File soundFile = createTempFileName(SpeechResourceTempFilePrefix + "_" + name + "_",
                     SpeechResourceFileUncompressedFormat);
-            String recordedSoundFile = ttsPlayer.textToSpeech.speak(voice, text, soundFile, new String[] { mood });
+            String recordedSoundFile = ttsPlayer.speak(actor, text, mood, soundFile);
             String storedSoundFileName = new File(name + SpeechResourceFileTypeExtension).getName();
             if (!recordedSoundFile.endsWith(SpeechResourceFileTypeExtension)) {
                 String encodedSoundFile = recordedSoundFile.replace(SpeechResourceFileUncompressedFormat,

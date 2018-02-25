@@ -2,29 +2,18 @@ package teaselib.core.textotspeech;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.List;
 import java.util.Locale;
-import java.util.concurrent.CountDownLatch;
 
 import org.junit.Assume;
 import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import teaselib.Actor;
 import teaselib.Mood;
 import teaselib.core.Configuration;
 import teaselib.core.ResourceLoader;
-import teaselib.core.events.Event;
-import teaselib.core.speechrecognition.SpeechRecognition;
-import teaselib.core.speechrecognition.SpeechRecognitionImplementation;
-import teaselib.core.speechrecognition.SpeechRecognitionResult.Confidence;
-import teaselib.core.speechrecognition.SpeechRecognizer;
-import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
 import teaselib.core.texttospeech.PronunciationDictionary;
 import teaselib.core.texttospeech.TextToSpeech;
 import teaselib.core.texttospeech.TextToSpeechPlayer;
@@ -33,9 +22,7 @@ import teaselib.core.util.Environment;
 import teaselib.test.DebugSetup;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
-public class PronunciationDictionaryTest {
-    private static final Logger logger = LoggerFactory.getLogger(PronunciationDictionaryTest.class);
-
+public class TextToSpeechPronunciationDictionaryTest {
     private static final Actor MS_ZIRA_PRO = new Actor("MS Zira Pro", Voice.Female, Locale.forLanguageTag("en-us"));
     private static final Actor LOQUENDO_KATE = new Actor("Loquendo Kate", Voice.Female, Locale.forLanguageTag("en-uk"));
     private static final Actor LOQUENDO_ALLISON = new Actor("Loquendo Allison", Voice.Female,
@@ -46,27 +33,7 @@ public class PronunciationDictionaryTest {
     // - MS mobile voices (added via extra category) ignore user dictionary
     // - only official SAPI voices consult the user dictionary
     // - creating pronunciation with UPS is tedious
-    // - Speech Server Zira Pro pronounces "cum" wrong (because it's older?) but sounds better.
-
-    // MS Speech recognition issues:
-    // - Cannot use UPS phonemes in AddWordTransition - interpreted as lexical
-    // - Cannot compile SRGS xml at runtime - only static
-    // - Speech recognition seems to ignore the user dictionary
-    // (cannot say "Hello" in the recognition test)
-    // So:
-    // - must implement Loquendo TTS provider to correct Loquendo wrong pronunciations
-    // - must implement .NET Microsoft.Speech TTS provider dll to correct pronunciation
-    // - At least .NET allows to use SSML
-
-    // SpLexicon User lexicon entries are applied to Microsoft non-mobile voices only,
-    // but the user dictionary entries are persisted system wide per user
-    // - > However, the file can be deleted to reset the changes,
-    // just look into C:\Users\xxx\AppData\Roaming\Microsoft\Speech\Files\UserLexicons\
-
-    // Microsoft UPS phonemes can't be inlined into addWordTransition either,
-    // so there's no point in using SpLexicon for speech recognition
-    // -> no phoneme lexicon for Microsoft SAPI
-    // So far the only way seems to implement .NET Microsoft.Speech and use SRGS xml.
+    // - Speech Server Zira Pro pronounces "cum" wrong (because it's older?) but overall sounds better.
 
     static final String VOICE_GERMAN = "TTS_MS_DE-DE_HEDDA_11.0";
 
@@ -101,7 +68,7 @@ public class PronunciationDictionaryTest {
 
     @Test
     public void testPronunciationCorrectionWithTestDictionary() throws InterruptedException {
-        String prompt = "Sake.";
+        String prompt = "For pity's sake.";
         TextToSpeechPlayer tts = getTTSPlayer(getClass().getResource("pronunciation").getPath());
 
         speak(MS_ZIRA_PRO, prompt, tts);
@@ -111,7 +78,7 @@ public class PronunciationDictionaryTest {
 
     @Test
     public void testPronunciationDefaultsWithProductionDictionary() throws InterruptedException {
-        String prompt = "Sake.";
+        String prompt = "For pity's sake.";
         TextToSpeechPlayer tts = getTTSPlayer(new File("defaults/pronunciation").getAbsolutePath());
 
         speak(MS_ZIRA_PRO, prompt, tts);
@@ -140,30 +107,5 @@ public class PronunciationDictionaryTest {
         textToSpeech.initPhoneticDictionary(pronunciationDictionary);
         // Speaks "Madame" as "Hello" as defined in the dictionary
         textToSpeech.speak(textToSpeech.getVoices().get(VOICE_GERMAN), "Jawohl, Madame.");
-    }
-
-    @Test
-    public void testSpeechRecognitionPronunciation() throws InterruptedException, IOException {
-        PronunciationDictionary pronunciationDictionary = new PronunciationDictionary(
-                new File(getClass().getResource("pronunciation").getPath()));
-        TextToSpeech textToSpeech = new TextToSpeech();
-        textToSpeech.initPhoneticDictionary(pronunciationDictionary);
-
-        SpeechRecognition speechRecognition = new SpeechRecognizer(new Configuration()).get(Locale.US);
-        CountDownLatch completed = new CountDownLatch(1);
-        List<String> choices = Arrays.asList("Bereit", "Madame");
-
-        Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs> speechRecognized = (sender,
-                eventArgs) -> completed.countDown();
-
-        speechRecognition.events.recognitionCompleted.add(speechRecognized);
-        try {
-            speechRecognition.startRecognition(choices, Confidence.Normal);
-            speechRecognition.emulateRecogntion("Hello");
-            completed.await();
-        } finally {
-            speechRecognition.events.recognitionCompleted.remove(speechRecognized);
-            SpeechRecognition.completeSpeechRecognitionInProgress();
-        }
     }
 }

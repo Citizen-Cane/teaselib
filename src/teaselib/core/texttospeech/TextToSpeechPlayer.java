@@ -24,6 +24,7 @@ import teaselib.Message;
 import teaselib.Message.Part;
 import teaselib.core.Configuration;
 import teaselib.core.ResourceLoader;
+import teaselib.core.util.ExceptionUtil;
 
 public class TextToSpeechPlayer {
     private static final String SIMULATED_SPEECH_TAG = "SimulatedSpeech=";
@@ -389,6 +390,20 @@ public class TextToSpeechPlayer {
             }
         } else {
             waitEstimatedSpeechDuration(prompt);
+        }
+    }
+
+    public String speak(Actor actor, String prompt, String mood, File file) throws InterruptedException {
+        Voice voice = getVoiceFor(actor);
+        if (voice != TextToSpeech.None) {
+            try {
+                return textToSpeech.speak(voice, pronounciationDictionary.correct(voice, prompt), file,
+                        new String[] { mood });
+            } catch (IOException e) {
+                throw ExceptionUtil.asRuntimeException(e);
+            }
+        } else {
+            throw new IllegalArgumentException(actor.toString());
         }
     }
 

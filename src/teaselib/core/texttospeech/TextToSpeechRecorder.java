@@ -156,6 +156,7 @@ public class TextToSpeechRecorder {
         logger.info("Scanning script '" + scanner.getScriptName() + "'");
         Set<String> created = new HashSet<>();
         for (Message message : scanner) {
+
             Actor actor = message.actor;
             Voice voice = getVoice(actor);
             if (!actors.contains(actor.key)) {
@@ -168,6 +169,8 @@ public class TextToSpeechRecorder {
 
     private String processMessage(Actor actor, Voice voice, Message message)
             throws InterruptedException, ExecutionException {
+        storage.checkForAsynchronousErrors();
+
         String hash = getHash(message);
         String newMessageHash = message.toPrerecordedSpeechHashString();
         if (!newMessageHash.isEmpty()) {

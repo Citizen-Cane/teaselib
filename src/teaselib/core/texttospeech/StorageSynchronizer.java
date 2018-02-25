@@ -5,13 +5,12 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
 
 import teaselib.Actor;
 import teaselib.core.concurrency.NamedExecutorService;
@@ -25,8 +24,7 @@ class StorageSynchronizer {
     private final int nThreads;
     private final NamedExecutorService encoding;
     private final NamedExecutorService io = NamedExecutorService.singleThreadedQueue("Speech Recorder I/O");
-
-    private final AtomicReference<Set<Future<?>>> tasks = new AtomicReference<>(new HashSet<>());
+    private final Set<Future<?>> tasks = new CopyOnWriteArraySet<>();
 
     StorageSynchronizer(PrerecordedSpeechStorage storage) {
         this.storage = storage;
@@ -77,7 +75,7 @@ class StorageSynchronizer {
 
     Future<String> encode(Callable<String> task) {
         Future<String> encoderTask = encoding.submit(task);
-        tasks.get().add(encoderTask);
+        addAynchronousTask(encoderTask);
         return encoderTask;
     }
 
@@ -86,8 +84,9 @@ class StorageSynchronizer {
         return submitIO(() -> {
             try (FileInputStream inputStream = new FileInputStream(recordedSoundFile);) {
                 storage.storeSpeechResource(actor, voice, hash, inputStream, storedSoundFileNane);
+            } finally {
+                Files.delete(Paths.get(recordedSoundFile));
             }
-            Files.delete(Paths.get(recordedSoundFile));
             return storedSoundFileNane;
         });
     }
@@ -113,22 +112,27 @@ class StorageSynchronizer {
 
     private Future<?> submitIO(Runnable task) {
         Future<?> ioTask = io.submit(task);
-        tasks.get().add(ioTask);
+        addAynchronousTask(ioTask);
         return ioTask;
     }
 
     private <T> Future<T> submitIO(Callable<T> task) {
         Future<T> ioTask = io.submit(task);
-        tasks.get().add(ioTask);
+        addAynchronousTask(ioTask);
         return ioTask;
     }
 
+    private void addAynchronousTask(Future<?> ioTask) {
+        tasks.add(ioTask);
+    }
+
     public void checkForAsynchronousErrors() throws ExecutionException, InterruptedException {
-        for (Future<?> future : tasks.getAndSet(new HashSet<>())) {
-            if (future.isDone()) {
-                future.get();
-            } else {
-                tasks.get().add(future);
+        synchronized (tasks) {
+            for (Future<?> task : tasks) {
+                if (task.isDone()) {
+                    task.get();
+                    tasks.remove(task);
+                }
             }
         }
     }

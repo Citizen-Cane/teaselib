@@ -341,18 +341,21 @@ public class TextToSpeechRecorder {
     private Future<String> writeSpeechResource(Actor actor, Voice voice, String hash, String storageSoundFile,
             String mood, String text) {
         return storage.encode(() -> {
-            File soundFile = createTempFileName(SpeechResourceTempFilePrefix + "_" + storageSoundFile + "_",
+            File soundFile = createTempFileName(SpeechResourceTempFilePrefix + "_",
                     SpeechResourceFileUncompressedFormat);
             String recordedSoundFile = ttsPlayer.speak(actor, text, mood, soundFile);
             if (!recordedSoundFile.endsWith(SpeechResourceFileTypeExtension)) {
-                String encodedSoundFile = recordedSoundFile.replace(SpeechResourceFileUncompressedFormat,
-                        SpeechResourceFileTypeExtension);
-                String[] argv = { recordedSoundFile, encodedSoundFile, "--preset", "standard" };
-                logger.info("Recording part " + storageSoundFile);
-                mp3.Main mp3Encoder = new mp3.Main();
-                mp3Encoder.run(argv);
-                Files.delete(Paths.get(recordedSoundFile));
-                return storage.storeRecordedSoundFile(actor, voice, hash, encodedSoundFile, storageSoundFile).get();
+                try {
+                    String encodedSoundFile = recordedSoundFile.replace(SpeechResourceFileUncompressedFormat,
+                            SpeechResourceFileTypeExtension);
+                    String[] argv = { recordedSoundFile, encodedSoundFile, "--preset", "standard" };
+                    logger.info("Recording part " + storageSoundFile);
+                    mp3.Main mp3Encoder = new mp3.Main();
+                    mp3Encoder.run(argv);
+                    return storage.storeRecordedSoundFile(actor, voice, hash, encodedSoundFile, storageSoundFile).get();
+                } finally {
+                    Files.delete(Paths.get(recordedSoundFile));
+                }
             } else {
                 return storage.storeRecordedSoundFile(actor, voice, hash, recordedSoundFile, storageSoundFile).get();
             }

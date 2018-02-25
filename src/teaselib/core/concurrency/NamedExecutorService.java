@@ -45,8 +45,7 @@ public class NamedExecutorService extends ThreadPoolExecutor {
     }
 
     public static NamedExecutorService newFixedThreadPool(int nThreads, String namePrefix) {
-        return new NamedExecutorService(nThreads, nThreads, 1, TimeUnit.MINUTES, namePrefix,
-                new LinkedBlockingQueue<Runnable>());
+        return newFixedThreadPool(nThreads, namePrefix, 1L, TimeUnit.MINUTES);
     }
 
     public static NamedExecutorService newFixedThreadPool(int nThreads, String namePrefix, long keepAliveTime,

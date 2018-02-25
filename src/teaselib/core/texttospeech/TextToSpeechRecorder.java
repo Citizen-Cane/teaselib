@@ -124,13 +124,17 @@ public class TextToSpeechRecorder {
 
     public TextToSpeechRecorder(File path, String name, ResourceLoader resources, TextVariables textVariables)
             throws IOException {
+        this(path, name, resources, textVariables,
+                new Configuration(new TeaseLibConfigSetup(new CommandLineHost())).set(
+                        TextToSpeechPlayer.Settings.Pronunciation,
+                        new File(new File("teaselib", TeaseLibConfigSetup.DEFAULTS),
+                                TeaseLibConfigSetup.PRONUNCIATION_DIRECTORY).getAbsolutePath()));
+    }
+
+    public TextToSpeechRecorder(File path, String name, ResourceLoader resources, TextVariables textVariables,
+            Configuration config) throws IOException {
         this.resources = resources;
         this.textVariables = textVariables;
-
-        Configuration config = new Configuration(new TeaseLibConfigSetup(new CommandLineHost()));
-        config.set(TextToSpeechPlayer.Settings.Pronunciation,
-                new File(new File("teaselib", TeaseLibConfigSetup.DEFAULTS),
-                        TeaseLibConfigSetup.PRONUNCIATION_DIRECTORY).getAbsolutePath());
 
         this.ttsPlayer = new TextToSpeechPlayer(config);
         this.ttsPlayer.load();

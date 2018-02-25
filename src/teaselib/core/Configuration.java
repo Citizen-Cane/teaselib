@@ -107,19 +107,21 @@ public class Configuration {
         throw new IllegalArgumentException("Property not found: " + item);
     }
 
-    public void set(String property, String value) {
-        set(QualifiedItem.of(property), value);
+    public Configuration set(String property, String value) {
+        return set(QualifiedItem.of(property), value);
     }
 
-    public void set(Enum<?> property, String value) {
-        set(QualifiedItem.of(property), value);
+    public Configuration set(Enum<?> property, String value) {
+        return set(QualifiedItem.of(property), value);
     }
 
-    public void set(QualifiedItem<?> property, String value) {
+    public Configuration set(QualifiedItem<?> property, String value) {
         sessionProperties.setProperty(property.toString(), value);
+        return this;
     }
 
-    public void setSystemProperty(QualifiedItem<?> property, String value) {
+    public Configuration setSystemProperty(QualifiedItem<?> property, String value) {
         System.getProperties().setProperty(property.toString(), value);
+        return this;
     }
 }

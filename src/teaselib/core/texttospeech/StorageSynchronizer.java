@@ -34,15 +34,15 @@ class StorageSynchronizer {
     }
 
     String getMessageHash(Actor actor, Voice voice, String hash) throws InterruptedException, ExecutionException {
-        return io.submit(() -> storage.getMessageHash(actor, voice, hash)).get();
+        return submitIO(() -> storage.getMessageHash(actor, voice, hash)).get();
     }
 
     long lastModified(Actor actor, Voice voice, String hash) throws InterruptedException, ExecutionException {
-        return io.submit(() -> storage.lastModified(actor, voice, hash)).get();
+        return submitIO(() -> storage.lastModified(actor, voice, hash)).get();
     }
 
     boolean hasMessage(Actor actor, Voice voice, String hash) throws InterruptedException, ExecutionException {
-        return io.submit(() -> storage.hasMessage(actor, voice, hash)).get();
+        return submitIO(() -> storage.hasMessage(actor, voice, hash)).get();
     }
 
     void keepMessage(Actor actor, final Voice voice, String hash) {
@@ -71,6 +71,12 @@ class StorageSynchronizer {
             storage.createNewEntry(actor, voice, hash, messageHash);
             return null;
         });
+    }
+
+    Future<?> encode(Runnable task) {
+        Future<?> encoderTask = encoding.submit(task);
+        addAynchronousTask(encoderTask);
+        return encoderTask;
     }
 
     Future<String> encode(Callable<String> task) {

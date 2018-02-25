@@ -311,53 +311,56 @@ public class TextToSpeechRecorder {
     }
 
     public void create(Actor actor, Voice voice, Message message, String hash, String messageHash) {
-        List<Future<String>> soundFileFutures = writeSpeechResources(actor, voice, message, hash, messageHash);
-
+        List<String> soundFiles = writeSpeechResources(actor, voice, message, hash, messageHash);
         writeMessageHash(actor, voice, hash, messageHash);
-
-        List<String> soundFilesPre = new ArrayList<>(soundFileFutures.size());
-        for (int i = 0; i < soundFileFutures.size(); i++) {
-            soundFilesPre.add(Integer.toString(i) + SpeechResourceFileTypeExtension);
-        }
-        writeInventory(actor, voice, hash, soundFilesPre);
+        writeInventory(actor, voice, hash, soundFiles);
     }
 
-    private List<Future<String>> writeSpeechResources(Actor actor, Voice voice, Message message, String hash,
+    private List<String> writeSpeechResources(Actor actor, Voice voice, Message message, String hash,
             String messageHash) {
         logger.info("Recording message:\n" + messageHash);
-        List<Future<String>> soundFiles = new ArrayList<>();
+        List<String> soundFiles = new ArrayList<>();
         String mood = Mood.Neutral;
         storage.createNewEntry(actor, voice, hash, messageHash);
+
         for (Part part : ttsPlayer.speechMessage(message).getParts()) {
             if (part.type == Message.Type.Mood) {
                 mood = part.value;
             } else if (part.type == Message.Type.Speech) {
                 int index = soundFiles.size();
                 String name = Integer.toString(index);
-                soundFiles.add(writeSpeechResource(actor, voice, hash, name, mood, part.value));
+                String storageSoundFile = storageSoundFile(name);
+                writeSpeechResource(actor, voice, hash, storageSoundFile, mood, part.value);
+                soundFiles.add(storageSoundFile);
             }
         }
+
         return soundFiles;
     }
 
-    private Future<String> writeSpeechResource(Actor actor, Voice voice, String hash, String name, String mood,
-            String text) {
+    private Future<String> writeSpeechResource(Actor actor, Voice voice, String hash, String storageSoundFile,
+            String mood, String text) {
         return storage.encode(() -> {
-            File soundFile = createTempFileName(SpeechResourceTempFilePrefix + "_" + name + "_",
+            File soundFile = createTempFileName(SpeechResourceTempFilePrefix + "_" + storageSoundFile + "_",
                     SpeechResourceFileUncompressedFormat);
             String recordedSoundFile = ttsPlayer.speak(actor, text, mood, soundFile);
-            String storedSoundFileName = new File(name + SpeechResourceFileTypeExtension).getName();
             if (!recordedSoundFile.endsWith(SpeechResourceFileTypeExtension)) {
                 String encodedSoundFile = recordedSoundFile.replace(SpeechResourceFileUncompressedFormat,
                         SpeechResourceFileTypeExtension);
                 String[] argv = { recordedSoundFile, encodedSoundFile, "--preset", "standard" };
-                logger.info("Recording part " + name);
+                logger.info("Recording part " + storageSoundFile);
                 mp3.Main mp3Encoder = new mp3.Main();
                 mp3Encoder.run(argv);
                 Files.delete(Paths.get(recordedSoundFile));
+                return storage.storeRecordedSoundFile(actor, voice, hash, encodedSoundFile, storageSoundFile).get();
+            } else {
+                return storage.storeRecordedSoundFile(actor, voice, hash, recordedSoundFile, storageSoundFile).get();
             }
-            return storage.storeRecordedSoundFile(actor, voice, hash, storedSoundFileName, recordedSoundFile).get();
         });
+    }
+
+    private static String storageSoundFile(String name) {
+        return new File(name + SpeechResourceFileTypeExtension).getName();
     }
 
     private void writeInventory(Actor actor, Voice voice, String hash, List<String> soundFiles) {

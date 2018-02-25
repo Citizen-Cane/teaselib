@@ -3,6 +3,8 @@ package teaselib.core.texttospeech;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -28,7 +30,7 @@ class StorageSynchronizer {
 
     StorageSynchronizer(PrerecordedSpeechStorage storage) {
         this.storage = storage;
-        nThreads = 1;// Math.max(1, Runtime.getRuntime().availableProcessors() - 1);
+        this.nThreads = Math.max(1, Runtime.getRuntime().availableProcessors() - 1);
         this.encoding = NamedExecutorService.newFixedThreadPool(getEncodingThreads(), "Speech Encoder",
                 Integer.MAX_VALUE, TimeUnit.SECONDS);
     }
@@ -79,15 +81,13 @@ class StorageSynchronizer {
         return encoderTask;
     }
 
-    Future<String> storeRecordedSoundFile(Actor actor, Voice voice, String hash, String storedSoundFileNane,
-            String recordedSoundFile) {
+    Future<String> storeRecordedSoundFile(Actor actor, Voice voice, String hash, String recordedSoundFile,
+            String storedSoundFileNane) {
         return submitIO(() -> {
             try (FileInputStream inputStream = new FileInputStream(recordedSoundFile);) {
                 storage.storeSpeechResource(actor, voice, hash, inputStream, storedSoundFileNane);
             }
-            if (!new File(recordedSoundFile).delete()) {
-                throw new IllegalStateException("Can't delete temporary encoded speech file " + recordedSoundFile);
-            }
+            Files.delete(Paths.get(recordedSoundFile));
             return storedSoundFileNane;
         });
     }

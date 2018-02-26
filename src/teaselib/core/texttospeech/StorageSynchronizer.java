@@ -9,6 +9,7 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
@@ -104,22 +105,15 @@ class StorageSynchronizer {
         });
     }
 
-    void close() throws InterruptedException, ExecutionException, IOException {
-        submitIO(() -> {
-            encoding.shutdown();
-            io.shutdown();
-        }).get();
-
-        encoding.awaitTermination(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
-        io.awaitTermination(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
-
+    void close() throws InterruptedException, IOException {
+        shutdownAndAwaitTermination(encoding);
+        shutdownAndAwaitTermination(io);
         storage.close();
     }
 
-    private Future<?> submitIO(Runnable task) {
-        Future<?> ioTask = io.submit(task);
-        addAynchronousTask(ioTask);
-        return ioTask;
+    private void shutdownAndAwaitTermination(ExecutorService service) throws InterruptedException {
+        service.shutdown();
+        service.awaitTermination(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
     }
 
     private <T> Future<T> submitIO(Callable<T> task) {

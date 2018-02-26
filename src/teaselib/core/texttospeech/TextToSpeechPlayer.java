@@ -246,9 +246,6 @@ public class TextToSpeechPlayer {
     }
 
     Voice getVoiceFor(Actor actor) {
-        if (actorKey2PrerecordedVoiceGuid.containsKey(actor.key)) {
-            throw new IllegalStateException("Prerecorded voice available");
-        }
         if (actorKey2TTSVoice.containsKey(actor.key)) {
             return actorKey2TTSVoice.get(actor.key);
         } else if (actorKey2ReservedVoiceGuid.containsKey(actor.key)) {
@@ -261,9 +258,8 @@ public class TextToSpeechPlayer {
     private Voice getReservedVoice(Actor actor) {
         String voiceGuid = actorKey2ReservedVoiceGuid.get(actor.key);
 
-        if (actorKey2TTSVoice.containsKey(voiceGuid)) {
-            throw new IllegalStateException(voiceGuid);
-        }
+        ensureNotPrerecordedVoice(actor);
+        ensureVoiceNotAcquired(voiceGuid);
 
         if (voiceGuid != null && voiceGuid != ACQUIRE_VOICE_ON_FIRST_USE) {
             useTTSVoice(actor.key, voiceGuid);
@@ -378,6 +374,8 @@ public class TextToSpeechPlayer {
      *            instance to call sleep on
      */
     public void speak(Actor actor, String prompt, String mood) throws InterruptedException {
+        ensureNotPrerecordedVoice(actor);
+
         Voice voice = getVoiceFor(actor);
         if (voice != TextToSpeech.None) {
             try {
@@ -409,6 +407,8 @@ public class TextToSpeechPlayer {
 
     public void stop(Actor actor) {
         if (textToSpeech != null) {
+            ensureNotPrerecordedVoice(actor);
+
             textToSpeech.stop(getVoiceFor(actor));
         }
     }
@@ -545,6 +545,18 @@ public class TextToSpeechPlayer {
                 }
             }
             return speechResources;
+        }
+    }
+    
+    private void ensureVoiceNotAcquired(String voiceGuid) {
+        if (actorKey2TTSVoice.containsKey(voiceGuid)) {
+            throw new IllegalStateException(voiceGuid);
+        }
+    }
+
+    private void ensureNotPrerecordedVoice(Actor actor) {
+        if (actorKey2PrerecordedVoiceGuid.containsKey(actor.key)) {
+            throw new IllegalStateException("Prerecorded voice available");
         }
     }
 }

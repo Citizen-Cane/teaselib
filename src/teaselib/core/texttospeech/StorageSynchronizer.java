@@ -111,7 +111,7 @@ class StorageSynchronizer {
         storage.close();
     }
 
-    private void shutdownAndAwaitTermination(ExecutorService service) throws InterruptedException {
+    private static void shutdownAndAwaitTermination(ExecutorService service) throws InterruptedException {
         service.shutdown();
         service.awaitTermination(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
     }

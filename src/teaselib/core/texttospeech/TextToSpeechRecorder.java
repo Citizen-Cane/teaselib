@@ -275,7 +275,7 @@ public class TextToSpeechRecorder {
         return voice;
     }
 
-    public void finish() throws IOException, InterruptedException, ExecutionException {
+    public void finish() throws IOException, InterruptedException {
         storage.close();
 
         if (passes.size() > 1) {

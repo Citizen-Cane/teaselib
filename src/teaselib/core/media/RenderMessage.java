@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -14,6 +15,7 @@ import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import teaselib.Actor;
 import teaselib.Config;
 import teaselib.Message;
 import teaselib.Message.Part;
@@ -40,7 +42,7 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
             Arrays.asList(Message.Type.Text, Message.Type.Image, Message.Type.Mood, Message.Type.Speech));
 
     private final ResourceLoader resources;
-    private final Message message;
+    private final List<Message> messages;
     private final Optional<TextToSpeechPlayer> ttsPlayer;
 
     private final Prefetcher<byte[]> imageFetcher = new Prefetcher<>();
@@ -50,21 +52,51 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
     private RenderSound soundRenderer = null;
     private String displayImage = null;
 
+    MessageTextAccumulator accumulatedText;
+    int currentMessage;
+    Message lastSection;
+
     private final Set<MediaRendererThread> interruptibleAudio = new HashSet<>();
 
     public RenderMessage(TeaseLib teaseLib, ResourceLoader resources, Optional<TextToSpeechPlayer> ttsPlayer,
-            Message message) {
+            Message... messages) {
+        this(teaseLib, resources, ttsPlayer, Arrays.asList(messages));
+    }
+
+    public RenderMessage(TeaseLib teaseLib, ResourceLoader resources, Optional<TextToSpeechPlayer> ttsPlayer,
+            List<Message> messages) {
         super(teaseLib);
 
-        if (message == null) {
+        if (messages == null) {
             throw new NullPointerException();
         }
 
         this.resources = resources;
-        this.message = message;
+        this.messages = messages;
         this.ttsPlayer = ttsPlayer;
 
-        prefetchImages(message);
+        prefetchImages(this.messages);
+
+        accumulatedText = new MessageTextAccumulator();
+        currentMessage = 0;
+        lastSection = getLastSection(getLastMessage());
+    }
+
+    public void append(Message message) {
+        synchronized (messages) {
+            messages.add(message);
+            lastSection = getLastSection(message);
+        }
+    }
+
+    private Message getLastMessage() {
+        return this.messages.get(this.messages.size() - 1);
+    }
+
+    private void prefetchImages(List<Message> messages) {
+        for (Message message : messages) {
+            prefetchImages(message);
+        }
     }
 
     private void prefetchImages(Message message) {
@@ -110,33 +142,41 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
         imageFetcher.fetch();
     }
 
-    public Message getMessage() {
-        return message;
-    }
-
     @Override
     public void renderMedia() throws IOException, InterruptedException {
-        if (replayPosition == Replay.Position.FromStart) {
-            renderMessage(message);
-        } else if (replayPosition == Replay.Position.FromMandatory) {
-            // TODO Remove all but last speech and delay parts
-            renderMessage(getMandatory(message));
-        } else if (replayPosition == Replay.Position.End) {
-            // TODO Remove all speech and delay parts
-            renderMessage(getEnd(message));
+        if (messages.isEmpty()) {
+            throw new IllegalStateException();
+        }
+        if (messages.get(0).isEmpty()) {
+            // Show image but no text
+            show(null, messages.get(0).actor, Mood.Neutral);
+            mandatoryCompleted();
         } else {
-            throw new IllegalStateException(replayPosition.toString());
+            if (replayPosition == Replay.Position.FromStart) {
+                accumulatedText = new MessageTextAccumulator();
+                currentMessage = 0;
+                render(messages);
+            } else if (replayPosition == Replay.Position.FromMandatory) {
+                // TODO remember accumulated text so that all but the last section
+                // is displayed, rendered, but the text not added again
+                // TODO Remove all but last speech and delay parts
+                renderMessage(getMandatory(messages));
+            } else if (replayPosition == Replay.Position.End) {
+                // TODO Remove all speech and delay parts
+                renderMessage(getEnd(messages));
+            } else {
+                throw new IllegalStateException(replayPosition.toString());
+            }
         }
     }
 
-    private static Message getMandatory(Message message) {
-        // TODO Auto-generated method stub
-        return getLastSection(message);
+    private Message getMandatory(List<Message> messages) {
+        return getLastSection(getLastMessage());
     }
 
-    private static Message getEnd(Message message) {
-        // TODO Auto-generated method stub
-        return getLastSection(message);
+    private Message getEnd(List<Message> messages) {
+        // TODO Return just the text, not the speech
+        return getLastSection(getLastMessage());
     }
 
     @Override
@@ -187,45 +227,40 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
         return lastSection;
     }
 
-    private void renderMessage(Message message) throws IOException, InterruptedException {
-        try {
-            if (message.isEmpty()) {
-                // Show image but no text
-                show(null, Mood.Neutral);
-                mandatoryCompleted();
-            } else {
-                MessageTextAccumulator accumulatedText = new MessageTextAccumulator();
-                String mood = Mood.Neutral;
-                Message lastSection = getLastSection(message);
-                // Process message parts
-                for (Iterator<Part> it = message.iterator(); it.hasNext();) {
-                    Part part = it.next();
-                    boolean lastParagraph = lastSection.getParts().contains(part);
-                    boolean lastPart = !it.hasNext();
-                    if (!ManuallyLoggedMessageTypes.contains(part.type)) {
-                        teaseLib.transcript.info("" + part.type.name() + " = " + part.value);
-                    }
-                    logger.info(part.type.toString() + ": " + part.value);
-
-                    mood = renderMessagePart(part, accumulatedText, mood, lastParagraph);
-                    if (part.type == Message.Type.Text) {
-                        show(part.value, accumulatedText, mood);
-                    } else if (lastPart) {
-                        show(accumulatedText.toString());
-                    }
-
-                    if (isDoneOrCancelled()) {
-                        break;
-                    }
-                }
-                completeCurrentParagraph(true);
-                allCompleted();
-            }
-        } finally {
+    private void render(List<Message> messages) throws IOException, InterruptedException {
+        for (; currentMessage < messages.size(); currentMessage++) {
+            renderMessage(messages.get(currentMessage));
         }
     }
 
-    private String renderMessagePart(Part part, MessageTextAccumulator accumulatedText, String mood,
+    private void renderMessage(Message message) throws IOException, InterruptedException {
+        String mood = Mood.Neutral;
+        // Process message parts
+        for (Iterator<Part> it = message.iterator(); it.hasNext();) {
+            Part part = it.next();
+            boolean lastParagraph = lastSection.getParts().contains(part);
+            boolean lastPart = !it.hasNext();
+            if (!ManuallyLoggedMessageTypes.contains(part.type)) {
+                teaseLib.transcript.info("" + part.type.name() + " = " + part.value);
+            }
+            logger.info(part.type.toString() + ": " + part.value);
+
+            mood = renderMessagePart(part, accumulatedText, message.actor, mood, lastParagraph);
+            if (part.type == Message.Type.Text) {
+                show(part.value, accumulatedText, message.actor, mood);
+            } else if (lastPart) {
+                show(accumulatedText.toString());
+            }
+
+            if (isDoneOrCancelled()) {
+                break;
+            }
+        }
+        completeCurrentParagraph(true);
+        allCompleted();
+    }
+
+    private String renderMessagePart(Part part, MessageTextAccumulator accumulatedText, Actor actor, String mood,
             boolean lastParagraph) throws IOException, InterruptedException {
         if (part.type == Message.Type.Image) {
             displayImage = part.value;
@@ -262,7 +297,7 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
                 speechRenderer = new RenderSpeechDelay(TextToSpeechPlayer.getSimulatedSpeechText(part.value),
                         paragraphPause, teaseLib);
             } else if (isSpeechOutputEnabled() && ttsPlayer.isPresent()) {
-                speechRenderer = new RenderTTSSpeech(ttsPlayer.get(), message.actor, part.value, mood, paragraphPause,
+                speechRenderer = new RenderTTSSpeech(ttsPlayer.get(), actor, part.value, mood, paragraphPause,
                         teaseLib);
             } else {
                 speechRenderer = new RenderSpeechDelay(part.value, paragraphPause, teaseLib);
@@ -270,14 +305,14 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
         } else if (part.type == Message.Type.DesktopItem) {
             if (isInstructionalImageOutputEnabled()) {
                 try {
-                    final RenderDesktopItem renderDesktopItem = new RenderDesktopItem(
+                    RenderDesktopItem renderDesktopItem = new RenderDesktopItem(
                             resources.unpackEnclosingFolder(part.value), teaseLib);
                     completeCurrentParagraph(lastParagraph);
                     renderDesktopItem.render();
                 } catch (IOException e) {
                     logger.error(e.getMessage(), e);
                     accumulatedText.add(new Part(Message.Type.Text, e.getMessage()));
-                    show(accumulatedText.toString(), mood);
+                    show(accumulatedText.toString(), actor, mood);
                     throw e;
                 }
             }
@@ -297,11 +332,10 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
         return mood;
     }
 
-    private void show(String text, MessageTextAccumulator accumulatedText, String mood)
+    private void show(String text, MessageTextAccumulator accumulatedText, Actor actor, String mood)
             throws IOException, InterruptedException {
         teaseLib.transcript.info(text);
-        show(accumulatedText.toString(), mood);
-
+        show(accumulatedText.toString(), actor, mood);
         if (speechRenderer != null && !isDoneOrCancelled()) {
             speak();
         }
@@ -334,12 +368,30 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
         }
     }
 
-    private void show(String text, String mood) throws IOException, InterruptedException {
-        if (message.actor.images.contains(displayImage) && mood != Mood.Neutral) {
+    private void show(String text, Actor actor, String mood) throws IOException, InterruptedException {
+        logMoodToTranscript(actor, mood);
+        logImageToTranscript(actor);
+        show(text);
+    }
+
+    private void logMoodToTranscript(Actor actor, String mood) {
+        if (actor.images.contains(displayImage) && mood != Mood.Neutral) {
             teaseLib.transcript.info("mood = " + mood);
         }
+    }
 
-        show(text);
+    private void logImageToTranscript(Actor actor) {
+        if (displayImage == Message.NoImage) {
+            if (!Boolean.parseBoolean(teaseLib.config.get(Config.Debug.StopOnAssetNotFound))) {
+                teaseLib.transcript.info(Message.NoImage);
+            }
+        } else {
+            if (actor.images.contains(displayImage)) {
+                teaseLib.transcript.debug("image = '" + displayImage + "'");
+            } else {
+                teaseLib.transcript.info("image = '" + displayImage + "'");
+            }
+        }
     }
 
     private void show(String text) throws IOException, InterruptedException {
@@ -353,18 +405,6 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
     }
 
     private byte[] getImageBytes() throws InterruptedException, IOException {
-        if (displayImage == Message.NoImage) {
-            if (!Boolean.parseBoolean(teaseLib.config.get(Config.Debug.StopOnAssetNotFound))) {
-                teaseLib.transcript.info(Message.NoImage);
-            }
-        } else {
-            if (message.actor.images.contains(displayImage)) {
-                teaseLib.transcript.debug("image = '" + displayImage + "'");
-            } else {
-                teaseLib.transcript.info("image = '" + displayImage + "'");
-            }
-        }
-
         if (displayImage != null && displayImage != Message.NoImage) {
             try {
                 return imageFetcher.get(displayImage);
@@ -446,18 +486,20 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
     public String toString() {
         long delay = 0;
         MessageTextAccumulator accumulatedText = new MessageTextAccumulator();
-        MessageParts paragraphs = message.getParts();
-        for (Iterator<Part> it = paragraphs.iterator(); it.hasNext();) {
-            Part part = it.next();
-            accumulatedText.add(part);
-            if (part.type == Type.Text) {
-                delay += TextToSpeech.getEstimatedSpeechDuration(part.value);
-                delay += getParagraphPause(accumulatedText, !it.hasNext());
-            } else if (part.type == Type.Delay) {
-                delay += getDelay(part.value).start;
+        for (Message message : messages) {
+            MessageParts paragraphs = message.getParts();
+            for (Iterator<Part> it = paragraphs.iterator(); it.hasNext();) {
+                Part part = it.next();
+                accumulatedText.add(part);
+                if (part.type == Type.Text) {
+                    delay += TextToSpeech.getEstimatedSpeechDuration(part.value);
+                    delay += getParagraphPause(accumulatedText, !it.hasNext());
+                } else if (part.type == Type.Delay) {
+                    delay += getDelay(part.value).start;
+                }
             }
         }
-        String messageText = message.toPrerecordedSpeechHashString().replace("\n", " ");
+        String messageText = accumulatedText.toString().replace("\n", " ");
         int length = 40;
         return "Estimated delay=" + String.format("%.2f", (double) delay / 1000) + " Message='"
                 + (messageText.length() > length ? messageText.substring(0, length) + "..." : messageText + "'");

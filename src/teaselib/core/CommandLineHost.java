@@ -7,18 +7,13 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
 import org.bytedeco.javacpp.opencv_core.Point;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import teaselib.core.VideoRenderer.Type;
-import teaselib.core.debug.DebugHost;
 import teaselib.core.javacv.VideoRendererJavaCV;
 import teaselib.core.ui.Choice;
 import teaselib.core.ui.InputMethod;
 
 public class CommandLineHost implements Host {
-    private static final Logger logger = LoggerFactory.getLogger(DebugHost.class);
-
     static final Point javacvDebugWindow = new Point(80, 80);
 
     @Override

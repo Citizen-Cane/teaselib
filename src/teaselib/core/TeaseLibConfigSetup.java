@@ -29,12 +29,14 @@ public final class TeaseLibConfigSetup implements Configuration.Setup {
     }
 
     @Override
-    public void applyTo(Configuration config) throws IOException {
+    public Configuration applyTo(Configuration config) throws IOException {
         userPath.mkdirs();
 
         addTeaseLibDefaults(config);
         addNetworkDefaults(config);
         addSpeechDefaults(config);
+
+        return config;
     }
 
     private void addTeaseLibDefaults(Configuration config) throws IOException {

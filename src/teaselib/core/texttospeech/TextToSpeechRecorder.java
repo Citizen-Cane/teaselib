@@ -113,7 +113,8 @@ public class TextToSpeechRecorder {
                 appendSeparator = true;
             }
             logger.info(processSymbols.toString() + ": " + upToDateEntries + " up to date, " + reusedDuplicates
-                    + " reused, " + changedEntries + " changed, " + newEntries + " new");
+                    + " reused, " + changedEntries + " changed, " + newEntries + " new" + " => "
+                    + (upToDateEntries + reusedDuplicates + changedEntries + newEntries));
         }
 
     }
@@ -124,11 +125,7 @@ public class TextToSpeechRecorder {
 
     public TextToSpeechRecorder(File path, String name, ResourceLoader resources, TextVariables textVariables)
             throws IOException {
-        this(path, name, resources, textVariables,
-                new Configuration(new TeaseLibConfigSetup(new CommandLineHost())).set(
-                        TextToSpeechPlayer.Settings.Pronunciation,
-                        new File(new File("teaselib", TeaseLibConfigSetup.DEFAULTS),
-                                TeaseLibConfigSetup.PRONUNCIATION_DIRECTORY).getAbsolutePath()));
+        this(path, name, resources, textVariables, new Configuration(new TeaseLibConfigSetup(new CommandLineHost())));
     }
 
     public TextToSpeechRecorder(File path, String name, ResourceLoader resources, TextVariables textVariables,

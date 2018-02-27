@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -78,7 +79,12 @@ public class TextToSpeechPlayer {
     public TextToSpeechPlayer(Configuration config) {
         this.config = config;
         if (config.has(Settings.Pronunciation)) {
-            this.pronounciationDictionary = new PronunciationDictionary(new File(config.get(Settings.Pronunciation)));
+            try {
+                this.pronounciationDictionary = new PronunciationDictionary(
+                        new File(config.get(Settings.Pronunciation)));
+            } catch (IOException e) {
+                throw ExceptionUtil.asRuntimeException(e);
+            }
         } else {
             this.pronounciationDictionary = PronunciationDictionary.empty();
         }
@@ -527,7 +533,7 @@ public class TextToSpeechPlayer {
         String key = message.actor.key;
         String voice = actorKey2PrerecordedVoiceGuid.get(key);
         if (voice == null) {
-            return null;
+            return Collections.emptyList();
         } else {
             String path = actorKey2SpeechResourcesLocation.get(key) + TextToSpeechRecorder.getHash(message) + "/";
             BufferedReader reader = null;
@@ -547,7 +553,7 @@ public class TextToSpeechPlayer {
             return speechResources;
         }
     }
-    
+
     private void ensureVoiceNotAcquired(String voiceGuid) {
         if (actorKey2TTSVoice.containsKey(voiceGuid)) {
             throw new IllegalStateException(voiceGuid);

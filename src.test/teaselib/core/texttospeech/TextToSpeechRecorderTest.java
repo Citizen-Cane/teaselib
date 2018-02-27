@@ -187,8 +187,10 @@ public class TextToSpeechRecorderTest {
 
     TextToSpeechRecorder recordVoices(ScriptScanner scriptScanner, File path, String name, ResourceLoader resources)
             throws IOException, InterruptedException, ExecutionException {
+        DebugSetup setup = new DebugSetup().withDictionaries();
+        Configuration configuration = setup.applyTo(new Configuration());
         TextToSpeechRecorder recorder = new TextToSpeechRecorder(path, name, resources, new TextVariables(),
-                DebugSetup.getConfiguration());
+                configuration);
 
         recorder.startPass("Test", "Test");
         recorder.run(scriptScanner);

@@ -1,22 +1,30 @@
 package teaselib.test;
 
+import java.io.File;
+
 import teaselib.Config;
 import teaselib.core.Configuration;
 import teaselib.core.Configuration.Setup;
+import teaselib.core.TeaseLibConfigSetup;
 import teaselib.core.devices.remote.LocalNetworkDevice;
+import teaselib.core.texttospeech.TextToSpeechPlayer;
 
 public final class DebugSetup implements Setup {
     boolean stopOnRenderError = true;
-    boolean remoteDeviceAccess = false;
+    boolean enableRemoteDeviceAccess = false;
     boolean enableOutput = false;
     boolean enableInput = false;
+    boolean enableDictionaries = false;
 
     @Override
-    public void applyTo(Configuration config) {
+    public Configuration applyTo(Configuration config) {
         applyTeaseLibConfiguration(config);
         applyRemoteDeviceAccess(config);
         applyInput(config);
         applyOutput(config);
+        applyDictionanries(config);
+        
+        return config;
     }
 
     private void applyTeaseLibConfiguration(Configuration config) {
@@ -26,8 +34,8 @@ public final class DebugSetup implements Setup {
     }
 
     private void applyRemoteDeviceAccess(Configuration config) {
-        config.set(LocalNetworkDevice.Settings.EnableDeviceDiscovery, Boolean.toString(remoteDeviceAccess));
-        config.set(LocalNetworkDevice.Settings.EnableDeviceStatusListener, Boolean.toString(remoteDeviceAccess));
+        config.set(LocalNetworkDevice.Settings.EnableDeviceDiscovery, Boolean.toString(enableRemoteDeviceAccess));
+        config.set(LocalNetworkDevice.Settings.EnableDeviceStatusListener, Boolean.toString(enableRemoteDeviceAccess));
     }
 
     protected void applyInput(Configuration config) {
@@ -43,13 +51,21 @@ public final class DebugSetup implements Setup {
         config.set(Config.Render.InstructionalImages, Boolean.toString(enableOutput));
     }
 
-    public static final Configuration getConfiguration() {
+    private void applyDictionanries(Configuration config) {
+        if (enableDictionaries) {
+            config.set(TextToSpeechPlayer.Settings.Pronunciation,
+                    new File(TeaseLibConfigSetup.DEFAULTS, TeaseLibConfigSetup.PRONUNCIATION_DIRECTORY)
+                            .getAbsolutePath());
+        }
+    }
+
+    public static Configuration getConfiguration() {
         Configuration config = new Configuration();
         new DebugSetup().applyTo(config);
         return config;
     }
 
-    public static final Configuration getConfigurationWithRemoteDeviceAccess() {
+    public static Configuration getConfigurationWithRemoteDeviceAccess() {
         Configuration config = new Configuration();
         new DebugSetup().withRemoteDeviceAccess().applyTo(config);
         return config;
@@ -61,7 +77,7 @@ public final class DebugSetup implements Setup {
     }
 
     public DebugSetup withRemoteDeviceAccess() {
-        remoteDeviceAccess = true;
+        enableRemoteDeviceAccess = true;
         return this;
     }
 
@@ -72,6 +88,11 @@ public final class DebugSetup implements Setup {
 
     public DebugSetup withOutput() {
         enableOutput = true;
+        return this;
+    }
+
+    public DebugSetup withDictionaries() {
+        enableDictionaries = true;
         return this;
     }
 }

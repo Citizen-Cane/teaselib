@@ -2,6 +2,7 @@ package teaselib.core.texttospeech;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
@@ -31,11 +32,15 @@ public class PronunciationDictionary {
         rootDirectory = null;
     }
 
-    public PronunciationDictionary(File root) {
-        if (logger.isInfoEnabled()) {
-            logger.info("Using pronunciation lexicon folder " + root.toString());
+    public PronunciationDictionary(File rootDirectory) throws IOException {
+        if (rootDirectory.exists()) {
+            if (logger.isInfoEnabled()) {
+                logger.info("Using pronunciation lexicon folder " + rootDirectory.toString());
+            }
+            this.rootDirectory = rootDirectory;
+        } else {
+            throw new FileNotFoundException(rootDirectory.getAbsolutePath());
         }
-        this.rootDirectory = root;
     }
 
     public Map<String, String> pronunciations(Voice voice) throws IOException {
@@ -115,10 +120,9 @@ public class PronunciationDictionary {
                     readProperties(all, file);
                 }
             }
-
             return all;
         } else {
-            logger.warn("   No lexicons found");
+            logger.warn("   No lexicons defined");
             return Collections.emptyMap();
         }
     }

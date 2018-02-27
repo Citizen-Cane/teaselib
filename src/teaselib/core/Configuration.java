@@ -19,7 +19,7 @@ public class Configuration {
     final Properties sessionProperties = new Properties();
 
     public static interface Setup {
-        void applyTo(Configuration config) throws IOException;
+        Configuration applyTo(Configuration config) throws IOException;
     }
 
     public Configuration() {

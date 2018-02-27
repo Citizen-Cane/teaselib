@@ -31,6 +31,7 @@ import teaselib.core.CommandLineHost;
 import teaselib.core.Configuration;
 import teaselib.core.ResourceLoader;
 import teaselib.core.TeaseLibConfigSetup;
+import teaselib.core.util.ExceptionUtil;
 import teaselib.util.TextVariables;
 
 public class TextToSpeechRecorder {
@@ -213,14 +214,15 @@ public class TextToSpeechRecorder {
         throw new IllegalStateException("Collision");
     }
 
-    private void updateMessage(Actor actor, Voice voice, Message message, String hash, String newMessageHash) {
+    private void updateMessage(Actor actor, Voice voice, Message message, String hash, String newMessageHash)
+            throws InterruptedException {
         log(actor, voice, hash, "has changed");
         storage.deleteMessage(actor, voice, hash);
         create(actor, voice, message, hash, newMessageHash);
         pass.changedEntries++;
     }
 
-    private void createNewMessage(Actor actor, Voice voice, Message message, String hash) {
+    private void createNewMessage(Actor actor, Voice voice, Message message, String hash) throws InterruptedException {
         log(actor, voice, hash, "is new");
         create(actor, voice, message, hash, message.toPrerecordedSpeechHashString());
         pass.newEntries++;
@@ -311,14 +313,15 @@ public class TextToSpeechRecorder {
         return message.toString();
     }
 
-    public void create(Actor actor, Voice voice, Message message, String hash, String messageHash) {
+    public void create(Actor actor, Voice voice, Message message, String hash, String messageHash)
+            throws InterruptedException {
         List<String> soundFiles = writeSpeechResources(actor, voice, message, hash, messageHash);
         writeMessageHash(actor, voice, hash, messageHash);
         writeInventory(actor, voice, hash, soundFiles);
     }
 
     private List<String> writeSpeechResources(Actor actor, Voice voice, Message message, String hash,
-            String messageHash) {
+            String messageHash) throws InterruptedException {
         logger.info("Recording message:\n" + messageHash);
         List<String> soundFiles = new ArrayList<>();
         String mood = Mood.Neutral;
@@ -340,11 +343,10 @@ public class TextToSpeechRecorder {
     }
 
     private Future<String> writeSpeechResource(Actor actor, Voice voice, String hash, String storageSoundFile,
-            String mood, String text) {
+            String mood, String text) throws InterruptedException {
+        String recordedSoundFile = generateMultithreadingIncomatibleTextToSpeechPlayer(actor, mood, text);
+
         return storage.encode(() -> {
-            File soundFile = createTempFileName(SpeechResourceTempFilePrefix + "_",
-                    SpeechResourceFileUncompressedFormat);
-            String recordedSoundFile = ttsPlayer.speak(actor, text, mood, soundFile);
             if (!recordedSoundFile.endsWith(SpeechResourceFileTypeExtension)) {
                 try {
                     String encodedSoundFile = recordedSoundFile.replace(SpeechResourceFileUncompressedFormat,
@@ -361,6 +363,12 @@ public class TextToSpeechRecorder {
                 return storage.storeRecordedSoundFile(actor, voice, hash, recordedSoundFile, storageSoundFile).get();
             }
         });
+    }
+
+    private String generateMultithreadingIncomatibleTextToSpeechPlayer(Actor actor, String mood, String text)
+            throws InterruptedException {
+        return ttsPlayer.speak(actor, text, mood,
+                createTempFileName(SpeechResourceTempFilePrefix + "_", SpeechResourceFileUncompressedFormat));
     }
 
     private static String storageSoundFile(String name) {
@@ -389,13 +397,13 @@ public class TextToSpeechRecorder {
         try {
             digest = MessageDigest.getInstance("SHA-256");
         } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException(e);
+            throw ExceptionUtil.asRuntimeException(e);
         }
         byte[] string = null;
         try {
             string = message.toPrerecordedSpeechHashString().getBytes("UTF-16");
         } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException(e);
+            throw ExceptionUtil.asRuntimeException(e);
         }
         byte[] hash = digest.digest(string);
         StringBuilder hexString = new StringBuilder();

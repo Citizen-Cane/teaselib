@@ -33,6 +33,12 @@ public class SexScriptsStatePersistence implements Persistence {
         this.host = host;
         if (has(PROPERTY_FILE_VALID_TAG)) {
             makeDataPropertiesBackup();
+        } else {
+            if (new File(DATA_PROPERTIES_BACKUP).exists()) {
+                throw new IllegalStateException("Data property file corrupt - restore it from backup.");
+            } else {
+                throw new IllegalStateException("Please run SexScripts intro first.");
+            }
         }
     }
 

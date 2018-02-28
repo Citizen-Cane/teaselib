@@ -2,10 +2,12 @@ package teaselib.hosts;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Locale;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import ss.IScript;
 import teaselib.Actor;
@@ -19,6 +21,7 @@ import teaselib.core.util.Stream;
 import teaselib.util.TextVariables;
 
 public class SexScriptsStatePersistence implements Persistence {
+    private static final Logger logger = LoggerFactory.getLogger(SexScriptsHost.class);
 
     private static final String DATA_PROPERTIES = "data.properties";
     private static final String DATA_PROPERTIES_BACKUP = "data backup.properties";
@@ -43,17 +46,11 @@ public class SexScriptsStatePersistence implements Persistence {
     }
 
     private static void makeDataPropertiesBackup() {
-        try {
-            FileInputStream dataProperties = new FileInputStream(new File(DATA_PROPERTIES));
-            FileOutputStream dataPropertiesBackup = new FileOutputStream(new File(DATA_PROPERTIES_BACKUP));
-            try {
-                Stream.copy(dataProperties, dataPropertiesBackup);
-            } finally {
-                dataProperties.close();
-                dataPropertiesBackup.close();
-            }
-        } catch (FileNotFoundException e) {
+        try (FileInputStream dataProperties = new FileInputStream(new File(DATA_PROPERTIES));
+                FileOutputStream dataPropertiesBackup = new FileOutputStream(new File(DATA_PROPERTIES_BACKUP));) {
+            Stream.copy(dataProperties, dataPropertiesBackup);
         } catch (IOException e) {
+            logger.error(e.getMessage(), e);
         }
     }
 

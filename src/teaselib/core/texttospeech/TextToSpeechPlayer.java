@@ -21,6 +21,7 @@ import org.slf4j.LoggerFactory;
 
 import teaselib.Actor;
 import teaselib.Config;
+import teaselib.Config.Debug;
 import teaselib.Message;
 import teaselib.Message.Part;
 import teaselib.core.Configuration;
@@ -472,7 +473,6 @@ public class TextToSpeechPlayer {
         Message speechMessage = new Message(message.actor);
         for (Part part : message.getParts()) {
             if (part.type == Message.Type.Text) {
-                // TODO Process TTS-only dictionary entries here
                 speechMessage.add(Message.Type.Speech, part.value);
                 speechMessage.add(part);
             } else {
@@ -491,35 +491,44 @@ public class TextToSpeechPlayer {
             return message;
         } else {
             try {
-                Iterator<String> prerenderedSpeechFiles = getSpeechResources(message, resources).iterator();
-                // Render pre-recorded speech as sound
-                Message preRenderedSpeechMessage = new Message(message.actor);
-                for (Part part : message.getParts()) {
-                    if (part.type == Message.Type.Text) {
-                        preRenderedSpeechMessage.add(Message.Type.Speech, prerenderedSpeechFiles.next());
-                        preRenderedSpeechMessage.add(part);
-                    } else {
-                        preRenderedSpeechMessage.add(part);
-                    }
-                }
-                return preRenderedSpeechMessage;
+                return injectPrerecordedSpeechParts(message, resources);
             } catch (IOException e) {
-                logger.error(e.getMessage(), e);
-                // Render missing pre-recorded speech as delay
-                Message preRenderedSpeechMessage = new Message(message.actor);
-                for (Part part : message.getParts()) {
-                    if (part.type == Message.Type.Text) {
-                        preRenderedSpeechMessage.add(part);
-                        int durationSeconds = Math
-                                .toIntExact(TextToSpeech.getEstimatedSpeechDuration(part.value) / 1000);
-                        preRenderedSpeechMessage.add(Message.Type.Delay, Integer.toString(durationSeconds));
-                    } else {
-                        preRenderedSpeechMessage.add(part);
-                    }
+                if (Boolean.parseBoolean(config.get(Debug.StopOnAssetNotFound))) {
+                    throw ExceptionUtil.asRuntimeException(e, message.buildString(" ", false));
+                } else {
+                    logger.error(e.getMessage(), e);
+                    return renderMissingPrerecordedSpeechAsDelay(message);
                 }
-                return preRenderedSpeechMessage;
             }
         }
+    }
+
+    private Message injectPrerecordedSpeechParts(Message message, ResourceLoader resources) throws IOException {
+        Iterator<String> prerenderedSpeechFiles = getSpeechResources(message, resources).iterator();
+        Message preRenderedSpeechMessage = new Message(message.actor);
+        for (Part part : message.getParts()) {
+            if (part.type == Message.Type.Text) {
+                preRenderedSpeechMessage.add(Message.Type.Speech, prerenderedSpeechFiles.next());
+                preRenderedSpeechMessage.add(part);
+            } else {
+                preRenderedSpeechMessage.add(part);
+            }
+        }
+        return preRenderedSpeechMessage;
+    }
+
+    private static Message renderMissingPrerecordedSpeechAsDelay(Message message) {
+        Message preRenderedSpeechMessage = new Message(message.actor);
+        for (Part part : message.getParts()) {
+            if (part.type == Message.Type.Text) {
+                preRenderedSpeechMessage.add(part);
+                int durationSeconds = Math.toIntExact(TextToSpeech.getEstimatedSpeechDuration(part.value) / 1000);
+                preRenderedSpeechMessage.add(Message.Type.Delay, Integer.toString(durationSeconds));
+            } else {
+                preRenderedSpeechMessage.add(part);
+            }
+        }
+        return preRenderedSpeechMessage;
     }
 
     /**
@@ -536,18 +545,12 @@ public class TextToSpeechPlayer {
             return Collections.emptyList();
         } else {
             String path = actorKey2SpeechResourcesLocation.get(key) + TextToSpeechRecorder.getHash(message) + "/";
-            BufferedReader reader = null;
             List<String> speechResources = new ArrayList<>();
-            try {
-                reader = new BufferedReader(
-                        new InputStreamReader(resources.getResource(path + TextToSpeechRecorder.ResourcesFilename)));
+            try (BufferedReader reader = new BufferedReader(
+                    new InputStreamReader(resources.getResource(path + TextToSpeechRecorder.ResourcesFilename)));) {
                 String soundFile = null;
                 while ((soundFile = reader.readLine()) != null) {
                     speechResources.add(path + soundFile);
-                }
-            } finally {
-                if (reader != null) {
-                    reader.close();
                 }
             }
             return speechResources;

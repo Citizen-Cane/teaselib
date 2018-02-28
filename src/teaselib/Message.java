@@ -269,7 +269,7 @@ public class Message {
         return buildString("\n", false);
     }
 
-    private String buildString(String newLine, boolean all) {
+    public String buildString(String newLine, boolean all) {
         if (parts == null) {
             return "";
         } else if (parts.isEmpty()) {

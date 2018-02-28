@@ -1,7 +1,6 @@
 package teaselib.core;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
@@ -336,7 +335,7 @@ public class TeaseScriptBaseTest {
         assertMessageDuration(script, message, 120);
     }
 
-    private void assertMessageDuration(TestScript script, Message message, long minimumSeconds) {
+    private static void assertMessageDuration(TestScript script, Message message, long minimumSeconds) {
         long start = script.teaseLib.getTime(TimeUnit.SECONDS);
         script.renderMessage(message, false);
         script.completeMandatory();

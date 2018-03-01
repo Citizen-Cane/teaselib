@@ -1,7 +1,7 @@
 package teaselib.core.media;
 
 import teaselib.Message;
-import teaselib.Message.Part;
+import teaselib.MessagePart;
 
 public class MessageTextAccumulator {
     private final StringBuilder message;
@@ -11,7 +11,7 @@ public class MessageTextAccumulator {
         message = new StringBuilder();
     }
 
-    public final void add(Message.Part part) {
+    public final void add(MessagePart part) {
         if (part.type == Message.Type.Text) {
             if (!appendToParagraph) {
                 newParagraph();
@@ -34,7 +34,7 @@ public class MessageTextAccumulator {
         }
     }
 
-    private static String removeKeyword(Part part) {
+    private static String removeKeyword(MessagePart part) {
         String value = part.value;
         if (part.type == Message.Type.Item
                 && value.startsWith(Message.Bullet)) {

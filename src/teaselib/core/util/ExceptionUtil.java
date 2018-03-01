@@ -1,7 +1,13 @@
 package teaselib.core.util;
 
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.concurrent.ExecutionException;
+
+import org.slf4j.Logger;
+
+import teaselib.Config;
+import teaselib.core.Configuration;
 
 public class ExceptionUtil {
 
@@ -47,4 +53,17 @@ public class ExceptionUtil {
             return new RuntimeException(message, e);
         }
     }
+
+    public static void handleIOException(Exception e, Configuration config, Logger logger) throws IOException {
+        if (e instanceof IOException) {
+            boolean stopOnAssetNotFound = Boolean.parseBoolean(config.get(Config.Debug.StopOnAssetNotFound));
+            if (stopOnAssetNotFound) {
+                logger.error(e.getMessage(), e);
+                throw (IOException) e;
+            } else {
+                logger.warn(e.getMessage(), e);
+            }
+        }
+    }
+
 }

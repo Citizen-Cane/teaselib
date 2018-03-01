@@ -23,7 +23,7 @@ import teaselib.Actor;
 import teaselib.Config;
 import teaselib.Config.Debug;
 import teaselib.Message;
-import teaselib.Message.Part;
+import teaselib.MessagePart;
 import teaselib.core.Configuration;
 import teaselib.core.ResourceLoader;
 import teaselib.core.util.ExceptionUtil;
@@ -443,7 +443,7 @@ public class TextToSpeechPlayer {
 
     private static Message simulatedSpeechMessage(Message message) {
         Message speechMessage = new Message(message.actor);
-        for (Part part : message.getParts()) {
+        for (MessagePart part : message.getParts()) {
             if (part.type == Message.Type.Text) {
                 speechMessage.add(Message.Type.Speech, simulatedSpeech(part.value));
                 speechMessage.add(part);
@@ -471,7 +471,7 @@ public class TextToSpeechPlayer {
 
     Message speechMessage(Message message) {
         Message speechMessage = new Message(message.actor);
-        for (Part part : message.getParts()) {
+        for (MessagePart part : message.getParts()) {
             if (part.type == Message.Type.Text) {
                 speechMessage.add(Message.Type.Speech, part.value);
                 speechMessage.add(part);
@@ -506,7 +506,7 @@ public class TextToSpeechPlayer {
     private Message injectPrerecordedSpeechParts(Message message, ResourceLoader resources) throws IOException {
         Iterator<String> prerenderedSpeechFiles = getSpeechResources(message, resources).iterator();
         Message preRenderedSpeechMessage = new Message(message.actor);
-        for (Part part : message.getParts()) {
+        for (MessagePart part : message.getParts()) {
             if (part.type == Message.Type.Text) {
                 preRenderedSpeechMessage.add(Message.Type.Speech, prerenderedSpeechFiles.next());
                 preRenderedSpeechMessage.add(part);
@@ -519,7 +519,7 @@ public class TextToSpeechPlayer {
 
     private static Message renderMissingPrerecordedSpeechAsDelay(Message message) {
         Message preRenderedSpeechMessage = new Message(message.actor);
-        for (Part part : message.getParts()) {
+        for (MessagePart part : message.getParts()) {
             if (part.type == Message.Type.Text) {
                 preRenderedSpeechMessage.add(part);
                 int durationSeconds = Math.toIntExact(TextToSpeech.getEstimatedSpeechDuration(part.value) / 1000);

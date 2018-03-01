@@ -1,4 +1,4 @@
-package teaselib.core;
+package teaselib.core.util;
 
 import java.io.IOException;
 import java.util.ArrayDeque;
@@ -13,8 +13,7 @@ import java.util.concurrent.Future;
 import teaselib.core.concurrency.NamedExecutorService;
 
 public class Prefetcher<T> {
-
-    private final static ExecutorService fetcher = NamedExecutorService.singleThreadedQueue("Resource Prefetcher");
+    private static final ExecutorService fetcher = NamedExecutorService.singleThreadedQueue("Resource Prefetcher");
 
     private final Queue<String> resources = new ArrayDeque<>();
     private final Map<String, Callable<T>> toFetch = new HashMap<>();

@@ -5,12 +5,11 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Stream;
 
-import teaselib.Message.Part;
 import teaselib.Message.Type;
 
-public class MessageParts implements Iterable<Part> {
+public class MessageParts implements Iterable<MessagePart> {
 
-    private final List<Part> p = new ArrayList<>();
+    private final List<MessagePart> p = new ArrayList<>();
 
     public boolean isEmpty() {
         return p.isEmpty();
@@ -33,27 +32,27 @@ public class MessageParts implements Iterable<Part> {
     }
 
     public void addAll(MessageParts parts) {
-        for (Part part : parts) {
+        for (MessagePart part : parts) {
             add(part);
         }
     }
 
     @Override
-    public Iterator<Part> iterator() {
+    public Iterator<MessagePart> iterator() {
         return p.iterator();
     }
 
-    public Stream<Part> stream() {
+    public Stream<MessagePart> stream() {
         return p.stream();
     }
 
-    void add(Part part) {
+    void add(MessagePart part) {
         if (part.type == Type.Text) {
             p.add(part);
         } else if (part.type == Type.Mood) {
             if (!p.isEmpty()) {
                 int i = p.size() - 1;
-                Part previous = p.get(i);
+                MessagePart previous = p.get(i);
                 if (previous.type == Type.Mood) {
                     p.set(i, part);
                 } else {
@@ -70,12 +69,12 @@ public class MessageParts implements Iterable<Part> {
     public void add(String text) {
         if (text == null)
             throw new IllegalArgumentException(text);
-        Part part = new Part(text);
+        MessagePart part = new MessagePart(text);
         add(part);
     }
 
     public void add(Type type, String value) {
-        add(new Part(type, value));
+        add(new MessagePart(type, value));
     }
 
     public int size() {
@@ -83,7 +82,7 @@ public class MessageParts implements Iterable<Part> {
     }
 
     public boolean contains(Type type) {
-        for (Part part : p) {
+        for (MessagePart part : p) {
             if (part.type == type) {
                 return true;
             }
@@ -91,11 +90,11 @@ public class MessageParts implements Iterable<Part> {
         return false;
     }
 
-    public boolean contains(Part part) {
+    public boolean contains(MessagePart part) {
         return p.contains(part);
     }
 
-    public Part get(int index) {
+    public MessagePart get(int index) {
         return p.get(index);
     }
 

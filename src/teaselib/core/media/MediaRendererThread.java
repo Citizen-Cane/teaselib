@@ -1,6 +1,6 @@
 package teaselib.core.media;
 
-import static java.util.concurrent.TimeUnit.*;
+import static java.util.concurrent.TimeUnit.HOURS;
 
 import java.io.IOException;
 import java.util.concurrent.Callable;
@@ -14,7 +14,6 @@ import org.slf4j.LoggerFactory;
 
 import teaselib.Config;
 import teaselib.Replay;
-import teaselib.core.Configuration;
 import teaselib.core.ScriptInterruptedException;
 import teaselib.core.TeaseLib;
 import teaselib.core.concurrency.NamedExecutorService;
@@ -114,19 +113,7 @@ public abstract class MediaRendererThread implements MediaRenderer.Threaded {
     }
 
     protected void handleIOException(Exception e) throws IOException {
-        handleIOException(teaseLib.config, e);
-    }
-
-    public static void handleIOException(Configuration config, Exception e) throws IOException {
-        if (e instanceof IOException) {
-            boolean stopOnAssetNotFound = Boolean.parseBoolean(config.get(Config.Debug.StopOnAssetNotFound));
-            if (stopOnAssetNotFound) {
-                logger.error(e.getMessage(), e);
-                throw (IOException) e;
-            } else {
-                logger.warn(e.getMessage(), e);
-            }
-        }
+        ExceptionUtil.handleIOException(e, teaseLib.config, logger);
     }
 
     /**

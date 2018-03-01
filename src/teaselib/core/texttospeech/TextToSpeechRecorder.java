@@ -25,8 +25,8 @@ import org.slf4j.LoggerFactory;
 
 import teaselib.Actor;
 import teaselib.Message;
-import teaselib.Message.Part;
 import teaselib.Mood;
+import teaselib.MessagePart;
 import teaselib.core.CommandLineHost;
 import teaselib.core.Configuration;
 import teaselib.core.ResourceLoader;
@@ -327,7 +327,7 @@ public class TextToSpeechRecorder {
         String mood = Mood.Neutral;
         storage.createNewEntry(actor, voice, hash, messageHash);
 
-        for (Part part : ttsPlayer.speechMessage(message).getParts()) {
+        for (MessagePart part : ttsPlayer.speechMessage(message).getParts()) {
             if (part.type == Message.Type.Mood) {
                 mood = part.value;
             } else if (part.type == Message.Type.Speech) {

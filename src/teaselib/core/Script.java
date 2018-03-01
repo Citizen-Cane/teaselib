@@ -20,6 +20,7 @@ import teaselib.Config;
 import teaselib.Gadgets;
 import teaselib.Message;
 import teaselib.Mood;
+import teaselib.MessagePart;
 import teaselib.Replay;
 import teaselib.ScriptFunction;
 import teaselib.core.media.MediaRenderer;
@@ -279,7 +280,7 @@ public abstract class Script {
             String lastMood = null;
             String nextMood = null;
 
-            for (Message.Part part : message.getParts()) {
+            for (MessagePart part : message.getParts()) {
                 if (part.type == Message.Type.Image) {
                     // Remember what type of image to display
                     // with the next text element
@@ -304,7 +305,7 @@ public abstract class Script {
                     }
                 } else if (part.type == Message.Type.Speech && !Message.Type.isSound(part.value)) {
                     if (Boolean.parseBoolean(teaseLib.config.get(Config.Render.Speech))) {
-                        parsedMessage.add(new Message.Part(part.type, expandTextVariables(part.value)));
+                        parsedMessage.add(new MessagePart(part.type, expandTextVariables(part.value)));
                     }
                 } else if (Message.Type.FileTypes.contains(part.type)) {
                     parsedMessage.add(part.type, part.value);
@@ -332,7 +333,7 @@ public abstract class Script {
                         parsedMessage.add(Message.Type.Image, nextImage);
                     }
                     // Replace text variables
-                    parsedMessage.add(new Message.Part(part.type, expandTextVariables(part.value)));
+                    parsedMessage.add(new MessagePart(part.type, expandTextVariables(part.value)));
                 } else if (part.type == Message.Type.DesktopItem
                         && !Boolean.parseBoolean(teaseLib.config.get(Config.Render.InstructionalImages))) {
                     // Ignore

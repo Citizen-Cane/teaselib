@@ -1,15 +1,12 @@
 package teaselib.core.media;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
@@ -18,18 +15,19 @@ import org.slf4j.LoggerFactory;
 import teaselib.Actor;
 import teaselib.Config;
 import teaselib.Message;
-import teaselib.Message.Part;
 import teaselib.Message.Type;
 import teaselib.MessageParts;
 import teaselib.Mood;
+import teaselib.MessagePart;
 import teaselib.Replay;
 import teaselib.Replay.Position;
-import teaselib.core.Prefetcher;
 import teaselib.core.ResourceLoader;
 import teaselib.core.TeaseLib;
 import teaselib.core.texttospeech.TextToSpeech;
 import teaselib.core.texttospeech.TextToSpeechPlayer;
 import teaselib.core.util.ExceptionUtil;
+import teaselib.core.util.PrefetchImage;
+import teaselib.core.util.Prefetcher;
 import teaselib.util.Interval;
 
 public class RenderMessage extends MediaRendererThread implements ReplayableMediaRenderer {
@@ -100,42 +98,11 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
     }
 
     private void prefetchImages(Message message) {
-        for (Part part : message.getParts()) {
+        for (MessagePart part : message.getParts()) {
             if (part.type == Message.Type.Image) {
                 final String resourcePath = part.value;
                 if (part.value != Message.NoImage) {
-                    imageFetcher.add(resourcePath, new Callable<byte[]>() {
-                        @Override
-                        public byte[] call() throws Exception {
-                            return getImageBytes(resourcePath);
-                        }
-
-                        private byte[] getImageBytes(String path) throws IOException {
-                            InputStream resource = null;
-                            byte[] imageBytes = null;
-                            try {
-                                resource = RenderMessage.this.resources.getResource(path);
-                                imageBytes = convertInputStreamToByte(resource);
-                            } catch (IOException e) {
-                                handleIOException(ExceptionUtil.reduce(e));
-                            } finally {
-                                if (resource != null) {
-                                    resource.close();
-                                }
-                            }
-                            return imageBytes;
-                        }
-
-                        private byte[] convertInputStreamToByte(InputStream is) throws IOException {
-                            byte[] buffer = new byte[8192];
-                            int bytesRead;
-                            ByteArrayOutputStream output = new ByteArrayOutputStream();
-                            while ((bytesRead = is.read(buffer)) != -1) {
-                                output.write(buffer, 0, bytesRead);
-                            }
-                            return output.toByteArray();
-                        }
-                    });
+                    imageFetcher.add(resourcePath, new PrefetchImage(resourcePath, resources, teaseLib.config));
                 }
             }
         }
@@ -185,34 +152,51 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
     }
 
     private static Message getLastSection(Message message) {
-        Message lastSection = new Message(message.actor);
-        MessageParts parts = message.getParts();
-        int index = parts.size();
-        while (index-- > 0) {
-            if (parts.get(index).type == Message.Type.Text) {
-                break;
-            }
-        }
-        // No text
+        int index = findLastTextElement(message);
+
         if (index < 0) {
             return message;
         }
-        // Get the modifiers for this text part (image, sound, mood, ...)
+
+        index = findStartOfHeader(message, index);
+        return copyTextHeader(message, index);
+    }
+
+    private static int findStartOfHeader(Message message, int index) {
+        MessageParts parts = message.getParts();
         while (index-- > 0) {
-            if (parts.get(index).type == Message.Type.Text) {
+            Type type = parts.get(index).type;
+            if (type == Message.Type.Text && type == Message.Type.Delay) {
                 // Start the last section after the second last text part
                 index++;
                 break;
             }
         }
-        // One text element -> whole message
+        return index;
+    }
+
+    private static int findLastTextElement(Message message) {
+        MessageParts parts = message.getParts();
+        int index = parts.size();
+        while (index-- > 0) {
+            Type type = parts.get(index).type;
+            if (type == Message.Type.Text) {
+                break;
+            }
+        }
+        return index;
+    }
+
+    private static Message copyTextHeader(Message message, int index) {
         if (index < 0) {
             index = 0;
         }
-        // Copy message header (all but skip desktop items and delay before the text)
+
+        Message lastSection = new Message(message.actor);
         boolean afterText = false;
+        MessageParts parts = message.getParts();
         for (int i = index; i < parts.size(); i++) {
-            Message.Part part = parts.get(i);
+            MessagePart part = parts.get(i);
             if (part.type == Message.Type.DesktopItem) {
                 // skip
             } else if (part.type == Message.Type.Delay && !afterText) {
@@ -236,8 +220,8 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
     private void renderMessage(Message message) throws IOException, InterruptedException {
         String mood = Mood.Neutral;
         // Process message parts
-        for (Iterator<Part> it = message.iterator(); it.hasNext();) {
-            Part part = it.next();
+        for (Iterator<MessagePart> it = message.iterator(); it.hasNext();) {
+            MessagePart part = it.next();
             boolean lastParagraph = lastSection.getParts().contains(part);
             boolean lastPart = !it.hasNext();
             if (!ManuallyLoggedMessageTypes.contains(part.type)) {
@@ -260,7 +244,7 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
         allCompleted();
     }
 
-    private String renderMessagePart(Part part, MessageTextAccumulator accumulatedText, Actor actor, String mood,
+    private String renderMessagePart(MessagePart part, MessageTextAccumulator accumulatedText, Actor actor, String mood,
             boolean lastParagraph) throws IOException, InterruptedException {
         if (part.type == Message.Type.Image) {
             displayImage = part.value;
@@ -311,7 +295,7 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
                     renderDesktopItem.render();
                 } catch (IOException e) {
                     logger.error(e.getMessage(), e);
-                    accumulatedText.add(new Part(Message.Type.Text, e.getMessage()));
+                    accumulatedText.add(new MessagePart(Message.Type.Text, e.getMessage()));
                     show(accumulatedText.toString(), actor, mood);
                     throw e;
                 }
@@ -431,7 +415,7 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
         }
     }
 
-    private void doKeyword(Part part) {
+    private void doKeyword(MessagePart part) {
         String keyword = part.value;
         if (keyword == Message.ActorImage) {
             throw new IllegalStateException(keyword + " must be resolved in pre-parse");
@@ -454,7 +438,7 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
         }
     }
 
-    private void doDelay(Part part, boolean lastParagraph) {
+    private void doDelay(MessagePart part, boolean lastParagraph) {
         completeCurrentParagraph(false);
 
         String args = part.value;
@@ -488,8 +472,8 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
         MessageTextAccumulator accumulatedText = new MessageTextAccumulator();
         for (Message message : messages) {
             MessageParts paragraphs = message.getParts();
-            for (Iterator<Part> it = paragraphs.iterator(); it.hasNext();) {
-                Part part = it.next();
+            for (Iterator<MessagePart> it = paragraphs.iterator(); it.hasNext();) {
+                MessagePart part = it.next();
                 accumulatedText.add(part);
                 if (part.type == Type.Text) {
                     delay += TextToSpeech.getEstimatedSpeechDuration(part.value);

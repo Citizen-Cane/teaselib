@@ -201,7 +201,7 @@ public class Message {
         return parts.isEmpty();
     }
 
-    public Iterator<Part> iterator() {
+    public Iterator<MessagePart> iterator() {
         return parts.iterator();
     }
 
@@ -226,7 +226,7 @@ public class Message {
     public void add(Message message) {
         if (message == null)
             throw new IllegalArgumentException();
-        for (Part part : message.getParts()) {
+        for (MessagePart part : message.getParts()) {
             parts.add(part);
         }
     }
@@ -237,7 +237,7 @@ public class Message {
      * 
      * @param part
      */
-    public void add(Part part) {
+    public void add(MessagePart part) {
         parts.add(part);
     }
 
@@ -276,8 +276,8 @@ public class Message {
             return "";
         } else {
             StringBuilder messageString = new StringBuilder();
-            for (Iterator<Part> i = parts.iterator(); i.hasNext();) {
-                Part part = i.next();
+            for (Iterator<MessagePart> i = parts.iterator(); i.hasNext();) {
+                MessagePart part = i.next();
                 boolean appendPart = all || part.type == Type.Text || part.type == Type.Mood;
                 if (appendPart) {
                     if (messageString.length() > 0) {
@@ -417,88 +417,18 @@ public class Message {
         return m.split(" |\t");
     }
 
-    public static class Part {
-        public final Type type;
-        public final String value;
-
-        public Part(String text) {
-            text = text.trim();
-            Type type = determineType(text);
-            if (type == Type.Keyword) {
-                text = keywordFrom(text);
-            } else if (type == Type.DesktopItem) {
-                // The keyword is optional,
-                // it's just needed to show an image on the desktop
-                text = removeAnyKeywordInFront(ShowOnDesktop, text);
-            } else if (type == Type.Delay) {
-                text = removeAnyKeywordInFront(Delay, text);
-            }
-            this.type = type;
-            this.value = text;
-        }
-
-        private static String removeAnyKeywordInFront(String keyword, String text) {
-            if (text.toLowerCase().startsWith(keyword)) {
-                text = text.substring(keyword.length()).trim();
-            }
-            return text;
-        }
-
-        public Part(Type type, String value) {
-            this.type = type;
-            this.value = value;
-        }
-
-        public boolean isFile() {
-            return Message.Type.isFile(type);
-        }
-
-        @Override
-        public String toString() {
-            return type.name() + "=" + value;
-        }
-
-        @Override
-        public int hashCode() {
-            final int prime = 31;
-            int result = 1;
-            result = prime * result + ((type == null) ? 0 : type.hashCode());
-            result = prime * result + ((value == null) ? 0 : value.hashCode());
-            return result;
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (this == obj)
-                return true;
-            if (obj == null)
-                return false;
-            if (getClass() != obj.getClass())
-                return false;
-            Part other = (Part) obj;
-            if (type != other.type)
-                return false;
-            if (value == null) {
-                if (other.value != null)
-                    return false;
-            } else if (!value.equals(other.value))
-                return false;
-            return true;
-        }
-    }
-
     public Message joinSentences() {
         MessageParts newParts = new MessageParts();
-        Iterator<Part> parts = this.parts.iterator();
-        Part sentence = null;
+        Iterator<MessagePart> parts = this.parts.iterator();
+        MessagePart sentence = null;
         while (parts.hasNext()) {
-            Part part = parts.next();
+            MessagePart part = parts.next();
             if (part.type == Type.Text) {
                 if (!endOf(part.value, EndOfSentenceCharacters) && !endOf(part.value, MainClauseAppendableCharacters)) {
                     if (sentence == null) {
                         sentence = part;
                     } else {
-                        sentence = new Part(Type.Text, sentence.value + " " + part.value);
+                        sentence = new MessagePart(Type.Text, sentence.value + " " + part.value);
                     }
                 } else {
                     if (sentence != null) {
@@ -519,25 +449,25 @@ public class Message {
 
     public Message readAloud() {
         MessageParts newParts = new MessageParts();
-        Iterator<Part> parts = this.parts.iterator();
+        Iterator<MessagePart> parts = this.parts.iterator();
         boolean readAloud = false;
         while (parts.hasNext()) {
-            Part part = parts.next();
+            MessagePart part = parts.next();
             if (part.type == Type.Text) {
                 String text = part.value;
                 boolean readAloudStart = text.startsWith("\"");
                 boolean readAloudEnd = text.endsWith("\"") || text.endsWith("\"."); // todo
                                                                                     // generalize
                 if (readAloudStart && !readAloud) {
-                    newParts.add(new Part(Type.Mood, Mood.Reading));
+                    newParts.add(new MessagePart(Type.Mood, Mood.Reading));
                     readAloud = true;
                 } else if (readAloud) {
                     // Repeat for each text part
-                    newParts.add(new Part(Type.Mood, Mood.Reading));
+                    newParts.add(new MessagePart(Type.Mood, Mood.Reading));
                 }
                 newParts.add(part);
                 if (readAloudEnd && readAloud) {
-                    newParts.add(new Part(Type.Mood, Mood.Neutral));
+                    newParts.add(new MessagePart(Type.Mood, Mood.Neutral));
                     readAloud = false;
                 }
             } else {
@@ -557,7 +487,7 @@ public class Message {
 
         boolean header = true;
 
-        for (Part part : parts) {
+        for (MessagePart part : parts) {
             boolean isHeaderType = ParagraphStart.contains(part.type);
             boolean startNewHeader = !header && isHeaderType;
             boolean headerTypeAlreadyInCurrent = current.getParts().contains(part.type) && isHeaderType;
@@ -624,7 +554,7 @@ public class Message {
 
     public List<String> resources() {
         List<String> resources = new ArrayList<>();
-        for (Part part : parts) {
+        for (MessagePart part : parts) {
             boolean isImageFile = part.type == Type.Image //
                     && NoImage.equalsIgnoreCase(part.value) //
                     && ActorImage.equalsIgnoreCase(part.value);

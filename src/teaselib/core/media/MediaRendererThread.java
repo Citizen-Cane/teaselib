@@ -127,6 +127,8 @@ public abstract class MediaRendererThread implements MediaRenderer.Threaded {
             completedStart = new CountDownLatch(1);
             completedMandatory = new CountDownLatch(1);
             completedAll = new CountDownLatch(1);
+        } else if (replayPosition == Replay.Position.FromCurrentPosition) {
+            completedStart = new CountDownLatch(0);
         } else if (replayPosition == Replay.Position.FromMandatory) {
             completedStart = new CountDownLatch(0);
             completedMandatory = new CountDownLatch(1);
@@ -160,7 +162,9 @@ public abstract class MediaRendererThread implements MediaRenderer.Threaded {
 
     protected void allCompleted() {
         completedAll.countDown();
-        logger.debug(getClass().getSimpleName() + " completed all after " + getElapsedSecondsFormatted());
+        if (logger.isDebugEnabled()) {
+            logger.debug(getClass().getSimpleName() + " completed all after " + getElapsedSecondsFormatted());
+        }
     }
 
     @Override

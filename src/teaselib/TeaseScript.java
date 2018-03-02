@@ -131,6 +131,18 @@ public abstract class TeaseScript extends TeaseScriptMath {
         queueRenderer(new RenderDelay(seconds, teaseLib));
     }
 
+    public final void prepend(String... message) {
+        prepend(new Message(actor, message));
+    }
+
+    public final void prepend(List<String> message) {
+        prepend(new Message(actor, message));
+    }
+
+    public final void prepend(Message message) {
+        prependMessage(message);
+    }
+
     public void say(String... message) {
         say(new Message(actor, message));
     }
@@ -141,6 +153,18 @@ public abstract class TeaseScript extends TeaseScriptMath {
 
     public void say(Message message) {
         renderMessage(message, true);
+    }
+
+    public final void append(String... message) {
+        append(new Message(actor, message));
+    }
+
+    public final void append(List<String> message) {
+        append(new Message(actor, message));
+    }
+
+    public final void append(Message message) {
+        appendMessage(message);
     }
 
     /**

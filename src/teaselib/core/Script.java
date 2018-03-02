@@ -19,8 +19,8 @@ import teaselib.Answers;
 import teaselib.Config;
 import teaselib.Gadgets;
 import teaselib.Message;
-import teaselib.Mood;
 import teaselib.MessagePart;
+import teaselib.Mood;
 import teaselib.Replay;
 import teaselib.ScriptFunction;
 import teaselib.core.media.MediaRenderer;
@@ -210,6 +210,9 @@ public abstract class Script {
     }
 
     protected void renderIntertitle(String... text) {
+        if (!prepends.isEmpty()) {
+            throw new IllegalStateException("renderIntertitle doesn't support prepended messages");
+        }
         try {
             RenderInterTitle interTitle = new RenderInterTitle(
                     new Message(actor, expandTextVariables(Arrays.asList(text))), teaseLib);
@@ -220,20 +223,44 @@ public abstract class Script {
         }
     }
 
+    private final List<Message> prepends = new ArrayList<>();
+    private RenderMessage renderMessage = null;
+
+    protected void prependMessage(Message message) {
+        renderMessage = null;
+        prepends.add(message);
+    }
+
     protected void renderMessage(Message message, boolean useTTS) {
         try {
             Optional<TextToSpeechPlayer> textToSpeech = useTTS
-                    ? Optional.of(teaseLib.globals.get(TextToSpeechPlayer.class))
+                    ? Optional.ofNullable(teaseLib.globals.get(TextToSpeechPlayer.class))
                     : Optional.empty();
-            // inject speech parts to play pre-recorded speech audio render TTS first
-            // as subsequent injections add mood thereby changing the message hash
-            boolean applySpeech = useTTS && textToSpeech.isPresent();
-            renderMessage(new RenderMessage(teaseLib, resources, textToSpeech, injectImagesAndExpandTextVariables(
-                    applySpeech ? textToSpeech.get().createSpeechMessage(message, resources) : message)));
+            List<Message> messages = new ArrayList<>(prepends.size() + 1);
+            for (Message prepend : prepends) {
+                messages.add(injectImagesAndExpandTextVariables(prepend, textToSpeech));
+            }
+            prepends.clear();
+
+            messages.add(injectImagesAndExpandTextVariables(message, textToSpeech));
+            renderMessage = new RenderMessage(teaseLib, resources, textToSpeech, messages);
+            renderMessage(renderMessage);
         } finally {
             displayImage = Message.ActorImage;
             mood = Mood.Neutral;
         }
+    }
+
+    protected void appendMessage(Message message) {
+        if (!prepends.isEmpty()) {
+            throw new IllegalStateException("Open prepends: " + prepends);
+        }
+        renderMessage.append(injectImagesAndExpandTextVariables(message, renderMessage.getTextToSpeech()));
+    }
+
+    private Message injectImagesAndExpandTextVariables(Message message, Optional<TextToSpeechPlayer> textToSpeech) {
+        return injectImagesAndExpandTextVariables(
+                textToSpeech.isPresent() ? textToSpeech.get().createSpeechMessage(message, resources) : message);
     }
 
     private void renderMessage(MediaRenderer renderMessage) {
@@ -472,6 +499,13 @@ public abstract class Script {
      */
     protected String showChoices(List<Answer> answers, ScriptFunction scriptFunction,
             Confidence recognitionConfidence) {
+        waitToStartScriptFunction(scriptFunction);
+        if (scriptFunction == null) {
+            stopBackgroundRenderers();
+        } else if (scriptFunction.relation != ScriptFunction.Relation.Autonomous) {
+            stopBackgroundRenderers();
+        }
+
         Prompt prompt = getPrompt(scriptFunction, recognitionConfidence, choices(answers));
         return showPrompt(prompt, scriptFunction);
     }
@@ -493,13 +527,6 @@ public abstract class Script {
     }
 
     private String showPrompt(Prompt prompt, ScriptFunction scriptFunction) {
-        waitToStartScriptFunction(scriptFunction);
-        if (scriptFunction == null) {
-            stopBackgroundRenderers();
-        } else if (scriptFunction.relation != ScriptFunction.Relation.Autonomous) {
-            stopBackgroundRenderers();
-        }
-
         String choice;
         try {
             choice = teaseLib.globals.get(Shower.class).show(this, prompt);

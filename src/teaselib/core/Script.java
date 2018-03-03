@@ -311,9 +311,9 @@ public abstract class Script {
                 if (part.type == Message.Type.Image) {
                     // Remember what type of image to display
                     // with the next text element
-                    if (part.value == Message.ActorImage) {
+                    if (Message.ActorImage.equalsIgnoreCase(part.value)) {
                         imageType = part.value;
-                    } else if (part.value == Message.NoImage) {
+                    } else if (Message.NoImage.equalsIgnoreCase(part.value)) {
                         imageType = part.value;
                     } else {
                         final String currentMood;
@@ -385,13 +385,13 @@ public abstract class Script {
 
     private String getActorOrDisplayImage(String imageType, String currentMood) {
         final String nextImage;
-        if (imageType == Message.ActorImage
-                && Boolean.parseBoolean(teaseLib.config.get(Config.Render.ActorImages)) == false) {
+        if (Message.ActorImage.equalsIgnoreCase(imageType)
+                && !Boolean.parseBoolean(teaseLib.config.get(Config.Render.ActorImages))) {
             nextImage = Message.NoImage;
-        } else if (imageType != Message.NoImage
-                && Boolean.parseBoolean(teaseLib.config.get(Config.Render.InstructionalImages)) == false) {
+        } else if (!Message.ActorImage.equalsIgnoreCase(imageType)
+                && !Boolean.parseBoolean(teaseLib.config.get(Config.Render.InstructionalImages))) {
             nextImage = Message.NoImage;
-        } else if (imageType == Message.ActorImage) {
+        } else if (Message.ActorImage.equalsIgnoreCase(imageType)) {
             if (actor.images.hasNext()) {
                 actor.images.hint(currentMood);
                 nextImage = actor.images.next();

@@ -369,6 +369,13 @@ public class MessagePartInjectionTest {
         assertMessageDuration(script, message, 120);
     }
 
+    @Test
+    public void testMessageResourceList() {
+        assertEquals(Arrays.asList("Foo.jpg", "Bar.mp3"),
+                new Message(null, "Test.", "Foo.jpg", Message.ActorImage, "Test.", "Bar.mp3", Message.NoImage, "test.")
+                        .resources());
+    }
+
     private static void assertMessageDuration(TestScript script, Message message, long minimumSeconds) {
         long start = script.teaseLib.getTime(TimeUnit.SECONDS);
         script.renderMessage(message, false);

@@ -556,9 +556,9 @@ public class Message {
         List<String> resources = new ArrayList<>();
         for (MessagePart part : parts) {
             boolean isImageFile = part.type == Type.Image //
-                    && NoImage.equalsIgnoreCase(part.value) //
-                    && ActorImage.equalsIgnoreCase(part.value);
-            if (isImageFile && Type.isFile(part.type)) {
+                    && !NoImage.equalsIgnoreCase(part.value) //
+                    && !ActorImage.equalsIgnoreCase(part.value);
+            if (isImageFile || (part.type != Type.Image && Type.isFile(part.type))) {
                 resources.add(part.value);
             }
         }

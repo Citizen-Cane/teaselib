@@ -152,7 +152,10 @@ public class Message {
 
     public static final String Bullet = "°";
 
-    public static final String[] Keywords = { Delay, ShowOnDesktop, ShowChoices, AwaitSoundCompletion, Bullet };
+    public static final String BackgroundSound = "BackgroundSound";
+
+    public static final String[] Keywords = { Delay, ShowOnDesktop, ShowChoices, AwaitSoundCompletion, Bullet,
+            BackgroundSound };
 
     public final Actor actor;
 
@@ -372,6 +375,8 @@ public class Message {
                 return Type.Delay;
             } else if (keyword == ShowOnDesktop) {
                 return Type.DesktopItem;
+            } else if (keyword == BackgroundSound) {
+                return Type.BackgroundSound;
             } else if (keyword == Message.Bullet) {
                 return Type.Item;
             } else {
@@ -383,7 +388,7 @@ public class Message {
             if (Type.isImage(mToLower)) {
                 return Type.Image;
             } else if (Type.isSound(mToLower)) {
-                return Type.BackgroundSound;
+                return Type.Sound;
             } else {
                 return Type.DesktopItem;
             }

@@ -14,16 +14,18 @@ public class MessagePart {
         } else if (type == Type.DesktopItem) {
             // The keyword is optional,
             // it's just needed to show a file on the desktop
-            text = removeAnyKeywordInFront(Message.ShowOnDesktop, text);
+            text = removeKeyword(Message.ShowOnDesktop, text);
         } else if (type == Type.Delay) {
-            text = removeAnyKeywordInFront(Message.Delay, text);
+            text = removeKeyword(Message.Delay, text);
+        } else if (type == Type.BackgroundSound) {
+            text = removeKeyword(Message.BackgroundSound, text);
         }
         this.type = type;
         this.value = text;
     }
 
-    private static String removeAnyKeywordInFront(String keyword, String text) {
-        if (text.toLowerCase().startsWith(keyword)) {
+    private static String removeKeyword(String keyword, String text) {
+        if (text.toLowerCase().startsWith(keyword.toLowerCase())) {
             text = text.substring(keyword.length()).trim();
         }
         return text;

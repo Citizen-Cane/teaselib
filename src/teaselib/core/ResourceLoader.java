@@ -257,12 +257,12 @@ public class ResourceLoader {
         return isValid;
     }
 
-    public InputStream getResource(String resource) throws IOException {
-        final String classloaderCompatibleResourcePath = getClassLoaderAbsoluteResourcePath(resource);
+    public InputStream getResource(String path) throws IOException {
+        String classloaderCompatibleResourcePath = getClassLoaderAbsoluteResourcePath(path);
         logger.info("Resource: '" + classloaderCompatibleResourcePath + "'");
         InputStream inputStream = classLoader.getResourceAsStream(classloaderCompatibleResourcePath);
         if (inputStream == null) {
-            throw new IOException(classloaderCompatibleResourcePath);
+            throw new IOException(path);
         }
         return inputStream;
     }
@@ -316,7 +316,11 @@ public class ResourceLoader {
      * @return The absolute file system path to the resource item.
      */
     public File getAssetPath(String resourcePath) {
-        return new File(basePath, resourceRoot + classLoaderCompatibleResourcePath(resourcePath));
+        if (resourcePath.startsWith("/")) {
+            return new File(basePath, resourcePath);
+        } else {
+            return new File(basePath, resourceRoot + classLoaderCompatibleResourcePath(resourcePath));
+        }
     }
 
     /**
@@ -327,21 +331,21 @@ public class ResourceLoader {
      * @return The requested resource file.
      * @throws IOException
      */
-    public File unpackEnclosingFolder(String path) throws IOException {
+    public File unpackEnclosingFolder(String resourcePath) throws IOException {
         File match = null;
-        String parentPath = path.substring(0, path.lastIndexOf("/"));
+        String parentPath = resourcePath.substring(0, resourcePath.lastIndexOf('/'));
         Collection<String> folder = resources(Pattern.compile(getClassLoaderAbsoluteResourcePath(parentPath + "/.*")));
         for (String file : folder) {
             File unpacked = unpackFileFromFolder(file);
             if (match == null && classLoaderCompatibleResourcePath(file)
-                    .equals(classLoaderCompatibleResourcePath(getClassLoaderAbsoluteResourcePath(path)))) {
+                    .equals(classLoaderCompatibleResourcePath(getClassLoaderAbsoluteResourcePath(resourcePath)))) {
                 match = unpacked;
             }
         }
         if (match != null) {
             return match;
         } else {
-            throw new FileNotFoundException(path);
+            throw new FileNotFoundException(resourcePath);
         }
     }
 
@@ -354,9 +358,8 @@ public class ResourceLoader {
      * @throws IOException
      */
     public File unpackToFile(String resourcePath) throws IOException {
-        String classLoaderCompatibleResourcePath = classLoaderCompatibleResourcePath(resourcePath);
-        File file = getAssetPath(classLoaderCompatibleResourcePath);
-        return unpackToFileInternal(classLoaderCompatibleResourcePath, file);
+        File file = getAssetPath(resourcePath);
+        return unpackToFileInternal(resourcePath, file);
     }
 
     private File unpackFileFromFolder(String resourcePath) throws IOException {
@@ -365,11 +368,11 @@ public class ResourceLoader {
         return unpackToFileInternal(classLoaderCompatibleResourcePath, file);
     }
 
-    private File unpackToFileInternal(String classLoaderCompatibleResourcePath, File file) throws IOException {
+    private File unpackToFileInternal(String resourcePath, File file) throws IOException {
         if (!file.exists()) {
             InputStream resource = null;
             try {
-                resource = getResource(classLoaderCompatibleResourcePath);
+                resource = getResource(resourcePath);
                 if (!file.exists()) {
                     file.getParentFile().mkdirs();
                     Files.copy(resource, Paths.get(file.toURI()));

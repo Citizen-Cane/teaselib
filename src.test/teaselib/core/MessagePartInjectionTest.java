@@ -17,7 +17,7 @@ import teaselib.test.DebugSetup;
 import teaselib.test.TestScript;
 import teaselib.util.RandomImages;
 
-public class TeaseScriptBaseTest {
+public class MessagePartInjectionTest {
     public final class ActorTestImage implements Images {
         private final String resourcePath;
 

@@ -11,6 +11,13 @@ public class MessageParts implements Iterable<MessagePart> {
 
     private final List<MessagePart> p = new ArrayList<>();
 
+    public MessageParts() {
+    }
+
+    public MessageParts(List<MessagePart> parts) {
+        p.addAll(parts);
+    }
+
     public boolean isEmpty() {
         return p.isEmpty();
     }

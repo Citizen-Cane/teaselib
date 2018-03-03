@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -146,7 +147,6 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
                 renderMessage(getMandatory(messages));
                 allCompleted();
             } else if (replayPosition == Position.End) {
-                // TODO Remove all speech and delay parts
                 renderMessage(getEnd(messages));
                 allCompleted();
             } else {
@@ -160,8 +160,14 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
     }
 
     private Message getEnd(List<Message> messages) {
-        // TODO Return just the text, not the speech or delay parts
-        return getLastSection(getLastMessage());
+        return stripAudio(getLastSection(getLastMessage()));
+    }
+
+    private Message stripAudio(Message message) {
+        List<MessagePart> parts = message.getParts().stream().filter(
+                part -> part.type != Type.Speech && part.type != Type.Sound && part.type != Type.BackgroundSound)
+                .collect(Collectors.toList());
+        return new Message(message.actor, new MessageParts(parts));
     }
 
     private static Message getLastSection(Message message) {

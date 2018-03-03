@@ -200,6 +200,11 @@ public class Message {
         this.actor = actor;
     }
 
+    public Message(Actor actor, MessageParts parts) {
+        this.parts = parts;
+        this.actor = actor;
+    }
+
     public boolean isEmpty() {
         return parts.isEmpty();
     }

@@ -1,12 +1,14 @@
 package teaselib.core;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.Test;
 
+import teaselib.Images;
 import teaselib.Message;
 import teaselib.Message.Type;
 import teaselib.MessageParts;
@@ -16,6 +18,33 @@ import teaselib.test.TestScript;
 import teaselib.util.RandomImages;
 
 public class TeaseScriptBaseTest {
+    public final class ActorTestImage implements Images {
+        private final String resourcePath;
+
+        public ActorTestImage(String resourcePath) {
+            this.resourcePath = resourcePath;
+        }
+
+        @Override
+        public String next() {
+            return resourcePath;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return true;
+        }
+
+        @Override
+        public void hint(String... hint) {
+        }
+
+        @Override
+        public boolean contains(String resource) {
+            return resourcePath.equals(resource);
+        }
+    }
+
     @Test
     public void testEmptyMessage() {
         TestScript script = TestScript.getOne(getClass());
@@ -33,6 +62,7 @@ public class TeaseScriptBaseTest {
     @Test
     public void testInjectionOfInlineResources() {
         TestScript script = TestScript.getOne(new DebugSetup().withOutput());
+        script.actor.images = new ActorTestImage("Actor.jpg");
 
         Message message = new Message(script.actor);
         message.add("Some text.");
@@ -49,14 +79,15 @@ public class TeaseScriptBaseTest {
         int n = 0;
         assertEquals(Type.Mood, parts.get(n++).type);
         assertEquals(Type.Image, parts.get(n).type);
-        assertEquals(Message.NoImage, parts.get(n++).value);
+        assertEquals("Actor.jpg", parts.get(n++).value);
         assertEquals(Type.Text, parts.get(n++).type);
 
         assertEquals(Type.Image, parts.get(n).type);
         assertEquals("foobar.jpg", parts.get(n++).value);
         assertEquals(Type.Text, parts.get(n++).type);
 
-        assertEquals(Type.Image, parts.get(n++).type);
+        assertEquals(Type.Image, parts.get(n).type);
+        assertEquals("Actor.jpg", parts.get(n++).value);
         assertEquals(Type.Text, parts.get(n++).type);
 
         assertEquals(Type.Image, parts.get(n).type);
@@ -72,6 +103,7 @@ public class TeaseScriptBaseTest {
     @Test
     public void testInjectionOfMood() {
         TestScript script = TestScript.getOne(new DebugSetup().withOutput());
+        script.actor.images = new ActorTestImage("Actor.jpg");
 
         script.setMood(Mood.Friendly);
 
@@ -104,7 +136,7 @@ public class TeaseScriptBaseTest {
         assertEquals(Type.Mood, parts.get(n).type);
         assertEquals(Mood.Harsh, parts.get(n++).value);
         assertEquals(Type.Image, parts.get(n).type);
-        assertEquals(Message.NoImage, parts.get(n++).value);
+        assertEquals("Actor.jpg", parts.get(n++).value);
         assertEquals(Type.Text, parts.get(n++).type);
 
         assertEquals(Type.Mood, parts.get(n).type);
@@ -115,7 +147,8 @@ public class TeaseScriptBaseTest {
 
         assertEquals(Type.Mood, parts.get(n).type);
         assertEquals(Mood.Strict, parts.get(n++).value);
-        assertEquals(Type.Image, parts.get(n++).type);
+        assertEquals(Type.Image, parts.get(n).type);
+        assertEquals("Actor.jpg", parts.get(n++).value);
         assertEquals(Type.Text, parts.get(n++).type);
 
         assertEquals(Type.Mood, parts.get(n).type);
@@ -124,7 +157,8 @@ public class TeaseScriptBaseTest {
         assertEquals("foo.jpg", parts.get(n++).value);
         assertEquals(Type.Delay, parts.get(n++).type);
 
-        assertEquals(Type.Image, parts.get(n++).type);
+        assertEquals(Type.Image, parts.get(n).type);
+        assertEquals("bar.jpg", parts.get(n++).value);
         assertEquals(Type.Text, parts.get(n++).type);
 
         assertEquals(Type.Text, parts.get(n++).type);
@@ -173,7 +207,7 @@ public class TeaseScriptBaseTest {
     @Test
     public void testThatActorImageTagApplyOverMultipleTextParagraphs() {
         TestScript script = TestScript.getOne(new DebugSetup().withOutput());
-        script.actor.images = new RandomImages(Arrays.asList("actor.jpg"));
+        script.actor.images = new ActorTestImage("Actor.jpg");
         script.setMood(Mood.Friendly);
 
         Message message = new Message(script.actor);
@@ -197,11 +231,11 @@ public class TeaseScriptBaseTest {
         assertEquals(Type.Text, parts.get(n++).type);
 
         assertEquals(Type.Image, parts.get(n).type);
-        assertEquals("actor.jpg", parts.get(n++).value);
+        assertEquals("Actor.jpg", parts.get(n++).value);
         assertEquals(Type.Text, parts.get(n++).type);
 
         assertEquals(Type.Image, parts.get(n).type);
-        assertEquals("actor.jpg", parts.get(n++).value);
+        assertEquals("Actor.jpg", parts.get(n++).value);
         assertEquals(Type.Text, parts.get(n++).type);
 
         assertEquals(parts.size(), n);
@@ -247,7 +281,7 @@ public class TeaseScriptBaseTest {
 
     @Test
     public void testInjectionOfImage() {
-        TestScript script = TestScript.getOne(new DebugSetup().withInput());
+        TestScript script = TestScript.getOne(new DebugSetup().withInput().withOutput());
 
         Message message = new Message(script.actor);
         message.add("Some text.");
@@ -258,7 +292,7 @@ public class TeaseScriptBaseTest {
         int n = 0;
         assertEquals(Type.Mood, parts.get(n++).type);
         assertEquals(Type.Image, parts.get(n).type);
-        assertEquals(Message.NoImage, parts.get(n++).value);
+        assertEquals("foo.jpg", parts.get(n++).value);
         assertEquals(Type.Text, parts.get(n++).type);
 
         assertEquals(parts.size(), n);

@@ -263,9 +263,14 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
             if (!ManuallyLoggedMessageTypes.contains(part.type)) {
                 teaseLib.transcript.info("" + part.type.name() + " = " + part.value);
             }
-            logger.info(part.type.toString() + ": " + part.value);
+            logger.info("{}={}", part.type, part.value);
 
-            mood = renderMessagePart(part, accumulatedText, message.actor, mood);
+            if (part.type == Message.Type.Mood) {
+                mood = part.value;
+            } else {
+                renderMessagePart(part, accumulatedText, message.actor, mood);
+            }
+
             if (part.type == Message.Type.Text) {
                 completeSectionMandatory();
                 completeSectionAll();
@@ -286,7 +291,7 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
         return lastSection.getParts().contains(part);
     }
 
-    private String renderMessagePart(MessagePart part, MessageTextAccumulator accumulatedText, Actor actor, String mood)
+    private void renderMessagePart(MessagePart part, MessageTextAccumulator accumulatedText, Actor actor, String mood)
             throws IOException, InterruptedException {
         if (part.type == Message.Type.Image) {
             displayImage = part.value;
@@ -307,8 +312,6 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
                     throw e;
                 }
             }
-        } else if (part.type == Message.Type.Mood) {
-            mood = part.value;
         } else if (part.type == Message.Type.Keyword) {
             doKeyword(part);
         } else if (part.type == Message.Type.Delay) {
@@ -320,7 +323,6 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
         } else {
             throw new UnsupportedOperationException(part.type + "=" + part.value);
         }
-        return mood;
     }
 
     private void showDesktopItem(MessagePart part) throws IOException {
@@ -486,6 +488,7 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
             throw new IllegalStateException(keyword + " must be resolved in pre-parse");
         } else if (keyword == Message.ShowChoices) {
             completeSectionMandatory();
+            skipPauseAfterSpeech();
             mandatoryCompleted();
         } else if (keyword == Message.AwaitSoundCompletion) {
             backgroundSoundRenderer.completeAll();
@@ -494,6 +497,12 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
             }
         } else {
             throw new UnsupportedOperationException(keyword);
+        }
+    }
+
+    private void skipPauseAfterSpeech() {
+        if (speechRendererInProgress != null) {
+            speechRendererInProgress.allCompleted();
         }
     }
 

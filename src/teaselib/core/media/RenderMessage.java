@@ -485,9 +485,7 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
         } else if (keyword == Message.NoImage) {
             throw new IllegalStateException(keyword + " must be resolved in pre-parse");
         } else if (keyword == Message.ShowChoices) {
-            if (speechRendererInProgress != null) {
-                speechRendererInProgress.completeMandatory();
-            }
+            completeSectionMandatory();
             mandatoryCompleted();
         } else if (keyword == Message.AwaitSoundCompletion) {
             backgroundSoundRenderer.completeAll();

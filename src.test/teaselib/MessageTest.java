@@ -235,7 +235,7 @@ public class MessageTest {
         assertEquals(2, messages.size());
 
         assertEquals(4, messages.get(0).getParts().size());
-        assertEquals(Message.Type.BackgroundSound, messages.get(0).getParts().get(3).type);
+        assertEquals(Message.Type.Sound, messages.get(0).getParts().get(3).type);
 
         assertEquals(3, messages.get(1).getParts().size());
 

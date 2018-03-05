@@ -1,6 +1,8 @@
 package teaselib.core.texttospeech;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
@@ -214,7 +216,7 @@ public class TextToSpeechRecorderTest {
     private static void testAssets(TextToSpeechPlayer tts, ResourceLoader resources, List<Message> messages) {
         for (Message message : messages) {
             Message speech = tts.createSpeechMessage(message, resources);
-            speech.getParts().stream().filter((part) -> part.type == Type.Speech)
+            speech.stream().filter((part) -> part.type == Type.Speech)
                     .forEach((part) -> assertTrue(Message.Type.isSound(part.value)));
         }
     }

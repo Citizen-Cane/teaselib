@@ -7,23 +7,25 @@ import java.util.stream.Stream;
 
 import teaselib.Message.Type;
 
-public class MessageParts implements Iterable<MessagePart> {
+public class AbstractMessage implements Iterable<MessagePart> {
+    public final Actor actor;
+    private final List<MessagePart> parts = new ArrayList<>();
 
-    private final List<MessagePart> p = new ArrayList<>();
-
-    public MessageParts() {
+    public AbstractMessage(Actor actor) {
+        this.actor = actor;
     }
 
-    public MessageParts(List<MessagePart> parts) {
-        p.addAll(parts);
+    public AbstractMessage(Actor actor, List<MessagePart> parts) {
+        this.actor = actor;
+        this.parts.addAll(parts);
     }
 
     public boolean isEmpty() {
-        return p.isEmpty();
+        return parts.isEmpty();
     }
 
     public void clear() {
-        p.clear();
+        parts.clear();
     }
 
     public void addAll(List<String> paragraphs) {
@@ -38,38 +40,44 @@ public class MessageParts implements Iterable<MessagePart> {
         }
     }
 
-    public void addAll(MessageParts parts) {
-        for (MessagePart part : parts) {
+    public void addAll(AbstractMessage message) {
+        for (MessagePart part : message) {
             add(part);
         }
     }
 
     @Override
     public Iterator<MessagePart> iterator() {
-        return p.iterator();
+        return parts.iterator();
     }
 
     public Stream<MessagePart> stream() {
-        return p.stream();
+        return parts.stream();
     }
 
-    void add(MessagePart part) {
+    /**
+     * Use with caution, since parts are not concatenated to sentences, which may result in collisions when prerecording
+     * speech
+     * 
+     * @param part
+     */
+    public void add(MessagePart part) {
         if (part.type == Type.Text) {
-            p.add(part);
+            parts.add(part);
         } else if (part.type == Type.Mood) {
-            if (!p.isEmpty()) {
-                int i = p.size() - 1;
-                MessagePart previous = p.get(i);
+            if (!parts.isEmpty()) {
+                int i = parts.size() - 1;
+                MessagePart previous = parts.get(i);
                 if (previous.type == Type.Mood) {
-                    p.set(i, part);
+                    parts.set(i, part);
                 } else {
-                    p.add(part);
+                    parts.add(part);
                 }
             } else {
-                p.add(part);
+                parts.add(part);
             }
         } else {
-            p.add(part);
+            parts.add(part);
         }
     }
 
@@ -85,11 +93,11 @@ public class MessageParts implements Iterable<MessagePart> {
     }
 
     public int size() {
-        return p.size();
+        return parts.size();
     }
 
     public boolean contains(Type type) {
-        for (MessagePart part : p) {
+        for (MessagePart part : parts) {
             if (part.type == type) {
                 return true;
             }
@@ -98,23 +106,24 @@ public class MessageParts implements Iterable<MessagePart> {
     }
 
     public boolean contains(MessagePart part) {
-        return p.contains(part);
+        return parts.contains(part);
     }
 
     public MessagePart get(int index) {
-        return p.get(index);
+        return parts.get(index);
     }
 
     @Override
     public String toString() {
-        return "size=" + size() + ", " + p.toString();
+        return "size=" + size() + ", " + parts.toString();
     }
 
     @Override
     public int hashCode() {
         final int prime = 31;
         int result = 1;
-        result = prime * result + ((p == null) ? 0 : p.hashCode());
+        result = prime * result + ((actor == null) ? 0 : actor.hashCode());
+        result = prime * result + ((parts == null) ? 0 : parts.hashCode());
         return result;
     }
 
@@ -126,11 +135,16 @@ public class MessageParts implements Iterable<MessagePart> {
             return false;
         if (getClass() != obj.getClass())
             return false;
-        MessageParts other = (MessageParts) obj;
-        if (p == null) {
-            if (other.p != null)
+        AbstractMessage other = (AbstractMessage) obj;
+        if (actor == null) {
+            if (other.actor != null)
                 return false;
-        } else if (!p.equals(other.p))
+        } else if (!actor.equals(other.actor))
+            return false;
+        if (parts == null) {
+            if (other.parts != null)
+                return false;
+        } else if (!parts.equals(other.parts))
             return false;
         return true;
     }

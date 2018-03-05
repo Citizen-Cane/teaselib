@@ -307,7 +307,7 @@ public abstract class Script {
             String lastMood = null;
             String nextMood = null;
 
-            for (MessagePart part : message.getParts()) {
+            for (MessagePart part : message) {
                 if (part.type == Message.Type.Image) {
                     // Remember what type of image to display
                     // with the next text element
@@ -332,7 +332,7 @@ public abstract class Script {
                     }
                 } else if (part.type == Message.Type.Speech && !Message.Type.isSound(part.value)) {
                     if (Boolean.parseBoolean(teaseLib.config.get(Config.Render.Speech))) {
-                        parsedMessage.add(new MessagePart(part.type, expandTextVariables(part.value)));
+                        parsedMessage.add(part.type, expandTextVariables(part.value));
                     }
                 } else if (Message.Type.FileTypes.contains(part.type)) {
                     parsedMessage.add(part.type, part.value);

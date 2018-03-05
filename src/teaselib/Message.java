@@ -7,8 +7,9 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collector;
 
-public class Message {
+public class Message extends AbstractMessage {
     /**
      * Message types.
      */
@@ -157,8 +158,6 @@ public class Message {
     public static final String[] Keywords = { Delay, ShowOnDesktop, ShowChoices, AwaitSoundCompletion, Bullet,
             BackgroundSound };
 
-    public final Actor actor;
-
     public static final Set<String> EndOfSentenceCharacters = new HashSet<>(Arrays.asList(":", ".", "!", "?"));
     public static final Set<String> MainClauseAppendableCharacters = new HashSet<>(
             Arrays.asList("\"", ">", ",", ";", "-"));
@@ -169,11 +168,21 @@ public class Message {
     private static final Set<String> ImageKeywords = new HashSet<>(
             Arrays.asList(ActorImage.toLowerCase(), NoImage.toLowerCase()));
 
-    private final MessageParts parts;
+    public Collector<MessagePart, Message, Message> collector() {
+        return collector(actor);
+    }
+
+    public static Collector<MessagePart, Message, Message> collector(Actor actor) {
+        return Collector.of(() -> new Message(actor), //
+                (message, part) -> message.add(part), //
+                (message1, message2) -> {
+                    message1.add(message2);
+                    return message1;
+                }, Collector.Characteristics.UNORDERED);
+    }
 
     public Message(Actor actor) {
-        this.parts = new MessageParts();
-        this.actor = actor;
+        super(actor);
     }
 
     /**
@@ -181,36 +190,22 @@ public class Message {
      *            The message to render, or null or an empty list to display no message
      */
     public Message(Actor actor, String... message) {
-        parts = new MessageParts();
-        if (message != null) {
-            parts.addAll(message);
-        }
-        this.actor = actor;
+        super(actor);
+        addAll(message);
     }
 
     /**
-     * @param message
+     * @param paragraphs
      *            The message to render, or null or an empty list to display no message
      */
-    public Message(Actor actor, List<String> message) {
-        this.parts = new MessageParts();
-        if (message != null) {
-            parts.addAll(message);
-        }
-        this.actor = actor;
+    public Message(Actor actor, List<String> paragraphs) {
+        super(actor);
+        addAll(paragraphs);
     }
 
-    public Message(Actor actor, MessageParts parts) {
-        this.parts = parts;
-        this.actor = actor;
-    }
-
-    public boolean isEmpty() {
-        return parts.isEmpty();
-    }
-
-    public Iterator<MessagePart> iterator() {
-        return parts.iterator();
+    public Message(Actor actor, AbstractMessage message) {
+        super(actor);
+        addAll(message);
     }
 
     /**
@@ -227,30 +222,16 @@ public class Message {
         for (String t : text) {
             if (t == null)
                 throw new IllegalArgumentException();
-            parts.add(t);
+            add(t);
         }
     }
 
     public void add(Message message) {
         if (message == null)
             throw new IllegalArgumentException();
-        for (MessagePart part : message.getParts()) {
-            parts.add(part);
+        for (MessagePart part : message) {
+            add(part);
         }
-    }
-
-    /**
-     * Use with caution, since parts are not concatenated to sentences, which may result in collisions when prerecording
-     * speech
-     * 
-     * @param part
-     */
-    public void add(MessagePart part) {
-        parts.add(part);
-    }
-
-    public void add(Type type, String value) {
-        parts.add(type, value);
     }
 
     @Override
@@ -278,13 +259,11 @@ public class Message {
     }
 
     public String buildString(String newLine, boolean all) {
-        if (parts == null) {
-            return "";
-        } else if (parts.isEmpty()) {
+        if (isEmpty()) {
             return "";
         } else {
             StringBuilder messageString = new StringBuilder();
-            for (Iterator<MessagePart> i = parts.iterator(); i.hasNext();) {
+            for (Iterator<MessagePart> i = iterator(); i.hasNext();) {
                 MessagePart part = i.next();
                 boolean appendPart = all || part.type == Type.Text || part.type == Type.Mood;
                 if (appendPart) {
@@ -300,10 +279,6 @@ public class Message {
             }
             return messageString.toString();
         }
-    }
-
-    public MessageParts getParts() {
-        return parts;
     }
 
     public static boolean isFile(String m) {
@@ -428,8 +403,8 @@ public class Message {
     }
 
     public Message joinSentences() {
-        MessageParts newParts = new MessageParts();
-        Iterator<MessagePart> parts = this.parts.iterator();
+        AbstractMessage newParts = new AbstractMessage(actor);
+        Iterator<MessagePart> parts = iterator();
         MessagePart sentence = null;
         while (parts.hasNext()) {
             MessagePart part = parts.next();
@@ -452,17 +427,17 @@ public class Message {
                 newParts.add(part);
             }
         }
-        this.parts.clear();
-        this.parts.addAll(newParts);
+        clear();
+        addAll(newParts);
         return this;
     }
 
     public Message readAloud() {
-        MessageParts newParts = new MessageParts();
-        Iterator<MessagePart> parts = this.parts.iterator();
+        AbstractMessage newParts = new AbstractMessage(actor);
+        Iterator<MessagePart> messageParts = iterator();
         boolean readAloud = false;
-        while (parts.hasNext()) {
-            MessagePart part = parts.next();
+        while (messageParts.hasNext()) {
+            MessagePart part = messageParts.next();
             if (part.type == Type.Text) {
                 String text = part.value;
                 boolean readAloudStart = text.startsWith("\"");
@@ -484,8 +459,8 @@ public class Message {
                 newParts.add(part);
             }
         }
-        this.parts.clear();
-        this.parts.addAll(newParts);
+        this.clear();
+        this.addAll(newParts);
         return this;
     }
 
@@ -497,11 +472,11 @@ public class Message {
 
         boolean header = true;
 
-        for (MessagePart part : parts) {
+        for (MessagePart part : this) {
             boolean isHeaderType = ParagraphStart.contains(part.type);
             boolean startNewHeader = !header && isHeaderType;
-            boolean headerTypeAlreadyInCurrent = current.getParts().contains(part.type) && isHeaderType;
-            boolean messageComplete = current.getParts().contains(Type.Text) && isHeaderType;
+            boolean headerTypeAlreadyInCurrent = current.contains(part.type) && isHeaderType;
+            boolean messageComplete = current.contains(Type.Text) && isHeaderType;
             if (startNewHeader || headerTypeAlreadyInCurrent || messageComplete) {
                 current = new Message(actor);
                 paragraphs.add(current);
@@ -531,40 +506,9 @@ public class Message {
         return message;
     }
 
-    @Override
-    public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        result = prime * result + ((actor == null) ? 0 : actor.hashCode());
-        result = prime * result + ((parts == null) ? 0 : parts.hashCode());
-        return result;
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj)
-            return true;
-        if (obj == null)
-            return false;
-        if (getClass() != obj.getClass())
-            return false;
-        Message other = (Message) obj;
-        if (actor == null) {
-            if (other.actor != null)
-                return false;
-        } else if (!actor.equals(other.actor))
-            return false;
-        if (parts == null) {
-            if (other.parts != null)
-                return false;
-        } else if (!parts.equals(other.parts))
-            return false;
-        return true;
-    }
-
     public List<String> resources() {
         List<String> resources = new ArrayList<>();
-        for (MessagePart part : parts) {
+        for (MessagePart part : this) {
             boolean isImageFile = part.type == Type.Image //
                     && !NoImage.equalsIgnoreCase(part.value) //
                     && !ActorImage.equalsIgnoreCase(part.value);

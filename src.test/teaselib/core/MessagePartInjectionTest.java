@@ -8,10 +8,11 @@ import java.util.concurrent.TimeUnit;
 
 import org.junit.Test;
 
+import teaselib.AbstractMessage;
+import teaselib.Actor;
 import teaselib.Images;
 import teaselib.Message;
 import teaselib.Message.Type;
-import teaselib.MessageParts;
 import teaselib.Mood;
 import teaselib.test.DebugSetup;
 import teaselib.test.TestScript;
@@ -45,6 +46,8 @@ public class MessagePartInjectionTest {
         }
     }
 
+    static final Actor DummyActor = null;
+
     @Test
     public void testEmptyMessage() {
         TestScript script = TestScript.getOne(getClass());
@@ -52,7 +55,7 @@ public class MessagePartInjectionTest {
         Message message = new Message(script.actor);
         script.setImage("foobar.jpg");
         Message parsed = script.injectImagesAndExpandTextVariables(message);
-        MessageParts parts = parsed.getParts();
+        AbstractMessage parts = parsed;
         int n = 0;
         assertEquals(Type.Image, parts.get(n).type);
 
@@ -75,7 +78,7 @@ public class MessagePartInjectionTest {
         message.add("bar.jpg");
 
         Message parsed = script.injectImagesAndExpandTextVariables(message);
-        MessageParts parts = parsed.getParts();
+        AbstractMessage parts = parsed;
         int n = 0;
         assertEquals(Type.Mood, parts.get(n++).type);
         assertEquals(Type.Image, parts.get(n).type);
@@ -130,7 +133,7 @@ public class MessagePartInjectionTest {
         message.add("I'm happy.");
 
         Message parsed = script.injectImagesAndExpandTextVariables(message);
-        MessageParts parts = parsed.getParts();
+        AbstractMessage parts = parsed;
         int n = 0;
 
         assertEquals(Type.Mood, parts.get(n).type);
@@ -185,7 +188,7 @@ public class MessagePartInjectionTest {
         message.add("Still nothing to see.");
 
         Message parsed = script.injectImagesAndExpandTextVariables(message);
-        MessageParts parts = parsed.getParts();
+        AbstractMessage parts = parsed;
         int n = 0;
 
         assertEquals(Type.Mood, parts.get(n).type);
@@ -220,7 +223,7 @@ public class MessagePartInjectionTest {
         message.add("There I am again.");
 
         Message parsed = script.injectImagesAndExpandTextVariables(message);
-        MessageParts parts = parsed.getParts();
+        AbstractMessage parts = parsed;
         int n = 0;
 
         assertEquals(Type.Mood, parts.get(n).type);
@@ -250,7 +253,7 @@ public class MessagePartInjectionTest {
         script.setImage("foo.jpg");
 
         Message parsed = script.injectImagesAndExpandTextVariables(message);
-        MessageParts parts = parsed.getParts();
+        AbstractMessage parts = parsed;
         int n = 0;
         assertEquals(Type.Mood, parts.get(n++).type);
         assertEquals(Type.Image, parts.get(n).type);
@@ -269,7 +272,7 @@ public class MessagePartInjectionTest {
         script.setImage(Message.NoImage);
 
         Message parsed = script.injectImagesAndExpandTextVariables(message);
-        MessageParts parts = parsed.getParts();
+        AbstractMessage parts = parsed;
         int n = 0;
         assertEquals(Type.Mood, parts.get(n++).type);
         assertEquals(Type.Image, parts.get(n).type);
@@ -288,7 +291,7 @@ public class MessagePartInjectionTest {
         script.setImage("foo.jpg");
 
         Message parsed = script.injectImagesAndExpandTextVariables(message);
-        MessageParts parts = parsed.getParts();
+        AbstractMessage parts = parsed;
         int n = 0;
         assertEquals(Type.Mood, parts.get(n++).type);
         assertEquals(Type.Image, parts.get(n).type);
@@ -307,7 +310,7 @@ public class MessagePartInjectionTest {
         script.setImage("foo.jpg");
 
         Message parsed = script.injectImagesAndExpandTextVariables(message);
-        MessageParts parts = parsed.getParts();
+        AbstractMessage parts = parsed;
         int n = 0;
         assertEquals(Type.Mood, parts.get(n++).type);
         assertEquals(Type.Image, parts.get(n).type);
@@ -328,7 +331,7 @@ public class MessagePartInjectionTest {
         message.add("Some text.");
 
         Message parsed = script.injectImagesAndExpandTextVariables(message);
-        MessageParts parts = parsed.getParts();
+        AbstractMessage parts = parsed;
         int n = 0;
 
         assertEquals(Type.Mood, parts.get(n++).type);
@@ -355,7 +358,7 @@ public class MessagePartInjectionTest {
         message.add(Message.Delay120s);
 
         Message parsed = script.injectImagesAndExpandTextVariables(message);
-        MessageParts parts = parsed.getParts();
+        AbstractMessage parts = parsed;
         int n = 0;
 
         assertEquals(Type.Mood, parts.get(n++).type);
@@ -371,9 +374,8 @@ public class MessagePartInjectionTest {
 
     @Test
     public void testMessageResourceList() {
-        assertEquals(Arrays.asList("Foo.jpg", "Bar.mp3"),
-                new Message(null, "Test.", "Foo.jpg", Message.ActorImage, "Test.", "Bar.mp3", Message.NoImage, "test.")
-                        .resources());
+        assertEquals(Arrays.asList("Foo.jpg", "Bar.mp3"), new Message(DummyActor, "Test.", "Foo.jpg",
+                Message.ActorImage, "Test.", "Bar.mp3", Message.NoImage, "Test.").resources());
     }
 
     private static void assertMessageDuration(TestScript script, Message message, long minimumSeconds) {
@@ -384,5 +386,29 @@ public class MessagePartInjectionTest {
 
         long duration = end - start;
         assertTrue(duration >= minimumSeconds);
+    }
+
+    @Test
+    public void testCollectorFilterPositive() {
+        Message expected = new Message(DummyActor);
+        expected.add(Type.Sound, "Bar.mp3");
+
+        assertEquals(expected,
+                new Message(DummyActor, "Test.", "Foo.jpg", Message.ActorImage, "Test.", "Bar.mp3", Message.NoImage,
+                        "Test.").stream().filter(part -> part.type == Type.Sound)
+                                .collect(Message.collector(DummyActor)));
+    }
+
+    @Test
+    public void testCollectorFilterNegative() {
+        Message expected = new Message(DummyActor);
+        expected.add(Type.Text, "Test.");
+        expected.add(Type.Text, "Test.");
+        expected.add(Type.Sound, "Bar.mp3");
+        expected.add(Type.Text, "Test.");
+        assertEquals(expected,
+                new Message(DummyActor, "Test.", "Foo.jpg", Message.ActorImage, "Test.", "Bar.mp3", Message.NoImage,
+                        "Test.").stream().filter(part -> part.type != Type.Image)
+                                .collect(Message.collector(DummyActor)));
     }
 }

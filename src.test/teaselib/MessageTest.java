@@ -36,8 +36,8 @@ public class MessageTest {
         final String s = "Understood, #slave? ";
         assertEquals(Message.Type.Text, Message.determineType(s));
         final Message message = new Message(actor, s);
-        assertEquals(message.getParts().size(), 1);
-        assertTrue(message.getParts().get(0).value.endsWith("?"));
+        assertEquals(message.size(), 1);
+        assertTrue(message.get(0).value.endsWith("?"));
     }
 
     @Test
@@ -46,8 +46,8 @@ public class MessageTest {
         final String s = " Understood, #slave?";
         assertEquals(Message.Type.Text, Message.determineType(s));
         final Message message = new Message(actor, s);
-        assertEquals(message.getParts().size(), 1);
-        assertTrue(message.getParts().get(0).value.startsWith("U"));
+        assertEquals(message.size(), 1);
+        assertTrue(message.get(0).value.startsWith("U"));
     }
 
     @Test
@@ -59,45 +59,45 @@ public class MessageTest {
     public void properAdd() {
         // Leading and trailing white space before is okay
         Message message = new Message(actor, " Have you Understood, #slave ");
-        assertEquals(Message.Type.Text, message.getParts().get(0).type);
+        assertEquals(Message.Type.Text, message.get(0).type);
     }
 
     @Test
     public void properParagraphs() {
         // Leading and trailing white space before is okay
         Message message = new Message(actor, "Now go!", "Have you Understood, #slave?");
-        assertEquals(2, message.getParts().size());
-        assertEquals(Message.Type.Text, message.getParts().get(0).type);
-        assertEquals(Message.Type.Text, message.getParts().get(1).type);
+        assertEquals(2, message.size());
+        assertEquals(Message.Type.Text, message.get(0).type);
+        assertEquals(Message.Type.Text, message.get(1).type);
     }
 
     @Test
     public void dontConcatenate() {
         // Leading and trailing white space before is okay
         Message message = new Message(actor, "Now go and", "do it, #slave!");
-        assertEquals(2, message.getParts().size());
-        assertEquals(Message.Type.Text, message.getParts().get(0).type);
+        assertEquals(2, message.size());
+        assertEquals(Message.Type.Text, message.get(0).type);
     }
 
     @Test
     public void properConcatenation() {
         // Leading and trailing white space before is okay
         Message message = new Message(actor, "   Now go and   ", "  do it, #slave!   ").joinSentences();
-        assertEquals(1, message.getParts().size());
-        assertEquals(Message.Type.Text, message.getParts().get(0).type);
-        assertEquals("Now go and do it, #slave!", message.getParts().get(0).value);
+        assertEquals(1, message.size());
+        assertEquals(Message.Type.Text, message.get(0).type);
+        assertEquals("Now go and do it, #slave!", message.get(0).value);
     }
 
     @Test
     public void readAloudSimple() {
         // Leading and trailing white space before is okay
         Message message = new Message(actor, "\"The adventures of Terry and Sally\"").readAloud();
-        assertEquals(3, message.getParts().size());
-        assertEquals(Message.Type.Mood, message.getParts().get(0).type);
-        assertEquals(Mood.Reading, message.getParts().get(0).value);
-        assertEquals(Message.Type.Text, message.getParts().get(1).type);
-        assertEquals(Message.Type.Mood, message.getParts().get(2).type);
-        assertEquals(Mood.Neutral, message.getParts().get(2).value);
+        assertEquals(3, message.size());
+        assertEquals(Message.Type.Mood, message.get(0).type);
+        assertEquals(Mood.Reading, message.get(0).value);
+        assertEquals(Message.Type.Text, message.get(1).type);
+        assertEquals(Message.Type.Mood, message.get(2).type);
+        assertEquals(Mood.Neutral, message.get(2).value);
     }
 
     @Test
@@ -106,16 +106,16 @@ public class MessageTest {
         Message message = new Message(actor, "It's storytime, slut!",
                 "I'm going to relate to you a fun tale of self-bondage today;", "a chapter from one of My favorites:",
                 "\"The adventures of Terry and Sally\"", "I'm sure you'll like it.").readAloud();
-        assertEquals(7, message.getParts().size());
-        assertEquals(Message.Type.Text, message.getParts().get(0).type);
-        assertEquals(Message.Type.Text, message.getParts().get(1).type);
-        assertEquals(Message.Type.Text, message.getParts().get(2).type);
-        assertEquals(Message.Type.Mood, message.getParts().get(3).type);
-        assertEquals(Mood.Reading, message.getParts().get(3).value);
-        assertEquals(Message.Type.Text, message.getParts().get(4).type);
-        assertEquals(Message.Type.Mood, message.getParts().get(5).type);
-        assertEquals(Mood.Neutral, message.getParts().get(5).value);
-        assertEquals(Message.Type.Text, message.getParts().get(6).type);
+        assertEquals(7, message.size());
+        assertEquals(Message.Type.Text, message.get(0).type);
+        assertEquals(Message.Type.Text, message.get(1).type);
+        assertEquals(Message.Type.Text, message.get(2).type);
+        assertEquals(Message.Type.Mood, message.get(3).type);
+        assertEquals(Mood.Reading, message.get(3).value);
+        assertEquals(Message.Type.Text, message.get(4).type);
+        assertEquals(Message.Type.Mood, message.get(5).type);
+        assertEquals(Mood.Neutral, message.get(5).value);
+        assertEquals(Message.Type.Text, message.get(6).type);
     }
 
     @Test
@@ -128,11 +128,11 @@ public class MessageTest {
                 "The interesting part to this whole adventure was the techniques that",
                 "Jennifer and I used to keep us both in the guest room for a few hours", "prior to getting out.")
                         .joinSentences();
-        assertEquals(4, message.getParts().size());
-        assertEquals(Message.Type.Text, message.getParts().get(0).type);
-        assertEquals(Message.Type.Text, message.getParts().get(1).type);
-        assertEquals(Message.Type.Text, message.getParts().get(2).type);
-        assertEquals(Message.Type.Text, message.getParts().get(3).type);
+        assertEquals(4, message.size());
+        assertEquals(Message.Type.Text, message.get(0).type);
+        assertEquals(Message.Type.Text, message.get(1).type);
+        assertEquals(Message.Type.Text, message.get(2).type);
+        assertEquals(Message.Type.Text, message.get(3).type);
     }
 
     @Test
@@ -141,17 +141,17 @@ public class MessageTest {
         Message message = new Message(actor, "It's storytime, slut!",
                 "I'm going to relate to you a fun tale of self-bondage today;", "a chapter from one of My favorites:",
                 "\"The adventures of Terry and Sally\"", "I'm sure you'll like it.").readAloud();
-        assertEquals(7, message.getParts().size());
-        assertEquals(Message.Type.Text, message.getParts().get(0).type);
-        assertEquals(Message.Type.Text, message.getParts().get(1).type);
-        assertEquals(Message.Type.Text, message.getParts().get(2).type);
-        assertEquals(Message.Type.Mood, message.getParts().get(3).type);
-        assertEquals(Mood.Reading, message.getParts().get(3).value);
-        assertEquals(Message.Type.Text, message.getParts().get(4).type);
-        assertEquals(Message.Type.Mood, message.getParts().get(5).type);
-        assertEquals(Mood.Neutral, message.getParts().get(5).value);
-        assertEquals(Message.Type.Text, message.getParts().get(6).type);
-        assertTrue(!message.getParts().get(6).value.startsWith(Mood.Neutral));
+        assertEquals(7, message.size());
+        assertEquals(Message.Type.Text, message.get(0).type);
+        assertEquals(Message.Type.Text, message.get(1).type);
+        assertEquals(Message.Type.Text, message.get(2).type);
+        assertEquals(Message.Type.Mood, message.get(3).type);
+        assertEquals(Mood.Reading, message.get(3).value);
+        assertEquals(Message.Type.Text, message.get(4).type);
+        assertEquals(Message.Type.Mood, message.get(5).type);
+        assertEquals(Mood.Neutral, message.get(5).value);
+        assertEquals(Message.Type.Text, message.get(6).type);
+        assertTrue(!message.get(6).value.startsWith(Mood.Neutral));
     }
 
     @Test
@@ -159,9 +159,9 @@ public class MessageTest {
         // concat == true
         Message message = new Message(actor, "Care must be taken to not make the ties too strong,",
                 "in order to keep the blood flowing through the tied up limbs.").joinSentences();
-        assertEquals(2, message.getParts().size());
-        assertEquals(Message.Type.Text, message.getParts().get(0).type);
-        assertEquals(Message.Type.Text, message.getParts().get(1).type);
+        assertEquals(2, message.size());
+        assertEquals(Message.Type.Text, message.get(0).type);
+        assertEquals(Message.Type.Text, message.get(1).type);
     }
 
     @Test
@@ -169,9 +169,9 @@ public class MessageTest {
         // concat == true
         Message message = new Message(actor, "I want you to put the gag in, to begin with -",
                 "you'll be wearing it throughout the session.").joinSentences();
-        assertEquals(2, message.getParts().size());
-        assertEquals(Message.Type.Text, message.getParts().get(0).type);
-        assertEquals(Message.Type.Text, message.getParts().get(1).type);
+        assertEquals(2, message.size());
+        assertEquals(Message.Type.Text, message.get(0).type);
+        assertEquals(Message.Type.Text, message.get(1).type);
     }
 
     @Test
@@ -216,9 +216,9 @@ public class MessageTest {
         List<Message> messages = new Message(actor, "Foo", "Foobar.jpg", "Bar", "Foobar").split();
         assertEquals(3, messages.size());
 
-        assertEquals(1, messages.get(0).getParts().size());
-        assertEquals(2, messages.get(1).getParts().size());
-        assertEquals(1, messages.get(2).getParts().size());
+        assertEquals(1, messages.get(0).size());
+        assertEquals(2, messages.get(1).size());
+        assertEquals(1, messages.get(2).size());
     }
 
     @Test
@@ -226,18 +226,18 @@ public class MessageTest {
         List<Message> messages = new Message(actor, Delay10s, "Foo.wav", Delay10s, "Foobar.jpg", "").split();
         assertEquals(2, messages.size());
 
-        assertEquals(3, messages.get(0).getParts().size());
-        assertEquals(2, messages.get(1).getParts().size());
+        assertEquals(3, messages.get(0).size());
+        assertEquals(2, messages.get(1).size());
     }
 
     private void testMultipleImages(Message message) {
         List<Message> messages = message.split();
         assertEquals(2, messages.size());
 
-        assertEquals(4, messages.get(0).getParts().size());
-        assertEquals(Message.Type.Sound, messages.get(0).getParts().get(3).type);
+        assertEquals(4, messages.get(0).size());
+        assertEquals(Message.Type.Sound, messages.get(0).get(3).type);
 
-        assertEquals(3, messages.get(1).getParts().size());
+        assertEquals(3, messages.get(1).size());
 
         Message joined = Message.join(messages);
         assertEquals(message, joined);

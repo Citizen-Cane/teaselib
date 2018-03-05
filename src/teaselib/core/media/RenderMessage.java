@@ -8,17 +8,16 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import teaselib.AbstractMessage;
 import teaselib.Actor;
 import teaselib.Config;
 import teaselib.Message;
 import teaselib.Message.Type;
 import teaselib.MessagePart;
-import teaselib.MessageParts;
 import teaselib.Mood;
 import teaselib.Replay.Position;
 import teaselib.Replay.Replayable;
@@ -37,8 +36,11 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
     private static final long DELAY_BETWEEN_PARAGRAPHS = 500;
     private static final long DELAY_AT_END_OF_MESSAGE = 2000;
 
-    static final Set<Message.Type> ManuallyLoggedMessageTypes = new HashSet<>(
+    private static final Set<Message.Type> ManuallyLoggedMessageTypes = new HashSet<>(
             Arrays.asList(Message.Type.Text, Message.Type.Image, Message.Type.Mood, Message.Type.Speech));
+
+    private static final Set<Type> SoundTypes = new HashSet<>(
+            Arrays.asList(Type.Speech, Type.Sound, Type.BackgroundSound));
 
     private final Prefetcher<byte[]> imageFetcher = new Prefetcher<>();
 
@@ -105,7 +107,7 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
     }
 
     private void prefetchImages(Message message) {
-        for (MessagePart part : message.getParts()) {
+        for (MessagePart part : message) {
             if (part.type == Message.Type.Image) {
                 final String resourcePath = part.value;
                 if (part.value != Message.NoImage) {
@@ -164,10 +166,7 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
     }
 
     private Message stripAudio(Message message) {
-        List<MessagePart> parts = message.getParts().stream().filter(
-                part -> part.type != Type.Speech && part.type != Type.Sound && part.type != Type.BackgroundSound)
-                .collect(Collectors.toList());
-        return new Message(message.actor, new MessageParts(parts));
+        return message.stream().filter(part -> !SoundTypes.contains(part.type)).collect(message.collector());
     }
 
     private static Message getLastSection(Message message) {
@@ -182,7 +181,7 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
     }
 
     private static int findStartOfHeader(Message message, int index) {
-        MessageParts parts = message.getParts();
+        AbstractMessage parts = message;
         while (index-- > 0) {
             Type type = parts.get(index).type;
             if (type == Message.Type.Text || type == Message.Type.Delay) {
@@ -195,7 +194,7 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
     }
 
     private static int findLastTextElement(Message message) {
-        MessageParts parts = message.getParts();
+        AbstractMessage parts = message;
         int index = parts.size();
         while (index-- > 0) {
             Type type = parts.get(index).type;
@@ -213,7 +212,7 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
 
         Message lastSection = new Message(message.actor);
         boolean afterText = false;
-        MessageParts parts = message.getParts();
+        AbstractMessage parts = message;
         for (int i = index; i < parts.size(); i++) {
             MessagePart part = parts.get(i);
             if (part.type == Message.Type.DesktopItem) {
@@ -288,7 +287,7 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
     }
 
     private boolean isLastParagraph(MessagePart part) {
-        return lastSection.getParts().contains(part);
+        return lastSection.contains(part);
     }
 
     private void renderMessagePart(MessagePart part, MessageTextAccumulator accumulatedText, Actor actor, String mood)
@@ -540,7 +539,7 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
         long delay = 0;
         MessageTextAccumulator text = new MessageTextAccumulator();
         for (Message message : messages) {
-            MessageParts paragraphs = message.getParts();
+            AbstractMessage paragraphs = message;
             for (Iterator<MessagePart> it = paragraphs.iterator(); it.hasNext();) {
                 MessagePart part = it.next();
                 text.add(part);

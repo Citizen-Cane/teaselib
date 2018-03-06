@@ -27,6 +27,7 @@ import teaselib.core.media.MediaRenderer;
 import teaselib.core.media.MediaRendererQueue;
 import teaselib.core.media.RenderInterTitle;
 import teaselib.core.media.RenderMessage;
+import teaselib.core.media.RenderedMessage;
 import teaselib.core.speechrecognition.SpeechRecognitionResult.Confidence;
 import teaselib.core.speechrecognition.SpeechRecognizer;
 import teaselib.core.texttospeech.TextToSpeechPlayer;
@@ -210,7 +211,7 @@ public abstract class Script {
     }
 
     protected void renderIntertitle(String... text) {
-        if (!prepends.isEmpty()) {
+        if (!prependedMessages.isEmpty()) {
             throw new IllegalStateException("renderIntertitle doesn't support prepended messages");
         }
         try {
@@ -223,12 +224,12 @@ public abstract class Script {
         }
     }
 
-    private final List<Message> prepends = new ArrayList<>();
+    private final List<Message> prependedMessages = new ArrayList<>();
     private RenderMessage renderMessage = null;
 
     protected void prependMessage(Message message) {
         renderMessage = null;
-        prepends.add(message);
+        prependedMessages.add(message);
     }
 
     protected void renderMessage(Message message, boolean useTTS) {
@@ -236,13 +237,16 @@ public abstract class Script {
             Optional<TextToSpeechPlayer> textToSpeech = useTTS
                     ? Optional.ofNullable(teaseLib.globals.get(TextToSpeechPlayer.class))
                     : Optional.empty();
-            List<Message> messages = new ArrayList<>(prepends.size() + 1);
-            for (Message prepend : prepends) {
-                messages.add(injectImagesAndExpandTextVariables(prepend, textToSpeech));
-            }
-            prepends.clear();
 
-            messages.add(injectImagesAndExpandTextVariables(message, textToSpeech));
+            RenderedMessage.Function[] messageModifiers = messageModifiers(textToSpeech);
+
+            List<Message> messages = new ArrayList<>(prependedMessages.size() + 1);
+            for (Message prependedMessage : prependedMessages) {
+                messages.add(RenderedMessage.of(prependedMessage, messageModifiers));
+            }
+            prependedMessages.clear();
+
+            messages.add(RenderedMessage.of(message, messageModifiers));
             renderMessage = new RenderMessage(teaseLib, resources, textToSpeech, messages);
             renderMessage(renderMessage);
         } finally {
@@ -252,15 +256,62 @@ public abstract class Script {
     }
 
     protected void appendMessage(Message message) {
-        if (!prepends.isEmpty()) {
-            throw new IllegalStateException("Open prepends: " + prepends);
+        if (!prependedMessages.isEmpty()) {
+            throw new IllegalStateException("Open prepends: " + prependedMessages);
         }
-        renderMessage.append(injectImagesAndExpandTextVariables(message, renderMessage.getTextToSpeech()));
+        renderMessage.append(RenderedMessage.of(message, messageModifiers(renderMessage.getTextToSpeech())));
     }
 
-    private Message injectImagesAndExpandTextVariables(Message message, Optional<TextToSpeechPlayer> textToSpeech) {
-        return injectImagesAndExpandTextVariables(
-                textToSpeech.isPresent() ? textToSpeech.get().createSpeechMessage(message, resources) : message);
+    private RenderedMessage.Function[] messageModifiers(Optional<TextToSpeechPlayer> textToSpeech) {
+        return new RenderedMessage.Function[] { //
+                (message) -> filterDebug(message), //
+                (message) -> addTextToSpeech(message, textToSpeech), //
+                (message) -> expandTextVariables(message), //
+                (message) -> addActorImages(message) //
+        };
+    }
+
+    private Message filterDebug(Message message) {
+        Message debugFiltered = new Message(message.actor);
+        for (MessagePart part : message) {
+            if (part.type == Message.Type.DesktopItem
+                    && !Boolean.parseBoolean(teaseLib.config.get(Config.Render.InstructionalImages))) {
+                // Ignore
+            } else if (part.type == Message.Type.Image
+                    && !Boolean.parseBoolean(teaseLib.config.get(Config.Render.InstructionalImages))) {
+                // Ignore
+            } else if (part.type == Message.Type.Sound
+                    && !Boolean.parseBoolean(teaseLib.config.get(Config.Render.Sound))) {
+                // Ignore
+            } else if (part.type == Message.Type.BackgroundSound
+                    && !Boolean.parseBoolean(teaseLib.config.get(Config.Render.Sound))) {
+                // Ignore
+            } else {
+                debugFiltered.add(part);
+            }
+        }
+        return debugFiltered;
+    }
+
+    private Message addTextToSpeech(Message message, Optional<TextToSpeechPlayer> textToSpeech) {
+        return textToSpeech.isPresent() ? textToSpeech.get().createSpeechMessage(message, resources) : message;
+    }
+
+    private Message expandTextVariables(Message message) {
+        Message expandedTextVariables = new Message(message.actor);
+        for (MessagePart part : message) {
+            if (part.type == Message.Type.Speech && !Message.Type.isSound(part.value)) {
+                if (Boolean.parseBoolean(teaseLib.config.get(Config.Render.Speech))) {
+                    expandedTextVariables.add(part.type, expandTextVariables(part.value));
+                }
+            } else if (part.type == Message.Type.Text) {
+                expandedTextVariables.add(new MessagePart(part.type, expandTextVariables(part.value)));
+
+            } else {
+                expandedTextVariables.add(part);
+            }
+        }
+        return expandedTextVariables;
     }
 
     private void renderMessage(MediaRenderer renderMessage) {
@@ -289,7 +340,7 @@ public abstract class Script {
         }
     }
 
-    public Message injectImagesAndExpandTextVariables(Message message) {
+    public Message addActorImages(Message message) {
         // Clone the actor to prevent the wrong actor image to be displayed
         // when changing the actor images right after rendering a message.
         // Without cloning one of the new actor images would be displayed
@@ -330,12 +381,8 @@ public abstract class Script {
                         imageType = nextImage = getActorOrDisplayImage(part.value, currentMood);
                         parsedMessage.add(part.type, nextImage);
                     }
-                } else if (part.type == Message.Type.Speech && !Message.Type.isSound(part.value)) {
-                    if (Boolean.parseBoolean(teaseLib.config.get(Config.Render.Speech))) {
-                        parsedMessage.add(part.type, expandTextVariables(part.value));
-                    }
-                } else if (Message.Type.FileTypes.contains(part.type)) {
-                    parsedMessage.add(part.type, part.value);
+                    // } else if (Message.Type.FileTypes.contains(part.type)) {
+                    // parsedMessage.add(part.type, part.value);
                 } else if (part.type == Message.Type.Keyword) {
                     parsedMessage.add(part);
                 } else if (part.type == Message.Type.Mood) {
@@ -360,16 +407,7 @@ public abstract class Script {
                         parsedMessage.add(Message.Type.Image, nextImage);
                     }
                     // Replace text variables
-                    parsedMessage.add(new MessagePart(part.type, expandTextVariables(part.value)));
-                } else if (part.type == Message.Type.DesktopItem
-                        && !Boolean.parseBoolean(teaseLib.config.get(Config.Render.InstructionalImages))) {
-                    // Ignore
-                } else if (part.type == Message.Type.Sound
-                        && !Boolean.parseBoolean(teaseLib.config.get(Config.Render.Sound))) {
-                    // Ignore
-                } else if (part.type == Message.Type.BackgroundSound
-                        && !Boolean.parseBoolean(teaseLib.config.get(Config.Render.Sound))) {
-                    // Ignore
+                    parsedMessage.add(part);
                 } else {
                     parsedMessage.add(part);
                 }

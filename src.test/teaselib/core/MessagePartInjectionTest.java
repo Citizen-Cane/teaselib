@@ -4,6 +4,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.util.Arrays;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.Test;
@@ -14,6 +15,7 @@ import teaselib.Images;
 import teaselib.Message;
 import teaselib.Message.Type;
 import teaselib.Mood;
+import teaselib.core.media.RenderedMessage;
 import teaselib.test.DebugSetup;
 import teaselib.test.TestScript;
 import teaselib.util.RandomImages;
@@ -54,7 +56,7 @@ public class MessagePartInjectionTest {
 
         Message message = new Message(script.actor);
         script.setImage("foobar.jpg");
-        Message parsed = script.addActorImages(message);
+        Message parsed = RenderedMessage.of(message, ((Script) script).messageModifiers(Optional.empty()));
         AbstractMessage parts = parsed;
         int n = 0;
         assertEquals(Type.Image, parts.get(n).type);
@@ -77,7 +79,7 @@ public class MessagePartInjectionTest {
         message.add(Type.Delay, "2");
         message.add("bar.jpg");
 
-        Message parsed = script.addActorImages(message);
+        Message parsed = RenderedMessage.of(message, ((Script) script).messageModifiers(Optional.empty()));
         AbstractMessage parts = parsed;
         int n = 0;
         assertEquals(Type.Mood, parts.get(n++).type);
@@ -132,7 +134,7 @@ public class MessagePartInjectionTest {
         message.add(Mood.Happy);
         message.add("I'm happy.");
 
-        Message parsed = script.addActorImages(message);
+        Message parsed = RenderedMessage.of(message, ((Script) script).messageModifiers(Optional.empty()));
         AbstractMessage parts = parsed;
         int n = 0;
 
@@ -187,7 +189,7 @@ public class MessagePartInjectionTest {
 
         message.add("Still nothing to see.");
 
-        Message parsed = script.addActorImages(message);
+        Message parsed = RenderedMessage.of(message, ((Script) script).messageModifiers(Optional.empty()));
         AbstractMessage parts = parsed;
         int n = 0;
 
@@ -222,7 +224,7 @@ public class MessagePartInjectionTest {
 
         message.add("There I am again.");
 
-        Message parsed = script.addActorImages(message);
+        Message parsed = RenderedMessage.of(message, ((Script) script).messageModifiers(Optional.empty()));
         AbstractMessage parts = parsed;
         int n = 0;
 
@@ -252,7 +254,7 @@ public class MessagePartInjectionTest {
         message.add("Some text.");
         script.setImage("foo.jpg");
 
-        Message parsed = script.addActorImages(message);
+        Message parsed = RenderedMessage.of(message, ((Script) script).messageModifiers(Optional.empty()));
         AbstractMessage parts = parsed;
         int n = 0;
         assertEquals(Type.Mood, parts.get(n++).type);
@@ -271,7 +273,7 @@ public class MessagePartInjectionTest {
         message.add("Some text.");
         script.setImage(Message.NoImage);
 
-        Message parsed = script.addActorImages(message);
+        Message parsed = RenderedMessage.of(message, ((Script) script).messageModifiers(Optional.empty()));
         AbstractMessage parts = parsed;
         int n = 0;
         assertEquals(Type.Mood, parts.get(n++).type);
@@ -290,7 +292,7 @@ public class MessagePartInjectionTest {
         message.add("Some text.");
         script.setImage("foo.jpg");
 
-        Message parsed = script.addActorImages(message);
+        Message parsed = RenderedMessage.of(message, ((Script) script).messageModifiers(Optional.empty()));
         AbstractMessage parts = parsed;
         int n = 0;
         assertEquals(Type.Mood, parts.get(n++).type);
@@ -309,7 +311,7 @@ public class MessagePartInjectionTest {
         message.add("Some text.");
         script.setImage("foo.jpg");
 
-        Message parsed = script.addActorImages(message);
+        Message parsed = RenderedMessage.of(message, ((Script) script).messageModifiers(Optional.empty()));
         AbstractMessage parts = parsed;
         int n = 0;
         assertEquals(Type.Mood, parts.get(n++).type);
@@ -330,7 +332,7 @@ public class MessagePartInjectionTest {
         message.add(Message.Delay120s);
         message.add("Some text.");
 
-        Message parsed = script.addActorImages(message);
+        Message parsed = RenderedMessage.of(message, ((Script) script).messageModifiers(Optional.empty()));
         AbstractMessage parts = parsed;
         int n = 0;
 
@@ -357,7 +359,7 @@ public class MessagePartInjectionTest {
         message.add("Some text.");
         message.add(Message.Delay120s);
 
-        Message parsed = script.addActorImages(message);
+        Message parsed = RenderedMessage.of(message, ((Script) script).messageModifiers(Optional.empty()));
         AbstractMessage parts = parsed;
         int n = 0;
 

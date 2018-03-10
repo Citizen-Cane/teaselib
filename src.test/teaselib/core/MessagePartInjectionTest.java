@@ -56,12 +56,12 @@ public class MessagePartInjectionTest {
 
         Message message = new Message(script.actor);
         script.setImage("foobar.jpg");
-        Message parsed = RenderedMessage.of(message, ((Script) script).messageModifiers(Optional.empty()));
-        AbstractMessage parts = parsed;
+        RenderedMessage parsed = RenderedMessage.of(message, ((Script) script).decorators(Optional.empty()));
         int n = 0;
-        assertEquals(Type.Image, parts.get(n).type);
 
-        assertEquals(parts.size(), 1);
+        assertEquals(Type.Image, parsed.get(n).type);
+
+        assertEquals(1, parsed.size());
     }
 
     @Test
@@ -79,30 +79,30 @@ public class MessagePartInjectionTest {
         message.add(Type.Delay, "2");
         message.add("bar.jpg");
 
-        Message parsed = RenderedMessage.of(message, ((Script) script).messageModifiers(Optional.empty()));
-        AbstractMessage parts = parsed;
+        RenderedMessage parsed = RenderedMessage.of(message, ((Script) script).decorators(Optional.empty()));
         int n = 0;
-        assertEquals(Type.Mood, parts.get(n++).type);
-        assertEquals(Type.Image, parts.get(n).type);
-        assertEquals("Actor.jpg", parts.get(n++).value);
-        assertEquals(Type.Text, parts.get(n++).type);
 
-        assertEquals(Type.Image, parts.get(n).type);
-        assertEquals("foobar.jpg", parts.get(n++).value);
-        assertEquals(Type.Text, parts.get(n++).type);
+        assertEquals(Type.Mood, parsed.get(n++).type);
+        assertEquals(Type.Image, parsed.get(n).type);
+        assertEquals("Actor.jpg", parsed.get(n++).value);
+        assertEquals(Type.Text, parsed.get(n++).type);
 
-        assertEquals(Type.Image, parts.get(n).type);
-        assertEquals("Actor.jpg", parts.get(n++).value);
-        assertEquals(Type.Text, parts.get(n++).type);
+        assertEquals(Type.Image, parsed.get(n).type);
+        assertEquals("foobar.jpg", parsed.get(n++).value);
+        assertEquals(Type.Text, parsed.get(n++).type);
 
-        assertEquals(Type.Image, parts.get(n).type);
-        assertEquals("foo.jpg", parts.get(n++).value);
-        assertEquals(Type.Delay, parts.get(n++).type);
+        assertEquals(Type.Image, parsed.get(n).type);
+        assertEquals("Actor.jpg", parsed.get(n++).value);
+        assertEquals(Type.Text, parsed.get(n++).type);
 
-        assertEquals(Type.Image, parts.get(n).type);
-        assertEquals("bar.jpg", parts.get(n++).value);
+        assertEquals(Type.Image, parsed.get(n).type);
+        assertEquals("foo.jpg", parsed.get(n++).value);
+        assertEquals(Type.Delay, parsed.get(n++).type);
 
-        assertEquals(parts.size(), n);
+        assertEquals(Type.Image, parsed.get(n).type);
+        assertEquals("bar.jpg", parsed.get(n++).value);
+
+        assertEquals(parsed.size(), n);
     }
 
     @Test
@@ -134,45 +134,44 @@ public class MessagePartInjectionTest {
         message.add(Mood.Happy);
         message.add("I'm happy.");
 
-        Message parsed = RenderedMessage.of(message, ((Script) script).messageModifiers(Optional.empty()));
-        AbstractMessage parts = parsed;
+        RenderedMessage parsed = RenderedMessage.of(message, ((Script) script).decorators(Optional.empty()));
         int n = 0;
 
-        assertEquals(Type.Mood, parts.get(n).type);
-        assertEquals(Mood.Harsh, parts.get(n++).value);
-        assertEquals(Type.Image, parts.get(n).type);
-        assertEquals("Actor.jpg", parts.get(n++).value);
-        assertEquals(Type.Text, parts.get(n++).type);
+        assertEquals(Type.Mood, parsed.get(n).type);
+        assertEquals(Mood.Harsh, parsed.get(n++).value);
+        assertEquals(Type.Image, parsed.get(n).type);
+        assertEquals("Actor.jpg", parsed.get(n++).value);
+        assertEquals(Type.Text, parsed.get(n++).type);
 
-        assertEquals(Type.Mood, parts.get(n).type);
-        assertEquals(Mood.Friendly, parts.get(n++).value);
-        assertEquals(Type.Image, parts.get(n).type);
-        assertEquals("foobar.jpg", parts.get(n++).value);
-        assertEquals(Type.Text, parts.get(n++).type);
+        assertEquals(Type.Mood, parsed.get(n).type);
+        assertEquals(Mood.Friendly, parsed.get(n++).value);
+        assertEquals(Type.Image, parsed.get(n).type);
+        assertEquals("foobar.jpg", parsed.get(n++).value);
+        assertEquals(Type.Text, parsed.get(n++).type);
 
-        assertEquals(Type.Mood, parts.get(n).type);
-        assertEquals(Mood.Strict, parts.get(n++).value);
-        assertEquals(Type.Image, parts.get(n).type);
-        assertEquals("Actor.jpg", parts.get(n++).value);
-        assertEquals(Type.Text, parts.get(n++).type);
+        assertEquals(Type.Mood, parsed.get(n).type);
+        assertEquals(Mood.Strict, parsed.get(n++).value);
+        assertEquals(Type.Image, parsed.get(n).type);
+        assertEquals("Actor.jpg", parsed.get(n++).value);
+        assertEquals(Type.Text, parsed.get(n++).type);
 
-        assertEquals(Type.Mood, parts.get(n).type);
-        assertEquals(Mood.Friendly, parts.get(n++).value);
-        assertEquals(Type.Image, parts.get(n).type);
-        assertEquals("foo.jpg", parts.get(n++).value);
-        assertEquals(Type.Delay, parts.get(n++).type);
+        assertEquals(Type.Mood, parsed.get(n).type);
+        assertEquals(Mood.Friendly, parsed.get(n++).value);
+        assertEquals(Type.Image, parsed.get(n).type);
+        assertEquals("foo.jpg", parsed.get(n++).value);
+        assertEquals(Type.Delay, parsed.get(n++).type);
 
-        assertEquals(Type.Image, parts.get(n).type);
-        assertEquals("bar.jpg", parts.get(n++).value);
-        assertEquals(Type.Text, parts.get(n++).type);
+        assertEquals(Type.Image, parsed.get(n).type);
+        assertEquals("bar.jpg", parsed.get(n++).value);
+        assertEquals(Type.Text, parsed.get(n++).type);
 
-        assertEquals(Type.Text, parts.get(n++).type);
+        assertEquals(Type.Text, parsed.get(n++).type);
 
-        assertEquals(Type.Mood, parts.get(n).type);
-        assertEquals(Mood.Happy, parts.get(n++).value);
-        assertEquals(Type.Text, parts.get(n++).type);
+        assertEquals(Type.Mood, parsed.get(n).type);
+        assertEquals(Mood.Happy, parsed.get(n++).value);
+        assertEquals(Type.Text, parsed.get(n++).type);
 
-        assertEquals(parts.size(), n);
+        assertEquals(parsed.size(), n);
     }
 
     @Test
@@ -189,24 +188,23 @@ public class MessagePartInjectionTest {
 
         message.add("Still nothing to see.");
 
-        Message parsed = RenderedMessage.of(message, ((Script) script).messageModifiers(Optional.empty()));
-        AbstractMessage parts = parsed;
+        RenderedMessage parsed = RenderedMessage.of(message, ((Script) script).decorators(Optional.empty()));
         int n = 0;
 
-        assertEquals(Type.Mood, parts.get(n).type);
-        assertEquals(Mood.Friendly, parts.get(n++).value);
+        assertEquals(Type.Mood, parsed.get(n).type);
+        assertEquals(Mood.Friendly, parsed.get(n++).value);
 
-        assertEquals(Type.Image, parts.get(n).type);
-        assertEquals("actor.jpg", parts.get(n++).value);
-        assertEquals(Type.Text, parts.get(n++).type);
+        assertEquals(Type.Image, parsed.get(n).type);
+        assertEquals("actor.jpg", parsed.get(n++).value);
+        assertEquals(Type.Text, parsed.get(n++).type);
 
-        assertEquals(Type.Image, parts.get(n).type);
-        assertEquals(Message.NoImage, parts.get(n++).value);
-        assertEquals(Type.Text, parts.get(n++).type);
+        assertEquals(Type.Image, parsed.get(n).type);
+        assertEquals(Message.NoImage, parsed.get(n++).value);
+        assertEquals(Type.Text, parsed.get(n++).type);
 
-        assertEquals(Type.Text, parts.get(n++).type);
+        assertEquals(Type.Text, parsed.get(n++).type);
 
-        assertEquals(parts.size(), n);
+        assertEquals(parsed.size(), n);
     }
 
     @Test
@@ -224,26 +222,25 @@ public class MessagePartInjectionTest {
 
         message.add("There I am again.");
 
-        Message parsed = RenderedMessage.of(message, ((Script) script).messageModifiers(Optional.empty()));
-        AbstractMessage parts = parsed;
+        RenderedMessage parsed = RenderedMessage.of(message, ((Script) script).decorators(Optional.empty()));
         int n = 0;
 
-        assertEquals(Type.Mood, parts.get(n).type);
-        assertEquals(Mood.Friendly, parts.get(n++).value);
+        assertEquals(Type.Mood, parsed.get(n).type);
+        assertEquals(Mood.Friendly, parsed.get(n++).value);
 
-        assertEquals(Type.Image, parts.get(n).type);
-        assertEquals(Message.NoImage, parts.get(n++).value);
-        assertEquals(Type.Text, parts.get(n++).type);
+        assertEquals(Type.Image, parsed.get(n).type);
+        assertEquals(Message.NoImage, parsed.get(n++).value);
+        assertEquals(Type.Text, parsed.get(n++).type);
 
-        assertEquals(Type.Image, parts.get(n).type);
-        assertEquals("Actor.jpg", parts.get(n++).value);
-        assertEquals(Type.Text, parts.get(n++).type);
+        assertEquals(Type.Image, parsed.get(n).type);
+        assertEquals("Actor.jpg", parsed.get(n++).value);
+        assertEquals(Type.Text, parsed.get(n++).type);
 
-        assertEquals(Type.Image, parts.get(n).type);
-        assertEquals("Actor.jpg", parts.get(n++).value);
-        assertEquals(Type.Text, parts.get(n++).type);
+        assertEquals(Type.Image, parsed.get(n).type);
+        assertEquals("Actor.jpg", parsed.get(n++).value);
+        assertEquals(Type.Text, parsed.get(n++).type);
 
-        assertEquals(parts.size(), n);
+        assertEquals(parsed.size(), n);
     }
 
     @Test
@@ -254,7 +251,7 @@ public class MessagePartInjectionTest {
         message.add("Some text.");
         script.setImage("foo.jpg");
 
-        Message parsed = RenderedMessage.of(message, ((Script) script).messageModifiers(Optional.empty()));
+        RenderedMessage parsed = RenderedMessage.of(message, ((Script) script).decorators(Optional.empty()));
         AbstractMessage parts = parsed;
         int n = 0;
         assertEquals(Type.Mood, parts.get(n++).type);
@@ -273,15 +270,14 @@ public class MessagePartInjectionTest {
         message.add("Some text.");
         script.setImage(Message.NoImage);
 
-        Message parsed = RenderedMessage.of(message, ((Script) script).messageModifiers(Optional.empty()));
-        AbstractMessage parts = parsed;
+        RenderedMessage parsed = RenderedMessage.of(message, ((Script) script).decorators(Optional.empty()));
         int n = 0;
-        assertEquals(Type.Mood, parts.get(n++).type);
-        assertEquals(Type.Image, parts.get(n).type);
-        assertEquals(Message.NoImage, parts.get(n++).value);
-        assertEquals(Type.Text, parts.get(n++).type);
+        assertEquals(Type.Mood, parsed.get(n++).type);
+        assertEquals(Type.Image, parsed.get(n).type);
+        assertEquals(Message.NoImage, parsed.get(n++).value);
+        assertEquals(Type.Text, parsed.get(n++).type);
 
-        assertEquals(parts.size(), n);
+        assertEquals(parsed.size(), n);
     }
 
     @Test
@@ -292,15 +288,14 @@ public class MessagePartInjectionTest {
         message.add("Some text.");
         script.setImage("foo.jpg");
 
-        Message parsed = RenderedMessage.of(message, ((Script) script).messageModifiers(Optional.empty()));
-        AbstractMessage parts = parsed;
+        RenderedMessage parsed = RenderedMessage.of(message, ((Script) script).decorators(Optional.empty()));
         int n = 0;
-        assertEquals(Type.Mood, parts.get(n++).type);
-        assertEquals(Type.Image, parts.get(n).type);
-        assertEquals("foo.jpg", parts.get(n++).value);
-        assertEquals(Type.Text, parts.get(n++).type);
+        assertEquals(Type.Mood, parsed.get(n++).type);
+        assertEquals(Type.Image, parsed.get(n).type);
+        assertEquals("foo.jpg", parsed.get(n++).value);
+        assertEquals(Type.Text, parsed.get(n++).type);
 
-        assertEquals(parts.size(), n);
+        assertEquals(parsed.size(), n);
     }
 
     @Test
@@ -311,15 +306,14 @@ public class MessagePartInjectionTest {
         message.add("Some text.");
         script.setImage("foo.jpg");
 
-        Message parsed = RenderedMessage.of(message, ((Script) script).messageModifiers(Optional.empty()));
-        AbstractMessage parts = parsed;
+        RenderedMessage parsed = RenderedMessage.of(message, ((Script) script).decorators(Optional.empty()));
         int n = 0;
-        assertEquals(Type.Mood, parts.get(n++).type);
-        assertEquals(Type.Image, parts.get(n).type);
-        assertEquals(Message.NoImage, parts.get(n++).value);
-        assertEquals(Type.Text, parts.get(n++).type);
+        assertEquals(Type.Mood, parsed.get(n++).type);
+        assertEquals(Type.Image, parsed.get(n).type);
+        assertEquals(Message.NoImage, parsed.get(n++).value);
+        assertEquals(Type.Text, parsed.get(n++).type);
 
-        assertEquals(parts.size(), n);
+        assertEquals(parsed.size(), n);
     }
 
     @Test
@@ -332,26 +326,28 @@ public class MessagePartInjectionTest {
         message.add(Message.Delay120s);
         message.add("Some text.");
 
-        Message parsed = RenderedMessage.of(message, ((Script) script).messageModifiers(Optional.empty()));
-        AbstractMessage parts = parsed;
+        RenderedMessage parsed = RenderedMessage.of(message, ((Script) script).decorators(Optional.empty()));
         int n = 0;
 
-        assertEquals(Type.Mood, parts.get(n++).type);
-        assertEquals(Type.Image, parts.get(n).type);
-        assertEquals(Message.NoImage, parts.get(n++).value);
-        assertEquals(Type.Text, parts.get(n++).type);
-        assertEquals(Type.Delay, parts.get(n++).type);
-        assertEquals(Type.Image, parts.get(n).type);
-        assertEquals(Message.NoImage, parts.get(n++).value);
-        assertEquals(Type.Text, parts.get(n++).type);
+        assertEquals(Type.Mood, parsed.get(n++).type);
+        assertEquals(Type.Image, parsed.get(n).type);
+        assertEquals(Message.NoImage, parsed.get(n++).value);
+        assertEquals(Type.Text, parsed.get(n++).type);
 
-        assertEquals(parts.size(), n);
+        assertEquals(Type.Delay, parsed.get(n).type);
+        assertEquals("120", parsed.get(n++).value);
+
+        assertEquals(Type.Image, parsed.get(n).type);
+        assertEquals(Message.NoImage, parsed.get(n++).value);
+        assertEquals(Type.Text, parsed.get(n++).type);
+
+        assertEquals(parsed.size(), n);
 
         assertMessageDuration(script, message, 120);
     }
 
     @Test
-    public void testMessageRendersWithEndDelay() {
+    public void testMessageRendersWithDelayAtEnd() {
         TestScript script = TestScript.getOne(new DebugSetup());
         script.debugger.freezeTime();
 
@@ -359,19 +355,165 @@ public class MessagePartInjectionTest {
         message.add("Some text.");
         message.add(Message.Delay120s);
 
-        Message parsed = RenderedMessage.of(message, ((Script) script).messageModifiers(Optional.empty()));
-        AbstractMessage parts = parsed;
+        RenderedMessage parsed = RenderedMessage.of(message, ((Script) script).decorators(Optional.empty()));
         int n = 0;
 
-        assertEquals(Type.Mood, parts.get(n++).type);
-        assertEquals(Type.Image, parts.get(n).type);
-        assertEquals(Message.NoImage, parts.get(n++).value);
-        assertEquals(Type.Text, parts.get(n++).type);
-        assertEquals(Type.Delay, parts.get(n++).type);
+        assertEquals(Type.Mood, parsed.get(n++).type);
+        assertEquals(Type.Image, parsed.get(n).type);
+        assertEquals(Message.NoImage, parsed.get(n++).value);
+        assertEquals(Type.Text, parsed.get(n++).type);
+        assertEquals(Type.Delay, parsed.get(n).type);
+        assertEquals("120", parsed.get(n++).value);
 
-        assertEquals(parts.size(), n);
+        assertEquals(parsed.size(), n);
 
         assertMessageDuration(script, message, 120);
+    }
+
+    @Test
+    public void testMessageWithSpeech() {
+        TestScript script = TestScript.getOne(new DebugSetup().withInput().withOutput());
+        script.debugger.freezeTime();
+        script.actor.images = new ActorTestImage("Actor.jpg");
+
+        Message message = new Message(script.actor);
+        message.add("Some text.");
+        message.add(Type.Speech, "Some text.");
+        message.add("Some more text.");
+        message.add(Type.Speech, "Some more text.");
+
+        RenderedMessage parsed = RenderedMessage.of(message, ((Script) script).decorators(Optional.empty()));
+        int n = 0;
+
+        assertEquals(Type.Mood, parsed.get(n++).type);
+        assertEquals(Type.Image, parsed.get(n).type);
+        assertEquals("Actor.jpg", parsed.get(n++).value);
+        assertEquals(Type.Text, parsed.get(n++).type);
+        assertEquals(Type.Speech, parsed.get(n++).type);
+        assertEquals(ScriptMessageDecorator.DelayBetweenParagraphs, parsed.get(n++));
+
+        assertEquals(Type.Image, parsed.get(n).type);
+        assertEquals("Actor.jpg", parsed.get(n++).value);
+        assertEquals(Type.Text, parsed.get(n++).type);
+        assertEquals(Type.Speech, parsed.get(n++).type);
+
+        assertEquals(Type.Keyword, parsed.get(n).type);
+        assertEquals(Message.ShowChoices, parsed.get(n++).value);
+
+        assertEquals(ScriptMessageDecorator.DelayAtEndOfPage, parsed.get(n++));
+
+        assertEquals(parsed.size(), n);
+    }
+
+    @Test
+    public void testMessageWithSpeechAndDelayAtEnd() {
+        TestScript script = TestScript.getOne(new DebugSetup().withInput().withOutput());
+        script.debugger.freezeTime();
+        script.actor.images = new ActorTestImage("Actor.jpg");
+
+        Message message = new Message(script.actor);
+        message.add("Some text.");
+        message.add(Type.Speech, "Some text.");
+        message.add("Some more text.");
+        message.add(Type.Speech, "Some more text.");
+        message.add(Type.Delay, "20");
+
+        RenderedMessage parsed = RenderedMessage.of(message, ((Script) script).decorators(Optional.empty()));
+        int n = 0;
+
+        assertEquals(Type.Mood, parsed.get(n++).type);
+        assertEquals(Type.Image, parsed.get(n).type);
+        assertEquals("Actor.jpg", parsed.get(n++).value);
+        assertEquals(Type.Text, parsed.get(n++).type);
+        assertEquals(Type.Speech, parsed.get(n++).type);
+        assertEquals(ScriptMessageDecorator.DelayBetweenParagraphs, parsed.get(n++));
+
+        assertEquals(Type.Image, parsed.get(n).type);
+        assertEquals("Actor.jpg", parsed.get(n++).value);
+        assertEquals(Type.Text, parsed.get(n++).type);
+        assertEquals(Type.Speech, parsed.get(n++).type);
+
+        assertEquals(Type.Delay, parsed.get(n).type);
+        assertEquals("20", parsed.get(n++).value);
+
+        assertEquals(parsed.size(), n);
+    }
+
+    @Test
+    public void testMessageWithExplicitShowChoicesKeyword() {
+        TestScript script = TestScript.getOne(new DebugSetup().withInput().withOutput());
+        script.debugger.freezeTime();
+        script.actor.images = new ActorTestImage("Actor.jpg");
+
+        Message message = new Message(script.actor);
+        message.add("Some text.");
+        message.add(Type.Speech, "Some text.");
+        message.add(Type.Keyword, Message.ShowChoices);
+
+        message.add("Some more text.");
+        message.add(Type.Speech, "Some more text.");
+        message.add(Type.Delay, "20");
+
+        RenderedMessage parsed = RenderedMessage.of(message, ((Script) script).decorators(Optional.empty()));
+        int n = 0;
+
+        assertEquals(Type.Mood, parsed.get(n++).type);
+        assertEquals(Type.Image, parsed.get(n).type);
+        assertEquals("Actor.jpg", parsed.get(n++).value);
+        assertEquals(Type.Text, parsed.get(n++).type);
+        assertEquals(Type.Speech, parsed.get(n++).type);
+
+        assertEquals(Type.Keyword, parsed.get(n).type);
+        assertEquals(Message.ShowChoices, parsed.get(n++).value);
+
+        assertEquals(ScriptMessageDecorator.DelayBetweenParagraphs, parsed.get(n++));
+
+        assertEquals(Type.Image, parsed.get(n).type);
+        assertEquals("Actor.jpg", parsed.get(n++).value);
+        assertEquals(Type.Text, parsed.get(n++).type);
+        assertEquals(Type.Speech, parsed.get(n++).type);
+
+        assertEquals(Type.Delay, parsed.get(n).type);
+        assertEquals("20", parsed.get(n++).value);
+
+        assertEquals(parsed.size(), n);
+    }
+
+    @Test
+    public void testMessageWithImageAtEnd() {
+        TestScript script = TestScript.getOne(new DebugSetup().withInput().withOutput());
+        script.debugger.freezeTime();
+        script.actor.images = new ActorTestImage("Actor.jpg");
+
+        Message message = new Message(script.actor);
+        message.add("Some text.");
+        message.add(Type.Speech, "Some text.");
+        message.add("Some more text.");
+        message.add(Type.Speech, "Some more text.");
+        message.add("foobar.jpg");
+
+        RenderedMessage parsed = RenderedMessage.of(message, ((Script) script).decorators(Optional.empty()));
+        int n = 0;
+
+        assertEquals(Type.Mood, parsed.get(n++).type);
+        assertEquals(Type.Image, parsed.get(n).type);
+        assertEquals("Actor.jpg", parsed.get(n++).value);
+        assertEquals(Type.Text, parsed.get(n++).type);
+        assertEquals(Type.Speech, parsed.get(n++).type);
+        assertEquals(ScriptMessageDecorator.DelayBetweenParagraphs, parsed.get(n++));
+
+        assertEquals(Type.Image, parsed.get(n).type);
+        assertEquals("Actor.jpg", parsed.get(n++).value);
+        assertEquals(Type.Text, parsed.get(n++).type);
+        assertEquals(Type.Speech, parsed.get(n++).type);
+        assertEquals(Type.Keyword, parsed.get(n).type);
+        assertEquals(Message.ShowChoices, parsed.get(n++).value);
+        assertEquals(ScriptMessageDecorator.DelayAtEndOfPage, parsed.get(n++));
+
+        assertEquals(Type.Image, parsed.get(n).type);
+        assertEquals("foobar.jpg", parsed.get(n++).value);
+
+        assertEquals(parsed.size(), n);
     }
 
     @Test

@@ -1,7 +1,6 @@
 package teaselib.core.media;
 
 import java.io.IOException;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.slf4j.Logger;
@@ -15,12 +14,10 @@ import teaselib.core.util.ExceptionUtil;
 public abstract class RenderSpeech extends MediaRendererThread {
     private static final Logger logger = LoggerFactory.getLogger(RenderSpeech.class);
 
-    private final long pauseMillis;
     private AtomicBoolean cancelled = new AtomicBoolean(false);
 
-    public RenderSpeech(long pauseMillis, TeaseLib teaseLib) {
+    public RenderSpeech(TeaseLib teaseLib) {
         super(teaseLib);
-        this.pauseMillis = pauseMillis;
     }
 
     @Override
@@ -39,10 +36,6 @@ public abstract class RenderSpeech extends MediaRendererThread {
             } finally {
                 mandatoryCompleted();
                 resumeSpeechRecognition.run();
-            }
-
-            if (!cancelled.get()) {
-                teaseLib.sleep(pauseMillis, TimeUnit.MILLISECONDS);
             }
         } finally {
             allCompleted();

@@ -445,8 +445,8 @@ public class TextToSpeechPlayer {
         Message speechMessage = new Message(message.actor);
         for (MessagePart part : message) {
             if (part.type == Message.Type.Text) {
-                speechMessage.add(Message.Type.Speech, simulatedSpeech(part.value));
                 speechMessage.add(part);
+                speechMessage.add(Message.Type.Speech, simulatedSpeech(part.value));
             } else {
                 speechMessage.add(part);
             }
@@ -473,8 +473,8 @@ public class TextToSpeechPlayer {
         Message speechMessage = new Message(message.actor);
         for (MessagePart part : message) {
             if (part.type == Message.Type.Text) {
-                speechMessage.add(Message.Type.Speech, part.value);
                 speechMessage.add(part);
+                speechMessage.add(Message.Type.Speech, part.value);
             } else {
                 speechMessage.add(part);
             }
@@ -508,8 +508,8 @@ public class TextToSpeechPlayer {
         Message preRenderedSpeechMessage = new Message(message.actor);
         for (MessagePart part : message) {
             if (part.type == Message.Type.Text) {
-                preRenderedSpeechMessage.add(Message.Type.Speech, prerenderedSpeechFiles.next());
                 preRenderedSpeechMessage.add(part);
+                preRenderedSpeechMessage.add(Message.Type.Speech, prerenderedSpeechFiles.next());
             } else {
                 preRenderedSpeechMessage.add(part);
             }

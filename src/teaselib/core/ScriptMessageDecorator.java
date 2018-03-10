@@ -1,16 +1,31 @@
 package teaselib.core;
 
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 
 import teaselib.Actor;
 import teaselib.Config;
 import teaselib.Message;
+import teaselib.Message.Type;
 import teaselib.MessagePart;
+import teaselib.core.media.MessageTextAccumulator;
 import teaselib.core.media.RenderedMessage;
 import teaselib.core.texttospeech.TextToSpeechPlayer;
 
 public class ScriptMessageDecorator {
+    private static final long DELAY_BETWEEN_PARAGRAPHS = 500;
+    private static final long DELAY_AT_END_OF_MESSAGE = 2000;
+    private static final long DELAY_FOR_APPEND = 0;
+
+    static final MessagePart DelayBetweenParagraphs = delay(DELAY_BETWEEN_PARAGRAPHS);
+    static final MessagePart DelayAtEndOfPage = delay(DELAY_AT_END_OF_MESSAGE);
+    static final MessagePart DelayAfterAppend = delay(DELAY_FOR_APPEND);
+    private static Set<MessagePart> generatedDelays = new HashSet<>(
+            Arrays.asList(DelayAfterAppend, DelayBetweenParagraphs, DelayAtEndOfPage));
+
     private final Configuration config;
     private final String displayImage;
     private final Actor actor;
@@ -32,8 +47,8 @@ public class ScriptMessageDecorator {
         this.textToSpeech = textToSpeech.isPresent() ? textToSpeech.get() : null;
     }
 
-    public RenderedMessage.Function[] messageModifiers() {
-        return new RenderedMessage.Function[] { //
+    public RenderedMessage.Decorator[] messageModifiers() {
+        return new RenderedMessage.Decorator[] { //
                 this::filterDebug, this::addTextToSpeech, this::expandTextVariables, this::addActorImages,
                 this::applyDelayRules };
     }
@@ -86,9 +101,8 @@ public class ScriptMessageDecorator {
         // Without cloning one of the new actor images would be displayed
         // with the current message because the actor is shared between
         // script and message
+        // TODO Remove cloning after removing actor from RenderedMessage
         Message parsedMessage = new Message(new Actor(message.actor));
-
-        // TODO hint actor aspect, camera position, posture
 
         if (message.isEmpty()) {
             ensureEmptyMessageContainsDisplayImage(parsedMessage, getActorOrDisplayImage(displayImage, mood));
@@ -107,7 +121,7 @@ public class ScriptMessageDecorator {
                     } else if (Message.NoImage.equalsIgnoreCase(part.value)) {
                         imageType = part.value;
                     } else {
-                        final String currentMood;
+                        String currentMood;
                         if (nextMood == null) {
                             currentMood = mood;
                         } else {
@@ -121,15 +135,13 @@ public class ScriptMessageDecorator {
                         imageType = nextImage = getActorOrDisplayImage(part.value, currentMood);
                         parsedMessage.add(part.type, nextImage);
                     }
-                    // } else if (Message.Type.FileTypes.contains(part.type)) {
-                    // parsedMessage.add(part.type, part.value);
                 } else if (part.type == Message.Type.Keyword) {
                     parsedMessage.add(part);
                 } else if (part.type == Message.Type.Mood) {
                     nextMood = part.value;
                 } else if (part.type == Message.Type.Text) {
                     // set mood if not done already
-                    final String currentMood;
+                    String currentMood;
                     if (nextMood == null) {
                         currentMood = mood;
                     } else {
@@ -146,7 +158,6 @@ public class ScriptMessageDecorator {
                         nextImage = getActorOrDisplayImage(imageType, currentMood);
                         parsedMessage.add(Message.Type.Image, nextImage);
                     }
-                    // Replace text variables
                     parsedMessage.add(part);
                 } else {
                     parsedMessage.add(part);
@@ -187,13 +198,85 @@ public class ScriptMessageDecorator {
     }
 
     private Message applyDelayRules(Message message) {
-        // TODO Apply delay rules like after speech, not after chowChoices etc. and remove the counterpart in
-        // RenderMessage
-        MessagePart delay = null;
+        Message lastSection = RenderedMessage.getLastSection(message);
+        MessagePart currentDelay = null;
         Message messageWithDelays = new Message(message.actor);
+        boolean showChoicesApplied = false;
+
         for (MessagePart messagePart : message) {
-            // TODO ...
+            if (messagePart.type == Type.Delay) {
+                currentDelay = accumulateDelay(currentDelay, messagePart);
+            } else {
+                if (messagePart.type == Type.Keyword && Message.ShowChoices.equalsIgnoreCase(messagePart.value)
+                        && isGeneratedDelay(currentDelay)) {
+                    messageWithDelays.add(messagePart);
+                    showChoicesApplied = true;
+                } else {
+                    showChoicesApplied = injectShowChoices(messageWithDelays, currentDelay, showChoicesApplied);
+                    currentDelay = injectDelay(currentDelay, messageWithDelays);
+
+                    if (messagePart.type == Type.Speech) {
+                        currentDelay = injectSpeechDelay(messageWithDelays, messagePart, lastSection);
+                    } else {
+                        messageWithDelays.add(messagePart);
+                    }
+                }
+            }
         }
-        return message;
+
+        injectShowChoices(messageWithDelays, currentDelay, showChoicesApplied);
+        injectDelay(currentDelay, messageWithDelays);
+
+        return messageWithDelays;
+    }
+
+    private MessagePart injectSpeechDelay(Message messageWithDelays, MessagePart messagePart, Message lastSection) {
+        MessagePart currentDelay;
+        messageWithDelays.add(messagePart);
+        // TODO showing last image immediately when showing Choices
+        // Text Speech Image -> Text Speech ShowChoices Image Delay
+
+        if (MessageTextAccumulator.canAppendTo(messagePart.value)) {
+            currentDelay = DelayAfterAppend;
+        } else {
+            currentDelay = lastSection.contains(messagePart) ? DelayAtEndOfPage : DelayBetweenParagraphs;
+        }
+        return currentDelay;
+    }
+
+    private boolean injectShowChoices(Message messageWithDelays, MessagePart currentDelay, boolean showChoicesApplied) {
+        if (currentDelay == DelayAtEndOfPage && !showChoicesApplied) {
+            messageWithDelays.add(Type.Keyword, Message.ShowChoices);
+            showChoicesApplied = true;
+        }
+        return showChoicesApplied;
+    }
+
+    private MessagePart injectDelay(MessagePart currentDelay, Message messageWithDelays) {
+        if (currentDelay != null) {
+            messageWithDelays.add(currentDelay);
+            currentDelay = null;
+        }
+        return currentDelay;
+    }
+
+    private static MessagePart delay(long millis) {
+        return new MessagePart(Type.Delay, Double.toString((double) (millis) / 1000.0));
+    }
+
+    private MessagePart accumulateDelay(MessagePart currentDelay, MessagePart additionalDelay) {
+        if (currentDelay == null) {
+            currentDelay = additionalDelay;
+        } else if (isGeneratedDelay(currentDelay)) {
+            currentDelay = additionalDelay;
+        } else {
+            currentDelay = new MessagePart(Type.Delay, Double
+                    .toString(Double.parseDouble(currentDelay.value) + Double.parseDouble(additionalDelay.value)));
+        }
+        return currentDelay;
+    }
+
+    private boolean isGeneratedDelay(MessagePart delay) {
+        return generatedDelays.contains(delay);
     }
 }

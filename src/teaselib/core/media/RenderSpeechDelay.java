@@ -9,8 +9,8 @@ import teaselib.core.texttospeech.TextToSpeech;
 final class RenderSpeechDelay extends RenderSpeech {
     private final String prompt;
 
-    RenderSpeechDelay(String prompt, long pauseMillis, TeaseLib teaseLib) {
-        super(pauseMillis, teaseLib);
+    RenderSpeechDelay(String prompt, TeaseLib teaseLib) {
+        super(teaseLib);
         this.prompt = prompt;
     }
 

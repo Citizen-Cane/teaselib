@@ -11,9 +11,8 @@ public class RenderTTSSpeech extends RenderSpeech {
     private final String prompt;
     private final String mood;
 
-    public RenderTTSSpeech(TextToSpeechPlayer ttsPlayer, Actor actor, String prompt, String mood, long pauseMillis,
-            TeaseLib teaseLib) {
-        super(pauseMillis, teaseLib);
+    public RenderTTSSpeech(TextToSpeechPlayer ttsPlayer, Actor actor, String prompt, String mood, TeaseLib teaseLib) {
+        super(teaseLib);
         this.ttsPlayer = ttsPlayer;
         this.actor = actor;
         this.prompt = prompt;

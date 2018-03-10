@@ -36,8 +36,7 @@ public class MessageTextAccumulator {
 
     private static String removeKeyword(MessagePart part) {
         String value = part.value;
-        if (part.type == Message.Type.Item
-                && value.startsWith(Message.Bullet)) {
+        if (part.type == Message.Type.Item && value.startsWith(Message.Bullet)) {
             return value.substring(Message.Bullet.length()).trim();
         } else if (value.equalsIgnoreCase(part.type.toString())) {
             return "";
@@ -47,9 +46,11 @@ public class MessageTextAccumulator {
     }
 
     private boolean canAppendToParagraph() {
-        String s = message.toString();
-        String ending = s.isEmpty() ? " "
-                : s.substring(s.length() - 1, s.length());
+        return canAppendTo(message.toString());
+    }
+
+    public static boolean canAppendTo(String string) {
+        String ending = string.isEmpty() ? " " : string.substring(string.length() - 1, string.length());
         return Message.MainClauseAppendableCharacters.contains(ending);
     }
 

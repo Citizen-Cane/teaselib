@@ -27,7 +27,7 @@ import teaselib.core.media.MediaRendererQueue;
 import teaselib.core.media.RenderInterTitle;
 import teaselib.core.media.RenderMessage;
 import teaselib.core.media.RenderedMessage;
-import teaselib.core.media.RenderedMessage.Function;
+import teaselib.core.media.RenderedMessage.Decorator;
 import teaselib.core.speechrecognition.SpeechRecognitionResult.Confidence;
 import teaselib.core.speechrecognition.SpeechRecognizer;
 import teaselib.core.texttospeech.TextToSpeechPlayer;
@@ -238,15 +238,15 @@ public abstract class Script {
                     ? Optional.ofNullable(teaseLib.globals.get(TextToSpeechPlayer.class))
                     : Optional.empty();
 
-            RenderedMessage.Function[] messageModifiers = messageModifiers(textToSpeech);
+            RenderedMessage.Decorator[] decorators = decorators(textToSpeech);
 
             List<Message> messages = new ArrayList<>(prependedMessages.size() + 1);
             for (Message prependedMessage : prependedMessages) {
-                messages.add(RenderedMessage.of(prependedMessage, messageModifiers));
+                messages.add(RenderedMessage.of(prependedMessage, decorators));
             }
             prependedMessages.clear();
 
-            messages.add(RenderedMessage.of(message, messageModifiers));
+            messages.add(RenderedMessage.of(message, decorators));
             renderMessage = new RenderMessage(teaseLib, resources, textToSpeech, messages);
             renderMessage(renderMessage);
         } finally {
@@ -259,10 +259,10 @@ public abstract class Script {
         if (!prependedMessages.isEmpty()) {
             throw new IllegalStateException("Open prepends: " + prependedMessages);
         }
-        renderMessage.append(RenderedMessage.of(message, messageModifiers(renderMessage.getTextToSpeech())));
+        renderMessage.append(RenderedMessage.of(message, decorators(renderMessage.getTextToSpeech())));
     }
 
-    Function[] messageModifiers(Optional<TextToSpeechPlayer> textToSpeech) {
+    Decorator[] decorators(Optional<TextToSpeechPlayer> textToSpeech) {
         return new ScriptMessageDecorator(teaseLib.config, displayImage, actor, mood, resources,
                 this::expandTextVariables, textToSpeech).messageModifiers();
     }

@@ -10,7 +10,6 @@ import org.bytedeco.javacpp.opencv_core.Point;
 
 import teaselib.core.VideoRenderer.Type;
 import teaselib.core.javacv.VideoRendererJavaCV;
-import teaselib.core.ui.Choice;
 import teaselib.core.ui.InputMethod;
 
 public class CommandLineHost implements Host {
@@ -61,18 +60,6 @@ public class CommandLineHost implements Host {
 
     final ReentrantLock replySection = new ReentrantLock(true);
     final Condition click = replySection.newCondition();
-
-    private List<Runnable> getClickableChoices(List<Choice> choices) {
-        List<Runnable> clickables = new ArrayList<>(choices.size());
-        for (int i = 0; i < choices.size(); i++) {
-            final int j = i;
-            clickables.add(() -> {
-                selectedIndex = j;
-                click.signal();
-            });
-        }
-        return clickables;
-    }
 
     @Override
     public InputMethod inputMethod() {

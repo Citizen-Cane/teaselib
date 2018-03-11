@@ -20,6 +20,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
+import teaselib.AbstractMessage;
 import teaselib.Actor;
 import teaselib.Message;
 import teaselib.Message.Type;
@@ -215,7 +216,7 @@ public class TextToSpeechRecorderTest {
 
     private static void testAssets(TextToSpeechPlayer tts, ResourceLoader resources, List<Message> messages) {
         for (Message message : messages) {
-            Message speech = tts.createSpeechMessage(message, resources);
+            AbstractMessage speech = tts.createSpeechMessage(message.actor, message, resources);
             speech.stream().filter((part) -> part.type == Type.Speech)
                     .forEach((part) -> assertTrue(Message.Type.isSound(part.value)));
         }

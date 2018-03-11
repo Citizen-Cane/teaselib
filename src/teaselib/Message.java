@@ -7,7 +7,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collector;
 
 public class Message extends AbstractMessage {
     /**
@@ -168,21 +167,10 @@ public class Message extends AbstractMessage {
     private static final Set<String> ImageKeywords = new HashSet<>(
             Arrays.asList(ActorImage.toLowerCase(), NoImage.toLowerCase()));
 
-    public Collector<MessagePart, Message, Message> collector() {
-        return collector(actor);
-    }
-
-    public static Collector<MessagePart, Message, Message> collector(Actor actor) {
-        return Collector.of(() -> new Message(actor), //
-                (message, part) -> message.add(part), //
-                (message1, message2) -> {
-                    message1.add(message2);
-                    return message1;
-                }, Collector.Characteristics.UNORDERED);
-    }
+    public final Actor actor;
 
     public Message(Actor actor) {
-        super(actor);
+        this.actor = actor;
     }
 
     /**
@@ -190,7 +178,7 @@ public class Message extends AbstractMessage {
      *            The message to render, or null or an empty list to display no message
      */
     public Message(Actor actor, String... message) {
-        super(actor);
+        this.actor = actor;
         addAll(message);
     }
 
@@ -199,12 +187,12 @@ public class Message extends AbstractMessage {
      *            The message to render, or null or an empty list to display no message
      */
     public Message(Actor actor, List<String> paragraphs) {
-        super(actor);
+        this.actor = actor;
         addAll(paragraphs);
     }
 
     public Message(Actor actor, AbstractMessage message) {
-        super(actor);
+        this.actor = actor;
         addAll(message);
     }
 
@@ -223,61 +211,6 @@ public class Message extends AbstractMessage {
             if (t == null)
                 throw new IllegalArgumentException();
             add(t);
-        }
-    }
-
-    public void add(Message message) {
-        if (message == null)
-            throw new IllegalArgumentException();
-        for (MessagePart part : message) {
-            add(part);
-        }
-    }
-
-    @Override
-    public String toString() {
-        return buildString("\n\n", true);
-    }
-
-    /**
-     * Builds a string with all the formatting.
-     * 
-     * @return
-     */
-    public String toText() {
-        return buildString("\n\n", true);
-    }
-
-    /**
-     * Converts the message to a hash string suitable for speech pre-recording. The string contains only the message
-     * parts that are relevant for pre-rendering speech - all other media hints are removed.
-     * 
-     * @return
-     */
-    public String toPrerecordedSpeechHashString() {
-        return buildString("\n", false);
-    }
-
-    public String buildString(String newLine, boolean all) {
-        if (isEmpty()) {
-            return "";
-        } else {
-            StringBuilder messageString = new StringBuilder();
-            for (Iterator<MessagePart> i = iterator(); i.hasNext();) {
-                MessagePart part = i.next();
-                boolean appendPart = all || part.type == Type.Text || part.type == Type.Mood;
-                if (appendPart) {
-                    if (messageString.length() > 0) {
-                        messageString.append(newLine);
-                    }
-                    if (part.type == Type.Text || part.type == Type.Mood) {
-                        messageString.append(part.value);
-                    } else {
-                        messageString.append(part.toString());
-                    }
-                }
-            }
-            return messageString.toString();
         }
     }
 
@@ -403,7 +336,7 @@ public class Message extends AbstractMessage {
     }
 
     public Message joinSentences() {
-        AbstractMessage newParts = new AbstractMessage(actor);
+        AbstractMessage newParts = new AbstractMessage();
         Iterator<MessagePart> parts = iterator();
         MessagePart sentence = null;
         while (parts.hasNext()) {
@@ -433,7 +366,7 @@ public class Message extends AbstractMessage {
     }
 
     public Message readAloud() {
-        AbstractMessage newParts = new AbstractMessage(actor);
+        AbstractMessage newParts = new AbstractMessage();
         Iterator<MessagePart> messageParts = iterator();
         boolean readAloud = false;
         while (messageParts.hasNext()) {

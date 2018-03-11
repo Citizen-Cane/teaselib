@@ -53,33 +53,34 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
 
     private final Prefetcher<byte[]> imageFetcher = new Prefetcher<>();
 
+    private final Actor actor;
     private final ResourceLoader resources;
     private final TextToSpeechPlayer ttsPlayer;
-    private final List<Message> messages;
+    private final List<RenderedMessage> messages;
 
     private MessageTextAccumulator accumulatedText;
     private int currentMessage;
-    private Message lastSection;
+    private AbstractMessage lastSection;
 
-    // private MediaRendererThread speechRenderer = null;
     private RenderSound backgroundSoundRenderer = null;
 
     private String displayImage = null;
     private MediaRenderer.Threaded currentRenderer = null;
 
     public RenderMessage(TeaseLib teaseLib, ResourceLoader resources, Optional<TextToSpeechPlayer> ttsPlayer,
-            Message... messages) {
-        this(teaseLib, resources, ttsPlayer, Arrays.asList(messages));
+            Actor actor, RenderedMessage... messages) {
+        this(teaseLib, resources, ttsPlayer, actor, Arrays.asList(messages));
     }
 
     public RenderMessage(TeaseLib teaseLib, ResourceLoader resources, Optional<TextToSpeechPlayer> ttsPlayer,
-            List<Message> messages) {
+            Actor actor, List<RenderedMessage> messages) {
         super(teaseLib);
 
         if (messages == null) {
             throw new NullPointerException();
         }
 
+        this.actor = actor;
         this.resources = resources;
         this.ttsPlayer = ttsPlayer.isPresent() ? ttsPlayer.get() : null;
         this.messages = messages;
@@ -91,7 +92,7 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
         prefetchImages(this.messages);
     }
 
-    public void append(Message message) {
+    public void append(RenderedMessage message) {
         synchronized (messages) {
             prefetchImages(message);
             messages.add(message);
@@ -104,17 +105,17 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
         }
     }
 
-    private Message getLastMessage() {
+    private RenderedMessage getLastMessage() {
         return this.messages.get(this.messages.size() - 1);
     }
 
-    private void prefetchImages(List<Message> messages) {
-        for (Message message : messages) {
+    private void prefetchImages(List<RenderedMessage> messages) {
+        for (RenderedMessage message : messages) {
             prefetchImages(message);
         }
     }
 
-    private void prefetchImages(Message message) {
+    private void prefetchImages(RenderedMessage message) {
         for (MessagePart part : message) {
             if (part.type == Message.Type.Image) {
                 final String resourcePath = part.value;
@@ -132,7 +133,7 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
             throw new IllegalStateException();
         }
         if (messages.get(0).isEmpty()) {
-            show(null, messages.get(0).actor, Mood.Neutral);
+            show(null, actor, Mood.Neutral);
             mandatoryCompleted();
             allCompleted();
         } else {
@@ -165,21 +166,21 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
         }
     }
 
-    private Message getMandatory() {
+    private RenderedMessage getMandatory() {
         return RenderedMessage.getLastSection(getLastMessage());
     }
 
-    private Message getEnd() {
+    private RenderedMessage getEnd() {
         return stripAudio(RenderedMessage.getLastSection(getLastMessage()));
     }
 
-    private Message stripAudio(Message message) {
-        return message.stream().filter(part -> !SoundTypes.contains(part.type)).collect(message.collector());
+    private RenderedMessage stripAudio(AbstractMessage message) {
+        return message.stream().filter(part -> !SoundTypes.contains(part.type)).collect(RenderedMessage.collector());
     }
 
     private void renderMessages() throws IOException, InterruptedException {
         while (true) {
-            Message message;
+            RenderedMessage message;
             synchronized (messages) {
                 if (currentMessage >= messages.size()) {
                     break;
@@ -208,7 +209,7 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
      * @throws IOException
      * @throws InterruptedException
      */
-    private void renderMessage(Message message) throws IOException, InterruptedException {
+    private void renderMessage(RenderedMessage message) throws IOException, InterruptedException {
         String mood = Mood.Neutral;
         for (Iterator<MessagePart> it = message.iterator(); it.hasNext();) {
             MessagePart part = it.next();
@@ -221,13 +222,13 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
             if (part.type == Message.Type.Mood) {
                 mood = part.value;
             } else {
-                renderMessagePart(part, accumulatedText, message.actor, mood);
+                renderMessagePart(part, accumulatedText, actor, mood);
             }
 
             if (part.type == Message.Type.Text) {
                 completeSectionMandatory();
                 completeSectionAll();
-                show(part.value, accumulatedText, message.actor, mood);
+                show(part.value, accumulatedText, actor, mood);
             } else if (lastPart) {
                 completeSectionMandatory();
                 completeSectionAll();
@@ -450,7 +451,7 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
     public String toString() {
         long delay = 0;
         MessageTextAccumulator text = new MessageTextAccumulator();
-        for (Message message : messages) {
+        for (RenderedMessage message : messages) {
             AbstractMessage paragraphs = message;
             for (Iterator<MessagePart> it = paragraphs.iterator(); it.hasNext();) {
                 MessagePart part = it.next();

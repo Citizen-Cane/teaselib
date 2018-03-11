@@ -23,6 +23,7 @@ import java.util.concurrent.Future;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import teaselib.AbstractMessage;
 import teaselib.Actor;
 import teaselib.Message;
 import teaselib.MessagePart;
@@ -392,7 +393,7 @@ public class TextToSpeechRecorder {
         return new File(System.getProperty("java.io.tmpdir"), prefix + UUID.randomUUID() + suffix);
     }
 
-    public static String getHash(Message message) {
+    public static String getHash(AbstractMessage message) {
         MessageDigest digest = null;
         try {
             digest = MessageDigest.getInstance("SHA-256");

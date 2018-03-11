@@ -240,14 +240,14 @@ public abstract class Script {
 
             RenderedMessage.Decorator[] decorators = decorators(textToSpeech);
 
-            List<Message> messages = new ArrayList<>(prependedMessages.size() + 1);
+            List<RenderedMessage> messages = new ArrayList<>(prependedMessages.size() + 1);
             for (Message prependedMessage : prependedMessages) {
                 messages.add(RenderedMessage.of(prependedMessage, decorators));
             }
             prependedMessages.clear();
 
             messages.add(RenderedMessage.of(message, decorators));
-            renderMessage = new RenderMessage(teaseLib, resources, textToSpeech, messages);
+            renderMessage = new RenderMessage(teaseLib, resources, textToSpeech, actor, messages);
             renderMessage(renderMessage);
         } finally {
             displayImage = Message.ActorImage;

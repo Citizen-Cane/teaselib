@@ -8,15 +8,12 @@ import java.util.stream.Stream;
 import teaselib.Message.Type;
 
 public class AbstractMessage implements Iterable<MessagePart> {
-    public final Actor actor;
     private final List<MessagePart> parts = new ArrayList<>();
 
-    public AbstractMessage(Actor actor) {
-        this.actor = actor;
+    public AbstractMessage() {
     }
 
-    public AbstractMessage(Actor actor, List<MessagePart> parts) {
-        this.actor = actor;
+    public AbstractMessage(List<MessagePart> parts) {
         this.parts.addAll(parts);
     }
 
@@ -41,6 +38,14 @@ public class AbstractMessage implements Iterable<MessagePart> {
     }
 
     public void addAll(AbstractMessage message) {
+        for (MessagePart part : message) {
+            add(part);
+        }
+    }
+
+    public void add(AbstractMessage message) {
+        if (message == null)
+            throw new IllegalArgumentException();
         for (MessagePart part : message) {
             add(part);
         }
@@ -114,15 +119,9 @@ public class AbstractMessage implements Iterable<MessagePart> {
     }
 
     @Override
-    public String toString() {
-        return "size=" + size() + ", " + parts.toString();
-    }
-
-    @Override
     public int hashCode() {
         final int prime = 31;
         int result = 1;
-        result = prime * result + ((actor == null) ? 0 : actor.hashCode());
         result = prime * result + ((parts == null) ? 0 : parts.hashCode());
         return result;
     }
@@ -136,11 +135,6 @@ public class AbstractMessage implements Iterable<MessagePart> {
         if (getClass() != obj.getClass())
             return false;
         AbstractMessage other = (AbstractMessage) obj;
-        if (actor == null) {
-            if (other.actor != null)
-                return false;
-        } else if (!actor.equals(other.actor))
-            return false;
         if (parts == null) {
             if (other.parts != null)
                 return false;
@@ -148,4 +142,56 @@ public class AbstractMessage implements Iterable<MessagePart> {
             return false;
         return true;
     }
+
+    @Override
+    public String toString() {
+        return buildString("\n", true);
+    }
+
+    /**
+     * Builds a string with all the formatting.
+     * 
+     * @return
+     */
+    public String toText() {
+        return buildString("\n\n", true);
+    }
+
+    /**
+     * Converts the message to a hash string suitable for speech pre-recording. The string contains only the message
+     * parts that are relevant for pre-rendering speech - all other media hints are removed.
+     * 
+     * @return
+     */
+    public String toPrerecordedSpeechHashString() {
+        return buildString("\n", false);
+    }
+
+    public String buildString(String newLine, boolean all) {
+        if (isEmpty()) {
+            return "";
+        } else {
+            StringBuilder messageString = new StringBuilder();
+            for (Iterator<MessagePart> i = iterator(); i.hasNext();) {
+                MessagePart part = i.next();
+                appendPart(messageString, part, newLine, all);
+            }
+            return messageString.toString();
+        }
+    }
+
+    private void appendPart(StringBuilder messageString, MessagePart part, String newLine, boolean all) {
+        boolean appendPart = all || part.type == Type.Text || part.type == Type.Mood;
+        if (appendPart) {
+            if (messageString.length() > 0) {
+                messageString.append(newLine);
+            }
+            if (part.type == Type.Text || part.type == Type.Mood) {
+                messageString.append(part.value);
+            } else {
+                messageString.append(part.toString());
+            }
+        }
+    }
+
 }

@@ -531,28 +531,4 @@ public class MessagePartInjectionTest {
         long duration = end - start;
         assertTrue(duration >= minimumSeconds);
     }
-
-    @Test
-    public void testCollectorFilterPositive() {
-        Message expected = new Message(DummyActor);
-        expected.add(Type.Sound, "Bar.mp3");
-
-        assertEquals(expected,
-                new Message(DummyActor, "Test.", "Foo.jpg", Message.ActorImage, "Test.", "Bar.mp3", Message.NoImage,
-                        "Test.").stream().filter(part -> part.type == Type.Sound)
-                                .collect(Message.collector(DummyActor)));
-    }
-
-    @Test
-    public void testCollectorFilterNegative() {
-        Message expected = new Message(DummyActor);
-        expected.add(Type.Text, "Test.");
-        expected.add(Type.Text, "Test.");
-        expected.add(Type.Sound, "Bar.mp3");
-        expected.add(Type.Text, "Test.");
-        assertEquals(expected,
-                new Message(DummyActor, "Test.", "Foo.jpg", Message.ActorImage, "Test.", "Bar.mp3", Message.NoImage,
-                        "Test.").stream().filter(part -> part.type != Type.Image)
-                                .collect(Message.collector(DummyActor)));
-    }
 }

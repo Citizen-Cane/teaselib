@@ -19,6 +19,7 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import teaselib.AbstractMessage;
 import teaselib.Actor;
 import teaselib.Config;
 import teaselib.Config.Debug;
@@ -429,10 +430,10 @@ public class TextToSpeechPlayer {
         Thread.sleep(TextToSpeech.getEstimatedSpeechDuration(prompt));
     }
 
-    public Message createSpeechMessage(Message message, ResourceLoader resources) {
+    public AbstractMessage createSpeechMessage(Actor actor, AbstractMessage message, ResourceLoader resources) {
         if (Boolean.parseBoolean(config.get(Config.Render.Speech))) {
-            if (prerenderedSpeechAvailable(message.actor)) {
-                return prerenderedSpeechMessage(message, resources);
+            if (prerenderedSpeechAvailable(actor)) {
+                return prerenderedSpeechMessage(actor, message, resources);
             } else {
                 return speechMessage(message);
             }
@@ -441,8 +442,8 @@ public class TextToSpeechPlayer {
         }
     }
 
-    private static Message simulatedSpeechMessage(Message message) {
-        Message speechMessage = new Message(message.actor);
+    private static AbstractMessage simulatedSpeechMessage(AbstractMessage message) {
+        AbstractMessage speechMessage = new AbstractMessage();
         for (MessagePart part : message) {
             if (part.type == Message.Type.Text) {
                 speechMessage.add(part);
@@ -469,8 +470,8 @@ public class TextToSpeechPlayer {
         return prompt.substring(SIMULATED_SPEECH_TAG.length());
     }
 
-    Message speechMessage(Message message) {
-        Message speechMessage = new Message(message.actor);
+    AbstractMessage speechMessage(AbstractMessage message) {
+        AbstractMessage speechMessage = new AbstractMessage();
         for (MessagePart part : message) {
             if (part.type == Message.Type.Text) {
                 speechMessage.add(part);
@@ -486,12 +487,12 @@ public class TextToSpeechPlayer {
         return actorKey2PrerecordedVoiceGuid.containsKey(actor.key);
     }
 
-    public Message prerenderedSpeechMessage(Message message, ResourceLoader resources) {
+    public AbstractMessage prerenderedSpeechMessage(Actor actor, AbstractMessage message, ResourceLoader resources) {
         if (message.toPrerecordedSpeechHashString().isEmpty()) {
             return message;
         } else {
             try {
-                return injectPrerecordedSpeechParts(message, resources);
+                return injectPrerecordedSpeechParts(actor, message, resources);
             } catch (IOException e) {
                 if (Boolean.parseBoolean(config.get(Debug.StopOnAssetNotFound))) {
                     throw ExceptionUtil.asRuntimeException(e, message.buildString(" ", false));
@@ -503,9 +504,10 @@ public class TextToSpeechPlayer {
         }
     }
 
-    private Message injectPrerecordedSpeechParts(Message message, ResourceLoader resources) throws IOException {
-        Iterator<String> prerenderedSpeechFiles = getSpeechResources(message, resources).iterator();
-        Message preRenderedSpeechMessage = new Message(message.actor);
+    private Message injectPrerecordedSpeechParts(Actor actor, AbstractMessage message, ResourceLoader resources)
+            throws IOException {
+        Iterator<String> prerenderedSpeechFiles = getSpeechResources(actor, message, resources).iterator();
+        Message preRenderedSpeechMessage = new Message(actor);
         for (MessagePart part : message) {
             if (part.type == Message.Type.Text) {
                 preRenderedSpeechMessage.add(part);
@@ -517,8 +519,8 @@ public class TextToSpeechPlayer {
         return preRenderedSpeechMessage;
     }
 
-    private static Message renderMissingPrerecordedSpeechAsDelay(Message message) {
-        Message preRenderedSpeechMessage = new Message(message.actor);
+    private static AbstractMessage renderMissingPrerecordedSpeechAsDelay(AbstractMessage message) {
+        AbstractMessage preRenderedSpeechMessage = new AbstractMessage();
         for (MessagePart part : message) {
             if (part.type == Message.Type.Text) {
                 preRenderedSpeechMessage.add(part);
@@ -538,13 +540,13 @@ public class TextToSpeechPlayer {
      * @return
      * @throws IOException
      */
-    private List<String> getSpeechResources(Message message, ResourceLoader resources) throws IOException {
-        String key = message.actor.key;
-        String voice = actorKey2PrerecordedVoiceGuid.get(key);
+    private List<String> getSpeechResources(Actor actor, AbstractMessage message, ResourceLoader resources)
+            throws IOException {
+        String voice = actorKey2PrerecordedVoiceGuid.get(actor.key);
         if (voice == null) {
             return Collections.emptyList();
         } else {
-            String path = actorKey2SpeechResourcesLocation.get(key) + TextToSpeechRecorder.getHash(message) + "/";
+            String path = actorKey2SpeechResourcesLocation.get(actor.key) + TextToSpeechRecorder.getHash(message) + "/";
             List<String> speechResources = new ArrayList<>();
             try (BufferedReader reader = new BufferedReader(
                     new InputStreamReader(resources.getResource(path + TextToSpeechRecorder.ResourcesFilename)));) {

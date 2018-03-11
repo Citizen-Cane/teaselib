@@ -2,46 +2,60 @@ package teaselib.core.media;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collector;
 
 import teaselib.AbstractMessage;
 import teaselib.Message;
 import teaselib.MessagePart;
 
-public class RenderedMessage extends Message {
+public class RenderedMessage extends AbstractMessage {
     @FunctionalInterface
     public interface Decorator {
-        Message process(Message message);
+        AbstractMessage process(AbstractMessage message);
     }
 
     RenderedMessage(Message message, List<Decorator> decorators) {
-        super(message.actor);
-
+        AbstractMessage decorated = message;
         for (Decorator decorator : decorators) {
-            message = decorator.process(message);
+            decorated = decorator.process(decorated);
         }
 
-        addAll(message);
+        addAll(decorated);
+    }
+
+    RenderedMessage() {
     }
 
     public static RenderedMessage of(Message message, Decorator... renderFunctions) {
         return new RenderedMessage(message, Arrays.asList(renderFunctions));
     }
 
-    public static Message getLastSection(Message message) {
+    public static Collector<MessagePart, RenderedMessage, RenderedMessage> collector() {
+        return Collector.of(RenderedMessage::new, //
+                (message, part) -> message.add(part), //
+                (message1, message2) -> {
+                    message1.add(message2);
+                    return message1;
+                }, Collector.Characteristics.UNORDERED);
+    }
+
+    public static RenderedMessage getLastSection(AbstractMessage message) {
         int index = findLastTextElement(message);
 
         if (index < 0) {
-            return message;
+            RenderedMessage renderedMessage = new RenderedMessage();
+            renderedMessage.addAll(message);
+            return renderedMessage;
         }
 
         index = findStartOfHeader(message, index);
         return copyTextHeader(message, index);
     }
 
-    static int findStartOfHeader(Message message, int index) {
+    static int findStartOfHeader(AbstractMessage message, int index) {
         AbstractMessage parts = message;
         while (index-- > 0) {
-            Type type = parts.get(index).type;
+            Message.Type type = parts.get(index).type;
             if (type == Message.Type.Text || type == Message.Type.Speech || type == Message.Type.Sound
                     || type == Message.Type.Delay) {
                 // last section starts after the second last text part
@@ -52,11 +66,11 @@ public class RenderedMessage extends Message {
         return index;
     }
 
-    static int findLastTextElement(Message message) {
+    static int findLastTextElement(AbstractMessage message) {
         AbstractMessage parts = message;
         int index = parts.size();
         while (index-- > 0) {
-            Type type = parts.get(index).type;
+            Message.Type type = parts.get(index).type;
             if (type == Message.Type.Text) {
                 break;
             }
@@ -64,12 +78,12 @@ public class RenderedMessage extends Message {
         return index;
     }
 
-    static Message copyTextHeader(Message message, int index) {
+    static RenderedMessage copyTextHeader(AbstractMessage message, int index) {
         if (index < 0) {
             index = 0;
         }
 
-        Message lastSection = new Message(message.actor);
+        RenderedMessage lastSection = new RenderedMessage();
         boolean afterText = false;
         AbstractMessage parts = message;
         for (int i = index; i < parts.size(); i++) {

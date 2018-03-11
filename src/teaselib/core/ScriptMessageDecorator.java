@@ -6,6 +6,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 
+import teaselib.AbstractMessage;
 import teaselib.Actor;
 import teaselib.Config;
 import teaselib.Message;
@@ -53,8 +54,8 @@ public class ScriptMessageDecorator {
                 this::applyDelayRules };
     }
 
-    private Message filterDebug(Message message) {
-        Message debugFiltered = new Message(message.actor);
+    private AbstractMessage filterDebug(AbstractMessage message) {
+        AbstractMessage debugFiltered = new AbstractMessage();
         for (MessagePart part : message) {
             if (part.type == Message.Type.DesktopItem
                     && !Boolean.parseBoolean(config.get(Config.Render.InstructionalImages))) {
@@ -74,12 +75,12 @@ public class ScriptMessageDecorator {
         return debugFiltered;
     }
 
-    private Message addTextToSpeech(Message message) {
-        return textToSpeech != null ? textToSpeech.createSpeechMessage(message, resources) : message;
+    private AbstractMessage addTextToSpeech(AbstractMessage message) {
+        return textToSpeech != null ? textToSpeech.createSpeechMessage(actor, message, resources) : message;
     }
 
-    private Message expandTextVariables(Message message) {
-        Message expandedTextVariables = new Message(message.actor);
+    private AbstractMessage expandTextVariables(AbstractMessage message) {
+        AbstractMessage expandedTextVariables = new AbstractMessage();
         for (MessagePart part : message) {
             if (part.type == Message.Type.Speech && !Message.Type.isSound(part.value)) {
                 if (Boolean.parseBoolean(config.get(Config.Render.Speech))) {
@@ -95,14 +96,8 @@ public class ScriptMessageDecorator {
         return expandedTextVariables;
     }
 
-    public Message addActorImages(Message message) {
-        // Clone the actor to prevent the wrong actor image to be displayed
-        // when changing the actor images right after rendering a message.
-        // Without cloning one of the new actor images would be displayed
-        // with the current message because the actor is shared between
-        // script and message
-        // TODO Remove cloning after removing actor from RenderedMessage
-        Message parsedMessage = new Message(new Actor(message.actor));
+    public AbstractMessage addActorImages(AbstractMessage message) {
+        AbstractMessage parsedMessage = new AbstractMessage();
 
         if (message.isEmpty()) {
             ensureEmptyMessageContainsDisplayImage(parsedMessage, getActorOrDisplayImage(displayImage, mood));
@@ -193,14 +188,14 @@ public class ScriptMessageDecorator {
         return nextImage;
     }
 
-    private static void ensureEmptyMessageContainsDisplayImage(Message parsedMessage, String nextImage) {
+    private static void ensureEmptyMessageContainsDisplayImage(AbstractMessage parsedMessage, String nextImage) {
         parsedMessage.add(Message.Type.Image, nextImage);
     }
 
-    private Message applyDelayRules(Message message) {
-        Message lastSection = RenderedMessage.getLastSection(message);
+    private AbstractMessage applyDelayRules(AbstractMessage message) {
+        AbstractMessage lastSection = RenderedMessage.getLastSection(message);
         MessagePart currentDelay = null;
-        Message messageWithDelays = new Message(message.actor);
+        AbstractMessage messageWithDelays = new AbstractMessage();
         boolean showChoicesApplied = false;
 
         for (MessagePart messagePart : message) {
@@ -213,7 +208,7 @@ public class ScriptMessageDecorator {
                     showChoicesApplied = true;
                 } else {
                     showChoicesApplied = injectShowChoices(messageWithDelays, currentDelay, showChoicesApplied);
-                    currentDelay = injectDelay(currentDelay, messageWithDelays);
+                    currentDelay = injectDelay(messageWithDelays, currentDelay);
 
                     if (messagePart.type == Type.Speech) {
                         currentDelay = injectSpeechDelay(messageWithDelays, messagePart, lastSection);
@@ -225,12 +220,13 @@ public class ScriptMessageDecorator {
         }
 
         injectShowChoices(messageWithDelays, currentDelay, showChoicesApplied);
-        injectDelay(currentDelay, messageWithDelays);
+        injectDelay(messageWithDelays, currentDelay);
 
         return messageWithDelays;
     }
 
-    private MessagePart injectSpeechDelay(Message messageWithDelays, MessagePart messagePart, Message lastSection) {
+    private MessagePart injectSpeechDelay(AbstractMessage messageWithDelays, MessagePart messagePart,
+            AbstractMessage lastSection) {
         MessagePart currentDelay;
         messageWithDelays.add(messagePart);
         // TODO showing last image immediately when showing Choices
@@ -244,7 +240,8 @@ public class ScriptMessageDecorator {
         return currentDelay;
     }
 
-    private boolean injectShowChoices(Message messageWithDelays, MessagePart currentDelay, boolean showChoicesApplied) {
+    private boolean injectShowChoices(AbstractMessage messageWithDelays, MessagePart currentDelay,
+            boolean showChoicesApplied) {
         if (currentDelay == DelayAtEndOfPage && !showChoicesApplied) {
             messageWithDelays.add(Type.Keyword, Message.ShowChoices);
             showChoicesApplied = true;
@@ -252,7 +249,7 @@ public class ScriptMessageDecorator {
         return showChoicesApplied;
     }
 
-    private MessagePart injectDelay(MessagePart currentDelay, Message messageWithDelays) {
+    private MessagePart injectDelay(AbstractMessage messageWithDelays, MessagePart currentDelay) {
         if (currentDelay != null) {
             messageWithDelays.add(currentDelay);
             currentDelay = null;

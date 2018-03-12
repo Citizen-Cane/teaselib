@@ -22,6 +22,7 @@ import teaselib.Mood;
 import teaselib.Replay.Position;
 import teaselib.Replay.Replayable;
 import teaselib.core.ResourceLoader;
+import teaselib.core.ScriptMessageDecorator;
 import teaselib.core.TeaseLib;
 import teaselib.core.texttospeech.TextToSpeech;
 import teaselib.core.texttospeech.TextToSpeechPlayer;
@@ -50,6 +51,8 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
 
     private static final Set<Type> SoundTypes = new HashSet<>(
             Arrays.asList(Type.Speech, Type.Sound, Type.BackgroundSound));
+
+    private static final long DELAY_AT_END_OF_MESSAGE = 2000;
 
     private final Prefetcher<byte[]> imageFetcher = new Prefetcher<>();
 
@@ -134,8 +137,7 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
         }
         if (messages.get(0).isEmpty()) {
             show(null, actor, Mood.Neutral);
-            mandatoryCompleted();
-            allCompleted();
+            finalizeRendering();
         } else {
             if (replayPosition == Position.FromStart) {
                 accumulatedText = new MessageTextAccumulator();
@@ -156,10 +158,10 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
                 // is displayed, rendered, but the text not added again
                 // TODO Remove all but last speech and delay parts
                 renderMessage(getMandatory());
-                allCompleted();
+                finalizeRendering();
             } else if (replayPosition == Position.End) {
                 renderMessage(getEnd());
-                allCompleted();
+                finalizeRendering();
             } else {
                 throw new IllegalStateException(replayPosition.toString());
             }
@@ -189,18 +191,24 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
             }
             renderMessage(message);
             currentMessage++;
+
+            synchronized (messages) {
+                boolean last = currentMessage == messages.size();
+                if (!last) {
+                    renderTimeSpannedPart(new RenderDelay(
+                            Double.parseDouble(ScriptMessageDecorator.DelayBetweenParagraphs.value), teaseLib));
+                }
+            }
         }
 
-        allCompleted();
+        finalizeRendering();
     }
 
-    @Override
-    protected void allCompleted() {
+    protected void finalizeRendering() {
         completeSectionMandatory();
         mandatoryCompleted();
         completeSectionAll();
-
-        super.allCompleted();
+        teaseLib.sleep(DELAY_AT_END_OF_MESSAGE, TimeUnit.MILLISECONDS);
     }
 
     /**
@@ -226,11 +234,9 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
             }
 
             if (part.type == Message.Type.Text) {
-                completeSectionMandatory();
                 completeSectionAll();
                 show(part.value, accumulatedText, actor, mood);
             } else if (lastPart) {
-                completeSectionMandatory();
                 completeSectionAll();
                 show(accumulatedText.toString());
             }
@@ -253,9 +259,9 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
             playSoundAsynchronous(part);
             // use awaitSoundCompletion keyword to wait for background sound completion
         } else if (part.type == Message.Type.Sound) {
-            playSoundAndWait(part);
+            playSound(part);
         } else if (part.type == Message.Type.Speech) {
-            playSpeechAndWait(part, actor, mood);
+            playSpeech(part, actor, mood);
         } else if (part.type == Message.Type.DesktopItem) {
             if (isInstructionalImageOutputEnabled()) {
                 try {
@@ -300,7 +306,7 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
         show(accumulatedText.toString(), actor, mood);
     }
 
-    private void playSpeechAndWait(MessagePart part, Actor actor, String mood) throws IOException {
+    private void playSpeech(MessagePart part, Actor actor, String mood) throws IOException {
         if (Message.Type.isSound(part.value)) {
             renderTimeSpannedPart(new RenderPrerecordedSpeech(part.value, resources, teaseLib));
         } else if (TextToSpeechPlayer.isSimulatedSpeech(part.value)) {
@@ -313,17 +319,15 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
         }
     }
 
-    private void playSoundAndWait(MessagePart part) throws IOException {
-
+    private void playSound(MessagePart part) throws IOException {
         if (isSoundOutputEnabled()) {
             renderTimeSpannedPart(new RenderSound(resources, part.value, teaseLib));
         }
     }
 
     private void playSoundAsynchronous(MessagePart part) {
-        completeSectionMandatory();
-
         if (isSoundOutputEnabled()) {
+            completeSectionMandatory();
             if (backgroundSoundRenderer != null) {
                 backgroundSoundRenderer.interrupt();
             }

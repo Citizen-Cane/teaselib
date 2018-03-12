@@ -18,14 +18,14 @@ import teaselib.core.texttospeech.TextToSpeechPlayer;
 
 public class ScriptMessageDecorator {
     private static final long DELAY_BETWEEN_PARAGRAPHS = 500;
-    private static final long DELAY_AT_END_OF_MESSAGE = 2000;
     private static final long DELAY_FOR_APPEND = 0;
 
-    static final MessagePart DelayBetweenParagraphs = delay(DELAY_BETWEEN_PARAGRAPHS);
-    static final MessagePart DelayAtEndOfPage = delay(DELAY_AT_END_OF_MESSAGE);
+    // TODO move to media package
+    static public final MessagePart DelayBetweenParagraphs = delay(DELAY_BETWEEN_PARAGRAPHS);
     static final MessagePart DelayAfterAppend = delay(DELAY_FOR_APPEND);
+
     private static Set<MessagePart> generatedDelays = new HashSet<>(
-            Arrays.asList(DelayAfterAppend, DelayBetweenParagraphs, DelayAtEndOfPage));
+            Arrays.asList(DelayAfterAppend, DelayBetweenParagraphs));
 
     private final Configuration config;
     private final String displayImage;
@@ -196,7 +196,6 @@ public class ScriptMessageDecorator {
         AbstractMessage lastSection = RenderedMessage.getLastSection(message);
         MessagePart currentDelay = null;
         AbstractMessage messageWithDelays = new AbstractMessage();
-        boolean showChoicesApplied = false;
 
         for (MessagePart messagePart : message) {
             if (messagePart.type == Type.Delay) {
@@ -205,9 +204,7 @@ public class ScriptMessageDecorator {
                 if (messagePart.type == Type.Keyword && Message.ShowChoices.equalsIgnoreCase(messagePart.value)
                         && isGeneratedDelay(currentDelay)) {
                     messageWithDelays.add(messagePart);
-                    showChoicesApplied = true;
                 } else {
-                    showChoicesApplied = injectShowChoices(messageWithDelays, currentDelay, showChoicesApplied);
                     currentDelay = injectDelay(messageWithDelays, currentDelay);
 
                     if (messagePart.type == Type.Speech) {
@@ -219,7 +216,6 @@ public class ScriptMessageDecorator {
             }
         }
 
-        injectShowChoices(messageWithDelays, currentDelay, showChoicesApplied);
         injectDelay(messageWithDelays, currentDelay);
 
         return messageWithDelays;
@@ -229,24 +225,15 @@ public class ScriptMessageDecorator {
             AbstractMessage lastSection) {
         MessagePart currentDelay;
         messageWithDelays.add(messagePart);
-        // TODO showing last image immediately when showing Choices
-        // Text Speech Image -> Text Speech ShowChoices Image Delay
 
         if (MessageTextAccumulator.canAppendTo(messagePart.value)) {
             currentDelay = DelayAfterAppend;
+        } else if (lastSection.contains(messagePart)) {
+            currentDelay = null;
         } else {
-            currentDelay = lastSection.contains(messagePart) ? DelayAtEndOfPage : DelayBetweenParagraphs;
+            currentDelay = DelayBetweenParagraphs;
         }
         return currentDelay;
-    }
-
-    private boolean injectShowChoices(AbstractMessage messageWithDelays, MessagePart currentDelay,
-            boolean showChoicesApplied) {
-        if (currentDelay == DelayAtEndOfPage && !showChoicesApplied) {
-            messageWithDelays.add(Type.Keyword, Message.ShowChoices);
-            showChoicesApplied = true;
-        }
-        return showChoicesApplied;
     }
 
     private MessagePart injectDelay(AbstractMessage messageWithDelays, MessagePart currentDelay) {

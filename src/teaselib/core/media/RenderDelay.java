@@ -9,11 +9,10 @@ import teaselib.core.ScriptInterruptedException;
 import teaselib.core.TeaseLib;
 
 public class RenderDelay extends MediaRendererThread {
-    private static final Logger logger = LoggerFactory
-            .getLogger(RenderDelay.class);
-    public final int seconds;
+    private static final Logger logger = LoggerFactory.getLogger(RenderDelay.class);
+    public final double seconds;
 
-    public RenderDelay(int seconds, TeaseLib teaseLib) {
+    public RenderDelay(double seconds, TeaseLib teaseLib) {
         super(teaseLib);
         this.seconds = seconds;
     }
@@ -24,10 +23,10 @@ public class RenderDelay extends MediaRendererThread {
         startCompleted();
         try {
             if (seconds > 0) {
-                logger.info(toString() + " seconds");
-                teaseLib.sleep(seconds, TimeUnit.SECONDS);
+                logger.info("Sleeping {} seconds", seconds);
+                teaseLib.sleep((long) (seconds * 1000), TimeUnit.MILLISECONDS);
             } else {
-                logger.info("skipped sleeping " + seconds + " seconds");
+                logger.info("skipped sleeping {} seconds", +seconds);
             }
         } catch (ScriptInterruptedException e) {
             // Expected
@@ -38,6 +37,6 @@ public class RenderDelay extends MediaRendererThread {
 
     @Override
     public String toString() {
-        return Integer.toString(seconds);
+        return Double.toString(seconds);
     }
 }

@@ -144,7 +144,7 @@ public abstract class MediaRendererThread implements MediaRenderer.Threaded {
         render();
     }
 
-    protected void startCompleted() {
+    protected final void startCompleted() {
         completedStart.countDown();
         if (logger.isDebugEnabled()) {
             logger.debug(getClass().getSimpleName() + " completed start after "
@@ -152,7 +152,7 @@ public abstract class MediaRendererThread implements MediaRenderer.Threaded {
         }
     }
 
-    protected void mandatoryCompleted() {
+    protected final void mandatoryCompleted() {
         completedMandatory.countDown();
         if (logger.isDebugEnabled()) {
             logger.debug(getClass().getSimpleName() + " completed mandatory after "
@@ -160,7 +160,7 @@ public abstract class MediaRendererThread implements MediaRenderer.Threaded {
         }
     }
 
-    protected void allCompleted() {
+    protected final void allCompleted() {
         completedAll.countDown();
         if (logger.isDebugEnabled()) {
             logger.debug(getClass().getSimpleName() + " completed all after " + getElapsedSecondsFormatted());

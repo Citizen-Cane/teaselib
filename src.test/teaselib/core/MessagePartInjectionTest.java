@@ -397,10 +397,10 @@ public class MessagePartInjectionTest {
         assertEquals(Type.Text, parsed.get(n++).type);
         assertEquals(Type.Speech, parsed.get(n++).type);
 
-        assertEquals(Type.Keyword, parsed.get(n).type);
-        assertEquals(Message.ShowChoices, parsed.get(n++).value);
-
-        assertEquals(ScriptMessageDecorator.DelayAtEndOfPage, parsed.get(n++));
+        // assertEquals(Type.Keyword, parsed.get(n).type);
+        // assertEquals(Message.ShowChoices, parsed.get(n++).value);
+        //
+        // assertEquals(ScriptMessageDecorator.DelayAtEndOfPage, parsed.get(n++));
 
         assertEquals(parsed.size(), n);
     }
@@ -506,12 +506,51 @@ public class MessagePartInjectionTest {
         assertEquals("Actor.jpg", parsed.get(n++).value);
         assertEquals(Type.Text, parsed.get(n++).type);
         assertEquals(Type.Speech, parsed.get(n++).type);
-        assertEquals(Type.Keyword, parsed.get(n).type);
-        assertEquals(Message.ShowChoices, parsed.get(n++).value);
-        assertEquals(ScriptMessageDecorator.DelayAtEndOfPage, parsed.get(n++));
+
+        // assertEquals(Type.Keyword, parsed.get(n).type);
+        // assertEquals(Message.ShowChoices, parsed.get(n++).value);
+        // assertEquals(ScriptMessageDecorator.DelayAtEndOfPage, parsed.get(n++));
 
         assertEquals(Type.Image, parsed.get(n).type);
         assertEquals("foobar.jpg", parsed.get(n++).value);
+
+        assertEquals(parsed.size(), n);
+    }
+
+    @Test
+    public void testMessageWithSoundAtEnd() {
+        TestScript script = TestScript.getOne(new DebugSetup().withInput().withOutput());
+        script.debugger.freezeTime();
+        script.actor.images = new ActorTestImage("Actor.jpg");
+
+        Message message = new Message(script.actor);
+        message.add("Some text.");
+        message.add(Type.Speech, "Some text.");
+        message.add("Some more text.");
+        message.add(Type.Speech, "Some more text.");
+        message.add("foobar.mp3");
+
+        RenderedMessage parsed = RenderedMessage.of(message, ((Script) script).decorators(Optional.empty()));
+        int n = 0;
+
+        assertEquals(Type.Mood, parsed.get(n++).type);
+        assertEquals(Type.Image, parsed.get(n).type);
+        assertEquals("Actor.jpg", parsed.get(n++).value);
+        assertEquals(Type.Text, parsed.get(n++).type);
+        assertEquals(Type.Speech, parsed.get(n++).type);
+        assertEquals(ScriptMessageDecorator.DelayBetweenParagraphs, parsed.get(n++));
+
+        assertEquals(Type.Image, parsed.get(n).type);
+        assertEquals("Actor.jpg", parsed.get(n++).value);
+        assertEquals(Type.Text, parsed.get(n++).type);
+        assertEquals(Type.Speech, parsed.get(n++).type);
+
+        // assertEquals(Type.Keyword, parsed.get(n).type);
+        // assertEquals(Message.ShowChoices, parsed.get(n++).value);
+        // assertEquals(ScriptMessageDecorator.DelayAtEndOfPage, parsed.get(n++));
+
+        assertEquals(Type.Sound, parsed.get(n).type);
+        assertEquals("foobar.mp3", parsed.get(n++).value);
 
         assertEquals(parsed.size(), n);
     }

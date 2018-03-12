@@ -58,7 +58,7 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
 
     private final Actor actor;
     private final ResourceLoader resources;
-    private final TextToSpeechPlayer ttsPlayer;
+    private final TextToSpeechPlayer textToSpeechPlayer;
     private final List<RenderedMessage> messages;
 
     private MessageTextAccumulator accumulatedText;
@@ -85,7 +85,7 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
 
         this.actor = actor;
         this.resources = resources;
-        this.ttsPlayer = ttsPlayer.isPresent() ? ttsPlayer.get() : null;
+        this.textToSpeechPlayer = ttsPlayer.isPresent() ? ttsPlayer.get() : null;
         this.messages = messages;
 
         this.accumulatedText = new MessageTextAccumulator();
@@ -194,7 +194,7 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
 
             synchronized (messages) {
                 boolean last = currentMessage == messages.size();
-                if (!last) {
+                if (!last && textToSpeechPlayer != null) {
                     renderTimeSpannedPart(new RenderDelay(
                             Double.parseDouble(ScriptMessageDecorator.DelayBetweenParagraphs.value), teaseLib));
                 }
@@ -208,7 +208,12 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
         completeSectionMandatory();
         mandatoryCompleted();
         completeSectionAll();
-        teaseLib.sleep(DELAY_AT_END_OF_MESSAGE, TimeUnit.MILLISECONDS);
+
+        if (getTextToSpeech().isPresent()) {
+            teaseLib.sleep(DELAY_AT_END_OF_MESSAGE, TimeUnit.MILLISECONDS);
+        }
+
+        allCompleted();
     }
 
     /**
@@ -312,8 +317,8 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
         } else if (TextToSpeechPlayer.isSimulatedSpeech(part.value)) {
             renderTimeSpannedPart(
                     new RenderSpeechDelay(TextToSpeechPlayer.getSimulatedSpeechText(part.value), teaseLib));
-        } else if (isSpeechOutputEnabled() && ttsPlayer != null) {
-            renderTimeSpannedPart(new RenderTTSSpeech(ttsPlayer, actor, part.value, mood, teaseLib));
+        } else if (isSpeechOutputEnabled() && textToSpeechPlayer != null) {
+            renderTimeSpannedPart(new RenderTTSSpeech(textToSpeechPlayer, actor, part.value, mood, teaseLib));
         } else {
             renderTimeSpannedPart(new RenderSpeechDelay(part.value, teaseLib));
         }
@@ -499,6 +504,6 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
     }
 
     public Optional<TextToSpeechPlayer> getTextToSpeech() {
-        return Optional.ofNullable(ttsPlayer);
+        return Optional.ofNullable(textToSpeechPlayer);
     }
 }

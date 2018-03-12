@@ -417,6 +417,9 @@ public class MessagePartInjectionTest {
         message.add("Some more text.");
         message.add(Type.Speech, "Some more text.");
         message.add(Type.Delay, "20");
+        message.add("Even more text.");
+        message.add(Type.Speech, "Even more text.");
+        message.add(Type.Delay, "20");
 
         RenderedMessage parsed = RenderedMessage.of(message, ((Script) script).decorators(Optional.empty()));
         int n = 0;
@@ -427,6 +430,14 @@ public class MessagePartInjectionTest {
         assertEquals(Type.Text, parsed.get(n++).type);
         assertEquals(Type.Speech, parsed.get(n++).type);
         assertEquals(ScriptMessageDecorator.DelayBetweenParagraphs, parsed.get(n++));
+
+        assertEquals(Type.Image, parsed.get(n).type);
+        assertEquals("Actor.jpg", parsed.get(n++).value);
+        assertEquals(Type.Text, parsed.get(n++).type);
+        assertEquals(Type.Speech, parsed.get(n++).type);
+
+        assertEquals(Type.Delay, parsed.get(n).type);
+        assertEquals("20", parsed.get(n++).value);
 
         assertEquals(Type.Image, parsed.get(n).type);
         assertEquals("Actor.jpg", parsed.get(n++).value);
@@ -568,6 +579,6 @@ public class MessagePartInjectionTest {
         long end = script.teaseLib.getTime(TimeUnit.SECONDS);
 
         long duration = end - start;
-        assertTrue(duration >= minimumSeconds);
+        assertTrue(duration == minimumSeconds);
     }
 }

@@ -205,11 +205,12 @@ public class ScriptMessageDecorator {
                         && isGeneratedDelay(currentDelay)) {
                     messageWithDelays.add(messagePart);
                 } else {
-                    currentDelay = injectDelay(messageWithDelays, currentDelay);
+                    injectDelay(messageWithDelays, currentDelay);
 
                     if (messagePart.type == Type.Speech) {
                         currentDelay = injectSpeechDelay(messageWithDelays, messagePart, lastSection);
                     } else {
+                        currentDelay = null;
                         messageWithDelays.add(messagePart);
                     }
                 }
@@ -236,12 +237,10 @@ public class ScriptMessageDecorator {
         return currentDelay;
     }
 
-    private MessagePart injectDelay(AbstractMessage messageWithDelays, MessagePart currentDelay) {
-        if (currentDelay != null) {
-            messageWithDelays.add(currentDelay);
-            currentDelay = null;
+    private void injectDelay(AbstractMessage messageWithDelays, MessagePart delay) {
+        if (delay != null) {
+            messageWithDelays.add(delay);
         }
-        return currentDelay;
     }
 
     private static MessagePart delay(long millis) {

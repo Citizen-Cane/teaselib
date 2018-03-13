@@ -3,11 +3,14 @@
  */
 package teaselib;
 
+import teaselib.functional.CallableScript;
+import teaselib.functional.RunnableScript;
+
 /**
- * @author someone
+ * @author Citizen-Cane
  *
  */
-public abstract class ScriptFunction implements Runnable {
+public class ScriptFunction implements CallableScript<String> {
     /**
      * Return value to state that the script function has timed out.
      */
@@ -24,8 +27,7 @@ public abstract class ScriptFunction implements Runnable {
      */
     public enum Relation {
         /**
-         * Specifies that the script function begins a new message, and doesn't
-         * relate to the current message.
+         * Specifies that the script function begins a new message, and doesn't relate to the current message.
          */
         Autonomous,
         /**
@@ -34,23 +36,48 @@ public abstract class ScriptFunction implements Runnable {
         Confirmation
     }
 
+    CallableScript<String> script;
     /**
      * The type of this script function;
      */
     public final Relation relation;
 
     /**
-     * The result of the script function. Initialized with the default value to
-     * state that the function just ended. Setting the result causes that value
-     * to be returned by {@link TeaseScript#reply}.
+     * The result of the script function. Initialized with the default value to state that the function just ended.
+     * Setting the result causes that value to be returned by {@link TeaseScript#reply}.
      */
-    public String result = null;
+    private String result = null;
 
-    public ScriptFunction() {
-        this.relation = Relation.Autonomous;
+    public ScriptFunction(RunnableScript script) {
+        this(script, Relation.Autonomous);
     }
 
-    public ScriptFunction(Relation relation) {
+    public ScriptFunction(RunnableScript script, Relation relation) {
+        this(() -> {
+            script.run();
+            return Timeout;
+        }, relation);
+    }
+
+    public ScriptFunction(CallableScript<String> script) {
+        this(script, Relation.Autonomous);
+    }
+
+    public ScriptFunction(CallableScript<String> script, Relation relation) {
+        this.script = script;
         this.relation = relation;
+    }
+
+    @Override
+    public String call() {
+        return script.call();
+    }
+
+    public void setResult(String result) {
+        this.result = result;
+    }
+
+    public String getResult() {
+        return result;
     }
 }

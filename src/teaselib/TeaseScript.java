@@ -6,6 +6,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Pattern;
 
 import org.slf4j.Logger;
@@ -28,6 +29,8 @@ import teaselib.core.speechrecognition.SpeechRecognitionResult.Confidence;
 import teaselib.core.speechrecognition.SpeechRecognizer;
 import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
 import teaselib.core.util.WildcardPattern;
+import teaselib.functional.CallableScript;
+import teaselib.functional.RunnableScript;
 import teaselib.util.Items;
 
 public abstract class TeaseScript extends TeaseScriptMath {
@@ -243,8 +246,17 @@ public abstract class TeaseScript extends TeaseScriptMath {
      * @return The choice object that has been selected by the user, or {@link TeaseScript#Timeout} if the script
      *         function completes.
      */
+
     public final String reply(ScriptFunction scriptFunction, List<String> text) {
         return showChoices(Answer.all(text), scriptFunction);
+    }
+
+    public final String reply(RunnableScript script, List<String> text) {
+        return showChoices(Answer.all(text), new ScriptFunction(script));
+    }
+
+    public final String reply(CallableScript<String> script, List<String> text) {
+        return showChoices(Answer.all(text), new ScriptFunction(script));
     }
 
     /**
@@ -258,56 +270,63 @@ public abstract class TeaseScript extends TeaseScriptMath {
      * @return The choice object that has been selected by the user, or {@link TeaseScript#Timeout} if the script
      *         function completes.
      */
+
     public final String reply(ScriptFunction scriptFunction, String text, String... more) {
         List<String> choices = buildChoicesFromArray(text, more);
         return reply(scriptFunction, choices);
     }
 
-    protected abstract class SpeechRecognitionAwareTimeoutScriptFunction extends ScriptFunction {
-        final long seconds;
+    public final String reply(RunnableScript script, String text, String... more) {
+        List<String> choices = buildChoicesFromArray(text, more);
+        return reply(new ScriptFunction(script), choices);
+    }
 
-        boolean ignoreTimeoutInDubioMitius = false;
+    public final String reply(CallableScript<String> script, String text, String... more) {
+        List<String> choices = buildChoicesFromArray(text, more);
+        return reply(new ScriptFunction(script), choices);
+    }
 
-        public SpeechRecognitionAwareTimeoutScriptFunction(long seconds, Relation relation) {
-            super(relation);
-            this.seconds = seconds;
+    protected String awaitTimeout(long seconds, SpeechRecognition.TimeoutBehavior timeoutBehavior) {
+        AtomicBoolean ignoreTimeoutInDubioMitius = new AtomicBoolean(false);
+
+        Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs> recognitionRejected;
+        SpeechRecognition speechRecognizer = teaseLib.globals.get(SpeechRecognizer.class).get(actor.locale());
+        EventSource<SpeechRecognitionImplementation, SpeechRecognizedEventArgs> speechDetectedEvents = speechRecognizer.events.recognitionRejected;
+        if (timeoutBehavior == TimeoutBehavior.InDubioMitius) {
+            Thread scriptFunctionThread = Thread.currentThread();
+            // TODO Should be SpeechDetectedEvent
+            recognitionRejected = (sender, eventArgs) -> {
+                if (!ignoreTimeoutInDubioMitius.get()) {
+                    logger.info("-" + scriptFunctionThread.getName() + " - : timeout disabled " + timeoutBehavior);
+                    ignoreTimeoutInDubioMitius.set(true);
+                }
+            };
+            speechDetectedEvents.add(recognitionRejected);
+        } else {
+            recognitionRejected = null;
         }
-
-        protected void awaitTimeout(SpeechRecognition.TimeoutBehavior timeoutBehavior) {
-            Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs> recognitionRejected;
-            SpeechRecognition speechRecognizer = teaseLib.globals.get(SpeechRecognizer.class).get(actor.locale());
-            EventSource<SpeechRecognitionImplementation, SpeechRecognizedEventArgs> speechDetectedEvents = speechRecognizer.events.recognitionRejected;
-            if (timeoutBehavior == TimeoutBehavior.InDubioMitius) {
-                Thread scriptFunctionThread = Thread.currentThread();
-                recognitionRejected = (sender, eventArgs) -> {
-                    if (!ignoreTimeoutInDubioMitius) {
-                        logger.info("-" + scriptFunctionThread.getName() + " - : timeout disabled " + timeoutBehavior);
-                        ignoreTimeoutInDubioMitius = true;
-                    }
-                };
-                speechDetectedEvents.add(recognitionRejected);
-            } else {
-                recognitionRejected = null;
+        try {
+            teaseLib.sleep(seconds, TimeUnit.SECONDS);
+            if (timeoutBehavior != TimeoutBehavior.InDubioContraReum
+                    && speechRecognizer.isSpeechRecognitionInProgress()) {
+                logger.info("Completing speech recognition " + timeoutBehavior);
+                SpeechRecognition.completeSpeechRecognitionInProgress();
             }
-            try {
-                teaseLib.sleep(seconds, TimeUnit.SECONDS);
-                if (timeoutBehavior != TimeoutBehavior.InDubioContraReum
-                        && speechRecognizer.isSpeechRecognitionInProgress()) {
-                    logger.info("Completing speech recognition " + timeoutBehavior);
-                    SpeechRecognition.completeSpeechRecognitionInProgress();
-                }
-            } finally {
-                if (recognitionRejected != null) {
-                    speechDetectedEvents.remove(recognitionRejected);
-                }
-            }
-            if (ignoreTimeoutInDubioMitius) {
-                logger.info(relation + " timeout ignored " + timeoutBehavior);
-            } else {
-                result = Timeout;
-                logger.info("Script function confirm timeout");
+        } finally {
+            if (recognitionRejected != null) {
+                speechDetectedEvents.remove(recognitionRejected);
             }
         }
+        String result;
+        if (ignoreTimeoutInDubioMitius.get()) {
+            logger.info(/* relation + */ " timeout ignored " + timeoutBehavior);
+            result = null;
+        } else {
+            logger.info("Script function confirm timeout");
+            result = Timeout;
+        }
+
+        return result;
     }
 
     /**
@@ -320,17 +339,12 @@ public abstract class TeaseScript extends TeaseScriptMath {
      * 
      * @param seconds
      *            The timeout duration
-     * @param timoutBehavior
+     * @param timeoutBehavior
      *            How speech recognition is handled when the timeout has been reached
      * @return A script function that accomplishes the described behavior.
      */
-    public ScriptFunction timeout(long seconds, final SpeechRecognition.TimeoutBehavior timoutBehavior) {
-        return new SpeechRecognitionAwareTimeoutScriptFunction(seconds, Relation.Autonomous) {
-            @Override
-            public void run() {
-                awaitTimeout(timoutBehavior);
-            }
-        };
+    public ScriptFunction timeout(long seconds, final SpeechRecognition.TimeoutBehavior timeoutBehavior) {
+        return new ScriptFunction(() -> awaitTimeout(seconds, timeoutBehavior), Relation.Autonomous);
     }
 
     /**
@@ -347,15 +361,12 @@ public abstract class TeaseScript extends TeaseScriptMath {
      *            How speech recognition is handled when the timeout has been reached
      * @return A script function that accomplishes the described behavior.
      */
-    public ScriptFunction timeoutWithConfirmation(long seconds,
-            final SpeechRecognition.TimeoutBehavior timoutBehavior) {
-        return new SpeechRecognitionAwareTimeoutScriptFunction(seconds, Relation.Confirmation) {
-            @Override
-            public void run() {
-                awaitTimeout(timoutBehavior);
-                sleep(Infinite, TimeUnit.SECONDS);
-            }
-        };
+    public ScriptFunction timeoutWithConfirmation(long seconds, SpeechRecognition.TimeoutBehavior timeoutBehavior) {
+        return new ScriptFunction(() -> {
+            String result = awaitTimeout(seconds, timeoutBehavior);
+            sleep(ScriptFunction.Infinite, TimeUnit.SECONDS);
+            return result;
+        }, Relation.Confirmation);
     }
 
     /**
@@ -371,14 +382,8 @@ public abstract class TeaseScript extends TeaseScriptMath {
      *            How speech recognition is handled when the timeout has been reached
      * @return A script function that accomplishes the described behavior.
      */
-    public ScriptFunction timeoutWithAutoConfirmation(long seconds,
-            final SpeechRecognition.TimeoutBehavior timoutBehavior) {
-        return new SpeechRecognitionAwareTimeoutScriptFunction(seconds, Relation.Confirmation) {
-            @Override
-            public void run() {
-                awaitTimeout(timoutBehavior);
-            }
-        };
+    public ScriptFunction timeoutWithAutoConfirmation(long seconds, SpeechRecognition.TimeoutBehavior timeoutBehavior) {
+        return new ScriptFunction(() -> awaitTimeout(seconds, timeoutBehavior), Relation.Confirmation);
     }
 
     /**
@@ -427,12 +432,32 @@ public abstract class TeaseScript extends TeaseScriptMath {
         return showChoices(Arrays.asList(Answer.yes(yes), Answer.no(no)), scriptFunction) == yes;
     }
 
+    public final boolean askYN(RunnableScript script, String yes, String no) {
+        return showChoices(Arrays.asList(Answer.yes(yes), Answer.no(no)), new ScriptFunction(script)) == yes;
+    }
+
     public final void deny(String no) {
         showChoices(Arrays.asList(Answer.no(no)));
     }
 
+    public final void deny(ScriptFunction scriptFunction, String no) {
+        showChoices(Arrays.asList(Answer.no(no)), scriptFunction);
+    }
+
+    public final void deny(RunnableScript script, String no) {
+        showChoices(Arrays.asList(Answer.no(no)), new ScriptFunction(script));
+    }
+
     public final void agree(String yes) {
         showChoices(Arrays.asList(Answer.yes(yes)));
+    }
+
+    public final void agree(ScriptFunction scriptFunction, String yes) {
+        showChoices(Arrays.asList(Answer.yes(yes)), scriptFunction);
+    }
+
+    public final void agree(RunnableScript script, String yes) {
+        showChoices(Arrays.asList(Answer.yes(yes)), new ScriptFunction(script));
     }
 
     /**

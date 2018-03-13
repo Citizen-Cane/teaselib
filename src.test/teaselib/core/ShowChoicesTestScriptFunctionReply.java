@@ -13,7 +13,6 @@ import org.junit.runner.RunWith;
 import org.junit.runners.MethodSorters;
 import org.junit.runners.Parameterized;
 
-import teaselib.ScriptFunction;
 import teaselib.TeaseScript;
 import teaselib.core.media.MediaRendererThread;
 import teaselib.test.IntegrationTests;
@@ -68,12 +67,9 @@ public class ShowChoicesTestScriptFunctionReply extends ShowChoicesAbstractTest 
         debugger.addResponse("Stop", Debugger.Response.Choose);
 
         script.say("In main script.");
-        assertEquals("Stop", script.reply(new ScriptFunction() {
-            @Override
-            public void run() {
-                script.queueRenderer(new DebugInfiniteDelay(script.teaseLib));
-                script.say("Inside script function.");
-            }
+        assertEquals("Stop", script.reply(() -> {
+            script.queueRenderer(new DebugInfiniteDelay(script.teaseLib));
+            script.say("Inside script function.");
         }, "Stop"));
         script.say("Resuming main script");
     }
@@ -85,22 +81,16 @@ public class ShowChoicesTestScriptFunctionReply extends ShowChoicesAbstractTest 
         debugger.addResponse("Stop*", Debugger.Response.Choose);
 
         script.say("In main script.");
-        assertEquals(TeaseScript.Timeout, script.reply(new ScriptFunction() {
-            @Override
-            public void run() {
-                script.say("Start of script function 1.");
-                assertEquals("No Level 1", script.reply("Yes Level 1", "No Level 1"));
+        assertEquals(TeaseScript.Timeout, script.reply(() -> {
+            script.say("Start of script function 1.");
+            assertEquals("No Level 1", script.reply("Yes Level 1", "No Level 1"));
 
-                assertEquals("Stop script function 2", script.reply(new ScriptFunction() {
-                    @Override
-                    public void run() {
-                        script.queueRenderer(new DebugInfiniteDelay(script.teaseLib));
-                        script.say("Inside script function 2.");
-                    }
-                }, "Stop script function 2"));
+            assertEquals("Stop script function 2", script.reply(() -> {
+                script.queueRenderer(new DebugInfiniteDelay(script.teaseLib));
+                script.say("Inside script function 2.");
+            }, "Stop script function 2"));
 
-                script.say("End of script function 1.");
-            }
+            script.say("End of script function 1.");
         }, "Ignore script function 1"));
         script.say("Resuming main script");
     }
@@ -112,31 +102,22 @@ public class ShowChoicesTestScriptFunctionReply extends ShowChoicesAbstractTest 
         debugger.addResponse("Stop*", Debugger.Response.Choose);
 
         script.say("In main script.");
-        assertEquals(TeaseScript.Timeout, script.reply(new ScriptFunction() {
-            @Override
-            public void run() {
-                script.say("Start of script function 1.");
+        assertEquals(TeaseScript.Timeout, script.reply(() -> {
+            script.say("Start of script function 1.");
 
-                assertEquals(TeaseScript.Timeout, script.reply(new ScriptFunction() {
-                    @Override
-                    public void run() {
-                        script.say("Start of script function 2.");
-                        assertEquals("No Level 2", script.reply("No Level 2", "Yes Level 2"));
+            assertEquals(TeaseScript.Timeout, script.reply(() -> {
+                script.say("Start of script function 2.");
+                assertEquals("No Level 2", script.reply("No Level 2", "Yes Level 2"));
 
-                        assertEquals("Stop script function 3", script.reply(new ScriptFunction() {
-                            @Override
-                            public void run() {
-                                script.queueRenderer(new DebugInfiniteDelay(script.teaseLib));
-                                script.say("Inside script function 3.");
-                            }
-                        }, "Stop script function 3"));
+                assertEquals("Stop script function 3", script.reply(() -> {
+                    script.queueRenderer(new DebugInfiniteDelay(script.teaseLib));
+                    script.say("Inside script function 3.");
+                }, "Stop script function 3"));
 
-                        script.say("End of script function 2");
-                    }
-                }, "Ignore script function 2"));
+                script.say("End of script function 2");
+            }, "Ignore script function 2"));
 
-                script.say("End of script function 1.");
-            }
+            script.say("End of script function 1.");
         }, "Ignore script function 1"));
         script.say("Resuming main script");
     }

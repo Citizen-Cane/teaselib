@@ -242,7 +242,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
         }
     }
 
-    private void setImageInternal(Image image) throws ScriptInterruptedException {
+    private void setImageInternal(Image image) {
         if (image != null) {
             ((ss.desktop.Script) ss).setImage(image, false);
 

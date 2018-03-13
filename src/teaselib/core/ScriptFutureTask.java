@@ -36,7 +36,7 @@ public class ScriptFutureTask extends FutureTask<Void> {
             @Override
             public Void call() throws Exception {
                 try {
-                    scriptFunction.run();
+                    scriptFunction.setResult(scriptFunction.call());
                     if (Thread.interrupted()) {
                         throw new ScriptInterruptedException();
                     }
@@ -57,13 +57,13 @@ public class ScriptFutureTask extends FutureTask<Void> {
         try {
             super.run();
         } catch (ScriptInterruptedException e) {
-            logger.info("Script task " + prompt + " interrupted");
+            logger.info("Script task {} interrupted", prompt);
         } catch (Throwable t) {
             setException(t);
         }
 
         try {
-            logger.info("Script task " + prompt + " is finishing");
+            logger.info("Script task {} is finishing", prompt);
             prompt.lock.lockInterruptibly();
             try {
                 timedOut.set(prompt.result() == Prompt.UNDEFINED);
@@ -77,7 +77,7 @@ public class ScriptFutureTask extends FutureTask<Void> {
             // and either has been stopped already or will be dismissed (all good states)
         } catch (ScriptInterruptedException e) {
             // Expected
-            logger.info("Script task " + prompt + " interrupted");
+            logger.info("Script task {} interrupted", prompt);
         } catch (Exception e) {
             if (throwable == null) {
                 setException(e);
@@ -85,7 +85,7 @@ public class ScriptFutureTask extends FutureTask<Void> {
                 logger.error(e.getMessage(), e);
             }
         } finally {
-            logger.info("Script task " + prompt + " finished");
+            logger.info("Script task {} finished", prompt);
         }
     }
 
@@ -98,10 +98,10 @@ public class ScriptFutureTask extends FutureTask<Void> {
     @Override
     protected void setException(Throwable t) {
         if (dismissed.get() && t instanceof ScriptInterruptedException) {
-            logger.info("Script task " + prompt + " already dismissed");
+            logger.info("Script task {} already dismissed", prompt);
         } else {
             throwable = t;
-            logger.info(t.getClass().getSimpleName() + ":@" + t.hashCode() + " stored - will be forwarded");
+            logger.info("{}:@{} stored - will be forwarded", t.getClass().getSimpleName(), t.hashCode());
             super.setException(t);
         }
         if (!(t instanceof ScriptInterruptedException || t instanceof InterruptedException)) {
@@ -114,13 +114,13 @@ public class ScriptFutureTask extends FutureTask<Void> {
     }
 
     public void execute() {
-        logger.info("Execute script task " + prompt);
+        logger.info("Execute script task {}", prompt);
         Executor.execute(this);
     }
 
     public void join() {
         try {
-            logger.info("Waiting for script task " + prompt + " to join");
+            logger.info("Waiting for script task {} to join", prompt);
             get();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
@@ -130,7 +130,7 @@ public class ScriptFutureTask extends FutureTask<Void> {
         } catch (ExecutionException e) {
             throw ExceptionUtil.asRuntimeException(ExceptionUtil.reduce(e));
         } finally {
-            logger.info("Joined script task " + prompt);
+            logger.info("Joined script task {}", prompt);
         }
     }
 
@@ -143,7 +143,7 @@ public class ScriptFutureTask extends FutureTask<Void> {
     }
 
     public String getScriptFunctionResult() {
-        return scriptFunction.result;
+        return scriptFunction.getResult();
     }
 
     public void forwardErrorsAsRuntimeException() {
@@ -154,7 +154,7 @@ public class ScriptFutureTask extends FutureTask<Void> {
     }
 
     private void throwException(Throwable t) {
-        logger.info("Forwarding script task error of " + prompt);
+        logger.info("Forwarding script task error of {}", prompt);
         if (t instanceof ScriptInterruptedException) {
             throw (ScriptInterruptedException) t;
         } else if (t instanceof InterruptedException) {
@@ -164,7 +164,7 @@ public class ScriptFutureTask extends FutureTask<Void> {
         } else if (t instanceof Error) {
             throw (Error) t;
         } else {
-            throw new RuntimeException(t);
+            throw ExceptionUtil.asRuntimeException(t);
         }
     }
 }

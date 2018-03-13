@@ -27,8 +27,8 @@ import teaselib.core.media.MediaRendererQueue;
 import teaselib.core.media.RenderInterTitle;
 import teaselib.core.media.RenderMessage;
 import teaselib.core.media.RenderedMessage;
-import teaselib.core.media.ScriptMessageDecorator;
 import teaselib.core.media.RenderedMessage.Decorator;
+import teaselib.core.media.ScriptMessageDecorator;
 import teaselib.core.speechrecognition.SpeechRecognitionResult.Confidence;
 import teaselib.core.speechrecognition.SpeechRecognizer;
 import teaselib.core.texttospeech.TextToSpeechPlayer;
@@ -41,6 +41,8 @@ import teaselib.core.ui.Shower;
 import teaselib.core.ui.SpeechRecognitionInputMethod;
 import teaselib.core.util.ExceptionUtil;
 import teaselib.core.util.ObjectMap;
+import teaselib.functional.CallableScript;
+import teaselib.functional.RunnableScript;
 import teaselib.motiondetection.Gesture;
 import teaselib.motiondetection.MotionDetector;
 import teaselib.util.SpeechRecognitionRejectedScript;
@@ -341,6 +343,14 @@ public abstract class Script {
 
     public final String reply(ScriptFunction scriptFunction, Answer... answers) {
         return showChoices(Arrays.asList(answers), scriptFunction);
+    }
+
+    public final String reply(RunnableScript script, Answer... answers) {
+        return showChoices(Arrays.asList(answers), new ScriptFunction(script));
+    }
+
+    public final String reply(CallableScript<String> script, Answer... answers) {
+        return showChoices(Arrays.asList(answers), new ScriptFunction(script));
     }
 
     public final String reply(Confidence confidence, Answer... answers) {

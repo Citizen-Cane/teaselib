@@ -27,6 +27,7 @@ import teaselib.core.media.MediaRendererQueue;
 import teaselib.core.media.RenderInterTitle;
 import teaselib.core.media.RenderMessage;
 import teaselib.core.media.RenderedMessage;
+import teaselib.core.media.ScriptMessageDecorator;
 import teaselib.core.media.RenderedMessage.Decorator;
 import teaselib.core.speechrecognition.SpeechRecognitionResult.Confidence;
 import teaselib.core.speechrecognition.SpeechRecognizer;

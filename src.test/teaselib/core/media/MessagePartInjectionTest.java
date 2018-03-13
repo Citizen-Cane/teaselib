@@ -1,8 +1,9 @@
-package teaselib.core;
+package teaselib.core.media;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
@@ -15,12 +16,36 @@ import teaselib.Images;
 import teaselib.Message;
 import teaselib.Message.Type;
 import teaselib.Mood;
-import teaselib.core.media.RenderedMessage;
+import teaselib.core.Configuration.Setup;
 import teaselib.test.DebugSetup;
 import teaselib.test.TestScript;
 import teaselib.util.RandomImages;
 
 public class MessagePartInjectionTest {
+    private final class DecoratingTestScript extends TestScript {
+
+        public DecoratingTestScript() throws IOException {
+            super();
+        }
+
+        public DecoratingTestScript(Setup setup) throws IOException {
+            super(setup);
+        }
+
+        public RenderedMessage.Decorator[] getDecorators() {
+            return new ScriptMessageDecorator(teaseLib.config, displayImage, actor, mood, resources,
+                    this::expandTextVariables, Optional.empty()).messageModifiers();
+        }
+
+        public String expandTextVariables(String text) {
+            return text;
+        }
+
+        public void renderMessage(Message message) {
+            super.renderMessage(message, false);
+        }
+    }
+
     public final class ActorTestImage implements Images {
         private final String resourcePath;
 
@@ -50,13 +75,16 @@ public class MessagePartInjectionTest {
 
     static final Actor DummyActor = null;
 
-    @Test
-    public void testEmptyMessage() {
-        TestScript script = TestScript.getOne(getClass());
+    private RenderedMessage decorate(DecoratingTestScript script, Message message) {
+        return RenderedMessage.of(message, script.getDecorators());
+    }
 
+    @Test
+    public void testEmptyMessage() throws IOException {
+        DecoratingTestScript script = new DecoratingTestScript();
         Message message = new Message(script.actor);
         script.setImage("foobar.jpg");
-        RenderedMessage parsed = RenderedMessage.of(message, ((Script) script).decorators(Optional.empty()));
+        RenderedMessage parsed = decorate(script, message);
         int n = 0;
 
         assertEquals(Type.Image, parsed.get(n).type);
@@ -65,8 +93,8 @@ public class MessagePartInjectionTest {
     }
 
     @Test
-    public void testInjectionOfInlineResources() {
-        TestScript script = TestScript.getOne(new DebugSetup().withOutput());
+    public void testInjectionOfInlineResources() throws IOException {
+        DecoratingTestScript script = new DecoratingTestScript(new DebugSetup().withOutput());
         script.actor.images = new ActorTestImage("Actor.jpg");
 
         Message message = new Message(script.actor);
@@ -79,7 +107,7 @@ public class MessagePartInjectionTest {
         message.add(Type.Delay, "2");
         message.add("bar.jpg");
 
-        RenderedMessage parsed = RenderedMessage.of(message, ((Script) script).decorators(Optional.empty()));
+        RenderedMessage parsed = decorate(script, message);
         int n = 0;
 
         assertEquals(Type.Mood, parsed.get(n++).type);
@@ -106,8 +134,8 @@ public class MessagePartInjectionTest {
     }
 
     @Test
-    public void testInjectionOfMood() {
-        TestScript script = TestScript.getOne(new DebugSetup().withOutput());
+    public void testInjectionOfMood() throws IOException {
+        DecoratingTestScript script = new DecoratingTestScript(new DebugSetup().withOutput());
         script.actor.images = new ActorTestImage("Actor.jpg");
 
         script.setMood(Mood.Friendly);
@@ -134,7 +162,7 @@ public class MessagePartInjectionTest {
         message.add(Mood.Happy);
         message.add("I'm happy.");
 
-        RenderedMessage parsed = RenderedMessage.of(message, ((Script) script).decorators(Optional.empty()));
+        RenderedMessage parsed = decorate(script, message);
         int n = 0;
 
         assertEquals(Type.Mood, parsed.get(n).type);
@@ -175,8 +203,8 @@ public class MessagePartInjectionTest {
     }
 
     @Test
-    public void testThatNoImageTagApplyOverMultipleTextParagraphs() {
-        TestScript script = TestScript.getOne(new DebugSetup().withOutput());
+    public void testThatNoImageTagApplyOverMultipleTextParagraphs() throws IOException {
+        DecoratingTestScript script = new DecoratingTestScript(new DebugSetup().withOutput());
         script.actor.images = new RandomImages(Arrays.asList("actor.jpg"));
         script.setMood(Mood.Friendly);
 
@@ -188,7 +216,7 @@ public class MessagePartInjectionTest {
 
         message.add("Still nothing to see.");
 
-        RenderedMessage parsed = RenderedMessage.of(message, ((Script) script).decorators(Optional.empty()));
+        RenderedMessage parsed = decorate(script, message);
         int n = 0;
 
         assertEquals(Type.Mood, parsed.get(n).type);
@@ -208,8 +236,8 @@ public class MessagePartInjectionTest {
     }
 
     @Test
-    public void testThatActorImageTagApplyOverMultipleTextParagraphs() {
-        TestScript script = TestScript.getOne(new DebugSetup().withOutput());
+    public void testThatActorImageTagApplyOverMultipleTextParagraphs() throws IOException {
+        DecoratingTestScript script = new DecoratingTestScript(new DebugSetup().withOutput());
         script.actor.images = new ActorTestImage("Actor.jpg");
         script.setMood(Mood.Friendly);
 
@@ -222,7 +250,7 @@ public class MessagePartInjectionTest {
 
         message.add("There I am again.");
 
-        RenderedMessage parsed = RenderedMessage.of(message, ((Script) script).decorators(Optional.empty()));
+        RenderedMessage parsed = decorate(script, message);
         int n = 0;
 
         assertEquals(Type.Mood, parsed.get(n).type);
@@ -244,14 +272,14 @@ public class MessagePartInjectionTest {
     }
 
     @Test
-    public void testInjectionOfScriptImage() {
-        TestScript script = TestScript.getOne(new DebugSetup().withOutput());
+    public void testInjectionOfScriptImage() throws IOException {
+        DecoratingTestScript script = new DecoratingTestScript(new DebugSetup().withOutput());
 
         Message message = new Message(script.actor);
         message.add("Some text.");
         script.setImage("foo.jpg");
 
-        RenderedMessage parsed = RenderedMessage.of(message, ((Script) script).decorators(Optional.empty()));
+        RenderedMessage parsed = decorate(script, message);
         AbstractMessage parts = parsed;
         int n = 0;
         assertEquals(Type.Mood, parts.get(n++).type);
@@ -263,14 +291,14 @@ public class MessagePartInjectionTest {
     }
 
     @Test
-    public void testInjectionOfScriptNoImage() {
-        TestScript script = TestScript.getOne(new DebugSetup().withOutput());
+    public void testInjectionOfScriptNoImage() throws IOException {
+        DecoratingTestScript script = new DecoratingTestScript(new DebugSetup().withOutput());
 
         Message message = new Message(script.actor);
         message.add("Some text.");
         script.setImage(Message.NoImage);
 
-        RenderedMessage parsed = RenderedMessage.of(message, ((Script) script).decorators(Optional.empty()));
+        RenderedMessage parsed = decorate(script, message);
         int n = 0;
         assertEquals(Type.Mood, parsed.get(n++).type);
         assertEquals(Type.Image, parsed.get(n).type);
@@ -281,14 +309,14 @@ public class MessagePartInjectionTest {
     }
 
     @Test
-    public void testInjectionOfImage() {
-        TestScript script = TestScript.getOne(new DebugSetup().withInput().withOutput());
+    public void testInjectionOfImage() throws IOException {
+        DecoratingTestScript script = new DecoratingTestScript(new DebugSetup().withInput().withOutput());
 
         Message message = new Message(script.actor);
         message.add("Some text.");
         script.setImage("foo.jpg");
 
-        RenderedMessage parsed = RenderedMessage.of(message, ((Script) script).decorators(Optional.empty()));
+        RenderedMessage parsed = decorate(script, message);
         int n = 0;
         assertEquals(Type.Mood, parsed.get(n++).type);
         assertEquals(Type.Image, parsed.get(n).type);
@@ -299,14 +327,14 @@ public class MessagePartInjectionTest {
     }
 
     @Test
-    public void testInjectionOfNoImageInDebugSetup() {
-        TestScript script = TestScript.getOne(new DebugSetup());
+    public void testInjectionOfNoImageInDebugSetup() throws IOException {
+        DecoratingTestScript script = new DecoratingTestScript(new DebugSetup());
 
         Message message = new Message(script.actor);
         message.add("Some text.");
         script.setImage("foo.jpg");
 
-        RenderedMessage parsed = RenderedMessage.of(message, ((Script) script).decorators(Optional.empty()));
+        RenderedMessage parsed = decorate(script, message);
         int n = 0;
         assertEquals(Type.Mood, parsed.get(n++).type);
         assertEquals(Type.Image, parsed.get(n).type);
@@ -317,8 +345,8 @@ public class MessagePartInjectionTest {
     }
 
     @Test
-    public void testMessageRendersWithMidDelay() {
-        TestScript script = TestScript.getOne(new DebugSetup());
+    public void testMessageRendersWithMidDelay() throws IOException {
+        DecoratingTestScript script = new DecoratingTestScript(new DebugSetup());
         script.debugger.freezeTime();
 
         Message message = new Message(script.actor);
@@ -326,7 +354,7 @@ public class MessagePartInjectionTest {
         message.add(Message.Delay120s);
         message.add("Some text.");
 
-        RenderedMessage parsed = RenderedMessage.of(message, ((Script) script).decorators(Optional.empty()));
+        RenderedMessage parsed = decorate(script, message);
         int n = 0;
 
         assertEquals(Type.Mood, parsed.get(n++).type);
@@ -347,15 +375,15 @@ public class MessagePartInjectionTest {
     }
 
     @Test
-    public void testMessageRendersWithDelayAtEnd() {
-        TestScript script = TestScript.getOne(new DebugSetup());
+    public void testMessageRendersWithDelayAtEnd() throws IOException {
+        DecoratingTestScript script = new DecoratingTestScript(new DebugSetup());
         script.debugger.freezeTime();
 
         Message message = new Message(script.actor);
         message.add("Some text.");
         message.add(Message.Delay120s);
 
-        RenderedMessage parsed = RenderedMessage.of(message, ((Script) script).decorators(Optional.empty()));
+        RenderedMessage parsed = decorate(script, message);
         int n = 0;
 
         assertEquals(Type.Mood, parsed.get(n++).type);
@@ -371,8 +399,8 @@ public class MessagePartInjectionTest {
     }
 
     @Test
-    public void testMessageWithSpeech() {
-        TestScript script = TestScript.getOne(new DebugSetup().withInput().withOutput());
+    public void testMessageWithSpeech() throws IOException {
+        DecoratingTestScript script = new DecoratingTestScript(new DebugSetup().withInput().withOutput());
         script.debugger.freezeTime();
         script.actor.images = new ActorTestImage("Actor.jpg");
 
@@ -382,7 +410,7 @@ public class MessagePartInjectionTest {
         message.add("Some more text.");
         message.add(Type.Speech, "Some more text.");
 
-        RenderedMessage parsed = RenderedMessage.of(message, ((Script) script).decorators(Optional.empty()));
+        RenderedMessage parsed = decorate(script, message);
         int n = 0;
 
         assertEquals(Type.Mood, parsed.get(n++).type);
@@ -406,8 +434,8 @@ public class MessagePartInjectionTest {
     }
 
     @Test
-    public void testMessageWithSpeechAndDelayAtEnd() {
-        TestScript script = TestScript.getOne(new DebugSetup().withInput().withOutput());
+    public void testMessageWithSpeechAndDelayAtEnd() throws IOException {
+        DecoratingTestScript script = new DecoratingTestScript(new DebugSetup().withInput().withOutput());
         script.debugger.freezeTime();
         script.actor.images = new ActorTestImage("Actor.jpg");
 
@@ -421,7 +449,7 @@ public class MessagePartInjectionTest {
         message.add(Type.Speech, "Even more text.");
         message.add(Type.Delay, "20");
 
-        RenderedMessage parsed = RenderedMessage.of(message, ((Script) script).decorators(Optional.empty()));
+        RenderedMessage parsed = decorate(script, message);
         int n = 0;
 
         assertEquals(Type.Mood, parsed.get(n++).type);
@@ -451,8 +479,8 @@ public class MessagePartInjectionTest {
     }
 
     @Test
-    public void testMessageWithExplicitShowChoicesKeyword() {
-        TestScript script = TestScript.getOne(new DebugSetup().withInput().withOutput());
+    public void testMessageWithExplicitShowChoicesKeyword() throws IOException {
+        DecoratingTestScript script = new DecoratingTestScript(new DebugSetup().withInput().withOutput());
         script.debugger.freezeTime();
         script.actor.images = new ActorTestImage("Actor.jpg");
 
@@ -465,7 +493,7 @@ public class MessagePartInjectionTest {
         message.add(Type.Speech, "Some more text.");
         message.add(Type.Delay, "20");
 
-        RenderedMessage parsed = RenderedMessage.of(message, ((Script) script).decorators(Optional.empty()));
+        RenderedMessage parsed = decorate(script, message);
         int n = 0;
 
         assertEquals(Type.Mood, parsed.get(n++).type);
@@ -491,8 +519,8 @@ public class MessagePartInjectionTest {
     }
 
     @Test
-    public void testMessageWithImageAtEnd() {
-        TestScript script = TestScript.getOne(new DebugSetup().withInput().withOutput());
+    public void testMessageWithImageAtEnd() throws IOException {
+        DecoratingTestScript script = new DecoratingTestScript(new DebugSetup().withInput().withOutput());
         script.debugger.freezeTime();
         script.actor.images = new ActorTestImage("Actor.jpg");
 
@@ -503,7 +531,7 @@ public class MessagePartInjectionTest {
         message.add(Type.Speech, "Some more text.");
         message.add("foobar.jpg");
 
-        RenderedMessage parsed = RenderedMessage.of(message, ((Script) script).decorators(Optional.empty()));
+        RenderedMessage parsed = decorate(script, message);
         int n = 0;
 
         assertEquals(Type.Mood, parsed.get(n++).type);
@@ -529,8 +557,8 @@ public class MessagePartInjectionTest {
     }
 
     @Test
-    public void testMessageWithSoundAtEnd() {
-        TestScript script = TestScript.getOne(new DebugSetup().withInput().withOutput());
+    public void testMessageWithSoundAtEnd() throws IOException {
+        DecoratingTestScript script = new DecoratingTestScript(new DebugSetup().withInput().withOutput());
         script.debugger.freezeTime();
         script.actor.images = new ActorTestImage("Actor.jpg");
 
@@ -541,7 +569,7 @@ public class MessagePartInjectionTest {
         message.add(Type.Speech, "Some more text.");
         message.add("foobar.mp3");
 
-        RenderedMessage parsed = RenderedMessage.of(message, ((Script) script).decorators(Optional.empty()));
+        RenderedMessage parsed = decorate(script, message);
         int n = 0;
 
         assertEquals(Type.Mood, parsed.get(n++).type);
@@ -572,9 +600,9 @@ public class MessagePartInjectionTest {
                 Message.ActorImage, "Test.", "Bar.mp3", Message.NoImage, "Test.").resources());
     }
 
-    private static void assertMessageDuration(TestScript script, Message message, long minimumSeconds) {
+    private static void assertMessageDuration(DecoratingTestScript script, Message message, long minimumSeconds) {
         long start = script.teaseLib.getTime(TimeUnit.SECONDS);
-        script.renderMessage(message, false);
+        script.renderMessage(message);
         script.completeMandatory();
         long end = script.teaseLib.getTime(TimeUnit.SECONDS);
 

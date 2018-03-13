@@ -1,4 +1,4 @@
-package teaselib.core;
+package teaselib.core.media;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -12,16 +12,15 @@ import teaselib.Config;
 import teaselib.Message;
 import teaselib.Message.Type;
 import teaselib.MessagePart;
-import teaselib.core.media.MessageTextAccumulator;
-import teaselib.core.media.RenderedMessage;
+import teaselib.core.Configuration;
+import teaselib.core.ResourceLoader;
 import teaselib.core.texttospeech.TextToSpeechPlayer;
 
 public class ScriptMessageDecorator {
     private static final long DELAY_BETWEEN_PARAGRAPHS = 500;
     private static final long DELAY_FOR_APPEND = 0;
 
-    // TODO move to media package
-    static public final MessagePart DelayBetweenParagraphs = delay(DELAY_BETWEEN_PARAGRAPHS);
+    static final MessagePart DelayBetweenParagraphs = delay(DELAY_BETWEEN_PARAGRAPHS);
     static final MessagePart DelayAfterAppend = delay(DELAY_FOR_APPEND);
 
     private static Set<MessagePart> generatedDelays = new HashSet<>(

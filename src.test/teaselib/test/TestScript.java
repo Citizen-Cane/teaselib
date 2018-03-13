@@ -27,7 +27,7 @@ public class TestScript extends TeaseScript {
 
     public static TestScript getOne() {
         try {
-            return new TestScript(new DebugHost(), new DebugPersistence());
+            return new TestScript();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -55,6 +55,14 @@ public class TestScript extends TeaseScript {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    protected TestScript() throws IOException {
+        this(new DebugHost(), new DebugPersistence());
+    }
+
+    protected TestScript(Setup setup) throws IOException {
+        this(new DebugHost(), new DebugPersistence(), setup);
     }
 
     TestScript(DebugHost dummyHost, DebugPersistence dummyPersistence) throws IOException {

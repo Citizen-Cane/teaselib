@@ -22,7 +22,6 @@ import teaselib.Mood;
 import teaselib.Replay.Position;
 import teaselib.Replay.Replayable;
 import teaselib.core.ResourceLoader;
-import teaselib.core.ScriptMessageDecorator;
 import teaselib.core.TeaseLib;
 import teaselib.core.texttospeech.TextToSpeech;
 import teaselib.core.texttospeech.TextToSpeechPlayer;

@@ -122,7 +122,7 @@ public class AbstractMessage implements Iterable<MessagePart> {
     public int hashCode() {
         final int prime = 31;
         int result = 1;
-        result = prime * result + ((parts == null) ? 0 : parts.hashCode());
+        result = prime * result + parts.hashCode();
         return result;
     }
 
@@ -135,12 +135,7 @@ public class AbstractMessage implements Iterable<MessagePart> {
         if (getClass() != obj.getClass())
             return false;
         AbstractMessage other = (AbstractMessage) obj;
-        if (parts == null) {
-            if (other.parts != null)
-                return false;
-        } else if (!parts.equals(other.parts))
-            return false;
-        return true;
+        return parts.equals(other.parts);
     }
 
     @Override

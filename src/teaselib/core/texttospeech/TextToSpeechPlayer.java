@@ -19,12 +19,12 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import teaselib.AbstractMessage;
 import teaselib.Actor;
 import teaselib.Config;
 import teaselib.Config.Debug;
 import teaselib.Message;
 import teaselib.MessagePart;
+import teaselib.core.AbstractMessage;
 import teaselib.core.Configuration;
 import teaselib.core.ResourceLoader;
 import teaselib.core.util.ExceptionUtil;

@@ -10,12 +10,12 @@ import java.util.concurrent.TimeUnit;
 
 import org.junit.Test;
 
-import teaselib.AbstractMessage;
 import teaselib.Actor;
 import teaselib.Images;
 import teaselib.Message;
 import teaselib.Message.Type;
 import teaselib.Mood;
+import teaselib.core.AbstractMessage;
 import teaselib.core.Configuration.Setup;
 import teaselib.test.DebugSetup;
 import teaselib.test.TestScript;

@@ -8,6 +8,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
+import teaselib.core.AbstractMessage;
+
 public class Message extends AbstractMessage {
     /**
      * Message types.
@@ -58,7 +60,7 @@ public class Message extends AbstractMessage {
         public static final Set<Message.Type> AudioTypes = new HashSet<>(
                 Arrays.asList(Message.Type.Sound, Message.Type.BackgroundSound, Message.Type.Speech));
 
-        public static final Set<Type> FileTypes = new HashSet<>(
+        static final Set<Type> FileTypes = new HashSet<>(
                 Arrays.asList(Type.BackgroundSound, Type.Sound, Type.Speech, Type.Image, Type.DesktopItem));
 
         public static boolean isFile(Type t) {
@@ -154,10 +156,10 @@ public class Message extends AbstractMessage {
 
     public static final String BackgroundSound = "BackgroundSound";
 
-    public static final String[] Keywords = { Delay, ShowOnDesktop, ShowChoices, AwaitSoundCompletion, Bullet,
+    static final String[] Keywords = { Delay, ShowOnDesktop, ShowChoices, AwaitSoundCompletion, Bullet,
             BackgroundSound };
 
-    public static final Set<String> EndOfSentenceCharacters = new HashSet<>(Arrays.asList(":", ".", "!", "?"));
+    static final Set<String> EndOfSentenceCharacters = new HashSet<>(Arrays.asList(":", ".", "!", "?"));
     public static final Set<String> MainClauseAppendableCharacters = new HashSet<>(
             Arrays.asList("\"", ">", ",", ";", "-"));
 
@@ -216,7 +218,7 @@ public class Message extends AbstractMessage {
 
     public static boolean isFile(String m) {
         int s = m.length();
-        int i = m.lastIndexOf(".");
+        int i = m.lastIndexOf('.');
 
         // Don't interpret scripting error messages and the like as resources
         int j = m.indexOf(".");
@@ -231,7 +233,7 @@ public class Message extends AbstractMessage {
             if (extension.matches("[A-Za-z0-9]+")) {
                 // This could certainly be done better than just assuming
                 // file extensions are non-space letters after a dot
-                return m.substring(i, s - 1).indexOf(" ") < 0;
+                return m.substring(i, s - 1).indexOf(' ') < 0;
             } else {
                 return false;
             }
@@ -374,8 +376,7 @@ public class Message extends AbstractMessage {
             if (part.type == Type.Text) {
                 String text = part.value;
                 boolean readAloudStart = text.startsWith("\"");
-                boolean readAloudEnd = text.endsWith("\"") || text.endsWith("\"."); // todo
-                                                                                    // generalize
+                boolean readAloudEnd = text.endsWith("\"") || text.endsWith("\".");
                 if (readAloudStart && !readAloud) {
                     newParts.add(new MessagePart(Type.Mood, Mood.Reading));
                     readAloud = true;
@@ -451,4 +452,30 @@ public class Message extends AbstractMessage {
         }
         return resources;
     }
+
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = super.hashCode();
+        result = prime * result + ((actor == null) ? 0 : actor.hashCode());
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (!super.equals(obj))
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        Message other = (Message) obj;
+        if (actor == null) {
+            if (other.actor != null)
+                return false;
+        } else if (!actor.equals(other.actor))
+            return false;
+        return true;
+    }
+
 }

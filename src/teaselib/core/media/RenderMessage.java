@@ -12,7 +12,6 @@ import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import teaselib.AbstractMessage;
 import teaselib.Actor;
 import teaselib.Config;
 import teaselib.Message;
@@ -21,6 +20,7 @@ import teaselib.MessagePart;
 import teaselib.Mood;
 import teaselib.Replay.Position;
 import teaselib.Replay.Replayable;
+import teaselib.core.AbstractMessage;
 import teaselib.core.ResourceLoader;
 import teaselib.core.TeaseLib;
 import teaselib.core.texttospeech.TextToSpeech;

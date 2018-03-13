@@ -23,11 +23,11 @@ import java.util.concurrent.Future;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import teaselib.AbstractMessage;
 import teaselib.Actor;
 import teaselib.Message;
 import teaselib.MessagePart;
 import teaselib.Mood;
+import teaselib.core.AbstractMessage;
 import teaselib.core.CommandLineHost;
 import teaselib.core.Configuration;
 import teaselib.core.ResourceLoader;

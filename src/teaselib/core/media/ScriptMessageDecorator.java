@@ -6,12 +6,12 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 
-import teaselib.AbstractMessage;
 import teaselib.Actor;
 import teaselib.Config;
 import teaselib.Message;
 import teaselib.Message.Type;
 import teaselib.MessagePart;
+import teaselib.core.AbstractMessage;
 import teaselib.core.Configuration;
 import teaselib.core.ResourceLoader;
 import teaselib.core.texttospeech.TextToSpeechPlayer;

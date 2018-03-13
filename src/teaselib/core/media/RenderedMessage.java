@@ -4,9 +4,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collector;
 
-import teaselib.AbstractMessage;
 import teaselib.Message;
 import teaselib.MessagePart;
+import teaselib.core.AbstractMessage;
 
 public class RenderedMessage extends AbstractMessage {
     @FunctionalInterface

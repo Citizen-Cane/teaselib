@@ -20,11 +20,11 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
-import teaselib.AbstractMessage;
 import teaselib.Actor;
 import teaselib.Message;
 import teaselib.Message.Type;
 import teaselib.Sexuality.Gender;
+import teaselib.core.AbstractMessage;
 import teaselib.core.Configuration;
 import teaselib.core.ResourceLoader;
 import teaselib.core.concurrency.NamedExecutorService;

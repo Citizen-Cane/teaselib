@@ -1,4 +1,4 @@
-package teaselib;
+package teaselib.core;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.stream.Stream;
 
 import teaselib.Message.Type;
+import teaselib.MessagePart;
 
 public class AbstractMessage implements Iterable<MessagePart> {
     private final List<MessagePart> parts = new ArrayList<>();

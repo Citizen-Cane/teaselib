@@ -23,6 +23,7 @@ import teaselib.Mood;
 import teaselib.Replay;
 import teaselib.ScriptFunction;
 import teaselib.core.media.MediaRenderer;
+import teaselib.core.media.MediaRenderer.Threaded;
 import teaselib.core.media.MediaRendererQueue;
 import teaselib.core.media.RenderInterTitle;
 import teaselib.core.media.RenderMessage;
@@ -242,11 +243,8 @@ public abstract class Script {
                     : Optional.empty();
 
             RenderedMessage.Decorator[] decorators = decorators(textToSpeech);
-
             List<RenderedMessage> messages = new ArrayList<>(prependedMessages.size() + 1);
-            for (Message prependedMessage : prependedMessages) {
-                messages.add(RenderedMessage.of(prependedMessage, decorators));
-            }
+            prependedMessages.stream().forEach(prepended -> message.add(RenderedMessage.of(prepended, decorators)));
             prependedMessages.clear();
 
             messages.add(RenderedMessage.of(message, decorators));
@@ -316,23 +314,31 @@ public abstract class Script {
 
     private void startBackgroundRenderers() {
         synchronized (backgroundRenderers) {
-            for (MediaRenderer.Threaded renderer : backgroundRenderers) {
-                if (!renderer.hasCompletedStart()) {
-                    try {
-                        renderer.render();
-                    } catch (IOException e) {
-                        logger.error(e.getMessage(), e);
-                    }
-                }
+            cleanupCompletedBackgroundRenderers();
+            backgroundRenderers.stream().filter(t -> !t.hasCompletedStart()).forEach(this::startBackgroundRenderer);
+        }
+    }
+
+    private void cleanupCompletedBackgroundRenderers() {
+        backgroundRenderers.stream().filter(Threaded::hasCompletedAll).collect(Collectors.toList()).stream()
+                .forEach(backgroundRenderers::remove);
+    }
+
+    private void startBackgroundRenderer(MediaRenderer.Threaded renderer) {
+        try {
+            renderer.render();
+        } catch (IOException e) {
+            try {
+                ExceptionUtil.handleIOException(e, teaseLib.config, logger);
+            } catch (IOException e1) {
+                throw ExceptionUtil.asRuntimeException(e1);
             }
         }
     }
 
     private void stopBackgroundRenderers() {
         synchronized (backgroundRenderers) {
-            for (MediaRenderer.Threaded renderer : backgroundRenderers) {
-                renderer.interrupt();
-            }
+            backgroundRenderers.stream().filter(t -> !t.hasCompletedAll()).forEach(Threaded::interrupt);
             backgroundRenderers.clear();
         }
     }
@@ -433,7 +439,9 @@ public abstract class Script {
         endAll();
         teaseLib.host.endScene();
 
-        logger.debug("Reply finished");
+        if (logger.isDebugEnabled()) {
+            logger.debug("Reply finished");
+        }
         teaseLib.transcript.info("< " + choice);
 
         return choice;
@@ -458,9 +466,9 @@ public abstract class Script {
         }
 
         Prompt prompt = new Prompt(choices, scriptFunction, inputMethods);
-        logger.info("Prompt: " + prompt);
+        logger.info("Prompt: {}", prompt);
         for (InputMethod inputMethod : inputMethods) {
-            logger.info(inputMethod.getClass().getSimpleName() + " " + inputMethod.toString());
+            logger.info("{} {}", inputMethod.getClass().getSimpleName(), inputMethod);
         }
         return prompt;
     }

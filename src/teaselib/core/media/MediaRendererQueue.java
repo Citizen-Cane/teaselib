@@ -113,36 +113,39 @@ public class MediaRendererQueue {
      * possible.
      */
     public void endAll() {
-        Map<Class<?>, Threaded> renderers = getThreadedRenderers();
-        if (!renderers.isEmpty()) {
-            if (logger.isDebugEnabled()) {
-                logger.debug("Ending all threaded renderers");
-            }
-            // Interrupt them all
-            RuntimeException exception = null;
-            for (MediaRenderer.Threaded renderer : renderers.values()) {
+        synchronized (threadedMediaRenderers) {
+            if (!threadedMediaRenderers.isEmpty()) {
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Ending all threaded renderers");
+                }
+                // Interrupt them all
+                RuntimeException exception = null;
+                for (MediaRenderer.Threaded renderer : threadedMediaRenderers.values()) {
+                    try {
+                        renderer.interrupt();
+                    } catch (RuntimeException e) {
+                        exception = e;
+                    }
+                }
+                if (exception != null) {
+                    throw exception;
+                }
                 try {
-                    renderer.interrupt();
+                    // then wait for them to complete
+                    for (MediaRenderer.Threaded renderer : threadedMediaRenderers.values()) {
+                        renderer.join();
+                    }
                 } catch (RuntimeException e) {
                     exception = e;
                 }
-            }
-            if (exception != null) {
-                throw exception;
-            }
-            try {
-                // then wait for them to complete
-                for (MediaRenderer.Threaded renderer : renderers.values()) {
-                    renderer.join();
+                if (exception != null) {
+                    throw exception;
                 }
-            } catch (RuntimeException e) {
-                exception = e;
+            } else {
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Threaded Renderers endAll: queue empty");
+                }
             }
-            if (exception != null) {
-                throw exception;
-            }
-        } else {
-            logger.debug("Threaded Renderers endAll: queue empty");
         }
     }
 

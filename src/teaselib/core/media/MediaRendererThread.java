@@ -60,54 +60,52 @@ public abstract class MediaRendererThread implements MediaRenderer.Threaded {
     @Override
     public final void render() {
         synchronized (this) {
+            Callable<Void> render = newRenderTask();
             startMillis = System.currentTimeMillis();
-            task = Executor.submit(new Callable<Void>() {
-                @Override
-                public Void call() throws Exception {
-                    setThreadName(nameForActiveThread());
-                    try {
-                        synchronized (MediaRendererThread.this) {
-                            MediaRendererThread.this.notifyAll();
-                        }
-                        renderMedia();
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                        // Expected
-                    } catch (ScriptInterruptedException e) {
-                        // Expected
-                    } catch (Exception e) {
-                        handleException(ExceptionUtil.reduce(e));
-                    } finally {
-                        startCompleted();
-                        mandatoryCompleted();
-                        allCompleted();
-                        setThreadName(nameForSleepingThread());
-                    }
-                    return null;
-                }
-
-                private void handleException(Exception e) throws Exception {
-                    if (e instanceof IOException) {
-                        handleIOException(e);
-                    } else {
-                        boolean stopOnRenderError = Boolean
-                                .parseBoolean(teaseLib.config.get(Config.Debug.StopOnRenderError));
-                        if (stopOnRenderError) {
-                            // TODO Error is not (always) forwarded to script thread
-                            logger.error(e.getMessage(), e);
-                            throw e;
-                        } else {
-                            logger.warn(e.getMessage(), e);
-                        }
-                    }
-                }
-            });
+            task = Executor.submit(render);
             try {
-                // Wait until the renderer has started
-                wait();
+                // TODO Wait for initialization of thread, later on signal all to start rendering
+                this.wait();
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 throw new ScriptInterruptedException(e);
+            }
+        }
+    }
+
+    private Callable<Void> newRenderTask() {
+        return () -> {
+            setThreadName(nameForActiveThread());
+            try {
+                synchronized (MediaRendererThread.this) {
+                    MediaRendererThread.this.notifyAll();
+                }
+                renderMedia();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                // Expected
+            } catch (ScriptInterruptedException e) {
+                // Expected
+            } catch (Exception e) {
+                handleException(ExceptionUtil.reduce(e));
+            } finally {
+                startCompleted();
+                mandatoryCompleted();
+                allCompleted();
+                setThreadName(nameForSleepingThread());
+            }
+            return null;
+        };
+    }
+
+    private void handleException(Exception e) throws Exception {
+        if (e instanceof IOException) {
+            handleIOException(e);
+        } else {
+            if (Boolean.parseBoolean(teaseLib.config.get(Config.Debug.StopOnRenderError))) {
+                throw e;
+            } else {
+                logger.warn(e.getMessage(), e);
             }
         }
     }
@@ -169,7 +167,8 @@ public abstract class MediaRendererThread implements MediaRenderer.Threaded {
 
     @Override
     public void completeStart() {
-        if (!isDoneOrCancelled()) {
+        Future<?> f = task;
+        if (f != null && !isDoneOrCancelled(f)) {
             try {
                 completedStart.await();
             } catch (InterruptedException e) {
@@ -181,7 +180,8 @@ public abstract class MediaRendererThread implements MediaRenderer.Threaded {
 
     @Override
     public void completeMandatory() {
-        if (!isDoneOrCancelled()) {
+        Future<?> f = task;
+        if (f != null && !isDoneOrCancelled(f)) {
             try {
                 completedMandatory.await();
             } catch (InterruptedException e) {
@@ -193,7 +193,8 @@ public abstract class MediaRendererThread implements MediaRenderer.Threaded {
 
     @Override
     public void completeAll() {
-        if (!isDoneOrCancelled()) {
+        Future<?> f = task;
+        if (f != null && !isDoneOrCancelled(f)) {
             try {
                 completedAll.await();
                 join();
@@ -205,7 +206,10 @@ public abstract class MediaRendererThread implements MediaRenderer.Threaded {
     }
 
     protected boolean isDoneOrCancelled() {
-        Future<?> f = task;
+        return isDoneOrCancelled(task);
+    }
+
+    private boolean isDoneOrCancelled(Future<?> f) {
         return f.isDone() || f.isCancelled();
     }
 
@@ -226,11 +230,12 @@ public abstract class MediaRendererThread implements MediaRenderer.Threaded {
 
     @Override
     public void interrupt() {
-        Future<?> f = task;
-        if (!isDoneOrCancelled()) {
-            f.cancel(true);
-            if (logger.isDebugEnabled()) {
-                logger.debug(getClass().getSimpleName() + " cancelled after " + getElapsedSecondsFormatted());
+        synchronized (this) {
+            if (task != null && !isDoneOrCancelled(task)) {
+                task.cancel(true);
+                if (logger.isDebugEnabled()) {
+                    logger.debug("{} cancelled after {}",getClass().getSimpleName() , getElapsedSecondsFormatted());
+                }
             }
         }
     }
@@ -239,7 +244,9 @@ public abstract class MediaRendererThread implements MediaRenderer.Threaded {
     public void join() {
         try {
             Future<?> f = task;
-            f.get();
+            if (f != null) {
+                f.get();
+            }
         } catch (CancellationException e) {
             // Expected
         } catch (InterruptedException e) {

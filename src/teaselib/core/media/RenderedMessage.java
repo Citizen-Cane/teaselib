@@ -39,6 +39,10 @@ public class RenderedMessage extends AbstractMessage {
                 }, Collector.Characteristics.UNORDERED);
     }
 
+    public RenderedMessage getLastSection() {
+        return getLastSection();
+    }
+
     public static RenderedMessage getLastSection(AbstractMessage message) {
         int index = findLastTextElement(message);
 

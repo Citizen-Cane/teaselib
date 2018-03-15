@@ -51,7 +51,7 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
     private static final Set<Type> SoundTypes = new HashSet<>(
             Arrays.asList(Type.Speech, Type.Sound, Type.BackgroundSound));
 
-    private static final long DELAY_AT_END_OF_MESSAGE = 2000;
+    private static final double DELAY_AT_END_OF_MESSAGE = 2.0;
 
     private final Prefetcher<byte[]> imageFetcher = new Prefetcher<>();
 
@@ -193,7 +193,7 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
 
             synchronized (messages) {
                 boolean last = currentMessage == messages.size();
-                if (!last && textToSpeechPlayer != null) {
+                if (!last && textToSpeechPlayer != null && !lastSectionHasDelay(message)) {
                     renderTimeSpannedPart(new RenderDelay(
                             Double.parseDouble(ScriptMessageDecorator.DelayBetweenParagraphs.value), teaseLib));
                 }
@@ -203,13 +203,19 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
         finalizeRendering();
     }
 
-    protected void finalizeRendering() {
+    private boolean lastSectionHasDelay(RenderedMessage message) {
+        return message.getLastSection().contains(Type.Delay);
+    }
+
+    protected void finalizeRendering() throws IOException {
         completeSectionMandatory();
         mandatoryCompleted();
         completeSectionAll();
 
-        if (getTextToSpeech().isPresent()) {
-            teaseLib.sleep(DELAY_AT_END_OF_MESSAGE, TimeUnit.MILLISECONDS);
+        if (getTextToSpeech().isPresent() && !lastSection.contains(Type.Delay)) {
+            renderTimeSpannedPart(new RenderDelay(DELAY_AT_END_OF_MESSAGE, teaseLib));
+            completeSectionMandatory();
+            completeSectionAll();
         }
 
         allCompleted();

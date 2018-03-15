@@ -42,6 +42,7 @@ public class SpeechRecognitionInputMethod implements InputMethod {
     private final Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs> recognitionCompleted;
 
     private final AtomicReference<Prompt> active = new AtomicReference<>();
+    private boolean speechRecognitionRejectedHandlerSignaled = false;
 
     public SpeechRecognitionInputMethod(SpeechRecognition speechRecognizer, Confidence expectedConfidence,
             Optional<SpeechRecognitionRejectedScript> speechRecognitionRejectedScript) {
@@ -66,9 +67,11 @@ public class SpeechRecognitionInputMethod implements InputMethod {
         }
     }
 
-    private void handleSpeechRecognitionRejected(@SuppressWarnings("unused") SpeechRecognitionImplementation sender,
-            @SuppressWarnings("unused") SpeechRecognizedEventArgs eventArgs) {
-        if (speechRecognitionRejectedScript.isPresent() && speechRecognitionRejectedScript.get().canRun()) {
+    private void handleSpeechRecognitionRejected(SpeechRecognitionImplementation sender,
+            SpeechRecognizedEventArgs eventArgs) {
+        if (!speechRecognitionRejectedHandlerSignaled && speechRecognitionRejectedScript.isPresent()
+                && speechRecognitionRejectedScript.get().canRun()) {
+            speechRecognitionRejectedHandlerSignaled = true;
             signalHandlerInvocation(RECOGNITION_REJECTED_HANDLER_KEY);
         }
     }
@@ -179,11 +182,10 @@ public class SpeechRecognitionInputMethod implements InputMethod {
     @Override
     public Map<String, Runnable> getHandlers() {
         HashMap<String, Runnable> handlers = new HashMap<>();
-        handlers.put(RECOGNITION_REJECTED_HANDLER_KEY, () -> {
-            if (speechRecognitionRejectedScript.isPresent()) {
-                speechRecognitionRejectedScript.get().run();
-            }
-        });
+        if (speechRecognitionRejectedScript.isPresent()) {
+            SpeechRecognitionRejectedScript script = speechRecognitionRejectedScript.get();
+            handlers.put(RECOGNITION_REJECTED_HANDLER_KEY, script::run);
+        }
         return handlers;
     }
 

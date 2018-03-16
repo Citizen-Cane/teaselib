@@ -474,76 +474,7 @@ public abstract class Script {
     }
 
     public SpeechRecognitionRejectedScript speechRecognitioneRejectedScript(ScriptFunction scriptFunction) {
-        return new SpeechRecognitionRejectedScript(this) {
-            @Override
-            public void run() {
-                Script script = Script.this;
-                script.endAll();
-                Replay beforeSpeechRecognitionRejected = script.getReplay();
-                script.actor.speechRecognitionRejectedScript.run();
-                beforeSpeechRecognitionRejected.replay(Replay.Position.End);
-            }
-
-            // Handling speech recognition rejected events:
-            // RecognitionRejectedEvent-scripts doesn't work in reply-calls that
-            // invoke script functions but they work inside script functions.
-            //
-            // Reason are:
-            // - The event handler would have to wait until messages rendered by
-            // the script function are completed -> delay in response
-            // - script functions may include timing which would be messed up by
-            // pausing them
-            // - Script functions may invoke other script functions, but the
-            // handler management is neither multi-threading-aware nor
-            // synchronized
-            // - The current code is unable to recover to the choice on top of
-            // the choices stack after a recognition-rejected pause event
-            //
-            // The recognitionRejected handler won't trigger immediately when
-            // a script function renders messages, because it will wait until
-            // the render queue is empty, and this includes message delays.
-            // Therefore script functions are not supported, because the script
-            // function would still render messages while the choices are shown.
-            // However rendering messages while showing choices should be fine.
-            @Override
-            public boolean canRun() {
-                SpeechRecognitionRejectedScript speechRecognitionRejectedScript = actor.speechRecognitionRejectedScript;
-                // TODO Must search pause stack for speech recognition rejected scripts
-                // - handlers of the same type shouldn't stack up -> handle in Shower
-                boolean choicesStackContainsSRRejectedState = false;
-
-                if (choicesStackContainsSRRejectedState == true) {
-                    log(speechRecognitionRejectedScript,
-                            "The choices stack contains already another SR rejection script");
-                    return false;
-                } else if (scriptFunction != null) {
-                    // This would work for the built-in confirmative timeout script functions:
-                    // - TimeoutBehavior.InDubioMitius and maybe also for
-                    // - TimeoutBehavior.TimeoutBehavior.InDubioMitius
-                    log(speechRecognitionRejectedScript,
-                            scriptFunction.relation.toString() + " script functions running");
-                    return false;
-                } else if (!teaseLib.globals.get(MediaRendererQueue.class).hasCompletedMandatory()) {
-                    // must complete all to avoid parallel rendering, see {@link Message#ShowChoices}
-                    log(speechRecognitionRejectedScript, "Message rendering still in progress");
-                    return false;
-                } else if (speechRecognitionRejectedScript.canRun() == false) {
-                    log(speechRecognitionRejectedScript,
-                            "RecognitionRejectedScript  .canRun() returned false - skipping");
-                    return false;
-                } else {
-                    return true;
-                }
-            }
-
-            private void log(Script speechRecognitionRejectedScript, String message) {
-                if (logger.isInfoEnabled()) {
-                    String skipping = " - skipping RecognitionRejectedScript "
-                            + speechRecognitionRejectedScript.toString();
-                    logger.info(message + skipping);
-                }
-            }
-        };
+        return new SpeechRecognitionRejectedScriptAdapter(this, scriptFunction);
     }
 
     public Replay getReplay() {

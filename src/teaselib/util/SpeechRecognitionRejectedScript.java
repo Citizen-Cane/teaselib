@@ -7,12 +7,13 @@ import teaselib.ScriptFunction;
 import teaselib.TeaseScript;
 import teaselib.core.Script;
 import teaselib.core.speechrecognition.SpeechRecognitionResult.Confidence;
+import teaselib.functional.RunnableScript;
 
 /**
  * @author Citizen-Cane
  *
  */
-public abstract class SpeechRecognitionRejectedScript extends TeaseScript implements Runnable {
+public abstract class SpeechRecognitionRejectedScript extends TeaseScript implements RunnableScript {
     public SpeechRecognitionRejectedScript(Script script) {
         super(script);
     }
@@ -33,5 +34,4 @@ public abstract class SpeechRecognitionRejectedScript extends TeaseScript implem
             Confidence recognitionConfidence) {
         return super.showChoices(answers, scriptFunction, Confidence.Low);
     }
-
 }

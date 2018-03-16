@@ -34,12 +34,19 @@ public class SpeechRecognitionResult {
             return higher(this);
         }
 
+        public double reducedProbability() {
+            return (probability + lower().probability) / 2.0;
+        }
+
         public boolean isAsHighAs(Confidence confidence) {
             if (this.higherThan(confidence))
                 return true;
-            if (this == confidence)
-                return true;
-            return false;
+            else
+                return this == confidence;
+        }
+
+        public boolean isLowerThan(Confidence confidence) {
+            return !isAsHighAs(confidence);
         }
 
         public boolean higherThan(Confidence confidence) {
@@ -72,7 +79,7 @@ public class SpeechRecognitionResult {
 
     }
 
-    public final static int UNKNOWN_PHRASE_INDEX = -1;
+    public static final int UNKNOWN_PHRASE_INDEX = -1;
 
     public final int index;
     public final String text;

@@ -1,13 +1,17 @@
 package teaselib.core.devices.xinput;
 
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import teaselib.core.Configuration;
 import teaselib.core.devices.Device;
+import teaselib.core.devices.DeviceCache;
 import teaselib.core.devices.Devices;
 import teaselib.test.DebugSetup;
 
 public class XInputStimulatorOutputTestBoth {
+    static final Logger logger = LoggerFactory.getLogger(XInputStimulatorOutputTestBoth.class);
 
     @Test
     public void testAlternate() throws InterruptedException {
@@ -15,7 +19,9 @@ public class XInputStimulatorOutputTestBoth {
         Devices devices = new Devices(config);
 
         XInputDevice xid = devices.get(XInputDevice.class).getDefaultDevice();
-        System.out.println(xid.getDevicePath() + (xid.connected() ? "" : ":" + Device.WaitingForConnection));
+        logger.info("{}{}", xid.getDevicePath(), (xid.connected() ? "" : ":" + Device.WaitingForConnection));
+        DeviceCache.connect(xid);
+
         try {
             for (int i = 0; i < 1000; i++) {
                 testVibration(xid, XInputDevice.VIBRATION_MAX_VALUE, XInputDevice.VIBRATION_MAX_VALUE);
@@ -36,7 +42,7 @@ public class XInputStimulatorOutputTestBoth {
         xic = xid.getComponents();
         xib = xic.getButtons();
         xia = xic.getAxes();
-        System.out.println(xia.lt + ", " + xia.rt + ", " + xib.lShoulder + ", " + xib.rShoulder);
+        logger.info("{}, {}, {}, {}", xia.lt, xia.rt, xib.lShoulder, xib.rShoulder);
         Thread.sleep(2500);
     }
 }

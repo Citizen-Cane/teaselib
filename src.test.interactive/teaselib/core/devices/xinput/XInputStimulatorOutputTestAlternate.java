@@ -8,11 +8,10 @@ import teaselib.core.Configuration;
 import teaselib.core.devices.Device;
 import teaselib.core.devices.DeviceCache;
 import teaselib.core.devices.Devices;
-import teaselib.stimulation.StimulationTest;
 import teaselib.test.DebugSetup;
 
 public class XInputStimulatorOutputTestAlternate {
-    private static final Logger logger = LoggerFactory.getLogger(StimulationTest.class);
+    private static final Logger logger = LoggerFactory.getLogger(XInputStimulatorOutputTestAlternate.class);
 
     @Test
     public void testAlternate() throws InterruptedException {
@@ -23,8 +22,8 @@ public class XInputStimulatorOutputTestAlternate {
         DeviceCache.connect(xid);
 
         if (logger.isInfoEnabled()) {
-            logger.info("Battery-Level is " + xid.batteryLevel().toString());
-            logger.info(xid.getDevicePath() + (xid.connected() ? "" : ":" + Device.WaitingForConnection));
+            logger.info("Battery-Level is {}", xid.batteryLevel());
+            logger.info("{}{}", xid.getDevicePath(), (xid.connected() ? "" : ":" + Device.WaitingForConnection));
         }
 
         try {
@@ -47,7 +46,7 @@ public class XInputStimulatorOutputTestAlternate {
         xic = xid.getComponents();
         xib = xic.getButtons();
         xia = xic.getAxes();
-        System.out.println(xia.lt + ", " + xia.rt + ", " + xib.lShoulder + ", " + xib.rShoulder);
+        logger.info("{}, {}, {}, {}", xia.lt, xia.rt, xib.lShoulder, xib.rShoulder);
         Thread.sleep(2500);
     }
 }

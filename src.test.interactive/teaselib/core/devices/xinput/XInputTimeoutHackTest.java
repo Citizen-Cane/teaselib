@@ -3,21 +3,24 @@
  */
 package teaselib.core.devices.xinput;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import org.junit.Ignore;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import teaselib.core.Configuration;
+import teaselib.core.devices.DeviceCache;
 import teaselib.core.devices.Devices;
 import teaselib.test.DebugSetup;
 
 /**
- * @author someone
+ * @author Citizen-Cane
  *
  */
 public class XInputTimeoutHackTest {
+    Logger logger = LoggerFactory.getLogger(XInputTimeoutHackTest.class);
 
     @Test
     public void testTimeoutHack_feedback() throws InterruptedException {
@@ -25,7 +28,9 @@ public class XInputTimeoutHackTest {
         Devices devices = new Devices(config);
 
         XInputDevice xid = devices.get(XInputDevice.class).getDefaultDevice();
-        System.out.println(xid.getDevicePath());
+        DeviceCache.connect(xid);
+
+        logger.info(xid.getDevicePath());
         xid.setVibration((short) 0, (short) 0);
         XInputButtonsDelta xib;
         try {

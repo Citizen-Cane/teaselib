@@ -35,7 +35,7 @@ public class XInputTimeoutMeasurement {
             xid.poll();
             XInputComponentsDelta xic = xid.getDelta();
             XInputButtonsDelta xib = xic.getButtons();
-            System.out.println(xib);
+            logger.info("{}", xib);
             Thread.sleep(60000);
         }
 

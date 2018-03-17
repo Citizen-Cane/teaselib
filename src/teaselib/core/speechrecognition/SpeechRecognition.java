@@ -1,7 +1,9 @@
 package teaselib.core.speechrecognition;
 
+import java.util.EnumMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.concurrent.locks.ReentrantLock;
 
 import org.slf4j.Logger;
@@ -23,6 +25,17 @@ public class SpeechRecognition {
 
     static final String EnableSpeechHypothesisHandlerGlobally = SpeechRecognition.class.getPackage().getName()
             + ".Enable" + SpeechDetectionEventHandler.class.getSimpleName() + "Globally";
+
+    private static final Map<Confidence, Confidence> confidenceMapping = confidenceMapping();
+
+    private static EnumMap<Confidence, Confidence> confidenceMapping() {
+        EnumMap<Confidence, Confidence> enumMap = new EnumMap<>(Confidence.class);
+        enumMap.put(Confidence.Noise, Confidence.Noise);
+        enumMap.put(Confidence.Low, Confidence.Low);
+        enumMap.put(Confidence.Normal, Confidence.Normal);
+        enumMap.put(Confidence.High, Confidence.High);
+        return enumMap;
+    }
 
     /**
      * How to handle speech recognition and timeout in script functions.
@@ -318,5 +331,9 @@ public class SpeechRecognition {
         } else {
             recognizerNotInitialized();
         }
+    }
+
+    public Confidence userDefinedConfidence(Confidence expectedConfidence) {
+        return confidenceMapping.getOrDefault(expectedConfidence, expectedConfidence);
     }
 }

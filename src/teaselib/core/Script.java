@@ -61,8 +61,6 @@ public abstract class Script {
     protected String mood = Mood.Neutral;
     protected String displayImage = Message.ActorImage;
 
-    protected static final int NoTimeout = 0;
-
     private final MediaRendererQueue renderQueue;
     private final List<MediaRenderer> queuedRenderers = new ArrayList<>();
     private final List<MediaRenderer.Threaded> backgroundRenderers = new ArrayList<>();
@@ -74,14 +72,14 @@ public abstract class Script {
 
         public ReplayImpl(List<MediaRenderer> renderers) {
             super();
-            logger.info("Remembering renderers in replay " + this);
+            logger.info("Remembering renderers in replay {}", this);
             this.renderers = new ArrayList<>(renderers);
         }
 
         @Override
         public void replay(Replay.Position replayPosition) {
             synchronized (queuedRenderers) {
-                logger.info("Replaying renderers from replay " + this);
+                logger.info("Replaying renderers from replay {}",  this);
                 // Finish current set before replaying
                 completeMandatory();
                 // Restore the prompt that caused running the SR-rejected script
@@ -409,7 +407,7 @@ public abstract class Script {
         }
 
         Prompt prompt = getPrompt(scriptFunction, recognitionConfidence, choices(answers));
-        return showPrompt(prompt, scriptFunction);
+        return showPrompt(prompt);
     }
 
     private Choices choices(List<Answer> answers) {
@@ -428,7 +426,7 @@ public abstract class Script {
             return Gesture.None;
     }
 
-    private String showPrompt(Prompt prompt, ScriptFunction scriptFunction) {
+    private String showPrompt(Prompt prompt) {
         String choice;
         try {
             choice = teaseLib.globals.get(Shower.class).show(this, prompt);
@@ -452,11 +450,9 @@ public abstract class Script {
         inputMethods.add(teaseLib.host.inputMethod());
 
         if (Boolean.parseBoolean(teaseLib.config.get(Config.InputMethod.SpeechRecognition))) {
-            inputMethods.add(new SpeechRecognitionInputMethod(
-                    teaseLib.globals.get(SpeechRecognizer.class).get(actor.locale()), recognitionConfidence,
-                    Optional.ofNullable(actor.speechRecognitionRejectedScript != null
-                            ? speechRecognitioneRejectedScript(scriptFunction)
-                            : null)));
+            inputMethods.add(
+                    new SpeechRecognitionInputMethod(teaseLib.globals.get(SpeechRecognizer.class).get(actor.locale()),
+                            recognitionConfidence, speechRecognitioneRejectedScript(scriptFunction)));
         }
 
         if (teaseLib.item(TeaseLib.DefaultDomain, Gadgets.Webcam).isAvailable()
@@ -473,8 +469,10 @@ public abstract class Script {
         return prompt;
     }
 
-    public SpeechRecognitionRejectedScript speechRecognitioneRejectedScript(ScriptFunction scriptFunction) {
-        return new SpeechRecognitionRejectedScriptAdapter(this, scriptFunction);
+    private Optional<SpeechRecognitionRejectedScript> speechRecognitioneRejectedScript(ScriptFunction scriptFunction) {
+        return actor.speechRecognitionRejectedScript != null
+                ? Optional.of(new SpeechRecognitionRejectedScriptAdapter(this, scriptFunction))
+                : Optional.empty();
     }
 
     public Replay getReplay() {

@@ -27,6 +27,11 @@ public class QualifiedEnum extends QualifiedItem<Enum<?>> {
     }
 
     @Override
+    public int hashCode() {
+        return value.hashCode();
+    }
+
+    @Override
     public String namespace() {
         return ReflectionUtils.normalizeClassName(value.getClass());
     }

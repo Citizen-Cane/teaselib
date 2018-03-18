@@ -41,4 +41,13 @@ public enum Config {
         GameController,
         HeadGestures,
     }
+
+    public enum SpeechRecognition {
+        ;
+        public enum Intention {
+            Chat,
+            Confirm,
+            Decide
+        }
+    }
 }

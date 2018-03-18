@@ -1,6 +1,10 @@
 package teaselib.core.util;
 
 public final class ReflectionUtils {
+
+    private ReflectionUtils() {
+    }
+
     public static String classParentName(Class<?> clazz) {
         String path = normalizeClassName(clazz);
         return path.substring(0, path.lastIndexOf("."));
@@ -58,12 +62,21 @@ public final class ReflectionUtils {
     }
 
     public static Enum<?> getEnum(QualifiedItem<?> qualifiedItem) throws ClassNotFoundException {
-        Class<?> enumClass = Class.forName(qualifiedItem.namespace());
-        for (Enum<?> value : (Enum<?>[]) enumClass.getEnumConstants()) {
+        @SuppressWarnings("unchecked")
+        Class<? extends Enum<?>> enumClass = (Class<? extends Enum<?>>) Class.forName(qualifiedItem.namespace());
+        return getEnum(enumClass, qualifiedItem);
+    }
+
+    public static <T extends Enum<?>> T getEnum(Class<T> enumClass, String qualifiedName) {
+        return getEnum(enumClass, QualifiedItem.nameOf(qualifiedName));
+    }
+
+    public static <T extends Enum<?>> T getEnum(Class<T> enumClass, QualifiedItem<?> qualifiedItem) {
+        for (T value : enumClass.getEnumConstants()) {
             if (value.name().equalsIgnoreCase(qualifiedItem.name())) {
                 return value;
             }
         }
-        throw new IllegalArgumentException("Undefined enum constant " + qualifiedItem);
+        throw new IllegalArgumentException(enumClass.getName() + ": undefined enum constant" + ": " + qualifiedItem);
     }
 }

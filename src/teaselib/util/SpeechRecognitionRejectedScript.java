@@ -1,12 +1,7 @@
 package teaselib.util;
 
-import java.util.List;
-
-import teaselib.Answer;
-import teaselib.ScriptFunction;
 import teaselib.TeaseScript;
 import teaselib.core.Script;
-import teaselib.core.speechrecognition.SpeechRecognitionResult.Confidence;
 import teaselib.functional.RunnableScript;
 
 /**
@@ -27,11 +22,5 @@ public abstract class SpeechRecognitionRejectedScript extends TeaseScript implem
      */
     public boolean canRun() {
         return true;
-    }
-
-    @Override
-    protected String showChoices(List<Answer> answers, ScriptFunction scriptFunction,
-            Confidence recognitionConfidence) {
-        return super.showChoices(answers, scriptFunction, Confidence.Low);
     }
 }

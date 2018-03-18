@@ -12,6 +12,7 @@ import java.util.regex.Pattern;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import teaselib.Config.SpeechRecognition.Intention;
 import teaselib.ScriptFunction.Relation;
 import teaselib.core.ResourceLoader;
 import teaselib.core.Script;
@@ -25,7 +26,6 @@ import teaselib.core.media.RenderSound;
 import teaselib.core.speechrecognition.SpeechRecognition;
 import teaselib.core.speechrecognition.SpeechRecognition.TimeoutBehavior;
 import teaselib.core.speechrecognition.SpeechRecognitionImplementation;
-import teaselib.core.speechrecognition.SpeechRecognitionResult.Confidence;
 import teaselib.core.speechrecognition.SpeechRecognizer;
 import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
 import teaselib.core.util.WildcardPattern;
@@ -218,10 +218,6 @@ public abstract class TeaseScript extends TeaseScriptMath {
         return showChoices(Answer.all(text), null);
     }
 
-    public final String reply(Confidence confidence, List<String> text) {
-        return showChoices(Answer.all(text), null, confidence);
-    }
-
     /**
      * Displays the requested choices in the user interface after the mandatory parts of all renderers have been
      * completed. This means especially that all text has been displayed and spoken.
@@ -309,7 +305,7 @@ public abstract class TeaseScript extends TeaseScriptMath {
             teaseLib.sleep(seconds, TimeUnit.SECONDS);
             if (timeoutBehavior != TimeoutBehavior.InDubioContraReum
                     && speechRecognizer.isSpeechRecognitionInProgress()) {
-                logger.info("Completing speech recognition " + timeoutBehavior);
+                logger.info("Completing speech recognition {}", timeoutBehavior);
                 SpeechRecognition.completeSpeechRecognitionInProgress();
             }
         } finally {
@@ -319,7 +315,7 @@ public abstract class TeaseScript extends TeaseScriptMath {
         }
         String result;
         if (ignoreTimeoutInDubioMitius.get()) {
-            logger.info(/* relation + */ " timeout ignored " + timeoutBehavior);
+            logger.info(/* relation + */ " timeout ignored {}", timeoutBehavior);
             result = null;
         } else {
             logger.info("Script function confirm timeout");
@@ -343,7 +339,7 @@ public abstract class TeaseScript extends TeaseScriptMath {
      *            How speech recognition is handled when the timeout has been reached
      * @return A script function that accomplishes the described behavior.
      */
-    public ScriptFunction timeout(long seconds, final SpeechRecognition.TimeoutBehavior timeoutBehavior) {
+    public ScriptFunction timeout(long seconds, SpeechRecognition.TimeoutBehavior timeoutBehavior) {
         return new ScriptFunction(() -> awaitTimeout(seconds, timeoutBehavior), Relation.Autonomous);
     }
 
@@ -390,14 +386,14 @@ public abstract class TeaseScript extends TeaseScriptMath {
      * Displays the requested choices in the user interface after the mandatory parts of all renderers have been
      * completed. This means especially that all text has been displayed and spoken.
      * 
-     * @param choice
+     * @param answer
      *            The first prompt to be displayed by the user interface.
      * @param more
      *            More prompts to be displayed by the user interface
      * @return The index of the choice object in the argument list that has been selected by the user.
      */
-    public final int replyIndex(String choice, String... more) {
-        List<String> choices = buildChoicesFromArray(choice, more);
+    public final int replyIndex(String answer, String... more) {
+        List<String> choices = buildChoicesFromArray(answer, more);
         return replyIndex(choices);
     }
 
@@ -405,13 +401,52 @@ public abstract class TeaseScript extends TeaseScriptMath {
      * Displays the requested choices in the user interface after the mandatory parts of all renderers have been
      * completed. This means especially that all text has been displayed and spoken.
      * 
-     * @param choices
+     * @param answer
      *            The prompts to be displayed in the user interface
      * @return The index of the choice object in the {@code choices} list that has been selected by the user.
      */
-    public final int replyIndex(List<String> choices) {
-        String answer = reply(choices);
-        return choices.indexOf(answer);
+    public final int replyIndex(List<String> answer) {
+        return answer.indexOf(reply(answer));
+    }
+
+    public final String reply(Answer... answers) {
+        return showChoices(Arrays.asList(answers));
+    }
+
+    public final String reply(ScriptFunction scriptFunction, Answer... answers) {
+        return showChoices(Arrays.asList(answers), scriptFunction);
+    }
+
+    public final String reply(RunnableScript script, Answer... answers) {
+        return showChoices(Arrays.asList(answers), new ScriptFunction(script));
+    }
+
+    public final String reply(CallableScript<String> script, Answer... answers) {
+        return showChoices(Arrays.asList(answers), new ScriptFunction(script));
+    }
+
+    public final String reply(Intention intention, Answer... answers) {
+        return showChoices(Arrays.asList(answers), null, intention);
+    }
+
+    public final String reply(ScriptFunction scriptFunction, Intention intention, Answer... answers) {
+        return showChoices(Arrays.asList(answers), scriptFunction, intention);
+    }
+
+    public final String reply(ScriptFunction scriptFunction, Intention intention, Answers answers) {
+        return showChoices(answers, scriptFunction, intention);
+    }
+
+    public final String reply(Intention intention, String answer) {
+        return showChoices(Answer.all(answer), null, intention);
+    }
+
+    public final String reply(Intention intention, List<String> answer) {
+        return showChoices(Answer.all(answer), null, intention);
+    }
+
+    public final String reply(ScriptFunction scriptFunction, Intention intention, List<String> answer) {
+        return showChoices(Answer.all(answer), scriptFunction, intention);
     }
 
     /**
@@ -460,41 +495,20 @@ public abstract class TeaseScript extends TeaseScriptMath {
         showChoices(Arrays.asList(Answer.yes(yes)), new ScriptFunction(script));
     }
 
-    /**
-     * If the reply should be non-blocking, e.g. not interrupt the flow of the script, the recognition accuracy might be
-     * lowered to become less picky.
-     * 
-     * Best used for replies that can be easily dismissed without consequences, like in conversations.
-     * 
-     * Or in situations that involve timing, where a quick reply is necessary, but the actual words don't matter.
-     * 
-     * @param recognitionConfidence
-     *            The confidence threshold used for speech recognition.
-     * @param choice
-     *            The prompt to be displayed by the user interface.
-     * 
-     * @return The choice object that has been selected by the user.
-     */
-    public final String reply(Confidence recognitionConfidence, String text) {
-        return showChoices(Answer.all(text), null, recognitionConfidence);
+    public final void chat(String chat) {
+        showChoices(Arrays.asList(Answer.yes(chat), Answer.no(chat)), null, Intention.Chat);
     }
 
-    /**
-     * Displays the requested choices in the user interface after the mandatory parts of all renderers have been
-     * completed. This means especially that all text has been displayed and spoken.
-     * 
-     * @param recognitionConfidence
-     *            The confidence threshold used for speech recognition.
-     * @param text
-     *            The first prompt to be displayed by the user interface.
-     * @param more
-     *            More prompts to be displayed by the user interface
-     * 
-     * @return The choice object that has been selected by the user, or {@link TeaseScript#Timeout} if the script
-     *         function completes.
-     */
-    public final String reply(ScriptFunction scriptFunction, Confidence recognitionConfidence, List<String> text) {
-        return showChoices(Answer.all(text), scriptFunction, recognitionConfidence);
+    public final void chat(Answer chat) {
+        showChoices(Arrays.asList(chat), null, Intention.Chat);
+    }
+
+    public final void chat(RunnableScript script, Answer chat) {
+        showChoices(Arrays.asList(chat), new ScriptFunction(script), Intention.Chat);
+    }
+
+    public final void chat(CallableScript<String> script, Answer chat) {
+        showChoices(Arrays.asList(chat), new ScriptFunction(script), Intention.Chat);
     }
 
     /**

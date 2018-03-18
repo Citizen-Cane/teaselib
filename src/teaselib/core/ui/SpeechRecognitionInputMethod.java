@@ -47,7 +47,7 @@ public class SpeechRecognitionInputMethod implements InputMethod {
     public SpeechRecognitionInputMethod(SpeechRecognition speechRecognizer, Confidence expectedConfidence,
             Optional<SpeechRecognitionRejectedScript> speechRecognitionRejectedScript) {
         this.speechRecognizer = speechRecognizer;
-        this.expectedConfidence = speechRecognizer.userDefinedConfidence(expectedConfidence);
+        this.expectedConfidence = expectedConfidence;
         this.speechRecognitionRejectedScript = speechRecognitionRejectedScript;
         this.audioSignalProblems = new AudioSignalProblems();
 

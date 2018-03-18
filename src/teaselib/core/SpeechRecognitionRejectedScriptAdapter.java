@@ -6,11 +6,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import teaselib.Answer;
+import teaselib.Config.SpeechRecognition.Intention;
 import teaselib.Message;
 import teaselib.Replay;
 import teaselib.ScriptFunction;
 import teaselib.core.media.MediaRendererQueue;
-import teaselib.core.speechrecognition.SpeechRecognitionResult.Confidence;
 import teaselib.util.SpeechRecognitionRejectedScript;
 
 final class SpeechRecognitionRejectedScriptAdapter extends SpeechRecognitionRejectedScript {
@@ -51,10 +51,9 @@ final class SpeechRecognitionRejectedScriptAdapter extends SpeechRecognitionReje
     }
 
     @Override
-    protected String showChoices(List<Answer> answers, ScriptFunction scriptFunction,
-            Confidence recognitionConfidence) {
+    protected String showChoices(List<Answer> answers, ScriptFunction scriptFunction, Intention intention) {
         finishedWithPrompt = true;
-        return super.showChoices(answers, scriptFunction, recognitionConfidence);
+        return super.showChoices(answers, scriptFunction, intention);
     }
 
     // Handling speech recognition rejected events:

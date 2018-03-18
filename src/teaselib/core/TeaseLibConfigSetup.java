@@ -10,11 +10,8 @@ import teaselib.hosts.PreDefinedItems;
 public final class TeaseLibConfigSetup implements Configuration.Setup {
     public static final String DEFAULTS = "defaults";
 
-    private static final String TEASELIB_TEMPLATE = "teaselib.template";
     private static final String TEASELIB_PROPERTIES = "teaselib.properties";
-
     private static final String NETWORK_PROPERTIES = "network.properties";
-
     public static final String VOICES_PROPERTIES = "voices.properties";
     public static final String PRONUNCIATION_DIRECTORY = "pronunciation";
 
@@ -40,7 +37,8 @@ public final class TeaseLibConfigSetup implements Configuration.Setup {
     }
 
     private void addTeaseLibDefaults(Configuration config) throws IOException {
-        config.addUserFile(new File(teaseLibDefaultsPath, TEASELIB_TEMPLATE), new File(userPath, TEASELIB_PROPERTIES));
+        config.addUserFile(new File(teaseLibDefaultsPath, TEASELIB_PROPERTIES),
+                new File(userPath, TEASELIB_PROPERTIES));
 
         config.addConfigFile(new File(teaseLibDefaultsPath, TEASELIB_PROPERTIES));
         config.addConfigFile(new File(userPath, TEASELIB_PROPERTIES));

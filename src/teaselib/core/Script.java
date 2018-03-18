@@ -15,8 +15,8 @@ import org.slf4j.LoggerFactory;
 import teaselib.Actor;
 import teaselib.Answer;
 import teaselib.Answer.Meaning;
-import teaselib.Answers;
 import teaselib.Config;
+import teaselib.Config.SpeechRecognition.Intention;
 import teaselib.Gadgets;
 import teaselib.Message;
 import teaselib.Mood;
@@ -42,8 +42,8 @@ import teaselib.core.ui.Shower;
 import teaselib.core.ui.SpeechRecognitionInputMethod;
 import teaselib.core.util.ExceptionUtil;
 import teaselib.core.util.ObjectMap;
-import teaselib.functional.CallableScript;
-import teaselib.functional.RunnableScript;
+import teaselib.core.util.QualifiedItem;
+import teaselib.core.util.ReflectionUtils;
 import teaselib.motiondetection.Gesture;
 import teaselib.motiondetection.MotionDetector;
 import teaselib.util.SpeechRecognitionRejectedScript;
@@ -79,7 +79,7 @@ public abstract class Script {
         @Override
         public void replay(Replay.Position replayPosition) {
             synchronized (queuedRenderers) {
-                logger.info("Replaying renderers from replay {}",  this);
+                logger.info("Replaying renderers from replay {}", this);
                 // Finish current set before replaying
                 completeMandatory();
                 // Restore the prompt that caused running the SR-rejected script
@@ -341,34 +341,6 @@ public abstract class Script {
         }
     }
 
-    public final String reply(Answer... answers) {
-        return showChoices(Arrays.asList(answers));
-    }
-
-    public final String reply(ScriptFunction scriptFunction, Answer... answers) {
-        return showChoices(Arrays.asList(answers), scriptFunction);
-    }
-
-    public final String reply(RunnableScript script, Answer... answers) {
-        return showChoices(Arrays.asList(answers), new ScriptFunction(script));
-    }
-
-    public final String reply(CallableScript<String> script, Answer... answers) {
-        return showChoices(Arrays.asList(answers), new ScriptFunction(script));
-    }
-
-    public final String reply(Confidence confidence, Answer... answers) {
-        return showChoices(Arrays.asList(answers), null, confidence);
-    }
-
-    public final String reply(ScriptFunction scriptFunction, Confidence confidence, Answer... answers) {
-        return showChoices(Arrays.asList(answers), scriptFunction, confidence);
-    }
-
-    public final String reply(ScriptFunction scriptFunction, Confidence confidence, Answers answers) {
-        return showChoices(answers, scriptFunction, confidence);
-    }
-
     protected final String showChoices(List<Answer> answers) {
         return showChoices(answers, null);
     }
@@ -379,7 +351,8 @@ public abstract class Script {
      * @see Script#showChoices(List, ScriptFunction, Confidence)
      */
     protected final String showChoices(List<Answer> answers, ScriptFunction scriptFunction) {
-        return showChoices(answers, scriptFunction, Confidence.Default);
+        return showChoices(answers, scriptFunction,
+                scriptFunction != null || answers.size() > 1 ? Intention.Decide : Intention.Confirm);
     }
 
     /**
@@ -398,11 +371,12 @@ public abstract class Script {
      *         value set by the script function.
      */
     protected String showChoices(List<Answer> answers, ScriptFunction scriptFunction,
-            Confidence recognitionConfidence) {
+            Config.SpeechRecognition.Intention intention) {
+        QualifiedItem<?> value = QualifiedItem.of(teaseLib.config.get(intention));
+        Confidence recognitionConfidence = ReflectionUtils.getEnum(Confidence.class, value);
+
         waitToStartScriptFunction(scriptFunction);
-        if (scriptFunction == null) {
-            stopBackgroundRenderers();
-        } else if (scriptFunction.relation != ScriptFunction.Relation.Autonomous) {
+        if (scriptFunction == null || scriptFunction.relation != ScriptFunction.Relation.Autonomous) {
             stopBackgroundRenderers();
         }
 

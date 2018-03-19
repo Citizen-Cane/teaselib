@@ -7,6 +7,7 @@ import teaselib.core.Configuration;
 import teaselib.core.Configuration.Setup;
 import teaselib.core.TeaseLibConfigSetup;
 import teaselib.core.devices.remote.LocalNetworkDevice;
+import teaselib.core.speechrecognition.SpeechRecognitionResult.Confidence;
 import teaselib.core.texttospeech.TextToSpeechPlayer;
 
 public final class DebugSetup implements Setup {
@@ -23,7 +24,7 @@ public final class DebugSetup implements Setup {
         applyInput(config);
         applyOutput(config);
         applyDictionanries(config);
-        
+
         return config;
     }
 
@@ -42,6 +43,10 @@ public final class DebugSetup implements Setup {
         config.set(Config.InputMethod.SpeechRecognition, Boolean.toString(enableInput));
         config.set(Config.InputMethod.GameController, Boolean.toString(enableInput));
         config.set(Config.InputMethod.HeadGestures, Boolean.toString(enableInput));
+
+        config.set(Config.SpeechRecognition.Intention.Chat, Confidence.Low);
+        config.set(Config.SpeechRecognition.Intention.Confirm, Confidence.Normal);
+        config.set(Config.SpeechRecognition.Intention.Decide, Confidence.High);
     }
 
     protected void applyOutput(Configuration config) {
@@ -49,6 +54,7 @@ public final class DebugSetup implements Setup {
         config.set(Config.Render.Sound, Boolean.toString(enableOutput));
         config.set(Config.Render.ActorImages, Boolean.toString(enableOutput));
         config.set(Config.Render.InstructionalImages, Boolean.toString(enableOutput));
+
     }
 
     private void applyDictionanries(Configuration config) {

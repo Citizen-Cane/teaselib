@@ -11,6 +11,7 @@ import java.util.Properties;
 import teaselib.core.util.ConfigurationFile;
 import teaselib.core.util.FileUtilities;
 import teaselib.core.util.QualifiedItem;
+import teaselib.core.util.ReflectionUtils;
 
 public class Configuration {
     private final List<Properties> defaults = new ArrayList<>();
@@ -113,6 +114,10 @@ public class Configuration {
 
     public Configuration set(Enum<?> property, String value) {
         return set(QualifiedItem.of(property), value);
+    }
+
+    public Configuration set(Enum<?> property, Enum<?> value) {
+        return set(QualifiedItem.of(property), ReflectionUtils.qualifiedName(value));
     }
 
     public Configuration set(QualifiedItem<?> property, String value) {

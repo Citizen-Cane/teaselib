@@ -13,6 +13,9 @@ public class NamedExecutorServiceTest {
 
     private Runnable test = () -> {
         try {
+            synchronized (NamedExecutorServiceTest.this) {
+                NamedExecutorServiceTest.this.notifyAll();
+            }
             complete.await();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
@@ -24,8 +27,14 @@ public class NamedExecutorServiceTest {
         NamedExecutorService unlimitedThreadPool = NamedExecutorService.newUnlimitedThreadPool("test", Long.MAX_VALUE,
                 TimeUnit.MILLISECONDS);
 
-        unlimitedThreadPool.submit(test);
-        unlimitedThreadPool.submit(test);
+        synchronized (this) {
+            unlimitedThreadPool.submit(test);
+            this.wait();
+        }
+        synchronized (this) {
+            unlimitedThreadPool.submit(test);
+            this.wait();
+        }
 
         assertEquals(2, unlimitedThreadPool.getActiveCount());
         assertEquals(2, unlimitedThreadPool.getLargestPoolSize());
@@ -48,9 +57,16 @@ public class NamedExecutorServiceTest {
         NamedExecutorService unlimitedThreadPool = NamedExecutorService.newFixedThreadPool(2, "test", Long.MAX_VALUE,
                 TimeUnit.MILLISECONDS);
 
-        unlimitedThreadPool.submit(test);
+        synchronized (this) {
+            unlimitedThreadPool.submit(test);
+            this.wait();
+        }
         assertEquals(1, unlimitedThreadPool.getActiveCount());
-        unlimitedThreadPool.submit(test);
+
+        synchronized (this) {
+            unlimitedThreadPool.submit(test);
+            this.wait();
+        }
         assertEquals(2, unlimitedThreadPool.getActiveCount());
 
         unlimitedThreadPool.submit(test);
@@ -73,7 +89,10 @@ public class NamedExecutorServiceTest {
         NamedExecutorService unlimitedThreadPool = NamedExecutorService.newFixedThreadPool(2, "test", Long.MAX_VALUE,
                 TimeUnit.MILLISECONDS);
 
-        unlimitedThreadPool.submit(test);
+        synchronized (this) {
+            unlimitedThreadPool.submit(test);
+            this.wait();
+        }
         assertEquals(1, unlimitedThreadPool.getActiveCount());
 
         complete.countDown();
@@ -89,8 +108,12 @@ public class NamedExecutorServiceTest {
     public void testSingleThreadedQueue() throws Exception {
         NamedExecutorService unlimitedThreadPool = NamedExecutorService.singleThreadedQueue("test");
 
-        unlimitedThreadPool.submit(test);
+        synchronized (this) {
+            unlimitedThreadPool.submit(test);
+            this.wait();
+        }
         assertEquals(1, unlimitedThreadPool.getActiveCount());
+
         unlimitedThreadPool.submit(test);
         assertEquals(1, unlimitedThreadPool.getActiveCount());
 

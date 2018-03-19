@@ -79,4 +79,8 @@ public final class ReflectionUtils {
         }
         throw new IllegalArgumentException(enumClass.getName() + ": undefined enum constant" + ": " + qualifiedItem);
     }
+
+    public static String qualifiedName(Enum<?> value) {
+        return ReflectionUtils.normalizeClassName(value.getClass()) + "." + value.name();
+    }
 }

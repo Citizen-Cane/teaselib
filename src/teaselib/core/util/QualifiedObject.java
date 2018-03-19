@@ -1,7 +1,6 @@
 package teaselib.core.util;
 
 public class QualifiedObject extends QualifiedItem<Object> {
-
     public QualifiedObject(Object value) {
         super(value);
         if (value instanceof Enum<?>) {
@@ -20,13 +19,18 @@ public class QualifiedObject extends QualifiedItem<Object> {
             if (value == null) {
                 return other.value == null;
             } else {
-                return value.equals(other.value);
+                return value.toString().equalsIgnoreCase(other.value.toString());
             }
         } else if (obj instanceof Enum<?>) {
-            return value.toString().equalsIgnoreCase(QualifiedEnum.toString((Enum<?>) obj));
+            return toString().equalsIgnoreCase(ReflectionUtils.qualifiedName((Enum<?>) obj));
         } else {
             return this.toString().equalsIgnoreCase(obj.toString());
         }
+    }
+
+    @Override
+    public int hashCode() {
+        return super.hashCode();
     }
 
     @Override

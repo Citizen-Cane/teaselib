@@ -10,11 +10,13 @@ public abstract class QualifiedItem<T> {
         this.value = value;
     }
 
+    public abstract boolean equals(Object obj);
+
     @Override
     public int hashCode() {
         final int prime = 31;
         int result = 1;
-        result = prime * result + (toString().toLowerCase().hashCode());
+        result = prime * result + toString().toLowerCase().hashCode();
         return result;
     }
 
@@ -30,7 +32,7 @@ public abstract class QualifiedItem<T> {
         } else if (item instanceof String) {
             String string = (String) item;
             if (string.contains(".")) {
-                return string.substring(0, string.lastIndexOf("."));
+                return string.substring(0, string.lastIndexOf('.'));
             } else {
                 return string;
             }
@@ -48,7 +50,7 @@ public abstract class QualifiedItem<T> {
         } else if (item instanceof String) {
             String string = (String) item;
             if (string.contains(".")) {
-                return string.substring(string.lastIndexOf(".") + 1);
+                return string.substring(string.lastIndexOf('.') + 1);
             } else {
                 return string;
             }
@@ -69,5 +71,4 @@ public abstract class QualifiedItem<T> {
             return new QualifiedObject(value);
         }
     }
-
 }

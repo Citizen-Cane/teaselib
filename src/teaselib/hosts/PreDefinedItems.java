@@ -34,7 +34,7 @@ public class PreDefinedItems extends AbstractUserItems {
 
     @Override
     protected Item[] createDefaultItems(String domain, QualifiedItem<?> item) {
-        if (item.equals(Toys.Buttplug)) {
+        if (item.is(Toys.Buttplug)) {
             Item standardButtplug = item(item, "buttplug", "A buttplug", Features.Anal, Toys.Anal.Plug);
             Item vibratingButtplug = item(item, "vibrating_buttplug", "A vibrating buttplug", Features.Vibrating,
                     Features.Anal, Toys.Anal.Plug);
@@ -44,20 +44,20 @@ public class PreDefinedItems extends AbstractUserItems {
 
             return new Item[] { standardButtplug, vibratingButtplug, inflatableButtplug, analBeads };
 
-        } else if (item.equals(Toys.Ankle_Restraints)) {
+        } else if (item.is(Toys.Ankle_Restraints)) {
             Item ankleCuffs = item(item, "ankle_cuffs", "Metal Ankle cuffs", Material.Metal);
             Item leatherAnkleCuffs = item(item, "leather_ankle_cuffs", "Leather ankle cuffs", Material.Leather);
 
             return new Item[] { ankleCuffs, leatherAnkleCuffs };
 
-        } else if (item.equals(Toys.Wrist_Restraints)) {
+        } else if (item.is(Toys.Wrist_Restraints)) {
             Item handCuffs = item(item, "handcuffs", "Metal Hand cuffs", Material.Metal);
             Item leatherWristCuffs = item(item, "leather_wrist_cuffs", "Leather wrist cuffs", Material.Leather,
                     Features.Detachable);
 
             return new Item[] { handCuffs, leatherWristCuffs };
 
-        } else if (item.equals(Toys.Gag)) {
+        } else if (item.is(Toys.Gag)) {
             Item ballGag = item(item, "ball_gag", "A ball gag", Toys.Gags.Ball_Gag, Material.Rubber);
             Item bitGag = item(item, "bit_gag", "A bit gag", Toys.Gags.Bit_Gag, Material.Rubber);
             Item muzzleGag = item(item, "muzzle_gag", "A muzzle gag", Toys.Gags.Muzzle_Gag, Material.Leather);
@@ -66,7 +66,7 @@ public class PreDefinedItems extends AbstractUserItems {
 
             return new Item[] { ballGag, bitGag, muzzleGag, penisGag, ringGag };
 
-        } else if (item.equals(Toys.Spanking_Implement)) {
+        } else if (item.is(Toys.Spanking_Implement)) {
             Item crop = item(item, "crop", "A crop", Toys.Spanking_Implements.Crop, Material.Leather,
                     Toys.Spanking_Implements.Crop);
             Item paddle = item(item, "paddle", "A paddle", Toys.Spanking_Implements.Paddle, Material.Leather);
@@ -80,7 +80,7 @@ public class PreDefinedItems extends AbstractUserItems {
 
             return new Item[] { crop, paddle, cane, whip, flogger, hairbrush, woodenSpoon };
 
-        } else if (item.equals(Toys.Collar)) {
+        } else if (item.is(Toys.Collar)) {
             Item dogCollar = item(item, "dog_collar", "A dog-collar", Toys.Collars.Dog_Collar, Material.Leather);
             Item maidCollar = item(item, "maid_collar", "A maid-collar", Toys.Collars.Maid_Collar, Material.Leather);
             Item postureCollar = item(item, "posture_collar", "Posture collar", Toys.Collars.Posture_Collar,
@@ -89,12 +89,12 @@ public class PreDefinedItems extends AbstractUserItems {
 
             return new Item[] { dogCollar, postureCollar, maidCollar, slaveCollar };
 
-        } else if (item.equals(Toys.Nipple_Clamps)) {
+        } else if (item.is(Toys.Nipple_Clamps)) {
             Item nippleClamps = item(item, "nipple_clamps", "Nipple clamps", Material.Metal);
 
             return new Item[] { nippleClamps };
 
-        } else if (item.equals(Toys.Chastity_Device)) {
+        } else if (item.is(Toys.Chastity_Device)) {
             Item chastityCage = item(item, "chastity_cage", "A chastity cage", defaults(item, Body.AroundCockBase),
                     Toys.ChastityDevices.Chastity_Cage, Features.Lockable);
             Item chastityBelt = item(item, "chastity_belt", "A Chastity belt", defaults(item, Body.OnBalls),
@@ -105,7 +105,7 @@ public class PreDefinedItems extends AbstractUserItems {
 
             return new Item[] { chastityCage, chastityBelt, gatesOfHell };
 
-        } else if (item.equals(Toys.Dildo)) {
+        } else if (item.is(Toys.Dildo)) {
             Item analDildo = item(item, "anal_dildo", "Anal dildo", Material.Rubber, Features.Anal,
                     Features.SuctionCup);
             Item dildo = item(item, "dildo", "A dildo", Material.Rubber, Features.Vaginal, Features.SuctionCup);
@@ -114,81 +114,81 @@ public class PreDefinedItems extends AbstractUserItems {
 
             return new Item[] { dildo, vibratingDildo, analDildo };
 
-        } else if (item.equals(Toys.VaginalInsert)) {
+        } else if (item.is(Toys.VaginalInsert)) {
             Item vibratingEgg = item(item, "vibrating_egg", "A vibrating egg", Toys.Vaginal.VibratingEgg,
                     Features.Vibrating);
             Item benWaBalls = item(item, "ben_wa_balls", "Ben Wa Balls", Toys.Vaginal.Ben_Wa_Balls);
 
             return new Item[] { vibratingEgg, benWaBalls };
 
-        } else if (item.equals(Toys.Vibrator)) {
+        } else if (item.is(Toys.Vibrator)) {
             Item butterfly = item(item, "vibrator", "A butterfly vibrator", Toys.Vibrators.HandsFree,
                     Features.Vibrating);
             Item massager = item(item, "vibrator_massager", "A massager", Toys.Vibrators.Manual, Features.Vibrating);
 
             return new Item[] { butterfly, massager };
 
-        } else if (item.equals(Toys.EStim_Device)) {
+        } else if (item.is(Toys.EStim_Device)) {
             Item estimDevice = item(item, "estim", "An EStim device", Features.Vibrating);
             return new Item[] { estimDevice };
 
-        } else if (item.equals(Toys.Ball_Stretcher)) {
+        } else if (item.is(Toys.Ball_Stretcher)) {
             return new Item[] { item(item, "ball_stretcher", "A ball stretcher") };
 
-        } else if (item.equals(Toys.Blindfold)) {
+        } else if (item.is(Toys.Blindfold)) {
             return new Item[] { item(item, "blindfold", "A blindfold") };
 
-        } else if (item.equals(Toys.Chains)) {
+        } else if (item.is(Toys.Chains)) {
             return new Item[] { item(item, "chains", "Some chains") };
 
-        } else if (item.equals(Toys.Rope)) {
+        } else if (item.is(Toys.Rope)) {
             return new Item[] { item(item, "rope", "Plenty of rope") };
 
-        } else if (item.equals(Toys.Cockring)) {
+        } else if (item.is(Toys.Cockring)) {
             return new Item[] { item(item, "cockring", "A tight cock ring"), item(item, "cockring_with_two_rings",
                     "A tight cock ring with an additional ring", defaults(item, Body.OnPenis)) };
 
-        } else if (item.equals(Toys.Anal_Douche)) {
+        } else if (item.is(Toys.Anal_Douche)) {
             return new Item[] { item(item, "anal_shower", "An anal douche") };
 
-        } else if (item.equals(Toys.Enema_Kit)) {
+        } else if (item.is(Toys.Enema_Kit)) {
             return new Item[] { item(item, "enema_kit", "An enema kit") };
 
-        } else if (item.equals(Toys.Enema_Bulb)) {
+        } else if (item.is(Toys.Enema_Bulb)) {
             return new Item[] { item(item, "enema_bulb", "An enema bulb") };
 
-        } else if (item.equals(Toys.Humbler)) {
+        } else if (item.is(Toys.Humbler)) {
             return new Item[] { item(item, "humbler", "A humbler") };
 
-        } else if (item.equals(Toys.GlansRing)) {
+        } else if (item.is(Toys.GlansRing)) {
             return new Item[] { item(item, "glansRing", "Glans ring") };
 
-        } else if (item.equals(Toys.Masturbator)) {
+        } else if (item.is(Toys.Masturbator)) {
             return new Item[] { item(item, "masturbator", "A fake pussy",
                     defaults(item, Masturbators.Pussy, Masturbators.Bumhole, Material.Rubber)) };
 
-        } else if (item.equals(Toys.Pussy_Clamps)) {
+        } else if (item.is(Toys.Pussy_Clamps)) {
             return new Item[] { item(item, "pussy_clamps", "Pussy clamps") };
 
-        } else if (item.equals(Toys.Clit_Clamp)) {
+        } else if (item.is(Toys.Clit_Clamp)) {
             return new Item[] { item(item, "clit_clamp", "Clit clamp") };
 
-        } else if (item.equals(Toys.Spreader_Bar)) {
+        } else if (item.is(Toys.Spreader_Bar)) {
             return new Item[] { item(item, "spreader_bar", "A spreader bar") };
 
-        } else if (item.equals(Toys.Strap_On)) {
+        } else if (item.is(Toys.Strap_On)) {
             return new Item[] { item(item, "strap_on", "A strap-on") };
 
-        } else if (item.equals(Toys.Doll)) {
+        } else if (item.is(Toys.Doll)) {
             return new Item[] { item(item, "doll", "A doll") };
 
-        } else if (item.equals(Toys.Husband)) {
+        } else if (item.is(Toys.Husband)) {
             return new Item[] { item(item, "husband", "Husband") };
 
-        } else if (item.equals(Toys.Wife)) {
+        } else if (item.is(Toys.Wife)) {
             return new Item[] { item(item, "wife", "Wife") };
 
-        } else if (item.equals(Household.Leash)) {
+        } else if (item.is(Household.Leash)) {
             return new Item[] { item(item, "leash", "A leash"),
                     item(item, "retractable_leash", "A retractable leash", defaults(item, Body.Tethered)) };
 

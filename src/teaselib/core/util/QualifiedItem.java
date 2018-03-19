@@ -10,6 +10,10 @@ public abstract class QualifiedItem<T> {
         this.value = value;
     }
 
+    public boolean is(Object obj) {
+        return equals(obj);
+    }
+
     public abstract boolean equals(Object obj);
 
     @Override
@@ -71,4 +75,5 @@ public abstract class QualifiedItem<T> {
             return new QualifiedObject(value);
         }
     }
+
 }

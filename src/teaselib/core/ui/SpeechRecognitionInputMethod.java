@@ -67,7 +67,7 @@ public class SpeechRecognitionInputMethod implements InputMethod {
             }
         };
         this.recognitionRejected = (sender, eventArgs) -> {
-            if (eventArgs.result.length == 1) {
+            if (eventArgs.result != null && eventArgs.result.length == 1) {
                 SpeechRecognitionResult result = eventArgs.result[0];
                 if (MUMBLE.equalsIgnoreCase(result.text)) {
                     logger.info("Rejected speech recognized as mumble - ignored");

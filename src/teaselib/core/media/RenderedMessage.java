@@ -40,7 +40,7 @@ public class RenderedMessage extends AbstractMessage {
     }
 
     public RenderedMessage getLastSection() {
-        return getLastSection();
+        return getLastSection(this);
     }
 
     public static RenderedMessage getLastSection(AbstractMessage message) {

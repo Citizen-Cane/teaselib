@@ -7,6 +7,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
@@ -103,6 +104,8 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
 
         if (hasCompletedMandatory()) {
             completeAll();
+            completedMandatory = new CountDownLatch(1);
+            completedAll = new CountDownLatch(1);
             replay(Position.FromCurrentPosition);
         }
     }

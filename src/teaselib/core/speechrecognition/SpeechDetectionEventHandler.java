@@ -109,31 +109,25 @@ public class SpeechDetectionEventHandler {
     }
 
     private Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs> speechDetected() {
-        return new Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs>() {
-            @Override
-            public void run(SpeechRecognitionImplementation sender, SpeechRecognizedEventArgs eventArgs) {
-                if (!enabled) {
-                    return;
-                } else {
-                    for (SpeechRecognitionResult result : eventArgs.result) {
-                        if (acceptHypothesis(result)) {
-                            logger.info("Considering {}", result);
-                            hypothesisResult = result;
-                        }
+        return (sender, eventArgs) -> {
+            if (!enabled) {
+                return;
+            } else {
+                for (SpeechRecognitionResult result : eventArgs.result) {
+                    if (acceptHypothesis(result)) {
+                        logger.info("Considering {}", result);
+                        hypothesisResult = result;
                     }
                 }
             }
-
-            private boolean acceptHypothesis(SpeechRecognitionResult result) {
-                if (hypothesisResult == null || //
-                result.index != hypothesisResult.index || //
-                promptSplitter.count(result.text) > promptSplitter.count(hypothesisResult.text) || //
-                result.hasHigherProbabilityThan(hypothesisResult)) {
-                    return true;
-                }
-                return false;
-            }
         };
+    }
+
+    private boolean acceptHypothesis(SpeechRecognitionResult result) {
+        return hypothesisResult == null //
+                || result.index != hypothesisResult.index //
+                || promptSplitter.count(result.text) > promptSplitter.count(hypothesisResult.text) //
+                || result.hasHigherProbabilityThan(hypothesisResult);
     }
 
     private Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs> recognitionRejected() {
@@ -144,12 +138,11 @@ public class SpeechDetectionEventHandler {
                 return;
             } else if (hypothesisIsAcceptable()) {
                 eventArgs.consumed = true;
-                SpeechRecognitionResult recognitionRejectedResult = eventArgs.result[0];
                 SpeechRecognitionResult elevatedResult = new SpeechRecognitionResult(hypothesisResult.index,
                         hypothesisResult.text, expectedConfidence.probability, expectedConfidence);
                 logger.info(
-                        "Forwarding rejected recognition result {} with accepted hypothesis {} as elevated result {}",
-                        recognitionRejectedResult, hypothesisResult, elevatedResult);
+                        "Forwarding rejected recognition event {} with accepted hypothesis {} as elevated result {}",
+                        eventArgs, hypothesisResult, elevatedResult);
                 fireRecognitionCompletedEvent(sender, elevatedResult);
             }
         };
@@ -189,37 +182,30 @@ public class SpeechDetectionEventHandler {
     }
 
     private Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs> recognitionCompleted() {
-        return new Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs>() {
-            @Override
-            public void run(SpeechRecognitionImplementation sender, SpeechRecognizedEventArgs eventArgs) {
-                SpeechRecognitionResult recognitionCompletedResult = eventArgs.result[0];
+        return (sender, eventArgs) -> {
+            SpeechRecognitionResult recognitionCompletedResult = eventArgs.result[0];
 
-                if (recognitionCompletedResult.confidence.isLowerThan(expectedConfidence) && //
-                hypothesisResult != null && //
-                hypothesisResult.index == recognitionCompletedResult.index && //
-                !confidenceIsHighEnough(recognitionCompletedResult, expectedConfidence) && //
-                hypothesisIsAcceptable()) {
-                    eventArgs.consumed = true;
-                    SpeechRecognitionResult elevatedResult = new SpeechRecognitionResult(hypothesisResult.index,
-                            hypothesisResult.text, expectedConfidence.probability, expectedConfidence);
-                    logger.info("Replacing recognition result {} of accepted hypothesis {} as elevated result {}",
-                            recognitionCompletedResult, hypothesisResult, elevatedResult);
-                    fireRecognitionCompletedEvent(sender, new SpeechRecognitionResult(recognitionCompletedResult.index,
-                            recognitionCompletedResult.text, elevatedResult.probability, elevatedResult.confidence));
-                }
+            if (recognitionCompletedResult.confidence.isLowerThan(expectedConfidence) //
+                    && hypothesisResult != null //
+                    && hypothesisResult.index == recognitionCompletedResult.index //
+                    && !confidenceIsHighEnough(recognitionCompletedResult, expectedConfidence) //
+                    && hypothesisIsAcceptable()) {
+                eventArgs.consumed = true;
+                SpeechRecognitionResult elevatedResult = new SpeechRecognitionResult(hypothesisResult.index,
+                        recognitionCompletedResult.text, expectedConfidence.probability, expectedConfidence);
+                logger.info("Replacing recognition result {} of accepted hypothesis {} as elevated result {}",
+                        recognitionCompletedResult, hypothesisResult, elevatedResult);
+                fireRecognitionCompletedEvent(sender, elevatedResult);
             }
-
-            private boolean confidenceIsHighEnough(SpeechRecognitionResult result, Confidence confidence) {
-                return result.confidence.probability >= confidence.probability;
-            }
-
         };
     }
 
-    private void fireRecognitionCompletedEvent(SpeechRecognitionImplementation sender,
-            SpeechRecognitionResult speechRecognitionResult) {
-        SpeechRecognitionResult[] results = { speechRecognitionResult };
-        SpeechRecognizedEventArgs recognitionCompletedEventArgs = new SpeechRecognizedEventArgs(results);
+    private boolean confidenceIsHighEnough(SpeechRecognitionResult result, Confidence confidence) {
+        return result.confidence.probability >= confidence.probability;
+    }
+
+    private void fireRecognitionCompletedEvent(SpeechRecognitionImplementation sender, SpeechRecognitionResult result) {
+        SpeechRecognizedEventArgs recognitionCompletedEventArgs = new SpeechRecognizedEventArgs(result);
         speechRecognizer.events.recognitionCompleted.run(sender, recognitionCompletedEventArgs);
     }
 }

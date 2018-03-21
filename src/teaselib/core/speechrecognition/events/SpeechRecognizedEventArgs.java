@@ -5,23 +5,23 @@ import teaselib.core.speechrecognition.SpeechRecognitionResult;
 public class SpeechRecognizedEventArgs extends SpeechRecognitionEventArgs {
     public final SpeechRecognitionResult result[];
 
-    public SpeechRecognizedEventArgs(SpeechRecognitionResult[] result) {
+    public SpeechRecognizedEventArgs(SpeechRecognitionResult... result) {
         this.result = result;
     }
 
     @Override
     public String toString() {
-        StringBuilder results = new StringBuilder();
+        StringBuilder resultString = new StringBuilder();
         if (result != null) {
             for (SpeechRecognitionResult r : result) {
-                if (results.length() > 0) {
-                    results.append(", ");
+                if (resultString.length() > 0) {
+                    resultString.append(", ");
                 }
-                results.append(r.toString());
+                resultString.append(r.toString());
             }
         } else {
-            results.append("<none>");
+            resultString.append("<none>");
         }
-        return getClass().getSimpleName() + "Result = " + results;
+        return getClass().getSimpleName() + "Result = " + resultString;
     }
 }

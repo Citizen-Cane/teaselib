@@ -26,14 +26,14 @@ import teaselib.motiondetection.MotionDetector.Presence;
 public class MotionDetectionResultImplementation extends MotionDetectionResultData {
     private static final Logger logger = LoggerFactory.getLogger(MotionDetectionResultImplementation.class);
 
-    private static final double CircularityVariance = 1.3; // 1.3 seems to be necessary to detect blinking eyes
+    private static final double CIRCULARITY_VARIANCE = 1.3; // 1.3 seems to be necessary to detect blinking eyes
     private static final Set<Presence> STARTUP_PRESENCE = Collections.singleton(Presence.CameraShake);
 
     public class PresenceData {
         final Map<Presence, Rect> presenceIndicators;
 
         boolean trackerMotionDetected = false;
-        boolean contourMotionDetected = false;;
+        boolean contourMotionDetected = false;
         Set<Presence> indicators = STARTUP_PRESENCE;
         Set<Presence> debugIndicators = STARTUP_PRESENCE;
         Rect presenceRegion = null;
@@ -98,7 +98,7 @@ public class MotionDetectionResultImplementation extends MotionDetectionResultDa
         List<Rect> motionRegions = new ArrayList<>();
         MatVector contours = motionProcessor.motionContours.contours;
         for (int i = 0; i < presenceRegions.size(); i++) {
-            if (!Geom.isCircular(contours.get(i), CircularityVariance)) {
+            if (!Geom.isCircular(contours.get(i), CIRCULARITY_VARIANCE)) {
                 motionRegions.add(presenceRegions.get(i));
             }
         }
@@ -151,24 +151,23 @@ public class MotionDetectionResultImplementation extends MotionDetectionResultDa
     }
 
     @Override
-    public boolean await(Signal signal, final double amount, final Presence change, final double timeSpanSeconds,
+    public boolean await(Signal signal, double amount, Presence change, double timeSpanSeconds,
             final double timeoutSeconds) throws InterruptedException {
         // TODO clamp amount to [0,1] and handle > 0.0, >= 1.0
         try {
-            return signal.await(timeoutSeconds, (new Signal.HasChangedPredicate() {
-                @Override
-                public Boolean call() throws Exception {
-                    List<TimeLine.Slice<Set<Presence>>> timeSpanIndicatorHistory = indicatorHistory
-                            .getTimeSpanSlices(timeSpanSeconds);
-                    return getAmount(timeSpanIndicatorHistory, change) >= amount;
-                }
-            }));
+            return signal.await(timeoutSeconds, () -> getChange(amount, change, timeSpanSeconds));
         } catch (InterruptedException e) {
             throw e;
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
         }
         return false;
+    }
+
+    private Boolean getChange(double amount, Presence change, double timeSpanSeconds) {
+        List<TimeLine.Slice<Set<Presence>>> timeSpanIndicatorHistory = indicatorHistory
+                .getTimeSpanSlices(timeSpanSeconds);
+        return getAmount(timeSpanIndicatorHistory, change) >= amount;
     }
 
     public static double getAmount(List<TimeLine.Slice<Set<Presence>>> slices, Object item) {
@@ -179,34 +178,27 @@ public class MotionDetectionResultImplementation extends MotionDetectionResultDa
         long absoluteTime = 0;
         for (Iterator<TimeLine.Slice<Set<Presence>>> it = slices.iterator(); it.hasNext();) {
             TimeLine.Slice<Set<Presence>> slice = it.next();
-            final long increment;
-            increment = slice.t;
+            long increment = slice.t;
             if (slice.item.contains(item)) {
                 absoluteCoverage += increment;
             }
             absoluteTime += increment;
         }
-        double amount = absoluteCoverage / (double) absoluteTime;
-        return amount;
+        return absoluteTime > 0 ? absoluteCoverage / (double) absoluteTime : 0;
     }
 
     @Override
-    @SuppressWarnings("resource")
     public Set<Presence> getPresence(Rect motionRegion, Rect presenceRegion) {
         Rect presenceRect = presenceIndicators.get(viewPoint2PresenceRegion.get(viewPoint));
-        Point tl = presenceRect.tl();
-        // rect.br() returns point + size which is not inside rect
-        Point br = new Point(tl.x() + presenceRect.width() - 1, tl.y() + presenceRect.height() - 1);
-        final Set<Presence> presence;
-        try {
+        Set<Presence> presence;
+        try (Point tl = presenceRect.tl();
+                Point br = new Point(tl.x() + presenceRect.width() - 1, tl.y() + presenceRect.height() - 1);) {
+            // rect.br() returns point + size which is not inside rectangle
             if (motionRegion == null || (motionRegion.contains(tl) && motionRegion.contains(br))) {
                 presence = shakePresence();
             } else {
                 presence = presenceState(presenceRegion, presenceRect);
             }
-        } finally {
-            tl.close();
-            br.close();
         }
         return presence;
     }

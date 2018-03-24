@@ -15,16 +15,17 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import teaselib.core.javacv.util.Geom;
+import teaselib.core.util.ExceptionUtil;
 import teaselib.core.util.TimeLine;
 import teaselib.core.util.TimeLine.Slice;
 import teaselib.motiondetection.Gesture;
 
 public class HeadGestureTracker {
+    private static final Logger logger = LoggerFactory.getLogger(HeadGestureTracker.class);
+
     // TODO Should be a fraction of the video size
     static final int MINIMUM_DIRECTION_VALUE = 20;
     static final int MINIMUM_DIRECTION_SCALE = 4;
-
-    private static final Logger logger = LoggerFactory.getLogger(HeadGestureTracker.class);
 
     static final long GesturePauseMillis = 500;
 
@@ -93,7 +94,7 @@ public class HeadGestureTracker {
 
     private void restartGesture(Mat videoImage, Rect region, long timeStamp, String string) {
         if (logger.isDebugEnabled()) {
-            logger.debug(string + " @" + timeStamp);
+            logger.debug("{} @{}", string, timeStamp);
         }
         directionTimeLine.clear();
         tracker.clear();
@@ -108,7 +109,7 @@ public class HeadGestureTracker {
             directionTimeLine.add(direction, timeStamp);
         } else if (featuresAreOutdated(timeStamp)) {
             if (logger.isDebugEnabled()) {
-                logger.debug("Updating outdated features" + " @" + timeStamp);
+                logger.debug("Updating outdated features @{}", timeStamp);
             }
             directionTimeLine.add(Direction.None, timeStamp);
             findNewFeatures(videoImage, region);
@@ -127,47 +128,32 @@ public class HeadGestureTracker {
             return Direction.None;
         }
 
-        FloatIndexer from = tracker.previousKeyPoints().createIndexer();
-        FloatIndexer to = tracker.keyPoints().createIndexer();
-
         Map<Direction, Float> directions = new EnumMap<>(Direction.class);
-
-        long n = Math.min(from.rows(), to.rows());
-        for (int i = 0; i < n; i++) {
-            Point p1 = new Point((int) from.get(i, 0), (int) from.get(i, 1));
-            Point p2 = new Point((int) to.get(i, 0), (int) to.get(i, 1));
-
-            addDirection(directions, direction(p1, p2), Geom.distance2(p1, p2));
-
-            p1.close();
-            p2.close();
-        }
-
-        if (!directions.isEmpty() && logger.isDebugEnabled()) {
-            StringBuilder points = new StringBuilder();
+        try (FloatIndexer from = tracker.previousKeyPoints().createIndexer();
+                FloatIndexer to = tracker.keyPoints().createIndexer();) {
+            long n = Math.min(from.rows(), to.rows());
             for (int i = 0; i < n; i++) {
-                Point p1 = new Point((int) from.get(i, 0), (int) from.get(i, 1));
-                Point p2 = new Point((int) to.get(i, 0), (int) to.get(i, 1));
-                points.append(toString(p1) + "-" + toString(p2) + " ");
-                p1.close();
-                p2.close();
+                try (Point p1 = new Point((int) from.get(i, 0), (int) from.get(i, 1));
+                        Point p2 = new Point((int) to.get(i, 0), (int) to.get(i, 1));) {
+                    addDirection(directions, direction(p1, p2), Geom.distance2(p1, p2));
+                }
             }
-            logger.debug(points.toString());
-        }
 
-        from.release();
-        to.release();
+            if (!directions.isEmpty() && logger.isDebugEnabled()) {
+                StringBuilder points = new StringBuilder();
+                for (int i = 0; i < n; i++) {
+                    try (Point p1 = new Point((int) from.get(i, 0), (int) from.get(i, 1));
+                            Point p2 = new Point((int) to.get(i, 0), (int) to.get(i, 1));) {
+                        points.append(toString(p1) + "-" + toString(p2) + " ");
+                    }
+                }
+                logger.debug(points.toString());
+            }
 
-        try {
-            from.close();
+            from.release();
+            to.release();
         } catch (Exception e) {
-            logger.error(e.getMessage(), e);
-        }
-
-        try {
-            to.close();
-        } catch (Exception e) {
-            logger.error(e.getMessage(), e);
+            throw ExceptionUtil.asRuntimeException(e);
         }
 
         return directions.isEmpty() ? Direction.None : direction(directions);
@@ -260,7 +246,7 @@ public class HeadGestureTracker {
     public Gesture getGesture() {
         Gesture gesture = getGesture(directionTimeLine);
         if (logger.isDebugEnabled()) {
-            logger.debug(directionTimeLine.getTimeSpan(1.0).toString() + " ->" + gesture);
+            logger.debug("{} -> {}", directionTimeLine.getTimeSpan(1.0).toString(), gesture);
         }
         return gesture;
     }

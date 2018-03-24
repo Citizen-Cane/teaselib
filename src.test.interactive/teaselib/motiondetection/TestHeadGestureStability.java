@@ -12,15 +12,13 @@ import teaselib.motiondetection.MotionDetector.MotionSensitivity;
 import teaselib.test.DebugSetup;
 
 public class TestHeadGestureStability {
-    MotionSensitivity AssumeSensitivity = MotionSensitivity.Low;
-    MotionSensitivity GestureSensitivity = MotionSensitivity.High;
-
     @Test
     public void testHeadGestures() throws InterruptedException {
         Configuration config = DebugSetup.getConfiguration();
         Devices devices = new Devices(config);
 
         MotionDetector motionDetector = devices.get(MotionDetector.class).getDefaultDevice();
+        motionDetector.setSensitivity(MotionSensitivity.Normal);
         motionDetector.setViewPoint(ViewPoint.EyeLevel);
 
         motionDetector.setVideoRenderer(new VideoRendererJavaCV(Type.CameraFeedback) {
@@ -29,12 +27,12 @@ public class TestHeadGestureStability {
                 return new Point(0, 0);
             }
         });
-        // motionDetector.start();
+
         DeviceCache.connect(motionDetector);
 
         for (int i = 0; i < 1; i++) {
             motionDetector.start();
-            Thread.sleep(1000);
+            Thread.sleep(2000);
             motionDetector.stop();
             Thread.sleep(500);
         }

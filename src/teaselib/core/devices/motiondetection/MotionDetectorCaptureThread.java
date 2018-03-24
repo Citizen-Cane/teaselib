@@ -6,6 +6,7 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -87,9 +88,8 @@ class MotionDetectorCaptureThread extends Thread {
         this.fps = FramesPerSecond.getFps(videoCaptureDevice.fps(), desiredFps);
         this.fpsStatistics = new FramesPerSecond((int) fps);
         this.desiredFrameTimeMillis = (long) (1000.0 / fps);
-        @SuppressWarnings("resource")
+
         Size resolution = videoCaptureDevice.resolution();
-        @SuppressWarnings("resource")
         Size processingSize = getProcessingSize(resolution);
         this.videoInputTransformation = getVideoTransformation(resolution, processingSize);
         motionProcessor = new MotionProcessorJavaCV(resolution, processingSize);
@@ -186,8 +186,17 @@ class MotionDetectorCaptureThread extends Thread {
                 // poll the device until its reconnected
                 DeviceCache.connect(videoCaptureDevice);
                 openVideoCaptureDevice(videoCaptureDevice);
-                fpsStatistics.start();
-                processVideoCaptureStream();
+                try {
+                    fpsStatistics.start();
+                    processVideoCaptureStream();
+                } finally {
+                    videoCaptureDevice.close();
+                    if (videoRenderer != null) {
+                        videoRenderer.close();
+                    }
+                    if (debugInfo != null)
+                        debugInfo.close();
+                }
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
@@ -231,73 +240,59 @@ class MotionDetectorCaptureThread extends Thread {
 
         provideFakeMotionAndPresenceData();
 
-        try {
-            boolean warmedUp = false;
-            int warmupFrames = (int) (1.0 / fps * WARMUP_SECONDS);
+        boolean warmedUp = false;
+        int warmupFrames = (int) (1.0 / fps * WARMUP_SECONDS);
 
-            for (Mat frame : videoCaptureDevice) {
-                long timeStamp = System.currentTimeMillis();
+        for (Mat frame : videoCaptureDevice) {
+            if (Thread.currentThread().isInterrupted()) {
+                break;
+            }
 
-                @SuppressWarnings("resource")
-                Mat image = videoInputTransformation.update(frame);
+            long timeStamp = System.currentTimeMillis();
+            Mat image = videoInputTransformation.update(frame);
+            Buffer.Locked<Mat> lock = video.get(image);
+            // Mat buffer = lock.get();
 
-                Buffer.Locked<Mat> lock = video.get(image);
-                // Mat buffer = lock.get();
+            // TODO move to after if-clause after resolving image mat copy issue
+            // - because copying the mat and computing gestures can be done parallel
+            List<Future<?>> frameTaskFutures = new ArrayList<>();
+            frameTaskFutures.add(frameTasks.submit(() -> computeGestures(image, timeStamp)));
 
-                // TODO move to after if-clause after resolving image mat copy issue
-                // - because copying the mat and computing gestures can be done parallel
-                List<Future<?>> frameTaskFutures = new ArrayList<>();
-                frameTaskFutures.add(frameTasks.submit(() -> computeGestures(image, timeStamp)));
-
-                if (motionAndPresence == null) {
-                    motionAndPresence = perceptionTasks.submit(() -> {
-                        // TODO Save cpu-cycles by copying to tracker and KNN data directly
-                        image.copyTo(motionImageCopy);
-                        computeMotionAndPresence(motionImageCopy, timeStamp);
-                        // TODO Increase semaphore count
-                        // lock.release();
-                    });
-                } else if (motionAndPresence.isCancelled()) {
-                    motionAndPresence = null;
-                } else if (motionAndPresence.isDone()) {
-                    motionAndPresence = null;
-                    if (!warmedUp) {
-                        if (warmupFrames > 0) {
-                            --warmupFrames;
-                        } else {
-                            warmedUp = presenceResult.getIndicatorHistory(0.0).contains(Presence.NoCameraShake);
-                        }
-                    }
-                    if (warmedUp) {
-                        updatePresenceResult();
-                        updateGestureResult(image);
+            if (motionAndPresence == null) {
+                motionAndPresence = perceptionTasks.submit(() -> {
+                    // TODO Save cpu-cycles by copying to tracker and KNN data directly
+                    image.copyTo(motionImageCopy);
+                    computeMotionAndPresence(motionImageCopy, timeStamp);
+                    // TODO Increase semaphore count
+                    // lock.release();
+                });
+            } else if (motionAndPresence.isCancelled()) {
+                motionAndPresence = null;
+            } else if (motionAndPresence.isDone()) {
+                motionAndPresence = null;
+                if (!warmedUp) {
+                    if (warmupFrames > 0) {
+                        --warmupFrames;
+                    } else {
+                        warmedUp = presenceResult.getIndicatorHistory(0.0).contains(Presence.NoCameraShake);
                     }
                 }
-
-                long timeLeft = fpsStatistics.timeMillisLeft(desiredFrameTimeMillis, timeStamp);
-                if (timeLeft > 0) {
-                    Thread.sleep(timeLeft);
-                }
-                // TODO review frame statistics class - may be wrong
-                fpsStatistics.updateFrame(timeStamp + timeLeft);
-
-                completeComputationAndRender(image, lock, frameTaskFutures);
-
-                if (!active.get()) {
-                    break;
+                if (warmedUp) {
+                    updatePresenceResult();
+                    updateGestureResult(image);
                 }
             }
-        } catch (InterruptedException e) {
-            throw e;
-        } catch (Exception e) {
-            logger.error(e.getMessage(), e);
-        } finally {
-            videoCaptureDevice.close();
-            if (videoRenderer != null) {
-                videoRenderer.close();
+            long timeLeft = fpsStatistics.timeMillisLeft(desiredFrameTimeMillis, timeStamp);
+            if (timeLeft > 0) {
+                Thread.sleep(timeLeft);
             }
-            if (debugInfo != null)
-                debugInfo.close();
+            // TODO review frame statistics class - may be wrong
+            fpsStatistics.updateFrame(timeStamp + timeLeft);
+            completeComputationAndRender(image, lock, frameTaskFutures);
+
+            if (!active.get()) {
+                break;
+            }
         }
     }
 
@@ -363,16 +358,22 @@ class MotionDetectorCaptureThread extends Thread {
     private void completeComputationAndRender(Mat image, Buffer.Locked<Mat> lock, List<Future<?>> tasks) {
         overlayRenderer.submit(() -> {
             try {
-                for (Future<?> task : tasks) {
-                    task.get();
-                }
+                completeTasks(tasks);
                 render(image);
             } catch (Exception e) {
                 logger.error(e.getMessage(), e);
             } finally {
-                lock.release();
+                if (lock != null) {
+                    lock.release();
+                }
             }
         });
+    }
+
+    private void completeTasks(List<Future<?>> tasks) throws InterruptedException, ExecutionException {
+        for (Future<?> task : tasks) {
+            task.get();
+        }
     }
 
     private void render(Mat video) {
@@ -388,10 +389,10 @@ class MotionDetectorCaptureThread extends Thread {
                 fpsStatistics.value());
 
         if (logDetails) {
-            // Log state
-            logger.info("contourMotionDetected=" + presenceResult.presenceData.contourMotionDetected
-                    + "  trackerMotionDetected=" + presenceResult.presenceData.trackerMotionDetected + "(distance="
-                    + motionProcessor.motionData.distance2 + "), " + indicators.toString());
+            logger.info("contourMotionDetected={}  trackerMotionDetected={} (distance={}), {}",
+                    presenceResult.presenceData.contourMotionDetected,
+                    presenceResult.presenceData.trackerMotionDetected, motionProcessor.motionData.distance2,
+                    indicators);
         }
 
         return indicators;

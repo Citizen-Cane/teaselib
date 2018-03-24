@@ -113,7 +113,7 @@ public class TimeLine<T> {
 
     private void removeFirstMillis(long timeSpanMillis) {
         long i = 0;
-        while (i < timeSpanMillis && i < items.size()) {
+        while (i < timeSpanMillis && 1 < items.size()) {
             items.removeFirst();
             long d = timeSpans.removeFirst();
             i += d;
@@ -229,5 +229,10 @@ public class TimeLine<T> {
 
     public Slice<T> tailSlice() {
         return new Slice<>(tailTimeSpan(), tail());
+    }
+
+    @Override
+    public String toString() {
+        return this.size() + " @ " + tailTimeMillis;
     }
 }

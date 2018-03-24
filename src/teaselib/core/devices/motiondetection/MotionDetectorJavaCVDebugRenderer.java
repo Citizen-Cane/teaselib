@@ -87,12 +87,14 @@ public class MotionDetectorJavaCVDebugRenderer {
     // }
 
     // private void renderDistanceTrackerPoints(Mat debugOutput, MotionProcessorJavaCV.MotionData motionData) {
-    //     MotionProcessorJavaCV.render(debugOutput, motionData, motionData.color);
+    // MotionProcessorJavaCV.render(debugOutput, motionData, motionData.color);
     // }
 
     private void renderGesture(Mat debugOutput, HeadGestureTracker gestureTracker, Gesture gesture) {
-        rectangle(debugOutput, gestureTracker.getRegion(), gesture == Gesture.None ? Color.MidCyan : Color.Cyan, 4, 8,
-                0);
+        if (debugOutput != null && gestureTracker.getRegion() != null) {
+            rectangle(debugOutput, gestureTracker.getRegion(), gesture == Gesture.None ? Color.MidCyan : Color.Cyan, 4,
+                    8, 0);
+        }
 
         if (gesture != Gesture.None) {
             Point p = new Point(debugOutput.size().width() - 70, 30);

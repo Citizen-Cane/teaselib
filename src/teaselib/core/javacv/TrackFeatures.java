@@ -14,6 +14,8 @@ import org.bytedeco.javacpp.opencv_core.Scalar;
 import org.bytedeco.javacpp.opencv_core.Size;
 import org.bytedeco.javacpp.indexer.FloatIndexer;
 
+import teaselib.core.util.ExceptionUtil;
+
 public class TrackFeatures {
     static final int MaxPoints = 256;
     static final Size FeatureSize = new Size(MaxPoints * 2, 2);
@@ -40,14 +42,10 @@ public class TrackFeatures {
     }
 
     public void start(Mat videoImage, Rect rect) {
-        Mat mask = Mat.zeros(videoImage.size(), CV_8UC1).asMat();
-        Mat roi = new Mat(mask, rect);
-        roi.put(maskPixel);
-
-        start(videoImage, mask);
-
-        roi.close();
-        mask.close();
+        try (Mat mask = Mat.zeros(videoImage.size(), CV_8UC1).asMat(); Mat roi = new Mat(mask, rect);) {
+            roi.put(maskPixel);
+            start(videoImage, mask);
+        }
     }
 
     public void start(Mat input, Mat mask) {
@@ -108,19 +106,17 @@ public class TrackFeatures {
     }
 
     public static void render(Mat input, Scalar color, Mat keyPoints) {
-        FloatIndexer points = keyPoints.createIndexer();
-        for (int i = 0; i < points.rows(); i++) {
-            opencv_core.Point p = new opencv_core.Point((int) points.get(i, 0), (int) points.get(i, 1));
-            int size = 15;
-            circle(input, p, 1, color);
-            circle(input, p, size, color);
-            p.close();
-        }
-        points.release();
-
-        try {
-            points.close();
-        } catch (Exception e) { //
+        try (FloatIndexer points = keyPoints.createIndexer();) {
+            for (int i = 0; i < points.rows(); i++) {
+                opencv_core.Point p = new opencv_core.Point((int) points.get(i, 0), (int) points.get(i, 1));
+                int size = 15;
+                circle(input, p, 1, color);
+                circle(input, p, size, color);
+                p.close();
+            }
+            points.release();
+        } catch (Exception e) {
+            throw ExceptionUtil.asRuntimeException(e);
         }
     }
 

@@ -80,11 +80,11 @@ public class MotionDetectorJavaCV extends MotionDetector /* extends WiredDevice 
     public static final Set<Feature> Features = EnumSet.of(Feature.Motion, Feature.Presence);
     static final double DesiredFps = 30;
 
-    private final MotionDetectorCaptureThread eventThread;
+    private final MotionDetectorCaptureThread captureThread;
 
     public MotionDetectorJavaCV(VideoCaptureDevice videoCaptureDevice) {
         super();
-        eventThread = new MotionDetectorCaptureThread(videoCaptureDevice, DesiredFps);
+        captureThread = new MotionDetectorCaptureThread(videoCaptureDevice, DesiredFps);
         setSensitivity(MotionSensitivity.Normal);
         setViewPoint(ViewPoint.EyeLevel);
         Thread detectionEventsShutdownHook = new Thread() {
@@ -94,14 +94,14 @@ public class MotionDetectorJavaCV extends MotionDetector /* extends WiredDevice 
             }
         };
         Runtime.getRuntime().addShutdownHook(detectionEventsShutdownHook);
-        eventThread.setDaemon(false);
-        eventThread.setName(getDevicePath());
-        eventThread.start();
+        captureThread.setDaemon(false);
+        captureThread.setName(getDevicePath());
+        captureThread.start();
     }
 
     @Override
     public String getDevicePath() {
-        return DeviceCache.createDevicePath(DeviceClassName, eventThread.videoCaptureDevice.getDevicePath());
+        return DeviceCache.createDevicePath(DeviceClassName, captureThread.videoCaptureDevice.getDevicePath());
     }
 
     @Override
@@ -111,32 +111,32 @@ public class MotionDetectorJavaCV extends MotionDetector /* extends WiredDevice 
 
     @Override
     public MotionSensitivity getSensitivity() {
-        return eventThread.motionSensitivity;
+        return captureThread.motionSensitivity;
     }
 
     @Override
     public void setSensitivity(MotionSensitivity motionSensitivity) {
-        eventThread.setSensitivity(motionSensitivity);
+        captureThread.setSensitivity(motionSensitivity);
     }
 
     @Override
     public ViewPoint getViewPoint() {
-        return eventThread.viewPoint;
+        return captureThread.viewPoint;
     }
 
     @Override
     public void setViewPoint(ViewPoint pointOfView) {
-        eventThread.setPointOfView(pointOfView);
+        captureThread.setPointOfView(pointOfView);
     }
 
     @Override
     public VideoRenderer getVideoRenderer() {
-        return eventThread.videoRenderer;
+        return captureThread.videoRenderer;
     }
 
     @Override
     public void setVideoRenderer(VideoRenderer videoRenderer) {
-        eventThread.videoRenderer = videoRenderer;
+        captureThread.videoRenderer = videoRenderer;
     }
 
     @Override
@@ -150,15 +150,15 @@ public class MotionDetectorJavaCV extends MotionDetector /* extends WiredDevice 
             awaitTimeout(timeoutSeconds);
             return false;
         }
-        eventThread.debugWindowTimeSpan = timeSpanSeconds;
+        captureThread.debugWindowTimeSpan = timeSpanSeconds;
         try {
-            return eventThread.presenceResult.await(eventThread.presenceChanged, amount, change, timeSpanSeconds,
+            return captureThread.presenceResult.await(captureThread.presenceChanged, amount, change, timeSpanSeconds,
                     timeoutSeconds);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new ScriptInterruptedException(e);
         } finally {
-            eventThread.debugWindowTimeSpan = MotionRegionDefaultTimespan;
+            captureThread.debugWindowTimeSpan = MotionRegionDefaultTimespan;
         }
     }
 
@@ -170,14 +170,14 @@ public class MotionDetectorJavaCV extends MotionDetector /* extends WiredDevice 
 
         try {
             // TODO resolve duplicated code
-            if (expected.contains(eventThread.gesture)) {
-                return eventThread.gesture;
+            if (expected.contains(captureThread.gesture)) {
+                return captureThread.gesture;
             }
             try {
-                eventThread.gestureChanged.await(timeoutSeconds, (new Signal.HasChangedPredicate() {
+                captureThread.gestureChanged.await(timeoutSeconds, (new Signal.HasChangedPredicate() {
                     @Override
                     public Boolean call() throws Exception {
-                        return expected.contains(eventThread.gesture);
+                        return expected.contains(captureThread.gesture);
                     }
                 }));
             } catch (InterruptedException e) {
@@ -186,11 +186,11 @@ public class MotionDetectorJavaCV extends MotionDetector /* extends WiredDevice 
             } catch (Exception e) {
                 logger.error(e.getMessage(), e);
             }
-            return eventThread.gesture;
+            return captureThread.gesture;
         } finally {
             // TODO make clear() multithreading safe
-            eventThread.gestureTracker.clear();
-            eventThread.gesture = Gesture.None;
+            captureThread.gestureTracker.clear();
+            captureThread.gesture = Gesture.None;
         }
     }
 
@@ -205,48 +205,48 @@ public class MotionDetectorJavaCV extends MotionDetector /* extends WiredDevice 
 
     @Override
     public boolean isWireless() {
-        return eventThread.videoCaptureDevice.isWireless();
+        return captureThread.videoCaptureDevice.isWireless();
     }
 
     @Override
     public BatteryLevel batteryLevel() {
-        return eventThread.videoCaptureDevice.batteryLevel();
+        return captureThread.videoCaptureDevice.batteryLevel();
     }
 
     protected double fps() {
-        return eventThread.fps();
+        return captureThread.fps();
     }
 
     @Override
     public void clearMotionHistory() {
-        eventThread.clearMotionHistory();
+        captureThread.clearMotionHistory();
     }
 
     @Override
     public boolean connected() {
-        return eventThread.videoCaptureDevice.connected();
+        return captureThread.videoCaptureDevice.connected();
     }
 
     @Override
     public boolean active() {
-        return eventThread.active();
+        return captureThread.active();
     }
 
     @Override
     public void stop() {
-        eventThread.stopCapture();
+        captureThread.stopCapture();
     }
 
     @Override
     public void start() {
-        eventThread.startCapture();
+        captureThread.startCapture();
     }
 
     @Override
     public void close() {
-        eventThread.interrupt();
+        captureThread.interrupt();
         try {
-            eventThread.join();
+            captureThread.join();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }

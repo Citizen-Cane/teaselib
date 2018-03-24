@@ -112,8 +112,10 @@ public abstract class MotionDetectionResultData implements MotionDetectionResult
         presenceRegionHistory.clear();
         motionAreaHistory.clear();
         indicatorHistory.clear();
-        // Set start values instead of testing for empty lists later on
-        long timeStamp = 0;
+        setStartValuesInsteadOfTestingForEmptyListsLaterOn(0L);
+    }
+
+    private void setStartValuesInsteadOfTestingForEmptyListsLaterOn(long timeStamp) {
         motionRegionHistory.add(all, timeStamp);
         presenceRegionHistory.add(all, timeStamp);
         motionAreaHistory.add(0, timeStamp);

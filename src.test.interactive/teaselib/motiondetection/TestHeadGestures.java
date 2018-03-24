@@ -7,6 +7,7 @@ import org.junit.Test;
 
 import teaselib.core.Configuration;
 import teaselib.core.VideoRenderer.Type;
+import teaselib.core.devices.DeviceCache;
 import teaselib.core.devices.Devices;
 import teaselib.core.javacv.VideoRendererJavaCV;
 import teaselib.motiondetection.MotionDetector.MotionSensitivity;
@@ -32,6 +33,7 @@ public class TestHeadGestures {
         });
         motionDetector.start();
         // TODO Resolve NPE when sleep is missing (wait for motion & presence data to be initialized)
+        DeviceCache.connect(motionDetector);
         Thread.sleep(1000);
         Movement movement = MotionDetector.movement(motionDetector);
 

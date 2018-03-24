@@ -1,9 +1,5 @@
-/**
- * 
- */
 package teaselib.motiondetection;
 
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,18 +11,11 @@ import teaselib.motiondetection.MotionDetector.Presence;
 import teaselib.test.DebugSetup;
 
 /**
- * @author someone
+ * @author Citizen-Cane
  *
  */
 public class TestMotionDetectorStability {
     private static final Logger logger = LoggerFactory.getLogger(TestMotionDetectorStability.class);
-
-    /**
-     * @throws java.lang.Exception
-     */
-    @BeforeClass
-    public static void setUpBeforeClass() throws Exception {
-    }
 
     @Test
     public void testPauseResume() {

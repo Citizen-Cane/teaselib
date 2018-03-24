@@ -21,7 +21,8 @@ public class VideoCaptureDeviceSingleThreadedTest {
 
         capture(vc);
 
-        Thread.sleep(500);
+        // Close device to avoid crash on system exit
+        vc.close();
     }
 
     private void capture(VideoCaptureDevice vc) {
@@ -35,6 +36,5 @@ public class VideoCaptureDeviceSingleThreadedTest {
             }
         }
         size.close();
-        vc.close();
     }
 }

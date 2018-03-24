@@ -22,9 +22,12 @@ public class VideoCaptureDeviceMultiThreadedTest {
         Thread capture = new Thread(() -> capture(vc));
         capture.start();
         Thread.sleep(2000);
+
         capture.interrupt();
         capture.join();
-        Thread.sleep(500);
+
+        // Close device to avoid crash on system exit
+        vc.close();
     }
 
     private void capture(VideoCaptureDevice vc) {
@@ -39,6 +42,5 @@ public class VideoCaptureDeviceMultiThreadedTest {
             }
         }
         size.close();
-        vc.close();
     }
 }

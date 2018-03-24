@@ -87,13 +87,8 @@ public class MotionDetectorJavaCV extends MotionDetector /* extends WiredDevice 
         captureThread = new MotionDetectorCaptureThread(videoCaptureDevice, DesiredFps);
         setSensitivity(MotionSensitivity.Normal);
         setViewPoint(ViewPoint.EyeLevel);
-        Thread detectionEventsShutdownHook = new Thread() {
-            @Override
-            public void run() {
-                close();
-            }
-        };
-        Runtime.getRuntime().addShutdownHook(detectionEventsShutdownHook);
+
+        Runtime.getRuntime().addShutdownHook(new Thread(this::close));
         captureThread.setDaemon(false);
         captureThread.setName(getDevicePath());
         captureThread.start();

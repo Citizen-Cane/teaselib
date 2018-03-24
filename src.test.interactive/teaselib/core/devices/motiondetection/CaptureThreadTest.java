@@ -41,14 +41,11 @@ public class CaptureThreadTest {
         Thread.sleep(2000);
         captureThread.stopCapture();
 
-        // TODO Resolve crash on exit due to cleanup issues so this can be removed
+        // to avoid crash on system exit
+        // OpenCV/VideoInput Video capture device must be closed
         captureThread.interrupt();
         captureThread.join();
 
-        // sleep makes program crash on system exit if vc isn't closed (bug fixed)
         Thread.sleep(500);
-
-        // System.gc doesn't lead to a crash
-        // System.gc();
     }
 }

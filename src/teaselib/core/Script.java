@@ -242,7 +242,7 @@ public abstract class Script {
 
             RenderedMessage.Decorator[] decorators = decorators(textToSpeech);
             List<RenderedMessage> messages = new ArrayList<>(prependedMessages.size() + 1);
-            prependedMessages.stream().forEach(prepended -> message.add(RenderedMessage.of(prepended, decorators)));
+            prependedMessages.stream().forEach(prepended -> messages.add(RenderedMessage.of(prepended, decorators)));
             prependedMessages.clear();
 
             messages.add(RenderedMessage.of(message, decorators));

@@ -33,6 +33,8 @@ public class MotionProcessorJavaCV {
     Contours motionContours = new Contours();
     DistanceTracker distanceTracker = new DistanceTracker(Color.Green);
 
+    public static final int WARMUP_FRAMES = 9;
+
     class MotionData {
         final Scalar color = distanceTracker.color();
 

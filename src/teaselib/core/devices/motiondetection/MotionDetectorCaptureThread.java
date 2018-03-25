@@ -40,19 +40,18 @@ import teaselib.video.VideoCaptureDevice;
 class MotionDetectorCaptureThread extends Thread {
     static final Logger logger = LoggerFactory.getLogger(MotionDetectorJavaCV.class);
 
-    private static final double WARMUP_SECONDS = 0.5;
     private static final Size DesiredProcessingSize = new Size(640, 480);
-    private static final boolean mirror = true;
+    private static final boolean MIRROR = true;
 
     private static final Map<MotionSensitivity, Integer> motionSensitivities = initStructuringElementSizes();
 
     VideoCaptureDevice videoCaptureDevice;
-
     private Buffer<Mat> video = new Buffer<>(Mat::new, (int) MotionDetectorJavaCV.DesiredFps);
-
     private Transformation videoInputTransformation;
+
     MotionSensitivity motionSensitivity;
     ViewPoint viewPoint;
+
     private MotionProcessorJavaCV motionProcessor;
     HeadGestureTracker gestureTracker = new HeadGestureTracker(Color.Cyan);
     protected Gesture gesture = Gesture.None;
@@ -111,7 +110,7 @@ class MotionDetectorCaptureThread extends Thread {
     }
 
     private Transformation getVideoTransformation(Size resolution, Size processingSize) {
-        if (mirror) {
+        if (MIRROR) {
             return new ScaleAndMirror(resolution, processingSize, video);
         } else if (resolution.equals(processingSize)) {
             // TODO Move buffers to video capture classes in order to save copies and scale/mirror on video hardware
@@ -226,30 +225,28 @@ class MotionDetectorCaptureThread extends Thread {
         }
     }
 
-    NamedExecutorService frameTasks = NamedExecutorService.newFixedThreadPool(2, "frame tasks", Long.MAX_VALUE,
+    private NamedExecutorService frameTasks = NamedExecutorService.newFixedThreadPool(2, "frame tasks", Long.MAX_VALUE,
             TimeUnit.MILLISECONDS);
-    NamedExecutorService perceptionTasks = NamedExecutorService.singleThreadedQueue("Motion and Presence",
+    private NamedExecutorService perceptionTasks = NamedExecutorService.singleThreadedQueue("Motion and Presence",
             Long.MAX_VALUE, TimeUnit.MILLISECONDS);
-    NamedExecutorService overlayRenderer = NamedExecutorService.singleThreadedQueue("Perception overlay renderer",
-            Long.MAX_VALUE, TimeUnit.MILLISECONDS);
+    private NamedExecutorService overlayRenderer = NamedExecutorService
+            .singleThreadedQueue("Perception overlay renderer", Long.MAX_VALUE, TimeUnit.MILLISECONDS);
 
-    Future<?> motionAndPresence = null;
-
+    private Future<?> motionAndPresence = null;
     private HeadGestureTracker.Parameters gestureResult = new HeadGestureTracker.Parameters();
-    Mat motionImageCopy = new Mat();
+    private Mat motionImageCopy = new Mat();
 
     private void processVideoCaptureStream() throws InterruptedException {
-
         provideFakeMotionAndPresenceData();
 
         boolean warmedUp = false;
-        int warmupFrames = (int) (1.0 / fps * WARMUP_SECONDS);
+
+        // TODO CameraShake is only suppressed if movement is detected from the first frame on
+        // -> probably means that the motion processor returns a full screen rectangle,
+        // which only resolves to a motion region when there is actual motion
+        int warmupFrames = MotionProcessorJavaCV.WARMUP_FRAMES;
 
         for (Mat frame : videoCaptureDevice) {
-            if (Thread.currentThread().isInterrupted()) {
-                break;
-            }
-
             long timeStamp = System.currentTimeMillis();
             Mat image = videoInputTransformation.update(frame);
             Buffer.Locked<Mat> lock = video.get(image);
@@ -292,7 +289,7 @@ class MotionDetectorCaptureThread extends Thread {
             fpsStatistics.updateFrame(timeStamp + timeLeft);
             completeComputationAndRender(image, lock, frameTaskFutures);
 
-            if (!active.get()) {
+            if (!active.get() || Thread.currentThread().isInterrupted()) {
                 break;
             }
         }
@@ -387,8 +384,8 @@ class MotionDetectorCaptureThread extends Thread {
 
     private Set<Presence> renderOverlays(Mat image) {
         Set<Presence> indicators = presenceResult.presenceData.debugIndicators;
-        debugInfo.render(image, motionProcessor.motionData, presenceResult.presenceData, gestureTracker, gesture,
-                fpsStatistics.value());
+        debugInfo.render(image, motionProcessor.motionContours, motionProcessor.motionData, presenceResult.presenceData,
+                gestureTracker, gesture, fpsStatistics.value());
 
         if (logDetails) {
             logger.info("contourMotionDetected={}  trackerMotionDetected={} (distance={}), {}",

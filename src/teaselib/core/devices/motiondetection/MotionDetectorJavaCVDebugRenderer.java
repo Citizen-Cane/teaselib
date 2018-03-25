@@ -22,6 +22,7 @@ import org.bytedeco.javacpp.opencv_core.Rect;
 import org.bytedeco.javacpp.opencv_core.Size;
 
 import teaselib.core.javacv.Color;
+import teaselib.core.javacv.Contours;
 import teaselib.core.javacv.HeadGestureTracker;
 import teaselib.motiondetection.Gesture;
 import teaselib.motiondetection.MotionDetector.Presence;
@@ -36,7 +37,7 @@ public class MotionDetectorJavaCVDebugRenderer {
         this.windowSize = windowSize;
     }
 
-    public void render(Mat debugOutput, MotionProcessorJavaCV.MotionData pixelData,
+    public void render(Mat debugOutput, Contours contours, MotionProcessorJavaCV.MotionData pixelData,
             MotionDetectionResultImplementation.PresenceData resultData, HeadGestureTracker gestureTracker,
             Gesture gesture, double fps) {
         boolean present = resultData.debugIndicators.contains(Presence.Present);
@@ -52,9 +53,9 @@ public class MotionDetectorJavaCVDebugRenderer {
                     resultData.debugIndicators, present);
 
             // TODO Enable from detector
-            // if (renderData.contourMotionDetected) {
-            // renderContourMotionRegion(debugOutput, renderData.debugPresenceRegion);
-            // }
+            if (resultData.contourMotionDetected) {
+                renderContourMotionRegion(contours, debugOutput, resultData.debugPresenceRegion);
+            }
 
             // TODO Enable from detector
             // if (resultData.trackerMotionDetected) {
@@ -75,14 +76,14 @@ public class MotionDetectorJavaCVDebugRenderer {
         drawRect(debugOutput, r, "", present ? Green : Blue);
     }
 
-    // private void renderContourMotionRegion(Mat debugOutput, Rect rM) {
-    // motionProcessor.motionContours.render(debugOutput, -1, White);
-    // if (rM != null) {
-    // Point p = new Point(debugOutput.cols() - 40, debugOutput.cols() - 20);
-    // putText(debugOutput, rM.area() + "p2", p, FONT_HERSHEY_PLAIN, 2.75, White);
-    // p.close();
-    // }
-    // }
+    private void renderContourMotionRegion(Contours contours, Mat debugOutput, Rect rM) {
+        contours.render(debugOutput, -1, White);
+        if (rM != null) {
+            Point p = new Point(debugOutput.cols() - 40, debugOutput.cols() - 20);
+            putText(debugOutput, rM.area() + "p2", p, FONT_HERSHEY_PLAIN, 2.75, White);
+            p.close();
+        }
+    }
 
     // private void renderDistanceTrackerPoints(Mat debugOutput, MotionProcessorJavaCV.MotionData motionData) {
     // MotionProcessorJavaCV.render(debugOutput, motionData, motionData.color);

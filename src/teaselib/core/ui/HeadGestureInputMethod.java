@@ -1,6 +1,3 @@
-/**
- * 
- */
 package teaselib.core.ui;
 
 import java.util.Arrays;
@@ -22,15 +19,15 @@ import teaselib.motiondetection.MotionDetector.MotionSensitivity;
  *
  */
 public class HeadGestureInputMethod implements InputMethod {
-    private final Supplier<MotionDetector> motionDetector;
+    private final NamedExecutorService workerThread = NamedExecutorService.singleThreadedQueue(getClass().getName());
+    private final Future<MotionDetector> motionDetector;
+    private final ReentrantLock replySection = new ReentrantLock(true);
+
+    private Future<Integer> gestureResult;
 
     public HeadGestureInputMethod(Supplier<MotionDetector> motionDetector) {
-        this.motionDetector = motionDetector;
+        this.motionDetector = workerThread.submit(motionDetector::get);
     }
-
-    private final NamedExecutorService workerThread = NamedExecutorService.singleThreadedQueue(getClass().getName());
-    private final ReentrantLock replySection = new ReentrantLock(true);
-    private Future<Integer> gestureResult;
 
     private static final List<Gesture> SupportedGestures = Arrays.asList(Gesture.Nod, Gesture.Shake);
 

@@ -376,12 +376,15 @@ public abstract class Script {
         QualifiedItem<?> value = QualifiedItem.of(teaseLib.config.get(intention));
         Confidence recognitionConfidence = ReflectionUtils.getEnum(Confidence.class, value);
 
+        Choices choices = choices(answers);
+        InputMethods inputMethods = getInputMethods(scriptFunction, recognitionConfidence, choices);
+
         waitToStartScriptFunction(scriptFunction);
         if (scriptFunction == null || scriptFunction.relation != ScriptFunction.Relation.Autonomous) {
             stopBackgroundRenderers();
         }
 
-        Prompt prompt = getPrompt(scriptFunction, recognitionConfidence, choices(answers));
+        Prompt prompt = getPrompt(inputMethods, scriptFunction, recognitionConfidence, choices);
         return showPrompt(prompt);
     }
 
@@ -420,7 +423,8 @@ public abstract class Script {
         return choice;
     }
 
-    private Prompt getPrompt(ScriptFunction scriptFunction, Confidence recognitionConfidence, Choices choices) {
+    private InputMethods getInputMethods(ScriptFunction scriptFunction, Confidence recognitionConfidence,
+            Choices choices) {
         InputMethods inputMethods = new InputMethods(teaseLib.globals.get(InputMethods.class));
         inputMethods.add(teaseLib.host.inputMethod());
 
@@ -436,7 +440,11 @@ public abstract class Script {
                 return teaseLib.devices.get(MotionDetector.class).getDefaultDevice();
             }));
         }
+        return inputMethods;
+    }
 
+    private Prompt getPrompt(InputMethods inputMethods, ScriptFunction scriptFunction, Confidence recognitionConfidence,
+            Choices choices) {
         Prompt prompt = new Prompt(choices, scriptFunction, inputMethods);
         logger.info("Prompt: {}", prompt);
         for (InputMethod inputMethod : inputMethods) {

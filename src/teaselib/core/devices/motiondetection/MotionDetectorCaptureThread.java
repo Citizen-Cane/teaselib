@@ -183,19 +183,27 @@ class MotionDetectorCaptureThread extends Thread {
             // - KNN/findContours uses less cpu without motion
             // -> adjust to < 50% processing time per frame
             while (!isInterrupted()) {
-                // poll the device until its reconnected
+                synchronized (active) {
+                    active.notifyAll();
+                    while (!active.get()) {
+                        active.wait();
+                    }
+
+                }
+
                 DeviceCache.connect(videoCaptureDevice);
                 openVideoCaptureDevice(videoCaptureDevice);
+                fpsStatistics.start();
                 try {
-                    fpsStatistics.start();
                     processVideoCaptureStream();
                 } finally {
                     videoCaptureDevice.close();
                     if (videoRenderer != null) {
                         videoRenderer.close();
                     }
-                    if (debugInfo != null)
+                    if (debugInfo != null) {
                         debugInfo.close();
+                    }
                 }
             }
         } catch (InterruptedException e) {
@@ -231,12 +239,6 @@ class MotionDetectorCaptureThread extends Thread {
     Mat motionImageCopy = new Mat();
 
     private void processVideoCaptureStream() throws InterruptedException {
-        synchronized (active) {
-            active.notifyAll();
-            while (!active.get()) {
-                active.wait();
-            }
-        }
 
         provideFakeMotionAndPresenceData();
 

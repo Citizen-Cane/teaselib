@@ -31,11 +31,9 @@ import teaselib.motiondetection.MotionDetector.Presence;
  */
 public class MotionDetectorJavaCVDebugRenderer {
     private final Size windowSize;
-    final Thread owner;
 
     public MotionDetectorJavaCVDebugRenderer(Size windowSize) {
         this.windowSize = windowSize;
-        this.owner = Thread.currentThread();
     }
 
     public void render(Mat debugOutput, MotionProcessorJavaCV.MotionData pixelData,

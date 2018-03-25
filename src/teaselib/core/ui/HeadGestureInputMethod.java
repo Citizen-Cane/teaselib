@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Supplier;
 
 import teaselib.core.concurrency.NamedExecutorService;
 import teaselib.motiondetection.Gesture;
@@ -21,10 +22,9 @@ import teaselib.motiondetection.MotionDetector.MotionSensitivity;
  *
  */
 public class HeadGestureInputMethod implements InputMethod {
-    private final MotionDetector motionDetector;
+    private final Supplier<MotionDetector> motionDetector;
 
-    public HeadGestureInputMethod(MotionDetector motionDetector) {
-        super();
+    public HeadGestureInputMethod(Supplier<MotionDetector> motionDetector) {
         this.motionDetector = motionDetector;
     }
 
@@ -45,7 +45,7 @@ public class HeadGestureInputMethod implements InputMethod {
                         notifyAll();
                     }
                     if (prompt.result() == Prompt.UNDEFINED) {
-                        int result = awaitGesture(prompt.choices.toGestures());
+                        int result = awaitGesture(motionDetector.get(), prompt);
                         prompt.lock.lockInterruptibly();
                         try {
                             if (!prompt.paused() && prompt.result() == Prompt.UNDEFINED) {
@@ -54,8 +54,6 @@ public class HeadGestureInputMethod implements InputMethod {
                         } finally {
                             prompt.lock.unlock();
                         }
-                    } else {
-                        // Ignored because another input method might have dismissed the prompt
                     }
                 } finally {
                     replySection.unlock();
@@ -63,28 +61,31 @@ public class HeadGestureInputMethod implements InputMethod {
                 return prompt.result();
             }
 
-            private int awaitGesture(List<Gesture> gestures) {
-                return motionDetector.call(() -> {
-                    motionDetector.setSensitivity(MotionSensitivity.High);
-                    while (!Thread.interrupted()) {
-                        Gesture gesture = motionDetector.await(gestures, Double.MAX_VALUE);
-                        if (supported(gesture)) {
-                            int result = gestures.indexOf(gesture);
-                            if (result >= 0 && result < prompt.choices.size()) {
-                                return result;
-                            }
-                        }
-                    }
-                    Thread.currentThread().interrupt();
-                    return Prompt.UNDEFINED;
-                });
-            }
         };
 
         synchronized (callable) {
             gestureResult = workerThread.submit(callable);
-            callable.wait();
+            while (!replySection.isLocked()) {
+                callable.wait();
+            }
         }
+    }
+
+    private int awaitGesture(MotionDetector motionDetector, Prompt prompt) {
+        return motionDetector.call(() -> {
+            motionDetector.setSensitivity(MotionSensitivity.High);
+            List<Gesture> gestures = prompt.choices.toGestures();
+            while (!Thread.currentThread().isInterrupted()) {
+                Gesture gesture = motionDetector.await(gestures, Double.MAX_VALUE);
+                if (supported(gesture)) {
+                    int result = gestures.indexOf(gesture);
+                    if (result >= 0 && result < prompt.choices.size()) {
+                        return result;
+                    }
+                }
+            }
+            return Prompt.UNDEFINED;
+        });
     }
 
     private boolean supported(Gesture gesture) {

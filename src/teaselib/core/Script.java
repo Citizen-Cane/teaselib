@@ -35,6 +35,7 @@ import teaselib.core.speechrecognition.SpeechRecognizer;
 import teaselib.core.texttospeech.TextToSpeechPlayer;
 import teaselib.core.ui.Choice;
 import teaselib.core.ui.Choices;
+import teaselib.core.ui.HeadGestureInputMethod;
 import teaselib.core.ui.InputMethod;
 import teaselib.core.ui.InputMethods;
 import teaselib.core.ui.Prompt;
@@ -431,8 +432,9 @@ public abstract class Script {
 
         if (teaseLib.item(TeaseLib.DefaultDomain, Gadgets.Webcam).isAvailable()
                 && choices.toGestures().stream().filter(gesture -> gesture != Gesture.None).count() > 0) {
-            MotionDetector motionDetector = teaseLib.devices.get(MotionDetector.class).getDefaultDevice();
-            inputMethods.add(motionDetector.getInputMethod());
+            inputMethods.add(new HeadGestureInputMethod(() -> {
+                return teaseLib.devices.get(MotionDetector.class).getDefaultDevice();
+            }));
         }
 
         Prompt prompt = new Prompt(choices, scriptFunction, inputMethods);

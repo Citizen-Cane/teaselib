@@ -398,10 +398,6 @@ class MotionDetectorCaptureThread extends Thread {
         return indicators;
     }
 
-    public void clearMotionHistory() {
-        presenceChanged.doLocked(() -> presenceResult.clear(presenceResult.getPresence()));
-    }
-
     public double fps() {
         return fps;
     }

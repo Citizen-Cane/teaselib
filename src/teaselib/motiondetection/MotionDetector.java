@@ -148,8 +148,6 @@ public abstract class MotionDetector implements Device.Creatable {
 
     public abstract void setVideoRenderer(VideoRenderer videoRenderer);
 
-    public abstract void clearMotionHistory();
-
     public abstract Set<Feature> getFeatures();
 
     public abstract boolean await(double amount, Presence change, double timeSpanSeconds, double timeoutSeconds);

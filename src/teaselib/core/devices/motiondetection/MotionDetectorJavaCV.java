@@ -213,11 +213,6 @@ public class MotionDetectorJavaCV extends MotionDetector /* extends WiredDevice 
     }
 
     @Override
-    public void clearMotionHistory() {
-        captureThread.clearMotionHistory();
-    }
-
-    @Override
     public boolean connected() {
         return captureThread.videoCaptureDevice.connected();
     }

@@ -18,6 +18,9 @@ import teaselib.core.javacv.DistanceTracker;
 import teaselib.core.javacv.TrackFeatures;
 
 public class MotionProcessorJavaCV {
+    private static final int HISTORY_SIZE = 1;
+
+    public static final int WARMUP_FRAMES = HISTORY_SIZE + 2;
     public static final Rect None = new Rect(Integer.MAX_VALUE, Integer.MAX_VALUE, -Integer.MAX_VALUE,
             -Integer.MAX_VALUE);
     public static final Rect Previous = new Rect(-Integer.MAX_VALUE, -Integer.MAX_VALUE, -Integer.MAX_VALUE,
@@ -32,8 +35,6 @@ public class MotionProcessorJavaCV {
     BackgroundSubtraction motion;
     Contours motionContours = new Contours();
     DistanceTracker distanceTracker = new DistanceTracker(Color.Green);
-
-    public static final int WARMUP_FRAMES = 9;
 
     class MotionData {
         final Scalar color = distanceTracker.color();
@@ -54,7 +55,7 @@ public class MotionProcessorJavaCV {
     MotionProcessorJavaCV(Size captureSize, Size renderSize) {
         this.captureWidth = captureSize.width();
         this.renderWidth = renderSize.width();
-        motion = new BackgroundSubtraction(1, 600.0, 0.2);
+        motion = new BackgroundSubtraction(HISTORY_SIZE, 600.0, 0.2);
     }
 
     /**

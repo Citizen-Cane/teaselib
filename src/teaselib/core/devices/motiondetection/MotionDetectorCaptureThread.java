@@ -32,6 +32,7 @@ import teaselib.core.javacv.util.Buffer;
 import teaselib.core.javacv.util.FramesPerSecond;
 import teaselib.core.javacv.util.Geom;
 import teaselib.motiondetection.Gesture;
+import teaselib.motiondetection.MotionDetector;
 import teaselib.motiondetection.MotionDetector.MotionSensitivity;
 import teaselib.motiondetection.MotionDetector.Presence;
 import teaselib.motiondetection.ViewPoint;
@@ -187,7 +188,6 @@ class MotionDetectorCaptureThread extends Thread {
                     while (!active.get()) {
                         active.wait();
                     }
-
                 }
 
                 DeviceCache.connect(videoCaptureDevice);
@@ -240,10 +240,6 @@ class MotionDetectorCaptureThread extends Thread {
         provideFakeMotionAndPresenceData();
 
         boolean warmedUp = false;
-
-        // TODO CameraShake is only suppressed if movement is detected from the first frame on
-        // -> probably means that the motion processor returns a full screen rectangle,
-        // which only resolves to a motion region when there is actual motion
         int warmupFrames = MotionProcessorJavaCV.WARMUP_FRAMES;
 
         for (Mat frame : videoCaptureDevice) {
@@ -273,7 +269,12 @@ class MotionDetectorCaptureThread extends Thread {
                     if (warmupFrames > 0) {
                         --warmupFrames;
                     } else {
-                        warmedUp = presenceResult.getIndicatorHistory(0.0).contains(Presence.NoCameraShake);
+                        Set<Presence> presence = presenceResult.getPresence();
+                        warmedUp = presence.contains(Presence.NoCameraShake);
+                        if (warmedUp) {
+                            Set<Presence> history = presence;
+                            presenceResult.clear(history);
+                        }
                     }
                 }
                 if (warmedUp) {
@@ -310,7 +311,7 @@ class MotionDetectorCaptureThread extends Thread {
 
     private void updatePresenceResult() {
         motionProcessor.updateRenderData();
-        presenceResult.updateRenderData(1.0, debugWindowTimeSpan);
+        presenceResult.updateRenderData(MotionDetector.PresenceRegionDefaultTimespan, debugWindowTimeSpan);
     }
 
     private void updateGestureResult(Mat video) {
@@ -398,7 +399,7 @@ class MotionDetectorCaptureThread extends Thread {
     }
 
     public void clearMotionHistory() {
-        presenceChanged.doLocked(() -> presenceResult.clear());
+        presenceChanged.doLocked(() -> presenceResult.clear(presenceResult.getPresence()));
     }
 
     public double fps() {

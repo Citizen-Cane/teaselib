@@ -1,12 +1,7 @@
-/**
- * 
- */
 package teaselib.core.devices.motiondetection;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumMap;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -53,13 +48,10 @@ public abstract class MotionDetectionResultData implements MotionDetectionResult
 
     protected ViewPoint viewPoint = ViewPoint.EyeLevel;
 
-    private final Rect all;
-
     protected MotionDetectionResultData(Size size) {
         presenceIndicators = buildPresenceIndicatorMap(size);
         negatedRegions = buildNegatedRegions();
-        all = presenceIndicators.get(Presence.Center);
-        clear();
+        clear(Presence.CameraShake);
     }
 
     protected Map<Presence, Rect> buildPresenceIndicatorMap(Size s) {
@@ -108,18 +100,27 @@ public abstract class MotionDetectionResultData implements MotionDetectionResult
     }
 
     protected void clear() {
+        clear(Presence.CameraShake);
+    }
+
+    protected void clear(Presence startupPresence) {
+        clear(Collections.singleton(startupPresence));
+    }
+
+    protected void clear(Set<Presence> startupPresence) {
         motionRegionHistory.clear();
         presenceRegionHistory.clear();
         motionAreaHistory.clear();
         indicatorHistory.clear();
-        setStartValuesInsteadOfTestingForEmptyListsLaterOn(0L);
+        setStartValuesInsteadOfTestingForEmptyListsLaterOn(startupPresence, 0L);
     }
 
-    private void setStartValuesInsteadOfTestingForEmptyListsLaterOn(long timeStamp) {
+    private void setStartValuesInsteadOfTestingForEmptyListsLaterOn(Set<Presence> startupPresence, long timeStamp) {
+        Rect all = presenceIndicators.get(Presence.Center);
         motionRegionHistory.add(all, timeStamp);
         presenceRegionHistory.add(all, timeStamp);
         motionAreaHistory.add(0, timeStamp);
-        indicatorHistory.add(new HashSet<>(Arrays.asList(Presence.CameraShake)), timeStamp);
+        indicatorHistory.add(startupPresence, timeStamp);
     }
 
     @Override
@@ -127,7 +128,11 @@ public abstract class MotionDetectionResultData implements MotionDetectionResult
         this.viewPoint = viewPoint;
     }
 
-    public Set<Presence> getIndicatorHistory(double timeSpan) {
+    public Set<Presence> getPresence() {
+        return getPresence(0.0);
+    }
+
+    public Set<Presence> getPresence(double timeSpan) {
         List<Set<Presence>> presenceTimeline = indicatorHistory.getTimeSpan(timeSpan);
         LinkedHashSet<Presence> indicators = new LinkedHashSet<>();
         for (Set<Presence> set : presenceTimeline) {

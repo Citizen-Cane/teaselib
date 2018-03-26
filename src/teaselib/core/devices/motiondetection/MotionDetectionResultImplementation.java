@@ -47,8 +47,8 @@ public class MotionDetectionResultImplementation extends MotionDetectionResultDa
             trackerMotionDetected = MotionDetectionResultImplementation.this.trackerMotionDetected;
             contourMotionDetected = MotionDetectionResultImplementation.this.contourMotionDetected;
 
-            indicators = getIndicatorHistory(calculationTimeSpan);
-            debugIndicators = getIndicatorHistory(debugWindowTimeSpan);
+            indicators = getPresence(calculationTimeSpan);
+            debugIndicators = getPresence(debugWindowTimeSpan);
             presenceRegion = getPresenceRegion(calculationTimeSpan);
             debugPresenceRegion = getPresenceRegion(calculationTimeSpan);
         }

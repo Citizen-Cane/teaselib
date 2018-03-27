@@ -1,6 +1,6 @@
 package teaselib.stimulation.pattern;
 
-import teaselib.stimulation.ConstantWave;
+import teaselib.stimulation.BurstSquareWave;
 import teaselib.stimulation.Stimulation;
 import teaselib.stimulation.Stimulator;
 import teaselib.stimulation.WaveForm;
@@ -16,13 +16,22 @@ import teaselib.stimulation.WaveForm;
  *
  */
 public class Whip extends Stimulation {
+    private final int strokes;
+    private final double period;
 
     public Whip(Stimulator stimulator) {
+        this(stimulator, 1, 0.2);
+    }
+
+    public Whip(Stimulator stimulator, int strokes, double period) {
         super(stimulator);
+        this.strokes = strokes;
+        this.period = period;
     }
 
     @Override
     public WaveForm waveform(int intensity) {
-        return new ConstantWave(stimulator.minimalSignalDuration() * spreadRange(1.0, 2.0, intensity));
+        double on = stimulator.minimalSignalDuration() * spreadRange(1.0, 2.0, intensity);
+        return new BurstSquareWave((int) strokes, on, this.period - on);
     }
 }

@@ -3,6 +3,7 @@
  */
 package teaselib.stimulation;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -23,9 +24,22 @@ public class WaveForm {
             this.amplitude = amplitude;
             this.durationMillis = durationMillis;
         }
+
+        @Override
+        public String toString() {
+            return "[" + amplitude + "+" + durationMillis + "ms]";
+        }
     }
 
     public final List<Entry> values;
+
+    public WaveForm() {
+        this.values = new ArrayList<>();
+    }
+
+    public WaveForm(List<Entry> values) {
+        this.values = values;
+    }
 
     public WaveForm(Entry... values) {
         this.values = Arrays.asList(values);
@@ -37,11 +51,20 @@ public class WaveForm {
         }
     }
 
+    @Override
+    public String toString() {
+        return values.toString();
+    }
+
     static long toMillis(double seconds) {
         return (int) (seconds * 1000);
     }
 
     public static double clamp(double value) {
         return Math.max(0.0, Math.min(value, 1.0));
+    }
+
+    public int size() {
+        return values.size();
     }
 }

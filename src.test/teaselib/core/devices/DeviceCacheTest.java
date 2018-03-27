@@ -1,4 +1,4 @@
-package motiondetection;
+package teaselib.core.devices;
 
 import static org.junit.Assert.assertEquals;
 
@@ -14,8 +14,8 @@ import teaselib.core.devices.Devices;
 import teaselib.motiondetection.MotionDetector;
 import teaselib.test.DebugSetup;
 
-public class MotionDetectionTests {
-    private static final Logger logger = LoggerFactory.getLogger(MotionDetectionTests.class);
+public class DeviceCacheTest {
+    private static final Logger logger = LoggerFactory.getLogger(DeviceCacheTest.class);
 
     @Test
     public void testNaming() {

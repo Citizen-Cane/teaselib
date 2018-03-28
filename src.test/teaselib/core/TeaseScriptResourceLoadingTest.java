@@ -1,7 +1,6 @@
 package teaselib.core;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.*;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -40,15 +39,11 @@ public class TeaseScriptResourceLoadingTest {
     }
 
     private static void loadResource(TestScript script, String path) throws IOException {
-        InputStream resourceStream = script.resources.getResource(path);
-        String resource = null;
-        BufferedReader reader = new BufferedReader(new InputStreamReader(resourceStream));
-        try {
-            resource = reader.readLine();
-        } finally {
-            reader.close();
+        try (InputStream resourceStream = script.resources.getResource(path);
+                BufferedReader reader = new BufferedReader(new InputStreamReader(resourceStream));) {
+            String resource = reader.readLine();
+            assertEquals("1", resource);
         }
-        assertEquals("1", resource);
     }
 
     @Test
@@ -107,14 +102,10 @@ public class TeaseScriptResourceLoadingTest {
 
         res1 = script.resources.unpackToFile(path);
         try {
-            String resource1 = null;
-            BufferedReader reader = new BufferedReader(new FileReader(res1));
-            try {
-                resource1 = reader.readLine();
-            } finally {
-                reader.close();
+            try (BufferedReader reader = new BufferedReader(new FileReader(res1));) {
+                String resource1 = reader.readLine();
+                assertEquals("1", resource1);
             }
-            assertEquals("1", resource1);
         } finally {
             res1.delete();
         }
@@ -132,14 +123,10 @@ public class TeaseScriptResourceLoadingTest {
 
         res1 = script.resources.unpackToFile(path);
         try {
-            String resource1 = null;
-            BufferedReader reader = new BufferedReader(new FileReader(res1));
-            try {
-                resource1 = reader.readLine();
-            } finally {
-                reader.close();
+            try (BufferedReader reader = new BufferedReader(new FileReader(res1));) {
+                String resource1 = reader.readLine();
+                assertEquals("1", resource1);
             }
-            assertEquals("1", resource1);
         } finally {
             res1.delete();
         }

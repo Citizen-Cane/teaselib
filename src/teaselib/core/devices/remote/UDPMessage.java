@@ -84,59 +84,54 @@ public class UDPMessage {
     }
 
     public UDPMessage(byte[] data) throws IOException {
-        ByteArrayInputStream input = new ByteArrayInputStream(data);
-        DataInputStream dataInputStream = new DataInputStream(input);
-        int textDataSize = dataInputStream.readShort();
-        byte[] textData = new byte[textDataSize - 1];
-        int parameterCount = dataInputStream.readByte();
-        dataInputStream.readFully(textData);
-        Scanner scanner = new Scanner(new ByteArrayInputStream(textData), Encoding);
-        try {
-            scanner.useDelimiter("\u0000");
-            String name = scanner.next();
-            List<String> parameters = new ArrayList<>(parameterCount);
-            while (scanner.hasNext() && parameters.size() < parameterCount) {
-                parameters.add(scanner.next());
-            }
-            int binarySize = dataInputStream.readShort();
-            byte[] binary = new byte[binarySize];
-            try {
+        try (ByteArrayInputStream input = new ByteArrayInputStream(data);
+                DataInputStream dataInputStream = new DataInputStream(input);) {
+            int textDataSize = dataInputStream.readShort();
+            byte[] textData = new byte[textDataSize - 1];
+            int parameterCount = dataInputStream.readByte();
+            dataInputStream.readFully(textData);
+            try (Scanner scanner = new Scanner(new ByteArrayInputStream(textData), Encoding);) {
+                scanner.useDelimiter("\u0000");
+                String name = scanner.next();
+                List<String> parameters = new ArrayList<>(parameterCount);
+                while (scanner.hasNext() && parameters.size() < parameterCount) {
+                    parameters.add(scanner.next());
+                }
+                int binarySize = dataInputStream.readShort();
+                byte[] binary = new byte[binarySize];
                 if (binarySize > 0) {
                     dataInputStream.readFully(binary);
                 }
-            } finally {
-                dataInputStream.close();
+                message = new RemoteDeviceMessage(name, parameters, binary);
             }
-            message = new RemoteDeviceMessage(name, parameters, binary);
-        } finally {
-            scanner.close();
         }
     }
 
     public byte[] toByteArray() throws IOException {
-        ByteArrayOutputStream data = new ByteArrayOutputStream();
-        DataOutputStream output = new DataOutputStream(data);
-        byte[] textData = getTextData();
-        output.writeShort(textData.length);
-        output.write(textData);
-        output.writeShort(message.binary.length);
-        if (message.binary.length > 0) {
-            output.write(message.binary);
+        try (ByteArrayOutputStream data = new ByteArrayOutputStream();
+                DataOutputStream output = new DataOutputStream(data);) {
+            byte[] textData = getTextData();
+            output.writeShort(textData.length);
+            output.write(textData);
+            output.writeShort(message.binary.length);
+            if (message.binary.length > 0) {
+                output.write(message.binary);
+            }
+            return data.toByteArray();
         }
-        data.close();
-        return data.toByteArray();
     }
 
     private byte[] getTextData() throws IOException {
-        ByteArrayOutputStream textData = new ByteArrayOutputStream();
-        DataOutputStream textDataOuptut = new DataOutputStream(textData);
-        textDataOuptut.writeByte(message.parameters.size());
-        textDataOuptut.write(message.command.getBytes());
-        textDataOuptut.writeByte(0);
-        for (String parameter : message.parameters) {
-            textDataOuptut.write(parameter.getBytes());
-            textDataOuptut.write(0);
+        try (ByteArrayOutputStream textData = new ByteArrayOutputStream();
+                DataOutputStream textDataOuptut = new DataOutputStream(textData);) {
+            textDataOuptut.writeByte(message.parameters.size());
+            textDataOuptut.write(message.command.getBytes());
+            textDataOuptut.writeByte(0);
+            for (String parameter : message.parameters) {
+                textDataOuptut.write(parameter.getBytes());
+                textDataOuptut.write(0);
+            }
+            return textData.toByteArray();
         }
-        return textData.toByteArray();
     }
 }

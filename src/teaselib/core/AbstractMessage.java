@@ -176,7 +176,7 @@ public class AbstractMessage implements Iterable<MessagePart> {
         }
     }
 
-    private void appendPart(StringBuilder messageString, MessagePart part, String newLine, boolean all) {
+    private static void appendPart(StringBuilder messageString, MessagePart part, String newLine, boolean all) {
         boolean appendPart = all || part.type == Type.Text || part.type == Type.Mood;
         if (appendPart) {
             if (messageString.length() > 0) {

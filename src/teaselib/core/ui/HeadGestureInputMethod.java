@@ -69,7 +69,7 @@ public class HeadGestureInputMethod implements InputMethod {
         }
     }
 
-    private int awaitGesture(MotionDetector motionDetector, Prompt prompt) {
+    private static int awaitGesture(MotionDetector motionDetector, Prompt prompt) {
         return motionDetector.call(() -> {
             motionDetector.setSensitivity(MotionSensitivity.High);
             List<Gesture> gestures = prompt.choices.toGestures();
@@ -86,7 +86,7 @@ public class HeadGestureInputMethod implements InputMethod {
         });
     }
 
-    private boolean supported(Gesture gesture) {
+    private static boolean supported(Gesture gesture) {
         int result = SupportedGestures.indexOf(gesture);
         return 0 <= result && result < SupportedGestures.size();
     }

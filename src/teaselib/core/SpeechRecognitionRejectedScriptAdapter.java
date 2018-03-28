@@ -98,7 +98,7 @@ final class SpeechRecognitionRejectedScriptAdapter extends SpeechRecognitionReje
         }
     }
 
-    private void log(Script speechRecognitionRejectedScript, String message) {
+    private static void log(Script speechRecognitionRejectedScript, String message) {
         if (logger.isInfoEnabled()) {
             String skipping = " - skipping RecognitionRejectedScript " + speechRecognitionRejectedScript;
             logger.info("{} {}", message, skipping);

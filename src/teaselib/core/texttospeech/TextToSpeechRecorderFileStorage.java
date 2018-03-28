@@ -32,11 +32,11 @@ public class TextToSpeechRecorderFileStorage implements PrerecordedSpeechStorage
 
     private static File createSubDir(File dir, String name) {
         File subDir = new File(dir, name);
-        if (subDir.exists() == false) {
-            logger.info("Creating directory " + subDir.getAbsolutePath());
+        if (!subDir.exists()) {
+            logger.info("Creating directory {}", subDir.getAbsolutePath());
             subDir.mkdirs();
         } else {
-            logger.info("Using directory " + subDir.getAbsolutePath());
+            logger.info("Using directory {}", subDir.getAbsolutePath());
         }
         return subDir;
     }
@@ -56,11 +56,8 @@ public class TextToSpeechRecorderFileStorage implements PrerecordedSpeechStorage
     public void createActorEntry(Actor actor, Voice voice, VoiceProperties properties) throws IOException {
         createActorDirectories(actor, voice);
         File file = new File(getVoiceDir(actor, voice), PreRecordedVoice.ActorPropertiesFilename);
-        FileOutputStream fileOutputStream = new FileOutputStream(file);
-        try {
+        try (FileOutputStream fileOutputStream = new FileOutputStream(file);) {
             properties.store(fileOutputStream, "");
-        } finally {
-            fileOutputStream.close();
         }
     }
 
@@ -104,15 +101,10 @@ public class TextToSpeechRecorderFileStorage implements PrerecordedSpeechStorage
      */
     @Override
     public String getMessageHash(Actor actor, Voice voice, String hash) throws IOException {
-        FileInputStream fileInputStream = new FileInputStream(
-                new File(getMessageDir(actor, voice, hash), TextToSpeechRecorder.MessageFilename));
-        String messageHash;
-        try {
-            messageHash = TextToSpeechRecorder.readMessage(fileInputStream);
-        } finally {
-            fileInputStream.close();
+        try (FileInputStream fileInputStream = new FileInputStream(
+                new File(getMessageDir(actor, voice, hash), TextToSpeechRecorder.MessageFilename));) {
+            return TextToSpeechRecorder.readMessage(fileInputStream);
         }
-        return messageHash;
     }
 
     /*
@@ -139,9 +131,9 @@ public class TextToSpeechRecorderFileStorage implements PrerecordedSpeechStorage
     @Override
     public void storeSpeechResource(Actor actor, Voice voice, String hash, InputStream inputStream, String name)
             throws IOException {
-        FileOutputStream os = new FileOutputStream(new File(getMessageDir(actor, voice, hash), name));
-        Stream.copy(inputStream, os);
-        os.close();
+        try (FileOutputStream os = new FileOutputStream(new File(getMessageDir(actor, voice, hash), name));) {
+            Stream.copy(inputStream, os);
+        }
     }
 
     /*
@@ -174,11 +166,8 @@ public class TextToSpeechRecorderFileStorage implements PrerecordedSpeechStorage
     @Override
     public void writeStringResource(Actor actor, Voice voice, String hash, String name, String value)
             throws IOException {
-        InputStream inputStream = new ByteArrayInputStream(value.getBytes(StandardCharsets.UTF_8));
-        try {
+        try (InputStream inputStream = new ByteArrayInputStream(value.getBytes(StandardCharsets.UTF_8));) {
             storeSpeechResource(actor, voice, hash, inputStream, name);
-        } finally {
-            inputStream.close();
         }
     }
 }

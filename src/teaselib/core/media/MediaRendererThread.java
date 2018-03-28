@@ -210,7 +210,7 @@ public abstract class MediaRendererThread implements MediaRenderer.Threaded {
         return isDoneOrCancelled(task);
     }
 
-    private boolean isDoneOrCancelled(Future<?> f) {
+    private static boolean isDoneOrCancelled(Future<?> f) {
         return f.isDone() || f.isCancelled();
     }
 

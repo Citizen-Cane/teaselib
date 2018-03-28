@@ -1,11 +1,8 @@
 package teaselib.core.javacv;
 
-import static org.bytedeco.javacpp.opencv_core.CV_8UC1;
-import static org.bytedeco.javacpp.opencv_imgproc.COLOR_BGRA2GRAY;
-import static org.bytedeco.javacpp.opencv_imgproc.circle;
-import static org.bytedeco.javacpp.opencv_imgproc.cvtColor;
-import static org.bytedeco.javacpp.opencv_imgproc.goodFeaturesToTrack;
-import static org.bytedeco.javacpp.opencv_video.calcOpticalFlowPyrLK;
+import static org.bytedeco.javacpp.opencv_core.*;
+import static org.bytedeco.javacpp.opencv_imgproc.*;
+import static org.bytedeco.javacpp.opencv_video.*;
 
 import org.bytedeco.javacpp.opencv_core;
 import org.bytedeco.javacpp.opencv_core.Mat;
@@ -23,7 +20,7 @@ public class TrackFeatures {
 
     private static final Mat EMPTY = new Mat(0, opencv_core.CV_8UC4);
 
-    private static final Scalar maskPixel = new Scalar(255, 255, 255, 255);;
+    private static final Scalar maskPixel = new Scalar(255, 255, 255, 255);
 
     final Mat keyPointFeatures = new Mat(FeatureSize, opencv_core.CV_8UC4);
     final Mat keyPointsFeaturesPrevious = new Mat(FeatureSize, opencv_core.CV_8UC4);

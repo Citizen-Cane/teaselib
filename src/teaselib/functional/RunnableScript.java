@@ -6,5 +6,6 @@ package teaselib.functional;
  */
 @FunctionalInterface
 public interface RunnableScript extends Runnable {
+    @Override
     public void run();
 }

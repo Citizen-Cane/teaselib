@@ -2,7 +2,6 @@ package teaselib.core;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -43,18 +42,15 @@ public class Configuration {
         }
     }
 
-    public void addConfigFile(File file) throws FileNotFoundException, IOException {
+    public void addConfigFile(File file) throws IOException {
         ConfigurationFile configurationFile;
         if (defaults.isEmpty()) {
             configurationFile = new ConfigurationFile(file);
         } else {
             configurationFile = new ConfigurationFile(file, defaults.get(defaults.size() - 1));
         }
-        FileInputStream fileInputStream = new FileInputStream(file);
-        try {
+        try (FileInputStream fileInputStream = new FileInputStream(file)) {
             configurationFile.load(fileInputStream);
-        } finally {
-            fileInputStream.close();
         }
         defaults.add(configurationFile);
         persistentProperties = configurationFile;
@@ -70,13 +66,8 @@ public class Configuration {
 
     public boolean has(QualifiedItem<?> property) {
         String item = property.toString();
-        if (sessionProperties.containsKey(item))
-            return true;
-        if (System.getProperties().containsKey(item))
-            return true;
-        if (persistentProperties.containsKey(item))
-            return true;
-        return false;
+        return sessionProperties.containsKey(item) || System.getProperties().containsKey(item)
+                || persistentProperties.containsKey(item);
     }
 
     public String get(String property) {

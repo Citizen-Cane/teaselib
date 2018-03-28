@@ -106,12 +106,9 @@ public class PrerecordedSpeechZipStorage implements PrerecordedSpeechStorage {
         String messageHash = messageHashes.get(processHash(actor, voice, hash));
         if (messageHash == null) {
             ZipEntry entry = current.getEntry(getPath(actor, voice, hash, TextToSpeechRecorder.MessageFilename));
-            InputStream inputStream = current.getInputStream(entry);
-            try {
+            try (InputStream inputStream = current.getInputStream(entry);) {
                 messageHash = TextToSpeechRecorder.readMessage(inputStream);
                 messageHashes.put(processHash(actor, voice, hash), messageHash);
-            } finally {
-                inputStream.close();
             }
         }
         return messageHash;
@@ -183,22 +180,19 @@ public class PrerecordedSpeechZipStorage implements PrerecordedSpeechStorage {
 
     private void copyEntry(Actor actor, Voice voice, String hash, String name) throws IOException {
         ZipEntry entry = current.getEntry(getPath(actor, voice, hash, name));
-        InputStream inputStream = current.getInputStream(entry);
-        storeSpeechResource(actor, voice, hash, inputStream, name);
-        updated.closeEntry();
-        inputStream.close();
+        try (InputStream inputStream = current.getInputStream(entry);) {
+            storeSpeechResource(actor, voice, hash, inputStream, name);
+            updated.closeEntry();
+        }
     }
 
     private String getStringResource(Actor actor, Voice voice, String hash, String name) throws IOException {
         ZipEntry entry = current.getEntry(getPath(actor, voice, hash, name));
-        InputStream inputStream;
-        ByteArrayOutputStream bos;
-        inputStream = current.getInputStream(entry);
-        bos = new ByteArrayOutputStream();
-        Stream.copy(inputStream, bos);
-        inputStream.close();
-        bos.close();
-        return new String(bos.toByteArray(), StandardCharsets.UTF_8);
+        try (InputStream inputStream = current.getInputStream(entry);
+                ByteArrayOutputStream bos = new ByteArrayOutputStream();) {
+            Stream.copy(inputStream, bos);
+            return new String(bos.toByteArray(), StandardCharsets.UTF_8);
+        }
     }
 
     @Override

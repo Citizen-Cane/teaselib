@@ -25,8 +25,7 @@ public class ResourceUnpackToFolderTest {
     @Test
     public void testUnpackFolderAbsolute() throws IOException {
         TestScript script = TestScript.getOne();
-        script.resources
-                .addAssets("/teaselib/core/UnpackResourcesTestData_flat.zip");
+        script.resources.addAssets("/teaselib/core/UnpackResourcesTestData_flat.zip");
 
         String resourcesFolder = "/" + "UnpackResourcesTestData" + "/";
         testUnpackResourcesToFolder(script, resourcesFolder);
@@ -35,8 +34,7 @@ public class ResourceUnpackToFolderTest {
     @Test
     public void testUnpackFolderRelative() throws IOException {
         TestScript script = TestScript.getOne();
-        script.resources
-                .addAssets("/teaselib/core/UnpackResourcesTestData_flat.zip");
+        script.resources.addAssets("/teaselib/core/UnpackResourcesTestData_flat.zip");
 
         String resourcesFolder = "UnpackResourcesTestData" + "/";
         testUnpackResourcesToFolder(script, resourcesFolder);
@@ -45,32 +43,26 @@ public class ResourceUnpackToFolderTest {
     @Test
     public void testUnpackFolderReferencedViaClass() throws IOException {
         TestScript script = TestScript.getOne(ResourceUnpackToFolderTest.class);
-        script.resources.addAssets(
-                "/teaselib/core/UnpackResourcesTestData_ResourceRootStructure.zip");
+        script.resources.addAssets("/teaselib/core/UnpackResourcesTestData_ResourceRootStructure.zip");
 
         String resourcesFolder = "UnpackResourcesTestData" + "/";
         testUnpackResourcesToFolder(script, resourcesFolder);
     }
 
-    private void testUnpackResourcesToFolder(TestScript script,
-            String resourcesFolder) throws IOException {
+    private void testUnpackResourcesToFolder(TestScript script, String resourcesFolder) throws IOException {
         String path = resourcesFolder + RESOURCE_1;
 
         deleteTestData(script, path);
 
-        Collection<String> itemsBefore = script
-                .resources(resourcesFolder + "*");
+        Collection<String> itemsBefore = script.resources(resourcesFolder + "*");
         // 1 txt, 3 jpg , 3 png
         assertEquals(7, itemsBefore.size());
 
         // Cache test data
         File res1 = script.resources.unpackEnclosingFolder(path);
         String resource1Content = null;
-        BufferedReader reader = new BufferedReader(new FileReader(res1));
-        try {
+        try (BufferedReader reader = new BufferedReader(new FileReader(res1));) {
             resource1Content = reader.readLine();
-        } finally {
-            reader.close();
         }
         assertEquals("1", resource1Content);
 
@@ -81,11 +73,8 @@ public class ResourceUnpackToFolderTest {
 
         // Repeat with cached content
         res1 = script.resources.unpackEnclosingFolder(path);
-        reader = new BufferedReader(new FileReader(res1));
-        try {
+        try (BufferedReader reader = new BufferedReader(new FileReader(res1));) {
             resource1Content = reader.readLine();
-        } finally {
-            reader.close();
         }
         assertEquals("1", resource1Content);
         assertEquals(itemsBefore.size(), getFilesCount(res1.getParentFile()));
@@ -116,8 +105,7 @@ public class ResourceUnpackToFolderTest {
         path.delete();
     }
 
-    private void deleteTestData(TestScript script, String path)
-            throws IOException {
+    private void deleteTestData(TestScript script, String path) throws IOException {
         File res1 = script.resources.unpackEnclosingFolder(path);
         deleteFolder(res1.getParentFile());
         assertFalse(res1.exists());

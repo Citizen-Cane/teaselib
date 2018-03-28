@@ -200,7 +200,7 @@ public class SpeechDetectionEventHandler {
         };
     }
 
-    private boolean confidenceIsHighEnough(SpeechRecognitionResult result, Confidence confidence) {
+    private static boolean confidenceIsHighEnough(SpeechRecognitionResult result, Confidence confidence) {
         return result.confidence.probability >= confidence.probability;
     }
 

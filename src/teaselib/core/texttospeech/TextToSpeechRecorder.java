@@ -247,14 +247,8 @@ public class TextToSpeechRecorder {
     }
 
     private boolean haveActorVoicesFile() throws IOException {
-        InputStream is = null;
-        try {
-            is = resources.getResource(ActorVoices.VoicesFilename);
+        try (InputStream is = resources.getResource(ActorVoices.VoicesFilename);) {
             return is != null;
-        } finally {
-            if (is != null) {
-                is.close();
-            }
         }
     }
 
@@ -299,17 +293,14 @@ public class TextToSpeechRecorder {
 
     static String readMessage(InputStream inputStream) throws IOException {
         StringBuilder message = new StringBuilder();
-        BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
-        String line = null;
-        try {
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));) {
+            String line = null;
             while ((line = reader.readLine()) != null) {
                 if (message.length() > 0) {
                     message.append("\n");
                 }
                 message.append(line);
             }
-        } finally {
-            reader.close();
         }
         return message.toString();
     }

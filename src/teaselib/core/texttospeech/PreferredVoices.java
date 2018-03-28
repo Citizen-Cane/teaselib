@@ -36,11 +36,8 @@ public class PreferredVoices {
     }
 
     public PreferredVoices load(File path) throws FileNotFoundException, IOException {
-        FileInputStream fileInputStream = new FileInputStream(path);
-        try {
+        try (FileInputStream fileInputStream = new FileInputStream(path);) {
             return load(fileInputStream);
-        } finally {
-            fileInputStream.close();
         }
     }
 

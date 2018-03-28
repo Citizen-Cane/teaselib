@@ -26,7 +26,7 @@ public class DurationImpl implements Duration {
         this.limits = convertToMillis(limit, unit);
     }
 
-    private long convertToMillis(long value, TimeUnit unit) {
+    private static long convertToMillis(long value, TimeUnit unit) {
         if (value == Long.MIN_VALUE)
             return Long.MIN_VALUE;
         if (value == Long.MAX_VALUE)

@@ -1,6 +1,3 @@
-/**
- * 
- */
 package teaselib.core.crypto;
 
 import java.io.File;
@@ -12,7 +9,7 @@ import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 
 /**
- * @author someone
+ * @author Citizen-Cane
  *
  */
 public class FileEncoder extends Encoder {
@@ -24,27 +21,19 @@ public class FileEncoder extends Encoder {
     /**
      * Encrypts the AES key to a file using an RSA public key
      */
-    public void saveAESKey(File publicKeyFile, File encryptedKeyFile)
-            throws IOException, GeneralSecurityException {
-        FileInputStream publicKeyInputStream = new FileInputStream(
-                publicKeyFile);
-        FileOutputStream fileOutputStream = new FileOutputStream(
-                encryptedKeyFile);
-        saveAESKey(fileOutputStream, publicKeyInputStream);
-        publicKeyInputStream.close();
-        fileOutputStream.close();
+    public void saveAESKey(File publicKeyFile, File encryptedKeyFile) throws IOException, GeneralSecurityException {
+        try (FileInputStream publicKeyInputStream = new FileInputStream(publicKeyFile);
+                FileOutputStream fileOutputStream = new FileOutputStream(encryptedKeyFile);) {
+            saveAESKey(fileOutputStream, publicKeyInputStream);
+        }
     }
 
     /**
      * Encrypts and then copies the contents of a given file.
      */
-    public void encrypt(File in, File out) throws IOException,
-            InvalidKeyException, InvalidAlgorithmParameterException {
-        FileInputStream is = new FileInputStream(in);
-        FileOutputStream os = new FileOutputStream(out);
-        encrypt(is, os, is.getChannel().size());
-        is.close();
-        os.close();
+    public void encrypt(File in, File out) throws IOException, InvalidKeyException, InvalidAlgorithmParameterException {
+        try (FileInputStream is = new FileInputStream(in); FileOutputStream os = new FileOutputStream(out);) {
+            encrypt(is, os, is.getChannel().size());
+        }
     }
-
 }

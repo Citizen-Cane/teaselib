@@ -132,7 +132,7 @@ public class Actuator implements Device {
             this.actuator = getActuatorIndex(devicePath);
         }
 
-        private int getActuatorIndex(String devicePath) {
+        private static int getActuatorIndex(String devicePath) {
             String actuatorIndex = devicePath.substring(devicePath.lastIndexOf('/') + 1);
             return Integer.parseInt(actuatorIndex);
         }

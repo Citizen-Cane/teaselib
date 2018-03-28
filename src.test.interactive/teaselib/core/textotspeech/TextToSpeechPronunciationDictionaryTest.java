@@ -86,7 +86,7 @@ public class TextToSpeechPronunciationDictionaryTest {
         speak(LOQUENDO_ALLISON, prompt, tts);
     }
 
-    private TextToSpeechPlayer getTTSPlayer(String path) {
+    private static TextToSpeechPlayer getTTSPlayer(String path) {
         Configuration config = DebugSetup.getConfiguration();
         config.set(TextToSpeechPlayer.Settings.Pronunciation, path);
         TextToSpeechPlayer tts = new TextToSpeechPlayer(config);

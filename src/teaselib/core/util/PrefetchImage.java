@@ -45,7 +45,7 @@ public final class PrefetchImage implements Callable<byte[]> {
         return imageBytes;
     }
 
-    private byte[] convertInputStreamToByte(InputStream is) throws IOException {
+    private static byte[] convertInputStreamToByte(InputStream is) throws IOException {
         byte[] buffer = new byte[8192];
         int bytesRead;
         ByteArrayOutputStream output = new ByteArrayOutputStream();

@@ -174,7 +174,7 @@ public class SpeechRecognitionInputMethod implements InputMethod {
         speechRecognizer.startRecognition(addMumbleDetection(active.get().choices.toDisplay()), expectedConfidence);
     }
 
-    private List<String> addMumbleDetection(List<String> display) {
+    private static List<String> addMumbleDetection(List<String> display) {
         List<String> choices = new ArrayList<>(display.size() + 1);
         choices.addAll(display);
         choices.add(MUMBLE);

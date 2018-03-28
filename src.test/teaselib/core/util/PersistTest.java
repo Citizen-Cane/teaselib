@@ -1,6 +1,6 @@
 package teaselib.core.util;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -70,7 +70,7 @@ public class PersistTest {
     public void testStorage() throws Exception {
         List<Object> values = Arrays.asList(new Object[] { "Foo", 1, 2L, 2.7f, 3.14159, false, true });
 
-        Persist.Persistable persistable = new PersistableImplementation<Object>(values);
+        Persist.Persistable persistable = new PersistableImplementation<>(values);
         String persisted = Persist.persist(persistable);
 
         Persist.Storage storage = new Persist.Storage(Persist.persistedValue(persisted));
@@ -96,7 +96,7 @@ public class PersistTest {
     public void testPersistRestore() throws Exception {
         List<Object> values = Arrays.asList(new Object[] { "Foo", 1, 2L, 2.7f, 3.14159, false, true });
 
-        Persist.Persistable persistable = new PersistableImplementation<Object>(values);
+        Persist.Persistable persistable = new PersistableImplementation<>(values);
         String persisted = Persist.persist(persistable);
         List<Object> restored = Persist.from(persisted);
 

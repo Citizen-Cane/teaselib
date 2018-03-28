@@ -178,7 +178,7 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
         return stripAudio(RenderedMessage.getLastSection(getLastMessage()));
     }
 
-    private RenderedMessage stripAudio(AbstractMessage message) {
+    private static RenderedMessage stripAudio(AbstractMessage message) {
         return message.stream().filter(part -> !SoundTypes.contains(part.type)).collect(RenderedMessage.collector());
     }
 
@@ -206,7 +206,7 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
         finalizeRendering();
     }
 
-    private boolean lastSectionHasDelay(RenderedMessage message) {
+    private static boolean lastSectionHasDelay(RenderedMessage message) {
         return message.getLastSection().contains(Type.Delay);
     }
 

@@ -20,9 +20,9 @@ import teaselib.core.util.ExceptionUtil;
 public class ScriptFutureTask extends FutureTask<Void> {
     private static final Logger logger = LoggerFactory.getLogger(ScriptFutureTask.class);
 
+    // TODO Move to MediaRenderQueue
     private static final ExecutorService Executor = NamedExecutorService.newUnlimitedThreadPool("Script task", 1,
             HOURS);
-    // TODO Move to MediaRenderQueue
 
     private final ScriptFunction scriptFunction;
     private final AtomicBoolean timedOut = new AtomicBoolean(false);

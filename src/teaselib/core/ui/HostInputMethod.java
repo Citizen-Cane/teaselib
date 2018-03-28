@@ -22,6 +22,7 @@ public class HostInputMethod implements InputMethod {
     }
 
     private final Backend host;
+    // TODO Share with SexScriptsHost
     private final ExecutorService workerThread = NamedExecutorService.singleThreadedQueue(getClass().getName());
     private final ReentrantLock replySection = new ReentrantLock(true);
 

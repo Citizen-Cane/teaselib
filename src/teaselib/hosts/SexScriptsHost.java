@@ -93,6 +93,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
     private final ImageIcon backgroundImageIcon;
     private final Image backgroundImage;
 
+    // TODO Consolidate, use a single thread pool
     private final ExecutorService showPopupThreadPool = NamedExecutorService.singleThreadedQueue("Show-Choices");
     private final ExecutorService showChoicesThreadPool = NamedExecutorService.singleThreadedQueue("Show-Popup");
 

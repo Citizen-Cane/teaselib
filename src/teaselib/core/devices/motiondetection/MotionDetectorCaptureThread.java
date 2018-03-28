@@ -65,7 +65,7 @@ class MotionDetectorCaptureThread extends Thread {
     private FramesPerSecond fpsStatistics;
     private long desiredFrameTimeMillis;
 
-    volatile double debugWindowTimeSpan = MotionDetectorJavaCV.PresenceRegionDefaultTimespan;
+    volatile double debugWindowTimeSpan = MotionDetector.PresenceRegionDefaultTimespan;
     private final AtomicBoolean active = new AtomicBoolean(false);
     final Signal presenceChanged = new Signal();
     final Signal gestureChanged = new Signal();
@@ -244,6 +244,7 @@ class MotionDetectorCaptureThread extends Thread {
 
         for (Mat frame : videoCaptureDevice) {
             long timeStamp = System.currentTimeMillis();
+            // TODO Retrieving buffer from video hidden in transformations, code duplicated
             Mat image = videoInputTransformation.update(frame);
             Buffer.Locked<Mat> lock = video.get(image);
             // Mat buffer = lock.get();
@@ -370,7 +371,7 @@ class MotionDetectorCaptureThread extends Thread {
         });
     }
 
-    private void completeTasks(List<Future<?>> tasks) throws InterruptedException, ExecutionException {
+    private static void completeTasks(List<Future<?>> tasks) throws InterruptedException, ExecutionException {
         for (Future<?> task : tasks) {
             task.get();
         }

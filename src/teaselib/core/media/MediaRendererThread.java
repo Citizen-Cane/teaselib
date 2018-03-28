@@ -1,6 +1,6 @@
 package teaselib.core.media;
 
-import static java.util.concurrent.TimeUnit.HOURS;
+import static java.util.concurrent.TimeUnit.*;
 
 import java.io.IOException;
 import java.util.concurrent.Callable;
@@ -28,6 +28,7 @@ public abstract class MediaRendererThread implements MediaRenderer.Threaded {
     protected final TeaseLib teaseLib;
 
     private static final String RenderTaskBaseName = "RenderTask ";
+    // TODO Move to MediaRenderQueue
     private static final ExecutorService Executor = NamedExecutorService.newUnlimitedThreadPool(RenderTaskBaseName, 1,
             HOURS);
     // TODO Move to MediaRenderQueue
@@ -234,7 +235,7 @@ public abstract class MediaRendererThread implements MediaRenderer.Threaded {
             if (task != null && !isDoneOrCancelled(task)) {
                 task.cancel(true);
                 if (logger.isDebugEnabled()) {
-                    logger.debug("{} cancelled after {}",getClass().getSimpleName() , getElapsedSecondsFormatted());
+                    logger.debug("{} cancelled after {}", getClass().getSimpleName(), getElapsedSecondsFormatted());
                 }
             }
         }

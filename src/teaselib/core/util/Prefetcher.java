@@ -13,6 +13,7 @@ import java.util.concurrent.Future;
 import teaselib.core.concurrency.NamedExecutorService;
 
 public class Prefetcher<T> {
+    // TODO Move to MediaRenderQueue
     private static final ExecutorService fetcher = NamedExecutorService.singleThreadedQueue("Resource Prefetcher");
 
     private final Queue<String> resources = new ArrayDeque<>();

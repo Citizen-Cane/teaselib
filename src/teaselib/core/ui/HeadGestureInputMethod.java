@@ -19,6 +19,7 @@ import teaselib.motiondetection.MotionDetector.MotionSensitivity;
  *
  */
 public class HeadGestureInputMethod implements InputMethod {
+    // TODO Move to MediaRenderQueue
     private final NamedExecutorService workerThread = NamedExecutorService.singleThreadedQueue(getClass().getName());
     private final Future<MotionDetector> motionDetector;
     private final ReentrantLock replySection = new ReentrantLock(true);

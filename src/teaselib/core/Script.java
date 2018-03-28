@@ -384,7 +384,7 @@ public abstract class Script {
             stopBackgroundRenderers();
         }
 
-        Prompt prompt = getPrompt(inputMethods, scriptFunction, recognitionConfidence, choices);
+        Prompt prompt = getPrompt(inputMethods, scriptFunction, choices);
         return showPrompt(prompt);
     }
 
@@ -436,15 +436,13 @@ public abstract class Script {
 
         if (teaseLib.item(TeaseLib.DefaultDomain, Gadgets.Webcam).isAvailable()
                 && choices.toGestures().stream().filter(gesture -> gesture != Gesture.None).count() > 0) {
-            inputMethods.add(new HeadGestureInputMethod(() -> {
-                return teaseLib.devices.get(MotionDetector.class).getDefaultDevice();
-            }));
+            inputMethods.add(new HeadGestureInputMethod(teaseLib.devices.get(MotionDetector.class)::getDefaultDevice));
         }
+
         return inputMethods;
     }
 
-    private Prompt getPrompt(InputMethods inputMethods, ScriptFunction scriptFunction, Confidence recognitionConfidence,
-            Choices choices) {
+    private static Prompt getPrompt(InputMethods inputMethods, ScriptFunction scriptFunction, Choices choices) {
         Prompt prompt = new Prompt(choices, scriptFunction, inputMethods);
         logger.info("Prompt: {}", prompt);
         for (InputMethod inputMethod : inputMethods) {

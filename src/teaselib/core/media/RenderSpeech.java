@@ -1,7 +1,6 @@
 package teaselib.core.media;
 
 import java.io.IOException;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -9,12 +8,9 @@ import org.slf4j.LoggerFactory;
 import teaselib.core.TeaseLib;
 import teaselib.core.speechrecognition.SpeechRecognition;
 import teaselib.core.speechrecognition.SpeechRecognizer;
-import teaselib.core.util.ExceptionUtil;
 
 public abstract class RenderSpeech extends MediaRendererThread {
     private static final Logger logger = LoggerFactory.getLogger(RenderSpeech.class);
-
-    private AtomicBoolean cancelled = new AtomicBoolean(false);
 
     public RenderSpeech(TeaseLib teaseLib) {
         super(teaseLib);
@@ -22,7 +18,7 @@ public abstract class RenderSpeech extends MediaRendererThread {
 
     @Override
     public final void renderMedia() throws IOException, InterruptedException {
-        logger.info(this + " started");
+        logger.info("{} started", this);
         // Suspend speech recognition while speaking, to avoid wrong
         // recognitions - and the mistress speech isn't to be interrupted anyway
         SpeechRecognition.completeSpeechRecognitionInProgress();
@@ -32,7 +28,7 @@ public abstract class RenderSpeech extends MediaRendererThread {
             try {
                 renderSpeech();
             } catch (IOException e) {
-                handleIOException(ExceptionUtil.reduce(e));
+                handleIOException((IOException) e);
             } finally {
                 mandatoryCompleted();
                 resumeSpeechRecognition.run();
@@ -41,13 +37,7 @@ public abstract class RenderSpeech extends MediaRendererThread {
             allCompleted();
         }
 
-        logger.info(this + " completed");
-    }
-
-    @Override
-    public void interrupt() {
-        cancelled.set(true);
-        super.interrupt();
+        logger.info("{} completed", this);
     }
 
     protected abstract void renderSpeech() throws IOException, InterruptedException;

@@ -1,6 +1,5 @@
 package teaselib.core;
 
-import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -247,7 +246,7 @@ public abstract class Script {
             prependedMessages.clear();
 
             messages.add(RenderedMessage.of(message, decorators));
-            renderMessage = new RenderMessage(teaseLib, resources, textToSpeech, actor, messages);
+            renderMessage = new RenderMessage(teaseLib, renderQueue, resources, textToSpeech, actor, messages);
             renderMessage(renderMessage);
         } finally {
             displayImage = Message.ActorImage;
@@ -324,20 +323,12 @@ public abstract class Script {
     }
 
     private void startBackgroundRenderer(MediaRenderer.Threaded renderer) {
-        try {
-            renderer.render();
-        } catch (IOException e) {
-            try {
-                ExceptionUtil.handleIOException(e, teaseLib.config, logger);
-            } catch (IOException e1) {
-                throw ExceptionUtil.asRuntimeException(e1);
-            }
-        }
+        renderQueue.submit(renderer);
     }
 
     private void stopBackgroundRenderers() {
         synchronized (backgroundRenderers) {
-            backgroundRenderers.stream().filter(t -> !t.hasCompletedAll()).forEach(Threaded::interrupt);
+            backgroundRenderers.stream().filter(t -> !t.hasCompletedAll()).forEach(renderQueue::interruptAndJoin);
             backgroundRenderers.clear();
         }
     }

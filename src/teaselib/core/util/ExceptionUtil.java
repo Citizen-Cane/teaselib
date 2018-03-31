@@ -54,7 +54,7 @@ public class ExceptionUtil {
         }
     }
 
-    public static void handleIOException(Exception e, Configuration config, Logger logger) throws IOException {
+    public static void handleIOException(IOException e, Configuration config, Logger logger) throws IOException {
         if (e instanceof IOException) {
             boolean stopOnAssetNotFound = Boolean.parseBoolean(config.get(Config.Debug.StopOnAssetNotFound));
             if (stopOnAssetNotFound) {

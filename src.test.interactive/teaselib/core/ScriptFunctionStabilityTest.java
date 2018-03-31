@@ -3,13 +3,12 @@
  */
 package teaselib.core;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 import org.junit.Before;
 import org.junit.Test;
 
 import teaselib.TeaseScript;
-import teaselib.core.media.MediaRendererThread;
 import teaselib.test.DebugSetup;
 import teaselib.test.TestScript;
 
@@ -32,33 +31,6 @@ public class ScriptFunctionStabilityTest {
 
         public TestException(String message) {
             super(message);
-        }
-    }
-
-    static class DebugInfiniteDelay extends MediaRendererThread {
-        public DebugInfiniteDelay(TeaseLib teaseLib) {
-            super(teaseLib);
-        }
-
-        @Override
-        protected void renderMedia() throws InterruptedException {
-            try {
-                startCompleted();
-                mandatoryCompleted();
-                allCompleted();
-
-                synchronized (this) {
-                    wait();
-                }
-            } catch (InterruptedException e) {
-                throw e;
-            }
-        }
-
-        @Override
-        public void completeAll() {
-            interrupt();
-            super.completeAll();
         }
     }
 

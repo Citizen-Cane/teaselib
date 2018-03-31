@@ -28,6 +28,7 @@ import teaselib.core.speechrecognition.SpeechRecognition.TimeoutBehavior;
 import teaselib.core.speechrecognition.SpeechRecognitionImplementation;
 import teaselib.core.speechrecognition.SpeechRecognizer;
 import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
+import teaselib.core.util.ExceptionUtil;
 import teaselib.core.util.WildcardPattern;
 import teaselib.functional.CallableScript;
 import teaselib.functional.RunnableScript;
@@ -100,7 +101,7 @@ public abstract class TeaseScript extends TeaseScriptMath {
                 queueRenderer(desktopItem);
             } catch (IOException e) {
                 if (Boolean.parseBoolean(teaseLib.config.get(Config.Debug.StopOnRenderError))) {
-                    throw new RuntimeException(e);
+                    throw ExceptionUtil.asRuntimeException(e);
                 } else {
                     logger.error(e.getMessage(), e);
                 }

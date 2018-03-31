@@ -21,17 +21,16 @@ public class RenderPrerecordedSpeech extends RenderSpeech {
 
     @Override
     protected void renderSpeech() throws IOException, InterruptedException {
-        audio.play();
+        try {
+            audio.play();
+        } catch (InterruptedException e) {
+            audio.stop();
+            throw e;
+        }
     }
 
     @Override
     public String toString() {
         return speechSoundFile;
-    }
-
-    @Override
-    public void interrupt() {
-        audio.stop();
-        super.interrupt();
     }
 }

@@ -1,7 +1,6 @@
 package teaselib.core.media;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -607,6 +606,6 @@ public class MessagePartInjectionTest {
         long end = script.teaseLib.getTime(TimeUnit.SECONDS);
 
         long duration = end - start;
-        assertTrue(duration == minimumSeconds);
+        assertEquals(minimumSeconds, duration);
     }
 }

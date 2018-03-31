@@ -1,22 +1,16 @@
 package teaselib.core.media;
 
-import static java.util.concurrent.TimeUnit.*;
-
 import java.io.IOException;
-import java.util.concurrent.Callable;
-import java.util.concurrent.CancellationException;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import teaselib.Config;
 import teaselib.Replay;
+import teaselib.core.Configuration;
 import teaselib.core.ScriptInterruptedException;
 import teaselib.core.TeaseLib;
-import teaselib.core.concurrency.NamedExecutorService;
 import teaselib.core.util.ExceptionUtil;
 
 /**
@@ -25,15 +19,8 @@ import teaselib.core.util.ExceptionUtil;
  */
 public abstract class MediaRendererThread implements MediaRenderer.Threaded {
     private static final Logger logger = LoggerFactory.getLogger(MediaRendererThread.class);
+
     protected final TeaseLib teaseLib;
-
-    private static final String RenderTaskBaseName = "RenderTask ";
-    // TODO Move to MediaRenderQueue
-    private static final ExecutorService Executor = NamedExecutorService.newUnlimitedThreadPool(RenderTaskBaseName, 1,
-            HOURS);
-    // TODO Move to MediaRenderQueue
-
-    protected Future<?> task = null;
     protected Replay.Position replayPosition = Replay.Position.FromStart;
 
     protected CountDownLatch completedStart = new CountDownLatch(1);
@@ -46,73 +33,47 @@ public abstract class MediaRendererThread implements MediaRenderer.Threaded {
         this.teaseLib = teaseLib;
     }
 
-    private String nameForActiveThread() {
-        return this.getClass().getSimpleName();
-    }
-
-    private static String nameForSleepingThread() {
-        return RenderTaskBaseName + "pool thread";
-    }
-
-    private static void setThreadName(String name) {
-        Thread.currentThread().setName(name);
-    }
-
     @Override
-    public final void render() {
-        synchronized (this) {
-            Callable<Void> render = newRenderTask();
-            startMillis = System.currentTimeMillis();
-            task = Executor.submit(render);
-            try {
-                // TODO Wait for initialization of thread, later on signal all to start rendering
-                this.wait();
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new ScriptInterruptedException(e);
-            }
+    public final void run() {
+        startMillis = System.currentTimeMillis();
+        try {
+            renderMedia();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            // Expected
+        } catch (ScriptInterruptedException e) {
+            // Expected
+        } catch (Exception e) {
+            handleException(e, teaseLib.config, logger);
+        } finally {
+            startCompleted();
+            mandatoryCompleted();
+            allCompleted();
         }
     }
 
-    private Callable<Void> newRenderTask() {
-        return () -> {
-            setThreadName(nameForActiveThread());
-            try {
-                synchronized (MediaRendererThread.this) {
-                    MediaRendererThread.this.notifyAll();
-                }
-                renderMedia();
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                // Expected
-            } catch (ScriptInterruptedException e) {
-                // Expected
-            } catch (Exception e) {
-                handleException(ExceptionUtil.reduce(e));
-            } finally {
-                startCompleted();
-                mandatoryCompleted();
-                allCompleted();
-                setThreadName(nameForSleepingThread());
-            }
-            return null;
-        };
-    }
-
-    private void handleException(Exception e) throws Exception {
+    public static void handleException(Exception e, Configuration config, Logger logger) {
         if (e instanceof IOException) {
-            handleIOException(e);
+            try {
+                ExceptionUtil.handleIOException((IOException) e, config, logger);
+            } catch (IOException e1) {
+                throw ExceptionUtil.asRuntimeException(e1);
+            }
         } else {
-            if (Boolean.parseBoolean(teaseLib.config.get(Config.Debug.StopOnRenderError))) {
-                throw e;
+            if (Boolean.parseBoolean(config.get(Config.Debug.StopOnRenderError))) {
+                throw ExceptionUtil.asRuntimeException(e);
             } else {
                 logger.warn(e.getMessage(), e);
             }
         }
     }
 
-    protected void handleIOException(Exception e) throws IOException {
-        ExceptionUtil.handleIOException(e, teaseLib.config, logger);
+    protected void handleIOException(IOException e) {
+        try {
+            ExceptionUtil.handleIOException(e, teaseLib.config, logger);
+        } catch (IOException e1) {
+            throw ExceptionUtil.asRuntimeException(e1);
+        }
     }
 
     /**
@@ -139,8 +100,8 @@ public abstract class MediaRendererThread implements MediaRenderer.Threaded {
         } else {
             throw new IllegalArgumentException(replayPosition.toString());
         }
-        logger.info("Replay " + replayPosition.toString());
-        render();
+        logger.info("Replay {}", replayPosition);
+        run();
     }
 
     protected final void startCompleted() {
@@ -154,64 +115,46 @@ public abstract class MediaRendererThread implements MediaRenderer.Threaded {
     protected final void mandatoryCompleted() {
         completedMandatory.countDown();
         if (logger.isDebugEnabled()) {
-            logger.debug(getClass().getSimpleName() + " completed mandatory after "
-                    + String.format("%.2f seconds", getElapsedSeconds()));
+            logger.debug("{} completed mandatory after {}", getClass().getSimpleName(),
+                    String.format("%.2f seconds", getElapsedSeconds()));
         }
     }
 
     protected final void allCompleted() {
         completedAll.countDown();
         if (logger.isDebugEnabled()) {
-            logger.debug(getClass().getSimpleName() + " completed all after " + getElapsedSecondsFormatted());
+            logger.debug("{} completed all after {}", getClass().getSimpleName(), getElapsedSecondsFormatted());
         }
     }
 
     @Override
     public void completeStart() {
-        Future<?> f = task;
-        if (f != null && !isDoneOrCancelled(f)) {
-            try {
-                completedStart.await();
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new ScriptInterruptedException(e);
-            }
+        try {
+            completedStart.await();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new ScriptInterruptedException(e);
         }
     }
 
     @Override
     public void completeMandatory() {
-        Future<?> f = task;
-        if (f != null && !isDoneOrCancelled(f)) {
-            try {
-                completedMandatory.await();
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new ScriptInterruptedException(e);
-            }
+        try {
+            completedMandatory.await();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new ScriptInterruptedException(e);
         }
     }
 
     @Override
     public void completeAll() {
-        Future<?> f = task;
-        if (f != null && !isDoneOrCancelled(f)) {
-            try {
-                completedAll.await();
-                join();
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new ScriptInterruptedException(e);
-            }
+        try {
+            completedAll.await();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new ScriptInterruptedException(e);
         }
-    }
-
-    protected boolean isDoneOrCancelled() {
-        return isDoneOrCancelled(task);
-    }
-
-    private static boolean isDoneOrCancelled(Future<?> f) {
-        return f.isDone() || f.isCancelled();
     }
 
     @Override
@@ -227,40 +170,6 @@ public abstract class MediaRendererThread implements MediaRenderer.Threaded {
     @Override
     public boolean hasCompletedAll() {
         return completedAll.getCount() == 0;
-    }
-
-    @Override
-    public void interrupt() {
-        synchronized (this) {
-            if (task != null && !isDoneOrCancelled(task)) {
-                task.cancel(true);
-                if (logger.isDebugEnabled()) {
-                    logger.debug("{} cancelled after {}", getClass().getSimpleName(), getElapsedSecondsFormatted());
-                }
-            }
-        }
-    }
-
-    @Override
-    public void join() {
-        try {
-            Future<?> f = task;
-            if (f != null) {
-                f.get();
-            }
-        } catch (CancellationException e) {
-            // Expected
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new ScriptInterruptedException(e);
-        } catch (Exception e) {
-            Exception cause = ExceptionUtil.reduce(e);
-            throw ExceptionUtil.asRuntimeException(cause);
-        } finally {
-            if (logger.isDebugEnabled()) {
-                logger.debug(getClass().getSimpleName() + " ended after " + getElapsedSecondsFormatted());
-            }
-        }
     }
 
     public String getElapsedSecondsFormatted() {

@@ -23,19 +23,16 @@ public class RenderTTSSpeech extends RenderSpeech {
 
     @Override
     protected void renderSpeech() throws InterruptedException {
-        ttsPlayer.speak(actor, prompt, mood);
+        try {
+            ttsPlayer.speak(actor, prompt, mood);
+        } catch (InterruptedException e) {
+            ttsPlayer.stop(actor);
+            throw e;
+        }
     }
 
     @Override
     public String toString() {
         return "\"" + (prompt.length() > 20 ? prompt.substring(0, 20) + "..." : prompt) + "\"";
-    }
-
-    @Override
-    public void interrupt() {
-        if (ttsPlayer != null) {
-            ttsPlayer.stop(actor);
-        }
-        super.interrupt();
     }
 }

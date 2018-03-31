@@ -23,10 +23,10 @@ import teaselib.Replay.Position;
 import teaselib.Replay.Replayable;
 import teaselib.core.AbstractMessage;
 import teaselib.core.ResourceLoader;
+import teaselib.core.ScriptInterruptedException;
 import teaselib.core.TeaseLib;
 import teaselib.core.texttospeech.TextToSpeech;
 import teaselib.core.texttospeech.TextToSpeechPlayer;
-import teaselib.core.util.ExceptionUtil;
 import teaselib.core.util.PrefetchImage;
 import teaselib.core.util.Prefetcher;
 import teaselib.util.Interval;
@@ -56,9 +56,10 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
 
     private final Prefetcher<byte[]> imageFetcher = new Prefetcher<>();
 
-    private final Actor actor;
+    private final MediaRendererQueue renderQueue;
     private final ResourceLoader resources;
     private final TextToSpeechPlayer textToSpeechPlayer;
+    private final Actor actor;
     private final List<RenderedMessage> messages;
 
     private MessageTextAccumulator accumulatedText;
@@ -70,14 +71,10 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
     private String displayImage = null;
     private MediaRenderer.Threaded currentRenderer = null;
 
-    public RenderMessage(TeaseLib teaseLib, ResourceLoader resources, Optional<TextToSpeechPlayer> ttsPlayer,
-            Actor actor, RenderedMessage... messages) {
-        this(teaseLib, resources, ttsPlayer, actor, Arrays.asList(messages));
-    }
-
-    public RenderMessage(TeaseLib teaseLib, ResourceLoader resources, Optional<TextToSpeechPlayer> ttsPlayer,
-            Actor actor, List<RenderedMessage> messages) {
+    public RenderMessage(TeaseLib teaseLib, MediaRendererQueue renderQueue, ResourceLoader resources,
+            Optional<TextToSpeechPlayer> ttsPlayer, Actor actor, List<RenderedMessage> messages) {
         super(teaseLib);
+        this.renderQueue = renderQueue;
 
         if (messages == null) {
             throw new NullPointerException();
@@ -106,7 +103,7 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
             completeAll();
             completedMandatory = new CountDownLatch(1);
             completedAll = new CountDownLatch(1);
-            replay(Position.FromCurrentPosition);
+            renderQueue.replay(this, Position.FromCurrentPosition);
         }
     }
 
@@ -137,36 +134,49 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
         if (messages.isEmpty()) {
             throw new IllegalStateException();
         }
-        if (messages.get(0).isEmpty()) {
-            show(null, actor, Mood.Neutral);
-            finalizeRendering();
-        } else {
-            if (replayPosition == Position.FromStart) {
-                accumulatedText = new MessageTextAccumulator();
-                currentMessage = 0;
-                renderMessages();
-            } else if (replayPosition == Position.FromCurrentPosition) {
-                Replayable replay;
-                synchronized (messages) {
-                    if (currentMessage < messages.size()) {
-                        replay = this::renderMessages;
-                    } else {
-                        replay = () -> renderMessage(getEnd());
-                    }
-                }
-                replay.run();
-            } else if (replayPosition == Position.FromMandatory) {
-                // TODO remember accumulated text so that all but the last section
-                // is displayed, rendered, but the text not added again
-                // TODO Remove all but last speech and delay parts
-                renderMessage(getMandatory());
-                finalizeRendering();
-            } else if (replayPosition == Position.End) {
-                renderMessage(getEnd());
+
+        try {
+            if (messages.get(0).isEmpty()) {
+                show(null, actor, Mood.Neutral);
                 finalizeRendering();
             } else {
-                throw new IllegalStateException(replayPosition.toString());
+                if (replayPosition == Position.FromStart) {
+                    accumulatedText = new MessageTextAccumulator();
+                    currentMessage = 0;
+                    renderMessages();
+                } else if (replayPosition == Position.FromCurrentPosition) {
+                    Replayable replay;
+                    synchronized (messages) {
+                        if (currentMessage < messages.size()) {
+                            replay = this::renderMessages;
+                        } else {
+                            replay = () -> renderMessage(getEnd());
+                        }
+                    }
+                    replay.run();
+                } else if (replayPosition == Position.FromMandatory) {
+                    // TODO remember accumulated text so that all but the last section
+                    // is displayed, rendered, but the text not added again
+                    // TODO Remove all but last speech and delay parts
+                    renderMessage(getMandatory());
+                    finalizeRendering();
+                } else if (replayPosition == Position.End) {
+                    renderMessage(getEnd());
+                    finalizeRendering();
+                } else {
+                    throw new IllegalStateException(replayPosition.toString());
+                }
             }
+        } catch (InterruptedException | ScriptInterruptedException e) {
+            if (currentRenderer != null) {
+                renderQueue.interrupt(currentRenderer);
+            }
+
+            if (backgroundSoundRenderer != null) {
+                renderQueue.interrupt(backgroundSoundRenderer);
+            }
+
+            throw e;
         }
     }
 
@@ -254,7 +264,7 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
                 show(accumulatedText.toString());
             }
 
-            if (isDoneOrCancelled()) {
+            if (Thread.currentThread().isInterrupted()) {
                 break;
             }
         }
@@ -302,14 +312,14 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
             this.currentRenderer.completeMandatory();
         }
         this.currentRenderer = renderer;
-        this.currentRenderer.render();
+        renderQueue.submit(this.currentRenderer);
     }
 
     private void showDesktopItem(MessagePart part) throws IOException {
         RenderDesktopItem renderDesktopItem = new RenderDesktopItem(resources.unpackEnclosingFolder(part.value),
                 teaseLib);
         completeSectionAll();
-        renderDesktopItem.render();
+        renderQueue.submit(renderDesktopItem);
     }
 
     private void showDesktopItemError(MessageTextAccumulator accumulatedText, Actor actor, String mood, IOException e)
@@ -342,10 +352,10 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
         if (isSoundOutputEnabled()) {
             completeSectionMandatory();
             if (backgroundSoundRenderer != null) {
-                backgroundSoundRenderer.interrupt();
+                renderQueue.interrupt(backgroundSoundRenderer);
             }
             backgroundSoundRenderer = new RenderSound(resources, part.value, teaseLib);
-            backgroundSoundRenderer.render();
+            renderQueue.submit(backgroundSoundRenderer);
         }
     }
 
@@ -395,9 +405,9 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
     }
 
     private void show(String text) throws IOException, InterruptedException {
-        if (!isDoneOrCancelled()) {
+        if (!Thread.currentThread().isInterrupted()) {
             teaseLib.host.show(getImageBytes(), text);
-            // First message shown - start part completed
+            // First message shown - start completed
             startCompleted();
         }
     }
@@ -407,7 +417,7 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
             try {
                 return imageFetcher.get(displayImage);
             } catch (IOException e) {
-                handleIOException(ExceptionUtil.reduce(e));
+                handleIOException((IOException) e);
             } finally {
                 synchronized (imageFetcher) {
                     if (!imageFetcher.isEmpty()) {
@@ -484,19 +494,6 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
         int length = 40;
         return "Estimated delay=" + String.format("%.2f", (double) delay / 1000) + " Message='"
                 + (messageText.length() > length ? messageText.substring(0, length) + "..." : messageText + "'");
-    }
-
-    @Override
-    public void interrupt() {
-        if (currentRenderer != null) {
-            currentRenderer.interrupt();
-        }
-
-        if (backgroundSoundRenderer != null) {
-            backgroundSoundRenderer.interrupt();
-        }
-
-        super.interrupt();
     }
 
     private boolean isSpeechOutputEnabled() {

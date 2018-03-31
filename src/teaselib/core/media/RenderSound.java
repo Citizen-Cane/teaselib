@@ -8,7 +8,6 @@ import org.slf4j.LoggerFactory;
 import teaselib.core.Audio;
 import teaselib.core.ResourceLoader;
 import teaselib.core.TeaseLib;
-import teaselib.core.util.ExceptionUtil;
 
 public class RenderSound extends MediaRendererThread {
     private static final Logger logger = LoggerFactory.getLogger(RenderSound.class);
@@ -24,11 +23,7 @@ public class RenderSound extends MediaRendererThread {
         try {
             audio.load();
         } catch (IOException e) {
-            try {
-                handleIOException(e);
-            } catch (IOException e1) {
-                ExceptionUtil.asRuntimeException(e1);
-            }
+            handleIOException(e);
         }
     }
 
@@ -36,12 +31,13 @@ public class RenderSound extends MediaRendererThread {
     public void renderMedia() throws IOException, InterruptedException {
         try {
             teaseLib.transcript.info("Message sound = " + soundFile);
-            logger.info(this.getClass().getSimpleName() + ": " + soundFile);
+            logger.info("{} started", soundFile);
             startCompleted();
             audio.play();
-            logger.info(this.getClass().getSimpleName() + ": " + soundFile + " completed");
-        } finally {
-            mandatoryCompleted();
+            logger.info("{} completed", soundFile);
+        } catch (InterruptedException e) {
+            audio.stop();
+            throw e;
         }
     }
 
@@ -50,9 +46,4 @@ public class RenderSound extends MediaRendererThread {
         return soundFile;
     }
 
-    @Override
-    public void interrupt() {
-        audio.stop();
-        super.interrupt();
-    }
 }

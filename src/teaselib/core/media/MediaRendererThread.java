@@ -6,9 +6,7 @@ import java.util.concurrent.CountDownLatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import teaselib.Config;
 import teaselib.Replay;
-import teaselib.core.Configuration;
 import teaselib.core.ScriptInterruptedException;
 import teaselib.core.TeaseLib;
 import teaselib.core.util.ExceptionUtil;
@@ -44,7 +42,7 @@ public abstract class MediaRendererThread implements MediaRenderer.Threaded {
         } catch (ScriptInterruptedException e) {
             // Expected
         } catch (Exception e) {
-            handleException(e, teaseLib.config, logger);
+            ExceptionUtil.handleException(e, teaseLib.config, logger);
         } finally {
             startCompleted();
             mandatoryCompleted();
@@ -52,28 +50,8 @@ public abstract class MediaRendererThread implements MediaRenderer.Threaded {
         }
     }
 
-    public static void handleException(Exception e, Configuration config, Logger logger) {
-        if (e instanceof IOException) {
-            try {
-                ExceptionUtil.handleIOException((IOException) e, config, logger);
-            } catch (IOException e1) {
-                throw ExceptionUtil.asRuntimeException(e1);
-            }
-        } else {
-            if (Boolean.parseBoolean(config.get(Config.Debug.StopOnRenderError))) {
-                throw ExceptionUtil.asRuntimeException(e);
-            } else {
-                logger.warn(e.getMessage(), e);
-            }
-        }
-    }
-
-    protected void handleIOException(IOException e) {
-        try {
-            ExceptionUtil.handleIOException(e, teaseLib.config, logger);
-        } catch (IOException e1) {
-            throw ExceptionUtil.asRuntimeException(e1);
-        }
+    protected void handleIOException(IOException e) throws IOException {
+        ExceptionUtil.handleIOException(e, teaseLib.config, logger);
     }
 
     /**

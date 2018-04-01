@@ -348,7 +348,7 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
         }
     }
 
-    private void playSoundAsynchronous(MessagePart part) {
+    private void playSoundAsynchronous(MessagePart part) throws IOException {
         if (isSoundOutputEnabled()) {
             completeSectionMandatory();
             if (backgroundSoundRenderer != null) {

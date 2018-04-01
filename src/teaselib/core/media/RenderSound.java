@@ -15,7 +15,7 @@ public class RenderSound extends MediaRendererThread {
     private final String soundFile;
     private final Audio audio;
 
-    public RenderSound(ResourceLoader resources, String soundFile, TeaseLib teaseLib) {
+    public RenderSound(ResourceLoader resources, String soundFile, TeaseLib teaseLib) throws IOException {
         super(teaseLib);
         this.soundFile = soundFile;
         this.audio = teaseLib.host.audio(resources, soundFile);

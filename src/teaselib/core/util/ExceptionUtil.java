@@ -55,11 +55,25 @@ public class ExceptionUtil {
     }
 
     public static void handleIOException(IOException e, Configuration config, Logger logger) throws IOException {
+        boolean stopOnAssetNotFound = Boolean.parseBoolean(config.get(Config.Debug.StopOnAssetNotFound));
+        if (stopOnAssetNotFound) {
+            logger.error(e.getMessage(), e);
+            throw e;
+        } else {
+            logger.warn(e.getMessage(), e);
+        }
+    }
+
+    public static void handleException(Exception e, Configuration config, Logger logger) {
         if (e instanceof IOException) {
-            boolean stopOnAssetNotFound = Boolean.parseBoolean(config.get(Config.Debug.StopOnAssetNotFound));
-            if (stopOnAssetNotFound) {
-                logger.error(e.getMessage(), e);
-                throw (IOException) e;
+            try {
+                ExceptionUtil.handleIOException((IOException) e, config, logger);
+            } catch (IOException e1) {
+                throw ExceptionUtil.asRuntimeException(e1);
+            }
+        } else {
+            if (Boolean.parseBoolean(config.get(Config.Debug.StopOnRenderError))) {
+                throw ExceptionUtil.asRuntimeException(e);
             } else {
                 logger.warn(e.getMessage(), e);
             }

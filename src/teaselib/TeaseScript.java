@@ -111,13 +111,21 @@ public abstract class TeaseScript extends TeaseScriptMath {
 
     public void setBackgroundSound(String path) {
         if (Boolean.parseBoolean(teaseLib.config.get(Config.Render.Sound))) {
-            queueBackgropundRenderer(new RenderSound(resources, path, teaseLib));
+            try {
+                queueBackgropundRenderer(new RenderSound(resources, path, teaseLib));
+            } catch (IOException e) {
+                ExceptionUtil.handleException(e, teaseLib.config, logger);
+            }
         }
     }
 
     public void setSound(String path) {
         if (Boolean.parseBoolean(teaseLib.config.get(Config.Render.Sound))) {
-            queueRenderer(new RenderSound(resources, path, teaseLib));
+            try {
+                queueRenderer(new RenderSound(resources, path, teaseLib));
+            } catch (IOException e) {
+                ExceptionUtil.handleException(e, teaseLib.config, logger);
+            }
         }
     }
 

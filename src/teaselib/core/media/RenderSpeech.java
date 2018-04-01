@@ -28,7 +28,7 @@ public abstract class RenderSpeech extends MediaRendererThread {
             try {
                 renderSpeech();
             } catch (IOException e) {
-                handleIOException((IOException) e);
+                handleIOException(e);
             } finally {
                 mandatoryCompleted();
                 resumeSpeechRecognition.run();

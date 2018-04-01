@@ -220,7 +220,7 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
         return message.getLastSection().contains(Type.Delay);
     }
 
-    protected void finalizeRendering() throws IOException {
+    protected void finalizeRendering() {
         completeSectionMandatory();
         mandatoryCompleted();
         completeSectionAll();
@@ -307,7 +307,7 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
         }
     }
 
-    private void renderTimeSpannedPart(MediaRenderer.Threaded renderer) throws IOException {
+    private void renderTimeSpannedPart(MediaRenderer.Threaded renderer) {
         if (this.currentRenderer != null) {
             this.currentRenderer.completeMandatory();
         }

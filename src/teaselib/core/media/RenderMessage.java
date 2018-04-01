@@ -412,12 +412,12 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
         }
     }
 
-    private byte[] getImageBytes() throws InterruptedException, IOException {
+    private byte[] getImageBytes() throws IOException, InterruptedException {
         if (displayImage != null && displayImage != Message.NoImage) {
             try {
                 return imageFetcher.get(displayImage);
             } catch (IOException e) {
-                handleIOException((IOException) e);
+                handleIOException(e);
             } finally {
                 synchronized (imageFetcher) {
                     if (!imageFetcher.isEmpty()) {
@@ -439,8 +439,10 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
             completeSectionMandatory();
             mandatoryCompleted();
         } else if (keyword == Message.AwaitSoundCompletion) {
-            backgroundSoundRenderer.completeAll();
-            backgroundSoundRenderer = null;
+            if (backgroundSoundRenderer != null) {
+                backgroundSoundRenderer.completeAll();
+                backgroundSoundRenderer = null;
+            }
         } else {
             throw new UnsupportedOperationException(keyword);
         }

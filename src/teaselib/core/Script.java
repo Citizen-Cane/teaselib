@@ -118,8 +118,7 @@ public abstract class Script {
      * @param actor
      */
     protected Script(Script script, Actor actor) {
-        this(script.teaseLib, script.resources, actor, script.namespace,
-                script.teaseLib.globals.get(MediaRendererQueue.class),
+        this(script.teaseLib, script.resources, actor, script.namespace, script.renderQueue,
                 script.teaseLib.globals.get(TextToSpeechPlayer.class));
     }
 
@@ -246,7 +245,8 @@ public abstract class Script {
             prependedMessages.clear();
 
             messages.add(RenderedMessage.of(message, decorators));
-            renderMessage = new RenderMessage(teaseLib, renderQueue, resources, textToSpeech, actor, messages);
+            renderMessage = new RenderMessage(teaseLib, new MediaRendererQueue(renderQueue), resources, textToSpeech,
+                    actor, messages);
             renderMessage(renderMessage);
         } finally {
             displayImage = Message.ActorImage;

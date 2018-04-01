@@ -17,7 +17,6 @@ import teaselib.Replay;
 import teaselib.Replay.Position;
 import teaselib.core.ScriptInterruptedException;
 import teaselib.core.concurrency.NamedExecutorService;
-import teaselib.core.media.MediaRenderer.Threaded;
 import teaselib.core.util.ExceptionUtil;
 
 public class MediaRendererQueue {
@@ -25,13 +24,16 @@ public class MediaRendererQueue {
 
     static final String RenderTaskBaseName = "RenderTask ";
 
-    // TODO Remove threadedMediaRenderers and throw if not empty when next set is played
-    Map<MediaRenderer.Threaded, Future<?>> interruptableRenderers = new HashMap<>();
+    private final Map<MediaRenderer.Threaded, Future<?>> activeRenderers = new HashMap<>();
+    private final ExecutorService executor;
 
-    // TODO remove
-    private final HashMap<Class<?>, MediaRenderer.Threaded> threadedMediaRenderers = new HashMap<>();
-    private final ExecutorService executor = NamedExecutorService.newUnlimitedThreadPool(RenderTaskBaseName, 1,
-            TimeUnit.HOURS);
+    public MediaRendererQueue() {
+        executor = NamedExecutorService.newUnlimitedThreadPool(RenderTaskBaseName, 1, TimeUnit.HOURS);
+    }
+
+    public MediaRendererQueue(MediaRendererQueue mediaRendererQueue) {
+        this.executor = mediaRendererQueue.executor;
+    }
 
     /**
      * Start a batch of renderers. This is reentrant and called from multiple threads. Frequent users are the main
@@ -39,78 +41,66 @@ public class MediaRendererQueue {
      * 
      * The functions waits for running renderers to complete, then starts the renderers suppplied in {@code renderers}.
      * 
-     * @param renderers
+     * @param activeRenderers
      *            The renderers to start.
      * @param teaseLib
      */
-    public void start(Collection<MediaRenderer> renderers) {
-        synchronized (threadedMediaRenderers) {
-            threadedMediaRenderers.clear();
-            for (MediaRenderer r : renderers) {
-                try {
-                    if (r instanceof MediaRenderer.Threaded) {
-                        runThreadedRenderer((MediaRenderer.Threaded) r);
-                    } else {
-                        r.run();
-                    }
-                } catch (ScriptInterruptedException e) {
-                    throw e;
-                } catch (Exception e) {
-                    // TODO use ExceptionUtil and config to stop on Render Error
-                    logger.error(e.getMessage(), e);
+    public void start(Collection<MediaRenderer> newSet) {
+        synchronized (activeRenderers) {
+            if (!activeRenderers.isEmpty()) {
+                throw new IllegalStateException();
+            }
+
+            for (MediaRenderer r : newSet) {
+                if (r instanceof MediaRenderer.Threaded) {
+                    submit((MediaRenderer.Threaded) r);
+                } else {
+                    r.run();
                 }
             }
         }
     }
 
-    private void runThreadedRenderer(MediaRenderer.Threaded r) {
-        threadedMediaRenderers.put(r.getClass(), r);
-        submit(r);
-    }
-
     public void replay(Collection<MediaRenderer> renderers, Replay.Position replayPosition) {
-        synchronized (threadedMediaRenderers) {
+        synchronized (activeRenderers) {
             completeAll();
             endAll();
-            threadedMediaRenderers.clear();
+
+            if (!activeRenderers.isEmpty()) {
+                throw new IllegalStateException();
+            }
+
             for (MediaRenderer r : renderers) {
                 if (r instanceof ReplayableMediaRenderer || replayPosition == Replay.Position.FromStart) {
-                    if (r instanceof MediaRenderer.Threaded) {
-                        threadedMediaRenderers.put(r.getClass(), (MediaRenderer.Threaded) r);
-                    }
                     replay(((ReplayableMediaRenderer) r), replayPosition);
                 }
             }
         }
     }
 
-    private Map<Class<?>, Threaded> getThreadedRenderers() {
-        synchronized (threadedMediaRenderers) {
-            return new HashMap<>(threadedMediaRenderers);
-        }
-    }
-
     public void completeStarts() {
-        Map<Class<?>, Threaded> renderers = getThreadedRenderers();
-        if (!renderers.isEmpty()) {
-            logger.debug("Completing all threaded renderers starts");
-            for (MediaRenderer.Threaded renderer : renderers.values()) {
-                renderer.completeStart();
+        synchronized (activeRenderers) {
+            if (!activeRenderers.isEmpty()) {
+                logger.debug("Completing all threaded renderers starts");
+                for (MediaRenderer.Threaded renderer : activeRenderers.keySet()) {
+                    renderer.completeStart();
+                }
+            } else {
+                logger.debug("Threaded Renderers completeStarts : queue empty");
             }
-        } else {
-            logger.debug("Threaded Renderers completeStarts : queue empty");
         }
     }
 
     public void completeMandatories() {
-        Map<Class<?>, Threaded> renderers = getThreadedRenderers();
-        if (!renderers.isEmpty()) {
-            logger.debug("Completing all threaded renderers mandatory part");
-            for (MediaRenderer.Threaded renderer : renderers.values()) {
-                renderer.completeMandatory();
+        synchronized (activeRenderers) {
+            if (!activeRenderers.isEmpty()) {
+                logger.debug("Completing all threaded renderers mandatory part");
+                for (MediaRenderer.Threaded renderer : activeRenderers.keySet()) {
+                    renderer.completeMandatory();
+                }
+            } else {
+                logger.debug("Threaded Renderers completeMandatories : queue empty");
             }
-        } else {
-            logger.debug("Threaded Renderers completeMandatories : queue empty");
         }
     }
 
@@ -119,16 +109,17 @@ public class MediaRendererQueue {
      * this method have been finished.
      */
     public void completeAll() {
-        Map<Class<?>, Threaded> renderers = getThreadedRenderers();
-        if (!renderers.isEmpty()) {
-            if (logger.isDebugEnabled()) {
-                logger.debug("Completing all threaded renderers {}", renderers);
+        synchronized (activeRenderers) {
+            if (!activeRenderers.isEmpty()) {
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Completing all threaded renderers {}", activeRenderers);
+                }
+                for (MediaRenderer.Threaded renderer : activeRenderers.keySet()) {
+                    renderer.completeAll();
+                }
+            } else if (logger.isDebugEnabled()) {
+                logger.debug("Threaded Renderers completeAll: queue empty");
             }
-            for (MediaRenderer.Threaded renderer : renderers.values()) {
-                renderer.completeAll();
-            }
-        } else if (logger.isDebugEnabled()) {
-            logger.debug("Threaded Renderers completeAll: queue empty");
         }
     }
 
@@ -137,38 +128,36 @@ public class MediaRendererQueue {
      * possible.
      */
     public void endAll() {
-        synchronized (threadedMediaRenderers) {
-            if (!threadedMediaRenderers.isEmpty()) {
+        synchronized (activeRenderers) {
+            if (!activeRenderers.isEmpty()) {
                 if (logger.isDebugEnabled()) {
                     logger.debug("Ending all threaded renderers");
                 }
 
                 List<Future<?>> futures = new ArrayList<>();
                 RuntimeException exception = null;
-                try {
-                    for (MediaRenderer.Threaded renderer : new ArrayList<>(threadedMediaRenderers.values())) {
-                        try {
-                            futures.add(interrupt(renderer));
-                        } catch (RuntimeException e) {
-                            exception = e;
-                        }
-                    }
-                    if (exception != null) {
-                        throw exception;
-                    }
+                for (MediaRenderer.Threaded renderer : new ArrayList<>(activeRenderers.keySet())) {
                     try {
-                        for (Future<?> future : futures) {
-                            join(future);
-                        }
+                        futures.add(interrupt(renderer));
                     } catch (RuntimeException e) {
                         exception = e;
                     }
-                } finally {
-                    threadedMediaRenderers.clear();
+                }
+                if (exception != null) {
+                    throw exception;
+                }
+                try {
+                    for (Future<?> future : futures) {
+                        join(future);
+                    }
+                } catch (RuntimeException e) {
+                    exception = e;
                 }
 
                 if (exception != null) {
                     throw exception;
+                } else if (!activeRenderers.isEmpty()) {
+                    throw new IllegalStateException();
                 }
             } else {
                 if (logger.isDebugEnabled()) {
@@ -179,11 +168,12 @@ public class MediaRendererQueue {
     }
 
     public boolean hasCompletedStarts() {
-        Map<Class<?>, Threaded> renderers = getThreadedRenderers();
-        if (!renderers.isEmpty()) {
-            for (MediaRenderer.Threaded renderer : renderers.values()) {
-                if (!renderer.hasCompletedStart()) {
-                    return false;
+        synchronized (activeRenderers) {
+            if (!activeRenderers.isEmpty()) {
+                for (MediaRenderer.Threaded renderer : activeRenderers.keySet()) {
+                    if (!renderer.hasCompletedStart()) {
+                        return false;
+                    }
                 }
             }
         }
@@ -191,11 +181,12 @@ public class MediaRendererQueue {
     }
 
     public boolean hasCompletedMandatory() {
-        Map<Class<?>, Threaded> renderers = getThreadedRenderers();
-        if (!renderers.isEmpty()) {
-            for (MediaRenderer.Threaded renderer : renderers.values()) {
-                if (!renderer.hasCompletedMandatory()) {
-                    return false;
+        synchronized (activeRenderers) {
+            if (!activeRenderers.isEmpty()) {
+                for (MediaRenderer.Threaded renderer : activeRenderers.keySet()) {
+                    if (!renderer.hasCompletedMandatory()) {
+                        return false;
+                    }
                 }
             }
         }
@@ -203,11 +194,12 @@ public class MediaRendererQueue {
     }
 
     public boolean hasCompletedAll() {
-        Map<Class<?>, Threaded> renderers = getThreadedRenderers();
-        if (!renderers.isEmpty()) {
-            for (MediaRenderer.Threaded renderer : renderers.values()) {
-                if (!renderer.hasCompletedAll()) {
-                    return false;
+        synchronized (activeRenderers) {
+            if (!activeRenderers.isEmpty()) {
+                for (MediaRenderer.Threaded renderer : activeRenderers.keySet()) {
+                    if (!renderer.hasCompletedAll()) {
+                        return false;
+                    }
                 }
             }
         }
@@ -215,17 +207,17 @@ public class MediaRendererQueue {
     }
 
     public Future<?> submit(MediaRenderer.Threaded mediaRenderer) {
-        synchronized (interruptableRenderers) {
+        synchronized (activeRenderers) {
             // TODO Must be managed by named executor service
             // setThreadName(nameForActiveThread());
             Future<?> future = submit((Runnable) mediaRenderer);
-            interruptableRenderers.put(mediaRenderer, future);
+            activeRenderers.put(mediaRenderer, future);
             return future;
         }
     }
 
     public Future<?> interrupt(MediaRenderer.Threaded mediaRenderer) {
-        Future<?> future = interruptableRenderers.remove(mediaRenderer);
+        Future<?> future = activeRenderers.remove(mediaRenderer);
         if (future == null) {
             throw new IllegalArgumentException(mediaRenderer.toString());
         } else {
@@ -244,8 +236,8 @@ public class MediaRendererQueue {
 
     public void join(MediaRenderer.Threaded mediaRenderer) {
         Future<?> future;
-        synchronized (interruptableRenderers) {
-            future = interruptableRenderers.remove(mediaRenderer);
+        synchronized (activeRenderers) {
+            future = activeRenderers.remove(mediaRenderer);
         }
 
         if (future == null) {
@@ -270,7 +262,12 @@ public class MediaRendererQueue {
 
     public void replay(ReplayableMediaRenderer renderer, Position position) {
         // TODO Avoid replaying if still rendering
+        // Handle threade and non-threaded
         submit(() -> renderer.replay(position));
+    }
+
+    public Future<?> submit(MediaRenderer mediaRenderer) {
+        throw new UnsupportedOperationException("Renderer must be threaded: " + mediaRenderer);
     }
 
     public Future<?> submit(Runnable runnable) {

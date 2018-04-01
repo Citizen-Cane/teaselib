@@ -1,8 +1,6 @@
 package teaselib.core.media;
 
 public interface MediaRenderer extends Runnable {
-    public void run();
-
     public interface Threaded extends MediaRenderer {
         /**
          * Wait for the renderer having completed the introduction phase of its content

@@ -243,10 +243,13 @@ public abstract class Script {
             List<RenderedMessage> messages = new ArrayList<>(prependedMessages.size() + 1);
             prependedMessages.stream().forEach(prepended -> messages.add(RenderedMessage.of(prepended, decorators)));
             prependedMessages.clear();
-
             messages.add(RenderedMessage.of(message, decorators));
-            renderMessage = new RenderMessage(teaseLib, new MediaRendererQueue(renderQueue), resources, textToSpeech,
-                    actor, messages);
+
+            // TODO Resolve: One instance per session should be enough, but would block in script function
+            // - blocking would only occur between RenderMessage threads
+            // - blocking would mean that two script functions render message at the same time
+            MediaRendererQueue messageRenderQueue = new MediaRendererQueue(renderQueue);
+            renderMessage = new RenderMessage(teaseLib, messageRenderQueue, resources, textToSpeech, actor, messages);
             renderMessage(renderMessage);
         } finally {
             displayImage = Message.ActorImage;

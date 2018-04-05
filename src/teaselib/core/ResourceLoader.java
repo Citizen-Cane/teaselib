@@ -370,16 +370,10 @@ public class ResourceLoader {
 
     private File unpackToFileInternal(String resourcePath, File file) throws IOException {
         if (!file.exists()) {
-            InputStream resource = null;
-            try {
-                resource = getResource(resourcePath);
+            try (InputStream resource = getResource(resourcePath);) {
                 if (!file.exists()) {
                     file.getParentFile().mkdirs();
                     Files.copy(resource, Paths.get(file.toURI()));
-                }
-            } finally {
-                if (resource != null) {
-                    resource.close();
                 }
             }
         }

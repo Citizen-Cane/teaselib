@@ -21,8 +21,7 @@ public class BackgroundSubtraction {
         this(history, 400, 0.5);
     }
 
-    public BackgroundSubtraction(int history, double dist2Threshold,
-            double shadowThreshold) {
+    public BackgroundSubtraction(int history, double dist2Threshold, double shadowThreshold) {
         this.history = history;
         this.dist2Threshold = dist2Threshold;
         this.shadowThreshold = shadowThreshold;
@@ -30,16 +29,12 @@ public class BackgroundSubtraction {
     }
 
     public void setStructuringElementSize(int size) {
-        Size s = new opencv_core.Size(size, size);
-        Point p = new opencv_core.Point(1, 1);
-        element = opencv_imgproc.getStructuringElement(
-                org.bytedeco.javacpp.opencv_imgproc.MORPH_RECT, s, p);
-        s.close();
-        p.close();
+        try (Size s = new opencv_core.Size(size, size); Point p = new opencv_core.Point(1, 1);) {
+            element = opencv_imgproc.getStructuringElement(org.bytedeco.javacpp.opencv_imgproc.MORPH_RECT, s, p);
+        }
     }
 
-    private void init(int history, double dist2Threshold,
-            double shadowThreshold) {
+    private void init(int history, double dist2Threshold, double shadowThreshold) {
         knn = org.bytedeco.javacpp.opencv_video.createBackgroundSubtractorKNN();
         knn.setHistory(history);
         knn.setDetectShadows(true);
@@ -50,8 +45,7 @@ public class BackgroundSubtraction {
 
     public void update(Mat input) {
         knn.apply(input, output);
-        org.bytedeco.javacpp.opencv_imgproc.morphologyEx(output, output,
-                opencv_imgproc.CV_MOP_OPEN, element);
+        org.bytedeco.javacpp.opencv_imgproc.morphologyEx(output, output, opencv_imgproc.CV_MOP_OPEN, element);
     }
 
     public void clear() {

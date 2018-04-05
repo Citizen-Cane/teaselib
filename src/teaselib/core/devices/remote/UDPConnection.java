@@ -4,7 +4,6 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInput;
 import java.io.DataInputStream;
-import java.io.DataOutput;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.DatagramPacket;
@@ -18,14 +17,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * @author
+ * @author Citizen-Cane
  *
  */
 public class UDPConnection {
     private static final int PacketBufferSize = 1024;
 
-    private static final Logger logger = LoggerFactory
-            .getLogger(UDPConnection.class);
+    private static final Logger logger = LoggerFactory.getLogger(UDPConnection.class);
 
     private static final int SequenceNumberForIncomingBroadcastPacket = 0;
     final InetAddress address;
@@ -35,10 +33,8 @@ public class UDPConnection {
 
     private boolean checkPacketNumber = true;
 
-    public UDPConnection(String address) throws SocketException,
-            NumberFormatException, UnknownHostException {
-        this(InetAddress.getByName(address.split(":")[0]),
-                Integer.parseInt(address.split(":")[1]));
+    public UDPConnection(String address) throws SocketException, NumberFormatException, UnknownHostException {
+        this(InetAddress.getByName(address.split(":")[0]), Integer.parseInt(address.split(":")[1]));
     }
 
     public UDPConnection(InetAddress address, int port) throws SocketException {
@@ -70,21 +66,17 @@ public class UDPConnection {
 
     public void send(byte[] data) throws IOException {
         byte[] packetData = attachHeader(data);
-        DatagramPacket packet = new DatagramPacket(packetData,
-                packetData.length, address, port);
+        DatagramPacket packet = new DatagramPacket(packetData, packetData.length, address, port);
         send(packet);
     }
 
     private byte[] attachHeader(byte[] data) throws IOException {
         ByteArrayOutputStream header = new ByteArrayOutputStream();
-        try {
-            DataOutput output = new DataOutputStream(header);
+        try (DataOutputStream output = new DataOutputStream(header);) {
             output.writeShort(getPacketNumber());
             output.writeShort(data.length);
             output.write(data);
             return header.toByteArray();
-        } finally {
-            header.close();
         }
     }
 
@@ -101,31 +93,28 @@ public class UDPConnection {
         clientSocket.send(sendPacket);
     }
 
-    public byte[] sendAndReceive(String data, int timeoutMillis)
-            throws IOException, SocketException {
+    public byte[] sendAndReceive(String data, int timeoutMillis) throws IOException {
         send(data);
         return receive(timeoutMillis);
     }
 
-    public byte[] sendAndReceive(byte[] data, int timeoutMillis)
-            throws IOException, SocketException {
+    public byte[] sendAndReceive(byte[] data, int timeoutMillis) throws IOException {
         send(data);
         clientSocket.setSoTimeout(timeoutMillis);
         return receiveMatchingPacket();
     }
 
-    public byte[] receive() throws SocketException, IOException {
+    public byte[] receive() throws IOException {
         clientSocket.setSoTimeout(0);
         return receiveMatchingPacket();
     }
 
-    public byte[] receive(int timeoutMillis)
-            throws SocketException, IOException {
+    public byte[] receive(int timeoutMillis) throws IOException {
         clientSocket.setSoTimeout(timeoutMillis);
         return receiveMatchingPacket();
     }
 
-    private byte[] receiveMatchingPacket() throws SocketException, IOException {
+    private byte[] receiveMatchingPacket() throws IOException {
         byte[] payload = null;
         while (payload == null) {
             DatagramPacket receivePacket = receivePacket();
@@ -135,15 +124,13 @@ public class UDPConnection {
     }
 
     private byte[] detachHeader(byte[] data) throws IOException {
-        ByteArrayInputStream rawData = new ByteArrayInputStream(data);
-        try {
+        try (ByteArrayInputStream rawData = new ByteArrayInputStream(data);) {
             DataInput input = new DataInputStream(rawData);
             int packetNumber = input.readShort();
             if (checkPacketNumber) {
                 if (packetNumber < this.packetNumber) {
-                    logger.warn("Ignoring packet with smaller number #"
-                            + packetNumber + " != expected packet number #"
-                            + this.packetNumber);
+                    logger.warn("Ignoring packet with smaller number #{} != expected packet number #{}", packetNumber,
+                            this.packetNumber);
                     return null;
                 } else if (packetNumber > this.packetNumber) {
                     throw new IllegalStateException("Packet-Number mismatch");
@@ -153,15 +140,12 @@ public class UDPConnection {
             byte[] content = new byte[size];
             input.readFully(content);
             return content;
-        } finally {
-            rawData.close();
         }
     }
 
-    private DatagramPacket receivePacket() throws SocketException, IOException {
+    private DatagramPacket receivePacket() throws IOException {
         byte[] receiveData = new byte[PacketBufferSize];
-        DatagramPacket receivePacket = new DatagramPacket(receiveData,
-                receiveData.length);
+        DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
         clientSocket.receive(receivePacket);
         return receivePacket;
     }

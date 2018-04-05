@@ -1,6 +1,3 @@
-/**
- * 
- */
 package teaselib.core.crypto;
 
 import java.io.File;
@@ -32,7 +29,7 @@ import teaselib.core.util.FileUtilities;
  * <p>
  * The private TeaseLib RSA key is used to restore the images.
  * 
- * @author someone
+ * @author Citizen-Cane
  *
  */
 public class CryptoSync extends CipherUtility {
@@ -257,19 +254,19 @@ public class CryptoSync extends CipherUtility {
         Decoder decoder = new Decoder();
         File zipFile = getEncryptedFile(name);
         File decryptedFile = getDecryptedFile(name);
-        ZipInputStream zis = new ZipInputStream(new FileInputStream(zipFile));
-        ZipEntry entry;
-        while ((entry = zis.getNextEntry()) != null) {
-            if (entry.getName().equals(ENCODED_KEY)) {
-                decoder.loadAESKey(zis, privateKey);
-            } else if (entry.getName().equals(ENCODED_DATA)) {
-                decryptedFile.getParentFile().mkdirs();
-                FileOutputStream os = new FileOutputStream(decryptedFile);
-                decoder.decrypt(zis, os);
-                os.close();
+        try (ZipInputStream zis = new ZipInputStream(new FileInputStream(zipFile));) {
+            ZipEntry entry;
+            while ((entry = zis.getNextEntry()) != null) {
+                if (entry.getName().equals(ENCODED_KEY)) {
+                    decoder.loadAESKey(zis, privateKey);
+                } else if (entry.getName().equals(ENCODED_DATA)) {
+                    decryptedFile.getParentFile().mkdirs();
+                    try (FileOutputStream os = new FileOutputStream(decryptedFile);) {
+                        decoder.decrypt(zis, os);
+                    }
+                }
             }
         }
-        zis.close();
         decryptedFile.setLastModified(zipFile.lastModified());
     }
 
@@ -278,18 +275,18 @@ public class CryptoSync extends CipherUtility {
         Encoder encoder = new Encoder();
         File zipFile = getEncryptedFile(name);
         zipFile.getParentFile().mkdirs();
-        ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(zipFile));
-        ZipEntry encodedKey = new ZipEntry(ENCODED_KEY);
-        zos.putNextEntry(encodedKey);
-        encoder.saveAESKey(zos, publicKey);
-        ZipEntry encodedData = new ZipEntry(ENCODED_DATA);
-        zos.putNextEntry(encodedData);
-        File decryptedFile = getDecryptedFile(name);
-        FileInputStream is = new FileInputStream(decryptedFile);
-        encoder.encrypt(is, zos, decryptedFile.length());
-        is.close();
-        zos.close();
-        zipFile.setLastModified(decryptedFile.lastModified());
+        try (ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(zipFile));) {
+            ZipEntry encodedKey = new ZipEntry(ENCODED_KEY);
+            zos.putNextEntry(encodedKey);
+            encoder.saveAESKey(zos, publicKey);
+            ZipEntry encodedData = new ZipEntry(ENCODED_DATA);
+            zos.putNextEntry(encodedData);
+            File decryptedFile = getDecryptedFile(name);
+            try (FileInputStream is = new FileInputStream(decryptedFile);) {
+                encoder.encrypt(is, zos, decryptedFile.length());
+            }
+            zipFile.setLastModified(decryptedFile.lastModified());
+        }
     }
 
     File getEncryptedFile(String name) {

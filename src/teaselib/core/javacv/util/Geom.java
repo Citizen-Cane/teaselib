@@ -45,14 +45,12 @@ public class Geom {
     }
 
     public static int distance2(Rect rect1, Rect rect2) {
-        Point p1 = center(rect1);
-        int r1 = (rect1.width() + rect1.height()) / 4;
-        Point p2 = center(rect2);
-        int r2 = (rect2.width() + rect2.height()) / 4;
-        int distance2 = distance2(p1, p2);
-        p1.close();
-        p2.close();
-        return distance2 - (r1 + r2) * (r1 + r2);
+        try (Point p1 = center(rect1); Point p2 = center(rect2);) {
+            int r1 = (rect1.width() + rect1.height()) / 4;
+            int r2 = (rect2.width() + rect2.height()) / 4;
+            int distance2 = distance2(p1, p2);
+            return distance2 - (r1 + r2) * (r1 + r2);
+        }
     }
 
     public static Point center(Rect r) {
@@ -119,19 +117,19 @@ public class Geom {
     }
 
     public static List<Rect> rectangles(MatVector contours) {
-        Mat p = new Mat();
-        int size = (int) contours.size();
-        List<Rect> rectangles = new ArrayList<>(size);
-        for (int i = 0; i < size; i++) {
-            approxPolyDP(contours.get(i), p, 3, true);
-            @SuppressWarnings("resource")
-            Rect r = boundingRect(p);
-            if (r != null) {
-                rectangles.add(r);
+        try (Mat p = new Mat();) {
+            int size = (int) contours.size();
+            List<Rect> rectangles = new ArrayList<>(size);
+            for (int i = 0; i < size; i++) {
+                approxPolyDP(contours.get(i), p, 3, true);
+                @SuppressWarnings("resource")
+                Rect r = boundingRect(p);
+                if (r != null) {
+                    rectangles.add(r);
+                }
             }
+            return rectangles;
         }
-        p.close();
-        return rectangles;
     }
 
     public static boolean isCircular(Mat contour, double circularity) {

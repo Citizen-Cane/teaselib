@@ -54,13 +54,13 @@ public abstract class VideoRendererJavaCV implements VideoRenderer {
     }
 
     private void renderFrame(Mat video) {
-        Point position = getPosition(type, video.cols(), video.rows());
-        if (position.x() != x || position.y() != y) {
-            x = position.x();
-            y = position.y();
-            org.bytedeco.javacpp.opencv_highgui.moveWindow(name, x, y);
+        try (Point position = getPosition(type, video.cols(), video.rows());) {
+            if (position.x() != x || position.y() != y) {
+                x = position.x();
+                y = position.y();
+                org.bytedeco.javacpp.opencv_highgui.moveWindow(name, x, y);
+            }
         }
-        position.close();
         org.bytedeco.javacpp.opencv_highgui.imshow(name, video);
         pumpMessages();
     }

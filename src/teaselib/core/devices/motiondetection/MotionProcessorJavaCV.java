@@ -94,32 +94,23 @@ public class MotionProcessorJavaCV {
 
     public static void render(Mat output, MotionData renderData, Scalar color) {
         if (hasFeatures(renderData.startPoints)) {
-            FloatIndexer from = renderData.startPoints.createIndexer();
-            FloatIndexer to = renderData.currentPoints.createIndexer();
+            try (FloatIndexer from = renderData.startPoints.createIndexer();
+                    FloatIndexer to = renderData.currentPoints.createIndexer();) {
+                long n = Math.min(from.rows(), to.rows());
+                for (int i = 0; i < n; i++) {
+                    try (Point p1 = new Point((int) from.get(i, 0), (int) from.get(i, 1));
+                            Point p2 = new Point((int) to.get(i, 0), (int) to.get(i, 1));) {
+                        opencv_imgproc.line(output, p1, p2, color);
+                    }
+                }
 
-            long n = Math.min(from.rows(), to.rows());
-            for (int i = 0; i < n; i++) {
-                Point p1 = new Point((int) from.get(i, 0), (int) from.get(i, 1));
-                Point p2 = new Point((int) to.get(i, 0), (int) to.get(i, 1));
-                opencv_imgproc.line(output, p1, p2, color);
-                p1.close();
-                p2.close();
-            }
+                from.release();
+                to.release();
 
-            int distance = (int) Math.sqrt(renderData.distance2);
-            Point p = new Point(0, output.rows() - 20);
-            putText(output, Integer.toString(distance), p, FONT_HERSHEY_PLAIN, 1.75, color);
-            p.close();
-
-            from.release();
-            to.release();
-
-            try {
-                from.close();
-            } catch (Exception e) { //
-            }
-            try {
-                to.close();
+                int distance = (int) Math.sqrt(renderData.distance2);
+                try (Point p = new Point(0, output.rows() - 20);) {
+                    putText(output, Integer.toString(distance), p, FONT_HERSHEY_PLAIN, 1.75, color);
+                }
             } catch (Exception e) { //
             }
 

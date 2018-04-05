@@ -26,15 +26,15 @@ public class VideoCaptureDeviceSingleThreadedTest {
     }
 
     private void capture(VideoCaptureDevice vc) {
-        Size size = new Size(320, 240);
-        vc.open();
-        vc.resolution(size);
-        for (Mat mat : vc) {
-            opencv_highgui.imshow("Test", mat);
-            if (org.bytedeco.javacpp.opencv_highgui.waitKey(30) >= 0) {
-                break;
+        try (Size size = new Size(320, 240);) {
+            vc.open();
+            vc.resolution(size);
+            for (Mat mat : vc) {
+                opencv_highgui.imshow("Test", mat);
+                if (org.bytedeco.javacpp.opencv_highgui.waitKey(30) >= 0) {
+                    break;
+                }
             }
         }
-        size.close();
     }
 }

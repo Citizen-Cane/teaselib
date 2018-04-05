@@ -50,21 +50,14 @@ public class ResourceList {
 
     private Collection<String> getResourcesFromJarFile(File file, Pattern pattern) {
         ArrayList<String> retval = new ArrayList<>();
-        ZipFile zf;
-        try {
-            zf = new ZipFile(file);
-        } catch (IOException e) {
-            throw ExceptionUtil.asRuntimeException(e);
-        }
-        Enumeration<? extends ZipEntry> e = zf.entries();
-        while (e.hasMoreElements()) {
-            ZipEntry ze = e.nextElement();
-            if (!ze.isDirectory()) {
-                addMatchingEntry(pattern, retval, ze.getName());
+        try (ZipFile zf = new ZipFile(file);) {
+            Enumeration<? extends ZipEntry> e = zf.entries();
+            while (e.hasMoreElements()) {
+                ZipEntry ze = e.nextElement();
+                if (!ze.isDirectory()) {
+                    addMatchingEntry(pattern, retval, ze.getName());
+                }
             }
-        }
-        try {
-            zf.close();
         } catch (final IOException e1) {
             throw ExceptionUtil.asRuntimeException(e1);
         }
@@ -88,10 +81,8 @@ public class ResourceList {
     }
 
     private void addMatchingEntry(Pattern pattern, Collection<String> retval, String resourcePath) {
-        if (resourcePath.startsWith(resourceRoot)) {
-            if (pattern.matcher(resourcePath).matches()) {
-                retval.add(resourcePath);
-            }
+        if (resourcePath.startsWith(resourceRoot) && pattern.matcher(resourcePath).matches()) {
+            retval.add(resourcePath);
         }
     }
 }

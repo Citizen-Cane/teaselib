@@ -6,17 +6,19 @@ import java.util.Comparator;
 import java.util.List;
 
 public class Partition<K> {
+    @FunctionalInterface
     public static interface Members<K> {
         boolean similar(K item1, K item2);
     }
 
-    public static interface Order<K> {
-        K group(K item1, K item2);
+    @FunctionalInterface
+    public static interface Join<K> {
+        K groups(K item1, K item2);
     }
 
     public final List<Group> groups;
     final Members<K> measure;
-    final Order<K> order;
+    final Join<K> join;
 
     public class Group {
         K orderingElement;
@@ -28,16 +30,38 @@ public class Partition<K> {
         }
 
         void join(Group group) {
-            orderingElement = order.group(orderingElement, group.orderingElement);
+            orderingElement = join.groups(orderingElement, group.orderingElement);
             items.addAll(group.items);
+        }
+
+        @Override
+        public String toString() {
+            return orderingElement.toString() + "->" + items;
         }
     }
 
-    public Partition(List<K> items, Members<K> measure, Order<K> order, final Comparator<K> comperator) {
+    public Partition(List<K> items, Members<K> measure) {
+        this(items, measure, (a, b) -> a, null);
+    }
+
+    public Partition(List<K> items, Members<K> measure, Join<K> order) {
+        this(items, measure, order, null);
+    }
+
+    public Partition(List<K> items, Members<K> measure, Join<K> order, final Comparator<K> comperator) {
         this.measure = measure;
-        this.order = order;
-        groups = new ArrayList<>();
-        // First iteration - create initial groups
+        this.join = order;
+        this.groups = new ArrayList<>();
+
+        createInitialGroups(items, measure);
+        joinGroups();
+
+        if (comperator != null) {
+            sortGroupsByOrderingElementLargestFirst(comperator);
+        }
+    }
+
+    private void createInitialGroups(List<K> items, Members<K> measure) {
         for (K item : items) {
             boolean grouped = false;
             for (Group group : groups) {
@@ -51,30 +75,37 @@ public class Partition<K> {
                 groups.add(new Group(item));
             }
         }
-        // Additional iterations - join groups
+    }
+
+    private void joinGroups() {
         boolean groupsJoined;
         do {
             groupsJoined = false;
             for (int i = groups.size() - 1; i >= 0; i--) {
-                for (int j = 0; j < groups.size(); j++) {
-                    if (i != j) {
-                        Group groupI = groups.get(i);
-                        Group groupJ = groups.get(j);
-                        if (similar(groupI, groupJ)) {
-                            groupJ.join(groupI);
-                            groups.remove(i);
-                            groupsJoined = true;
-                            break;
-                        }
-                    }
-                }
+                groupsJoined = joinGroup(groupsJoined, i);
             }
         } while (groupsJoined && groups.size() > 1);
-        // Sort groups, with largest ordering element first
-        Comparator<Group> groupComperator = (Group g1, Group g2) -> {
-            return -comperator.compare(g1.orderingElement, g2.orderingElement);
-        };
-        Collections.sort(groups, groupComperator);
+    }
+
+    private boolean joinGroup(boolean groupsJoined, int i) {
+        for (int j = 0; j < groups.size(); j++) {
+            if (i != j) {
+                Group groupI = groups.get(i);
+                Group groupJ = groups.get(j);
+                if (similar(groupI, groupJ)) {
+                    groupJ.join(groupI);
+                    groups.remove(i);
+                    groupsJoined = true;
+                    break;
+                }
+            }
+        }
+        return groupsJoined;
+    }
+
+    private void sortGroupsByOrderingElementLargestFirst(final Comparator<K> comperator) {
+        Comparator<Group> c = (Group g1, Group g2) -> -comperator.compare(g1.orderingElement, g2.orderingElement);
+        Collections.sort(groups, c);
     }
 
     private boolean similar(Group group1, Group group2) {
@@ -93,5 +124,10 @@ public class Partition<K> {
             }
         }
         return false;
+    }
+
+    @Override
+    public String toString() {
+        return groups.toString();
     }
 }

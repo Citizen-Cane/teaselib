@@ -23,7 +23,7 @@ import teaselib.stimulation.Stimulator.ChannelDependency;
 public abstract class StimulationController<T> {
     private static final Logger logger = LoggerFactory.getLogger(StimulationController.class);
 
-    private static final int SleepTimeForPartiallyDependentStimChannels = 100;
+    private static final int SLEEP_TIME_FOR_PARTIALLY_DEPENDENT_CHANNELS = 100;
 
     private final Map<StimulationRegion, Stimulator> stimulators = new EnumMap<>(StimulationRegion.class);
     private final Map<T, Stimulation> stimulations = new HashMap<>();
@@ -111,7 +111,7 @@ public abstract class StimulationController<T> {
                 newStimulation.play(actualDurationSeconds, intensity);
                 playing.put(type, newStimulation);
             } else {
-                logger.warn("Stimulation type " + type.toString() + " hasn't been assigned to a body region");
+                logger.warn("Stimulation type {} hasn't been assigned to a body region", type);
             }
         }
     }
@@ -147,22 +147,26 @@ public abstract class StimulationController<T> {
             for (Stimulation s : playing.values()) {
                 if (s.stimulator.getDevice() == stimulation.stimulator.getDevice()) {
                     if (channelDependency == Stimulator.ChannelDependency.PartiallyDependent) {
-                        try {
-                            Thread.sleep(SleepTimeForPartiallyDependentStimChannels);
-                        } catch (InterruptedException e) {
-                            Thread.currentThread().interrupt();
-                            throw new ScriptInterruptedException(e);
-                        }
-                        delay = SleepTimeForPartiallyDependentStimChannels * 1000;
-                        break;
+                        delay = sleep(SLEEP_TIME_FOR_PARTIALLY_DEPENDENT_CHANNELS) * 1000.0;
                     } else {
                         delay = completePreviousStimulation(s);
-                        break;
                     }
+                    break;
                 }
             }
         }
         return delay;
+    }
+
+    private long sleep(long delayMillis) {
+        try {
+            Thread.sleep(delayMillis);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new ScriptInterruptedException(e);
+        }
+        return delayMillis;
+
     }
 
     private static double completePreviousStimulation(Stimulation stimulation) {
@@ -174,10 +178,8 @@ public abstract class StimulationController<T> {
 
     public void complete(T type) {
         synchronized (playing) {
-            if (stimulations.containsKey(type)) {
-                if (playing.containsKey(type)) {
-                    playing.get(type).complete();
-                }
+            if (stimulations.containsKey(type) && playing.containsKey(type)) {
+                playing.get(type).complete();
             }
         }
     }

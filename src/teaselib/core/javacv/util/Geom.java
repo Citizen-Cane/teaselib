@@ -17,14 +17,18 @@ import org.bytedeco.javacpp.opencv_core.Point;
 import org.bytedeco.javacpp.opencv_core.Rect;
 import org.bytedeco.javacpp.indexer.IntIndexer;
 
+import teaselib.core.util.ExceptionUtil;
 import teaselib.util.math.Partition;
 import teaselib.util.math.Statistics;
 
 public class Geom {
+    private Geom() {
+    }
+
     public static List<Partition<Rect>.Group> partition(List<Rect> rectangles, int distance) {
         final int distance2 = distance * distance;
         Partition.Members<Rect> members = (rect1, rect2) -> distance2(rect1, rect2) < distance2;
-        Partition.Order<Rect> order = (rect1, rect2) -> {
+        Partition.Join<Rect> order = (rect1, rect2) -> {
             Rect group = new Rect(rect1);
             join(group, rect2, group);
             return group;
@@ -35,7 +39,8 @@ public class Geom {
     }
 
     public static Point center(List<Rect> rectangles) {
-        return center(join(rectangles));
+        Rect join = join(rectangles);
+        return join != null ? center(join) : null;
     }
 
     public static int distance2(Point p1, Point p2) {
@@ -75,13 +80,12 @@ public class Geom {
     }
 
     public static Rect join(Collection<Rect> rectangles) {
-        long size = rectangles.size();
-        if (size == 0) {
+        if ((long) rectangles.size() == 0) {
             return null;
         } else {
             Iterator<Rect> iterator = rectangles.iterator();
             Rect r = new Rect(iterator.next());
-            for (; iterator.hasNext();) {
+            while (iterator.hasNext()) {
                 join(r, iterator.next(), r);
             }
             return r;
@@ -99,12 +103,12 @@ public class Geom {
                 r.y(y);
                 r.width(width);
                 r.height(height);
-            } else if (a != null && b == null) {
+            } else if (a != null /* && b == null */) {
                 r.x(a.x());
                 r.y(a.y());
                 r.width(a.width());
                 r.height(a.height());
-            } else if (a == null && b != null) {
+            } else if (/* a == null && */ b != null) {
                 r.x(b.x());
                 r.y(b.y());
                 r.width(b.width());
@@ -122,7 +126,6 @@ public class Geom {
             List<Rect> rectangles = new ArrayList<>(size);
             for (int i = 0; i < size; i++) {
                 approxPolyDP(contours.get(i), p, 3, true);
-                @SuppressWarnings("resource")
                 Rect r = boundingRect(p);
                 if (r != null) {
                     rectangles.add(r);
@@ -155,28 +158,31 @@ public class Geom {
         return contourCircularity <= circularity;
     }
 
-    @SuppressWarnings("resource")
     private static List<Integer> distance2Center(Mat contour) {
-        IntIndexer points = contour.createIndexer();
-        int cx = 0;
-        int cy = 0;
-        final int s = (int) points.rows();
-        for (int i = 0; i < s; i++) {
-            cx += points.get(i, 0);
-            cy += points.get(i, 1);
+        try (IntIndexer points = contour.createIndexer();) {
+            int cx = 0;
+            int cy = 0;
+            final int s = (int) points.rows();
+            for (int i = 0; i < s; i++) {
+                cx += points.get(i, 0);
+                cy += points.get(i, 1);
+            }
+            cx /= s;
+            cy /= s;
+            try (Point center = new Point(cx, cy);) {
+                List<Integer> distance2Center = new ArrayList<>(s);
+                for (int i = 0; i < s; i++) {
+                    int x = points.get(i, 0);
+                    int y = points.get(i, 1);
+                    opencv_core.Point p = new Point(x, y);
+                    distance2Center.add((int) Math.sqrt(distance2(center, p)));
+                }
+                return distance2Center;
+            } finally {
+                points.release();
+            }
+        } catch (Exception e) {
+            throw ExceptionUtil.asRuntimeException(e);
         }
-        cx /= s;
-        cy /= s;
-        Point center = new Point(cx, cy);
-        List<Integer> distance2Center = new ArrayList<>(s);
-        for (int i = 0; i < s; i++) {
-            int x = points.get(i, 0);
-            int y = points.get(i, 1);
-            opencv_core.Point p = new Point(x, y);
-            distance2Center.add((int) Math.sqrt(distance2(center, p)));
-        }
-        // center.release();
-        points.release();
-        return distance2Center;
     }
 }

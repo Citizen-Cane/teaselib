@@ -19,12 +19,11 @@ public class Whip extends Stimulation {
     private final int strokes;
     private final double period;
 
-    public Whip(Stimulator stimulator) {
-        this(stimulator, 1, 0.2);
+    public Whip() {
+        this(1, 0.2);
     }
 
-    public Whip(Stimulator stimulator, int strokes, double period) {
-        super(stimulator);
+    public Whip(int strokes, double period) {
         this.strokes = strokes;
         this.period = period;
     }

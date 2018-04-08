@@ -181,9 +181,8 @@ public class IntentionBasedControllerTest {
         c.add(Intention.Tease, stim2);
         c.add(Intention.Punish, stim3);
 
-        // TODO Resolve the extra reference to stimulator -> introduce new or for the time being init with null
-        Stimulation pulse = new Tease(null);
-        Stimulation whip = new Whip(null);
+        Stimulation pulse = new Tease();
+        Stimulation whip = new Whip();
 
         c.play(Intention.Tease, pulse, Intention.Punish, whip);
     }
@@ -206,8 +205,8 @@ public class IntentionBasedControllerTest {
         c.add(Intention.Tease, stim2);
         c.add(Intention.Punish, stim3);
 
-        Stimulation walk = new Walk(null);
-        Stimulation whip = new Whip(null);
+        Stimulation walk = new Walk();
+        Stimulation whip = new Whip();
         c.play(Intention.Rythm, walk, Intention.Punish, whip);
     }
 
@@ -230,9 +229,9 @@ public class IntentionBasedControllerTest {
         c.add(Intention.Tease, stim2);
         c.add(Intention.Punish, stim3);
 
-        Stimulation walk = new Walk(null);
-        Stimulation pulse = new Tease(null);
-        Stimulation whip = new Whip(null);
+        Stimulation walk = new Walk();
+        Stimulation pulse = new Tease();
+        Stimulation whip = new Whip();
         c.play(Intention.Rythm, walk, Intention.Tease, pulse, Intention.Punish, whip);
     }
 }

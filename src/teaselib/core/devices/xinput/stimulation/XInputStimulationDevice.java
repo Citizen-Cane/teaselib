@@ -100,6 +100,9 @@ public class XInputStimulationDevice extends StimulationDevice {
             for (String devicePath : devices.get(XInputDevice.class).getDevicePaths()) {
                 DeviceCache<XInputDevice> xinputDevces = devices.get(XInputDevice.class);
                 // TODO controller not needed since device path already known
+                // - devicePath is XInput360GameController/WaitingForConnection,
+                // but list will contain XInputStimulationDevice/XInput360GameController/0
+                // -> different from MotionDetectorJavaCV.enumerateDevicePaths(...)
                 XInputDevice controller = xinputDevces.getDevice(devicePath);
                 devicePaths.add(DeviceCache.createDevicePath(XInputStimulationDevice.DeviceClassName,
                         controller.getDevicePath()));

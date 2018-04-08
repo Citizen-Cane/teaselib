@@ -1,5 +1,8 @@
 package teaselib.stimulation;
 
+import java.util.Arrays;
+import java.util.List;
+
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -60,35 +63,31 @@ public class StimulationTest {
 
     @Test
     public void testWalk() throws InterruptedException {
-        Stimulator stimulator = getRightStimulator();
-        testStimulation(new Walk(stimulator));
+        testStimulation(getRightStimulator(), new Walk());
     }
 
     @Test
     public void testTrot() throws InterruptedException {
-        Stimulator stimulator = getRightStimulator();
-        testStimulation(new Trot(stimulator));
+        testStimulation(getRightStimulator(), new Trot());
     }
 
     @Test
     public void testRun() throws InterruptedException {
-        Stimulator stimulator = getRightStimulator();
-        testStimulation(new Run(stimulator));
+        testStimulation(getRightStimulator(), new Run());
     }
 
     @Test
     public void testTease() throws InterruptedException {
-        Stimulator stimulator = getRightStimulator();
-        testStimulation(new Tease(stimulator));
+        testStimulation(getRightStimulator(), new Tease());
     }
 
     @Test
     public void testAttention() throws InterruptedException {
         Stimulator stimulator = getRightStimulator();
-        Stimulation stimulation = new Attention(stimulator);
+        Stimulation stimulation = new Attention();
         for (int i = Stimulation.MinIntensity; i <= Stimulation.MaxIntensity; i++) {
-            stimulation.play(0, i);
-            stimulation.complete();
+            stimulator.play(stimulation.getWaveform(stimulator, i), 0, i);
+            stimulator.complete();
             Thread.sleep(5000);
         }
     }
@@ -96,10 +95,10 @@ public class StimulationTest {
     @Test
     public void testPunish() throws InterruptedException {
         Stimulator stimulator = getLeftStimulator();
-        Stimulation stimulation = new Punish(stimulator);
+        Stimulation stimulation = new Punish();
         for (int i = Stimulation.MinIntensity; i <= Stimulation.MaxIntensity; i++) {
-            stimulation.play(0, i);
-            stimulation.complete();
+            stimulator.play(stimulation.getWaveform(stimulator, i), 0, i);
+            stimulator.complete();
             Thread.sleep(5000);
         }
     }
@@ -107,10 +106,10 @@ public class StimulationTest {
     @Test
     public void testWhip() throws InterruptedException {
         Stimulator stimulator = getLeftStimulator();
-        Stimulation stimulation = new Whip(stimulator);
+        Stimulation stimulation = new Whip();
         for (int i = Stimulation.MinIntensity; i <= Stimulation.MaxIntensity; i++) {
-            stimulation.play(0, i);
-            stimulation.complete();
+            stimulator.play(stimulation.getWaveform(stimulator, i), 0, i);
+            stimulator.complete();
             Thread.sleep(5000);
         }
     }
@@ -118,25 +117,24 @@ public class StimulationTest {
     @Test
     public void testBallMassage() throws InterruptedException {
         Stimulator stimulator = getLeftStimulator();
-        Stimulation stimulation = new Cum(stimulator);
+        Stimulation stimulation = new Cum();
         for (int i = Stimulation.MinIntensity; i <= Stimulation.MaxIntensity; i++) {
-            stimulation.play(0, i);
-            stimulation.complete();
+            stimulator.play(stimulation.getWaveform(stimulator, i), 0, i);
+            stimulator.complete();
             Thread.sleep(5000);
         }
     }
 
     @Test
     public void testCum() throws InterruptedException {
-        Stimulator stimulator = getRightStimulator();
-        testStimulation(new Cum(stimulator));
+        testStimulation(getRightStimulator(), new Cum());
     }
 
-    static private void testStimulation(Stimulation stimulation) throws InterruptedException {
+    static private void testStimulation(Stimulator stimulator, Stimulation stimulation) throws InterruptedException {
         double durationSeconds = 30.0;
         for (int i = Stimulation.MinIntensity; i <= Stimulation.MaxIntensity; i++) {
-            stimulation.play(durationSeconds, i);
-            stimulation.complete();
+            stimulator.play(stimulation.getWaveform(stimulator, i), durationSeconds, i);
+            stimulator.complete();
             Thread.sleep(5000);
         }
     }
@@ -146,19 +144,21 @@ public class StimulationTest {
         Stimulator a = getLeftStimulator();
         Stimulator c = getRightStimulator();
         final double durationSeconds = 10.0;
-        Stimulation[] r = { new Walk(a), new Trot(a), new Walk(a), new Run(a), new Run(a), new Run(a), new Run(a) };
-        Stimulation[] l = { new Tease(c), new Cum(c), new Tease(c), new Cum(c), new Cum(c), new Cum(c), new Cum(c) };
-        for (int j = 0; j < r.length; j++) {
+        List<Stimulation> r = Arrays.asList(new Walk(), new Trot(), new Walk(), new Run(), new Run(), new Run(),
+                new Run());
+        List<Stimulation> l = Arrays.asList(new Tease(), new Cum(), new Tease(), new Cum(), new Cum(), new Cum(),
+                new Cum());
+        for (int j = 0; j < r.size(); j++) {
             for (int i = Stimulation.MinIntensity; i <= Stimulation.MaxIntensity; i++) {
-                Stimulation left = l[j];
-                Stimulation right = r[j];
+                Stimulation left = l.get(j);
+                Stimulation right = r.get(j);
                 System.out.println(left.toString() + " " + right.toString());
 
-                right.play(durationSeconds, i);
-                left.play(durationSeconds, i);
+                a.play(right.getWaveform(a, i), durationSeconds, i);
+                c.play(left.getWaveform(c, i), durationSeconds, i);
 
-                right.complete();
-                left.complete();
+                a.complete();
+                c.complete();
 
                 Thread.sleep(5000);
             }

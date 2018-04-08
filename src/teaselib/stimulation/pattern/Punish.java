@@ -21,12 +21,11 @@ public class Punish extends Stimulation {
 
     private final PunishType punishType;
 
-    public Punish(Stimulator stimulator) {
-        this(stimulator, PunishType.Constant);
+    public Punish() {
+        this(PunishType.Constant);
     }
 
-    public Punish(Stimulator stimulator, PunishType punishType) {
-        super(stimulator);
+    public Punish(PunishType punishType) {
         this.punishType = punishType;
     }
 

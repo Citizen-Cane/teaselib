@@ -12,8 +12,7 @@ import teaselib.stimulation.WaveForm;
 public class Gait extends Stimulation {
     final double periodDurationSeconds;
 
-    public Gait(Stimulator stimulator, double periodDurationSeconds) {
-        super(stimulator);
+    public Gait(double periodDurationSeconds) {
         this.periodDurationSeconds = periodDurationSeconds;
     }
 

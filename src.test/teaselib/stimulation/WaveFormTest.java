@@ -68,8 +68,8 @@ public class WaveFormTest {
     @Test
     public void testWhip() {
         TestStimulator stim = new TestStimulator();
-        Whip whip = new Whip(stim, 1, 0);
-        whip.play(0, 0);
+        Whip whip = new Whip(1, 0);
+        stim.play(whip.getWaveform(stim, 0), 0, 0);
         logger.info("{}", stim.waveForm);
 
         assertEquals(2, stim.waveForm.size());
@@ -78,8 +78,8 @@ public class WaveFormTest {
     @Test
     public void testMultiWhip() {
         TestStimulator stim = new TestStimulator();
-        Whip whip = new Whip(stim, 2, 0.2);
-        whip.play(0, 0);
+        Whip whip = new Whip(2, 0.2);
+        stim.play(whip.getWaveform(stim, 0), 0, 0);
         logger.info("{}", stim.waveForm);
 
         assertEquals(4, stim.waveForm.size());

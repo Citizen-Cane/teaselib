@@ -16,12 +16,11 @@ public class Tease extends Stimulation {
 
     private final double periodDurationSeconds;
 
-    public Tease(Stimulator stimulator) {
-        this(stimulator, DurationSeconds);
+    public Tease() {
+        this(DurationSeconds);
     }
 
-    public Tease(Stimulator stimulator, double periodDuration) {
-        super(stimulator);
+    public Tease(double periodDuration) {
         this.periodDurationSeconds = periodDuration;
     }
 

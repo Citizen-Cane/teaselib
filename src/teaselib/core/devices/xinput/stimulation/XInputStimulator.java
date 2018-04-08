@@ -161,10 +161,9 @@ public class XInputStimulator implements Stimulator {
     @Override
     public void stop() {
         synchronized (player) {
-            if (current.get().isPresent()) {
-                if (!current.get().get().isDone()) {
-                    current.get().get().cancel(true);
-                }
+            Optional<Future<Void>> currentPlayer = current.get();
+            if (currentPlayer.isPresent() && !currentPlayer.get().isDone()) {
+                currentPlayer.get().cancel(true);
             }
         }
     }
@@ -172,9 +171,10 @@ public class XInputStimulator implements Stimulator {
     @Override
     public void complete() {
         synchronized (player) {
-            if (current.get().isPresent()) {
+            Optional<Future<Void>> currentPlayer = current.get();
+            if (currentPlayer.isPresent()) {
                 try {
-                    current.get().get().get();
+                    currentPlayer.get().get();
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                     throw new ScriptInterruptedException();

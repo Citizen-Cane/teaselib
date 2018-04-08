@@ -17,10 +17,6 @@ public class Cum extends Stimulation {
     static final double IntensityFactor = 2.0;
     static final double OffSeconds = 2.0;
 
-    public Cum(Stimulator stimulator) {
-        super(stimulator);
-    }
-
     @Override
     public WaveForm waveform(Stimulator stimulator, int intensity) {
         double onTimeSeconds = MinOnDurationSeconds + IntensityFactor * intensity;

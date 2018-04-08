@@ -3,7 +3,10 @@ package teaselib.util.math;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Spliterator;
+import java.util.function.Consumer;
 
 public class Partition<K> {
     @FunctionalInterface
@@ -20,7 +23,7 @@ public class Partition<K> {
     final Members<K> measure;
     final Join<K> join;
 
-    public class Group {
+    public class Group implements Iterable<K> {
         K orderingElement;
         public final List<K> items = new ArrayList<>();
 
@@ -35,8 +38,27 @@ public class Partition<K> {
         }
 
         @Override
+        public void forEach(Consumer<? super K> action) {
+            items.forEach(action);
+        }
+
+        @Override
+        public Spliterator<K> spliterator() {
+            return items.spliterator();
+        }
+
+        @Override
+        public Iterator<K> iterator() {
+            return items.iterator();
+        }
+
+        @Override
         public String toString() {
             return orderingElement.toString() + "->" + items;
+        }
+
+        public int size() {
+            return items.size();
         }
     }
 

@@ -31,7 +31,7 @@ public class Punish extends Stimulation {
     }
 
     @Override
-    public WaveForm waveform(int intensity) {
+    public WaveForm waveform(Stimulator stimulator, int intensity) {
         double punishSeconds = MinOnDurationSeconds + IntensityFactor * intensity;
 
         if (punishType == PunishType.Constant) {

@@ -1,40 +1,54 @@
 package teaselib.stimulation.ext;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
+import org.junit.Before;
 import org.junit.Test;
 
 import teaselib.core.devices.BatteryLevel;
+import teaselib.stimulation.Stimulation;
 import teaselib.stimulation.StimulationDevice;
 import teaselib.stimulation.Stimulator;
 import teaselib.stimulation.WaveForm;
+import teaselib.stimulation.pattern.Tease;
+import teaselib.stimulation.pattern.Walk;
+import teaselib.stimulation.pattern.Whip;
 
 public class IntentionBasedControllerTest {
-    private final class TestController extends IntentionBasedController<Intention> {
-        Consumer<List<IntentionBasedController<Intention>.StimulationAction>> testActionList;
-        BiConsumer<StimulationDevice, List<IntentionBasedController<Intention>.StimulationAction>> testDeviceEntry;
+    int n;
 
-        public TestController(Consumer<List<IntentionBasedController<Intention>.StimulationAction>> testActionList,
-                BiConsumer<StimulationDevice, List<IntentionBasedController<Intention>.StimulationAction>> testDeviceEntry) {
+    @Before
+    public void resetTestStimulatorId() {
+        n = 1;
+    }
+
+    private final class TestController extends IntentionBasedController<Intention> {
+        Consumer<List<StimulationCommand>> testActionList;
+        BiConsumer<StimulationDevice, List<Channel>> testDeviceEntry;
+
+        public TestController(Consumer<List<StimulationCommand>> testActionList,
+                BiConsumer<StimulationDevice, List<Channel>> testDeviceEntry) {
             this.testActionList = testActionList;
             this.testDeviceEntry = testDeviceEntry;
         }
 
         @Override
-        public void play(List<IntentionBasedController<Intention>.StimulationAction> stimulationActions) {
-            testActionList.accept(stimulationActions);
-            super.play(stimulationActions);
+        public void play(List<StimulationCommand> stimulationCommands) {
+            testActionList.accept(stimulationCommands);
+            super.play(stimulationCommands);
         }
 
         @Override
-        void play(StimulationDevice device, List<IntentionBasedController<Intention>.StimulationAction> items) {
-            testDeviceEntry.accept(device, items);
-            super.play(device, items);
+        void play(StimulationDevice device, List<Channel> channels) {
+            testDeviceEntry.accept(device, channels);
+            super.play(device, channels);
         }
     }
 
@@ -78,10 +92,17 @@ public class IntentionBasedControllerTest {
         public List<Stimulator> stimulators() {
             throw new UnsupportedOperationException();
         }
+
+        @Override
+        public void play(List<Channel> channels) {
+            assertNotNull(channels);
+            assertFalse(channels.isEmpty());
+        }
     }
 
     private final class TestStimulator implements Stimulator {
         final StimulationDevice device;
+        final int id = n++;
 
         TestStimulator(StimulationDevice device) {
             super();
@@ -90,7 +111,7 @@ public class IntentionBasedControllerTest {
 
         @Override
         public String getDeviceName() {
-            return null;
+            return getClass().getSimpleName() + "_" + id;
         }
 
         @Override
@@ -115,7 +136,7 @@ public class IntentionBasedControllerTest {
 
         @Override
         public double minimalSignalDuration() {
-            throw new UnsupportedOperationException();
+            return 0.02;
         }
 
         @Override
@@ -137,6 +158,11 @@ public class IntentionBasedControllerTest {
         public void complete() {
             throw new UnsupportedOperationException();
         }
+
+        @Override
+        public String toString() {
+            return getDeviceName();
+        }
     }
 
     @Test
@@ -155,7 +181,11 @@ public class IntentionBasedControllerTest {
         c.add(Intention.Tease, stim2);
         c.add(Intention.Punish, stim3);
 
-        c.play(Intention.Tease, null, Intention.Punish, null);
+        // TODO Resolve the extra reference to stimulator -> introduce new or for the time being init with null
+        Stimulation pulse = new Tease(null);
+        Stimulation whip = new Whip(null);
+
+        c.play(Intention.Tease, pulse, Intention.Punish, whip);
     }
 
     @Test
@@ -176,7 +206,9 @@ public class IntentionBasedControllerTest {
         c.add(Intention.Tease, stim2);
         c.add(Intention.Punish, stim3);
 
-        c.play(Intention.Rythm, null, Intention.Punish, null);
+        Stimulation walk = new Walk(null);
+        Stimulation whip = new Whip(null);
+        c.play(Intention.Rythm, walk, Intention.Punish, whip);
     }
 
     @Test
@@ -198,6 +230,9 @@ public class IntentionBasedControllerTest {
         c.add(Intention.Tease, stim2);
         c.add(Intention.Punish, stim3);
 
-        c.play(Intention.Rythm, null, Intention.Tease, null, Intention.Punish, null);
+        Stimulation walk = new Walk(null);
+        Stimulation pulse = new Tease(null);
+        Stimulation whip = new Whip(null);
+        c.play(Intention.Rythm, walk, Intention.Tease, pulse, Intention.Punish, whip);
     }
 }

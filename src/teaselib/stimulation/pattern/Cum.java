@@ -22,7 +22,7 @@ public class Cum extends Stimulation {
     }
 
     @Override
-    public WaveForm waveform(int intensity) {
+    public WaveForm waveform(Stimulator stimulator, int intensity) {
         double onTimeSeconds = MinOnDurationSeconds + IntensityFactor * intensity;
         double offTimeSeconds = OffSeconds * spreadRange(1.0, 2.0, intensity);
         return new SquareWave(onTimeSeconds, offTimeSeconds);

@@ -18,7 +18,7 @@ public class Gait extends Stimulation {
     }
 
     @Override
-    public WaveForm waveform(int intensity) {
+    public WaveForm waveform(Stimulator stimulator, int intensity) {
         double onTimeSeconds = spreadRange(Math.max(0.2, stimulator.minimalSignalDuration()), 0.5, intensity);
         return new SquareWave(onTimeSeconds, periodDurationSeconds - onTimeSeconds);
     }

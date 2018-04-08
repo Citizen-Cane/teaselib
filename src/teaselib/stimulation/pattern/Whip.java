@@ -30,7 +30,7 @@ public class Whip extends Stimulation {
     }
 
     @Override
-    public WaveForm waveform(int intensity) {
+    public WaveForm waveform(Stimulator stimulator, int intensity) {
         double on = stimulator.minimalSignalDuration() * spreadRange(1.0, 2.0, intensity);
         return new BurstSquareWave((int) strokes, on, this.period - on);
     }

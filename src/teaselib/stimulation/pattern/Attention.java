@@ -18,7 +18,7 @@ public class Attention extends Stimulation {
     }
 
     @Override
-    public WaveForm waveform(int intensity) {
+    public WaveForm waveform(Stimulator stimulator, int intensity) {
         double onTimeSeconds = MinOnDurationSeconds + IntensityFactor * intensity;
         return new ConstantWave(onTimeSeconds);
     }

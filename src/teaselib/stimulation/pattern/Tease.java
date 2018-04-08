@@ -26,7 +26,7 @@ public class Tease extends Stimulation {
     }
 
     @Override
-    public WaveForm waveform(int intensity) {
+    public WaveForm waveform(Stimulator stimulator, int intensity) {
         double onTime = spreadRange(Math.max(0.1, stimulator.minimalSignalDuration()), periodDurationSeconds * 0.25,
                 intensity);
         return new SquareWave(onTime, periodDurationSeconds - onTime);

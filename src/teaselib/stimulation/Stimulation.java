@@ -15,12 +15,13 @@ import org.slf4j.LoggerFactory;
 public abstract class Stimulation {
     private static final Logger logger = LoggerFactory.getLogger(Stimulation.class);
 
-    protected static final int MinIntensity = 0;
-    protected static final int MaxIntensity = 10;
+    public static final int MinIntensity = 0;
+    public static final int MaxIntensity = 10;
 
     protected static final double maxStrength = 1.0;
 
-    protected Stimulator stimulator;
+    @Deprecated
+    Stimulator stimulator;
     int priority;
 
     public class Priority {
@@ -39,12 +40,21 @@ public abstract class Stimulation {
         this.priority = priority;
     }
 
+    @Deprecated
     public void play(double durationSeconds, int intensity) {
+        play(waveform(stimulator, intensity), durationSeconds, intensity);
+    }
+
+    public void play(WaveForm waveForm, double durationSeconds, int intensity) {
         if (logger.isInfoEnabled()) {
             logger.info(getClass().getSimpleName() + ": intensity=" + intensity + " duration=" + durationSeconds
                     + " on " + stimulator.getDeviceName() + ", " + stimulator.getLocation());
         }
-        stimulator.play(waveform(intensity), durationSeconds, Stimulation.maxStrength);
+        stimulator.play(waveForm, durationSeconds, Stimulation.maxStrength);
+    }
+
+    public WaveForm getWaveform(Stimulator stimulator, int intensity) {
+        return waveform(stimulator, intensity);
     }
 
     public void extend(double durationSeconds) {
@@ -59,7 +69,7 @@ public abstract class Stimulation {
         stimulator.complete();
     }
 
-    protected abstract WaveForm waveform(int intensity);
+    protected abstract WaveForm waveform(Stimulator stimulator, int intensity);
 
     public static double spreadRange(double from, double to, int intensity) {
         return from + (to - from) * intensity / MaxIntensity;

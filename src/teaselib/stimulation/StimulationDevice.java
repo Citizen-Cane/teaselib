@@ -7,6 +7,7 @@ import teaselib.core.devices.Device;
 import teaselib.core.devices.DeviceCache;
 import teaselib.core.devices.Devices;
 import teaselib.core.devices.xinput.stimulation.XInputStimulationDevice;
+import teaselib.stimulation.ext.Channel;
 
 /**
  * 
@@ -20,7 +21,7 @@ import teaselib.core.devices.xinput.stimulation.XInputStimulationDevice;
  * Then there's the intensity of the stimulation: For a vibrator, you may want to render intensity by adjusting the
  * motor voltage, but for controlling an e-stim current via a relay, the choice are on or off. So for relays, intensity
  * maps to on/off time.
- *  
+ * 
  * @author Citizen-Cane
  */
 public abstract class StimulationDevice implements Device.Creatable {
@@ -38,5 +39,7 @@ public abstract class StimulationDevice implements Device.Creatable {
         }.addFactory(XInputStimulationDevice.getDeviceFactory(devices, configuration));
     }
 
-    abstract public List<Stimulator> stimulators();
+    public abstract List<Stimulator> stimulators();
+
+    public abstract void play(List<Channel> channels);
 }

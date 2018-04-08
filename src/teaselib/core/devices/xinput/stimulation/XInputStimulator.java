@@ -152,7 +152,7 @@ public class XInputStimulator implements Stimulator {
     @Override
     public void extend(double durationSeconds) {
         synchronized (player) {
-            if (current != null) {
+            if (current.get().isPresent()) {
                 playTime.addAndGet((long) durationSeconds * 100);
             }
         }
@@ -161,10 +161,9 @@ public class XInputStimulator implements Stimulator {
     @Override
     public void stop() {
         synchronized (player) {
-            Optional<Future<Void>> optional = current.get();
-            if (optional.isPresent()) {
-                if (!optional.get().isDone()) {
-                    optional.get().cancel(true);
+            if (current.get().isPresent()) {
+                if (!current.get().get().isDone()) {
+                    current.get().get().cancel(true);
                 }
             }
         }
@@ -173,10 +172,9 @@ public class XInputStimulator implements Stimulator {
     @Override
     public void complete() {
         synchronized (player) {
-            Optional<Future<Void>> optional = current.get();
-            if (optional.isPresent()) {
+            if (current.get().isPresent()) {
                 try {
-                    optional.get().get();
+                    current.get().get().get();
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                     throw new ScriptInterruptedException();

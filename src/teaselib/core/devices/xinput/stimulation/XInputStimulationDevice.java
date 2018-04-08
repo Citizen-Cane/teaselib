@@ -12,6 +12,7 @@ import teaselib.core.devices.Devices;
 import teaselib.core.devices.xinput.XInputDevice;
 import teaselib.stimulation.StimulationDevice;
 import teaselib.stimulation.Stimulator;
+import teaselib.stimulation.ext.Channel;
 
 /**
  * The XInputStimulator class turns any Microsoft XInput (x360, Xbox One and compatible) controller into a vibrator or
@@ -98,8 +99,8 @@ public class XInputStimulationDevice extends StimulationDevice {
             List<String> devicePaths = new ArrayList<>(4);
             for (String devicePath : devices.get(XInputDevice.class).getDevicePaths()) {
                 DeviceCache<XInputDevice> xinputDevces = devices.get(XInputDevice.class);
-                XInputDevice controller = xinputDevces.getDevice(devicePath); // TODO device path or deviceName ?
-                                                                              // -> rename in base class
+                // TODO controller not needed since device path already known
+                XInputDevice controller = xinputDevces.getDevice(devicePath);
                 devicePaths.add(DeviceCache.createDevicePath(XInputStimulationDevice.DeviceClassName,
                         controller.getDevicePath()));
             }
@@ -169,5 +170,10 @@ public class XInputStimulationDevice extends StimulationDevice {
 
     XInputDevice getXInputDevice() {
         return device;
+    }
+
+    @Override
+    public void play(List<Channel> channels) {
+        // TODO submit channel data to device
     }
 }

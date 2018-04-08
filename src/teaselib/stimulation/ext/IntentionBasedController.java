@@ -56,7 +56,7 @@ public class IntentionBasedController<T extends Enum<?>> {
             WaveForm waveForm = stimulationCommand.stimulation.getWaveform(stimulator, intensity);
             channels.add(new Channel(stimulator, waveForm));
         }
-        StimulationDevice device = group.items.get(0).stimulator.getDevice();
+        StimulationDevice device = group.get(0).stimulator.getDevice();
         play(device, channels);
     }
 

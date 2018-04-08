@@ -25,7 +25,7 @@ public class Partition<K> {
 
     public class Group implements Iterable<K> {
         K orderingElement;
-        public final List<K> items = new ArrayList<>();
+        private final List<K> items = new ArrayList<>();
 
         Group(K item) {
             items.add(item);
@@ -55,6 +55,10 @@ public class Partition<K> {
         @Override
         public String toString() {
             return orderingElement.toString() + "->" + items;
+        }
+
+        public K get(int index) {
+            return items.get(index);
         }
 
         public int size() {
@@ -131,7 +135,7 @@ public class Partition<K> {
     }
 
     private boolean similar(Group group1, Group group2) {
-        for (K k : group1.items) {
+        for (K k : group1) {
             if (similarToGroup(k, group2)) {
                 return true;
             }
@@ -140,7 +144,7 @@ public class Partition<K> {
     }
 
     private boolean similarToGroup(K item, Group group) {
-        for (K k : group.items) {
+        for (K k : group) {
             if (measure.similar(k, item)) {
                 return true;
             }

@@ -13,6 +13,10 @@ import java.util.List;
  * 
  * @author Citizen-Cane
  */
+
+// TODO store time stamps instead of delta - saves summing up when ensuring capacity
+// - would become very similar to WaveForm class, with added capacity management -> refactor and add full test coverage
+
 public class TimeLine<T> {
     private int maxItems = 1000;
     private long maxTimeSpanMillis = 1000 * 60;
@@ -87,7 +91,6 @@ public class TimeLine<T> {
     }
 
     private void ensureCapacity() {
-        // TODO store timestamps instead of delta - saves summing up
         long sum = sum(timeSpans);
         if (sum > maxTimeSpanMillis) {
             removeFirstMillis(sum - maxTimeSpanMillis);

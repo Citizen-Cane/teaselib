@@ -1,13 +1,12 @@
-/**
- * 
- */
 package teaselib.stimulation;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 /**
+ * A sequence of values with absolute time stamps. Entries contain durations, internally the entries are stored with
+ * absolute time stamps.
+ * 
  * @author Citizen-Cane
  *
  */
@@ -33,22 +32,22 @@ public class WaveForm {
 
     public final List<Entry> values;
 
+    private long start;
+    private long end;
+
     public WaveForm() {
+        this(0);
+    }
+
+    public WaveForm(long start) {
         this.values = new ArrayList<>();
+        this.start = start;
+        this.end = start;
     }
 
-    public WaveForm(List<Entry> values) {
-        this.values = values;
-    }
-
-    public WaveForm(Entry... values) {
-        this.values = Arrays.asList(values);
-    }
-
-    public void add(Entry... entries) {
-        for (Entry entry : entries) {
-            values.add(entry);
-        }
+    public void add(double amplitude, long durationMillis) {
+        this.values.add(new Entry(amplitude, end));
+        end += durationMillis;
     }
 
     @Override
@@ -56,8 +55,8 @@ public class WaveForm {
         return values.toString();
     }
 
-    static long toMillis(double seconds) {
-        return (int) (seconds * 1000);
+    public static long toMillis(double seconds) {
+        return (long) (seconds * 1000);
     }
 
     public static double clamp(double value) {
@@ -66,5 +65,9 @@ public class WaveForm {
 
     public int size() {
         return values.size();
+    }
+
+    public long getDuration() {
+        return end - start;
     }
 }

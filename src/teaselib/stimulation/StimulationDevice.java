@@ -41,5 +41,5 @@ public abstract class StimulationDevice implements Device.Creatable {
 
     public abstract List<Stimulator> stimulators();
 
-    public abstract void play(List<Channel> channels);
+    public abstract void play(List<Channel> channels, int repeatCount);
 }

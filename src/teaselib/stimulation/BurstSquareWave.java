@@ -6,10 +6,9 @@ package teaselib.stimulation;
  */
 public class BurstSquareWave extends WaveForm {
     public BurstSquareWave(int n, double onTimeSeconds, double offTimeSeconds) {
-        super();
-
         for (int i = 0; i < n; i++) {
-            add(new Entry(MAX, toMillis(onTimeSeconds)), new Entry(MIN, toMillis(offTimeSeconds)));
+            add(MAX, toMillis(onTimeSeconds));
+            add(MIN, toMillis(offTimeSeconds));
         }
     }
 }

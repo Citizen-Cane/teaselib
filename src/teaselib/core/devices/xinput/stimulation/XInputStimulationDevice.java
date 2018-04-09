@@ -175,8 +175,49 @@ public class XInputStimulationDevice extends StimulationDevice {
         return device;
     }
 
+    class ExceutionSequence {
+        class Entry {
+            int channel;
+            int durationMilis;
+
+            public Entry(int channel, int durationMilis) {
+                super();
+                this.channel = channel;
+                this.durationMilis = durationMilis;
+            }
+
+            List<Entry> executionList = new ArrayList<>();
+        }
+    }
+
     @Override
-    public void play(List<Channel> channels) {
-        // TODO submit channel data to device
+    public void play(List<Channel> channels, int repeatCount) {
+        ExceutionSequence seq = new ExceutionSequence();
+
+        // TODO interleave waveform lists:
+        // peek the minimum next duration
+        // -> add value & wait time to batch list
+        //
+        // Problems:
+        // - multiple channels may change at the same time -> add 0 duration for all but the last set
+        //
+        // Change problem dimension to known algorithm and split up
+        // - convert each channel to absolute time stamps (starting from t0)
+        // - join all channels
+        // - sort by time stamp
+        // - execute value changes at same time stamps together
+        // - repeat waveforms until duration is exceeded
+
+        // TODO Create absolute waveforms from the beginning
+        // - tranformation is needed anyway, and when channels aren't mixed,
+        // the original waveform can be used, and sorting can be skipped
+
+        // TODO forward play duration or repeat count up to here - needed to repeat waveforms
+        while (true) {
+            for (Channel channel : channels) {
+                int n = ((XInputStimulator) channel.stimulator).channel;
+                long duration = channel.waveForm.values.get(0).durationMillis;
+            }
+        }
     }
 }

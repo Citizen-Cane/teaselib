@@ -40,15 +40,15 @@ public class IntentionBasedControllerTest {
         }
 
         @Override
-        public void play(List<StimulationCommand> stimulationCommands) {
+        public void play(List<StimulationCommand> stimulationCommands, double durationSeconds) {
             testActionList.accept(stimulationCommands);
-            super.play(stimulationCommands);
+            super.play(stimulationCommands, durationSeconds);
         }
 
         @Override
-        void play(StimulationDevice device, List<Channel> channels) {
+        void play(StimulationDevice device, List<Channel> channels, int repeatCount) {
             testDeviceEntry.accept(device, channels);
-            super.play(device, channels);
+            super.play(device, channels, repeatCount);
         }
     }
 
@@ -94,7 +94,7 @@ public class IntentionBasedControllerTest {
         }
 
         @Override
-        public void play(List<Channel> channels) {
+        public void play(List<Channel> channels, int repeatCount) {
             assertNotNull(channels);
             assertFalse(channels.isEmpty());
         }

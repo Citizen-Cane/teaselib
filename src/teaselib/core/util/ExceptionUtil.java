@@ -19,6 +19,10 @@ public class ExceptionUtil {
             Throwable cause = e.getCause();
             if (cause instanceof Exception) {
                 return reduce((Exception) cause);
+            } else if (cause instanceof Error) {
+                throw (Error) cause;
+            } else if (cause == null) {
+                return e;
             } else {
                 return new RuntimeException(cause);
             }

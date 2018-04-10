@@ -122,7 +122,7 @@ public abstract class StimulationController<T> {
 
                 if (logger.isInfoEnabled()) {
                     logger.info(getClass().getSimpleName() + ": intensity=" + intensity + " duration=" + durationSeconds
-                            + " on " + stimulator.getDeviceName() + ", " + stimulator.getLocation());
+                            + " on " + stimulator.getName());
                 }
 
                 WaveForm waveform = stimulation.getWaveform(stimulator(type), intensity);

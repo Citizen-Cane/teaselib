@@ -18,7 +18,6 @@ import teaselib.stimulation.Stimulator;
 import teaselib.stimulation.WaveForm;
 
 public class XInputStimulator implements Stimulator {
-
     static class SharedState {
         final XInputDevice device;
         int leftMotor = 0;
@@ -29,13 +28,19 @@ public class XInputStimulator implements Stimulator {
             this.device = device;
         }
 
-        public void setLeftMotor(int value) {
-            leftMotor = value;
+        public void setLeftMotor(int strength) {
+            leftMotor = strength;
             device.setVibration(leftMotor, rightMotor);
         }
 
-        public void setRightMotor(int value) {
-            rightMotor = value;
+        public void setRightMotor(int strength) {
+            rightMotor = strength;
+            device.setVibration(leftMotor, rightMotor);
+        }
+
+        public void setBothMotors(int strength) {
+            leftMotor = strength;
+            rightMotor = strength;
             device.setVibration(leftMotor, rightMotor);
         }
     }
@@ -48,10 +53,6 @@ public class XInputStimulator implements Stimulator {
     private final AtomicReference<Optional<Future<Void>>> current = new AtomicReference<>(Optional.empty());
     private final AtomicLong playTime = new AtomicLong(0);
 
-    public ChannelDependency channelDependency = ChannelDependency.Independent;
-    // TODO Must be configurable since cannot be detected by hardware
-    public Output output = Output.EStim;
-
     /**
      * Get all stimulators for a device.
      * 
@@ -60,6 +61,25 @@ public class XInputStimulator implements Stimulator {
      * @return The stimulators share the device, because the outputs can only be set simultaneously
      */
     public static List<XInputStimulator> getStimulators(XInputStimulationDevice device) {
+        if (device.output == Output.EStim && device.wiring == Wiring.CommonGround_Accumulation) {
+            return threeDependentStimulators(device);
+        } else {
+            return twoIndependentStimulators(device);
+        }
+    }
+
+    private static List<XInputStimulator> threeDependentStimulators(XInputStimulationDevice device) {
+        List<XInputStimulator> stimulators = new ArrayList<>(3);
+        XInputStimulator channel0 = new XInputStimulator(device, 0);
+        stimulators.add(channel0);
+        XInputStimulator channel1 = new XInputStimulator(device, 1);
+        stimulators.add(channel1);
+        XInputStimulator channel2 = new XInputStimulator(device, 2);
+        stimulators.add(channel2);
+        return stimulators;
+    }
+
+    private static List<XInputStimulator> twoIndependentStimulators(XInputStimulationDevice device) {
         List<XInputStimulator> stimulators = new ArrayList<>(2);
         XInputStimulator channel0 = new XInputStimulator(device, 0);
         stimulators.add(channel0);
@@ -68,6 +88,9 @@ public class XInputStimulator implements Stimulator {
     }
 
     XInputStimulator(XInputStimulationDevice device, int channel) {
+        if (channel < 0 || channel > 2)
+            throw new IllegalArgumentException(Integer.toString(channel));
+
         this.device = device;
         this.sharedState = new SharedState(device.getXInputDevice());
         this.channel = channel;
@@ -85,20 +108,26 @@ public class XInputStimulator implements Stimulator {
         int strength = (int) (value * XInputDevice.VIBRATION_MAX_VALUE);
         if (channel == 0) {
             sharedState.setLeftMotor(strength);
-        } else {
+        } else if (channel == 1) {
             sharedState.setRightMotor(strength);
+        } else if (channel == 2) {
+            sharedState.setBothMotors(strength);
+        } else {
+            throw new IllegalArgumentException(Integer.toString(channel));
         }
     }
 
     @Override
-    public String getDeviceName() {
-        return "XBox Gamepad " + sharedState.device.getPlayerNum() + " " + (channel == 0 ? "Left" : "Right")
-                + " channel";
+    public String getName() {
+        return device.getName() + " " + getLocation();
     }
 
-    @Override
-    public String getLocation() {
-        return channel == 0 ? "Left rumble motor" : "Right rumble motor";
+    private String getLocation() {
+        if (device.output == Output.EStim) {
+            return channel == 0 ? "Left channel" : "Right channel";
+        } else {
+            return channel == 0 ? "Left rumble motor" : "Right rumble motor";
+        }
     }
 
     @Override
@@ -108,17 +137,18 @@ public class XInputStimulator implements Stimulator {
 
     @Override
     public ChannelDependency channelDependency() {
-        return channelDependency;
+        return device.wiring == Wiring.CommonGround_Accumulation ? ChannelDependency.Dependent
+                : ChannelDependency.Independent;
     }
 
     @Override
     public Output output() {
-        return output;
+        return device.output;
     }
 
     @Override
     public double minimalSignalDuration() {
-        return output == Output.Vibration ? 0.15 : 0.02;
+        return output() == Output.Vibration ? 0.15 : 0.02;
     }
 
     @Override

@@ -7,6 +7,8 @@ import teaselib.core.devices.Device;
 import teaselib.core.devices.DeviceCache;
 import teaselib.core.devices.Devices;
 import teaselib.core.devices.xinput.stimulation.XInputStimulationDevice;
+import teaselib.stimulation.Stimulator.Output;
+import teaselib.stimulation.Stimulator.Wiring;
 import teaselib.stimulation.ext.Channel;
 
 /**
@@ -25,6 +27,7 @@ import teaselib.stimulation.ext.Channel;
  * @author Citizen-Cane
  */
 public abstract class StimulationDevice implements Device.Creatable {
+
     public static synchronized DeviceCache<StimulationDevice> getDeviceCache(Devices devices,
             Configuration configuration) {
         return new DeviceCache<StimulationDevice>() {
@@ -37,6 +40,14 @@ public abstract class StimulationDevice implements Device.Creatable {
                 return getDevice(getLast(getDevicePaths()));
             }
         }.addFactory(XInputStimulationDevice.getDeviceFactory(devices, configuration));
+    }
+
+    public Output output = Output.EStim;;
+    public Wiring wiring = Wiring.CommonGround_Accumulation;
+
+    public void setMode(Output output, Wiring wiring) {
+        this.output = output;
+        this.wiring = wiring;
     }
 
     public abstract List<Stimulator> stimulators();

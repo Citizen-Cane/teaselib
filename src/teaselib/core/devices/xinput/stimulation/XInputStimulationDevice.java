@@ -1,6 +1,7 @@
 package teaselib.core.devices.xinput.stimulation;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -122,7 +123,7 @@ public class XInputStimulationDevice extends StimulationDevice {
     }
 
     private final XInputDevice device;
-    private final List<Stimulator> stimulators;
+    private final List<XInputStimulator> stimulators;
 
     public XInputStimulationDevice(XInputDevice device) {
         super();
@@ -138,7 +139,7 @@ public class XInputStimulationDevice extends StimulationDevice {
 
     @Override
     public String getName() {
-        return "XInput stimulator";
+        return device.getName() + "stimulator";
     }
 
     @Override
@@ -168,7 +169,7 @@ public class XInputStimulationDevice extends StimulationDevice {
 
     @Override
     public List<Stimulator> stimulators() {
-        return stimulators;
+        return Collections.unmodifiableList(stimulators);
     }
 
     XInputDevice getXInputDevice() {

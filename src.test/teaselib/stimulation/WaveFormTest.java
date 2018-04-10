@@ -15,13 +15,8 @@ public class WaveFormTest {
         WaveForm waveForm = null;
 
         @Override
-        public String getDeviceName() {
+        public String getName() {
             return getClass().getSimpleName();
-        }
-
-        @Override
-        public String getLocation() {
-            return "Virtual Rumble Motor";
         }
 
         @Override

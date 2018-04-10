@@ -57,7 +57,7 @@ public class StimulationTest {
     public void testEnumerateStimulators() {
         System.out.println(device.getDevicePath() + (device.connected() ? "" : ":" + Device.WaitingForConnection));
         for (Stimulator stimulator : device.stimulators()) {
-            System.out.println(stimulator.getDeviceName());
+            System.out.println(stimulator.getName());
         }
     }
 

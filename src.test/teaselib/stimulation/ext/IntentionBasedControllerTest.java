@@ -110,13 +110,8 @@ public class IntentionBasedControllerTest {
         }
 
         @Override
-        public String getDeviceName() {
+        public String getName() {
             return getClass().getSimpleName() + "_" + id;
-        }
-
-        @Override
-        public String getLocation() {
-            throw new UnsupportedOperationException();
         }
 
         @Override
@@ -161,7 +156,7 @@ public class IntentionBasedControllerTest {
 
         @Override
         public String toString() {
-            return getDeviceName();
+            return getName();
         }
     }
 

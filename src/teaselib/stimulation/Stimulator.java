@@ -4,10 +4,10 @@
 package teaselib.stimulation;
 
 /**
- * Represents a stimulator device channel.
+ * Represents a single channel of a stimulation device.
  * 
- * A device may consists of multiple stimulators (like gamepads), in that case several stimulator instances are created
- * for the device.
+ * A device usually consists of multiple stimulators (like gamepads with rumble motors), in that case several stimulator
+ * instances are created for the device.
  * 
  * @author Citizen-Cane
  *
@@ -46,18 +46,28 @@ public interface Stimulator {
     }
 
     /**
+     * Electrode wiring
+     *
+     */
+    public enum Wiring {
+        /**
+         * Independent channels.
+         */
+        Independent,
+
+        /**
+         * When both channel signals add up to induce a stronger signal on the body part that's wired up with a common
+         * electrode, the device provides an additional channel, however all three channels will be independent.
+         */
+        CommonGround_Accumulation
+    }
+
+    /**
      * The name of the device that provides the stimulation
      * 
      * @return
      */
-    String getDeviceName();
-
-    /**
-     * Location of the stimulator on the device
-     * 
-     * @return
-     */
-    String getLocation();
+    String getName();
 
     /**
      * The device that controls the stimulation output
@@ -94,12 +104,15 @@ public interface Stimulator {
      * @param durationSeconds
      * @param maxstrength
      */
+    @Deprecated
     void play(WaveForm waveform, double durationSeconds, double maxstrength);
 
+    @Deprecated
     void extend(double durationSeconds);
 
+    @Deprecated
     void stop();
 
+    @Deprecated
     void complete();
-
 }

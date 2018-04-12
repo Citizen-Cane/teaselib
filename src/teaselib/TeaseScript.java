@@ -224,22 +224,21 @@ public abstract class TeaseScript extends TeaseScriptMath {
      * @return The choice object that has been selected by the user.
      */
     public final String reply(List<String> text) {
-        return showChoices(Answer.all(text), null);
+        return showChoices(Answers.of(text), null);
     }
 
     /**
      * Displays the requested choices in the user interface after the mandatory parts of all renderers have been
      * completed. This means especially that all text has been displayed and spoken.
      * 
-     * @param text
+     * @param answer
      *            The first prompt to be displayed by the user interface.
      * @param more
      *            More prompts to be displayed by the user interface
      * @return The choice object that has been selected by the user.
      */
-    public final String reply(String text, String... more) {
-        List<String> choices = buildChoicesFromArray(text, more);
-        return reply(choices);
+    public final String reply(String answer, String... more) {
+        return showChoices(Answers.of(answer, more));
     }
 
     /**
@@ -253,15 +252,15 @@ public abstract class TeaseScript extends TeaseScriptMath {
      */
 
     public final String reply(ScriptFunction scriptFunction, List<String> text) {
-        return showChoices(Answer.all(text), scriptFunction);
+        return showChoices(Answers.of(text), scriptFunction);
     }
 
     public final String reply(RunnableScript script, List<String> text) {
-        return showChoices(Answer.all(text), new ScriptFunction(script));
+        return showChoices(Answers.of(text), new ScriptFunction(script));
     }
 
     public final String reply(CallableScript<String> script, List<String> text) {
-        return showChoices(Answer.all(text), new ScriptFunction(script));
+        return showChoices(Answers.of(text), new ScriptFunction(script));
     }
 
     /**
@@ -277,18 +276,15 @@ public abstract class TeaseScript extends TeaseScriptMath {
      */
 
     public final String reply(ScriptFunction scriptFunction, String text, String... more) {
-        List<String> choices = buildChoicesFromArray(text, more);
-        return reply(scriptFunction, choices);
+        return showChoices(Answers.of(text, more), scriptFunction);
     }
 
     public final String reply(RunnableScript script, String text, String... more) {
-        List<String> choices = buildChoicesFromArray(text, more);
-        return reply(new ScriptFunction(script), choices);
+        return showChoices(Answers.of(text, more), new ScriptFunction(script));
     }
 
     public final String reply(CallableScript<String> script, String text, String... more) {
-        List<String> choices = buildChoicesFromArray(text, more);
-        return reply(new ScriptFunction(script), choices);
+        return showChoices(Answers.of(text, more), new ScriptFunction(script));
     }
 
     protected String awaitTimeout(long seconds, SpeechRecognition.TimeoutBehavior timeoutBehavior) {
@@ -402,8 +398,7 @@ public abstract class TeaseScript extends TeaseScriptMath {
      * @return The index of the choice object in the argument list that has been selected by the user.
      */
     public final int replyIndex(String answer, String... more) {
-        List<String> choices = buildChoicesFromArray(answer, more);
-        return replyIndex(choices);
+        return replyIndex(Answers.of(answer, more));
     }
 
     /**
@@ -414,24 +409,32 @@ public abstract class TeaseScript extends TeaseScriptMath {
      *            The prompts to be displayed in the user interface
      * @return The index of the choice object in the {@code choices} list that has been selected by the user.
      */
-    public final int replyIndex(List<String> answer) {
-        return answer.indexOf(reply(answer));
+    public final int replyIndex(List<String> answers) {
+        return answers.indexOf(reply(answers));
+    }
+
+    public final int replyIndex(Answers answers) {
+        return answers.indexOf(showChoices(answers));
     }
 
     public final String reply(Answer... answers) {
         return showChoices(Arrays.asList(answers));
     }
 
-    public final String reply(ScriptFunction scriptFunction, Answer... answers) {
-        return showChoices(Arrays.asList(answers), scriptFunction);
+    public final String reply(ScriptFunction scriptFunction, Answer answer, Answer... more) {
+        return showChoices(Answers.of(answer, more), scriptFunction);
     }
 
-    public final String reply(RunnableScript script, Answer... answers) {
-        return showChoices(Arrays.asList(answers), new ScriptFunction(script));
+    public final String reply(RunnableScript script, Answer answer, Answer... more) {
+        return showChoices(Answers.of(answer, more), new ScriptFunction(script));
     }
 
-    public final String reply(CallableScript<String> script, Answer... answers) {
-        return showChoices(Arrays.asList(answers), new ScriptFunction(script));
+    public final String reply(CallableScript<String> script, Answer answer, Answer... more) {
+        return showChoices(Answers.of(answer, more), new ScriptFunction(script));
+    }
+
+    public final String reply(ScriptFunction scriptFunction, Answers answers) {
+        return showChoices(answers, scriptFunction);
     }
 
     public final String reply(Intention intention, Answer... answers) {
@@ -447,15 +450,15 @@ public abstract class TeaseScript extends TeaseScriptMath {
     }
 
     public final String reply(Intention intention, String answer) {
-        return showChoices(Answer.all(answer), null, intention);
+        return showChoices(Answers.of(answer), null, intention);
     }
 
-    public final String reply(Intention intention, List<String> answer) {
-        return showChoices(Answer.all(answer), null, intention);
+    public final String reply(Intention intention, List<String> answers) {
+        return showChoices(Answers.of(answers), null, intention);
     }
 
-    public final String reply(ScriptFunction scriptFunction, Intention intention, List<String> answer) {
-        return showChoices(Answer.all(answer), scriptFunction, intention);
+    public final String reply(ScriptFunction scriptFunction, Intention intention, List<String> answers) {
+        return showChoices(Answers.of(answers), scriptFunction, intention);
     }
 
     /**

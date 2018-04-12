@@ -10,7 +10,7 @@ import teaselib.functional.RunnableScript;
  * @author Citizen-Cane
  *
  */
-public class ScriptFunction implements CallableScript<String> {
+public class ScriptFunction {
     /**
      * Return value to state that the script function has timed out.
      */
@@ -68,7 +68,6 @@ public class ScriptFunction implements CallableScript<String> {
         this.relation = relation;
     }
 
-    @Override
     public String call() {
         return script.call();
     }

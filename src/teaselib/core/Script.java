@@ -133,13 +133,6 @@ public abstract class Script {
         textToSpeech.acquireVoice(actor, resources);
     }
 
-    protected static List<String> buildChoicesFromArray(String choice, String... more) {
-        List<String> choices = new ArrayList<>(1 + more.length);
-        choices.add(choice);
-        choices.addAll(Arrays.asList(more));
-        return choices;
-    }
-
     private static final String SCRIPT_INSTANCES = "ScriptInstances";
 
     public <T extends Script> T script(Class<T> scriptClass) {

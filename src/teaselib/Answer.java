@@ -1,8 +1,5 @@
 package teaselib;
 
-import java.util.ArrayList;
-import java.util.List;
-
 /**
  * @author Citizen-Cane
  *
@@ -23,22 +20,6 @@ public class Answer {
 
     public static Answer no(String text) {
         return new Answer(text, Meaning.NO);
-    }
-
-    public static List<Answer> all(List<String> answers) {
-        List<Answer> all = new ArrayList<>(answers.size());
-        for (String answer : answers) {
-            all.add(Answer.resume(answer));
-        }
-        return all;
-    }
-
-    public static List<Answer> all(String... answers) {
-        List<Answer> all = new ArrayList<>(answers.length);
-        for (String answer : answers) {
-            all.add(Answer.resume(answer));
-        }
-        return all;
     }
 
     public static Answer resume(String text) {

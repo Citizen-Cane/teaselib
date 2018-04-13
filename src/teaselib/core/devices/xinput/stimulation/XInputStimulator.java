@@ -45,7 +45,7 @@ public class XInputStimulator implements Stimulator {
         }
     }
 
-    final StimulationDevice device;
+    final XInputStimulationDevice device;
     final SharedState sharedState;
     final int channel;
 
@@ -102,10 +102,8 @@ public class XInputStimulator implements Stimulator {
         this.channel = channel;
     }
 
-    private void set(double value) {
-        value = Math.max(0.0, value);
-        value = Math.min(value, 1.0);
-        int strength = (int) (value * XInputDevice.VIBRATION_MAX_VALUE);
+    void set(double value) {
+        int strength = device.vibrationValue(value);
         if (channel == 0) {
             sharedState.setLeftMotor(strength);
         } else if (channel == 1) {
@@ -156,12 +154,14 @@ public class XInputStimulator implements Stimulator {
         Callable<Void> renderWaveform = () -> {
             try {
                 long startTime = System.currentTimeMillis();
+                long now = startTime;
                 do {
                     for (WaveForm.Entry entry : waveform.values) {
                         set(entry.amplitude);
-                        Thread.sleep(entry.durationMillis);
+                        now = System.currentTimeMillis();
+                        Thread.sleep(entry.timeStampMillis - now);
                     }
-                } while (System.currentTimeMillis() - startTime < playTime.get());
+                } while (now - startTime < playTime.get());
 
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();

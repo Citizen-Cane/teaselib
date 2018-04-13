@@ -13,6 +13,7 @@ import teaselib.core.devices.Devices;
 import teaselib.core.devices.xinput.XInputDevice;
 import teaselib.stimulation.StimulationDevice;
 import teaselib.stimulation.Stimulator;
+import teaselib.stimulation.Stimulator.Wiring;
 import teaselib.stimulation.ext.Channel;
 
 /**
@@ -73,7 +74,7 @@ import teaselib.stimulation.ext.Channel;
  * This alone may give you a disabled controller timeout - just tease your victim before the timeout duration elapses to
  * restart the timer.
  * 
- * <h2>Replace the shoulder buttons with a MOSFET</h2>
+ * <h2>Replace the shoulder buttons with a MOSFET which is triggered by activating a rumble motors.</h2>
  * 
  * Unsolder the micro-switches. Get a MOSFET with a threshold voltage of 1-2V, for instance a NDP6060L, or a IRLZ34N.
  * <p>
@@ -100,7 +101,7 @@ public class XInputStimulationDevice extends StimulationDevice {
             List<String> devicePaths = new ArrayList<>(4);
             for (String devicePath : devices.get(XInputDevice.class).getDevicePaths()) {
                 DeviceCache<XInputDevice> xinputDevces = devices.get(XInputDevice.class);
-                // TODO controller not needed since device path already known
+                // TODO controller reference not needed since device path already known?
                 // - devicePath is XInput360GameController/WaitingForConnection,
                 // but list will contain XInputStimulationDevice/XInput360GameController/0
                 // -> different from MotionDetectorJavaCV.enumerateDevicePaths(...)
@@ -128,8 +129,7 @@ public class XInputStimulationDevice extends StimulationDevice {
     public XInputStimulationDevice(XInputDevice device) {
         super();
         this.device = device;
-        this.stimulators = new ArrayList<>(2);
-        this.stimulators.addAll(XInputStimulator.getStimulators(this));
+        this.stimulators = XInputStimulator.getStimulators(this);
     }
 
     @Override
@@ -176,49 +176,57 @@ public class XInputStimulationDevice extends StimulationDevice {
         return device;
     }
 
-    class ExceutionSequence {
-        class Entry {
-            int channel;
-            int durationMilis;
-
-            public Entry(int channel, int durationMilis) {
-                super();
-                this.channel = channel;
-                this.durationMilis = durationMilis;
+    @Override
+    public void play(List<Channel> channels, int repeatCount) {
+        // TODO Run this asynchronously
+        double[] channelValues = new double[channels.size()];
+        for (int i = 0; i < repeatCount; i++) {
+            long timeStampMillis = 0;
+            while (timeStampMillis != Long.MAX_VALUE) {
+                timeStampMillis = Channel.nextTimeStamp(channels, timeStampMillis);
+                Channel.getSamples(channels, timeStampMillis, channelValues);
+                playSamples(channelValues);
+                sleep(timeStampMillis - System.currentTimeMillis());
+                if (Thread.currentThread().isInterrupted())
+                    return;
             }
-
-            List<Entry> executionList = new ArrayList<>();
         }
     }
 
-    @Override
-    public void play(List<Channel> channels, int repeatCount) {
-        ExceutionSequence seq = new ExceutionSequence();
-
-        // TODO interleave waveform lists:
-        // peek the minimum next duration
-        // -> add value & wait time to batch list
-        //
-        // Problems:
-        // - multiple channels may change at the same time -> add 0 duration for all but the last set
-        //
-        // Change problem dimension to known algorithm and split up
-        // - convert each channel to absolute time stamps (starting from t0)
-        // - join all channels
-        // - sort by time stamp
-        // - execute value changes at same time stamps together
-        // - repeat waveforms until duration is exceeded
-
-        // TODO Create absolute waveforms from the beginning
-        // - tranformation is needed anyway, and when channels aren't mixed,
-        // the original waveform can be used, and sorting can be skipped
-
-        // TODO forward play duration or repeat count up to here - needed to repeat waveforms
-        while (true) {
-            for (Channel channel : channels) {
-                int n = ((XInputStimulator) channel.stimulator).channel;
-                long duration = channel.waveForm.values.get(0).durationMillis;
-            }
+    private void sleep(long millis) {
+        try {
+            Thread.sleep(millis);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
         }
+    }
+
+    private void playSamples(double[] channelValues) {
+        if (wiring == Wiring.CommonGround_Accumulation) {
+            setHighestPriorityChannel(channelValues);
+        } else {
+            setIndependentChannels(channelValues);
+        }
+    }
+
+    private void setHighestPriorityChannel(double[] channelValues) {
+        if (channelValues[2] > 0) {
+            int value = vibrationValue(channelValues[2]);
+            device.setVibration(value, value);
+        } else if (channelValues[1] > 0) {
+            device.setVibration(0, vibrationValue(channelValues[1]));
+        } else {
+            device.setVibration(vibrationValue(channelValues[0]), 0);
+        }
+    }
+
+    private void setIndependentChannels(double[] channelValues) {
+        device.setVibration(vibrationValue(channelValues[0]), vibrationValue(channelValues[1]));
+    }
+
+    int vibrationValue(double value) {
+        value = Math.max(0.0, value);
+        value = Math.min(value, 1.0);
+        return (int) (value * XInputDevice.VIBRATION_MAX_VALUE);
     }
 }

@@ -12,9 +12,12 @@ public abstract class Stimulation {
 
     protected static final double maxStrength = 1.0;
 
-    int priority;
+    final int priority;
 
     public class Priority {
+        private Priority() {
+        }
+
         public static final int OneShotShort = 300;
         public static final int OneShot = 200;
         public static final int Normal = 100;

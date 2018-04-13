@@ -1,7 +1,6 @@
 package teaselib.stimulation.ext;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,7 +30,9 @@ public class IntentionBasedController<T extends Enum<?>> {
     }
 
     public void play(T intention, Stimulation stimulation, double durationSeconds) {
-        play(Arrays.asList(new StimulationCommand(stims.get(intention), stimulation)), durationSeconds);
+        List<Channel> channels = new ArrayList<>();
+        channels.add(newChannel(intention, stimulation, 0));
+        play(channels, durationSeconds);
     }
 
     public void play(T intention, Stimulation stimulation, T intention2, Stimulation stimulation2) {
@@ -40,8 +41,11 @@ public class IntentionBasedController<T extends Enum<?>> {
 
     public void play(T intention, Stimulation stimulation, T intention2, Stimulation stimulation2,
             double durationSeconds) {
-        play(Arrays.asList(new StimulationCommand(stims.get(intention), stimulation),
-                new StimulationCommand(stims.get(intention2), stimulation2)), durationSeconds);
+        List<Channel> channels = new ArrayList<>();
+        Channel channel1 = newChannel(intention, stimulation, 0);
+        channels.add(channel1);
+        channels.add(newChannel(intention2, stimulation2, channel1.waveForm.getDurationMillis()));
+        play(channels, durationSeconds);
     }
 
     public void play(T intention, Stimulation stimulation, T intention2, Stimulation stimulation2, T intention3,
@@ -51,26 +55,31 @@ public class IntentionBasedController<T extends Enum<?>> {
 
     public void play(T intention, Stimulation stimulation, T intention2, Stimulation stimulation2, T intention3,
             Stimulation stimulation3, double durationSeconds) {
-        play(Arrays.asList(new StimulationCommand(stims.get(intention), stimulation),
-                new StimulationCommand(stims.get(intention2), stimulation2),
-                new StimulationCommand(stims.get(intention3), stimulation3)), durationSeconds);
+        List<Channel> channels = new ArrayList<>();
+        Channel channel1 = newChannel(intention, stimulation, 0);
+        channels.add(channel1);
+        Channel channel2 = newChannel(intention2, stimulation2, channel1.waveForm.getDurationMillis());
+        channels.add(channel2);
+        channels.add(newChannel(intention3, stimulation3, channel2.waveForm.getDurationMillis()));
+        play(channels, durationSeconds);
     }
 
-    public void play(List<StimulationCommand> stimulationCommands, double durationSeconds) {
-        Partition<StimulationCommand> devices = new Partition<>(stimulationCommands,
+    private Channel newChannel(T intention, Stimulation stimulation, long startMillis) {
+        Stimulator stimulator = stims.get(intention);
+        WaveForm waveform = stimulation.getWaveform(stimulator, intensity);
+        return new Channel(stimulator, waveform, startMillis);
+    }
+
+    void play(List<Channel> channels, double durationSeconds) {
+        Partition<Channel> devices = new Partition<>(channels,
                 (a, b) -> a.stimulator.getDevice() == b.stimulator.getDevice());
-        for (Partition<StimulationCommand>.Group group : devices.groups) {
+        for (Partition<Channel>.Group group : devices.groups) {
             play(group, durationSeconds);
         }
     }
 
-    private void play(Partition<StimulationCommand>.Group group, double durationSeconds) {
-        List<Channel> channels = new ArrayList<>(group.size());
-        for (StimulationCommand stimulationCommand : group) {
-            Stimulator stimulator = stimulationCommand.stimulator;
-            WaveForm waveForm = stimulationCommand.stimulation.getWaveform(stimulator, intensity);
-            channels.add(new Channel(stimulator, waveForm));
-        }
+    private void play(Partition<Channel>.Group group, double durationSeconds) {
+        List<Channel> channels = asList(group);
         StimulationDevice device = group.get(0).stimulator.getDevice();
         long maxDurationMillis = maxDurationMillis(channels);
         int repeatCount = maxDurationMillis > 0
@@ -79,10 +88,18 @@ public class IntentionBasedController<T extends Enum<?>> {
         play(device, channels, repeatCount);
     }
 
+    private List<Channel> asList(Iterable<Channel> group) {
+        List<Channel> channels = new ArrayList<>();
+        for (Channel channel : group) {
+            channels.add(channel);
+        }
+        return channels;
+    }
+
     private long maxDurationMillis(List<Channel> channels) {
         Optional<Channel> max = channels.stream().reduce(Channel::maxDuration);
         if (max.isPresent()) {
-            return max.get().waveForm.getDuration();
+            return max.get().waveForm.getDurationMillis();
         } else {
             throw new IllegalStateException();
         }

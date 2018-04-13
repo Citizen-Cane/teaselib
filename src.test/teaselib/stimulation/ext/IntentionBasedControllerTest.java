@@ -30,19 +30,19 @@ public class IntentionBasedControllerTest {
     }
 
     private final class TestController extends IntentionBasedController<Intention> {
-        Consumer<List<StimulationCommand>> testActionList;
+        Consumer<List<Channel>> testActionList;
         BiConsumer<StimulationDevice, List<Channel>> testDeviceEntry;
 
-        public TestController(Consumer<List<StimulationCommand>> testActionList,
+        public TestController(Consumer<List<Channel>> testActionList,
                 BiConsumer<StimulationDevice, List<Channel>> testDeviceEntry) {
             this.testActionList = testActionList;
             this.testDeviceEntry = testDeviceEntry;
         }
 
         @Override
-        public void play(List<StimulationCommand> stimulationCommands, double durationSeconds) {
-            testActionList.accept(stimulationCommands);
-            super.play(stimulationCommands, durationSeconds);
+        public void play(List<Channel> channels, double durationSeconds) {
+            testActionList.accept(channels);
+            super.play(channels, durationSeconds);
         }
 
         @Override

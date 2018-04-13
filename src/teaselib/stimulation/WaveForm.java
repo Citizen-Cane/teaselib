@@ -10,39 +10,34 @@ import java.util.List;
  * @author Citizen-Cane
  *
  */
+// TODO Make interface and implementation ArrayBased waveform, because arrays will be inefficient for non-rectangular
+// waveforms - its just done this way for now because the XInput-Controller is happy with square waves
 public class WaveForm {
     static final double MIN = 0.0;
     static final double MAX = 1.0;
 
     public static class Entry {
         public final double amplitude;
-        public final long durationMillis;
+        public final long timeStampMillis;
 
         public Entry(double amplitude, long durationMillis) {
             super();
             this.amplitude = amplitude;
-            this.durationMillis = durationMillis;
+            this.timeStampMillis = durationMillis;
         }
 
         @Override
         public String toString() {
-            return "[" + amplitude + "+" + durationMillis + "ms]";
+            return "[" + amplitude + "+" + timeStampMillis + "ms]";
         }
     }
 
     public final List<Entry> values;
-
-    private long start;
     private long end;
 
     public WaveForm() {
-        this(0);
-    }
-
-    public WaveForm(long start) {
         this.values = new ArrayList<>();
-        this.start = start;
-        this.end = start;
+        this.end = 0;
     }
 
     public void add(double amplitude, long durationMillis) {
@@ -67,7 +62,28 @@ public class WaveForm {
         return values.size();
     }
 
-    public long getDuration() {
-        return end - start;
+    public long getDurationMillis() {
+        return end;
+    }
+
+    // TODO Replace by iterable entry to avoid looping twice
+    // keep in mind that the abstraction must also cover audio waveforms
+    // - audio waveforms have constant distance between samples - will be O(1)
+    public long nextTime(long currentTimeMillis) {
+        for (Entry entry : values) {
+            if (currentTimeMillis <= entry.timeStampMillis) {
+                return entry.timeStampMillis;
+            }
+        }
+        return Long.MAX_VALUE;
+    }
+
+    public double getValue(long timeMillis) {
+        for (Entry entry : values) {
+            if (timeMillis <= entry.timeStampMillis) {
+                return entry.amplitude;
+            }
+        }
+        return 0.0;
     }
 }

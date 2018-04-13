@@ -31,10 +31,10 @@ public class IntentionBasedControllerTest {
 
     private final class TestController extends IntentionBasedController<Intention> {
         Consumer<List<Channel>> testActionList;
-        BiConsumer<StimulationDevice, List<Channel>> testDeviceEntry;
+        BiConsumer<StimulationDevice, StimulationChannels> testDeviceEntry;
 
         public TestController(Consumer<List<Channel>> testActionList,
-                BiConsumer<StimulationDevice, List<Channel>> testDeviceEntry) {
+                BiConsumer<StimulationDevice, StimulationChannels> testDeviceEntry) {
             this.testActionList = testActionList;
             this.testDeviceEntry = testDeviceEntry;
         }
@@ -46,7 +46,7 @@ public class IntentionBasedControllerTest {
         }
 
         @Override
-        void play(StimulationDevice device, List<Channel> channels, int repeatCount) {
+        void play(StimulationDevice device, StimulationChannels channels, int repeatCount) {
             testDeviceEntry.accept(device, channels);
             super.play(device, channels, repeatCount);
         }
@@ -94,7 +94,7 @@ public class IntentionBasedControllerTest {
         }
 
         @Override
-        public void play(List<Channel> channels, int repeatCount) {
+        public void play(StimulationChannels channels, int repeatCount) {
             assertNotNull(channels);
             assertFalse(channels.isEmpty());
         }

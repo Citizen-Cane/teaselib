@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 import teaselib.stimulation.Stimulation;
 import teaselib.stimulation.StimulationDevice;
@@ -79,13 +78,9 @@ public class IntentionBasedController<T extends Enum<?>> {
     }
 
     private void play(Partition<Channel>.Group group, double durationSeconds) {
-        List<Channel> channels = asList(group);
-        StimulationDevice device = group.get(0).stimulator.getDevice();
-        long maxDurationMillis = maxDurationMillis(channels);
-        int repeatCount = maxDurationMillis > 0
-                ? Math.max(1, (int) (WaveForm.toMillis(durationSeconds) / maxDurationMillis))
-                : 1;
-        play(device, channels, repeatCount);
+        StimulationChannels channels = new StimulationChannels(asList(group));
+        int repeatCount = repeatCount(channels, durationSeconds);
+        play(channels.get(0).stimulator.getDevice(), channels, repeatCount);
     }
 
     private List<Channel> asList(Iterable<Channel> group) {
@@ -96,16 +91,14 @@ public class IntentionBasedController<T extends Enum<?>> {
         return channels;
     }
 
-    private long maxDurationMillis(List<Channel> channels) {
-        Optional<Channel> max = channels.stream().reduce(Channel::maxDuration);
-        if (max.isPresent()) {
-            return max.get().waveForm.getDurationMillis();
-        } else {
-            throw new IllegalStateException();
-        }
+    private int repeatCount(StimulationChannels channels, double durationSeconds) {
+        long maxDurationMillis = channels.maxDurationMillis();
+        return maxDurationMillis > 0
+                ? Math.max(1, (int) (WaveForm.toMillis(durationSeconds) / maxDurationMillis))
+                : 1;
     }
 
-    void play(StimulationDevice device, List<Channel> channels, int repeatCount) {
+    void play(StimulationDevice device, StimulationChannels channels, int repeatCount) {
         device.play(channels, repeatCount);
     }
 }

@@ -14,7 +14,7 @@ import teaselib.core.devices.xinput.XInputDevice;
 import teaselib.stimulation.StimulationDevice;
 import teaselib.stimulation.Stimulator;
 import teaselib.stimulation.Stimulator.Wiring;
-import teaselib.stimulation.ext.Channel;
+import teaselib.stimulation.ext.StimulationChannels;
 
 /**
  * The XInputStimulator class turns any Microsoft XInput (x360, Xbox One and compatible) controller into a vibrator or
@@ -177,14 +177,14 @@ public class XInputStimulationDevice extends StimulationDevice {
     }
 
     @Override
-    public void play(List<Channel> channels, int repeatCount) {
+    public void play(StimulationChannels channels, int repeatCount) {
         // TODO Run this asynchronously
         double[] channelValues = new double[channels.size()];
         for (int i = 0; i < repeatCount; i++) {
             long timeStampMillis = 0;
             while (timeStampMillis != Long.MAX_VALUE) {
-                timeStampMillis = Channel.nextTimeStamp(channels, timeStampMillis);
-                Channel.getSamples(channels, timeStampMillis, channelValues);
+                timeStampMillis = channels.nextTimeStamp(timeStampMillis);
+                channels.getSamples(timeStampMillis, channelValues);
                 playSamples(channelValues);
                 sleep(timeStampMillis - System.currentTimeMillis());
                 if (Thread.currentThread().isInterrupted())

@@ -1,8 +1,5 @@
 package teaselib.stimulation.ext;
 
-import java.util.List;
-import java.util.Optional;
-
 import teaselib.stimulation.Stimulator;
 import teaselib.stimulation.WaveForm;
 
@@ -27,22 +24,6 @@ public class Channel {
 
     public double getValue(long timeStampMillis) {
         return waveForm.getValue(startMillis + timeStampMillis);
-    }
-
-    public static long nextTimeStamp(List<Channel> channels, long currentTimeMillis) {
-        Optional<Long> min = channels.stream().map(Channel::getWaveForm)
-                .map((WaveForm waveform) -> waveform.nextTime(currentTimeMillis)).reduce(Math::min);
-        if (min.isPresent()) {
-            return min.get();
-        } else {
-            throw new IllegalArgumentException(channels.toString());
-        }
-    }
-
-    public static void getSamples(List<Channel> channels, long timeStampMillis, double[] values) {
-        for (int i = 0; i < values.length; i++) {
-            values[i] = channels.get(i).getValue(timeStampMillis);
-        }
     }
 
     @Override

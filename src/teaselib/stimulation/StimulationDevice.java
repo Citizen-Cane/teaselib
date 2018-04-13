@@ -9,7 +9,7 @@ import teaselib.core.devices.Devices;
 import teaselib.core.devices.xinput.stimulation.XInputStimulationDevice;
 import teaselib.stimulation.Stimulator.Output;
 import teaselib.stimulation.Stimulator.Wiring;
-import teaselib.stimulation.ext.Channel;
+import teaselib.stimulation.ext.StimulationChannels;
 
 /**
  * 
@@ -52,5 +52,5 @@ public abstract class StimulationDevice implements Device.Creatable {
 
     public abstract List<Stimulator> stimulators();
 
-    public abstract void play(List<Channel> channels, int repeatCount);
+    public abstract void play(StimulationChannels channels, int repeatCount);
 }

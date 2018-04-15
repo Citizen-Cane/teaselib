@@ -15,34 +15,50 @@ import teaselib.stimulation.WaveForm;
 public class StimulationChannels implements Iterable<Channel> {
     final List<Channel> channels;
 
-    class Sample {
+    public class Samples {
         long timeStampMillis;
         final double[] values;
 
-        public Sample(int channels) {
+        public Samples(int channels) {
             timeStampMillis = Long.MIN_VALUE;
             values = new double[channels];
         }
 
+        public long getTimeStampMillis() {
+            return timeStampMillis;
+        }
+
+        public double[] getValues() {
+            return values;
+        }
+
+        public double get(int index) {
+            return values[index];
+        }
+
+        @Override
+        public String toString() {
+            return timeStampMillis + "ms -> " + Arrays.toString(values);
+        }
     }
 
-    class IteratorImpl implements Iterator<Sample> {
-        final Sample sample;
+    class IteratorImpl implements Iterator<Samples> {
+        final Samples samples;
 
         final List<Iterator<WaveForm.Sample>> pointers;
-        final List<WaveForm.Sample> samples;
+        final List<WaveForm.Sample> waveformSamples;
 
         long timeStampMillis = 0;
 
         private IteratorImpl() {
-            this.sample = new Sample(size());
-            this.samples = new ArrayList<>(size());
+            this.samples = new Samples(size());
+            this.waveformSamples = new ArrayList<>(size());
             this.pointers = new ArrayList<>(size());
 
             for (Channel channel : channels) {
                 Iterator<WaveForm.Sample> iterator = channel.getWaveForm().iterator();
                 pointers.add(iterator);
-                samples.add(iterator.next());
+                waveformSamples.add(iterator.next());
             }
         }
 
@@ -52,40 +68,38 @@ public class StimulationChannels implements Iterable<Channel> {
         }
 
         @Override
-        public Sample next() {
+        public Samples next() {
             throw new UnsupportedOperationException();
             // TODO advancing through multiple waveform samples requires to remember time for each sample between sample
             // boundaries
         }
     }
 
-    public class SampleIterator implements Iterator<double[]> {
-        final double[] values;
-        long timeStampMillis;
+    public class SampleIterator implements Iterator<Samples> {
+        Samples samples;
 
         private SampleIterator() {
-            values = new double[channels.size()];
-            timeStampMillis = Long.MIN_VALUE;
+            samples = new Samples(channels.size());
         }
 
         public long getTimeStampMillis() {
-            return timeStampMillis;
+            return samples.timeStampMillis;
         }
 
         @Override
         public boolean hasNext() {
             return channels.stream().map(Channel::getWaveForm).map(WaveForm::getDurationMillis).reduce(Math::max)
-                    .orElseGet(() -> Long.MIN_VALUE) > timeStampMillis;
+                    .orElseGet(() -> Long.MIN_VALUE) > samples.timeStampMillis;
         }
 
         @Override
-        public double[] next() {
+        public Samples next() {
             if (!hasNext()) {
                 throw new NoSuchElementException();
             } else {
-                timeStampMillis = nextTimeStamp(timeStampMillis);
-                getSamples(timeStampMillis, values);
-                return values;
+                samples.timeStampMillis = nextTimeStamp(samples.timeStampMillis);
+                getSamples(samples.timeStampMillis, samples.values);
+                return samples;
             }
         }
 
@@ -107,7 +121,7 @@ public class StimulationChannels implements Iterable<Channel> {
 
         @Override
         public String toString() {
-            return timeStampMillis + "ms -> " + Arrays.toString(values);
+            return samples.toString();
         }
     }
 
@@ -134,7 +148,7 @@ public class StimulationChannels implements Iterable<Channel> {
         return channels.spliterator();
     }
 
-    public SampleIterator sampleIterator() {
+    private SampleIterator sampleIterator() {
         return new SampleIterator();
     }
 
@@ -172,4 +186,7 @@ public class StimulationChannels implements Iterable<Channel> {
         return channels.toString();
     }
 
+    public Iterable<Samples> samples() {
+        return this::sampleIterator;
+    }
 }

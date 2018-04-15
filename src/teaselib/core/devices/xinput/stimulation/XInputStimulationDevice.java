@@ -18,11 +18,13 @@ import teaselib.core.devices.DeviceCache;
 import teaselib.core.devices.DeviceFactory;
 import teaselib.core.devices.Devices;
 import teaselib.core.devices.xinput.XInputDevice;
+import teaselib.core.util.ExceptionUtil;
 import teaselib.stimulation.StimulationDevice;
 import teaselib.stimulation.Stimulator;
 import teaselib.stimulation.Stimulator.Wiring;
 import teaselib.stimulation.WaveForm;
 import teaselib.stimulation.ext.StimulationChannels;
+import teaselib.stimulation.ext.StimulationChannels.Samples;
 
 /**
  * The XInputStimulator class turns any Microsoft XInput (x360, Xbox One and compatible) controller into a vibrator or
@@ -196,11 +198,9 @@ public class XInputStimulationDevice extends StimulationDevice {
     private void playAsync(StimulationChannels channels, int repeatCount) {
         try {
             for (int i = 0; i < repeatCount; i++) {
-                StimulationChannels.SampleIterator sampleIterator = channels.sampleIterator();
-                while (sampleIterator.hasNext()) {
-                    double[] channelValues = sampleIterator.next();
-                    playSamples(channelValues);
-                    sleep(sampleIterator.getTimeStampMillis() - System.currentTimeMillis());
+                for (Samples samples : channels.samples()) {
+                    playSamples(samples);
+                    sleep(samples.getTimeStampMillis() - System.currentTimeMillis());
                     if (Thread.currentThread().isInterrupted())
                         return;
                 }
@@ -218,27 +218,27 @@ public class XInputStimulationDevice extends StimulationDevice {
         }
     }
 
-    private void playSamples(double[] channelValues) {
+    private void playSamples(Samples samples) {
         if (wiring == Wiring.CommonGround_Accumulation) {
-            setHighestPriorityChannel(channelValues);
+            setHighestPriorityChannel(samples);
         } else {
-            setIndependentChannels(channelValues);
+            setIndependentChannels(samples);
         }
     }
 
-    private void setHighestPriorityChannel(double[] channelValues) {
-        if (channelValues[2] > WaveForm.MEAN) {
-            int value = vibrationValue(channelValues[2]);
+    private void setHighestPriorityChannel(Samples samples) {
+        if (samples.getValues()[2] > WaveForm.MEAN) {
+            int value = vibrationValue(samples.get(2));
             device.setVibration(value, value);
-        } else if (channelValues[1] > WaveForm.MEAN) {
-            device.setVibration(0, vibrationValue(channelValues[1]));
+        } else if (samples.getValues()[1] > WaveForm.MEAN) {
+            device.setVibration(0, vibrationValue(samples.get(1)));
         } else {
-            device.setVibration(vibrationValue(channelValues[0]), 0);
+            device.setVibration(vibrationValue(samples.get(0)), 0);
         }
     }
 
-    private void setIndependentChannels(double[] channelValues) {
-        device.setVibration(vibrationValue(channelValues[0]), vibrationValue(channelValues[1]));
+    private void setIndependentChannels(Samples samples) {
+        device.setVibration(vibrationValue(samples.get(0)), vibrationValue(samples.get(1)));
     }
 
     int vibrationValue(double value) {
@@ -268,7 +268,7 @@ public class XInputStimulationDevice extends StimulationDevice {
                     Thread.currentThread().interrupt();
                     throw new ScriptInterruptedException();
                 } catch (ExecutionException e) {
-                    // Ignore
+                    throw ExceptionUtil.asRuntimeException(ExceptionUtil.reduce(e));
                 }
             }
         }

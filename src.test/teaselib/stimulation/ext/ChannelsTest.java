@@ -4,9 +4,12 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import java.util.Iterator;
+
 import org.junit.Test;
 
 import teaselib.stimulation.SquareWave;
+import teaselib.stimulation.ext.StimulationChannels.Samples;
 
 public class ChannelsTest {
     @Test
@@ -16,9 +19,8 @@ public class ChannelsTest {
 
         assertEquals(1, channels.size());
 
-        StimulationChannels.SampleIterator sampleIterator = channels.sampleIterator();
+        Iterator<Samples> sampleIterator = channels.samples().iterator();
         assertTrue(sampleIterator.hasNext());
-        assertEquals(Long.MIN_VALUE, sampleIterator.timeStampMillis);
 
         testSample(sampleIterator, 0, 1.0);
         testSample(sampleIterator, 500, 0.0);
@@ -35,9 +37,8 @@ public class ChannelsTest {
 
         assertEquals(1, channels.size());
 
-        StimulationChannels.SampleIterator sampleIterator = channels.sampleIterator();
+        Iterator<Samples> sampleIterator = channels.samples().iterator();
         assertTrue(sampleIterator.hasNext());
-        assertEquals(Long.MIN_VALUE, sampleIterator.timeStampMillis);
 
         testSample(sampleIterator, 0, 0.0);
         testSample(sampleIterator, startOffset, 1.0);
@@ -47,10 +48,10 @@ public class ChannelsTest {
         assertFalse(sampleIterator.hasNext());
     }
 
-    private void testSample(StimulationChannels.SampleIterator sampleIterator, long timeStamp, double value) {
-        double[] values = sampleIterator.next();
-        assertEquals(1, values.length);
-        assertEquals(timeStamp, sampleIterator.timeStampMillis);
-        assertEquals(value, values[0], 0);
+    private void testSample(Iterator<Samples> sampleIterator, long timeStamp, double value) {
+        Samples samples = sampleIterator.next();
+        assertEquals(1, samples.getValues().length);
+        assertEquals(timeStamp, samples.timeStampMillis);
+        assertEquals(value, samples.getValues()[0], 0);
     }
 }

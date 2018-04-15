@@ -15,13 +15,14 @@ import teaselib.stimulation.WaveForm;
 public class StimulationChannels implements Iterable<Channel> {
     final List<Channel> channels;
 
+    // TODO Change to normal iterator that returns reused object with timestamp and sample array
     public class SampleIterator implements Iterator<double[]> {
         final double[] values;
         long timeStampMillis;
 
         private SampleIterator() {
             values = new double[channels.size()];
-            timeStampMillis = 0;
+            timeStampMillis = Long.MIN_VALUE;
         }
 
         public long getTimeStampMillis() {
@@ -30,11 +31,8 @@ public class StimulationChannels implements Iterable<Channel> {
 
         @Override
         public boolean hasNext() {
-            // TODO Fails to detect end because the waveform only returns Long.MAX_VALUE when called once more
-            // return nextTimeStamp(timeStampMillis) < Long.MAX_VALUE;
-
             return channels.stream().map(Channel::getWaveForm).map(WaveForm::getDurationMillis).reduce(Math::max)
-                    .get() > timeStampMillis;
+                    .orElseGet(() -> Long.MIN_VALUE) > timeStampMillis;
         }
 
         @Override
@@ -42,8 +40,8 @@ public class StimulationChannels implements Iterable<Channel> {
             if (!hasNext()) {
                 throw new NoSuchElementException();
             } else {
-                getSamples(timeStampMillis, values);
                 timeStampMillis = nextTimeStamp(timeStampMillis);
+                getSamples(timeStampMillis, values);
                 return values;
             }
         }

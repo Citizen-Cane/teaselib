@@ -11,6 +11,23 @@ import teaselib.stimulation.pattern.Whip;
 public class WaveFormTest {
     private static final Logger logger = LoggerFactory.getLogger(WaveFormTest.class);
 
+    @Test
+    public void testSampleDurationAndValues() {
+        SquareWave squareWave = new SquareWave(0.5, 0.5);
+
+        assertEquals(1000, squareWave.getDurationMillis());
+
+        assertEquals(0, squareWave.nextTime(-1));
+        assertEquals(500, squareWave.nextTime(0));
+        assertEquals(1000, squareWave.nextTime(500));
+        assertEquals(Long.MAX_VALUE, squareWave.nextTime(1000));
+
+        assertEquals(0.0, squareWave.getValue(-1), 0.0);
+        assertEquals(1.0, squareWave.getValue(0), 0.0);
+        assertEquals(0.0, squareWave.getValue(500), 0.0);
+        assertEquals(0.0, squareWave.getValue(1000), 0.0);
+    }
+
     private static final class TestStimulator implements Stimulator {
         WaveForm waveForm = null;
 

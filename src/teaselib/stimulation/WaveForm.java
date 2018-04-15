@@ -79,9 +79,7 @@ public class WaveForm {
         return end;
     }
 
-    // TODO Replace by iterable entry to avoid looping twice
-    // keep in mind that the abstraction must also cover audio waveforms
-    // - audio waveforms have constant distance between samples - will be O(1)
+    // TODO Implement Iterator that returns the reused object with timestamp and value - saves looping twice
     public long nextTime(long currentTimeMillis) {
         long timeStampMillis = 0;
         for (Entry entry : values) {

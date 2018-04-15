@@ -159,7 +159,7 @@ public class XInputStimulator implements Stimulator {
                     for (WaveForm.Entry entry : waveform.values) {
                         set(entry.amplitude);
                         now = System.currentTimeMillis();
-                        Thread.sleep(entry.timeStampMillis - now);
+                        Thread.sleep(entry.durationMillis - now);
                     }
                 } while (now - startTime < playTime.get());
 

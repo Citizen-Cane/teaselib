@@ -1,6 +1,7 @@
 package teaselib.stimulation;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -12,24 +13,25 @@ import java.util.List;
  */
 // TODO Turn into interface and ArrayListBased waveform implementation, because arrays will be inefficient for
 // non-rectangular waveforms - this is closely tied to the XInput-Controller since that one is happy with square waves
-public class WaveForm {
+public class WaveForm implements Iterable<WaveForm.Sample> {
+
     public static final double MIN = 0.0;
     public static final double MAX = 1.0;
     public static final double MEAN = (MAX - MIN) / 2.0;
 
     public static class Entry {
         public final double amplitude;
-        public final long timeStampMillis;
+        public final long durationMillis;
 
         public Entry(double amplitude, long durationMillis) {
             super();
             this.amplitude = amplitude;
-            this.timeStampMillis = durationMillis;
+            this.durationMillis = durationMillis;
         }
 
         @Override
         public String toString() {
-            return "[" + amplitude + "+" + timeStampMillis + "ms]";
+            return "[" + amplitude + "+" + durationMillis + "ms]";
         }
     }
 
@@ -55,7 +57,7 @@ public class WaveForm {
 
     private void add(Entry entry) {
         this.values.add(entry);
-        end += entry.timeStampMillis;
+        end += entry.durationMillis;
     }
 
     @Override
@@ -79,6 +81,48 @@ public class WaveForm {
         return end;
     }
 
+    @Override
+    public Iterator<Sample> iterator() {
+        return new IteratorImpl();
+    }
+
+    public class Sample {
+        long timeStampMillis = Long.MIN_VALUE;
+        double value = 0;
+
+        private Sample() {
+        }
+
+        public long getTimeStampMillis() {
+            return timeStampMillis;
+        }
+
+        public double getValue() {
+            return value;
+        }
+    }
+
+    class IteratorImpl implements Iterator<WaveForm.Sample> {
+        final Sample sample = new Sample();
+        final Iterator<Entry> entry = values.iterator();
+        long timeStampMillis = 0;
+
+        @Override
+        public boolean hasNext() {
+            return entry.hasNext();
+            // return sample.timeStamp < getDurationMillis();
+        }
+
+        @Override
+        public Sample next() {
+            Entry current = entry.next();
+            sample.timeStampMillis = timeStampMillis;
+            sample.value = current.amplitude;
+            timeStampMillis += current.durationMillis;
+            return sample;
+        }
+    }
+
     // TODO Implement Iterator that returns the reused object with timestamp and value - saves looping twice
     public long nextTime(long currentTimeMillis) {
         long timeStampMillis = 0;
@@ -86,7 +130,7 @@ public class WaveForm {
             if (currentTimeMillis < timeStampMillis) {
                 return timeStampMillis;
             }
-            timeStampMillis += entry.timeStampMillis;
+            timeStampMillis += entry.durationMillis;
         }
         if (timeStampMillis <= end && currentTimeMillis < end) {
             return timeStampMillis;
@@ -109,7 +153,7 @@ public class WaveForm {
             if (timeMillis <= timeStampMillis) {
                 return entry.amplitude;
             }
-            timeStampMillis += entry.timeStampMillis;
+            timeStampMillis += entry.durationMillis;
         }
         return 0.0;
     }

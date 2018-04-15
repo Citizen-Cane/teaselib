@@ -15,7 +15,50 @@ import teaselib.stimulation.WaveForm;
 public class StimulationChannels implements Iterable<Channel> {
     final List<Channel> channels;
 
-    // TODO Change to normal iterator that returns reused object with timestamp and sample array
+    class Sample {
+        long timeStampMillis;
+        final double[] values;
+
+        public Sample(int channels) {
+            timeStampMillis = Long.MIN_VALUE;
+            values = new double[channels];
+        }
+
+    }
+
+    class IteratorImpl implements Iterator<Sample> {
+        final Sample sample;
+
+        final List<Iterator<WaveForm.Sample>> pointers;
+        final List<WaveForm.Sample> samples;
+
+        long timeStampMillis = 0;
+
+        private IteratorImpl() {
+            this.sample = new Sample(size());
+            this.samples = new ArrayList<>(size());
+            this.pointers = new ArrayList<>(size());
+
+            for (Channel channel : channels) {
+                Iterator<WaveForm.Sample> iterator = channel.getWaveForm().iterator();
+                pointers.add(iterator);
+                samples.add(iterator.next());
+            }
+        }
+
+        @Override
+        public boolean hasNext() {
+            return pointers.stream().filter(Iterator::hasNext).count() > 0;
+        }
+
+        @Override
+        public Sample next() {
+            throw new UnsupportedOperationException();
+            // TODO advancing through multiple waveform samples requires to remember time for each sample between sample
+            // boundaries
+        }
+    }
+
     public class SampleIterator implements Iterator<double[]> {
         final double[] values;
         long timeStampMillis;

@@ -98,6 +98,16 @@ public class IntentionBasedControllerTest {
             assertNotNull(channels);
             assertFalse(channels.isEmpty());
         }
+
+        @Override
+        public void stop() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void complete() {
+            throw new UnsupportedOperationException();
+        }
     }
 
     private final class TestStimulator implements Stimulator {

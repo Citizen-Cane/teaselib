@@ -10,11 +10,12 @@ import java.util.List;
  * @author Citizen-Cane
  *
  */
-// TODO Make interface and implementation ArrayBased waveform, because arrays will be inefficient for non-rectangular
-// waveforms - its just done this way for now because the XInput-Controller is happy with square waves
+// TODO Turn into interface and ArrayListBased waveform implementation, because arrays will be inefficient for
+// non-rectangular waveforms - this is closely tied to the XInput-Controller since that one is happy with square waves
 public class WaveForm {
-    static final double MIN = 0.0;
-    static final double MAX = 1.0;
+    public static final double MIN = 0.0;
+    public static final double MAX = 1.0;
+    public static final double MEAN = (MAX - MIN) / 2.0;
 
     public static class Entry {
         public final double amplitude;
@@ -40,9 +41,21 @@ public class WaveForm {
         this.end = 0;
     }
 
-    public void add(double amplitude, long durationMillis) {
-        this.values.add(new Entry(amplitude, end));
-        end += durationMillis;
+    public WaveForm(long startMillis, WaveForm waveForm) {
+        this();
+        add(0.0, startMillis);
+        for (Entry entry : waveForm.values) {
+            add(entry);
+        }
+    }
+
+    public void add(double amplitude, long timeStampMillis) {
+        add(new Entry(amplitude, timeStampMillis));
+    }
+
+    private void add(Entry entry) {
+        this.values.add(entry);
+        end += entry.timeStampMillis;
     }
 
     @Override
@@ -70,19 +83,35 @@ public class WaveForm {
     // keep in mind that the abstraction must also cover audio waveforms
     // - audio waveforms have constant distance between samples - will be O(1)
     public long nextTime(long currentTimeMillis) {
+        long timeStampMillis = 0;
         for (Entry entry : values) {
-            if (currentTimeMillis <= entry.timeStampMillis) {
-                return entry.timeStampMillis;
+            if (currentTimeMillis < timeStampMillis) {
+                return timeStampMillis;
             }
+            timeStampMillis += entry.timeStampMillis;
         }
-        return Long.MAX_VALUE;
+        if (timeStampMillis <= end && currentTimeMillis < end) {
+            return timeStampMillis;
+        } else {
+            return Long.MAX_VALUE;
+        }
     }
 
     public double getValue(long timeMillis) {
+        if (timeMillis < 0) {
+            return 0.0;
+        } else {
+            return value(timeMillis);
+        }
+    }
+
+    private double value(long timeMillis) {
+        long timeStampMillis = 0;
         for (Entry entry : values) {
-            if (timeMillis <= entry.timeStampMillis) {
+            if (timeMillis <= timeStampMillis) {
                 return entry.amplitude;
             }
+            timeStampMillis += entry.timeStampMillis;
         }
         return 0.0;
     }

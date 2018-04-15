@@ -4,8 +4,15 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicReference;
 
 import teaselib.core.Configuration;
+import teaselib.core.ScriptInterruptedException;
+import teaselib.core.concurrency.NamedExecutorService;
 import teaselib.core.devices.BatteryLevel;
 import teaselib.core.devices.DeviceCache;
 import teaselib.core.devices.DeviceFactory;
@@ -14,6 +21,7 @@ import teaselib.core.devices.xinput.XInputDevice;
 import teaselib.stimulation.StimulationDevice;
 import teaselib.stimulation.Stimulator;
 import teaselib.stimulation.Stimulator.Wiring;
+import teaselib.stimulation.WaveForm;
 import teaselib.stimulation.ext.StimulationChannels;
 
 /**
@@ -126,6 +134,10 @@ public class XInputStimulationDevice extends StimulationDevice {
     private final XInputDevice device;
     private final List<XInputStimulator> stimulators;
 
+    private final ExecutorService executor = NamedExecutorService.singleThreadedQueue(getClass().getName());
+    private final AtomicReference<Optional<Future<Void>>> stimulationGenerator = new AtomicReference<>(
+            Optional.empty());
+
     public XInputStimulationDevice(XInputDevice device) {
         super();
         this.device = device;
@@ -178,18 +190,23 @@ public class XInputStimulationDevice extends StimulationDevice {
 
     @Override
     public void play(StimulationChannels channels, int repeatCount) {
-        // TODO Run this asynchronously
-        double[] channelValues = new double[channels.size()];
-        for (int i = 0; i < repeatCount; i++) {
-            long timeStampMillis = 0;
-            while (timeStampMillis != Long.MAX_VALUE) {
-                timeStampMillis = channels.nextTimeStamp(timeStampMillis);
-                channels.getSamples(timeStampMillis, channelValues);
-                playSamples(channelValues);
-                sleep(timeStampMillis - System.currentTimeMillis());
-                if (Thread.currentThread().isInterrupted())
-                    return;
+        executor.submit(() -> playAsync(channels, repeatCount));
+    }
+
+    private void playAsync(StimulationChannels channels, int repeatCount) {
+        try {
+            for (int i = 0; i < repeatCount; i++) {
+                StimulationChannels.SampleIterator sampleIterator = channels.sampleIterator();
+                while (sampleIterator.hasNext()) {
+                    double[] channelValues = sampleIterator.next();
+                    playSamples(channelValues);
+                    sleep(sampleIterator.getTimeStampMillis() - System.currentTimeMillis());
+                    if (Thread.currentThread().isInterrupted())
+                        return;
+                }
             }
+        } finally {
+            device.setVibration(0, 0);
         }
     }
 
@@ -210,10 +227,10 @@ public class XInputStimulationDevice extends StimulationDevice {
     }
 
     private void setHighestPriorityChannel(double[] channelValues) {
-        if (channelValues[2] > 0) {
+        if (channelValues[2] > WaveForm.MEAN) {
             int value = vibrationValue(channelValues[2]);
             device.setVibration(value, value);
-        } else if (channelValues[1] > 0) {
+        } else if (channelValues[1] > WaveForm.MEAN) {
             device.setVibration(0, vibrationValue(channelValues[1]));
         } else {
             device.setVibration(vibrationValue(channelValues[0]), 0);
@@ -225,8 +242,36 @@ public class XInputStimulationDevice extends StimulationDevice {
     }
 
     int vibrationValue(double value) {
-        value = Math.max(0.0, value);
-        value = Math.min(value, 1.0);
+        value = Math.max(WaveForm.MIN, value);
+        value = Math.min(value, WaveForm.MAX);
         return (int) (value * XInputDevice.VIBRATION_MAX_VALUE);
     }
+
+    @Override
+    public void stop() {
+        synchronized (executor) {
+            Optional<Future<Void>> current = stimulationGenerator.get();
+            if (current.isPresent() && !current.get().isDone()) {
+                current.get().cancel(true);
+            }
+        }
+    }
+
+    @Override
+    public void complete() {
+        synchronized (executor) {
+            Optional<Future<Void>> current = stimulationGenerator.get();
+            if (current.isPresent()) {
+                try {
+                    current.get().get();
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new ScriptInterruptedException();
+                } catch (ExecutionException e) {
+                    // Ignore
+                }
+            }
+        }
+    }
+
 }

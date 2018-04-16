@@ -19,7 +19,7 @@ public class ChannelsTest {
 
         assertEquals(1, channels.size());
 
-        Iterator<Samples> sampleIterator = channels.samples().iterator();
+        Iterator<Samples> sampleIterator = channels.iterator();
         assertTrue(sampleIterator.hasNext());
 
         testSample(sampleIterator, 0, 1.0);
@@ -37,7 +37,7 @@ public class ChannelsTest {
 
         assertEquals(1, channels.size());
 
-        Iterator<Samples> sampleIterator = channels.samples().iterator();
+        Iterator<Samples> sampleIterator = channels.iterator();
         assertTrue(sampleIterator.hasNext());
 
         testSample(sampleIterator, 0, 0.0);

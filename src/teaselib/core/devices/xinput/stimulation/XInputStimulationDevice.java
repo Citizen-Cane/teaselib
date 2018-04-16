@@ -198,7 +198,7 @@ public class XInputStimulationDevice extends StimulationDevice {
     private void playAsync(StimulationChannels channels, int repeatCount) {
         try {
             for (int i = 0; i < repeatCount; i++) {
-                for (Samples samples : channels.samples()) {
+                for (Samples samples : channels) {
                     playSamples(samples);
                     sleep(samples.getTimeStampMillis() - System.currentTimeMillis());
                     if (Thread.currentThread().isInterrupted())

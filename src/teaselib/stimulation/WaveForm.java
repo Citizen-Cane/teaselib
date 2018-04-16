@@ -86,11 +86,20 @@ public class WaveForm implements Iterable<WaveForm.Sample> {
         return new IteratorImpl();
     }
 
-    public class Sample {
-        long timeStampMillis = Long.MIN_VALUE;
-        double value = 0;
+    public static class Sample {
+        long timeStampMillis;
+        double value;
+
+        public static final Sample Invalid = new Sample(Long.MIN_VALUE, 0.0);
+        public static final Sample End = new Sample(Long.MAX_VALUE, 0.0);
 
         private Sample() {
+            this(Long.MIN_VALUE, 0.0);
+        }
+
+        public Sample(long timeStampMillis, double value) {
+            this.timeStampMillis = timeStampMillis;
+            this.value = value;
         }
 
         public long getTimeStampMillis() {
@@ -99,6 +108,10 @@ public class WaveForm implements Iterable<WaveForm.Sample> {
 
         public double getValue() {
             return value;
+        }
+
+        public static Sample earliest(Sample a, Sample b) {
+            return a.timeStampMillis < b.timeStampMillis ? a : b;
         }
     }
 
@@ -110,7 +123,6 @@ public class WaveForm implements Iterable<WaveForm.Sample> {
         @Override
         public boolean hasNext() {
             return entry.hasNext();
-            // return sample.timeStamp < getDurationMillis();
         }
 
         @Override
@@ -123,7 +135,6 @@ public class WaveForm implements Iterable<WaveForm.Sample> {
         }
     }
 
-    // TODO Implement Iterator that returns the reused object with timestamp and value - saves looping twice
     public long nextTime(long currentTimeMillis) {
         long timeStampMillis = 0;
         for (Entry entry : values) {

@@ -113,6 +113,11 @@ public class WaveForm implements Iterable<WaveForm.Sample> {
         public static Sample earliest(Sample a, Sample b) {
             return a.timeStampMillis < b.timeStampMillis ? a : b;
         }
+
+        @Override
+        public String toString() {
+            return timeStampMillis + "ms -> " + value;
+        }
     }
 
     class IteratorImpl implements Iterator<WaveForm.Sample> {

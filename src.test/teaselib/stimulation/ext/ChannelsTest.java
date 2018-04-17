@@ -25,8 +25,14 @@ public class ChannelsTest {
         assertEquals(1, samples.getValues().length);
 
         testSample(samples, 0, 0, 1.0);
-        testSample(sampleIterator, 500, 0, 0.0);
-        testSample(sampleIterator, 1000, 0, 0.0);
+
+        assertTrue(sampleIterator.hasNext());
+        samples = sampleIterator.next();
+        testSample(samples, 500, 0, 0.0);
+
+        assertTrue(sampleIterator.hasNext());
+        samples = sampleIterator.next();
+        testSample(samples, 1000, 0, 0.0);
 
         assertFalse(sampleIterator.hasNext());
     }
@@ -46,8 +52,125 @@ public class ChannelsTest {
 
         testSample(samples, 0, 0, 1.0);
         testSample(samples, 0, 1, 1.0);
-        testSample(sampleIterator, 500, 0, 0.0);
-        testSample(sampleIterator, 1000, 0, 0.0);
+
+        assertTrue(sampleIterator.hasNext());
+        samples = sampleIterator.next();
+        testSample(samples, 500, 0, 0.0);
+        testSample(samples, 500, 1, 0.0);
+
+        assertTrue(sampleIterator.hasNext());
+        samples = sampleIterator.next();
+        testSample(samples, 1000, 0, 0.0);
+        testSample(samples, 1000, 1, 0.0);
+
+        assertFalse(sampleIterator.hasNext());
+    }
+
+    @Test
+    public void testDualChannels_Shifted() {
+        StimulationChannels channels = new StimulationChannels();
+        channels.add(new Channel(null, new SquareWave(0.5, 0.5)));
+        channels.add(new Channel(null, new SquareWave(0.5, 0.5), 500));
+
+        assertEquals(2, channels.size());
+
+        Iterator<Samples> sampleIterator = channels.iterator();
+        assertTrue(sampleIterator.hasNext());
+        Samples samples = sampleIterator.next();
+        assertEquals(2, samples.getValues().length);
+
+        testSample(samples, 0, 0, 1.0);
+        testSample(samples, 0, 1, 0.0);
+
+        assertTrue(sampleIterator.hasNext());
+        samples = sampleIterator.next();
+        testSample(samples, 500, 0, 0.0);
+        testSample(samples, 500, 1, 1.0);
+
+        assertTrue(sampleIterator.hasNext());
+        samples = sampleIterator.next();
+        testSample(samples, 1000, 0, 0.0);
+        testSample(samples, 1000, 1, 0.0);
+
+        samples = sampleIterator.next();
+        testSample(samples, 1500, 0, 0.0);
+        testSample(samples, 1500, 1, 0.0);
+
+        assertFalse(sampleIterator.hasNext());
+    }
+
+    @Test
+    public void testTripleChannels() {
+        StimulationChannels channels = new StimulationChannels();
+        channels.add(new Channel(null, new SquareWave(0.5, 0.5)));
+        channels.add(new Channel(null, new SquareWave(0.5, 0.5)));
+        channels.add(new Channel(null, new SquareWave(0.5, 0.5)));
+
+        assertEquals(3, channels.size());
+
+        Iterator<Samples> sampleIterator = channels.iterator();
+        assertTrue(sampleIterator.hasNext());
+        Samples samples = sampleIterator.next();
+        assertEquals(3, samples.getValues().length);
+
+        testSample(samples, 0, 0, 1.0);
+        testSample(samples, 0, 1, 1.0);
+        testSample(samples, 0, 2, 1.0);
+
+        assertTrue(sampleIterator.hasNext());
+        samples = sampleIterator.next();
+        testSample(samples, 500, 0, 0.0);
+        testSample(samples, 500, 1, 0.0);
+        testSample(samples, 500, 2, 0.0);
+
+        assertTrue(sampleIterator.hasNext());
+        samples = sampleIterator.next();
+        testSample(samples, 1000, 0, 0.0);
+        testSample(samples, 1000, 1, 0.0);
+        testSample(samples, 1000, 2, 0.0);
+
+        assertFalse(sampleIterator.hasNext());
+    }
+
+    @Test
+    public void testTripleChannels_Shifted() {
+        StimulationChannels channels = new StimulationChannels();
+        channels.add(new Channel(null, new SquareWave(0.5, 0.5)));
+        channels.add(new Channel(null, new SquareWave(0.5, 0.5), 500));
+        channels.add(new Channel(null, new SquareWave(0.5, 0.5), 1000));
+
+        assertEquals(3, channels.size());
+
+        Iterator<Samples> sampleIterator = channels.iterator();
+        assertTrue(sampleIterator.hasNext());
+        Samples samples = sampleIterator.next();
+        assertEquals(3, samples.getValues().length);
+
+        testSample(samples, 0, 0, 1.0);
+        testSample(samples, 0, 1, 0.0);
+        testSample(samples, 0, 2, 0.0);
+
+        assertTrue(sampleIterator.hasNext());
+        samples = sampleIterator.next();
+        testSample(samples, 500, 0, 0.0);
+        testSample(samples, 500, 1, 1.0);
+        testSample(samples, 500, 2, 0.0);
+
+        assertTrue(sampleIterator.hasNext());
+        samples = sampleIterator.next();
+        testSample(samples, 1000, 0, 0.0);
+        testSample(samples, 1000, 1, 0.0);
+        testSample(samples, 1000, 2, 1.0);
+
+        samples = sampleIterator.next();
+        testSample(samples, 1500, 0, 0.0);
+        testSample(samples, 1500, 1, 0.0);
+        testSample(samples, 1500, 2, 0.0);
+
+        samples = sampleIterator.next();
+        testSample(samples, 2000, 0, 0.0);
+        testSample(samples, 2000, 1, 0.0);
+        testSample(samples, 2000, 2, 0.0);
 
         assertFalse(sampleIterator.hasNext());
     }
@@ -72,6 +195,7 @@ public class ChannelsTest {
     }
 
     private void testSample(Iterator<Samples> sampleIterator, long timeStamp, int index, double value) {
+        assertTrue(sampleIterator.hasNext());
         Samples samples = sampleIterator.next();
         testSample(samples, timeStamp, index, value);
     }

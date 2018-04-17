@@ -90,7 +90,6 @@ public class WaveForm implements Iterable<WaveForm.Sample> {
         long timeStampMillis;
         double value;
 
-        public static final Sample Invalid = new Sample(Long.MIN_VALUE, 0.0);
         public static final Sample End = new Sample(Long.MAX_VALUE, 0.0);
 
         private Sample() {

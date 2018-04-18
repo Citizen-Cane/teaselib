@@ -49,8 +49,8 @@ public class ScriptMessageDecorator {
 
     public RenderedMessage.Decorator[] messageModifiers() {
         return new RenderedMessage.Decorator[] { //
-                this::filterDebug, this::addTextToSpeech, this::expandTextVariables, this::addActorImages,
-                this::applyDelayRules };
+                this::filterDebug, this::applyDelayRules, this::addTextToSpeech, this::expandTextVariables,
+                this::addActorImages };
     }
 
     private AbstractMessage filterDebug(AbstractMessage message) {

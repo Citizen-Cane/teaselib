@@ -290,6 +290,26 @@ public class MessagePartInjectionTest {
     }
 
     @Test
+    public void testThatAppendingToSentenceDoesntResultInPauseBetweenParts() throws IOException {
+        DecoratingTestScript script = new DecoratingTestScript(new DebugSetup().withOutput());
+
+        Message message = new Message(script.actor);
+        message.add("Some text,");
+        message.add("and some more.");
+
+        RenderedMessage parsed = decorate(script, message);
+        AbstractMessage parts = parsed;
+        int n = 0;
+        assertEquals(Type.Mood, parts.get(n++).type);
+        assertEquals(Type.Image, parts.get(n++).type);
+        assertEquals(Type.Text, parts.get(n++).type);
+        assertEquals(Type.Image, parts.get(n++).type);
+        assertEquals(Type.Text, parts.get(n++).type);
+
+        assertEquals(parts.size(), n);
+    }
+
+    @Test
     public void testInjectionOfScriptNoImage() throws IOException {
         DecoratingTestScript script = new DecoratingTestScript(new DebugSetup().withOutput());
 
@@ -424,10 +444,36 @@ public class MessagePartInjectionTest {
         assertEquals(Type.Text, parsed.get(n++).type);
         assertEquals(Type.Speech, parsed.get(n++).type);
 
-        // assertEquals(Type.Keyword, parsed.get(n).type);
-        // assertEquals(Message.ShowChoices, parsed.get(n++).value);
-        //
-        // assertEquals(ScriptMessageDecorator.DelayAtEndOfPage, parsed.get(n++));
+        assertEquals(parsed.size(), n);
+    }
+
+    @Test
+    public void testMessageWithSpeechDoesntDelayAfterAppend() throws IOException {
+        DecoratingTestScript script = new DecoratingTestScript(new DebugSetup().withInput().withOutput());
+        script.debugger.freezeTime();
+        script.actor.images = new ActorTestImage("Actor.jpg");
+
+        Message message = new Message(script.actor);
+        message.add("Some text,");
+        message.add(Type.Speech, "Some text,");
+        message.add("plus some more appended after the comma of the first part.");
+        message.add(Type.Speech, "plus some more appended after the comma of the first part.");
+
+        RenderedMessage parsed = decorate(script, message);
+        int n = 0;
+
+        assertEquals(Type.Mood, parsed.get(n++).type);
+        assertEquals(Type.Image, parsed.get(n).type);
+        assertEquals("Actor.jpg", parsed.get(n++).value);
+        assertEquals(Type.Text, parsed.get(n++).type);
+        assertEquals(Type.Speech, parsed.get(n++).type);
+
+        assertEquals(ScriptMessageDecorator.DelayAfterAppend, parsed.get(n++));
+
+        assertEquals(Type.Image, parsed.get(n).type);
+        assertEquals("Actor.jpg", parsed.get(n++).value);
+        assertEquals(Type.Text, parsed.get(n++).type);
+        assertEquals(Type.Speech, parsed.get(n++).type);
 
         assertEquals(parsed.size(), n);
     }

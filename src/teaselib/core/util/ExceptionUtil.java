@@ -43,11 +43,7 @@ public class ExceptionUtil {
     }
 
     public static RuntimeException asRuntimeException(Exception e) {
-        if (e instanceof RuntimeException) {
-            return (RuntimeException) e;
-        } else {
-            return new RuntimeException(e.getClass().getSimpleName() + ": " + e.getMessage(), e);
-        }
+        return asRuntimeException((Throwable) e);
     }
 
     public static RuntimeException asRuntimeException(Exception e, String message) {

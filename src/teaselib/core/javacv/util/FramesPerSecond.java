@@ -5,6 +5,7 @@ import java.util.List;
 
 public class FramesPerSecond {
     private final int capacity;
+    // TODO use TimeLine or linked list
     private List<Long> frameTimes;
 
     double fps = 0.0;
@@ -14,8 +15,10 @@ public class FramesPerSecond {
      * Find the number closest to the desired frames per second.
      * 
      * @param capableFps
+     *            What the device can provide
      * @param desiredFps
-     * @return
+     *            What the application wants
+     * @return A fps value so that for all integers n * returnedFps =< capableFPS
      */
     public static double getFps(double capableFps, double desiredFps) {
         final double fps;
@@ -23,7 +26,7 @@ public class FramesPerSecond {
             double div = Math.floorDiv((int) capableFps, (int) desiredFps);
             fps = capableFps / div;
         } else if (capableFps > desiredFps) {
-            fps = capableFps;
+            fps = capableFps / 2.0;
         } else {
             fps = desiredFps;
         }
@@ -47,8 +50,13 @@ public class FramesPerSecond {
         long frameDuration = currentTimeMillis - frameStartTime;
         frameTimes.add(frameDuration);
         if (frameTimes.size() == capacity) {
-            fps = 1000.0 / averageFrameTime(frameTimes);
-            frameTimes.clear();
+            double averageFrameTime = averageFrameTime(frameTimes);
+            if (averageFrameTime > 0) {
+                fps = 1000.0 / averageFrameTime;
+            } else {
+                fps = 0.0;
+            }
+            frameTimes.remove(0);
         }
         frameStartTime = currentTimeMillis;
     }

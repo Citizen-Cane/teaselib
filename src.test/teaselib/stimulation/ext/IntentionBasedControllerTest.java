@@ -182,7 +182,7 @@ public class IntentionBasedControllerTest {
         IntentionBasedController<Intention> c = new TestController(
                 (stimulationActions) -> assertEquals(2, stimulationActions.size()), (device, items) -> assertTrue(
                         (device == device1 && items.size() == 1) || device == device2 && items.size() == 2));
-        c.add(Intention.Rythm, stim1);
+        c.add(Intention.Pace, stim1);
         c.add(Intention.Tease, stim2);
         c.add(Intention.Punish, stim3);
 
@@ -206,13 +206,13 @@ public class IntentionBasedControllerTest {
                 (device, items) -> assertTrue(
                         (device == device1 && items.size() == 1) && items.get(0).stimulator == stim1
                                 || device == device2 && items.size() == 1 && items.get(0).stimulator == stim3));
-        c.add(Intention.Rythm, stim1);
+        c.add(Intention.Pace, stim1);
         c.add(Intention.Tease, stim2);
         c.add(Intention.Punish, stim3);
 
         Stimulation walk = new Walk();
         Stimulation whip = new Whip();
-        c.play(Intention.Rythm, walk, Intention.Punish, whip);
+        c.play(Intention.Pace, walk, Intention.Punish, whip);
     }
 
     @Test
@@ -230,13 +230,13 @@ public class IntentionBasedControllerTest {
                         (device == device1 && items.size() == 1) && items.get(0).stimulator == stim1
                                 || device == device2 && items.size() == 2 && items.get(0).stimulator == stim2
                                         && items.get(1).stimulator == stim3));
-        c.add(Intention.Rythm, stim1);
+        c.add(Intention.Pace, stim1);
         c.add(Intention.Tease, stim2);
         c.add(Intention.Punish, stim3);
 
         Stimulation walk = new Walk();
         Stimulation pulse = new Tease();
         Stimulation whip = new Whip();
-        c.play(Intention.Rythm, walk, Intention.Tease, pulse, Intention.Punish, whip);
+        c.play(Intention.Pace, walk, Intention.Tease, pulse, Intention.Punish, whip);
     }
 }

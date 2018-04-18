@@ -1,7 +1,7 @@
 package teaselib.stimulation.ext;
 
 public enum Intention {
-    Rythm,
+    Pace,
     Tease,
     Punish
 }

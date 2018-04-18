@@ -153,8 +153,8 @@ public class DebugHost implements Host, HostInputMethod.Backend {
     }
 
     @Override
-    public int reply(Choices choices) throws ScriptInterruptedException {
-        logger.info("Reply " + choices + " @ " + Thread.currentThread().getStackTrace()[1].toString());
+    public int reply(Choices choices) {
+        logger.info("Reply {} @ {}", choices, Thread.currentThread().getStackTrace()[1]);
 
         try {
             replySection.lockInterruptibly();

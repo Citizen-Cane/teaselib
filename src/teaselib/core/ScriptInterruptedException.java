@@ -19,16 +19,17 @@ public class ScriptInterruptedException extends RuntimeException {
 
     public ScriptInterruptedException(InterruptedException e) {
         super(e);
+        Thread.interrupted();
     }
 
     public ScriptInterruptedException() {
         StackTraceElement[] stackTrace = this.getStackTrace();
         if (stackTrace.length > 0) {
             final StackTraceElement firstElement = stackTrace[0];
-            logger.info("interrupted at " + firstElement.toString());
+            logger.info("interrupted at {}", firstElement);
             for (StackTraceElement element : stackTrace) {
                 if (element != firstElement) {
-                    logger.debug("\t" + element.toString());
+                    logger.debug("\t{}", element);
                 }
             }
         }

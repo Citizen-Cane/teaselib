@@ -39,7 +39,7 @@ public class ShowChoicesTest extends ShowChoicesAbstractTest {
     }
 
     @Test
-    public void testSimpleReply() throws Exception {
+    public void testSimpleReply() {
         debugger.addResponse("No", Debugger.Response.Choose);
 
         script.say("Main script start.");
@@ -48,7 +48,7 @@ public class ShowChoicesTest extends ShowChoicesAbstractTest {
     }
 
     @Test
-    public void testSingleScriptFunction() throws Exception {
+    public void testSingleScriptFunction() {
         debugger.addResponse("Stop", Debugger.Response.Ignore);
 
         script.say("In main script.");
@@ -59,7 +59,7 @@ public class ShowChoicesTest extends ShowChoicesAbstractTest {
     }
 
     @Test
-    public void testSingleScriptFunctionWithInnerReply() throws Exception {
+    public void testSingleScriptFunctionWithInnerReply() {
         debugger.addResponse("Stop", Debugger.Response.Ignore);
         debugger.addResponse("No", Debugger.Response.Choose);
 
@@ -73,7 +73,7 @@ public class ShowChoicesTest extends ShowChoicesAbstractTest {
     }
 
     @Test
-    public void testTwoScriptFunctionsEachWithInnerReply() throws Exception {
+    public void testTwoScriptFunctionsEachWithInnerReply() {
         debugger.addResponse("Stop*", Debugger.Response.Ignore);
         debugger.addResponse("No*", Debugger.Response.Choose);
         debugger.addResponse("Wow*", Debugger.Response.Choose);
@@ -97,7 +97,7 @@ public class ShowChoicesTest extends ShowChoicesAbstractTest {
     }
 
     @Test
-    public void testThreeScriptFunctionsEachWithInnerReply() throws Exception {
+    public void testThreeScriptFunctionsEachWithInnerReply() {
         debugger.addResponse("Stop*", Debugger.Response.Ignore);
         debugger.addResponse("No*", Debugger.Response.Choose);
         debugger.addResponse("Wow*2", Debugger.Response.Choose);

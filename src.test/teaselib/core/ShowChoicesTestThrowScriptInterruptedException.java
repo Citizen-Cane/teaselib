@@ -39,7 +39,7 @@ public class ShowChoicesTestThrowScriptInterruptedException extends ShowChoicesA
     }
 
     @Test(expected = ScriptInterruptedException.class)
-    public void testSingleScriptFunctionErrorHandling() throws Exception {
+    public void testSingleScriptFunctionErrorHandling() {
         debugger.addResponse("Ignore", Debugger.Response.Ignore);
 
         script.say("In main script.");
@@ -51,7 +51,7 @@ public class ShowChoicesTestThrowScriptInterruptedException extends ShowChoicesA
     }
 
     @Test(expected = ScriptInterruptedException.class)
-    public void testSingleScriptFunctionWithInnerReplyErrorHandling() throws Exception {
+    public void testSingleScriptFunctionWithInnerReplyErrorHandling() {
         debugger.addResponse("Ignore", Debugger.Response.Ignore);
         debugger.addResponse("No", Debugger.Response.Choose);
 
@@ -66,7 +66,7 @@ public class ShowChoicesTestThrowScriptInterruptedException extends ShowChoicesA
     }
 
     @Test(expected = ScriptInterruptedException.class)
-    public void testTwoScriptFunctionsEachWithInnerReplyErrorHandling() throws Exception {
+    public void testTwoScriptFunctionsEachWithInnerReplyErrorHandling() {
         debugger.addResponse("Ignore*", Debugger.Response.Ignore);
         debugger.addResponse("No*", Debugger.Response.Choose);
         debugger.addResponse("Wow*", Debugger.Response.Choose);
@@ -89,7 +89,7 @@ public class ShowChoicesTestThrowScriptInterruptedException extends ShowChoicesA
     }
 
     @Test(expected = ScriptInterruptedException.class)
-    public void testThreeScriptFunctionsEachWithInnerReplyErrorHandling() throws Exception {
+    public void testThreeScriptFunctionsEachWithInnerReplyErrorHandling() {
         debugger.addResponse("Ignore*", Debugger.Response.Ignore);
         debugger.addResponse("No*1", Debugger.Response.Choose);
         debugger.addResponse("Wow*2", Debugger.Response.Choose);

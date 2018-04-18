@@ -1,6 +1,6 @@
 package teaselib.core;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -80,7 +80,7 @@ public class ShowChoicesInputMethodHandlerTest {
     }
 
     @Test
-    public void testHandlerSingleInvocation() throws Exception {
+    public void testHandlerSingleInvocation() {
         debugger.addResponse("No", Debugger.Response.Invoke);
         debugger.addResponse("DebugConfirm", Debugger.Response.Choose);
 
@@ -92,7 +92,7 @@ public class ShowChoicesInputMethodHandlerTest {
     }
 
     @Test
-    public void testHandlerDoubleInvocation() throws Exception {
+    public void testHandlerDoubleInvocation() {
         debugger.addResponse("No", Debugger.Response.Invoke);
         debugger.addResponse("Yes", Debugger.Response.Invoke);
         debugger.addResponse("DebugConfirm", Debugger.Response.Choose);
@@ -105,7 +105,7 @@ public class ShowChoicesInputMethodHandlerTest {
     }
 
     @Test
-    public void testHandlerTripleInvocation() throws Exception {
+    public void testHandlerTripleInvocation() {
         debugger.addResponse("No", Debugger.Response.Invoke);
         debugger.addResponse("Yes", Debugger.Response.Invoke);
         debugger.addResponse("Maybe", Debugger.Response.Invoke);
@@ -119,7 +119,7 @@ public class ShowChoicesInputMethodHandlerTest {
     }
 
     @Test
-    public void testHandlerQuadInvocation() throws Exception {
+    public void testHandlerQuadInvocation() {
         debugger.addResponse("No", Debugger.Response.Invoke);
         debugger.addResponse("Yes", Debugger.Response.Invoke);
         debugger.addResponse("Maybe", Debugger.Response.Invoke);

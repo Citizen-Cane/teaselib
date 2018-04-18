@@ -463,10 +463,6 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
                 renderTimeSpannedPart(new RenderDelay(delay, teaseLib));
             }
         }
-
-        if (isLastParagraph(part)) {
-            mandatoryCompleted();
-        }
     }
 
     private double geteDelaySeconds(String args) {

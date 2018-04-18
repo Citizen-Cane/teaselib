@@ -16,6 +16,7 @@ import java.util.Locale;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,7 +29,6 @@ import teaselib.State;
 import teaselib.core.Host.Location;
 import teaselib.core.debug.TimeAdvanceListener;
 import teaselib.core.debug.TimeAdvancedEvent;
-import teaselib.core.devices.DeviceFactoryListener;
 import teaselib.core.devices.Devices;
 import teaselib.core.devices.remote.LocalNetworkDevice;
 import teaselib.core.util.ObjectMap;
@@ -61,8 +61,8 @@ public class TeaseLib {
     final StateMaps stateMaps = new StateMaps(this);
     public final Devices devices;
 
-    private long frozenTime = Long.MIN_VALUE;
-    private long timeOffsetMillis = 0;
+    private AtomicLong frozenTime = new AtomicLong(Long.MIN_VALUE);
+    private AtomicLong timeOffsetMillis = new AtomicLong(0);
     private final Set<TimeAdvanceListener> timeAdvanceListeners = new HashSet<>();
 
     public TeaseLib(final Host host, Persistence persistence) throws IOException {
@@ -92,12 +92,12 @@ public class TeaseLib {
     }
 
     private static void logDateTime() {
-        logger.info(new Date(System.currentTimeMillis()).toString());
+        logger.info("{}", new Date(System.currentTimeMillis()));
     }
 
     private static void logJavaProperties() {
         for (Entry<Object, Object> entry : System.getProperties().entrySet()) {
-            logger.debug(entry.getKey() + "=" + entry.getValue());
+            logger.debug("{}={}", entry.getKey(), entry.getValue());
         }
     }
 
@@ -134,12 +134,8 @@ public class TeaseLib {
     }
 
     private void bindMotionDetectorToVideoRenderer() {
-        devices.get(MotionDetector.class).addDeviceListener(new DeviceFactoryListener<MotionDetector>() {
-            @Override
-            public void deviceCreated(MotionDetector motionDetector) {
-                motionDetector.setVideoRenderer(TeaseLib.this.host.getDisplay(VideoRenderer.Type.CameraFeedback));
-            }
-        });
+        devices.get(MotionDetector.class).addDeviceListener(motionDetector -> motionDetector
+                .setVideoRenderer(TeaseLib.this.host.getDisplay(VideoRenderer.Type.CameraFeedback)));
     }
 
     private void bindNetworkProperties() {
@@ -148,7 +144,6 @@ public class TeaseLib {
         }
     }
 
-    @SuppressWarnings("resource")
     public static void run(Host host, Persistence persistence, File classPath, String script)
             throws ReflectiveOperationException, IOException {
         if (!classPath.exists()) {
@@ -163,7 +158,7 @@ public class TeaseLib {
             Method method = classLoaderClass.getDeclaredMethod("addURL", (Class<?>) URL.class);
             method.setAccessible(true);
             method.invoke(classLoader, classPath.toURI().toURL());
-            logger.info("Added class path " + classPath.getAbsolutePath());
+            logger.info("Added class path {}", classPath.getAbsolutePath());
         } catch (IOException | RuntimeException e) {
             throw e;
         } catch (Exception e) {
@@ -180,7 +175,7 @@ public class TeaseLib {
 
     private void run(String script) throws ReflectiveOperationException {
         if (logger.isInfoEnabled()) {
-            logger.info("Running script " + script);
+            logger.info("Running script {}", script);
         }
 
         Class<?> scriptClass = Thread.currentThread().getContextClassLoader().loadClass(script);
@@ -246,28 +241,28 @@ public class TeaseLib {
     public long getTime(TimeUnit unit) {
         final long time;
         if (isTimeFrozen()) {
-            time = frozenTime + timeOffsetMillis;
+            time = frozenTime.get() + timeOffsetMillis.get();
         } else {
             long now = System.currentTimeMillis();
-            time = now + timeOffsetMillis;
+            time = now + timeOffsetMillis.get();
         }
         return unit.convert(time, TimeUnit.MILLISECONDS);
     }
 
     boolean isTimeFrozen() {
-        return frozenTime > Long.MIN_VALUE;
+        return frozenTime.get() > Long.MIN_VALUE;
     }
 
     void freezeTime() {
-        frozenTime = getTime(TimeUnit.MILLISECONDS);
+        frozenTime.set(getTime(TimeUnit.MILLISECONDS));
     }
 
     void advanceTime(long duration, TimeUnit unit) {
-        timeOffsetMillis += unit.toMillis(duration);
+        timeOffsetMillis.addAndGet(unit.toMillis(duration));
     }
 
     void resumeTime() {
-        frozenTime = Long.MIN_VALUE;
+        frozenTime.set(Long.MIN_VALUE);
     }
 
     /**

@@ -1,6 +1,6 @@
 package teaselib.core;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 import java.util.Arrays;
 import java.util.List;
@@ -39,7 +39,7 @@ public class ShowChoicesTestScriptFunctionReply extends ShowChoicesAbstractTest 
     }
 
     @Test
-    public void testSingleScriptFunctionDismiss() throws Exception {
+    public void testSingleScriptFunctionDismiss() {
         debugger.addResponse("Stop", Debugger.Response.Choose);
 
         script.say("In main script.");
@@ -51,7 +51,7 @@ public class ShowChoicesTestScriptFunctionReply extends ShowChoicesAbstractTest 
     }
 
     @Test
-    public void testTwoScriptFunctionsDismiss() throws Exception {
+    public void testTwoScriptFunctionsDismiss() {
         debugger.addResponse("No*", Debugger.Response.Choose);
         debugger.addResponse("Ignore*", Debugger.Response.Ignore);
         debugger.addResponse("Stop*", Debugger.Response.Choose);
@@ -72,7 +72,7 @@ public class ShowChoicesTestScriptFunctionReply extends ShowChoicesAbstractTest 
     }
 
     @Test
-    public void testThreeScriptFunctionsEachWithInnerReply() throws Exception {
+    public void testThreeScriptFunctionsEachWithInnerReply() {
         debugger.addResponse("No*", Debugger.Response.Choose);
         debugger.addResponse("Ignore*", Debugger.Response.Ignore);
         debugger.addResponse("Stop*", Debugger.Response.Choose);

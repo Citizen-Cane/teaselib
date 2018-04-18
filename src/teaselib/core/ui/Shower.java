@@ -44,7 +44,7 @@ public class Shower {
         }
     }
 
-    private void resumeAfterException() throws InterruptedException {
+    private void resumeAfterException() {
         try {
             resumePrevious();
         } catch (Exception e) {

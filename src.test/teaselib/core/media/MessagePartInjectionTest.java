@@ -1,6 +1,6 @@
 package teaselib.core.media;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -74,7 +74,7 @@ public class MessagePartInjectionTest {
 
     static final Actor DummyActor = null;
 
-    private RenderedMessage decorate(DecoratingTestScript script, Message message) {
+    private static RenderedMessage decorate(DecoratingTestScript script, Message message) {
         return RenderedMessage.of(message, script.getDecorators());
     }
 

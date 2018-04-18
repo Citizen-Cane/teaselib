@@ -24,6 +24,14 @@ public class EStimController extends IntentionBasedController<Intention> {
             eStimController.add(Intention.Pace, stimulator1);
             eStimController.add(Intention.Tease, stimulator2);
             eStimController.add(Intention.Punish, stimulator1, stimulator2);
+            // TODO Trigger both when punished
+            // - introduce multichannel stimulator proxy and resolve to physical channel in newChannel(...)
+            // -> not needed when intentions can be assigned to multiple stimulators
+            // - Allow multiple stimulators for the same intention (sounds good)
+            // - then when playing a waveform, play to all
+            // - once body region specifiable, play to those matching in body region or to all
+            // -> private final Map<T, List<Stimulator>> stims = new HashMap<>();
+
         } else if (stimulators.size() == 1) {
             Stimulator stimulator1 = stimulator.next();
             eStimController.add(Intention.Pace, stimulator1);

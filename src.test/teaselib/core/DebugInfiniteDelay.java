@@ -9,18 +9,14 @@ class DebugInfiniteDelay extends MediaRendererThread {
 
     @Override
     protected void renderMedia() throws InterruptedException {
-        try {
-            startCompleted();
-            mandatoryCompleted();
-            allCompleted();
+        startCompleted();
+        mandatoryCompleted();
+        allCompleted();
 
-            synchronized (this) {
+        synchronized (this) {
+            while (!Thread.currentThread().isInterrupted()) {
                 wait();
             }
-        } catch (InterruptedException e) {
-            // TODO Shouldn't be necessary
-            super.completeAll();
-            throw e;
         }
     }
 }

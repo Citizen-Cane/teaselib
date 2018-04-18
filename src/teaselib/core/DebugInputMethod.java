@@ -40,8 +40,7 @@ public class DebugInputMethod implements InputMethod {
         Prompt prompt = activePrompt.get();
         if (prompt != null) {
             dismissExpectedPromptOrIgnore(prompt);
-
-            elapsed.set(elapsed.get() + e.teaseLib.getTime(TimeUnit.MILLISECONDS));
+            elapsed.addAndGet(e.teaseLib.getTime(TimeUnit.MILLISECONDS));
         }
     };
 
@@ -54,7 +53,7 @@ public class DebugInputMethod implements InputMethod {
             } else if (result.response == Response.Invoke) {
                 invokeHandlerOnce(prompt, result);
             } else {
-                logger.info("Ignoring " + result);
+                logger.info("Ignoring {}", result);
             }
         } finally {
             prompt.lock.unlock();
@@ -140,7 +139,7 @@ public class DebugInputMethod implements InputMethod {
     }
 
     private static void choose(Prompt prompt, Result result) {
-        logger.info("Choosing " + result);
+        logger.info("Choosing {}", result);
         prompt.signalResult(result.index);
     }
 

@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -140,32 +139,7 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
                 show(null, actor, Mood.Neutral);
                 finalizeRendering();
             } else {
-                if (replayPosition == Position.FromStart) {
-                    accumulatedText = new MessageTextAccumulator();
-                    currentMessage = 0;
-                    renderMessages();
-                } else if (replayPosition == Position.FromCurrentPosition) {
-                    Replayable replay;
-                    synchronized (messages) {
-                        if (currentMessage < messages.size()) {
-                            replay = this::renderMessages;
-                        } else {
-                            replay = () -> renderMessage(getEnd());
-                        }
-                    }
-                    replay.run();
-                } else if (replayPosition == Position.FromMandatory) {
-                    // TODO remember accumulated text so that all but the last section
-                    // is displayed, rendered, but the text not added again
-                    // TODO Remove all but last speech and delay parts
-                    renderMessage(getMandatory());
-                    finalizeRendering();
-                } else if (replayPosition == Position.End) {
-                    renderMessage(getEnd());
-                    finalizeRendering();
-                } else {
-                    throw new IllegalStateException(replayPosition.toString());
-                }
+                replay();
             }
         } catch (InterruptedException | ScriptInterruptedException e) {
             if (currentRenderer != null) {
@@ -177,6 +151,35 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
             }
 
             throw e;
+        }
+    }
+
+    private void replay() throws IOException, InterruptedException {
+        if (replayPosition == Position.FromStart) {
+            accumulatedText = new MessageTextAccumulator();
+            currentMessage = 0;
+            renderMessages();
+        } else if (replayPosition == Position.FromCurrentPosition) {
+            Replayable replay;
+            synchronized (messages) {
+                if (currentMessage < messages.size()) {
+                    replay = this::renderMessages;
+                } else {
+                    replay = () -> renderMessage(getEnd());
+                }
+            }
+            replay.run();
+        } else if (replayPosition == Position.FromMandatory) {
+            // TODO remember accumulated text so that all but the last section
+            // is displayed, rendered, but the text not added again
+            // TODO Remove all but last speech and delay parts
+            renderMessage(getMandatory());
+            finalizeRendering();
+        } else if (replayPosition == Position.End) {
+            renderMessage(getEnd());
+            finalizeRendering();
+        } else {
+            throw new IllegalStateException(replayPosition.toString());
         }
     }
 
@@ -253,7 +256,7 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
             if (part.type == Message.Type.Mood) {
                 mood = part.value;
             } else {
-                renderMessagePart(part, accumulatedText, actor, mood);
+                renderPart(part, accumulatedText, actor, mood);
             }
 
             if (part.type == Message.Type.Text) {
@@ -274,7 +277,7 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
         return lastSection.contains(part);
     }
 
-    private void renderMessagePart(MessagePart part, MessageTextAccumulator accumulatedText, Actor actor, String mood)
+    private void renderPart(MessagePart part, MessageTextAccumulator accumulatedText, Actor actor, String mood)
             throws IOException, InterruptedException {
         if (part.type == Message.Type.Image) {
             displayImage = part.value;
@@ -455,8 +458,10 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
         if (args.isEmpty()) {
             completeSectionAll();
         } else {
-            Interval delay = getDelay(part.value);
-            teaseLib.sleep(teaseLib.random(delay.start, delay.end), TimeUnit.MILLISECONDS);
+            double delay = geteDelaySeconds(part.value);
+            if (delay > 0) {
+                renderTimeSpannedPart(new RenderDelay(delay, teaseLib));
+            }
         }
 
         if (isLastParagraph(part)) {
@@ -464,7 +469,18 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
         }
     }
 
-    private static Interval getDelay(String args) {
+    private double geteDelaySeconds(String args) {
+        String[] argv = args.split(" ");
+        if (argv.length == 1) {
+            return Double.parseDouble(args);
+        } else {
+            double start = Double.parseDouble(argv[0]);
+            double end = Double.parseDouble(argv[1]);
+            return teaseLib.random(start, end);
+        }
+    }
+
+    private static Interval getDelayMillis(String args) {
         String[] argv = args.split(" ");
         if (argv.length == 1) {
             int delay = (int) (Double.parseDouble(args) * 1000);
@@ -478,7 +494,7 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
 
     @Override
     public String toString() {
-        long delay = 0;
+        long delayMillis = 0;
         MessageTextAccumulator text = new MessageTextAccumulator();
         for (RenderedMessage message : messages) {
             AbstractMessage paragraphs = message;
@@ -486,15 +502,15 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
                 MessagePart part = it.next();
                 text.add(part);
                 if (part.type == Type.Text) {
-                    delay += TextToSpeech.getEstimatedSpeechDuration(part.value);
+                    delayMillis += TextToSpeech.getEstimatedSpeechDuration(part.value);
                 } else if (part.type == Type.Delay) {
-                    delay += getDelay(part.value).start;
+                    delayMillis += getDelayMillis(part.value).start;
                 }
             }
         }
         String messageText = text.toString().replace("\n", " ");
         int length = 40;
-        return "Estimated delay=" + String.format("%.2f", (double) delay / 1000) + " Message='"
+        return "Estimated delay=" + String.format("%.2f", (double) delayMillis / 1000) + " Message='"
                 + (messageText.length() > length ? messageText.substring(0, length) + "..." : messageText + "'");
     }
 

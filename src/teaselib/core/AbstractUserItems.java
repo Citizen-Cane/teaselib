@@ -79,46 +79,42 @@ public abstract class AbstractUserItems implements UserItems {
                     for (; itemNode != null; itemNode = itemNode.getNextSibling()) {
                         if ("Item".equalsIgnoreCase(itemNode.getNodeName())
                                 && itemNode.getNodeType() == Node.ELEMENT_NODE) {
-                            NamedNodeMap attributes = itemNode.getAttributes();
-                            String itemName = attributes.getNamedItem("item").getNodeValue();
-                            String guid = attributes.getNamedItem("guid").getNodeValue();
-                            String displayName = attributes.getNamedItem("displayName").getNodeValue();
-                            boolean available = Boolean
-                                    .parseBoolean(attributes.getNamedItem("available").getNodeValue());
-
-                            List<Enum<?>> itemAttributes = new ArrayList<>();
-                            NodeList childNodes = itemNode.getChildNodes();
-                            for (int i = 0; i < childNodes.getLength(); i++) {
-                                Node attributeNode = childNodes.item(i);
-                                if (attributeNode.getNodeType() == Node.ELEMENT_NODE) {
-                                    if ("Attribute".equalsIgnoreCase(attributeNode.getNodeName())) {
-                                        String enumClassName = "teaselib." + attributeNode.getTextContent().trim();
-                                        itemAttributes.add(ReflectionUtils.getEnum(enumClassName));
-                                    }
-                                }
-                            }
-
-                            String enumName = "teaselib." + itemClass.getNodeName() + "." + itemName;
-                            Enum<?> enumValue = ReflectionUtils.getEnum(enumName);
-                            ItemImpl itemImpl = new ItemImpl(teaseLib, enumValue, TeaseLib.DefaultDomain, //
-                                    guid, //
-                                    displayName, defaults(new QualifiedEnum(enumValue)), //
-                                    itemAttributes.toArray());
-                            itemImpl.setAvailable(available);
-                            items.add(itemImpl);
+                            items.add(readItem(itemClass, itemNode));
                         }
                     }
                 }
             }
-        } catch (ParserConfigurationException e) {
-            throw ExceptionUtil.asRuntimeException(e);
-        } catch (SAXException e) {
-            throw ExceptionUtil.asRuntimeException(e);
-        } catch (ClassNotFoundException e) {
+        } catch (ParserConfigurationException | SAXException | ClassNotFoundException e) {
             throw ExceptionUtil.asRuntimeException(e);
         }
 
         return items;
+    }
+
+    private ItemImpl readItem(Node itemClass, Node itemNode) throws ClassNotFoundException {
+        NamedNodeMap attributes = itemNode.getAttributes();
+        String itemName = attributes.getNamedItem("item").getNodeValue();
+        String guid = attributes.getNamedItem("guid").getNodeValue();
+        String displayName = attributes.getNamedItem("displayName").getNodeValue();
+
+        List<Enum<?>> itemAttributes = new ArrayList<>();
+        NodeList childNodes = itemNode.getChildNodes();
+        for (int i = 0; i < childNodes.getLength(); i++) {
+            Node attributeNode = childNodes.item(i);
+            if (attributeNode.getNodeType() == Node.ELEMENT_NODE) {
+                if ("Attribute".equalsIgnoreCase(attributeNode.getNodeName())) {
+                    String enumClassName = "teaselib." + attributeNode.getTextContent().trim();
+                    itemAttributes.add(ReflectionUtils.getEnum(enumClassName));
+                }
+            }
+        }
+
+        String enumName = "teaselib." + itemClass.getNodeName() + "." + itemName;
+        Enum<?> enumValue = ReflectionUtils.getEnum(enumName);
+        return new ItemImpl(teaseLib, enumValue, TeaseLib.DefaultDomain, //
+                guid, //
+                displayName, defaults(new QualifiedEnum(enumValue)), //
+                itemAttributes.toArray());
     }
 
     protected Item[] getDefaultItem(String domain, QualifiedItem<?> item) {

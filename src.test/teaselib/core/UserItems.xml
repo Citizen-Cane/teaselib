@@ -4,26 +4,26 @@
 <!-- item defaults - defines default item set in TeaseLib -->
 <Items>
 	<Toys>
-		<Item item="Humbler" guid="myHumbler" displayName="My Humbler" available="true">
+		<Item item="Humbler" guid="myHumbler" displayName="My Humbler">
 			<Attribute> Material.Wood </Attribute>
 			<Attribute> Features.Lockable </Attribute>
 		</Item>
 	</Toys>
 
 	<Household>
-		<Item item="Wooden_Spoon" guid="wooden_spoon" displayName="Wooden spoon" available="false">
+		<Item item="Wooden_Spoon" guid="wooden_spoon" displayName="Wooden spoon">
 			<Attribute> Material.Wood </Attribute>
 		</Item>
 	</Household>
 	
 	<Clothes>
-		<Item item="Catsuit" guid="catsuit" displayName="Catsuit" available="true">
+		<Item item="Catsuit" guid="catsuit" displayName="Catsuit">
 			<Attribute> Material.Rubber </Attribute>
 		</Item>
 	</Clothes>
 
 	<Gadgets>
-		<Item item="Computer_Controlled_EStim" guid="estim" displayName="EStim" available="false">
+		<Item item="Computer_Controlled_EStim" guid="estim" displayName="EStim">
 		</Item>
 	</Gadgets>
 </Items>

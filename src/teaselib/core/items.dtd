@@ -9,6 +9,5 @@
 	item CDATA #REQUIRED
 	guid CDATA #REQUIRED
 	displayName CDATA #REQUIRED
-	available CDATA #REQUIRED
 >
 <!ELEMENT Attribute (#PCDATA)>

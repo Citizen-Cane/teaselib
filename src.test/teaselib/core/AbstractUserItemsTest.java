@@ -1,6 +1,10 @@
 package teaselib.core;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.io.IOException;
@@ -20,7 +24,7 @@ import teaselib.hosts.PreDefinedItems;
 import teaselib.test.TestScript;
 import teaselib.util.Item;
 
-public class UserItemsTest {
+public class AbstractUserItemsTest {
 
     @Test
     public void testToyDefaults() throws Exception {
@@ -123,7 +127,6 @@ public class UserItemsTest {
 
         for (Item humbler : humblers) {
             if (humbler.displayName().equals("My Humbler")) {
-                assertTrue(humbler.isAvailable());
                 assertTrue(humbler.is(Material.Wood));
                 assertTrue(humbler.is(Features.Lockable));
                 return;
@@ -139,7 +142,6 @@ public class UserItemsTest {
 
         for (Item spoon : spoons) {
             if (spoon.displayName().equals("Wooden spoon")) {
-                assertFalse(spoon.isAvailable());
                 assertTrue(spoon.is(Material.Wood));
                 return;
             }
@@ -154,7 +156,6 @@ public class UserItemsTest {
 
         for (Item catsuit : catsuits) {
             if (catsuit.displayName().equals("Catsuit")) {
-                assertTrue(catsuit.isAvailable());
                 assertTrue(catsuit.is(Material.Rubber));
                 return;
             }
@@ -169,7 +170,6 @@ public class UserItemsTest {
 
         for (Item estim : estims) {
             if (estim.displayName().equals("EStim")) {
-                assertFalse(estim.isAvailable());
                 return;
             }
         }

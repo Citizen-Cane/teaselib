@@ -1,6 +1,6 @@
 package teaselib.core;
 
-import static java.util.concurrent.TimeUnit.*;
+import static java.util.concurrent.TimeUnit.HOURS;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;

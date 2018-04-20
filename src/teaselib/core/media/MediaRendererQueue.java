@@ -262,7 +262,7 @@ public class MediaRendererQueue {
 
     public void replay(ReplayableMediaRenderer renderer, Position position) {
         // TODO Avoid replaying if still rendering
-        // Handle threade and non-threaded
+        // Handle threaded and non-threaded
         submit(() -> renderer.replay(position));
     }
 

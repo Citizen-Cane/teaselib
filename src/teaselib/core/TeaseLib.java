@@ -258,7 +258,11 @@ public class TeaseLib {
     }
 
     void advanceTime(long duration, TimeUnit unit) {
-        timeOffsetMillis.addAndGet(unit.toMillis(duration));
+        if (duration == Long.MAX_VALUE) {
+            timeOffsetMillis.set(Long.MAX_VALUE - frozenTime.get());
+        } else {
+            timeOffsetMillis.addAndGet(unit.toMillis(duration));
+        }
     }
 
     void resumeTime() {

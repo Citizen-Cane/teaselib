@@ -7,26 +7,26 @@ public final class ReflectionUtils {
 
     public static String classParentName(Class<?> clazz) {
         String path = normalizeClassName(clazz);
-        return path.substring(0, path.lastIndexOf("."));
+        return path.substring(0, path.lastIndexOf('.'));
     }
 
     public static String classSimpleName(Class<?> clazz) {
         String path = normalizeClassName(clazz);
-        return path.substring(path.lastIndexOf(".") + 1);
+        return path.substring(path.lastIndexOf('.') + 1);
     }
 
     public static String classParentName(Object object) {
         String path = normalizeClassName(object.getClass());
-        return path.substring(0, path.lastIndexOf("."));
+        return path.substring(0, path.lastIndexOf('.'));
     }
 
     public static String classSimpleName(Object object) {
         String path = normalizeClassName(object.getClass());
-        return path.substring(path.lastIndexOf(".") + 1);
+        return path.substring(path.lastIndexOf('.') + 1);
     }
 
     public static String normalizeClassName(Class<?> clazz) {
-        return clazz.getName().replace("$", ".");
+        return clazz.getName().replace('$', '.');
     }
 
     public static String normalizeClassName(String className) {
@@ -34,27 +34,31 @@ public final class ReflectionUtils {
     }
 
     public static String asAbsolutePath(String className) {
-        return "/" + className.replace(".", "/") + "/";
+        return "/" + className.replace('.', '/') + '/';
     }
 
     public static String asAbsolutePath(Class<?> clazz) {
-        return "/" + clazz.getName().replace(".", "/") + "/";
+        return "/" + clazz.getName().replace('.', '/') + '/';
+    }
+
+    public static String getPackagePath(Class<?> clazz) {
+        return clazz.getPackage().getName().replace(".", "/") + "/";
     }
 
     public static String asClassLoaderCompatiblePath(String className) {
-        return className.replace(".", "/") + "/";
+        return className.replace('.', '/') + '/';
     }
 
     public static String asPath(String className) {
-        return className.replace(".", "/");
+        return className.replace('.', '/');
     }
 
     public static String getClass(String qualifiedName) {
-        return qualifiedName.substring(0, qualifiedName.lastIndexOf("."));
+        return qualifiedName.substring(0, qualifiedName.lastIndexOf('.'));
     }
 
     public static String getName(String qualifiedName) {
-        return qualifiedName.substring(qualifiedName.lastIndexOf(".") + 1);
+        return qualifiedName.substring(qualifiedName.lastIndexOf('.') + 1);
     }
 
     public static Enum<?> getEnum(String qualifiedName) throws ClassNotFoundException {
@@ -81,6 +85,6 @@ public final class ReflectionUtils {
     }
 
     public static String qualifiedName(Enum<?> value) {
-        return ReflectionUtils.normalizeClassName(value.getClass()) + "." + value.name();
+        return ReflectionUtils.normalizeClassName(value.getClass()) + '.' + value.name();
     }
 }

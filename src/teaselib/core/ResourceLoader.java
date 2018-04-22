@@ -24,6 +24,7 @@ import org.slf4j.LoggerFactory;
 
 import teaselib.Config;
 import teaselib.core.util.QualifiedItem;
+import teaselib.core.util.ReflectionUtils;
 
 public class ResourceLoader {
     private static final Logger logger = LoggerFactory.getLogger(ResourceLoader.class);
@@ -41,7 +42,7 @@ public class ResourceLoader {
      *            The class of the main script, for loading resources.
      */
     public ResourceLoader(Class<?> mainScript) {
-        this(mainScript, getPackagePath(mainScript));
+        this(mainScript, ReflectionUtils.getPackagePath(mainScript));
     }
 
     public ResourceLoader(Class<?> mainScript, String resourceRoot, String[] assets) {
@@ -111,10 +112,6 @@ public class ResourceLoader {
         } else {
             return path;
         }
-    }
-
-    private static String getPackagePath(Class<?> mainScript) {
-        return mainScript.getPackage().getName().replace(".", "/") + "/";
     }
 
     public static File getProjectPath(Class<?> mainScript) {

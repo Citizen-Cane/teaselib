@@ -85,7 +85,7 @@ public class ResourceLoader {
     public ResourceLoader(File basePath, String resourceRoot) {
         this.basePath = getBasePath(basePath);
         this.resourceRoot = classLoaderCompatibleResourcePath(pathToFolder(resourceRoot));
-        logger.info("Using basepath='" + basePath.getAbsolutePath() + "'");
+        logger.info("Using basepath='{}'", basePath.getAbsolutePath());
         try {
             addURL = addURLMethod();
         } catch (NoSuchMethodException e) {
@@ -141,7 +141,7 @@ public class ResourceLoader {
 
     private static File projectParentPathFromJar(URL url) {
         String path = getUndecoratedPath(url);
-        int startOffset = new String("File:/").length();
+        int startOffset = "File:/".length();
         int jarOffset = classLoaderCompatibleResourcePath(path).indexOf(".jar!");
         return new File(classLoaderCompatibleResourcePath(path).substring(startOffset, jarOffset)).getParentFile();
     }
@@ -185,12 +185,12 @@ public class ResourceLoader {
     }
 
     private void addAssetsToAntClassLoader(String[] paths)
-            throws NoSuchMethodException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+            throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
         Method addPathComponent = addPathComponentMethod();
         for (String path : paths) {
             File file = new File(basePath, path);
-            logger.info("Using resource location: " + file.getAbsolutePath());
-            addPathComponent.invoke(classLoader, new Object[] { file });
+            logger.info("Using resource location: {}", file.getAbsolutePath());
+            addPathComponent.invoke(classLoader, file);
         }
     }
 
@@ -220,8 +220,7 @@ public class ResourceLoader {
         if (!file.isAbsolute()) {
             file = new File(basePath, classLoaderCompatibleResourcePath(path));
         }
-        URI uri = file.toURI();
-        return uri;
+        return file.toURI();
     }
 
     private void addAssets(URI[] assets)
@@ -234,14 +233,14 @@ public class ResourceLoader {
     private void addAsset(URI uri) throws IllegalAccessException, InvocationTargetException, MalformedURLException {
         boolean isValid = isValidResourceLocation(uri);
         if (isValid) {
-            addURL.invoke(classLoader, new Object[] { uri.toURL() });
+            addURL.invoke(classLoader, uri.toURL());
             resourceLocations.add(uri);
-            logger.info("Using resource location: " + uri.getPath());
+            logger.info("Using resource location: {}", uri.getPath());
         } else {
             // Just warn, since everybody should be able to unpack the archives
             // to explore or change the contents,
             // and to remove them to ensure the unpacked resources are used
-            logger.warn("Archive not available: " + uri.getPath());
+            logger.warn("Archive not available: {}", uri.getPath());
         }
     }
 
@@ -250,13 +249,12 @@ public class ResourceLoader {
         boolean isValidAndNotAddYet = file.exists() && !resourceLocations.contains(uri);
         boolean isArchiveOrDirectory = uri.getPath().endsWith(".jar") || uri.getPath().endsWith(".zip")
                 || file.isDirectory();
-        boolean isValid = isValidAndNotAddYet && isArchiveOrDirectory;
-        return isValid;
+        return isValidAndNotAddYet && isArchiveOrDirectory;
     }
 
     public InputStream getResource(String path) throws IOException {
         String classloaderCompatibleResourcePath = getClassLoaderAbsoluteResourcePath(path);
-        logger.info("Resource: '" + classloaderCompatibleResourcePath + "'");
+        logger.info("Resource: '{}'", classloaderCompatibleResourcePath);
         InputStream inputStream = classLoader.getResourceAsStream(classloaderCompatibleResourcePath);
         if (inputStream == null) {
             throw new IOException(path);

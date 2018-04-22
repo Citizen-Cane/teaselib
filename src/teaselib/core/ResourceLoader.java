@@ -254,7 +254,7 @@ public class ResourceLoader {
 
     public InputStream getResource(String path) throws IOException {
         String classloaderCompatibleResourcePath = getClassLoaderAbsoluteResourcePath(path);
-        logger.info("Resource: '{}'", classloaderCompatibleResourcePath);
+        logger.debug("Resource: '{}'", classloaderCompatibleResourcePath);
         InputStream inputStream = classLoader.getResourceAsStream(classloaderCompatibleResourcePath);
         if (inputStream == null) {
             throw new IOException(path);

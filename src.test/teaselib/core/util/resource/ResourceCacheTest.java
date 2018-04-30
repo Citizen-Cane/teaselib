@@ -1,6 +1,8 @@
 package teaselib.core.util.resource;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -52,7 +54,7 @@ public class ResourceCacheTest {
 
         List<String> resources = resourceCache.get(WildcardPattern.compile("*resource1.txt"));
         assertFalse(resources.isEmpty());
-        assertEquals("/UnpackResourcesTestData/resource1.txt", resources.get(0));
+        assertEquals("/teaselib/core/UnpackResourcesTestData/resource1.txt", resources.get(0));
 
         try (InputStream is = resourceCache.get(resources.get(0));) {
             assertNotNull(is);
@@ -66,7 +68,7 @@ public class ResourceCacheTest {
 
         List<String> resources = resourceCache.get(WildcardPattern.compile("*bar.txt"));
         assertFalse(resources.isEmpty());
-        assertEquals("/bar.txt", resources.get(0));
+        assertEquals("/teaselib/core/util/bar.txt", resources.get(0));
 
         try (InputStream is = resourceCache.get(resources.get(0));) {
             assertNotNull(is);
@@ -76,11 +78,11 @@ public class ResourceCacheTest {
     @Test
     public void testResourceFolderPath() throws IOException {
         ResourceCache resourceCache = new ResourceCache();
-        resourceCache.add(new FolderLocation(Paths.get("bin.test/"), Paths.get("teaselib/core/")));
+        resourceCache.add(new FolderLocation(Paths.get("bin.test/"), Paths.get("teaselib/core/util/")));
 
-        List<String> resources = resourceCache.get(WildcardPattern.compile("/util/*bar.txt"));
+        List<String> resources = resourceCache.get(WildcardPattern.compile("/teaselib/core/util/*bar.txt"));
         assertFalse(resources.isEmpty());
-        assertEquals("/util/bar.txt", resources.get(0));
+        assertEquals("/teaselib/core/util/bar.txt", resources.get(0));
 
         try (InputStream is = resourceCache.get(resources.get(0));) {
             assertNotNull(is);

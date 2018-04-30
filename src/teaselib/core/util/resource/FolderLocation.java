@@ -2,11 +2,10 @@ package teaselib.core.util.resource;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 
 public class FolderLocation extends FileSystemLocation {
     public FolderLocation(Path root) {
-        this(root, Paths.get(""));
+        this(root, null);
     }
 
     FolderLocation(Path root, Path project) {

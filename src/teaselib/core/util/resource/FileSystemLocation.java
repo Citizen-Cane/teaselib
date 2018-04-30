@@ -17,7 +17,7 @@ public abstract class FileSystemLocation implements ResourceLocation {
     List<Path> rootDirectories = new ArrayList<>();
 
     FileSystemLocation(Path root, Path project) {
-        if (project.startsWith("/"))
+        if (project != null && project.startsWith("/"))
             throw new IllegalArgumentException("Project path must be relative to resolve it");
         this.root = root;
         this.project = project;
@@ -26,7 +26,7 @@ public abstract class FileSystemLocation implements ResourceLocation {
     }
 
     void addRootDirectory(Path path) {
-        rootDirectories.add(path.resolve(project.toString()));
+        rootDirectories.add(path);
         return;
     }
 
@@ -53,10 +53,19 @@ public abstract class FileSystemLocation implements ResourceLocation {
             Files.walkFileTree(directory, new SimpleFileVisitor<Path>() {
                 @Override
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-                    Path relative = file.subpath(directory.getNameCount(), file.getNameCount());
-                    String key = "/" + relative.toString().replace('\\', '/');
-                    resources.add(key);
+                    String resourcePath = resourcePath(subpath(directory, file));
+                    if (project == null || resourcePath.startsWith(resourcePath(project))) {
+                        resources.add(resourcePath);
+                    }
                     return FileVisitResult.CONTINUE;
+                }
+
+                private Path subpath(Path directory, Path file) {
+                    return file.subpath(directory.getNameCount(), file.getNameCount());
+                }
+
+                private String resourcePath(Path relative) {
+                    return "/" + relative.toString().replace('\\', '/');
                 }
             });
         }

@@ -69,7 +69,7 @@ public class VoiceProperties {
 
     protected void store(File path, String fileName) throws IOException {
         File file = new File(path, fileName);
-        logger.info("Saving " + file.toString());
+        logger.info("Saving {}", file);
         try (FileOutputStream fileOutputStream = new FileOutputStream(file);) {
             store(fileOutputStream, "");
         }
@@ -77,5 +77,10 @@ public class VoiceProperties {
 
     protected void store(OutputStream os, String comments) throws IOException {
         properties.store(os, comments);
+    }
+
+    @Override
+    public String toString() {
+        return properties.toString();
     }
 }

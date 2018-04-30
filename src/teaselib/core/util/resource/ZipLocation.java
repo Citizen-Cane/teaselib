@@ -1,32 +1,24 @@
 package teaselib.core.util.resource;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
-import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 
 public class ZipLocation extends FileSystemLocation {
-    private final Path path;
     private final FileSystem fileSystem;
 
-    public ZipLocation(Path path) throws IOException {
-        this.path = path;
-        this.fileSystem = FileSystems.newFileSystem(path, null);
+    public ZipLocation(Path zip) throws IOException {
+        this(zip, Paths.get(""));
+    }
+
+    ZipLocation(Path zip, Path project) throws IOException {
+        super(zip, project);
+        this.fileSystem = FileSystems.newFileSystem(zip, null);
         for (Path root : fileSystem.getRootDirectories()) {
-            add(root);
+            addRootDirectory(root);
         }
-    }
-
-    @Override
-    public Path path() {
-        return path;
-    }
-
-    @Override
-    public InputStream get(String resource) throws IOException {
-        return Files.newInputStream(fileSystem.getPath(resource));
     }
 
     @Override

@@ -114,9 +114,9 @@ public class TextToSpeechRecorder {
                 processSymbols.append(symbol.toString());
                 appendSeparator = true;
             }
-            logger.info(processSymbols.toString() + ": " + upToDateEntries + " up to date, " + reusedDuplicates
-                    + " reused, " + changedEntries + " changed, " + newEntries + " new" + " => "
-                    + (upToDateEntries + reusedDuplicates + changedEntries + newEntries));
+            logger.info("{}: {} up to date, {} reused, {} changed, {} new  => {}", processSymbols, upToDateEntries,
+                    reusedDuplicates, changedEntries, newEntries,
+                    (upToDateEntries + reusedDuplicates + changedEntries + newEntries));
         }
 
     }
@@ -141,8 +141,7 @@ public class TextToSpeechRecorder {
         this.voices = ttsPlayer.textToSpeech.getVoices();
         this.storage = new StorageSynchronizer(new PrerecordedSpeechZipStorage(path, resources.getRoot(), name));
         this.actorVoices = new ActorVoices(resources);
-        logger.info("Build start: " + new Date(buildStart).toString() + " with " + storage.getEncodingThreads()
-                + " encoding threads");
+        logger.info("Build start: {} with {} encoding threads", new Date(buildStart), storage.getEncodingThreads());
         ttsPlayer.loadActorVoiceProperties(resources);
     }
 
@@ -151,12 +150,12 @@ public class TextToSpeechRecorder {
         pass = new Pass(key, value);
         passes.add(pass);
 
-        logger.info("Pass " + passes.size() + " for " + key + "=" + value);
-        logger.info("using text variables: '" + textVariables.toString() + "'");
+        logger.info("Pass {} for {}={}", passes.size(), key, value);
+        logger.info("using text variables: '{}'", textVariables);
     }
 
     public void run(ScriptScanner scanner) throws IOException, InterruptedException, ExecutionException {
-        logger.info("Scanning script '" + scanner.getScriptName() + "'");
+        logger.info("Scanning script '{}'", scanner.getScriptName());
         Set<String> created = new HashSet<>();
         for (Message message : scanner) {
 
@@ -208,10 +207,8 @@ public class TextToSpeechRecorder {
     private static void handleCollision(Actor actor, Voice voice, String hash, String oldMessageHash,
             String newMessageHash) {
         log(actor, voice, hash, "collision!");
-        logger.info("Old:");
-        logger.info(oldMessageHash);
-        logger.info("New:");
-        logger.info(newMessageHash);
+        logger.info("Old: {}", oldMessageHash);
+        logger.info("New: {}", newMessageHash);
         throw new IllegalStateException("Collision");
     }
 
@@ -230,11 +227,15 @@ public class TextToSpeechRecorder {
     }
 
     private static void log(Actor actor, final Voice voice, String hash, String message) {
-        logger.info(actor.key + " " + voice.info().name + " " + hash + " " + message);
+        if (logger.isInfoEnabled()) {
+            logger.info("{} {} {} {}", actor.key, voice.info().name, hash, message);
+        }
     }
 
     private void createActorEntry(Actor actor, Voice voice) throws IOException {
-        logger.info("Creating actor entry for " + voice.info().name);
+        if (logger.isInfoEnabled()) {
+            logger.info("Creating actor entry for {}", voice.info().name);
+        }
         actors.add(actor.key);
         actorVoices.putGuid(actor.key, voice);
 
@@ -280,14 +281,15 @@ public class TextToSpeechRecorder {
             p.log();
         }
 
+        if (logger.isInfoEnabled()) {
+            long now = System.currentTimeMillis();
+            long seconds = (now - buildStart) / 1000;
+            String duration = String.format("%d:%02d:%02d", seconds / 3600, (seconds % 3600) / 60, (seconds % 60));
+            logger.info("Finished - Build time : {} using {} of {} encoding threads", duration,
+                    storage.getUsedEncodingThreads(), storage.getEncodingThreads());
+        }
+
         sum = Pass.sum(passes);
-
-        long now = System.currentTimeMillis();
-        long seconds = (now - buildStart) / 1000;
-        String duration = String.format("%d:%02d:%02d", seconds / 3600, (seconds % 3600) / 60, (seconds % 60));
-        logger.info("Finished - Build time : " + duration + " using " + storage.getUsedEncodingThreads() + " of "
-                + storage.getEncodingThreads() + " encoding threads");
-
         sum.log();
     }
 
@@ -314,7 +316,7 @@ public class TextToSpeechRecorder {
 
     private List<String> writeSpeechResources(Actor actor, Voice voice, Message message, String hash,
             String messageHash) throws InterruptedException {
-        logger.info("Recording message:\n" + messageHash);
+        logger.info("Recording message:\n{}", messageHash);
         List<String> soundFiles = new ArrayList<>();
         String mood = Mood.Neutral;
         storage.createNewEntry(actor, voice, hash, messageHash);
@@ -344,7 +346,7 @@ public class TextToSpeechRecorder {
                     String encodedSoundFile = recordedSoundFile.replace(SpeechResourceFileUncompressedFormat,
                             SpeechResourceFileTypeExtension);
                     String[] argv = { recordedSoundFile, encodedSoundFile, "--preset", "standard" };
-                    logger.info("Recording part " + storageSoundFile);
+                    logger.info("Recording part {}", storageSoundFile);
                     mp3.Main mp3Encoder = new mp3.Main();
                     mp3Encoder.run(argv);
                     return storage.storeRecordedSoundFile(actor, voice, hash, encodedSoundFile, storageSoundFile).get();

@@ -4,8 +4,8 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Enumeration;
+import java.util.List;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -20,6 +20,7 @@ import teaselib.core.util.ExceptionUtil;
 /**
  * list resources available from the class path @ *
  */
+@Deprecated
 public class ResourceList {
     public static final String PathDelimiter = "/";
 
@@ -37,7 +38,7 @@ public class ResourceList {
      *            the pattern to match
      * @return the resources in the order they are found
      */
-    public Collection<String> getResources(final URI basePath, final Pattern pattern) {
+    public List<String> getResources(URI basePath, Pattern pattern) {
         ArrayList<String> retval = new ArrayList<>();
         File file = new File(basePath.getPath());
         if (file.isDirectory()) {
@@ -48,7 +49,7 @@ public class ResourceList {
         return retval;
     }
 
-    private Collection<String> getResourcesFromJarFile(File file, Pattern pattern) {
+    private List<String> getResourcesFromJarFile(File file, Pattern pattern) {
         ArrayList<String> retval = new ArrayList<>();
         try (ZipFile zf = new ZipFile(file);) {
             Enumeration<? extends ZipEntry> e = zf.entries();
@@ -64,7 +65,7 @@ public class ResourceList {
         return retval;
     }
 
-    private Collection<String> getResourcesFromDirectory(URI basePath, File directory, Pattern pattern) {
+    private List<String> getResourcesFromDirectory(URI basePath, File directory, Pattern pattern) {
         ArrayList<String> retval = new ArrayList<>();
         File[] fileList = directory.listFiles();
         for (final File file : fileList) {
@@ -80,7 +81,7 @@ public class ResourceList {
         return retval;
     }
 
-    private void addMatchingEntry(Pattern pattern, Collection<String> retval, String resourcePath) {
+    private void addMatchingEntry(Pattern pattern, List<String> retval, String resourcePath) {
         if (resourcePath.startsWith(resourceRoot) && pattern.matcher(resourcePath).matches()) {
             retval.add(resourcePath);
         }

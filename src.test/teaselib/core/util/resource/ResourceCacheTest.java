@@ -19,14 +19,20 @@ import teaselib.core.util.WildcardPattern;
 public class ResourceCacheTest {
     private static final Logger logger = LoggerFactory.getLogger(ResourceCacheTest.class);
 
+    private static final String packagePath = ReflectionUtils.getPackagePath(ResourceUnpackToFolderTest.class);
+
     private ZipLocation locationOfFlatResourceArchive() throws IOException {
-        return new ZipLocation(Paths.get(ResourceLoader.getProjectPath(getClass()) + "/"
-                + ReflectionUtils.getPackagePath(ResourceUnpackToFolderTest.class)
-                + "/UnpackResourcesTestData_flat.zip"));
+        return new ZipLocation(ResourceLoader.getProjectPath(getClass()).toPath()
+                .resolve(packagePath + "UnpackResourcesTestData_flat.zip"), Paths.get(""));
+    }
+
+    private ZipLocation locationOfHierarcalResourceArchive() throws IOException {
+        return new ZipLocation(ResourceLoader.getProjectPath(getClass()).toPath()
+                .resolve(packagePath + "UnpackResourcesTestData_ResourceRootStructure.zip"), Paths.get(packagePath));
     }
 
     @Test
-    public void testResourceZipCache() throws IOException {
+    public void testResourceZip() throws IOException {
         ResourceCache resourceCache = new ResourceCache();
         resourceCache.add(locationOfFlatResourceArchive());
 
@@ -40,9 +46,23 @@ public class ResourceCacheTest {
     }
 
     @Test
-    public void testResourceFolderCache() throws IOException {
+    public void testResourceZipPath() throws IOException {
         ResourceCache resourceCache = new ResourceCache();
-        resourceCache.add(new FolderLocation(Paths.get("bin.test/teaselib/core/util/")));
+        resourceCache.add(locationOfHierarcalResourceArchive());
+
+        List<String> resources = resourceCache.get(WildcardPattern.compile("*resource1.txt"));
+        assertFalse(resources.isEmpty());
+        assertEquals("/UnpackResourcesTestData/resource1.txt", resources.get(0));
+
+        try (InputStream is = resourceCache.get(resources.get(0));) {
+            assertNotNull(is);
+        }
+    }
+
+    @Test
+    public void testResourceFolder() throws IOException {
+        ResourceCache resourceCache = new ResourceCache();
+        resourceCache.add(new FolderLocation(Paths.get("bin.test/"), Paths.get("teaselib/core/util/")));
 
         List<String> resources = resourceCache.get(WildcardPattern.compile("*bar.txt"));
         assertFalse(resources.isEmpty());
@@ -54,10 +74,24 @@ public class ResourceCacheTest {
     }
 
     @Test
+    public void testResourceFolderPath() throws IOException {
+        ResourceCache resourceCache = new ResourceCache();
+        resourceCache.add(new FolderLocation(Paths.get("bin.test/"), Paths.get("teaselib/core/")));
+
+        List<String> resources = resourceCache.get(WildcardPattern.compile("/util/*bar.txt"));
+        assertFalse(resources.isEmpty());
+        assertEquals("/util/bar.txt", resources.get(0));
+
+        try (InputStream is = resourceCache.get(resources.get(0));) {
+            assertNotNull(is);
+        }
+    }
+
+    @Test
     public void testResourceCache() throws IOException {
         ResourceCache resourceCache = new ResourceCache();
         resourceCache.add(locationOfFlatResourceArchive());
-        resourceCache.add(new FolderLocation(Paths.get("bin.test/teaselib/core/util/")));
+        resourceCache.add(new FolderLocation(Paths.get("bin.test/"), Paths.get("teaselib/core/util/")));
 
         print(resourceCache.get(WildcardPattern.compile("*.txt")));
     }

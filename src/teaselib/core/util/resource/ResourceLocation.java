@@ -7,9 +7,12 @@ import java.nio.file.Path;
 import java.util.List;
 
 interface ResourceLocation extends Closeable {
-    Path path();
+    Path root();
+
+    Path project();
 
     List<String> resources() throws IOException;
 
     InputStream get(String resource) throws IOException;
+
 }

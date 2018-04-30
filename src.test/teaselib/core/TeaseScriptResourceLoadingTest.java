@@ -1,6 +1,7 @@
 package teaselib.core;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -10,6 +11,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.Collection;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import teaselib.core.util.ReflectionUtils;
@@ -31,10 +33,10 @@ public class TeaseScriptResourceLoadingTest {
     }
 
     @Test
-    public void testAbsoluteResourceLoadingFromFile() throws IOException {
-        TestScript script = TestScript.getOne(TeaseScriptResourceLoadingTest.class);
+    public void testRResourceLoadingFromFile() throws IOException {
+        TestScript script = TestScript.getOne();
 
-        String name = ReflectionUtils.asAbsolutePath(ReflectionUtils.classParentName(this.getClass())) + RESOURCE_1;
+        String name = absolutePath() + RESOURCE_1;
         loadResource(script, name);
     }
 
@@ -48,10 +50,23 @@ public class TeaseScriptResourceLoadingTest {
 
     @Test
     public void testAbsoluteResourceLoadingFromZip() throws IOException {
+        TestScript script = TestScript.getOne();
+        script.resources.addAssets("teaselib/core/UnpackResourcesTestData_ResourceRootStructure.zip");
+
+        String path = absolutePath() + RESOURCE_1;
+        loadResource(script, path);
+    }
+
+    private String absolutePath() {
+        return ReflectionUtils.asAbsolutePath(ReflectionUtils.classParentName(this.getClass()));
+    }
+
+    @Test
+    public void testRelativeResourceLoadingFromZip() throws IOException {
         TestScript script = TestScript.getOne(TeaseScriptResourceLoadingTest.class);
         script.resources.addAssets("teaselib/core/UnpackResourcesTestData_ResourceRootStructure.zip");
 
-        String path = "UnpackResourcesTestData" + "/" + RESOURCE_1;
+        String path = RESOURCE_1;
         loadResource(script, path);
     }
 
@@ -90,9 +105,11 @@ public class TeaseScriptResourceLoadingTest {
         assertEquals(2, script.resources("util/Bar*.txt").size());
     }
 
+    // TODO unpack to temporary folder to improve stability
     @Test
     public void testUnpackFileAbsolute() throws IOException {
         TestScript script = TestScript.getOne(TeaseScriptResourceLoadingTest.class);
+
         script.resources.addAssets("/teaselib/core/UnpackResourcesTestData_ResourceRootStructure.zip");
 
         String path = "/teaselib/core/UnpackResourcesTestData" + "/" + RESOURCE_1;
@@ -111,12 +128,13 @@ public class TeaseScriptResourceLoadingTest {
         }
     }
 
+    // TODO unpack to temporary folder to improve stability
     @Test
     public void testUnpackFileRelative() throws IOException {
         TestScript script = TestScript.getOne(TeaseScriptResourceLoadingTest.class);
-        script.resources.addAssets("/teaselib/core/UnpackResourcesTestData_ResourceRootStructure.zip");
+        script.resources.addAssets("/teaselib/core/UnpackResourcesTestData_flat.zip");
 
-        String path = "UnpackResourcesTestData" + "/" + RESOURCE_1;
+        String path = "/UnpackResourcesTestData" + "/" + RESOURCE_1;
         File res1 = script.resources.unpackToFile(path);
         res1.delete();
         assertFalse(res1.exists());
@@ -146,5 +164,4 @@ public class TeaseScriptResourceLoadingTest {
         assertEquals(3, itemsFromRelative.size());
         assertEquals(itemsFromRelative, itemsFromAbsolute);
     }
-
 }

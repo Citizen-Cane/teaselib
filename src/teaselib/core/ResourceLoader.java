@@ -4,19 +4,11 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.net.MalformedURLException;
-import java.net.URI;
 import java.net.URL;
-import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
-import java.util.Set;
+import java.util.List;
 import java.util.regex.Pattern;
 
 import org.slf4j.Logger;
@@ -25,17 +17,18 @@ import org.slf4j.LoggerFactory;
 import teaselib.Config;
 import teaselib.core.util.QualifiedItem;
 import teaselib.core.util.ReflectionUtils;
+import teaselib.core.util.resource.ResourceCache;
 
 public class ResourceLoader {
     private static final Logger logger = LoggerFactory.getLogger(ResourceLoader.class);
 
     public static final String ResourcesInProjectFolder = "/";
 
-    private final ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-    private final Method addURL;
-    private final Set<URI> resourceLocations = new HashSet<>();
     private final File basePath;
     private final String resourceRoot;
+
+    // TODO Must be global in order to share actor resources between scripts
+    private final ResourceCache resourceCache = new ResourceCache();
 
     /**
      * @param mainScript
@@ -86,17 +79,8 @@ public class ResourceLoader {
         this.basePath = getBasePath(basePath);
         this.resourceRoot = classLoaderCompatibleResourcePath(pathToFolder(resourceRoot));
         logger.info("Using basepath='{}'", basePath.getAbsolutePath());
-        try {
-            addURL = addURLMethod();
-        } catch (NoSuchMethodException e) {
-            throw new IllegalArgumentException(e.getMessage(), e);
-        }
-        // The base path already part of the class path,
-        // but not listed in resource locations
-        URI uri = basePath.toURI();
-        if (isValidResourceLocation(uri)) {
-            resourceLocations.add(uri);
-        }
+
+        addAssets(basePath.getPath());
     }
 
     private static String pathToFolder(String path) {
@@ -159,109 +143,46 @@ public class ResourceLoader {
         return classLoaderCompatibleResourcePath(path).replace("%20", " ");
     }
 
-    private static Method addURLMethod() throws NoSuchMethodException {
-        Method addURI = URLClassLoader.class.getDeclaredMethod("addURL", URL.class);
-        addURI.setAccessible(true);
-        return addURI;
-    }
-
     public void addAssets(Class<?> scriptClass) {
         addAssets(ResourceLoader.getProjectPath(scriptClass).getAbsolutePath());
     }
 
+    // TODO Split handling to support mandatory and optional assets
     public void addAssets(String... paths) {
-        try {
-            if (haveAntClassLoader()) {
-                addAssetsToAntClassLoader(paths);
-            } else {
-                addAssets(toURIs(paths));
-            }
-        } catch (IllegalArgumentException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new IllegalArgumentException("Cannot add assets " + Arrays.toString(paths) + " - " + e.getMessage(),
-                    e);
-        }
-    }
-
-    private void addAssetsToAntClassLoader(String[] paths)
-            throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
-        Method addPathComponent = addPathComponentMethod();
         for (String path : paths) {
-            File file = new File(basePath, path);
-            logger.info("Using resource location: {}", file.getAbsolutePath());
-            addPathComponent.invoke(classLoader, file);
+            addAssets(path);
         }
     }
 
-    private boolean haveAntClassLoader() {
-        return classLoader.getClass().getSimpleName().startsWith("AntClassLoader");
-    }
-
-    private Method addPathComponentMethod() throws NoSuchMethodException {
-        Class<?> classLoaderClass = classLoader.getClass().getSuperclass();
-        Method addPathComponent = classLoaderClass.getDeclaredMethod("addPathComponent", File.class);
-        addPathComponent.setAccessible(true);
-        return addPathComponent;
-    }
-
-    private URI[] toURIs(String[] paths) {
-        URI[] uris = new URI[paths.length];
-        for (int i = 0; i < paths.length; i++) {
-            String entry = paths[i];
-            URI uri = toURI(classLoaderCompatibleResourcePath(entry));
-            uris[i] = uri;
+    private String addAssets(String path) {
+        if (!new File(path).isAbsolute()) {
+            path = basePath + absoluteResourcePath(path);
         }
-        return uris;
-    }
-
-    private URI toURI(String path) {
-        File file = new File(classLoaderCompatibleResourcePath(path));
-        if (!file.isAbsolute()) {
-            file = new File(basePath, classLoaderCompatibleResourcePath(path));
+        // TODO use resource root to limit caching to resourceRoot branch
+        // -> saves memory and improves performance as only the resources are cached, but nothing else
+        // resourceCache.add(ResourceCache.location(path, resourceRoot));
+        try {
+            resourceCache.add(ResourceCache.location(path));
+        } catch (IOException e) {
+            throw new IllegalArgumentException("Cannot add assets " + path + " - " + e.getMessage(), e);
         }
-        return file.toURI();
+        return path;
     }
 
-    private void addAssets(URI[] assets)
-            throws IllegalAccessException, InvocationTargetException, MalformedURLException {
-        for (URI uri : assets) {
-            addAsset(uri);
-        }
-    }
-
-    private void addAsset(URI uri) throws IllegalAccessException, InvocationTargetException, MalformedURLException {
-        boolean isValid = isValidResourceLocation(uri);
-        if (isValid) {
-            addURL.invoke(classLoader, uri.toURL());
-            resourceLocations.add(uri);
-            logger.info("Using resource location: {}", uri.getPath());
-        } else {
-            // Just warn, since everybody should be able to unpack the archives
-            // to explore or change the contents,
-            // and to remove them to ensure the unpacked resources are used
-            logger.warn("Archive not available: {}", uri.getPath());
-        }
-    }
-
-    private boolean isValidResourceLocation(URI uri) {
-        File file = new File(uri);
-        boolean isValidAndNotAddYet = file.exists() && !resourceLocations.contains(uri);
-        boolean isArchiveOrDirectory = uri.getPath().endsWith(".jar") || uri.getPath().endsWith(".zip")
-                || file.isDirectory();
-        return isValidAndNotAddYet && isArchiveOrDirectory;
+    public boolean hasResource(String path) {
+        return resourceCache.has(path);
     }
 
     public InputStream getResource(String path) throws IOException {
         String classloaderCompatibleResourcePath = getClassLoaderAbsoluteResourcePath(path);
-        logger.debug("Resource: '{}'", classloaderCompatibleResourcePath);
-        InputStream inputStream = classLoader.getResourceAsStream(classloaderCompatibleResourcePath);
-        if (inputStream == null) {
-            throw new IOException(path);
-        }
-        return inputStream;
+        return resourceCache.get(absoluteResourcePath(classloaderCompatibleResourcePath));
     }
 
+    public static String absoluteResourcePath(String path) {
+        return path.startsWith("/") ? path : "/" + path;
+    }
+
+    // TODO It's not class loader absolute anymore, since there's a leading / now
     public String getClassLoaderAbsoluteResourcePath(String resource) {
         final String classloaderCompatibleResourcePath;
         if (isAbsoluteResourcePath(resource)) {
@@ -271,7 +192,7 @@ public class ResourceLoader {
         } else {
             classloaderCompatibleResourcePath = resourceRoot + resource;
         }
-        return classloaderCompatibleResourcePath;
+        return "/" + classloaderCompatibleResourcePath;
     }
 
     private boolean isNearlyAbsoluteResourcePath(String resource) {
@@ -291,13 +212,8 @@ public class ResourceLoader {
      * @return List of resource paths matching the pattern. All resources in all asset paths are enumerated, then
      *         matched against the pattern.
      */
-    public Collection<String> resources(Pattern pattern) {
-        Collection<String> resources = new LinkedHashSet<>();
-        for (URI classsPathEntry : resourceLocations) {
-            Collection<String> matches = new ResourceList(resourceRoot).getResources(classsPathEntry, pattern);
-            resources.addAll(matches);
-        }
-        return resources;
+    public List<String> resources(Pattern pattern) {
+        return resourceCache.get(pattern);
     }
 
     /**

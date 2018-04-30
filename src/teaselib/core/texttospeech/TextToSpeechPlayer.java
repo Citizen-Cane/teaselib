@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.Set;
 
 import org.slf4j.Logger;
@@ -200,25 +201,28 @@ public class TextToSpeechPlayer {
     public void loadActorVoiceProperties(ResourceLoader resources) {
         if (!loadedActorVoiceProperties.contains(resources)) {
             loadedActorVoiceProperties.add(resources);
-            // Get the list of actor to voice assignments
-            ActorVoices actorVoices = new ActorVoices(resources);
-            for (String actorKey : actorVoices.keySet()) {
-                // Available as a pre-recorded voice?
-                String voiceGuid = actorVoices.getGuid(actorKey);
-                PreRecordedVoice preRecordedVoice;
-                try {
-                    preRecordedVoice = new PreRecordedVoice(
-                            resources.getResource(PreRecordedVoice.getResourcePath(actorKey, voiceGuid)));
-                } catch (IOException e) {
-                    preRecordedVoice = null;
-                }
-                if (!actorKey2TTSVoice.containsKey(actorKey) && preRecordedVoice != null) {
+            ActorVoices voiceAssignments = new ActorVoices(resources);
+            for (String actorKey : voiceAssignments.keySet()) {
+                String voiceGuid = voiceAssignments.getGuid(actorKey);
+                Optional<PreRecordedVoice> preRecordedVoice = getPrerecordedVoice(resources, actorKey, voiceGuid);
+                if (!actorKey2TTSVoice.containsKey(actorKey) && preRecordedVoice.isPresent()) {
                     usePrerecordedVoice(actorKey, voiceGuid);
                 } else {
-                    logger.info("Actor key=" + actorKey + ": prerecorded voice '" + voiceGuid + "' not available");
+                    logger.info("Actor key={}: prerecorded voice '{}' not available", actorKey, voiceGuid);
                     reserveVoice(actorKey, voiceGuid);
                 }
             }
+        }
+    }
+
+    private static Optional<PreRecordedVoice> getPrerecordedVoice(ResourceLoader resources, String actorKey,
+            String voiceGuid) {
+        try {
+            PreRecordedVoice preRecordedVoice = new PreRecordedVoice(
+                    resources.getResource(PreRecordedVoice.getResourcePath(actorKey, voiceGuid)));
+            return Optional.of(preRecordedVoice);
+        } catch (IOException e) {
+            return Optional.empty();
         }
     }
 

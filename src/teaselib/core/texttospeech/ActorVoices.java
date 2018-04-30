@@ -11,7 +11,7 @@ import teaselib.core.ResourceLoader;
 public class ActorVoices extends VoiceProperties {
     private static final org.slf4j.Logger logger = LoggerFactory.getLogger(ActorVoices.class);
 
-    public final static String VoicesFilename = "Actor Voices.properties";
+    public static final String VoicesFilename = "Actor Voices.properties";
 
     public ActorVoices(ResourceLoader resources) {
         try {
@@ -19,7 +19,7 @@ public class ActorVoices extends VoiceProperties {
                 properties.load(recordedVoicesConfig);
             }
         } catch (IOException e) {
-            logger.info("No actor voices configuration found in '" + VoicesFilename + "' - using defaults");
+            logger.info("No actor voices configuration found in '{}' - using defaults", VoicesFilename);
         }
     }
 

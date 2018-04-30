@@ -3,7 +3,6 @@ package teaselib;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -567,12 +566,12 @@ public abstract class TeaseScript extends TeaseScriptMath {
      */
     public List<String> resources(String wildcardPattern) {
         Pattern pattern = WildcardPattern.compile(resources.getClassLoaderAbsoluteResourcePath(wildcardPattern));
-        Collection<String> items = resources.resources(pattern);
-        final int size = items.size();
+        List<String> items = resources.resources(pattern);
+        int size = items.size();
         if (size > 0) {
-            logger.info(getClass().getSimpleName() + ": '" + wildcardPattern + "' yields " + size + " resources");
+            logger.info("{}: '{}' yields {} resources", getClass().getSimpleName(), wildcardPattern, size);
         } else {
-            logger.info(getClass().getSimpleName() + ": '" + wildcardPattern + "' doesn't yield any resources");
+            logger.info("{}: '{}' doesn't yield any resources", getClass().getSimpleName(), wildcardPattern);
         }
         return new ArrayList<>(items);
     }

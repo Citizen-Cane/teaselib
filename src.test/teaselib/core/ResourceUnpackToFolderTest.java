@@ -3,7 +3,8 @@
  */
 package teaselib.core;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -45,7 +46,7 @@ public class ResourceUnpackToFolderTest {
         TestScript script = TestScript.getOne(ResourceUnpackToFolderTest.class);
         script.resources.addAssets("/teaselib/core/UnpackResourcesTestData_ResourceRootStructure.zip");
 
-        String resourcesFolder = "UnpackResourcesTestData" + "/";
+        String resourcesFolder = "/teaselib/core/UnpackResourcesTestData" + "/";
         testUnpackResourcesToFolder(script, resourcesFolder);
     }
 
@@ -54,30 +55,31 @@ public class ResourceUnpackToFolderTest {
 
         deleteTestData(script, path);
 
-        Collection<String> itemsBefore = script.resources(resourcesFolder + "*");
-        // 1 txt, 3 jpg , 3 png
-        assertEquals(7, itemsBefore.size());
-
-        // Cache test data
-        File res1 = script.resources.unpackEnclosingFolder(path);
-        String resource1Content = null;
-        try (BufferedReader reader = new BufferedReader(new FileReader(res1));) {
-            resource1Content = reader.readLine();
+        try {
+            Collection<String> itemsBefore = script.resources(resourcesFolder + "*");
+            // 1 txt, 3 jpg , 3 png
+            assertEquals(7, itemsBefore.size());
+            // Cache test data
+            File res1 = script.resources.unpackEnclosingFolder(path);
+            String resource1Content = null;
+            try (BufferedReader reader = new BufferedReader(new FileReader(res1));) {
+                resource1Content = reader.readLine();
+            }
+            assertEquals("1", resource1Content);
+            // Test that duplicate resources aren't listed
+            Collection<String> itemsAfter = script.resources(resourcesFolder + "*");
+            assertEquals(itemsBefore, itemsAfter);
+            assertEquals(itemsBefore.size(), getFilesCount(res1.getParentFile()));
+            // Repeat with cached content
+            res1 = script.resources.unpackEnclosingFolder(path);
+            try (BufferedReader reader = new BufferedReader(new FileReader(res1));) {
+                resource1Content = reader.readLine();
+            }
+            assertEquals("1", resource1Content);
+            assertEquals(itemsBefore.size(), getFilesCount(res1.getParentFile()));
+        } finally {
+            deleteTestData(script, path);
         }
-        assertEquals("1", resource1Content);
-
-        // Test that duplicate resources aren't listed
-        Collection<String> itemsAfter = script.resources(resourcesFolder + "*");
-        assertEquals(itemsBefore, itemsAfter);
-        assertEquals(itemsBefore.size(), getFilesCount(res1.getParentFile()));
-
-        // Repeat with cached content
-        res1 = script.resources.unpackEnclosingFolder(path);
-        try (BufferedReader reader = new BufferedReader(new FileReader(res1));) {
-            resource1Content = reader.readLine();
-        }
-        assertEquals("1", resource1Content);
-        assertEquals(itemsBefore.size(), getFilesCount(res1.getParentFile()));
     }
 
     public static int getFilesCount(File folder) {

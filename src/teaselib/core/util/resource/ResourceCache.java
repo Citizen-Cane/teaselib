@@ -58,7 +58,7 @@ public class ResourceCache {
     }
 
     public boolean has(String key) {
-        return resourceLocations.containsKey(key);
+        return dataLookup.containsKey(key);
     }
 
     public List<String> get(Pattern pattern) {
@@ -71,11 +71,7 @@ public class ResourceCache {
         return resources;
     }
 
-    public static ResourceLocation location(String path) throws IOException {
-        return location(path, "");
-    }
-
-    static ResourceLocation location(String path, String project) throws IOException {
+    public static ResourceLocation location(String path, String project) throws IOException {
         if (path.toLowerCase().endsWith("jar") || path.toLowerCase().endsWith("zip")) {
             return new ZipLocation(Paths.get(path), Paths.get(project));
         } else {

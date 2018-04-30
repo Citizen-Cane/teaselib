@@ -2,16 +2,17 @@ package teaselib.core;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.Collection;
 
-import org.junit.Ignore;
 import org.junit.Test;
 
 import teaselib.core.util.ReflectionUtils;
@@ -105,18 +106,37 @@ public class TeaseScriptResourceLoadingTest {
         assertEquals(2, script.resources("util/Bar*.txt").size());
     }
 
-    // TODO unpack to temporary folder to improve stability
     @Test
     public void testUnpackFileAbsolute() throws IOException {
         TestScript script = TestScript.getOne(TeaseScriptResourceLoadingTest.class);
-
         script.resources.addAssets("/teaselib/core/UnpackResourcesTestData_ResourceRootStructure.zip");
 
         String path = "/teaselib/core/UnpackResourcesTestData" + "/" + RESOURCE_1;
+        assertTrue(script.resources.hasResource(path));
         File res1 = script.resources.unpackToFile(path);
         res1.delete();
         assertFalse(res1.exists());
 
+        readContent(script, path);
+    }
+
+    @Test
+    public void testUnpackFileRelative() throws IOException {
+        TestScript script = TestScript.getOne(TeaseScriptResourceLoadingTest.class);
+        script.resources.addAssets("/teaselib/core/UnpackResourcesTestData_ResourceRootStructure.zip");
+
+        String path = "UnpackResourcesTestData" + "/" + RESOURCE_1;
+        assertTrue(script.resources.hasResource(path));
+        File res1 = script.resources.unpackToFile(path);
+        res1.delete();
+        assertFalse(res1.exists());
+
+        readContent(script, path);
+    }
+
+    // TODO unpack to temporary folder to improve stability
+    private void readContent(TestScript script, String path) throws IOException, FileNotFoundException {
+        File res1;
         res1 = script.resources.unpackToFile(path);
         try {
             try (BufferedReader reader = new BufferedReader(new FileReader(res1));) {
@@ -128,26 +148,13 @@ public class TeaseScriptResourceLoadingTest {
         }
     }
 
-    // TODO unpack to temporary folder to improve stability
     @Test
-    public void testUnpackFileRelative() throws IOException {
+    public void testResourceFilteredOutBecauseNotInScriptPath() throws IOException {
         TestScript script = TestScript.getOne(TeaseScriptResourceLoadingTest.class);
         script.resources.addAssets("/teaselib/core/UnpackResourcesTestData_flat.zip");
 
-        String path = "/UnpackResourcesTestData" + "/" + RESOURCE_1;
-        File res1 = script.resources.unpackToFile(path);
-        res1.delete();
-        assertFalse(res1.exists());
-
-        res1 = script.resources.unpackToFile(path);
-        try {
-            try (BufferedReader reader = new BufferedReader(new FileReader(res1));) {
-                String resource1 = reader.readLine();
-                assertEquals("1", resource1);
-            }
-        } finally {
-            res1.delete();
-        }
+        String path = "UnpackResourcesTestData" + "/" + RESOURCE_1;
+        assertFalse(script.resources.hasResource(path));
     }
 
     @Test

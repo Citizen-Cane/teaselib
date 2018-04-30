@@ -158,11 +158,8 @@ public class ResourceLoader {
         if (!new File(path).isAbsolute()) {
             path = basePath + absoluteResourcePath(path);
         }
-        // TODO use resource root to limit caching to resourceRoot branch
-        // -> saves memory and improves performance as only the resources are cached, but nothing else
-        // resourceCache.add(ResourceCache.location(path, resourceRoot));
         try {
-            resourceCache.add(ResourceCache.location(path));
+            resourceCache.add(ResourceCache.location(path, resourceRoot));
         } catch (IOException e) {
             throw new IllegalArgumentException("Cannot add assets " + path + " - " + e.getMessage(), e);
         }
@@ -170,12 +167,11 @@ public class ResourceLoader {
     }
 
     public boolean hasResource(String path) {
-        return resourceCache.has(path);
+        return resourceCache.has(absoluteResourcePath(getClassLoaderAbsoluteResourcePath(path)));
     }
 
     public InputStream getResource(String path) throws IOException {
-        String classloaderCompatibleResourcePath = getClassLoaderAbsoluteResourcePath(path);
-        return resourceCache.get(absoluteResourcePath(classloaderCompatibleResourcePath));
+        return resourceCache.get(absoluteResourcePath(getClassLoaderAbsoluteResourcePath(path)));
     }
 
     public static String absoluteResourcePath(String path) {

@@ -37,6 +37,10 @@ public final class ReflectionUtils {
         return (className.startsWith("/") ? "" : "/") + className.replace('.', '/') + '/';
     }
 
+    public static String asAbsolutePath(Package p) {
+        return "/" + p.getName().replace('.', '/') + '/';
+    }
+
     public static String asAbsolutePath(Class<?> clazz) {
         return "/" + clazz.getName().replace('.', '/') + '/';
     }

@@ -2,6 +2,7 @@ package teaselib.core;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import java.io.BufferedReader;
@@ -22,12 +23,12 @@ import teaselib.test.TestScript;
  * @author Citizen-Cane
  *
  */
-public class TeaseScriptResourceLoadingTest {
+public class ResourceLoaderTest {
     private static final String RESOURCE_1 = "resource1.txt";
 
     @Test
     public void testRelativeResourceLoadingFromFile() throws IOException {
-        TestScript script = TestScript.getOne(TeaseScriptResourceLoadingTest.class);
+        TestScript script = TestScript.getOne(getClass());
 
         String relativePath = RESOURCE_1;
         loadResource(script, relativePath);
@@ -53,9 +54,7 @@ public class TeaseScriptResourceLoadingTest {
     public void testAbsoluteResourceLoadingFromZip() throws IOException {
         TestScript script = TestScript.getOne();
         script.resources.addAssets("teaselib/core/UnpackResourcesTestData_ResourceRootStructure.zip");
-
-        String path = absolutePath() + RESOURCE_1;
-        loadResource(script, path);
+        loadResource(script, absolutePath() + RESOURCE_1);
     }
 
     private String absolutePath() {
@@ -64,16 +63,14 @@ public class TeaseScriptResourceLoadingTest {
 
     @Test
     public void testRelativeResourceLoadingFromZip() throws IOException {
-        TestScript script = TestScript.getOne(TeaseScriptResourceLoadingTest.class);
+        TestScript script = TestScript.getOne(getClass());
         script.resources.addAssets("teaselib/core/UnpackResourcesTestData_ResourceRootStructure.zip");
-
-        String path = RESOURCE_1;
-        loadResource(script, path);
+        loadResource(script, RESOURCE_1);
     }
 
     @Test
     public void testResourceLoadingWithWildcardsRelativePaths() {
-        TestScript script = TestScript.getOne(TeaseScriptResourceLoadingTest.class);
+        TestScript script = TestScript.getOne(getClass());
 
         assertEquals(1, script.resources("util/Foo.txt").size());
         assertEquals(2, script.resources("util/Foo?.txt").size());
@@ -84,7 +81,7 @@ public class TeaseScriptResourceLoadingTest {
 
     @Test
     public void testResourceLoadingWithWildcardsAbsolutePaths() {
-        TestScript script = TestScript.getOne(TeaseScriptResourceLoadingTest.class);
+        TestScript script = TestScript.getOne(getClass());
 
         String rootDir = "/" + getClass().getPackage().getName().replace(".", "/");
         assertEquals(1, script.resources(rootDir + "/util/Foo.txt").size());
@@ -96,7 +93,7 @@ public class TeaseScriptResourceLoadingTest {
 
     @Test
     public void testResourceLoadingCaseRelative() {
-        TestScript script = TestScript.getOne(TeaseScriptResourceLoadingTest.class);
+        TestScript script = TestScript.getOne(getClass());
 
         assertEquals(1, script.resources("util/bar.txt").size());
         assertEquals(3, script.resources("util/bar?.txt").size());
@@ -108,7 +105,7 @@ public class TeaseScriptResourceLoadingTest {
 
     @Test
     public void testUnpackFileAbsolute() throws IOException {
-        TestScript script = TestScript.getOne(TeaseScriptResourceLoadingTest.class);
+        TestScript script = TestScript.getOne(getClass());
         script.resources.addAssets("/teaselib/core/UnpackResourcesTestData_ResourceRootStructure.zip");
 
         String path = "/teaselib/core/UnpackResourcesTestData" + "/" + RESOURCE_1;
@@ -122,7 +119,7 @@ public class TeaseScriptResourceLoadingTest {
 
     @Test
     public void testUnpackFileRelative() throws IOException {
-        TestScript script = TestScript.getOne(TeaseScriptResourceLoadingTest.class);
+        TestScript script = TestScript.getOne(getClass());
         script.resources.addAssets("/teaselib/core/UnpackResourcesTestData_ResourceRootStructure.zip");
 
         String path = "UnpackResourcesTestData" + "/" + RESOURCE_1;
@@ -150,7 +147,7 @@ public class TeaseScriptResourceLoadingTest {
 
     @Test
     public void testResourceFilteredOutBecauseNotInScriptPath() throws IOException {
-        TestScript script = TestScript.getOne(TeaseScriptResourceLoadingTest.class);
+        TestScript script = TestScript.getOne(getClass());
         script.resources.addAssets("/teaselib/core/UnpackResourcesTestData_flat.zip");
 
         String path = "UnpackResourcesTestData" + "/" + RESOURCE_1;
@@ -159,7 +156,7 @@ public class TeaseScriptResourceLoadingTest {
 
     @Test
     public void testThatPathsAreCompatibleBetweenDifferentResourceLoaders() {
-        TestScript script1 = TestScript.getOne(TeaseScriptResourceLoadingTest.class);
+        TestScript script1 = TestScript.getOne(getClass());
         TestScript script2 = TestScript.getOne();
 
         assertFalse(script1.resources.equals(script2.resources));
@@ -170,5 +167,105 @@ public class TeaseScriptResourceLoadingTest {
 
         assertEquals(3, itemsFromRelative.size());
         assertEquals(itemsFromRelative, itemsFromAbsolute);
+    }
+
+    @Test
+    public void testUnpackFolderAbsolute() throws IOException {
+        TestScript script = TestScript.getOne();
+        script.resources.addAssets("/teaselib/core/UnpackResourcesTestData_flat.zip");
+
+        String resourcesFolder = "/" + "UnpackResourcesTestData" + "/";
+        testUnpackResourcesToFolder(script, resourcesFolder);
+    }
+
+    @Test
+    public void testUnpackFolderRelative() throws IOException {
+        TestScript script = TestScript.getOne();
+        script.resources.addAssets("/teaselib/core/UnpackResourcesTestData_flat.zip");
+
+        String resourcesFolder = "UnpackResourcesTestData" + "/";
+        testUnpackResourcesToFolder(script, resourcesFolder);
+    }
+
+    @Test
+    public void testUnpackFolderReferencedViaClass() throws IOException {
+        TestScript script = TestScript.getOne(ResourceLoaderTest.class);
+        script.resources.addAssets("/teaselib/core/UnpackResourcesTestData_ResourceRootStructure.zip");
+
+        String resourcesFolder = "/teaselib/core/UnpackResourcesTestData" + "/";
+        testUnpackResourcesToFolder(script, resourcesFolder);
+    }
+
+    private void testUnpackResourcesToFolder(TestScript script, String resourcesFolder) throws IOException {
+        String path = resourcesFolder + RESOURCE_1;
+
+        deleteTestData(script, path);
+
+        try {
+            Collection<String> itemsBefore = script.resources(resourcesFolder + "*");
+            // 1 txt, 3 jpg , 3 png
+            assertEquals(7, itemsBefore.size());
+            // Cache test data
+            File res1 = script.resources.unpackEnclosingFolder(path);
+            String resource1Content = null;
+            try (BufferedReader reader = new BufferedReader(new FileReader(res1));) {
+                resource1Content = reader.readLine();
+            }
+            assertEquals("1", resource1Content);
+            // Test that duplicate resources aren't listed
+            Collection<String> itemsAfter = script.resources(resourcesFolder + "*");
+            assertEquals(itemsBefore, itemsAfter);
+            assertEquals(itemsBefore.size(), getFilesCount(res1.getParentFile()));
+            // Repeat with cached content
+            res1 = script.resources.unpackEnclosingFolder(path);
+            try (BufferedReader reader = new BufferedReader(new FileReader(res1));) {
+                resource1Content = reader.readLine();
+            }
+            assertEquals("1", resource1Content);
+            assertEquals(itemsBefore.size(), getFilesCount(res1.getParentFile()));
+        } finally {
+            deleteTestData(script, path);
+        }
+    }
+
+    public static int getFilesCount(File folder) {
+        File[] files = folder.listFiles();
+        int count = 0;
+        for (File f : files) {
+            if (f.isDirectory()) {
+                count += getFilesCount(f);
+            } else {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    private void deleteFolder(File path) {
+        File[] files = path.listFiles();
+        for (File file : files) {
+            if (file.isDirectory()) {
+                deleteFolder(file);
+            } else {
+                file.delete();
+            }
+        }
+        path.delete();
+    }
+
+    private void deleteTestData(TestScript script, String path) throws IOException {
+        File res1 = script.resources.unpackEnclosingFolder(path);
+        deleteFolder(res1.getParentFile());
+        assertFalse(res1.exists());
+    }
+
+    @Test
+    public void testScriptRelativeResources() throws IOException {
+        TestScript script = TestScript.getOne();
+        assertEquals(ResourceLoader.ResourcesInProjectFolder, "/" + script.resources.getRoot());
+        String relativePath = RESOURCE_1;
+        try (InputStream resourceStream = script.resources.getResource(relativePath, getClass());) {
+            assertNotNull(resourceStream);
+        }
     }
 }

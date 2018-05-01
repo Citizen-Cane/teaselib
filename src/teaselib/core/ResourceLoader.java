@@ -77,6 +77,8 @@ public class ResourceLoader {
 
     public ResourceLoader(File basePath, String resourceRoot) {
         this.basePath = getBasePath(basePath);
+        // TODO resource root should be absolute path same as ResourcesInProjectFolder
+        // -> should fit in nicely with locations and resolve a couple of "/" in the code
         this.resourceRoot = classLoaderCompatibleResourcePath(pathToFolder(resourceRoot));
         logger.info("Using basepath='{}'", basePath.getAbsolutePath());
 
@@ -171,7 +173,45 @@ public class ResourceLoader {
     }
 
     public InputStream getResource(String path) throws IOException {
-        return resourceCache.get(absoluteResourcePath(getClassLoaderAbsoluteResourcePath(path)));
+        return getResource(path, null);
+    }
+
+    public InputStream getResource(String path, Class<?> clazz) throws IOException {
+        final String absoluteResourcePath;
+        if (isAbsoluteResourcePath(path)) {
+            return resource(path);
+        } else if (isNearlyAbsoluteResourcePath(path) && clazz == null) {
+            return resource("/" + path);
+        } else if (clazz != null) {
+            absoluteResourcePath = ReflectionUtils.asAbsolutePath(clazz.getPackage()) + path;
+            if (resourceCache.has(absoluteResourcePath)) {
+                InputStream inputStream;
+                try {
+                    inputStream = resource(absoluteResourcePath);
+                } catch (IOException e) {
+                    inputStream = null;
+                }
+                if (inputStream != null) {
+                    return inputStream;
+                } else {
+                    return resource(absoluteResourcePath(absoluteResourcePath));
+                }
+            } else {
+                return resource(path);
+            }
+        } else {
+            return resource(absoluteResourcePath(resourceRoot + path));
+        }
+    }
+
+    private InputStream resource(String path) throws IOException {
+        return inputStreamOrThrow(path, resourceCache.get(path));
+    }
+
+    private InputStream inputStreamOrThrow(String path, InputStream inputStream) throws IOException {
+        if (inputStream == null)
+            throw new IOException(path);
+        return inputStream;
     }
 
     public static String absoluteResourcePath(String path) {
@@ -179,6 +219,8 @@ public class ResourceLoader {
     }
 
     // TODO It's not class loader absolute anymore, since there's a leading / now
+    // TODO Code duplicated and extended to getResource(...) > refactor and delete this
+    @Deprecated
     public String getClassLoaderAbsoluteResourcePath(String resource) {
         final String classloaderCompatibleResourcePath;
         if (isAbsoluteResourcePath(resource)) {
@@ -209,6 +251,7 @@ public class ResourceLoader {
      *         matched against the pattern.
      */
     public List<String> resources(Pattern pattern) {
+        // TODO enum local matches to absolute paths
         return resourceCache.get(pattern);
     }
 

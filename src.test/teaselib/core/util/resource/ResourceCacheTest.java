@@ -14,14 +14,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import teaselib.core.ResourceLoader;
-import teaselib.core.ResourceUnpackToFolderTest;
+import teaselib.core.ResourceLoaderTest;
 import teaselib.core.util.ReflectionUtils;
 import teaselib.core.util.WildcardPattern;
 
 public class ResourceCacheTest {
     private static final Logger logger = LoggerFactory.getLogger(ResourceCacheTest.class);
 
-    private static final String packagePath = ReflectionUtils.getPackagePath(ResourceUnpackToFolderTest.class);
+    private static final String packagePath = ReflectionUtils.getPackagePath(ResourceLoaderTest.class);
 
     private ZipLocation locationOfFlatResourceArchive() throws IOException {
         return new ZipLocation(ResourceLoader.getProjectPath(getClass()).toPath()

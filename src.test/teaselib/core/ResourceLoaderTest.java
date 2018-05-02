@@ -131,6 +131,10 @@ public class ResourceLoaderTest {
         readContent(script, path);
     }
 
+    // TODO implement missing test unpacking file/folder relative to non-empty resource root
+    // - current test cases don't cover production code situations
+    // -> /Mine/accessories/DIY/PonygirlBitgag/.*
+
     // TODO unpack to temporary folder to improve stability
     private void readContent(TestScript script, String path) throws IOException, FileNotFoundException {
         File res1;

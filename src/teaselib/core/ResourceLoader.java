@@ -228,21 +228,6 @@ public class ResourceLoader {
         return path.startsWith("/") ? path : "/" + path;
     }
 
-    // TODO It's not class loader absolute anymore, since there's a leading / now
-    // TODO Code duplicated and extended to getResource(...) > refactor and delete this
-    @Deprecated
-    public String getClassLoaderAbsoluteResourcePath(String resource) {
-        final String classloaderCompatibleResourcePath;
-        if (isAbsoluteResourcePath(resource)) {
-            classloaderCompatibleResourcePath = classLoaderCompatibleResourcePath(resource);
-        } else if (isNearlyAbsoluteResourcePath(resource)) {
-            classloaderCompatibleResourcePath = resource;
-        } else {
-            classloaderCompatibleResourcePath = resourceRoot + resource;
-        }
-        return "/" + classloaderCompatibleResourcePath;
-    }
-
     private boolean isNearlyAbsoluteResourcePath(String resource) {
         return resource.startsWith(resourceRoot);
     }
@@ -314,18 +299,10 @@ public class ResourceLoader {
     public File unpackEnclosingFolder(String resourcePath) throws IOException {
         File match = null;
         String parentPath = resourcePath.substring(0, resourcePath.lastIndexOf('/'));
-        // TODO Remove deprecated method calls
-        // List<String> folder = resources(parentPath + "/.*", null);
-        // -> parent path is used to enum the folder, then unpack all files, resulting in:
-        // [/UnpackResourcesTestData/resource1.txt, /UnpackResourcesTestData/images/test (2).png,
-        // /UnpackResourcesTestData/images/test (1).png, /UnpackResourcesTestData/images/more/test (4).png,
-        // /UnpackResourcesTestData/images/more/test (3).png, /UnpackResourcesTestData/images/more/marquis2.jpg,
-        // /UnpackResourcesTestData/images/marquis1.jpg]
-        List<String> folder = resources(Pattern.compile(getClassLoaderAbsoluteResourcePath(parentPath + "/.*")));
+        List<String> folder = resources(absolutePathOrNull(parentPath + "/*", null), null);
         for (String file : folder) {
             File unpacked = unpackFileFromFolder(file);
-            if (match == null && classLoaderCompatibleResourcePath(file)
-                    .equals(classLoaderCompatibleResourcePath(getClassLoaderAbsoluteResourcePath(resourcePath)))) {
+            if (match == null && file.equals(absolutePathOrNull(resourcePath, null))) {
                 match = unpacked;
             }
         }

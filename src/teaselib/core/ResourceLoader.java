@@ -7,7 +7,7 @@ import java.io.InputStream;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.Collection;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -17,6 +17,7 @@ import org.slf4j.LoggerFactory;
 import teaselib.Config;
 import teaselib.core.util.QualifiedItem;
 import teaselib.core.util.ReflectionUtils;
+import teaselib.core.util.WildcardPattern;
 import teaselib.core.util.resource.ResourceCache;
 
 public class ResourceLoader {
@@ -169,7 +170,7 @@ public class ResourceLoader {
     }
 
     public boolean hasResource(String path) {
-        return resourceCache.has(absoluteResourcePath(getClassLoaderAbsoluteResourcePath(path)));
+        return resourceCache.has(absolutePathOrNull(path, null));
     }
 
     public InputStream getResource(String path) throws IOException {
@@ -177,31 +178,40 @@ public class ResourceLoader {
     }
 
     public InputStream getResource(String path, Class<?> clazz) throws IOException {
-        final String absoluteResourcePath;
-        if (isAbsoluteResourcePath(path)) {
-            return resource(path);
-        } else if (isNearlyAbsoluteResourcePath(path) && clazz == null) {
-            return resource("/" + path);
-        } else if (clazz != null) {
-            absoluteResourcePath = ReflectionUtils.asAbsolutePath(clazz.getPackage()) + path;
-            if (resourceCache.has(absoluteResourcePath)) {
-                InputStream inputStream;
-                try {
-                    inputStream = resource(absoluteResourcePath);
-                } catch (IOException e) {
-                    inputStream = null;
-                }
-                if (inputStream != null) {
-                    return inputStream;
-                } else {
-                    return resource(absoluteResourcePath(absoluteResourcePath));
-                }
-            } else {
-                return resource(path);
-            }
+        String absoluteResourcePath = absolutePathOrNull(path, clazz);
+        if (absoluteResourcePath != null) {
+            return resource(absoluteResourcePath);
         } else {
-            return resource(absoluteResourcePath(resourceRoot + path));
+            absoluteResourcePath = absoluteResourcePath(packagePath(clazz) + path);
+            InputStream inputStream;
+            // TODO produce IOException here
+            try {
+                inputStream = resource(absoluteResourcePath);
+            } catch (IOException e) {
+                inputStream = null;
+            }
+            if (inputStream != null) {
+                return inputStream;
+            } else {
+                return resource(absoluteResourcePath(resourceRoot + path));
+            }
         }
+    }
+
+    private String absolutePathOrNull(String path, Class<?> clazz) {
+        if (isAbsoluteResourcePath(path)) {
+            return path;
+        } else if (isNearlyAbsoluteResourcePath(path) && clazz == null) {
+            return absoluteResourcePath(path);
+        } else if (clazz == null || resourceRoot.equals(packagePath(clazz))) {
+            return absoluteResourcePath(resourceRoot + path);
+        } else {
+            return null;
+        }
+    }
+
+    private String packagePath(Class<?> clazz) {
+        return ReflectionUtils.getPackagePath(clazz);
     }
 
     private InputStream resource(String path) throws IOException {
@@ -239,6 +249,26 @@ public class ResourceLoader {
 
     private static boolean isAbsoluteResourcePath(String resource) {
         return resource.startsWith("/");
+    }
+
+    public List<String> resources(String wildcardPattern, Class<?> clazz) {
+        String absolutePattern = absolutePathOrNull(wildcardPattern, clazz);
+        if (absolutePattern != null) {
+            return resources(WildcardPattern.compile(absolutePattern));
+        } else {
+            List<String> resources = new ArrayList<>();
+            resources.addAll(classRelative(wildcardPattern, clazz));
+            resources.addAll(projectRelative(wildcardPattern));
+            return resources;
+        }
+    }
+
+    private List<String> classRelative(String wildcardPattern, Class<?> clazz) {
+        return resources(WildcardPattern.compile(ReflectionUtils.asAbsolutePath(clazz.getPackage()) + wildcardPattern));
+    }
+
+    private List<String> projectRelative(String wildcardPattern) {
+        return resources(WildcardPattern.compile(absoluteResourcePath(resourceRoot + wildcardPattern)));
     }
 
     /**
@@ -284,7 +314,14 @@ public class ResourceLoader {
     public File unpackEnclosingFolder(String resourcePath) throws IOException {
         File match = null;
         String parentPath = resourcePath.substring(0, resourcePath.lastIndexOf('/'));
-        Collection<String> folder = resources(Pattern.compile(getClassLoaderAbsoluteResourcePath(parentPath + "/.*")));
+        // TODO Remove deprecated method calls
+        // List<String> folder = resources(parentPath + "/.*", null);
+        // -> parent path is used to enum the folder, then unpack all files, resulting in:
+        // [/UnpackResourcesTestData/resource1.txt, /UnpackResourcesTestData/images/test (2).png,
+        // /UnpackResourcesTestData/images/test (1).png, /UnpackResourcesTestData/images/more/test (4).png,
+        // /UnpackResourcesTestData/images/more/test (3).png, /UnpackResourcesTestData/images/more/marquis2.jpg,
+        // /UnpackResourcesTestData/images/marquis1.jpg]
+        List<String> folder = resources(Pattern.compile(getClassLoaderAbsoluteResourcePath(parentPath + "/.*")));
         for (String file : folder) {
             File unpacked = unpackFileFromFolder(file);
             if (match == null && classLoaderCompatibleResourcePath(file)

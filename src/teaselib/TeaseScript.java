@@ -6,7 +6,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.regex.Pattern;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -565,8 +564,7 @@ public abstract class TeaseScript extends TeaseScriptMath {
      * @return A list of resources that matches the wildcard pattern.
      */
     public List<String> resources(String wildcardPattern) {
-        Pattern pattern = WildcardPattern.compile(resources.getClassLoaderAbsoluteResourcePath(wildcardPattern));
-        List<String> items = resources.resources(pattern);
+        List<String> items = resources.resources(wildcardPattern, getClass());
         int size = items.size();
         if (size > 0) {
             logger.info("{}: '{}' yields {} resources", getClass().getSimpleName(), wildcardPattern, size);
@@ -575,5 +573,4 @@ public abstract class TeaseScript extends TeaseScriptMath {
         }
         return new ArrayList<>(items);
     }
-
 }

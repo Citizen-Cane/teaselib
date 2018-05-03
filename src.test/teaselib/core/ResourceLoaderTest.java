@@ -131,9 +131,19 @@ public class ResourceLoaderTest {
         readContent(script, path);
     }
 
-    // TODO implement missing test unpacking file/folder relative to non-empty resource root
-    // - current test cases don't cover production code situations
-    // -> /Mine/accessories/DIY/PonygirlBitgag/.*
+    @Test
+    public void testUnpackFileRelativeToResourceRoot() throws IOException {
+        TestScript script = TestScript.getOne("/teaselib/core/UnpackResourcesTestData");
+        script.resources.addAssets("/teaselib/core/UnpackResourcesTestData_ResourceRootStructure.zip");
+
+        String path = RESOURCE_1;
+        assertTrue(script.resources.hasResource(path));
+        File res1 = script.resources.unpackToFile(path);
+        res1.delete();
+        assertFalse(res1.exists());
+
+        readContent(script, path);
+    }
 
     // TODO unpack to temporary folder to improve stability
     private void readContent(TestScript script, String path) throws IOException, FileNotFoundException {
@@ -188,6 +198,15 @@ public class ResourceLoaderTest {
         script.resources.addAssets("/teaselib/core/UnpackResourcesTestData_flat.zip");
 
         String resourcesFolder = "UnpackResourcesTestData" + "/";
+        testUnpackResourcesToFolder(script, resourcesFolder);
+    }
+
+    @Test
+    public void testUnpackFolderRelativeToResourceRoot() throws IOException {
+        TestScript script = TestScript.getOne("/teaselib/core/");
+        script.resources.addAssets("/teaselib/core/UnpackResourcesTestData_ResourceRootStructure.zip");
+
+        String resourcesFolder = "UnpackResourcesTestData/";
         testUnpackResourcesToFolder(script, resourcesFolder);
     }
 

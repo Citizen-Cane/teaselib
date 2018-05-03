@@ -57,6 +57,14 @@ public class TestScript extends TeaseScript {
         }
     }
 
+    public static TestScript getOne(String resourceRoot) {
+        try {
+            return new TestScript(new DebugHost(), new DebugPersistence(), resourceRoot);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     protected TestScript() throws IOException {
         this(new DebugHost(), new DebugPersistence());
     }
@@ -79,6 +87,10 @@ public class TestScript extends TeaseScript {
         this(dummyHost, dummyPersistence, new ResourceLoader(resourceRoot), new DebugSetup());
     }
 
+    public TestScript(DebugHost debugHost, DebugPersistence debugPersistence, String resourceRoot) throws IOException {
+        this(debugHost, debugPersistence, new ResourceLoader(TestScript.class, resourceRoot), new DebugSetup());
+    }
+
     TestScript(DebugHost dummyHost, DebugPersistence dummyPersistence, ResourceLoader resourceLoader, Setup setup)
             throws IOException {
         super(new TeaseLib(dummyHost, dummyPersistence, setup), resourceLoader, newActor(), TestScriptNamespace);
@@ -91,5 +103,4 @@ public class TestScript extends TeaseScript {
     public String toString() {
         return "namespace=" + namespace + ", storage=" + persistence.storage.toString();
     }
-
 }

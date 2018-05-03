@@ -41,20 +41,11 @@ public class ResourceCache {
 
     public InputStream get(String key) throws IOException {
         ResourceLocation resourceLocation = getLocation(key);
-        InputStream inputStream = resourceLocation.get(key);
-        if (inputStream == null) {
-            throw new IllegalArgumentException(key);
-        }
-        return inputStream;
+        return resourceLocation != null ? resourceLocation.get(key) : null;
     }
 
-    private ResourceLocation getLocation(String key) throws IOException {
-        ResourceLocation resourceLocation = dataLookup.get(key);
-        if (resourceLocation == null) {
-            throw new IOException(key);
-        } else {
-            return resourceLocation;
-        }
+    private ResourceLocation getLocation(String key) {
+        return dataLookup.get(key);
     }
 
     public boolean has(String key) {

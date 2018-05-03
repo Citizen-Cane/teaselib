@@ -180,20 +180,14 @@ public class ResourceLoader {
     public InputStream getResource(String path, Class<?> clazz) throws IOException {
         String absoluteResourcePath = absolutePathOrNull(path, clazz);
         if (absoluteResourcePath != null) {
-            return resource(absoluteResourcePath);
+            return inputStreamOrThrow(path, resource(absoluteResourcePath));
         } else {
             absoluteResourcePath = absoluteResourcePath(packagePath(clazz) + path);
-            InputStream inputStream;
-            // TODO produce IOException here
-            try {
-                inputStream = resource(absoluteResourcePath);
-            } catch (IOException e) {
-                inputStream = null;
-            }
+            InputStream inputStream = resourceCache.get(absoluteResourcePath);
             if (inputStream != null) {
                 return inputStream;
             } else {
-                return resource(absoluteResourcePath(resourceRoot + path));
+                return inputStreamOrThrow(path, resource(absoluteResourcePath(resourceRoot + path)));
             }
         }
     }
@@ -266,7 +260,6 @@ public class ResourceLoader {
      *         matched against the pattern.
      */
     public List<String> resources(Pattern pattern) {
-        // TODO enum local matches to absolute paths
         return resourceCache.get(pattern);
     }
 

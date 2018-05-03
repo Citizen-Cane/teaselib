@@ -4,32 +4,27 @@ import java.awt.Desktop;
 import java.io.File;
 import java.io.IOException;
 
+import teaselib.core.ResourceLoader;
 import teaselib.core.TeaseLib;
 import teaselib.core.util.ExceptionUtil;
 
 /**
- * Image is a default command. As such, every action has one, but since it doesn't have a state, so we can use the same
- * instance for all actions.
  * 
- * @author someone
+ * @author Citizen-Cane
  * 
  */
-public class RenderDesktopItem implements MediaRenderer {
-
-    private final File file;
+public class RenderDesktopItem extends MediaRendererThread {
     private final TeaseLib teaseLib;
+    private final File file;
 
-    public RenderDesktopItem(File file, TeaseLib teaseLib) {
-        this.file = file;
+    public RenderDesktopItem(TeaseLib teaseLib, ResourceLoader resources, String resource) throws IOException {
+        super(teaseLib);
         this.teaseLib = teaseLib;
+        this.file = resources.unpackEnclosingFolder(resource);
     }
 
     @Override
-    public void run() {
-        // TODO Perform in separate task to avoid delay
-        // TODO Determine if directory or file in resource archive
-        // TODO unpack folder containing the file
-        // TODO execute in unpacked folder
+    public void renderMedia() {
         teaseLib.transcript.info("Desktop Item = " + file.getAbsolutePath());
         try {
             Desktop.getDesktop().open(file);

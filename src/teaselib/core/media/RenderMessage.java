@@ -273,10 +273,6 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
         }
     }
 
-    private boolean isLastParagraph(MessagePart part) {
-        return lastSection.contains(part);
-    }
-
     private void renderPart(MessagePart part, MessageTextAccumulator accumulatedText, Actor actor, String mood)
             throws IOException, InterruptedException {
         if (part.type == Message.Type.Image) {
@@ -319,8 +315,7 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
     }
 
     private void showDesktopItem(MessagePart part) throws IOException {
-        RenderDesktopItem renderDesktopItem = new RenderDesktopItem(resources.unpackEnclosingFolder(part.value),
-                teaseLib);
+        RenderDesktopItem renderDesktopItem = new RenderDesktopItem(teaseLib, resources, part.value);
         completeSectionAll();
         renderQueue.submit(renderDesktopItem);
     }

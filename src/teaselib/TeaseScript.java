@@ -95,7 +95,7 @@ public abstract class TeaseScript extends TeaseScriptMath {
     public void showDesktopItem(String path) {
         if (Boolean.parseBoolean(teaseLib.config.get(Config.Render.InstructionalImages))) {
             try {
-                MediaRenderer desktopItem = new RenderDesktopItem(resources.unpackEnclosingFolder(path), teaseLib);
+                MediaRenderer desktopItem = new RenderDesktopItem(teaseLib, resources, path);
                 queueRenderer(desktopItem);
             } catch (IOException e) {
                 if (Boolean.parseBoolean(teaseLib.config.get(Config.Debug.StopOnRenderError))) {

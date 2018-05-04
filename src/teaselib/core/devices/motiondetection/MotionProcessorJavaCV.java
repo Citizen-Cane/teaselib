@@ -111,10 +111,10 @@ public class MotionProcessorJavaCV {
                 try (Point p = new Point(0, output.rows() - 20);) {
                     putText(output, Integer.toString(distance), p, FONT_HERSHEY_PLAIN, 1.75, color);
                 }
-            } catch (Exception e) { //
+            } catch (Exception e) { // Ignored
             }
 
-            TrackFeatures.render(output, color, renderData.currentPoints);
+            TrackFeatures.render(output, color, renderData.currentPoints, null, null);
         }
     }
 

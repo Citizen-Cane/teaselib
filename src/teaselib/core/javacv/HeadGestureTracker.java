@@ -23,9 +23,8 @@ import teaselib.motiondetection.Gesture;
 public class HeadGestureTracker {
     private static final Logger logger = LoggerFactory.getLogger(HeadGestureTracker.class);
 
-    // TODO Should be a fraction of the video size
-    static final int MINIMUM_DIRECTION_VALUE = 20;
-    static final int MINIMUM_DIRECTION_SCALE = 4;
+    static final int MINIMUM_DIRECTION_SIZE_FRACTION_OF_VIDEO = 32;
+    static final int DOMINATING_DIRECTION_SCALE_OVER_OTHER = 4;
 
     static final long GesturePauseMillis = 500;
 
@@ -38,9 +37,12 @@ public class HeadGestureTracker {
     private final Mat startKeyPoints = new Mat();
 
     public final Scalar color;
+    public final Scalar colorInverse;
 
     private boolean resetTrackFeatures = true;
     private Rect region;
+
+    private int videoWidth;
 
     public static class Parameters {
         public boolean cameraShake = true;
@@ -50,6 +52,7 @@ public class HeadGestureTracker {
 
     public HeadGestureTracker(Scalar color) {
         this.color = color;
+        this.colorInverse = new Scalar(255 - color.blue(), 255 - color.green(), 255 - color.red(), 0);
     }
 
     public static Rect enlargePresenceRegionToFaceSize(Mat video, Rect presence) {
@@ -211,7 +214,11 @@ public class HeadGestureTracker {
         return x != Direction.None ? x : y;
     }
 
-    static Direction direction(Map<Direction, Float> all) {
+    Direction direction(Map<Direction, Float> all) {
+        return direction(all, videoWidth);
+    }
+
+    static Direction direction(Map<Direction, Float> all, int videoWidth) {
         if (logger.isDebugEnabled()) {
             logger.debug(all.toString());
         }
@@ -225,7 +232,7 @@ public class HeadGestureTracker {
             }
         }
 
-        if (max > MINIMUM_DIRECTION_VALUE) {
+        if (max > videoWidth / MINIMUM_DIRECTION_SIZE_FRACTION_OF_VIDEO) {
             return dominatingDirectionOrNone(all, direction);
         } else {
             return Direction.None;
@@ -235,7 +242,7 @@ public class HeadGestureTracker {
     private static Direction dominatingDirectionOrNone(Map<Direction, Float> all, Direction direction) {
         Float maxValue = all.get(direction);
         for (Entry<Direction, Float> entry : all.entrySet()) {
-            if (entry.getKey() != direction && entry.getValue() * MINIMUM_DIRECTION_SCALE > maxValue) {
+            if (entry.getKey() != direction && entry.getValue() * DOMINATING_DIRECTION_SCALE_OVER_OTHER > maxValue) {
                 direction = Direction.None;
                 break;
             }
@@ -302,7 +309,7 @@ public class HeadGestureTracker {
     }
 
     public void render(Mat output) {
-        tracker.render(output, color);
+        tracker.render(output, color, region, colorInverse);
     }
 
     public void clear() {

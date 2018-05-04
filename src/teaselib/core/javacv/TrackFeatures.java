@@ -99,19 +99,22 @@ public class TrackFeatures {
         return keyPoints;
     }
 
-    public void render(Mat input, Scalar color) {
+    public void render(Mat input, Scalar colorInside, Rect mask, Scalar colorOutside) {
         if (hasFeatures()) {
-            render(input, color, keyPoints);
+            render(input, colorInside, keyPoints, mask, colorOutside);
         }
     }
 
-    public static void render(Mat input, Scalar color, Mat keyPoints) {
+    public static void render(Mat input, Scalar colorInside, Mat keyPoints, Rect mask, Scalar colorOutside) {
         try (FloatIndexer points = keyPoints.createIndexer();) {
             for (int i = 0; i < points.rows(); i++) {
                 try (opencv_core.Point p = new opencv_core.Point((int) points.get(i, 0), (int) points.get(i, 1));) {
-                    int size = 15;
-                    circle(input, p, 1, color);
-                    circle(input, p, size, color);
+                    Scalar color = mask == null || mask.contains(p) ? colorInside : colorOutside;
+                    if (color != null) {
+                        int size = 15;
+                        circle(input, p, 1, color);
+                        circle(input, p, size, color);
+                    }
                 }
             }
             points.release();

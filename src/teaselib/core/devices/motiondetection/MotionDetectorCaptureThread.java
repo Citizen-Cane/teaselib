@@ -236,12 +236,13 @@ class MotionDetectorCaptureThread extends Thread {
     private HeadGestureTracker.Parameters gestureResult = new HeadGestureTracker.Parameters();
     private Mat motionImageCopy = new Mat();
 
-    private void processVideoCaptureStream() throws InterruptedException {
+    private void processVideoCaptureStream() throws InterruptedException, ExecutionException {
         provideFakeMotionAndPresenceData();
 
         boolean warmedUp = false;
         int warmupFrames = MotionProcessorJavaCV.WARMUP_FRAMES;
 
+        List<Future<?>> frameTaskFutures = new ArrayList<>();
         for (Mat frame : videoCaptureDevice) {
             long timeStamp = System.currentTimeMillis();
             // TODO Retrieving buffer from video hidden in transformations, code duplicated
@@ -249,9 +250,10 @@ class MotionDetectorCaptureThread extends Thread {
             Buffer.Locked<Mat> lock = video.get(image);
             // Mat buffer = lock.get();
 
+            complete(frameTaskFutures);
+            frameTaskFutures.clear();
             // TODO move to after if-clause after resolving image mat copy issue
             // - because copying the mat and computing gestures can be done parallel
-            List<Future<?>> frameTaskFutures = new ArrayList<>();
             frameTaskFutures.add(frameTasks.submit(() -> computeGestures(image, timeStamp)));
 
             if (motionAndPresence == null) {
@@ -289,7 +291,7 @@ class MotionDetectorCaptureThread extends Thread {
             }
             // TODO review frame statistics class - may be wrong
             fpsStatistics.updateFrame(timeStamp + timeLeft);
-            completeComputationAndRender(image, lock, frameTaskFutures);
+            completeComputationAndRender(image, lock, new ArrayList<>(frameTaskFutures));
 
             if (!active.get() || Thread.currentThread().isInterrupted()) {
                 break;
@@ -359,7 +361,7 @@ class MotionDetectorCaptureThread extends Thread {
     private void completeComputationAndRender(Mat image, Buffer.Locked<Mat> lock, List<Future<?>> tasks) {
         overlayRenderer.submit(() -> {
             try {
-                completeTasks(tasks);
+                complete(tasks);
                 render(image);
             } catch (Exception e) {
                 logger.error(e.getMessage(), e);
@@ -371,7 +373,7 @@ class MotionDetectorCaptureThread extends Thread {
         });
     }
 
-    private static void completeTasks(List<Future<?>> tasks) throws InterruptedException, ExecutionException {
+    private static void complete(List<Future<?>> tasks) throws InterruptedException, ExecutionException {
         for (Future<?> task : tasks) {
             task.get();
         }

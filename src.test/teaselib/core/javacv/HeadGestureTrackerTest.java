@@ -16,6 +16,7 @@ public class HeadGestureTrackerTest {
     private static final long SHAKETIME = (HeadGestureTracker.GestureMinDuration
             + HeadGestureTracker.GestureMaxDuration) / (2 * HeadGestureTracker.NumberOfDirections);
     private static final int NUMBER_OF_SUPPORTED_DIRECTIONS = 6;
+    private static final int DIRECTION_SIZE_AT_640 = 640 / HeadGestureTracker.MINIMUM_DIRECTION_SIZE_FRACTION_OF_VIDEO;
 
     @Test
     public void testDirection() {
@@ -62,14 +63,14 @@ public class HeadGestureTrackerTest {
         assertEquals(30, directions.get(Direction.Right).intValue());
         assertEquals(1, directions.get(Direction.Left).intValue());
 
-        assertEquals(Direction.Right, HeadGestureTracker.direction(directions));
+        assertEquals(Direction.Right, HeadGestureTracker.direction(directions, DIRECTION_SIZE_AT_640));
 
         HeadGestureTracker.addDirection(directions, Direction.Left, 149);
         assertEquals(2, directions.size());
         assertEquals(30, directions.get(Direction.Right).intValue());
         assertEquals(150, directions.get(Direction.Left).intValue());
 
-        assertEquals(Direction.Left, HeadGestureTracker.direction(directions));
+        assertEquals(Direction.Left, HeadGestureTracker.direction(directions, DIRECTION_SIZE_AT_640));
 
         HeadGestureTracker.addDirection(directions, Direction.Up, 500);
         assertEquals(3, directions.size());
@@ -80,7 +81,7 @@ public class HeadGestureTrackerTest {
         assertEquals(500, directions.get(Direction.Down).intValue());
 
         // Direction.None because the direction is not distinct
-        assertTrue(HeadGestureTracker.direction(directions) == Direction.None);
+        assertTrue(HeadGestureTracker.direction(directions, DIRECTION_SIZE_AT_640) == Direction.None);
 
         HeadGestureTracker.addDirection(directions, Direction.Down);
         assertEquals(4, directions.size());
@@ -89,14 +90,14 @@ public class HeadGestureTrackerTest {
         assertEquals(500, directions.get(Direction.Up).intValue());
         assertEquals(501, directions.get(Direction.Down).intValue());
 
-        assertEquals(Direction.None, HeadGestureTracker.direction(directions));
+        assertEquals(Direction.None, HeadGestureTracker.direction(directions, DIRECTION_SIZE_AT_640));
 
         HeadGestureTracker.addDirection(directions, Direction.Up, 2000);
         assertEquals(4, directions.size());
         assertEquals(2500, directions.get(Direction.Up).intValue());
         assertEquals(501, directions.get(Direction.Down).intValue());
 
-        assertEquals(Direction.Up, HeadGestureTracker.direction(directions));
+        assertEquals(Direction.Up, HeadGestureTracker.direction(directions, DIRECTION_SIZE_AT_640));
     }
 
     @Test

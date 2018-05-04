@@ -1,20 +1,23 @@
-/**
- * 
- */
 package teaselib.core.devices.motiondetection;
 
-import static org.bytedeco.javacpp.opencv_core.*;
-import static org.bytedeco.javacpp.opencv_imgproc.*;
-import static teaselib.core.javacv.Color.*;
-import static teaselib.core.javacv.util.Gui.*;
+import static org.bytedeco.javacpp.opencv_core.FONT_HERSHEY_PLAIN;
+import static org.bytedeco.javacpp.opencv_imgproc.putText;
+import static org.bytedeco.javacpp.opencv_imgproc.rectangle;
+import static teaselib.core.javacv.Color.Blue;
+import static teaselib.core.javacv.Color.DarkBlue;
+import static teaselib.core.javacv.Color.DarkGreen;
+import static teaselib.core.javacv.Color.Green;
+import static teaselib.core.javacv.Color.White;
+import static teaselib.core.javacv.util.Gui.drawRect;
 
-import java.util.Map;
 import java.util.Set;
 
 import org.bytedeco.javacpp.opencv_core.Mat;
 import org.bytedeco.javacpp.opencv_core.Point;
 import org.bytedeco.javacpp.opencv_core.Rect;
 import org.bytedeco.javacpp.opencv_core.Size;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import teaselib.core.javacv.Color;
 import teaselib.core.javacv.Contours;
@@ -22,42 +25,54 @@ import teaselib.core.javacv.HeadGestureTracker;
 import teaselib.motiondetection.Gesture;
 import teaselib.motiondetection.MotionDetector.Presence;
 
+/**
+ * @author Citizen-Cane
+ *
+ */
 public class MotionDetectorJavaCVDebugRenderer {
+    static final Logger logger = LoggerFactory.getLogger(MotionDetectorJavaCVDebugRenderer.class);
+
     private final Size windowSize;
+
+    private final boolean renderTrackFeatures;
+    private final boolean renderDetails;
 
     public MotionDetectorJavaCVDebugRenderer(Size windowSize) {
         this.windowSize = windowSize;
+        this.renderTrackFeatures = logger.isInfoEnabled();
+        this.renderDetails = logger.isDebugEnabled();
     }
 
     public void render(Mat debugOutput, Contours contours, MotionProcessorJavaCV.MotionData pixelData,
             MotionDetectionResultImplementation.PresenceData resultData, HeadGestureTracker gestureTracker,
             Gesture gesture, double fps) {
         boolean present = resultData.debugIndicators.contains(Presence.Present);
-        // Motion
+
         if (resultData.debugIndicators.contains(Presence.CameraShake)) {
             rectangle(debugOutput, resultData.presenceIndicators.get(Presence.Present),
                     present ? Color.MidBlue : Color.DarkBlue, 15, 8, 0);
         } else {
-            if (resultData.debugPresenceRegion != null) {
+            if (renderTrackFeatures && resultData.debugPresenceRegion != null) {
                 renderMotionRegion(debugOutput, resultData.debugPresenceRegion, present);
             }
-            renderPresenceIndicators(debugOutput, resultData.presenceIndicators, resultData.debugIndicators, present);
-
-            // TODO Enable from detector when logging details
-            if (resultData.contourMotionDetected) {
+            if (renderTrackFeatures) {
+                renderPresenceIndicators(debugOutput, resultData, present);
+            }
+            if (renderDetails && resultData.contourMotionDetected) {
                 renderContourMotionRegion(contours, debugOutput, resultData.debugPresenceRegion);
             }
 
-            // TODO Enable from detector when logging details
-            if (resultData.trackerMotionDetected) {
+            if (renderDetails && resultData.trackerMotionDetected) {
                 renderDistanceTrackerPoints(debugOutput, pixelData);
             }
 
-            if (gestureTracker.hasFeatures()) {
+            if (renderTrackFeatures && gestureTracker.hasFeatures()) {
                 gestureTracker.render(debugOutput);
             }
 
-            renderGesture(debugOutput, gestureTracker, gesture);
+            if (renderTrackFeatures) {
+                renderGesture(debugOutput, gestureTracker, gesture);
+            }
         }
         renderRegionList(debugOutput, resultData.debugIndicators);
         renderFPS(debugOutput, fps);
@@ -113,11 +128,11 @@ public class MotionDetectorJavaCVDebugRenderer {
         }
     }
 
-    private static void renderPresenceIndicators(Mat debugOutput, Map<Presence, Rect> presenceIndicators,
-            Set<Presence> indicators, boolean present) {
+    private static void renderPresenceIndicators(Mat debugOutput,
+            MotionDetectionResultImplementation.PresenceData resultData, boolean present) {
         for (Presence key : Presence.values()) {
-            if (indicators.contains(key) && presenceIndicators.containsKey(key)) {
-                rectangle(debugOutput, presenceIndicators.get(key), present ? DarkGreen : DarkBlue, 4, 8, 0);
+            if (resultData.indicators.contains(key) && resultData.presenceIndicators.containsKey(key)) {
+                rectangle(debugOutput, resultData.presenceIndicators.get(key), present ? DarkGreen : DarkBlue, 4, 8, 0);
             }
         }
     }

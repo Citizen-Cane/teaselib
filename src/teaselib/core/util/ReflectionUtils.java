@@ -37,7 +37,7 @@ public final class ReflectionUtils {
         return "/" + clazz.getName().replace('.', '/') + '/';
     }
 
-    public static String getPackagePath(Class<?> clazz) {
+    public static String packagePath(Class<?> clazz) {
         return clazz.getPackage().getName().replace(".", "/") + "/";
     }
 
@@ -45,9 +45,9 @@ public final class ReflectionUtils {
         return clazz.getName().replace('.', '/') + '/';
     }
 
-    public static Enum<?> getEnum(QualifiedItem<?> qualifiedItem) throws ClassNotFoundException {
+    public static <T extends Enum<?>> T getEnum(QualifiedItem qualifiedItem) throws ClassNotFoundException {
         @SuppressWarnings("unchecked")
-        Class<? extends Enum<?>> enumClass = (Class<? extends Enum<?>>) Class.forName(qualifiedItem.namespace());
+        Class<T> enumClass = (Class<T>) Class.forName(qualifiedItem.namespace());
         return getEnum(enumClass, qualifiedItem);
     }
 
@@ -55,7 +55,7 @@ public final class ReflectionUtils {
         return getEnum(enumClass, QualifiedItem.nameOf(qualifiedName));
     }
 
-    public static <T extends Enum<?>> T getEnum(Class<T> enumClass, QualifiedItem<?> qualifiedItem) {
+    public static <T extends Enum<?>> T getEnum(Class<T> enumClass, QualifiedItem qualifiedItem) {
         for (T value : enumClass.getEnumConstants()) {
             if (value.name().equalsIgnoreCase(qualifiedItem.name())) {
                 return value;

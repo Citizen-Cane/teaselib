@@ -66,7 +66,7 @@ public class TextToSpeechRecorderTest {
         new DebugSetup().withInput().withOutput().applyTo(config);
         TextToSpeechPlayer tts = new TextToSpeechPlayer(config);
         ResourceLoader resources = new ResourceLoader(this.getClass(),
-                ResourceLoader.absolute(ReflectionUtils.getPackagePath(getClass())));
+                ResourceLoader.absolute(ReflectionUtils.packagePath(getClass())));
 
         tts.load();
         tts.loadActorVoiceProperties(resources);
@@ -106,7 +106,7 @@ public class TextToSpeechRecorderTest {
         File path = tempFolder.getRoot();
         String name = "test";
         ResourceLoader resources = new ResourceLoader(this.getClass(),
-                ResourceLoader.absolute(ReflectionUtils.getPackagePath(getClass())));
+                ResourceLoader.absolute(ReflectionUtils.packagePath(getClass())));
 
         List<Message> messages = Arrays.asList(new Message(actor, "I have a dream."),
                 new Message(actor, "I dream of white sheep standing on the lawn."),
@@ -169,7 +169,7 @@ public class TextToSpeechRecorderTest {
     public void testReplay() throws IOException, InterruptedException, ExecutionException {
         File path = tempFolder.getRoot();
         String name = "test";
-        String resourcesRoot = ResourceLoader.absolute(ReflectionUtils.getPackagePath(getClass()));
+        String resourcesRoot = ResourceLoader.absolute(ReflectionUtils.packagePath(getClass()));
         ResourceLoader resources = new ResourceLoader(this.getClass(), resourcesRoot);
 
         List<Message> messages = Arrays.asList(new Message(actor, "I have a dream."),

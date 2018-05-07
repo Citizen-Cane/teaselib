@@ -15,7 +15,7 @@ public class ActorVoices extends VoiceProperties {
 
     public ActorVoices(ResourceLoader resources) {
         try {
-            try (InputStream recordedVoicesConfig = resources.getResource(VoicesFilename);) {
+            try (InputStream recordedVoicesConfig = resources.get(VoicesFilename);) {
                 properties.load(recordedVoicesConfig);
             }
         } catch (IOException e) {

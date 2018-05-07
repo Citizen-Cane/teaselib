@@ -248,7 +248,7 @@ public class TextToSpeechRecorder {
     }
 
     private boolean haveActorVoicesFile() throws IOException {
-        try (InputStream is = resources.getResource(ActorVoices.VoicesFilename);) {
+        try (InputStream is = resources.get(ActorVoices.VoicesFilename);) {
             return is != null;
         }
     }

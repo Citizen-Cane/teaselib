@@ -36,18 +36,15 @@ public class ResourceLoader {
      *            The class of the main script, for loading resources.
      */
     public ResourceLoader(Class<?> mainScript) {
-        this(mainScript, ReflectionUtils.getPackagePath(mainScript));
+        this(mainScript, ReflectionUtils.packagePath(mainScript));
     }
 
     public ResourceLoader(Class<?> mainScript, String resourceRoot, String[] assets) {
-        this(mainScript, resourceRoot);
-        addAssets(assets);
+        this(mainScript, resourceRoot, assets, new String[] {});
     }
 
     public ResourceLoader(Class<?> mainScript, String resourceRoot, String[] assets, String[] optionalAssets) {
-        this(mainScript, resourceRoot);
-        addAssets(assets);
-        addAssets(optionalAssets);
+        this(getBasePath(getProjectPath(mainScript)), resourceRoot, assets, optionalAssets);
     }
 
     /**
@@ -57,7 +54,7 @@ public class ResourceLoader {
      *            The resource path under which to start looking for resources.
      */
     public ResourceLoader(Class<?> mainScript, String resourceRoot) {
-        this(getBasePath(getProjectPath(mainScript)), resourceRoot);
+        this(mainScript, resourceRoot, new String[] {}, new String[] {});
     }
 
     private static File getBasePath(File mainScript) {
@@ -80,8 +77,11 @@ public class ResourceLoader {
         this.basePath = getBasePath(basePath);
         this.resourceRoot = absolute(pathToFolder(resourceRoot));
         logger.info("Using basepath='{}'", basePath.getAbsolutePath());
+        addProjectFolder();
+    }
 
-        addAssets(basePath.getPath());
+    private void addProjectFolder() {
+        addAssets("");
     }
 
     private static String pathToFolder(String path) {
@@ -145,6 +145,7 @@ public class ResourceLoader {
     }
 
     public void addAssets(Class<?> scriptClass) {
+        // TODO untested, must be local path, not relative
         addAssets(ResourceLoader.getProjectPath(scriptClass).getAbsolutePath());
     }
 
@@ -167,11 +168,11 @@ public class ResourceLoader {
         return path;
     }
 
-    public boolean hasResource(String path) {
+    public boolean has(String path) {
         return resourceCache.has(absolutePathOrNull(path, null));
     }
 
-    public InputStream getResource(String path) throws IOException {
+    public InputStream get(String path) throws IOException {
         return getResource(path, null);
     }
 
@@ -180,7 +181,7 @@ public class ResourceLoader {
         if (absoluteResourcePath != null) {
             return inputStreamOrThrow(path, resource(absoluteResourcePath));
         } else {
-            absoluteResourcePath = absolute(packagePath(clazz) + path);
+            absoluteResourcePath = absolute(ReflectionUtils.packagePath(clazz) + path);
             InputStream inputStream = resourceCache.get(absoluteResourcePath);
             if (inputStream != null) {
                 return inputStream;
@@ -191,26 +192,22 @@ public class ResourceLoader {
     }
 
     private String absolutePathOrNull(String path, Class<?> clazz) {
-        if (isAbsoluteResourcePath(path)) {
+        if (isAbsolute(path)) {
             return path;
-        } else if (isNearlyAbsoluteResourcePath(path) && clazz == null) {
+        } else if (isNearlyAbsolute(path) && clazz == null) {
             return absolute(path);
-        } else if (clazz == null || resourceRoot.equals(absolute(packagePath(clazz)))) {
+        } else if (clazz == null || resourceRoot.equals(absolute(ReflectionUtils.packagePath(clazz)))) {
             return resourceRoot + path;
         } else {
             return null;
         }
     }
 
-    private String packagePath(Class<?> clazz) {
-        return ReflectionUtils.getPackagePath(clazz);
-    }
-
     private InputStream resource(String path) throws IOException {
         return inputStreamOrThrow(path, resourceCache.get(path));
     }
 
-    private InputStream inputStreamOrThrow(String path, InputStream inputStream) throws IOException {
+    private static InputStream inputStreamOrThrow(String path, InputStream inputStream) throws IOException {
         if (inputStream == null)
             throw new IOException(path);
         return inputStream;
@@ -220,11 +217,11 @@ public class ResourceLoader {
         return path.startsWith("/") ? path : "/" + path;
     }
 
-    private boolean isNearlyAbsoluteResourcePath(String resource) {
+    private boolean isNearlyAbsolute(String resource) {
         return resource.startsWith(resourceRoot.substring(1));
     }
 
-    private static boolean isAbsoluteResourcePath(String resource) {
+    private static boolean isAbsolute(String resource) {
         return resource.startsWith("/");
     }
 
@@ -325,7 +322,7 @@ public class ResourceLoader {
 
     private File unpackToFileInternal(String resourcePath, File file) throws IOException {
         if (!file.exists()) {
-            try (InputStream resource = getResource(resourcePath);) {
+            try (InputStream resource = get(resourcePath);) {
                 if (!file.exists()) {
                     file.getParentFile().mkdirs();
                     Files.copy(resource, Paths.get(file.toURI()));

@@ -219,7 +219,7 @@ public class TextToSpeechPlayer {
             String voiceGuid) {
         try {
             PreRecordedVoice preRecordedVoice = new PreRecordedVoice(
-                    resources.getResource(PreRecordedVoice.getResourcePath(actorKey, voiceGuid)));
+                    resources.get(PreRecordedVoice.getResourcePath(actorKey, voiceGuid)));
             return Optional.of(preRecordedVoice);
         } catch (IOException e) {
             return Optional.empty();
@@ -553,7 +553,7 @@ public class TextToSpeechPlayer {
             String path = actorKey2SpeechResourcesLocation.get(actor.key) + TextToSpeechRecorder.getHash(message) + "/";
             List<String> speechResources = new ArrayList<>();
             try (BufferedReader reader = new BufferedReader(
-                    new InputStreamReader(resources.getResource(path + TextToSpeechRecorder.ResourcesFilename)));) {
+                    new InputStreamReader(resources.get(path + TextToSpeechRecorder.ResourcesFilename)));) {
                 String soundFile = null;
                 while ((soundFile = reader.readLine()) != null) {
                     speechResources.add(path + soundFile);

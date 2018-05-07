@@ -31,7 +31,7 @@ public final class PrefetchImage implements Callable<byte[]> {
 
     private byte[] getImageBytes(String path) throws IOException {
         byte[] imageBytes = null;
-        try (InputStream resource = resources.getResource(path);) {
+        try (InputStream resource = resources.get(path);) {
             imageBytes = convertInputStreamToByte(resource);
         } catch (IOException e) {
             ExceptionUtil.handleIOException(e, config, logger);

@@ -43,7 +43,7 @@ public class ResourceLoaderTest {
     }
 
     private static void loadResource(TestScript script, String path) throws IOException {
-        try (InputStream resourceStream = script.resources.getResource(path);
+        try (InputStream resourceStream = script.resources.get(path);
                 BufferedReader reader = new BufferedReader(new InputStreamReader(resourceStream));) {
             String resource = reader.readLine();
             assertEquals("1", resource);
@@ -58,7 +58,7 @@ public class ResourceLoaderTest {
     }
 
     private String absolutePath() {
-        return ResourceLoader.absolute(ReflectionUtils.getPackagePath(getClass()));
+        return ResourceLoader.absolute(ReflectionUtils.packagePath(getClass()));
     }
 
     @Test
@@ -109,7 +109,7 @@ public class ResourceLoaderTest {
         script.resources.addAssets("/teaselib/core/UnpackResourcesTestData_ResourceRootStructure.zip");
 
         String path = "/teaselib/core/UnpackResourcesTestData" + "/" + RESOURCE_1;
-        assertTrue(script.resources.hasResource(path));
+        assertTrue(script.resources.has(path));
         File res1 = script.resources.unpackToFile(path);
         res1.delete();
         assertFalse(res1.exists());
@@ -123,7 +123,7 @@ public class ResourceLoaderTest {
         script.resources.addAssets("/teaselib/core/UnpackResourcesTestData_ResourceRootStructure.zip");
 
         String path = "UnpackResourcesTestData" + "/" + RESOURCE_1;
-        assertTrue(script.resources.hasResource(path));
+        assertTrue(script.resources.has(path));
         File res1 = script.resources.unpackToFile(path);
         res1.delete();
         assertFalse(res1.exists());
@@ -137,7 +137,7 @@ public class ResourceLoaderTest {
         script.resources.addAssets("/teaselib/core/UnpackResourcesTestData_ResourceRootStructure.zip");
 
         String path = RESOURCE_1;
-        assertTrue(script.resources.hasResource(path));
+        assertTrue(script.resources.has(path));
         File res1 = script.resources.unpackToFile(path);
         res1.delete();
         assertFalse(res1.exists());
@@ -165,7 +165,7 @@ public class ResourceLoaderTest {
         script.resources.addAssets("/teaselib/core/UnpackResourcesTestData_flat.zip");
 
         String path = "UnpackResourcesTestData" + "/" + RESOURCE_1;
-        assertFalse(script.resources.hasResource(path));
+        assertFalse(script.resources.has(path));
     }
 
     @Test

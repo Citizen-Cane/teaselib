@@ -1,6 +1,8 @@
 package teaselib.core.texttospeech;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
@@ -63,9 +65,8 @@ public class TextToSpeechRecorderTest {
         Configuration config = new Configuration();
         new DebugSetup().withInput().withOutput().applyTo(config);
         TextToSpeechPlayer tts = new TextToSpeechPlayer(config);
-
         ResourceLoader resources = new ResourceLoader(this.getClass(),
-                ReflectionUtils.asPath(ReflectionUtils.classParentName(this)));
+                ResourceLoader.absolute(ReflectionUtils.getPackagePath(getClass())));
 
         tts.load();
         tts.loadActorVoiceProperties(resources);
@@ -105,7 +106,7 @@ public class TextToSpeechRecorderTest {
         File path = tempFolder.getRoot();
         String name = "test";
         ResourceLoader resources = new ResourceLoader(this.getClass(),
-                ReflectionUtils.asPath(ReflectionUtils.classParentName(this)));
+                ResourceLoader.absolute(ReflectionUtils.getPackagePath(getClass())));
 
         List<Message> messages = Arrays.asList(new Message(actor, "I have a dream."),
                 new Message(actor, "I dream of white sheep standing on the lawn."),
@@ -168,7 +169,7 @@ public class TextToSpeechRecorderTest {
     public void testReplay() throws IOException, InterruptedException, ExecutionException {
         File path = tempFolder.getRoot();
         String name = "test";
-        String resourcesRoot = ReflectionUtils.asPath(ReflectionUtils.classParentName(this));
+        String resourcesRoot = ResourceLoader.absolute(ReflectionUtils.getPackagePath(getClass()));
         ResourceLoader resources = new ResourceLoader(this.getClass(), resourcesRoot);
 
         List<Message> messages = Arrays.asList(new Message(actor, "I have a dream."),
@@ -207,7 +208,7 @@ public class TextToSpeechRecorderTest {
         new DebugSetup().withInput().withOutput().applyTo(config);
         TextToSpeechPlayer tts = new TextToSpeechPlayer(config);
         tts.acquireVoice(actor, resources);
-        
+
         testAssets(tts, resources, messages);
     }
 

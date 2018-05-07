@@ -29,14 +29,6 @@ public final class ReflectionUtils {
         return clazz.getName().replace('$', '.');
     }
 
-    public static String normalizeClassName(String className) {
-        return className.replace("$", ".");
-    }
-
-    public static String asAbsolutePath(String className) {
-        return (className.startsWith("/") ? "" : "/") + className.replace('.', '/') + '/';
-    }
-
     public static String asAbsolutePath(Package p) {
         return "/" + p.getName().replace('.', '/') + '/';
     }
@@ -49,24 +41,8 @@ public final class ReflectionUtils {
         return clazz.getPackage().getName().replace(".", "/") + "/";
     }
 
-    public static String asClassLoaderCompatiblePath(String className) {
-        return className.replace('.', '/') + '/';
-    }
-
-    public static String asPath(String className) {
-        return className.replace('.', '/');
-    }
-
-    public static String getClass(String qualifiedName) {
-        return qualifiedName.substring(0, qualifiedName.lastIndexOf('.'));
-    }
-
-    public static String getName(String qualifiedName) {
-        return qualifiedName.substring(qualifiedName.lastIndexOf('.') + 1);
-    }
-
-    public static Enum<?> getEnum(String qualifiedName) throws ClassNotFoundException {
-        return getEnum(new QualifiedObject(qualifiedName));
+    public static String asClassLoaderCompatiblePath(Class<?> clazz) {
+        return clazz.getName().replace('.', '/') + '/';
     }
 
     public static Enum<?> getEnum(QualifiedItem<?> qualifiedItem) throws ClassNotFoundException {

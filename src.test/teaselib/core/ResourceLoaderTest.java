@@ -58,7 +58,7 @@ public class ResourceLoaderTest {
     }
 
     private String absolutePath() {
-        return ReflectionUtils.asAbsolutePath(ReflectionUtils.classParentName(this.getClass()));
+        return ResourceLoader.absolute(ReflectionUtils.getPackagePath(getClass()));
     }
 
     @Test

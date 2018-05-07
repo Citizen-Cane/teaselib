@@ -104,13 +104,13 @@ public abstract class AbstractUserItems implements UserItems {
             if (attributeNode.getNodeType() == Node.ELEMENT_NODE) {
                 if ("Attribute".equalsIgnoreCase(attributeNode.getNodeName())) {
                     String enumClassName = "teaselib." + attributeNode.getTextContent().trim();
-                    itemAttributes.add(ReflectionUtils.getEnum(enumClassName));
+                    itemAttributes.add(ReflectionUtils.getEnum(QualifiedItem.of(enumClassName)));
                 }
             }
         }
 
         String enumName = "teaselib." + itemClass.getNodeName() + "." + itemName;
-        Enum<?> enumValue = ReflectionUtils.getEnum(enumName);
+        Enum<?> enumValue = ReflectionUtils.getEnum(QualifiedItem.of(enumName));
         return new ItemImpl(teaseLib, enumValue, TeaseLib.DefaultDomain, //
                 guid, //
                 displayName, defaults(new QualifiedEnum(enumValue)), //

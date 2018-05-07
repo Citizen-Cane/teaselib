@@ -15,8 +15,6 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
 
-import com.sun.xml.internal.messaging.saaj.util.ByteOutputStream;
-
 import teaselib.Actor;
 import teaselib.core.util.Stream;
 
@@ -134,9 +132,9 @@ public class PrerecordedSpeechZipStorage implements PrerecordedSpeechStorage {
         ZipEntry resourceEntry = new ZipEntry(getPath(actor, voice, hash, name));
         resourceEntry.setMethod(zipStorageMethod);
         if (zipStorageMethod == ZipOutputStream.STORED) {
-            try (ByteOutputStream bo = new ByteOutputStream()) {
+            try (ByteArrayOutputStream bo = new ByteArrayOutputStream()) {
                 Stream.copy(inputStream, bo);
-                byte[] buf = bo.getBytes();
+                byte[] buf = bo.toByteArray();
                 resourceEntry.setSize(buf.length);
                 resourceEntry.setCompressedSize(buf.length);
                 CRC32 crc = new CRC32();

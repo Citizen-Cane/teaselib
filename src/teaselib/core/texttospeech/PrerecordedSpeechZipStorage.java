@@ -35,8 +35,8 @@ public class PrerecordedSpeechZipStorage implements PrerecordedSpeechStorage {
     private final File zipFileCurrent;
 
     public PrerecordedSpeechZipStorage(File path, String resourcesRoot, String name) throws IOException {
-        this.resourcesRoot = resourcesRoot.endsWith("/") ? resourcesRoot.substring(0, resourcesRoot.length() - 1)
-                : resourcesRoot;
+        this.resourcesRoot = resourcesRoot.endsWith("/") ? resourcesRoot.substring(1, resourcesRoot.length() - 1)
+                : resourcesRoot.substring(1);
         this.archiveName = name + " " + "Speech";
         zipFileCurrent = new File(path, archiveName + Zip).getAbsoluteFile();
         zipFileUpdated = new File(path, archiveName + Temp + Zip).getAbsoluteFile();

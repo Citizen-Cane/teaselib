@@ -78,9 +78,7 @@ public class ResourceLoader {
 
     public ResourceLoader(File basePath, String resourceRoot) {
         this.basePath = getBasePath(basePath);
-        // TODO resource root should be absolute path same as ResourcesInProjectFolder
-        // -> should fit in nicely with locations and resolve a couple of "/" in the code
-        this.resourceRoot = classLoaderCompatibleResourcePath(pathToFolder(resourceRoot));
+        this.resourceRoot = absolute(pathToFolder(resourceRoot));
         logger.info("Using basepath='{}'", basePath.getAbsolutePath());
 
         addAssets(basePath.getPath());
@@ -159,7 +157,7 @@ public class ResourceLoader {
 
     private String addAssets(String path) {
         if (!new File(path).isAbsolute()) {
-            path = basePath + absoluteResourcePath(path);
+            path = basePath + absolute(path);
         }
         try {
             resourceCache.add(ResourceCache.location(path, resourceRoot));
@@ -182,12 +180,12 @@ public class ResourceLoader {
         if (absoluteResourcePath != null) {
             return inputStreamOrThrow(path, resource(absoluteResourcePath));
         } else {
-            absoluteResourcePath = absoluteResourcePath(packagePath(clazz) + path);
+            absoluteResourcePath = absolute(packagePath(clazz) + path);
             InputStream inputStream = resourceCache.get(absoluteResourcePath);
             if (inputStream != null) {
                 return inputStream;
             } else {
-                return inputStreamOrThrow(path, resource(absoluteResourcePath(resourceRoot + path)));
+                return inputStreamOrThrow(path, resource(resourceRoot + path));
             }
         }
     }
@@ -196,9 +194,9 @@ public class ResourceLoader {
         if (isAbsoluteResourcePath(path)) {
             return path;
         } else if (isNearlyAbsoluteResourcePath(path) && clazz == null) {
-            return absoluteResourcePath(path);
-        } else if (clazz == null || resourceRoot.equals(packagePath(clazz))) {
-            return absoluteResourcePath(resourceRoot + path);
+            return absolute(path);
+        } else if (clazz == null || resourceRoot.equals(absolute(packagePath(clazz)))) {
+            return resourceRoot + path;
         } else {
             return null;
         }
@@ -218,12 +216,12 @@ public class ResourceLoader {
         return inputStream;
     }
 
-    public static String absoluteResourcePath(String path) {
+    public static String absolute(String path) {
         return path.startsWith("/") ? path : "/" + path;
     }
 
     private boolean isNearlyAbsoluteResourcePath(String resource) {
-        return resource.startsWith(resourceRoot);
+        return resource.startsWith(resourceRoot.substring(1));
     }
 
     private static boolean isAbsoluteResourcePath(String resource) {
@@ -247,7 +245,7 @@ public class ResourceLoader {
     }
 
     private List<String> projectRelative(String wildcardPattern) {
-        return resources(WildcardPattern.compile(absoluteResourcePath(resourceRoot + wildcardPattern)));
+        return resources(WildcardPattern.compile(resourceRoot + wildcardPattern));
     }
 
     /**
@@ -277,7 +275,7 @@ public class ResourceLoader {
         if (resourcePath.startsWith("/")) {
             return new File(basePath, resourcePath);
         } else {
-            return new File(basePath, resourceRoot + classLoaderCompatibleResourcePath(resourcePath));
+            return new File(basePath, resourceRoot + resourcePath);
         }
     }
 

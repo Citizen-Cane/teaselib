@@ -5,6 +5,7 @@ import java.io.InputStream;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
@@ -17,8 +18,8 @@ public abstract class FileSystemLocation implements ResourceLocation {
     List<Path> rootDirectories = new ArrayList<>();
 
     FileSystemLocation(Path root, Path project) {
-        if (project != null && project.startsWith("/"))
-            throw new IllegalArgumentException("Project path must be relative to resolve it");
+        if (project != null && !project.startsWith("/"))
+            project = Paths.get(project.toString());
         this.root = root;
         this.project = project;
 
@@ -53,9 +54,9 @@ public abstract class FileSystemLocation implements ResourceLocation {
             Files.walkFileTree(directory, new SimpleFileVisitor<Path>() {
                 @Override
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-                    String resourcePath = resourcePath(subpath(directory, file));
-                    if (project == null || resourcePath.startsWith(resourcePath(project))) {
-                        resources.add(resourcePath);
+                    String path = resourcePath(subpath(directory, file));
+                    if (project == null || path.startsWith(resourcePath(project))) {
+                        resources.add(path);
                     }
                     return FileVisitResult.CONTINUE;
                 }
@@ -64,8 +65,8 @@ public abstract class FileSystemLocation implements ResourceLocation {
                     return file.subpath(directory.getNameCount(), file.getNameCount());
                 }
 
-                private String resourcePath(Path relative) {
-                    return "/" + relative.toString().replace('\\', '/');
+                private String resourcePath(Path path) {
+                    return path.startsWith("/") ? "" : "/" + path.toString().replace('\\', '/');
                 }
             });
         }

@@ -285,7 +285,7 @@ public class ResourceLoaderTest {
     @Test
     public void testScriptRelativeResources() throws IOException {
         TestScript script = TestScript.getOne();
-        assertEquals(ResourceLoader.ResourcesInProjectFolder, "/" + script.resources.getRoot());
+        assertEquals(ResourceLoader.ResourcesInProjectFolder, script.resources.getRoot());
         String relativePath = RESOURCE_1;
         try (InputStream resourceStream = script.resources.getResource(relativePath, getClass());) {
             assertNotNull(resourceStream);

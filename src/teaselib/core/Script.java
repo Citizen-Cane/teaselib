@@ -360,7 +360,7 @@ public abstract class Script {
      */
     protected String showChoices(List<Answer> answers, ScriptFunction scriptFunction,
             Config.SpeechRecognition.Intention intention) {
-        QualifiedItem<?> value = QualifiedItem.of(teaseLib.config.get(intention));
+        QualifiedItem value = QualifiedItem.of(teaseLib.config.get(intention));
         Confidence recognitionConfidence = ReflectionUtils.getEnum(Confidence.class, value);
 
         Choices choices = choices(answers);

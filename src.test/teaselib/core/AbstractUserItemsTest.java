@@ -1,10 +1,6 @@
 package teaselib.core;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 import java.io.File;
 import java.io.IOException;
@@ -32,7 +28,7 @@ public class AbstractUserItemsTest {
 
         UserItems items = new AbstractUserItems(script.teaseLib) {
             @Override
-            protected Item[] createDefaultItems(String domain, QualifiedItem<?> item) {
+            protected Item[] createDefaultItems(String domain, QualifiedItem item) {
                 throw new UnsupportedOperationException();
             }
         };
@@ -83,12 +79,12 @@ public class AbstractUserItemsTest {
                 super(teaseLib);
             }
 
-            public Item[] createItems(String domain, QualifiedItem<?> item) {
+            public Item[] createItems(String domain, QualifiedItem item) {
                 return createDefaultItems(domain, item);
             }
 
             @Override
-            public Item[] getDefaultItem(String domain, QualifiedItem<?> item) {
+            public Item[] getDefaultItem(String domain, QualifiedItem item) {
                 return new Item[] { Item.NotAvailable };
             }
 

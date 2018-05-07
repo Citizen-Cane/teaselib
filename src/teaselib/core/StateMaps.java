@@ -68,7 +68,7 @@ public class StateMaps {
         return state(domain, QualifiedItem.of(item));
     }
 
-    private State state(String domain, QualifiedItem<?> item) {
+    private State state(String domain, QualifiedItem item) {
         if (Persist.isPersistedString(item.toString())) {
             State state = Persist.from(item.toString(), clazz -> teaseLib);
             item = QualifiedItem.of(((StateImpl) state).item);
@@ -77,15 +77,15 @@ public class StateMaps {
                 stateMap.put(item.toString().toLowerCase(), state);
             }
             return state;
-        } else if (item.value instanceof StateImpl) {
-            StateImpl stateImpl = (StateImpl) item.value;
+        } else if (item.value() instanceof StateImpl) {
+            StateImpl stateImpl = (StateImpl) item.value();
             StateMap stateMap = stateMap(domain, stateImpl.item.toString().toLowerCase());
             State existing = stateMap.get(item.toString().toLowerCase());
             if (existing == null) {
                 State state = new StateImpl(this, domain, stateImpl.item.toString().toLowerCase());
                 stateMap.put(stateImpl.item.toString().toLowerCase(), state);
                 return state;
-            } else if (!existing.equals(item.value)) {
+            } else if (!existing.equals(item.value())) {
                 throw new IllegalArgumentException(
                         "States cannot be replaced: " + stateImpl.toString() + " -> " + existing.toString());
             } else {
@@ -95,7 +95,7 @@ public class StateMaps {
             StateMap stateMap = stateMap(domain, item);
             State state = stateMap.get(item.toString().toLowerCase());
             if (state == null) {
-                state = new StateImpl(this, domain, item.value);
+                state = new StateImpl(this, domain, item.value());
                 stateMap.put(item.toString().toLowerCase(), state);
             }
             return state;
@@ -104,7 +104,7 @@ public class StateMaps {
 
     public static boolean hasAllAttributes(Set<Object> mine, Object[] others) {
         attributeLoop: for (Object value : others) {
-            QualifiedItem<?> item = QualifiedItem.of(stripState(value));
+            QualifiedItem item = QualifiedItem.of(stripState(value));
             for (Object attribute : mine) {
                 if (item.equals(stripState(attribute))) {
                     continue attributeLoop;
@@ -129,7 +129,7 @@ public class StateMaps {
         return state.item;
     }
 
-    private StateMap stateMap(String domain, QualifiedItem<?> item) {
+    private StateMap stateMap(String domain, QualifiedItem item) {
         return stateMap(domain, item.namespace().toLowerCase());
     }
 

@@ -1,6 +1,6 @@
 package teaselib.core.util;
 
-public class QualifiedEnum extends QualifiedItem<Enum<?>> {
+public class QualifiedEnum extends AbstractQualifiedItem<Enum<?>> {
 
     public QualifiedEnum(Enum<?> value) {
         super(value);

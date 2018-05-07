@@ -1,8 +1,6 @@
 package teaselib.util;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import org.junit.Test;
 
@@ -24,7 +22,7 @@ public class ItemImplTest {
     @Test
     public void testAvailable() throws Exception {
         TeaseScript script = TestScript.getOne();
-        QualifiedItem<?> fooBar = QualifiedItem.of("Foo.Bar");
+        QualifiedItem fooBar = QualifiedItem.of("Foo.Bar");
         String storageName = fooBar.name();
         TeaseLib.PersistentBoolean value = script.teaseLib.new PersistentBoolean(TeaseLib.DefaultDomain,
                 fooBar.namespace(), storageName);

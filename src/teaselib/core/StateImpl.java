@@ -139,7 +139,7 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
         addPeerThatHasBeenPersistedWithMe(peer, QualifiedItem.of(peer));
     }
 
-    private void addPeerThatHasBeenPersistedWithMe(Object peer, QualifiedItem<?> qualifiedPeer) {
+    private void addPeerThatHasBeenPersistedWithMe(Object peer, QualifiedItem qualifiedPeer) {
         if (isCached(qualifiedPeer)) {
             if (state(peer).applied()) {
                 peers.add(peer);
@@ -149,7 +149,7 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
         }
     }
 
-    private boolean isCached(QualifiedItem<?> qualifiedPeer) {
+    private boolean isCached(QualifiedItem qualifiedPeer) {
         return this.stateMaps.stateMap(domain, qualifiedPeer.namespace().toLowerCase())
                 .contains(qualifiedPeer.name().toLowerCase());
     }

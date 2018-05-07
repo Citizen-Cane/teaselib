@@ -117,12 +117,12 @@ public abstract class AbstractUserItems implements UserItems {
                 itemAttributes.toArray());
     }
 
-    protected Item[] getDefaultItem(String domain, QualifiedItem<?> item) {
+    protected Item[] getDefaultItem(String domain, QualifiedItem item) {
         return new Item[] { new ItemImpl(teaseLib, item, domain, item.name(), ItemImpl.createDisplayName(item)) };
     }
 
     @Override
-    public List<Item> get(String domain, QualifiedItem<?> item) {
+    public List<Item> get(String domain, QualifiedItem item) {
         ItemMap itemMap = domainMap.get(domain);
         if (itemMap == null) {
             itemMap = new ItemMap();
@@ -163,20 +163,20 @@ public abstract class AbstractUserItems implements UserItems {
         return userItems;
     }
 
-    protected abstract Item[] createDefaultItems(String domain, QualifiedItem<?> item);
+    protected abstract Item[] createDefaultItems(String domain, QualifiedItem item);
 
-    protected Item item(QualifiedItem<?> item, String name, String displayName, Enum<?>... attributes) {
+    protected Item item(QualifiedItem item, String name, String displayName, Enum<?>... attributes) {
         return item(TeaseLib.DefaultDomain, name, displayName, item, defaults(item), attributes);
     }
 
-    protected Item item(QualifiedItem<?> item, String name, String displayName, Enum<?>[] defaultPeers,
+    protected Item item(QualifiedItem item, String name, String displayName, Enum<?>[] defaultPeers,
             Enum<?>... attributes) {
         return item(TeaseLib.DefaultDomain, name, displayName, item, defaultPeers, attributes);
     }
 
-    protected Item item(String domain, String name, String displayName, QualifiedItem<?> item, Enum<?>[] defaultPeers,
+    protected Item item(String domain, String name, String displayName, QualifiedItem item, Enum<?>[] defaultPeers,
             Enum<?>... attributes) {
-        return new ItemImpl(teaseLib, item.value, domain, name, displayName, defaultPeers, attributes);
+        return new ItemImpl(teaseLib, item.value(), domain, name, displayName, defaultPeers, attributes);
     }
 
     public Enum<?>[] array(Enum<?>[] defaults, Enum<?>... additional) {
@@ -187,7 +187,7 @@ public abstract class AbstractUserItems implements UserItems {
     }
 
     @Override
-    public Enum<?>[] defaults(QualifiedItem<?> item) {
+    public Enum<?>[] defaults(QualifiedItem item) {
         if (item.namespace().equalsIgnoreCase(Toys.class.getName())) {
             return getToyDefaults(item);
         } else if (item.namespace().equalsIgnoreCase(Clothes.class.getName())) {
@@ -201,15 +201,15 @@ public abstract class AbstractUserItems implements UserItems {
         }
     }
 
-    private static Enum<?>[] getClothesDefaults(QualifiedItem<?> item) {
+    private static Enum<?>[] getClothesDefaults(QualifiedItem item) {
         return new Body[] {};
     }
 
-    private static Enum<?>[] getHouseholdDefaults(QualifiedItem<?> item) {
+    private static Enum<?>[] getHouseholdDefaults(QualifiedItem item) {
         return new Body[] {};
     }
 
-    private static Enum<?>[] getGadgetsDefaults(QualifiedItem<?> item) {
+    private static Enum<?>[] getGadgetsDefaults(QualifiedItem item) {
         return new Body[] {};
     }
 
@@ -224,7 +224,7 @@ public abstract class AbstractUserItems implements UserItems {
      *            The item to get defaults for.
      * @return The defaults for the item. An item may not have defaults, in this case the returned array is empty.
      */
-    private static Enum<?>[] getToyDefaults(QualifiedItem<?> item) {
+    private static Enum<?>[] getToyDefaults(QualifiedItem item) {
         if (item.equals(Toys.Buttplug)) {
             return new Body[] { Body.InButt };
         } else if (item.equals(Toys.Ankle_Restraints)) {

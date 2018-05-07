@@ -1,32 +1,18 @@
 package teaselib.core.util;
 
-public abstract class QualifiedItem<T> {
-    public final T value;
+/**
+ * @author Citizen-Cane
+ *
+ */
+public abstract class QualifiedItem {
 
-    public QualifiedItem(T value) {
-        if (value == null) {
-            throw new IllegalArgumentException("null");
-        }
-        this.value = value;
-    }
-
-    public boolean is(Object obj) {
-        return equals(obj);
-    }
-
-    public abstract boolean equals(Object obj);
-
-    @Override
-    public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        result = prime * result + toString().toLowerCase().hashCode();
-        return result;
-    }
+    public abstract boolean is(Object obj);
 
     public abstract String namespace();
 
     public abstract String name();
+
+    public abstract Object value();
 
     public static String namespaceOf(Object item) {
         if (item instanceof Enum<?>) {
@@ -40,8 +26,8 @@ public abstract class QualifiedItem<T> {
             } else {
                 return string;
             }
-        } else if (item instanceof QualifiedItem<?>) {
-            return ((QualifiedItem<?>) item).namespace();
+        } else if (item instanceof QualifiedItem) {
+            return ((QualifiedItem) item).namespace();
         } else {
             return ReflectionUtils.classParentName(item.toString());
         }
@@ -58,17 +44,17 @@ public abstract class QualifiedItem<T> {
             } else {
                 return string;
             }
-        } else if (item instanceof QualifiedItem<?>) {
-            return ((QualifiedItem<?>) item).name();
+        } else if (item instanceof AbstractQualifiedItem<?>) {
+            return ((QualifiedItem) item).name();
         } else {
             name = item.toString();
         }
         return name;
     }
 
-    public static QualifiedItem<?> of(Object value) {
-        if (value instanceof QualifiedItem) {
-            return (QualifiedItem<?>) value;
+    public static QualifiedItem of(Object value) {
+        if (value instanceof AbstractQualifiedItem) {
+            return (QualifiedItem) value;
         } else if (value instanceof Enum<?>) {
             return new QualifiedEnum((Enum<?>) value);
         } else {

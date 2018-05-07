@@ -64,7 +64,7 @@ public class Configuration {
         return has(QualifiedItem.of(property));
     }
 
-    public boolean has(QualifiedItem<?> property) {
+    public boolean has(QualifiedItem property) {
         String item = property.toString();
         return sessionProperties.containsKey(item) || System.getProperties().containsKey(item)
                 || persistentProperties.containsKey(item);
@@ -78,7 +78,7 @@ public class Configuration {
         return get(QualifiedItem.of(property));
     }
 
-    public String get(QualifiedItem<?> property) {
+    public String get(QualifiedItem property) {
         String item = property.toString();
 
         String value = sessionProperties.getProperty(item);
@@ -111,12 +111,12 @@ public class Configuration {
         return set(QualifiedItem.of(property), ReflectionUtils.qualifiedName(value));
     }
 
-    public Configuration set(QualifiedItem<?> property, String value) {
+    public Configuration set(QualifiedItem property, String value) {
         sessionProperties.setProperty(property.toString(), value);
         return this;
     }
 
-    public Configuration setSystemProperty(QualifiedItem<?> property, String value) {
+    public Configuration setSystemProperty(QualifiedItem property, String value) {
         System.getProperties().setProperty(property.toString(), value);
         return this;
     }

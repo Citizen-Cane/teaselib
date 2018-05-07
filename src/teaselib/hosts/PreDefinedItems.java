@@ -1,7 +1,5 @@
 package teaselib.hosts;
 
-import java.io.IOException;
-
 import teaselib.Body;
 import teaselib.Features;
 import teaselib.Household;
@@ -25,7 +23,7 @@ import teaselib.util.Item;
  *         available by a script.
  */
 public class PreDefinedItems extends AbstractUserItems {
-    public PreDefinedItems(TeaseLib teaseLib) throws IOException {
+    public PreDefinedItems(TeaseLib teaseLib) {
         super(teaseLib);
     }
 
@@ -33,7 +31,7 @@ public class PreDefinedItems extends AbstractUserItems {
     // TODO Create TeaseLib version with extended inventory and item guids for custom item creation
 
     @Override
-    protected Item[] createDefaultItems(String domain, QualifiedItem<?> item) {
+    protected Item[] createDefaultItems(String domain, QualifiedItem item) {
         if (item.is(Toys.Buttplug)) {
             Item standardButtplug = item(item, "buttplug", "A buttplug", Features.Anal, Toys.Anal.Plug);
             Item vibratingButtplug = item(item, "vibrating_buttplug", "A vibrating buttplug", Features.Vibrating,
@@ -197,7 +195,7 @@ public class PreDefinedItems extends AbstractUserItems {
         }
     }
 
-    protected Enum<?>[] defaults(QualifiedItem<?> item, Enum<?>... more) {
+    protected Enum<?>[] defaults(QualifiedItem item, Enum<?>... more) {
         return array(defaults(item), more);
     }
 }

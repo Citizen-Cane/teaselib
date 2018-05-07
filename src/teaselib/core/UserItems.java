@@ -6,7 +6,7 @@ import teaselib.core.util.QualifiedItem;
 import teaselib.util.Item;
 
 public interface UserItems {
-    List<Item> get(String domain, QualifiedItem<?> item);
+    List<Item> get(String domain, QualifiedItem item);
 
-    Enum<?>[] defaults(QualifiedItem<?> item);
+    Enum<?>[] defaults(QualifiedItem item);
 }

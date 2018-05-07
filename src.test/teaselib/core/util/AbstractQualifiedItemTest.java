@@ -8,7 +8,7 @@ import org.junit.Test;
 
 import teaselib.Toys;
 
-public class QualifiedItemTest {
+public class AbstractQualifiedItemTest {
 
     @Test
     public void testEquals() {

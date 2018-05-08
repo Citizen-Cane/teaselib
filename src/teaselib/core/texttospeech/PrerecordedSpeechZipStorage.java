@@ -8,6 +8,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.NoSuchFileException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.zip.CRC32;
@@ -50,7 +51,7 @@ public class PrerecordedSpeechZipStorage implements PrerecordedSpeechStorage {
     private ZipFile getCurrent() throws IOException {
         try {
             return new ZipFile(zipFileCurrent);
-        } catch (FileNotFoundException e) {
+        } catch (FileNotFoundException | NoSuchFileException e) {
             try (FileOutputStream fos = new FileOutputStream(zipFileCurrent);
                     ZipOutputStream zos = new ZipOutputStream(fos);) {
                 zos.flush();

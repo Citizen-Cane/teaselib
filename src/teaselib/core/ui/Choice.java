@@ -17,4 +17,9 @@ public class Choice {
     public Choice(String text, String display) {
         this(Gesture.None, text, display);
     }
+
+    @Override
+    public String toString() {
+        return "Gesture=" + gesture + " text='" + text + "' display='" + display + "'";
+    }
 }

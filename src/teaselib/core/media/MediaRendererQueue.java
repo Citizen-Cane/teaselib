@@ -1,5 +1,6 @@
 package teaselib.core.media;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -16,6 +17,7 @@ import org.slf4j.LoggerFactory;
 import teaselib.Replay;
 import teaselib.Replay.Position;
 import teaselib.core.ScriptInterruptedException;
+import teaselib.core.TeaseLib;
 import teaselib.core.concurrency.NamedExecutorService;
 import teaselib.core.util.ExceptionUtil;
 
@@ -61,7 +63,7 @@ public class MediaRendererQueue {
         }
     }
 
-    public void replay(Collection<MediaRenderer> renderers, Replay.Position replayPosition) {
+    public void replay(List<MediaRenderer> renderers, Replay.Position replayPosition, TeaseLib teaseLib) {
         synchronized (activeRenderers) {
             completeAll();
             endAll();
@@ -72,7 +74,7 @@ public class MediaRendererQueue {
 
             for (MediaRenderer r : renderers) {
                 if (r instanceof ReplayableMediaRenderer || replayPosition == Replay.Position.FromStart) {
-                    replay(((ReplayableMediaRenderer) r), replayPosition);
+                    replay(((ReplayableMediaRenderer) r), replayPosition, teaseLib);
                 }
             }
         }
@@ -260,10 +262,16 @@ public class MediaRendererQueue {
         }
     }
 
-    public void replay(ReplayableMediaRenderer renderer, Position position) {
+    public void replay(ReplayableMediaRenderer renderer, Position position, TeaseLib teaseLib) {
         // TODO Avoid replaying if still rendering
         // Handle threaded and non-threaded
-        submit(() -> renderer.replay(position));
+        // TODO Remove teaseLib reference by instanciating threaded renderer elsewhere
+        submit(new MediaRendererThread(teaseLib) {
+            @Override
+            protected void renderMedia() throws InterruptedException, IOException {
+                renderer.replay(position);
+            }
+        });
     }
 
     public Future<?> submit(MediaRenderer mediaRenderer) {

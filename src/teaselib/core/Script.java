@@ -85,7 +85,7 @@ public abstract class Script {
                 // Restore the prompt that caused running the SR-rejected script
                 // as soon as possible
                 endAll();
-                renderQueue.replay(renderers, replayPosition);
+                renderQueue.replay(renderers, replayPosition, teaseLib);
                 playedRenderers = renderers;
             }
         }
@@ -231,18 +231,12 @@ public abstract class Script {
             Optional<TextToSpeechPlayer> textToSpeech = useTTS
                     ? Optional.ofNullable(teaseLib.globals.get(TextToSpeechPlayer.class))
                     : Optional.empty();
-
             RenderedMessage.Decorator[] decorators = decorators(textToSpeech);
             List<RenderedMessage> messages = new ArrayList<>(prependedMessages.size() + 1);
             prependedMessages.stream().forEach(prepended -> messages.add(RenderedMessage.of(prepended, decorators)));
             prependedMessages.clear();
             messages.add(RenderedMessage.of(message, decorators));
-
-            // TODO Resolve: One instance per session should be enough, but would block in script function
-            // - blocking would only occur between RenderMessage threads
-            // - blocking would mean that two script functions render message at the same time
-            MediaRendererQueue messageRenderQueue = new MediaRendererQueue(renderQueue);
-            renderMessage = new RenderMessage(teaseLib, messageRenderQueue, resources, textToSpeech, actor, messages);
+            renderMessage = new RenderMessage(teaseLib, renderQueue, resources, textToSpeech, actor, messages);
             renderMessage(renderMessage);
         } finally {
             displayImage = Message.ActorImage;

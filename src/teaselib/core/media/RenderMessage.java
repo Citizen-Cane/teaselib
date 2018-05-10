@@ -55,7 +55,9 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
 
     private final Prefetcher<byte[]> imageFetcher = new Prefetcher<>();
 
+    private final MediaRendererQueue parentRenderQueue;
     private final MediaRendererQueue renderQueue;
+
     private final ResourceLoader resources;
     private final TextToSpeechPlayer textToSpeechPlayer;
     private final Actor actor;
@@ -65,20 +67,19 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
     private int currentMessage;
     private AbstractMessage lastSection;
 
-    private RenderSound backgroundSoundRenderer = null;
-
     private String displayImage = null;
     private MediaRenderer.Threaded currentRenderer = null;
+    private RenderSound backgroundSoundRenderer = null;
 
     public RenderMessage(TeaseLib teaseLib, MediaRendererQueue renderQueue, ResourceLoader resources,
             Optional<TextToSpeechPlayer> ttsPlayer, Actor actor, List<RenderedMessage> messages) {
         super(teaseLib);
-        this.renderQueue = renderQueue;
-
         if (messages == null) {
             throw new NullPointerException();
         }
 
+        this.parentRenderQueue = renderQueue;
+        this.renderQueue = new MediaRendererQueue(renderQueue);
         this.actor = actor;
         this.resources = resources;
         this.textToSpeechPlayer = ttsPlayer.isPresent() ? ttsPlayer.get() : null;
@@ -102,7 +103,7 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
             completeAll();
             completedMandatory = new CountDownLatch(1);
             completedAll = new CountDownLatch(1);
-            renderQueue.replay(this, Position.FromCurrentPosition);
+            parentRenderQueue.replay(this, Position.FromCurrentPosition, teaseLib);
         }
     }
 
@@ -200,6 +201,7 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
             RenderedMessage message;
             synchronized (messages) {
                 if (currentMessage >= messages.size()) {
+                    finalizeRendering();
                     break;
                 }
                 message = messages.get(currentMessage);
@@ -215,8 +217,6 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
                 }
             }
         }
-
-        finalizeRendering();
     }
 
     private static boolean lastSectionHasDelay(RenderedMessage message) {

@@ -79,7 +79,6 @@ public abstract class MediaRendererThread implements MediaRenderer.Threaded {
             throw new IllegalArgumentException(replayPosition.toString());
         }
         logger.info("Replay {}", replayPosition);
-        run();
     }
 
     protected final void startCompleted() {

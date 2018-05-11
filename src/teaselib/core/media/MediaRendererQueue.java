@@ -1,8 +1,6 @@
 package teaselib.core.media;
 
-import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -15,9 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import teaselib.Replay;
-import teaselib.Replay.Position;
 import teaselib.core.ScriptInterruptedException;
-import teaselib.core.TeaseLib;
 import teaselib.core.concurrency.NamedExecutorService;
 import teaselib.core.util.ExceptionUtil;
 
@@ -47,23 +43,17 @@ public class MediaRendererQueue {
      *            The renderers to start.
      * @param teaseLib
      */
-    public void start(Collection<MediaRenderer> newSet) {
+    public void start(List<MediaRenderer> newSet) {
         synchronized (activeRenderers) {
             if (!activeRenderers.isEmpty()) {
                 throw new IllegalStateException();
             }
 
-            for (MediaRenderer r : newSet) {
-                if (r instanceof MediaRenderer.Threaded) {
-                    submit((MediaRenderer.Threaded) r);
-                } else {
-                    r.run();
-                }
-            }
+            play(newSet);
         }
     }
 
-    public void replay(List<MediaRenderer> renderers, Replay.Position replayPosition, TeaseLib teaseLib) {
+    public void replay(List<MediaRenderer> renderers, Replay.Position replayPosition) {
         synchronized (activeRenderers) {
             completeAll();
             endAll();
@@ -72,10 +62,24 @@ public class MediaRendererQueue {
                 throw new IllegalStateException();
             }
 
+            List<MediaRenderer> replayable = new ArrayList<>();
             for (MediaRenderer r : renderers) {
                 if (r instanceof ReplayableMediaRenderer || replayPosition == Replay.Position.FromStart) {
-                    replay(((ReplayableMediaRenderer) r), replayPosition, teaseLib);
+                    ((ReplayableMediaRenderer) r).replay(replayPosition);
+                    replayable.add(r);
                 }
+            }
+
+            play(replayable);
+        }
+    }
+
+    private void play(List<MediaRenderer> mediaRenderers) {
+        for (MediaRenderer r : mediaRenderers) {
+            if (r instanceof MediaRenderer.Threaded) {
+                submit((MediaRenderer.Threaded) r);
+            } else {
+                r.run();
             }
         }
     }
@@ -212,7 +216,7 @@ public class MediaRendererQueue {
         synchronized (activeRenderers) {
             // TODO Must be managed by named executor service
             // setThreadName(nameForActiveThread());
-            Future<?> future = submit((Runnable) mediaRenderer);
+            Future<?> future = executor.submit(mediaRenderer);
             activeRenderers.put(mediaRenderer, future);
             return future;
         }
@@ -236,20 +240,7 @@ public class MediaRendererQueue {
         join(interrupt(mediaRenderer));
     }
 
-    public void join(MediaRenderer.Threaded mediaRenderer) {
-        Future<?> future;
-        synchronized (activeRenderers) {
-            future = activeRenderers.remove(mediaRenderer);
-        }
-
-        if (future == null) {
-            throw new IllegalArgumentException(mediaRenderer.toString());
-        } else {
-            join(future);
-        }
-    }
-
-    public void join(Future<?> future) {
+    private void join(Future<?> future) {
         try {
             if (!future.isCancelled() || !future.isDone()) {
                 future.get();
@@ -260,25 +251,5 @@ public class MediaRendererQueue {
         } catch (ExecutionException e) {
             throw ExceptionUtil.asRuntimeException(ExceptionUtil.reduce(e));
         }
-    }
-
-    public void replay(ReplayableMediaRenderer renderer, Position position, TeaseLib teaseLib) {
-        // TODO Avoid replaying if still rendering
-        // Handle threaded and non-threaded
-        // TODO Remove teaseLib reference by instanciating threaded renderer elsewhere
-        submit(new MediaRendererThread(teaseLib) {
-            @Override
-            protected void renderMedia() throws InterruptedException, IOException {
-                renderer.replay(position);
-            }
-        });
-    }
-
-    public Future<?> submit(MediaRenderer mediaRenderer) {
-        throw new UnsupportedOperationException("Renderer must be threaded: " + mediaRenderer);
-    }
-
-    public Future<?> submit(Runnable runnable) {
-        return executor.submit(runnable);
     }
 }

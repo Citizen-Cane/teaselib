@@ -7,7 +7,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.CountDownLatch;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -55,7 +54,6 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
 
     private final Prefetcher<byte[]> imageFetcher = new Prefetcher<>();
 
-    private final MediaRendererQueue parentRenderQueue;
     private final MediaRendererQueue renderQueue;
 
     private final ResourceLoader resources;
@@ -78,7 +76,6 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
             throw new NullPointerException();
         }
 
-        this.parentRenderQueue = renderQueue;
         this.renderQueue = new MediaRendererQueue(renderQueue);
         this.actor = actor;
         this.resources = resources;
@@ -97,13 +94,6 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
             prefetchImages(message);
             messages.add(message);
             lastSection = RenderedMessage.getLastSection(message);
-        }
-
-        if (hasCompletedMandatory()) {
-            completeAll();
-            completedMandatory = new CountDownLatch(1);
-            completedAll = new CountDownLatch(1);
-            parentRenderQueue.replay(this, Position.FromCurrentPosition, teaseLib);
         }
     }
 

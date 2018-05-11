@@ -20,6 +20,7 @@ import teaselib.Gadgets;
 import teaselib.Message;
 import teaselib.Mood;
 import teaselib.Replay;
+import teaselib.Replay.Position;
 import teaselib.ScriptFunction;
 import teaselib.core.media.MediaRenderer;
 import teaselib.core.media.MediaRenderer.Threaded;
@@ -85,7 +86,7 @@ public abstract class Script {
                 // Restore the prompt that caused running the SR-rejected script
                 // as soon as possible
                 endAll();
-                renderQueue.replay(renderers, replayPosition, teaseLib);
+                renderQueue.replay(renderers, replayPosition);
                 playedRenderers = renderers;
             }
         }
@@ -249,6 +250,12 @@ public abstract class Script {
             renderMessage(message, true);
         } else {
             renderMessage.append(RenderedMessage.of(message, decorators(renderMessage.getTextToSpeech())));
+
+            if (renderMessage.hasCompletedMandatory()) {
+                renderMessage.completeAll();
+                renderMessage.replay(Position.FromMandatory);
+                renderQueue.submit(renderMessage);
+            }
         }
     }
 

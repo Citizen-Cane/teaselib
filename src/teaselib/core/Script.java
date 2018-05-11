@@ -245,10 +245,11 @@ public abstract class Script {
     }
 
     protected void appendMessage(Message message) {
-        if (!prependedMessages.isEmpty()) {
-            throw new IllegalStateException("Open prepends: " + prependedMessages);
+        if (renderMessage == null) {
+            renderMessage(message, true);
+        } else {
+            renderMessage.append(RenderedMessage.of(message, decorators(renderMessage.getTextToSpeech())));
         }
-        renderMessage.append(RenderedMessage.of(message, decorators(renderMessage.getTextToSpeech())));
     }
 
     Decorator[] decorators(Optional<TextToSpeechPlayer> textToSpeech) {

@@ -7,6 +7,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -91,10 +92,24 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
 
     public void append(RenderedMessage message) {
         synchronized (messages) {
-            prefetchImages(message);
-            messages.add(message);
-            lastSection = RenderedMessage.getLastSection(message);
+            prepareReplayFromCurrent(message);
         }
+    }
+
+    public void replace(RenderedMessage message) {
+        synchronized (messages) {
+            messages.remove(messages.size() - 1);
+            currentMessage--;
+            accumulatedText = new MessageTextAccumulator();
+            messages.forEach(m -> m.forEach(accumulatedText::add));
+            prepareReplayFromCurrent(message);
+        }
+    }
+
+    private void prepareReplayFromCurrent(RenderedMessage message) {
+        messages.add(message);
+        lastSection = RenderedMessage.getLastSection(message);
+        prefetchImages(message);
     }
 
     private RenderedMessage getLastMessage() {
@@ -154,9 +169,14 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
             Replayable replay;
             synchronized (messages) {
                 if (currentMessage < messages.size()) {
+                    completedMandatory = new CountDownLatch(1);
+                    completedAll = new CountDownLatch(1);
                     replay = this::renderMessages;
                 } else {
-                    replay = () -> renderMessage(getEnd());
+                    replay = () -> {
+                        renderMessage(getEnd());
+                        finalizeRendering();
+                    };
                 }
             }
             replay.run();

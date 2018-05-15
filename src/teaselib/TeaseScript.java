@@ -177,6 +177,18 @@ public abstract class TeaseScript extends TeaseScriptMath {
         appendMessage(message);
     }
 
+    public final void replace(String... message) {
+        replace(new Message(actor, message));
+    }
+
+    public final void replace(List<String> message) {
+        replace(new Message(actor, message));
+    }
+
+    public final void replace(Message message) {
+        replaceMessage(message);
+    }
+
     /**
      * Show instructional text, this is not spoken, just displayed.
      * 

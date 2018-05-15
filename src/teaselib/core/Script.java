@@ -249,13 +249,34 @@ public abstract class Script {
         if (renderMessage == null) {
             renderMessage(message, true);
         } else {
-            renderMessage.append(RenderedMessage.of(message, decorators(renderMessage.getTextToSpeech())));
+            completeMandatory();
+            renderMessage.append(rendered(message));
+            replay();
+        }
+    }
 
-            if (renderMessage.hasCompletedMandatory()) {
-                renderMessage.completeAll();
-                renderMessage.replay(Position.FromMandatory);
-                renderQueue.submit(renderMessage);
-            }
+    protected void replaceMessage(Message message) {
+        if (renderMessage == null) {
+            renderMessage(message, true);
+        } else {
+            completeMandatory();
+            renderMessage.replace(rendered(message));
+            replay();
+        }
+    }
+
+    private RenderedMessage rendered(Message message) {
+        Decorator[] decorators = decorators(renderMessage.getTextToSpeech());
+        return RenderedMessage.of(message, decorators);
+    }
+
+    private void replay() {
+        if (renderMessage.hasCompletedMandatory()) {
+            renderMessage.completeAll();
+            renderMessage.replay(Position.FromCurrentPosition);
+            renderQueue.submit(renderMessage);
+        } else {
+            throw new IllegalStateException("Can only append or replace if mandatory completed");
         }
     }
 

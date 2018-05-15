@@ -121,7 +121,7 @@ public class TextToSpeechRecorder {
 
     }
 
-    List<Pass> passes = new ArrayList<>();
+    private final List<Pass> passes = new ArrayList<>();
     Pass pass;
     Pass sum;
 

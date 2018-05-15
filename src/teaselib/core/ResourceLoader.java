@@ -25,6 +25,8 @@ public class ResourceLoader {
 
     public static final String ResourcesInProjectFolder = "/";
 
+    public static final String separator = "/";
+
     private final File basePath;
     private final String resourceRoot;
 

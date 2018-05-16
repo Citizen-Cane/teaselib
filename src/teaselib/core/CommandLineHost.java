@@ -11,6 +11,7 @@ import org.bytedeco.javacpp.opencv_core.Point;
 import teaselib.core.VideoRenderer.Type;
 import teaselib.core.javacv.VideoRendererJavaCV;
 import teaselib.core.ui.InputMethod;
+import teaselib.core.util.FileUtilities;
 
 public class CommandLineHost implements Host {
     static final Point javacvDebugWindow = new Point(80, 80);
@@ -84,9 +85,9 @@ public class CommandLineHost implements Host {
     @Override
     public File getLocation(Location folder) {
         if (folder == Location.Host)
-            return new File("").getAbsoluteFile();
+            return FileUtilities.currentDir();
         else if (folder == Location.TeaseLib)
-            return new File(getLocation(Location.Host), "lib" + File.separator + "TeaseLib" + File.separator);
+            return ResourceLoader.getProjectPath(getClass()).getParentFile().getAbsoluteFile();
         else if (folder == Location.User)
             return new File(getLocation(Location.Host).getAbsoluteFile(), "teaselib");
         else if (folder == Location.Log)

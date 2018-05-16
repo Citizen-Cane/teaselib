@@ -51,4 +51,8 @@ public class FileUtilities {
     public static void copyFile(File source, File destination) throws IOException {
         Files.copy(source.toPath(), destination.toPath(), StandardCopyOption.REPLACE_EXISTING);
     }
+
+    public static File currentDir() {
+        return new File("").getAbsoluteFile();
+    }
 }

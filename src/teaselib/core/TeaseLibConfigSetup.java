@@ -17,10 +17,12 @@ public final class TeaseLibConfigSetup implements Configuration.Setup {
 
     private static final String ITEM_STORE_FILENAME = "items.xml";
 
+    private final File teaseLibPath;
     private final File teaseLibDefaultsPath;
     private final File userPath;
 
     public TeaseLibConfigSetup(Host host) {
+        teaseLibPath = host.getLocation(Location.TeaseLib);
         teaseLibDefaultsPath = new File(host.getLocation(Location.TeaseLib), DEFAULTS);
         userPath = host.getLocation(Location.User);
     }
@@ -56,6 +58,6 @@ public final class TeaseLibConfigSetup implements Configuration.Setup {
         config.addUserFile(TextToSpeechPlayer.Settings.Voices, new File(teaseLibDefaultsPath, VOICES_PROPERTIES),
                 new File(userPath, VOICES_PROPERTIES));
         config.set(TextToSpeechPlayer.Settings.Pronunciation,
-                new File(teaseLibDefaultsPath, PRONUNCIATION_DIRECTORY).getAbsolutePath());
+                new File(teaseLibPath, PRONUNCIATION_DIRECTORY).getAbsolutePath());
     }
 }

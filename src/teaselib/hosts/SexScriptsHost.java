@@ -50,6 +50,7 @@ import teaselib.core.ui.Choices;
 import teaselib.core.ui.HostInputMethod;
 import teaselib.core.ui.InputMethod;
 import teaselib.core.util.ExceptionUtil;
+import teaselib.core.util.FileUtilities;
 import teaselib.util.Interval;
 
 /**
@@ -637,9 +638,9 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
     @Override
     public File getLocation(Location folder) {
         if (folder == Location.Host)
-            return new File("").getAbsoluteFile();
+            return FileUtilities.currentDir();
         else if (folder == Location.TeaseLib)
-            return new File(getLocation(Location.Host), "lib" + File.separator + "TeaseLib" + File.separator);
+            return ResourceLoader.getProjectPath(getClass()).getParentFile().getAbsoluteFile();
         else if (folder == Location.User)
             return new File(getLocation(Location.Host).getAbsoluteFile(), "teaselib");
         else if (folder == Location.Log)

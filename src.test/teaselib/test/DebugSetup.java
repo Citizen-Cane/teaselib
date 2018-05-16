@@ -60,8 +60,7 @@ public final class DebugSetup implements Setup {
     private void applyDictionanries(Configuration config) {
         if (enableDictionaries) {
             config.set(TextToSpeechPlayer.Settings.Pronunciation,
-                    new File(TeaseLibConfigSetup.DEFAULTS, TeaseLibConfigSetup.PRONUNCIATION_DIRECTORY)
-                            .getAbsolutePath());
+                    new File(TeaseLibConfigSetup.PRONUNCIATION_DIRECTORY).getAbsolutePath());
         }
     }
 

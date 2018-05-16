@@ -101,6 +101,7 @@ public class ResourceLoader {
         }
     }
 
+    // TODO Move to reflection utils
     public static File getProjectPath(Class<?> mainScript) {
         String classFile = getClassFilePath(mainScript);
         URL url = mainScript.getClassLoader().getResource(classLoaderCompatibleResourcePath(classFile));
@@ -146,6 +147,8 @@ public class ResourceLoader {
         return classLoaderCompatibleResourcePath(path).replace("%20", " ");
     }
 
+    @Deprecated
+    // TODO No need to call this, remove
     public void addAssets(Class<?> scriptClass) {
         // TODO untested, must be local path, not relative
         addAssets(ResourceLoader.getProjectPath(scriptClass).getAbsolutePath());

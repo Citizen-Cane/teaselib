@@ -4,6 +4,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -206,10 +207,10 @@ public class DebugHost implements Host, HostInputMethod.Backend {
         else if (folder == Location.TeaseLib)
             return new File(".");
         else if (folder == Location.User)
-            return getLocation(Location.Host);
+            throw new UnsupportedOperationException();
         else if (folder == Location.Log)
             return getLocation(Location.Host);
         else
-            throw new IllegalArgumentException(folder.toString());
+            throw new IllegalArgumentException(Objects.toString(folder));
     }
 }

@@ -3,6 +3,7 @@ package teaselib.core;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -93,6 +94,6 @@ public class CommandLineHost implements Host {
         else if (folder == Location.Log)
             return getLocation(Location.Host);
         else
-            throw new IllegalArgumentException(folder.toString());
+            throw new IllegalArgumentException(Objects.toString(folder));
     }
 }

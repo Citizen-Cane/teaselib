@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -647,6 +648,6 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
         else if (folder == Location.Log)
             return getLocation(Location.Host);
         else
-            throw new IllegalArgumentException(folder.toString());
+            throw new IllegalArgumentException(Objects.toString(folder));
     }
 }

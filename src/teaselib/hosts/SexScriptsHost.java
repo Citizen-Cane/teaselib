@@ -641,6 +641,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
             return FileUtilities.currentDir();
         else if (folder == Location.TeaseLib)
             return ResourceLoader.getProjectPath(getClass()).getParentFile().getAbsoluteFile();
+        // return new File(getLocation(Location.Host), "lib" + File.separator + "TeaseLib" + File.separator);
         else if (folder == Location.User)
             return new File(getLocation(Location.Host).getAbsoluteFile(), "teaselib");
         else if (folder == Location.Log)

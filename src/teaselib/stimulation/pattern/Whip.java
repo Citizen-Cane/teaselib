@@ -15,7 +15,7 @@ import teaselib.stimulation.WaveForm;
  * @author Citizen-Cane
  *
  */
-public class Whip extends Stimulation {
+public class Whip implements Stimulation {
     private final int strokes;
     private final double period;
 
@@ -30,7 +30,7 @@ public class Whip extends Stimulation {
 
     @Override
     public WaveForm waveform(Stimulator stimulator, int intensity) {
-        double on = stimulator.minimalSignalDuration() * spreadRange(1.0, 2.0, intensity);
+        double on = stimulator.minimalSignalDuration() * Stimulation.spreadRange(1.0, 2.0, intensity);
         return new BurstSquareWave((int) strokes, on, this.period - on);
     }
 }

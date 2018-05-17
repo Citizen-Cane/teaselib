@@ -10,7 +10,7 @@ import teaselib.stimulation.WaveForm;
  * @author Citizen-Cane
  *
  */
-public class Punish extends Stimulation {
+public class Punish implements Stimulation {
     static final double MinOnDurationSeconds = 2.0;
     static final double IntensityFactor = 0.25;
 

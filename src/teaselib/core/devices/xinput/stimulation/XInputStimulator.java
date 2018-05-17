@@ -61,7 +61,7 @@ public class XInputStimulator implements Stimulator {
      * @return The stimulators share the device, because the outputs can only be set simultaneously
      */
     public static List<XInputStimulator> getStimulators(XInputStimulationDevice device) {
-        if (device.output == Output.EStim && device.wiring == Wiring.CommonGround_Accumulation) {
+        if (device.output == Output.EStim && device.wiring == Wiring.INFERENCE_CHANNEL) {
             return threeDependentStimulators(device);
         } else {
             return twoIndependentStimulators(device);
@@ -135,13 +135,18 @@ public class XInputStimulator implements Stimulator {
 
     @Override
     public ChannelDependency channelDependency() {
-        return device.wiring == Wiring.CommonGround_Accumulation ? ChannelDependency.Dependent
+        return device.wiring == Wiring.INFERENCE_CHANNEL ? ChannelDependency.Dependent
                 : ChannelDependency.Independent;
     }
 
     @Override
     public Output output() {
         return device.output;
+    }
+
+    @Override
+    public Signal signal() {
+        return device.output == Output.EStim ? Signal.Discrete : Signal.Continous;
     }
 
     @Override

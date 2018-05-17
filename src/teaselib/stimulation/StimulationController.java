@@ -125,7 +125,7 @@ public abstract class StimulationController<T> {
                             + " on " + stimulator.getName());
                 }
 
-                WaveForm waveform = stimulation.getWaveform(stimulator(type), intensity);
+                WaveForm waveform = stimulation.waveform(stimulator(type), intensity);
                 stimulator.play(waveform, actualDurationSeconds, intensity);
                 playing.put(type, stimulation);
             } else {
@@ -138,11 +138,11 @@ public abstract class StimulationController<T> {
         if (playing.containsKey(type)) {
             double startMillis = System.currentTimeMillis();
             Stimulation current = playing.get(type);
-            if (current.priority > stimulation.priority) {
-                stimulator(type).complete();
-            } else {
-                stimulator(type).stop();
-            }
+            // if (current.priority > stimulation.priority) {
+            // stimulator(type).complete();
+            // } else {
+            stimulator(type).stop();
+            // }
             playing.remove(type);
             return System.currentTimeMillis() - startMillis;
         } else {
@@ -183,7 +183,6 @@ public abstract class StimulationController<T> {
             throw new ScriptInterruptedException(e);
         }
         return delayMillis;
-
     }
 
     private double completePreviousStimulation(T type) {

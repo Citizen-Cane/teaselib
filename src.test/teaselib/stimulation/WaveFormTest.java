@@ -52,6 +52,11 @@ public class WaveFormTest {
         }
 
         @Override
+        public Signal signal() {
+            return Signal.Discrete;
+        }
+
+        @Override
         public double minimalSignalDuration() {
             return 0.05;
         }
@@ -81,7 +86,7 @@ public class WaveFormTest {
     public void testWhip() {
         TestStimulator stim = new TestStimulator();
         Whip whip = new Whip(1, 0);
-        stim.play(whip.getWaveform(stim, 0), 0, 0);
+        stim.play(whip.waveform(stim, 0), 0, 0);
         logger.info("{}", stim.waveForm);
 
         assertEquals(2, stim.waveForm.size());
@@ -91,7 +96,7 @@ public class WaveFormTest {
     public void testMultiWhip() {
         TestStimulator stim = new TestStimulator();
         Whip whip = new Whip(2, 0.2);
-        stim.play(whip.getWaveform(stim, 0), 0, 0);
+        stim.play(whip.waveform(stim, 0), 0, 0);
         logger.info("{}", stim.waveForm);
 
         assertEquals(4, stim.waveForm.size());

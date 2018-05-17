@@ -3,18 +3,24 @@ package teaselib.stimulation.ext;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
+import java.util.Set;
 
+import teaselib.core.devices.Device;
 import teaselib.stimulation.Stimulation;
 import teaselib.stimulation.StimulationDevice;
 import teaselib.stimulation.Stimulator;
 import teaselib.stimulation.WaveForm;
 import teaselib.util.math.Partition;
 
-class IntentionBasedController<T extends Enum<?>> {
+public class IntentionBasedController<T extends Enum<?>, B extends Enum<?>> {
     private final Map<T, List<Stimulator>> stims = new HashMap<>();
+
+    private final Map<T, B> regions = new HashMap<>();
 
     private int intensity = Stimulation.MinIntensity;
 
@@ -27,37 +33,49 @@ class IntentionBasedController<T extends Enum<?>> {
         list.addAll(Arrays.asList(stimulators));
     }
 
-    public void play(T intention, Stimulation stimulation) {
-        play(intention, stimulation, 0);
+    public void assign(T intention, B region) {
+        regions.put(intention, region);
     }
 
-    public void play(T intention, Stimulation stimulation, double durationSeconds) {
+    // TODO Implies there's a single stimulator for each intention -> allow for multiple (spank butt, smack balls, etc.)
+    public B is(T intention) {
+        return regions.get(intention);
+    }
+
+    public IntentionBasedController<T, B> play(T intention, Stimulation stimulation) {
+        return play(intention, stimulation, 0);
+    }
+
+    public IntentionBasedController<T, B> play(T intention, Stimulation stimulation, double durationSeconds) {
         List<Channel> channels = new ArrayList<>();
         channels.addAll(newChannels(intention, stimulation, 0));
         play(channels, durationSeconds);
+        return this;
     }
 
-    public void play(T intention, Stimulation stimulation, T intention2, Stimulation stimulation2) {
-        play(intention, stimulation, intention2, stimulation2, 0);
+    public IntentionBasedController<T, B> play(T intention, Stimulation stimulation, T intention2,
+            Stimulation stimulation2) {
+        return play(intention, stimulation, intention2, stimulation2, 0);
     }
 
-    public void play(T intention, Stimulation stimulation, T intention2, Stimulation stimulation2,
-            double durationSeconds) {
+    public IntentionBasedController<T, B> play(T intention, Stimulation stimulation, T intention2,
+            Stimulation stimulation2, double durationSeconds) {
         List<Channel> channels = new ArrayList<>();
         List<Channel> channels1 = newChannels(intention, stimulation, 0);
         channels.addAll(channels1);
         List<Channel> channels2 = newChannels(intention2, stimulation2, getMaxDuration(channels1));
         channels.addAll(channels2);
         play(channels, durationSeconds);
+        return this;
     }
 
-    public void play(T intention, Stimulation stimulation, T intention2, Stimulation stimulation2, T intention3,
-            Stimulation stimulation3) {
-        play(intention, stimulation, intention2, stimulation2, intention3, stimulation3, 0);
+    public IntentionBasedController<T, B> play(T intention, Stimulation stimulation, T intention2,
+            Stimulation stimulation2, T intention3, Stimulation stimulation3) {
+        return play(intention, stimulation, intention2, stimulation2, intention3, stimulation3, 0);
     }
 
-    public void play(T intention, Stimulation stimulation, T intention2, Stimulation stimulation2, T intention3,
-            Stimulation stimulation3, double durationSeconds) {
+    public IntentionBasedController<T, B> play(T intention, Stimulation stimulation, T intention2,
+            Stimulation stimulation2, T intention3, Stimulation stimulation3, double durationSeconds) {
         List<Channel> channels = new ArrayList<>();
         List<Channel> channels1 = newChannels(intention, stimulation, 0);
         channels.addAll(channels1);
@@ -65,6 +83,7 @@ class IntentionBasedController<T extends Enum<?>> {
         channels.addAll(channels2);
         channels.addAll(newChannels(intention3, stimulation3, getMaxDuration(channels2)));
         play(channels, durationSeconds);
+        return this;
     }
 
     private long getMaxDuration(List<Channel> channels) {
@@ -80,7 +99,7 @@ class IntentionBasedController<T extends Enum<?>> {
         List<Stimulator> stimulators = stims.get(intention);
         List<Channel> newChannels = new ArrayList<>();
         for (Stimulator stimulator : stimulators) {
-            WaveForm waveform = stimulation.getWaveform(stimulator, intensity);
+            WaveForm waveform = stimulation.waveform(stimulator, intensity);
             newChannels.add(new Channel(stimulator, waveform, startMillis));
         }
         return newChannels;
@@ -90,14 +109,14 @@ class IntentionBasedController<T extends Enum<?>> {
         Partition<Channel> devices = new Partition<>(channels,
                 (a, b) -> a.stimulator.getDevice() == b.stimulator.getDevice());
         for (Partition<Channel>.Group group : devices.groups) {
-            play(group, durationSeconds);
+            play(group.get(0).stimulator.getDevice(), group, durationSeconds);
         }
     }
 
-    private void play(Partition<Channel>.Group group, double durationSeconds) {
+    private void play(StimulationDevice device, Partition<Channel>.Group group, double durationSeconds) {
         StimulationChannels channels = new StimulationChannels(asList(group));
         int repeatCount = repeatCount(channels, durationSeconds);
-        play(channels.get(0).stimulator.getDevice(), channels, repeatCount);
+        play(device, channels, repeatCount);
     }
 
     private List<Channel> asList(Iterable<Channel> group) {
@@ -115,5 +134,49 @@ class IntentionBasedController<T extends Enum<?>> {
 
     void play(StimulationDevice device, StimulationChannels channels, int repeatCount) {
         device.play(channels, repeatCount);
+    }
+
+    public void complete() {
+        for (Entry<T, List<Stimulator>> entry : stims.entrySet()) {
+            complete(entry.getKey());
+        }
+    }
+
+    public void complete(T intention) {
+        for (Stimulator stimulator : stims.get(intention)) {
+            stimulator.getDevice().complete();
+        }
+    }
+
+    public void stop() {
+        for (Entry<T, List<Stimulator>> entry : stims.entrySet()) {
+            stop(entry.getKey());
+        }
+    }
+
+    public void stop(T intention) {
+        for (Stimulator stimulator : stims.get(intention)) {
+            stimulator.getDevice().stop();
+        }
+    }
+
+    public void increaseIntensity() {
+        if (intensity < Stimulation.MaxIntensity) {
+            intensity++;
+        }
+    }
+
+    public void close() {
+        stop();
+        Set<Device> closed = new HashSet<>();
+        for (Entry<T, List<Stimulator>> entry : stims.entrySet()) {
+            for (Stimulator stimulator : entry.getValue()) {
+                StimulationDevice device = stimulator.getDevice();
+                if (!closed.contains(device)) {
+                    device.close();
+                    closed.add(device);
+                }
+            }
+        }
     }
 }

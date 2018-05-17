@@ -11,7 +11,7 @@ import teaselib.stimulation.WaveForm;
  * 
  * @author Citizen-Cane
  */
-public class Tease extends Stimulation {
+public class Tease implements Stimulation {
     static final double DurationSeconds = 2.0;
 
     private final double periodDurationSeconds;
@@ -26,8 +26,8 @@ public class Tease extends Stimulation {
 
     @Override
     public WaveForm waveform(Stimulator stimulator, int intensity) {
-        double onTime = spreadRange(Math.max(0.1, stimulator.minimalSignalDuration()), periodDurationSeconds * 0.25,
-                intensity);
+        double onTime = Stimulation.spreadRange(Math.max(0.1, stimulator.minimalSignalDuration()),
+                periodDurationSeconds * 0.25, intensity);
         return new SquareWave(onTime, periodDurationSeconds - onTime);
     }
 }

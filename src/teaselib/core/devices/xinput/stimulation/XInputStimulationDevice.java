@@ -134,7 +134,6 @@ public class XInputStimulationDevice extends StimulationDevice {
     }
 
     private final XInputDevice device;
-    private final List<XInputStimulator> stimulators;
 
     private final ExecutorService executor = NamedExecutorService.singleThreadedQueue(getClass().getName());
     private final AtomicReference<Optional<Future<Void>>> stimulationGenerator = new AtomicReference<>(
@@ -143,7 +142,6 @@ public class XInputStimulationDevice extends StimulationDevice {
     public XInputStimulationDevice(XInputDevice device) {
         super();
         this.device = device;
-        this.stimulators = XInputStimulator.getStimulators(this);
     }
 
     @Override
@@ -183,7 +181,7 @@ public class XInputStimulationDevice extends StimulationDevice {
 
     @Override
     public List<Stimulator> stimulators() {
-        return Collections.unmodifiableList(stimulators);
+        return Collections.unmodifiableList(XInputStimulator.getStimulators(this));
     }
 
     XInputDevice getXInputDevice() {
@@ -192,6 +190,14 @@ public class XInputStimulationDevice extends StimulationDevice {
 
     @Override
     public void play(StimulationChannels channels, int repeatCount) {
+        // TODO Continue running patterns by mixing new pattern into current
+        // - possible because inference channel has priority
+        // - possible because independent channels are independent :^)
+        // -> mix here because mixing in controller wouldn't work for remote devices
+        // - can mix in controller by accounting time, or if channels on remote device are independent
+        // - it's basically replacing the existing channels with new channels and setting the offset (which we don't
+        // have)
+        stop();
         executor.submit(() -> playAsync(channels, repeatCount));
     }
 
@@ -219,7 +225,7 @@ public class XInputStimulationDevice extends StimulationDevice {
     }
 
     private void playSamples(Samples samples) {
-        if (wiring == Wiring.CommonGround_Accumulation) {
+        if (wiring == Wiring.INFERENCE_CHANNEL) {
             setHighestPriorityChannel(samples);
         } else {
             setIndependentChannels(samples);
@@ -273,5 +279,4 @@ public class XInputStimulationDevice extends StimulationDevice {
             }
         }
     }
-
 }

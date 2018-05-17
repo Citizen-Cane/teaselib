@@ -12,6 +12,7 @@ import java.util.function.Consumer;
 import org.junit.Before;
 import org.junit.Test;
 
+import teaselib.Body;
 import teaselib.core.devices.BatteryLevel;
 import teaselib.stimulation.Stimulation;
 import teaselib.stimulation.StimulationDevice;
@@ -29,7 +30,7 @@ public class IntentionBasedControllerTest {
         n = 1;
     }
 
-    private final class TestController extends IntentionBasedController<Intention> {
+    private final class TestController extends IntentionBasedController<Intention, Body> {
         Consumer<List<Channel>> testActionList;
         BiConsumer<StimulationDevice, StimulationChannels> testDeviceEntry;
 
@@ -39,7 +40,6 @@ public class IntentionBasedControllerTest {
             this.testDeviceEntry = testDeviceEntry;
         }
 
-        @Override
         public void play(List<Channel> channels, double durationSeconds) {
             testActionList.accept(channels);
             super.play(channels, durationSeconds);
@@ -140,6 +140,11 @@ public class IntentionBasedControllerTest {
         }
 
         @Override
+        public Signal signal() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
         public double minimalSignalDuration() {
             return 0.02;
         }
@@ -179,17 +184,17 @@ public class IntentionBasedControllerTest {
         Stimulator stim2 = new TestStimulator(device2);
         Stimulator stim3 = new TestStimulator(device2);
 
-        IntentionBasedController<Intention> c = new TestController(
+        IntentionBasedController<Intention, Body> c = new TestController(
                 (stimulationActions) -> assertEquals(2, stimulationActions.size()), (device, items) -> assertTrue(
                         (device == device1 && items.size() == 1) || device == device2 && items.size() == 2));
         c.add(Intention.Pace, stim1);
         c.add(Intention.Tease, stim2);
-        c.add(Intention.Punish, stim3);
+        c.add(Intention.Pain, stim3);
 
         Stimulation pulse = new Tease();
         Stimulation whip = new Whip();
 
-        c.play(Intention.Tease, pulse, Intention.Punish, whip);
+        c.play(Intention.Tease, pulse, Intention.Pain, whip);
     }
 
     @Test
@@ -201,18 +206,18 @@ public class IntentionBasedControllerTest {
         Stimulator stim2 = new TestStimulator(device2);
         Stimulator stim3 = new TestStimulator(device2);
 
-        IntentionBasedController<Intention> c = new TestController(
+        IntentionBasedController<Intention, Body> c = new TestController(
                 (stimulationActions) -> assertEquals(2, stimulationActions.size()),
                 (device, items) -> assertTrue(
                         (device == device1 && items.size() == 1) && items.get(0).stimulator == stim1
                                 || device == device2 && items.size() == 1 && items.get(0).stimulator == stim3));
         c.add(Intention.Pace, stim1);
         c.add(Intention.Tease, stim2);
-        c.add(Intention.Punish, stim3);
+        c.add(Intention.Pain, stim3);
 
         Stimulation walk = new Walk();
         Stimulation whip = new Whip();
-        c.play(Intention.Pace, walk, Intention.Punish, whip);
+        c.play(Intention.Pace, walk, Intention.Pain, whip);
     }
 
     @Test
@@ -224,7 +229,7 @@ public class IntentionBasedControllerTest {
         Stimulator stim2 = new TestStimulator(device2);
         Stimulator stim3 = new TestStimulator(device2);
 
-        IntentionBasedController<Intention> c = new TestController(
+        IntentionBasedController<Intention, Body> c = new TestController(
                 (stimulationActions) -> assertEquals(3, stimulationActions.size()),
                 (device, items) -> assertTrue(
                         (device == device1 && items.size() == 1) && items.get(0).stimulator == stim1
@@ -232,11 +237,11 @@ public class IntentionBasedControllerTest {
                                         && items.get(1).stimulator == stim3));
         c.add(Intention.Pace, stim1);
         c.add(Intention.Tease, stim2);
-        c.add(Intention.Punish, stim3);
+        c.add(Intention.Pain, stim3);
 
         Stimulation walk = new Walk();
         Stimulation pulse = new Tease();
         Stimulation whip = new Whip();
-        c.play(Intention.Pace, walk, Intention.Tease, pulse, Intention.Punish, whip);
+        c.play(Intention.Pace, walk, Intention.Tease, pulse, Intention.Pain, whip);
     }
 }

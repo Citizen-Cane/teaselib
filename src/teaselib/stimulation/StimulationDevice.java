@@ -1,8 +1,10 @@
 package teaselib.stimulation;
 
+import java.util.Collections;
 import java.util.List;
 
 import teaselib.core.Configuration;
+import teaselib.core.devices.BatteryLevel;
 import teaselib.core.devices.Device;
 import teaselib.core.devices.DeviceCache;
 import teaselib.core.devices.Devices;
@@ -28,6 +30,63 @@ import teaselib.stimulation.ext.StimulationChannels;
  */
 public abstract class StimulationDevice implements Device.Creatable {
 
+    // TODO Make this a device class to allow more control
+    public static final StimulationDevice MANUAL = new StimulationDevice() {
+        @Override
+        public boolean isWireless() {
+            return true;
+        }
+
+        @Override
+        public String getName() {
+            return "Manual EStim device";
+        }
+
+        @Override
+        public String getDevicePath() {
+            return "ManualEStimDevice";
+        }
+
+        @Override
+        public boolean connected() {
+            return true;
+        }
+
+        @Override
+        public void close() {
+        }
+
+        @Override
+        public BatteryLevel batteryLevel() {
+            return BatteryLevel.Medium;
+        }
+
+        @Override
+        public boolean active() {
+            return true;
+        }
+
+        @Override
+        public void stop() {
+            // Ignore
+        }
+
+        @Override
+        public List<Stimulator> stimulators() {
+            return Collections.emptyList();
+        }
+
+        @Override
+        public void play(StimulationChannels channels, int repeatCount) {
+            // Ignore
+        }
+
+        @Override
+        public void complete() {
+            // Ignore
+        }
+    };
+
     public static synchronized DeviceCache<StimulationDevice> getDeviceCache(Devices devices,
             Configuration configuration) {
         return new DeviceCache<StimulationDevice>() {
@@ -43,7 +102,7 @@ public abstract class StimulationDevice implements Device.Creatable {
     }
 
     public Output output = Output.EStim;;
-    public Wiring wiring = Wiring.CommonGround_Accumulation;
+    public Wiring wiring = Wiring.INFERENCE_CHANNEL;
 
     public void setMode(Output output, Wiring wiring) {
         this.output = output;

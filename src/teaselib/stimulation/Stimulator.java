@@ -1,6 +1,3 @@
-/**
- * 
- */
 package teaselib.stimulation;
 
 /**
@@ -13,7 +10,6 @@ package teaselib.stimulation;
  *
  */
 public interface Stimulator {
-
     /**
      * The extent to which the channels of a device can be contolled independetly from each other:
      * 
@@ -57,10 +53,19 @@ public interface Stimulator {
 
         /**
          * When both channel signals add up to induce a stronger signal on the body part that's wired up with a common
-         * electrode, the device provides an additional channel, however all three channels will be independent.
+         * electrode, the device provides an additional channel, however all three channels will be dependent.
          */
-        CommonGround_Accumulation
+        INFERENCE_CHANNEL
     }
+
+    public enum Signal {
+        Discrete,
+        Continous
+    }
+
+    public static double SingalLevel_Pace = 0.33;
+    public static double SingalLevel_Tease = 0.66;
+    public static double SingalLevel_Punish = 1.0;
 
     /**
      * The name of the device that provides the stimulation
@@ -89,6 +94,8 @@ public interface Stimulator {
      * @return
      */
     Output output();
+
+    Signal signal();
 
     /**
      * The duration the output value must be set to high in order to receive a noticeable output signal.

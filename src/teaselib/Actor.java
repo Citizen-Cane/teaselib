@@ -65,9 +65,13 @@ public class Actor {
     public SpeechRecognitionRejectedScript speechRecognitionRejectedScript = null;
 
     public Actor(Actor actor) {
-        this.locale = actor.locale();
+        this(actor, actor.locale());
+    }
+
+    public Actor(Actor actor, Locale locale) {
+        this.locale = locale;
         this.gender = actor.gender;
-        this.key = actor.key;
+        this.key = key(actor, locale);
         this.textVariables = actor.textVariables;
         this.images = actor.images;
     }
@@ -114,6 +118,13 @@ public class Actor {
 
     private static String key(String fullName) {
         return escape(fullName);
+    }
+
+    private static String key(Actor actor, Locale locale) {
+        if (actor.locale().getCountry().equals(locale.getCountry())) {
+            return key(actor.get(FormOfAddress.FullName));
+        }
+        return key(actor.get(FormOfAddress.FullName)) + "_" + locale;
     }
 
     private static String escape(String string) {

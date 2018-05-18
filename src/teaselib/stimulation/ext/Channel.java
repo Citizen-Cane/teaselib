@@ -4,11 +4,18 @@ import teaselib.stimulation.Stimulator;
 import teaselib.stimulation.WaveForm;
 
 public class Channel {
-    public final Stimulator stimulator;
-    public final WaveForm waveForm;
+    static final Channel EMPTY = new Channel(null, WaveForm.NONE) {
+        @Override
+        public String toString() {
+            return "Empty";
+        }
+    };
+
+    final Stimulator stimulator;
+    final WaveForm waveForm;
 
     public Channel(Stimulator stimulator, WaveForm waveForm, long startMillis) {
-        this(stimulator, new WaveForm(startMillis, waveForm));
+        this(stimulator, startMillis > 0 ? new WaveForm(startMillis, waveForm) : waveForm);
     }
 
     public Channel(Stimulator stimulator, WaveForm waveForm) {

@@ -61,14 +61,6 @@ public class XInputStimulator implements Stimulator {
      * @return The stimulators share the device, because the outputs can only be set simultaneously
      */
     public static List<XInputStimulator> getStimulators(XInputStimulationDevice device) {
-        if (device.output == Output.EStim && device.wiring == Wiring.INFERENCE_CHANNEL) {
-            return threeDependentStimulators(device);
-        } else {
-            return twoIndependentStimulators(device);
-        }
-    }
-
-    private static List<XInputStimulator> threeDependentStimulators(XInputStimulationDevice device) {
         List<XInputStimulator> stimulators = new ArrayList<>(3);
         XInputStimulator channel0 = new XInputStimulator(device, 0);
         stimulators.add(channel0);
@@ -76,14 +68,6 @@ public class XInputStimulator implements Stimulator {
         stimulators.add(channel1);
         XInputStimulator channel2 = new XInputStimulator(device, 2);
         stimulators.add(channel2);
-        return stimulators;
-    }
-
-    private static List<XInputStimulator> twoIndependentStimulators(XInputStimulationDevice device) {
-        List<XInputStimulator> stimulators = new ArrayList<>(2);
-        XInputStimulator channel0 = new XInputStimulator(device, 0);
-        stimulators.add(channel0);
-        stimulators.add(new XInputStimulator(channel0, 1));
         return stimulators;
     }
 
@@ -135,8 +119,7 @@ public class XInputStimulator implements Stimulator {
 
     @Override
     public ChannelDependency channelDependency() {
-        return device.wiring == Wiring.INFERENCE_CHANNEL ? ChannelDependency.Dependent
-                : ChannelDependency.Independent;
+        return device.wiring == Wiring.INFERENCE_CHANNEL ? ChannelDependency.Dependent : ChannelDependency.Independent;
     }
 
     @Override

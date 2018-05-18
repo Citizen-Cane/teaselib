@@ -19,6 +19,8 @@ public class WaveForm implements Iterable<WaveForm.Sample> {
     public static final double MAX = 1.0;
     public static final double MEAN = (MAX - MIN) / 2.0;
 
+    public static final WaveForm NONE = WaveForm.empty();
+
     public static class Entry {
         public final double amplitude;
         public final long durationMillis;
@@ -41,6 +43,12 @@ public class WaveForm implements Iterable<WaveForm.Sample> {
     public WaveForm() {
         this.values = new ArrayList<>();
         this.end = 0;
+    }
+
+    private static WaveForm empty() {
+        WaveForm empty = new WaveForm();
+        empty.add(0, 0);
+        return empty;
     }
 
     public WaveForm(long startMillis, WaveForm waveForm) {

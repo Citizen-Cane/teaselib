@@ -1,35 +1,22 @@
 package teaselib.stimulation.ext;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
-import org.junit.Before;
 import org.junit.Test;
 
 import teaselib.Body;
-import teaselib.core.devices.BatteryLevel;
 import teaselib.stimulation.Stimulation;
 import teaselib.stimulation.StimulationDevice;
 import teaselib.stimulation.Stimulator;
-import teaselib.stimulation.WaveForm;
 import teaselib.stimulation.pattern.Tease;
 import teaselib.stimulation.pattern.Walk;
 import teaselib.stimulation.pattern.Whip;
 
 public class IntentionBasedControllerTest {
-    int n;
-
-    @Before
-    public void resetTestStimulatorId() {
-        n = 1;
-    }
-
     private final class TestController extends IntentionBasedController<Intention, Body> {
         Consumer<List<Channel>> testActionList;
         BiConsumer<StimulationDevice, StimulationChannels> testDeviceEntry;
@@ -40,6 +27,7 @@ public class IntentionBasedControllerTest {
             this.testDeviceEntry = testDeviceEntry;
         }
 
+        @Override
         public void play(List<Channel> channels, double durationSeconds) {
             testActionList.accept(channels);
             super.play(channels, durationSeconds);
@@ -52,141 +40,18 @@ public class IntentionBasedControllerTest {
         }
     }
 
-    private final class TestStimulationDevice extends StimulationDevice {
-        @Override
-        public boolean isWireless() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public String getName() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public String getDevicePath() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public boolean connected() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void close() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public BatteryLevel batteryLevel() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public boolean active() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public List<Stimulator> stimulators() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void play(StimulationChannels channels, int repeatCount) {
-            assertNotNull(channels);
-            assertFalse(channels.isEmpty());
-        }
-
-        @Override
-        public void stop() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void complete() {
-            throw new UnsupportedOperationException();
-        }
-    }
-
-    private final class TestStimulator implements Stimulator {
-        final StimulationDevice device;
-        final int id = n++;
-
-        TestStimulator(StimulationDevice device) {
-            super();
-            this.device = device;
-        }
-
-        @Override
-        public String getName() {
-            return getClass().getSimpleName() + "_" + id;
-        }
-
-        @Override
-        public StimulationDevice getDevice() {
-            return device;
-        }
-
-        @Override
-        public ChannelDependency channelDependency() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public Output output() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public Signal signal() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public double minimalSignalDuration() {
-            return 0.02;
-        }
-
-        @Override
-        public void play(WaveForm waveform, double durationSeconds, double maxstrength) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void extend(double durationSeconds) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void stop() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void complete() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public String toString() {
-            return getName();
-        }
-    }
-
     @Test
     public void testDevicePartitioningJoin() {
-        StimulationDevice device1 = new TestStimulationDevice();
-        StimulationDevice device2 = new TestStimulationDevice();
+        TestStimulationDevice device1 = new TestStimulationDevice();
+        TestStimulationDevice device2 = new TestStimulationDevice();
 
-        Stimulator stim1 = new TestStimulator(device1);
-        Stimulator stim2 = new TestStimulator(device2);
-        Stimulator stim3 = new TestStimulator(device2);
+        Stimulator stim1 = device1.add(new TestStimulator(device1, 1));
+        Stimulator stim2 = device2.add(new TestStimulator(device2, 2));
+        Stimulator stim3 = device2.add(new TestStimulator(device2, 3));
 
         IntentionBasedController<Intention, Body> c = new TestController(
                 (stimulationActions) -> assertEquals(2, stimulationActions.size()), (device, items) -> assertTrue(
-                        (device == device1 && items.size() == 1) || device == device2 && items.size() == 2));
+                        (device == device1 && items.size() == 1) || (device == device2 && items.size() == 2)));
         c.add(Intention.Pace, stim1);
         c.add(Intention.Tease, stim2);
         c.add(Intention.Pain, stim3);
@@ -199,18 +64,19 @@ public class IntentionBasedControllerTest {
 
     @Test
     public void testDevicePartitioningSeparate() {
-        StimulationDevice device1 = new TestStimulationDevice();
-        StimulationDevice device2 = new TestStimulationDevice();
+        TestStimulationDevice device1 = new TestStimulationDevice();
+        TestStimulationDevice device2 = new TestStimulationDevice();
 
-        Stimulator stim1 = new TestStimulator(device1);
-        Stimulator stim2 = new TestStimulator(device2);
-        Stimulator stim3 = new TestStimulator(device2);
+        Stimulator stim1 = device1.add(new TestStimulator(device1, 1));
+        Stimulator stim2 = device2.add(new TestStimulator(device2, 2));
+        Stimulator stim3 = device2.add(new TestStimulator(device2, 3));
 
         IntentionBasedController<Intention, Body> c = new TestController(
                 (stimulationActions) -> assertEquals(2, stimulationActions.size()),
                 (device, items) -> assertTrue(
-                        (device == device1 && items.size() == 1) && items.get(0).stimulator == stim1
-                                || device == device2 && items.size() == 1 && items.get(0).stimulator == stim3));
+                        (device == device1 && items.size() == 1 && items.get(0).stimulator == stim1)
+                                || (device == device2 && items.size() == 2 && items.get(0) == Channel.EMPTY
+                                        && items.get(1).stimulator == stim3)));
         c.add(Intention.Pace, stim1);
         c.add(Intention.Tease, stim2);
         c.add(Intention.Pain, stim3);
@@ -222,19 +88,19 @@ public class IntentionBasedControllerTest {
 
     @Test
     public void testDevicePartitioningSeparateAndJoined() {
-        StimulationDevice device1 = new TestStimulationDevice();
-        StimulationDevice device2 = new TestStimulationDevice();
+        TestStimulationDevice device1 = new TestStimulationDevice();
+        TestStimulationDevice device2 = new TestStimulationDevice();
 
-        Stimulator stim1 = new TestStimulator(device1);
-        Stimulator stim2 = new TestStimulator(device2);
-        Stimulator stim3 = new TestStimulator(device2);
+        Stimulator stim1 = device1.add(new TestStimulator(device1, 1));
+        Stimulator stim2 = device2.add(new TestStimulator(device2, 2));
+        Stimulator stim3 = device2.add(new TestStimulator(device2, 3));
 
         IntentionBasedController<Intention, Body> c = new TestController(
                 (stimulationActions) -> assertEquals(3, stimulationActions.size()),
                 (device, items) -> assertTrue(
-                        (device == device1 && items.size() == 1) && items.get(0).stimulator == stim1
-                                || device == device2 && items.size() == 2 && items.get(0).stimulator == stim2
-                                        && items.get(1).stimulator == stim3));
+                        (device == device1 && items.size() == 1 && items.get(0).stimulator == stim1)
+                                || (device == device2 && items.size() == 2 && items.get(0).stimulator == stim2
+                                        && items.get(1).stimulator == stim3)));
         c.add(Intention.Pace, stim1);
         c.add(Intention.Tease, stim2);
         c.add(Intention.Pain, stim3);

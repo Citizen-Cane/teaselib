@@ -94,7 +94,7 @@ public class EStimControllerSetup extends TeaseScript {
 
     private StimulationDevice attachElectrodes(StimulationDevice device) {
         // TODO Can't check channel count since the device isn't wired up -> enum physical channels or reset wiring
-        // TODO Mixed mode (EStim/Vivrator) is possible, so don't check too much here
+        // TODO Mixed mode (EStim/Vivrator) is possible, so don't check too much here - handle in instructions instead
         device.setMode(device.output, Wiring.Independent);
         List<Stimulator> stimulators = device.stimulators().stream().filter(EstimOutput).collect(Collectors.toList());
 
@@ -106,11 +106,11 @@ public class EStimControllerSetup extends TeaseScript {
                 || stimulators.stream().filter(VibrationOutput).count() > 0) {
             return handleMoreThanTwoPhysicalChannels();
         } else {
-            return wireUpDualPhysicalChannelDevice(device, stimulators);
+            return wireUpDualPhysicalChannelDevice(device);
         }
     }
 
-    private StimulationDevice handleMoreThanTwoPhysicalChannels() {
+    private static StimulationDevice handleMoreThanTwoPhysicalChannels() {
         throw new UnsupportedOperationException("Only devices with 2 physical estim-channels are supported for now");
     }
 
@@ -120,10 +120,13 @@ public class EStimControllerSetup extends TeaseScript {
         return device;
     }
 
-    private StimulationDevice wireUpDualPhysicalChannelDevice(StimulationDevice device, List<Stimulator> stimulators) {
-        // showLengthyInstructions();
+    private StimulationDevice wireUpDualPhysicalChannelDevice(StimulationDevice device) {
+        // TODO instructions that work for mixed devices - mixed estim/vibration setups work
+        // - just test channels for output and adjust instructions
+        // TODO add device selector and signal type selector (estim/vibration)
 
-        device.play(constantSignal(stimulators, 1, TimeUnit.MINUTES), 60);
+        // showLengthyInstructions();
+        device.play(constantSignal(device, 1, TimeUnit.MINUTES), 60);
 
         String separate = "Two separate sets of electrodes, #title";
         String oneShared = "One shared electrode, #title";
@@ -159,7 +162,7 @@ public class EStimControllerSetup extends TeaseScript {
         append("Tell me when you're ready, #slave.", "How did you wire yourself up?");
     }
 
-    private StimulationDevice mapPhysicalDualDiscreteChannelsToSingleContinuous(StimulationDevice device) {
+    private static StimulationDevice mapPhysicalDualDiscreteChannelsToSingleContinuous(StimulationDevice device) {
         // WIth two channels the same setup as one shared electrode
         // - two physical channels or pace and tease, one inference channel for punishment
         return device;
@@ -168,10 +171,10 @@ public class EStimControllerSetup extends TeaseScript {
         // -> setup as single continuous channel device
     }
 
-    private StimulationChannels constantSignal(List<Stimulator> stimulators, int duration, TimeUnit timeUnit) {
+    private static StimulationChannels constantSignal(StimulationDevice device, int duration, TimeUnit timeUnit) {
         WaveForm waveForm = new ConstantWave(timeUnit.toMillis(duration));
-        StimulationChannels channels = new StimulationChannels();
-        for (Stimulator stimulator : stimulators) {
+        StimulationChannels channels = new StimulationChannels(device);
+        for (Stimulator stimulator : device.stimulators()) {
             channels.add(new Channel(stimulator, waveForm));
         }
         return channels;
@@ -201,30 +204,36 @@ public class EStimControllerSetup extends TeaseScript {
         // constant input or burst pulse
         // return new ConstantWave(2.0);
         Stimulation stimulation = (stimulator, intensity) -> {
-            double mimimalSignalDuration = stimulator.minimalSignalDuration() * 1000.0;
+            double mimimalSignalDuration = stimulator.minimalSignalDuration();
             return new BurstSquareWave(2, mimimalSignalDuration, 1.0 - mimimalSignalDuration);
         };
 
         for (Intention intention : Intention.values()) {
-            if (intention == Intention.Pace) {
-                replace("Pace!");
-            } else if (intention == Intention.Tease) {
-                replace("Tease!");
-            } else if (intention == Intention.Pain) {
-                replace("Pain!");
-            }
+            while (true) {
+                if (intention == Intention.Pace) {
+                    replace("Pace!");
+                } else if (intention == Intention.Tease) {
+                    replace("Tease!");
+                } else if (intention == Intention.Pain) {
+                    replace("Pain!");
+                }
 
-            stim.play(intention, stimulation);
-            stim.complete(intention);
+                stim.play(intention, stimulation);
+                stim.complete(intention);
 
-            String nextPlease = "Next please, #title";
-            // TODO Include answer from script function -> nested function
-            String todoNestedAnswer = "All channels adjusted, #title";
-            String answer = reply(nextPlease, todoNestedAnswer);
-            if (answer == nextPlease) {
-                continue;
-            } else {
-                Thread.currentThread().interrupt();
+                String againPlease = "Again please, #title";
+                String nextPlease = "Next please, #title";
+                // TODO Include answer from script function -> nested function
+                String todoNestedAnswer = "All channels adjusted, #title";
+                String answer = reply(againPlease, nextPlease, todoNestedAnswer);
+                if (answer == againPlease) {
+                    continue;
+                } else if (answer == nextPlease) {
+                    break;
+                } else if (answer == todoNestedAnswer) {
+                    // TODO causes ScriptInterruptedExceptino to fall through and being displayed by SexScript dialog
+                    Thread.currentThread().interrupt();
+                }
             }
         }
     }

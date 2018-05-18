@@ -8,11 +8,15 @@ import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.stream.Stream;
 
+import teaselib.stimulation.StimulationDevice;
+import teaselib.stimulation.Stimulator;
 import teaselib.stimulation.WaveForm;
 import teaselib.stimulation.WaveForm.Sample;
 import teaselib.stimulation.ext.StimulationChannels.Samples;
 
+// TODO Rename to DeviceChannels
 public class StimulationChannels implements Iterable<Samples> {
+    final List<Stimulator> stimulators;
     final List<Channel> channels;
 
     public class Samples {
@@ -165,12 +169,20 @@ public class StimulationChannels implements Iterable<Samples> {
         }
     }
 
-    public StimulationChannels() {
-        this.channels = new ArrayList<>();
+    public StimulationChannels(StimulationDevice device) {
+        this.stimulators = device.stimulators();
+        this.channels = new ArrayList<>(stimulators.size());
+        int size = stimulators.size();
+        for (int i = 0; i < size; i++) {
+            channels.add(Channel.EMPTY);
+        }
     }
 
-    public StimulationChannels(List<Channel> channels) {
-        this.channels = channels;
+    public StimulationChannels(StimulationDevice device, List<Channel> channels) {
+        this(device);
+        for (Channel channel : channels) {
+            add(channel);
+        }
     }
 
     @Override
@@ -204,7 +216,12 @@ public class StimulationChannels implements Iterable<Samples> {
     }
 
     public void add(Channel channel) {
-        channels.add(channel);
+        int index = stimulators.indexOf(channel.stimulator);
+        if (index >= 0) {
+            channels.set(index, channel);
+        } else {
+            throw new IllegalArgumentException("Channel belongs to differnet device: " + channel);
+        }
     }
 
     @Override

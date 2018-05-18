@@ -29,7 +29,7 @@ public class IntentionBasedController<T extends Enum<?>, B extends Enum<?>> {
     }
 
     public void add(T intention, Stimulator... stimulators) {
-        List<Stimulator> list = stims.computeIfAbsent(intention, (key) -> new ArrayList<>());
+        List<Stimulator> list = stims.computeIfAbsent(intention, key -> new ArrayList<>());
         list.addAll(Arrays.asList(stimulators));
     }
 
@@ -86,7 +86,7 @@ public class IntentionBasedController<T extends Enum<?>, B extends Enum<?>> {
         return this;
     }
 
-    private long getMaxDuration(List<Channel> channels) {
+    private static long getMaxDuration(List<Channel> channels) {
         Optional<Channel> duration = channels.stream().reduce(Channel::maxDuration);
         if (duration.isPresent()) {
             return duration.get().getWaveForm().getDurationMillis();
@@ -114,12 +114,12 @@ public class IntentionBasedController<T extends Enum<?>, B extends Enum<?>> {
     }
 
     private void play(StimulationDevice device, Partition<Channel>.Group group, double durationSeconds) {
-        StimulationChannels channels = new StimulationChannels(asList(group));
+        StimulationChannels channels = new StimulationChannels(device, asList(group));
         int repeatCount = repeatCount(channels, durationSeconds);
         play(device, channels, repeatCount);
     }
 
-    private List<Channel> asList(Iterable<Channel> group) {
+    private static List<Channel> asList(Iterable<Channel> group) {
         List<Channel> channels = new ArrayList<>();
         for (Channel channel : group) {
             channels.add(channel);
@@ -127,7 +127,7 @@ public class IntentionBasedController<T extends Enum<?>, B extends Enum<?>> {
         return channels;
     }
 
-    private int repeatCount(StimulationChannels channels, double durationSeconds) {
+    private static int repeatCount(StimulationChannels channels, double durationSeconds) {
         long maxDurationMillis = channels.maxDurationMillis();
         return maxDurationMillis > 0 ? Math.max(1, (int) (WaveForm.toMillis(durationSeconds) / maxDurationMillis)) : 1;
     }

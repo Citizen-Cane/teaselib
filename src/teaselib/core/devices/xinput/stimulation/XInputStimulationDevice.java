@@ -21,6 +21,7 @@ import teaselib.core.devices.xinput.XInputDevice;
 import teaselib.core.util.ExceptionUtil;
 import teaselib.stimulation.StimulationDevice;
 import teaselib.stimulation.Stimulator;
+import teaselib.stimulation.Stimulator.Output;
 import teaselib.stimulation.Stimulator.Wiring;
 import teaselib.stimulation.WaveForm;
 import teaselib.stimulation.ext.StimulationChannels;
@@ -134,6 +135,7 @@ public class XInputStimulationDevice extends StimulationDevice {
     }
 
     private final XInputDevice device;
+    private final List<Stimulator> stimulators;
 
     private final ExecutorService executor = NamedExecutorService.singleThreadedQueue(getClass().getName());
     private final AtomicReference<Optional<Future<Void>>> stimulationGenerator = new AtomicReference<>(
@@ -142,6 +144,7 @@ public class XInputStimulationDevice extends StimulationDevice {
     public XInputStimulationDevice(XInputDevice device) {
         super();
         this.device = device;
+        this.stimulators = Collections.unmodifiableList(XInputStimulator.getStimulators(this));
     }
 
     @Override
@@ -181,7 +184,19 @@ public class XInputStimulationDevice extends StimulationDevice {
 
     @Override
     public List<Stimulator> stimulators() {
-        return Collections.unmodifiableList(XInputStimulator.getStimulators(this));
+        if (output == Output.EStim && wiring == Wiring.INFERENCE_CHANNEL) {
+            return threeDependentStimulators();
+        } else {
+            return twoIndependentStimulators();
+        }
+    }
+
+    private List<Stimulator> threeDependentStimulators() {
+        return stimulators;
+    }
+
+    private List<Stimulator> twoIndependentStimulators() {
+        return stimulators.subList(0, 2);
     }
 
     XInputDevice getXInputDevice() {
@@ -206,7 +221,7 @@ public class XInputStimulationDevice extends StimulationDevice {
             for (int i = 0; i < repeatCount; i++) {
                 for (Samples samples : channels) {
                     playSamples(samples);
-                    sleep(samples.getTimeStampMillis() - System.currentTimeMillis());
+                    sleep(samples.getTimeStampMillis());
                     if (Thread.currentThread().isInterrupted())
                         return;
                 }
@@ -216,7 +231,7 @@ public class XInputStimulationDevice extends StimulationDevice {
         }
     }
 
-    private void sleep(long millis) {
+    private static void sleep(long millis) {
         try {
             Thread.sleep(millis);
         } catch (InterruptedException e) {

@@ -24,7 +24,7 @@ public class WaveForm implements Iterable<WaveForm.Sample> {
         public final long durationMillis;
 
         public Entry(double amplitude, long durationMillis) {
-            if (durationMillis <= 0)
+            if (durationMillis < 0)
                 throw new IllegalArgumentException("Duration must be positive: " + durationMillis);
             this.amplitude = amplitude;
             this.durationMillis = durationMillis;

@@ -121,7 +121,7 @@ public class EStimControllerSetup extends TeaseScript {
     }
 
     private StimulationDevice wireUpDualPhysicalChannelDevice(StimulationDevice device, List<Stimulator> stimulators) {
-        // showLengthyInstructions();
+        showLengthyInstructions();
 
         device.play(constantSignal(stimulators, 1, TimeUnit.MINUTES), 60);
 
@@ -168,7 +168,7 @@ public class EStimControllerSetup extends TeaseScript {
         // -> setup as single continuous channel device
     }
 
-    private StimulationChannels constantSignal(List<Stimulator> stimulators, int duration, TimeUnit timeUnit) {
+    private StimulationChannels constantSignal(List<Stimulator> stimulators, long duration, TimeUnit timeUnit) {
         WaveForm waveForm = new ConstantWave(timeUnit.toMillis(duration));
         StimulationChannels channels = new StimulationChannels();
         for (Stimulator stimulator : stimulators) {
@@ -186,9 +186,9 @@ public class EStimControllerSetup extends TeaseScript {
         if (device.wiring == Wiring.INFERENCE_CHANNEL) {
             append(Message.Bullet, "Inference channel: discipline");
         }
+        append("Let's try it:");
 
         reply(() -> {
-            append("Let's try it:");
             while (true)
                 iterateIntentions(stim);
         }, "All channels adjusted, #title");
@@ -201,7 +201,7 @@ public class EStimControllerSetup extends TeaseScript {
         // constant input or burst pulse
         // return new ConstantWave(2.0);
         Stimulation stimulation = (stimulator, intensity) -> {
-            double mimimalSignalDuration = stimulator.minimalSignalDuration() * 1000.0;
+            double mimimalSignalDuration = stimulator.minimalSignalDuration();
             return new BurstSquareWave(2, mimimalSignalDuration, 1.0 - mimimalSignalDuration);
         };
 
@@ -218,6 +218,7 @@ public class EStimControllerSetup extends TeaseScript {
             stim.complete(intention);
 
             String nextPlease = "Next please, #title";
+            // listen to "next please" input and advance, but keep buttons displayed
             // TODO Include answer from script function -> nested function
             String todoNestedAnswer = "All channels adjusted, #title";
             String answer = reply(nextPlease, todoNestedAnswer);

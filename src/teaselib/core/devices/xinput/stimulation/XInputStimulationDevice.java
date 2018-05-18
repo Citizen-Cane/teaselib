@@ -136,8 +136,7 @@ public class XInputStimulationDevice extends StimulationDevice {
     private final XInputDevice device;
 
     private final ExecutorService executor = NamedExecutorService.singleThreadedQueue(getClass().getName());
-    private final AtomicReference<Optional<Future<Void>>> stimulationGenerator = new AtomicReference<>(
-            Optional.empty());
+    private final AtomicReference<Optional<Future<?>>> stimulationGenerator = new AtomicReference<>(Optional.empty());
 
     public XInputStimulationDevice(XInputDevice device) {
         super();
@@ -151,7 +150,7 @@ public class XInputStimulationDevice extends StimulationDevice {
 
     @Override
     public String getName() {
-        return device.getName() + "stimulator";
+        return device.getName();
     }
 
     @Override
@@ -190,15 +189,17 @@ public class XInputStimulationDevice extends StimulationDevice {
 
     @Override
     public void play(StimulationChannels channels, int repeatCount) {
-        // TODO Continue running patterns by mixing new pattern into current
-        // - possible because inference channel has priority
-        // - possible because independent channels are independent :^)
-        // -> mix here because mixing in controller wouldn't work for remote devices
-        // - can mix in controller by accounting time, or if channels on remote device are independent
-        // - it's basically replacing the existing channels with new channels and setting the offset (which we don't
-        // have)
-        stop();
-        executor.submit(() -> playAsync(channels, repeatCount));
+        synchronized (executor) {
+            // TODO Continue running patterns by mixing new pattern into currently playing
+            // - possible because inference channel has priority
+            // - possible because independent channels are independent :^)
+            // -> mix here because mixing in controller wouldn't work for remote devices
+            // - can mix in controller by accounting time, or if channels on remote device are independent
+            // - it's basically replacing the existing channels with new channels and setting the offset (which we don't
+            // have)
+            stop();
+            stimulationGenerator.set(Optional.of(executor.submit(() -> playAsync(channels, repeatCount))));
+        }
     }
 
     private void playAsync(StimulationChannels channels, int repeatCount) {
@@ -206,7 +207,7 @@ public class XInputStimulationDevice extends StimulationDevice {
             for (int i = 0; i < repeatCount; i++) {
                 for (Samples samples : channels) {
                     playSamples(samples);
-                    sleep(samples.getTimeStampMillis() - System.currentTimeMillis());
+                    sleep(samples.getTimeStampMillis());
                     if (Thread.currentThread().isInterrupted())
                         return;
                 }
@@ -256,7 +257,7 @@ public class XInputStimulationDevice extends StimulationDevice {
     @Override
     public void stop() {
         synchronized (executor) {
-            Optional<Future<Void>> current = stimulationGenerator.get();
+            Optional<Future<?>> current = stimulationGenerator.get();
             if (current.isPresent() && !current.get().isDone()) {
                 current.get().cancel(true);
             }
@@ -266,7 +267,7 @@ public class XInputStimulationDevice extends StimulationDevice {
     @Override
     public void complete() {
         synchronized (executor) {
-            Optional<Future<Void>> current = stimulationGenerator.get();
+            Optional<Future<?>> current = stimulationGenerator.get();
             if (current.isPresent()) {
                 try {
                     current.get().get();
@@ -278,5 +279,10 @@ public class XInputStimulationDevice extends StimulationDevice {
                 }
             }
         }
+    }
+
+    @Override
+    public String toString() {
+        return getDevicePath();
     }
 }

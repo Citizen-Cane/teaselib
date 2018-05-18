@@ -135,8 +135,7 @@ public class XInputStimulator implements Stimulator {
 
     @Override
     public ChannelDependency channelDependency() {
-        return device.wiring == Wiring.INFERENCE_CHANNEL ? ChannelDependency.Dependent
-                : ChannelDependency.Independent;
+        return device.wiring == Wiring.INFERENCE_CHANNEL ? ChannelDependency.Dependent : ChannelDependency.Independent;
     }
 
     @Override
@@ -218,5 +217,10 @@ public class XInputStimulator implements Stimulator {
                 }
             }
         }
+    }
+
+    @Override
+    public String toString() {
+        return device.getDevicePath() + " " + getLocation();
     }
 }

@@ -16,21 +16,23 @@ import teaselib.stimulation.WaveForm;
  *
  */
 public class Whip implements Stimulation {
+    static final double DEFAULT_PERIOD_SECONDS = 1.0;
+
     private final int strokes;
-    private final double period;
+    private final double periodDurationSeconds;
 
     public Whip() {
-        this(1, 0.2);
+        this(1, DEFAULT_PERIOD_SECONDS);
     }
 
-    public Whip(int strokes, double period) {
+    public Whip(int strokes, double periodDurationSeconds) {
         this.strokes = strokes;
-        this.period = period;
+        this.periodDurationSeconds = periodDurationSeconds;
     }
 
     @Override
     public WaveForm waveform(Stimulator stimulator, int intensity) {
         double on = stimulator.minimalSignalDuration() * Stimulation.spreadRange(1.0, 2.0, intensity);
-        return new BurstSquareWave((int) strokes, on, this.period - on);
+        return new BurstSquareWave(strokes, on, Math.max(0, this.periodDurationSeconds - on));
     }
 }

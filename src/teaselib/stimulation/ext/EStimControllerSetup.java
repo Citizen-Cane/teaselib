@@ -125,7 +125,7 @@ public class EStimControllerSetup extends TeaseScript {
         // - just test channels for output and adjust instructions
         // TODO add device selector and signal type selector (estim/vibration)
 
-        // showLengthyInstructions();
+        showLengthyInstructions();
         device.play(constantSignal(device, 1, TimeUnit.MINUTES), 60);
 
         String separate = "Two separate sets of electrodes, #title";
@@ -189,9 +189,9 @@ public class EStimControllerSetup extends TeaseScript {
         if (device.wiring == Wiring.INFERENCE_CHANNEL) {
             append(Message.Bullet, "Inference channel: discipline");
         }
+        append("Let's try it:");
 
         reply(() -> {
-            append("Let's try it:");
             while (true)
                 iterateIntentions(stim);
         }, "All channels adjusted, #title");
@@ -223,6 +223,7 @@ public class EStimControllerSetup extends TeaseScript {
 
                 String againPlease = "Again please, #title";
                 String nextPlease = "Next please, #title";
+            // listen to "next please" input and advance, but keep buttons displayed
                 // TODO Include answer from script function -> nested function
                 String todoNestedAnswer = "All channels adjusted, #title";
                 String answer = reply(againPlease, nextPlease, todoNestedAnswer);

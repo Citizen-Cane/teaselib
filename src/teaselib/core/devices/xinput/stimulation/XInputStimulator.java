@@ -202,4 +202,9 @@ public class XInputStimulator implements Stimulator {
             }
         }
     }
+
+    @Override
+    public String toString() {
+        return device.getDevicePath() + " " + getLocation();
+    }
 }

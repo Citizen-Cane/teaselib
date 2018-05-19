@@ -6,7 +6,7 @@ public class ConstantWave extends SquareWave {
         super(seconds, 0.0);
     }
 
-    public ConstantWave(long millis) {
-        super(millis, 0);
+    public ConstantWave(long durationMillis) {
+        super(durationMillis, 0);
     }
 }

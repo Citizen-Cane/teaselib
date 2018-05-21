@@ -47,9 +47,9 @@ public class IntentionBasedController<T extends Enum<?>, B extends Enum<?>> {
     }
 
     public IntentionBasedController<T, B> play(T intention, Stimulation stimulation, double durationSeconds) {
-        List<Channel> channels = new ArrayList<>();
-        channels.addAll(newChannels(intention, stimulation, 0));
-        play(channels, durationSeconds);
+        List<StimulationTarget> targets = new ArrayList<>();
+        targets.addAll(allTargets(intention, stimulation, 0));
+        play(targets, durationSeconds);
         return this;
     }
 
@@ -60,12 +60,12 @@ public class IntentionBasedController<T extends Enum<?>, B extends Enum<?>> {
 
     public IntentionBasedController<T, B> play(T intention, Stimulation stimulation, T intention2,
             Stimulation stimulation2, double durationSeconds) {
-        List<Channel> channels = new ArrayList<>();
-        List<Channel> channels1 = newChannels(intention, stimulation, 0);
-        channels.addAll(channels1);
-        List<Channel> channels2 = newChannels(intention2, stimulation2, getMaxDuration(channels1));
-        channels.addAll(channels2);
-        play(channels, durationSeconds);
+        List<StimulationTarget> targets = new ArrayList<>();
+        List<StimulationTarget> targets1 = allTargets(intention, stimulation, 0);
+        targets.addAll(targets1);
+        List<StimulationTarget> targets2 = allTargets(intention2, stimulation2, getMaxDuration(targets1));
+        targets.addAll(targets2);
+        play(targets, durationSeconds);
         return this;
     }
 
@@ -76,64 +76,64 @@ public class IntentionBasedController<T extends Enum<?>, B extends Enum<?>> {
 
     public IntentionBasedController<T, B> play(T intention, Stimulation stimulation, T intention2,
             Stimulation stimulation2, T intention3, Stimulation stimulation3, double durationSeconds) {
-        List<Channel> channels = new ArrayList<>();
-        List<Channel> channels1 = newChannels(intention, stimulation, 0);
-        channels.addAll(channels1);
-        List<Channel> channels2 = newChannels(intention2, stimulation2, getMaxDuration(channels1));
-        channels.addAll(channels2);
-        channels.addAll(newChannels(intention3, stimulation3, getMaxDuration(channels2)));
-        play(channels, durationSeconds);
+        List<StimulationTarget> targets = new ArrayList<>();
+        List<StimulationTarget> targets1 = allTargets(intention, stimulation, 0);
+        targets.addAll(targets1);
+        List<StimulationTarget> targets2 = allTargets(intention2, stimulation2, getMaxDuration(targets1));
+        targets.addAll(targets2);
+        targets.addAll(allTargets(intention3, stimulation3, getMaxDuration(targets2)));
+        play(targets, durationSeconds);
         return this;
     }
 
-    private static long getMaxDuration(List<Channel> channels) {
-        Optional<Channel> duration = channels.stream().reduce(Channel::maxDuration);
+    private static long getMaxDuration(List<StimulationTarget> targets) {
+        Optional<StimulationTarget> duration = targets.stream().reduce(StimulationTarget::maxDuration);
         if (duration.isPresent()) {
             return duration.get().getWaveForm().getDurationMillis();
         } else {
-            throw new IllegalArgumentException(channels.toString());
+            throw new IllegalArgumentException(targets.toString());
         }
     }
 
-    private List<Channel> newChannels(T intention, Stimulation stimulation, long startMillis) {
+    private List<StimulationTarget> allTargets(T intention, Stimulation stimulation, long startMillis) {
         List<Stimulator> stimulators = stims.get(intention);
-        List<Channel> newChannels = new ArrayList<>();
+        List<StimulationTarget> targets = new ArrayList<>();
         for (Stimulator stimulator : stimulators) {
             WaveForm waveform = stimulation.waveform(stimulator, intensity);
-            newChannels.add(new Channel(stimulator, waveform, startMillis));
+            targets.add(new StimulationTarget(stimulator, waveform, startMillis));
         }
-        return newChannels;
+        return targets;
     }
 
-    void play(List<Channel> channels, double durationSeconds) {
-        Partition<Channel> devices = new Partition<>(channels,
+    void play(List<StimulationTarget> targets, double durationSeconds) {
+        Partition<StimulationTarget> devices = new Partition<>(targets,
                 (a, b) -> a.stimulator.getDevice() == b.stimulator.getDevice());
-        for (Partition<Channel>.Group group : devices.groups) {
+        for (Partition<StimulationTarget>.Group group : devices.groups) {
             play(group.get(0).stimulator.getDevice(), group, durationSeconds);
         }
     }
 
-    private void play(StimulationDevice device, Partition<Channel>.Group group, double durationSeconds) {
-        StimulationChannels channels = new StimulationChannels(device, asList(group));
-        int repeatCount = repeatCount(channels, durationSeconds);
-        play(device, channels, repeatCount);
+    private void play(StimulationDevice device, Partition<StimulationTarget>.Group targetGroup, double durationSeconds) {
+        StimulationTargets stimulationTargets = new StimulationTargets(device, asList(targetGroup));
+        int repeatCount = repeatCount(stimulationTargets, durationSeconds);
+        play(device, stimulationTargets, repeatCount);
     }
 
-    private static List<Channel> asList(Iterable<Channel> group) {
-        List<Channel> channels = new ArrayList<>();
-        for (Channel channel : group) {
-            channels.add(channel);
+    private static List<StimulationTarget> asList(Iterable<StimulationTarget> lines) {
+        List<StimulationTarget> list = new ArrayList<>();
+        for (StimulationTarget line : lines) {
+            list.add(line);
         }
-        return channels;
+        return list;
     }
 
-    private static int repeatCount(StimulationChannels channels, double durationSeconds) {
-        long maxDurationMillis = channels.maxDurationMillis();
+    private static int repeatCount(StimulationTargets lines, double durationSeconds) {
+        long maxDurationMillis = lines.maxDurationMillis();
         return maxDurationMillis > 0 ? Math.max(1, (int) (WaveForm.toMillis(durationSeconds) / maxDurationMillis)) : 1;
     }
 
-    void play(StimulationDevice device, StimulationChannels channels, int repeatCount) {
-        device.play(channels, repeatCount);
+    void play(StimulationDevice device, StimulationTargets lines, int repeatCount) {
+        device.play(lines, repeatCount);
     }
 
     public void complete() {

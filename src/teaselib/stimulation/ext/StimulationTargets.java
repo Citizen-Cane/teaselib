@@ -12,12 +12,11 @@ import teaselib.stimulation.StimulationDevice;
 import teaselib.stimulation.Stimulator;
 import teaselib.stimulation.WaveForm;
 import teaselib.stimulation.WaveForm.Sample;
-import teaselib.stimulation.ext.StimulationChannels.Samples;
+import teaselib.stimulation.ext.StimulationTargets.Samples;
 
-// TODO Rename to DeviceChannels
-public class StimulationChannels implements Iterable<Samples> {
-    final List<Stimulator> stimulators;
-    final List<Channel> channels;
+public class StimulationTargets implements Iterable<Samples> {
+    private final List<Stimulator> stimulators;
+    private final List<StimulationTarget> targets;
 
     public class Samples {
         long timeStampMillis;
@@ -46,18 +45,18 @@ public class StimulationChannels implements Iterable<Samples> {
         }
     }
 
-    class IteratorImpl implements Iterator<Samples> {
+    private class SampleIterator implements Iterator<Samples> {
         final Samples samples;
 
         final List<Iterator<WaveForm.Sample>> iterators;
         final List<WaveForm.Sample> waveformSamples;
 
-        private IteratorImpl() {
+        private SampleIterator() {
             this.samples = new Samples(size());
             this.waveformSamples = new ArrayList<>(size());
             this.iterators = new ArrayList<>(size());
 
-            for (Channel channel : channels) {
+            for (StimulationTarget channel : targets) {
                 Iterator<WaveForm.Sample> iterator = channel.getWaveForm().iterator();
                 iterators.add(iterator);
                 Sample sample = iterator.next();
@@ -68,7 +67,7 @@ public class StimulationChannels implements Iterable<Samples> {
 
         @Override
         public boolean hasNext() {
-            return waveformSamples.stream().filter(sample -> sample == WaveForm.Sample.End).count() < channels.size();
+            return waveformSamples.stream().filter(sample -> sample == WaveForm.Sample.End).count() < targets.size();
         }
 
         @Override
@@ -90,7 +89,7 @@ public class StimulationChannels implements Iterable<Samples> {
         }
 
         private void advance(long nextTimeStampMillis) {
-            for (int channel = 0; channel < channels.size(); channel++) {
+            for (int channel = 0; channel < targets.size(); channel++) {
                 Sample sample = waveformSamples.get(channel);
                 if (sample.getTimeStampMillis() == nextTimeStampMillis) {
                     samples.getValues()[channel] = sample.getValue();
@@ -119,79 +118,29 @@ public class StimulationChannels implements Iterable<Samples> {
         }
     }
 
-    class SampleIterator implements Iterator<Samples> {
-        Samples samples;
-
-        private SampleIterator() {
-            samples = new Samples(channels.size());
-        }
-
-        public long getTimeStampMillis() {
-            return samples.timeStampMillis;
-        }
-
-        @Override
-        public boolean hasNext() {
-            return channels.stream().map(Channel::getWaveForm).map(WaveForm::getDurationMillis).reduce(Math::max)
-                    .orElseGet(() -> Long.MIN_VALUE) > samples.timeStampMillis;
-        }
-
-        @Override
-        public Samples next() {
-            if (!hasNext()) {
-                throw new NoSuchElementException();
-            } else {
-                samples.timeStampMillis = nextTimeStamp(samples.timeStampMillis);
-                getSamples(samples.timeStampMillis, samples.values);
-                return samples;
-            }
-        }
-
-        private long nextTimeStamp(long currentTimeMillis) {
-            Optional<Long> min = channels.stream().map(Channel::getWaveForm)
-                    .map((WaveForm waveform) -> waveform.nextTime(currentTimeMillis)).reduce(Math::min);
-            if (min.isPresent()) {
-                return min.get();
-            } else {
-                throw new IllegalArgumentException(channels.toString());
-            }
-        }
-
-        private void getSamples(long timeStampMillis, double[] values) {
-            for (int i = 0; i < values.length; i++) {
-                values[i] = channels.get(i).getValue(timeStampMillis);
-            }
-        }
-
-        @Override
-        public String toString() {
-            return samples.toString();
-        }
-    }
-
-    public StimulationChannels(StimulationDevice device) {
+    public StimulationTargets(StimulationDevice device) {
         this.stimulators = device.stimulators();
-        this.channels = new ArrayList<>(stimulators.size());
+        this.targets = new ArrayList<>(stimulators.size());
         int size = stimulators.size();
         for (int i = 0; i < size; i++) {
-            channels.add(Channel.EMPTY);
+            targets.add(StimulationTarget.EMPTY);
         }
     }
 
-    public StimulationChannels(StimulationDevice device, List<Channel> channels) {
+    public StimulationTargets(StimulationDevice device, List<StimulationTarget> channels) {
         this(device);
-        for (Channel channel : channels) {
+        for (StimulationTarget channel : channels) {
             add(channel);
         }
     }
 
     @Override
     public Iterator<Samples> iterator() {
-        return new IteratorImpl();
+        return new SampleIterator();
     }
 
     public long maxDurationMillis() {
-        Optional<Channel> max = channels.stream().reduce(Channel::maxDuration);
+        Optional<StimulationTarget> max = targets.stream().reduce(StimulationTarget::maxDuration);
         if (max.isPresent()) {
             return max.get().waveForm.getDurationMillis();
         } else {
@@ -200,25 +149,25 @@ public class StimulationChannels implements Iterable<Samples> {
     }
 
     public int size() {
-        return channels.size();
+        return targets.size();
     }
 
-    public Stream<Channel> stream() {
-        return channels.stream();
+    public Stream<StimulationTarget> stream() {
+        return targets.stream();
     }
 
-    public Channel get(int index) {
-        return channels.get(index);
+    public StimulationTarget get(int index) {
+        return targets.get(index);
     }
 
     public boolean isEmpty() {
-        return channels.isEmpty();
+        return targets.isEmpty();
     }
 
-    public void add(Channel channel) {
+    public void add(StimulationTarget channel) {
         int index = stimulators.indexOf(channel.stimulator);
         if (index >= 0) {
-            channels.set(index, channel);
+            targets.set(index, channel);
         } else {
             throw new IllegalArgumentException("Channel belongs to differnet device: " + channel);
         }
@@ -226,6 +175,6 @@ public class StimulationChannels implements Iterable<Samples> {
 
     @Override
     public String toString() {
-        return channels.toString();
+        return targets.toString();
     }
 }

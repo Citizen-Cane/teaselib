@@ -171,11 +171,11 @@ public class EStimControllerSetup extends TeaseScript {
         // -> setup as single continuous channel device
     }
 
-    private static StimulationChannels constantSignal(StimulationDevice device, int duration, TimeUnit timeUnit) {
+    private static StimulationTargets constantSignal(StimulationDevice device, int duration, TimeUnit timeUnit) {
         WaveForm waveForm = new ConstantWave(timeUnit.toMillis(duration));
-        StimulationChannels channels = new StimulationChannels(device);
+        StimulationTargets channels = new StimulationTargets(device);
         for (Stimulator stimulator : device.stimulators()) {
-            channels.add(new Channel(stimulator, waveForm));
+            channels.add(new StimulationTarget(stimulator, waveForm));
         }
         return channels;
     }

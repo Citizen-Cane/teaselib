@@ -8,19 +8,19 @@ import org.junit.Test;
 
 import teaselib.stimulation.SquareWave;
 import teaselib.stimulation.Stimulator;
-import teaselib.stimulation.ext.StimulationChannels.Samples;
+import teaselib.stimulation.ext.StimulationTargets.Samples;
 
-public class ChannelsTest {
+public class StimulationTargtetsTest {
     @Test
-    public void testSingleChannel() {
+    public void testSingleTarget() {
         TestStimulationDevice device = new TestStimulationDevice();
         Stimulator stim1 = device.add(new TestStimulator(device, 1));
-        StimulationChannels channels = new StimulationChannels(device);
+        StimulationTargets targets = new StimulationTargets(device);
 
-        channels.add(new Channel(stim1, new SquareWave(0.5, 0.5)));
-        assertEquals(1, channels.size());
+        targets.add(new StimulationTarget(stim1, new SquareWave(0.5, 0.5)));
+        assertEquals(1, targets.size());
 
-        Iterator<Samples> samples = channels.iterator();
+        Iterator<Samples> samples = targets.iterator();
         test(samples.next(), 0, 1.0);
         test(samples.next(), 500, 0.0);
         test(samples.next(), 1000, 0.0);
@@ -29,16 +29,16 @@ public class ChannelsTest {
     }
 
     @Test
-    public void testSingleChannelWithOffset() {
+    public void testSingleTargetWithOffset() {
         TestStimulationDevice device = new TestStimulationDevice();
         Stimulator stim1 = device.add(new TestStimulator(device, 1));
-        StimulationChannels channels = new StimulationChannels(device);
+        StimulationTargets targets = new StimulationTargets(device);
 
         int startOffset = 666;
-        channels.add(new Channel(stim1, new SquareWave(0.5, 0.5), startOffset));
-        assertEquals(1, channels.size());
+        targets.add(new StimulationTarget(stim1, new SquareWave(0.5, 0.5), startOffset));
+        assertEquals(1, targets.size());
 
-        Iterator<Samples> samples = channels.iterator();
+        Iterator<Samples> samples = targets.iterator();
         test(samples.next(), 0, 0.0);
         test(samples.next(), startOffset, 1.0);
         test(samples.next(), startOffset + 500, 0.0);
@@ -48,17 +48,17 @@ public class ChannelsTest {
     }
 
     @Test
-    public void testDualChannels() {
+    public void testDualTargets() {
         TestStimulationDevice device = new TestStimulationDevice();
         Stimulator stim1 = device.add(new TestStimulator(device, 1));
         Stimulator stim2 = device.add(new TestStimulator(device, 2));
-        StimulationChannels channels = new StimulationChannels(device);
+        StimulationTargets targets = new StimulationTargets(device);
 
-        channels.add(new Channel(stim1, new SquareWave(0.5, 0.5)));
-        channels.add(new Channel(stim2, new SquareWave(0.5, 0.5)));
-        assertEquals(2, channels.size());
+        targets.add(new StimulationTarget(stim1, new SquareWave(0.5, 0.5)));
+        targets.add(new StimulationTarget(stim2, new SquareWave(0.5, 0.5)));
+        assertEquals(2, targets.size());
 
-        Iterator<Samples> samples = channels.iterator();
+        Iterator<Samples> samples = targets.iterator();
         test(samples.next(), 0, 1.0, 1.0);
         test(samples.next(), 500, 0.0, 0.0);
         test(samples.next(), 1000, 0.0, 0.0);
@@ -67,17 +67,17 @@ public class ChannelsTest {
     }
 
     @Test
-    public void testDualChannels_Shifted() {
+    public void testDualTargets_Shifted() {
         TestStimulationDevice device = new TestStimulationDevice();
         Stimulator stim1 = device.add(new TestStimulator(device, 1));
         Stimulator stim2 = device.add(new TestStimulator(device, 2));
-        StimulationChannels channels = new StimulationChannels(device);
+        StimulationTargets targets = new StimulationTargets(device);
 
-        channels.add(new Channel(stim1, new SquareWave(0.5, 0.5)));
-        channels.add(new Channel(stim2, new SquareWave(0.5, 0.5), 500));
-        assertEquals(2, channels.size());
+        targets.add(new StimulationTarget(stim1, new SquareWave(0.5, 0.5)));
+        targets.add(new StimulationTarget(stim2, new SquareWave(0.5, 0.5), 500));
+        assertEquals(2, targets.size());
 
-        Iterator<Samples> samples = channels.iterator();
+        Iterator<Samples> samples = targets.iterator();
         test(samples.next(), 0, 1.0, 0.0);
         test(samples.next(), 500, 0.0, 1.0);
         test(samples.next(), 1000, 0.0, 0.0);
@@ -87,19 +87,19 @@ public class ChannelsTest {
     }
 
     @Test
-    public void testTripleChannels() {
+    public void testTripleTargets() {
         TestStimulationDevice device = new TestStimulationDevice();
         Stimulator stim1 = device.add(new TestStimulator(device, 1));
         Stimulator stim2 = device.add(new TestStimulator(device, 2));
         Stimulator stim3 = device.add(new TestStimulator(device, 3));
-        StimulationChannels channels = new StimulationChannels(device);
+        StimulationTargets targets = new StimulationTargets(device);
 
-        channels.add(new Channel(stim1, new SquareWave(0.5, 0.5)));
-        channels.add(new Channel(stim2, new SquareWave(0.5, 0.5)));
-        channels.add(new Channel(stim3, new SquareWave(0.5, 0.5)));
-        assertEquals(3, channels.size());
+        targets.add(new StimulationTarget(stim1, new SquareWave(0.5, 0.5)));
+        targets.add(new StimulationTarget(stim2, new SquareWave(0.5, 0.5)));
+        targets.add(new StimulationTarget(stim3, new SquareWave(0.5, 0.5)));
+        assertEquals(3, targets.size());
 
-        Iterator<Samples> samples = channels.iterator();
+        Iterator<Samples> samples = targets.iterator();
         test(samples.next(), 0, 1.0, 1.0, 1.0);
         test(samples.next(), 500, 0.0, 0.0, 0.0);
         test(samples.next(), 1000, 0.0, 0.0, 0.0);
@@ -108,19 +108,19 @@ public class ChannelsTest {
     }
 
     @Test
-    public void testTripleChannels_Shifted() {
+    public void testTripleTargets_Shifted() {
         TestStimulationDevice device = new TestStimulationDevice();
         Stimulator stim1 = device.add(new TestStimulator(device, 1));
         Stimulator stim2 = device.add(new TestStimulator(device, 2));
         Stimulator stim3 = device.add(new TestStimulator(device, 3));
-        StimulationChannels channels = new StimulationChannels(device);
+        StimulationTargets targets = new StimulationTargets(device);
 
-        channels.add(new Channel(stim1, new SquareWave(0.5, 0.5)));
-        channels.add(new Channel(stim2, new SquareWave(0.5, 0.5), 500));
-        channels.add(new Channel(stim3, new SquareWave(0.5, 0.5), 1000));
-        assertEquals(3, channels.size());
+        targets.add(new StimulationTarget(stim1, new SquareWave(0.5, 0.5)));
+        targets.add(new StimulationTarget(stim2, new SquareWave(0.5, 0.5), 500));
+        targets.add(new StimulationTarget(stim3, new SquareWave(0.5, 0.5), 1000));
+        assertEquals(3, targets.size());
 
-        Iterator<Samples> samples = channels.iterator();
+        Iterator<Samples> samples = targets.iterator();
         test(samples.next(), 0, 1.0, 0.0, 0.0);
         test(samples.next(), 500, 0.0, 1.0, 0.0);
         test(samples.next(), 1000, 0.0, 0.0, 1.0);
@@ -131,7 +131,7 @@ public class ChannelsTest {
     }
 
     @Test
-    public void testTripleChannels_sequential() {
+    public void testTripleTargets_sequential() {
         TestStimulationDevice device = new TestStimulationDevice();
         Stimulator stim1 = device.add(new TestStimulator(device, 1));
         Stimulator stim2 = device.add(new TestStimulator(device, 2));
@@ -140,7 +140,7 @@ public class ChannelsTest {
     }
 
     @Test
-    public void testThatChannelOrderIsSameAsStimulatorOrderOfDevice() {
+    public void testThatTargetOrderIsSameAsStimulatorOrderOfDevice() {
         TestStimulationDevice device = new TestStimulationDevice();
         Stimulator stim1 = device.add(new TestStimulator(device, 1));
         Stimulator stim2 = device.add(new TestStimulator(device, 2));
@@ -153,38 +153,38 @@ public class ChannelsTest {
 
     private static void testOrderingAscending(TestStimulationDevice device, Stimulator stim1, Stimulator stim2,
             Stimulator stim3) {
-        StimulationChannels channels = new StimulationChannels(device);
+        StimulationTargets targets = new StimulationTargets(device);
 
-        channels.add(new Channel(stim1, new SquareWave(0.5, 0.5)));
-        channels.add(new Channel(stim2, new SquareWave(0.5, 0.5), 1000));
-        channels.add(new Channel(stim3, new SquareWave(0.5, 0.5), 2000));
+        targets.add(new StimulationTarget(stim1, new SquareWave(0.5, 0.5)));
+        targets.add(new StimulationTarget(stim2, new SquareWave(0.5, 0.5), 1000));
+        targets.add(new StimulationTarget(stim3, new SquareWave(0.5, 0.5), 2000));
 
-        testTripleChannels(channels);
+        testTripleTargets(targets);
     }
 
     private static void testOrderingDescending(TestStimulationDevice device, Stimulator stim1, Stimulator stim2,
             Stimulator stim3) {
-        StimulationChannels channels = new StimulationChannels(device);
+        StimulationTargets targets = new StimulationTargets(device);
 
-        channels.add(new Channel(stim3, new SquareWave(0.5, 0.5), 2000));
-        channels.add(new Channel(stim2, new SquareWave(0.5, 0.5), 1000));
-        channels.add(new Channel(stim1, new SquareWave(0.5, 0.5)));
+        targets.add(new StimulationTarget(stim3, new SquareWave(0.5, 0.5), 2000));
+        targets.add(new StimulationTarget(stim2, new SquareWave(0.5, 0.5), 1000));
+        targets.add(new StimulationTarget(stim1, new SquareWave(0.5, 0.5)));
 
-        testTripleChannels(channels);
+        testTripleTargets(targets);
     }
 
     private static void testOrderingRandom(TestStimulationDevice device, Stimulator stim1, Stimulator stim2,
             Stimulator stim3) {
-        StimulationChannels channels = new StimulationChannels(device);
+        StimulationTargets targets = new StimulationTargets(device);
 
-        channels.add(new Channel(stim2, new SquareWave(0.5, 0.5), 1000));
-        channels.add(new Channel(stim3, new SquareWave(0.5, 0.5), 2000));
-        channels.add(new Channel(stim1, new SquareWave(0.5, 0.5)));
+        targets.add(new StimulationTarget(stim2, new SquareWave(0.5, 0.5), 1000));
+        targets.add(new StimulationTarget(stim3, new SquareWave(0.5, 0.5), 2000));
+        targets.add(new StimulationTarget(stim1, new SquareWave(0.5, 0.5)));
 
-        testTripleChannels(channels);
+        testTripleTargets(targets);
     }
 
-    private static void testTripleChannels(StimulationChannels channels) {
+    private static void testTripleTargets(StimulationTargets channels) {
         assertEquals(3, channels.size());
 
         Iterator<Samples> samples = channels.iterator();

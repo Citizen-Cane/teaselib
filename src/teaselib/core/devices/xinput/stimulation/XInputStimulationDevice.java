@@ -24,8 +24,8 @@ import teaselib.stimulation.Stimulator;
 import teaselib.stimulation.Stimulator.Output;
 import teaselib.stimulation.Stimulator.Wiring;
 import teaselib.stimulation.WaveForm;
-import teaselib.stimulation.ext.StimulationChannels;
-import teaselib.stimulation.ext.StimulationChannels.Samples;
+import teaselib.stimulation.ext.StimulationTargets;
+import teaselib.stimulation.ext.StimulationTargets.Samples;
 
 /**
  * The XInputStimulator class turns any Microsoft XInput (x360, Xbox One and compatible) controller into a vibrator or
@@ -203,7 +203,7 @@ public class XInputStimulationDevice extends StimulationDevice {
     }
 
     @Override
-    public void play(StimulationChannels channels, int repeatCount) {
+    public void play(StimulationTargets channels, int repeatCount) {
         synchronized (executor) {
             // TODO Continue running patterns by mixing new pattern into currently playing
             // - possible because inference channel has priority
@@ -217,10 +217,10 @@ public class XInputStimulationDevice extends StimulationDevice {
         }
     }
 
-    private void playAsync(StimulationChannels channels, int repeatCount) {
+    private void playAsync(StimulationTargets targets, int repeatCount) {
         try {
             for (int i = 0; i < repeatCount; i++) {
-                for (Samples samples : channels) {
+                for (Samples samples : targets) {
                     playSamples(samples);
                     sleep(samples.getTimeStampMillis());
                     if (Thread.currentThread().isInterrupted())
@@ -242,13 +242,13 @@ public class XInputStimulationDevice extends StimulationDevice {
 
     private void playSamples(Samples samples) {
         if (wiring == Wiring.INFERENCE_CHANNEL) {
-            setHighestPriorityChannel(samples);
+            setHighestPriorityStimulator(samples);
         } else {
-            setIndependentChannels(samples);
+            setIndependentStimulators(samples);
         }
     }
 
-    private void setHighestPriorityChannel(Samples samples) {
+    private void setHighestPriorityStimulator(Samples samples) {
         if (samples.getValues()[2] > WaveForm.MEAN) {
             int value = vibrationValue(samples.get(2));
             device.setVibration(value, value);
@@ -259,7 +259,7 @@ public class XInputStimulationDevice extends StimulationDevice {
         }
     }
 
-    private void setIndependentChannels(Samples samples) {
+    private void setIndependentStimulators(Samples samples) {
         device.setVibration(vibrationValue(samples.get(0)), vibrationValue(samples.get(1)));
     }
 

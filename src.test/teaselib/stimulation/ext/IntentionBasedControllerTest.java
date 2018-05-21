@@ -18,23 +18,23 @@ import teaselib.stimulation.pattern.Whip;
 
 public class IntentionBasedControllerTest {
     private final class TestController extends IntentionBasedController<Intention, Body> {
-        Consumer<List<Channel>> testActionList;
-        BiConsumer<StimulationDevice, StimulationChannels> testDeviceEntry;
+        Consumer<List<StimulationTarget>> testActionList;
+        BiConsumer<StimulationDevice, StimulationTargets> testDeviceEntry;
 
-        public TestController(Consumer<List<Channel>> testActionList,
-                BiConsumer<StimulationDevice, StimulationChannels> testDeviceEntry) {
+        public TestController(Consumer<List<StimulationTarget>> testActionList,
+                BiConsumer<StimulationDevice, StimulationTargets> testDeviceEntry) {
             this.testActionList = testActionList;
             this.testDeviceEntry = testDeviceEntry;
         }
 
         @Override
-        public void play(List<Channel> channels, double durationSeconds) {
+        public void play(List<StimulationTarget> channels, double durationSeconds) {
             testActionList.accept(channels);
             super.play(channels, durationSeconds);
         }
 
         @Override
-        void play(StimulationDevice device, StimulationChannels channels, int repeatCount) {
+        void play(StimulationDevice device, StimulationTargets channels, int repeatCount) {
             testDeviceEntry.accept(device, channels);
             super.play(device, channels, repeatCount);
         }
@@ -75,7 +75,7 @@ public class IntentionBasedControllerTest {
                 (stimulationActions) -> assertEquals(2, stimulationActions.size()),
                 (device, items) -> assertTrue(
                         (device == device1 && items.size() == 1 && items.get(0).stimulator == stim1)
-                                || (device == device2 && items.size() == 2 && items.get(0) == Channel.EMPTY
+                                || (device == device2 && items.size() == 2 && items.get(0) == StimulationTarget.EMPTY
                                         && items.get(1).stimulator == stim3)));
         c.add(Intention.Pace, stim1);
         c.add(Intention.Tease, stim2);

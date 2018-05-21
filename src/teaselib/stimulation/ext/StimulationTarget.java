@@ -3,8 +3,8 @@ package teaselib.stimulation.ext;
 import teaselib.stimulation.Stimulator;
 import teaselib.stimulation.WaveForm;
 
-public class Channel {
-    static final Channel EMPTY = new Channel(null, WaveForm.NONE) {
+public class StimulationTarget {
+    static final StimulationTarget EMPTY = new StimulationTarget(null, WaveForm.NONE) {
         @Override
         public String toString() {
             return "Empty";
@@ -14,11 +14,11 @@ public class Channel {
     final Stimulator stimulator;
     final WaveForm waveForm;
 
-    public Channel(Stimulator stimulator, WaveForm waveForm, long startMillis) {
+    public StimulationTarget(Stimulator stimulator, WaveForm waveForm, long startMillis) {
         this(stimulator, startMillis > 0 ? new WaveForm(startMillis, waveForm) : waveForm);
     }
 
-    public Channel(Stimulator stimulator, WaveForm waveForm) {
+    public StimulationTarget(Stimulator stimulator, WaveForm waveForm) {
         this.stimulator = stimulator;
         this.waveForm = waveForm;
     }
@@ -27,7 +27,7 @@ public class Channel {
         return waveForm;
     }
 
-    public static Channel maxDuration(Channel a, Channel b) {
+    public static StimulationTarget maxDuration(StimulationTarget a, StimulationTarget b) {
         return a.waveForm.getDurationMillis() > b.waveForm.getDurationMillis() ? a : b;
     }
 

@@ -54,13 +54,13 @@ public class Prompt {
         scriptTask.execute();
     }
 
-    void joinScriptTask() {
+    void joinScriptTask() throws InterruptedException {
         if (scriptTask != null) {
             scriptTask.join();
         }
     }
 
-    void cancelScriptTask() {
+    void cancelScriptTask() throws InterruptedException {
         if (scriptTask != null) {
             if (!scriptTask.isCancelled() && !scriptTask.isDone()) {
                 scriptTask.cancel(true);

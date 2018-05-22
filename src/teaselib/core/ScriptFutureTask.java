@@ -54,13 +54,7 @@ public class ScriptFutureTask extends FutureTask<Void> {
 
     @Override
     public void run() {
-        try {
-            super.run();
-        } catch (ScriptInterruptedException e) {
-            logger.info("Script task {} interrupted", prompt);
-        } catch (Throwable t) {
-            setException(t);
-        }
+        super.run();
 
         try {
             logger.info("Script task {} is finishing", prompt);
@@ -71,13 +65,8 @@ public class ScriptFutureTask extends FutureTask<Void> {
             } finally {
                 prompt.lock.unlock();
             }
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            // Ignore interrupt while dismissing prompt since the script function is finishing,
-            // and either has been stopped already or will be dismissed (all good states)
-        } catch (ScriptInterruptedException e) {
-            // Expected
-            logger.info("Script task {} interrupted", prompt);
+        } catch (InterruptedException | ScriptInterruptedException e) {
+            handleScriptTaskInterrupted();
         } catch (Exception e) {
             if (throwable == null) {
                 setException(e);
@@ -87,6 +76,11 @@ public class ScriptFutureTask extends FutureTask<Void> {
         } finally {
             logger.info("Script task {} finished", prompt);
         }
+    }
+
+    private void handleScriptTaskInterrupted() {
+        logger.info("Script task {} interrupted", prompt);
+        Thread.interrupted();
     }
 
     @Override
@@ -118,13 +112,10 @@ public class ScriptFutureTask extends FutureTask<Void> {
         Executor.execute(this);
     }
 
-    public void join() {
+    public void join() throws InterruptedException {
         try {
             logger.info("Waiting for script task {} to join", prompt);
             get();
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new ScriptInterruptedException(e);
         } catch (CancellationException e) {
             // Ignore
         } catch (ExecutionException e) {

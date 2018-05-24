@@ -60,7 +60,7 @@ public class EStimControllerSetup extends TeaseScript {
     }
 
     private StimulationDevice getDevice() {
-        say("Get your EStim device and turn on the teaseLib controller!");
+        // say("Get your EStim device and turn on the controller!");
         String manualDevice = "I only have a manual device";
         String notAvailable = "I'm sorry, #title, but I don't have any";
         Chooser chooser = new Chooser();
@@ -125,7 +125,7 @@ public class EStimControllerSetup extends TeaseScript {
         // - just test channels for output and adjust instructions
         // TODO add device selector and signal type selector (estim/vibration)
 
-        showLengthyInstructions();
+        wireUpDualPhysicalChannelDeviceInstructions();
         device.play(constantSignal(device, 1, TimeUnit.MINUTES), 60);
 
         String separate = "Two separate sets of electrodes, #title";
@@ -142,7 +142,7 @@ public class EStimControllerSetup extends TeaseScript {
         }
     }
 
-    private void showLengthyInstructions() {
+    private void wireUpDualPhysicalChannelDeviceInstructions() {
         say("You may now apply the electrodes and connect them to your stimulation device.");
         append(Message.Bullet,
                 "Use a separate set of electrodes for each channel to provide me with two independent channels to guide you through the session.");
@@ -151,10 +151,10 @@ public class EStimControllerSetup extends TeaseScript {
         append(Message.Bullet,
                 "Share electrodes between both channels for three levels of signal strength to guide and punish you.");
 
-        append("I've turned on all channels of the controller on pass-through to allow you to play with the signal strength.");
+        append("I've set all channels to pass-through to allow you to play with the signal strength.");
         append(Message.Bullet, "The left channel will set your pace.");
         append(Message.Bullet, "The right channel will be used to tease you.");
-        append(Message.Bullet, "The inference channel will be used to discipline you.");
+        append(Message.Bullet, "The inference channel on the shared electrodes will be used to discipline you.");
 
         append("A shared electrode might inflict sharp pain on the body part it's applied to,",
                 "but this is just what you deserve.");
@@ -182,24 +182,27 @@ public class EStimControllerSetup extends TeaseScript {
 
     private StimulationDevice adjustLevels(EStimController stim, StimulationDevice device) {
         EStimController.init(stim, device);
-
-        say("Now adjust the levels acording to your pain tolerance for proper feedback during your training");
-        append(Message.Bullet, "Left channel: pace");
-        append(Message.Bullet, "Right channel: tease");
-        if (device.wiring == Wiring.INFERENCE_CHANNEL) {
-            append(Message.Bullet, "Inference channel: discipline");
-        }
+         adjustlevelsInstructions(device);
         append("Let's try it:");
 
         reply(() -> {
-            while (true)
-                iterateIntentions(stim);
+            while (iterateIntentions(stim))
+                ;
         }, "All channels adjusted, #title");
 
         return device;
     }
 
-    private void iterateIntentions(EStimController stim) {
+    private void adjustlevelsInstructions(StimulationDevice device) {
+        say("Now adjust the levels acording to your pain tolerance for proper feedback during your training:");
+         append(Message.Bullet, "Left channel: pace");
+         append(Message.Bullet, "Right channel: tease");
+         if (device.wiring == Wiring.INFERENCE_CHANNEL) {
+         append(Message.Bullet, "Inference channel: discipline");
+         }
+    }
+
+    private boolean iterateIntentions(EStimController stim) {
         // TODO What is perceived stronger on pain or tease level:
         // constant input or burst pulse
         // return new ConstantWave(2.0);
@@ -223,19 +226,18 @@ public class EStimControllerSetup extends TeaseScript {
 
                 String againPlease = "Again please, #title";
                 String nextPlease = "Next please, #title";
-            // listen to "next please" input and advance, but keep buttons displayed
+                // listen to "next please" input and advance, but keep buttons displayed
                 // TODO Include answer from script function -> nested function
                 String todoNestedAnswer = "All channels adjusted, #title";
                 String answer = reply(againPlease, nextPlease, todoNestedAnswer);
-                if (answer == againPlease) {
-                    continue;
-                } else if (answer == nextPlease) {
+                if (answer == nextPlease) {
                     break;
                 } else if (answer == todoNestedAnswer) {
-                    // TODO causes ScriptInterruptedExceptino to fall through and being displayed by SexScript dialog
-                    Thread.currentThread().interrupt();
+                    return false;
                 }
             }
         }
+
+        return true;
     }
 }

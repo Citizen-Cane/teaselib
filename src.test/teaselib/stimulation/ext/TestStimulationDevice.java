@@ -1,6 +1,3 @@
-/**
- * 
- */
 package teaselib.stimulation.ext;
 
 import static org.junit.Assert.*;
@@ -61,7 +58,7 @@ final class TestStimulationDevice extends StimulationDevice {
     }
 
     @Override
-    public void play(StimulationTargets channels, int repeatCount) {
+    public void play(StimulationTargets channels) {
         assertNotNull(channels);
         assertFalse(channels.isEmpty());
     }

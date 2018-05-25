@@ -1,6 +1,8 @@
 package teaselib.stimulation.ext;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 import java.util.Iterator;
 
@@ -24,6 +26,25 @@ public class StimulationTargtetsTest {
         test(samples.next(), 0, 1.0);
         test(samples.next(), 500, 0.0);
         test(samples.next(), 1000, 0.0);
+
+        assertFalse(samples.hasNext());
+    }
+
+    @Test
+    public void testSingleTargetRepeatCount() {
+        TestStimulationDevice device = new TestStimulationDevice();
+        Stimulator stim1 = device.add(new TestStimulator(device, 1));
+        StimulationTargets targets = new StimulationTargets(device);
+
+        targets.add(new StimulationTarget(stim1, new SquareWave(0.5, 0.5), 0, 2000));
+        assertEquals(1, targets.size());
+
+        Iterator<Samples> samples = targets.iterator();
+        test(samples.next(), 0, 1.0);
+        test(samples.next(), 500, 0.0);
+        test(samples.next(), 1000, 1.0);
+        test(samples.next(), 1500, 0.0);
+        test(samples.next(), 2000, 0.0);
 
         assertFalse(samples.hasNext());
     }

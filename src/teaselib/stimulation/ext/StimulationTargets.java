@@ -50,18 +50,26 @@ public class StimulationTargets implements Iterable<Samples> {
 
         final List<Iterator<WaveForm.Sample>> iterators;
         final List<WaveForm.Sample> waveformSamples;
+        final int[] repeatCounts;
 
         private SampleIterator() {
             this.samples = new Samples(size());
-            this.waveformSamples = new ArrayList<>(size());
-            this.iterators = new ArrayList<>(size());
 
-            for (StimulationTarget channel : targets) {
-                Iterator<WaveForm.Sample> iterator = channel.getWaveForm().iterator();
+            this.iterators = new ArrayList<>(size());
+            this.waveformSamples = new ArrayList<>(size());
+            this.repeatCounts = new int[size()];
+
+            for (StimulationTarget target : targets) {
+                waveformSamples.add(null);
+                Iterator<WaveForm.Sample> iterator = target.getWaveForm().iterator();
                 iterators.add(iterator);
+
                 Sample sample = iterator.next();
-                samples.getValues()[waveformSamples.size()] = sample.getValue();
-                waveformSamples.add(sample);
+                int targetIndex = targets.indexOf(target);
+                samples.getValues()[targetIndex] = sample.getValue();
+                waveformSamples.set(targetIndex, sample);
+
+                repeatCounts[iterators.size() - 1] = 0;
             }
         }
 
@@ -76,12 +84,18 @@ public class StimulationTargets implements Iterable<Samples> {
                 throw new NoSuchElementException();
             } else {
                 Optional<Sample> sample = waveformSamples.stream().reduce(Sample::earliest);
-                if (sample.isPresent() && sample.get().getTimeStampMillis() >= samples.timeStampMillis) {
-                    Sample next = sample.get();
-                    long nextTimeStampMillis = next.getTimeStampMillis();
-                    samples.timeStampMillis = nextTimeStampMillis;
-                    advance(nextTimeStampMillis);
-                    return samples;
+                if (sample.isPresent()) {
+                    int targetIndex = waveformSamples.indexOf(sample.get());
+                    long duration = targets.get(targetIndex).waveForm.getDurationMillis() * repeatCounts[targetIndex];
+                    if (duration + sample.get().getTimeStampMillis() >= samples.timeStampMillis) {
+                        Sample next = sample.get();
+                        long nextTimeStampMillis = next.getTimeStampMillis();
+                        samples.timeStampMillis = duration + nextTimeStampMillis;
+                        advance(nextTimeStampMillis);
+                        return samples;
+                    } else {
+                        throw new IllegalStateException();
+                    }
                 } else {
                     throw new IllegalStateException();
                 }
@@ -98,23 +112,31 @@ public class StimulationTargets implements Iterable<Samples> {
             }
         }
 
-        private void fetchNextValue(int channel) {
-            Iterator<Sample> iterator = iterators.get(channel);
+        private void fetchNextValue(int targetIndex) {
+            Iterator<Sample> iterator = iterators.get(targetIndex);
             if (iterator != null) {
                 boolean hasNext = iterator.hasNext();
                 if (hasNext) {
-                    waveformSamples.set(channel, iterator.next());
+                    waveformSamples.set(targetIndex, iterator.next());
                 } else {
-                    waveformSamples.set(channel, new WaveForm.Sample(channelDuration(channel), 0.0));
-                    iterators.set(channel, null);
+                    StimulationTarget target = targets.get(targetIndex);
+                    if (repeatCounts[targetIndex] < target.repeatCount - 1) {
+                        iterator = target.getWaveForm().iterator();
+                        iterators.set(targetIndex, iterator);
+
+                        Sample sample = iterator.next();
+                        waveformSamples.set(targetIndex, sample);
+
+                        repeatCounts[targetIndex]++;
+                    } else {
+                        long timeStamp = target.getWaveForm().getDurationMillis();
+                        waveformSamples.set(targetIndex, new WaveForm.Sample(timeStamp, 0.0));
+                        iterators.set(targetIndex, null);
+                    }
                 }
             } else {
-                waveformSamples.set(channel, WaveForm.Sample.End);
+                waveformSamples.set(targetIndex, WaveForm.Sample.End);
             }
-        }
-
-        private long channelDuration(int channel) {
-            return get(channel).getWaveForm().getDurationMillis();
         }
     }
 

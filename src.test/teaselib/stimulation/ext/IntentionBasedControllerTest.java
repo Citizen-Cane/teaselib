@@ -1,6 +1,7 @@
 package teaselib.stimulation.ext;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.util.List;
 import java.util.function.BiConsumer;
@@ -28,16 +29,17 @@ public class IntentionBasedControllerTest {
         }
 
         @Override
-        public void play(List<StimulationTarget> channels, double durationSeconds) {
+        public void play(List<StimulationTarget> channels) {
             testActionList.accept(channels);
-            super.play(channels, durationSeconds);
+            super.play(channels);
         }
 
         @Override
-        void play(StimulationDevice device, StimulationTargets channels, int repeatCount) {
+        void play(StimulationDevice device, StimulationTargets channels) {
             testDeviceEntry.accept(device, channels);
-            super.play(device, channels, repeatCount);
+            super.play(device, channels);
         }
+
     }
 
     @Test

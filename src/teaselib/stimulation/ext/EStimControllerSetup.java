@@ -126,7 +126,7 @@ public class EStimControllerSetup extends TeaseScript {
         // TODO add device selector and signal type selector (estim/vibration)
 
         wireUpDualPhysicalChannelDeviceInstructions();
-        device.play(constantSignal(device, 1, TimeUnit.MINUTES), 60);
+        device.play(constantSignal(device, 1, TimeUnit.MINUTES));
 
         String separate = "Two separate sets of electrodes, #title";
         String oneShared = "One shared electrode, #title";
@@ -171,18 +171,18 @@ public class EStimControllerSetup extends TeaseScript {
         // -> setup as single continuous channel device
     }
 
-    private static StimulationTargets constantSignal(StimulationDevice device, int duration, TimeUnit timeUnit) {
+    private static StimulationTargets constantSignal(StimulationDevice device, long duration, TimeUnit timeUnit) {
         WaveForm waveForm = new ConstantWave(timeUnit.toMillis(duration));
         StimulationTargets channels = new StimulationTargets(device);
         for (Stimulator stimulator : device.stimulators()) {
-            channels.add(new StimulationTarget(stimulator, waveForm));
+            channels.add(new StimulationTarget(stimulator, waveForm, 0));
         }
         return channels;
     }
 
     private StimulationDevice adjustLevels(EStimController stim, StimulationDevice device) {
         EStimController.init(stim, device);
-         adjustlevelsInstructions(device);
+        adjustlevelsInstructions(device);
         append("Let's try it:");
 
         reply(() -> {
@@ -195,11 +195,11 @@ public class EStimControllerSetup extends TeaseScript {
 
     private void adjustlevelsInstructions(StimulationDevice device) {
         say("Now adjust the levels acording to your pain tolerance for proper feedback during your training:");
-         append(Message.Bullet, "Left channel: pace");
-         append(Message.Bullet, "Right channel: tease");
-         if (device.wiring == Wiring.INFERENCE_CHANNEL) {
-         append(Message.Bullet, "Inference channel: discipline");
-         }
+        append(Message.Bullet, "Left channel: pace");
+        append(Message.Bullet, "Right channel: tease");
+        if (device.wiring == Wiring.INFERENCE_CHANNEL) {
+            append(Message.Bullet, "Inference channel: discipline");
+        }
     }
 
     private boolean iterateIntentions(EStimController stim) {

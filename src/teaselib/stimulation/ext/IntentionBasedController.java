@@ -7,8 +7,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import teaselib.core.devices.Device;
 import teaselib.stimulation.Stimulation;
@@ -47,9 +47,9 @@ public class IntentionBasedController<T extends Enum<?>, B extends Enum<?>> {
     }
 
     public IntentionBasedController<T, B> play(T intention, Stimulation stimulation, double durationSeconds) {
-        List<StimulationTarget> targets = new ArrayList<>();
-        targets.addAll(allTargets(intention, stimulation, 0));
-        play(targets, durationSeconds);
+        long startMillis = 0;
+        long durationMillis = TimeUnit.SECONDS.toMillis((long) durationSeconds);
+        play(allTargets(intention, stimulation, startMillis, durationMillis));
         return this;
     }
 
@@ -61,11 +61,11 @@ public class IntentionBasedController<T extends Enum<?>, B extends Enum<?>> {
     public IntentionBasedController<T, B> play(T intention, Stimulation stimulation, T intention2,
             Stimulation stimulation2, double durationSeconds) {
         List<StimulationTarget> targets = new ArrayList<>();
-        List<StimulationTarget> targets1 = allTargets(intention, stimulation, 0);
-        targets.addAll(targets1);
-        List<StimulationTarget> targets2 = allTargets(intention2, stimulation2, getMaxDuration(targets1));
-        targets.addAll(targets2);
-        play(targets, durationSeconds);
+        long startMillis = 0;
+        long durationMillis = TimeUnit.SECONDS.toMillis((long) durationSeconds);
+        targets.addAll(allTargets(intention, stimulation, startMillis, durationMillis));
+        targets.addAll(allTargets(intention2, stimulation2, startMillis, durationMillis));
+        play(targets);
         return this;
     }
 
@@ -74,49 +74,45 @@ public class IntentionBasedController<T extends Enum<?>, B extends Enum<?>> {
         return play(intention, stimulation, intention2, stimulation2, intention3, stimulation3, 0);
     }
 
+    // TODO Play all parallel, because playing one after another can be accomplished via sequential play/complete pairs
+    // TODO Add overload with duration seconds parameter for each stimulation
+    // -> allows to extend the target duration when playing
+    // TODO Add overload with start offset parameter for each stimulation
+    // TODO split into start and play, where play completes the stimulation
     public IntentionBasedController<T, B> play(T intention, Stimulation stimulation, T intention2,
             Stimulation stimulation2, T intention3, Stimulation stimulation3, double durationSeconds) {
         List<StimulationTarget> targets = new ArrayList<>();
-        List<StimulationTarget> targets1 = allTargets(intention, stimulation, 0);
-        targets.addAll(targets1);
-        List<StimulationTarget> targets2 = allTargets(intention2, stimulation2, getMaxDuration(targets1));
-        targets.addAll(targets2);
-        targets.addAll(allTargets(intention3, stimulation3, getMaxDuration(targets2)));
-        play(targets, durationSeconds);
+        long startMillis = 0;
+        long durationMillis = TimeUnit.SECONDS.toMillis((long) durationSeconds);
+        targets.addAll(allTargets(intention, stimulation, startMillis, durationMillis));
+        targets.addAll(allTargets(intention2, stimulation2, startMillis, durationMillis));
+        targets.addAll(allTargets(intention3, stimulation3, startMillis, durationMillis));
+        play(targets);
         return this;
     }
 
-    private static long getMaxDuration(List<StimulationTarget> targets) {
-        Optional<StimulationTarget> duration = targets.stream().reduce(StimulationTarget::maxDuration);
-        if (duration.isPresent()) {
-            return duration.get().getWaveForm().getDurationMillis();
-        } else {
-            throw new IllegalArgumentException(targets.toString());
-        }
-    }
-
-    private List<StimulationTarget> allTargets(T intention, Stimulation stimulation, long startMillis) {
+    private List<StimulationTarget> allTargets(T intention, Stimulation stimulation, long startMillis,
+            long durationMillis) {
         List<Stimulator> stimulators = stims.get(intention);
         List<StimulationTarget> targets = new ArrayList<>();
         for (Stimulator stimulator : stimulators) {
             WaveForm waveform = stimulation.waveform(stimulator, intensity);
-            targets.add(new StimulationTarget(stimulator, waveform, startMillis));
+            targets.add(new StimulationTarget(stimulator, waveform, startMillis, durationMillis));
         }
         return targets;
     }
 
-    void play(List<StimulationTarget> targets, double durationSeconds) {
+    void play(List<StimulationTarget> targets) {
         Partition<StimulationTarget> devices = new Partition<>(targets,
                 (a, b) -> a.stimulator.getDevice() == b.stimulator.getDevice());
         for (Partition<StimulationTarget>.Group group : devices.groups) {
-            play(group.get(0).stimulator.getDevice(), group, durationSeconds);
+            play(group.get(0).stimulator.getDevice(), group);
         }
     }
 
-    private void play(StimulationDevice device, Partition<StimulationTarget>.Group targetGroup, double durationSeconds) {
+    private void play(StimulationDevice device, Partition<StimulationTarget>.Group targetGroup) {
         StimulationTargets stimulationTargets = new StimulationTargets(device, asList(targetGroup));
-        int repeatCount = repeatCount(stimulationTargets, durationSeconds);
-        play(device, stimulationTargets, repeatCount);
+        play(device, stimulationTargets);
     }
 
     private static List<StimulationTarget> asList(Iterable<StimulationTarget> lines) {
@@ -127,13 +123,8 @@ public class IntentionBasedController<T extends Enum<?>, B extends Enum<?>> {
         return list;
     }
 
-    private static int repeatCount(StimulationTargets lines, double durationSeconds) {
-        long maxDurationMillis = lines.maxDurationMillis();
-        return maxDurationMillis > 0 ? Math.max(1, (int) (WaveForm.toMillis(durationSeconds) / maxDurationMillis)) : 1;
-    }
-
-    void play(StimulationDevice device, StimulationTargets lines, int repeatCount) {
-        device.play(lines, repeatCount);
+    void play(StimulationDevice device, StimulationTargets targets) {
+        device.play(targets);
     }
 
     public void complete() {

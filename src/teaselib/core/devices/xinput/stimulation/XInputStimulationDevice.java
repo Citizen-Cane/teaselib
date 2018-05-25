@@ -203,7 +203,7 @@ public class XInputStimulationDevice extends StimulationDevice {
     }
 
     @Override
-    public void play(StimulationTargets channels, int repeatCount) {
+    public void play(StimulationTargets channels) {
         synchronized (executor) {
             // TODO Continue running patterns by mixing new pattern into currently playing
             // - possible because inference channel has priority
@@ -213,19 +213,17 @@ public class XInputStimulationDevice extends StimulationDevice {
             // - it's basically replacing the existing channels with new channels and setting the offset (which we don't
             // have)
             stop();
-            stimulationGenerator.set(Optional.of(executor.submit(() -> playAsync(channels, repeatCount))));
+            stimulationGenerator.set(Optional.of(executor.submit(() -> playAsync(channels))));
         }
     }
 
-    private void playAsync(StimulationTargets targets, int repeatCount) {
+    private void playAsync(StimulationTargets targets) {
         try {
-            for (int i = 0; i < repeatCount; i++) {
-                for (Samples samples : targets) {
-                    playSamples(samples);
-                    sleep(samples.getTimeStampMillis());
-                    if (Thread.currentThread().isInterrupted())
-                        return;
-                }
+            for (Samples samples : targets) {
+                playSamples(samples);
+                sleep(samples.getTimeStampMillis());
+                if (Thread.currentThread().isInterrupted())
+                    return;
             }
         } finally {
             device.setVibration(0, 0);

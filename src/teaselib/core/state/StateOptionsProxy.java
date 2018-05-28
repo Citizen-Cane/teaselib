@@ -15,8 +15,8 @@ public class StateOptionsProxy extends AbstractProxy<State.Options> implements S
     }
 
     @Override
-    public State remember() {
-        return new StateProxy(namespace, state.remember());
+    public void remember() {
+        state.remember();
     }
 
     @Override

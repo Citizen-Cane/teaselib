@@ -13,7 +13,7 @@ public interface State {
     @SuppressWarnings("unchecked")
     <S extends Object> Options applyTo(S... items);
 
-    boolean is(Object... objects);
+    boolean is(Object... attributes);
 
     boolean applied();
 
@@ -33,6 +33,6 @@ public interface State {
     }
 
     interface Persistence {
-        State remember();
+        void remember();
     }
 }

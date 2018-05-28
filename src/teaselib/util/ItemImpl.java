@@ -103,10 +103,6 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
             return false;
     }
 
-    public boolean has(Object... attributes) {
-        return StateMaps.hasAllAttributes(this.attributes, attributes);
-    }
-
     private boolean stateContainsAll(Object... attributes) {
         if (!applied()) {
             return false;

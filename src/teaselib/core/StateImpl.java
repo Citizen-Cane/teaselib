@@ -98,7 +98,7 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
         }
     }
 
-    private long string2limit(String limitString) {
+    private static long string2limit(String limitString) {
         long limit;
         if (limitString.equals(REMOVED_KEYWORD)) {
             limit = REMOVED;
@@ -326,13 +326,12 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
     }
 
     @Override
-    public State remember() {
+    public void remember() {
         updatePersistence();
         for (Object s : peers) {
             StateImpl peer = state(s);
             peer.updatePersistence();
         }
-        return this;
     }
 
     @Override

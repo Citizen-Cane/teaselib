@@ -15,7 +15,7 @@ public interface Item extends State {
 
     }
 
-    public static final Item NotAvailable = new Item() {
+    public static final Item NotFound = new Item() {
 
         @Override
         public boolean is(Object... attributes) {

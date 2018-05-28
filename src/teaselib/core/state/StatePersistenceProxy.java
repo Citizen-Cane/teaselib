@@ -1,6 +1,3 @@
-/**
- * 
- */
 package teaselib.core.state;
 
 import teaselib.State;
@@ -13,7 +10,7 @@ public class StatePersistenceProxy extends AbstractProxy<State.Persistence> impl
     }
 
     @Override
-    public State remember() {
-        return new StateProxy(namespace, state.remember());
+    public void remember() {
+        state.remember();
     }
 }

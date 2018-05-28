@@ -793,15 +793,7 @@ public class TeaseLib {
      * @return The item that corresponds to the value.
      */
     public <T extends Object> Item item(String domain, T item) {
-        Items items = items(domain, item);
-        Items available = items.available();
-        if (!available.isEmpty()) {
-            return available.get(0);
-        } else if (!items.isEmpty()) {
-            return items.get(0);
-        } else {
-            return Item.NotAvailable;
-        }
+        return items(domain, item).get();
     }
 
     public Item getByGuid(String domain, Object item, String guid) {

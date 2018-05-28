@@ -3,7 +3,6 @@ package teaselib.core;
 import static org.junit.Assert.*;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.List;
 
 import org.junit.Test;
@@ -75,7 +74,7 @@ public class AbstractUserItemsTest {
 
         class TestablePredefinedItems extends PreDefinedItems {
 
-            public TestablePredefinedItems(TeaseLib teaseLib) throws IOException {
+            public TestablePredefinedItems(TeaseLib teaseLib) {
                 super(teaseLib);
             }
 
@@ -85,7 +84,7 @@ public class AbstractUserItemsTest {
 
             @Override
             public Item[] getDefaultItem(String domain, QualifiedItem item) {
-                return new Item[] { Item.NotAvailable };
+                return new Item[] { Item.NotFound };
             }
 
         }
@@ -97,12 +96,12 @@ public class AbstractUserItemsTest {
             Item[] predefined = items.createItems(TeaseLib.DefaultDomain, new QualifiedEnum(item));
             assertNotNull(predefined);
             assertTrue(predefined.length > 0);
-            assertNotEquals("Expected defined item for " + item.name(), Item.NotAvailable, predefined[0]);
+            assertNotEquals("Expected defined item for " + item.name(), Item.NotFound, predefined[0]);
         }
     }
 
     @Test
-    public void testUserItems() throws IOException {
+    public void testUserItems() {
         TestScript script = TestScript.getOne();
         Configuration config = script.teaseLib.config;
 

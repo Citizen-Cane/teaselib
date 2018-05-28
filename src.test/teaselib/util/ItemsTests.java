@@ -16,63 +16,63 @@ import teaselib.test.TestScript;
 public class ItemsTests {
 
     @Test
-    public void testGetAvailableItemsFirst() throws Exception {
+    public void testGetAvailableItemsFirst() {
         TeaseScript script = TestScript.getOne();
         Items gags = script.items(Toys.Gag);
 
-        assertFalse(gags.isAvailable());
+        assertFalse(gags.anyAvailable());
         assertFalse(gags.get(0).is(Toys.Gags.Ring_Gag));
 
         Item ringGag = gags.get(Toys.Gags.Ring_Gag);
         assertTrue(ringGag.is(Toys.Gags.Ring_Gag));
 
         ringGag.setAvailable(true);
-        assertTrue(gags.isAvailable());
+        assertTrue(gags.anyAvailable());
 
         Items sameGags = script.items(Toys.Gag);
-        assertTrue(sameGags.isAvailable());
+        assertTrue(sameGags.anyAvailable());
         assertFalse(gags.get(0).is(Toys.Gags.Ring_Gag));
 
         Item sameRingGag = script.item(Toys.Gag);
         assertTrue(sameRingGag.isAvailable());
         assertTrue(sameRingGag.is(Toys.Gags.Ring_Gag));
 
-        Item againTheSameGag = script.items(Toys.Gag).available().get(0);
+        Item againTheSameGag = script.items(Toys.Gag).getAvailable().get(0);
         assertTrue(againTheSameGag.isAvailable());
         assertTrue(againTheSameGag.is(Toys.Gags.Ring_Gag));
         assertFalse(gags.get(0).is(Toys.Gags.Ring_Gag));
 
-        // TODO Doesn't work because of TeaseScript interception proxies
-        // assertEquals(ringGag, sameRingGag);
-        // assertEquals(ringGag, againTheSameGag);
+        assertEquals(ringGag, sameRingGag);
+        assertEquals(ringGag, againTheSameGag);
     }
 
     @Test
-    public void testAvailable() throws Exception {
+    public void testAvailable() {
         TeaseScript script = TestScript.getOne();
         Items gags = script.items(Toys.Gag);
 
-        assertFalse(gags.isAvailable());
+        assertFalse(gags.anyAvailable());
 
         Item ringGag = gags.get(Toys.Gags.Ring_Gag);
         assertTrue(ringGag.is(Toys.Gags.Ring_Gag));
 
-        assertEquals(0, gags.available().size());
+        assertEquals(0, gags.getAvailable().size());
         assertNotEquals(ringGag, script.item(Toys.Gag));
         assertTrue(script.item(Toys.Gag).is(Toys.Gags.Ball_Gag));
 
         ringGag.setAvailable(true);
         assertTrue(ringGag.isAvailable());
 
-        assertEquals(ringGag, gags.available().get(0));
+        assertEquals(ringGag, gags.getAvailable().get(0));
 
     }
 
     @Test
-    public void testAll() throws Exception {
+    public void testAll() {
         TeaseScript script = TestScript.getOne();
         Items gags = script.items(Toys.Gag);
-        Items allMetalAndLeather = gags.all(Material.Metal, Material.Leather);
+        // TODO test that all() is AND
+        Items allMetalAndLeather = gags.getAll(Material.Metal, Material.Leather);
         assertEquals(1, allMetalAndLeather.size());
 
         Item ringGag = allMetalAndLeather.get(0);
@@ -82,11 +82,13 @@ public class ItemsTests {
     }
 
     @Test
-    public void testGet() throws Exception {
+    public void testGet() {
         TeaseScript script = TestScript.getOne();
         Items collars = script.items(Toys.Collar);
+        assertEquals(Toys.Collars.values().length, collars.size());
 
-        assertEquals(Item.NotAvailable, collars.get());
+        assertNotEquals(Item.NotFound, collars.get());
+        assertFalse(collars.get().isAvailable());
 
         Item dogCollar = collars.get(Toys.Collars.Dog_Collar);
         assertTrue(dogCollar.is(Toys.Collars.Dog_Collar));
@@ -103,26 +105,61 @@ public class ItemsTests {
         assertEquals(postureCollar, collars.get());
         assertTrue(collars.get(Toys.Collars.Posture_Collar).isAvailable());
 
-        Item noDogCollar = collars.prefer(Toys.Collars.Dog_Collar);
+        Item noDogCollar = collars.prefer(Toys.Collars.Dog_Collar).get();
         assertEquals(postureCollar, noDogCollar);
 
-        Item availablePostureCollar = collars.prefer(Toys.Collars.Posture_Collar);
+        Item availablePostureCollar = collars.prefer(Toys.Collars.Posture_Collar).get();
         assertEquals(postureCollar, availablePostureCollar);
+    }
+
+    // TODO Add more tests for prefer() in order to find out if the method makes sense
+    // TODO Add tests for selectAppliableSet() in order to find out if the method makes sense
+
+    @Test
+    public void testContains() {
+        TeaseScript script = TestScript.getOne();
+        Items collars = script.items(Toys.Collar);
+        assertEquals(Toys.Collars.values().length, collars.size());
+
+        assertTrue(collars.contains(Toys.Collar));
+        assertFalse(collars.contains(Toys.Buttplug));
+
+        assertTrue(collars.contains("teaselib.Toys.Collar"));
+        assertFalse(collars.contains("teaselib.Toys.Buttplug"));
     }
 
     @Test
     public void testAny() {
         TeaseScript script = TestScript.getOne();
         Items collars = script.items(Toys.Collar);
+        assertEquals(Toys.Collars.values().length, collars.size());
 
-        assertEquals(Item.NotAvailable, collars.get());
-
-        assertEquals(Item.NotAvailable, script.random(script.items(Toys.Collar).available()));
+        assertNotEquals(Item.NotFound, collars.get());
+        assertFalse(collars.get().isAvailable());
+        for (Item item : script.items(Toys.Collar)) {
+            assertTrue(!item.isAvailable());
+        }
+        assertTrue(script.items(Toys.Collar).getAvailable().isEmpty());
 
         Item postureCollar = collars.get(Toys.Collars.Posture_Collar);
         postureCollar.setAvailable(true);
 
-        assertEquals(postureCollar, script.random(script.items(Toys.Collar).available()));
+        assertEquals(1, script.items(Toys.Collar).getAvailable().size());
+        assertEquals(postureCollar, script.items(Toys.Collar).getAvailable().get(0));
+    }
+
+    @Test
+    public void testRetainIsLogicalAnd() {
+        TeaseScript script = TestScript.getOne();
+        Items buttPlugs = script.items(Toys.Buttplug);
+        assertTrue(buttPlugs.size() > 1);
+
+        Item analBeads = buttPlugs.get(Toys.Anal.Beads);
+        assertNotEquals(Item.NotFound, analBeads);
+
+        Items allAnalbeads = script.items(Toys.Buttplug).getAll(Toys.Anal.Beads);
+        assertTrue(allAnalbeads.size() == 1);
+        assertEquals(analBeads, allAnalbeads.get(0));
     }
 
     @Test

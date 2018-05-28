@@ -10,8 +10,8 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import teaselib.core.ResourceLoader;
-import teaselib.core.TeaseLib;
 import teaselib.core.Script;
+import teaselib.core.TeaseLib;
 import teaselib.util.Item;
 import teaselib.util.Items;
 
@@ -165,10 +165,10 @@ public class TeaseScriptMath extends TeaseScriptPersistenceUtil {
     }
 
     public Item random(Items items) {
-        if (items.size() > 0) {
+        if (!items.isEmpty()) {
             return items.get(random(0, items.size() - 1));
         } else {
-            return Item.NotAvailable;
+            return Item.NotFound;
         }
     }
 }

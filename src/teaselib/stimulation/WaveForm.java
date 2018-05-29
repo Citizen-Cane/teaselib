@@ -33,6 +33,33 @@ public class WaveForm implements Iterable<WaveForm.Sample> {
         }
 
         @Override
+        public int hashCode() {
+            final int prime = 31;
+            int result = 1;
+            long temp;
+            temp = Double.doubleToLongBits(amplitude);
+            result = prime * result + (int) (temp ^ (temp >>> 32));
+            result = prime * result + (int) (durationMillis ^ (durationMillis >>> 32));
+            return result;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj)
+                return true;
+            if (obj == null)
+                return false;
+            if (getClass() != obj.getClass())
+                return false;
+            Entry other = (Entry) obj;
+            if (Double.doubleToLongBits(amplitude) != Double.doubleToLongBits(other.amplitude))
+                return false;
+            if (durationMillis != other.durationMillis)
+                return false;
+            return true;
+        }
+
+        @Override
         public String toString() {
             return "[" + amplitude + "+" + durationMillis + "ms]";
         }
@@ -71,7 +98,7 @@ public class WaveForm implements Iterable<WaveForm.Sample> {
 
     @Override
     public String toString() {
-        return values.toString();
+        return values.toString() + "->" + end;
     }
 
     public static long toMillis(double seconds) {
@@ -174,11 +201,73 @@ public class WaveForm implements Iterable<WaveForm.Sample> {
     private double value(long timeMillis) {
         long timeStampMillis = 0;
         for (Entry entry : values) {
-            if (timeMillis <= timeStampMillis) {
+            if (timeMillis < timeStampMillis + entry.durationMillis) {
                 return entry.amplitude;
             }
             timeStampMillis += entry.durationMillis;
         }
         return 0.0;
+    }
+
+    public WaveForm slice(long startMillis) {
+        return slice(startMillis, getDurationMillis());
+    }
+
+    public WaveForm slice(long startMillis, long endMillis) {
+        WaveForm slice = new WaveForm();
+        Iterator<Entry> iterator = values.iterator();
+        long timeStampMillis = 0;
+
+        while (iterator.hasNext()) {
+            Entry entry = iterator.next();
+            timeStampMillis += entry.durationMillis;
+            if (timeStampMillis > startMillis) {
+                slice.add(new Entry(entry.amplitude, timeStampMillis - startMillis));
+                break;
+            }
+        }
+
+        while (iterator.hasNext()) {
+            Entry entry = iterator.next();
+            if (timeStampMillis + entry.durationMillis <= endMillis) {
+                slice.add(entry);
+            } else {
+                if (timeStampMillis < endMillis) {
+                    slice.add(new Entry(entry.amplitude, endMillis - timeStampMillis));
+                }
+                break;
+            }
+            timeStampMillis += entry.durationMillis;
+        }
+
+        return slice;
+    }
+
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + (int) (end ^ (end >>> 32));
+        result = prime * result + ((values == null) ? 0 : values.hashCode());
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        WaveForm other = (WaveForm) obj;
+        if (end != other.end)
+            return false;
+        if (values == null) {
+            if (other.values != null)
+                return false;
+        } else if (!values.equals(other.values))
+            return false;
+        return true;
     }
 }

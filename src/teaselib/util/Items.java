@@ -1,16 +1,18 @@
 package teaselib.util;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Predicate;
+import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import teaselib.core.state.ItemProxy;
 import teaselib.core.util.QualifiedItem;
+import teaselib.util.math.Combinations;
 
 /**
  * @author Citizen-Cane
@@ -29,6 +31,10 @@ public class Items extends ArrayList<Item> {
         super(items);
     }
 
+    public Items(Item[] items) {
+        super(Arrays.asList(items));
+    }
+
     public Items(int capacity) {
         super(capacity);
     }
@@ -45,11 +51,11 @@ public class Items extends ArrayList<Item> {
         return filter(Item::isAvailable).count() == size();
     }
 
-    public boolean anyAppliable() {
+    public boolean anyApplicable() {
         return stream().filter(Item::canApply).count() > 0;
     }
 
-    public boolean allAppliable() {
+    public boolean allApplicable() {
         return stream().filter(Item::canApply).count() == size();
     }
 
@@ -65,7 +71,7 @@ public class Items extends ArrayList<Item> {
         return new Items(filter(Item::isAvailable).collect(Collectors.toList()));
     }
 
-    public Items getApplyable() {
+    public Items getApplicable() {
         return new Items(filter(Item::canApply).collect(Collectors.toList()));
     }
 
@@ -73,8 +79,11 @@ public class Items extends ArrayList<Item> {
         return new Items(filter(Item::applied).collect(Collectors.toList()));
     }
 
-    public boolean availableAndAppliable() {
-        return allAvailable() && allAppliable();
+    // TODO Changes meaning of canApply to allAvailable() && allApplicable() - but canApply is used to solely in
+    // mine-maid to check body state
+    @Deprecated
+    public boolean usable() {
+        return allAvailable() && allApplicable();
     }
 
     /**
@@ -93,28 +102,18 @@ public class Items extends ArrayList<Item> {
      * @return An item that matches all attributes, or the first available, or {@link Item#NotFound}.
      */
 
-    public final Item get(Enum<?>... attributes) {
-        return getInternal(attributes);
+    public final Item item(Enum<?> item) {
+        return item(QualifiedItem.of(item));
     }
 
-    public final Item get(String... attributes) {
-        return getInternal(attributes);
+    public final Item item(String item) {
+        return item(QualifiedItem.of(item));
     }
 
-    /**
-     * Get first matching or any.
-     * 
-     * @return
-     */
-    @SafeVarargs
-    private final <S> Item getInternal(S... attributes) {
-        if (attributes.length == 0) {
-            return firstAvailableOrNotFound();
-        } else {
-            for (Item item : this) {
-                if (item.is(attributes)) {
-                    return item;
-                }
+    private final Item item(QualifiedItem item) {
+        for (Item mine : this) {
+            if (QualifiedItem.of(mine).equals(item)) {
+                return mine;
             }
         }
         return Item.NotFound;
@@ -135,26 +134,26 @@ public class Items extends ArrayList<Item> {
         return new Items(this);
     }
 
-    public final Items getAll(Enum<?>... attributes) {
-        return getAllImpl(attributes);
+    public final Items query(Enum<?>... attributes) {
+        return getQueryImpl(attributes);
     }
 
-    public final Items getAll(String... attributes) {
-        return getAllImpl(attributes);
+    public final Items query(String... attributes) {
+        return getQueryImpl(attributes);
     }
 
     @SafeVarargs
-    public final <S> Items getAllImpl(S... attributes) {
+    public final <S> Items getQueryImpl(S... attributes) {
         if (attributes.length == 0) {
             return this;
         } else {
-            Items items = new Items();
+            Items matching = new Items();
             for (Item item : this) {
                 if (item.is(attributes)) {
-                    items.add(item);
+                    matching.add(item);
                 }
             }
-            return items;
+            return matching;
         }
     }
 
@@ -166,34 +165,27 @@ public class Items extends ArrayList<Item> {
         return containsImpl(item);
     }
 
+    // TODO fails, similar to item(...) but without QualifiedItem wrap
     private <S> boolean containsImpl(S item) {
         for (Item i : this) {
-            if (qualifiedItem(i).equals(item)) {
+            if (QualifiedItem.of(i).equals(item)) {
                 return true;
             }
         }
         return false;
     }
 
-    private static QualifiedItem qualifiedItem(Item item) {
-        if (item instanceof ItemProxy) {
-            return QualifiedItem.of(((ItemImpl) ((ItemProxy) item).item).item);
-        } else if (item instanceof ItemImpl) {
-            return QualifiedItem.of(((ItemImpl) item).item);
-        } else
-            throw new UnsupportedOperationException(item.toString());
-    }
-
     /**
-     * Get matching or available items. Try to match items with the requested attributes first. If not possible, match
-     * as many items as possible, then complete set with available non-matching items. Finally add unavailable items to
-     * complete the set.
+     * Get matching or available items. Try to match available items with the requested attributes first. If not
+     * possible, match as many items as possible, then complete set with available non-matching items. Finally add
+     * unavailable items to complete the set.
      * 
      * @param attributes
      *            The preferred attributes to match.
      * @return Preferred items matching requested attributes, filled up with non-matching items as a fall-back.
      */
     @SafeVarargs
+    // TODO Improve behavior and add more tests
     public final <S> Items prefer(S... attributes) {
         Set<QualifiedItem> found = new HashSet<>();
         Items preferred = new Items();
@@ -220,6 +212,40 @@ public class Items extends ArrayList<Item> {
         }
 
         return preferred;
+    }
+
+    private static Collector<Items, Combinations<Items>, Combinations<Items>> toCombinations() {
+        return Collector.of(Combinations<Items>::new, //
+                (items, item) -> items.add(item), //
+                (items1, items2) -> {
+                    items1.addAll(items2);
+                    return items1;
+                }, Collector.Characteristics.UNORDERED);
+    }
+
+    // TODO Combine so that each combination contains only one item of each kind
+    // (means that generic uncountable items like rope or chains are listed once)
+    public Combinations<Items> combinations() {
+        Combinations<Item[]> combinations = Combinations.combinationsK(size(), this.toArray());
+        return combinations.stream().map(Items::new).collect(toCombinations());
+    }
+
+    @Override
+    public Item[] toArray() {
+        Item[] array = new Item[size()];
+        return super.toArray(array);
+    }
+
+    /**
+     * Select the items that match best
+     * 
+     * @param a
+     * @param b
+     * @return
+     */
+    public static Items best(Items a, @SuppressWarnings("unused") Items b) {
+        // TODO Define "best" and find the best item
+        return a;
     }
 
     /**

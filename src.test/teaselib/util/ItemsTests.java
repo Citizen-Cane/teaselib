@@ -11,6 +11,7 @@ import teaselib.Material;
 import teaselib.State;
 import teaselib.TeaseScript;
 import teaselib.Toys;
+import teaselib.core.util.QualifiedItem;
 import teaselib.test.TestScript;
 
 public class ItemsTests {
@@ -23,7 +24,7 @@ public class ItemsTests {
         assertFalse(gags.anyAvailable());
         assertFalse(gags.get(0).is(Toys.Gags.Ring_Gag));
 
-        Item ringGag = gags.get(Toys.Gags.Ring_Gag);
+        Item ringGag = gags.query(Toys.Gags.Ring_Gag).get();
         assertTrue(ringGag.is(Toys.Gags.Ring_Gag));
 
         ringGag.setAvailable(true);
@@ -53,7 +54,7 @@ public class ItemsTests {
 
         assertFalse(gags.anyAvailable());
 
-        Item ringGag = gags.get(Toys.Gags.Ring_Gag);
+        Item ringGag = gags.query(Toys.Gags.Ring_Gag).get();
         assertTrue(ringGag.is(Toys.Gags.Ring_Gag));
 
         assertEquals(0, gags.getAvailable().size());
@@ -72,11 +73,11 @@ public class ItemsTests {
         TeaseScript script = TestScript.getOne();
         Items gags = script.items(Toys.Gag);
         // TODO test that all() is AND
-        Items allMetalAndLeather = gags.getAll(Material.Metal, Material.Leather);
+        Items allMetalAndLeather = gags.query(Material.Metal, Material.Leather);
         assertEquals(1, allMetalAndLeather.size());
 
         Item ringGag = allMetalAndLeather.get(0);
-        Item sameRingGag = gags.get(Toys.Gags.Ring_Gag);
+        Item sameRingGag = gags.query(Toys.Gags.Ring_Gag).get();
 
         assertEquals(sameRingGag, ringGag);
     }
@@ -90,20 +91,20 @@ public class ItemsTests {
         assertNotEquals(Item.NotFound, collars.get());
         assertFalse(collars.get().isAvailable());
 
-        Item dogCollar = collars.get(Toys.Collars.Dog_Collar);
+        Item dogCollar = collars.query(Toys.Collars.Dog_Collar).get();
         assertTrue(dogCollar.is(Toys.Collars.Dog_Collar));
 
-        Item postureCollar = collars.get(Toys.Collars.Posture_Collar);
+        Item postureCollar = collars.query(Toys.Collars.Posture_Collar).get();
         postureCollar.setAvailable(true);
 
         assertEquals(postureCollar, collars.get());
-        assertEquals(dogCollar, collars.get(Toys.Collars.Dog_Collar));
+        assertEquals(dogCollar, collars.query(Toys.Collars.Dog_Collar).get());
 
-        assertFalse(collars.get(Toys.Collars.Dog_Collar).isAvailable());
-        assertTrue(collars.get(Toys.Collars.Posture_Collar).isAvailable());
+        assertFalse(collars.query(Toys.Collars.Dog_Collar).get().isAvailable());
+        assertTrue(collars.query(Toys.Collars.Posture_Collar).get().isAvailable());
 
         assertEquals(postureCollar, collars.get());
-        assertTrue(collars.get(Toys.Collars.Posture_Collar).isAvailable());
+        assertTrue(collars.query(Toys.Collars.Posture_Collar).get().isAvailable());
 
         Item noDogCollar = collars.prefer(Toys.Collars.Dog_Collar).get();
         assertEquals(postureCollar, noDogCollar);
@@ -141,7 +142,7 @@ public class ItemsTests {
         }
         assertTrue(script.items(Toys.Collar).getAvailable().isEmpty());
 
-        Item postureCollar = collars.get(Toys.Collars.Posture_Collar);
+        Item postureCollar = collars.query(Toys.Collars.Posture_Collar).get();
         postureCollar.setAvailable(true);
 
         assertEquals(1, script.items(Toys.Collar).getAvailable().size());
@@ -154,12 +155,23 @@ public class ItemsTests {
         Items buttPlugs = script.items(Toys.Buttplug);
         assertTrue(buttPlugs.size() > 1);
 
-        Item analBeads = buttPlugs.get(Toys.Anal.Beads);
+        Item analBeads = buttPlugs.query(Toys.Anal.Beads).get();
         assertNotEquals(Item.NotFound, analBeads);
 
-        Items allAnalbeads = script.items(Toys.Buttplug).getAll(Toys.Anal.Beads);
+        Items allAnalbeads = script.items(Toys.Buttplug).query(Toys.Anal.Beads);
         assertTrue(allAnalbeads.size() == 1);
         assertEquals(analBeads, allAnalbeads.get(0));
+    }
+
+    @Test
+    public void testGetDoesntSearchForPeersOrAttributes() {
+        TeaseScript script = TestScript.getOne();
+        Items chainedUp = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints, Toys.Chains);
+
+        Item chains = chainedUp.item(Toys.Chains);
+        assertEquals(QualifiedItem.of(Toys.Chains), QualifiedItem.of(chains));
+        chainedUp.item(Toys.Wrist_Restraints).applyTo(Toys.Chains);
+        assertEquals(QualifiedItem.of(Toys.Chains), QualifiedItem.of(chains));
     }
 
     @Test

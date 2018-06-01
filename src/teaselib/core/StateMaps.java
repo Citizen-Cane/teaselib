@@ -1,5 +1,6 @@
 package teaselib.core;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Set;
 
@@ -102,17 +103,11 @@ public class StateMaps {
         }
     }
 
-    public static boolean hasAllAttributes(Set<Object> mine, Object[] others) {
-        attributeLoop: for (Object value : others) {
-            QualifiedItem item = QualifiedItem.of(stripState(value));
-            for (Object attribute : mine) {
-                if (item.equals(stripState(attribute))) {
-                    continue attributeLoop;
-                }
-            }
-            return false;
-        }
-        return true;
+    public static boolean hasAllAttributes(Set<Object> availableAttributes, Object[] desiredAttributes) {
+        return Arrays.stream(desiredAttributes).map(desiredAttribute -> QualifiedItem.of(stripState(desiredAttribute)))
+                .filter(desiredQualifiedAttribute -> availableAttributes.stream()
+                        .anyMatch(desiredQualifiedAttribute::equals))
+                .count() == desiredAttributes.length;
     }
 
     private static Object stripState(Object value) {

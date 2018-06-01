@@ -30,7 +30,6 @@ import teaselib.core.util.ExceptionUtil;
 import teaselib.core.util.WildcardPattern;
 import teaselib.functional.CallableScript;
 import teaselib.functional.RunnableScript;
-import teaselib.util.Item;
 import teaselib.util.Items;
 
 public abstract class TeaseScript extends TeaseScriptMath {
@@ -532,11 +531,6 @@ public abstract class TeaseScript extends TeaseScriptMath {
 
     public final void chat(CallableScript<String> script, Answer chat) {
         showChoices(Arrays.asList(chat), new ScriptFunction(script), Intention.Chat);
-    }
-
-    // TODO Test
-    public boolean availableAndApplyable(Item... items) {
-        return new Items(Arrays.asList(items)).availableAndAppliable();
     }
 
     /**

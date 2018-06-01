@@ -105,7 +105,7 @@ public class ItemImplTest {
         assertFalse(script.state(Body.InButt).is(Toys.Anal.Beads));
         assertFalse(script.state(Body.InButt).is(Features.Anal));
 
-        Item analBeads1 = script.items(Toys.Buttplug).get(Toys.Anal.Beads);
+        Item analBeads1 = script.items(Toys.Buttplug).query(Toys.Anal.Beads).get();
         analBeads1.apply();
 
         assertTrue(script.state(Toys.Buttplug).applied());
@@ -118,7 +118,7 @@ public class ItemImplTest {
         assertTrue(script.state(Body.InButt).is(Toys.Anal.Beads));
         assertTrue(script.state(Body.InButt).is(Features.Anal));
 
-        Item analBeads2 = script.items(Toys.Buttplug).get(Toys.Anal.Beads);
+        Item analBeads2 = script.items(Toys.Buttplug).query(Toys.Anal.Beads).get();
         assertTrue(analBeads2.is(Toys.Anal.Beads));
         analBeads2.remove();
 
@@ -147,7 +147,7 @@ public class ItemImplTest {
         assertFalse(script.state(Toys.Wrist_Restraints).applied());
 
         // Wrists are not only tied, but also tied behind back
-        script.items(Toys.Wrist_Restraints).get(Material.Leather).applyTo(Posture.WristsTiedBehindBack);
+        script.items(Toys.Wrist_Restraints).query(Material.Leather).get().applyTo(Posture.WristsTiedBehindBack);
 
         assertTrue(script.state(Toys.Wrist_Restraints).applied());
         assertTrue(script.state(Toys.Wrist_Restraints).is(Material.Leather));
@@ -198,11 +198,11 @@ public class ItemImplTest {
 
         assertFalse(script.state(Toys.Wrist_Restraints).applied());
 
-        Item wristRestraints = script.items(Toys.Wrist_Restraints).get(Material.Leather);
+        Item wristRestraints = script.items(Toys.Wrist_Restraints).query(Material.Leather).get();
 
         assertFalse(wristRestraints.applied());
         assertTrue(wristRestraints.canApply());
-        assertFalse(wristRestraints.is(wristRestraints));
+        assertTrue(wristRestraints.is(wristRestraints));
 
         // Perfectly legal for detachable restraints
         wristRestraints.apply();
@@ -222,11 +222,11 @@ public class ItemImplTest {
 
         assertFalse(script.state(Toys.Gag).applied());
 
-        Item gag = script.items(Toys.Gag).get(Material.Leather);
+        Item gag = script.items(Toys.Gag).query(Material.Leather).get();
 
         assertFalse(gag.applied());
         assertTrue(gag.canApply());
-        assertFalse(gag.is(gag));
+        assertTrue(gag.is(gag));
 
         gag.apply();
 
@@ -252,7 +252,7 @@ public class ItemImplTest {
 
         // Wrists are not only tied, but also tied behind back
 
-        script.items(Toys_Wrist_Restraints).get(leather).applyTo(Body_WristsTiedBehindBack);
+        script.items(Toys_Wrist_Restraints).query(leather).get().applyTo(Body_WristsTiedBehindBack);
 
         assertTrue(script.state(Toys_Wrist_Restraints).applied());
         assertTrue(script.state(Toys_Wrist_Restraints).is(leather));
@@ -285,7 +285,7 @@ public class ItemImplTest {
 
         // Wrists are not only tied, but also tied behind back
 
-        script.items(Toys_Wrist_Restraints).get(leather).applyTo(Posture_WristsTiedBehindBack);
+        script.items(Toys_Wrist_Restraints).query(leather).get().applyTo(Posture_WristsTiedBehindBack);
 
         assertTrue(script.state(Toys.Wrist_Restraints).applied());
         assertTrue(script.state(Toys_Wrist_Restraints).is(leather));

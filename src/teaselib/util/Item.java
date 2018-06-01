@@ -12,11 +12,9 @@ public interface Item extends State {
      *
      */
     interface Attribute {
-
     }
 
     public static final Item NotFound = new Item() {
-
         @Override
         public boolean is(Object... attributes) {
             return false;
@@ -71,12 +69,12 @@ public interface Item extends State {
 
         @Override
         public void setAvailable(boolean isAvailable) {
-            // ignore
+            throw new UnsupportedOperationException();
         }
 
         @Override
         public String displayName() {
-            return "Not available";
+            return "Not found";
         }
 
         @Override
@@ -91,5 +89,8 @@ public interface Item extends State {
 
     String displayName();
 
+    // TODO change meaning of canApply() to available & applicable - that's checked in the code very often
+    // - would be closer to the meaning of "can"since unavailable stuff can't be applied anyway
+    // - and canApply although not available can be checked by checking whether all default peers are free
     boolean canApply();
 }

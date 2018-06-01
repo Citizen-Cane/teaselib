@@ -1,5 +1,7 @@
 package teaselib.core.util;
 
+import teaselib.util.Item;
+
 /**
  * @author Citizen-Cane
  *
@@ -53,13 +55,14 @@ public abstract class QualifiedItem {
     }
 
     public static QualifiedItem of(Object value) {
-        if (value instanceof AbstractQualifiedItem) {
+        if (value instanceof QualifiedItem) {
             return (QualifiedItem) value;
-        } else if (value instanceof Enum<?>) {
+        } else if (value instanceof Enum) {
             return new QualifiedEnum((Enum<?>) value);
+        } else if (value instanceof Item) {
+            return new QualifiedItemImpl((Item) value);
         } else {
             return new QualifiedObject(value);
         }
     }
-
 }

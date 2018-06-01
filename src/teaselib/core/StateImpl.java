@@ -7,6 +7,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import teaselib.Duration;
 import teaselib.State;
@@ -270,7 +271,17 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
             throw new IllegalArgumentException();
         }
 
+        if (!allItemInstancesFoundInPeers(attributes)) {
+            return false;
+        }
+
         return StateMaps.hasAllAttributes(attributesAndPeers(), attributes);
+    }
+
+    private boolean allItemInstancesFoundInPeers(Object... attributes) {
+        List<Object> items = Arrays.stream(attributes).filter(attribute -> attribute instanceof Item)
+                .collect(Collectors.toList());
+        return items.stream().filter(attribute -> peers.stream().anyMatch(attribute::equals)).count() == items.size();
     }
 
     private Set<Object> attributesAndPeers() {

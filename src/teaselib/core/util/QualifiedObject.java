@@ -1,6 +1,6 @@
 package teaselib.core.util;
 
-public class QualifiedObject extends AbstractQualifiedItem<Object> {
+class QualifiedObject extends AbstractQualifiedItem<Object> {
     public QualifiedObject(Object value) {
         super(value);
         if (value instanceof Enum<?>) {

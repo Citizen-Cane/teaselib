@@ -53,4 +53,12 @@ public class StimulationTarget {
     public String toString() {
         return stimulator + "->" + waveForm;
     }
+
+    public StimulationTarget delayed(long startMillis) {
+        return startMillis > 0 ? new StimulationTarget(stimulator, waveForm, startMillis, repeatCount) : this;
+    }
+
+    public StimulationTarget slice(long startMillis) {
+        return new StimulationTarget(stimulator, waveForm.slice(startMillis));
+    }
 }

@@ -19,7 +19,7 @@ public class StimulationTargtetsTest {
         Stimulator stim1 = device.add(new TestStimulator(device, 1));
         StimulationTargets targets = new StimulationTargets(device);
 
-        targets.add(new StimulationTarget(stim1, new SquareWave(0.5, 0.5)));
+        targets.set(new StimulationTarget(stim1, new SquareWave(0.5, 0.5)));
         assertEquals(1, targets.size());
 
         Iterator<Samples> samples = targets.iterator();
@@ -36,7 +36,7 @@ public class StimulationTargtetsTest {
         Stimulator stim1 = device.add(new TestStimulator(device, 1));
         StimulationTargets targets = new StimulationTargets(device);
 
-        targets.add(new StimulationTarget(stim1, new SquareWave(0.5, 0.5), 0, 2000));
+        targets.set(new StimulationTarget(stim1, new SquareWave(0.5, 0.5), 0, 2000));
         assertEquals(1, targets.size());
 
         Iterator<Samples> samples = targets.iterator();
@@ -56,7 +56,7 @@ public class StimulationTargtetsTest {
         StimulationTargets targets = new StimulationTargets(device);
 
         int startOffset = 666;
-        targets.add(new StimulationTarget(stim1, new SquareWave(0.5, 0.5), startOffset));
+        targets.set(new StimulationTarget(stim1, new SquareWave(0.5, 0.5), startOffset));
         assertEquals(1, targets.size());
 
         Iterator<Samples> samples = targets.iterator();
@@ -75,8 +75,8 @@ public class StimulationTargtetsTest {
         Stimulator stim2 = device.add(new TestStimulator(device, 2));
         StimulationTargets targets = new StimulationTargets(device);
 
-        targets.add(new StimulationTarget(stim1, new SquareWave(0.5, 0.5)));
-        targets.add(new StimulationTarget(stim2, new SquareWave(0.5, 0.5)));
+        targets.set(new StimulationTarget(stim1, new SquareWave(0.5, 0.5)));
+        targets.set(new StimulationTarget(stim2, new SquareWave(0.5, 0.5)));
         assertEquals(2, targets.size());
 
         Iterator<Samples> samples = targets.iterator();
@@ -94,8 +94,8 @@ public class StimulationTargtetsTest {
         Stimulator stim2 = device.add(new TestStimulator(device, 2));
         StimulationTargets targets = new StimulationTargets(device);
 
-        targets.add(new StimulationTarget(stim1, new SquareWave(0.5, 0.5)));
-        targets.add(new StimulationTarget(stim2, new SquareWave(0.5, 0.5), 500));
+        targets.set(new StimulationTarget(stim1, new SquareWave(0.5, 0.5)));
+        targets.set(new StimulationTarget(stim2, new SquareWave(0.5, 0.5), 500));
         assertEquals(2, targets.size());
 
         Iterator<Samples> samples = targets.iterator();
@@ -115,9 +115,9 @@ public class StimulationTargtetsTest {
         Stimulator stim3 = device.add(new TestStimulator(device, 3));
         StimulationTargets targets = new StimulationTargets(device);
 
-        targets.add(new StimulationTarget(stim1, new SquareWave(0.5, 0.5)));
-        targets.add(new StimulationTarget(stim2, new SquareWave(0.5, 0.5)));
-        targets.add(new StimulationTarget(stim3, new SquareWave(0.5, 0.5)));
+        targets.set(new StimulationTarget(stim1, new SquareWave(0.5, 0.5)));
+        targets.set(new StimulationTarget(stim2, new SquareWave(0.5, 0.5)));
+        targets.set(new StimulationTarget(stim3, new SquareWave(0.5, 0.5)));
         assertEquals(3, targets.size());
 
         Iterator<Samples> samples = targets.iterator();
@@ -136,9 +136,9 @@ public class StimulationTargtetsTest {
         Stimulator stim3 = device.add(new TestStimulator(device, 3));
         StimulationTargets targets = new StimulationTargets(device);
 
-        targets.add(new StimulationTarget(stim1, new SquareWave(0.5, 0.5)));
-        targets.add(new StimulationTarget(stim2, new SquareWave(0.5, 0.5), 500));
-        targets.add(new StimulationTarget(stim3, new SquareWave(0.5, 0.5), 1000));
+        targets.set(new StimulationTarget(stim1, new SquareWave(0.5, 0.5)));
+        targets.set(new StimulationTarget(stim2, new SquareWave(0.5, 0.5), 500));
+        targets.set(new StimulationTarget(stim3, new SquareWave(0.5, 0.5), 1000));
         assertEquals(3, targets.size());
 
         Iterator<Samples> samples = targets.iterator();
@@ -176,9 +176,9 @@ public class StimulationTargtetsTest {
             Stimulator stim3) {
         StimulationTargets targets = new StimulationTargets(device);
 
-        targets.add(new StimulationTarget(stim1, new SquareWave(0.5, 0.5)));
-        targets.add(new StimulationTarget(stim2, new SquareWave(0.5, 0.5), 1000));
-        targets.add(new StimulationTarget(stim3, new SquareWave(0.5, 0.5), 2000));
+        targets.set(new StimulationTarget(stim1, new SquareWave(0.5, 0.5)));
+        targets.set(new StimulationTarget(stim2, new SquareWave(0.5, 0.5), 1000));
+        targets.set(new StimulationTarget(stim3, new SquareWave(0.5, 0.5), 2000));
 
         testTripleTargets(targets);
     }
@@ -187,9 +187,9 @@ public class StimulationTargtetsTest {
             Stimulator stim3) {
         StimulationTargets targets = new StimulationTargets(device);
 
-        targets.add(new StimulationTarget(stim3, new SquareWave(0.5, 0.5), 2000));
-        targets.add(new StimulationTarget(stim2, new SquareWave(0.5, 0.5), 1000));
-        targets.add(new StimulationTarget(stim1, new SquareWave(0.5, 0.5)));
+        targets.set(new StimulationTarget(stim3, new SquareWave(0.5, 0.5), 2000));
+        targets.set(new StimulationTarget(stim2, new SquareWave(0.5, 0.5), 1000));
+        targets.set(new StimulationTarget(stim1, new SquareWave(0.5, 0.5)));
 
         testTripleTargets(targets);
     }
@@ -198,9 +198,9 @@ public class StimulationTargtetsTest {
             Stimulator stim3) {
         StimulationTargets targets = new StimulationTargets(device);
 
-        targets.add(new StimulationTarget(stim2, new SquareWave(0.5, 0.5), 1000));
-        targets.add(new StimulationTarget(stim3, new SquareWave(0.5, 0.5), 2000));
-        targets.add(new StimulationTarget(stim1, new SquareWave(0.5, 0.5)));
+        targets.set(new StimulationTarget(stim2, new SquareWave(0.5, 0.5), 1000));
+        targets.set(new StimulationTarget(stim3, new SquareWave(0.5, 0.5), 2000));
+        targets.set(new StimulationTarget(stim1, new SquareWave(0.5, 0.5)));
 
         testTripleTargets(targets);
     }
@@ -220,6 +220,32 @@ public class StimulationTargtetsTest {
         assertFalse(samples.hasNext());
     }
 
+    @Test
+    public void testInsertNothing() {
+        TestStimulationDevice device = new TestStimulationDevice();
+        Stimulator stim1 = device.add(new TestStimulator(device, 1));
+        Stimulator stim2 = device.add(new TestStimulator(device, 2));
+        StimulationTargets targets = new StimulationTargets(device);
+
+        targets.set(new StimulationTarget(stim1, new SquareWave(0.5, 0.5)));
+        targets.set(new StimulationTarget(stim2, new SquareWave(0.5, 0.5)));
+        assertEquals(2, targets.size());
+
+        Iterator<Samples> samples = targets.iterator();
+        test(samples.next(), 0, 1.0, 1.0);
+        test(samples.next(), 500, 0.0, 0.0);
+        test(samples.next(), 1000, 0.0, 0.0);
+
+        assertFalse(samples.hasNext());
+
+        StimulationTargets newTargets = new StimulationTargets(device);
+        targets.continuedStimulation(newTargets, targets.maxDurationMillis());
+
+        assertFalse("Nothing has been inserted so there shouldn't be any new samples", samples.hasNext());
+    }
+
+    // TODO More continuedStimulation() tests
+    
     private static void test(Samples samples, long expectedTimeStampMillis, double... values) {
         assertEquals(expectedTimeStampMillis, samples.timeStampMillis);
         assertArrayEquals(values, samples.getValues(), 0.0);

@@ -6,6 +6,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 import teaselib.stimulation.StimulationDevice;
@@ -59,13 +60,13 @@ public class StimulationTargets implements Iterable<Samples> {
             this.waveformSamples = new ArrayList<>(size());
             this.repeatCounts = new int[size()];
 
-            for (StimulationTarget target : targets) {
+            for (int targetIndex = 0; targetIndex < targets.size(); targetIndex++) {
+                StimulationTarget target = targets.get(targetIndex);
                 waveformSamples.add(null);
                 Iterator<WaveForm.Sample> iterator = target.getWaveForm().iterator();
                 iterators.add(iterator);
 
                 Sample sample = iterator.next();
-                int targetIndex = targets.indexOf(target);
                 samples.getValues()[targetIndex] = sample.getValue();
                 waveformSamples.set(targetIndex, sample);
 
@@ -141,18 +142,27 @@ public class StimulationTargets implements Iterable<Samples> {
     }
 
     public StimulationTargets(StimulationDevice device) {
-        this.stimulators = device.stimulators();
+        this(device.stimulators());
+    }
+
+    public StimulationTargets(StimulationDevice device, List<StimulationTarget> targets) {
+        this(device.stimulators());
+        for (int i = 0; i < targets.size(); i++) {
+            StimulationTarget target = targets.get(i);
+            if (target != StimulationTarget.EMPTY) {
+                set(target);
+            } else {
+                clear(i);
+            }
+        }
+    }
+
+    private StimulationTargets(List<Stimulator> stimulators) {
+        this.stimulators = stimulators;
         this.targets = new ArrayList<>(stimulators.size());
         int size = stimulators.size();
         for (int i = 0; i < size; i++) {
             targets.add(StimulationTarget.EMPTY);
-        }
-    }
-
-    public StimulationTargets(StimulationDevice device, List<StimulationTarget> channels) {
-        this(device);
-        for (StimulationTarget channel : channels) {
-            add(channel);
         }
     }
 
@@ -186,17 +196,66 @@ public class StimulationTargets implements Iterable<Samples> {
         return targets.isEmpty();
     }
 
-    public void add(StimulationTarget channel) {
-        int index = stimulators.indexOf(channel.stimulator);
+    public void set(Stimulator stimulator, WaveForm waveForm, long duration, TimeUnit timeUnit) {
+        set(new StimulationTarget(stimulator, waveForm, timeUnit.toMillis(duration)));
+    }
+
+    public void set(StimulationTarget target) {
+        int index = stimulators.indexOf(target.stimulator);
         if (index >= 0) {
-            targets.set(index, channel);
+            targets.set(index, target);
         } else {
-            throw new IllegalArgumentException("Channel belongs to differnet device: " + channel);
+            throw new IllegalArgumentException("Target belongs to different device: " + target);
         }
+    }
+
+    public void clear(Stimulator stimulator) {
+        if (stimulator == null)
+            throw new IllegalArgumentException();
+
+        int index = stimulators.indexOf(stimulator);
+        if (index >= 0) {
+            targets.set(index, StimulationTarget.EMPTY);
+        } else {
+            throw new IllegalArgumentException("Stimulator belongs to different device: " + stimulator);
+        }
+    }
+
+    private void clear(int index) {
+        targets.set(index, StimulationTarget.EMPTY);
     }
 
     @Override
     public String toString() {
         return targets.toString();
+    }
+
+    public StimulationTargets continuedStimulation(StimulationTargets replacement, long startMillis) {
+        StimulationTargets continuation = new StimulationTargets(stimulators);
+
+        if (size() != replacement.size())
+            throw new IllegalArgumentException(replacement.toString());
+
+        for (int i = 0; i < stimulators.size(); i++) {
+            Stimulator stimulator = stimulators.get(i);
+            if (stimulator != replacement.stimulators.get(i))
+                throw new IllegalArgumentException(replacement.stimulators.toString());
+
+            StimulationTarget newTarget = replacement.get(i);
+            StimulationTarget oldTarget = targets.get(i);
+            if (oldTarget == StimulationTarget.EMPTY || startMillis >= oldTarget.getWaveForm().getDurationMillis()) {
+                if (newTarget == StimulationTarget.EMPTY) {
+                    continuation.clear(i);
+                } else {
+                    continuation.set(newTarget);
+                }
+            } else if (newTarget == StimulationTarget.EMPTY) {
+                continuation.set(oldTarget.slice(startMillis));
+            } else {
+                continuation.set(newTarget.slice(startMillis));
+            }
+        }
+
+        return continuation;
     }
 }

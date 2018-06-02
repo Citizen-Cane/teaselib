@@ -68,9 +68,7 @@ public class EStimControllerSetup extends TeaseScript {
         if (result == Chooser.CONNECTED) {
             return chooser.device;
         } else {
-            // TODO remove test code
             return chooser.device;
-            // return StimulationDevice.MANUAL;
         }
     }
 
@@ -173,11 +171,11 @@ public class EStimControllerSetup extends TeaseScript {
 
     private static StimulationTargets constantSignal(StimulationDevice device, long duration, TimeUnit timeUnit) {
         WaveForm waveForm = new ConstantWave(timeUnit.toMillis(duration));
-        StimulationTargets channels = new StimulationTargets(device);
+        StimulationTargets targets = new StimulationTargets(device);
         for (Stimulator stimulator : device.stimulators()) {
-            channels.add(new StimulationTarget(stimulator, waveForm, 0));
+            targets.set(stimulator, waveForm, 0, timeUnit);
         }
-        return channels;
+        return targets;
     }
 
     private StimulationDevice adjustLevels(EStimController stim, StimulationDevice device) {

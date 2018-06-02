@@ -77,7 +77,7 @@ public abstract class StimulationDevice implements Device.Creatable {
         }
 
         @Override
-        public void play(StimulationTargets channels) {
+        public void play(StimulationTargets targets) {
             // Ignore
         }
 
@@ -111,7 +111,7 @@ public abstract class StimulationDevice implements Device.Creatable {
 
     public abstract List<Stimulator> stimulators();
 
-    public abstract void play(StimulationTargets channels);
+    public abstract void play(StimulationTargets targets);
 
     public abstract void stop();
 

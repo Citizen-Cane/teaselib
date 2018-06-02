@@ -58,9 +58,9 @@ final class TestStimulationDevice extends StimulationDevice {
     }
 
     @Override
-    public void play(StimulationTargets channels) {
-        assertNotNull(channels);
-        assertFalse(channels.isEmpty());
+    public void play(StimulationTargets targets) {
+        assertNotNull(targets);
+        assertFalse(targets.isEmpty());
     }
 
     @Override

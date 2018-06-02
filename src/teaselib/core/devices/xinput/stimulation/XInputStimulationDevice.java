@@ -2,13 +2,17 @@ package teaselib.core.devices.xinput.stimulation;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import teaselib.core.Configuration;
 import teaselib.core.ScriptInterruptedException;
@@ -138,7 +142,7 @@ public class XInputStimulationDevice extends StimulationDevice {
     private final List<Stimulator> stimulators;
 
     private final ExecutorService executor = NamedExecutorService.singleThreadedQueue(getClass().getName());
-    private final AtomicReference<Optional<Future<?>>> stimulationGenerator = new AtomicReference<>(Optional.empty());
+    private StimulationSamplerTask stream = null;
 
     public XInputStimulationDevice(XInputDevice device) {
         super();
@@ -203,62 +207,121 @@ public class XInputStimulationDevice extends StimulationDevice {
     }
 
     @Override
-    public void play(StimulationTargets channels) {
+    public void play(StimulationTargets targets) {
         synchronized (executor) {
-            // TODO Continue running patterns by mixing new pattern into currently playing
-            // - possible because inference channel has priority
-            // - possible because independent channels are independent :^)
-            // -> mix here because mixing in controller wouldn't work for remote devices
-            // - can mix in controller by accounting time, or if channels on remote device are independent
-            // - it's basically replacing the existing channels with new channels and setting the offset (which we don't
-            // have)
-            stop();
-            stimulationGenerator.set(Optional.of(executor.submit(() -> playAsync(channels))));
-        }
-    }
-
-    private void playAsync(StimulationTargets targets) {
-        try {
-            for (Samples samples : targets) {
-                playSamples(samples);
-                sleep(samples.getTimeStampMillis());
-                if (Thread.currentThread().isInterrupted())
-                    return;
+            if (stream == null) {
+                stream = new StimulationSamplerTask();
+            } else if (stream.future.isDone()) {
+                stream = new StimulationSamplerTask();
             }
-        } finally {
-            device.setVibration(0, 0);
+            stream.play(targets);
         }
     }
 
-    private static void sleep(long millis) {
-        try {
-            Thread.sleep(millis);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        }
-    }
+    class StimulationSamplerTask {
+        final Lock lock = new ReentrantLock();
+        final Condition play = lock.newCondition();
+        final AtomicReference<StimulationTargets> targets = new AtomicReference<>(null);
+        final AtomicReference<StimulationTargets> playing = new AtomicReference<>(null);
+        final Future<?> future;
 
-    private void playSamples(Samples samples) {
-        if (wiring == Wiring.INFERENCE_CHANNEL) {
-            setHighestPriorityStimulator(samples);
-        } else {
-            setIndependentStimulators(samples);
-        }
-    }
+        long startTimeMillis;
+        Samples samples;
 
-    private void setHighestPriorityStimulator(Samples samples) {
-        if (samples.getValues()[2] > WaveForm.MEAN) {
-            int value = vibrationValue(samples.get(2));
-            device.setVibration(value, value);
-        } else if (samples.getValues()[1] > WaveForm.MEAN) {
-            device.setVibration(0, vibrationValue(samples.get(1)));
-        } else {
-            device.setVibration(vibrationValue(samples.get(0)), 0);
+        public StimulationSamplerTask() {
+            super();
+            this.future = executor.submit(this::run);
         }
-    }
 
-    private void setIndependentStimulators(Samples samples) {
-        device.setVibration(vibrationValue(samples.get(0)), vibrationValue(samples.get(1)));
+        void play(StimulationTargets newTargets) {
+            lock.lock();
+            try {
+                long now = System.currentTimeMillis();
+                StimulationTargets previous = playing.getAndSet(null);
+                if (previous != null) {
+                    // TODO continued playing will be slightly off from actual time duration because
+                    // the sampler ignores execution time between await() calls
+                    play(stream.playing.get().continuedStimulation(newTargets, now - startTimeMillis), now);
+                } else {
+                    play(newTargets, now);
+                }
+            } finally {
+                lock.unlock();
+            }
+        }
+
+        private void play(StimulationTargets newTargets, long now) {
+            targets.set(newTargets);
+            startTimeMillis = now;
+            play.signal();
+        }
+
+        void run() {
+            try {
+                lock.lockInterruptibly();
+                try {
+                    while (!Thread.currentThread().isInterrupted()) {
+                        StimulationTargets currentTargets;
+                        // TODO Should check once
+                        // TODO Can replace stimulation but not append seamlessly
+                        // because complete() waits for all to be completed
+                        // TODO add extend() to add next waveform and continue playing seamlessly
+                        // TODO resolve current deadlock issues ->
+                        // TODO simplify synchronization with BlockingQueue(1)
+                        // - play pattern, continue playing until queue is empty, stop output, end task
+                        // Use cases (incomplete):
+                        // - play, play next
+                        // - play, replace with new
+                        // -> follow same pattern as with messages: put should return when stim has been started
+                        // -> complete() always waits for stimulation to be completed
+                        while ((currentTargets = this.targets.getAndSet(null)) == null) {
+                            if (play.await(Long.MAX_VALUE, TimeUnit.MILLISECONDS)) {
+                                break;
+                            }
+                        }
+                        playing.set(currentTargets);
+                        Iterator<Samples> iterator = currentTargets.iterator();
+                        while (iterator.hasNext()) {
+                            samples = iterator.next();
+                            playSamples(samples);
+                            if (play.await(samples.getTimeStampMillis(), TimeUnit.MILLISECONDS)) {
+                                break;
+                            }
+                        }
+                    }
+                } finally {
+                    lock.unlock();
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            } finally {
+                device.setVibration(0, 0);
+            }
+        }
+
+        private void playSamples(Samples samples) {
+            if (wiring == Wiring.INFERENCE_CHANNEL) {
+                setHighestPriorityStimulator(samples);
+            } else {
+                setIndependentStimulators(samples);
+            }
+        }
+
+        private void setHighestPriorityStimulator(Samples samples) {
+            if (samples.getValues()[2] > WaveForm.MEAN) {
+                int value = vibrationValue(samples.get(2));
+                device.setVibration(value, value);
+            } else if (samples.getValues()[1] > WaveForm.MEAN) {
+                device.setVibration(0, vibrationValue(samples.get(1)));
+            } else {
+                device.setVibration(vibrationValue(samples.get(0)), 0);
+            }
+        }
+
+        private void setIndependentStimulators(Samples samples) {
+            device.setVibration(vibrationValue(samples.get(0)), vibrationValue(samples.get(1)));
+        }
+
     }
 
     int vibrationValue(double value) {
@@ -270,9 +333,8 @@ public class XInputStimulationDevice extends StimulationDevice {
     @Override
     public void stop() {
         synchronized (executor) {
-            Optional<Future<?>> current = stimulationGenerator.get();
-            if (current.isPresent() && !current.get().isDone()) {
-                current.get().cancel(true);
+            if (streamFutureRunning()) {
+                stream.future.cancel(true);
             }
         }
     }
@@ -280,10 +342,16 @@ public class XInputStimulationDevice extends StimulationDevice {
     @Override
     public void complete() {
         synchronized (executor) {
-            Optional<Future<?>> current = stimulationGenerator.get();
-            if (current.isPresent()) {
+            if (streamFutureRunning()) {
+                stream.lock.lock();
                 try {
-                    current.get().get();
+                    stream.play.signal();
+                } finally {
+                    stream.lock.unlock();
+                }
+
+                try {
+                    stream.future.get();
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                     throw new ScriptInterruptedException();
@@ -292,6 +360,10 @@ public class XInputStimulationDevice extends StimulationDevice {
                 }
             }
         }
+    }
+
+    private boolean streamFutureRunning() {
+        return stream != null && !stream.future.isDone() && !stream.future.isCancelled();
     }
 
     @Override

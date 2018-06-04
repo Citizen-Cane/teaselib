@@ -50,23 +50,27 @@ public class XInputStimulationControllerTest {
             return new BurstSquareWave(2, mimimalSignalDuration, 1.0 - mimimalSignalDuration);
         };
 
+        device.play(constantSignal(device, 1, TimeUnit.MINUTES));
+
         for (Intention intention : Intention.values()) {
             stim.play(intention, stimulation);
             stim.complete(intention);
         }
 
-        // TODO overload with duration for each channel
+        // TODO overload method with duration parameter for each channel
         stim.play(Intention.Pain, new Whip(), Intention.Tease, new Attention(), Intention.Pace,
-                new Walk().over(60, TimeUnit.SECONDS));
+                new Walk().over(5, TimeUnit.SECONDS));
         Thread.sleep(1000);
         stim.play(Intention.Pain, new Whip());
-        stim.complete(Intention.Pain); // makes absolutely sense, since we can react in the the middle of a stimulation
+
+        // TODO makes absolutely sense, since it allows to act in the the middle of a stimulation
+        stim.complete(Intention.Pain);
 
         // TODO Can stop whole device only, and it probably doesn't make sense to stop just one stimulator
-        stim.play(Intention.Pace, new Walk().over(60, TimeUnit.SECONDS));
-        stim.stop(Intention.Pace);
-
-        stim.play(Intention.Pace, new Walk(), 60.0);
+        stim.play(Intention.Pace, new Walk().over(5, TimeUnit.SECONDS));
+        stim.complete();
+        // TODO add append() to stimulation controller
+        stim.play(Intention.Pace, new Walk(), 5.0);
         stim.stop(Intention.Pace);
 
     }

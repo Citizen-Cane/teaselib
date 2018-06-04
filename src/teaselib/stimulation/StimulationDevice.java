@@ -82,6 +82,11 @@ public abstract class StimulationDevice implements Device.Creatable {
         }
 
         @Override
+        public void append(StimulationTargets targets) {
+            // Ignore
+        }
+
+        @Override
         public void complete() {
             // Ignore
         }
@@ -112,6 +117,8 @@ public abstract class StimulationDevice implements Device.Creatable {
     public abstract List<Stimulator> stimulators();
 
     public abstract void play(StimulationTargets targets);
+
+    public abstract void append(StimulationTargets targets);
 
     public abstract void stop();
 

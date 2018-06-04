@@ -1,6 +1,7 @@
 package teaselib.stimulation.ext;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -61,6 +62,11 @@ final class TestStimulationDevice extends StimulationDevice {
     public void play(StimulationTargets targets) {
         assertNotNull(targets);
         assertFalse(targets.isEmpty());
+    }
+
+    @Override
+    public void append(StimulationTargets targets) {
+        play(targets);
     }
 
     @Override

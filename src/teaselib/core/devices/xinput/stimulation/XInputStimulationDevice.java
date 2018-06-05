@@ -5,10 +5,11 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
-import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Condition;
@@ -229,11 +230,12 @@ public class XInputStimulationDevice extends StimulationDevice {
 
     class StimulationSamplerTask {
         final Lock lock = new ReentrantLock();
-        final Condition play = lock.newCondition();
-        final SynchronousQueue<StimulationTargets> targets = new SynchronousQueue<>();
+        final Condition playNext = lock.newCondition();
+        final Condition taken = lock.newCondition();
+
+        final BlockingQueue<StimulationTargets> targets = new ArrayBlockingQueue<>(1);
         final AtomicReference<StimulationTargets> playing = new AtomicReference<>(null);
         final Future<?> future;
-
         long startTimeMillis;
         Samples samples;
 
@@ -244,7 +246,7 @@ public class XInputStimulationDevice extends StimulationDevice {
 
         void play(StimulationTargets newTargets) {
             long now = System.currentTimeMillis();
-            StimulationTargets previous = playing.getAndSet(null);
+            StimulationTargets previous = playing.get();
             if (previous != null) {
                 // TODO continued playing will be slightly off from actual time duration because
                 // the sampler ignores execution time between await() calls
@@ -256,14 +258,16 @@ public class XInputStimulationDevice extends StimulationDevice {
 
         private void play(StimulationTargets newTargets, long now) {
             try {
-                lock.lock();
+                lock.lockInterruptibly();
                 try {
-                    // Signal() before put() is safe, as await() returns after unlock()
-                    play.signal();
+                    playNext.signal();
+                    targets.put(newTargets);
+                    while (!targets.isEmpty()) {
+                        taken.await();
+                    }
                 } finally {
                     lock.unlock();
                 }
-                targets.put(newTargets);
                 startTimeMillis = now;
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
@@ -273,38 +277,41 @@ public class XInputStimulationDevice extends StimulationDevice {
 
         public void append(StimulationTargets newTargets) {
             try {
-                targets.put(newTargets);
+                lock.lockInterruptibly();
+                try {
+                    targets.put(newTargets);
+                    while (!targets.isEmpty()) {
+                        taken.await();
+                    }
+                } finally {
+                    lock.unlock();
+                }
+                startTimeMillis = System.currentTimeMillis();
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 throw new ScriptInterruptedException(e);
             }
-            startTimeMillis = System.currentTimeMillis();
         }
 
         void run() {
             try {
                 while (!Thread.currentThread().isInterrupted()) {
-                    // TODO Should check once
-                    // TODO Can replace stimulation but not append seamlessly
-                    // because complete() waits for all to be completed
-                    // TODO add extend() to add next waveform and continue playing seamlessly
-                    // TODO resolve current deadlock issues ->
-                    // TODO simplify synchronization with BlockingQueue(1) or SynchronousQueue
-                    // - play pattern, continue playing until queue is empty, stop output, end task
-                    // Use cases (incomplete):
-                    // - play - replace with new - continuedStimulation()
-                    // - append - complete(), play next seamlessly
-                    // - append - increase repeat count of target
-                    // - stop - stop stimulation
-                    // TODO append - add next job via BlockingQueue(1) and put() -> complete() running waveform
-                    // TODO play (offer/put) - signal sampler to take new targets
-                    // TODO stop() - clear queue and interrupt sampler
-                    // TODO handle interrupted main thread - must stop stimulation (general issue for devices)
-                    StimulationTargets currentTargets = targets.poll();
-                    if (currentTargets == null) {
-                        break;
+                    lock.lockInterruptibly();
+                    try {
+                        if (playing.get() == null) {
+                            while (targets.peek() == null) {
+                                playNext.await();
+                            }
+                        }
+                        StimulationTargets currentTargets = targets.poll();
+                        taken.signal();
+                        if (currentTargets == null) {
+                            break;
+                        }
+                        renderSamples(currentTargets);
+                    } finally {
+                        lock.unlock();
                     }
-                    renderSamples(currentTargets);
                 }
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
@@ -314,19 +321,14 @@ public class XInputStimulationDevice extends StimulationDevice {
         }
 
         private void renderSamples(StimulationTargets currentTargets) throws InterruptedException {
-            lock.lockInterruptibly();
-            try {
-                playing.set(currentTargets);
-                Iterator<Samples> iterator = currentTargets.iterator();
-                while (iterator.hasNext()) {
-                    samples = iterator.next();
-                    playSamples(samples);
-                    if (play.await(samples.getTimeStampMillis(), TimeUnit.MILLISECONDS)) {
-                        break;
-                    }
+            playing.set(currentTargets);
+            Iterator<Samples> iterator = currentTargets.iterator();
+            while (iterator.hasNext()) {
+                samples = iterator.next();
+                playSamples(samples);
+                if (playNext.await(samples.getTimeStampMillis(), TimeUnit.MILLISECONDS)) {
+                    break;
                 }
-            } finally {
-                lock.unlock();
             }
         }
 
@@ -374,13 +376,6 @@ public class XInputStimulationDevice extends StimulationDevice {
     public void complete() {
         synchronized (executor) {
             if (streamFutureRunning()) {
-                // stream.lock.lock();
-                // try {
-                // stream.play.signal();
-                // } finally {
-                // stream.lock.unlock();
-                // }
-
                 try {
                     stream.future.get();
                 } catch (InterruptedException e) {

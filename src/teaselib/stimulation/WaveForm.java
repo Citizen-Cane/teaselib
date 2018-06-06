@@ -65,7 +65,7 @@ public class WaveForm implements Iterable<WaveForm.Sample> {
         }
     }
 
-    public final List<Entry> values;
+    final List<Entry> values;
     private long end;
 
     public WaveForm() {
@@ -94,6 +94,11 @@ public class WaveForm implements Iterable<WaveForm.Sample> {
     private void add(Entry entry) {
         this.values.add(entry);
         end += entry.durationMillis;
+    }
+
+    public void add(WaveForm waveForm) {
+        values.addAll(waveForm.values);
+        end += waveForm.getDurationMillis();
     }
 
     @Override

@@ -21,7 +21,7 @@ public class Repeat implements Stimulation {
         WaveForm repeated = stimulation.waveform(stimulator, intensity);
         long elapsed = 0;
         while (elapsed < durationMillis) {
-            all.values.addAll(repeated.values);
+            all.add(repeated);
             elapsed += repeated.getDurationMillis();
         }
         return all;

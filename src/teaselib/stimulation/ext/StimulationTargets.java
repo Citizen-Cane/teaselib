@@ -258,4 +258,8 @@ public class StimulationTargets implements Iterable<Samples> {
 
         return continuation;
     }
+
+    public Samples zero() {
+        return new Samples(targets.size());
+    }
 }

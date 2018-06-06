@@ -5,6 +5,8 @@ import java.util.concurrent.TimeUnit;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import teaselib.core.Configuration;
 import teaselib.core.devices.Devices;
@@ -16,11 +18,14 @@ import teaselib.stimulation.ext.Intention;
 import teaselib.stimulation.ext.StimulationTarget;
 import teaselib.stimulation.ext.StimulationTargets;
 import teaselib.stimulation.pattern.Attention;
+import teaselib.stimulation.pattern.Repeat;
 import teaselib.stimulation.pattern.Walk;
 import teaselib.stimulation.pattern.Whip;
 import teaselib.test.DebugSetup;
 
 public class XInputStimulationControllerTest {
+    private static final Logger logger = LoggerFactory.getLogger(XInputStimulationControllerTest.class);
+
     private static XInputStimulationDevice device;
 
     @BeforeClass
@@ -38,11 +43,15 @@ public class XInputStimulationControllerTest {
     }
 
     @Test
-    public void test() throws InterruptedException {
+    public void testStimulationSampling() throws InterruptedException {
         EStimController stim = new EStimController();
+        logger.info("Connected to {}", device);
         EStimController.init(stim, device);
 
-        device.play(constantSignal(device, 1, TimeUnit.MINUTES));
+        StimulationTargets constantSignal = constantSignal(device, 1, TimeUnit.MINUTES);
+        logger.info("Playing {}", constantSignal);
+        device.play(constantSignal);
+        logger.info("Stop");
         device.stop();
 
         Stimulation stimulation = (stimulator, intensity) -> {
@@ -50,25 +59,54 @@ public class XInputStimulationControllerTest {
             return new BurstSquareWave(2, mimimalSignalDuration, 1.0 - mimimalSignalDuration);
         };
 
+        logger.info("Playing {}", constantSignal);
+        device.play(constantSignal);
+
+        logger.info("Replacing stimulation targets:");
         for (Intention intention : Intention.values()) {
+            logger.info("Playing {} {}", intention, stimulation);
             stim.play(intention, stimulation);
-            stim.complete(intention);
+            logger.info("Completing");
+            // TODO completing single intention doesn't work yet - blocks 1 minute to complete all
+            // stim.complete(intention);
         }
+        stim.stop();
 
-        // TODO overload with duration for each channel
-        stim.play(Intention.Pain, new Whip(), Intention.Tease, new Attention(), Intention.Pace,
-                new Walk().over(60, TimeUnit.SECONDS));
-        Thread.sleep(1000);
-        stim.play(Intention.Pain, new Whip());
-        stim.complete(Intention.Pain); // makes absolutely sense, since we can react in the the middle of a stimulation
+        logger.info("Playing multiple patterns");
+        // TODO overload method with duration parameter for each channel
+        Whip whip = new Whip();
+        Walk walkRepeated = new Walk();
+        Repeat walkRendered = walkRepeated.over(2, TimeUnit.SECONDS);
+        stim.play(Intention.Pain, whip, Intention.Tease, new Attention(), Intention.Pace, walkRendered);
+        logger.info("Waiting");
+        sleep(2000);
 
-        // TODO Can stop whole device only, and it probably doesn't make sense to stop just one stimulator
-        stim.play(Intention.Pace, new Walk().over(60, TimeUnit.SECONDS));
+        logger.info("While teasing and setting pace: Playing {}", whip);
+        stim.play(Intention.Pain, whip);
+
+        // TODO makes absolutely sense, since it allows to act in the the middle of a stimulation
+        logger.info("Completing whip");
+        stim.complete(Intention.Pain);
+
+        // TODO add append() methods to stimulation controller
+        logger.info("Playing Walk rendered {}", walkRendered);
+        stim.play(Intention.Pace, walkRendered);
+        logger.info("Completing");
+        stim.complete();
+
+        logger.info("Playing Walk repeated {}", walkRepeated);
+        stim.play(Intention.Pace, walkRepeated, 2.0);
+        logger.info("Completing");
+        stim.complete();
+
+        logger.info("Playing Walk repeated {}", walkRepeated);
+        stim.play(Intention.Pace, walkRepeated, 2.0);
+        logger.info("Stopping");
         stim.stop(Intention.Pace);
+    }
 
-        stim.play(Intention.Pace, new Walk(), 60.0);
-        stim.stop(Intention.Pace);
-
+    private void sleep(long millis) throws InterruptedException {
+        Thread.sleep(millis);
     }
 
     private static StimulationTargets constantSignal(StimulationDevice device, long duration, TimeUnit timeUnit) {

@@ -5,12 +5,17 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
 import java.util.Iterator;
+import java.util.concurrent.TimeUnit;
 
 import org.junit.Test;
 
 import teaselib.stimulation.SquareWave;
 import teaselib.stimulation.Stimulator;
 import teaselib.stimulation.ext.StimulationTargets.Samples;
+import teaselib.stimulation.pattern.Attention;
+import teaselib.stimulation.pattern.Repeat;
+import teaselib.stimulation.pattern.Walk;
+import teaselib.stimulation.pattern.Whip;
 
 public class StimulationTargtetsTest {
     @Test
@@ -244,8 +249,66 @@ public class StimulationTargtetsTest {
         assertFalse("Nothing has been inserted so there shouldn't be any new samples", samples.hasNext());
     }
 
+    @Test
+    public void testSamplingMultipleWaveforms() {
+        TestStimulationDevice device = new TestStimulationDevice();
+        Stimulator stim1 = device.add(new TestStimulator(device, 1));
+        Stimulator stim2 = device.add(new TestStimulator(device, 2));
+        Stimulator stim3 = device.add(new TestStimulator(device, 3));
+        StimulationTargets targets = new StimulationTargets(device);
+
+        Walk walk = new Walk();
+        Attention attention = new Attention();
+        Whip whip = new Whip();
+        targets.set(new StimulationTarget(stim1, whip.waveform(stim1, 0)));
+        targets.set(new StimulationTarget(stim2, attention.waveform(stim2, 0)));
+        targets.set(new StimulationTarget(stim3, walk.waveform(stim3, 0)));
+
+        Iterator<Samples> firstStim = targets.iterator();
+        while (firstStim.hasNext()) {
+            @SuppressWarnings("unused")
+            Samples samples = firstStim.next();
+        }
+    }
+
+    @Test
+    public void testSamplingRepeat() {
+        TestStimulationDevice device = new TestStimulationDevice();
+        Stimulator stim1 = device.add(new TestStimulator(device, 1));
+        Stimulator stim2 = device.add(new TestStimulator(device, 2));
+        Stimulator stim3 = device.add(new TestStimulator(device, 3));
+        StimulationTargets targets = new StimulationTargets(device);
+
+        Walk step = new Walk();
+        Repeat walk = step.over(1, TimeUnit.MINUTES);
+        Attention attention = new Attention();
+        Whip whip = new Whip();
+        targets.set(new StimulationTarget(stim1, whip.waveform(stim1, 0)));
+        targets.set(new StimulationTarget(stim2, attention.waveform(stim2, 0)));
+        targets.set(new StimulationTarget(stim3, walk.waveform(stim3, 0)));
+
+        Iterator<Samples> firstStim = targets.iterator();
+        while (firstStim.hasNext()) {
+            @SuppressWarnings("unused")
+            Samples samples = firstStim.next();
+        }
+
+        StimulationTargets newTargets = new StimulationTargets(device);
+        newTargets.set(new StimulationTarget(stim1, whip.waveform(stim1, 0)));
+        StimulationTargets continued = targets.continuedStimulation(newTargets,
+                targets.maxDurationMillis() - step.waveform(stim1, 0).getDurationMillis());
+
+        assertEquals(1000, continued.get(0).getWaveForm().getDurationMillis());
+        assertEquals(whip.waveform(stim3, 0).getDurationMillis(), continued.get(0).getWaveForm().getDurationMillis());
+
+        Iterator<Samples> secondStim = continued.iterator();
+        while (secondStim.hasNext()) {
+            Samples samples = secondStim.next();
+        }
+    }
+
     // TODO More continuedStimulation() tests
-    
+
     private static void test(Samples samples, long expectedTimeStampMillis, double... values) {
         assertEquals(expectedTimeStampMillis, samples.timeStampMillis);
         assertArrayEquals(values, samples.getValues(), 0.0);

@@ -164,10 +164,33 @@ public class ItemImplTest {
                 say("You're wearing leather restraints", script.state(Toys.Wrist_Restraints).is(Material.Leather));
             }
         }
+
+        script.item(Toys.Wrist_Restraints).remove();
+        assertFalse(script.state(Toys.Wrist_Restraints).applied());
+        assertFalse(script.state(Body.WristsTied).applied());
+        assertFalse(script.state(Posture.WristsTiedBehindBack).applied());
     }
 
     private static void say(String message, boolean assertion) {
         assertTrue(message, assertion);
+    }
+
+    @Test
+    public void testApplyAndRemoveTheOtherWayAround() {
+        TeaseScript script = TestScript.getOne();
+
+        script.item(Toys.Wrist_Restraints).apply();
+        assertTrue(script.state(Body.WristsTied).applied());
+        assertTrue(script.state(Toys.Wrist_Restraints).is(script.namespace));
+        assertTrue(script.state(Body.WristsTied).is(script.namespace));
+
+        script.item(Body.WristsTied).remove();
+        assertFalse(script.state(Body.WristsTied).applied());
+
+        assertFalse(script.state(Body.WristsTied).is(script.namespace));
+        // TODO namespace must be an attribute, to remove it from Toys.Wrist_Restraints
+        assertFalse(script.state(Toys.Wrist_Restraints).is(script.namespace));
+        assertFalse(script.state(Toys.Wrist_Restraints).applied());
     }
 
     @Test

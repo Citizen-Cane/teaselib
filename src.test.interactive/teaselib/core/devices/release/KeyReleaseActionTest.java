@@ -1,5 +1,7 @@
 package teaselib.core.devices.release;
 
+import static org.junit.Assert.*;
+
 import java.util.concurrent.TimeUnit;
 
 import org.junit.Test;
@@ -30,9 +32,9 @@ public class KeyReleaseActionTest {
 
             KeyReleaseTest.sleep(10, TimeUnit.SECONDS);
 
+            assertTrue(actuator.isRunning());
             script.item(Toys.Wrist_Restraints).remove();
-
-            KeyReleaseTest.assertStoppedAfterRelease(actuator);
+            assertFalse(actuator.isRunning());
         }
 
         KeyReleaseTest.assertEndState(keyRelease);

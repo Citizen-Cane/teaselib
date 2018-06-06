@@ -69,6 +69,11 @@ public class StateMaps {
         return state(domain, QualifiedItem.of(item));
     }
 
+    @SuppressWarnings("unchecked")
+    public <T extends State> T state(String domain, T state) {
+        return (T) state(domain, QualifiedItem.of(state));
+    }
+
     private State state(String domain, QualifiedItem item) {
         if (Persist.isPersistedString(item.toString())) {
             State state = Persist.from(item.toString(), clazz -> teaseLib);
@@ -80,11 +85,12 @@ public class StateMaps {
             return state;
         } else if (item.value() instanceof StateImpl) {
             StateImpl stateImpl = (StateImpl) item.value();
-            StateMap stateMap = stateMap(domain, stateImpl.item.toString().toLowerCase());
-            State existing = stateMap.get(item.toString().toLowerCase());
+            StateMap stateMap = stateMap(domain, QualifiedItem.of(stateImpl.item));
+            String key = item.name().toLowerCase();
+            State existing = stateMap.get(key);
             if (existing == null) {
-                State state = new StateImpl(this, domain, stateImpl.item.toString().toLowerCase());
-                stateMap.put(stateImpl.item.toString().toLowerCase(), state);
+                State state = (State) item.value();
+                stateMap.put(key, state);
                 return state;
             } else if (!existing.equals(item.value())) {
                 throw new IllegalArgumentException(
@@ -94,10 +100,11 @@ public class StateMaps {
             }
         } else {
             StateMap stateMap = stateMap(domain, item);
-            State state = stateMap.get(item.toString().toLowerCase());
+            String key = item.name().toLowerCase();
+            State state = stateMap.get(key);
             if (state == null) {
                 state = new StateImpl(this, domain, item.value());
-                stateMap.put(item.toString().toLowerCase(), state);
+                stateMap.put(key, state);
             }
             return state;
         }
@@ -129,7 +136,8 @@ public class StateMaps {
     }
 
     StateMap stateMap(String domain, String namespaceKey) {
-        StateMapCache domainCache = getDomainCache(domain.toLowerCase());
+        domain=domain.toLowerCase();
+        StateMapCache domainCache = getDomainCache(domain);
         final StateMap stateMap;
         if (domainCache.containsKey(namespaceKey)) {
             stateMap = domainCache.get(namespaceKey);

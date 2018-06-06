@@ -766,6 +766,10 @@ public class TeaseLib {
         return stateMaps.state(domain, item);
     }
 
+    public <T extends State> T state(String domain, T item) {
+        return stateMaps.state(domain, item);
+    }
+
     /**
      * Get items from a enumeration.
      * 
@@ -793,7 +797,11 @@ public class TeaseLib {
      * @return The item that corresponds to the value.
      */
     public <T extends Object> Item item(String domain, T item) {
-        return items(domain, item).get();
+        if (item instanceof Item) {
+            throw new IllegalArgumentException(item.toString());
+        } else {
+            return items(domain, item).get();
+        }
     }
 
     public Item getByGuid(String domain, Object item, String guid) {

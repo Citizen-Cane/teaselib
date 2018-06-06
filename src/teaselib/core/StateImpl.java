@@ -19,21 +19,20 @@ import teaselib.util.Item;
 import teaselib.util.ItemImpl;
 
 public class StateImpl implements State, State.Options, StateMaps.Attributes {
-
     private static final String TEMPORARY_KEYWORD = "TEMPORARY";
     private static final String REMOVED_KEYWORD = "REMOVED";
     private static final String INDEFINITELY_KEYWORD = "INDEFINITELY";
 
     private final StateMaps stateMaps;
-    protected final String domain;
-    protected final Object item;
+    public final String domain;
+    public final Object item;
+
+    private final Set<Object> peers = new HashSet<>();
+    private final Set<Object> attributes = new HashSet<>();
 
     private final PersistentString durationStorage;
     private final PersistentString peerStorage;
     private final PersistentString attributeStorage;
-
-    private final Set<Object> peers = new HashSet<>();
-    private final Set<Object> attributes = new HashSet<>();
 
     private Duration duration;
 

@@ -26,7 +26,7 @@ public class AbstractProxy<T> {
 
     @Override
     public int hashCode() {
-        return super.hashCode();
+        return state.hashCode();
     }
 
 }

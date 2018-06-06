@@ -261,4 +261,22 @@ public class Items extends ArrayList<Item> {
         // TODO Implement this - at least just return one item of each kind
         return new Items(this);
     }
+
+    public void apply() {
+        for (Item item : this) {
+            item.apply();
+        }
+    }
+
+    public void applyTo(Object... peers) {
+        for (Item item : this) {
+            item.applyTo(peers);
+        }
+    }
+
+    public void remove() {
+        for (Item item : this) {
+            item.remove();
+        }
+    }
 }

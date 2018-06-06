@@ -1,5 +1,6 @@
 package teaselib.core.util;
 
+import teaselib.State;
 import teaselib.util.Item;
 
 /**
@@ -61,6 +62,8 @@ public abstract class QualifiedItem {
             return new QualifiedEnum((Enum<?>) value);
         } else if (value instanceof Item) {
             return new QualifiedItemImpl((Item) value);
+        } else if (value instanceof State) {
+            return new QualifiedStateImpl((State) value);
         } else {
             return new QualifiedObject(value);
         }

@@ -26,11 +26,12 @@ import teaselib.core.util.QualifiedItem;
  */
 public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
     final TeaseLib teaseLib;
+
     public final String domain;
     public final String guid;
     public final Object item;
-    public final TeaseLib.PersistentBoolean value;
     public final String displayName;
+    public final TeaseLib.PersistentBoolean value;
     public final Object[] defaultPeers;
     public final Set<Object> attributes;
 
@@ -159,6 +160,12 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
             throw new IllegalArgumentException("Item without default peers must be applied with explicit peer list");
         }
 
+        for (S s : items) {
+            if (s instanceof List || s instanceof Object[]) {
+                throw new IllegalArgumentException("Applying lists and arrays isn't supported yet: " + s);
+            }
+        }
+
         applyInstanceTo(defaultPeers);
         applyInstanceTo(items);
 
@@ -196,8 +203,9 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
         relevantPeers.addAll(attributes);
 
         for (Object peer : relevantPeers) {
-            teaseLib.state(domain, peer).removeFrom(this);
-            teaseLib.state(domain, peer).removeFrom(this.item);
+            State peerState = teaseLib.state(domain, peer);
+            peerState.removeFrom(this);
+            peerState.removeFrom(this.item);
         }
 
         return state.remove();

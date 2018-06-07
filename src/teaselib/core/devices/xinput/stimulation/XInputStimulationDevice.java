@@ -2,19 +2,10 @@ package teaselib.core.devices.xinput.stimulation;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
 import teaselib.core.Configuration;
 import teaselib.core.ScriptInterruptedException;
@@ -140,7 +131,7 @@ public class XInputStimulationDevice extends StimulationDevice {
         return new MyDeviceFactory(DeviceClassName, devices, configuration);
     }
 
-    private final XInputDevice device;
+    final XInputDevice device;
     private final List<Stimulator> stimulators;
 
     private final ExecutorService executor = NamedExecutorService.singleThreadedQueue(getClass().getName());
@@ -212,7 +203,7 @@ public class XInputStimulationDevice extends StimulationDevice {
     public void play(StimulationTargets targets) {
         synchronized (executor) {
             if (stream == null || stream.future.isDone()) {
-                stream = new StimulationSamplerTask();
+                stream = new XInputStimmulationSamplerTask(executor);
             }
             stream.play(targets);
         }
@@ -222,117 +213,19 @@ public class XInputStimulationDevice extends StimulationDevice {
     public void append(StimulationTargets targets) {
         synchronized (executor) {
             if (stream == null || stream.future.isDone()) {
-                stream = new StimulationSamplerTask();
+                stream = new XInputStimmulationSamplerTask(executor);
             }
             stream.append(targets);
         }
     }
 
-    class StimulationSamplerTask {
-        final Lock lock = new ReentrantLock();
-        final Condition playNext = lock.newCondition();
-        final Condition taken = lock.newCondition();
-
-        final BlockingQueue<StimulationTargets> targets = new ArrayBlockingQueue<>(1);
-        final AtomicReference<StimulationTargets> playing = new AtomicReference<>(null);
-        final Future<?> future;
-        long startTimeMillis;
-        Samples samples;
-
-        public StimulationSamplerTask() {
-            super();
-            this.future = executor.submit(this::run);
+    class XInputStimmulationSamplerTask extends StimulationSamplerTask {
+        public XInputStimmulationSamplerTask(ExecutorService executor) {
+            super(executor);
         }
 
-        void play(StimulationTargets newTargets) {
-            long now = System.currentTimeMillis();
-            StimulationTargets previous = playing.get();
-            if (previous != null) {
-                // TODO continued playing will be slightly off from actual time duration because
-                // the sampler ignores execution time between await() calls
-                play(previous.continuedStimulation(newTargets, now - startTimeMillis), now);
-            } else {
-                play(newTargets, now);
-            }
-        }
-
-        private void play(StimulationTargets newTargets, long now) {
-            try {
-                lock.lockInterruptibly();
-                try {
-                    playNext.signal();
-                    targets.put(newTargets);
-                    while (!targets.isEmpty()) {
-                        taken.await();
-                    }
-                } finally {
-                    lock.unlock();
-                }
-                startTimeMillis = now;
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new ScriptInterruptedException(e);
-            }
-        }
-
-        public void append(StimulationTargets newTargets) {
-            try {
-                lock.lockInterruptibly();
-                try {
-                    targets.put(newTargets);
-                    while (!targets.isEmpty()) {
-                        taken.await();
-                    }
-                } finally {
-                    lock.unlock();
-                }
-                startTimeMillis = System.currentTimeMillis();
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new ScriptInterruptedException(e);
-            }
-        }
-
-        void run() {
-            try {
-                while (!Thread.currentThread().isInterrupted()) {
-                    lock.lockInterruptibly();
-                    try {
-                        if (playing.get() == null) {
-                            while (targets.peek() == null) {
-                                playNext.await();
-                            }
-                        }
-                        StimulationTargets currentTargets = targets.poll();
-                        taken.signal();
-                        if (currentTargets == null) {
-                            break;
-                        }
-                        renderSamples(currentTargets);
-                    } finally {
-                        lock.unlock();
-                    }
-                }
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            } finally {
-                device.setVibration(0, 0);
-            }
-        }
-
-        private void renderSamples(StimulationTargets currentTargets) throws InterruptedException {
-            playing.set(currentTargets);
-            Iterator<Samples> iterator = currentTargets.iterator();
-            while (iterator.hasNext()) {
-                samples = iterator.next();
-                playSamples(samples);
-                if (playNext.await(samples.getTimeStampMillis(), TimeUnit.MILLISECONDS)) {
-                    break;
-                }
-            }
-        }
-
-        private void playSamples(Samples samples) {
+        @Override
+        void playSamples(Samples samples) {
             if (wiring == Wiring.INFERENCE_CHANNEL) {
                 setHighestPriorityStimulator(samples);
             } else {
@@ -354,7 +247,6 @@ public class XInputStimulationDevice extends StimulationDevice {
         private void setIndependentStimulators(Samples samples) {
             device.setVibration(vibrationValue(samples.get(0)), vibrationValue(samples.get(1)));
         }
-
     }
 
     int vibrationValue(double value) {

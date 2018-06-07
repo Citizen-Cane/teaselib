@@ -43,7 +43,7 @@ public class XInputStimulationControllerTest {
     }
 
     @Test
-    public void testXInputStimulationController() throws InterruptedException {
+    public void testStimulationSampling() throws InterruptedException {
         EStimController stim = new EStimController();
         logger.info("Connected to {}", device);
         EStimController.init(stim, device);

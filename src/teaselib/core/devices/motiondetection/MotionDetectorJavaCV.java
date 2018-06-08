@@ -172,7 +172,12 @@ public class MotionDetectorJavaCV extends MotionDetector /* extends WiredDevice 
                 captureThread.gestureChanged.await(timeoutSeconds, (new Signal.HasChangedPredicate() {
                     @Override
                     public Boolean call() throws Exception {
-                        return expected.contains(captureThread.gesture);
+                        boolean isExpected = expected.contains(captureThread.gesture);
+                        if (isExpected) {
+                            // TODO make clear() multithreading safe
+                            captureThread.gestureTracker.clear();
+                        }
+                        return isExpected;
                     }
                 }));
             } catch (InterruptedException e) {
@@ -183,8 +188,6 @@ public class MotionDetectorJavaCV extends MotionDetector /* extends WiredDevice 
             }
             return captureThread.gesture;
         } finally {
-            // TODO make clear() multithreading safe
-            captureThread.gestureTracker.clear();
             captureThread.gesture = Gesture.None;
         }
     }

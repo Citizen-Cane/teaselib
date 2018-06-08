@@ -314,6 +314,8 @@ public class HeadGestureTracker {
 
     public void clear() {
         directionTimeLine.clear();
+        tracker.clear();
+        restart();
     }
 
     public Rect getRegion() {

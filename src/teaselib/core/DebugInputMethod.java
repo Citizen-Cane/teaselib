@@ -138,9 +138,9 @@ public class DebugInputMethod implements InputMethod {
         }
     }
 
-    private static void choose(Prompt prompt, Result result) {
+    private void choose(Prompt prompt, Result result) {
         logger.info("Choosing {}", result);
-        prompt.signalResult(result.index);
+        prompt.signalResult(this, result.index);
     }
 
     @Override

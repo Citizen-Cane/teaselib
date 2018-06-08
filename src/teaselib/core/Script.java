@@ -425,9 +425,7 @@ public abstract class Script {
         endAll();
         teaseLib.host.endScene();
 
-        if (logger.isDebugEnabled()) {
-            logger.debug("Reply finished");
-        }
+        logger.info("{}", prompt);
         teaseLib.transcript.info("< " + choice);
 
         return choice;

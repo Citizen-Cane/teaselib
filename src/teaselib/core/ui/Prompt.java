@@ -36,6 +36,7 @@ public class Prompt {
     private int result;
 
     String inputHandlerKey = NONE;
+    private InputMethod inputMethod;
 
     public Prompt(Choices choices, ScriptFunction scriptFunction, List<InputMethod> inputMethods) {
         super();
@@ -107,21 +108,22 @@ public class Prompt {
         return result;
     }
 
-    public synchronized void setResultOnce(int value) {
+    public synchronized void setResultOnce(InputMethod inputMethod, int value) {
         if (result == Prompt.UNDEFINED) {
+            this.inputMethod = inputMethod;
             result = value;
         } else {
-            throw new IllegalStateException("Prompt result can be set only once for " + this);
+            throw new IllegalStateException("Prompt " + this + " already set to " + inputMethod + " -> " + value);
         }
     }
 
-    public void signalResult(int resultIndex) {
-        setResultOnce(resultIndex);
+    public void signalResult(InputMethod inputMethod, int resultIndex) {
+        setResultOnce(inputMethod, resultIndex);
 
         if (!paused()) {
             click.signalAll();
         } else {
-            throw new IllegalStateException("Prompt click signaled for paused prompt " + this);
+            throw new IllegalStateException(inputMethod + " tried to signal paused prompt " + this);
         }
     }
 
@@ -172,8 +174,12 @@ public class Prompt {
         } else {
             lockState = "locked";
         }
-        return (scriptTask != null ? scriptTask.getRelation() + " " : " ") + "" + choices.toString() + " " + lockState
-                + (paused.get() ? " paused" : "") + " result=" + toString(result);
+        String scriptTaskDescription = scriptTask != null ? scriptTask.getRelation() + " " : " ";
+        String isPaused = paused.get() ? " paused" : "";
+        String resultString = " result=" + toString(result);
+        String inputMethodName = inputMethod != null ? "(input method =" + inputMethod.getClass().getSimpleName() + ")"
+                : "";
+        return scriptTaskDescription + choices.toString() + " " + lockState + isPaused + resultString + inputMethodName;
     }
 
     private String toString(int result) {

@@ -66,7 +66,7 @@ public class PromptQueue {
 
     public boolean dismiss(Prompt prompt) {
         if (prompt.result() == Prompt.UNDEFINED) {
-            prompt.setResultOnce(Prompt.DISMISSED);
+            prompt.setResultOnce(null, Prompt.DISMISSED);
             return dismissPrompt(prompt);
         } else {
             return false;

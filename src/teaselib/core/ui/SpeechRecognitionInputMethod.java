@@ -126,7 +126,7 @@ public class SpeechRecognitionInputMethod implements InputMethod {
         Prompt prompt = active.get();
         prompt.lock.lock();
         try {
-            prompt.signalResult(resultIndex);
+            prompt.signalResult(this, resultIndex);
         } finally {
             prompt.lock.unlock();
         }

@@ -45,7 +45,7 @@ public class HostInputMethod implements InputMethod {
                         prompt.lock.lockInterruptibly();
                         try {
                             if (!prompt.paused() && prompt.result() == Prompt.UNDEFINED) {
-                                prompt.signalResult(result);
+                                prompt.signalResult(HostInputMethod.this, result);
                             }
                         } finally {
                             prompt.lock.unlock();

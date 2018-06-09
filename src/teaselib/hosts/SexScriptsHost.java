@@ -442,7 +442,6 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
                     final String choice = choices.get(index).display;
                     if (buttonText.contains(choice)) {
                         clickableChoices.set(index, () -> {
-                            logger.info("Clicking on '" + choice + "'");
                             button.doClick();
                         });
                     }

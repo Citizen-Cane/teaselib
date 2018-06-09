@@ -32,6 +32,7 @@ public class HeadGestureInputMethod implements InputMethod {
 
     private static final List<Gesture> SupportedGestures = Arrays.asList(Gesture.Nod, Gesture.Shake);
 
+    // TODO Duplicates HostInputMethod -> pull out await*(...) into override, introduce AbstractInputMethod
     @Override
     public void show(Prompt prompt) throws InterruptedException {
         Callable<Integer> callable = new Callable<Integer>() {
@@ -47,7 +48,7 @@ public class HeadGestureInputMethod implements InputMethod {
                         prompt.lock.lockInterruptibly();
                         try {
                             if (!prompt.paused() && prompt.result() == Prompt.UNDEFINED) {
-                                prompt.signalResult(result);
+                                prompt.signalResult(HeadGestureInputMethod.this, result);
                             }
                         } finally {
                             prompt.lock.unlock();
@@ -58,7 +59,6 @@ public class HeadGestureInputMethod implements InputMethod {
                 }
                 return prompt.result();
             }
-
         };
 
         synchronized (callable) {

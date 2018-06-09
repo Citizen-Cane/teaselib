@@ -147,9 +147,7 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
         applyInstanceTo(defaultPeers);
 
         State state = teaseLib.state(domain, item);
-        state.applyTo(this);
         applyMyAttributesTo(state);
-
         return (State.Options) state;
     }
 

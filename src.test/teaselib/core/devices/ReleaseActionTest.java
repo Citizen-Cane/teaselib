@@ -2,53 +2,36 @@ package teaselib.core.devices;
 
 import static org.junit.Assert.*;
 
-import java.util.Arrays;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.junit.Ignore;
 import org.junit.Test;
 
 import teaselib.Household;
+import teaselib.Material;
 import teaselib.State;
 import teaselib.Toys;
-import teaselib.core.StateImpl;
 import teaselib.core.TeaseLib;
 import teaselib.core.devices.release.Actuator;
 import teaselib.core.devices.release.KeyRelease;
 import teaselib.core.util.Persist;
+import teaselib.core.util.Persist.Storage;
 import teaselib.core.util.QualifiedItem;
-import teaselib.core.util.ReflectionUtils;
 import teaselib.test.TestScript;
 import teaselib.util.Item;
 import teaselib.util.Items;
 
 public class ReleaseActionTest {
-    public static final class ReleaseActionState extends StateImpl implements Persist.Persistable {
+    public static final class ReleaseActionState extends ReleaseAction {
         static final AtomicBoolean Success = new AtomicBoolean(false);
-
         boolean removed = false;
 
-        public ReleaseActionState(TeaseLib teaseLib, String devicePath) {
-            super(teaseLib, TeaseLib.DefaultDomain,
-                    ReflectionUtils.normalizeClassName(ReleaseActionState.class) + "." + devicePath);
+        public ReleaseActionState(Storage storage) {
+            super(storage);
         }
 
-        @Override
-        public List<String> persisted() {
-            return Arrays.asList(Persist.persist(domain), Persist.persist(item.toString()));
-        }
-
-        public ReleaseActionState(Persist.Storage storage) {
-            super(storage.getInstance(TeaseLib.class), storage.next(), storage.next());
-        }
-
-        public String getStateName() {
-            return QualifiedItem.of(item).toString();
-        }
-
-        public String devicePath() {
-            return QualifiedItem.nameOf(item);
+        public ReleaseActionState(TeaseLib teaseLib, String item) {
+            super(teaseLib, TeaseLib.DefaultDomain, item);
         }
 
         @Override
@@ -66,12 +49,12 @@ public class ReleaseActionTest {
         String devicePath = "KeyRelease/MyPhoton/1";
         ReleaseActionState actionItem = script.teaseLib.state(TeaseLib.DefaultDomain,
                 new ReleaseActionState(script.teaseLib, devicePath));
-        State sameInstance = script.state(actionItem.getStateName());
+        State sameInstance = script.state(QualifiedItem.of(actionItem).toString());
         assertEquals(actionItem, sameInstance);
 
         String action = Persist.persist(actionItem);
         ReleaseActionState restored = (ReleaseActionState) Persist.from(action, clazz -> script.teaseLib);
-        assertEquals(devicePath, restored.devicePath());
+        assertEquals(actionItem, restored);
 
         Item restraints = script.item(Toys.Wrist_Restraints);
         restraints.apply();
@@ -82,9 +65,6 @@ public class ReleaseActionTest {
         restraints.remove();
 
         assertEquals(true, ReleaseActionState.Success.getAndSet(false));
-
-        // TODO persisted instance is restored multiple times
-        // -> doesn't matter for physical device but local state won't be restored
         assertEquals(false, restored.removed);
     }
 
@@ -95,7 +75,7 @@ public class ReleaseActionTest {
         String devicePath = "KeyRelease/MyPhoton/1";
         ReleaseActionState actionItem = script.teaseLib.state(TeaseLib.DefaultDomain,
                 new ReleaseActionState(script.teaseLib, devicePath));
-        State sameInstance = script.state(actionItem.getStateName());
+        State sameInstance = script.state(QualifiedItem.of(actionItem).toString());
         assertEquals(actionItem, sameInstance);
 
         Item restraints = script.item(Toys.Wrist_Restraints);
@@ -116,6 +96,35 @@ public class ReleaseActionTest {
     }
 
     @Test
+    public void testReleaseActionInstanceRemoveOtherToyOfSameType() {
+        TestScript script = TestScript.getOne();
+
+        String devicePath = "KeyRelease/MyPhoton/1";
+        ReleaseActionState actionItem = script.teaseLib.state(TeaseLib.DefaultDomain,
+                new ReleaseActionState(script.teaseLib, devicePath));
+        State sameInstance = script.state(QualifiedItem.of(actionItem).toString());
+        assertEquals(actionItem, sameInstance);
+
+        Item handCuffs = script.items(Toys.Wrist_Restraints).query(Material.Metal).get();
+        handCuffs.apply();
+        handCuffs.applyTo(actionItem);
+
+        // start(action);
+
+        Item otherCuffs = script.items(Toys.Wrist_Restraints).query(Material.Leather).get();
+        assertNotEquals(handCuffs, otherCuffs);
+        otherCuffs.remove();
+
+        assertFalse(otherCuffs.applied());
+        assertFalse(otherCuffs.is(script.namespace));
+        assertFalse(actionItem.is(script.namespace));
+        assertFalse(actionItem.applied());
+
+        assertEquals(true, ReleaseActionState.Success.getAndSet(false));
+        assertEquals(true, actionItem.removed);
+    }
+
+    @Test
     public void testReleaseActionMultiLevel() {
         TestScript script = TestScript.getOne();
 
@@ -124,12 +133,12 @@ public class ReleaseActionTest {
 
         ReleaseActionState removeRestraintsAction = script.teaseLib.state(TeaseLib.DefaultDomain,
                 new ReleaseActionState(script.teaseLib, devicePath1));
-        State sameInstance1 = script.state(removeRestraintsAction.getStateName());
+        State sameInstance1 = script.state(QualifiedItem.of(removeRestraintsAction).toString());
         assertEquals(removeRestraintsAction, sameInstance1);
 
         ReleaseActionState removeChainsAction = script.teaseLib.state(TeaseLib.DefaultDomain,
                 new ReleaseActionState(script.teaseLib, devicePath2));
-        State sameInstance2 = script.state(removeChainsAction.getStateName());
+        State sameInstance2 = script.state(QualifiedItem.of(removeChainsAction).toString());
         assertEquals(removeChainsAction, sameInstance2);
 
         Items restraints = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints, Toys.Collar);
@@ -164,13 +173,64 @@ public class ReleaseActionTest {
     }
 
     @Test
+    public void testReleaseActionMultiLevelReleaseWhenOnlySingleItemIsRemoved() {
+        TestScript script = TestScript.getOne();
+
+        String devicePath1 = "KeyRelease/MyPhoton/1";
+        String devicePath2 = "KeyRelease/MyPhoton/2";
+
+        ReleaseActionState removeRestraintsAction = script.teaseLib.state(TeaseLib.DefaultDomain,
+                new ReleaseActionState(script.teaseLib, devicePath1));
+        State sameInstance1 = script.state(QualifiedItem.of(removeRestraintsAction).toString());
+        assertEquals(removeRestraintsAction, sameInstance1);
+
+        ReleaseActionState removeChainsAction = script.teaseLib.state(TeaseLib.DefaultDomain,
+                new ReleaseActionState(script.teaseLib, devicePath2));
+        State sameInstance2 = script.state(QualifiedItem.of(removeChainsAction).toString());
+        assertEquals(removeChainsAction, sameInstance2);
+
+        Items restraints = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints, Toys.Collar);
+        restraints.apply();
+        restraints.applyTo(removeRestraintsAction);
+
+        Items chains = script.items(Toys.Chains, Household.Bell);
+        chains.apply();
+        chains.applyTo(removeChainsAction);
+        for (Item restraint : restraints) {
+            chains.applyTo(restraint);
+        }
+
+        // start(action);
+
+        assertTrue(chains.allApplied());
+        assertTrue(restraints.allApplied());
+        assertEquals(false, removeChainsAction.removed);
+        assertEquals(false, removeRestraintsAction.removed);
+
+        Item someChains = chains.item(Toys.Chains);
+        someChains.remove();
+        // TODO overwrite removeFrom()
+        assertTrue(removeChainsAction.removed);
+        assertFalse(removeRestraintsAction.removed);
+        assertFalse(chains.anyApplied());
+        assertTrue(restraints.allApplied());
+
+        Item wristRestraints = restraints.item(Toys.Wrist_Restraints);
+        wristRestraints.remove();
+        assertTrue(removeChainsAction.removed);
+        assertTrue(removeRestraintsAction.removed);
+        assertFalse(chains.anyApplied());
+        assertFalse(restraints.anyApplied());
+    }
+
+    @Test
     public void testThatReleaseActionCanBeAppliedBeforehand() {
         TestScript script = TestScript.getOne();
 
         String devicePath = "KeyRelease/MyPhoton/1";
         ReleaseActionState actionItem = script.teaseLib.state(TeaseLib.DefaultDomain,
                 new ReleaseActionState(script.teaseLib, devicePath));
-        State sameInstance = script.state(actionItem.getStateName());
+        State sameInstance = script.state(QualifiedItem.of(actionItem).toString());
         assertEquals(actionItem, sameInstance);
 
         Item restraints = script.item(Toys.Wrist_Restraints);
@@ -180,10 +240,8 @@ public class ReleaseActionTest {
         // TODO namespace not assigned because we don't have a proxy
         assertFalse(actionItem.is(script.namespace));
 
-        // TODO Should be false since we've applied the action item only - ignore action items when testing applied()
-        // state
-        // assertFalse(restraints.applied());
-        assertTrue(restraints.applied());
+        // TODO Must be false when applying the action item only -> ignore action items when testing applied()
+        assertFalse(restraints.applied());
         assertTrue(actionItem.applied());
 
         restraints.apply();
@@ -198,7 +256,6 @@ public class ReleaseActionTest {
         restraints.remove();
         assertFalse(restraints.applied());
         assertFalse(restraints.is(script.namespace));
-        // TODO currently this works as intended because we don't use a proxy for setting the namespace
         assertFalse(actionItem.is(script.namespace));
         assertFalse(actionItem.is(Toys.Wrist_Restraints));
         assertFalse(actionItem.applied());

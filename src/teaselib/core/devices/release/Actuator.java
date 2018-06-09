@@ -5,12 +5,14 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import teaselib.State;
-import teaselib.core.StateImpl;
 import teaselib.core.TeaseLib;
 import teaselib.core.devices.BatteryLevel;
 import teaselib.core.devices.Device;
 import teaselib.core.devices.DeviceCache;
+import teaselib.core.devices.ReleaseAction;
 import teaselib.core.util.Persist;
+
+// TODO Should be a device -> just remember the device path instead of the additional index
 
 /**
  * @author Citizen-Cane
@@ -18,21 +20,21 @@ import teaselib.core.util.Persist;
  */
 public class Actuator implements Device {
     final KeyRelease keyRelease;
-    final int actuator;
+    final int index;
 
     public Actuator(KeyRelease keyRelease, int actuatorIndex) {
         this.keyRelease = keyRelease;
-        this.actuator = actuatorIndex;
+        this.index = actuatorIndex;
     }
 
     @Override
     public String getDevicePath() {
-        return DeviceCache.createDevicePath(keyRelease.getDevicePath(), Integer.toString(actuator));
+        return DeviceCache.createDevicePath(keyRelease.getDevicePath(), Integer.toString(index));
     }
 
     @Override
     public String getName() {
-        return keyRelease.getName() + " actuator " + actuator;
+        return keyRelease.getName() + " actuator " + index;
     }
 
     @Override
@@ -61,15 +63,15 @@ public class Actuator implements Device {
     }
 
     public int index() {
-        return actuator;
+        return index;
     }
 
     public boolean arm() {
-        return keyRelease.arm(actuator);
+        return keyRelease.arm(index);
     }
 
     public String start(long duration, TimeUnit unit) {
-        return keyRelease.start(actuator, (int) TimeUnit.SECONDS.convert(duration, unit));
+        return keyRelease.start(index, (int) TimeUnit.SECONDS.convert(duration, unit));
     }
 
     public int sleep(long duration, TimeUnit unit) {
@@ -77,7 +79,7 @@ public class Actuator implements Device {
     }
 
     public boolean add(long duration, TimeUnit unit) {
-        return keyRelease.add(actuator, (int) TimeUnit.SECONDS.convert(duration, unit));
+        return keyRelease.add(index, (int) TimeUnit.SECONDS.convert(duration, unit));
     }
 
     /**
@@ -86,7 +88,7 @@ public class Actuator implements Device {
      * @return True if the actuator holds a key and is counting down (not armed).
      */
     public boolean isRunning() {
-        return keyRelease.isRunning(actuator);
+        return keyRelease.isRunning(index);
     }
 
     /**
@@ -95,14 +97,14 @@ public class Actuator implements Device {
      * @return The number of available minutes.
      */
     public long available(TimeUnit unit) {
-        return unit.convert(keyRelease.available(actuator), TimeUnit.SECONDS);
+        return unit.convert(keyRelease.available(index), TimeUnit.SECONDS);
     }
 
     /**
      * @return Duration minutes until release.
      */
     public long remaining(TimeUnit unit) {
-        return unit.convert(keyRelease.remaining(actuator), TimeUnit.SECONDS);
+        return unit.convert(keyRelease.remaining(index), TimeUnit.SECONDS);
     }
 
     /**
@@ -111,7 +113,7 @@ public class Actuator implements Device {
      * @return Whether the key has been released.
      */
     public boolean release() {
-        return keyRelease.release(actuator);
+        return keyRelease.release(index);
     }
 
     @Override
@@ -121,11 +123,11 @@ public class Actuator implements Device {
 
     // TODO Should be a private class but need to instanciate it when persistence is required
     // - find out if constructor.setAccesible() does the trick
-    public static final class ReleaseAction extends StateImpl implements Persist.Persistable {
+    public static final class ActuatorReleaseAction extends ReleaseAction {
         private final KeyRelease keyRelease;
         private final int actuator;
 
-        public ReleaseAction(TeaseLib teaseLib, String domain, String devicePath) {
+        public ActuatorReleaseAction(TeaseLib teaseLib, String domain, String devicePath) {
             super(teaseLib, domain, devicePath);
             String parentDevice = DeviceCache.getParentDevice(devicePath);
             this.keyRelease = KeyRelease.getDeviceCache(teaseLib.devices, teaseLib.config).getDevice(parentDevice);
@@ -142,12 +144,18 @@ public class Actuator implements Device {
             return Arrays.asList(Persist.persist(domain), Persist.persist(item.toString()));
         }
 
-        public ReleaseAction(Persist.Storage storage) {
+        public ActuatorReleaseAction(Persist.Storage storage) {
             this(storage.getInstance(TeaseLib.class), storage.next(), storage.next());
         }
 
-        public String devicePath() {
-            return item.toString();
+        @Override
+        public int hashCode() {
+            return super.hashCode();
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            return super.equals(obj);
         }
 
         @Override
@@ -156,38 +164,9 @@ public class Actuator implements Device {
             keyRelease.actuators().get(actuator).release();
             return this;
         }
-
-        @Override
-        public int hashCode() {
-            final int prime = 31;
-            int result = super.hashCode();
-            result = prime * result + actuator;
-            result = prime * result + ((keyRelease == null) ? 0 : keyRelease.hashCode());
-            return result;
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (this == obj)
-                return true;
-            if (!super.equals(obj))
-                return false;
-            if (getClass() != obj.getClass())
-                return false;
-            ReleaseAction other = (ReleaseAction) obj;
-            if (actuator != other.actuator)
-                return false;
-            if (keyRelease == null) {
-                if (other.keyRelease != null)
-                    return false;
-            } else if (!keyRelease.equals(other.keyRelease))
-                return false;
-            return true;
-        }
-
     }
 
     public State releaseAction(TeaseLib teaseLib) {
-        return new ReleaseAction(teaseLib, TeaseLib.DefaultDomain, getDevicePath());
+        return new ActuatorReleaseAction(teaseLib, TeaseLib.DefaultDomain, getDevicePath());
     }
 }

@@ -335,6 +335,45 @@ public class TeaseLib {
         public String toString() {
             return name + "=" + value();
         }
+
+        @Override
+        public int hashCode() {
+            final int prime = 31;
+            int result = 1;
+            result = prime * result + getOuterType().hashCode();
+            result = prime * result + ((defaultValue == null) ? 0 : defaultValue.hashCode());
+            result = prime * result + ((name == null) ? 0 : name.hashCode());
+            return result;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj)
+                return true;
+            if (obj == null)
+                return false;
+            if (getClass() != obj.getClass())
+                return false;
+            @SuppressWarnings("unchecked")
+            PersistentValue<T> other = (PersistentValue<T>) obj;
+            if (!getOuterType().equals(other.getOuterType()))
+                return false;
+            if (defaultValue == null) {
+                if (other.defaultValue != null)
+                    return false;
+            } else if (!defaultValue.equals(other.defaultValue))
+                return false;
+            if (name == null) {
+                if (other.name != null)
+                    return false;
+            } else if (!name.equals(other.name))
+                return false;
+            return true;
+        }
+
+        private TeaseLib getOuterType() {
+            return TeaseLib.this;
+        }
     }
 
     /**

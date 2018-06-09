@@ -118,7 +118,8 @@ public abstract class AbstractUserItems implements UserItems {
     }
 
     protected Item[] getDefaultItem(String domain, QualifiedItem item) {
-        return new Item[] { new ItemImpl(teaseLib, item, domain, item.name(), ItemImpl.createDisplayName(item)) };
+        return new Item[] {
+                new ItemImpl(teaseLib, item.value(), domain, item.name(), ItemImpl.createDisplayName(item)) };
     }
 
     @Override

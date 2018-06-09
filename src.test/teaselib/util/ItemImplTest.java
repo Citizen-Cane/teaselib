@@ -176,7 +176,7 @@ public class ItemImplTest {
     }
 
     @Test
-    public void testApplyAndRemoveTheOtherWayAround() {
+    public void testApply1to1AndRemoveTheOtherWayAround() {
         TeaseScript script = TestScript.getOne();
 
         script.item(Toys.Wrist_Restraints).apply();
@@ -188,9 +188,32 @@ public class ItemImplTest {
         assertFalse(script.state(Body.WristsTied).applied());
 
         assertFalse(script.state(Body.WristsTied).is(script.namespace));
-        // TODO namespace must be an attribute, to remove it from Toys.Wrist_Restraints
-        assertFalse(script.state(Toys.Wrist_Restraints).is(script.namespace));
         assertFalse(script.state(Toys.Wrist_Restraints).applied());
+        assertFalse(script.state(Toys.Wrist_Restraints).is(script.namespace));
+    }
+
+    @Test
+    public void testApply1toNAndRemoveTheOtherWayAround() {
+        TeaseScript script = TestScript.getOne();
+
+        script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints).apply();
+        assertTrue(script.state(Body.WristsTied).applied());
+        assertTrue(script.state(Toys.Wrist_Restraints).is(script.namespace));
+        assertTrue(script.state(Body.WristsTied).is(script.namespace));
+        assertTrue(script.state(Body.AnklesTied).applied());
+        assertTrue(script.state(Toys.Ankle_Restraints).is(script.namespace));
+        assertTrue(script.state(Body.AnklesTied).is(script.namespace));
+
+        script.item(Body.WristsTied).remove();
+        assertFalse(script.state(Body.WristsTied).applied());
+
+        assertFalse(script.state(Body.WristsTied).is(script.namespace));
+        assertFalse(script.state(Toys.Wrist_Restraints).applied());
+        assertFalse(script.state(Toys.Wrist_Restraints).is(script.namespace));
+
+        assertTrue(script.state(Body.AnklesTied).applied());
+        assertTrue(script.state(Toys.Ankle_Restraints).is(script.namespace));
+        assertTrue(script.state(Body.AnklesTied).is(script.namespace));
     }
 
     @Test

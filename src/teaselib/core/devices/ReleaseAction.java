@@ -14,7 +14,7 @@ import teaselib.core.util.ReflectionUtils;
  * @author Citizen-Cane
  *
  */
-public class ReleaseAction extends StateImpl implements Persist.Persistable {
+public abstract class ReleaseAction extends StateImpl implements Persist.Persistable {
     public ReleaseAction(TeaseLib teaseLib, String domain, String item) {
         super(teaseLib, domain, ReflectionUtils.normalizeClassName(ReleaseActionState.class) + "." + item);
     }
@@ -31,4 +31,12 @@ public class ReleaseAction extends StateImpl implements Persist.Persistable {
     public ReleaseAction(Persist.Storage storage) {
         this(storage.getInstance(TeaseLib.class), storage.next(), storage.next());
     }
+
+    @Override
+    public Persistence removeFrom(Object... peers2) {
+        performAction();
+        return super.removeFrom(peers2);
+    }
+
+    protected abstract void performAction();
 }

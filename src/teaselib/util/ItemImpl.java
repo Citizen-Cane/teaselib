@@ -152,13 +152,12 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
     }
 
     @Override
-    @SafeVarargs
-    public final <S extends Object> State.Options applyTo(S... items) {
+    public State.Options applyTo(Object... items) {
         if (items.length == 0 && defaultPeers.length == 0) {
             throw new IllegalArgumentException("Item without default peers must be applied with explicit peer list");
         }
 
-        for (S s : items) {
+        for (Object s : items) {
             if (s instanceof List || s instanceof Object[]) {
                 throw new IllegalArgumentException("Applying lists and arrays isn't supported yet: " + s);
             }
@@ -210,8 +209,7 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
     }
 
     @Override
-    @SafeVarargs
-    public final <S extends Object> State.Persistence removeFrom(S... peer) {
+    public final State.Persistence removeFrom(Object... peer) {
         return teaseLib.state(domain, item).removeFrom(peer);
     }
 

@@ -1,6 +1,3 @@
-/**
- * 
- */
 package teaselib.core.state;
 
 import teaselib.Duration;
@@ -36,8 +33,7 @@ public class ItemProxy extends AbstractProxy<Item> implements Item, StateMaps.At
     }
 
     @Override
-    @SafeVarargs
-    public final <S> Options applyTo(S... items) {
+    public Options applyTo(Object... items) {
         injectNamespace();
         return new StateOptionsProxy(namespace, item.applyTo(items));
     }
@@ -58,8 +54,7 @@ public class ItemProxy extends AbstractProxy<Item> implements Item, StateMaps.At
     }
 
     @Override
-    @SafeVarargs
-    public final <S extends Object> Persistence removeFrom(S... peer) {
+    public Persistence removeFrom(Object... peer) {
         return new StatePersistenceProxy(namespace, item.removeFrom(peer));
     }
 

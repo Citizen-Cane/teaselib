@@ -35,10 +35,9 @@ public class ReleaseActionTest {
         }
 
         @Override
-        public Persistence remove() {
+        public void performAction() {
             Success.set(true);
             removed = true;
-            return super.remove();
         }
     }
 
@@ -209,18 +208,19 @@ public class ReleaseActionTest {
 
         Item someChains = chains.item(Toys.Chains);
         someChains.remove();
-        // TODO overwrite removeFrom()
         assertTrue(removeChainsAction.removed);
         assertFalse(removeRestraintsAction.removed);
-        assertFalse(chains.anyApplied());
+        assertTrue(chains.anyApplied());
+        assertFalse(chains.allApplied());
         assertTrue(restraints.allApplied());
 
         Item wristRestraints = restraints.item(Toys.Wrist_Restraints);
         wristRestraints.remove();
         assertTrue(removeChainsAction.removed);
         assertTrue(removeRestraintsAction.removed);
-        assertFalse(chains.anyApplied());
-        assertFalse(restraints.anyApplied());
+        assertTrue(chains.anyApplied());
+        assertTrue(restraints.anyApplied());
+        assertFalse(restraints.allApplied());
     }
 
     @Test

@@ -125,13 +125,13 @@ public class Actuator implements Device {
     // - find out if constructor.setAccesible() does the trick
     public static final class ActuatorReleaseAction extends ReleaseAction {
         private final KeyRelease keyRelease;
-        private final int actuator;
+        private final int actuatorIndex;
 
         public ActuatorReleaseAction(TeaseLib teaseLib, String domain, String devicePath) {
             super(teaseLib, domain, devicePath);
             String parentDevice = DeviceCache.getParentDevice(devicePath);
             this.keyRelease = KeyRelease.getDeviceCache(teaseLib.devices, teaseLib.config).getDevice(parentDevice);
-            this.actuator = getActuatorIndex(devicePath);
+            this.actuatorIndex = getActuatorIndex(devicePath);
         }
 
         private static int getActuatorIndex(String devicePath) {
@@ -159,10 +159,9 @@ public class Actuator implements Device {
         }
 
         @Override
-        public Persistence remove() {
+        protected void performAction() {
             DeviceCache.connect(keyRelease, 10.0);
-            keyRelease.actuators().get(actuator).release();
-            return this;
+            keyRelease.actuators().get(actuatorIndex).release();
         }
     }
 

@@ -31,8 +31,7 @@ public interface Item extends State {
         }
 
         @Override
-        @SafeVarargs
-        public final <S extends Object> State.Options applyTo(S... items) {
+        public State.Options applyTo(Object... items) {
             throw new UnsupportedOperationException();
         }
 
@@ -57,8 +56,7 @@ public interface Item extends State {
         }
 
         @Override
-        @SafeVarargs
-        public final <S extends Object> Persistence removeFrom(S... peer) {
+        public Persistence removeFrom(Object... peer) {
             throw new UnsupportedOperationException();
         }
 

@@ -10,8 +10,7 @@ public interface State {
 
     Options apply();
 
-    @SuppressWarnings("unchecked")
-    <S extends Object> Options applyTo(S... items);
+    Options applyTo(Object... items);
 
     boolean is(Object... attributes);
 
@@ -23,8 +22,7 @@ public interface State {
 
     Persistence remove();
 
-    @SuppressWarnings("unchecked")
-    <S extends Object> Persistence removeFrom(S... peers);
+    Persistence removeFrom(Object... peers);
 
     interface Options extends State.Persistence {
         Persistence over(long duration, TimeUnit unit);

@@ -221,8 +221,7 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
     }
 
     @Override
-    @SafeVarargs
-    public final <A extends Object> State.Options applyTo(A... attributes) {
+    public State.Options applyTo(Object... attributes) {
         applyInternal(attributes);
         return this;
     }
@@ -387,8 +386,7 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
     }
 
     @Override
-    @SafeVarargs
-    public final <S extends Object> Persistence removeFrom(S... peers2) {
+    public Persistence removeFrom(Object... peers2) {
         if (peers2.length == 0) {
             throw new IllegalArgumentException("removeFrom requires at least one peer");
         }

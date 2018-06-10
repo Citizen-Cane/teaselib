@@ -106,7 +106,7 @@ public abstract class StimulationDevice implements Device.Creatable {
         }.addFactory(XInputStimulationDevice.getDeviceFactory(devices, configuration));
     }
 
-    public Output output = Output.EStim;;
+    public Output output = Output.EStim;
     public Wiring wiring = Wiring.INFERENCE_CHANNEL;
 
     public void setMode(Output output, Wiring wiring) {

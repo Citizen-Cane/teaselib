@@ -240,7 +240,7 @@ public class MediaRendererQueue {
         join(interrupt(mediaRenderer));
     }
 
-    private void join(Future<?> future) {
+    private static void join(Future<?> future) {
         try {
             if (!future.isCancelled() || !future.isDone()) {
                 future.get();

@@ -3,12 +3,9 @@
  */
 package teaselib;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static teaselib.Message.ActorImage;
-import static teaselib.Message.Delay10s;
-import static teaselib.Mood.Amused;
-import static teaselib.Mood.Angry;
+import static org.junit.Assert.*;
+import static teaselib.Message.*;
+import static teaselib.Mood.*;
 
 import java.util.List;
 import java.util.Locale;
@@ -230,7 +227,7 @@ public class MessageTest {
         assertEquals(2, messages.get(1).size());
     }
 
-    private void testMultipleImages(Message message) {
+    private static void testMultipleImages(Message message) {
         List<Message> messages = message.split();
         assertEquals(2, messages.size());
 

@@ -1,6 +1,6 @@
 package teaselib.stimulation;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -198,7 +198,7 @@ public class WaveFormTest {
         assertEquals(0.0, slice.getValue(2400), 0.0);
     }
 
-    private WaveForm getSlicableWaveform() {
+    private static WaveForm getSlicableWaveform() {
         WaveForm waveForm = new WaveForm();
         waveForm.add(1.0, 1000);
         waveForm.add(0.75, 1000);

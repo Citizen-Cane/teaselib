@@ -175,7 +175,7 @@ public abstract class StimulationController<T> {
         return delay;
     }
 
-    private long sleep(long delayMillis) {
+    private static long sleep(long delayMillis) {
         try {
             Thread.sleep(delayMillis);
         } catch (InterruptedException e) {

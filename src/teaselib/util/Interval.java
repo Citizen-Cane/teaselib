@@ -34,7 +34,7 @@ public class Interval implements Iterable<Integer> {
 
             @Override
             public Integer next() {
-                return new Integer(i++);
+                return Integer.valueOf(i++);
             }
 
             @Override

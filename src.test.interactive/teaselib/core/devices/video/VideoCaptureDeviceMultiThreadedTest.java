@@ -30,7 +30,7 @@ public class VideoCaptureDeviceMultiThreadedTest {
         vc.close();
     }
 
-    private void capture(VideoCaptureDevice vc) {
+    private static void capture(VideoCaptureDevice vc) {
         try (Size size = new Size(320, 240);) {
             vc.fps(30);
             vc.open();

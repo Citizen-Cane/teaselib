@@ -29,12 +29,12 @@ public class PersistTest {
     @Test
     public void testPersistIntegralTypes() throws Exception {
         assertEquals("Foo", Persist.from(Persist.persist("Foo")));
-        assertEquals(new Integer(1), Persist.from(Persist.persist(new Integer(1))));
-        assertEquals(new Long(2), Persist.from(Persist.persist(new Long(2))));
-        assertEquals(new Float(2.7), Persist.from(Persist.persist(new Float(2.7))));
-        assertEquals(new Double(3.14159d), Persist.from(Persist.persist(new Double(3.14159d))));
-        assertEquals(new Boolean(false), Persist.from(Persist.persist(new Boolean(false))));
-        assertEquals(new Boolean(true), Persist.from(Persist.persist(new Boolean(true))));
+        assertEquals(Integer.valueOf(1), Persist.from(Persist.persist(Integer.valueOf(1))));
+        assertEquals(Long.valueOf(2), Persist.from(Persist.persist(Long.valueOf(2))));
+        assertEquals(Float.valueOf(2.7f), Persist.from(Persist.persist(Float.valueOf(2.7f))));
+        assertEquals(Double.valueOf(3.14159d), Persist.from(Persist.persist(Double.valueOf(3.14159d))));
+        assertEquals(Boolean.valueOf(false), Persist.from(Persist.persist(Boolean.valueOf(false))));
+        assertEquals(Boolean.valueOf(true), Persist.from(Persist.persist(Boolean.valueOf(true))));
     }
 
     @Test(expected = UnsupportedOperationException.class)

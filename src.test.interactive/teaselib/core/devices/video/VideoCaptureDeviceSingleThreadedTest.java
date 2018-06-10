@@ -13,7 +13,7 @@ import teaselib.video.VideoCaptureDevice;
 
 public class VideoCaptureDeviceSingleThreadedTest {
     @Test
-    public void testVideoCapture() throws InterruptedException {
+    public void testVideoCapture() {
         Configuration config = DebugSetup.getConfiguration();
         Devices devices = new Devices(config);
         VideoCaptureDevice vc = devices.get(VideoCaptureDevice.class).getDefaultDevice();
@@ -25,7 +25,7 @@ public class VideoCaptureDeviceSingleThreadedTest {
         vc.close();
     }
 
-    private void capture(VideoCaptureDevice vc) {
+    private static void capture(VideoCaptureDevice vc) {
         try (Size size = new Size(320, 240);) {
             vc.open();
             vc.resolution(size);

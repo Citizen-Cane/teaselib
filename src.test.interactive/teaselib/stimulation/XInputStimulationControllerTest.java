@@ -105,7 +105,7 @@ public class XInputStimulationControllerTest {
         stim.stop(Intention.Pace);
     }
 
-    private void sleep(long millis) throws InterruptedException {
+    private static void sleep(long millis) throws InterruptedException {
         Thread.sleep(millis);
     }
 

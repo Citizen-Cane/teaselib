@@ -221,7 +221,7 @@ public class ScriptMessageDecorator {
         return messageWithDelays;
     }
 
-    private MessagePart injectSpeechDelay(AbstractMessage messageWithDelays, MessagePart messagePart,
+    private static MessagePart injectSpeechDelay(AbstractMessage messageWithDelays, MessagePart messagePart,
             AbstractMessage lastSection) {
         MessagePart currentDelay;
         messageWithDelays.add(messagePart);
@@ -236,17 +236,17 @@ public class ScriptMessageDecorator {
         return currentDelay;
     }
 
-    private void injectDelay(AbstractMessage messageWithDelays, MessagePart delay) {
+    private static void injectDelay(AbstractMessage messageWithDelays, MessagePart delay) {
         if (delay != null) {
             messageWithDelays.add(delay);
         }
     }
 
     private static MessagePart delay(long millis) {
-        return new MessagePart(Type.Delay, Double.toString((double) (millis) / 1000.0));
+        return new MessagePart(Type.Delay, Double.toString(millis / 1000.0));
     }
 
-    private MessagePart accumulateDelay(MessagePart currentDelay, MessagePart additionalDelay) {
+    private static MessagePart accumulateDelay(MessagePart currentDelay, MessagePart additionalDelay) {
         if (currentDelay == null) {
             currentDelay = additionalDelay;
         } else if (isGeneratedDelay(currentDelay)) {
@@ -258,7 +258,7 @@ public class ScriptMessageDecorator {
         return currentDelay;
     }
 
-    private boolean isGeneratedDelay(MessagePart delay) {
+    private static boolean isGeneratedDelay(MessagePart delay) {
         return generatedDelays.contains(delay);
     }
 }

@@ -1,9 +1,6 @@
 package teaselib.core;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -146,7 +143,7 @@ public class ResourceLoaderTest {
     }
 
     // TODO unpack to temporary folder to improve stability
-    private void readContent(TestScript script, String path) throws IOException, FileNotFoundException {
+    private static void readContent(TestScript script, String path) throws IOException, FileNotFoundException {
         File res1;
         res1 = script.resources.unpackToFile(path);
         try {
@@ -160,7 +157,7 @@ public class ResourceLoaderTest {
     }
 
     @Test
-    public void testResourceFilteredOutBecauseNotInScriptPath() throws IOException {
+    public void testResourceFilteredOutBecauseNotInScriptPath() {
         TestScript script = TestScript.getOne(getClass());
         script.resources.addAssets("/teaselib/core/UnpackResourcesTestData_flat.zip");
 

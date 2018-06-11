@@ -12,6 +12,7 @@ import java.util.stream.Collectors;
 import teaselib.Duration;
 import teaselib.State;
 import teaselib.core.TeaseLib.PersistentString;
+import teaselib.core.devices.ActionState;
 import teaselib.core.state.AbstractProxy;
 import teaselib.core.util.Persist;
 import teaselib.core.util.QualifiedItem;
@@ -226,24 +227,27 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
         return this;
     }
 
-    @SafeVarargs
-    protected final <A extends Object> State applyInternal(A... attributes) {
+    protected State applyInternal(Object... attributes) {
         if (attributes.length == 1 && attributes[0] instanceof List<?>) {
             throw new IllegalArgumentException();
         }
 
-        if (!applied()) {
+        if (!applied() && !stateAppliesBeforehand(attributes)) {
             setTemporary();
         }
-        for (A attribute : attributes) {
+
+        for (Object attribute : attributes) {
             if (!peers.contains(attribute)) {
                 peers.add(attribute);
-                Object[] items = new Object[] { item };
                 StateImpl state = state(attribute);
-                state.applyInternal(items);
+                state.applyInternal(item);
             }
         }
         return this;
+    }
+
+    private boolean stateAppliesBeforehand(Object... attributes) {
+        return attributes.length == 1 && state(attributes[0]) instanceof ActionState;
     }
 
     private void setTemporary() {
@@ -509,10 +513,7 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
                 return false;
         } else if (!attributeStorage.equals(other.attributeStorage))
             return false;
-        if (attributes == null) {
-            if (other.attributes != null)
-                return false;
-        } else if (!attributes.equals(other.attributes))
+        if (!attributes.equals(other.attributes))
             return false;
         if (domain == null) {
             if (other.domain != null)
@@ -539,10 +540,7 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
                 return false;
         } else if (!peerStorage.equals(other.peerStorage))
             return false;
-        if (peers == null) {
-            if (other.peers != null)
-                return false;
-        } else if (!peers.equals(other.peers))
+        if (!peers.equals(other.peers))
             return false;
         return true;
     }

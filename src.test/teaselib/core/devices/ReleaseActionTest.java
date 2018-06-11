@@ -14,6 +14,7 @@ import teaselib.Toys;
 import teaselib.core.TeaseLib;
 import teaselib.core.devices.release.Actuator;
 import teaselib.core.devices.release.KeyRelease;
+import teaselib.core.state.StateProxy;
 import teaselib.core.util.Persist;
 import teaselib.core.util.Persist.Storage;
 import teaselib.core.util.QualifiedItem;
@@ -80,6 +81,8 @@ public class ReleaseActionTest {
         Item restraints = script.item(Toys.Wrist_Restraints);
         restraints.apply();
         restraints.applyTo(actionItem);
+        assertTrue(restraints.is(script.namespace));
+        assertTrue(actionItem.is(script.namespace));
 
         // start(action);
 
@@ -107,6 +110,8 @@ public class ReleaseActionTest {
         Item handCuffs = script.items(Toys.Wrist_Restraints).query(Material.Metal).get();
         handCuffs.apply();
         handCuffs.applyTo(actionItem);
+        assertTrue(handCuffs.is(script.namespace));
+        assertTrue(handCuffs.is(script.namespace));
 
         // start(action);
 
@@ -224,7 +229,7 @@ public class ReleaseActionTest {
     }
 
     @Test
-    public void testThatReleaseActionCanBeAppliedBeforehand() {
+    public void testThatReleaseActionCanBeAttachedBeforehandWithoutApplyingToPeer() {
         TestScript script = TestScript.getOne();
 
         String devicePath = "KeyRelease/MyPhoton/1";
@@ -235,12 +240,9 @@ public class ReleaseActionTest {
 
         Item restraints = script.item(Toys.Wrist_Restraints);
         assertFalse(actionItem.applied());
-        actionItem.applyTo(restraints);
+        new StateProxy(script.namespace, actionItem).applyTo(restraints);
+        assertTrue(actionItem.is(script.namespace));
 
-        // TODO namespace not assigned because we don't have a proxy
-        assertFalse(actionItem.is(script.namespace));
-
-        // TODO Must be false when applying the action item only -> ignore action items when testing applied()
         assertFalse(restraints.applied());
         assertTrue(actionItem.applied());
 

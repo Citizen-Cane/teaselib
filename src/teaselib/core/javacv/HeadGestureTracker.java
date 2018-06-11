@@ -20,19 +20,37 @@ import teaselib.core.util.TimeLine;
 import teaselib.core.util.TimeLine.Slice;
 import teaselib.motiondetection.Gesture;
 
+//TODO  number of direction == 4 much more natural but tracker detects lots of false positives (maybe a timing issue)
+// -> better with tighter timing, as shaking/nodding is a short gesture (about a second)
+// TODO tracker not updated although no tracking points are active, and the motion region focusses on the head
+// TODO check that motion detection still works because the "Assume The Position" test does not always wait, (intended?) and sometimes it blocks 
 public class HeadGestureTracker {
     private static final Logger logger = LoggerFactory.getLogger(HeadGestureTracker.class);
 
-    static final int MINIMUM_DIRECTION_SIZE_FRACTION_OF_VIDEO = 32;
-    static final int DOMINATING_DIRECTION_SCALE_OVER_OTHER = 4;
+    // TODO res / fraction must be larger than dominating direction scale or tracking buffers
+    // -> find relationship and document in code
+    static final int MINIMUM_DIRECTION_SIZE_FRACTION_OF_VIDEO = 40;
+    static final int DOMINATING_DIRECTION_SCALE_OVER_OTHER = 5;
 
     static final long GesturePauseMillis = 500;
 
-    static final int NumberOfDirections = 6;
-    static final long GestureMaxDuration = 500 * NumberOfDirections;
-    static final long GestureMinDuration = 300;
+    /**
+     * THe number of single moves of a gesture.
+     */
+    static final int NumberOfDirections = 4;
+    // TODO Tests that expect 6 directions are broken -> return to 6 if unstable
 
-    private final TrackFeatures tracker = new TrackFeatures();
+    /**
+     * Duration in which the gesture has to be completed.
+     */
+    static final long GestureMaxDuration = 250 * NumberOfDirections;
+
+    /**
+     * The minimum duration it takes to complete a gesture.
+     */
+    static final long GestureMinDuration = 500;
+
+    private final TrackFeatures tracker = new TrackFeatures(5);
     private final TimeLine<Direction> directionTimeLine = new TimeLine<>();
     private final Mat startKeyPoints = new Mat();
 
@@ -99,8 +117,7 @@ public class HeadGestureTracker {
         if (logger.isDebugEnabled()) {
             logger.debug("{} @{}", string, timeStamp);
         }
-        directionTimeLine.clear();
-        tracker.clear();
+        clear();
         directionTimeLine.add(Direction.None, timeStamp);
         findNewFeatures(videoImage, region);
     }
@@ -111,15 +128,14 @@ public class HeadGestureTracker {
         if (direction != Direction.None) {
             directionTimeLine.add(direction, timeStamp);
         } else if (featuresAreOutdated(timeStamp)) {
-            if (logger.isDebugEnabled()) {
-                logger.debug("Updating outdated features @{}", timeStamp);
-            }
+            logger.debug("Updating outdated features @{}", timeStamp);
+            clear();
             directionTimeLine.add(Direction.None, timeStamp);
             findNewFeatures(videoImage, region);
         }
     }
 
-    private void findNewFeatures(Mat videoImage, Rect region) {
+    public void findNewFeatures(Mat videoImage, Rect region) {
         this.region = region;
         tracker.start(videoImage, region);
         tracker.keyPoints().copyTo(startKeyPoints);
@@ -127,18 +143,30 @@ public class HeadGestureTracker {
     }
 
     private Direction direction() {
-        if (tracker.previousKeyPoints().empty()) {
+        Mat keyPoints = tracker.keyPoints();
+        Mat previousKeyPoints = tracker.previousKeyPoints();
+
+        if (previousKeyPoints.empty()) {
             return Direction.None;
         }
 
+        // TODO Parameter object
         Map<Direction, Float> directions = new EnumMap<>(Direction.class);
-        try (FloatIndexer from = tracker.previousKeyPoints().createIndexer();
-                FloatIndexer to = tracker.keyPoints().createIndexer();) {
+        Map<Direction, Integer> weights = new EnumMap<>(Direction.class);
+        calcDirectionsAndWeights(keyPoints, previousKeyPoints, directions, weights);
+        logger.debug("{} = {}", directions, weights);
+
+        return directions.isEmpty() ? Direction.None : direction(directions, weights);
+    }
+
+    private void calcDirectionsAndWeights(Mat keyPoints, Mat previousKeyPoints, Map<Direction, Float> directions,
+            Map<Direction, Integer> weights) {
+        try (FloatIndexer from = previousKeyPoints.createIndexer(); FloatIndexer to = keyPoints.createIndexer();) {
             long n = Math.min(from.rows(), to.rows());
             for (int i = 0; i < n; i++) {
                 try (Point p1 = new Point((int) from.get(i, 0), (int) from.get(i, 1));
                         Point p2 = new Point((int) to.get(i, 0), (int) to.get(i, 1));) {
-                    addDirection(directions, direction(p1, p2), Geom.distance2(p1, p2));
+                    addDirection(directions, weights, direction(p1, p2), Geom.distance2(p1, p2));
                 }
             }
 
@@ -158,21 +186,23 @@ public class HeadGestureTracker {
         } catch (Exception e) {
             throw ExceptionUtil.asRuntimeException(e);
         }
-
-        return directions.isEmpty() ? Direction.None : direction(directions);
     }
 
-    static void addDirection(Map<Direction, Float> directions, Direction d) {
-        addDirection(directions, d, 1);
+    static void addDirection(Map<Direction, Float> directions, Map<Direction, Integer> weights, Direction d) {
+        addDirection(directions, weights, d, 1);
     }
 
-    static void addDirection(Map<Direction, Float> directions, Direction d, float amount) {
+    static void addDirection(Map<Direction, Float> directions, Map<Direction, Integer> weights, Direction d,
+            float amount) {
         if (d != Direction.None) {
             Float current = directions.get(d);
             if (current == null) {
                 directions.put(d, amount);
-            } else
+                weights.put(d, 1);
+            } else {
                 directions.put(d, current + amount);
+                weights.put(d, weights.get(d) + 1);
+            }
         }
     }
 
@@ -214,11 +244,11 @@ public class HeadGestureTracker {
         return x != Direction.None ? x : y;
     }
 
-    Direction direction(Map<Direction, Float> all) {
-        return direction(all, videoWidth);
+    Direction direction(Map<Direction, Float> all, Map<Direction, Integer> weights) {
+        return direction(all, weights, videoWidth);
     }
 
-    static Direction direction(Map<Direction, Float> all, int videoWidth) {
+    static Direction direction(Map<Direction, Float> all, Map<Direction, Integer> weights, int videoWidth) {
         if (logger.isDebugEnabled()) {
             logger.debug(all.toString());
         }
@@ -226,23 +256,28 @@ public class HeadGestureTracker {
         float max = 0;
         Direction direction = Direction.None;
         for (Entry<Direction, Float> entry : all.entrySet()) {
-            if (entry.getValue() > max) {
+            float value = entry.getValue() / weights.get(entry.getKey());
+            if (value > max) {
                 direction = entry.getKey();
-                max = entry.getValue();
+                max = value;
             }
         }
 
         if (max > videoWidth / MINIMUM_DIRECTION_SIZE_FRACTION_OF_VIDEO) {
-            return dominatingDirectionOrNone(all, direction);
+            return dominatingDirectionOrNone(all, weights, direction);
         } else {
+            logger.info("Direction value {} too small", max);
             return Direction.None;
         }
     }
 
-    private static Direction dominatingDirectionOrNone(Map<Direction, Float> all, Direction direction) {
+    private static Direction dominatingDirectionOrNone(Map<Direction, Float> all, Map<Direction, Integer> weights,
+            Direction direction) {
         Float maxValue = all.get(direction);
         for (Entry<Direction, Float> entry : all.entrySet()) {
-            if (entry.getKey() != direction && entry.getValue() * DOMINATING_DIRECTION_SCALE_OVER_OTHER > maxValue) {
+            if (entry.getKey() != direction && entry.getValue() / weights.get(entry.getKey())
+                    * DOMINATING_DIRECTION_SCALE_OVER_OTHER > maxValue) {
+                logger.debug("Direction {} not dominating ", direction);
                 direction = Direction.None;
                 break;
             }
@@ -253,7 +288,7 @@ public class HeadGestureTracker {
     public Gesture getGesture() {
         Gesture gesture = getGesture(directionTimeLine);
         if (logger.isDebugEnabled()) {
-            logger.debug("{} -> {}", directionTimeLine.getTimeSpan(1.0).toString(), gesture);
+            logger.debug("{} -> {}", directionTimeLine.getTimeSpan(1.0), gesture);
         }
         return gesture;
     }
@@ -266,7 +301,6 @@ public class HeadGestureTracker {
             return Gesture.None;
 
         List<Slice<Direction>> slices = directionTimeLine.getTimeSpanSlices(GestureMaxDuration);
-
         long duration = directionTimeLine.duration(slices);
         if (slices.size() >= NumberOfDirections && GestureMinDuration <= duration && duration <= GestureMaxDuration) {
             long n = slices.stream().filter(slice -> slice.item == Direction.None).count();
@@ -274,16 +308,21 @@ public class HeadGestureTracker {
                 long h = slices.stream().filter(slice -> horizontal(slice.item)).count();
                 long v = slices.stream().filter(slice -> vertical(slice.item)).count();
                 if (h > v && h >= NumberOfDirections && v <= 1) {
+                    logger.info("Detected {}: {}", Gesture.Shake, slices);
                     return Gesture.Shake;
                 } else if (v > h && v >= NumberOfDirections && h <= 1) {
+                    logger.info("Detected {}: {}", Gesture.Nod, slices);
                     return Gesture.Nod;
                 } else {
+                    logger.debug("Not a distinct gesture: {}", slices);
                     return Gesture.None;
                 }
             } else {
+                logger.info("Timeslice contain NoDirection entries: {}", slices);
                 return Gesture.None;
             }
         } else {
+            logger.debug("Gesture timeout: {}ms", duration);
             return Gesture.None;
         }
     }

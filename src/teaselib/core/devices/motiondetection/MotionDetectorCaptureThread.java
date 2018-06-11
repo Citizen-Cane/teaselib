@@ -78,7 +78,6 @@ class MotionDetectorCaptureThread extends Thread {
         super();
         this.desiredFps = desiredFps;
         this.videoCaptureDevice = videoCaptureDevice;
-        gestureTracker.restart();
     }
 
     private void openVideoCaptureDevice(VideoCaptureDevice videoCaptureDevice) {
@@ -346,7 +345,9 @@ class MotionDetectorCaptureThread extends Thread {
 
     private void computeGestures(Mat video, long timeStamp) {
         if (gestureResult.cameraShake) {
-            gestureTracker.restart();
+            // gestureTracker.restart();
+            gestureTracker.clear();
+            gestureTracker.findNewFeatures(video, presenceResult.presenceIndicators.get(Presence.Center));
         } else {
             gestureTracker.update(video, gestureResult.motionDetected, gestureResult.gestureRegion, timeStamp);
         }

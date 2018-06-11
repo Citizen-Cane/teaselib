@@ -48,56 +48,75 @@ public class HeadGestureTrackerTest {
     @Test
     public void testDirectionMap() {
         Map<Direction, Float> directions = new EnumMap<>(Direction.class);
-        HeadGestureTracker.addDirection(directions, Direction.None);
+        Map<Direction, Integer> weights = new EnumMap<>(Direction.class);
+        HeadGestureTracker.addDirection(directions, weights, Direction.None);
         assertEquals(0, directions.size());
 
-        HeadGestureTracker.addDirection(directions, Direction.Right, 15);
+        HeadGestureTracker.addDirection(directions, weights, Direction.Right, 15);
         assertEquals(1, directions.size());
 
-        HeadGestureTracker.addDirection(directions, Direction.Right, 15);
+        HeadGestureTracker.addDirection(directions, weights, Direction.Right, 15);
         assertEquals(1, directions.size());
         assertEquals(30, directions.get(Direction.Right).intValue());
 
-        HeadGestureTracker.addDirection(directions, Direction.Left);
+        HeadGestureTracker.addDirection(directions, weights, Direction.Left);
         assertEquals(2, directions.size());
         assertEquals(30, directions.get(Direction.Right).intValue());
         assertEquals(1, directions.get(Direction.Left).intValue());
 
-        assertEquals(Direction.Right, HeadGestureTracker.direction(directions, DIRECTION_SIZE_AT_640));
+        assertEquals(Direction.Right, HeadGestureTracker.direction(directions, weights, DIRECTION_SIZE_AT_640));
 
-        HeadGestureTracker.addDirection(directions, Direction.Left, 149);
+        HeadGestureTracker.addDirection(directions, weights, Direction.Left, 149);
         assertEquals(2, directions.size());
         assertEquals(30, directions.get(Direction.Right).intValue());
         assertEquals(150, directions.get(Direction.Left).intValue());
 
-        assertEquals(Direction.Left, HeadGestureTracker.direction(directions, DIRECTION_SIZE_AT_640));
+        assertEquals(Direction.Left, HeadGestureTracker.direction(directions, weights, DIRECTION_SIZE_AT_640));
 
-        HeadGestureTracker.addDirection(directions, Direction.Up, 500);
+        HeadGestureTracker.addDirection(directions, weights, Direction.Up, 500);
         assertEquals(3, directions.size());
 
-        HeadGestureTracker.addDirection(directions, Direction.Down, 500);
+        HeadGestureTracker.addDirection(directions, weights, Direction.Down, 500);
         assertEquals(4, directions.size());
         assertEquals(500, directions.get(Direction.Up).intValue());
         assertEquals(500, directions.get(Direction.Down).intValue());
 
         // Direction.None because the direction is not distinct
-        assertTrue(HeadGestureTracker.direction(directions, DIRECTION_SIZE_AT_640) == Direction.None);
+        assertTrue(HeadGestureTracker.direction(directions, weights, DIRECTION_SIZE_AT_640) == Direction.None);
 
-        HeadGestureTracker.addDirection(directions, Direction.Down);
+        HeadGestureTracker.addDirection(directions, weights, Direction.Down);
         assertEquals(4, directions.size());
         assertEquals(30, directions.get(Direction.Right).intValue());
         assertEquals(150, directions.get(Direction.Left).intValue());
         assertEquals(500, directions.get(Direction.Up).intValue());
         assertEquals(501, directions.get(Direction.Down).intValue());
 
-        assertEquals(Direction.None, HeadGestureTracker.direction(directions, DIRECTION_SIZE_AT_640));
+        assertEquals(Direction.None, HeadGestureTracker.direction(directions, weights, DIRECTION_SIZE_AT_640));
 
-        HeadGestureTracker.addDirection(directions, Direction.Up, 2000);
+        HeadGestureTracker.addDirection(directions, weights, Direction.Up, 2000);
         assertEquals(4, directions.size());
         assertEquals(2500, directions.get(Direction.Up).intValue());
         assertEquals(501, directions.get(Direction.Down).intValue());
 
-        assertEquals(Direction.Up, HeadGestureTracker.direction(directions, DIRECTION_SIZE_AT_640));
+        assertEquals(Direction.Up, HeadGestureTracker.direction(directions, weights, DIRECTION_SIZE_AT_640));
+    }
+
+    @Test
+    public void testDirectionWeights() {
+        Map<Direction, Float> directions = new EnumMap<>(Direction.class);
+        Map<Direction, Integer> weights = new EnumMap<>(Direction.class);
+        HeadGestureTracker.addDirection(directions, weights, Direction.None);
+        assertEquals(0, directions.size());
+
+        HeadGestureTracker.addDirection(directions, weights, Direction.Right, 50);
+        HeadGestureTracker.addDirection(directions, weights, Direction.Right, 50);
+        assertEquals(2, weights.get(Direction.Right).intValue());
+        HeadGestureTracker.addDirection(directions, weights, Direction.Left, 75);
+        assertEquals(1, weights.get(Direction.Left).intValue());
+
+        assertEquals(100, directions.get(Direction.Right).intValue());
+        assertEquals(75, directions.get(Direction.Left).intValue());
+        assertEquals(Direction.Left, HeadGestureTracker.direction(directions, weights, DIRECTION_SIZE_AT_640));
     }
 
     @Test
@@ -326,7 +345,7 @@ public class HeadGestureTrackerTest {
     }
 
     @Test
-    public void testNodWithPauseAndInvertedDirection() {
+    public void testShakeWithPauseAndInvertedDirection() {
         TimeLine<Direction> directionTimeLine = new TimeLine<>(0);
         assertEquals(Gesture.None, HeadGestureTracker.getGesture(directionTimeLine));
         assertTrue(HeadGestureTracker.NumberOfDirections <= NUMBER_OF_SUPPORTED_DIRECTIONS);
@@ -348,4 +367,27 @@ public class HeadGestureTrackerTest {
 
         assertEquals(Gesture.Shake, HeadGestureTracker.getGesture(directionTimeLine));
     }
+
+    @Test
+    public void testMaxDurationTimeout() {
+        TimeLine<Direction> directionTimeLine = new TimeLine<>(0);
+        assertEquals(Gesture.None, HeadGestureTracker.getGesture(directionTimeLine));
+        assertTrue(HeadGestureTracker.NumberOfDirections <= NUMBER_OF_SUPPORTED_DIRECTIONS);
+
+        int i = 1;
+        directionTimeLine.add(Direction.Left, SHAKETIME * i++);
+        directionTimeLine.add(Direction.Right, SHAKETIME * i++);
+
+        directionTimeLine.add(Direction.Left, SHAKETIME * i++);
+        directionTimeLine.add(Direction.Right, SHAKETIME * i++);
+
+        directionTimeLine.add(Direction.Left, SHAKETIME * i++);
+
+        i += 5;
+        assertTrue(SHAKETIME * i >= HeadGestureTracker.GestureMaxDuration);
+
+        directionTimeLine.add(Direction.Right, SHAKETIME * i++);
+        assertEquals(Gesture.None, HeadGestureTracker.getGesture(directionTimeLine));
+    }
+
 }

@@ -1,6 +1,8 @@
 package teaselib.core.javacv.util;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
 
 import org.bytedeco.javacpp.opencv_core;
 import org.bytedeco.javacpp.opencv_core.Mat;
@@ -40,7 +42,7 @@ public class RingTest {
             assertEquals(mat3, ring.getLast());
 
             video.create(200, 400, opencv_core.CV_8UC1);
-            ring.resize(3);
+            ring.resize(video::clone, 3);
             assertEquals(400, ring.getCurrent().cols());
             assertEquals(200, ring.getCurrent().rows());
         }

@@ -14,14 +14,13 @@ import org.bytedeco.javacpp.opencv_core.Scalar;
 import org.bytedeco.javacpp.opencv_core.Size;
 import org.bytedeco.javacpp.indexer.FloatIndexer;
 
+import teaselib.core.javacv.util.Ring;
 import teaselib.core.util.ExceptionUtil;
 
 public class TrackFeatures {
     static final int MaxPoints = 256;
     static final Size FeatureSize = new Size(MaxPoints * 2, 2);
     static final Size StatusSize = new Size(MaxPoints, 1);
-
-    private static final Mat EMPTY = new Mat(0, opencv_core.CV_8UC4);
 
     private static final Scalar maskPixel = new Scalar(255, 255, 255, 255);
 
@@ -34,8 +33,13 @@ public class TrackFeatures {
     Mat videoMatGray = new Mat();
     Mat videoMatGrayPrevious = new Mat();
 
-    Mat keyPoints = EMPTY;
-    Mat keyPointsPrevious = EMPTY;
+    final Ring<Mat> buffers;
+    Ring<Mat> keyPoints;
+
+    public TrackFeatures(int buffers) {
+        this.buffers = new Ring<>(keyPointFeatures::clone, buffers);
+        this.keyPoints = null;
+    }
 
     public void start(Mat videoImage) {
         start(videoImage, (Mat) null);
@@ -52,25 +56,32 @@ public class TrackFeatures {
         cvtColor(input, videoMatGray, COLOR_BGRA2GRAY);
         videoMatGrayPrevious = new Mat(input.size(), opencv_core.CV_8UC1);
 
-        keyPoints = keyPointFeatures;
-        keyPointsPrevious = keyPointsFeaturesPrevious;
+        keyPoints = buffers;
 
         double qualityLevel = 0.20;
         double minDistance = input.cols() / 40.0;
 
+        Mat current = keyPoints.getCurrent();
+
         if (mask != null) {
-            goodFeaturesToTrack(videoMatGray, keyPoints, MaxPoints, qualityLevel, minDistance, mask, 3, false, 0.04);
+            goodFeaturesToTrack(videoMatGray, current, MaxPoints, qualityLevel, minDistance, mask, 3, false, 0.04);
         } else {
-            goodFeaturesToTrack(videoMatGray, keyPoints, MaxPoints, qualityLevel, minDistance);
+            goodFeaturesToTrack(videoMatGray, current, MaxPoints, qualityLevel, minDistance);
         }
-        keyPoints.copyTo(keyPointsPrevious);
+
+        for (int i = 0; i < keyPoints.size() - 1; i++) {
+            buffers.advance();
+            current.copyTo(keyPoints.getCurrent());
+        }
     }
 
     public void update(Mat input) {
         if (hasFeatures()) {
             swapPixels(input);
-            swapKeyPoints();
-            calcOpticalFlowPyrLK(videoMatGrayPrevious, videoMatGray, keyPointsPrevious, keyPoints, status, error);
+            Mat previous = keyPoints.getCurrent();
+            keyPoints.advance();
+            Mat current = keyPoints.getCurrent();
+            calcOpticalFlowPyrLK(videoMatGrayPrevious, videoMatGray, previous, current, status, error);
         }
     }
 
@@ -81,27 +92,21 @@ public class TrackFeatures {
         cvtColor(input, videoMatGray, COLOR_BGRA2GRAY);
     }
 
-    private void swapKeyPoints() {
-        Mat swap = keyPointsPrevious;
-        keyPointsPrevious = keyPoints;
-        keyPoints = swap;
-    }
-
     public boolean hasFeatures() {
-        return keyPoints != EMPTY && keyPoints.rows() * keyPoints.cols() > 0;
+        return keyPoints != null;
     }
 
     public Mat previousKeyPoints() {
-        return keyPointsPrevious;
+        return keyPoints.getLast();
     }
 
     public Mat keyPoints() {
-        return keyPoints;
+        return keyPoints.getCurrent();
     }
 
     public void render(Mat input, Scalar colorInside, Rect mask, Scalar colorOutside) {
         if (hasFeatures()) {
-            render(input, colorInside, keyPoints, mask, colorOutside);
+            render(input, colorInside, keyPoints.getCurrent(), mask, colorOutside);
         }
     }
 
@@ -124,7 +129,6 @@ public class TrackFeatures {
     }
 
     public void clear() {
-        keyPoints = EMPTY;
-        keyPointsPrevious = EMPTY;
+        keyPoints = null;
     }
 }

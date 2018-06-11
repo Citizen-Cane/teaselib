@@ -6,7 +6,7 @@ import org.bytedeco.javacpp.opencv_core.Scalar;
 import org.bytedeco.javacpp.indexer.FloatIndexer;
 
 public class DistanceTracker {
-    private final TrackFeatures tracker = new TrackFeatures();
+    private final TrackFeatures tracker = new TrackFeatures(2);
     private final Mat keyPoints = new Mat();
     private final Scalar color;
 
@@ -82,7 +82,7 @@ public class DistanceTracker {
     }
 
     public Mat currentPoints() {
-        return tracker.keyPoints;
+        return tracker.keyPoints();
     }
 
     public Scalar color() {

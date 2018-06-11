@@ -10,30 +10,38 @@ import java.util.function.Supplier;
  */
 public class Ring<T> {
     final Deque<T> elements;
-    private Supplier<T> supplier;
 
-    Ring(Supplier<T> supplier, int size) {
-        this.supplier = supplier;
+    public Ring(Supplier<T> supplier, int size) {
         elements = new ArrayDeque<>(size);
-        resize(size);
+        resize(supplier, size);
     }
 
-    public void resize(int size) {
+    public void resize(Supplier<T> supplier, int size) {
         elements.clear();
         for (int i = 0; i < size; i++) {
-            elements.addLast(this.supplier.get());
+            elements.addLast(supplier.get());
         }
     }
 
-    T getCurrent() {
+    public void start(Supplier<T> supplier) {
+        for (int i = 0; i < elements.size(); i++) {
+            elements.addLast(supplier.get());
+        }
+    }
+
+    public T getCurrent() {
         return elements.getFirst();
     }
 
-    T getLast() {
+    public T getLast() {
         return elements.getLast();
     }
 
-    void advance() {
+    public void advance() {
         elements.addFirst(elements.removeLast());
+    }
+
+    public int size() {
+        return elements.size();
     }
 }

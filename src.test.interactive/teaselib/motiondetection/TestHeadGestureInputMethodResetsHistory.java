@@ -48,6 +48,18 @@ public class TestHeadGestureInputMethodResetsHistory {
             System.out.println("I said 'Nod!'");
         }
 
+        System.out.println("Shake!");
+        motionDetector.setSensitivity(GestureSensitivity);
+        while (Gesture.Shake != motionDetector.await(Arrays.asList(Gesture.Shake), 5.0)) {
+            System.out.println("I said 'Shake!'");
+        }
+
+        System.out.println("Shake again!");
+        motionDetector.setSensitivity(GestureSensitivity);
+        while (Gesture.Shake != motionDetector.await(Arrays.asList(Gesture.Shake), 5.0)) {
+            System.out.println("I said 'Shake'!'");
+        }
+
         System.out.println("Very good, you're very obedient!");
     }
 }

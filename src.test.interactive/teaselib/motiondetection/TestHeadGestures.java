@@ -37,29 +37,29 @@ public class TestHeadGestures {
         Thread.sleep(1000);
         Movement movement = MotionDetector.movement(motionDetector);
 
-        System.out.println("Assume the position!");
-
         motionDetector.setSensitivity(AssumeSensitivity);
+        while (!movement.startedWithin(1.0)) {
+            System.out.println("Assume the position!");
+        }
         while (!movement.stoppedWithin(1.0, 5.0)) {
             System.out.println("Freeze'!");
         }
 
         System.out.println("Nod!");
-
         motionDetector.setSensitivity(GestureSensitivity);
         while (Gesture.Nod != motionDetector.await(Arrays.asList(Gesture.Nod), 5.0)) {
             System.out.println("I said 'Nod!'");
         }
 
-        System.out.println("Very good! Now stay put until my next command");
-
         motionDetector.setSensitivity(AssumeSensitivity);
+        while (!movement.startedWithin(5.0)) {
+            System.out.println("Very good! Now stay put until my next command");
+        }
         while (!movement.stoppedWithin(1.0, 5.0)) {
             System.out.println("Freeze'!");
         }
 
         System.out.println("Shake!");
-
         motionDetector.setSensitivity(GestureSensitivity);
         while (Gesture.Shake != motionDetector.await(Arrays.asList(Gesture.Shake), 5.0)) {
             System.out.println("I said 'Shake!'");

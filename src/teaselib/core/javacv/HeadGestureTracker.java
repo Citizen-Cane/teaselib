@@ -20,17 +20,17 @@ import teaselib.core.util.TimeLine;
 import teaselib.core.util.TimeLine.Slice;
 import teaselib.motiondetection.Gesture;
 
-//TODO  number of direction == 4 much more natural but tracker detects lots of false positives (maybe a timing issue)
-// -> better with tighter timing, as shaking/nodding is a short gesture (about a second)
 // TODO tracker not updated although no tracking points are active, and the motion region focusses on the head
 // TODO check that motion detection still works because the "Assume The Position" test does not always wait, (intended?) and sometimes it blocks 
 public class HeadGestureTracker {
     private static final Logger logger = LoggerFactory.getLogger(HeadGestureTracker.class);
 
-    // TODO res / fraction must be larger than dominating direction scale or tracking buffers
+    // TODO res * fraction must be larger than dominating direction scale or tracking buffers
     // -> find relationship and document in code
-    static final int MINIMUM_DIRECTION_SIZE_FRACTION_OF_VIDEO = 40;
-    static final int DOMINATING_DIRECTION_SCALE_OVER_OTHER = 5;
+    // TODO Should be a size fraction of the face region
+    static final int NUMBER_OF_FRAMES = 5;
+    static final float MINIMUM_DIRECTION_SIZE_FRACTION_OF_VIDEO = NUMBER_OF_FRAMES / 100.0f;
+    static final int DOMINATING_DIRECTION_SCALE_OVER_OTHER = 32;
 
     static final long GesturePauseMillis = 500;
 
@@ -38,7 +38,6 @@ public class HeadGestureTracker {
      * THe number of single moves of a gesture.
      */
     static final int NumberOfDirections = 4;
-    // TODO Tests that expect 6 directions are broken -> return to 6 if unstable
 
     /**
      * Duration in which the gesture has to be completed.
@@ -123,6 +122,8 @@ public class HeadGestureTracker {
     }
 
     private void updateGesture(Mat videoImage, Rect region, long timeStamp) {
+        // TODO turn into face region width (region.width) after switching to face/pose detection
+        videoWidth = videoImage.cols();
         tracker.update(videoImage);
         Direction direction = direction();
         if (direction != Direction.None) {
@@ -256,17 +257,18 @@ public class HeadGestureTracker {
         float max = 0;
         Direction direction = Direction.None;
         for (Entry<Direction, Float> entry : all.entrySet()) {
-            float value = entry.getValue() / weights.get(entry.getKey());
+            Direction candidate = entry.getKey();
+            float value = entry.getValue() / weights.get(candidate);
             if (value > max) {
-                direction = entry.getKey();
+                direction = candidate;
                 max = value;
             }
         }
 
-        if (max > videoWidth / MINIMUM_DIRECTION_SIZE_FRACTION_OF_VIDEO) {
+        if (max > videoWidth * MINIMUM_DIRECTION_SIZE_FRACTION_OF_VIDEO) {
             return dominatingDirectionOrNone(all, weights, direction);
         } else {
-            logger.info("Direction value {} too small", max);
+            logger.debug("Direction value {} too small", max);
             return Direction.None;
         }
     }
@@ -308,10 +310,10 @@ public class HeadGestureTracker {
                 long h = slices.stream().filter(slice -> horizontal(slice.item)).count();
                 long v = slices.stream().filter(slice -> vertical(slice.item)).count();
                 if (h > v && h >= NumberOfDirections && v <= 1) {
-                    logger.info("Detected {}: {}", Gesture.Shake, slices);
+                    logger.debug("Detected {}: {}", Gesture.Shake, slices);
                     return Gesture.Shake;
                 } else if (v > h && v >= NumberOfDirections && h <= 1) {
-                    logger.info("Detected {}: {}", Gesture.Nod, slices);
+                    logger.debug("Detected {}: {}", Gesture.Nod, slices);
                     return Gesture.Nod;
                 } else {
                     logger.debug("Not a distinct gesture: {}", slices);

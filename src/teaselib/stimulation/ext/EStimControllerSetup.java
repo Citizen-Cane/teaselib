@@ -60,15 +60,20 @@ public class EStimControllerSetup extends TeaseScript {
     }
 
     private StimulationDevice getDevice() {
-        // say("Get your EStim device and turn on the controller!");
-        String manualDevice = "I only have a manual device";
-        String notAvailable = "I'm sorry, #title, but I don't have any";
         Chooser chooser = new Chooser();
-        String result = reply(chooser::connectDevice, manualDevice, notAvailable);
-        if (result == Chooser.CONNECTED) {
+        chooser.connect();
+        if (chooser.device.connected()) {
             return chooser.device;
         } else {
-            return chooser.device;
+            say("Get your EStim device and turn on the controller!");
+            String manualDevice = "I only have a manual device";
+            String notAvailable = "I'm sorry, #title, but I don't have any";
+            String result = reply(chooser::connectDevice, manualDevice, notAvailable);
+            if (result == Chooser.CONNECTED) {
+                return chooser.device;
+            } else {
+                return StimulationDevice.MANUAL;
+            }
         }
     }
 
@@ -79,14 +84,18 @@ public class EStimControllerSetup extends TeaseScript {
 
         String connectDevice() {
             do {
-                device = teaseLib.devices.get(StimulationDevice.class).getDefaultDevice();
-                DeviceCache.connect(device);
-                if (device.batteryLevel().needsCharging()) {
-                    say("Looks like the batteries need recharging.", "Go replace them, #slave!");
-                    device.close(); // disconnect
-                }
+                connect();
             } while (!device.connected());
             return device.connected() ? CONNECTED : CANCELLED;
+        }
+
+        void connect() {
+            device = teaseLib.devices.get(StimulationDevice.class).getDefaultDevice();
+            DeviceCache.connect(device);
+            if (device.batteryLevel().needsCharging()) {
+                say("Looks like the batteries need recharging.", "Go replace them, #slave!");
+                device.close(); // disconnect
+            }
         }
     }
 

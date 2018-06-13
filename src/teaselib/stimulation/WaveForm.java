@@ -103,7 +103,7 @@ public class WaveForm implements Iterable<WaveForm.Sample> {
 
     @Override
     public String toString() {
-        return values.toString() + "->" + end;
+        return values.toString() + "->" + end + "ms";
     }
 
     public static long toMillis(double seconds) {

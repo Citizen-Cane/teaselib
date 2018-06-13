@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 
@@ -18,7 +19,6 @@ import teaselib.core.devices.xinput.XInputDevice;
 import teaselib.core.util.ExceptionUtil;
 import teaselib.stimulation.StimulationDevice;
 import teaselib.stimulation.Stimulator;
-import teaselib.stimulation.Stimulator.Output;
 import teaselib.stimulation.Stimulator.Wiring;
 import teaselib.stimulation.WaveForm;
 import teaselib.stimulation.ext.StimulationTargets;
@@ -180,7 +180,7 @@ public class XInputStimulationDevice extends StimulationDevice {
 
     @Override
     public List<Stimulator> stimulators() {
-        if (output == Output.EStim && wiring == Wiring.INFERENCE_CHANNEL) {
+        if (wiring == Wiring.INFERENCE_CHANNEL) {
             return threeDependentStimulators();
         } else {
             return twoIndependentStimulators();
@@ -202,6 +202,7 @@ public class XInputStimulationDevice extends StimulationDevice {
     @Override
     public void play(StimulationTargets targets) {
         synchronized (executor) {
+            collectSampleStreamExceptions();
             if (stream == null || stream.future.isDone()) {
                 stream = new XInputStimmulationSamplerTask(executor);
             }
@@ -212,6 +213,7 @@ public class XInputStimulationDevice extends StimulationDevice {
     @Override
     public void append(StimulationTargets targets) {
         synchronized (executor) {
+            collectSampleStreamExceptions();
             if (stream == null || stream.future.isDone()) {
                 stream = new XInputStimmulationSamplerTask(executor);
             }
@@ -261,6 +263,7 @@ public class XInputStimulationDevice extends StimulationDevice {
             if (streamFutureRunning()) {
                 stream.future.cancel(true);
             }
+            collectSampleStreamExceptions();
         }
     }
 
@@ -268,20 +271,28 @@ public class XInputStimulationDevice extends StimulationDevice {
     public void complete() {
         synchronized (executor) {
             if (streamFutureRunning()) {
-                try {
-                    stream.future.get();
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    throw new ScriptInterruptedException();
-                } catch (ExecutionException e) {
-                    throw ExceptionUtil.asRuntimeException(ExceptionUtil.reduce(e));
-                }
+                collectSampleStreamExceptions();
             }
         }
     }
 
     private boolean streamFutureRunning() {
         return stream != null && !stream.future.isDone() && !stream.future.isCancelled();
+    }
+
+    private void collectSampleStreamExceptions() {
+        try {
+            if (stream != null && stream.future.isDone()) {
+                stream.future.get();
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new ScriptInterruptedException(e);
+        } catch (CancellationException e) {
+            // Ignore
+        } catch (ExecutionException e) {
+            throw ExceptionUtil.asRuntimeException(ExceptionUtil.reduce(e));
+        }
     }
 
     @Override

@@ -64,13 +64,19 @@ public class StimulationTargets implements Iterable<Samples> {
                 StimulationTarget target = targets.get(targetIndex);
                 waveformSamples.add(null);
                 Iterator<WaveForm.Sample> iterator = target.getWaveForm().iterator();
-                iterators.add(iterator);
-
-                Sample sample = iterator.next();
-                samples.getValues()[targetIndex] = sample.getValue();
-                waveformSamples.set(targetIndex, sample);
-
-                repeatCounts[iterators.size() - 1] = 0;
+                if (iterator.hasNext()) {
+                    iterators.add(iterator);
+                    Sample sample = iterator.next();
+                    samples.getValues()[targetIndex] = sample.getValue();
+                    waveformSamples.set(targetIndex, sample);
+                    repeatCounts[iterators.size() - 1] = 0;
+                } else {
+                    iterators.add(null);
+                    Sample sample = new Sample(0, 0.0);
+                    samples.getValues()[targetIndex] = sample.getValue();
+                    waveformSamples.set(targetIndex, sample);
+                    repeatCounts[iterators.size() - 1] = 0;
+                }
             }
         }
 

@@ -33,6 +33,12 @@ public class XInputStimulationControllerTest {
         Configuration config = DebugSetup.getConfiguration();
         Devices devices = new Devices(config);
         device = (XInputStimulationDevice) devices.get(StimulationDevice.class).getDefaultDevice();
+        // TODO Too late, since stims are enumerated in constructor
+        // TODO Name of inference channel wrong
+        // TODO Inference channel is likely the wrong stimulator - but it's just a place holder since vibration is now
+        // set in device
+        // TODO stimulation targets start with 0ms time stamps or duration - no noticeable signal - debug all targets
+        // sample streams
         device.setMode(Output.EStim, Wiring.INFERENCE_CHANNEL);
     }
 
@@ -44,13 +50,15 @@ public class XInputStimulationControllerTest {
 
     @Test
     public void testStimulationSampling() throws InterruptedException {
-        EStimController stim = new EStimController();
         logger.info("Connected to {}", device);
+        device.setMode(Output.Vibration, Wiring.INFERENCE_CHANNEL);
+        EStimController stim = new EStimController();
         EStimController.init(stim, device);
 
         StimulationTargets constantSignal = constantSignal(device, 1, TimeUnit.MINUTES);
         logger.info("Playing {}", constantSignal);
         device.play(constantSignal);
+        sleep(1000);
         logger.info("Stop");
         device.stop();
 

@@ -7,12 +7,12 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Predicate;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import teaselib.core.util.QualifiedItem;
 import teaselib.util.math.Combinations;
+import teaselib.util.math.Varieties;
 
 /**
  * @author Citizen-Cane
@@ -214,20 +214,22 @@ public class Items extends ArrayList<Item> {
         return preferred;
     }
 
-    private static Collector<Items, Combinations<Items>, Combinations<Items>> toCombinations() {
-        return Collector.of(Combinations<Items>::new, //
-                (items, item) -> items.add(item), //
-                (items1, items2) -> {
-                    items1.addAll(items2);
-                    return items1;
-                }, Collector.Characteristics.UNORDERED);
+    public Varieties<Items> varieties() {
+        int variety = getVariety();
+        Combinations<Item[]> combinations = Combinations.combinationsK(variety, toArray());
+        return combinations.stream().map(Arrays::asList)
+                .filter(combination -> Varieties.isVariety(combination.stream().map(QualifiedItem::of)
+                        .map(QualifiedItem::toString).collect(Collectors.toList())))
+                .map(Items::new).collect(Varieties.toVarieties());
     }
 
-    // TODO Combine so that each combination contains only one item of each kind
-    // (means that generic uncountable items like rope or chains are listed once)
-    public Combinations<Items> combinations() {
-        Combinations<Item[]> combinations = Combinations.combinationsK(size(), this.toArray());
-        return combinations.stream().map(Items::new).collect(toCombinations());
+    private int getVariety() {
+        Set<String> types = new HashSet<>();
+        for (Item item : this) {
+            types.add(QualifiedItem.of(item).toString());
+        }
+
+        return types.size();
     }
 
     @Override

@@ -4,12 +4,10 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
 
-import teaselib.core.concurrency.NamedExecutorService;
 import teaselib.motiondetection.Gesture;
 import teaselib.motiondetection.MotionDetector;
 import teaselib.motiondetection.MotionDetector.MotionSensitivity;
@@ -18,55 +16,18 @@ import teaselib.motiondetection.MotionDetector.MotionSensitivity;
  * @author Citizen-Cane
  *
  */
-public class HeadGestureInputMethod implements InputMethod {
-    // TODO Move to MediaRenderQueue
-    private final NamedExecutorService workerThread = NamedExecutorService.singleThreadedQueue(getClass().getName());
+public class HeadGestureInputMethod extends AbstractInputMethod {
     private final Future<MotionDetector> motionDetector;
-    private final ReentrantLock replySection = new ReentrantLock(true);
-
-    private Future<Integer> gestureResult;
 
     public HeadGestureInputMethod(Supplier<MotionDetector> motionDetector) {
-        this.motionDetector = workerThread.submit(motionDetector::get);
+        this.motionDetector = executor.submit(motionDetector::get);
     }
 
     private static final List<Gesture> SupportedGestures = Arrays.asList(Gesture.Nod, Gesture.Shake);
 
-    // TODO Duplicates HostInputMethod -> pull out await*(...) into override, introduce AbstractInputMethod
     @Override
-    public void show(Prompt prompt) throws InterruptedException {
-        Callable<Integer> callable = new Callable<Integer>() {
-            @Override
-            public Integer call() throws Exception {
-                replySection.lockInterruptibly();
-                try {
-                    synchronized (this) {
-                        notifyAll();
-                    }
-                    if (prompt.result() == Prompt.UNDEFINED) {
-                        int result = awaitGesture(motionDetector.get(), prompt);
-                        prompt.lock.lockInterruptibly();
-                        try {
-                            if (!prompt.paused() && prompt.result() == Prompt.UNDEFINED) {
-                                prompt.signalResult(HeadGestureInputMethod.this, result);
-                            }
-                        } finally {
-                            prompt.lock.unlock();
-                        }
-                    }
-                } finally {
-                    replySection.unlock();
-                }
-                return prompt.result();
-            }
-        };
-
-        synchronized (callable) {
-            gestureResult = workerThread.submit(callable);
-            while (!replySection.isLocked()) {
-                callable.wait();
-            }
-        }
+    protected int awaitResult(Prompt prompt) throws InterruptedException, ExecutionException {
+        return awaitGesture(motionDetector.get(), prompt);
     }
 
     private static int awaitGesture(MotionDetector motionDetector, Prompt prompt) {
@@ -92,15 +53,8 @@ public class HeadGestureInputMethod implements InputMethod {
     }
 
     @Override
-    public boolean dismiss(Prompt prompt) throws InterruptedException {
-        if (gestureResult.isCancelled() || gestureResult.isDone()) {
-            return false;
-        }
-
-        gestureResult.cancel(true);
+    protected boolean handleDismiss(Prompt prompt) throws InterruptedException {
         replySection.lockInterruptibly();
-        replySection.unlock();
-
         return true;
     }
 

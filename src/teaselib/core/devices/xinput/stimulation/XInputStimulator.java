@@ -104,11 +104,14 @@ public class XInputStimulator implements Stimulator {
         return device.getName() + " " + getLocation();
     }
 
+    private String[] estimLocation = { "Left channel", "Right channel", "Inference channel" };
+    private String[] rumbleLocation = { "Left rumble motor", "Right rumble motor", "Both rumble motors" };
+
     private String getLocation() {
         if (device.output == Output.EStim) {
-            return channel == 0 ? "Left channel" : "Right channel";
+            return estimLocation[channel];
         } else {
-            return channel == 0 ? "Left rumble motor" : "Right rumble motor";
+            return rumbleLocation[channel];
         }
     }
 

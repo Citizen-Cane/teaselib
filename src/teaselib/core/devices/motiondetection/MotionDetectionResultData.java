@@ -18,7 +18,7 @@ import teaselib.motiondetection.ViewPoint;
  * The data set for the motion detection results
  *
  */
-public abstract class MotionDetectionResultData implements MotionDetectionResult {
+abstract class MotionDetectionResultData implements MotionDetectionResult {
     // TODO size of one or two structuring elements
     static final int CornerSize = 32;
     protected static final Map<ViewPoint, Presence> viewPoint2PresenceRegion = getViewPointRegions();

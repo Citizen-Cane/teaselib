@@ -10,22 +10,20 @@ import teaselib.motiondetection.MotionDetector.Presence;
 import teaselib.motiondetection.ViewPoint;
 
 /**
- * @author someone
+ * @author Citizen-Cane
  *
  */
-interface MotionDetectionResult {
+public interface MotionDetectionResult {
     void setViewPoint(ViewPoint viewPoint);
 
-    boolean updateMotionState(Mat videoImage,
-            MotionProcessorJavaCV motionProcessor, long timeStamp);
+    boolean updateMotionState(Mat videoImage, MotionProcessorJavaCV motionProcessor, long timeStamp);
 
     Rect getPresenceRegion(double seconds);
 
     Rect getMotionRegion(double seconds);
 
-    public boolean await(Signal signal, final double amount,
-            final Presence change, final double timeSpanSeconds,
-            final double timeoutSeconds) throws InterruptedException;
+    public boolean await(Signal signal, double amount, Presence change, double timeSpanSeconds,
+            double timeoutSeconds) throws InterruptedException;
 
     Set<Presence> getPresence(Rect motionRegion, Rect presenceRegion);
 }

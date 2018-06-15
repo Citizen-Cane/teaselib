@@ -10,7 +10,9 @@ public class Signal {
     final Lock lock = new ReentrantLock();
     final Condition condition = lock.newCondition();
 
-    public interface HasChangedPredicate extends Callable<Boolean> {
+    @FunctionalInterface
+    public interface HasChangedPredicate {
+        boolean call();
     }
 
     public void signal() {

@@ -345,7 +345,6 @@ class MotionDetectorCaptureThread extends Thread {
 
     private void computeGestures(Mat video, long timeStamp) {
         if (gestureResult.cameraShake) {
-            // gestureTracker.restart();
             gestureTracker.clear();
             gestureTracker.findNewFeatures(video, presenceResult.presenceIndicators.get(Presence.Center));
         } else {

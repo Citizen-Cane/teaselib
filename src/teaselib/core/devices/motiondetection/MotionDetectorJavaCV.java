@@ -12,7 +12,6 @@ import org.slf4j.LoggerFactory;
 import teaselib.core.Configuration;
 import teaselib.core.ScriptInterruptedException;
 import teaselib.core.VideoRenderer;
-import teaselib.core.concurrency.Signal;
 import teaselib.core.devices.BatteryLevel;
 import teaselib.core.devices.DeviceCache;
 import teaselib.core.devices.DeviceFactory;
@@ -157,6 +156,35 @@ public class MotionDetectorJavaCV extends MotionDetector /* extends WiredDevice 
         }
     }
 
+    @FunctionalInterface
+    public interface PresenceChanged {
+        boolean expected(MotionDetectionResult result);
+    }
+
+    public boolean await(PresenceChanged expected, double timeoutSeconds) {
+        if (!active()) {
+            throw new IllegalStateException(getClass().getName() + " not active");
+        }
+
+        try {
+            if (expected.expected(captureThread.presenceResult)) {
+                return true;
+            }
+            try {
+                captureThread.presenceChanged.await(timeoutSeconds, () -> {
+                    return expected.expected(captureThread.presenceResult);
+                });
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new ScriptInterruptedException(e);
+            } catch (Exception e) {
+                logger.error(e.getMessage(), e);
+            }
+            return false;
+        } finally {
+        }
+    }
+
     @Override
     public Gesture await(List<Gesture> expected, double timeoutSeconds) {
         if (!active()) {
@@ -169,16 +197,13 @@ public class MotionDetectorJavaCV extends MotionDetector /* extends WiredDevice 
                 return captureThread.gesture;
             }
             try {
-                captureThread.gestureChanged.await(timeoutSeconds, (new Signal.HasChangedPredicate() {
-                    @Override
-                    public Boolean call() throws Exception {
-                        boolean isExpected = expected.contains(captureThread.gesture);
-                        if (isExpected) {
-                            // TODO make clear() multithreading safe
-                            captureThread.gestureTracker.clear();
-                        }
-                        return isExpected;
+                captureThread.gestureChanged.await(timeoutSeconds, (() -> {
+                    boolean isExpected = expected.contains(captureThread.gesture);
+                    if (isExpected) {
+                        // TODO make clear() multithreading safe
+                        captureThread.gestureTracker.clear();
                     }
+                    return isExpected;
                 }));
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();

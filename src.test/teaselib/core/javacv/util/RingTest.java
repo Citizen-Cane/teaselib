@@ -18,9 +18,9 @@ public class RingTest {
             assertEquals(opencv_core.CV_8UC1, video.type());
 
             Ring<Mat> ring = new Ring<>(video::clone, 3);
-            Mat mat1 = ring.getCurrent();
+            Mat mat1 = ring.current();
             assertNotNull(mat1);
-            Mat mat3 = ring.getLast();
+            Mat mat3 = ring.last();
             assertNotNull(mat3);
 
             assertEquals(200, mat1.cols());
@@ -29,22 +29,28 @@ public class RingTest {
             assertEquals(100, mat3.rows());
 
             ring.advance();
-            assertEquals(mat3, ring.getCurrent());
-            assertNotEquals(mat1, ring.getLast());
+            assertEquals(mat3, ring.current());
+            assertEquals(mat1, ring.previous());
+            assertNotEquals(mat1, ring.last());
 
             ring.advance();
-            assertNotEquals(mat1, ring.getCurrent());
-            assertNotEquals(mat3, ring.getCurrent());
-            assertEquals(mat1, ring.getLast());
+            assertNotEquals(mat1, ring.current());
+            assertNotEquals(mat3, ring.current());
+            assertEquals(mat1, ring.last());
+            assertEquals(mat3, ring.previous());
 
             ring.advance();
-            assertEquals(mat1, ring.getCurrent());
-            assertEquals(mat3, ring.getLast());
+            assertEquals(mat1, ring.current());
+            assertEquals(mat3, ring.last());
+            assertNotEquals(mat1, ring.previous());
+            assertNotEquals(mat3, ring.previous());
 
             video.create(200, 400, opencv_core.CV_8UC1);
             ring.resize(video::clone, 3);
-            assertEquals(400, ring.getCurrent().cols());
-            assertEquals(200, ring.getCurrent().rows());
+            for (int i = 0; i < ring.size(); i++) {
+                assertEquals(400, ring.current().cols());
+                assertEquals(200, ring.current().rows());
+            }
         }
     }
 }

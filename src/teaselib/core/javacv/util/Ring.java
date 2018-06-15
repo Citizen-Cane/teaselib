@@ -10,6 +10,7 @@ import java.util.function.Supplier;
  */
 public class Ring<T> {
     final Deque<T> elements;
+    T previous;
 
     public Ring(Supplier<T> supplier, int size) {
         elements = new ArrayDeque<>(size);
@@ -29,15 +30,20 @@ public class Ring<T> {
         }
     }
 
-    public T getCurrent() {
+    public T current() {
         return elements.getFirst();
     }
 
-    public T getLast() {
+    public T previous() {
+        return previous;
+    }
+
+    public T last() {
         return elements.getLast();
     }
 
     public void advance() {
+        previous = current();
         elements.addFirst(elements.removeLast());
     }
 

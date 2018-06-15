@@ -51,7 +51,6 @@ public class HeadGestureTracker {
 
     private final TrackFeatures tracker = new TrackFeatures(5);
     private final TimeLine<Direction> directionTimeLine = new TimeLine<>();
-    private final Mat startKeyPoints = new Mat();
 
     public final Scalar color;
     public final Scalar colorInverse;
@@ -60,6 +59,8 @@ public class HeadGestureTracker {
     private Rect region;
 
     private int videoWidth;
+
+    private static int presenceRegionToFaceEnlargementvideoSizeFraction = 4;
 
     public static class Parameters {
         public boolean cameraShake = true;
@@ -76,12 +77,11 @@ public class HeadGestureTracker {
         // Enlarge gesture region based on the observation that when beginning the first nod the presence region
         // starts with a horizontally wide but vertically narrow area around the eyes
         // - if the region gets too large we might miss the face
-        int fraction = 5;
-        try (Size minSize = new Size(video.rows() / fraction, video.cols() / fraction)) {
-            if (presence.width() < minSize.width() || presence.height() < minSize.height()) {
+        try (Size minSizePortrait = new Size(video.rows() / presenceRegionToFaceEnlargementvideoSizeFraction, video.cols() / presenceRegionToFaceEnlargementvideoSizeFraction)) {
+            if (presence.width() < minSizePortrait.width() || presence.height() < minSizePortrait.height()) {
                 try (Point center = Geom.center(presence);
-                        Size size = new Size(Math.max(minSize.width(), presence.width()),
-                                Math.max(minSize.height(), presence.height()));) {
+                        Size size = new Size(Math.max(minSizePortrait.width(), presence.width()),
+                                Math.max(minSizePortrait.height(), presence.height()));) {
                     presence = new Rect(center.x() - size.width() / 2, center.y() - size.height() / 2, size.width(),
                             size.height());
                 }
@@ -124,7 +124,13 @@ public class HeadGestureTracker {
     private void updateGesture(Mat videoImage, Rect region, long timeStamp) {
         // TODO turn into face region width (region.width) after switching to face/pose detection
         videoWidth = videoImage.cols();
-        tracker.update(videoImage);
+
+        try {
+            tracker.update(videoImage);
+        } catch (Exception e) {
+            logger.error(e.getMessage(), e);
+        }
+
         Direction direction = direction();
         if (direction != Direction.None) {
             directionTimeLine.add(direction, timeStamp);
@@ -139,7 +145,6 @@ public class HeadGestureTracker {
     public void findNewFeatures(Mat videoImage, Rect region) {
         this.region = region;
         tracker.start(videoImage, region);
-        tracker.keyPoints().copyTo(startKeyPoints);
         resetTrackFeatures = false;
     }
 
@@ -151,7 +156,7 @@ public class HeadGestureTracker {
             return Direction.None;
         }
 
-        // TODO Parameter object
+        // TODO Introduce Parameter object
         Map<Direction, Float> directions = new EnumMap<>(Direction.class);
         Map<Direction, Integer> weights = new EnumMap<>(Direction.class);
         calcDirectionsAndWeights(keyPoints, previousKeyPoints, directions, weights);

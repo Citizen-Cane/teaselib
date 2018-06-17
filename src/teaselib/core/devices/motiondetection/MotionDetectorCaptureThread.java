@@ -22,7 +22,6 @@ import teaselib.core.VideoRenderer;
 import teaselib.core.concurrency.NamedExecutorService;
 import teaselib.core.concurrency.Signal;
 import teaselib.core.devices.DeviceCache;
-import teaselib.core.javacv.Color;
 import teaselib.core.javacv.Copy;
 import teaselib.core.javacv.HeadGestureTracker;
 import teaselib.core.javacv.Scale;
@@ -54,8 +53,7 @@ class MotionDetectorCaptureThread extends Thread {
     ViewPoint viewPoint;
 
     private MotionProcessorJavaCV motionProcessor;
-    HeadGestureTracker gestureTracker = new HeadGestureTracker(Color.Cyan);
-    protected Gesture gesture = Gesture.None;
+    public GestureSource gesture = new GestureSource(this::active);
 
     // TODO Atomic reference
     MotionDetectionResultImplementation presenceResult;
@@ -68,7 +66,6 @@ class MotionDetectorCaptureThread extends Thread {
     volatile double debugWindowTimeSpan = MotionDetector.PresenceRegionDefaultTimespan;
     private final AtomicBoolean active = new AtomicBoolean(false);
     final Signal presenceChanged = new Signal();
-    final Signal gestureChanged = new Signal();
 
     MotionDetectorJavaCVDebugRenderer debugInfo = null;
     VideoRenderer videoRenderer = null;
@@ -232,7 +229,6 @@ class MotionDetectorCaptureThread extends Thread {
             .singleThreadedQueue("Perception overlay renderer", Long.MAX_VALUE, TimeUnit.MILLISECONDS);
 
     private Future<?> motionAndPresence = null;
-    private HeadGestureTracker.Parameters gestureResult = new HeadGestureTracker.Parameters();
     private Mat motionImageCopy = new Mat();
 
     private void processVideoCaptureStream() throws InterruptedException, ExecutionException {
@@ -253,7 +249,7 @@ class MotionDetectorCaptureThread extends Thread {
             frameTaskFutures.clear();
             // TODO move to after if-clause after resolving image mat copy issue
             // - because copying the mat and computing gestures can be done parallel
-            frameTaskFutures.add(frameTasks.submit(() -> computeGestures(image, timeStamp)));
+            frameTaskFutures.add(frameTasks.submit(() -> gesture.update(image, timeStamp)));
 
             if (motionAndPresence == null) {
                 motionAndPresence = perceptionTasks.submit(() -> {
@@ -303,12 +299,8 @@ class MotionDetectorCaptureThread extends Thread {
         presenceResult.presenceData.trackerMotionDetected = true;
         presenceResult.presenceData.indicators = Collections.singleton(Presence.Center);
         presenceResult.presenceData.debugIndicators = Collections.singleton(Presence.Center);
-
         presenceResult.presenceData.presenceRegion = defaultHeadRegion();
-
-        gestureResult.cameraShake = false;
-        gestureResult.motionDetected = true;
-        gestureResult.gestureRegion = defaultHeadRegion();
+        gesture.updateResult(false, true, defaultHeadRegion());
     }
 
     private void updatePresenceResult() {
@@ -317,14 +309,11 @@ class MotionDetectorCaptureThread extends Thread {
     }
 
     private void updateGestureResult(Mat video) {
-        gestureResult.cameraShake = presenceResult.presenceData.indicators.contains(Presence.CameraShake);
-        gestureResult.motionDetected = presenceResult.motionDetected;
-
         Rect gestureRegion = Geom.intersect(
                 HeadGestureTracker.enlargePresenceRegionToFaceSize(video, presenceResult.presenceData.presenceRegion),
                 presenceResult.presenceData.presenceIndicators.get(Presence.Present));
-
-        gestureResult.gestureRegion = gestureRegion != null ? gestureRegion : defaultHeadRegion();
+        gesture.updateResult(presenceResult.presenceData.indicators.contains(Presence.CameraShake),
+                presenceResult.motionDetected, gestureRegion != null ? gestureRegion : defaultHeadRegion());
     }
 
     private Rect defaultHeadRegion() {
@@ -341,21 +330,6 @@ class MotionDetectorCaptureThread extends Thread {
                 presenceChanged.signal();
             }
         });
-    }
-
-    private void computeGestures(Mat video, long timeStamp) {
-        if (gestureResult.cameraShake) {
-            gestureTracker.clear();
-            gestureTracker.findNewFeatures(video, presenceResult.presenceIndicators.get(Presence.Center));
-        } else {
-            gestureTracker.update(video, gestureResult.motionDetected, gestureResult.gestureRegion, timeStamp);
-        }
-        Gesture newGesture = gestureTracker.getGesture();
-        boolean changed = gesture != newGesture;
-        gesture = newGesture;
-        if (changed) {
-            gestureChanged.signal();
-        }
     }
 
     private void completeComputationAndRender(Mat image, Buffer.Locked<Mat> lock, List<Future<?>> tasks) {
@@ -389,7 +363,7 @@ class MotionDetectorCaptureThread extends Thread {
     private Set<Presence> renderOverlays(Mat image) {
         Set<Presence> indicators = presenceResult.presenceData.debugIndicators;
         debugInfo.render(image, motionProcessor.motionContours, motionProcessor.motionData, presenceResult.presenceData,
-                gestureTracker, gesture, fpsStatistics.value());
+                gesture.gestureTracker, gesture.current.get(), fpsStatistics.value());
 
         if (logDetails) {
             logger.info("contourMotionDetected={}  trackerMotionDetected={} (distance={}), {}",

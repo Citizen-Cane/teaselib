@@ -18,6 +18,8 @@ import teaselib.core.devices.DeviceFactory;
 import teaselib.core.devices.Devices;
 import teaselib.motiondetection.Gesture;
 import teaselib.motiondetection.MotionDetector;
+import teaselib.motiondetection.Pose;
+import teaselib.motiondetection.Proximity;
 import teaselib.motiondetection.ViewPoint;
 import teaselib.video.VideoCaptureDevice;
 
@@ -185,36 +187,28 @@ public class MotionDetectorJavaCV extends MotionDetector /* extends WiredDevice 
         }
     }
 
+    public Proximity awaitPose(Proximity expected, double timeoutSeconds) {
+        // TODO all of this has the same pattern: waiting for a signal when state changes then check changed state for
+        // expected
+        // TODO define common interface, pass in Predicate (or list of expected items)
+        // TODO match predicate against actual state -> class with state container, plus signal
+        // TODO state is a set of types -> or singletonSet like for gestures
+        // TODO The provider may have its own set of parameters, like movement (amount, timeSpan, duration) or gesture
+        // (no params)
+        // TODO forward to provider, along with generic predicate - params -> time line processing -> result ->
+        // predicate to decide if actual matches expected
+        // TODO generate perception object(
+        return Proximity.Unknown;
+    }
+
+    public Pose awaitPose(Pose expected, double timeoutSeconds) {
+        // TODO
+        return Pose.Unknown;
+    }
+
     @Override
     public Gesture await(List<Gesture> expected, double timeoutSeconds) {
-        if (!active()) {
-            throw new IllegalStateException(getClass().getName() + " not active");
-        }
-
-        try {
-            // TODO resolve duplicated code
-            if (expected.contains(captureThread.gesture)) {
-                return captureThread.gesture;
-            }
-            try {
-                captureThread.gestureChanged.await(timeoutSeconds, (() -> {
-                    boolean isExpected = expected.contains(captureThread.gesture);
-                    if (isExpected) {
-                        // TODO make clear() multithreading safe
-                        captureThread.gestureTracker.clear();
-                    }
-                    return isExpected;
-                }));
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new ScriptInterruptedException(e);
-            } catch (Exception e) {
-                logger.error(e.getMessage(), e);
-            }
-            return captureThread.gesture;
-        } finally {
-            captureThread.gesture = Gesture.None;
-        }
+        return captureThread.gesture.await(expected, timeoutSeconds);
     }
 
     private static void awaitTimeout(double timeoutSeconds) {

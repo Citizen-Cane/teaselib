@@ -77,7 +77,8 @@ public class HeadGestureTracker {
         // Enlarge gesture region based on the observation that when beginning the first nod the presence region
         // starts with a horizontally wide but vertically narrow area around the eyes
         // - if the region gets too large we might miss the face
-        try (Size minSizePortrait = new Size(video.rows() / presenceRegionToFaceEnlargementvideoSizeFraction, video.cols() / presenceRegionToFaceEnlargementvideoSizeFraction)) {
+        try (Size minSizePortrait = new Size(video.rows() / presenceRegionToFaceEnlargementvideoSizeFraction,
+                video.cols() / presenceRegionToFaceEnlargementvideoSizeFraction)) {
             if (presence.width() < minSizePortrait.width() || presence.height() < minSizePortrait.height()) {
                 try (Point center = Geom.center(presence);
                         Size size = new Size(Math.max(minSizePortrait.width(), presence.width()),
@@ -165,7 +166,7 @@ public class HeadGestureTracker {
         return directions.isEmpty() ? Direction.None : direction(directions, weights);
     }
 
-    private void calcDirectionsAndWeights(Mat keyPoints, Mat previousKeyPoints, Map<Direction, Float> directions,
+    private static void calcDirectionsAndWeights(Mat keyPoints, Mat previousKeyPoints, Map<Direction, Float> directions,
             Map<Direction, Integer> weights) {
         try (FloatIndexer from = previousKeyPoints.createIndexer(); FloatIndexer to = keyPoints.createIndexer();) {
             long n = Math.min(from.rows(), to.rows());

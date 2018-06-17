@@ -1,6 +1,6 @@
 package teaselib.core.devices.motiondetection;
 
-import static teaselib.core.javacv.util.Geom.intersects;
+import static teaselib.core.javacv.util.Geom.*;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -54,7 +54,7 @@ public class MotionDetectionResultImplementation extends MotionDetectionResultDa
         }
     }
 
-    public PresenceData presenceData = new PresenceData();
+    final PresenceData presenceData = new PresenceData();
 
     MotionDetectionResultImplementation(Size size) {
         super(size);

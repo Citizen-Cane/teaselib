@@ -12,10 +12,12 @@ import org.slf4j.LoggerFactory;
 import teaselib.core.Configuration;
 import teaselib.core.ScriptInterruptedException;
 import teaselib.core.VideoRenderer;
+import teaselib.core.concurrency.Signal.HasChangedPredicate;
 import teaselib.core.devices.BatteryLevel;
 import teaselib.core.devices.DeviceCache;
 import teaselib.core.devices.DeviceFactory;
 import teaselib.core.devices.Devices;
+import teaselib.core.devices.motiondetection.PerceptionSource.PerceptionChanged;
 import teaselib.motiondetection.Gesture;
 import teaselib.motiondetection.MotionDetector;
 import teaselib.motiondetection.Pose;
@@ -158,12 +160,8 @@ public class MotionDetectorJavaCV extends MotionDetector /* extends WiredDevice 
         }
     }
 
-    @FunctionalInterface
-    public interface PresenceChanged {
-        boolean expected(MotionDetectionResult result);
-    }
-
-    public boolean await(PresenceChanged expected, double timeoutSeconds) {
+    // TODO This is just used for for ArriveClose -> Generalize
+    public boolean await(PerceptionChanged expected, double timeoutSeconds) {
         if (!active()) {
             throw new IllegalStateException(getClass().getName() + " not active");
         }
@@ -173,9 +171,7 @@ public class MotionDetectorJavaCV extends MotionDetector /* extends WiredDevice 
                 return true;
             }
             try {
-                captureThread.presenceChanged.await(timeoutSeconds, () -> {
-                    return expected.expected(captureThread.presenceResult);
-                });
+                captureThread.presenceChanged.await(timeoutSeconds, matches(expected));
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 throw new ScriptInterruptedException(e);
@@ -185,6 +181,10 @@ public class MotionDetectorJavaCV extends MotionDetector /* extends WiredDevice 
             return false;
         } finally {
         }
+    }
+
+    private HasChangedPredicate matches(PerceptionChanged expected) {
+        return () -> expected.expected(captureThread.presenceResult);
     }
 
     public Proximity awaitPose(Proximity expected, double timeoutSeconds) {

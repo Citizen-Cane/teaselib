@@ -17,6 +17,11 @@ import teaselib.core.concurrency.Signal;
 public abstract class PerceptionSource<T> {
     static final Logger logger = LoggerFactory.getLogger(PerceptionSource.class);
 
+    @FunctionalInterface
+    public interface PerceptionChanged {
+        boolean expected(MotionDetectionResult result);
+    }
+
     final AtomicReference<T> current;
     final Signal signal;
 

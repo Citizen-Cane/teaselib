@@ -48,7 +48,6 @@ final class GestureSource extends PerceptionSource<Gesture> {
         gestureResult.cameraShake = cameraShake;
         gestureResult.motionDetected = motionDetected;
         gestureResult.gestureRegion = region;
-
     }
 
     @Override

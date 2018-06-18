@@ -32,9 +32,13 @@ public abstract class PerceptionSource<T> {
         this.signal = new Signal();
     }
 
+    /**
+     * @param resolution
+     *            The size of the video input
+     */
     public void setResulution(Size resolution) {
         // Overwrite if necessary
-    };
+    }
 
     public abstract void update(Mat video, long timeStamp);
 
@@ -43,36 +47,27 @@ public abstract class PerceptionSource<T> {
     }
 
     public boolean await(PerceptionFunction expected, double timeoutSeconds) {
-        // TODO Move out, it's the responsibility of the capture thread
-        if (!active()) {
-            throw new IllegalStateException(getClass().getName() + " not active");
-        }
-
-        try {
-            if (expected.matches()) {
-                return true;
-            }
+        if (matches(expected)) {
+            return true;
+        } else {
             try {
-                if (signal.await(timeoutSeconds, (() -> {
-                    if (expected.matches()) {
-                        startNewRecognition();
-                        return true;
-                    } else {
-                        return false;
-                    }
-                }))) {
-                    return true;
-                }
+                return signal.await(timeoutSeconds, (() -> matches(expected)));
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 throw new ScriptInterruptedException(e);
             } catch (Exception e) {
                 logger.error(e.getMessage(), e);
+                return false;
             }
-        } finally {
-            resetCurrent();
         }
-        return false;
+    }
+
+    private boolean matches(PerceptionFunction expected) {
+        boolean matches = expected.matches();
+        if (matches) {
+            startNewRecognition();
+        }
+        return matches;
     }
 
     public T get() {
@@ -87,10 +82,5 @@ public abstract class PerceptionSource<T> {
         return new Rect(video.cols() / 4, video.rows() / 4, video.cols() / 2, video.rows() / 2);
     }
 
-    abstract boolean active();
-
     abstract void startNewRecognition();
-
-    abstract void resetCurrent();
-
 }

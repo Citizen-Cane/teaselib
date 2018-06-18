@@ -20,11 +20,6 @@ final class GestureSource extends PerceptionSource<Gesture> {
     }
 
     @Override
-    boolean active() {
-        return activeState.getAsBoolean();
-    }
-
-    @Override
     public void update(Mat video, long timeStamp) {
         if (gestureResult.cameraShake) {
             gestureTracker.clear();
@@ -47,15 +42,8 @@ final class GestureSource extends PerceptionSource<Gesture> {
     }
 
     @Override
-    void resetCurrent() {
-        // TODO Remove
-    }
-
-    @Override
     public Gesture get() {
-        Gesture gesture = super.get();
-        current.set(Gesture.None);
-        return gesture;
+        return current.getAndSet(Gesture.None);
     }
 
     public void updateResult(boolean cameraShake, boolean motionDetected, Rect region) {

@@ -10,7 +10,6 @@ import org.bytedeco.javacpp.opencv_core.Mat;
 import org.bytedeco.javacpp.opencv_core.Rect;
 import org.bytedeco.javacpp.opencv_core.Size;
 
-import teaselib.core.ScriptInterruptedException;
 import teaselib.core.util.TimeLine;
 import teaselib.motiondetection.MotionDetector;
 import teaselib.motiondetection.MotionDetector.MotionSensitivity;
@@ -72,23 +71,9 @@ public class MotionSource extends PerceptionSource<Presence> {
         });
     }
 
-    @Override
-    boolean active() {
-        // TODO Remove
-        return true;
-    }
-
     public boolean await(double amount, Presence change, double timeSpanSeconds, final double timeoutSeconds) {
         // TODO clamp amount to [0,1] and handle > 0.0, >= 1.0
-        try {
-            return signal.await(timeoutSeconds, () -> getChange(amount, change, timeSpanSeconds));
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new ScriptInterruptedException(e);
-        } catch (Exception e) {
-            logger.error(e.getMessage(), e);
-        }
-        return false;
+        return await(() -> getChange(amount, change, timeSpanSeconds), timeoutSeconds);
     }
 
     private Boolean getChange(double amount, Presence change, double timeSpanSeconds) {
@@ -104,12 +89,6 @@ public class MotionSource extends PerceptionSource<Presence> {
     @Override
     void startNewRecognition() {
         // Ignore since motion is continuous, not an event like a gesture
-    }
-
-    @Override
-    void resetCurrent() {
-        // TODO Auto-generated method stub
-
     }
 
     public void updateResult(Rect region) {

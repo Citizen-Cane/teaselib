@@ -1,6 +1,7 @@
 package teaselib.core.devices.motiondetection;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
@@ -16,7 +17,6 @@ import teaselib.core.devices.BatteryLevel;
 import teaselib.core.devices.DeviceCache;
 import teaselib.core.devices.DeviceFactory;
 import teaselib.core.devices.Devices;
-import teaselib.core.devices.motiondetection.MotionSource.MotionFunction;
 import teaselib.motiondetection.Gesture;
 import teaselib.motiondetection.MotionDetector;
 import teaselib.motiondetection.Pose;
@@ -156,32 +156,52 @@ public class MotionDetectorJavaCV extends MotionDetector /* extends WiredDevice 
         }
     }
 
-    // TODO This is just used for for ArriveClose -> Generalize
-    public boolean await(MotionFunction expected, double timeoutSeconds) {
-        return captureThread.motion.await(expected, timeoutSeconds);
+    public boolean await(Proximity expected, double timeoutSeconds) {
+        if (!active()) {
+            throw new IllegalStateException(getClass().getName() + " not active");
+        }
+
+        if (expected == Proximity.Close) {
+            return captureThread.motion.await(this::arriveClose, timeoutSeconds);
+        } else if (expected == Proximity.Far) {
+            return captureThread.motion.await(this::arriveFar, timeoutSeconds);
+        } else {
+            awaitTimeout(timeoutSeconds);
+            return false;
+        }
     }
 
-    public Proximity awaitPose(Proximity expected, double timeoutSeconds) {
-        // TODO all of this has the same pattern: waiting for a signal when state changes then check changed state for
-        // expected
-        // TODO define common interface, pass in Predicate (or list of expected items)
-        // TODO match predicate against actual state -> class with state container, plus signal
-        // TODO state is a set of types -> or singletonSet like for gestures
-        // TODO The provider may have its own set of parameters, like movement (amount, timeSpan, duration) or gesture
-        // (no params)
-        // TODO forward to provider, along with generic predicate - params -> time line processing -> result ->
-        // predicate to decide if actual matches expected
-        // TODO generate perception object(
-        return Proximity.Unknown;
+    boolean arriveClose(MotionDetectionResult result) {
+        double seconds = 1.0;
+        Set<Presence> presence = result.getPresence(result.getMotionRegion(seconds), result.getPresenceRegion(seconds));
+        return presence.containsAll(Arrays.asList(Presence.Top, Presence.Bottom, Presence.Right, Presence.Left));
+    }
+
+    boolean arriveFar(MotionDetectionResult result) {
+        double seconds = 1.0;
+        Set<Presence> presence = result.getPresence(result.getMotionRegion(seconds), result.getPresenceRegion(seconds));
+        // TODO Tailored for doggy play and viewpoint == LowAngle - generalize
+        return !presence.contains(Presence.CameraShake) && !presence.contains(Presence.NoMotion)
+                && !presence.contains(Presence.TopBorder) && !presence.contains(Presence.BottomBorder);
+        // TODO if motion happens the motion region should be rather small in a few sectors
+        // - not 100% but the best we can do, should work for doggy fetch
     }
 
     public Pose awaitPose(Pose expected, double timeoutSeconds) {
+        if (!active()) {
+            throw new IllegalStateException(getClass().getName() + " not active");
+        }
+
         // TODO
         return Pose.Unknown;
     }
 
     @Override
     public Gesture await(List<Gesture> expected, double timeoutSeconds) {
+        if (!active()) {
+            throw new IllegalStateException(getClass().getName() + " not active");
+        }
+
         captureThread.gesture.await(expected, timeoutSeconds);
         return captureThread.gesture.get();
     }

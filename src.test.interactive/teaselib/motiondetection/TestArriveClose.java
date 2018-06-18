@@ -1,7 +1,6 @@
 package teaselib.motiondetection;
 
 import java.util.Arrays;
-import java.util.Set;
 
 import org.bytedeco.javacpp.opencv_core.Point;
 import org.junit.Test;
@@ -10,11 +9,9 @@ import teaselib.core.Configuration;
 import teaselib.core.VideoRenderer.Type;
 import teaselib.core.devices.DeviceCache;
 import teaselib.core.devices.Devices;
-import teaselib.core.devices.motiondetection.MotionDetectionResult;
 import teaselib.core.devices.motiondetection.MotionDetectorJavaCV;
 import teaselib.core.javacv.VideoRendererJavaCV;
 import teaselib.motiondetection.MotionDetector.MotionSensitivity;
-import teaselib.motiondetection.MotionDetector.Presence;
 import teaselib.test.DebugSetup;
 
 public class TestArriveClose {
@@ -62,21 +59,21 @@ public class TestArriveClose {
 
     private void arriveCloseAndStepBack(MotionDetector motionDetector, Movement movement) {
         motionDetector.setSensitivity(AssumeSensitivity);
-        final double amount = 0.95;
+        // double amount = 0.95;
         MotionDetectorJavaCV mdJV = (MotionDetectorJavaCV) motionDetector;
 
         System.out.println("Wait for motion detector to warm up!");
-        mdJV.await(1.0, Presence.NoCameraShake, 1.0, 10.0);
+        mdJV.await(Proximity.Far, 10.0);
 
         System.out.println("Come close!");
         // while (!mdJV.await(amount, Presence.CameraShake, 0.2, 5.0)) {
-        while (!mdJV.await(this::arriveClose, 5.0)) {
+        while (!mdJV.await(Proximity.Close, 5.0)) {
             System.out.println("I said 'Come close'!");
         }
 
         System.out.println("Very good. Now step back!");
-        // TODO No side borders
-        while (!mdJV.await(amount, Presence.NoTopBorder, 3.0, 5.0)) {
+        // while (!mdJV.await(amount, Presence.NoTopBorder, 3.0, 5.0)) {
+        while (!mdJV.await(Proximity.Far, 5.0)) {
             System.out.println("I said 'Step back'!");
         }
 
@@ -84,13 +81,5 @@ public class TestArriveClose {
         while (!movement.stoppedWithin(1.0, 5.0)) {
             System.out.println("I said 'Stand still'!");
         }
-    }
-
-    boolean arriveClose(MotionDetectionResult result) {
-        double seconds = 1.0;
-        Set<Presence> presence = result.getPresence(result.getMotionRegion(seconds), result.getPresenceRegion(seconds));
-        // return presence.containsAll(
-        // Arrays.asList(Presence.TopBorder, Presence.BottomBorder, Presence.RightBorder, Presence.LeftBorder));
-        return presence.containsAll(Arrays.asList(Presence.Top, Presence.Bottom, Presence.Right, Presence.Left));
     }
 }

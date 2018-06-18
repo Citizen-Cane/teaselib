@@ -5,7 +5,6 @@ import java.util.Set;
 import org.bytedeco.javacpp.opencv_core.Mat;
 import org.bytedeco.javacpp.opencv_core.Rect;
 
-import teaselib.core.concurrency.Signal;
 import teaselib.motiondetection.MotionDetector.Presence;
 import teaselib.motiondetection.ViewPoint;
 
@@ -22,8 +21,8 @@ public interface MotionDetectionResult {
 
     Rect getMotionRegion(double seconds);
 
-    public boolean await(Signal signal, double amount, Presence change, double timeSpanSeconds,
-            double timeoutSeconds) throws InterruptedException;
+    // public boolean await(Signal signal, double amount, Presence change, double timeSpanSeconds,
+    // double timeoutSeconds) throws InterruptedException;
 
     Set<Presence> getPresence(Rect motionRegion, Rect presenceRegion);
 }

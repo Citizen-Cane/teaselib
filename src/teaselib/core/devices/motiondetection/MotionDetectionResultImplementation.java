@@ -1,6 +1,6 @@
 package teaselib.core.devices.motiondetection;
 
-import static teaselib.core.javacv.util.Geom.*;
+import static teaselib.core.javacv.util.Geom.intersects;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -18,7 +18,6 @@ import org.bytedeco.javacpp.opencv_core.Size;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import teaselib.core.concurrency.Signal;
 import teaselib.core.javacv.util.Geom;
 import teaselib.core.util.TimeLine;
 import teaselib.motiondetection.MotionDetector.Presence;
@@ -148,26 +147,6 @@ public class MotionDetectionResultImplementation extends MotionDetectionResultDa
     @Override
     public Rect getMotionRegion(double seconds) {
         return Geom.join(motionRegionHistory.getTimeSpan(seconds));
-    }
-
-    @Override
-    public boolean await(Signal signal, double amount, Presence change, double timeSpanSeconds,
-            final double timeoutSeconds) throws InterruptedException {
-        // TODO clamp amount to [0,1] and handle > 0.0, >= 1.0
-        try {
-            return signal.await(timeoutSeconds, () -> getChange(amount, change, timeSpanSeconds));
-        } catch (InterruptedException e) {
-            throw e;
-        } catch (Exception e) {
-            logger.error(e.getMessage(), e);
-        }
-        return false;
-    }
-
-    private Boolean getChange(double amount, Presence change, double timeSpanSeconds) {
-        List<TimeLine.Slice<Set<Presence>>> timeSpanIndicatorHistory = indicatorHistory
-                .getTimeSpanSlices(timeSpanSeconds);
-        return getAmount(timeSpanIndicatorHistory, change) >= amount;
     }
 
     public static double getAmount(List<TimeLine.Slice<Set<Presence>>> slices, Object item) {

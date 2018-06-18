@@ -1,10 +1,7 @@
 package teaselib.core.devices.motiondetection;
 
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.EnumMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -20,8 +17,8 @@ import org.slf4j.LoggerFactory;
 
 import teaselib.core.VideoRenderer;
 import teaselib.core.concurrency.NamedExecutorService;
-import teaselib.core.concurrency.Signal;
 import teaselib.core.devices.DeviceCache;
+import teaselib.core.devices.motiondetection.MotionDetectionResultImplementation.PresenceData;
 import teaselib.core.javacv.Copy;
 import teaselib.core.javacv.HeadGestureTracker;
 import teaselib.core.javacv.Scale;
@@ -30,7 +27,6 @@ import teaselib.core.javacv.Transformation;
 import teaselib.core.javacv.util.Buffer;
 import teaselib.core.javacv.util.FramesPerSecond;
 import teaselib.core.javacv.util.Geom;
-import teaselib.motiondetection.Gesture;
 import teaselib.motiondetection.MotionDetector;
 import teaselib.motiondetection.MotionDetector.MotionSensitivity;
 import teaselib.motiondetection.MotionDetector.Presence;
@@ -43,8 +39,6 @@ class MotionDetectorCaptureThread extends Thread {
     private static final Size DesiredProcessingSize = new Size(640, 480);
     private static final boolean MIRROR = true;
 
-    private static final Map<MotionSensitivity, Integer> motionSensitivities = initStructuringElementSizes();
-
     VideoCaptureDevice videoCaptureDevice;
     private Buffer<Mat> video = new Buffer<>(Mat::new, (int) MotionDetectorJavaCV.DesiredFps);
     private Transformation videoInputTransformation;
@@ -52,11 +46,8 @@ class MotionDetectorCaptureThread extends Thread {
     MotionSensitivity motionSensitivity;
     ViewPoint viewPoint;
 
-    private MotionProcessorJavaCV motionProcessor;
-    public GestureSource gesture = new GestureSource(this::active);
-
-    // TODO Atomic reference
-    MotionDetectionResultImplementation presenceResult;
+    final MotionSource motion = new MotionSource();
+    final GestureSource gesture = new GestureSource(this::active);
 
     private final double desiredFps;
     private double fps;
@@ -65,7 +56,6 @@ class MotionDetectorCaptureThread extends Thread {
 
     volatile double debugWindowTimeSpan = MotionDetector.PresenceRegionDefaultTimespan;
     private final AtomicBoolean active = new AtomicBoolean(false);
-    final Signal presenceChanged = new Signal();
 
     MotionDetectorJavaCVDebugRenderer debugInfo = null;
     VideoRenderer videoRenderer = null;
@@ -86,12 +76,11 @@ class MotionDetectorCaptureThread extends Thread {
         this.desiredFrameTimeMillis = (long) (1000.0 / fps);
 
         Size resolution = videoCaptureDevice.resolution();
-        Size processingSize = getProcessingSize(resolution);
+        processingSize = getProcessingSize(resolution);
         this.videoInputTransformation = getVideoTransformation(resolution, processingSize);
-        motionProcessor = new MotionProcessorJavaCV(resolution, processingSize);
-        presenceResult = new MotionDetectionResultImplementation(processingSize);
-        applySensitivity(motionSensitivity);
-        applyPointOfView(viewPoint);
+        motion.setResulution(processingSize);
+        motion.applySensitivity(resolution, processingSize, motionSensitivity);
+        motion.applyPointOfView(viewPoint);
         debugInfo = new MotionDetectorJavaCVDebugRenderer(processingSize);
     }
 
@@ -117,14 +106,6 @@ class MotionDetectorCaptureThread extends Thread {
         }
     }
 
-    private static EnumMap<MotionSensitivity, Integer> initStructuringElementSizes() {
-        EnumMap<MotionSensitivity, Integer> map = new EnumMap<>(MotionSensitivity.class);
-        map.put(MotionSensitivity.High, 12);
-        map.put(MotionSensitivity.Normal, 24);
-        map.put(MotionSensitivity.Low, 36);
-        return map;
-    }
-
     public void setSensitivity(MotionSensitivity motionSensitivity) {
         if (motionSensitivity == this.motionSensitivity)
             return;
@@ -135,18 +116,13 @@ class MotionDetectorCaptureThread extends Thread {
         }
 
         this.motionSensitivity = motionSensitivity;
-
-        if (motionProcessor != null) {
-            applySensitivity(motionSensitivity);
+        if (isActive) {
+            motion.applySensitivity(videoCaptureDevice.resolution(), processingSize, motionSensitivity);
         }
 
         if (isActive) {
             startCapture();
         }
-    }
-
-    private void applySensitivity(MotionSensitivity motionSensitivity) {
-        motionProcessor.setStructuringElementSize(motionSensitivities.get(motionSensitivity));
     }
 
     public void setPointOfView(ViewPoint viewPoint) {
@@ -159,17 +135,13 @@ class MotionDetectorCaptureThread extends Thread {
         }
 
         this.viewPoint = viewPoint;
-        if (presenceResult != null) {
-            applyPointOfView(viewPoint);
+        if (isActive) {
+            motion.applyPointOfView(viewPoint);
         }
 
         if (isActive) {
             startCapture();
         }
-    }
-
-    private void applyPointOfView(ViewPoint viewPoint) {
-        presenceResult.setViewPoint(viewPoint);
     }
 
     @Override
@@ -195,9 +167,6 @@ class MotionDetectorCaptureThread extends Thread {
                     videoCaptureDevice.close();
                     if (videoRenderer != null) {
                         videoRenderer.close();
-                    }
-                    if (debugInfo != null) {
-                        debugInfo.close();
                     }
                 }
             }
@@ -230,6 +199,8 @@ class MotionDetectorCaptureThread extends Thread {
 
     private Future<?> motionAndPresence = null;
     private Mat motionImageCopy = new Mat();
+
+    private Size processingSize;
 
     private void processVideoCaptureStream() throws InterruptedException, ExecutionException {
         provideFakeMotionAndPresenceData();
@@ -267,16 +238,16 @@ class MotionDetectorCaptureThread extends Thread {
                     if (warmupFrames > 0) {
                         --warmupFrames;
                     } else {
-                        Set<Presence> presence = presenceResult.getPresence();
+                        Set<Presence> presence = motion.presenceResult.getPresence();
                         warmedUp = presence.contains(Presence.NoCameraShake);
                         if (warmedUp) {
                             Set<Presence> history = presence;
-                            presenceResult.clear(history);
+                            motion.presenceResult.clear(history);
                         }
                     }
                 }
                 if (warmedUp) {
-                    updatePresenceResult();
+                    motion.updatePresenceResult();
                     updateGestureResult(image);
                 }
             }
@@ -295,41 +266,25 @@ class MotionDetectorCaptureThread extends Thread {
     }
 
     private void provideFakeMotionAndPresenceData() {
-        presenceResult.presenceData.contourMotionDetected = true;
-        presenceResult.presenceData.trackerMotionDetected = true;
-        presenceResult.presenceData.indicators = Collections.singleton(Presence.Center);
-        presenceResult.presenceData.debugIndicators = Collections.singleton(Presence.Center);
-        presenceResult.presenceData.presenceRegion = defaultHeadRegion();
+        motion.updateResult(defaultHeadRegion());
         gesture.updateResult(false, true, defaultHeadRegion());
-    }
-
-    private void updatePresenceResult() {
-        motionProcessor.updateRenderData();
-        presenceResult.updateRenderData(MotionDetector.PresenceRegionDefaultTimespan, debugWindowTimeSpan);
     }
 
     private void updateGestureResult(Mat video) {
         Rect gestureRegion = Geom.intersect(
-                HeadGestureTracker.enlargePresenceRegionToFaceSize(video, presenceResult.presenceData.presenceRegion),
-                presenceResult.presenceData.presenceIndicators.get(Presence.Present));
-        gesture.updateResult(presenceResult.presenceData.indicators.contains(Presence.CameraShake),
-                presenceResult.motionDetected, gestureRegion != null ? gestureRegion : defaultHeadRegion());
+                HeadGestureTracker.enlargePresenceRegionToFaceSize(video,
+                        motion.presenceResult.presenceData.presenceRegion),
+                motion.presenceResult.presenceData.presenceIndicators.get(Presence.Present));
+        gesture.updateResult(motion.presenceResult.presenceData.indicators.contains(Presence.CameraShake),
+                motion.presenceResult.motionDetected, gestureRegion != null ? gestureRegion : defaultHeadRegion());
     }
 
     private Rect defaultHeadRegion() {
-        return presenceResult.presenceData.presenceIndicators.get(Presence.Center);
+        return motion.defaultRegion();
     }
 
     private void computeMotionAndPresence(Mat video, long timeStamp) {
-        motionProcessor.update(video);
-        motionProcessor.updateTrackerData(video);
-
-        presenceChanged.doLocked(() -> {
-            boolean hasChanged = presenceResult.updateMotionState(video, motionProcessor, timeStamp);
-            if (hasChanged) {
-                presenceChanged.signal();
-            }
-        });
+        motion.update(video, timeStamp);
     }
 
     private void completeComputationAndRender(Mat image, Buffer.Locked<Mat> lock, List<Future<?>> tasks) {
@@ -361,15 +316,15 @@ class MotionDetectorCaptureThread extends Thread {
     }
 
     private Set<Presence> renderOverlays(Mat image) {
-        Set<Presence> indicators = presenceResult.presenceData.debugIndicators;
-        debugInfo.render(image, motionProcessor.motionContours, motionProcessor.motionData, presenceResult.presenceData,
+        PresenceData presenceData = motion.presenceResult.presenceData;
+        Set<Presence> indicators = presenceData.debugIndicators;
+        debugInfo.render(image, motion.motionProcessor.motionContours, motion.motionProcessor.motionData, presenceData,
                 gesture.gestureTracker, gesture.current.get(), fpsStatistics.value());
 
         if (logDetails) {
             logger.info("contourMotionDetected={}  trackerMotionDetected={} (distance={}), {}",
-                    presenceResult.presenceData.contourMotionDetected,
-                    presenceResult.presenceData.trackerMotionDetected, motionProcessor.motionData.distance2,
-                    indicators);
+                    presenceData.contourMotionDetected, presenceData.trackerMotionDetected,
+                    motion.motionProcessor.motionData.distance2, indicators);
         }
 
         return indicators;

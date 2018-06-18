@@ -32,13 +32,10 @@ import teaselib.motiondetection.MotionDetector.Presence;
 public class MotionDetectorJavaCVDebugRenderer {
     static final Logger logger = LoggerFactory.getLogger(MotionDetectorJavaCVDebugRenderer.class);
 
-    private final Size windowSize;
-
     private final boolean renderTrackFeatures;
     private final boolean renderDetails;
 
     public MotionDetectorJavaCVDebugRenderer(Size windowSize) {
-        this.windowSize = windowSize;
         this.renderTrackFeatures = logger.isInfoEnabled();
         this.renderDetails = logger.isDebugEnabled();
     }
@@ -135,9 +132,5 @@ public class MotionDetectorJavaCVDebugRenderer {
                 rectangle(debugOutput, resultData.presenceIndicators.get(key), present ? DarkGreen : DarkBlue, 4, 8, 0);
             }
         }
-    }
-
-    public void close() {
-        windowSize.close();
     }
 }

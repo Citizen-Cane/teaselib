@@ -36,18 +36,9 @@ final class GestureSource extends PerceptionSource<Gesture> {
         boolean changed = current.get() != newGesture;
         current.set(newGesture);
         if (changed) {
+            // Race condition - signalee must pick up current - how bad is it?
             signal.signal();
         }
-    }
-
-    private static Rect defaultRegion(Mat video) {
-        return new Rect(video.cols() / 4, video.rows() / 4, video.cols() / 2, video.rows() / 2);
-    }
-
-    public void updateResult(boolean cameraShake, boolean motionDetected, Rect region) {
-        gestureResult.cameraShake = cameraShake;
-        gestureResult.motionDetected = motionDetected;
-        gestureResult.gestureRegion = region;
     }
 
     @Override
@@ -57,7 +48,19 @@ final class GestureSource extends PerceptionSource<Gesture> {
 
     @Override
     void resetCurrent() {
+        // TODO Remove
+    }
+
+    @Override
+    public Gesture get() {
+        Gesture gesture = super.get();
         current.set(Gesture.None);
-        // TODO integrate into clear()
+        return gesture;
+    }
+
+    public void updateResult(boolean cameraShake, boolean motionDetected, Rect region) {
+        gestureResult.cameraShake = cameraShake;
+        gestureResult.motionDetected = motionDetected;
+        gestureResult.gestureRegion = region;
     }
 }

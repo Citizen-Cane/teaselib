@@ -26,9 +26,6 @@ public class MotionProcessorJavaCV {
     public static final Rect Previous = new Rect(-Integer.MAX_VALUE, -Integer.MAX_VALUE, -Integer.MAX_VALUE,
             -Integer.MAX_VALUE);
 
-    private final int captureWidth;
-    private final int renderWidth;
-
     int structuringElementSize = 0;
     int distanceThreshold2 = 0;
 
@@ -52,9 +49,7 @@ public class MotionProcessorJavaCV {
 
     MotionData motionData = new MotionData();
 
-    MotionProcessorJavaCV(Size captureSize, Size renderSize) {
-        this.captureWidth = captureSize.width();
-        this.renderWidth = renderSize.width();
+    MotionProcessorJavaCV() {
         motion = new BackgroundSubtraction(HISTORY_SIZE, 600.0, 0.2);
     }
 
@@ -63,14 +58,21 @@ public class MotionProcessorJavaCV {
      * 
      * @param nominalSizeAtBaseResolutionWidth
      */
-    public void setStructuringElementSize(int nominalSizeAtBaseResolutionWidth) {
+    public void setStructuringElementSize(int size) {
+        structuringElementSize = size;
+        motion.setStructuringElementSize(structuringElementSize);
+        distanceThreshold2 = structuringElementSize * structuringElementSize;
+    }
+
+    static int sizeOfStructuringElement(Size captureSize, Size renderSize, int nominalSizeAtBaseResolutionWidth) {
+        int captureWidth = captureSize.width();
+        int renderWidth = renderSize.width();
         double baseResolutionWidth = 1920;
         double nominalWidthFactor = captureWidth / baseResolutionWidth;
         double sizeFactor = ((double) renderWidth) / ((double) captureWidth) * nominalWidthFactor;
         // The structuring element size must beat least 2
-        structuringElementSize = Math.max(2, (int) (nominalSizeAtBaseResolutionWidth * sizeFactor));
-        motion.setStructuringElementSize(structuringElementSize);
-        distanceThreshold2 = structuringElementSize * structuringElementSize;
+        int finalSize = Math.max(2, (int) (nominalSizeAtBaseResolutionWidth * sizeFactor));
+        return finalSize;
     }
 
     public void update(Mat videoImage) {

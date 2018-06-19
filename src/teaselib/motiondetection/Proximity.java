@@ -7,5 +7,7 @@ package teaselib.motiondetection;
 public enum Proximity {
     Unknown,
     Close,
-    Far
+    Far,
+    FarOrAway,
+    Away
 }

@@ -157,13 +157,15 @@ public class MotionDetectorJavaCV extends MotionDetector /* extends WiredDevice 
     }
 
     public boolean await(Proximity expected, double timeoutSeconds) {
-        if (!active()) {
-            throw new IllegalStateException(getClass().getName() + " not active");
-        }
+        checkActive();
 
         if (expected == Proximity.Close) {
             return captureThread.motion.await(this::arriveClose, timeoutSeconds);
         } else if (expected == Proximity.Far) {
+            return captureThread.motion.await(this::arriveFar, timeoutSeconds);
+        } else if (expected == Proximity.FarOrAway) {
+            return captureThread.motion.await(this::arriveFar, timeoutSeconds);
+        } else if (expected == Proximity.Away) {
             return captureThread.motion.await(this::arriveFar, timeoutSeconds);
         } else {
             awaitTimeout(timeoutSeconds);
@@ -172,36 +174,57 @@ public class MotionDetectorJavaCV extends MotionDetector /* extends WiredDevice 
     }
 
     boolean arriveClose(MotionDetectionResult result) {
-        double seconds = 1.0;
-        Set<Presence> presence = result.getPresence(result.getMotionRegion(seconds), result.getPresenceRegion(seconds));
+        double timeSpanSeconds = 1.0;
+        Set<Presence> presence = result.getPresence(result.getMotionRegion(timeSpanSeconds),
+                result.getPresenceRegion(timeSpanSeconds));
         return presence.containsAll(Arrays.asList(Presence.Top, Presence.Bottom, Presence.Right, Presence.Left));
     }
 
     boolean arriveFar(MotionDetectionResult result) {
-        double seconds = 1.0;
-        Set<Presence> presence = result.getPresence(result.getMotionRegion(seconds), result.getPresenceRegion(seconds));
-        // TODO Tailored for doggy play and viewpoint == LowAngle - generalize
-        return !presence.contains(Presence.CameraShake) && !presence.contains(Presence.NoMotion)
-                && !presence.contains(Presence.TopBorder) && !presence.contains(Presence.BottomBorder);
-        // TODO if motion happens the motion region should be rather small in a few sectors
-        // - not 100% but the best we can do, should work for doggy fetch
-    }
-
-    public Pose awaitPose(Pose expected, double timeoutSeconds) {
-        if (!active()) {
-            throw new IllegalStateException(getClass().getName() + " not active");
+        double timeSpanSeconds = 1.0;
+        Set<Presence> presence = result.getPresence(result.getMotionRegion(timeSpanSeconds),
+                result.getPresenceRegion(timeSpanSeconds));
+        if (presence.contains(Presence.CameraShake) || presence.contains(Presence.NoMotion)) {
+            return false;
         }
 
+        return result.getPresenceRegion(timeSpanSeconds)
+                .width() < captureThread.motion.presenceResult.presenceIndicators.get(Presence.Center).width();
+    }
+
+    boolean arriveFarOrAway(MotionDetectionResult result) {
+        double timeSpanSeconds = 1.0;
+        Set<Presence> presence = result.getPresence(result.getMotionRegion(timeSpanSeconds),
+                result.getPresenceRegion(timeSpanSeconds));
+
+        if (presence.contains(Presence.Away)) {
+            return true;
+        }
+
+        if (presence.contains(Presence.CameraShake) || presence.contains(Presence.NoMotion)) {
+            return false;
+        }
+
+        return result.getPresenceRegion(timeSpanSeconds)
+                .width() < captureThread.motion.presenceResult.presenceIndicators.get(Presence.Center).width();
+    }
+
+    boolean arriveAway(MotionDetectionResult result) {
+        double timeSpanSeconds = 1.0;
+        Set<Presence> presence = result.getPresence(result.getMotionRegion(timeSpanSeconds),
+                result.getPresenceRegion(timeSpanSeconds));
+        return presence.contains(Presence.Away);
+    }
+
+    public Pose await(Pose expected, double timeoutSeconds) {
+        checkActive();
         // TODO
         return Pose.Unknown;
     }
 
     @Override
     public Gesture await(List<Gesture> expected, double timeoutSeconds) {
-        if (!active()) {
-            throw new IllegalStateException(getClass().getName() + " not active");
-        }
-
+        checkActive();
         captureThread.gesture.await(expected, timeoutSeconds);
         return captureThread.gesture.get();
     }
@@ -212,6 +235,12 @@ public class MotionDetectorJavaCV extends MotionDetector /* extends WiredDevice 
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new ScriptInterruptedException(e);
+        }
+    }
+
+    private void checkActive() {
+        if (!active()) {
+            throw new IllegalStateException(getClass().getName() + " not active");
         }
     }
 

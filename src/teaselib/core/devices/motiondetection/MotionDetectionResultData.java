@@ -51,7 +51,7 @@ abstract class MotionDetectionResultData implements MotionDetectionResult {
     protected MotionDetectionResultData(Size size) {
         presenceIndicators = buildPresenceIndicatorMap(size);
         negatedRegions = buildNegatedRegions();
-        clear(Presence.CameraShake);
+        restart(Presence.CameraShake);
     }
 
     protected Map<Presence, Rect> buildPresenceIndicatorMap(Size s) {
@@ -99,15 +99,15 @@ abstract class MotionDetectionResultData implements MotionDetectionResult {
         return Collections.unmodifiableMap(negatedRegions);
     }
 
-    protected void clear() {
-        clear(Presence.CameraShake);
+    protected void restart() {
+        restart(Presence.CameraShake);
     }
 
-    protected void clear(Presence startupPresence) {
-        clear(Collections.singleton(startupPresence));
+    protected void restart(Presence startupPresence) {
+        restart(Collections.singleton(startupPresence));
     }
 
-    protected void clear(Set<Presence> startupPresence) {
+    protected void restart(Set<Presence> startupPresence) {
         motionRegionHistory.clear();
         presenceRegionHistory.clear();
         motionAreaHistory.clear();

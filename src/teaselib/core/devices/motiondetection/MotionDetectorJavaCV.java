@@ -1,7 +1,6 @@
 package teaselib.core.devices.motiondetection;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
@@ -156,90 +155,45 @@ public class MotionDetectorJavaCV extends MotionDetector /* extends WiredDevice 
         }
     }
 
+    @Override
     public boolean await(Proximity expected, double timeoutSeconds) {
-        checkActive();
-
-        if (expected == Proximity.Close) {
-            return captureThread.motion.await(this::arriveClose, timeoutSeconds);
-        } else if (expected == Proximity.Far) {
-            return captureThread.motion.await(this::arriveFar, timeoutSeconds);
-        } else if (expected == Proximity.FarOrAway) {
-            return captureThread.motion.await(this::arriveFar, timeoutSeconds);
-        } else if (expected == Proximity.Away) {
-            return captureThread.motion.await(this::arriveFar, timeoutSeconds);
-        } else {
+        if (!active()) {
             awaitTimeout(timeoutSeconds);
             return false;
         }
-    }
 
-    boolean arriveClose(MotionDetectionResult result) {
-        double timeSpanSeconds = 1.0;
-        Set<Presence> presence = result.getPresence(result.getMotionRegion(timeSpanSeconds),
-                result.getPresenceRegion(timeSpanSeconds));
-        return presence.containsAll(Arrays.asList(Presence.Top, Presence.Bottom, Presence.Right, Presence.Left));
-    }
-
-    boolean arriveFar(MotionDetectionResult result) {
-        double timeSpanSeconds = 1.0;
-        Set<Presence> presence = result.getPresence(result.getMotionRegion(timeSpanSeconds),
-                result.getPresenceRegion(timeSpanSeconds));
-        if (presence.contains(Presence.CameraShake) || presence.contains(Presence.NoMotion)) {
-            return false;
-        }
-
-        return result.getPresenceRegion(timeSpanSeconds)
-                .width() < captureThread.motion.presenceResult.presenceIndicators.get(Presence.Center).width();
-    }
-
-    boolean arriveFarOrAway(MotionDetectionResult result) {
-        double timeSpanSeconds = 1.0;
-        Set<Presence> presence = result.getPresence(result.getMotionRegion(timeSpanSeconds),
-                result.getPresenceRegion(timeSpanSeconds));
-
-        if (presence.contains(Presence.Away)) {
-            return true;
-        }
-
-        if (presence.contains(Presence.CameraShake) || presence.contains(Presence.NoMotion)) {
-            return false;
-        }
-
-        return result.getPresenceRegion(timeSpanSeconds)
-                .width() < captureThread.motion.presenceResult.presenceIndicators.get(Presence.Center).width();
-    }
-
-    boolean arriveAway(MotionDetectionResult result) {
-        double timeSpanSeconds = 1.0;
-        Set<Presence> presence = result.getPresence(result.getMotionRegion(timeSpanSeconds),
-                result.getPresenceRegion(timeSpanSeconds));
-        return presence.contains(Presence.Away);
+        return captureThread.proximity.await(expected, timeoutSeconds);
     }
 
     public Pose await(Pose expected, double timeoutSeconds) {
-        checkActive();
+        if (!active()) {
+            awaitTimeout(timeoutSeconds);
+            return Pose.Unknown;
+        }
         // TODO
         return Pose.Unknown;
     }
 
     @Override
     public Gesture await(List<Gesture> expected, double timeoutSeconds) {
-        checkActive();
+        if (!active()) {
+            awaitTimeout(timeoutSeconds);
+            return Gesture.None;
+        }
+
         captureThread.gesture.await(expected, timeoutSeconds);
         return captureThread.gesture.get();
     }
 
-    private static void awaitTimeout(double timeoutSeconds) {
-        try {
-            Thread.sleep((long) (timeoutSeconds * 1000));
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new ScriptInterruptedException(e);
-        }
-    }
-
-    private void checkActive() {
-        if (!active()) {
+    private void awaitTimeout(double timeoutSeconds) {
+        if (timeoutSeconds < Double.MAX_VALUE) {
+            try {
+                Thread.sleep((long) (timeoutSeconds * 1000));
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new ScriptInterruptedException(e);
+            }
+        } else {
             throw new IllegalStateException(getClass().getName() + " not active");
         }
     }

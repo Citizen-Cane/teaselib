@@ -1,7 +1,5 @@
 package teaselib.core.devices.motiondetection;
 
-import java.util.function.BooleanSupplier;
-
 import org.bytedeco.javacpp.opencv_core.Mat;
 import org.bytedeco.javacpp.opencv_core.Rect;
 
@@ -12,12 +10,6 @@ import teaselib.motiondetection.Gesture;
 final class GestureSource extends PerceptionSource<Gesture> {
     final HeadGestureTracker gestureTracker = new HeadGestureTracker(Color.Cyan);
     final HeadGestureTracker.Parameters gestureResult = new HeadGestureTracker.Parameters();
-    final BooleanSupplier activeState;
-
-    public GestureSource(BooleanSupplier activeState) {
-        super();
-        this.activeState = activeState;
-    }
 
     @Override
     public void update(Mat video, long timeStamp) {

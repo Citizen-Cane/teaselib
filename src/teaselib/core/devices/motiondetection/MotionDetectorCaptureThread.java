@@ -47,7 +47,8 @@ class MotionDetectorCaptureThread extends Thread {
     ViewPoint viewPoint;
 
     final MotionSource motion = new MotionSource();
-    final GestureSource gesture = new GestureSource(this::active);
+    final GestureSource gesture = new GestureSource();
+    final ProximitySource proximity = new ProximitySource(motion);
 
     private final double desiredFps;
     private double fps;
@@ -199,7 +200,6 @@ class MotionDetectorCaptureThread extends Thread {
 
     private Future<?> motionAndPresence = null;
     private Mat motionImageCopy = new Mat();
-
     private Size processingSize;
 
     private void processVideoCaptureStream() throws InterruptedException, ExecutionException {
@@ -241,8 +241,7 @@ class MotionDetectorCaptureThread extends Thread {
                         Set<Presence> presence = motion.presenceResult.getPresence();
                         warmedUp = presence.contains(Presence.NoCameraShake);
                         if (warmedUp) {
-                            Set<Presence> history = presence;
-                            motion.presenceResult.clear(history);
+                            motion.presenceResult.restart(presence);
                         }
                     }
                 }

@@ -9,7 +9,6 @@ import teaselib.core.Configuration;
 import teaselib.core.VideoRenderer.Type;
 import teaselib.core.devices.DeviceCache;
 import teaselib.core.devices.Devices;
-import teaselib.core.devices.motiondetection.MotionDetectorJavaCV;
 import teaselib.core.javacv.VideoRendererJavaCV;
 import teaselib.motiondetection.MotionDetector.MotionSensitivity;
 import teaselib.test.DebugSetup;
@@ -60,20 +59,19 @@ public class TestArriveClose {
     private void arriveCloseAndStepBack(MotionDetector motionDetector, Movement movement) {
         motionDetector.setSensitivity(AssumeSensitivity);
         // double amount = 0.95;
-        MotionDetectorJavaCV mdJV = (MotionDetectorJavaCV) motionDetector;
 
         System.out.println("Wait for motion detector to warm up!");
-        mdJV.await(Proximity.Far, 10.0);
+        motionDetector.await(Proximity.Far, 10.0);
 
         System.out.println("Come close!");
         // while (!mdJV.await(amount, Presence.CameraShake, 0.2, 5.0)) {
-        while (!mdJV.await(Proximity.Close, 5.0)) {
+        while (!motionDetector.await(Proximity.Close, 5.0)) {
             System.out.println("I said 'Come close'!");
         }
 
         System.out.println("Very good. Now step back!");
         // while (!mdJV.await(amount, Presence.NoTopBorder, 3.0, 5.0)) {
-        while (!mdJV.await(Proximity.Far, 5.0)) {
+        while (!motionDetector.await(Proximity.Far, 5.0)) {
             System.out.println("I said 'Step back'!");
         }
 

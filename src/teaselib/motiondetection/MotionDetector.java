@@ -150,13 +150,15 @@ public abstract class MotionDetector implements Device.Creatable {
 
     public abstract Set<Feature> getFeatures();
 
-    public abstract boolean await(double amount, Presence change, double timeSpanSeconds, double timeoutSeconds);
-
     public abstract void stop();
 
     public abstract void start();
 
+    public abstract boolean await(double amount, Presence change, double timeSpanSeconds, double timeoutSeconds);
+
     public abstract Gesture await(List<Gesture> gestures, double timeoutSeconds);
+
+    public abstract boolean await(Proximity proximity, double timeoutSeconds);
 
     public void run(Runnable runnable) {
         call(() -> {

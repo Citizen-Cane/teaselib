@@ -49,6 +49,7 @@ class MotionDetectorCaptureThread extends Thread {
     final MotionSource motion = new MotionSource();
     final GestureSource gesture = new GestureSource();
     final ProximitySource proximity = new ProximitySource(motion);
+    final PoseSource pose = new PoseSource(motion);
 
     private final double desiredFps;
     private double fps;

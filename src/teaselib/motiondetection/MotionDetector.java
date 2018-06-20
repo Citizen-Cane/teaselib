@@ -160,6 +160,8 @@ public abstract class MotionDetector implements Device.Creatable {
 
     public abstract boolean await(Proximity proximity, double timeoutSeconds);
 
+    public abstract boolean await(Pose pose, double timeoutSeconds);
+
     public void run(Runnable runnable) {
         call(() -> {
             runnable.run();

@@ -9,6 +9,10 @@ import teaselib.core.devices.motiondetection.MotionSource.MotionFunction;
 import teaselib.motiondetection.MotionDetector.Presence;
 import teaselib.motiondetection.Proximity;
 
+/**
+ * @author Citizen-Cane
+ *
+ */
 public class ProximitySource extends PerceptionSource<Proximity> {
     final MotionSource motion;
 
@@ -42,8 +46,8 @@ public class ProximitySource extends PerceptionSource<Proximity> {
         }
     }
 
-    private boolean await(MotionFunction expected2, double timeoutSeconds) {
-        return motion.await(expected2, timeoutSeconds);
+    private boolean await(MotionFunction expected, double timeoutSeconds) {
+        return motion.await(expected, timeoutSeconds);
     }
 
     boolean arriveClose(MotionDetectionResult result) {
@@ -101,5 +105,4 @@ public class ProximitySource extends PerceptionSource<Proximity> {
     public Proximity get() {
         return current.getAndSet(Proximity.Unknown);
     }
-
 }

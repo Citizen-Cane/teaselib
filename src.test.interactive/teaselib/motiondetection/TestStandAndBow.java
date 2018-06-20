@@ -15,7 +15,7 @@ import teaselib.core.javacv.VideoRendererJavaCV;
 import teaselib.motiondetection.MotionDetector.MotionSensitivity;
 import teaselib.test.DebugSetup;
 
-public class TestArriveClose {
+public class TestStandAndBow {
     static final Logger logger = LoggerFactory.getLogger(TestArriveClose.class);
 
     MotionSensitivity AssumeSensitivity = MotionSensitivity.Low;
@@ -42,11 +42,43 @@ public class TestArriveClose {
         Movement movement = MotionDetector.movement(motionDetector);
 
         while (true) {
-            arriveCloseAndStepBack(motionDetector, movement);
+            motionDetector.setSensitivity(AssumeSensitivity);
+            logger.info("Wait for motion detector to warm up!");
+            motionDetector.await(Proximity.Far, 10.0);
+
+            logger.info("Stand!");
+            while (!motionDetector.await(Pose.Stand, 15.0)) {
+                logger.info("I said 'Stand'!");
+            }
+
+            logger.info("Very good. Now kneel!");
+            while (!motionDetector.await(Pose.Kneel, 15.0)) {
+                System.out.println("I said 'Kneel'!");
+            }
+
+            logger.info("Very good. Now Bow and kiss the floor I'm standing on!");
+            while (!motionDetector.await(Pose.Kneel, 15.0)) {
+                logger.info("I said 'Kneel'!");
+            }
+
+            System.out.println("Stay with your nose on the floor!");
+            while (!movement.stoppedWithin(1.0, 5.0)) {
+                logger.info("I said 'Stay on the floor'!");
+            }
+
+            System.out.println("Very good. You may kneel up.");
+            while (!motionDetector.await(Pose.Kneel, 15.0)) {
+                logger.info("I said 'Kneel up'!");
+            }
+
+            System.out.println("Stand up!");
+            while (!motionDetector.await(Pose.Stand, 15.0)) {
+                logger.info("I said 'Stand up'!");
+            }
 
             logger.info("Did it work!");
             motionDetector.setSensitivity(GestureSensitivity);
-            Gesture gesture = Gesture.None;
+            Gesture gesture;
             while (Gesture.None == (gesture = motionDetector.await(Arrays.asList(Gesture.Nod), 5.0))) {
                 logger.info("I said 'Did it work?'!");
             }
@@ -57,31 +89,6 @@ public class TestArriveClose {
             }
         }
 
-        System.out.println("Very good, you're very obedient!");
-    }
-
-    private void arriveCloseAndStepBack(MotionDetector motionDetector, Movement movement) {
-        motionDetector.setSensitivity(AssumeSensitivity);
-        // double amount = 0.95;
-
-        logger.info("Wait for motion detector to warm up!");
-        motionDetector.await(Proximity.Far, 10.0);
-
-        logger.info("Come close!");
-        // while (!mdJV.await(amount, Presence.CameraShake, 0.2, 5.0)) {
-        while (!motionDetector.await(Proximity.Close, 5.0)) {
-            logger.info("I said 'Come close'!");
-        }
-
-        System.out.println("Very good. Now step back!");
-        // while (!mdJV.await(amount, Presence.NoTopBorder, 3.0, 5.0)) {
-        while (!motionDetector.await(Proximity.Far, 5.0)) {
-            logger.info("I said 'Step back'!");
-        }
-
-        logger.info("Stand still!");
-        while (!movement.stoppedWithin(1.0, 5.0)) {
-            logger.info("I said 'Stand still'!");
-        }
+        logger.info("Very good, you're very obedient!");
     }
 }

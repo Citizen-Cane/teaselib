@@ -5,5 +5,8 @@ package teaselib.motiondetection;
  *
  */
 public enum Pose {
-    Unknown
+    Unknown,
+    Bow,
+    Kneel,
+    Stand
 }

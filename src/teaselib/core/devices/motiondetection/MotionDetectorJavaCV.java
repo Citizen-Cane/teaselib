@@ -143,8 +143,7 @@ public class MotionDetectorJavaCV extends MotionDetector /* extends WiredDevice 
     @Override
     public boolean await(double amount, Presence change, double timeSpanSeconds, double timeoutSeconds) {
         if (!active()) {
-            awaitTimeout(timeoutSeconds);
-            return false;
+            return handleInactive(timeoutSeconds);
         }
 
         captureThread.debugWindowTimeSpan = timeSpanSeconds;
@@ -156,28 +155,9 @@ public class MotionDetectorJavaCV extends MotionDetector /* extends WiredDevice 
     }
 
     @Override
-    public boolean await(Proximity expected, double timeoutSeconds) {
-        if (!active()) {
-            awaitTimeout(timeoutSeconds);
-            return false;
-        }
-
-        return captureThread.proximity.await(expected, timeoutSeconds);
-    }
-
-    public Pose await(Pose expected, double timeoutSeconds) {
-        if (!active()) {
-            awaitTimeout(timeoutSeconds);
-            return Pose.Unknown;
-        }
-        // TODO
-        return Pose.Unknown;
-    }
-
-    @Override
     public Gesture await(List<Gesture> expected, double timeoutSeconds) {
         if (!active()) {
-            awaitTimeout(timeoutSeconds);
+            handleInactive(timeoutSeconds);
             return Gesture.None;
         }
 
@@ -185,14 +165,36 @@ public class MotionDetectorJavaCV extends MotionDetector /* extends WiredDevice 
         return captureThread.gesture.get();
     }
 
-    private void awaitTimeout(double timeoutSeconds) {
-        if (timeoutSeconds < Double.MAX_VALUE) {
+    @Override
+    public boolean await(Proximity expected, double timeoutSeconds) {
+        if (!active()) {
+            return handleInactive(timeoutSeconds);
+        }
+
+        return captureThread.proximity.await(expected, timeoutSeconds);
+    }
+
+    public boolean await(Pose expected, double timeoutSeconds) {
+        if (!active()) {
+            return handleInactive(timeoutSeconds);
+        }
+
+        return captureThread.pose.await(expected, timeoutSeconds);
+    }
+
+    private boolean handleInactive(double timeoutSeconds) {
+        if (timeoutSeconds <= 0.0) {
+            return false;
+        } else if (timeoutSeconds < Double.MAX_VALUE) {
+            double reducedTimeoutSeconds = timeoutSeconds * 0.5;
+            boolean fakedResult = true;
             try {
-                Thread.sleep((long) (timeoutSeconds * 1000));
+                Thread.sleep((long) (reducedTimeoutSeconds * 1000));
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 throw new ScriptInterruptedException(e);
             }
+            return fakedResult;
         } else {
             throw new IllegalStateException(getClass().getName() + " not active");
         }

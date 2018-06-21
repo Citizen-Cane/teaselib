@@ -8,6 +8,10 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.UnaryOperator;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -66,6 +70,10 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
     private int currentMessage;
     private AbstractMessage lastSection;
 
+    private final Lock messageRenderingInProgressLock = new ReentrantLock();
+    private AtomicReference<UnaryOperator<List<RenderedMessage>>> messageModifier = new AtomicReference<>(
+            identiyOperator());
+
     private String displayImage = null;
     private MediaRenderer.Threaded currentRenderer = null;
     private RenderSound backgroundSoundRenderer = null;
@@ -90,26 +98,63 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
         prefetchImages(this.messages);
     }
 
-    public void append(RenderedMessage message) {
-        synchronized (messages) {
-            prepareReplayFromCurrent(message);
-        }
+    private static UnaryOperator<List<RenderedMessage>> identiyOperator() {
+        return (List<RenderedMessage> m) -> {
+            return m;
+        };
     }
 
-    public void replace(RenderedMessage message) {
-        synchronized (messages) {
-            messages.remove(messages.size() - 1);
+    public boolean append(RenderedMessage message) {
+        applyMessageModification(message, appendMessage(message));
+        return modificationAppliedToCurrentRenderThread();
+    }
+
+    public boolean replace(RenderedMessage message) {
+        applyMessageModification(message, replaceLastMessage(message));
+        return modificationAppliedToCurrentRenderThread();
+    }
+
+    private boolean modificationAppliedToCurrentRenderThread() {
+        return messageModifier.get() == null;
+    }
+
+    private UnaryOperator<List<RenderedMessage>> appendMessage(RenderedMessage message) {
+        return (List<RenderedMessage> currentMessages) -> {
+            addAndUpdateLastSection(currentMessages, message);
+            return currentMessages;
+        };
+    }
+
+    private UnaryOperator<List<RenderedMessage>> replaceLastMessage(RenderedMessage message) {
+        return (List<RenderedMessage> currentMessages) -> {
+            currentMessages.remove(currentMessages.size() - 1);
             currentMessage--;
             accumulatedText = new MessageTextAccumulator();
-            messages.forEach(m -> m.forEach(accumulatedText::add));
-            prepareReplayFromCurrent(message);
-        }
+            currentMessages.forEach(m -> m.forEach(accumulatedText::add));
+            addAndUpdateLastSection(currentMessages, message);
+            return currentMessages;
+        };
     }
 
-    private void prepareReplayFromCurrent(RenderedMessage message) {
-        messages.add(message);
+    private void addAndUpdateLastSection(List<RenderedMessage> currentMessages, RenderedMessage message) {
+        currentMessages.add(message);
         lastSection = RenderedMessage.getLastSection(message);
+    }
+
+    private void applyMessageModification(RenderedMessage message, UnaryOperator<List<RenderedMessage>> unaryOperator) {
         prefetchImages(message);
+        if (messageModifier.getAndSet(unaryOperator) != null) {
+            throw new IllegalStateException(message.toString());
+        } else {
+            try {
+                messageRenderingInProgressLock.lockInterruptibly();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new ScriptInterruptedException(e);
+            } finally {
+                messageRenderingInProgressLock.unlock();
+            }
+        }
     }
 
     private RenderedMessage getLastMessage() {
@@ -136,28 +181,45 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
 
     @Override
     public void renderMedia() throws IOException, InterruptedException {
-        if (messages.isEmpty()) {
-            throw new IllegalStateException();
-        }
-
         try {
-            if (messages.get(0).isEmpty()) {
-                show(null, actor, Mood.Neutral);
-                finalizeRendering();
-            } else {
-                replay();
+            while (applyAnyPendingMessageModifications()) {
+                if (messages.isEmpty()) {
+                    throw new IllegalStateException();
+                }
+                messageRenderingInProgressLock.lockInterruptibly();
+                try {
+                    boolean emptyMessage = messages.get(0).isEmpty();
+                    if (emptyMessage) {
+                        show(null, actor, Mood.Neutral);
+                    } else {
+                        replay();
+                    }
+                } finally {
+                    messageRenderingInProgressLock.unlock();
+                }
             }
         } catch (InterruptedException | ScriptInterruptedException e) {
-            if (currentRenderer != null) {
+            if (currentRenderer != null)
                 renderQueue.interrupt(currentRenderer);
-            }
-
-            if (backgroundSoundRenderer != null) {
+            if (backgroundSoundRenderer != null)
                 renderQueue.interrupt(backgroundSoundRenderer);
-            }
-
             throw e;
+        } finally {
+            finalizeRendering();
         }
+    }
+
+    private boolean applyAnyPendingMessageModifications() {
+        UnaryOperator<List<RenderedMessage>> operator = messageModifier.getAndSet(null);
+        boolean applied = operator != null;
+        if (applied) {
+            apply(operator, messages);
+        }
+        return applied;
+    }
+
+    private static void apply(UnaryOperator<List<RenderedMessage>> operator, List<RenderedMessage> messages) {
+        operator.apply(messages);
     }
 
     private void replay() throws IOException, InterruptedException {
@@ -167,17 +229,14 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
             renderMessages();
         } else if (replayPosition == Position.FromCurrentPosition) {
             Replayable replay;
-            synchronized (messages) {
-                if (currentMessage < messages.size()) {
-                    completedMandatory = new CountDownLatch(1);
-                    completedAll = new CountDownLatch(1);
-                    replay = this::renderMessages;
-                } else {
-                    replay = () -> {
-                        renderMessage(getEnd());
-                        finalizeRendering();
-                    };
-                }
+            if (currentMessage < messages.size()) {
+                completedMandatory = new CountDownLatch(1);
+                completedAll = new CountDownLatch(1);
+                replay = this::renderMessages;
+            } else {
+                replay = () -> {
+                    renderMessage(getEnd());
+                };
             }
             replay.run();
         } else if (replayPosition == Position.FromMandatory) {
@@ -185,10 +244,8 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
             // is displayed, rendered, but the text not added again
             // TODO Remove all but last speech and delay parts
             renderMessage(getMandatory());
-            finalizeRendering();
         } else if (replayPosition == Position.End) {
             renderMessage(getEnd());
-            finalizeRendering();
         } else {
             throw new IllegalStateException(replayPosition.toString());
         }
@@ -209,22 +266,17 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
     private void renderMessages() throws IOException, InterruptedException {
         while (true) {
             RenderedMessage message;
-            synchronized (messages) {
-                if (currentMessage >= messages.size()) {
-                    finalizeRendering();
-                    break;
-                }
-                message = messages.get(currentMessage);
+            if (currentMessage >= messages.size()) {
+                break;
             }
+            message = messages.get(currentMessage);
             renderMessage(message);
             currentMessage++;
 
-            synchronized (messages) {
-                boolean last = currentMessage == messages.size();
-                if (!last && textToSpeechPlayer != null && !lastSectionHasDelay(message)) {
-                    renderTimeSpannedPart(new RenderDelay(
-                            Double.parseDouble(ScriptMessageDecorator.DelayBetweenParagraphs.value), teaseLib));
-                }
+            boolean last = currentMessage == messages.size();
+            if (!last && textToSpeechPlayer != null && !lastSectionHasDelay(message)) {
+                renderTimeSpannedPart(new RenderDelay(
+                        Double.parseDouble(ScriptMessageDecorator.DelayBetweenParagraphs.value), teaseLib));
             }
         }
     }
@@ -234,7 +286,6 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
     }
 
     protected void finalizeRendering() {
-        completeSectionMandatory();
         mandatoryCompleted();
         completeSectionAll();
 

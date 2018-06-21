@@ -249,9 +249,9 @@ public abstract class Script {
         if (renderMessage == null) {
             renderMessage(message, true);
         } else {
-            completeMandatory();
-            renderMessage.append(rendered(message));
-            replay();
+            if (!renderMessage.append(rendered(message))) {
+                replay();
+            }
         }
     }
 
@@ -259,9 +259,9 @@ public abstract class Script {
         if (renderMessage == null) {
             renderMessage(message, true);
         } else {
-            completeMandatory();
-            renderMessage.replace(rendered(message));
-            replay();
+            if (!renderMessage.replace(rendered(message))) {
+                replay();
+            }
         }
     }
 

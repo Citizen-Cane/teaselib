@@ -276,7 +276,7 @@ public abstract class Script {
             renderMessage.replay(Position.FromCurrentPosition);
             renderQueue.submit(renderMessage);
         } else {
-            throw new IllegalStateException("Can only append or replace if mandatory completed");
+            throw new IllegalStateException("Can only replay afer completing mandatory " + renderMessage);
         }
     }
 

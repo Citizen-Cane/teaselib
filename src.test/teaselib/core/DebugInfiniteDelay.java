@@ -11,7 +11,6 @@ class DebugInfiniteDelay extends MediaRendererThread {
     protected void renderMedia() throws InterruptedException {
         startCompleted();
         mandatoryCompleted();
-        allCompleted();
 
         synchronized (this) {
             while (!Thread.currentThread().isInterrupted()) {

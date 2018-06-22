@@ -24,17 +24,14 @@ public abstract class RenderSpeech extends MediaRendererThread {
         SpeechRecognition.completeSpeechRecognitionInProgress();
         Runnable resumeSpeechRecognition = teaseLib.globals.get(SpeechRecognizer.class).pauseRecognition();
         startCompleted();
+
         try {
-            try {
-                renderSpeech();
-            } catch (IOException e) {
-                handleIOException(e);
-            } finally {
-                mandatoryCompleted();
-                resumeSpeechRecognition.run();
-            }
+            renderSpeech();
+        } catch (IOException e) {
+            handleIOException(e);
         } finally {
-            allCompleted();
+            mandatoryCompleted();
+            resumeSpeechRecognition.run();
         }
 
         logger.info("{} completed", this);

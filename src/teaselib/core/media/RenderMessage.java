@@ -7,7 +7,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.UnaryOperator;
@@ -70,9 +72,8 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
     private AbstractMessage lastSection;
 
     private final Lock messageRenderingInProgressLock = new ReentrantLock();
-    private static UnaryOperator<List<RenderedMessage>> StartupEnabler = (List<RenderedMessage> m) -> m;
-    private final AtomicReference<UnaryOperator<List<RenderedMessage>>> messageModifier = new AtomicReference<>(
-            StartupEnabler);
+    private final Condition messageRenderingModifierTaken = messageRenderingInProgressLock.newCondition();
+    private final AtomicReference<UnaryOperator<List<RenderedMessage>>> messageModifier = new AtomicReference<>(null);
 
     private String displayImage = null;
     private MediaRenderer.Threaded currentRenderer = null;
@@ -99,18 +100,11 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
     }
 
     public boolean append(RenderedMessage message) {
-        applyMessageModification(message, appendMessage(message));
-        return modificationApplied();
+        return applyMessageModifier(message, appendMessage(message));
     }
 
     public boolean replace(RenderedMessage message) {
-        applyMessageModification(message, replaceLastMessage(message));
-        return modificationApplied();
-    }
-
-    private boolean modificationApplied() {
-        // TODO Doesn't guarantee that the renderer has finished
-        return messageModifier.get() == null;
+        return applyMessageModifier(message, replaceLastMessage(message));
     }
 
     private UnaryOperator<List<RenderedMessage>> appendMessage(RenderedMessage message) {
@@ -140,26 +134,37 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
         lastSection = RenderedMessage.getLastSection(message);
     }
 
-    private void applyMessageModification(RenderedMessage message, UnaryOperator<List<RenderedMessage>> unaryOperator) {
-        // TODO race condition with renderMedia() & modificationApplied()
+    private boolean applyMessageModifier(RenderedMessage message, UnaryOperator<List<RenderedMessage>> unaryOperator) {
         UnaryOperator<List<RenderedMessage>> alreadyScheduledOperator = messageModifier.getAndSet(unaryOperator);
-        if (alreadyScheduledOperator == StartupEnabler) {
-            logger.warn("Overwriting startup enabler");
-        } else if (alreadyScheduledOperator != null) {
+        if (alreadyScheduledOperator != null) {
+            // TODO code still reached -> resolve deadlock
             throw new IllegalStateException(message.toString());
         } else {
             try {
                 messageRenderingInProgressLock.lockInterruptibly();
                 try {
                     prefetchImages(message);
+                    awaitModifierAppliedByRenderThreadOrCompletedMandatory();
                 } finally {
                     messageRenderingInProgressLock.unlock();
                 }
+                return modifierApplied();
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 throw new ScriptInterruptedException(e);
             }
         }
+    }
+
+    private void awaitModifierAppliedByRenderThreadOrCompletedMandatory() throws InterruptedException {
+        while (!(hasCompletedMandatory()) && messageModifier.get() != null) {
+            if (messageRenderingModifierTaken.await(100, TimeUnit.MILLISECONDS))
+                break;
+        }
+    }
+
+    private boolean modifierApplied() {
+        return messageModifier.get() == null;
     }
 
     private RenderedMessage getLastMessage() {
@@ -185,34 +190,29 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
     }
 
     @Override
-    public void replay(Position replayPosition) {
-        if (messageModifier.get() == null) {
+    public void renderMedia() throws IOException, InterruptedException {
+        applyPendingMessageModification();
+        if (messages.isEmpty()) {
             throw new IllegalStateException();
         }
-        super.replay(replayPosition);
-    }
 
-    @Override
-    public void renderMedia() throws IOException, InterruptedException {
         try {
-            if (messageModifier.get() == null) {
-                throw new IllegalStateException();
-            }
-
-            while (applyPendingMessageModification()) {
-                if (messages.isEmpty()) {
-                    throw new IllegalStateException();
-                }
+            boolean processMessages = true;
+            while (processMessages) {
                 messageRenderingInProgressLock.lockInterruptibly();
                 try {
+                    messageRenderingModifierTaken.signalAll();
                     boolean emptyMessage = messages.get(0).isEmpty();
                     if (emptyMessage) {
                         show(null, actor, Mood.Neutral);
                     } else {
                         play();
                     }
+                    if (!applyPendingMessageModification()) {
+                        processMessages = false;
+                        finalizeRendering();
+                    }
                 } finally {
-                    // TODO lock until mandatory completed
                     messageRenderingInProgressLock.unlock();
                 }
             }
@@ -222,8 +222,6 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
             if (backgroundSoundRenderer != null)
                 renderQueue.interrupt(backgroundSoundRenderer);
             throw e;
-        } finally {
-            finalizeRendering();
         }
     }
 
@@ -334,14 +332,10 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
                 renderPart(part, accumulatedText, actor, mood);
             }
 
+            completeSectionAll();
             if (part.type == Message.Type.Text) {
-                completeSectionAll();
                 show(part.value, accumulatedText, actor, mood);
-            } else if (lastPart) {
-                completeSectionAll();
-                // TODO causes display flicker when appending
-                // since it's just called before displaying the appended message
-                // TODO used for ending a message with an extra image, but called with speech part
+            } else if (lastPart && definesPageLayout(part)) {
                 show(accumulatedText.toString());
             }
 
@@ -349,6 +343,10 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
                 break;
             }
         }
+    }
+
+    private static boolean definesPageLayout(MessagePart part) {
+        return part.type != Type.Image;
     }
 
     private void renderPart(MessagePart part, MessageTextAccumulator accumulatedText, Actor actor, String mood)

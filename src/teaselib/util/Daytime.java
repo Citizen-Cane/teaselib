@@ -4,7 +4,7 @@ package teaselib.util;
  * @author Citizen-Cane
  *
  */
-public enum TimeOfDay {
+public enum Daytime {
     Morning,
     Forenoon,
     Noon,

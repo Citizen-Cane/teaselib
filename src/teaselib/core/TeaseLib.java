@@ -8,6 +8,10 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.ZoneId;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashSet;
@@ -267,6 +271,12 @@ public class TeaseLib {
 
     void resumeTime() {
         frozenTime.set(Long.MIN_VALUE);
+    }
+
+    public TimeOfDayImpl timeOfDay() {
+        LocalTime now = LocalDateTime
+                .ofInstant(Instant.ofEpochMilli(getTime(TimeUnit.MILLISECONDS)), ZoneId.systemDefault()).toLocalTime();
+        return new TimeOfDayImpl(now);
     }
 
     /**

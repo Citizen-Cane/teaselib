@@ -4,38 +4,47 @@ import java.time.LocalTime;
 import java.util.EnumMap;
 import java.util.Map;
 
+import teaselib.util.Daytime;
 import teaselib.util.Interval;
-import teaselib.util.TimeOfDay;
 
 /**
  * @author Citizen-Cane
  *
  */
-public class TimeOfDayImpl {
-    static final Map<TimeOfDay, Interval> defaultTimeOfDayTable = createDefaultTimeOfDayTable();
+public class TimeOfDayImpl implements TimeOfDay {
 
-    static Map<TimeOfDay, Interval> createDefaultTimeOfDayTable() {
-        EnumMap<TimeOfDay, Interval> timeOfDay = new EnumMap<>(TimeOfDay.class);
+    static Map<Daytime, Interval> defaultTimeOfDayTable() {
+        EnumMap<Daytime, Interval> timeOfDay = new EnumMap<>(Daytime.class);
 
-        timeOfDay.put(TimeOfDay.Morning, new Interval(6, 9));
-        timeOfDay.put(TimeOfDay.Forenoon, new Interval(8, 11));
-        timeOfDay.put(TimeOfDay.Noon, new Interval(12, 13));
-        timeOfDay.put(TimeOfDay.Afternoon, new Interval(13, 18));
-        timeOfDay.put(TimeOfDay.Evening, new Interval(18, 23));
-        timeOfDay.put(TimeOfDay.Night, new Interval(-2, 5));
+        timeOfDay.put(Daytime.Morning, new Interval(6, 9));
+        timeOfDay.put(Daytime.Forenoon, new Interval(8, 11));
+        timeOfDay.put(Daytime.Noon, new Interval(12, 13));
+        timeOfDay.put(Daytime.Afternoon, new Interval(13, 18));
+        timeOfDay.put(Daytime.Evening, new Interval(18, 23));
+        timeOfDay.put(Daytime.Night, new Interval(-2, 5));
 
         return timeOfDay;
     }
 
-    private TimeOfDayImpl() {
+    static final Map<Daytime, Interval> timeOfDayTable = defaultTimeOfDayTable();
+
+    static boolean is(LocalTime localTime, Daytime timeOfDay) {
+        return is(localTime, timeOfDay, timeOfDayTable);
     }
 
-    static boolean is(LocalTime localTime, TimeOfDay timeOfDay) {
-        return is(localTime, timeOfDay, defaultTimeOfDayTable);
-    }
-
-    static boolean is(LocalTime localTime, TimeOfDay timeOfDay, Map<TimeOfDay, Interval> defaultTimeOfDayTable) {
+    static boolean is(LocalTime localTime, Daytime timeOfDay, Map<Daytime, Interval> defaultTimeOfDayTable) {
         Interval interval = defaultTimeOfDayTable.get(timeOfDay);
         return interval.contains(localTime.getHour()) || interval.contains(localTime.getHour() - 24);
+    }
+
+    private final LocalTime localTime;
+
+    TimeOfDayImpl(LocalTime localTime) {
+        this.localTime = localTime;
+    }
+
+    @Override
+    public boolean is(Daytime dayTime) {
+        return is(localTime, dayTime);
     }
 }

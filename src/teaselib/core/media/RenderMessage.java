@@ -109,6 +109,7 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
     }
 
     private boolean modificationApplied() {
+        // TODO Doesn't guarantee that the renderer has finished
         return messageModifier.get() == null;
     }
 
@@ -142,7 +143,7 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
     private void applyMessageModification(RenderedMessage message, UnaryOperator<List<RenderedMessage>> unaryOperator) {
         // TODO race condition with renderMedia() & modificationApplied()
         UnaryOperator<List<RenderedMessage>> alreadyScheduledOperator = messageModifier.getAndSet(unaryOperator);
-        if (alreadyScheduledOperator != StartupEnabler) {
+        if (alreadyScheduledOperator == StartupEnabler) {
             logger.warn("Overwriting startup enabler");
         } else if (alreadyScheduledOperator != null) {
             throw new IllegalStateException(message.toString());
@@ -578,7 +579,7 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
         }
         String messageText = text.toString().replace("\n", " ");
         int length = 40;
-        return "Estimated delay=" + String.format("%.2f", (double) delayMillis / 1000) + " Message='"
+        return "delay~" + String.format("%.2f", (double) delayMillis / 1000) + " Message='"
                 + (messageText.length() > length ? messageText.substring(0, length) + "..." : messageText + "'");
     }
 

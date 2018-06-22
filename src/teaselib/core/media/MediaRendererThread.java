@@ -21,9 +21,9 @@ public abstract class MediaRendererThread implements MediaRenderer.Threaded {
     protected final TeaseLib teaseLib;
     protected Replay.Position position = Replay.Position.FromCurrentPosition;
 
-    protected CountDownLatch completedStart = new CountDownLatch(1);
-    protected CountDownLatch completedMandatory = new CountDownLatch(1);
-    protected CountDownLatch completedAll = new CountDownLatch(1);
+    private CountDownLatch completedStart = new CountDownLatch(1);
+    private CountDownLatch completedMandatory = new CountDownLatch(1);
+    private CountDownLatch completedAll = new CountDownLatch(1);
 
     private long startMillis = 0;
 

@@ -70,9 +70,7 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
     private AbstractMessage lastSection;
 
     private final Lock messageRenderingInProgressLock = new ReentrantLock();
-    private static UnaryOperator<List<RenderedMessage>> StartupEnabler = (List<RenderedMessage> m) -> m;
-    private final AtomicReference<UnaryOperator<List<RenderedMessage>>> messageModifier = new AtomicReference<>(
-            StartupEnabler);
+    private final AtomicReference<UnaryOperator<List<RenderedMessage>>> messageModifier = new AtomicReference<>(null);
 
     private String displayImage = null;
     private MediaRenderer.Threaded currentRenderer = null;
@@ -109,7 +107,7 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
     }
 
     private boolean modificationApplied() {
-        // TODO Doesn't guarantee that the renderer has finished
+        // TODO Doesn't guarantee that the renderer has finished -> results in replay
         return messageModifier.get() == null;
     }
 
@@ -142,10 +140,10 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
 
     private void applyMessageModification(RenderedMessage message, UnaryOperator<List<RenderedMessage>> unaryOperator) {
         // TODO race condition with renderMedia() & modificationApplied()
+        // TODO if the renderer hasn't started yet, it is not guaranteed that we are waiting for the modification to be
+        // applied
         UnaryOperator<List<RenderedMessage>> alreadyScheduledOperator = messageModifier.getAndSet(unaryOperator);
-        if (alreadyScheduledOperator == StartupEnabler) {
-            logger.warn("Overwriting startup enabler");
-        } else if (alreadyScheduledOperator != null) {
+        if (alreadyScheduledOperator != null) {
             throw new IllegalStateException(message.toString());
         } else {
             try {
@@ -199,7 +197,9 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
                 throw new IllegalStateException();
             }
 
-            while (applyPendingMessageModification()) {
+            applyPendingMessageModification();
+            boolean processMessages = true;
+            while (processMessages) {
                 if (messages.isEmpty()) {
                     throw new IllegalStateException();
                 }
@@ -211,8 +211,11 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
                     } else {
                         play();
                     }
+                    if (!applyPendingMessageModification()) {
+                        processMessages = false;
+                        finalizeRendering();
+                    }
                 } finally {
-                    // TODO lock until mandatory completed
                     messageRenderingInProgressLock.unlock();
                 }
             }
@@ -222,8 +225,6 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
             if (backgroundSoundRenderer != null)
                 renderQueue.interrupt(backgroundSoundRenderer);
             throw e;
-        } finally {
-            finalizeRendering();
         }
     }
 

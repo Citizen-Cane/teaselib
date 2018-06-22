@@ -271,6 +271,7 @@ public abstract class Script {
     }
 
     private void replay() {
+        renderMessage.completeMandatory(); // TODO Workaround because modificationApplied is not mt safe
         if (renderMessage.hasCompletedMandatory()) {
             renderMessage.completeAll();
             renderMessage.replay(Position.FromCurrentPosition);

@@ -7,7 +7,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
@@ -135,18 +134,18 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
     }
 
     private boolean applyMessageModifier(RenderedMessage message, UnaryOperator<List<RenderedMessage>> unaryOperator) {
+        prefetchImages(message);
         UnaryOperator<List<RenderedMessage>> alreadyScheduledOperator = messageModifier.getAndSet(unaryOperator);
         if (alreadyScheduledOperator != null) {
-            // TODO code still reached -> resolve deadlock
             throw new IllegalStateException(message.toString());
         } else {
             try {
-                messageRenderingInProgressLock.lockInterruptibly();
-                try {
-                    prefetchImages(message);
-                    awaitModifierAppliedByRenderThreadOrCompletedMandatory();
-                } finally {
-                    messageRenderingInProgressLock.unlock();
+                if (messageRenderingInProgressLock.tryLock()) {
+                    try {
+                        awaitModifierAppliedByRenderThreadOrCompletedMandatory();
+                    } finally {
+                        messageRenderingInProgressLock.unlock();
+                    }
                 }
                 return modifierApplied();
             } catch (InterruptedException e) {
@@ -158,8 +157,9 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
 
     private void awaitModifierAppliedByRenderThreadOrCompletedMandatory() throws InterruptedException {
         while (!(hasCompletedMandatory()) && messageModifier.get() != null) {
-            if (messageRenderingModifierTaken.await(100, TimeUnit.MILLISECONDS))
-                break;
+            // if (messageRenderingModifierTaken.await(100, TimeUnit.MILLISECONDS))
+            // break;
+            messageRenderingModifierTaken.await();
         }
     }
 
@@ -199,21 +199,17 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
         try {
             boolean processMessages = true;
             while (processMessages) {
-                messageRenderingInProgressLock.lockInterruptibly();
-                try {
-                    messageRenderingModifierTaken.signalAll();
-                    boolean emptyMessage = messages.get(0).isEmpty();
-                    if (emptyMessage) {
-                        show(null, actor, Mood.Neutral);
-                    } else {
-                        play();
-                    }
-                    if (!applyPendingMessageModification()) {
-                        processMessages = false;
-                        finalizeRendering();
-                    }
-                } finally {
-                    messageRenderingInProgressLock.unlock();
+                signalMessageModifierApplied();
+
+                boolean emptyMessage = messages.get(0).isEmpty();
+                if (emptyMessage) {
+                    show(null, actor, Mood.Neutral);
+                } else {
+                    play();
+                }
+                if (!applyPendingMessageModification()) {
+                    processMessages = false;
+                    finalizeRendering();
                 }
             }
         } catch (InterruptedException | ScriptInterruptedException e) {
@@ -222,6 +218,17 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
             if (backgroundSoundRenderer != null)
                 renderQueue.interrupt(backgroundSoundRenderer);
             throw e;
+        } finally {
+            signalMessageModifierApplied();
+        }
+    }
+
+    private void signalMessageModifierApplied() throws InterruptedException {
+        messageRenderingInProgressLock.lockInterruptibly();
+        try {
+            messageRenderingModifierTaken.signalAll();
+        } finally {
+            messageRenderingInProgressLock.unlock();
         }
     }
 

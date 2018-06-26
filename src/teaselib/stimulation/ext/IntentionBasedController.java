@@ -2,6 +2,7 @@ package teaselib.stimulation.ext;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -15,11 +16,11 @@ import teaselib.stimulation.Stimulation;
 import teaselib.stimulation.StimulationDevice;
 import teaselib.stimulation.Stimulator;
 import teaselib.stimulation.WaveForm;
+import teaselib.stimulation.pattern.SoundStimulation;
 import teaselib.util.math.Partition;
 
 public class IntentionBasedController<T extends Enum<?>, B extends Enum<?>> {
     private final Map<T, List<Stimulator>> stims = new HashMap<>();
-
     private final Map<T, B> regions = new HashMap<>();
 
     private int intensity = Stimulation.MinIntensity;
@@ -93,9 +94,12 @@ public class IntentionBasedController<T extends Enum<?>, B extends Enum<?>> {
 
     private List<StimulationTarget> allTargets(T intention, Stimulation stimulation, long startMillis,
             long durationMillis) {
-        List<Stimulator> stimulators = stims.get(intention);
+        if (stimulation instanceof SoundStimulation) {
+            ((SoundStimulation) stimulation).play();
+        }
+
         List<StimulationTarget> targets = new ArrayList<>();
-        for (Stimulator stimulator : stimulators) {
+        for (Stimulator stimulator : stimulators(intention)) {
             WaveForm waveform = stimulation.waveform(stimulator, intensity);
             targets.add(new StimulationTarget(stimulator, waveform, startMillis, durationMillis));
         }
@@ -134,7 +138,8 @@ public class IntentionBasedController<T extends Enum<?>, B extends Enum<?>> {
     }
 
     public void complete(T intention) {
-        for (Stimulator stimulator : stims.get(intention)) {
+        for (Stimulator stimulator : stimulators(intention)) {
+            // TODO Play(intention, WaveForm::Empty)
             stimulator.getDevice().complete();
         }
     }
@@ -146,9 +151,13 @@ public class IntentionBasedController<T extends Enum<?>, B extends Enum<?>> {
     }
 
     public void stop(T intention) {
-        for (Stimulator stimulator : stims.get(intention)) {
+        for (Stimulator stimulator : stimulators(intention)) {
             stimulator.getDevice().stop();
         }
+    }
+
+    private List<Stimulator> stimulators(T intention) {
+        return stims.getOrDefault(intention, Collections.emptyList());
     }
 
     public void increaseIntensity() {

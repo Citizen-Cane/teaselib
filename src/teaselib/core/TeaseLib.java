@@ -273,7 +273,7 @@ public class TeaseLib {
         frozenTime.set(Long.MIN_VALUE);
     }
 
-    public TimeOfDayImpl timeOfDay() {
+    public TimeOfDay timeOfDay() {
         LocalTime now = LocalDateTime
                 .ofInstant(Instant.ofEpochMilli(getTime(TimeUnit.MILLISECONDS)), ZoneId.systemDefault()).toLocalTime();
         return new TimeOfDayImpl(now);

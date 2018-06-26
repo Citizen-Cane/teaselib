@@ -1,6 +1,3 @@
-/**
- * 
- */
 package teaselib;
 
 import java.util.ArrayList;
@@ -12,11 +9,12 @@ import java.util.concurrent.TimeUnit;
 import teaselib.core.ResourceLoader;
 import teaselib.core.Script;
 import teaselib.core.TeaseLib;
+import teaselib.core.TimeOfDay;
 import teaselib.util.Item;
 import teaselib.util.Items;
 
 /**
- * @author someone
+ * @author Citizen-Cane
  *
  */
 public class TeaseScriptMath extends TeaseScriptPersistenceUtil {
@@ -170,5 +168,9 @@ public class TeaseScriptMath extends TeaseScriptPersistenceUtil {
         } else {
             return Item.NotFound;
         }
+    }
+
+    public TimeOfDay timeOfDay() {
+        return teaseLib.timeOfDay();
     }
 }

@@ -54,6 +54,7 @@ public abstract class StimulationDevice implements Device.Creatable {
 
         @Override
         public void close() {
+            // Nothing to do
         }
 
         @Override

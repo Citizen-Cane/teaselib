@@ -121,6 +121,7 @@ public class DeviceCache<T extends Device> {
                 Thread.sleep(duration);
                 timeoutMillis -= duration;
             } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
                 throw new ScriptInterruptedException(e);
             }
         }

@@ -61,7 +61,7 @@ public class EStimControllerSetup extends TeaseScript {
 
     private StimulationDevice getDevice() {
         Chooser chooser = new Chooser();
-        chooser.connect();
+        chooser.tryConnect();
         if (chooser.device.connected()) {
             return chooser.device;
         } else {
@@ -89,9 +89,21 @@ public class EStimControllerSetup extends TeaseScript {
             return device.connected() ? CONNECTED : CANCELLED;
         }
 
+        void tryConnect() {
+            device = teaseLib.devices.get(StimulationDevice.class).getDefaultDevice();
+            DeviceCache.connect(device, 0);
+            if (device.connected()) {
+                checkBatteries();
+            }
+        }
+
         void connect() {
             device = teaseLib.devices.get(StimulationDevice.class).getDefaultDevice();
             DeviceCache.connect(device);
+            checkBatteries();
+        }
+
+        private void checkBatteries() {
             if (device.batteryLevel().needsCharging()) {
                 say("Looks like the batteries need recharging.", "Go replace them, #slave!");
                 device.close(); // disconnect
@@ -122,7 +134,7 @@ public class EStimControllerSetup extends TeaseScript {
     }
 
     private StimulationDevice handleManualDevice(StimulationDevice device) {
-        append("Tell me when you're ready, #slave");
+        append("Tell me when you're ready, #slave.");
         agree("I'm wired up, #title");
         return device;
     }
@@ -150,7 +162,7 @@ public class EStimControllerSetup extends TeaseScript {
     }
 
     private void wireUpDualPhysicalChannelDeviceInstructions() {
-        say("You may now apply the electrodes and connect them to your stimulation device.");
+        show("You may now apply the electrodes and connect them to your stimulation device.");
         append(Message.Bullet,
                 "Use a separate set of electrodes for each channel to provide me with two independent channels to guide you through the session.");
         append(Message.Bullet,

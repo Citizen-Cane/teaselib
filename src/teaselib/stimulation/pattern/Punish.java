@@ -14,18 +14,19 @@ public class Punish implements Stimulation {
     static final double MinOnDurationSeconds = 2.0;
     static final double IntensityFactor = 0.25;
 
-    enum PunishType {
-        Constant,
+    public enum Type {
+        Long,
+        Smack,
         Burst
     }
 
-    private final PunishType punishType;
+    private final Type punishType;
 
     public Punish() {
-        this(PunishType.Constant);
+        this(Type.Long);
     }
 
-    public Punish(PunishType punishType) {
+    public Punish(Type punishType) {
         this.punishType = punishType;
     }
 
@@ -33,9 +34,11 @@ public class Punish implements Stimulation {
     public WaveForm waveform(Stimulator stimulator, int intensity) {
         double punishSeconds = MinOnDurationSeconds + IntensityFactor * intensity;
 
-        if (punishType == PunishType.Constant) {
+        if (punishType == Type.Long) {
             return new ConstantWave(punishSeconds);
-        } else if (punishType == PunishType.Burst) {
+        } else if (punishType == Type.Smack) {
+            return new ConstantWave(punishSeconds / 4);
+        } else if (punishType == Type.Burst) {
             return new BurstSquareWave((int) punishSeconds, 0.80, 0.20);
         } else {
             throw new IllegalArgumentException(punishType.toString());

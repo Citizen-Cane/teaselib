@@ -168,7 +168,7 @@ public class XInputDevice implements Device.Creatable {
         int ret = getBatteryInformation(playerNum, batteryStatusBuffer);
         if (ret == ERROR_DEVICE_NOT_CONNECTED) {
             setConnected(false);
-            return BatteryLevel.Empty;
+            return BatteryLevel.Medium;
         }
 
         int batteryType = batteryStatusBuffer.get();

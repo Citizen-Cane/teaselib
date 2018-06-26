@@ -15,6 +15,7 @@ import org.bytedeco.javacpp.opencv_core.Size;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import teaselib.core.ScriptInterruptedException;
 import teaselib.core.VideoRenderer;
 import teaselib.core.concurrency.NamedExecutorService;
 import teaselib.core.devices.DeviceCache;
@@ -172,7 +173,7 @@ class MotionDetectorCaptureThread extends Thread {
                     }
                 }
             }
-        } catch (InterruptedException e) {
+        } catch (InterruptedException | ScriptInterruptedException e) {
             Thread.currentThread().interrupt();
         } catch (Exception e) {
             logger.error(e.getMessage(), e);

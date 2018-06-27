@@ -1,6 +1,7 @@
 package teaselib.core;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.time.LocalTime;
 
@@ -40,5 +41,11 @@ public class TimeOfDayImplTest {
 
         assertTrue(TimeOfDayImpl.is(LocalTime.of(22, 0), Daytime.Night));
         assertTrue(TimeOfDayImpl.is(LocalTime.of(0, 0), Daytime.Night));
+    }
+
+    @Test
+    public void testAnyOf() {
+        assertTrue(new TimeOfDayImpl(LocalTime.of(4, 0)).isAnyOf(Daytime.Night, Daytime.Forenoon));
+        assertFalse(new TimeOfDayImpl(LocalTime.of(4, 0)).isAnyOf(Daytime.Morning, Daytime.Forenoon));
     }
 }

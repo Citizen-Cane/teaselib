@@ -1,6 +1,7 @@
 package teaselib.core;
 
 import java.time.LocalTime;
+import java.util.Arrays;
 import java.util.EnumMap;
 import java.util.Map;
 
@@ -28,12 +29,12 @@ public class TimeOfDayImpl implements TimeOfDay {
 
     static final Map<Daytime, Interval> timeOfDayTable = defaultTimeOfDayTable();
 
-    static boolean is(LocalTime localTime, Daytime timeOfDay) {
-        return is(localTime, timeOfDay, timeOfDayTable);
+    static boolean is(LocalTime localTime, Daytime dayTime) {
+        return is(localTime, dayTime, timeOfDayTable);
     }
 
-    static boolean is(LocalTime localTime, Daytime timeOfDay, Map<Daytime, Interval> defaultTimeOfDayTable) {
-        Interval interval = defaultTimeOfDayTable.get(timeOfDay);
+    static boolean is(LocalTime localTime, Daytime dayTimes, Map<Daytime, Interval> defaultTimeOfDayTable) {
+        Interval interval = defaultTimeOfDayTable.get(dayTimes);
         return interval.contains(localTime.getHour()) || interval.contains(localTime.getHour() - 24);
     }
 
@@ -46,5 +47,10 @@ public class TimeOfDayImpl implements TimeOfDay {
     @Override
     public boolean is(Daytime dayTime) {
         return is(localTime, dayTime);
+    }
+
+    @Override
+    public boolean isAnyOf(Daytime... daytimes) {
+        return Arrays.asList(daytimes).stream().anyMatch(this::is);
     }
 }

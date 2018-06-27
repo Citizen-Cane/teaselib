@@ -35,6 +35,7 @@ import teaselib.core.debug.TimeAdvanceListener;
 import teaselib.core.debug.TimeAdvancedEvent;
 import teaselib.core.devices.Devices;
 import teaselib.core.devices.remote.LocalNetworkDevice;
+import teaselib.core.util.ExceptionUtil;
 import teaselib.core.util.ObjectMap;
 import teaselib.core.util.PropertyNameMapping;
 import teaselib.core.util.QualifiedItem;
@@ -865,5 +866,13 @@ public class TeaseLib {
 
     public Actor getDominant(Gender gender, Locale locale) {
         return persistence.getDominant(gender, locale);
+    }
+
+    public void addUserItems(File path) {
+        try {
+            userItems.loadItems(path);
+        } catch (IOException e) {
+            ExceptionUtil.handleException(e, config, logger);
+        }
     }
 }

@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -53,10 +52,17 @@ public abstract class AbstractUserItems implements UserItems {
         this.teaseLib = teaseLib;
     }
 
-    List<Item> userItems;
+    final List<Item> userItems = new ArrayList<>();
+    private boolean defaultItemsLoaded = false;
 
-    private List<Item> loadItems(File file) throws IOException {
+    @Override
+    public void loadItems(File file) throws IOException {
+        // TODO This check is a hack -> replace by something that is bullet proof
+        if (!defaultItemsLoaded) {
+            loadDefaultItems();
+        }
         List<Item> items = new ArrayList<>();
+        // TODO Overwrite existing items
 
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
         try {
@@ -88,7 +94,7 @@ public abstract class AbstractUserItems implements UserItems {
             throw ExceptionUtil.asRuntimeException(e);
         }
 
-        return items;
+        userItems.addAll(items);
     }
 
     private ItemImpl readItem(Node itemClass, Node itemNode) throws ClassNotFoundException {
@@ -130,17 +136,10 @@ public abstract class AbstractUserItems implements UserItems {
             domainMap.put(domain, itemMap);
         }
 
-        if (userItems == null) {
-            if (teaseLib.config.has(Settings.ITEM_STORE)) {
-                try {
-                    // TODO domain parameter
-                    userItems = loadItems(new File(teaseLib.config.get(Settings.ITEM_STORE)));
-                } catch (IOException e) {
-                    throw ExceptionUtil.asRuntimeException(e);
-                }
-            } else {
-                userItems = Collections.emptyList();
-            }
+        // TODO don't copy default items, just empty xml file for adding personal stuff and load defaults, then user
+        // items
+        if (!defaultItemsLoaded && teaseLib.config.has(Settings.ITEM_STORE)) {
+            loadDefaultItems();
         }
 
         if (!itemMap.containsKey(item)) {
@@ -157,6 +156,16 @@ public abstract class AbstractUserItems implements UserItems {
             }
         } else {
             return itemMap.get(item);
+        }
+    }
+
+    private void loadDefaultItems() {
+        defaultItemsLoaded = true;
+        try {
+            // TODO domain parameter
+            loadItems(new File(teaseLib.config.get(Settings.ITEM_STORE)));
+        } catch (IOException e) {
+            throw ExceptionUtil.asRuntimeException(e);
         }
     }
 

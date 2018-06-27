@@ -8,10 +8,10 @@ package teaselib.stimulation;
  */
 @FunctionalInterface
 public interface Stimulation {
-    public static final int MinIntensity = 0;
-    public static final int MaxIntensity = 10;
-
-    public static final double MaxStrength = 1.0;
+    static final int MinIntensity = 0;
+    static final int MaxIntensity = 10;
+    static final double MaxStrength = 1.0;
+    static final Stimulation NONE = (stimulator1, intensity) -> WaveForm.NONE;
 
     WaveForm waveform(Stimulator stimulator, int intensity);
 

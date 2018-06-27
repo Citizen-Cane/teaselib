@@ -93,11 +93,11 @@ public class StimulationTargets implements Iterable<Samples> {
                 Optional<Sample> sample = waveformSamples.stream().reduce(Sample::earliest);
                 if (sample.isPresent()) {
                     int targetIndex = waveformSamples.indexOf(sample.get());
-                    long duration = targets.get(targetIndex).waveForm.getDurationMillis() * repeatCounts[targetIndex];
-                    if (duration + sample.get().getTimeStampMillis() >= samples.timeStampMillis) {
+                    long waveFormDuration = targets.get(targetIndex).waveForm.getDurationMillis() * repeatCounts[targetIndex];
+                    if (waveFormDuration + sample.get().getTimeStampMillis() >= samples.timeStampMillis) {
                         Sample next = sample.get();
                         long nextTimeStampMillis = next.getTimeStampMillis();
-                        samples.timeStampMillis = duration + nextTimeStampMillis;
+                        samples.timeStampMillis = waveFormDuration + nextTimeStampMillis;
                         advance(nextTimeStampMillis);
                         return samples;
                     } else {

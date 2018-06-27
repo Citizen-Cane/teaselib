@@ -282,7 +282,7 @@ public class XInputStimulationDevice extends StimulationDevice {
 
     private void collectSampleStreamExceptions() {
         try {
-            if (stream != null && stream.future.isDone()) {
+            if (streamFutureRunning()) {
                 stream.future.get();
             }
         } catch (InterruptedException e) {

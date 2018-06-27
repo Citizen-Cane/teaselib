@@ -139,7 +139,6 @@ public class IntentionBasedController<T extends Enum<?>, B extends Enum<?>> {
 
     public void complete(T intention) {
         for (Stimulator stimulator : stimulators(intention)) {
-            // TODO Play(intention, WaveForm::Empty)
             stimulator.getDevice().complete();
         }
     }
@@ -151,9 +150,7 @@ public class IntentionBasedController<T extends Enum<?>, B extends Enum<?>> {
     }
 
     public void stop(T intention) {
-        for (Stimulator stimulator : stimulators(intention)) {
-            stimulator.getDevice().stop();
-        }
+        play(intention, Stimulation.NONE);
     }
 
     private List<Stimulator> stimulators(T intention) {

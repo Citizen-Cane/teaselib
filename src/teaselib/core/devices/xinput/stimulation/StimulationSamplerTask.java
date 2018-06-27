@@ -3,6 +3,7 @@ package teaselib.core.devices.xinput.stimulation;
 import java.util.Iterator;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -25,9 +26,10 @@ public abstract class StimulationSamplerTask {
     final Future<?> future;
     long startTimeMillis;
     Samples samples;
+    private final Executor executor;
 
     public StimulationSamplerTask(ExecutorService executor) {
-        super();
+        this.executor = executor;
         this.future = executor.submit(this::run);
     }
 
@@ -92,9 +94,15 @@ public abstract class StimulationSamplerTask {
                     }
                     StimulationTargets currentTargets = targets.poll();
                     taken.signal();
+
+                    // breaking is inappropriate and complicates synchronizing
+                    // synchronizing on executor doesn't work
+                    // -> wait for currentTargets != null, but only end task when interrupted
+                    // synchronized (executor) {
                     if (currentTargets == null) {
                         break;
                     }
+                    // }
                     renderSamples(currentTargets);
                 } finally {
                     lock.unlock();
@@ -113,7 +121,10 @@ public abstract class StimulationSamplerTask {
         while (iterator.hasNext()) {
             samples = iterator.next();
             playSamples(samples);
-            if (playNext.await(samples.getTimeStampMillis(), TimeUnit.MILLISECONDS)) {
+            // TODO samples.getTimeStampMillis() is absolute
+            // needed to advance internally in StimulationTargets -> provide timespan as well
+            long timeStampMillis = samples.getTimeStampMillis();
+            if (playNext.await(timeStampMillis, TimeUnit.MILLISECONDS)) {
                 break;
             }
         }

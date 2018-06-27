@@ -13,6 +13,7 @@ public enum Posture {
     CantCrawl,
     CantKneel,
     CantProne,
+    CantReachCrotch,
     CantSitOnChair,
     CantStand, // TODO if this means kneeling UpRight, then there's no difference to CantProne
     CantTypeOrUseMouse,

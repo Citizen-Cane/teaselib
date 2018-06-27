@@ -113,7 +113,7 @@ public class EStimControllerSetup extends TeaseScript {
 
     private StimulationDevice attachElectrodes(StimulationDevice device) {
         // TODO Can't check channel count since the device isn't wired up -> enum physical channels or reset wiring
-        // TODO Mixed mode (EStim/Vivrator) is possible, so don't check too much here - handle in instructions instead
+        // TODO Mixed mode (EStim/Vibrator) is possible, so don't check too much here - handle in instructions instead
         device.setMode(device.output, Wiring.Independent);
         List<Stimulator> stimulators = device.stimulators().stream().filter(EstimOutput).collect(Collectors.toList());
 
@@ -205,8 +205,9 @@ public class EStimControllerSetup extends TeaseScript {
         append("Let's try it:");
 
         reply(() -> {
-            while (iterateIntentions(stim))
-                ;
+            while (iterateIntentions(stim)) { // do
+            }
+
         }, "All channels adjusted, #title");
 
         return device;

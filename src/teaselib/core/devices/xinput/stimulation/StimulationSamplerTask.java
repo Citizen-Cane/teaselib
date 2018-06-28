@@ -121,10 +121,8 @@ public abstract class StimulationSamplerTask {
         while (iterator.hasNext()) {
             samples = iterator.next();
             playSamples(samples);
-            // TODO samples.getTimeStampMillis() is absolute
-            // needed to advance internally in StimulationTargets -> provide timespan as well
-            long timeStampMillis = samples.getTimeStampMillis();
-            if (playNext.await(timeStampMillis, TimeUnit.MILLISECONDS)) {
+            long durationMillis = samples.getDurationMillis();
+            if (playNext.await(durationMillis, TimeUnit.MILLISECONDS)) {
                 break;
             }
         }

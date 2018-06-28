@@ -55,6 +55,25 @@ public class StimulationTargtetsTest {
     }
 
     @Test
+    public void testSingleTargetRepeatCountTimeStampAndDuration() {
+        TestStimulationDevice device = new TestStimulationDevice();
+        Stimulator stim1 = device.add(new TestStimulator(device, 1));
+        StimulationTargets targets = new StimulationTargets(device);
+
+        targets.set(new StimulationTarget(stim1, new SquareWave(0.5, 0.5), 0, 2000));
+        assertEquals(1, targets.size());
+
+        Iterator<Samples> samples = targets.iterator();
+        test(samples.next(), 0, 500, 1.0);
+        test(samples.next(), 500, 500, 0.0);
+        test(samples.next(), 1000, 500, 1.0);
+        test(samples.next(), 1500, 500, 0.0);
+        test(samples.next(), 2000, Long.MAX_VALUE, 0.0);
+
+        assertFalse(samples.hasNext());
+    }
+
+    @Test
     public void testSingleTargetWithOffset() {
         TestStimulationDevice device = new TestStimulationDevice();
         Stimulator stim1 = device.add(new TestStimulator(device, 1));
@@ -310,7 +329,14 @@ public class StimulationTargtetsTest {
     // TODO More continuedStimulation() tests
 
     private static void test(Samples samples, long expectedTimeStampMillis, double... values) {
-        assertEquals(expectedTimeStampMillis, samples.timeStampMillis);
+        assertEquals(expectedTimeStampMillis, samples.getTimeStampMillis());
+        assertArrayEquals(values, samples.getValues(), 0.0);
+    }
+
+    private static void test(Samples samples, long expectedTimeStampMillis, long exectedDurationMillis,
+            double... values) {
+        assertEquals("Time stamp -", expectedTimeStampMillis, samples.getTimeStampMillis());
+        assertEquals("Duration -", exectedDurationMillis, samples.getDurationMillis());
         assertArrayEquals(values, samples.getValues(), 0.0);
     }
 }

@@ -117,6 +117,8 @@ public class StimulationTargets implements Iterable<Samples> {
                             long nextWaveFormDuration = targets.get(targetIndex).waveForm.getDurationMillis()
                                     * repeatCounts[targetIndex];
                             long nextTimeStampMillis = next.get().getTimeStampMillis();
+
+                            // TODO waveform duration is finite, so the infinite delay is irregular -> remove
                             long durationMillis = nextTimeStampMillis == Long.MAX_VALUE ? Long.MAX_VALUE
                                     : (nextWaveFormDuration + nextTimeStampMillis)
                                             - (waveFormDuration + timeStampMillis);

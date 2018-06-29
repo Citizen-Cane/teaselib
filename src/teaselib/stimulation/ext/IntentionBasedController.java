@@ -11,6 +11,9 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import teaselib.core.devices.Device;
 import teaselib.stimulation.Stimulation;
 import teaselib.stimulation.StimulationDevice;
@@ -20,6 +23,8 @@ import teaselib.stimulation.pattern.SoundStimulation;
 import teaselib.util.math.Partition;
 
 public class IntentionBasedController<T extends Enum<?>, B extends Enum<?>> {
+    private static final Logger logger = LoggerFactory.getLogger(IntentionBasedController.class);
+
     private final Map<T, List<Stimulator>> stims = new HashMap<>();
     private final Map<T, B> regions = new HashMap<>();
 
@@ -128,6 +133,7 @@ public class IntentionBasedController<T extends Enum<?>, B extends Enum<?>> {
     }
 
     void play(StimulationDevice device, StimulationTargets targets) {
+        logger.info("{} {}", device, targets);
         device.play(targets);
     }
 

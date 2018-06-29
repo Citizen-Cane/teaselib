@@ -4,19 +4,13 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CancellationException;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
 
 import teaselib.core.Configuration;
-import teaselib.core.ScriptInterruptedException;
-import teaselib.core.concurrency.NamedExecutorService;
 import teaselib.core.devices.BatteryLevel;
 import teaselib.core.devices.DeviceCache;
 import teaselib.core.devices.DeviceFactory;
 import teaselib.core.devices.Devices;
 import teaselib.core.devices.xinput.XInputDevice;
-import teaselib.core.util.ExceptionUtil;
 import teaselib.stimulation.StimulationDevice;
 import teaselib.stimulation.Stimulator;
 import teaselib.stimulation.Stimulator.Wiring;
@@ -134,8 +128,7 @@ public class XInputStimulationDevice extends StimulationDevice {
     final XInputDevice device;
     private final List<Stimulator> stimulators;
 
-    private final ExecutorService executor = NamedExecutorService.singleThreadedQueue(getClass().getName());
-    private StimulationSamplerTask stream = null;
+    private final StimulationSamplerTask stream = new XInputStimmulationSamplerTask();
 
     public XInputStimulationDevice(XInputDevice device) {
         super();
@@ -201,31 +194,15 @@ public class XInputStimulationDevice extends StimulationDevice {
 
     @Override
     public void play(StimulationTargets targets) {
-        synchronized (executor) {
-            collectSampleStreamExceptions();
-            if (stream == null || stream.future.isDone()) {
-                stream = new XInputStimmulationSamplerTask(executor);
-            }
-            stream.play(targets);
-        }
+        stream.play(targets);
     }
 
     @Override
     public void append(StimulationTargets targets) {
-        synchronized (executor) {
-            collectSampleStreamExceptions();
-            if (stream == null || stream.future.isDone()) {
-                stream = new XInputStimmulationSamplerTask(executor);
-            }
-            stream.append(targets);
-        }
+        stream.append(targets);
     }
 
     class XInputStimmulationSamplerTask extends StimulationSamplerTask {
-        public XInputStimmulationSamplerTask(ExecutorService executor) {
-            super(executor);
-        }
-
         @Override
         void playSamples(Samples samples) {
             if (wiring == Wiring.INFERENCE_CHANNEL) {
@@ -259,40 +236,12 @@ public class XInputStimulationDevice extends StimulationDevice {
 
     @Override
     public void stop() {
-        synchronized (executor) {
-            if (streamFutureRunning()) {
-                stream.future.cancel(true);
-            }
-            collectSampleStreamExceptions();
-        }
+        stream.stop();
     }
 
     @Override
     public void complete() {
-        synchronized (executor) {
-            if (streamFutureRunning()) {
-                collectSampleStreamExceptions();
-            }
-        }
-    }
-
-    private boolean streamFutureRunning() {
-        return stream != null && !stream.future.isDone() && !stream.future.isCancelled();
-    }
-
-    private void collectSampleStreamExceptions() {
-        try {
-            if (streamFutureRunning()) {
-                stream.future.get();
-            }
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new ScriptInterruptedException(e);
-        } catch (CancellationException e) {
-            // Ignore
-        } catch (ExecutionException e) {
-            throw ExceptionUtil.asRuntimeException(ExceptionUtil.reduce(e));
-        }
+        stream.complete();
     }
 
     @Override

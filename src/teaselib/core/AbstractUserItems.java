@@ -4,7 +4,9 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -38,31 +40,31 @@ public abstract class AbstractUserItems implements UserItems {
     private static final String ITEMS_DTD = "items.dtd";
 
     protected final TeaseLib teaseLib;
-    final Map<String, ItemMap> domainMap = new HashMap<>();
+    private final Map<String, ItemMap> domainMap = new HashMap<>();
+    private final Map<String, Item> userItems = new LinkedHashMap<>();
+
+    private boolean defaultItemsLoaded = false;
 
     class ItemMap extends HashMap<Object, List<Item>> {
         private static final long serialVersionUID = 1L;
     }
 
     public enum Settings {
-        ITEM_STORE;
+        ITEM_DEFAULT_STORE,
+        ITEM_USER_STORE
     }
 
     public AbstractUserItems(TeaseLib teaseLib) {
         this.teaseLib = teaseLib;
     }
 
-    final List<Item> userItems = new ArrayList<>();
-    private boolean defaultItemsLoaded = false;
-
     @Override
     public void loadItems(File file) throws IOException {
-        // TODO This check is a hack -> replace by something that is bullet proof
+        domainMap.clear();
         if (!defaultItemsLoaded) {
             loadDefaultItems();
         }
         List<Item> items = new ArrayList<>();
-        // TODO Overwrite existing items
 
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
         try {
@@ -94,7 +96,9 @@ public abstract class AbstractUserItems implements UserItems {
             throw ExceptionUtil.asRuntimeException(e);
         }
 
-        userItems.addAll(items);
+        for (Item item : items) {
+            userItems.put(((ItemImpl) item).guid, item);
+        }
     }
 
     private ItemImpl readItem(Node itemClass, Node itemNode) throws ClassNotFoundException {
@@ -136,14 +140,12 @@ public abstract class AbstractUserItems implements UserItems {
             domainMap.put(domain, itemMap);
         }
 
-        // TODO don't copy default items, just empty xml file for adding personal stuff and load defaults, then user
-        // items
-        if (!defaultItemsLoaded && teaseLib.config.has(Settings.ITEM_STORE)) {
+        if (!defaultItemsLoaded && teaseLib.config.has(Settings.ITEM_DEFAULT_STORE)) {
             loadDefaultItems();
         }
 
         if (!itemMap.containsKey(item)) {
-            List<Item> allItems = getUserItems();
+            Collection<Item> allItems = getUserItems();
             List<Item> items = allItems.stream().filter(itemImpl -> item.equals(((ItemImpl) itemImpl).item))
                     .collect(Collectors.toList());
             if (!items.isEmpty()) {
@@ -162,15 +164,16 @@ public abstract class AbstractUserItems implements UserItems {
     private void loadDefaultItems() {
         defaultItemsLoaded = true;
         try {
-            // TODO domain parameter
-            loadItems(new File(teaseLib.config.get(Settings.ITEM_STORE)));
+            // TODO decide about domain parameter
+            loadItems(new File(teaseLib.config.get(Settings.ITEM_DEFAULT_STORE)));
+            loadItems(new File(teaseLib.config.get(Settings.ITEM_USER_STORE)));
         } catch (IOException e) {
             throw ExceptionUtil.asRuntimeException(e);
         }
     }
 
-    private List<Item> getUserItems() {
-        return userItems;
+    private Collection<Item> getUserItems() {
+        return userItems.values();
     }
 
     protected abstract Item[] createDefaultItems(String domain, QualifiedItem item);

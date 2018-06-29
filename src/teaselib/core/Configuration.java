@@ -31,9 +31,13 @@ public class Configuration {
         setup.applyTo(this);
     }
 
-    public void addUserFile(Enum<?> setting, File preset, File userFile) throws IOException {
+    public void addDefaultFile(Enum<?> setting, File defaultFile) throws IOException {
+        set(setting, defaultFile.getAbsolutePath());
+    }
+
+    public void addUserFile(Enum<?> setting, File templateFile, File userFile) throws IOException {
         set(setting, userFile.getAbsolutePath());
-        addUserFile(preset, userFile);
+        addUserFile(templateFile, userFile);
     }
 
     public void addUserFile(File preset, File userFile) throws IOException {

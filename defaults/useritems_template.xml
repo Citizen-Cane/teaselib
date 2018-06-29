@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE Items SYSTEM "items.dtd">
+
+<!--item defaults - defines default item set in TeaseLib -->
+
+<Items>
+	<Toys>
+	</Toys>
+
+	<Household>
+	</Household>
+	
+	<Clothes>
+	</Clothes>
+
+	<Gadgets>
+	</Gadgets>
+</Items>

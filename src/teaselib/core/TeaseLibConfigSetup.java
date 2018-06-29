@@ -15,7 +15,9 @@ public final class TeaseLibConfigSetup implements Configuration.Setup {
     public static final String VOICES_PROPERTIES = "voices.properties";
     public static final String PRONUNCIATION_DIRECTORY = "pronunciation";
 
-    private static final String ITEM_STORE_FILENAME = "items.xml";
+    private static final String ITEM_DEFAULT_STORE_FILENAME = "items.xml";
+    private static final String ITEM_TEMPLATE_STORE_FILENAME = "useritems_template.xml";
+    private static final String ITEM_USER_STORE_FILENAME = "useritems.xml";
 
     private final File teaseLibPath;
     private final File teaseLibDefaultsPath;
@@ -45,8 +47,12 @@ public final class TeaseLibConfigSetup implements Configuration.Setup {
         config.addConfigFile(new File(teaseLibDefaultsPath, TEASELIB_PROPERTIES));
         config.addConfigFile(new File(userPath, TEASELIB_PROPERTIES));
 
-        config.addUserFile(PreDefinedItems.Settings.ITEM_STORE, new File(teaseLibDefaultsPath, ITEM_STORE_FILENAME),
-                new File(userPath, ITEM_STORE_FILENAME));
+        config.addDefaultFile(PreDefinedItems.Settings.ITEM_DEFAULT_STORE,
+                new File(teaseLibDefaultsPath, ITEM_DEFAULT_STORE_FILENAME));
+        config.addUserFile(PreDefinedItems.Settings.ITEM_USER_STORE,
+                new File(teaseLibDefaultsPath, ITEM_TEMPLATE_STORE_FILENAME),
+                new File(userPath, ITEM_USER_STORE_FILENAME));
+
     }
 
     private void addNetworkDefaults(Configuration config) throws IOException {

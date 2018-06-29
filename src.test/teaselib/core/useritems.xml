@@ -4,7 +4,7 @@
 <!-- item defaults - defines default item set in TeaseLib -->
 <Items>
 	<Toys>
-		<Item item="Humbler" guid="myHumbler" displayName="My Humbler">
+		<Item item="Humbler" guid="humbler" displayName="My Humbler">
 			<Attribute> Material.Wood </Attribute>
 			<Attribute> Features.Lockable </Attribute>
 		</Item>

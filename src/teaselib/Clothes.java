@@ -10,68 +10,79 @@ package teaselib;
  * 
  * The list has been inspired by CyberMistress and SexScripts.
  * 
- * @author someone
+ * @author Citizen-Cane
  *
  */
 public enum Clothes {
-    Apron,
-    Baby_Doll,
-    Belt,
-    Bikini,
-    Blouse,
+    // Underwear
+    Babydoll,
     Body,
-    Boots,
-    Boxers,
     Bra,
-    Bracelet,
-    Breast_Forms,
-    Briefs,
     Catsuit,
-    Corset,
-    Diaper,
-    Dress,
-    Garterbelt,
-    GString,
-    Gloves,
-    Handbag,
-    Harness,
-    High_Heels,
-    Hood,
-    Jacket,
-    Jeans,
-    Jewelry,
+    Garter_Belt,
     Leotard,
-    Make_up,
-    Miniskirt,
-    Monokini,
-    Necklace,
     Nightie,
-    Panties,
+    Underpants,
     Pantyhose,
-    Princess_Tiara,
-    Pumps,
-    Sandals,
-    Scarf,
-    Shirt,
-    Shoes,
-    Shorts,
-    Skirt,
+    Pajamas,
     Socks,
     Stockings,
+    Swimwear,
+
+    // Attire
+    Blouse,
+    Dress,
+    Jacket,
+    Skirt,
+    Shirt,
+    Shoes,
     Suit,
     Sweater,
-    Sweatpants,
-    Swimsuit,
     Tanktop,
-    Thong,
-    Tie,
     Trousers,
     TShirt,
     Vest,
-    Wig,
+
+    // Fetish
+    Corset,
+    Harness,
+    Hood,
 
     ;
 
+    enum UnderpantsType {
+        Boxers,
+        Briefs,
+        G_String,
+        Panties,
+        Thong,
+    }
+
+    enum Footwear {
+        Boots,
+        High_Heels,
+        Pumps,
+        Sandals,
+        Sneakers
+    }
+
+    enum SkirtType {
+        MiniSkirt,
+        Skirt
+    }
+
+    enum TrouwsersType {
+        Jeans,
+        Shorts,
+        Sweatpants,
+        Trousers
+    }
+
+    enum SwimwearType {
+        Bikini,
+        Monokini,
+        Swimsuit,
+    }
     // Namespaces of wearers of the diverse clothing items
 
     public static final String Male = "Male";
@@ -81,36 +92,25 @@ public enum Clothes {
     public static final String Wife = "wife";
     public static final String Husband = "Husband";
 
-    public static final Clothes[] Underwear = { Boxers, Briefs, GString, Panties, Thong };
+    public static final Clothes[] Underwear = { Babydoll, Body, Bra, Catsuit, Garter_Belt, Leotard, Nightie, Underpants,
+            Pantyhose, Socks, Stockings, Swimwear };
 
-    public static final Clothes[] Clothing = { Jeans, Shirt, Shorts, Socks, Suit, Sweater, Sweatpants, Trousers,
-            TShirt };
+    public static final Clothes[] Clothing = { Shirt, Socks, Suit, Sweater, Trousers, TShirt };
 
-    // TODO resolve to Shoes + specialization
-    public static final Clothes[] Footwear = { Boots, Sandals, Shoes };
+    public static final Clothes[] MaleUnderwear = { Underpants, Socks, Pajamas };
+    public static final Clothes[] MaleClothing = { Socks, Shirt, TShirt, Sweater, Trousers, Jacket, Suit };
 
-    public static final Clothes[] Accesoires = { Bracelet, Belt, Gloves, Necklace };
+    public static final Clothes[] FemaleUnderwear = { Underpants, Socks, Babydoll, Nightie, Pantyhose, Body, Bra,
+            Catsuit, Garter_Belt, Nightie, Underpants, Pajamas, Leotard, Swimwear };
+    public static final Clothes[] FemaleClothing = { Blouse, Corset, Dress, Jacket, Shirt, Skirt, Stockings, Sweater,
+            Tanktop, Trousers, Vest };
 
-    public static final Clothes[] MaleClothing = { Boots, Boxers, Briefs, Jacket, Socks, Suit, Sweater, Sweatpants,
-            Trousers, TShirt };
-    public static final Clothes[] MaleAccesoires = { Tie };
+    public static final Clothes[] Fetish = { Corset, Harness, Hood };
 
-    public static final Clothes[] FemaleClothing = { Baby_Doll, Bikini, Blouse, Body, Bra, Catsuit, Corset, Dress,
-            Garterbelt, GString, High_Heels, Jacket, Leotard, Miniskirt, Monokini, Nightie, Panties, Pantyhose, Shirt,
-            Shorts, Skirt, Socks, Stockings, Sweater, Sweatpants, Swimsuit, Tanktop, Vest };
-    public static final Clothes[] FemaleFootwear = { Pumps, High_Heels };
-    public static final Clothes[] FemaleAccesoires = { Belt, Gloves, Handbag, Jewelry, Make_up, Princess_Tiara, Scarf };
+    public static final Clothes[] MaidClothes = { Blouse, Body, Bra, Catsuit, Corset, Dress, Garter_Belt, Leotard,
+            Underpants, Pantyhose, Shirt, Shoes, Skirt, Socks, Stockings };
 
-    public static final Clothes[] MaidClothes = { Blouse, Body, Boots, Bra, Catsuit, Corset, Dress, Garterbelt, GString,
-            High_Heels, Leotard, Miniskirt, Panties, Pantyhose, Sandals, Shirt, Shoes, Skirt, Socks, Stockings, Thong };
-
-    public static final Clothes[] FetishAccesoires = { Corset, Harness, Hood };
-    public static final Clothes[] MaidAccesoires = { Apron, Belt, Gloves };
-    public static final Clothes[] TrannyAccesoires = { Breast_Forms, Diaper, Wig };
-
-    public static final Clothes[][] Categories = { Underwear, Clothing, MaleClothing, FemaleClothing, Footwear,
-            FemaleFootwear, Accesoires, MaleAccesoires, FemaleAccesoires, FetishAccesoires, MaidAccesoires,
-            TrannyAccesoires };
+    public static final Clothes[][] Categories = { Clothing, MaleClothing, FemaleClothing };
 
     @Override
     public String toString() {

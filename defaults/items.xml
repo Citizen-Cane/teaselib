@@ -5,23 +5,427 @@
 
 <Items>
 	<Toys>
+		<Item item="Blindfold" guid="blindfold" displayName="Blindfold">
+		</Item>
+
+		<Item item="Buttplug" guid="buttplug" displayName="Butt plug">
+			<Attribute> Toys.Anal.Plug </Attribute>
+			<Attribute> Body.Orifice.Anal </Attribute>
+		</Item>
+
+		<Item item="Buttplug" guid="anal_beads" displayName="Anal Beads">
+			<Attribute> Toys.Anal.Beads </Attribute>
+			<Attribute> Body.Orifice.Anal </Attribute>
+		</Item>
+
+		<Item item="Collar" guid="collar" displayName="Collar">
+		</Item>
+
+		<Item item="Gag" guid="ball_gag" displayName="Ball gag">
+			<Attribute> Toys.Gags.Ball_Gag </Attribute>
+			<Attribute> Body.Orifice.Oral </Attribute>
+		</Item>
+		<Item item="Gag" guid="bit_gag" displayName="Bit gag">
+			<Attribute> Toys.Gags.Bit_Gag </Attribute>
+			<Attribute> Body.Orifice.Oral </Attribute>
+		</Item>
+		<Item item="Gag" guid="muzzle_gag" displayName="Muzzle gag">
+			<Attribute> Toys.Gags.Muzzle_Gag </Attribute>
+			<Attribute> Body.Orifice.Oral </Attribute>
+		</Item>
+		<Item item="Gag" guid="penis_gag" displayName="Penis gag">
+			<Attribute> Toys.Gags.Penis_Gag </Attribute>
+			<Attribute> Body.Orifice.Oral </Attribute>
+		</Item>
+		<Item item="Gag" guid="ring_gag" displayName="Ring gag">
+			<Attribute> Toys.Gags.Ring_Gag </Attribute>
+			<Attribute> Body.Orifice.Oral </Attribute>
+		</Item>
+		
+		<Item item="Nipple_Clamps" guid="nipple_clamps" displayName="Nipple Clamps">
+		</Item>
+
+		<Item item="Spanking_Implement" guid="cane" displayName="Cane">
+			<Attribute> Toys.Spanking_Implements.Cane </Attribute>
+		</Item>
+		<Item item="Spanking_Implement" guid="crop" displayName="Crop">
+			<Attribute> Toys.Spanking_Implements.Crop </Attribute>
+		</Item>
+		<Item item="Spanking_Implement" guid="flogger" displayName="Flogger">
+			<Attribute> Toys.Spanking_Implements.Flogger </Attribute>
+		</Item>
+		<Item item="Spanking_Implement" guid="paddle" displayName="Paddle">
+			<Attribute> Toys.Spanking_Implements.Paddle </Attribute>
+		</Item>
+		<Item item="Spanking_Implement" guid="whip" displayName="Whip">
+			<Attribute> Toys.Spanking_Implements.Whip </Attribute>
+		</Item>
+
+
+		<Item item="Rope" guid="rope" displayName="Rope">
+		</Item>
+
+		<Item item="Ankle_Restraints" guid="ankle_restraints" displayName="Ankle Restraints">
+		</Item>
+
+		<Item item="Wrist_Restraints" guid="wrist_restraints" displayName="Ankle Restraints">
+		</Item>
+
+		<Item item="Chains" guid="chains" displayName="Chains">
+		</Item>
+
+		<Item item="Spreader_Bar" guid="spreader_bar" displayName="Spreader bar">
+		</Item>
+
+
+		<Item item="Ball_Stretcher" guid="ball_stretcher" displayName="Ball stretcher">
+		</Item>
+
+		<Item item="Chastity_Device" guid="chastity_cage" displayName="Chastity cage">
+			<Attribute> Toys.Chastity_Devices.Cage </Attribute>
+		</Item>
+		<Item item="Chastity_Device" guid="chastity_belt" displayName="Chastity belt">
+			<Attribute> Toys.Chastity_Devices.Cage </Attribute>
+		</Item>
+		<Item item="Chastity_Device" guid="gates_of_hell" displayName="Gates Of Hell">
+			<Attribute> Toys.Chastity_Devices.Gates_of_Hell </Attribute>
+		</Item>
+		<Item item="Chastity_Device" guid="cone_of_shame" displayName="Cone Of Shame">
+			<Attribute> Toys.Chastity_Devices.Cone_of_Shame </Attribute>
+		</Item>
+
+		<Item item="Cock_Ring" guid="cockring" displayName="Cock ring">
+		</Item>
+
+		<Item item="Glans_Ring" guid="glans_ring" displayName="Glans ring">
+		</Item>
+
 		<Item item="Humbler" guid="humbler" displayName="Humbler">
 		</Item>
+
+		<Item item="Masturbator" guid="masturbator" displayName="Masturbator">
+		</Item>
+
+
+		<Item item="Dildo" guid="dildo" displayName="Dildo">
+		</Item>
+
+		<Item item="Pussy_Clamps" guid="pussy_clamps" displayName="Pussy clamps">
+		</Item>
+
+		<Item item="Clit_Clamp" guid="clit_clamp" displayName="Clit clamp">
+		</Item>
+
+		<Item item="VaginalInsert" guid="vibrating_egg" displayName="Vibrating egg">
+			<Attribute> Body.Orifice.Vaginal </Attribute>
+			<Attribute> Features.Vibrating </Attribute>
+			<Attribute> Toys.Vaginal.Vibrating_Egg </Attribute>
+		</Item>
+
+		<Item item="VaginalInsert" guid="ben_wa_balls" displayName="Ben Wa Balls">
+			<Attribute> Body.Orifice.Vaginal </Attribute>
+			<Attribute> Toys.Vaginal.Ben_Wa_Balls </Attribute>
+		</Item>
+
+		<Item item="Vibrator" guid="vibrator" displayName="Vibrator">
+			<Attribute> Features.Vibrating </Attribute>
+		</Item>
+
+		<Item item="Vibrator" guid="butterfly_vibrator" displayName="Butterfly vibrator">
+			<Attribute> Features.Vibrating </Attribute>
+			<Attribute> Features.HandsFree </Attribute>
+		</Item>
+
+		<Item item="Anal_Douche" guid="anal_douche" displayName="Anal douche">
+			<Attribute> Body.Orifice.Anal </Attribute>
+		</Item>
+
+		<Item item="Enema_Kit" guid="enema_kit" displayName="Enema Kit">
+			<Attribute> Body.Orifice.Anal </Attribute>
+		</Item>
+
+		<Item item="Enema_Bulb" guid="enema_bulb" displayName="Enema bulb">
+			<Attribute> Body.Orifice.Anal </Attribute>
+		</Item>
+
+
+		<Item item="EStim_Device" guid="estim_device" displayName="EStim Device">
+		</Item>
+
+
+		<Item item="Doll" guid="doll" displayName="Doll">
+			<Attribute> Material.Rubber </Attribute>
+		</Item>
+
+		<Item item="Husband" guid="husband" displayName="Husband">
+		</Item>
+
+		<Item item="Wife" guid="wife" displayName="Wife">
+		</Item>
+
 	</Toys>
 
+
 	<Household>
+		<Item item="Bell" guid="bell" displayName="Bell">
+			<Attribute> Material.Metal </Attribute>
+		</Item>
+
+		<Item item="Baloons" guid="ballons" displayName="Baloons">
+			<Attribute> Material.Rubber </Attribute>
+			<Attribute> Features.Inflatable </Attribute>
+		</Item>
+
+		<Item item="Candle" guid="candle" displayName="Candle">
+		</Item>
+
+		<Item item="Cigarettes" guid="cigarettes" displayName="Cigarettes">
+		</Item>
+
+		<Item item="Clothes_Pegs" guid="clothespins" displayName="Clothes pegs">
+		</Item>
+
+		<Item item="Condoms" guid="condoms" displayName="Condoms">
+		</Item>
+
+		<Item item="Diaper" guid="diaper" displayName="Diaper">
+		</Item>
+
+		<Item item="Duct_Tape" guid="duct_tape" displayName="Duct tape">
+		</Item>
+
+		<Item item="Heat_Rub" guid="heat_rub" displayName="Heat rub">
+		</Item>
+
+		<Item item="Hairbrush" guid="hairbrush" displayName="Hairbrush">
+		</Item>
+
+		<Item item="Ice_Tray" guid="ice_tray" displayName="Ice tray">
+		</Item>
+
+		<Item item="Icecubes" guid="icecubes" displayName="Icecubes">
+		</Item>
+
+		<Item item="Leash" guid="leash" displayName="Leash">
+		</Item>
+
+		<Item item="Lube" guid="baby_oil" displayName="Baby oil">
+			<Attribute> Household.LubeType.Baby_Oil </Attribute>
+		</Item>
+		<Item item="Lube" guid="silicone_lube" displayName="Baby oil">
+			<Attribute> Household.LubeType.Silicone_Based </Attribute>
+		</Item>
+		<Item item="Lube" guid="vaseline" displayName="Baby oil">
+			<Attribute> Household.LubeType.Baby_Oil </Attribute>
+		</Item>
+		<Item item="Lube" guid="lube" displayName="Baby oil">
+			<Attribute> Household.LubeType.Water_Based </Attribute>
+		</Item>
+
+		<Item item="Padlocks" guid="padlocks" displayName="Padlocks">
+		</Item>
+
+		<Item item="Rubber_Bands" guid="rubber_bands" displayName="Rubber bands">
+		</Item>
+
+		<Item item="Ruler" guid="ruler" displayName="Ruler">
+		</Item>
+
+		<Item item="Shoe_Lace" guid="shoe_lace" displayName="Shoe lace">
+		</Item>
+
+		<Item item="Shrinkwrap" guid="shrinkwrap" displayName="Shrinkwrap">
+		</Item>
+
+		<Item item="Tampon" guid="tampon" displayName="Tampon">
+		</Item>
+
+		<Item item="Weight" guid="weight" displayName="Weight">
+		</Item>
+		
 		<Item item="Wooden_Spoon" guid="wooden_spoon" displayName="Woodenspoon">
 			<Attribute> Material.Wood </Attribute>
 		</Item>
+		
 	</Household>
 	
 	<Clothes>
+		<Item item="Babydoll" guid="babydoll" displayName="Babydoll">
+		</Item>
+
+		<Item item="Body" guid="body" displayName="Body">
+		</Item>
+
+		<Item item="Bra" guid="bra" displayName="Bra">
+		</Item>
+
 		<Item item="Catsuit" guid="catsuit" displayName="Catsuit">
 		</Item>
+
+		<Item item="Garter_Belt" guid="garter_belt" displayName="Garter belt">
+		</Item>
+
+		<Item item="Leotard" guid="leotard" displayName="Leotard">
+		</Item>
+
+		<Item item="Nightie" guid="nightie" displayName="Nightie">
+		</Item>
+
+		<Item item="Underpants" guid="boxers" displayName="Boxers">
+			<Attribute> Clothes.UnderpantsType.Boxers </Attribute>
+		</Item>
+		<Item item="Underpants" guid="briefs" displayName="Briefs">
+			<Attribute> Clothes.UnderpantsType.Briefs </Attribute>
+		</Item>
+		<Item item="Underpants" guid="g_string" displayName="G-String">
+			<Attribute> Clothes.UnderpantsType.G_String </Attribute>
+		</Item>
+		<Item item="Underpants" guid="panties" displayName="Panties">
+			<Attribute> Clothes.UnderpantsType.Panties </Attribute>
+		</Item>
+		<Item item="Underpants" guid="thong" displayName="Thong">
+			<Attribute> Clothes.UnderpantsType.Thong </Attribute>
+		</Item>
+
+		<Item item="Pantyhose" guid="pantyhose" displayName="Pantyhose">
+		</Item>
+		
+		<Item item="Pajamas" guid="pajamas" displayName="Pajamas">
+		</Item>
+		
+		<Item item="Socks" guid="socks" displayName="Socks">
+		</Item>
+		
+		<Item item="Stockings" guid="stockings" displayName="Stockings">
+		</Item>
+		
+		<Item item="Swimwear" guid="bikini" displayName="Bikini">
+			<Attribute> Clothes.SwimwearType.Bikini </Attribute>
+		</Item>
+		<Item item="Swimwear" guid="monokini" displayName="Monokini">
+			<Attribute> Clothes.SwimwearType.Monokini </Attribute>
+		</Item>
+		<Item item="Swimwear" guid="swimsuit" displayName="Swimsuit">
+			<Attribute> Clothes.SwimwearType.Swimsuit </Attribute>
+		</Item>
+
+
+		<Item item="Blouse" guid="blouse" displayName="Blouse">
+		</Item>
+		
+		<Item item="Dress" guid="dress" displayName="Dress">
+		</Item>
+		
+		<Item item="Jacket" guid="jacket" displayName="Jacket">
+		</Item>
+		
+		<Item item="Skirt" guid="skirt" displayName="Skirt">
+			<Attribute> Clothes.SkirtType.Skirt </Attribute>
+			<Attribute> Length.Medium </Attribute>
+		</Item>
+		<Item item="Skirt" guid="miniskirt" displayName="Miniskirt">
+			<Attribute> Clothes.SkirtType.Miniskirt </Attribute>
+			<Attribute> Length.Short </Attribute>
+		</Item>
+
+		<Item item="Shirt" guid="shirt" displayName="Shirt">
+		</Item>
+		
+		<Item item="Shoes" guid="boots" displayName="Boots">
+			<Attribute> Clothes.Footwear.Boots </Attribute>
+		</Item>
+		<Item item="Shoes" guid="high_heels" displayName="High heels">
+			<Attribute> Clothes.Footwear.High_Heels </Attribute>
+		</Item>
+		<Item item="Shoes" guid="pumps" displayName="Pumps">
+			<Attribute> Clothes.Footwear.Pumps </Attribute>
+		</Item>
+		<Item item="Shoes" guid="sandals" displayName="Sandals">
+			<Attribute> Clothes.Footwear.Sandals </Attribute>
+		</Item>
+		<Item item="Shoes" guid="sneakers" displayName="Sneakers">
+			<Attribute> Clothes.Footwear.Sneakers </Attribute>
+		</Item>
+		
+		<Item item="Suit" guid="suit" displayName="Suit">
+		</Item>
+
+		<Item item="Sweater" guid="sweater" displayName="Sweater">
+		</Item>
+		
+		<Item item="Tanktop" guid="tanktop" displayName="Tanktop">
+		</Item>
+
+		<Item item="Trousers" guid="jeans" displayName="Jeans">
+			<Attribute> Clothes.TrouwsersType.Jeans </Attribute>
+		</Item>
+		<Item item="Trousers" guid="shorts" displayName="Shorts">
+			<Attribute> Clothes.TrouwsersType.Shorts </Attribute>
+		</Item>
+		<Item item="Trousers" guid="sweatpants" displayName="Sweatpants">
+			<Attribute> Clothes.TrouwsersType.Sweatpants </Attribute>
+		</Item>
+		<Item item="Trousers" guid="trouwsers" displayName="Trouwsers">
+			<Attribute> Clothes.TrouwsersType.Trousers </Attribute>
+		</Item>
+
+		<Item item="TShirt" guid="tshirt" displayName="T-Shirt">
+		</Item>
+
+		<Item item="Vest" guid="vest" displayName="Vest">
+		</Item>
+
 	</Clothes>
 
+	<Accessoires>
+		<Item item="Apron" guid="apron" displayName="Apron">
+		</Item>
+
+		<Item item="Belt" guid="belt" displayName="Belt">
+		</Item>
+
+
+		<Item item="Gloves" guid="gloves" displayName="Gloves">
+		</Item>
+
+		<Item item="Handbag" guid="handbag" displayName="Handbag">
+		</Item>
+
+		<Item item="Jewelry" guid="bracelet" displayName="Bracelet">
+		</Item>
+		<Item item="Jewelry" guid="necklace" displayName="Necklace">
+		</Item>
+
+		<Item item="Princess_Tiara" guid="princess_tiara" displayName="Princess tiara">
+		</Item>
+
+		<Item item="Scarf" guid="scarf" displayName="Scarf">
+		</Item>
+
+		<Item item="Tie" guid="tie" displayName="Tie">
+		</Item>
+
+		<Item item="Breast_Forms" guid="princess_tiara" displayName="Breast forms">
+		</Item>
+
+		<Item item="Strap_On" guid="strap_on" displayName="Strap-on">
+		</Item>
+
+		<Item item="Wig" guid="wig" displayName="Wig">
+		</Item>
+	</Accessoires>
+	
+
 	<Gadgets>
-		<Item item="Computer_Controlled_EStim" guid="estim" displayName="Teaselib-enabled estim controller">
+		<Item item="Key_Release" guid="key_relase" displayName="TeaaseLib-controlled Key-Release">
+		</Item>
+		<Item item="Key_Safe" guid="key_safe" displayName="Key-Safe">
+		</Item>
+		<Item item="EStim_Controller" guid="estim_controller" displayName="Teaselib-controlled estim device">
+		</Item>
+		<Item item="Vibrator_Controller" guid="vibrator_controller" displayName="Teaselib-controlled vibrator">
+		</Item>
+		<Item item="Webcam" guid="webcam" displayName="Webcam">
 		</Item>
 	</Gadgets>
 </Items>

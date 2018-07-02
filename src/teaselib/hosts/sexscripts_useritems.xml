@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE Items SYSTEM "items.dtd">
+
+<!-- SexScripts non-generic user items - not covered by TeaseLib default items -->
+
+<Items>
+	<Toys>
+		<Item item="Buttplug" guid="inflatable_buttplug" displayName="Inflatable buttplug">
+			<Attribute> Toys.Anal.Plug </Attribute>
+			<Attribute> Body.Orifice.Anal </Attribute>
+			<Attribute> Features.Inflatable </Attribute>
+		</Item>
+		<Item item="Buttplug" guid="vibrating_buttplug" displayName="Vibrating buttplug">
+			<Attribute> Toys.Anal.Plug </Attribute>
+			<Attribute> Body.Orifice.Anal </Attribute>
+			<Attribute> Features.Vibrating </Attribute>
+		</Item>
+		<Item item="Dildo" guid="vibrating_dildo" displayName="Vibrating dildo">
+			<Attribute> Features.Vibrating </Attribute>
+		</Item>
+
+		<Item item="Ankle_Restraints" guid="ankle_cuffs" displayName="Ankle cuffs">
+			<Attribute> Features.Lockable </Attribute>
+			<Attribute> Material.Metal </Attribute>
+		</Item>
+
+		<Item item="Wrist_Restraints" guid="handcuffs" displayName="Hand cuffs">
+			<Attribute> Features.Lockable </Attribute>
+			<Attribute> Material.Metal </Attribute>
+		</Item>
+
+		<Item item="Plants" guid="plants" displayName="Plants">
+		</Item>
+	</Toys>
+
+	<Household>
+	</Household>
+	
+	<Clothes>
+		<Item item="Dress" guid="maid_attire" displayName="Maid attire">
+		</Item>
+
+		<Item item="Jewelry" guid="jewelry" displayName="Jewelry">
+		</Item>
+	</Clothes>
+
+	<Gadgets>
+	</Gadgets>
+</Items>

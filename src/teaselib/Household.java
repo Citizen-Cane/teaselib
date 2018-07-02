@@ -1,7 +1,6 @@
 package teaselib;
 
 public enum Household {
-    Baby_Oil,
     Bell,
     Baloons,
     Candle,
@@ -13,7 +12,7 @@ public enum Household {
     Heat_Rub,
     Hairbrush,
     Ice_Tray,
-    Icecube,
+    Icecubes,
     Leash,
     Lube,
     Padlocks,
@@ -27,11 +26,18 @@ public enum Household {
 
     ;
 
+    enum LubeType {
+        Baby_Oil,
+        Silicone_Based,
+        Vaseline,
+        Water_Based,
+    }
+
     public static final Household[] Spanking = { Hairbrush, Ruler, Wooden_Spoon, Clothes_Pegs };
     public static final Household[] Bondage = { Padlocks, Shoe_Lace, Shrinkwrap, Duct_Tape, Leash };
-    public static final Household[] Tools = { Baby_Oil, Heat_Rub, Lube, Baloons, Bell, Condoms, Diaper, Rubber_Bands,
-            Tampon, Weight };
-    public static final Household[] Kitchen = { Ice_Tray, Icecube, Candle, Cigarettes };
+    public static final Household[] Tools = { Heat_Rub, Lube, Baloons, Bell, Condoms, Diaper, Rubber_Bands, Tampon,
+            Weight };
+    public static final Household[] Kitchen = { Ice_Tray, Icecubes, Candle, Cigarettes };
 
     public static final Household[] Categories[] = { Spanking, Bondage, Tools, Kitchen };
 }

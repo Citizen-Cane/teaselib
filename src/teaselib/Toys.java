@@ -17,23 +17,23 @@ import teaselib.util.Item;
  *
  */
 public enum Toys {
-    Ankle_Restraints,
     Blindfold,
     Buttplug,
     Collar,
     Gag,
     Nipple_Clamps,
     Spanking_Implement,
-    Spreader_Bar,
-    Wrist_Restraints,
 
-    Chains,
     Rope,
+    Ankle_Restraints,
+    Wrist_Restraints,
+    Chains,
+    Spreader_Bar,
 
     Ball_Stretcher,
     Chastity_Device,
-    Cockring,
-    GlansRing,
+    Cock_Ring,
+    Glans_Ring,
     Humbler,
     Masturbator,
 
@@ -41,13 +41,12 @@ public enum Toys {
     Pussy_Clamps,
     Clit_Clamp,
     VaginalInsert,
-    Vibrator,
-    Strap_On,
 
     Anal_Douche,
     Enema_Kit,
     Enema_Bulb,
 
+    Vibrator,
     EStim_Device,
 
     Doll,
@@ -61,14 +60,14 @@ public enum Toys {
         Bumhole,
         Feet,
         Breasts,
-        Face,
+        Mouth,
     }
 
-    public enum ChastityDevices implements Item.Attribute {
-        Chastity_Belt,
-        Chastity_Cage,
+    public enum Chastity_Devices implements Item.Attribute {
+        Belt,
+        Cage,
+        Gates_of_Hell,
         Cone_of_Shame,
-        Gates_of_Hell
     }
 
     public enum Collars implements Item.Attribute {
@@ -101,21 +100,16 @@ public enum Toys {
 
     public enum Vaginal implements Item.Attribute {
         Ben_Wa_Balls,
-        VibratingEgg,
-    }
-
-    public enum Vibrators implements Item.Attribute {
-        HandsFree,
-        Manual,
+        Vibrating_Egg,
     }
 
     public static final Toys Essential[] = { Gag, Blindfold, Collar, Nipple_Clamps, Spanking_Implement };
     public static final Toys Bondage[] = { Ankle_Restraints, Wrist_Restraints, Rope, Chains, Spreader_Bar };
     public static final Toys Backdoor[] = { Buttplug, Dildo, Anal_Douche, Enema_Bulb, Enema_Kit };
     public static final Toys Female[] = { Clit_Clamp, Pussy_Clamps, VaginalInsert };
-    public static final Toys Male[] = { Ball_Stretcher, Cockring, GlansRing, Humbler, Masturbator };
+    public static final Toys Male[] = { Ball_Stretcher, Chastity_Device, Cock_Ring, Glans_Ring, Humbler, Masturbator };
     public static final Toys Stimulation[] = { Vibrator, EStim_Device };
-    public static final Toys Partner[] = { Doll, Husband, Wife, Chastity_Device, Strap_On };
+    public static final Toys Partner[] = { Doll, Husband, Wife };
 
     public static final Toys[] Categories[] = { Essential, Bondage, Backdoor, Female, Male, Stimulation, Partner };
 }

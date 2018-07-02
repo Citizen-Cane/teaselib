@@ -94,7 +94,7 @@ public class ItemIdentityTest {
     public void testItemInstanceRemoveAnyInstance() {
         TestScript script = TestScript.getOne();
 
-        Item chastityDevice = script.items(Toys.Chastity_Device).query(Toys.ChastityDevices.Gates_of_Hell).get();
+        Item chastityDevice = script.items(Toys.Chastity_Device).query(Toys.Chastity_Devices.Gates_of_Hell).get();
         State onPenis = script.state(Body.OnPenis);
 
         chastityDevice.apply();
@@ -102,7 +102,7 @@ public class ItemIdentityTest {
         assertTrue(chastityDevice.applied());
         assertTrue(onPenis.applied());
 
-        Item otherChastityDevice = script.items(Toys.Chastity_Device).query(Toys.ChastityDevices.Chastity_Belt).get();
+        Item otherChastityDevice = script.items(Toys.Chastity_Device).query(Toys.Chastity_Devices.Belt).get();
         otherChastityDevice.remove();
 
         assertFalse(chastityDevice.applied());

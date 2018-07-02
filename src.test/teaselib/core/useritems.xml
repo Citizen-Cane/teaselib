@@ -23,7 +23,7 @@
 	</Clothes>
 
 	<Gadgets>
-		<Item item="Computer_Controlled_EStim" guid="estim" displayName="EStim">
+		<Item item="EStim_Controller" guid="estim" displayName="EStim">
 		</Item>
 	</Gadgets>
 </Items>

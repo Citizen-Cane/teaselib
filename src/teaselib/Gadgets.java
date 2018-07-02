@@ -9,16 +9,16 @@ package teaselib;
  *
  */
 public enum Gadgets {
-    SelfBondage_TimeLock,
+    Key_Release,
     Key_Safe,
-    Computer_Controlled_EStim,
-    Computer_Controlled_Vibrator,
+    EStim_Controller,
+    Vibrator_Controller,
     Webcam
 
     ;
 
-    public static final Gadgets[] All = { SelfBondage_TimeLock, Key_Safe, Computer_Controlled_Vibrator,
-            Gadgets.Computer_Controlled_EStim, Webcam };
+    public static final Gadgets[] All = { Key_Release, Key_Safe, Vibrator_Controller,
+            Gadgets.EStim_Controller, Webcam };
 
     public static final Gadgets[][] Categories = { All };
 }

@@ -6,8 +6,15 @@ public enum Features implements Item.Attribute {
     Inflatable,
     Vibrating,
     Detachable,
-    Anal,
-    Vaginal,
     SuctionCup,
     Lockable,
+    HandsFree,
+    EStim,
+
+    ;
+
+    public enum ElectrodeType {
+        Uni,
+        Dual
+    }
 }

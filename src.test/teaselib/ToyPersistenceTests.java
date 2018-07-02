@@ -31,7 +31,7 @@ public class ToyPersistenceTests {
             assertTrue(script.persistence.storage.containsKey("Toys.ball_gag"));
         }
 
-        script.teaseLib.item(Clothes.Female, Clothes.High_Heels).setAvailable(true);
+        script.teaseLib.item(Clothes.Female, Clothes.Shoes).setAvailable(true);
         assertTrue(script.persistence.storage.containsKey("Female.Clothes.High_Heels"));
     }
 
@@ -44,28 +44,23 @@ public class ToyPersistenceTests {
 
         gag.setAvailable(true);
         if (script.persistence.getNameMapping() instanceof SexScriptsPropertyNameMapping) {
-            assertTrue(script.persistence.storage
-                    .containsKey(Toys.class.getSimpleName() + ".ballgag"));
+            assertTrue(script.persistence.storage.containsKey(Toys.class.getSimpleName() + ".ballgag"));
         } else {
-            assertTrue(script.persistence.storage
-                    .containsKey(Toys.class.getSimpleName() + ".ball_gag"));
+            assertTrue(script.persistence.storage.containsKey(Toys.class.getSimpleName() + ".ball_gag"));
         }
 
-        script.teaseLib.item(TeaseLib.DefaultDomain, Clothes.High_Heels).setAvailable(true);
-        assertTrue(script.persistence.storage
-                .containsKey(Clothes.class.getSimpleName() + ".High_Heels"));
+        script.teaseLib.item(TeaseLib.DefaultDomain, Clothes.Shoes).setAvailable(true);
+        assertTrue(script.persistence.storage.containsKey(Clothes.class.getSimpleName() + ".High_Heels"));
     }
 
     public void testAssignedToysAndClothingAsItems() {
         TestScript script = TestScript.getOne();
 
         script.teaseLib.item(Clothes.Maid, Toys.Gag).setAvailable(true);
-        assertTrue(script.persistence.storage
-                .containsKey("Maid." + Toys.class.getSimpleName() + ".ball_gag"));
+        assertTrue(script.persistence.storage.containsKey("Maid." + Toys.class.getSimpleName() + ".ball_gag"));
 
-        script.teaseLib.item(Clothes.Female, Clothes.High_Heels).setAvailable(true);
+        script.teaseLib.item(Clothes.Female, Clothes.Shoes).setAvailable(true);
 
-        assertTrue(script.persistence.storage
-                .containsKey("Female." + Clothes.class.getSimpleName() + ".high_heels"));
+        assertTrue(script.persistence.storage.containsKey("Female." + Clothes.class.getSimpleName() + ".high_heels"));
     }
 }

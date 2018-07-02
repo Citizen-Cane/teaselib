@@ -27,5 +27,13 @@ public enum Body {
     OnLabia,
 
     AnklesTied,
-    WristsTied
+    WristsTied,
+
+    ;
+
+    public enum Orifice {
+        Anal,
+        Oral,
+        Vaginal
+    }
 }

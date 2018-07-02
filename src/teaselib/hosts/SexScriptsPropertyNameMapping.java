@@ -54,11 +54,16 @@ public class SexScriptsPropertyNameMapping extends PropertyNameMapping {
 
     @Override
     public String mapName(String domain, String path, String name) {
-        if (Toys.class.getSimpleName().equals(path) && Toys.Gags.Ball_Gag.name().equalsIgnoreCase(name)) {
+        if (is(Toys.Gag, Toys.Gags.Ball_Gag.name(), path, name)) {
             return "ballgag";
-        } else if (Household.class.getSimpleName().equals(path)
-                && Household.Clothes_Pegs.name().equalsIgnoreCase(name)) {
+        } else if (is(Toys.Cock_Ring, path, name)) {
+            return "cockring";
+        } else if (is(Toys.EStim_Device, path, name)) {
+            return "estim";
+        } else if (is(Household.Clothes_Pegs, path, name)) {
             return "clothespins";
+        } else if (is(Household.Cigarettes, path, name)) {
+            return "cigarette";
         } else if ("Sexuality$Orientation".equals(path) && Sexuality.Orientation.LikesMales.name().equals(name)) {
             return "likemale";
         } else if ("Sexuality$Orientation".equals(path) && Sexuality.Orientation.LikesFemales.name().equals(name)) {
@@ -71,6 +76,14 @@ public class SexScriptsPropertyNameMapping extends PropertyNameMapping {
                 return mappedName;
             }
         }
+    }
+
+    private static boolean is(Enum<?> item, String guid, String path, String name) {
+        return item.getClass().getSimpleName().equals(path) && guid.equalsIgnoreCase(name);
+    }
+
+    private static boolean is(Enum<?> item, String path, String name) {
+        return item.getClass().getSimpleName().equals(path) && item.name().equalsIgnoreCase(name);
     }
 
     @Override

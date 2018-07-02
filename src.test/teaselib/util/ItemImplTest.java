@@ -5,7 +5,6 @@ import static org.junit.Assert.*;
 import org.junit.Test;
 
 import teaselib.Body;
-import teaselib.Features;
 import teaselib.Length;
 import teaselib.Material;
 import teaselib.Posture;
@@ -103,29 +102,29 @@ public class ItemImplTest {
         assertFalse(script.state(Toys.Buttplug).applied());
         assertFalse(script.state(Toys.Buttplug).is(Toys.Anal.Beads));
         assertFalse(script.state(Body.InButt).is(Toys.Anal.Beads));
-        assertFalse(script.state(Body.InButt).is(Features.Anal));
+        assertFalse(script.state(Body.InButt).is(Body.Orifice.Anal));
 
         Item analBeads1 = script.items(Toys.Buttplug).query(Toys.Anal.Beads).get();
         analBeads1.apply();
 
         assertTrue(script.state(Toys.Buttplug).applied());
         assertTrue(script.state(Toys.Buttplug).is(Toys.Anal.Beads));
-        assertTrue(script.state(Toys.Buttplug).is(Features.Anal));
+        assertTrue(script.state(Toys.Buttplug).is(Body.Orifice.Anal));
 
         assertTrue(script.state(Body.InButt).applied());
         assertTrue(script.state(Body.InButt).is(Toys.Buttplug));
 
         assertTrue(script.state(Body.InButt).is(Toys.Anal.Beads));
-        assertTrue(script.state(Body.InButt).is(Features.Anal));
+        assertTrue(script.state(Body.InButt).is(Body.Orifice.Anal));
 
         Item analBeads2 = script.items(Toys.Buttplug).query(Toys.Anal.Beads).get();
         assertTrue(analBeads2.is(Toys.Anal.Beads));
         analBeads2.remove();
 
         assertFalse(script.state(Toys.Buttplug).is(Toys.Anal.Beads));
-        assertFalse(script.state(Toys.Buttplug).is(Features.Anal));
+        assertFalse(script.state(Toys.Buttplug).is(Body.Orifice.Anal));
         assertFalse(script.state(Body.InButt).is(Toys.Anal.Beads));
-        assertFalse(script.state(Body.InButt).is(Features.Anal));
+        assertFalse(script.state(Body.InButt).is(Body.Orifice.Anal));
 
         Item buttPlug = script.item(Toys.Buttplug);
         assertFalse(buttPlug.applied());

@@ -75,49 +75,22 @@ public class AbstractUserItemsTest {
     }
 
     @Test
-    public void testPredefinedItems() throws Exception {
-
-        class TestablePredefinedItems extends PreDefinedItems {
-
-            public TestablePredefinedItems(TeaseLib teaseLib) {
-                super(teaseLib);
-            }
-
-            public Item[] createItems(String domain, QualifiedItem item) {
-                return createDefaultItems(domain, item);
-            }
-
-            @Override
-            public Item[] getDefaultItem(String domain, QualifiedItem item) {
-                return new Item[] { Item.NotFound };
-            }
-
-        }
-
+    public void testDefaultItems() throws Exception {
         TestScript script = TestScript.getOne();
-        TestablePredefinedItems items = new TestablePredefinedItems(script.teaseLib);
+        UserItems items = configureUserItems(script);
 
         for (Toys item : Toys.values()) {
-            Item[] predefined = items.createItems(TeaseLib.DefaultDomain, new QualifiedEnum(item));
+            List<Item> predefined = items.get(TeaseLib.DefaultDomain, new QualifiedEnum(item));
             assertNotNull(predefined);
-            assertTrue(predefined.length > 0);
-            assertNotEquals("Expected defined item for " + item.name(), Item.NotFound, predefined[0]);
+            assertTrue(predefined.size() > 0);
+            assertNotEquals("Expected defined item for " + item.name(), Item.NotFound, predefined.get(0));
         }
     }
 
     @Test
     public void testUserItems() {
         TestScript script = TestScript.getOne();
-        Configuration config = script.teaseLib.config;
-
-        config.set(AbstractUserItems.Settings.ITEM_DEFAULT_STORE,
-                new File(script.host.getLocation(Location.TeaseLib), "defaults/" + "items.xml").getPath());
-        assertTrue(new File(config.get(AbstractUserItems.Settings.ITEM_DEFAULT_STORE)).exists());
-
-        config.set(AbstractUserItems.Settings.ITEM_USER_STORE, getClass().getResource("useritems.xml").getPath());
-        assertTrue(new File(config.get(AbstractUserItems.Settings.ITEM_USER_STORE)).exists());
-
-        UserItems userItems = new PreDefinedItems(script.teaseLib);
+        UserItems userItems = configureUserItems(script);
 
         testToys(userItems);
         testHousehold(userItems);
@@ -125,9 +98,14 @@ public class AbstractUserItemsTest {
         testGadgets(userItems);
     }
 
-    @Test
-    public void testUserItemsOverwriteEntry() {
-        TestScript script = TestScript.getOne();
+    private UserItems configureUserItems(TestScript script) {
+        configurePaths(script);
+
+        UserItems userItems = new PreDefinedItems(script.teaseLib);
+        return userItems;
+    }
+
+    private void configurePaths(TestScript script) {
         Configuration config = script.teaseLib.config;
 
         config.set(AbstractUserItems.Settings.ITEM_DEFAULT_STORE,
@@ -136,6 +114,12 @@ public class AbstractUserItemsTest {
 
         config.set(AbstractUserItems.Settings.ITEM_USER_STORE, getClass().getResource("useritems.xml").getPath());
         assertTrue(new File(config.get(AbstractUserItems.Settings.ITEM_USER_STORE)).exists());
+    }
+
+    @Test
+    public void testUserItemsOverwriteEntry() {
+        TestScript script = TestScript.getOne();
+        configurePaths(script);
 
         // Overwrite by user items
         assertEquals(1, script.items(Toys.Humbler).size());
@@ -198,11 +182,11 @@ public class AbstractUserItemsTest {
     }
 
     private static void testGadgets(UserItems userItems) {
-        List<Item> estims = userItems.get(TeaseLib.DefaultDomain, QualifiedItem.of(Gadgets.Computer_Controlled_EStim));
+        List<Item> estims = userItems.get(TeaseLib.DefaultDomain, QualifiedItem.of(Gadgets.EStim_Controller));
         assertEquals(1, estims.size());
 
         for (Item estim : estims) {
-            if (estim.displayName().equals("EStim")) {
+            if (estim.displayName().equals("Teaselib-controlled estim device")) {
                 return;
             }
         }

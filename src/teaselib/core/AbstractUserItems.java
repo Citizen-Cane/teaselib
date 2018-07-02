@@ -23,6 +23,7 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
+import teaselib.Accessoires;
 import teaselib.Body;
 import teaselib.Clothes;
 import teaselib.Gadgets;
@@ -207,6 +208,8 @@ public abstract class AbstractUserItems implements UserItems {
             return getClothesDefaults(item);
         } else if (item.namespace().equalsIgnoreCase(Household.class.getName())) {
             return getHouseholdDefaults(item);
+        } else if (item.namespace().equalsIgnoreCase(Accessoires.class.getName())) {
+            return getAccessoiresDefaults(item);
         } else if (item.namespace().equalsIgnoreCase(Gadgets.class.getName())) {
             return getGadgetsDefaults(item);
         } else {
@@ -219,6 +222,10 @@ public abstract class AbstractUserItems implements UserItems {
     }
 
     private static Enum<?>[] getHouseholdDefaults(QualifiedItem item) {
+        return new Body[] {};
+    }
+
+    private static Enum<?>[] getAccessoiresDefaults(QualifiedItem item) {
         return new Body[] {};
     }
 
@@ -264,7 +271,7 @@ public abstract class AbstractUserItems implements UserItems {
             return new Body[] { Body.OnBalls };
         } else if (item.equals(Toys.Blindfold)) {
             return new Body[] { Body.Blindfolded };
-        } else if (item.equals(Toys.Cockring)) {
+        } else if (item.equals(Toys.Cock_Ring)) {
             return new Body[] { Body.AroundCockBase };
         } else if (item.equals(Toys.Anal_Douche)) {
             return new Body[] { Body.InButt };
@@ -272,7 +279,7 @@ public abstract class AbstractUserItems implements UserItems {
             return new Body[] { Body.InButt };
         } else if (item.equals(Toys.Enema_Kit)) {
             return new Body[] { Body.InButt };
-        } else if (item.equals(Toys.GlansRing)) {
+        } else if (item.equals(Toys.Glans_Ring)) {
             return new Enum<?>[] { Body.OnPenis };
         } else if (item.equals(Toys.Humbler)) {
             return new Enum<?>[] { Body.OnBalls, Posture.CantStand, Posture.CantSitOnChair };
@@ -296,7 +303,7 @@ public abstract class AbstractUserItems implements UserItems {
             return new Body[] {};
         } else if (item.equals(Toys.Wife)) {
             return new Body[] {};
-        } else if (item.equals(Toys.Strap_On)) {
+        } else if (item.equals(Accessoires.Strap_On)) {
             return new Body[] {};
         } else {
             throw new IllegalArgumentException("Defaults not defined for " + item);

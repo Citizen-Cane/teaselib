@@ -8,6 +8,15 @@
 			<Attribute> Material.Wood </Attribute>
 			<Attribute> Features.Lockable </Attribute>
 		</Item>
+
+		<Item item="Wrist_Restraints" guid="wrist_restraints" displayName="Ankle Restraints">
+			<Attribute> Material.Leather </Attribute>
+		</Item>
+
+		<Item item="Wrist_Restraints" guid="handcuffs" displayName="Hand cuffs">
+			<Attribute> Material.Metal </Attribute>
+		</Item>
+		
 	</Toys>
 
 	<Household>
@@ -23,7 +32,7 @@
 	</Clothes>
 
 	<Gadgets>
-		<Item item="EStim_Controller" guid="estim" displayName="EStim">
+		<Item item="EStim_Controller" guid="estim_controller" displayName="EStim-Test-Entry">
 		</Item>
 	</Gadgets>
 </Items>

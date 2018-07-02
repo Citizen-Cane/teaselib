@@ -1,8 +1,11 @@
 package teaselib.test;
 
+import static org.junit.Assert.*;
+
 import java.io.File;
 
 import teaselib.Config;
+import teaselib.core.AbstractUserItems;
 import teaselib.core.Configuration;
 import teaselib.core.Configuration.Setup;
 import teaselib.core.TeaseLibConfigSetup;
@@ -16,6 +19,7 @@ public final class DebugSetup implements Setup {
     boolean enableOutput = false;
     boolean enableInput = false;
     boolean enableDictionaries = false;
+    // boolean loadItems = false;
 
     @Override
     public Configuration applyTo(Configuration config) {
@@ -24,6 +28,7 @@ public final class DebugSetup implements Setup {
         applyInput(config);
         applyOutput(config);
         applyDictionanries(config);
+        loadDefaultItemStores(config);
 
         return config;
     }
@@ -64,6 +69,17 @@ public final class DebugSetup implements Setup {
         }
     }
 
+    private void loadDefaultItemStores(Configuration config) {
+        // if (loadItems) {
+        config.set(AbstractUserItems.Settings.ITEM_DEFAULT_STORE, new File("defaults/" + "items.xml").getPath());
+        assertTrue(new File(config.get(AbstractUserItems.Settings.ITEM_DEFAULT_STORE)).exists());
+
+        config.set(AbstractUserItems.Settings.ITEM_USER_STORE,
+                new File("defaults/" + "useritems_template.xml").getPath());
+        assertTrue(new File(config.get(AbstractUserItems.Settings.ITEM_USER_STORE)).exists());
+        // }
+    }
+
     public static Configuration getConfiguration() {
         Configuration config = new Configuration();
         new DebugSetup().applyTo(config);
@@ -100,4 +116,9 @@ public final class DebugSetup implements Setup {
         enableDictionaries = true;
         return this;
     }
+
+    // public DebugSetup withItems() {
+    // loadItems = true;
+    // return this;
+    // }
 }

@@ -141,7 +141,8 @@ public class ItemImplTest {
 
     @Test
     public void testApplyToAppliesDefaultsAndAttributesPlusCustomPeers() {
-        TeaseScript script = TestScript.getOne();
+        TestScript script = TestScript.getOne();
+        script.addTestUserItems();
 
         assertFalse(script.state(Toys.Wrist_Restraints).applied());
 
@@ -156,13 +157,6 @@ public class ItemImplTest {
 
         assertTrue(script.state(Body.WristsTied).is(Toys.Wrist_Restraints));
         assertTrue(script.state(Posture.WristsTiedBehindBack).is(Toys.Wrist_Restraints));
-
-        // This is how to comment a certain item in a certain body location
-        if (script.state(Body.WristsTied).is(Toys.Wrist_Restraints)) {
-            if (script.item(Toys.Wrist_Restraints).is(Material.Leather)) {
-                say("You're wearing leather restraints", script.state(Toys.Wrist_Restraints).is(Material.Leather));
-            }
-        }
 
         script.item(Toys.Wrist_Restraints).remove();
         assertFalse(script.state(Toys.Wrist_Restraints).applied());
@@ -239,7 +233,8 @@ public class ItemImplTest {
 
     @Test
     public void testCanApplyWithoutDefaults() {
-        TeaseScript script = TestScript.getOne();
+        TestScript script = TestScript.getOne();
+        script.addTestUserItems();
 
         assertFalse(script.state(Toys.Wrist_Restraints).applied());
 
@@ -267,7 +262,7 @@ public class ItemImplTest {
 
         assertFalse(script.state(Toys.Gag).applied());
 
-        Item gag = script.items(Toys.Gag).query(Material.Leather).get();
+        Item gag = script.items(Toys.Gag).query(Toys.Gags.Ball_Gag).get();
 
         assertFalse(gag.applied());
         assertTrue(gag.canApply());
@@ -286,7 +281,8 @@ public class ItemImplTest {
 
     @Test
     public void testApplyToAppliesDefaultsAndAttributesPlusCustomPeersWithStrings() {
-        TeaseScript script = TestScript.getOne();
+        TestScript script = TestScript.getOne();
+        script.addTestUserItems();
 
         String Toys_Wrist_Restraints = "teaselib.Toys.Wrist_Restraints";
         String Body_WristsTied = "teaselib.Body.WristsTied";
@@ -318,7 +314,8 @@ public class ItemImplTest {
 
     @Test
     public void testStringsAndEnumsMixed() {
-        TeaseScript script = TestScript.getOne();
+        TestScript script = TestScript.getOne();
+        script.addTestUserItems();
 
         String Toys_Wrist_Restraints = "teaselib.Toys.Wrist_Restraints";
         String Body_WristsTied = "teaselib.Body.WristsTied";

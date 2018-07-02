@@ -1,8 +1,6 @@
 package teaselib;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import org.junit.Test;
 
@@ -53,7 +51,8 @@ public class ScriptPersistenceTests {
 
         script.item(Clothes.Underpants).setAvailable(true);
         assertTrue(script.item(Clothes.Underpants).isAvailable());
-        assertFalse(script.domain(Clothes.Female).item(Clothes.Underpants).isAvailable());
+        // TODO Support domain names for user items
+        assertFalse("Item domains not separated", script.domain(Clothes.Female).item(Clothes.Underpants).isAvailable());
 
         script.domain(Clothes.Female).item(Clothes.Underpants).setAvailable(true);
         assertTrue(script.domain(Clothes.Female).item(Clothes.Underpants).isAvailable());

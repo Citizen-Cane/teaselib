@@ -25,6 +25,11 @@ public class CategoryTests {
         testCategories(Clothes.Categories, Clothes.values());
     }
 
+    @Test
+    public void testAccessoiresCategories() {
+        testCategories(Accessoires.Categories, Accessoires.values());
+    }
+
     private static <T extends Enum<?>> void testCategories(T[][] categories, T[] values) {
         Set<T> all = new HashSet<>();
         for (T[] items : Arrays.asList(categories)) {

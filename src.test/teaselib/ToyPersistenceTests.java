@@ -3,7 +3,7 @@
  */
 package teaselib;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import org.junit.Test;
 
@@ -31,8 +31,11 @@ public class ToyPersistenceTests {
             assertTrue(script.persistence.storage.containsKey("Toys.ball_gag"));
         }
 
-        script.teaseLib.item(Clothes.Female, Clothes.Shoes).setAvailable(true);
-        assertTrue(script.persistence.storage.containsKey("Female.Clothes.High_Heels"));
+        script.teaseLib.items(Clothes.Female, Clothes.Shoes).query(Clothes.Footwear.High_Heels).get()
+                .setAvailable(true);
+        // TODO Support domain names for user items
+        assertTrue("Domain names for user items not supported",
+                script.persistence.storage.containsKey("Female.Clothes.High_Heels"));
     }
 
     @Test
@@ -49,8 +52,9 @@ public class ToyPersistenceTests {
             assertTrue(script.persistence.storage.containsKey(Toys.class.getSimpleName() + ".ball_gag"));
         }
 
-        script.teaseLib.item(TeaseLib.DefaultDomain, Clothes.Shoes).setAvailable(true);
-        assertTrue(script.persistence.storage.containsKey(Clothes.class.getSimpleName() + ".High_Heels"));
+        script.teaseLib.items(TeaseLib.DefaultDomain, Clothes.Shoes).query(Clothes.Footwear.High_Heels).get()
+                .setAvailable(true);
+        assertTrue(script.persistence.storage.containsKey(Clothes.class.getSimpleName() + ".high_heels"));
     }
 
     public void testAssignedToysAndClothingAsItems() {

@@ -1,5 +1,6 @@
 package teaselib.test;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.Locale;
 
@@ -97,6 +98,14 @@ public class TestScript extends TeaseScript {
         this.host = dummyHost;
         this.persistence = dummyPersistence;
         this.debugger = new Debugger(teaseLib);
+    }
+
+    public void addTestUserItems() {
+        addCustomUserItems("teaselib/core/useritems.xml");
+    }
+
+    public void addCustomUserItems(String resourcePath) {
+        teaseLib.addUserItems(new File(ResourceLoader.getProjectPath(getClass()), resourcePath));
     }
 
     @Override

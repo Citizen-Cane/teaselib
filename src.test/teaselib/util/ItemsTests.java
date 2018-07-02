@@ -7,7 +7,6 @@ import java.util.concurrent.TimeUnit;
 import org.junit.Test;
 
 import teaselib.Body;
-import teaselib.Material;
 import teaselib.State;
 import teaselib.TeaseScript;
 import teaselib.Toys;
@@ -70,47 +69,49 @@ public class ItemsTests {
 
     @Test
     public void testAll() {
-        TeaseScript script = TestScript.getOne();
+        TestScript script = TestScript.getOne();
+        script.addTestUserItems();
+
         Items gags = script.items(Toys.Gag);
-        // TODO test that all() is AND
-        Items allMetalAndLeather = gags.query(Material.Metal, Material.Leather);
-        assertEquals(1, allMetalAndLeather.size());
 
-        Item ringGag = allMetalAndLeather.get(0);
-        Item sameRingGag = gags.query(Toys.Gags.Ring_Gag).get();
+        Items bitGags = gags.query(Toys.Gags.Bit_Gag, Body.Orifice.Oral);
+        assertEquals(1, bitGags.size());
 
-        assertEquals(sameRingGag, ringGag);
+        Item bitGag = bitGags.get(0);
+        Item sameRingGag = gags.query(Toys.Gags.Bit_Gag).get();
+
+        assertEquals(sameRingGag, bitGag);
     }
 
     @Test
     public void testGet() {
         TeaseScript script = TestScript.getOne();
-        Items collars = script.items(Toys.Collar);
-        assertEquals(Toys.Collars.values().length, collars.size());
+        Items gags = script.items(Toys.Gag);
+        assertEquals(Toys.Gags.values().length, gags.size());
 
-        assertNotEquals(Item.NotFound, collars.get());
-        assertFalse(collars.get().isAvailable());
+        assertNotEquals(Item.NotFound, gags.get());
+        assertFalse(gags.get().isAvailable());
 
-        Item dogCollar = collars.query(Toys.Collars.Dog_Collar).get();
-        assertTrue(dogCollar.is(Toys.Collars.Dog_Collar));
+        Item bitGag = gags.query(Toys.Gags.Bit_Gag).get();
+        assertTrue(bitGag.is(Toys.Gags.Bit_Gag));
 
-        Item postureCollar = collars.query(Toys.Collars.Posture_Collar).get();
-        postureCollar.setAvailable(true);
+        Item penisGag = gags.query(Toys.Gags.Penis_Gag).get();
+        penisGag.setAvailable(true);
 
-        assertEquals(postureCollar, collars.get());
-        assertEquals(dogCollar, collars.query(Toys.Collars.Dog_Collar).get());
+        assertEquals(penisGag, gags.get());
+        assertEquals(bitGag, gags.query(Toys.Gags.Bit_Gag).get());
 
-        assertFalse(collars.query(Toys.Collars.Dog_Collar).get().isAvailable());
-        assertTrue(collars.query(Toys.Collars.Posture_Collar).get().isAvailable());
+        assertFalse(gags.query(Toys.Gags.Bit_Gag).get().isAvailable());
+        assertTrue(gags.query(Toys.Gags.Penis_Gag).get().isAvailable());
 
-        assertEquals(postureCollar, collars.get());
-        assertTrue(collars.query(Toys.Collars.Posture_Collar).get().isAvailable());
+        assertEquals(penisGag, gags.get());
+        assertTrue(gags.query(Toys.Gags.Penis_Gag).get().isAvailable());
 
-        Item noDogCollar = collars.prefer(Toys.Collars.Dog_Collar).get();
-        assertEquals(postureCollar, noDogCollar);
+        Item noRingGag = gags.prefer(Toys.Gags.Ring_Gag).get();
+        assertEquals(penisGag, noRingGag);
 
-        Item availablePostureCollar = collars.prefer(Toys.Collars.Posture_Collar).get();
-        assertEquals(postureCollar, availablePostureCollar);
+        Item availablePenisGag = gags.prefer(Toys.Gags.Penis_Gag).get();
+        assertEquals(penisGag, availablePenisGag);
     }
 
     // TODO Add more tests for prefer() in order to find out if the method makes sense
@@ -119,34 +120,35 @@ public class ItemsTests {
     @Test
     public void testContains() {
         TeaseScript script = TestScript.getOne();
-        Items collars = script.items(Toys.Collar);
-        assertEquals(Toys.Collars.values().length, collars.size());
+        Items gags = script.items(Toys.Gag);
+        assertEquals(Toys.Gags.values().length, gags.size());
 
-        assertTrue(collars.contains(Toys.Collar));
-        assertFalse(collars.contains(Toys.Buttplug));
+        assertTrue(gags.contains(Toys.Gag));
+        assertFalse(gags.contains(Toys.Buttplug));
 
-        assertTrue(collars.contains("teaselib.Toys.Collar"));
-        assertFalse(collars.contains("teaselib.Toys.Buttplug"));
+        assertTrue(gags.contains("teaselib.Toys.Gag"));
+        assertFalse(gags.contains("teaselib.Toys.Buttplug"));
     }
 
     @Test
     public void testAny() {
-        TeaseScript script = TestScript.getOne();
-        Items collars = script.items(Toys.Collar);
-        assertEquals(Toys.Collars.values().length, collars.size());
+        TestScript script = TestScript.getOne();
 
-        assertNotEquals(Item.NotFound, collars.get());
-        assertFalse(collars.get().isAvailable());
-        for (Item item : script.items(Toys.Collar)) {
+        Items gags = script.items(Toys.Gag);
+        assertEquals(Toys.Gags.values().length, gags.size());
+
+        assertNotEquals(Item.NotFound, gags.get());
+        assertFalse(gags.get().isAvailable());
+        for (Item item : script.items(Toys.Gag)) {
             assertTrue(!item.isAvailable());
         }
         assertTrue(script.items(Toys.Collar).getAvailable().isEmpty());
 
-        Item postureCollar = collars.query(Toys.Collars.Posture_Collar).get();
-        postureCollar.setAvailable(true);
+        Item penisGag = gags.query(Toys.Gags.Penis_Gag).get();
+        penisGag.setAvailable(true);
 
-        assertEquals(1, script.items(Toys.Collar).getAvailable().size());
-        assertEquals(postureCollar, script.items(Toys.Collar).getAvailable().get(0));
+        assertEquals(1, script.items(Toys.Gag).getAvailable().size());
+        assertEquals(penisGag, script.items(Toys.Gag).getAvailable().get(0));
     }
 
     @Test

@@ -4,6 +4,7 @@ import static org.junit.Assert.*;
 
 import org.junit.Test;
 
+import teaselib.Material;
 import teaselib.core.Script;
 import teaselib.core.TeaseLib;
 import teaselib.test.TestScript;
@@ -47,6 +48,11 @@ public class QualifiedItemTest {
     @Test
     public void testIdentity() {
         TestScript testScript = TestScript.getOne();
+
+        Item metal = testScript.item(Material.Metal);
+        Item metalString = testScript.item("teaselib.Material.Metal");
+
+        assertEquals(metal, metalString);
 
         Item one = testScript.item(TestEnum.One);
         Item oneString = testScript.item("teaselib.core.util.QualifiedItemTest.TestEnum.One");

@@ -100,6 +100,7 @@ public class ReleaseActionTest {
     @Test
     public void testReleaseActionInstanceRemoveOtherToyOfSameType() {
         TestScript script = TestScript.getOne();
+        script.addTestUserItems();
 
         String devicePath = "KeyRelease/MyPhoton/1";
         ReleaseActionState actionItem = script.teaseLib.state(TeaseLib.DefaultDomain,

@@ -114,7 +114,7 @@ public class ItemIdentityTest {
         TestScript script = TestScript.getOne();
 
         Item chastityDevice = script.items("teaselib.Toys.Chastity_Device")
-                .query("teaselib.Toys.ChastityDevices.Gates_of_Hell").get();
+                .query("teaselib.Toys.Chastity_Devices.Gates_of_Hell").get();
         State onPenis = script.state("teaselib.Body.OnPenis");
 
         chastityDevice.apply();
@@ -123,7 +123,7 @@ public class ItemIdentityTest {
         assertTrue(onPenis.applied());
 
         Item otherChastityDevice = script.items("teaselib.Toys.Chastity_Device")
-                .query("teaselib.Toys.ChastityDevices.Chastity_Belt").get();
+                .query("teaselib.Toys.Chastity_Devices.Belt").get();
         otherChastityDevice.remove();
 
         assertFalse(chastityDevice.applied());

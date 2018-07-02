@@ -60,11 +60,16 @@ public abstract class AbstractUserItems implements UserItems {
     }
 
     @Override
-    public void loadItems(File file) throws IOException {
+    public void loadItems(String domain, File file) throws IOException {
+        // TODO remove load-hack, but it's needed by AbstractUserItemsTest.testUserItemsOverwriteEntry()
         domainMap.clear();
+
+        // TODO Remove load-hack,but it's needed by AbstractUserItemsTest.testUserItems()
         if (!defaultItemsLoaded) {
-            loadDefaultItems();
+            loadDefaultItems(domain);
         }
+
+        // TODO decide about domain parameter
         List<Item> items = new ArrayList<>();
 
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
@@ -137,12 +142,16 @@ public abstract class AbstractUserItems implements UserItems {
     public List<Item> get(String domain, QualifiedItem item) {
         ItemMap itemMap = domainMap.get(domain);
         if (itemMap == null) {
+            if (!defaultItemsLoaded) {
+                // TODO Load items into domain specific user item list -> map domain->all items
+                // - loadItems loads into a single list - items will be overwritten with each new domain
+                // TODO defaultItemsLoaded can be replaced by domain
+                // TODO decide about domain parameter
+                loadDefaultItems(domain);
+            }
+
             itemMap = new ItemMap();
             domainMap.put(domain, itemMap);
-        }
-
-        if (!defaultItemsLoaded && teaseLib.config.has(Settings.ITEM_DEFAULT_STORE)) {
-            loadDefaultItems();
         }
 
         if (!itemMap.containsKey(item)) {
@@ -162,12 +171,11 @@ public abstract class AbstractUserItems implements UserItems {
         }
     }
 
-    private void loadDefaultItems() {
+    private void loadDefaultItems(String domain) {
         defaultItemsLoaded = true;
         try {
-            // TODO decide about domain parameter
-            loadItems(new File(teaseLib.config.get(Settings.ITEM_DEFAULT_STORE)));
-            loadItems(new File(teaseLib.config.get(Settings.ITEM_USER_STORE)));
+            loadItems(domain, new File(teaseLib.config.get(Settings.ITEM_DEFAULT_STORE)));
+            loadItems(domain, new File(teaseLib.config.get(Settings.ITEM_USER_STORE)));
         } catch (IOException e) {
             throw ExceptionUtil.asRuntimeException(e);
         }

@@ -10,7 +10,7 @@ import teaselib.util.Item;
 public interface UserItems {
     List<Item> get(String domain, QualifiedItem item);
 
-    void loadItems(File path) throws IOException;
+    void loadItems(String domain, File path) throws IOException;
 
     Enum<?>[] defaults(QualifiedItem item);
 }

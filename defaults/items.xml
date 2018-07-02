@@ -85,7 +85,7 @@
 			<Attribute> Toys.Chastity_Devices.Cage </Attribute>
 		</Item>
 		<Item item="Chastity_Device" guid="chastity_belt" displayName="Chastity belt">
-			<Attribute> Toys.Chastity_Devices.Cage </Attribute>
+			<Attribute> Toys.Chastity_Devices.Belt </Attribute>
 		</Item>
 		<Item item="Chastity_Device" guid="gates_of_hell" displayName="Gates Of Hell">
 			<Attribute> Toys.Chastity_Devices.Gates_of_Hell </Attribute>

@@ -98,19 +98,20 @@ public enum Clothes {
     public static final Clothes[] Clothing = { Shirt, Socks, Suit, Sweater, Trousers, TShirt };
 
     public static final Clothes[] MaleUnderwear = { Underpants, Socks, Pajamas };
-    public static final Clothes[] MaleClothing = { Socks, Shirt, TShirt, Sweater, Trousers, Jacket, Suit };
+    public static final Clothes[] MaleClothing = { Socks, Shirt, TShirt, Sweater, Trousers, Jacket, Suit, Vest, Shoes };
 
     public static final Clothes[] FemaleUnderwear = { Underpants, Socks, Babydoll, Nightie, Pantyhose, Body, Bra,
             Catsuit, Garter_Belt, Nightie, Underpants, Pajamas, Leotard, Swimwear };
     public static final Clothes[] FemaleClothing = { Blouse, Corset, Dress, Jacket, Shirt, Skirt, Stockings, Sweater,
-            Tanktop, Trousers, Vest };
+            Tanktop, Trousers, Vest, Shoes };
 
     public static final Clothes[] Fetish = { Corset, Harness, Hood };
 
     public static final Clothes[] MaidClothes = { Blouse, Body, Bra, Catsuit, Corset, Dress, Garter_Belt, Leotard,
             Underpants, Pantyhose, Shirt, Shoes, Skirt, Socks, Stockings };
 
-    public static final Clothes[][] Categories = { Clothing, MaleClothing, FemaleClothing };
+    public static final Clothes[][] Categories = { MaleUnderwear, MaleClothing, FemaleUnderwear, FemaleClothing,
+            Fetish };
 
     @Override
     public String toString() {

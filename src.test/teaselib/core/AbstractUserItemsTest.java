@@ -1,12 +1,9 @@
 package teaselib.core;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.List;
 
 import org.junit.Test;
@@ -17,7 +14,6 @@ import teaselib.Gadgets;
 import teaselib.Household;
 import teaselib.Material;
 import teaselib.Toys;
-import teaselib.core.Host.Location;
 import teaselib.core.util.QualifiedEnum;
 import teaselib.core.util.QualifiedItem;
 import teaselib.hosts.PreDefinedItems;
@@ -88,7 +84,7 @@ public class AbstractUserItemsTest {
     }
 
     @Test
-    public void testUserItems() {
+    public void testUserItems() throws IOException {
         TestScript script = TestScript.getOne();
         UserItems userItems = configureUserItems(script);
 
@@ -98,36 +94,28 @@ public class AbstractUserItemsTest {
         testGadgets(userItems);
     }
 
-    private UserItems configureUserItems(TestScript script) {
-        configurePaths(script);
-
+    private UserItems configureUserItems(TestScript script) throws IOException {
         UserItems userItems = new PreDefinedItems(script.teaseLib);
+        userItems.loadItems(TeaseLib.DefaultDomain,
+                new File(ResourceLoader.getProjectPath(getClass()), "teaselib/core/useritems.xml"));
         return userItems;
-    }
-
-    private void configurePaths(TestScript script) {
-        Configuration config = script.teaseLib.config;
-
-        config.set(AbstractUserItems.Settings.ITEM_DEFAULT_STORE,
-                new File(script.host.getLocation(Location.TeaseLib), "defaults/" + "items.xml").getPath());
-        assertTrue(new File(config.get(AbstractUserItems.Settings.ITEM_DEFAULT_STORE)).exists());
-
-        config.set(AbstractUserItems.Settings.ITEM_USER_STORE, getClass().getResource("useritems.xml").getPath());
-        assertTrue(new File(config.get(AbstractUserItems.Settings.ITEM_USER_STORE)).exists());
     }
 
     @Test
     public void testUserItemsOverwriteEntry() {
         TestScript script = TestScript.getOne();
-        configurePaths(script);
+
+        // Default
+        assertEquals(1, script.items(Toys.Humbler).size());
+        assertFalse(script.item(Toys.Humbler).is(Material.Wood));
 
         // Overwrite by user items
+        script.addCustomUserItems("teaselib/core/useritems.xml");
         assertEquals(1, script.items(Toys.Humbler).size());
         assertTrue(script.item(Toys.Humbler).is(Material.Wood));
 
         // additional items via custom user items
-        script.teaseLib
-                .addUserItems(new File(ResourceLoader.getProjectPath(getClass()), "teaselib/core/useritems2.xml"));
+        script.addCustomUserItems("teaselib/core/useritems2.xml");
         assertEquals(2, script.items(Toys.Humbler).size());
         for (Item item : script.items(Toys.Humbler)) {
             assertTrue(item.is(Material.Wood));
@@ -182,11 +170,11 @@ public class AbstractUserItemsTest {
     }
 
     private static void testGadgets(UserItems userItems) {
-        List<Item> estims = userItems.get(TeaseLib.DefaultDomain, QualifiedItem.of(Gadgets.EStim_Controller));
-        assertEquals(1, estims.size());
+        List<Item> estimController = userItems.get(TeaseLib.DefaultDomain, QualifiedItem.of(Gadgets.EStim_Controller));
+        assertEquals(1, estimController.size());
 
-        for (Item estim : estims) {
-            if (estim.displayName().equals("Teaselib-controlled estim device")) {
+        for (Item estim : estimController) {
+            if (estim.displayName().equals("EStim-Test-Entry")) {
                 return;
             }
         }

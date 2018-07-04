@@ -16,22 +16,16 @@ import teaselib.Material;
 import teaselib.Toys;
 import teaselib.core.util.QualifiedEnum;
 import teaselib.core.util.QualifiedItem;
-import teaselib.hosts.PreDefinedItems;
 import teaselib.test.TestScript;
 import teaselib.util.Item;
 
-public class AbstractUserItemsTest {
+public class UserItemsImplTest {
 
     @Test
     public void testToyDefaults() throws Exception {
         TestScript script = TestScript.getOne();
 
-        UserItems items = new AbstractUserItems(script.teaseLib) {
-            @Override
-            protected Item[] createDefaultItems(String domain, QualifiedItem item) {
-                throw new UnsupportedOperationException();
-            }
-        };
+        UserItems items = new UserItemsImpl(script.teaseLib);
 
         for (Clothes item : Clothes.values()) {
             assertNotNull(items.defaults(new QualifiedEnum(item)));
@@ -49,7 +43,7 @@ public class AbstractUserItemsTest {
     @Test
     public void testToyItems() throws Exception {
         TestScript script = TestScript.getOne();
-        UserItems items = new PreDefinedItems(script.teaseLib);
+        UserItems items = new UserItemsImpl(script.teaseLib);
 
         for (Household item : Household.values()) {
             testItem(items, item);
@@ -95,9 +89,8 @@ public class AbstractUserItemsTest {
     }
 
     private UserItems configureUserItems(TestScript script) throws IOException {
-        UserItems userItems = new PreDefinedItems(script.teaseLib);
-        userItems.loadItems(TeaseLib.DefaultDomain,
-                new File(ResourceLoader.getProjectPath(getClass()), "teaselib/core/useritems.xml"));
+        UserItems userItems = new UserItemsImpl(script.teaseLib);
+        userItems.loadItems(new File(ResourceLoader.getProjectPath(getClass()), "teaselib/core/useritems.xml"));
         return userItems;
     }
 

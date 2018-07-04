@@ -5,7 +5,7 @@ import static org.junit.Assert.*;
 import java.io.File;
 
 import teaselib.Config;
-import teaselib.core.AbstractUserItems;
+import teaselib.core.UserItemsImpl;
 import teaselib.core.Configuration;
 import teaselib.core.Configuration.Setup;
 import teaselib.core.TeaseLibConfigSetup;
@@ -71,12 +71,12 @@ public final class DebugSetup implements Setup {
 
     private void loadDefaultItemStores(Configuration config) {
         // if (loadItems) {
-        config.set(AbstractUserItems.Settings.ITEM_DEFAULT_STORE, new File("defaults/" + "items.xml").getPath());
-        assertTrue(new File(config.get(AbstractUserItems.Settings.ITEM_DEFAULT_STORE)).exists());
+        config.set(UserItemsImpl.Settings.ITEM_DEFAULT_STORE, new File("defaults/" + "items.xml").getPath());
+        assertTrue(new File(config.get(UserItemsImpl.Settings.ITEM_DEFAULT_STORE)).exists());
 
-        config.set(AbstractUserItems.Settings.ITEM_USER_STORE,
+        config.set(UserItemsImpl.Settings.ITEM_USER_STORE,
                 new File("defaults/" + "useritems_template.xml").getPath());
-        assertTrue(new File(config.get(AbstractUserItems.Settings.ITEM_USER_STORE)).exists());
+        assertTrue(new File(config.get(UserItemsImpl.Settings.ITEM_USER_STORE)).exists());
         // }
     }
 

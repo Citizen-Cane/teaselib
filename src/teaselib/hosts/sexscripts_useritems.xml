@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE Items SYSTEM "items.dtd">
 
-<!-- SexScripts non-generic user items - not covered by TeaseLib default items -->
+<!-- SexScripts non-generic user items - not covered by TeaseLib default items - some aren't available as enums -->
 
 <Items>
 	<Toys>
@@ -30,6 +30,9 @@
 		</Item>
 
 		<Item item="Plants" guid="plants" displayName="Plants">
+		</Item>
+
+		<Item item="Hood" guid="hood" displayName="Hood">
 		</Item>
 	</Toys>
 

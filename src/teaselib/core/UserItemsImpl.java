@@ -4,12 +4,13 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.Map.Entry;
+import java.util.function.Supplier;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -37,17 +38,24 @@ import teaselib.core.util.ReflectionUtils;
 import teaselib.util.Item;
 import teaselib.util.ItemImpl;
 
-public abstract class AbstractUserItems implements UserItems {
+public class UserItemsImpl implements UserItems {
     private static final String ITEMS_DTD = "items.dtd";
 
     protected final TeaseLib teaseLib;
     private final Map<String, ItemMap> domainMap = new HashMap<>();
-    private final Map<String, Item> userItems = new LinkedHashMap<>();
+    List<File> loadOrder = new ArrayList<>();
 
-    private boolean defaultItemsLoaded = false;
-
-    class ItemMap extends HashMap<Object, List<Item>> {
+    class ItemMap extends LinkedHashMap<Object, Map<String, Item>> {
         private static final long serialVersionUID = 1L;
+
+        public Map<String, Item> getOrDefault(Object key, Supplier<Map<String, Item>> defaultSupplier) {
+            Map<String, Item> value = super.get(key);
+            if (value == null) {
+                value = defaultSupplier.get();
+                put(key, value);
+            }
+            return value;
+        }
     }
 
     public enum Settings {
@@ -55,29 +63,30 @@ public abstract class AbstractUserItems implements UserItems {
         ITEM_USER_STORE
     }
 
-    public AbstractUserItems(TeaseLib teaseLib) {
+    public UserItemsImpl(TeaseLib teaseLib) {
         this.teaseLib = teaseLib;
+
+        if (loadOrder.isEmpty()) {
+            loadItems(new File(teaseLib.config.get(Settings.ITEM_DEFAULT_STORE)));
+            loadItems(new File(teaseLib.config.get(Settings.ITEM_USER_STORE)));
+        }
     }
 
     @Override
-    public void loadItems(String domain, File file) throws IOException {
-        // TODO remove load-hack, but it's needed by AbstractUserItemsTest.testUserItemsOverwriteEntry()
+    public void loadItems(File file) {
+        loadOrder.add(file);
         domainMap.clear();
+    }
 
-        // TODO Remove load-hack,but it's needed by AbstractUserItemsTest.testUserItems()
-        if (!defaultItemsLoaded) {
-            loadDefaultItems(domain);
-        }
-
-        // TODO decide about domain parameter
-        List<Item> items = new ArrayList<>();
+    private List<ItemImpl> readItems(String domain, File file) throws IOException {
+        List<ItemImpl> items = new ArrayList<>();
 
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
         try {
             DocumentBuilder db = dbf.newDocumentBuilder();
             db.setEntityResolver((publicId, systemId) -> {
                 if (systemId.contains(ITEMS_DTD)) {
-                    return new InputSource(AbstractUserItems.class.getResourceAsStream(ITEMS_DTD));
+                    return new InputSource(UserItemsImpl.class.getResourceAsStream(ITEMS_DTD));
                 } else {
                     return null;
                 }
@@ -93,7 +102,7 @@ public abstract class AbstractUserItems implements UserItems {
                     for (; itemNode != null; itemNode = itemNode.getNextSibling()) {
                         if ("Item".equalsIgnoreCase(itemNode.getNodeName())
                                 && itemNode.getNodeType() == Node.ELEMENT_NODE) {
-                            items.add(readItem(itemClass, itemNode));
+                            items.add(readItem(domain, itemClass, itemNode));
                         }
                     }
                 }
@@ -102,12 +111,10 @@ public abstract class AbstractUserItems implements UserItems {
             throw ExceptionUtil.asRuntimeException(e);
         }
 
-        for (Item item : items) {
-            userItems.put(((ItemImpl) item).guid, item);
-        }
+        return items;
     }
 
-    private ItemImpl readItem(Node itemClass, Node itemNode) throws ClassNotFoundException {
+    private ItemImpl readItem(String domain, Node itemClass, Node itemNode) throws ClassNotFoundException {
         NamedNodeMap attributes = itemNode.getAttributes();
         String itemName = attributes.getNamedItem("item").getNodeValue();
         String guid = attributes.getNamedItem("guid").getNodeValue();
@@ -127,85 +134,73 @@ public abstract class AbstractUserItems implements UserItems {
 
         String enumName = "teaselib." + itemClass.getNodeName() + "." + itemName;
         Enum<?> enumValue = ReflectionUtils.getEnum(QualifiedItem.of(enumName));
-        return new ItemImpl(teaseLib, enumValue, TeaseLib.DefaultDomain, //
-                guid, //
+        return new ItemImpl(teaseLib, enumValue, domain, guid, //
                 displayName, defaults(new QualifiedEnum(enumValue)), //
                 itemAttributes.toArray());
     }
 
-    protected Item[] getDefaultItem(String domain, QualifiedItem item) {
-        return new Item[] {
+    private ItemImpl[] getDefaultItem(String domain, QualifiedItem item) {
+        return new ItemImpl[] {
                 new ItemImpl(teaseLib, item.value(), domain, item.name(), ItemImpl.createDisplayName(item)) };
     }
 
     @Override
     public List<Item> get(String domain, QualifiedItem item) {
-        ItemMap itemMap = domainMap.get(domain);
-        if (itemMap == null) {
-            if (!defaultItemsLoaded) {
-                // TODO Load items into domain specific user item list -> map domain->all items
-                // - loadItems loads into a single list - items will be overwritten with each new domain
-                // TODO defaultItemsLoaded can be replaced by domain
-                // TODO decide about domain parameter
-                loadDefaultItems(domain);
-            }
+        ItemMap itemMap = getItemMap(domain);
+        List<Item> all = collectItems(item, itemMap);
 
+        if (all.isEmpty()) {
+            addDefaultItem(domain, item, itemMap, all);
+        }
+
+        return Collections.unmodifiableList(all);
+    }
+
+    private ItemMap getItemMap(String domain) {
+        ItemMap itemMap = domainMap.get(domain);
+
+        if (itemMap == null) {
             itemMap = new ItemMap();
             domainMap.put(domain, itemMap);
-        }
-
-        if (!itemMap.containsKey(item)) {
-            Collection<Item> allItems = getUserItems();
-            List<Item> items = allItems.stream().filter(itemImpl -> item.equals(((ItemImpl) itemImpl).item))
-                    .collect(Collectors.toList());
-            if (!items.isEmpty()) {
-                itemMap.put(item, items);
-                return items;
-            } else {
-                List<Item> defaults = Arrays.asList(createDefaultItems(domain, item));
-                itemMap.put(item, defaults);
-                return defaults;
+            try {
+                loadItems(domain, itemMap);
+            } catch (IOException e) {
+                throw ExceptionUtil.asRuntimeException(e);
             }
-        } else {
-            return itemMap.get(item);
+        }
+
+        return itemMap;
+    }
+
+    private void loadItems(String domain, ItemMap itemMap) throws IOException {
+        for (File file : loadOrder) {
+            List<ItemImpl> items = readItems(domain, file);
+            addItems(itemMap, items);
         }
     }
 
-    private void loadDefaultItems(String domain) {
-        defaultItemsLoaded = true;
-        try {
-            loadItems(domain, new File(teaseLib.config.get(Settings.ITEM_DEFAULT_STORE)));
-            loadItems(domain, new File(teaseLib.config.get(Settings.ITEM_USER_STORE)));
-        } catch (IOException e) {
-            throw ExceptionUtil.asRuntimeException(e);
+    private static void addItems(ItemMap itemMap, List<ItemImpl> items) {
+        for (ItemImpl item : items) {
+            Map<String, Item> allItemsOfThisType = itemMap.getOrDefault(item.item, LinkedHashMap<String, Item>::new);
+            allItemsOfThisType.put(item.guid, item);
         }
     }
 
-    private Collection<Item> getUserItems() {
-        return userItems.values();
+    private static List<Item> collectItems(QualifiedItem item, ItemMap itemMap) {
+        List<Item> all = new ArrayList<>();
+        for (Entry<Object, Map<String, Item>> entry : itemMap.entrySet()) {
+            // TODO use QualifiedItem as key for item map
+            if (item.equals(entry.getKey())) {
+                all.addAll(entry.getValue().values());
+            }
+        }
+        return all;
     }
 
-    protected abstract Item[] createDefaultItems(String domain, QualifiedItem item);
-
-    protected Item item(QualifiedItem item, String name, String displayName, Enum<?>... attributes) {
-        return item(TeaseLib.DefaultDomain, name, displayName, item, defaults(item), attributes);
-    }
-
-    protected Item item(QualifiedItem item, String name, String displayName, Enum<?>[] defaultPeers,
-            Enum<?>... attributes) {
-        return item(TeaseLib.DefaultDomain, name, displayName, item, defaultPeers, attributes);
-    }
-
-    protected Item item(String domain, String name, String displayName, QualifiedItem item, Enum<?>[] defaultPeers,
-            Enum<?>... attributes) {
-        return new ItemImpl(teaseLib, item.value(), domain, name, displayName, defaultPeers, attributes);
-    }
-
-    public Enum<?>[] array(Enum<?>[] defaults, Enum<?>... additional) {
-        Enum<?>[] extended = new Enum<?>[defaults.length + additional.length];
-        System.arraycopy(defaults, 0, extended, 0, defaults.length);
-        System.arraycopy(additional, 0, extended, defaults.length, additional.length);
-        return extended;
+    private void addDefaultItem(String domain, QualifiedItem item, ItemMap itemMap, List<Item> all) {
+        List<ItemImpl> defaultItems = Arrays.asList(getDefaultItem(domain, item));
+        addItems(itemMap, defaultItems);
+        all.addAll(defaultItems);
     }
 
     @Override
@@ -234,7 +229,11 @@ public abstract class AbstractUserItems implements UserItems {
     }
 
     private static Enum<?>[] getAccessoiresDefaults(QualifiedItem item) {
-        return new Body[] {};
+        if (item.is(Accessoires.Strap_On)) {
+            return new Body[] { Body.CrotchRoped };
+        } else {
+            return new Body[] {};
+        }
     }
 
     private static Enum<?>[] getGadgetsDefaults(QualifiedItem item) {
@@ -253,65 +252,63 @@ public abstract class AbstractUserItems implements UserItems {
      * @return The defaults for the item. An item may not have defaults, in this case the returned array is empty.
      */
     private static Enum<?>[] getToyDefaults(QualifiedItem item) {
-        if (item.equals(Toys.Buttplug)) {
+        if (item.is(Toys.Buttplug)) {
             return new Body[] { Body.InButt };
-        } else if (item.equals(Toys.Ankle_Restraints)) {
+        } else if (item.is(Toys.Ankle_Restraints)) {
             return new Body[] { Body.AnklesTied };
-        } else if (item.equals(Toys.Wrist_Restraints)) {
+        } else if (item.is(Toys.Wrist_Restraints)) {
             return new Body[] { Body.WristsTied };
-        } else if (item.equals(Toys.Gag)) {
+        } else if (item.is(Toys.Gag)) {
             return new Body[] { Body.InMouth };
-        } else if (item.equals(Toys.Spanking_Implement)) {
+        } else if (item.is(Toys.Spanking_Implement)) {
             return new Body[] {};
-        } else if (item.equals(Toys.Collar)) {
+        } else if (item.is(Toys.Collar)) {
             return new Body[] { Body.AroundNeck };
-        } else if (item.equals(Toys.Nipple_Clamps)) {
+        } else if (item.is(Toys.Nipple_Clamps)) {
             return new Body[] { Body.OnNipples };
-        } else if (item.equals(Toys.Chastity_Device)) {
+        } else if (item.is(Toys.Chastity_Device)) {
             return new Body[] { Body.OnPenis, Body.CantJerkOff };
-        } else if (item.equals(Toys.Dildo)) {
+        } else if (item.is(Toys.Dildo)) {
             return new Body[] {};
-        } else if (item.equals(Toys.VaginalInsert)) {
+        } else if (item.is(Toys.VaginalInsert)) {
             return new Body[] { Body.InVagina };
-        } else if (item.equals(Toys.Vibrator)) {
+        } else if (item.is(Toys.Vibrator)) {
             return new Body[] {};
-        } else if (item.equals(Toys.Ball_Stretcher)) {
+        } else if (item.is(Toys.Ball_Stretcher)) {
             return new Body[] { Body.OnBalls };
-        } else if (item.equals(Toys.Blindfold)) {
+        } else if (item.is(Toys.Blindfold)) {
             return new Body[] { Body.Blindfolded };
-        } else if (item.equals(Toys.Cock_Ring)) {
+        } else if (item.is(Toys.Cock_Ring)) {
             return new Body[] { Body.AroundCockBase };
-        } else if (item.equals(Toys.Anal_Douche)) {
+        } else if (item.is(Toys.Anal_Douche)) {
             return new Body[] { Body.InButt };
-        } else if (item.equals(Toys.Enema_Bulb)) {
+        } else if (item.is(Toys.Enema_Bulb)) {
             return new Body[] { Body.InButt };
-        } else if (item.equals(Toys.Enema_Kit)) {
+        } else if (item.is(Toys.Enema_Kit)) {
             return new Body[] { Body.InButt };
-        } else if (item.equals(Toys.Glans_Ring)) {
+        } else if (item.is(Toys.Glans_Ring)) {
             return new Enum<?>[] { Body.OnPenis };
-        } else if (item.equals(Toys.Humbler)) {
+        } else if (item.is(Toys.Humbler)) {
             return new Enum<?>[] { Body.OnBalls, Posture.CantStand, Posture.CantSitOnChair };
-        } else if (item.equals(Toys.Masturbator)) {
+        } else if (item.is(Toys.Masturbator)) {
             return new Body[] {};
-        } else if (item.equals(Toys.Pussy_Clamps)) {
+        } else if (item.is(Toys.Pussy_Clamps)) {
             return new Body[] { Body.OnLabia, Body.OnBalls };
-        } else if (item.equals(Toys.Clit_Clamp)) {
+        } else if (item.is(Toys.Clit_Clamp)) {
             return new Body[] { Body.OnClit, Body.OnPenis };
-        } else if (item.equals(Toys.Spreader_Bar)) {
+        } else if (item.is(Toys.Spreader_Bar)) {
             return new Body[] {};
-        } else if (item.equals(Toys.EStim_Device)) {
+        } else if (item.is(Toys.EStim_Device)) {
             return new Body[] {};
-        } else if (item.equals(Toys.Chains)) {
+        } else if (item.is(Toys.Chains)) {
             return new Body[] {};
-        } else if (item.equals(Toys.Rope)) {
+        } else if (item.is(Toys.Rope)) {
             return new Body[] {};
-        } else if (item.equals(Toys.Doll)) {
+        } else if (item.is(Toys.Doll)) {
             return new Body[] {};
-        } else if (item.equals(Toys.Husband)) {
+        } else if (item.is(Toys.Husband)) {
             return new Body[] {};
-        } else if (item.equals(Toys.Wife)) {
-            return new Body[] {};
-        } else if (item.equals(Accessoires.Strap_On)) {
+        } else if (item.is(Toys.Wife)) {
             return new Body[] {};
         } else {
             throw new IllegalArgumentException("Defaults not defined for " + item);

@@ -15,11 +15,11 @@ import org.slf4j.LoggerFactory;
 import teaselib.Actor;
 import teaselib.Images;
 import teaselib.Sexuality.Gender;
+import teaselib.core.UserItemsImpl;
 import teaselib.core.Persistence;
 import teaselib.core.TeaseLib;
 import teaselib.core.UserItems;
 import teaselib.core.util.PropertyNameMapping;
-import teaselib.hosts.PreDefinedItems;
 import teaselib.util.TextVariables;
 
 public class DebugPersistence implements Persistence {
@@ -60,7 +60,7 @@ public class DebugPersistence implements Persistence {
 
     @Override
     public UserItems getUserItems(TeaseLib teaseLib) throws IOException {
-        return new PreDefinedItems(teaseLib);
+        return new UserItemsImpl(teaseLib);
     }
 
     @Override

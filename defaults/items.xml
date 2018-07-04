@@ -171,7 +171,7 @@
 			<Attribute> Material.Metal </Attribute>
 		</Item>
 
-		<Item item="Baloons" guid="ballons" displayName="Baloons">
+		<Item item="Balloons" guid="balloons" displayName="Balloons">
 			<Attribute> Material.Rubber </Attribute>
 			<Attribute> Features.Inflatable </Attribute>
 		</Item>
@@ -212,14 +212,14 @@
 		<Item item="Lube" guid="baby_oil" displayName="Baby oil">
 			<Attribute> Household.LubeType.Baby_Oil </Attribute>
 		</Item>
-		<Item item="Lube" guid="silicone_lube" displayName="Baby oil">
+		<Item item="Lube" guid="lube" displayName="Water-based lube">
+			<Attribute> Household.LubeType.Water_Based </Attribute>
+		</Item>
+		<Item item="Lube" guid="silicone_lube" displayName="Silicon-based lube">
 			<Attribute> Household.LubeType.Silicone_Based </Attribute>
 		</Item>
-		<Item item="Lube" guid="vaseline" displayName="Baby oil">
+		<Item item="Lube" guid="vaseline" displayName="Vaseline">
 			<Attribute> Household.LubeType.Baby_Oil </Attribute>
-		</Item>
-		<Item item="Lube" guid="lube" displayName="Baby oil">
-			<Attribute> Household.LubeType.Water_Based </Attribute>
 		</Item>
 
 		<Item item="Padlocks" guid="padlocks" displayName="Padlocks">
@@ -375,6 +375,16 @@
 		<Item item="Vest" guid="vest" displayName="Vest">
 		</Item>
 
+		<Item item="Corset" guid="corset" displayName="Corset">
+		</Item>
+
+		<Item item="Harness" guid="harness" displayName="Harness">
+		</Item>
+
+		<Item item="Mask" guid="mask" displayName="Mask">
+		</Item>
+
+
 	</Clothes>
 
 	<Accessoires>
@@ -405,7 +415,7 @@
 		<Item item="Tie" guid="tie" displayName="Tie">
 		</Item>
 
-		<Item item="Breast_Forms" guid="princess_tiara" displayName="Breast forms">
+		<Item item="Breast_Forms" guid="breast_forms" displayName="Breast forms">
 		</Item>
 
 		<Item item="Strap_On" guid="strap_on" displayName="Strap-on">

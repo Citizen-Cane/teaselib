@@ -46,7 +46,7 @@ public enum Clothes {
     // Fetish
     Corset,
     Harness,
-    Hood,
+    Mask,
 
     ;
 
@@ -87,9 +87,8 @@ public enum Clothes {
 
     public static final String Male = "Male";
     public static final String Female = "Female";
-    public static final String Maid = "Maid";
     public static final String Doll = "Doll";
-    public static final String Wife = "wife";
+    public static final String Wife = "Wife";
     public static final String Husband = "Husband";
 
     public static final Clothes[] Underwear = { Babydoll, Body, Bra, Catsuit, Garter_Belt, Leotard, Nightie, Underpants,
@@ -105,10 +104,7 @@ public enum Clothes {
     public static final Clothes[] FemaleClothing = { Blouse, Corset, Dress, Jacket, Shirt, Skirt, Stockings, Sweater,
             Tanktop, Trousers, Vest, Shoes };
 
-    public static final Clothes[] Fetish = { Corset, Harness, Hood };
-
-    public static final Clothes[] MaidClothes = { Blouse, Body, Bra, Catsuit, Corset, Dress, Garter_Belt, Leotard,
-            Underpants, Pantyhose, Shirt, Shoes, Skirt, Socks, Stockings };
+    public static final Clothes[] Fetish = { Corset, Harness, Mask };
 
     public static final Clothes[][] Categories = { MaleUnderwear, MaleClothing, FemaleUnderwear, FemaleClothing,
             Fetish };

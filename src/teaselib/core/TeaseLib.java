@@ -870,7 +870,7 @@ public class TeaseLib {
 
     public void addUserItems(File path) {
         try {
-            userItems.loadItems(TeaseLib.DefaultDomain, path);
+            userItems.loadItems(path);
         } catch (IOException e) {
             ExceptionUtil.handleException(e, config, logger);
         }

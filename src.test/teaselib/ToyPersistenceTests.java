@@ -18,6 +18,23 @@ import teaselib.util.Item;
  */
 public class ToyPersistenceTests {
     @Test
+    public void testDomainSeparation() {
+        TestScript script = TestScript.getOne();
+
+        Item shoes = script.teaseLib.items(Clothes.Female, Clothes.Shoes).get();
+        Item shoes2 = script.teaseLib.item(Clothes.Female, Clothes.Shoes);
+
+        assertEquals(shoes, shoes2);
+
+        Item shoes3 = script.teaseLib.items(Clothes.Doll, Clothes.Shoes).get();
+        Item shoes4 = script.teaseLib.item(Clothes.Doll, Clothes.Shoes);
+
+        assertEquals(shoes3, shoes4);
+
+        assertNotEquals(shoes, shoes4);
+    }
+
+    @Test
     public void testToysAndClothing() {
         TestScript script = TestScript.getOne();
 
@@ -31,11 +48,11 @@ public class ToyPersistenceTests {
             assertTrue(script.persistence.storage.containsKey("Toys.ball_gag"));
         }
 
-        script.teaseLib.items(Clothes.Female, Clothes.Shoes).query(Clothes.Footwear.High_Heels).get()
-                .setAvailable(true);
-        // TODO Support domain names for user items
-        assertTrue("Domain names for user items not supported",
-                script.persistence.storage.containsKey("Female.Clothes.High_Heels"));
+        Item highHeels = script.teaseLib.items(Clothes.Female, Clothes.Shoes).query(Clothes.Footwear.High_Heels).get();
+        highHeels.setAvailable(true);
+
+        assertTrue("Domain item storage unsupported",
+                script.persistence.storage.containsKey("Female.Clothes.high_heels"));
     }
 
     @Test
@@ -57,14 +74,15 @@ public class ToyPersistenceTests {
         assertTrue(script.persistence.storage.containsKey(Clothes.class.getSimpleName() + ".high_heels"));
     }
 
+    @Test
     public void testAssignedToysAndClothingAsItems() {
         TestScript script = TestScript.getOne();
 
-        script.teaseLib.item(Clothes.Maid, Toys.Gag).setAvailable(true);
-        assertTrue(script.persistence.storage.containsKey("Maid." + Toys.class.getSimpleName() + ".ball_gag"));
+        script.teaseLib.item(Clothes.Male, Toys.Collar).setAvailable(true);
+        assertTrue(script.persistence.storage.containsKey("Male." + Toys.class.getSimpleName() + ".collar"));
 
-        script.teaseLib.item(Clothes.Female, Clothes.Shoes).setAvailable(true);
-
+        script.teaseLib.items(Clothes.Female, Clothes.Shoes).query(Clothes.Footwear.High_Heels).get()
+                .setAvailable(true);
         assertTrue(script.persistence.storage.containsKey("Female." + Clothes.class.getSimpleName() + ".high_heels"));
     }
 }

@@ -13,8 +13,8 @@ public enum Features implements Item.Attribute {
 
     ;
 
-    public enum ElectrodeType {
-        Uni,
-        Dual
+    public enum Electrode {
+        Single,
+        Dual,
     }
 }

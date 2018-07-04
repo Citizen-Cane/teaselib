@@ -5,7 +5,6 @@ import java.io.IOException;
 
 import teaselib.core.Host.Location;
 import teaselib.core.texttospeech.TextToSpeechPlayer;
-import teaselib.hosts.PreDefinedItems;
 
 public final class TeaseLibConfigSetup implements Configuration.Setup {
     public static final String DEFAULTS = "defaults";
@@ -47,9 +46,9 @@ public final class TeaseLibConfigSetup implements Configuration.Setup {
         config.addConfigFile(new File(teaseLibDefaultsPath, TEASELIB_PROPERTIES));
         config.addConfigFile(new File(userPath, TEASELIB_PROPERTIES));
 
-        config.addDefaultFile(PreDefinedItems.Settings.ITEM_DEFAULT_STORE,
+        config.addDefaultFile(UserItemsImpl.Settings.ITEM_DEFAULT_STORE,
                 new File(teaseLibDefaultsPath, ITEM_DEFAULT_STORE_FILENAME));
-        config.addUserFile(PreDefinedItems.Settings.ITEM_USER_STORE,
+        config.addUserFile(UserItemsImpl.Settings.ITEM_USER_STORE,
                 new File(teaseLibDefaultsPath, ITEM_TEMPLATE_STORE_FILENAME),
                 new File(userPath, ITEM_USER_STORE_FILENAME));
 

@@ -55,6 +55,10 @@ public enum Toys {
 
     ;
 
+    public enum ClampType implements Item.Attribute {
+        Clover,
+    }
+
     public enum Masturbators {
         Pussy,
         Bumhole,
@@ -70,11 +74,9 @@ public enum Toys {
         Cone_of_Shame,
     }
 
-    public enum Collars implements Item.Attribute {
-        Dog_Collar,
-        Maid_Collar,
-        Posture_Collar,
-        Slave_Collar,
+    public enum CollarType implements Item.Attribute {
+        Dog,
+        Posture,
     }
 
     public enum Gags implements Item.Attribute {

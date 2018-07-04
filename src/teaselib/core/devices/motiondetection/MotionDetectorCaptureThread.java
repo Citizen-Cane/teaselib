@@ -2,7 +2,9 @@ package teaselib.core.devices.motiondetection;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Queue;
 import java.util.Set;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
@@ -46,6 +48,7 @@ class MotionDetectorCaptureThread extends Thread {
 
     MotionSensitivity motionSensitivity;
     ViewPoint viewPoint;
+    Queue<Runnable> stateChanges = new ConcurrentLinkedQueue<>();
 
     final MotionSource motion = new MotionSource();
     final GestureSource gesture = new GestureSource();
@@ -82,8 +85,8 @@ class MotionDetectorCaptureThread extends Thread {
         processingSize = getProcessingSize(resolution);
         this.videoInputTransformation = getVideoTransformation(resolution, processingSize);
         motion.setResulution(processingSize);
-        motion.applySensitivity(resolution, processingSize, motionSensitivity);
-        motion.applyPointOfView(viewPoint);
+        setSensitivity(motionSensitivity);
+        setPointOfView(viewPoint);
         debugInfo = new MotionDetectorJavaCVDebugRenderer(processingSize);
     }
 
@@ -113,38 +116,22 @@ class MotionDetectorCaptureThread extends Thread {
         if (motionSensitivity == this.motionSensitivity)
             return;
 
-        boolean isActive = active();
-        if (isActive) {
-            stopCapture();
-        }
+        stateChanges.add(() -> applyMotion(motionSensitivity));
+    }
 
-        this.motionSensitivity = motionSensitivity;
-        if (isActive) {
-            motion.applySensitivity(videoCaptureDevice.resolution(), processingSize, motionSensitivity);
-        }
-
-        if (isActive) {
-            startCapture();
-        }
+    private void applyMotion(MotionSensitivity motionSensitivity) {
+        motion.applySensitivity(videoCaptureDevice.resolution(), processingSize, motionSensitivity);
     }
 
     public void setPointOfView(ViewPoint viewPoint) {
         if (viewPoint == this.viewPoint)
             return;
 
-        boolean isActive = active();
-        if (isActive) {
-            stopCapture();
-        }
+        stateChanges.add(() -> applyPointOfView(viewPoint));
+    }
 
-        this.viewPoint = viewPoint;
-        if (isActive) {
-            motion.applyPointOfView(viewPoint);
-        }
-
-        if (isActive) {
-            startCapture();
-        }
+    private void applyPointOfView(ViewPoint viewPoint) {
+        motion.applyPointOfView(viewPoint);
     }
 
     @Override
@@ -213,6 +200,12 @@ class MotionDetectorCaptureThread extends Thread {
         List<Future<?>> frameTaskFutures = new ArrayList<>();
         for (Mat frame : videoCaptureDevice) {
             long timeStamp = System.currentTimeMillis();
+
+            Runnable stateChange;
+            while ((stateChange = stateChanges.poll()) != null) {
+                stateChange.run();
+            }
+
             // TODO Retrieving buffer from video hidden in transformations, code duplicated
             Mat image = videoInputTransformation.update(frame);
             Buffer.Locked<Mat> lock = video.get(image);
@@ -336,19 +329,24 @@ class MotionDetectorCaptureThread extends Thread {
     }
 
     public boolean active() {
-        return active.get();
+        synchronized (active) {
+            return active.get();
+        }
     }
 
     public void stopCapture() {
         synchronized (active) {
-            active.set(false);
-            while (active.get()) {
-                try {
-                    active.wait();
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    break;
-                }
+            boolean isActive = active.getAndSet(false);
+            if (isActive) {
+                // TODO resolve stupid loop condition (don't test active flag)
+                do {
+                    try {
+                        active.wait();
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        break;
+                    }
+                } while (active.get());
             }
         }
     }

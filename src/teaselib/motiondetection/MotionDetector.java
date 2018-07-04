@@ -174,7 +174,9 @@ public abstract class MotionDetector implements Device.Creatable {
         MotionSensitivity sensitivity = getSensitivity();
         ViewPoint viewPoint = getViewPoint();
         try {
-            start();
+            if (!active) {
+                start();
+            }
             return function.get();
         } finally {
             setSensitivity(sensitivity);

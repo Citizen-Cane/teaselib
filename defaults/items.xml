@@ -243,7 +243,7 @@
 		<Item item="Weight" guid="weight" displayName="Weight">
 		</Item>
 		
-		<Item item="Wooden_Spoon" guid="wooden_spoon" displayName="Woodenspoon">
+		<Item item="Wooden_Spoon" guid="wooden_spoon" displayName="Wooden spoon">
 			<Attribute> Material.Wood </Attribute>
 		</Item>
 		

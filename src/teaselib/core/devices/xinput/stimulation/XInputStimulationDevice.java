@@ -212,6 +212,11 @@ public class XInputStimulationDevice extends StimulationDevice {
             }
         }
 
+        @Override
+        void clearSamples() {
+            device.setVibration(XInputDevice.VIBRATION_MIN_VALUE, XInputDevice.VIBRATION_MIN_VALUE);
+        }
+
         private void setHighestPriorityStimulator(Samples samples) {
             if (samples.getValues()[2] > WaveForm.MEAN) {
                 int value = vibrationValue(samples.get(2));

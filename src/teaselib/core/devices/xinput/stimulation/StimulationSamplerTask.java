@@ -1,12 +1,11 @@
 package teaselib.core.devices.xinput.stimulation;
 
 import java.util.Iterator;
-import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Condition;
@@ -22,12 +21,12 @@ import teaselib.stimulation.ext.StimulationTargets.Samples;
 public abstract class StimulationSamplerTask {
     final Lock lock = new ReentrantLock();
     final Condition playNext = lock.newCondition();
-    final Condition taken = lock.newCondition();
 
     private final ExecutorService executor = NamedExecutorService.singleThreadedQueue(getClass().getName());
 
-    final BlockingQueue<StimulationTargets> targets = new ArrayBlockingQueue<>(1);
+    final BlockingQueue<StimulationTargets> playList = new SynchronousQueue<>();
     final AtomicReference<StimulationTargets> playing = new AtomicReference<>(null);
+
     Future<?> future;
     long startTimeMillis;
     Samples samples;
@@ -37,8 +36,11 @@ public abstract class StimulationSamplerTask {
     }
 
     void play(StimulationTargets newTargets) {
-        start();
+        if (newTargets == null) {
+            throw new NullPointerException();
+        }
 
+        start();
         long now = System.currentTimeMillis();
         StimulationTargets previous = playing.get();
         if (previous != null) {
@@ -47,6 +49,22 @@ public abstract class StimulationSamplerTask {
             play(previous.continuedStimulation(newTargets, now - startTimeMillis), now);
         } else {
             play(newTargets, now);
+        }
+    }
+
+    /**
+     * Play new targets after the current has been finished.
+     * 
+     * @param newTargets
+     * @param now
+     */
+    private void play(StimulationTargets newTargets, long now) {
+        try {
+            playList.put(newTargets);
+            startTimeMillis = now;
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new ScriptInterruptedException(e);
         }
     }
 
@@ -65,84 +83,74 @@ public abstract class StimulationSamplerTask {
         this.future = this.executor.submit(this::run);
     }
 
-    void handleExceptions() {
+    private void handleExceptions() {
         try {
-            future.get();
+            if (!future.isCancelled()) {
+                future.get();
+            }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new ScriptInterruptedException(e);
-        } catch (CancellationException e) {
-            // Ignore
         } catch (ExecutionException e) {
             throw ExceptionUtil.asRuntimeException(ExceptionUtil.reduce(e));
         }
     }
 
-    private void play(StimulationTargets newTargets, long now) {
+    public void append(StimulationTargets newTargets) {
         try {
-            lock.lockInterruptibly();
-            try {
-                playNext.signal();
-                targets.put(newTargets);
-                while (!targets.isEmpty()) {
-                    taken.await();
-                }
-            } finally {
-                lock.unlock();
-            }
-            startTimeMillis = now;
+            cancelCurrentlyPlaying();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new ScriptInterruptedException(e);
         }
+        play(newTargets);
     }
 
-    public void append(StimulationTargets newTargets) {
+    private void cancelCurrentlyPlaying() throws InterruptedException {
+        lock.lockInterruptibly();
         try {
-            lock.lockInterruptibly();
-            try {
-                targets.put(newTargets);
-                while (!targets.isEmpty()) {
-                    taken.await();
-                }
-            } finally {
-                lock.unlock();
-            }
-            startTimeMillis = System.currentTimeMillis();
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new ScriptInterruptedException(e);
+            playNext.signal();
+        } finally {
+            lock.unlock();
         }
     }
 
     public void stop() {
-        if (future != null && !future.isCancelled() && !future.isDone()) {
-            future.cancel(true);
+        try {
+            if (future != null && !future.isCancelled() && !future.isDone()) {
+                future.cancel(true);
+            }
+            handleExceptions();
+        } finally {
+            playing.set(null);
+        }
+    }
+
+    public void complete() {
+        try {
+            playList.put(StimulationTargets.None);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new ScriptInterruptedException(e);
         }
         handleExceptions();
     }
 
-    public void complete() {
-        handleExceptions();
-    }
-
+    // TODO simplify synchronization
+    // - wait for play data -> synchronous queue
+    // - end task on play data == null or empty queue -> SynchronousQueue.poll()
+    // - play next data if signaled -> lock playNext and signal
+    // - set all sample values to 0 when task queue is empty (or future is done) -> if playData == null and on interrupt
+    // - retrieve errors -> check if done, get error - if not done, then no error occured
     void run() {
         try {
             while (!Thread.currentThread().isInterrupted()) {
+                StimulationTargets currentTargets = playList.take();
                 lock.lockInterruptibly();
                 try {
-                    if (playing.get() == null) {
-                        while (targets.peek() == null) {
-                            playNext.await();
-                        }
-                    }
-                    StimulationTargets currentTargets = targets.poll();
-                    taken.signal();
-
-                    if (currentTargets == null) {
+                    if (currentTargets == StimulationTargets.None) {
                         break;
                     }
-
                     renderSamples(currentTargets);
                 } finally {
                     lock.unlock();
@@ -151,7 +159,7 @@ public abstract class StimulationSamplerTask {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         } finally {
-            playSamples(playing.get().zero());
+            clearSamples();
         }
     }
 
@@ -169,6 +177,9 @@ public abstract class StimulationSamplerTask {
                 // -> this allows for continuous appending of additional stimulations
                 // TODO waveform duration is finite, so the infinite delay is irregular -> remove
                 break;
+            } else if (durationMillis == 0) {
+                // TODO Investigate 0 durations - should be skipped, but should also not be submitted by iterator
+                continue;
             } else if (playNext.await(durationMillis, TimeUnit.MILLISECONDS)) {
                 break;
             }
@@ -176,4 +187,6 @@ public abstract class StimulationSamplerTask {
     }
 
     abstract void playSamples(Samples samples);
+
+    abstract void clearSamples();
 }

@@ -16,6 +16,8 @@ import teaselib.stimulation.WaveForm.Sample;
 import teaselib.stimulation.ext.StimulationTargets.Samples;
 
 public class StimulationTargets implements Iterable<Samples> {
+    public static final StimulationTargets None = new StimulationTargets();
+
     private final List<Stimulator> stimulators;
     private final List<StimulationTarget> targets;
 
@@ -179,6 +181,10 @@ public class StimulationTargets implements Iterable<Samples> {
 
     }
 
+    private StimulationTargets() {
+        this(new ArrayList<>());
+    }
+
     public StimulationTargets(StimulationDevice device) {
         this(device.stimulators());
     }
@@ -271,7 +277,7 @@ public class StimulationTargets implements Iterable<Samples> {
     public StimulationTargets continuedStimulation(StimulationTargets replacement, long startMillis) {
         StimulationTargets continuation = new StimulationTargets(stimulators);
 
-        if (size() != replacement.size())
+        if (replacement == null || size() != replacement.size())
             throw new IllegalArgumentException(replacement.toString());
 
         for (int i = 0; i < stimulators.size(); i++) {
@@ -295,9 +301,5 @@ public class StimulationTargets implements Iterable<Samples> {
         }
 
         return continuation;
-    }
-
-    public Samples zero() {
-        return new Samples(targets.size());
     }
 }

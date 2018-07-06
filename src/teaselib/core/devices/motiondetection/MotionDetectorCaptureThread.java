@@ -265,12 +265,25 @@ class MotionDetectorCaptureThread extends Thread {
     }
 
     private void updateGestureResult(Mat video) {
-        Rect gestureRegion = Geom.intersect(
-                HeadGestureTracker.enlargePresenceRegionToFaceSize(video,
-                        motion.presenceResult.presenceData.presenceRegion),
-                motion.presenceResult.presenceData.presenceIndicators.get(Presence.Present));
-        gesture.updateResult(motion.presenceResult.presenceData.indicators.contains(Presence.CameraShake),
-                motion.presenceResult.motionDetected, gestureRegion != null ? gestureRegion : defaultHeadRegion());
+        if (presenceRegionSizeReasonableForHeadGesture()) {
+            Rect gestureRegion = Geom.intersect(
+                    HeadGestureTracker.enlargePresenceRegionToFaceSize(video,
+                            motion.presenceResult.presenceData.presenceRegion),
+                    motion.presenceResult.presenceData.presenceIndicators.get(Presence.Present));
+            gesture.updateResult(motion.presenceResult.presenceData.indicators.contains(Presence.CameraShake),
+                    motion.presenceResult.motionDetected, gestureRegion != null ? gestureRegion : defaultHeadRegion());
+        } else {
+            ignoreExxessivelyLargeMotionRegion();
+        }
+    }
+
+    private boolean presenceRegionSizeReasonableForHeadGesture() {
+        return motion.presenceResult.presenceData.presenceRegion.width() < //
+        motion.presenceResult.presenceIndicators.get(Presence.Center).width();
+    }
+
+    private void ignoreExxessivelyLargeMotionRegion() {
+        gesture.updateResult(true, false, motion.presenceResult.presenceData.presenceRegion);
     }
 
     private Rect defaultHeadRegion() {

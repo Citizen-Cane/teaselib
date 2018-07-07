@@ -24,12 +24,12 @@ public class KeyReleaseTestPulse {
         KeyReleaseTest.sleep(10, TimeUnit.SECONDS);
         assertTrue(keyRelease.connected());
         assertTrue(keyRelease.active());
-        assertTrue(actuators.size() > 0);
+        assertTrue(!actuators.isEmpty());
     }
 
     private static void testActuator(Actuator actuator) {
         KeyReleaseTest.arm(actuator);
-        KeyReleaseTest.sleep(15, TimeUnit.SECONDS);
+        KeyReleaseTest.sleep(5, TimeUnit.SECONDS);
 
         actuator.start(actuator.available(TimeUnit.SECONDS), TimeUnit.SECONDS);
 
@@ -38,14 +38,13 @@ public class KeyReleaseTestPulse {
             if (remaining == 0) {
                 break;
             }
-            logger.info(
-                    "Actuator " + actuator + " has " + actuator.remaining(TimeUnit.MINUTES) + " minutes until release");
+            logger.info("Actuator {} has {} minutes until release", actuator, actuator.remaining(TimeUnit.MINUTES));
             KeyReleaseTest.sleep(60, TimeUnit.SECONDS);
         }
 
         // Don't release, this should happen automatically
 
         assertFalse(actuator.isRunning());
-        logger.info("Actuator " + actuator + " auto-released");
+        logger.info("Actuator {} auto-released", actuator);
     }
 }

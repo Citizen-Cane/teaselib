@@ -58,7 +58,7 @@ public class DeviceCache<T extends Device> {
             DeviceFactory<? extends T> deviceFactory = factories.get(deviceClassName);
             T device = deviceFactory.getDevice(devicePath);
             if (device == null) {
-                throw new IllegalArgumentException(devicePath);
+                throw new NullPointerException(devicePath);
             }
             return device;
         } catch (Exception e) {

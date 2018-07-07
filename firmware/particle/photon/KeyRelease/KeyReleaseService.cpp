@@ -77,23 +77,29 @@ const char* const KeyReleaseService::Version = "0.01";
 */
 
 const int KeyReleaseService::DefaultSetupSize = 2;
-const KeyReleaseService::Actuator KeyReleaseService::ShortRelease = {TX, 30 * 60, 60 * 60, 30, 150};
-const KeyReleaseService::Actuator KeyReleaseService::LongRelease = {RX, 60 * 60 , 120 * 60, 150, 30};
+const int DefaultHours = 1;
+const int ShortHours = 4;
+const int LongHours = 5;
+const KeyReleaseService::Actuator KeyReleaseService::ShortRelease = {TX, DefaultHours * 60 * 60, ShortHours * 60 * 60, 30, 150};
+const KeyReleaseService::Actuator KeyReleaseService::LongRelease = {RX, DefaultHours * 60 * 60 , LongHours * 60 * 60, 150, 30};
 const KeyReleaseService::Actuator* KeyReleaseService::DefaultSetup[] = {&ShortRelease, &LongRelease};
 
 // pulse every 0.5s @ 0s -> 500ms
-// pulse every 10.0s @ 3600s -> 10000ms
+// pulse every 5.0s @ 3600s -> 1000ms
 // y = mx+b -> m = (y-b) / x
-// m = 10000ms-500ms / 3600s ~ 2.63888
-const unsigned int pulseFrequencyAt0s = 500;
-const unsigned int pulseFrequencyAt1h = 10000;
-const unsigned int secondsAt1h = 3600;
+// m = 5000ms - 500ms / 3600s ~ 1.25
+const unsigned int PulseFrequencyAt0s = 500;
+const unsigned int PulseFrequencyAt1h = 5000;
+const unsigned int SecondsAt1h = 3600;
 
+// timer period must be smaller than 65535 according to
+// https://community.particle.io/t/scheduling-a-function-on-photon/18815/2
 // TODO LED Timer callback not called when period is changed to larger than 1000ms
 // - since release timer change from minutes to seconds, with firmware 0.62
 // - however the release timer works fine, so something's wrong here and needs to be fixed
-const unsigned int pulseFrequencyWhenIdleOrArming = 999;
-const unsigned int pulseLength = 100;
+const unsigned int MaxPulseFrequency = 999;
+const unsigned int PulseFrequencyWhenIdleOrArming = min(1000, MaxPulseFrequency);
+const unsigned int PulseLength = 100;
 
 
 KeyReleaseService::KeyReleaseService(const Actuator** actuators, const int actuatorCount)
@@ -104,8 +110,8 @@ KeyReleaseService::KeyReleaseService(const Actuator** actuators, const int actua
 , actuatorCount(actuatorCount)
 , sessionKey(createSessionKey())
 , releaseTimer(1 * 1000, &KeyReleaseService::releaseTimerCallback, *this)
-, ledTimer(pulseFrequencyWhenIdleOrArming, &KeyReleaseService::ledTimerCallback, *this)
-, ledPulseOffTimer(pulseLength, &KeyReleaseService::ledTimerPulseOffCallback, *this, true)
+, ledTimer(PulseFrequencyWhenIdleOrArming, &KeyReleaseService::ledTimerCallback, *this)
+, ledPulseOffTimer(PulseLength, &KeyReleaseService::ledTimerPulseOffCallback, *this, true)
 , status(Idle)
 {
 }
@@ -295,7 +301,7 @@ void KeyReleaseService::updatePulse(const Status status) {
   this->status = status;
 
   if (status == Armed) {
-    ledTimer.changePeriod(pulseFrequencyWhenIdleOrArming);
+    ledTimer.changePeriod(PulseFrequencyWhenIdleOrArming);
     RGB.control(true);
     RGB.color(240, 100, 0);
     ledTimer.start();
@@ -308,7 +314,7 @@ void KeyReleaseService::updatePulse(const Status status) {
       updatePulse(Idle);
     }
   } else if (status == Released) {
-    ledTimer.changePeriod(pulseFrequencyWhenIdleOrArming);
+    ledTimer.changePeriod(PulseFrequencyWhenIdleOrArming);
     RGB.color(255, 0, 255);
   } else if (status == Idle) {
     ledTimer.stop();
@@ -318,10 +324,9 @@ void KeyReleaseService::updatePulse(const Status status) {
 }
 
 unsigned int KeyReleaseService::pulsePeriod(const unsigned int seconds) {
-  const unsigned int pulsePeriod = pulseFrequencyAt0s + (pulseFrequencyAt1h - pulseFrequencyAt0s) * seconds / secondsAt1h;
-  // timer period must be smaller than 65535 according to
-  // https://community.particle.io/t/scheduling-a-function-on-photon/18815/2
-  return min(pulsePeriod, 50000);
+  const unsigned int pulseFrequency = PulseFrequencyAt0s + ((PulseFrequencyAt1h - PulseFrequencyAt0s) * seconds) / SecondsAt1h;
+  const unsigned int lowPulseFrequency = max(pulseFrequency, 500);
+  return min(lowPulseFrequency, MaxPulseFrequency);
 }
 
 void KeyReleaseService::ledTimerCallback() {

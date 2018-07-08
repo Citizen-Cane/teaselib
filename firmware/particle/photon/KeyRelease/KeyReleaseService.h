@@ -77,6 +77,7 @@ private:
 
   Timer releaseTimer;
   Timer ledTimer;
+  unsigned int secondsSinceLastUpdate;
   Timer ledPulseOffTimer;
   void releaseTimerCallback();
   void ledTimerCallback();
@@ -92,6 +93,7 @@ private:
     Released
   } status;
   void updatePulse(Status status);
+  void updatePulse(const int frequencyMillis);
   unsigned int nextRelease();
   unsigned int runningReleases();
   unsigned int createCountMessage(unsigned int count, char* buffer);

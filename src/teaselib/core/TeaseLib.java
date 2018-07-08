@@ -31,6 +31,7 @@ import teaselib.Duration;
 import teaselib.Sexuality.Gender;
 import teaselib.State;
 import teaselib.core.Host.Location;
+import teaselib.core.StateMaps.StateMapCache;
 import teaselib.core.debug.TimeAdvanceListener;
 import teaselib.core.debug.TimeAdvancedEvent;
 import teaselib.core.devices.Devices;
@@ -40,6 +41,7 @@ import teaselib.core.util.ObjectMap;
 import teaselib.core.util.PropertyNameMapping;
 import teaselib.core.util.QualifiedItem;
 import teaselib.core.util.ReflectionUtils;
+import teaselib.functional.RunnableScript;
 import teaselib.motiondetection.MotionDetector;
 import teaselib.util.Item;
 import teaselib.util.ItemImpl;
@@ -157,49 +159,47 @@ public class TeaseLib {
 
         host.showInterTitle("");
 
-        URLClassLoader classLoader = (URLClassLoader) Thread.currentThread().getContextClassLoader();
-        Class<?> classLoaderClass = URLClassLoader.class;
+        try (URLClassLoader classLoader = (URLClassLoader) Thread.currentThread().getContextClassLoader();) {
+            Class<?> classLoaderClass = URLClassLoader.class;
+            try {
+                Method method = classLoaderClass.getDeclaredMethod("addURL", (Class<?>) URL.class);
+                method.setAccessible(true);
+                method.invoke(classLoader, classPath.toURI().toURL());
+                logger.info("Added class path {}", classPath.getAbsolutePath());
+            } catch (IOException | RuntimeException e) {
+                throw e;
+            } catch (Exception e) {
+                throw new ReflectiveOperationException("Could not add URL to system classloader");
+            }
+        }
+
+        TeaseLib teaseLib = new TeaseLib(host, persistence);
+        teaseLib.run(script);
+    }
+
+    public void run(String script) throws ReflectiveOperationException {
         try {
-            Method method = classLoaderClass.getDeclaredMethod("addURL", (Class<?>) URL.class);
-            method.setAccessible(true);
-            method.invoke(classLoader, classPath.toURI().toURL());
-            logger.info("Added class path {}", classPath.getAbsolutePath());
-        } catch (IOException | RuntimeException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new ReflectiveOperationException("Could not add URL to system classloader");
-        }
-
-        run(host, persistence, script);
-    }
-
-    private static void run(Host host, Persistence persistence, String script)
-            throws ReflectiveOperationException, IOException {
-        new TeaseLib(host, persistence).run(script);
-    }
-
-    private void run(String script) throws ReflectiveOperationException {
-        if (logger.isInfoEnabled()) {
             logger.info("Running script {}", script);
-        }
 
-        Class<?> scriptClass = Thread.currentThread().getContextClassLoader().loadClass(script);
-        run(scriptClass);
+            Class<?> scriptClass = Thread.currentThread().getContextClassLoader().loadClass(script);
+            run(scriptClass);
+        } catch (Throwable t) {
+            try {
+                temporaryItems().remove();
+            } catch (Throwable ignored) {
+                logger.error(ignored.getMessage(), ignored);
+            }
+            throw t;
+        } finally {
+            host.show(null, "");
+        }
     }
 
     private void run(Class<?> scriptClass)
             throws NoSuchMethodException, InstantiationException, IllegalAccessException, InvocationTargetException {
         Constructor<?> mainscriptConstructor = scriptClass.getConstructor(TeaseLib.class);
-        Runnable runnable = (Runnable) mainscriptConstructor.newInstance(this);
-        run(runnable);
-    }
-
-    private void run(Runnable script) {
-        try {
-            script.run();
-        } finally {
-            host.show(null, "");
-        }
+        RunnableScript script = (RunnableScript) mainscriptConstructor.newInstance(this);
+        script.run();
     }
 
     /**
@@ -833,6 +833,23 @@ public class TeaseLib {
         Items items = new Items(values.length);
         for (T item : values) {
             items.addAll(userItems.get(domain, QualifiedItem.of(item)));
+        }
+        return items;
+    }
+
+    /**
+     * @return All temporary items
+     */
+    public Items temporaryItems() {
+        Items items = new Items();
+        for (Entry<String, StateMapCache> entry : stateMaps.cache.entrySet()) {
+            for (Entry<String, StateMap> entry2 : entry.getValue().entrySet()) {
+                for (Entry<Object, State> entry3 : entry2.getValue().states.entrySet()) {
+                    if (entry3.getValue().duration().limit(TimeUnit.SECONDS) == State.TEMPORARY) {
+                        items.add(item(entry.getKey(), ((StateImpl) entry3.getValue()).item));
+                    }
+                }
+            }
         }
         return items;
     }

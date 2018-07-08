@@ -2,15 +2,21 @@ package teaselib.core.devices;
 
 import static org.junit.Assert.*;
 
+import java.util.Locale;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
 import teaselib.Household;
+import teaselib.MainScript;
 import teaselib.Material;
+import teaselib.Sexuality.Gender;
 import teaselib.State;
+import teaselib.TeaseScript;
 import teaselib.Toys;
+import teaselib.core.ResourceLoader;
 import teaselib.core.TeaseLib;
 import teaselib.core.devices.release.Actuator;
 import teaselib.core.devices.release.KeyRelease;
@@ -42,19 +48,25 @@ public class ReleaseActionTest {
         }
     }
 
+    @Before
+    public void resetGlobalFlag() {
+        ReleaseActionState.Success.set(false);
+    }
+
     @Test
-    public void testReleaseActionStateQualified() {
+    public void testReleaseActionStateQualifiedPersisted() {
         TestScript script = TestScript.getOne();
 
         String devicePath = "KeyRelease/MyPhoton/1";
-        ReleaseActionState actionItem = script.teaseLib.state(TeaseLib.DefaultDomain,
+        ReleaseActionState actionState = script.teaseLib.state(TeaseLib.DefaultDomain,
                 new ReleaseActionState(script.teaseLib, devicePath));
-        State sameInstance = script.state(QualifiedItem.of(actionItem).toString());
-        assertEquals(actionItem, sameInstance);
+        State sameInstance = script.state(QualifiedItem.of(actionState).toString());
+        assertEquals(actionState, sameInstance);
 
-        String action = Persist.persist(actionItem);
+        String action = Persist.persist(actionState);
         ReleaseActionState restored = (ReleaseActionState) Persist.from(action, clazz -> script.teaseLib);
-        assertEquals(actionItem, restored);
+        assertEquals(actionState, restored);
+        assertNotSame(actionState, restored);
 
         Item restraints = script.item(Toys.Wrist_Restraints);
         restraints.apply();
@@ -65,6 +77,8 @@ public class ReleaseActionTest {
         restraints.remove();
 
         assertEquals(true, ReleaseActionState.Success.getAndSet(false));
+        assertEquals(true, actionState.removed);
+        // different instance
         assertEquals(false, restored.removed);
     }
 
@@ -73,16 +87,16 @@ public class ReleaseActionTest {
         TestScript script = TestScript.getOne();
 
         String devicePath = "KeyRelease/MyPhoton/1";
-        ReleaseActionState actionItem = script.teaseLib.state(TeaseLib.DefaultDomain,
+        ReleaseActionState actionState = script.teaseLib.state(TeaseLib.DefaultDomain,
                 new ReleaseActionState(script.teaseLib, devicePath));
-        State sameInstance = script.state(QualifiedItem.of(actionItem).toString());
-        assertEquals(actionItem, sameInstance);
+        State sameInstance = script.state(QualifiedItem.of(actionState).toString());
+        assertEquals(actionState, sameInstance);
 
         Item restraints = script.item(Toys.Wrist_Restraints);
         restraints.apply();
-        restraints.applyTo(actionItem);
+        restraints.applyTo(actionState);
         assertTrue(restraints.is(script.namespace));
-        assertTrue(actionItem.is(script.namespace));
+        assertTrue(actionState.is(script.namespace));
 
         // start(action);
 
@@ -90,11 +104,80 @@ public class ReleaseActionTest {
 
         assertFalse(restraints.applied());
         assertFalse(restraints.is(script.namespace));
-        assertFalse(actionItem.is(script.namespace));
-        assertFalse(actionItem.applied());
+        assertFalse(actionState.is(script.namespace));
+        assertFalse(actionState.applied());
 
         assertEquals(true, ReleaseActionState.Success.getAndSet(false));
-        assertEquals(true, actionItem.removed);
+        assertEquals(true, actionState.removed);
+    }
+
+    public static class BuggyScript extends TeaseScript implements MainScript {
+        public BuggyScript(TeaseLib teaseLib) {
+            super(teaseLib, new ResourceLoader(BuggyScript.class), teaseLib.getDominant(Gender.Feminine, Locale.UK),
+                    "test");
+        }
+
+        @Override
+        public void run() {
+            String devicePath = "KeyRelease/MyPhoton/1";
+            ReleaseActionState actionState = teaseLib.state(TeaseLib.DefaultDomain,
+                    new ReleaseActionState(teaseLib, devicePath));
+
+            Item restraints = item(Toys.Wrist_Restraints);
+            restraints.apply();
+            restraints.applyTo(actionState);
+
+            assertEquals(false, ReleaseActionState.Success.getAndSet(false));
+
+            throw new IllegalStateException();
+        }
+    }
+
+    @Test
+    public void testReleaseActionInstanceErrorHandling() throws Exception {
+        TestScript script = TestScript.getOne();
+        try {
+            script.teaseLib.run(BuggyScript.class.getName());
+        } catch (Exception e) {
+            if (!(e instanceof IllegalStateException)) {
+                throw e;
+            }
+        }
+
+        assertEquals(true, ReleaseActionState.Success.getAndSet(false));
+    }
+
+    public static class BugFreeScript extends TeaseScript implements MainScript {
+        public BugFreeScript(TeaseLib teaseLib) {
+            super(teaseLib, new ResourceLoader(BuggyScript.class), teaseLib.getDominant(Gender.Feminine, Locale.UK),
+                    "test");
+        }
+
+        @Override
+        public void run() {
+            String devicePath = "KeyRelease/MyPhoton/1";
+            ReleaseActionState actionState = teaseLib.state(TeaseLib.DefaultDomain,
+                    new ReleaseActionState(teaseLib, devicePath));
+
+            Item restraints = item(Toys.Wrist_Restraints);
+            restraints.apply();
+            restraints.applyTo(actionState);
+        }
+    }
+
+    @Test
+    public void testReleaseActionInstanceScriptSuccessfulFinish() throws Exception {
+        assertEquals(false, ReleaseActionState.Success.getAndSet(false));
+        TestScript script = TestScript.getOne();
+        try {
+            script.teaseLib.run(BugFreeScript.class.getName());
+        } catch (Exception e) {
+            if (!(e instanceof IllegalStateException)) {
+                throw e;
+            }
+        }
+
+        assertEquals(false, ReleaseActionState.Success.getAndSet(false));
     }
 
     @Test

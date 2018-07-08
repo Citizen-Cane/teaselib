@@ -370,4 +370,22 @@ public class ItemImplTest {
             say("You're wearing leather restraints", script.state(Toys_Wrist_Restraints).is(Body.WristsTied, leather));
         }
     }
+
+    @Test
+    public void testTemporaryItems() {
+        TestScript script = TestScript.getOne();
+        script.addTestUserItems();
+
+        assertFalse(script.state(Toys.Wrist_Restraints).applied());
+
+        Item wristRestraints = script.items(Toys.Wrist_Restraints).query(Material.Leather).get();
+        wristRestraints.applyTo(Posture.WristsTiedBehindBack);
+
+        Items temporaryItems = script.teaseLib.temporaryItems();
+        Item temporaryWristRestraints = temporaryItems.query(Toys.Wrist_Restraints).get();
+
+        assertEquals(wristRestraints, temporaryWristRestraints);
+        assertTrue(temporaryItems.contains(Toys.Wrist_Restraints));
+    }
+
 }

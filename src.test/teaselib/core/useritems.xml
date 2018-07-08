@@ -9,7 +9,7 @@
 			<Attribute> Features.Lockable </Attribute>
 		</Item>
 
-		<Item item="Wrist_Restraints" guid="wrist_restraints" displayName="Ankle Restraints">
+		<Item item="Wrist_Restraints" guid="wrist_restraints" displayName="Wrist Restraints">
 			<Attribute> Material.Leather </Attribute>
 		</Item>
 

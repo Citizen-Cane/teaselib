@@ -19,13 +19,11 @@ import teaselib.stimulation.ext.StimulationTargets;
 import teaselib.stimulation.ext.StimulationTargets.Samples;
 
 public abstract class StimulationSamplerTask {
-    final Lock lock = new ReentrantLock();
-    final Condition playNext = lock.newCondition();
-
     private final ExecutorService executor = NamedExecutorService.singleThreadedQueue(getClass().getName());
-
-    final BlockingQueue<StimulationTargets> playList = new SynchronousQueue<>();
-    final AtomicReference<StimulationTargets> playing = new AtomicReference<>(null);
+    private final BlockingQueue<StimulationTargets> playList = new SynchronousQueue<>();
+    private final AtomicReference<StimulationTargets> playing = new AtomicReference<>(null);
+    private final Lock lock = new ReentrantLock();
+    private final Condition playNext = lock.newCondition();
 
     Future<?> future;
     long startTimeMillis;
@@ -85,7 +83,7 @@ public abstract class StimulationSamplerTask {
 
     private void handleExceptions() {
         try {
-            if (!future.isCancelled()) {
+            if (!future.isCancelled() && future.isDone()) {
                 future.get();
             }
         } catch (InterruptedException e) {
@@ -136,12 +134,6 @@ public abstract class StimulationSamplerTask {
         handleExceptions();
     }
 
-    // TODO simplify synchronization
-    // - wait for play data -> synchronous queue
-    // - end task on play data == null or empty queue -> SynchronousQueue.poll()
-    // - play next data if signaled -> lock playNext and signal
-    // - set all sample values to 0 when task queue is empty (or future is done) -> if playData == null and on interrupt
-    // - retrieve errors -> check if done, get error - if not done, then no error occured
     void run() {
         try {
             while (!Thread.currentThread().isInterrupted()) {
@@ -149,9 +141,10 @@ public abstract class StimulationSamplerTask {
                 lock.lockInterruptibly();
                 try {
                     if (currentTargets == StimulationTargets.None) {
-                        break;
+                        clearSamples();
+                    } else {
+                        renderSamples(currentTargets);
                     }
-                    renderSamples(currentTargets);
                 } finally {
                     lock.unlock();
                 }

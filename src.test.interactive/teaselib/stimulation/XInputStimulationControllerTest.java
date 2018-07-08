@@ -66,17 +66,13 @@ public class XInputStimulationControllerTest {
             return new BurstSquareWave(2, mimimalSignalDuration, 1.0 - mimimalSignalDuration);
         };
 
-        logger.info("Playing {}", constantSignal);
-        device.play(constantSignal);
-
         logger.info("Replacing stimulation targets:");
         for (Intention intention : Intention.values()) {
             sleep(250);
             logger.info("Playing {} {}", intention, stimulation);
             stim.play(intention, stimulation);
             logger.info("Completing");
-            // TODO completing single intention doesn't work yet - blocks 1 minute to complete all
-            // stim.complete(intention);
+            stim.complete(intention);
         }
         sleep(250);
         stim.stop();
@@ -102,6 +98,7 @@ public class XInputStimulationControllerTest {
         logger.info("Playing Walk rendered {}", walkRendered);
         stim.play(Intention.Pace, walkRendered);
         logger.info("Completing");
+        // Blocks because sampler task is done but main thread stim.complete() inserts StimulationTargets.None
         stim.complete();
 
         logger.info("Playing Walk repeated {}", walkRepeated);

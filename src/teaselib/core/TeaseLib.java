@@ -160,29 +160,32 @@ public class TeaseLib {
         host.showInterTitle("");
 
         try (URLClassLoader classLoader = (URLClassLoader) Thread.currentThread().getContextClassLoader();) {
-            Class<?> classLoaderClass = URLClassLoader.class;
+            Class<URLClassLoader> classLoaderClass = URLClassLoader.class;
             try {
-                Method method = classLoaderClass.getDeclaredMethod("addURL", (Class<?>) URL.class);
+                Method method = classLoaderClass.getDeclaredMethod("addURL", (Class<URL>) URL.class);
                 method.setAccessible(true);
                 method.invoke(classLoader, classPath.toURI().toURL());
                 logger.info("Added class path {}", classPath.getAbsolutePath());
+
+                TeaseLib teaseLib = new TeaseLib(host, persistence);
+                teaseLib.run(script);
             } catch (IOException | RuntimeException e) {
                 throw e;
             } catch (Exception e) {
                 throw new ReflectiveOperationException("Could not add URL to system classloader");
             }
         }
-
-        TeaseLib teaseLib = new TeaseLib(host, persistence);
-        teaseLib.run(script);
     }
 
-    public void run(String script) throws ReflectiveOperationException {
+    public void run(String scriptName) throws ReflectiveOperationException {
         try {
-            logger.info("Running script {}", script);
+            logger.info("Running script {}", scriptName);
 
-            Class<?> scriptClass = Thread.currentThread().getContextClassLoader().loadClass(script);
-            run(scriptClass);
+            ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
+            @SuppressWarnings("unchecked")
+            Class<RunnableScript> scriptClass = (Class<RunnableScript>) contextClassLoader.loadClass(scriptName);
+            RunnableScript script = script(scriptClass);
+            script.run();
         } catch (Throwable t) {
             try {
                 temporaryItems().remove();
@@ -195,11 +198,10 @@ public class TeaseLib {
         }
     }
 
-    private void run(Class<?> scriptClass)
+    private RunnableScript script(Class<RunnableScript> scriptClass)
             throws NoSuchMethodException, InstantiationException, IllegalAccessException, InvocationTargetException {
         Constructor<?> mainscriptConstructor = scriptClass.getConstructor(TeaseLib.class);
-        RunnableScript script = (RunnableScript) mainscriptConstructor.newInstance(this);
-        script.run();
+        return (RunnableScript) mainscriptConstructor.newInstance(this);
     }
 
     /**

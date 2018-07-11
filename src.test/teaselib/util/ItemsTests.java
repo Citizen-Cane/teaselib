@@ -7,11 +7,14 @@ import java.util.concurrent.TimeUnit;
 import org.junit.Test;
 
 import teaselib.Body;
+import teaselib.Features;
+import teaselib.Material;
 import teaselib.State;
 import teaselib.TeaseScript;
 import teaselib.Toys;
 import teaselib.core.util.QualifiedItem;
 import teaselib.test.TestScript;
+import teaselib.util.math.Varieties;
 
 public class ItemsTests {
 
@@ -170,9 +173,9 @@ public class ItemsTests {
         TeaseScript script = TestScript.getOne();
         Items chainedUp = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints, Toys.Chains);
 
-        Item chains = chainedUp.item(Toys.Chains);
+        Item chains = chainedUp.get(Toys.Chains);
         assertEquals(QualifiedItem.of(Toys.Chains), QualifiedItem.of(chains));
-        chainedUp.item(Toys.Wrist_Restraints).applyTo(Toys.Chains);
+        chainedUp.get(Toys.Wrist_Restraints).applyTo(Toys.Chains);
         assertEquals(QualifiedItem.of(Toys.Chains), QualifiedItem.of(chains));
     }
 
@@ -224,5 +227,37 @@ public class ItemsTests {
 
         assertFalse(nippleClamps.applied());
         assertFalse(onNipples.applied());
+    }
+    
+    @Test
+    public void testVarieties() {
+        TestScript script = TestScript.getOne();
+
+        Items inventory = script.items(Toys.Collar, Toys.Ankle_Restraints, Toys.Wrist_Restraints, Toys.Chains);
+        Varieties<Items> varieties = inventory.prefer(Features.Lockable, Material.Leather).varieties();
+        Items restraints = varieties.reduce(Items::best);
+        assertEquals(4, restraints.size());
+
+        Item collar = restraints.get(Toys.Collar);
+        Item anklecuffs = restraints.get(Toys.Ankle_Restraints);
+        Item wristCuffs = restraints.get(Toys.Wrist_Restraints);
+        Item chains = restraints.get(Toys.Chains);
+
+        assertNotEquals(Item.NotFound, collar);
+        assertNotEquals(Item.NotFound, anklecuffs);
+        assertNotEquals(Item.NotFound, wristCuffs);
+        assertNotEquals(Item.NotFound, chains);
+    }
+
+    @Test
+    public void testItemsSubList() {
+        TestScript script = TestScript.getOne();
+
+        Item wristRestraints = script.item(Toys.Wrist_Restraints);
+        assertTrue(wristRestraints.is(Toys.Wrist_Restraints));
+
+        Item wristRestraints2 = script.items(Toys.Wrist_Restraints).items(Toys.Wrist_Restraints).get();
+        assertNotEquals(Item.NotFound, wristRestraints2);
+        assertTrue(wristRestraints2.is(Toys.Wrist_Restraints));
     }
 }

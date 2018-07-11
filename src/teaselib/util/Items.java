@@ -102,7 +102,7 @@ public class Items extends ArrayList<Item> {
      * @return An item that matches all attributes, or the first available, or {@link Item#NotFound}.
      */
 
-    public final Item item(Enum<?> item) {
+    public final Item get(Enum<?> item) {
         return item(QualifiedItem.of(item));
     }
 
@@ -134,6 +134,7 @@ public class Items extends ArrayList<Item> {
         return new Items(this);
     }
 
+    @SafeVarargs
     public final Items query(Enum<?>... attributes) {
         return getQueryImpl(attributes);
     }
@@ -186,6 +187,7 @@ public class Items extends ArrayList<Item> {
      */
     @SafeVarargs
     // TODO Improve behavior and add more tests
+    // TODO rate attributes in the order listed (first higher rated)
     public final <S> Items prefer(S... attributes) {
         Set<QualifiedItem> found = new HashSet<>();
         Items preferred = new Items();
@@ -259,9 +261,9 @@ public class Items extends ArrayList<Item> {
      * 
      * @return
      */
-    public <S> Items selectAppliableSet(@SuppressWarnings("unchecked") S... prefrerred) {
-        // TODO Implement this - at least just return one item of each kind
-        return new Items(this);
+    public <S> Items selectApplicableSet(@SuppressWarnings("unchecked") S... preferred) {
+        // TODO improve this - at least just return one item of each kind
+        return prefer(preferred);
     }
 
     public void apply() {
@@ -280,5 +282,22 @@ public class Items extends ArrayList<Item> {
         for (Item item : this) {
             item.remove();
         }
+    }
+
+    /**
+     * Get a list just containing the requested subset of items
+     * 
+     * @return A list containing the requested items, or {@link Item#NotFound} for any missing item.
+     */
+    public Items items(Enum<?>... itemOrAttribute) {
+        Items items = new Items();
+        for (Item item : this) {
+            for (Enum<?> any : itemOrAttribute) {
+                if (item.is(any)) {
+                    items.add(item);
+                }
+            }
+        }        
+        return items;
     }
 }

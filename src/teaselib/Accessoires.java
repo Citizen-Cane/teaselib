@@ -18,16 +18,21 @@ public enum Accessoires {
 
     ;
 
-    enum JewelryType {
+    public enum JewelryType {
         Bracelet,
         Necklace,
+    }
+
+    public enum GloveType {
+        Household,
+        Elbow,
     }
 
     public static final Accessoires[] Male = { Tie, Gloves };
     public static final Accessoires[] Female = { Belt, Gloves, Handbag, Jewelry, Makeup, Princess_Tiara, Scarf };
 
     public static final Accessoires[] Fetish = { Strap_On };
-    public static final Accessoires[] Maid = { Apron, Belt, Gloves };
+    public static final Accessoires[] Maid = { Apron }; // TODO Bonnet
     public static final Accessoires[] Crossdressing = { Breast_Forms, Wig };
 
     public static final Accessoires[][] Categories = { Male, Female, Fetish, Maid, Crossdressing };

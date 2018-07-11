@@ -47,10 +47,12 @@ public enum Clothes {
     Corset,
     Harness,
     Mask,
+    // TODO In BDSM context, a hood is full head cover with holes for eyes, nose and mouth, otherwise a head harness
+    // A mask is similar but also different, more like for wearing a costume -> resolve
 
     ;
 
-    enum UnderpantsType {
+    public enum UnderpantsType {
         Boxers,
         Briefs,
         G_String,
@@ -58,7 +60,7 @@ public enum Clothes {
         Thong,
     }
 
-    enum Footwear {
+    public enum Footwear {
         Boots,
         High_Heels,
         Pumps,
@@ -66,23 +68,39 @@ public enum Clothes {
         Sneakers
     }
 
-    enum SkirtType {
+    public enum SkirtType {
         MiniSkirt,
         Skirt
     }
 
-    enum TrouwsersType {
+    public enum TrouwsersType {
         Jeans,
         Shorts,
         Sweatpants,
         Trousers
     }
 
-    enum SwimwearType {
+    public enum SwimwearType {
         Bikini,
         Monokini,
         Swimsuit,
     }
+
+    public enum GenitalAccessType {
+        Ouvert,
+        Zipper,
+    }
+
+    public enum AnalAccessType {
+        Ouvert,
+        Zipper,
+    }
+
+    public enum BreastAccessType {
+        Ouvert,
+        Zipper,
+    }
+
     // Namespaces of wearers of the diverse clothing items
 
     public static final String Male = "Male";
@@ -99,10 +117,10 @@ public enum Clothes {
     public static final Clothes[] MaleUnderwear = { Underpants, Socks, Pajamas };
     public static final Clothes[] MaleClothing = { Socks, Shirt, TShirt, Sweater, Trousers, Jacket, Suit, Vest, Shoes };
 
-    public static final Clothes[] FemaleUnderwear = { Underpants, Socks, Babydoll, Nightie, Pantyhose, Body, Bra,
-            Catsuit, Garter_Belt, Nightie, Underpants, Pajamas, Leotard, Swimwear };
-    public static final Clothes[] FemaleClothing = { Blouse, Corset, Dress, Jacket, Shirt, Skirt, Stockings, Sweater,
-            Tanktop, Trousers, Vest, Shoes };
+    public static final Clothes[] FemaleUnderwear = { Underpants, Garter_Belt, Stockings, Pantyhose, Socks, Body, Bra,
+            Babydoll, Nightie, Pajamas, Leotard, Catsuit, Swimwear };
+    public static final Clothes[] FemaleClothing = { Blouse, Dress, Jacket, Shirt, Skirt, Sweater, Tanktop, Trousers,
+            Vest, Shoes };
 
     public static final Clothes[] Fetish = { Corset, Harness, Mask };
 

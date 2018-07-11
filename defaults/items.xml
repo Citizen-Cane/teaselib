@@ -409,6 +409,9 @@
 		<Item item="Princess_Tiara" guid="princess_tiara" displayName="Princess tiara">
 		</Item>
 
+		<Item item="Makeup" guid="makeup" displayName="Makeup">
+		</Item>
+
 		<Item item="Scarf" guid="scarf" displayName="Scarf">
 		</Item>
 

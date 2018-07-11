@@ -49,6 +49,11 @@ public class TextVariables implements Iterable<Enum<?>> {
         return keys2names.put(key.name().toLowerCase(), value);
     }
 
+    public void remove(Enum<?> key) {
+        entries.remove(key);
+        keys2names.remove(key.name().toLowerCase());
+    }
+
     @Override
     public Iterator<Enum<?>> iterator() {
         return entries.keySet().iterator();
@@ -94,4 +99,5 @@ public class TextVariables implements Iterable<Enum<?>> {
         }
         return expanded;
     }
+
 }

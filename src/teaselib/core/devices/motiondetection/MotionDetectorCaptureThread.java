@@ -148,7 +148,10 @@ class MotionDetectorCaptureThread extends Thread {
                     }
                 }
 
-                DeviceCache.connect(videoCaptureDevice);
+                if (!connectedWhileActive()) {
+                    continue;
+                }
+
                 openVideoCaptureDevice(videoCaptureDevice);
                 fpsStatistics.start();
                 try {
@@ -169,6 +172,13 @@ class MotionDetectorCaptureThread extends Thread {
             shutdown(perceptionTasks);
             shutdown(overlayRenderer);
         }
+    }
+
+    private boolean connectedWhileActive() {
+        do {
+            DeviceCache.connect(videoCaptureDevice, 1.0);
+        } while (!videoCaptureDevice.connected() && active.get());
+        return active.get();
     }
 
     public void shutdown(ExecutorService executor) {

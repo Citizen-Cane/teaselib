@@ -295,7 +295,7 @@ public class ReleaseActionTest {
         assertEquals(false, removeChainsAction.removed);
         assertEquals(false, removeRestraintsAction.removed);
 
-        Item someChains = chains.item(Toys.Chains);
+        Item someChains = chains.get(Toys.Chains);
         someChains.remove();
         assertTrue(removeChainsAction.removed);
         assertFalse(removeRestraintsAction.removed);
@@ -303,7 +303,7 @@ public class ReleaseActionTest {
         assertFalse(chains.allApplied());
         assertTrue(restraints.allApplied());
 
-        Item wristRestraints = restraints.item(Toys.Wrist_Restraints);
+        Item wristRestraints = restraints.get(Toys.Wrist_Restraints);
         wristRestraints.remove();
         assertTrue(removeChainsAction.removed);
         assertTrue(removeRestraintsAction.removed);

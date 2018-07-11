@@ -285,9 +285,9 @@ public class Items extends ArrayList<Item> {
     }
 
     /**
-     * Get a list just containing the requested subset of items
+     * Get a sublist just containing the requested items
      * 
-     * @return A list containing the requested items, or {@link Item#NotFound} for any missing item.
+     * @return A sublist containing the requested items, or {@link Item#NotFound} for any missing item.
      */
     public Items items(Enum<?>... itemOrAttribute) {
         Items items = new Items();
@@ -297,7 +297,7 @@ public class Items extends ArrayList<Item> {
                     items.add(item);
                 }
             }
-        }        
+        }
         return items;
     }
 }

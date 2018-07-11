@@ -30,6 +30,7 @@ import teaselib.core.util.ExceptionUtil;
 import teaselib.core.util.WildcardPattern;
 import teaselib.functional.CallableScript;
 import teaselib.functional.RunnableScript;
+import teaselib.util.Item;
 import teaselib.util.Items;
 
 public abstract class TeaseScript extends TeaseScriptMath {
@@ -206,6 +207,27 @@ public abstract class TeaseScript extends TeaseScriptMath {
 
     public void show(Message message) {
         renderMessage(message, false);
+    }
+
+    /**
+     * Show item images to hint slave what he or she should put on. Actors may reference to the shown hints in theier
+     * dialog messages, which allows for greater flexibility in script dialogs - its just more natural to show the item
+     * instead of describing it in every detail.
+     * 
+     * @param item
+     *            The items to hint / display.
+     */
+    public void show(Item... item) {
+        // TODO Show item images
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @param item
+     */
+    public void show(List<Item> items) {
+        // TODO Show item images
     }
 
     /**

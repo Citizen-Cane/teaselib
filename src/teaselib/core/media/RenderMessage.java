@@ -353,7 +353,7 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
     }
 
     private static boolean definesPageLayout(MessagePart part) {
-        return part.type != Type.Image;
+        return part.type == Type.Image || part.type == Type.Text;
     }
 
     private void renderPart(MessagePart part, MessageTextAccumulator accumulatedText, Actor actor, String mood)

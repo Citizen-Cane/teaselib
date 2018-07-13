@@ -157,6 +157,9 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
             throw new IllegalArgumentException("Item without default peers must be applied with explicit peer list");
         }
 
+        // TODO Implement a generic solution for processing arrays, lists, and Items class instances
+        // (used by Rakhee key release setup)
+
         for (Object s : items) {
             if (s instanceof List || s instanceof Object[]) {
                 throw new IllegalArgumentException("Applying lists and arrays isn't supported yet: " + s);

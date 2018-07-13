@@ -1,6 +1,9 @@
 package teaselib.util;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.util.concurrent.TimeUnit;
 
@@ -16,7 +19,7 @@ import teaselib.core.util.QualifiedItem;
 import teaselib.test.TestScript;
 import teaselib.util.math.Varieties;
 
-public class ItemsTests {
+public class ItemsTest {
 
     @Test
     public void testGetAvailableItemsFirst() {
@@ -228,7 +231,7 @@ public class ItemsTests {
         assertFalse(nippleClamps.applied());
         assertFalse(onNipples.applied());
     }
-    
+
     @Test
     public void testVarieties() {
         TestScript script = TestScript.getOne();
@@ -259,5 +262,17 @@ public class ItemsTests {
         Item wristRestraints2 = script.items(Toys.Wrist_Restraints).items(Toys.Wrist_Restraints).get();
         assertNotEquals(Item.NotFound, wristRestraints2);
         assertTrue(wristRestraints2.is(Toys.Wrist_Restraints));
+    }
+
+    @Test
+    public void testItemValues() {
+        TestScript script = TestScript.getOne();
+
+        Items restraints = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints);
+
+        Object[] values = restraints.values();
+
+        assertEquals(Toys.Wrist_Restraints, values[0]);
+        assertEquals(Toys.Ankle_Restraints, values[1]);
     }
 }

@@ -10,6 +10,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import teaselib.core.state.ItemProxy;
 import teaselib.core.util.QualifiedItem;
 import teaselib.util.math.Combinations;
 import teaselib.util.math.Varieties;
@@ -253,7 +254,7 @@ public class Items extends ArrayList<Item> {
     }
 
     /**
-     * Select matching items and return a set of them. Build all combinations of available items, see if they could be
+     * Select matching items and return a set of them. Build all combinations of available items, see if they can be
      * applied, choose one of the candidates.
      * 
      * @param prefrerred
@@ -263,7 +264,7 @@ public class Items extends ArrayList<Item> {
      */
     public <S> Items selectApplicableSet(@SuppressWarnings("unchecked") S... preferred) {
         // TODO improve this - at least just return one item of each kind
-        return prefer(preferred);
+        return prefer(preferred).getAvailable();
     }
 
     public void apply() {
@@ -299,5 +300,17 @@ public class Items extends ArrayList<Item> {
             }
         }
         return items;
+    }
+
+    public Object[] values() {
+        Object[] values = new Object[size()];
+        return stream().map(item -> itemImpl(item).item).collect(Collectors.toList()).toArray(values);
+    }
+
+    private static ItemImpl itemImpl(Item item) {
+        if (item instanceof ItemProxy)
+            return itemImpl(((ItemProxy) item).item);
+        else
+            return (ItemImpl) item;
     }
 }

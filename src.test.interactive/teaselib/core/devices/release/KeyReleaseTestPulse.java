@@ -1,8 +1,8 @@
 package teaselib.core.devices.release;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.Test;
@@ -15,7 +15,7 @@ public class KeyReleaseTestPulse {
     @Test
     public void testPulseFrequency() {
         final KeyRelease keyRelease = KeyReleaseTest.connectDefaultDevice();
-        List<Actuator> actuators = KeyReleaseTest.connect(keyRelease);
+        Actuators actuators = KeyReleaseTest.connect(keyRelease);
 
         for (Actuator actuator : KeyReleaseTest.connect(keyRelease)) {
             testActuator(actuator);

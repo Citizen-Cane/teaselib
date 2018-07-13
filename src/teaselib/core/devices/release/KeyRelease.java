@@ -5,8 +5,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 import teaselib.core.Configuration;
 import teaselib.core.devices.BatteryLevel;
@@ -164,48 +162,20 @@ public class KeyRelease implements Device, Device.Creatable {
         return remoteDevice.batteryLevel();
     }
 
-    public List<Actuator> actuators() {
+    public Actuators actuators() {
         RemoteDeviceMessage count = remoteDevice.sendAndReceive(new RemoteDeviceMessage(DeviceClassName, Actuators));
         if (RemoteDevice.Count.equals(count.command)) {
-            int actuators = Integer.parseInt(count.parameters.get(0));
-            releaseKeys = new String[actuators];
-            List<Actuator> releaseMchanisms = new ArrayList<>(actuators);
+            int size = Integer.parseInt(count.parameters.get(0));
+            releaseKeys = new String[size];
+            List<Actuator> actuators = new ArrayList<>(size);
             for (int i = 0; i < releaseKeys.length; i++) {
-                releaseMchanisms.add(new Actuator(this, i));
+                actuators.add(new Actuator(this, i));
                 releaseKeys[i] = "";
             }
-            return releaseMchanisms;
+            return new Actuators(actuators);
         } else {
-            return Collections.emptyList();
+            return new Actuators(Collections.emptyList());
         }
-    }
-
-    public Actuator getActuator(long duration, TimeUnit unit) {
-        List<Actuator> releaseMechanisms = actuators();
-        List<Long> durations = releaseMechanisms.stream().map(actuator -> actuator.available(unit))
-                .collect(Collectors.toList());
-        return releaseMechanisms.get(getActuatorIndex(duration, durations));
-    }
-
-    static int getActuatorIndex(long duration, List<Long> durations) {
-        long bestDifferenceSoFar = Integer.MAX_VALUE;
-        int unset = Integer.MIN_VALUE;
-        int bestActuator = unset;
-        long maxDuration = unset;
-        int maxActuator = unset;
-        for (int actuator = 0; actuator < durations.size(); actuator++) {
-            long availableDuration = durations.get(actuator);
-            long difference = availableDuration - duration;
-            if (0 <= difference && difference < bestDifferenceSoFar) {
-                bestActuator = actuator;
-                bestDifferenceSoFar = difference;
-            }
-            if (availableDuration > maxDuration) {
-                maxDuration = availableDuration;
-                maxActuator = actuator;
-            }
-        }
-        return bestActuator != unset ? bestActuator : maxActuator;
     }
 
     boolean arm(int actuator) {

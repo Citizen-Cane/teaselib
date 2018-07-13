@@ -3,7 +3,9 @@
  */
 package teaselib.core.devices.release;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.util.Arrays;
 import java.util.List;
@@ -35,12 +37,12 @@ public class KeyReleaseTest {
         return keyRelease;
     }
 
-    public static List<Actuator> connect(KeyRelease keyRelease) {
+    public static Actuators connect(KeyRelease keyRelease) {
         assertTrue("No KeyRelease device found", DeviceCache.connect(keyRelease, 0.0));
         assertTrue(keyRelease.connected());
         logger.info(keyRelease.getName());
         assertTrue(keyRelease.active());
-        List<Actuator> actuators = keyRelease.actuators();
+        Actuators actuators = keyRelease.actuators();
         assertTrue(actuators.size() > 0);
         logger.info(keyRelease.getName() + ": " + actuators + " actuators");
         return actuators;
@@ -142,7 +144,7 @@ public class KeyReleaseTest {
     public void testDeepSleepPacket() {
         KeyRelease keyRelease = connectDefaultDevice();
 
-        List<Actuator> actuators = connect(keyRelease);
+        Actuators actuators = connect(keyRelease);
         logger.info(keyRelease.getName() + ": " + actuators.size() + " actuators");
         Actuator actuator = actuators.get(0);
         actuator.sleep(HoldDuration, TimeUnit.MINUTES);
@@ -158,12 +160,12 @@ public class KeyReleaseTest {
     @Test
     public void testHardwiredDuration() {
         List<Long> durations_60_120 = Arrays.asList(60L, 120L);
-        assertEquals(0, KeyRelease.getActuatorIndex(59, durations_60_120));
-        assertEquals(0, KeyRelease.getActuatorIndex(60, durations_60_120));
-        assertEquals(1, KeyRelease.getActuatorIndex(61, durations_60_120));
-        assertEquals(1, KeyRelease.getActuatorIndex(120, durations_60_120));
-        assertEquals(1, KeyRelease.getActuatorIndex(121, durations_60_120));
-        assertEquals(0, KeyRelease.getActuatorIndex(0, durations_60_120));
-        assertEquals(0, KeyRelease.getActuatorIndex(-1, durations_60_120));
+        assertEquals(0, Actuators.getActuatorIndex(59, durations_60_120));
+        assertEquals(0, Actuators.getActuatorIndex(60, durations_60_120));
+        assertEquals(1, Actuators.getActuatorIndex(61, durations_60_120));
+        assertEquals(1, Actuators.getActuatorIndex(120, durations_60_120));
+        assertEquals(1, Actuators.getActuatorIndex(121, durations_60_120));
+        assertEquals(0, Actuators.getActuatorIndex(0, durations_60_120));
+        assertEquals(0, Actuators.getActuatorIndex(-1, durations_60_120));
     }
 }

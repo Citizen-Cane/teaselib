@@ -3,7 +3,6 @@ package teaselib.core.devices.release;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
@@ -19,7 +18,7 @@ public class KeyReleaseArmReleaseOnTimeout {
     @Test
     public void testThatArmWithoutStartReleasesKeyAfterRequestedDuration() throws InterruptedException {
         final KeyRelease keyRelease = KeyReleaseTest.connectDefaultDevice();
-        List<Actuator> actuators = KeyReleaseTest.connect(keyRelease);
+        Actuators actuators = KeyReleaseTest.connect(keyRelease);
 
         ExecutorService executor = NamedExecutorService.newFixedThreadPool(actuators.size(), "test", 0,
                 TimeUnit.MINUTES);

@@ -21,8 +21,8 @@ public class ToyPersistenceTests {
     public void testDomainSeparation() {
         TestScript script = TestScript.getOne();
 
-        Item shoes = script.teaseLib.items(Clothes.Female, Clothes.Shoes).get();
-        Item shoes2 = script.teaseLib.item(Clothes.Female, Clothes.Shoes);
+        Item shoes = script.teaseLib.items(Clothes.Partner, Clothes.Shoes).get();
+        Item shoes2 = script.teaseLib.item(Clothes.Partner, Clothes.Shoes);
 
         assertEquals(shoes, shoes2);
 
@@ -48,11 +48,11 @@ public class ToyPersistenceTests {
             assertTrue(script.persistence.storage.containsKey("Toys.ball_gag"));
         }
 
-        Item highHeels = script.teaseLib.items(Clothes.Female, Clothes.Shoes).query(Clothes.Footwear.High_Heels).get();
+        Item highHeels = script.teaseLib.items(Clothes.Partner, Clothes.Shoes).query(Clothes.Footwear.High_Heels).get();
         highHeels.setAvailable(true);
 
         assertTrue("Domain item storage unsupported",
-                script.persistence.storage.containsKey("Female.Clothes.high_heels"));
+                script.persistence.storage.containsKey("Partner.Clothes.high_heels"));
     }
 
     @Test
@@ -78,11 +78,10 @@ public class ToyPersistenceTests {
     public void testAssignedToysAndClothingAsItems() {
         TestScript script = TestScript.getOne();
 
-        script.teaseLib.item(Clothes.Male, Toys.Collar).setAvailable(true);
-        assertTrue(script.persistence.storage.containsKey("Male." + Toys.class.getSimpleName() + ".collar"));
+        script.teaseLib.item(Clothes.Partner, Toys.Collar).setAvailable(true);
+        assertTrue(script.persistence.storage.containsKey("Partner." + Toys.class.getSimpleName() + ".collar"));
 
-        script.teaseLib.items(Clothes.Female, Clothes.Shoes).query(Clothes.Footwear.High_Heels).get()
-                .setAvailable(true);
-        assertTrue(script.persistence.storage.containsKey("Female." + Clothes.class.getSimpleName() + ".high_heels"));
+        script.teaseLib.items(Clothes.Doll, Clothes.Shoes).query(Clothes.Footwear.High_Heels).get().setAvailable(true);
+        assertTrue(script.persistence.storage.containsKey("Doll." + Clothes.class.getSimpleName() + ".high_heels"));
     }
 }

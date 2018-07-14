@@ -52,10 +52,10 @@ public class ScriptPersistenceTests {
         script.item(Clothes.Underpants).setAvailable(true);
         assertTrue(script.item(Clothes.Underpants).isAvailable());
         // TODO Support domain names for user items
-        assertFalse("Item domains not separated", script.domain(Clothes.Female).item(Clothes.Underpants).isAvailable());
+        assertFalse("Item domains not separated", script.domain(Clothes.Doll).item(Clothes.Underpants).isAvailable());
 
-        script.domain(Clothes.Female).item(Clothes.Underpants).setAvailable(true);
-        assertTrue(script.domain(Clothes.Female).item(Clothes.Underpants).isAvailable());
+        script.domain(Clothes.Doll).item(Clothes.Underpants).setAvailable(true);
+        assertTrue(script.domain(Clothes.Doll).item(Clothes.Underpants).isAvailable());
 
         assertEquals(2, script.persistence.storage.size());
     }

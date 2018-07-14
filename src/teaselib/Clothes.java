@@ -103,11 +103,8 @@ public enum Clothes {
 
     // Namespaces of wearers of the diverse clothing items
 
-    public static final String Male = "Male";
-    public static final String Female = "Female";
     public static final String Doll = "Doll";
-    public static final String Wife = "Wife";
-    public static final String Husband = "Husband";
+    public static final String Partner = "Partner";
 
     public static final Clothes[] Underwear = { Babydoll, Body, Bra, Catsuit, Garter_Belt, Leotard, Nightie, Underpants,
             Pantyhose, Socks, Stockings, Swimwear };

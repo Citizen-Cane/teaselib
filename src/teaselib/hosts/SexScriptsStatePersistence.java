@@ -13,10 +13,10 @@ import ss.IScript;
 import teaselib.Actor;
 import teaselib.Images;
 import teaselib.Sexuality.Gender;
-import teaselib.core.UserItemsImpl;
 import teaselib.core.Persistence;
 import teaselib.core.TeaseLib;
 import teaselib.core.UserItems;
+import teaselib.core.UserItemsImpl;
 import teaselib.core.util.PropertyNameMapping;
 import teaselib.core.util.Stream;
 import teaselib.util.TextVariables;
@@ -113,10 +113,15 @@ public class SexScriptsStatePersistence implements Persistence {
     }
 
     private String getLocalized(String name, Locale locale) {
+        String localizedVariableName = name + "." + locale.getLanguage();
         if (defaultLanguageMatches(locale)) {
             return get(name);
+        } else if (has(localizedVariableName)) {
+            return get(localizedVariableName);
         } else {
-            return get(name + "." + locale);
+            String defaultValue = get(name);
+            logger.warn("Localized name {} not found, using default '{}'", localizedVariableName, defaultValue);
+            return defaultValue;
         }
     }
 

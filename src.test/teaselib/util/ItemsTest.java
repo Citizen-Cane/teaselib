@@ -1,15 +1,13 @@
 package teaselib.util;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import java.util.concurrent.TimeUnit;
 
 import org.junit.Test;
 
 import teaselib.Body;
+import teaselib.Clothes;
 import teaselib.Features;
 import teaselib.Material;
 import teaselib.State;
@@ -20,6 +18,45 @@ import teaselib.test.TestScript;
 import teaselib.util.math.Varieties;
 
 public class ItemsTest {
+    @Test
+    public void testSimpleApplyWithStates() {
+        TeaseScript script = TestScript.getOne();
+
+        script.state(Clothes.Stockings).apply();
+        assertTrue(script.state(Clothes.Stockings).applied());
+        assertTrue(script.item(Clothes.Stockings).applied());
+
+        Items items = script.items(Clothes.Garter_Belt);
+        items.apply();
+        assertTrue(script.state(Clothes.Garter_Belt).applied());
+        assertTrue(script.item(Clothes.Garter_Belt).applied());
+    }
+
+    @Test
+    public void testSimpleApplyWithoutDefaultPeers() {
+        TeaseScript script = TestScript.getOne();
+
+        script.item(Clothes.Stockings).apply();
+        assertTrue(script.state(Clothes.Stockings).applied());
+        assertTrue(script.item(Clothes.Stockings).applied());
+
+        Items items = script.items(Clothes.Garter_Belt);
+        items.apply();
+        assertTrue(script.item(Clothes.Garter_Belt).applied());
+    }
+
+    @Test
+    public void testSimpleApplyWithDefaultPeers() {
+        TeaseScript script = TestScript.getOne();
+
+        Item gag = script.item(Toys.Gag);
+        gag.apply();
+        assertTrue(script.item(Toys.Gag).applied());
+
+        Items buttPlugs = script.items(Toys.Buttplug);
+        buttPlugs.apply();
+        assertTrue(script.item(Toys.Buttplug).applied());
+    }
 
     @Test
     public void testGetAvailableItemsFirst() {

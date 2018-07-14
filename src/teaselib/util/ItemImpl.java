@@ -144,9 +144,14 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
 
     @Override
     public State.Options apply() {
-        applyInstanceTo(defaultPeers);
-
         State state = teaseLib.state(domain, item);
+
+        if (defaultPeers.length == 0) {
+            state.apply();
+        } else {
+            applyInstanceTo(defaultPeers);
+        }
+
         applyMyAttributesTo(state);
         return (State.Options) state;
     }

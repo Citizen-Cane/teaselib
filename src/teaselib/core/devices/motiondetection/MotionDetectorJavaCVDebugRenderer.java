@@ -1,14 +1,9 @@
 package teaselib.core.devices.motiondetection;
 
-import static org.bytedeco.javacpp.opencv_core.FONT_HERSHEY_PLAIN;
-import static org.bytedeco.javacpp.opencv_imgproc.putText;
-import static org.bytedeco.javacpp.opencv_imgproc.rectangle;
-import static teaselib.core.javacv.Color.Blue;
-import static teaselib.core.javacv.Color.DarkBlue;
-import static teaselib.core.javacv.Color.DarkGreen;
-import static teaselib.core.javacv.Color.Green;
-import static teaselib.core.javacv.Color.White;
-import static teaselib.core.javacv.util.Gui.drawRect;
+import static org.bytedeco.javacpp.opencv_core.*;
+import static org.bytedeco.javacpp.opencv_imgproc.*;
+import static teaselib.core.javacv.Color.*;
+import static teaselib.core.javacv.util.Gui.*;
 
 import java.util.Set;
 
@@ -42,7 +37,7 @@ public class MotionDetectorJavaCVDebugRenderer {
 
     public void render(Mat debugOutput, Contours contours, MotionProcessorJavaCV.MotionData pixelData,
             MotionDetectionResultImplementation.PresenceData resultData, HeadGestureTracker gestureTracker,
-            Gesture gesture, double fps) {
+            Gesture gesture, double fpsVideo, double fpsFrameTasks) {
         boolean present = resultData.debugIndicators.contains(Presence.Present);
 
         if (resultData.debugIndicators.contains(Presence.CameraShake)) {
@@ -72,7 +67,7 @@ public class MotionDetectorJavaCVDebugRenderer {
             }
         }
         renderRegionList(debugOutput, resultData.debugIndicators);
-        renderFPS(debugOutput, fps);
+        renderFPS(debugOutput, fpsVideo, fpsFrameTasks);
     }
 
     private static void renderMotionRegion(Mat debugOutput, Rect r, boolean present) {
@@ -117,12 +112,19 @@ public class MotionDetectorJavaCVDebugRenderer {
         }
     }
 
-    private static void renderFPS(Mat debugOutput, double fps) {
-        // fps
-        String fpsFormatted = String.format("%1$.2f", fps);
+    private static void renderFPS(Mat debugOutput, double fpsVideo, double fpsFrameTasks) {
+        // video
         try (Point p = new Point(0, debugOutput.rows() - 10);) {
-            putText(debugOutput, fpsFormatted + "fps", p, FONT_HERSHEY_PLAIN, 1.75, White);
+            renderFps(debugOutput, p, fpsVideo);
         }
+        try (Point p = new Point(debugOutput.cols() - 120, debugOutput.rows() - 10);) {
+            renderFps(debugOutput, p, fpsFrameTasks);
+        }
+    }
+
+    private static void renderFps(Mat debugOutput, Point p, double fps) {
+        String fpsFormatted = String.format("%1$.2f", fps);
+        putText(debugOutput, fpsFormatted + "fps", p, FONT_HERSHEY_PLAIN, 1.75, White);
     }
 
     private static void renderPresenceIndicators(Mat debugOutput,

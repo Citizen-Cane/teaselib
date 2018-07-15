@@ -57,7 +57,8 @@ class MotionDetectorCaptureThread extends Thread {
 
     private final double desiredFps;
     private double fps;
-    private FramesPerSecond fpsStatistics;
+    private FramesPerSecond fpsVideoStatistics;
+    private FramesPerSecond fpsFrameTasksStatistics;
     private long desiredFrameTimeMillis;
 
     volatile double debugWindowTimeSpan = MotionDetector.PresenceRegionDefaultTimespan;
@@ -78,7 +79,8 @@ class MotionDetectorCaptureThread extends Thread {
         videoCaptureDevice.open();
         videoCaptureDevice.resolution(videoCaptureDevice.getResolutions().getMatchingOrSimilar(DesiredProcessingSize));
         this.fps = FramesPerSecond.getFps(videoCaptureDevice.fps(), desiredFps);
-        this.fpsStatistics = new FramesPerSecond((int) fps);
+        this.fpsVideoStatistics = new FramesPerSecond((int) fps);
+        this.fpsFrameTasksStatistics = new FramesPerSecond((int) fps);
         this.desiredFrameTimeMillis = (long) (1000.0 / fps);
 
         Size resolution = videoCaptureDevice.resolution();
@@ -153,7 +155,8 @@ class MotionDetectorCaptureThread extends Thread {
                 }
 
                 openVideoCaptureDevice(videoCaptureDevice);
-                fpsStatistics.start();
+                fpsVideoStatistics.start();
+                fpsFrameTasksStatistics.start();
                 try {
                     processVideoCaptureStream();
                 } finally {
@@ -232,6 +235,15 @@ class MotionDetectorCaptureThread extends Thread {
                     // TODO Save cpu-cycles by copying to tracker and KNN data directly
                     image.copyTo(motionImageCopy);
                     computeMotionAndPresence(motionImageCopy, timeStamp);
+                    fpsFrameTasksStatistics.updateFrame(timeStamp);
+                    try {
+                        // TODO add fps controlling -> consume only half cpu
+                        long frameTime = fpsFrameTasksStatistics.frameTime() / 2;
+                        // logger.info("Frame time {}", frameTime);
+                        Thread.sleep(frameTime);
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                    }
                     // TODO Increase semaphore count
                     // lock.release();
                 });
@@ -255,12 +267,11 @@ class MotionDetectorCaptureThread extends Thread {
                     updateGestureResult(image);
                 }
             }
-            long timeLeft = fpsStatistics.timeMillisLeft(desiredFrameTimeMillis, timeStamp);
+            long timeLeft = fpsVideoStatistics.timeMillisLeft(desiredFrameTimeMillis, timeStamp);
             if (timeLeft > 0) {
                 Thread.sleep(timeLeft);
             }
-            // TODO review frame statistics class - may be wrong
-            fpsStatistics.updateFrame(timeStamp + timeLeft);
+            fpsVideoStatistics.updateFrame(timeStamp + timeLeft);
             completeComputationAndRender(image, lock, new ArrayList<>(frameTaskFutures));
 
             if (!active.get() || Thread.currentThread().isInterrupted()) {
@@ -336,7 +347,8 @@ class MotionDetectorCaptureThread extends Thread {
         PresenceData presenceData = motion.presenceResult.presenceData;
         Set<Presence> indicators = presenceData.debugIndicators;
         debugInfo.render(image, motion.motionProcessor.motionContours, motion.motionProcessor.motionData, presenceData,
-                gesture.gestureTracker, gesture.current.get(), fpsStatistics.value());
+                gesture.gestureTracker, gesture.current.get(), fpsVideoStatistics.value(),
+                fpsFrameTasksStatistics.value());
 
         if (logDetails) {
             logger.info("contourMotionDetected={}  trackerMotionDetected={} (distance={}), {}",

@@ -81,4 +81,12 @@ public class FramesPerSecond {
     public long timeMillisLeft(long desiredFrameTime, long now) {
         return Math.max(0, frameStartTime + desiredFrameTime - now);
     }
+
+    public long frameTime() {
+        if (frameTimes.isEmpty()) {
+            return 0;
+        } else {
+            return frameTimes.get(frameTimes.size() - 1);
+        }
+    }
 }

@@ -544,25 +544,31 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
     }
 
     private double geteDelaySeconds(String args) {
-        String[] argv = args.split(" ");
+        double[] argv = getDelayInterval(args);
         if (argv.length == 1) {
-            return Double.parseDouble(args);
+            return argv[0];
         } else {
-            double start = Double.parseDouble(argv[0]);
-            double end = Double.parseDouble(argv[1]);
-            return teaseLib.random(start, end);
+            return teaseLib.random(argv[0], argv[1]);
+        }
+    }
+
+    // TODO Utilities -> Interval
+    public static double[] getDelayInterval(String delayInterval) {
+        String[] argv = delayInterval.split(" ");
+        if (argv.length == 1) {
+            return new double[] { Double.parseDouble(delayInterval) };
+        } else {
+            return new double[] { Double.parseDouble(argv[0]), Double.parseDouble(argv[1]) };
         }
     }
 
     private static Interval getDelayMillis(String args) {
-        String[] argv = args.split(" ");
+        double[] argv = getDelayInterval(args);
         if (argv.length == 1) {
-            int delay = (int) (Double.parseDouble(args) * 1000);
+            int delay = (int) (argv[0] * 1000.0);
             return new Interval(delay, delay);
         } else {
-            double start = Double.parseDouble(argv[0]) * 1000;
-            double end = Double.parseDouble(argv[1]) * 1000;
-            return new Interval((int) start, (int) end);
+            return new Interval((int) (argv[0] * 1000.0), (int) (argv[1] * 1000.0));
         }
     }
 

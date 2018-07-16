@@ -246,16 +246,37 @@ public class ScriptMessageDecorator {
         return new MessagePart(Type.Delay, Double.toString(millis / 1000.0));
     }
 
-    private static MessagePart accumulateDelay(MessagePart currentDelay, MessagePart additionalDelay) {
+    static MessagePart accumulateDelay(MessagePart currentDelay, MessagePart additionalDelay) {
         if (currentDelay == null) {
             currentDelay = additionalDelay;
         } else if (isGeneratedDelay(currentDelay)) {
             currentDelay = additionalDelay;
         } else {
-            currentDelay = new MessagePart(Type.Delay, Double
-                    .toString(Double.parseDouble(currentDelay.value) + Double.parseDouble(additionalDelay.value)));
+            double[] currentDelayValues = RenderMessage.getDelayInterval(currentDelay.value);
+            double[] additionalDelayValues = RenderMessage.getDelayInterval(additionalDelay.value);
+
+            String newInterval;
+            if (currentDelayValues.length == additionalDelayValues.length) {
+                if (currentDelayValues.length == 1) {
+                    newInterval = Double.toString(currentDelayValues[0] + additionalDelayValues[0]);
+                } else {
+                    newInterval = Double.toString(currentDelayValues[0] + additionalDelayValues[0]) + " "
+                            + Double.toString(currentDelayValues[1] + additionalDelayValues[1]);
+                }
+            } else if (currentDelayValues.length == 2 && additionalDelayValues.length == 1) {
+                newInterval = Double.toString(currentDelayValues[0] + additionalDelayValues[0]) + " "
+                        + Double.toString(currentDelayValues[1] + additionalDelayValues[0]);
+            } else if (currentDelayValues.length == 1 && additionalDelayValues.length == 2) {
+                newInterval = Double.toString(currentDelayValues[0] + additionalDelayValues[0]) + " "
+                        + Double.toString(currentDelayValues[0] + additionalDelayValues[1]);
+            } else {
+                throw new IllegalArgumentException(currentDelay.value + " or " + additionalDelay.value);
+            }
+
+            currentDelay = new MessagePart(Type.Delay, newInterval);
         }
         return currentDelay;
+
     }
 
     private static boolean isGeneratedDelay(MessagePart delay) {

@@ -160,6 +160,11 @@ class MotionDetectorCaptureThread extends Thread {
                 try {
                     processVideoCaptureStream();
                 } finally {
+                    synchronized (active) {
+                        active.set(false);
+                        active.notifyAll();
+                    }
+
                     videoCaptureDevice.close();
                     if (videoRenderer != null) {
                         videoRenderer.close();

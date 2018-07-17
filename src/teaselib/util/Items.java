@@ -6,6 +6,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -66,6 +67,14 @@ public class Items extends ArrayList<Item> {
 
     public boolean allApplied() {
         return stream().filter(Item::applied).count() == size();
+    }
+
+    public boolean anyExpired() {
+        return stream().filter(Item::expired).count() > 0;
+    }
+
+    public boolean allExpired() {
+        return stream().filter(Item::expired).count() == size();
     }
 
     public Items getAvailable() {
@@ -267,16 +276,33 @@ public class Items extends ArrayList<Item> {
         return prefer(preferred).getAvailable();
     }
 
-    public void apply() {
+    public Items apply() {
         for (Item item : this) {
             item.apply();
         }
+        return this;
     }
 
-    public void applyTo(Object... peers) {
+    public Items applyTo(Object... peers) {
         for (Item item : this) {
             item.applyTo(peers);
         }
+        return this;
+    }
+
+    public Items over(long duration, TimeUnit unit) {
+        for (Item item : this) {
+            item.apply().over(duration, unit);
+        }
+        return this;
+    }
+
+    public Items remember(long duration, TimeUnit unit) {
+        for (Item item : this) {
+            item.apply().over(duration, unit).remember();
+            ;
+        }
+        return this;
     }
 
     public void remove() {

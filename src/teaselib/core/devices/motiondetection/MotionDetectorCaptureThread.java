@@ -1,6 +1,7 @@
 package teaselib.core.devices.motiondetection;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Queue;
 import java.util.Set;
@@ -143,31 +144,21 @@ class MotionDetectorCaptureThread extends Thread {
             // - KNN/findContours uses less cpu without motion
             // -> adjust to < 50% processing time per frame
             while (!isInterrupted()) {
-                synchronized (active) {
-                    active.notifyAll();
-                    while (!active.get()) {
-                        active.wait();
-                    }
-                }
+                waitStarted();
 
-                if (!connectedWhileActive()) {
-                    continue;
-                }
+                if (connectedWhileActive()) {
+                    openVideoCaptureDevice(videoCaptureDevice);
+                    fpsVideoStatistics.start();
+                    fpsFrameTasksStatistics.start();
+                    try {
+                        processVideoCaptureStream();
+                    } finally {
+                        notifyStopped();
 
-                openVideoCaptureDevice(videoCaptureDevice);
-                fpsVideoStatistics.start();
-                fpsFrameTasksStatistics.start();
-                try {
-                    processVideoCaptureStream();
-                } finally {
-                    synchronized (active) {
-                        active.set(false);
-                        active.notifyAll();
-                    }
-
-                    videoCaptureDevice.close();
-                    if (videoRenderer != null) {
-                        videoRenderer.close();
+                        videoCaptureDevice.close();
+                        if (videoRenderer != null) {
+                            videoRenderer.close();
+                        }
                     }
                 }
             }
@@ -176,6 +167,8 @@ class MotionDetectorCaptureThread extends Thread {
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
         } finally {
+            notifyStopped();
+
             shutdown(frameTasks);
             shutdown(perceptionTasks);
             shutdown(overlayRenderer);
@@ -183,9 +176,9 @@ class MotionDetectorCaptureThread extends Thread {
     }
 
     private boolean connectedWhileActive() {
-        do {
+        while (!videoCaptureDevice.connected() && active.get()) {
             DeviceCache.connect(videoCaptureDevice, 1.0);
-        } while (!videoCaptureDevice.connected() && active.get());
+        }
         return active.get();
     }
 
@@ -216,7 +209,9 @@ class MotionDetectorCaptureThread extends Thread {
         int warmupFrames = MotionProcessorJavaCV.WARMUP_FRAMES;
 
         List<Future<?>> frameTaskFutures = new ArrayList<>();
-        for (Mat frame : videoCaptureDevice) {
+        for (Iterator<Mat> iterator = videoCaptureDevice.iterator(); //
+                iterator.hasNext() && active.get() && !Thread.currentThread().isInterrupted();) {
+            Mat frame = iterator.next();
             long timeStamp = System.currentTimeMillis();
 
             Runnable stateChange;
@@ -278,10 +273,6 @@ class MotionDetectorCaptureThread extends Thread {
             }
             fpsVideoStatistics.updateFrame(timeStamp + timeLeft);
             completeComputationAndRender(image, lock, new ArrayList<>(frameTaskFutures));
-
-            if (!active.get() || Thread.currentThread().isInterrupted()) {
-                break;
-            }
         }
     }
 
@@ -376,12 +367,13 @@ class MotionDetectorCaptureThread extends Thread {
 
     public void stopCapture() {
         synchronized (active) {
-            boolean isActive = active.getAndSet(false);
-            if (isActive) {
+            boolean wasActive = active.getAndSet(false);
+            if (wasActive) {
                 // TODO resolve stupid loop condition (don't test active flag)
                 do {
                     try {
-                        active.wait();
+                        // TODO Should work without timeout but doesn't
+                        active.wait(1000);
                     } catch (InterruptedException e) {
                         Thread.currentThread().interrupt();
                         break;
@@ -391,11 +383,27 @@ class MotionDetectorCaptureThread extends Thread {
         }
     }
 
+    private void notifyStopped() {
+        synchronized (active) {
+            active.set(false);
+            active.notifyAll();
+        }
+    }
+
     public void startCapture() {
         synchronized (active) {
-            boolean isActive = active.getAndSet(true);
-            if (!isActive) {
+            boolean activeAlready = active.getAndSet(true);
+            if (!activeAlready) {
                 active.notifyAll();
+            }
+        }
+    }
+
+    private void waitStarted() throws InterruptedException {
+        synchronized (active) {
+            // active.notifyAll();
+            while (!active.get()) {
+                active.wait();
             }
         }
     }

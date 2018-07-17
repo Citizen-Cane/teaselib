@@ -11,6 +11,7 @@ import teaselib.core.util.ReflectionUtils;
 public abstract class ReleaseAction extends ActionState {
     public ReleaseAction(TeaseLib teaseLib, String domain, String item,
             Class<? extends ReleaseAction> implementationClass) {
+        // TODO Class is wrong, must be derived class
         super(teaseLib, domain, ReflectionUtils.normalizeClassName(implementationClass) + "." + item);
     }
 

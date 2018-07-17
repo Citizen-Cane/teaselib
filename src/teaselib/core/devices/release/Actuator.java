@@ -128,7 +128,7 @@ public class Actuator implements Device {
         private final int actuatorIndex;
 
         public ActuatorReleaseAction(TeaseLib teaseLib, String domain, String devicePath) {
-            super(teaseLib, domain, devicePath);
+            super(teaseLib, domain, devicePath, ActuatorReleaseAction.class);
             String parentDevice = DeviceCache.getParentDevice(devicePath);
             this.keyRelease = KeyRelease.getDeviceCache(teaseLib.devices, teaseLib.config).getDevice(parentDevice);
             this.actuatorIndex = getActuatorIndex(devicePath);

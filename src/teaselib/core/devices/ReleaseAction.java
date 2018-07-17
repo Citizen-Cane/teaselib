@@ -1,7 +1,6 @@
 package teaselib.core.devices;
 
 import teaselib.core.TeaseLib;
-import teaselib.core.devices.ReleaseActionTest.ReleaseActionState;
 import teaselib.core.util.Persist;
 import teaselib.core.util.ReflectionUtils;
 
@@ -10,12 +9,13 @@ import teaselib.core.util.ReflectionUtils;
  *
  */
 public abstract class ReleaseAction extends ActionState {
-    public ReleaseAction(TeaseLib teaseLib, String domain, String item) {
-        super(teaseLib, domain, ReflectionUtils.normalizeClassName(ReleaseActionState.class) + "." + item);
+    public ReleaseAction(TeaseLib teaseLib, String domain, String item,
+            Class<? extends ReleaseAction> implementationClass) {
+        super(teaseLib, domain, ReflectionUtils.normalizeClassName(implementationClass) + "." + item);
     }
 
-    public ReleaseAction(Persist.Storage storage) {
-        this(storage.getInstance(TeaseLib.class), storage.next(), storage.next());
+    public ReleaseAction(Persist.Storage storage, Class<? extends ReleaseAction> implementationClass) {
+        this(storage.getInstance(TeaseLib.class), storage.next(), storage.next(), implementationClass);
     }
 
     @Override

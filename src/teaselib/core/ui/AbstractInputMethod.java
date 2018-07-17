@@ -4,21 +4,23 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.locks.ReentrantLock;
-
-import teaselib.core.concurrency.NamedExecutorService;
 
 /**
  * @author Citizen-Cane
  *
  */
 public abstract class AbstractInputMethod implements InputMethod {
-    // TODO Move executor to MediaRenderQueue
-    protected final NamedExecutorService executor = NamedExecutorService.singleThreadedQueue(getClass().getName());
+    protected final ExecutorService executor;
     protected final ReentrantLock replySection = new ReentrantLock(true);
 
     private Future<Integer> worker;
+
+    public AbstractInputMethod(ExecutorService executor) {
+        this.executor = executor;
+    }
 
     @Override
     public final void show(Prompt prompt) throws InterruptedException {
@@ -84,7 +86,6 @@ public abstract class AbstractInputMethod implements InputMethod {
             if (replySection.isHeldByCurrentThread()) {
                 replySection.unlock();
             }
-            executor.shutdown();
         }
     }
 

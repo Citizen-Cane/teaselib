@@ -4,6 +4,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -19,7 +20,8 @@ public class HostInputMethod extends AbstractInputMethod {
 
     private final Backend host;
 
-    public HostInputMethod(Backend host) {
+    public HostInputMethod(ExecutorService executorService, Backend host) {
+        super(executorService);
         this.host = host;
     }
 

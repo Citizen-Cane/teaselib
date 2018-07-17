@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.function.Supplier;
 
@@ -19,7 +20,8 @@ import teaselib.motiondetection.MotionDetector.MotionSensitivity;
 public class HeadGestureInputMethod extends AbstractInputMethod {
     private final Future<MotionDetector> motionDetector;
 
-    public HeadGestureInputMethod(Supplier<MotionDetector> motionDetector) {
+    public HeadGestureInputMethod(ExecutorService executorService, Supplier<MotionDetector> motionDetector) {
+        super(executorService);
         this.motionDetector = executor.submit(motionDetector::get);
     }
 

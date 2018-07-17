@@ -20,6 +20,7 @@ import teaselib.core.ResourceLoader;
 import teaselib.core.ScriptInterruptedException;
 import teaselib.core.VideoRenderer;
 import teaselib.core.VideoRenderer.Type;
+import teaselib.core.concurrency.NamedExecutorService;
 import teaselib.core.javacv.VideoRendererJavaCV;
 import teaselib.core.ui.Choice;
 import teaselib.core.ui.Choices;
@@ -40,7 +41,7 @@ public class DebugHost implements Host, HostInputMethod.Backend {
     public DebugHost() {
         super();
         Thread.currentThread().setName(getClass().getSimpleName() + " Script");
-        inputMethod = new HostInputMethod(this);
+        inputMethod = new HostInputMethod(NamedExecutorService.singleThreadedQueue(getClass().getSimpleName()), this);
     }
 
     @Override

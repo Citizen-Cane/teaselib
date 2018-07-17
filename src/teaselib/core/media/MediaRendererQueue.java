@@ -252,4 +252,8 @@ public class MediaRendererQueue {
             throw ExceptionUtil.asRuntimeException(ExceptionUtil.reduce(e));
         }
     }
+
+    public ExecutorService getExecutorService() {
+        return executor;
+    }
 }

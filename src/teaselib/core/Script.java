@@ -444,7 +444,8 @@ public abstract class Script {
 
         if (teaseLib.item(TeaseLib.DefaultDomain, Gadgets.Webcam).isAvailable()
                 && choices.toGestures().stream().filter(gesture -> gesture != Gesture.None).count() > 0) {
-            inputMethods.add(new HeadGestureInputMethod(teaseLib.devices.get(MotionDetector.class)::getDefaultDevice));
+            inputMethods.add(new HeadGestureInputMethod(renderQueue.getExecutorService(),
+                    teaseLib.devices.get(MotionDetector.class)::getDefaultDevice));
         }
 
         return inputMethods;

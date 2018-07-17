@@ -174,7 +174,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
             }
         });
 
-        inputMethod = new HostInputMethod(this);
+        inputMethod = new HostInputMethod(NamedExecutorService.singleThreadedQueue(getClass().getSimpleName()), this);
     }
 
     @Override

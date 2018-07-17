@@ -55,9 +55,6 @@ public class HeadGestureInputMethod extends AbstractInputMethod {
     @Override
     protected boolean handleDismiss(Prompt prompt) throws InterruptedException {
         replySection.lockInterruptibly();
-        if (motionDetector != null && !motionDetector.isCancelled()) {
-            motionDetector.cancel(true);
-        }
         return true;
     }
 

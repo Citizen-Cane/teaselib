@@ -367,19 +367,7 @@ class MotionDetectorCaptureThread extends Thread {
 
     public void stopCapture() {
         synchronized (active) {
-            boolean wasActive = active.getAndSet(false);
-            if (wasActive) {
-                // TODO resolve stupid loop condition (don't test active flag)
-                do {
-                    try {
-                        // TODO Should work without timeout but doesn't
-                        active.wait(1000);
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                        break;
-                    }
-                } while (active.get());
-            }
+            active.set(false);
         }
     }
 
@@ -392,16 +380,13 @@ class MotionDetectorCaptureThread extends Thread {
 
     public void startCapture() {
         synchronized (active) {
-            boolean activeAlready = active.getAndSet(true);
-            if (!activeAlready) {
-                active.notifyAll();
-            }
+            active.set(true);
+            active.notifyAll();
         }
     }
 
     private void waitStarted() throws InterruptedException {
         synchronized (active) {
-            // active.notifyAll();
             while (!active.get()) {
                 active.wait();
             }

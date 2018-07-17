@@ -150,20 +150,24 @@ public class HeadGestureTracker {
     }
 
     private Direction direction() {
-        Mat keyPoints = tracker.keyPoints();
-        Mat previousKeyPoints = tracker.previousKeyPoints();
+        if (tracker.hasFeatures()) {
+            Mat keyPoints = tracker.keyPoints();
+            Mat previousKeyPoints = tracker.previousKeyPoints();
 
-        if (previousKeyPoints.empty()) {
+            if (previousKeyPoints.empty()) {
+                return Direction.None;
+            }
+
+            // TODO Introduce Parameter object
+            Map<Direction, Float> directions = new EnumMap<>(Direction.class);
+            Map<Direction, Integer> weights = new EnumMap<>(Direction.class);
+            calcDirectionsAndWeights(keyPoints, previousKeyPoints, directions, weights);
+            logger.debug("{} = {}", directions, weights);
+
+            return directions.isEmpty() ? Direction.None : direction(directions, weights);
+        } else {
             return Direction.None;
         }
-
-        // TODO Introduce Parameter object
-        Map<Direction, Float> directions = new EnumMap<>(Direction.class);
-        Map<Direction, Integer> weights = new EnumMap<>(Direction.class);
-        calcDirectionsAndWeights(keyPoints, previousKeyPoints, directions, weights);
-        logger.debug("{} = {}", directions, weights);
-
-        return directions.isEmpty() ? Direction.None : direction(directions, weights);
     }
 
     private static void calcDirectionsAndWeights(Mat keyPoints, Mat previousKeyPoints, Map<Direction, Float> directions,

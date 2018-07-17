@@ -84,6 +84,7 @@ public abstract class AbstractInputMethod implements InputMethod {
             if (replySection.isHeldByCurrentThread()) {
                 replySection.unlock();
             }
+            executor.shutdown();
         }
     }
 

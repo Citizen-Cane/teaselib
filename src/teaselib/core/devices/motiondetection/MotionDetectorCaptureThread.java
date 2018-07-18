@@ -5,10 +5,10 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Queue;
 import java.util.Set;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -49,7 +49,7 @@ class MotionDetectorCaptureThread extends Thread {
 
     MotionSensitivity motionSensitivity;
     ViewPoint viewPoint;
-    Queue<Runnable> stateChanges = new ConcurrentLinkedQueue<>();
+    Queue<Runnable> stateChanges = new LinkedBlockingQueue<>();
 
     final MotionSource motion = new MotionSource();
     final GestureSource gesture = new GestureSource();
@@ -116,10 +116,9 @@ class MotionDetectorCaptureThread extends Thread {
     }
 
     public void setSensitivity(MotionSensitivity motionSensitivity) {
-        if (motionSensitivity == this.motionSensitivity)
-            return;
-
-        stateChanges.add(() -> applyMotion(motionSensitivity));
+        if (motionSensitivity != this.motionSensitivity) {
+            stateChanges.add(() -> applyMotion(motionSensitivity));
+        }
     }
 
     private void applyMotion(MotionSensitivity motionSensitivity) {
@@ -127,10 +126,9 @@ class MotionDetectorCaptureThread extends Thread {
     }
 
     public void setPointOfView(ViewPoint viewPoint) {
-        if (viewPoint == this.viewPoint)
-            return;
-
-        stateChanges.add(() -> applyPointOfView(viewPoint));
+        if (viewPoint != this.viewPoint) {
+            stateChanges.add(() -> applyPointOfView(viewPoint));
+        }
     }
 
     private void applyPointOfView(ViewPoint viewPoint) {
@@ -142,9 +140,12 @@ class MotionDetectorCaptureThread extends Thread {
         try {
             // TODO Auto-adjust until frame rate is stable
             // - KNN/findContours uses less cpu without motion
-            // -> adjust to < 50% processing time per frame
             while (!isInterrupted()) {
-                waitStarted();
+                synchronized (active) {
+                    while (!active.get()) {
+                        active.wait();
+                    }
+                }
 
                 if (connectedWhileActive()) {
                     openVideoCaptureDevice(videoCaptureDevice);
@@ -153,7 +154,7 @@ class MotionDetectorCaptureThread extends Thread {
                     try {
                         processVideoCaptureStream();
                     } finally {
-                        notifyStopped();
+                        active.set(false);
 
                         videoCaptureDevice.close();
                         if (videoRenderer != null) {
@@ -167,7 +168,7 @@ class MotionDetectorCaptureThread extends Thread {
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
         } finally {
-            notifyStopped();
+            active.set(false);
 
             shutdown(frameTasks);
             shutdown(perceptionTasks);
@@ -209,15 +210,18 @@ class MotionDetectorCaptureThread extends Thread {
         int warmupFrames = MotionProcessorJavaCV.WARMUP_FRAMES;
 
         List<Future<?>> frameTaskFutures = new ArrayList<>();
-        for (Iterator<Mat> iterator = videoCaptureDevice.iterator(); //
-                iterator.hasNext() && active.get() && !Thread.currentThread().isInterrupted();) {
+        for (Iterator<Mat> iterator = videoCaptureDevice.iterator(); iterator.hasNext();) {
+
+            processQueuedStateChanges();
+            if (!active.get()) {
+                break;
+            } else {
+                if (Thread.currentThread().isInterrupted())
+                    break;
+            }
+
             Mat frame = iterator.next();
             long timeStamp = System.currentTimeMillis();
-
-            Runnable stateChange;
-            while ((stateChange = stateChanges.poll()) != null) {
-                stateChange.run();
-            }
 
             // TODO Retrieving buffer from video hidden in transformations, code duplicated
             Mat image = videoInputTransformation.update(frame);
@@ -273,6 +277,13 @@ class MotionDetectorCaptureThread extends Thread {
             }
             fpsVideoStatistics.updateFrame(timeStamp + timeLeft);
             completeComputationAndRender(image, lock, new ArrayList<>(frameTaskFutures));
+        }
+    }
+
+    private void processQueuedStateChanges() {
+        Runnable stateChange;
+        while ((stateChange = stateChanges.poll()) != null) {
+            stateChange.run();
         }
     }
 
@@ -366,30 +377,13 @@ class MotionDetectorCaptureThread extends Thread {
     }
 
     public void stopCapture() {
-        synchronized (active) {
-            active.set(false);
-        }
-    }
-
-    private void notifyStopped() {
-        synchronized (active) {
-            active.set(false);
-            active.notifyAll();
-        }
+        stateChanges.add(() -> active.set(false));
     }
 
     public void startCapture() {
         synchronized (active) {
             active.set(true);
             active.notifyAll();
-        }
-    }
-
-    private void waitStarted() throws InterruptedException {
-        synchronized (active) {
-            while (!active.get()) {
-                active.wait();
-            }
         }
     }
 }

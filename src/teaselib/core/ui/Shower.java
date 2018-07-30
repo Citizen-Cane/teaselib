@@ -24,12 +24,12 @@ public class Shower {
         this.promptQueue = new PromptQueue();
     }
 
-    public String show(Script script, Prompt prompt) throws InterruptedException {
+    public Choice show(Script script, Prompt prompt) throws InterruptedException {
         prompt.lock.lockInterruptibly();
         try {
             pauseCurrent();
 
-            String choice;
+            Choice choice;
             try {
                 choice = showNew(script, prompt);
             } catch (Exception e) {
@@ -52,14 +52,14 @@ public class Shower {
         }
     }
 
-    private String showNew(Script script, Prompt prompt) throws InterruptedException {
+    private Choice showNew(Script script, Prompt prompt) throws InterruptedException {
         stack.push(prompt);
 
         int resultIndex = promptQueue.show(script, prompt);
         return result(prompt, resultIndex);
     }
 
-    private String result(Prompt prompt, int resultIndex) throws InterruptedException {
+    private Choice result(Prompt prompt, int resultIndex) throws InterruptedException {
         if (resultIndex == Prompt.DISMISSED) {
             prompt.joinScriptTask();
             prompt.forwardErrorsAsRuntimeException();

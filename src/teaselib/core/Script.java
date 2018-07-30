@@ -395,7 +395,7 @@ public abstract class Script {
         }
 
         Prompt prompt = getPrompt(inputMethods, scriptFunction, choices);
-        return showPrompt(prompt);
+        return showPrompt(prompt).text;
     }
 
     private Choices choices(List<Answer> answers) {
@@ -414,8 +414,8 @@ public abstract class Script {
             return Gesture.None;
     }
 
-    private String showPrompt(Prompt prompt) {
-        String choice;
+    private Choice showPrompt(Prompt prompt) {
+        Choice choice;
         try {
             choice = teaseLib.globals.get(Shower.class).show(this, prompt);
         } catch (InterruptedException e) {

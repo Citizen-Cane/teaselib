@@ -16,6 +16,7 @@ import teaselib.core.ScriptInterruptedException;
 import teaselib.core.util.ExceptionUtil;
 
 public class Prompt {
+    private static final Choice TIMEOUT = new Choice(ScriptFunction.Timeout, ScriptFunction.Timeout);
     public static final int DISMISSED = -1;
     public static final int UNDEFINED = Integer.MIN_VALUE;
 
@@ -76,20 +77,31 @@ public class Prompt {
         }
     }
 
-    String choice(int resultIndex) {
-        String choice = scriptTask != null ? scriptTask.getScriptFunctionResult() : null;
-        if (choice == null) {
-            if (scriptTask != null && scriptTask.timedOut()) {
-                choice = ScriptFunction.Timeout;
-            } else if (resultIndex == Prompt.DISMISSED) {
-                choice = ScriptFunction.Timeout;
-            } else if (resultIndex == UNDEFINED) {
-                throw new IllegalStateException("Undefined prompt result for " + this);
-            } else {
-                choice = choices.get(resultIndex).text;
+    Choice choice(int resultIndex) {
+        if (scriptTask != null && scriptTask.timedOut()) {
+            return TIMEOUT;
+        } else {
+            Choice choice = scriptTask != null ? scriptTaskResult(scriptTask) : null;
+            if (choice == null) {
+                if (resultIndex == Prompt.DISMISSED) {
+                    choice = TIMEOUT;
+                } else if (resultIndex == UNDEFINED) {
+                    throw new IllegalStateException("Undefined prompt result for " + this);
+                } else {
+                    choice = choices.get(resultIndex);
+                }
             }
+            return choice;
         }
-        return choice;
+    }
+
+    private static Choice scriptTaskResult(ScriptFutureTask scriptTask) {
+        String scriptFunctionResult = scriptTask.getScriptFunctionResult();
+        if (scriptFunctionResult != null) {
+            return new Choice(scriptFunctionResult, scriptFunctionResult);
+        } else {
+            return null;
+        }
     }
 
     void executeInputMethodHandler() {
@@ -188,7 +200,7 @@ public class Prompt {
         } else if (result == Prompt.DISMISSED) {
             return "DISMISSED";
         } else {
-            return choice(result);
+            return choice(result).display;
         }
     }
 

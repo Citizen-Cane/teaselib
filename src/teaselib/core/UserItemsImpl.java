@@ -1,7 +1,8 @@
 package teaselib.core;
 
-import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -43,7 +44,7 @@ public class UserItemsImpl implements UserItems {
 
     protected final TeaseLib teaseLib;
     private final Map<String, ItemMap> domainMap = new HashMap<>();
-    List<File> loadOrder = new ArrayList<>();
+    List<URL> loadOrder = new ArrayList<>();
 
     class ItemMap extends LinkedHashMap<Object, Map<String, Item>> {
         private static final long serialVersionUID = 1L;
@@ -67,18 +68,22 @@ public class UserItemsImpl implements UserItems {
         this.teaseLib = teaseLib;
 
         if (loadOrder.isEmpty()) {
-            loadItems(new File(teaseLib.config.get(Settings.ITEM_DEFAULT_STORE)));
-            loadItems(new File(teaseLib.config.get(Settings.ITEM_USER_STORE)));
+            addItems(getClass().getResource(teaseLib.config.get(Settings.ITEM_DEFAULT_STORE)));
+            addItems(getClass().getResource(teaseLib.config.get(Settings.ITEM_USER_STORE)));
         }
     }
 
     @Override
-    public void loadItems(File file) {
-        loadOrder.add(file);
+    public void addItems(URL url) {
+        if (url == null) {
+            throw new NullPointerException();
+        }
+
+        loadOrder.add(url);
         domainMap.clear();
     }
 
-    private List<ItemImpl> readItems(String domain, File file) throws IOException {
+    private List<ItemImpl> readItems(String domain, URL url) throws IOException {
         List<ItemImpl> items = new ArrayList<>();
 
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
@@ -92,9 +97,12 @@ public class UserItemsImpl implements UserItems {
                 }
             });
 
-            Document dom = db.parse(file);
-            Element doc = dom.getDocumentElement();
+            Document dom;
+            try (InputStream data = url.openStream()) {
+                dom = db.parse(data);
+            }
 
+            Element doc = dom.getDocumentElement();
             Node itemClass = doc.getFirstChild();
             for (; itemClass != null; itemClass = itemClass.getNextSibling()) {
                 if (itemClass.getNodeType() == Node.ELEMENT_NODE) {
@@ -173,8 +181,8 @@ public class UserItemsImpl implements UserItems {
     }
 
     private void loadItems(String domain, ItemMap itemMap) throws IOException {
-        for (File file : loadOrder) {
-            List<ItemImpl> items = readItems(domain, file);
+        for (URL url : loadOrder) {
+            List<ItemImpl> items = readItems(domain, url);
             addItems(itemMap, items);
         }
     }

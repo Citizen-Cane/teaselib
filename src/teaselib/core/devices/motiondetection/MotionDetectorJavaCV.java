@@ -9,9 +9,9 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import teaselib.core.Configuration;
 import teaselib.core.ScriptInterruptedException;
 import teaselib.core.VideoRenderer;
+import teaselib.core.configuration.Configuration;
 import teaselib.core.devices.BatteryLevel;
 import teaselib.core.devices.DeviceCache;
 import teaselib.core.devices.DeviceFactory;

@@ -29,9 +29,9 @@ import teaselib.MessagePart;
 import teaselib.Mood;
 import teaselib.core.AbstractMessage;
 import teaselib.core.CommandLineHost;
-import teaselib.core.Configuration;
 import teaselib.core.ResourceLoader;
-import teaselib.core.TeaseLibConfigSetup;
+import teaselib.core.configuration.Configuration;
+import teaselib.core.configuration.TeaseLibConfigSetup;
 import teaselib.core.util.ExceptionUtil;
 import teaselib.util.TextVariables;
 

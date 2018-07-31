@@ -12,7 +12,7 @@ import org.bytedeco.javacpp.videoInputLib.videoInput;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import teaselib.core.Configuration;
+import teaselib.core.configuration.Configuration;
 import teaselib.core.devices.BatteryLevel;
 import teaselib.core.devices.Device;
 import teaselib.core.devices.DeviceCache;

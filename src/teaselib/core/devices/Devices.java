@@ -4,7 +4,7 @@ import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
 
-import teaselib.core.Configuration;
+import teaselib.core.configuration.Configuration;
 
 public class Devices {
     private final Map<Class<?>, DeviceCache<? extends Device>> deviceClasses = new HashMap<Class<?>, DeviceCache<?>>();

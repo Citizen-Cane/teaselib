@@ -243,7 +243,7 @@ public class ResourceLoader {
     }
 
     private List<String> classRelative(String wildcardPattern, Class<?> clazz) {
-        return resources(WildcardPattern.compile(ReflectionUtils.asAbsolutePath(clazz.getPackage()) + wildcardPattern));
+        return resources(WildcardPattern.compile(ReflectionUtils.absolutePath(clazz.getPackage()) + wildcardPattern));
     }
 
     private List<String> projectRelative(String wildcardPattern) {

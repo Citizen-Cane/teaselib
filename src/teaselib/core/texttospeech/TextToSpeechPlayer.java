@@ -26,8 +26,8 @@ import teaselib.Config.Debug;
 import teaselib.Message;
 import teaselib.MessagePart;
 import teaselib.core.AbstractMessage;
-import teaselib.core.Configuration;
 import teaselib.core.ResourceLoader;
+import teaselib.core.configuration.Configuration;
 import teaselib.core.util.ExceptionUtil;
 
 public class TextToSpeechPlayer {

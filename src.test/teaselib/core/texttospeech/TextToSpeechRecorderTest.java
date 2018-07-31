@@ -25,11 +25,11 @@ import teaselib.Message;
 import teaselib.Message.Type;
 import teaselib.Sexuality.Gender;
 import teaselib.core.AbstractMessage;
-import teaselib.core.Configuration;
 import teaselib.core.ResourceLoader;
 import teaselib.core.concurrency.NamedExecutorService;
+import teaselib.core.configuration.Configuration;
+import teaselib.core.configuration.DebugSetup;
 import teaselib.core.util.ReflectionUtils;
-import teaselib.test.DebugSetup;
 import teaselib.util.TextVariables;
 
 public class TextToSpeechRecorderTest {

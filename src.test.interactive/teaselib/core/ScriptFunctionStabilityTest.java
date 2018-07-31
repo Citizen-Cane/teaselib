@@ -9,7 +9,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import teaselib.TeaseScript;
-import teaselib.test.DebugSetup;
+import teaselib.core.configuration.DebugSetup;
 import teaselib.test.TestScript;
 
 public class ScriptFunctionStabilityTest {

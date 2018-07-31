@@ -1,6 +1,6 @@
 package teaselib.core;
 
-import teaselib.test.DebugSetup;
+import teaselib.core.configuration.DebugSetup;
 import teaselib.test.TestScript;
 
 /**

@@ -32,11 +32,13 @@ import teaselib.Sexuality.Gender;
 import teaselib.State;
 import teaselib.core.Host.Location;
 import teaselib.core.StateMaps.StateMapCache;
+import teaselib.core.configuration.Configuration;
+import teaselib.core.configuration.Setup;
+import teaselib.core.configuration.TeaseLibConfigSetup;
 import teaselib.core.debug.TimeAdvanceListener;
 import teaselib.core.debug.TimeAdvancedEvent;
 import teaselib.core.devices.Devices;
 import teaselib.core.devices.remote.LocalNetworkDevice;
-import teaselib.core.util.ExceptionUtil;
 import teaselib.core.util.ObjectMap;
 import teaselib.core.util.PropertyNameMapping;
 import teaselib.core.util.QualifiedItem;
@@ -76,7 +78,7 @@ public class TeaseLib {
         this(host, persistence, new TeaseLibConfigSetup(host));
     }
 
-    public TeaseLib(Host host, Persistence persistence, Configuration.Setup setup) throws IOException {
+    public TeaseLib(Host host, Persistence persistence, Setup setup) throws IOException {
         if (host == null || persistence == null || setup == null) {
             throw new IllegalArgumentException();
         }
@@ -887,11 +889,7 @@ public class TeaseLib {
         return persistence.getDominant(gender, locale);
     }
 
-    public void addUserItems(File path) {
-        try {
-            userItems.loadItems(path);
-        } catch (IOException e) {
-            ExceptionUtil.handleException(e, config, logger);
-        }
+    public void addUserItems(URL items) {
+        userItems.addItems(items);
     }
 }

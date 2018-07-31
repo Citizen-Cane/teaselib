@@ -15,8 +15,8 @@ import teaselib.Message;
 import teaselib.Message.Type;
 import teaselib.Mood;
 import teaselib.core.AbstractMessage;
-import teaselib.core.Configuration.Setup;
-import teaselib.test.DebugSetup;
+import teaselib.core.configuration.DebugSetup;
+import teaselib.core.configuration.Setup;
 import teaselib.test.TestScript;
 import teaselib.util.RandomImages;
 

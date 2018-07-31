@@ -8,9 +8,9 @@ import org.junit.Test;
 
 import teaselib.State;
 import teaselib.Toys;
+import teaselib.core.configuration.DebugSetup;
 import teaselib.core.devices.DeviceCache;
 import teaselib.core.devices.Devices;
-import teaselib.test.DebugSetup;
 import teaselib.test.TestScript;
 
 public class KeyReleaseActionTest {

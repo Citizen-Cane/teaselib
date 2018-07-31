@@ -12,14 +12,14 @@ import org.junit.runners.MethodSorters;
 
 import teaselib.Actor;
 import teaselib.Mood;
-import teaselib.core.Configuration;
 import teaselib.core.ResourceLoader;
+import teaselib.core.configuration.Configuration;
+import teaselib.core.configuration.DebugSetup;
 import teaselib.core.texttospeech.PronunciationDictionary;
 import teaselib.core.texttospeech.TextToSpeech;
 import teaselib.core.texttospeech.TextToSpeechPlayer;
 import teaselib.core.texttospeech.Voice;
 import teaselib.core.util.Environment;
-import teaselib.test.DebugSetup;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class TextToSpeechPronunciationDictionaryTest {

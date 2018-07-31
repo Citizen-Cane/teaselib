@@ -6,7 +6,7 @@ import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
 
-import teaselib.core.Configuration;
+import teaselib.core.configuration.Configuration;
 
 /**
  * @author Citizen-Cane

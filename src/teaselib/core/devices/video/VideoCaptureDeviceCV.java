@@ -16,7 +16,7 @@ import org.bytedeco.javacpp.opencv_videoio.VideoCapture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import teaselib.core.Configuration;
+import teaselib.core.configuration.Configuration;
 import teaselib.core.devices.BatteryLevel;
 import teaselib.core.devices.DeviceCache;
 import teaselib.core.devices.DeviceFactory;

@@ -10,9 +10,9 @@ import java.util.Map;
 
 import org.junit.Test;
 
+import teaselib.core.configuration.DebugSetup;
 import teaselib.core.debug.DebugHost;
 import teaselib.core.debug.DebugPersistence;
-import teaselib.test.DebugSetup;
 
 public class TeaseLibGlobalObjectsTest {
 

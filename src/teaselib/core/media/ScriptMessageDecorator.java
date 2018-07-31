@@ -12,8 +12,8 @@ import teaselib.Message;
 import teaselib.Message.Type;
 import teaselib.MessagePart;
 import teaselib.core.AbstractMessage;
-import teaselib.core.Configuration;
 import teaselib.core.ResourceLoader;
+import teaselib.core.configuration.Configuration;
 import teaselib.core.texttospeech.TextToSpeechPlayer;
 
 public class ScriptMessageDecorator {

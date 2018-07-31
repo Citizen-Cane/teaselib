@@ -19,9 +19,9 @@ import org.junit.runners.Parameterized;
 import teaselib.Actor;
 import teaselib.Sexuality.Gender;
 import teaselib.TeaseScript;
+import teaselib.core.configuration.DebugSetup;
 import teaselib.core.debug.DebugHost;
 import teaselib.core.debug.DebugPersistence;
-import teaselib.test.DebugSetup;
 import teaselib.test.IntegrationTests;
 
 @Category(IntegrationTests.class)

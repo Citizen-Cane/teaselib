@@ -1,7 +1,6 @@
 package teaselib.core;
 
-import java.io.File;
-import java.io.IOException;
+import java.net.URL;
 import java.util.List;
 
 import teaselib.core.util.QualifiedItem;
@@ -10,7 +9,7 @@ import teaselib.util.Item;
 public interface UserItems {
     List<Item> get(String domain, QualifiedItem item);
 
-    void loadItems(File path) throws IOException;
+    void addItems(URL path);
 
     Enum<?>[] defaults(QualifiedItem item);
 }

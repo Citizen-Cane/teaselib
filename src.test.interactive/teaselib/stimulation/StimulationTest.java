@@ -9,7 +9,8 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import teaselib.core.Configuration;
+import teaselib.core.configuration.Configuration;
+import teaselib.core.configuration.DebugSetup;
 import teaselib.core.devices.Device;
 import teaselib.core.devices.Devices;
 import teaselib.stimulation.pattern.Attention;
@@ -20,7 +21,6 @@ import teaselib.stimulation.pattern.Tease;
 import teaselib.stimulation.pattern.Trot;
 import teaselib.stimulation.pattern.Walk;
 import teaselib.stimulation.pattern.Whip;
-import teaselib.test.DebugSetup;
 
 public class StimulationTest {
     private static final Logger logger = LoggerFactory.getLogger(StimulationTest.class);

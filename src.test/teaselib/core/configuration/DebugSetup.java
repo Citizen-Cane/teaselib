@@ -1,14 +1,14 @@
-package teaselib.test;
+package teaselib.core.configuration;
 
-import static org.junit.Assert.*;
+import static teaselib.core.configuration.Configuration.DEFAULTS;
+import static teaselib.core.configuration.TeaseLibConfigSetup.ITEM_DEFAULT_STORE_FILENAME;
+import static teaselib.core.configuration.TeaseLibConfigSetup.ITEM_TEMPLATE_STORE_FILENAME;
+import static teaselib.core.configuration.TeaseLibConfigSetup.PRONUNCIATION_DIRECTORY;
 
 import java.io.File;
 
 import teaselib.Config;
 import teaselib.core.UserItemsImpl;
-import teaselib.core.Configuration;
-import teaselib.core.Configuration.Setup;
-import teaselib.core.TeaseLibConfigSetup;
 import teaselib.core.devices.remote.LocalNetworkDevice;
 import teaselib.core.speechrecognition.SpeechRecognitionResult.Confidence;
 import teaselib.core.texttospeech.TextToSpeechPlayer;
@@ -19,7 +19,6 @@ public final class DebugSetup implements Setup {
     boolean enableOutput = false;
     boolean enableInput = false;
     boolean enableDictionaries = false;
-    // boolean loadItems = false;
 
     @Override
     public Configuration applyTo(Configuration config) {
@@ -64,20 +63,13 @@ public final class DebugSetup implements Setup {
 
     private void applyDictionanries(Configuration config) {
         if (enableDictionaries) {
-            config.set(TextToSpeechPlayer.Settings.Pronunciation,
-                    new File(TeaseLibConfigSetup.PRONUNCIATION_DIRECTORY).getAbsolutePath());
+            config.set(TextToSpeechPlayer.Settings.Pronunciation, new File(PRONUNCIATION_DIRECTORY).getAbsolutePath());
         }
     }
 
     private void loadDefaultItemStores(Configuration config) {
-        // if (loadItems) {
-        config.set(UserItemsImpl.Settings.ITEM_DEFAULT_STORE, new File("defaults/" + "items.xml").getPath());
-        assertTrue(new File(config.get(UserItemsImpl.Settings.ITEM_DEFAULT_STORE)).exists());
-
-        config.set(UserItemsImpl.Settings.ITEM_USER_STORE,
-                new File("defaults/" + "useritems_template.xml").getPath());
-        assertTrue(new File(config.get(UserItemsImpl.Settings.ITEM_USER_STORE)).exists());
-        // }
+        config.set(UserItemsImpl.Settings.ITEM_DEFAULT_STORE, DEFAULTS + ITEM_DEFAULT_STORE_FILENAME);
+        config.set(UserItemsImpl.Settings.ITEM_USER_STORE, DEFAULTS + ITEM_TEMPLATE_STORE_FILENAME);
     }
 
     public static Configuration getConfiguration() {
@@ -116,9 +108,4 @@ public final class DebugSetup implements Setup {
         enableDictionaries = true;
         return this;
     }
-
-    // public DebugSetup withItems() {
-    // loadItems = true;
-    // return this;
-    // }
 }

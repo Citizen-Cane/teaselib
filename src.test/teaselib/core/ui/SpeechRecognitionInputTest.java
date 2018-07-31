@@ -6,10 +6,10 @@ import java.util.Optional;
 
 import org.junit.Test;
 
+import teaselib.core.configuration.DebugSetup;
 import teaselib.core.speechrecognition.SpeechRecognition;
 import teaselib.core.speechrecognition.SpeechRecognitionResult.Confidence;
 import teaselib.core.speechrecognition.SpeechRecognizer;
-import teaselib.test.DebugSetup;
 
 public class SpeechRecognitionInputTest {
     private static Choice choice(String text) {

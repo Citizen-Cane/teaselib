@@ -8,8 +8,8 @@ import java.util.concurrent.Callable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import teaselib.core.Configuration;
 import teaselib.core.ResourceLoader;
+import teaselib.core.configuration.Configuration;
 
 public final class PrefetchImage implements Callable<byte[]> {
     private static final Logger logger = LoggerFactory.getLogger(PrefetchImage.class);

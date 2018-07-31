@@ -1,8 +1,12 @@
 package teaselib.core;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.List;
 
@@ -90,7 +94,7 @@ public class UserItemsImplTest {
 
     private UserItems configureUserItems(TestScript script) throws IOException {
         UserItems userItems = new UserItemsImpl(script.teaseLib);
-        userItems.loadItems(new File(ResourceLoader.getProjectPath(getClass()), "teaselib/core/useritems.xml"));
+        userItems.addItems(script.getClass().getResource("useritems.xml"));
         return userItems;
     }
 
@@ -103,12 +107,12 @@ public class UserItemsImplTest {
         assertFalse(script.item(Toys.Humbler).is(Material.Wood));
 
         // Overwrite by user items
-        script.addCustomUserItems("teaselib/core/useritems.xml");
+        script.addTestUserItems();
         assertEquals(1, script.items(Toys.Humbler).size());
         assertTrue(script.item(Toys.Humbler).is(Material.Wood));
 
         // additional items via custom user items
-        script.addCustomUserItems("teaselib/core/useritems2.xml");
+        script.addTestUserItems2();
         assertEquals(2, script.items(Toys.Humbler).size());
         for (Item item : script.items(Toys.Humbler)) {
             assertTrue(item.is(Material.Wood));

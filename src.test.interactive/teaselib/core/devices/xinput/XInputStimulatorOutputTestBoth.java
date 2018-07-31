@@ -4,11 +4,11 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import teaselib.core.Configuration;
+import teaselib.core.configuration.Configuration;
+import teaselib.core.configuration.DebugSetup;
 import teaselib.core.devices.Device;
 import teaselib.core.devices.DeviceCache;
 import teaselib.core.devices.Devices;
-import teaselib.test.DebugSetup;
 
 public class XInputStimulatorOutputTestBoth {
     static final Logger logger = LoggerFactory.getLogger(XInputStimulatorOutputTestBoth.class);

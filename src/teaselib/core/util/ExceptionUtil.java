@@ -7,7 +7,7 @@ import java.util.concurrent.ExecutionException;
 import org.slf4j.Logger;
 
 import teaselib.Config;
-import teaselib.core.Configuration;
+import teaselib.core.configuration.Configuration;
 
 public class ExceptionUtil {
 

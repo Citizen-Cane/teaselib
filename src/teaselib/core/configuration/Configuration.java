@@ -1,26 +1,24 @@
-package teaselib.core;
+package teaselib.core.configuration;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 
-import teaselib.core.util.ConfigurationFile;
 import teaselib.core.util.FileUtilities;
 import teaselib.core.util.QualifiedItem;
 import teaselib.core.util.ReflectionUtils;
 
 public class Configuration {
+    static final String DEFAULTS = ReflectionUtils.absolutePath(Configuration.class) + "defaults/";
+
     private final List<Properties> defaults = new ArrayList<>();
     Properties persistentProperties;
 
     final Properties sessionProperties = new Properties();
-
-    public static interface Setup {
-        Configuration applyTo(Configuration config) throws IOException;
-    }
 
     public Configuration() {
         persistentProperties = sessionProperties;
@@ -31,29 +29,43 @@ public class Configuration {
         setup.applyTo(this);
     }
 
-    public void addDefaultFile(Enum<?> setting, File defaultFile) throws IOException {
-        set(setting, defaultFile.getAbsolutePath());
+    public void addDefaultFile(Enum<?> setting, String resource) {
+        set(setting, DEFAULTS + resource);
     }
 
-    public void addUserFile(Enum<?> setting, File templateFile, File userFile) throws IOException {
+    public void addUserFile(Enum<?> setting, String templateResource, File userFile) throws IOException {
         set(setting, userFile.getAbsolutePath());
-        addUserFile(templateFile, userFile);
+        addUserFile(DEFAULTS + templateResource, userFile);
     }
 
-    public void addUserFile(File preset, File userFile) throws IOException {
+    public void addUserFile(String templateResource, File userFile) throws IOException {
         if (!userFile.exists()) {
-            FileUtilities.copyFile(preset, userFile);
+            FileUtilities.copy(templateResource, userFile);
         }
     }
 
-    public void addConfigFile(File file) throws IOException {
+    public void add(File file) throws IOException {
         ConfigurationFile configurationFile;
         if (defaults.isEmpty()) {
-            configurationFile = new ConfigurationFile(file);
+            configurationFile = new ConfigurationFile();
         } else {
-            configurationFile = new ConfigurationFile(file, defaults.get(defaults.size() - 1));
+            configurationFile = new ConfigurationFile(defaults.get(defaults.size() - 1));
         }
         try (FileInputStream fileInputStream = new FileInputStream(file)) {
+            configurationFile.load(fileInputStream);
+        }
+        defaults.add(configurationFile);
+        persistentProperties = configurationFile;
+    }
+
+    public void add(String configResource) throws IOException {
+        ConfigurationFile configurationFile;
+        if (defaults.isEmpty()) {
+            configurationFile = new ConfigurationFile();
+        } else {
+            configurationFile = new ConfigurationFile(defaults.get(defaults.size() - 1));
+        }
+        try (InputStream fileInputStream = getClass().getResourceAsStream(configResource)) {
             configurationFile.load(fileInputStream);
         }
         defaults.add(configurationFile);

@@ -7,13 +7,13 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import teaselib.core.Configuration;
 import teaselib.core.VideoRenderer.Type;
+import teaselib.core.configuration.Configuration;
+import teaselib.core.configuration.DebugSetup;
 import teaselib.core.devices.DeviceCache;
 import teaselib.core.devices.Devices;
 import teaselib.core.javacv.VideoRendererJavaCV;
 import teaselib.motiondetection.MotionDetector.MotionSensitivity;
-import teaselib.test.DebugSetup;
 
 public class TestArriveClose {
     static final Logger logger = LoggerFactory.getLogger(TestArriveClose.class);

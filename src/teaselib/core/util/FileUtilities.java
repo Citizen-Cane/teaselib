@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 
@@ -48,8 +49,18 @@ public class FileUtilities {
         };
     }
 
-    public static void copyFile(File source, File destination) throws IOException {
+    public static void copy(File source, File destination) throws IOException {
         Files.copy(source.toPath(), destination.toPath(), StandardCopyOption.REPLACE_EXISTING);
+    }
+
+    public static void copy(String resource, File destination) throws IOException {
+        try (InputStream source = FileUtilities.class.getResourceAsStream(resource)) {
+            copy(source, destination);
+        }
+    }
+
+    public static void copy(InputStream resource, File destination) throws IOException {
+        Files.copy(resource, destination.toPath(), StandardCopyOption.REPLACE_EXISTING);
     }
 
     public static File currentDir() {

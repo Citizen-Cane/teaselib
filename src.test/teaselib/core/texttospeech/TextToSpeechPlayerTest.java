@@ -15,9 +15,9 @@ import org.junit.Test;
 import teaselib.Actor;
 import teaselib.Mood;
 import teaselib.Sexuality.Gender;
-import teaselib.core.Configuration;
+import teaselib.core.configuration.Configuration;
+import teaselib.core.configuration.DebugSetup;
 import teaselib.core.texttospeech.implementation.TextToSpeechImplementationDebugProxy;
-import teaselib.test.DebugSetup;
 
 public class TextToSpeechPlayerTest {
     static final TestTTS testTTS = new TestTTS();

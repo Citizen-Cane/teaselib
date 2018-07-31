@@ -29,12 +29,12 @@ public final class ReflectionUtils {
         return clazz.getName().replace('$', '.');
     }
 
-    public static String asAbsolutePath(Package p) {
+    public static String absolutePath(Package p) {
         return "/" + p.getName().replace('.', '/') + '/';
     }
 
-    public static String asAbsolutePath(Class<?> clazz) {
-        return "/" + clazz.getName().replace('.', '/') + '/';
+    public static String absolutePath(Class<?> clazz) {
+        return absolutePath(clazz.getPackage());
     }
 
     public static String packagePath(Class<?> clazz) {

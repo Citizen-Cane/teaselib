@@ -13,9 +13,9 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import teaselib.core.Configuration;
+import teaselib.core.configuration.Configuration;
+import teaselib.core.configuration.DebugSetup;
 import teaselib.core.devices.Devices;
-import teaselib.test.DebugSetup;
 
 /**
  * @author Citizen Cane

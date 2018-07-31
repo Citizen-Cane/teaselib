@@ -2,7 +2,7 @@ package teaselib.core.devices.remote;
 
 import java.util.Collections;
 
-import teaselib.core.Configuration;
+import teaselib.core.configuration.Configuration;
 import teaselib.core.devices.Device;
 import teaselib.core.devices.DeviceCache;
 import teaselib.core.devices.Devices;

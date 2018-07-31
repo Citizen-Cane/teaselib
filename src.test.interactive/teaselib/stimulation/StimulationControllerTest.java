@@ -9,10 +9,10 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import teaselib.core.Configuration;
+import teaselib.core.configuration.Configuration;
+import teaselib.core.configuration.DebugSetup;
 import teaselib.core.devices.Devices;
 import teaselib.stimulation.BodyStimulationController.Type;
-import teaselib.test.DebugSetup;
 
 /**
  * @author Citizen-Cane

@@ -3,13 +3,13 @@ package teaselib.motiondetection;
 import org.bytedeco.javacpp.opencv_core.Point;
 import org.junit.Test;
 
-import teaselib.core.Configuration;
 import teaselib.core.VideoRenderer.Type;
+import teaselib.core.configuration.Configuration;
+import teaselib.core.configuration.DebugSetup;
 import teaselib.core.devices.DeviceCache;
 import teaselib.core.devices.Devices;
 import teaselib.core.javacv.VideoRendererJavaCV;
 import teaselib.motiondetection.MotionDetector.MotionSensitivity;
-import teaselib.test.DebugSetup;
 
 public class TestHeadGestureStability {
     @Test

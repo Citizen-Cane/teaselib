@@ -4,8 +4,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import teaselib.core.Configuration;
 import teaselib.core.ScriptInterruptedException;
+import teaselib.core.configuration.Configuration;
 
 public abstract class DeviceFactory<T extends Device> {
     private final String deviceClass;

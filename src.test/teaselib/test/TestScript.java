@@ -1,16 +1,16 @@
 package teaselib.test;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.Locale;
 
 import teaselib.Actor;
 import teaselib.Sexuality.Gender;
 import teaselib.TeaseScript;
-import teaselib.core.Configuration.Setup;
 import teaselib.core.Debugger;
 import teaselib.core.ResourceLoader;
 import teaselib.core.TeaseLib;
+import teaselib.core.configuration.DebugSetup;
+import teaselib.core.configuration.Setup;
 import teaselib.core.debug.DebugHost;
 import teaselib.core.debug.DebugPersistence;
 import teaselib.core.util.PropertyNameMapping;
@@ -101,11 +101,15 @@ public class TestScript extends TeaseScript {
     }
 
     public void addTestUserItems() {
-        addCustomUserItems("teaselib/core/useritems.xml");
+        addCustomUserItems("useritems.xml");
     }
 
-    public void addCustomUserItems(String resourcePath) {
-        teaseLib.addUserItems(new File(ResourceLoader.getProjectPath(getClass()), resourcePath));
+    public void addTestUserItems2() {
+        addCustomUserItems("useritems2.xml");
+    }
+
+    private void addCustomUserItems(String resourcePath) {
+        teaseLib.addUserItems(getClass().getResource(resourcePath));
     }
 
     @Override

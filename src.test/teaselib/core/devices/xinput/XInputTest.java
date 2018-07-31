@@ -11,12 +11,12 @@ import java.util.List;
 
 import org.junit.Test;
 
-import teaselib.core.Configuration;
+import teaselib.core.configuration.Configuration;
+import teaselib.core.configuration.DebugSetup;
 import teaselib.core.devices.DeviceCache;
 import teaselib.core.devices.Devices;
 import teaselib.core.devices.xinput.stimulation.XInputStimulationDevice;
 import teaselib.stimulation.StimulationDevice;
-import teaselib.test.DebugSetup;
 
 /**
  * @author someone

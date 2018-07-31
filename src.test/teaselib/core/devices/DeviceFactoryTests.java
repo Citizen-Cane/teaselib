@@ -10,13 +10,13 @@ import java.util.Set;
 import org.junit.Test;
 import org.slf4j.LoggerFactory;
 
-import teaselib.core.Configuration;
+import teaselib.core.configuration.Configuration;
+import teaselib.core.configuration.DebugSetup;
 import teaselib.core.devices.release.KeyRelease;
 import teaselib.core.devices.remote.RemoteDevice;
 import teaselib.core.devices.xinput.XInputDevice;
 import teaselib.motiondetection.MotionDetector;
 import teaselib.stimulation.StimulationDevice;
-import teaselib.test.DebugSetup;
 import teaselib.video.VideoCaptureDevice;
 
 /**

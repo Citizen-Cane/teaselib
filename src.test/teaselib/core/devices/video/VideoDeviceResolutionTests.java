@@ -5,9 +5,9 @@ import static org.junit.Assert.*;
 import org.bytedeco.javacpp.opencv_core.Size;
 import org.junit.Test;
 
-import teaselib.core.Configuration;
+import teaselib.core.configuration.Configuration;
+import teaselib.core.configuration.DebugSetup;
 import teaselib.core.devices.Devices;
-import teaselib.test.DebugSetup;
 import teaselib.video.ResolutionList;
 import teaselib.video.VideoCaptureDevice;
 

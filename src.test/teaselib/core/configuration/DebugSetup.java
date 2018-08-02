@@ -2,7 +2,6 @@ package teaselib.core.configuration;
 
 import static teaselib.core.configuration.Configuration.DEFAULTS;
 import static teaselib.core.configuration.TeaseLibConfigSetup.ITEM_DEFAULT_STORE_FILENAME;
-import static teaselib.core.configuration.TeaseLibConfigSetup.ITEM_TEMPLATE_STORE_FILENAME;
 import static teaselib.core.configuration.TeaseLibConfigSetup.PRONUNCIATION_DIRECTORY;
 
 import java.io.File;
@@ -69,7 +68,6 @@ public final class DebugSetup implements Setup {
 
     private void loadDefaultItemStores(Configuration config) {
         config.set(UserItemsImpl.Settings.ITEM_DEFAULT_STORE, DEFAULTS + ITEM_DEFAULT_STORE_FILENAME);
-        config.set(UserItemsImpl.Settings.ITEM_USER_STORE, DEFAULTS + ITEM_TEMPLATE_STORE_FILENAME);
     }
 
     public static Configuration getConfiguration() {

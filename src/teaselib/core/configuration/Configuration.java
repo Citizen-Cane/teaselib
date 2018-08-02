@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Properties;
 
 import teaselib.core.util.FileUtilities;
@@ -29,13 +30,9 @@ public class Configuration {
         setup.applyTo(this);
     }
 
-    public void addDefaultFile(Enum<?> setting, String resource) {
-        set(setting, DEFAULTS + resource);
-    }
-
     public void addUserFile(Enum<?> setting, String templateResource, File userFile) throws IOException {
         set(setting, userFile.getAbsolutePath());
-        addUserFile(DEFAULTS + templateResource, userFile);
+        addUserFile(templateResource, userFile);
     }
 
     public void addUserFile(String templateResource, File userFile) throws IOException {
@@ -66,6 +63,7 @@ public class Configuration {
             configurationFile = new ConfigurationFile(defaults.get(defaults.size() - 1));
         }
         try (InputStream fileInputStream = getClass().getResourceAsStream(configResource)) {
+            Objects.requireNonNull(fileInputStream, "Configuration file not found:" + configResource);
             configurationFile.load(fileInputStream);
         }
         defaults.add(configurationFile);

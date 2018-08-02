@@ -38,23 +38,25 @@ public final class TeaseLibConfigSetup implements Setup {
     }
 
     private void addTeaseLibDefaults(Configuration config) throws IOException {
-        config.add(TEASELIB_PROPERTIES);
-        config.addUserFile(TEASELIB_PROPERTIES, new File(userPath, TEASELIB_PROPERTIES));
-        config.add(new File(userPath, TEASELIB_PROPERTIES));
+        config.add(Configuration.DEFAULTS + TEASELIB_PROPERTIES);
+        File teaseLibProperties = new File(userPath, TEASELIB_PROPERTIES);
+        config.addUserFile(Configuration.DEFAULTS + TEASELIB_PROPERTIES, teaseLibProperties);
+        config.add(teaseLibProperties);
 
-        config.addDefaultFile(UserItemsImpl.Settings.ITEM_DEFAULT_STORE, ITEM_DEFAULT_STORE_FILENAME);
-        config.addUserFile(UserItemsImpl.Settings.ITEM_USER_STORE, ITEM_TEMPLATE_STORE_FILENAME,
-                new File(userPath, ITEM_USER_STORE_FILENAME));
+        config.set(UserItemsImpl.Settings.ITEM_DEFAULT_STORE, Configuration.DEFAULTS + ITEM_DEFAULT_STORE_FILENAME);
+        config.addUserFile(UserItemsImpl.Settings.ITEM_USER_STORE,
+                Configuration.DEFAULTS + ITEM_TEMPLATE_STORE_FILENAME, new File(userPath, ITEM_USER_STORE_FILENAME));
     }
 
     private void addNetworkDefaults(Configuration config) throws IOException {
+        config.add(Configuration.DEFAULTS + NETWORK_PROPERTIES);
         File networkProperties = new File(userPath, NETWORK_PROPERTIES);
-        config.addUserFile(NETWORK_PROPERTIES, networkProperties);
+        config.addUserFile(Configuration.DEFAULTS + NETWORK_PROPERTIES, networkProperties);
         config.add(networkProperties);
     }
 
     private void addSpeechDefaults(Configuration config) throws IOException {
-        config.addUserFile(TextToSpeechPlayer.Settings.Voices, VOICES_PROPERTIES,
+        config.addUserFile(TextToSpeechPlayer.Settings.Voices, Configuration.DEFAULTS + VOICES_PROPERTIES,
                 new File(userPath, VOICES_PROPERTIES));
         config.set(TextToSpeechPlayer.Settings.Pronunciation,
                 new File(teaseLibPath, PRONUNCIATION_DIRECTORY).getAbsolutePath());

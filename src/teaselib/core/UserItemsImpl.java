@@ -2,7 +2,9 @@ package teaselib.core;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -11,6 +13,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.function.Supplier;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -69,15 +72,19 @@ public class UserItemsImpl implements UserItems {
 
         if (loadOrder.isEmpty()) {
             addItems(getClass().getResource(teaseLib.config.get(Settings.ITEM_DEFAULT_STORE)));
-            addItems(getClass().getResource(teaseLib.config.get(Settings.ITEM_USER_STORE)));
+            if (teaseLib.config.has(Settings.ITEM_USER_STORE)) {
+                try {
+                    addItems(Paths.get(teaseLib.config.get(Settings.ITEM_USER_STORE)).toUri().toURL());
+                } catch (MalformedURLException e) {
+                    throw ExceptionUtil.asRuntimeException(e);
+                }
+            }
         }
     }
 
     @Override
     public void addItems(URL url) {
-        if (url == null) {
-            throw new NullPointerException();
-        }
+        Objects.requireNonNull(url);
 
         loadOrder.add(url);
         domainMap.clear();

@@ -25,9 +25,6 @@
         <copy todir="${destination}/lib/TeaseLib/lib/">
             <fileset dir="${DeployTeaseLib.basedir}/lib/" excludes="**.obj,**.iobj,**.pdb,**.ipdb,**.exp,**.ilk,**.lib"/>
         </copy>
-        <copy todir="${destination}/lib/TeaseLib/defaults/">
-            <fileset dir="${DeployTeaseLib.basedir}/defaults/" includes="*.properties,*.template,*.xml"/>
-        </copy>
         <copy todir="${destination}/lib/TeaseLib/pronunciation">
             <fileset dir="${DeployTeaseLib.basedir}/pronunciation"/>
         </copy>

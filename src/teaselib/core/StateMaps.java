@@ -79,10 +79,14 @@ public class StateMaps {
             State state = Persist.from(item.toString(), clazz -> teaseLib);
             item = QualifiedItem.of(((StateImpl) state).item);
             StateMap stateMap = stateMap(domain, item);
-            if (!stateMap.contains(item.toString().toLowerCase())) {
-                stateMap.put(item.toString().toLowerCase(), state);
+            String key = item.toString().toLowerCase();
+            if (!stateMap.contains(key)) {
+                stateMap.put(key, state);
+                return state;
+            } else {
+                return stateMap.get(key);
+
             }
-            return state;
         } else if (item.value() instanceof StateImpl) {
             StateImpl stateImpl = (StateImpl) item.value();
             StateMap stateMap = stateMap(domain, QualifiedItem.of(stateImpl.item));
@@ -96,7 +100,7 @@ public class StateMaps {
                 throw new IllegalArgumentException(
                         "States cannot be replaced: " + stateImpl.toString() + " -> " + existing.toString());
             } else {
-                return stateImpl;
+                return existing;
             }
         } else {
             StateMap stateMap = stateMap(domain, item);
@@ -136,7 +140,7 @@ public class StateMaps {
     }
 
     StateMap stateMap(String domain, String namespaceKey) {
-        domain=domain.toLowerCase();
+        domain = domain.toLowerCase();
         StateMapCache domainCache = getDomainCache(domain);
         final StateMap stateMap;
         if (domainCache.containsKey(namespaceKey)) {

@@ -1,6 +1,9 @@
 package teaselib.core;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
 
 import java.util.concurrent.TimeUnit;
 
@@ -265,5 +268,15 @@ public class StateTests {
 
         assertEquals(clothesPegsByEnum, clothesPegsByString);
         assertTrue(((StateProxy) clothesPegsByEnum).state == ((StateProxy) clothesPegsByString).state);
+    }
+
+    @Test
+    public void testThatInjectedStateInstancesArentOverwrittenByEquals() {
+        TestScript script = TestScript.getOne();
+        State test1 = script.teaseLib.state(TeaseLib.DefaultDomain,
+                new StateImpl(script.teaseLib, TeaseLib.DefaultDomain, "test"));
+        State test2 = script.teaseLib.state(TeaseLib.DefaultDomain,
+                new StateImpl(script.teaseLib, TeaseLib.DefaultDomain, "test"));
+        assertSame(test1, test2);
     }
 }

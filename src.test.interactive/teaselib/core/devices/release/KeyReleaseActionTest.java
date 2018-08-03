@@ -1,6 +1,7 @@
 package teaselib.core.devices.release;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.util.concurrent.TimeUnit;
 
@@ -22,7 +23,7 @@ public class KeyReleaseActionTest {
         KeyRelease keyRelease = deviceCache.getDefaultDevice();
 
         for (Actuator actuator : KeyReleaseTest.connect(keyRelease)) {
-            State releaseAction = actuator.releaseAction(script.teaseLib);
+            State releaseAction = actuator.releaseAction(script);
             KeyReleaseTest.arm(actuator);
 
             script.item(Toys.Wrist_Restraints).apply();

@@ -2,7 +2,6 @@ package teaselib.core.devices.release;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -99,12 +98,13 @@ public class KeyRelease implements Device, Device.Creatable {
 
     private static final String DeviceClassName = "KeyRelease";
 
-    private static final String Actuators = "actuators";
+    private static final String GetActuators = "actuators";
 
     private RemoteDevice remoteDevice;
     private final Devices devices;
     private final DeviceFactory<KeyRelease> factory;
 
+    private Actuators actuators;
     private String[] releaseKeys = { "" };
 
     KeyRelease(Devices devices, DeviceFactory<KeyRelease> factory) {
@@ -163,18 +163,26 @@ public class KeyRelease implements Device, Device.Creatable {
     }
 
     public Actuators actuators() {
-        RemoteDeviceMessage count = remoteDevice.sendAndReceive(new RemoteDeviceMessage(DeviceClassName, Actuators));
-        if (RemoteDevice.Count.equals(count.command)) {
-            int size = Integer.parseInt(count.parameters.get(0));
-            releaseKeys = new String[size];
-            List<Actuator> actuators = new ArrayList<>(size);
-            for (int i = 0; i < releaseKeys.length; i++) {
-                actuators.add(new Actuator(this, i));
-                releaseKeys[i] = "";
+        if (actuators != null) {
+            return actuators;
+        } else if (connected()) {
+            RemoteDeviceMessage count = remoteDevice
+                    .sendAndReceive(new RemoteDeviceMessage(DeviceClassName, GetActuators));
+            if (RemoteDevice.Count.equals(count.command)) {
+                int size = Integer.parseInt(count.parameters.get(0));
+                releaseKeys = new String[size];
+                List<Actuator> elements = new ArrayList<>(size);
+                for (int i = 0; i < size; i++) {
+                    elements.add(new Actuator(this, i));
+                    releaseKeys[i] = "";
+                }
+                actuators = new Actuators(elements);
+                return actuators;
+            } else {
+                return Actuators.NONE;
             }
-            return new Actuators(actuators);
         } else {
-            return new Actuators(Collections.emptyList());
+            return Actuators.NONE;
         }
     }
 

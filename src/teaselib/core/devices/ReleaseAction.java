@@ -9,10 +9,11 @@ import teaselib.core.util.ReflectionUtils;
  *
  */
 public abstract class ReleaseAction extends ActionState {
+    boolean actionPerformed = false;
+
     public ReleaseAction(TeaseLib teaseLib, String domain, String item,
-            Class<? extends ReleaseAction> implementationClass) {
-        // TODO Class is wrong, must be derived class
-        super(teaseLib, domain, ReflectionUtils.normalizeClassName(implementationClass) + "." + item);
+            Class<? extends ReleaseAction> subClass) {
+        super(teaseLib, domain, ReflectionUtils.normalizeClassName(subClass) + "." + item);
     }
 
     public ReleaseAction(Persist.Storage storage, Class<? extends ReleaseAction> implementationClass) {
@@ -20,8 +21,29 @@ public abstract class ReleaseAction extends ActionState {
     }
 
     @Override
+    public Options applyTo(Object... attributes) {
+        try {
+            return super.applyTo(attributes);
+        } finally {
+            actionPerformed = false;
+        }
+    }
+
+    @Override
     public Persistence removeFrom(Object... peers2) {
-        performAction();
+        performReleaseActionIfNecessary();
         return super.removeFrom(peers2);
+    }
+
+    @Override
+    public Persistence remove() {
+        performReleaseActionIfNecessary();
+        return super.remove();
+    }
+
+    protected void performReleaseActionIfNecessary() {
+        if (!actionPerformed) {
+            actionPerformed = performAction();
+        }
     }
 }

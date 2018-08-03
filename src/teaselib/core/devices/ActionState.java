@@ -14,21 +14,6 @@ import teaselib.core.util.QualifiedItem;
  *
  */
 public abstract class ActionState extends StateImpl implements Persist.Persistable {
-
-    /**
-     * @param stateMaps
-     * @param domain
-     * @param item
-     */
-    public ActionState(StateMaps stateMaps, String domain, Object item) {
-        super(stateMaps, domain, item);
-    }
-
-    /**
-     * @param teaseLib
-     * @param domain
-     * @param item
-     */
     public ActionState(TeaseLib teaseLib, String domain, Object item) {
         super(teaseLib, domain, item);
     }
@@ -42,5 +27,5 @@ public abstract class ActionState extends StateImpl implements Persist.Persistab
         }
     }
 
-    protected abstract void performAction();
+    protected abstract boolean performAction();
 }

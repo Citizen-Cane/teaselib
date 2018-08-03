@@ -1,9 +1,10 @@
-package teaselib.core.devices;
+package teaselib.core.devices.release;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 import java.util.Locale;
@@ -22,8 +23,7 @@ import teaselib.TeaseScript;
 import teaselib.Toys;
 import teaselib.core.ResourceLoader;
 import teaselib.core.TeaseLib;
-import teaselib.core.devices.release.Actuator;
-import teaselib.core.devices.release.KeyRelease;
+import teaselib.core.devices.ReleaseAction;
 import teaselib.core.state.StateProxy;
 import teaselib.core.util.Persist;
 import teaselib.core.util.Persist.Storage;
@@ -46,9 +46,10 @@ public class ReleaseActionTest {
         }
 
         @Override
-        public void performAction() {
-            Success.set(true);
+        public boolean performAction() {
             removed = true;
+            Success.set(removed);
+            return removed;
         }
     }
 
@@ -321,14 +322,16 @@ public class ReleaseActionTest {
         TestScript script = TestScript.getOne();
 
         String devicePath = "KeyRelease/MyPhoton/1";
-        TestReleaseActionState releaseAction = script.teaseLib.state(TeaseLib.DefaultDomain,
+        State releaseAction = script.teaseLib.state(TeaseLib.DefaultDomain,
                 new TestReleaseActionState(script.teaseLib, devicePath));
         State sameInstance = script.state(QualifiedItem.of(releaseAction).toString());
         assertEquals(releaseAction, sameInstance);
 
         Item restraints = script.item(Toys.Wrist_Restraints);
         assertFalse(releaseAction.applied());
-        new StateProxy(script.namespace, releaseAction).applyTo(restraints);
+
+        StateProxy productionState = new StateProxy(script.namespace, releaseAction);
+        productionState.applyTo(restraints);
         assertTrue(releaseAction.is(script.namespace));
 
         assertFalse(restraints.applied());
@@ -351,7 +354,33 @@ public class ReleaseActionTest {
         assertFalse(releaseAction.applied());
 
         assertEquals(true, TestReleaseActionState.Success.getAndSet(false));
-        assertEquals(true, releaseAction.removed);
+        assertEquals(true, ((TestReleaseActionState) releaseAction).removed);
+    }
+
+    @Test
+    public void ensureThatActuatorAlwaysReturnsTheSameReleaseActionInstance() {
+        TestScript script = TestScript.getOne();
+
+        Actuator a = new Actuator(new KeyRelease(null, null, null) {
+            @Override
+            public String getDevicePath() {
+                return "KeyRelease/10.1.1.11/Test";
+            }
+        }, 0);
+
+        State releaseAction1 = a.releaseAction(script);
+        State releaseAction2 = a.releaseAction(script);
+        assertEquals(releaseAction1, releaseAction2);
+        assertNotSame(releaseAction1, releaseAction2);
+
+        State state1 = ((StateProxy) releaseAction1).state;
+        State state2 = ((StateProxy) releaseAction2).state;
+        assertEquals(state1, state2);
+        assertSame(state1, state2);
+        // Instances are indeed identical:
+        // - firstly they're proxies in order to tag items with the name space
+        // - secondly, they're constructed anew each time since Actuator can't cache them (TeaseLib does)
+        // - but thirdly, teaselib caches them and returns the existing instance
     }
 
     @Test
@@ -366,7 +395,7 @@ public class ReleaseActionTest {
         assertTrue(device.actuators().size() > 0);
 
         Actuator actuator = device.actuators().get(0);
-        State release = actuator.releaseAction(script.teaseLib);
+        State release = actuator.releaseAction(script);
 
         Item restraints = script.item(Toys.Wrist_Restraints);
         restraints.apply();

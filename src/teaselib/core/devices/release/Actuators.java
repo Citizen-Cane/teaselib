@@ -1,5 +1,6 @@
 package teaselib.core.devices.release;
 
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
@@ -8,6 +9,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class Actuators implements Iterable<Actuator> {
+    public static final Actuators NONE = new Actuators(Collections.emptyList());
+
     final List<Actuator> elements;
 
     public Actuators(List<Actuator> elements) {

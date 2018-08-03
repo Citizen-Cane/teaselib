@@ -5,11 +5,13 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import teaselib.State;
+import teaselib.core.Script;
 import teaselib.core.TeaseLib;
 import teaselib.core.devices.BatteryLevel;
 import teaselib.core.devices.Device;
 import teaselib.core.devices.DeviceCache;
 import teaselib.core.devices.ReleaseAction;
+import teaselib.core.state.StateProxy;
 import teaselib.core.util.Persist;
 
 // TODO Should be a device -> just remember the device path instead of the additional index
@@ -127,11 +129,15 @@ public class Actuator implements Device {
         private final KeyRelease keyRelease;
         private final int actuatorIndex;
 
-        public ActuatorReleaseAction(TeaseLib teaseLib, String domain, String devicePath) {
-            super(teaseLib, domain, devicePath, ActuatorReleaseAction.class);
-            String parentDevice = DeviceCache.getParentDevice(devicePath);
-            this.keyRelease = KeyRelease.getDeviceCache(teaseLib.devices, teaseLib.config).getDevice(parentDevice);
-            this.actuatorIndex = getActuatorIndex(devicePath);
+        ActuatorReleaseAction(TeaseLib teaseLib, String domain, KeyRelease keyRelease, String actuatorDevicePath) {
+            super(teaseLib, domain, actuatorDevicePath, ActuatorReleaseAction.class);
+            this.keyRelease = keyRelease;
+            this.actuatorIndex = getActuatorIndex(actuatorDevicePath);
+        }
+
+        public ActuatorReleaseAction(TeaseLib teaseLib, String domain, String actuatorDevicePath) {
+            this(teaseLib, domain, KeyRelease.getDeviceCache(teaseLib.devices, teaseLib.config)
+                    .getDevice(DeviceCache.getParentDevice(actuatorDevicePath)), actuatorDevicePath);
         }
 
         private static int getActuatorIndex(String devicePath) {
@@ -159,13 +165,14 @@ public class Actuator implements Device {
         }
 
         @Override
-        protected void performAction() {
+        protected boolean performAction() {
             DeviceCache.connect(keyRelease, 10.0);
-            keyRelease.actuators().get(actuatorIndex).release();
+            return keyRelease.actuators().get(actuatorIndex).release();
         }
     }
 
-    public State releaseAction(TeaseLib teaseLib) {
-        return new ActuatorReleaseAction(teaseLib, TeaseLib.DefaultDomain, getDevicePath());
+    public State releaseAction(Script script) {
+        return new StateProxy(script.namespace, script.teaseLib.state(TeaseLib.DefaultDomain,
+                new ActuatorReleaseAction(script.teaseLib, TeaseLib.DefaultDomain, keyRelease, getDevicePath())));
     }
 }

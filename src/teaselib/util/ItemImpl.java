@@ -200,7 +200,7 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
     }
 
     @Override
-    public State.Persistence remove() {
+    public State remove() {
         StateImpl state = (StateImpl) teaseLib.state(domain, item);
 
         HashSet<Object> relevantPeers = new HashSet<>(state.peers());
@@ -217,7 +217,7 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
     }
 
     @Override
-    public final State.Persistence removeFrom(Object... peer) {
+    public final State removeFrom(Object... peer) {
         return teaseLib.state(domain, item).removeFrom(peer);
     }
 

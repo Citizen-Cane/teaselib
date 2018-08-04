@@ -1,5 +1,6 @@
 package teaselib.core.devices;
 
+import teaselib.State;
 import teaselib.core.TeaseLib;
 import teaselib.core.util.Persist;
 import teaselib.core.util.ReflectionUtils;
@@ -11,8 +12,7 @@ import teaselib.core.util.ReflectionUtils;
 public abstract class ReleaseAction extends ActionState {
     boolean actionPerformed = false;
 
-    public ReleaseAction(TeaseLib teaseLib, String domain, String item,
-            Class<? extends ReleaseAction> subClass) {
+    public ReleaseAction(TeaseLib teaseLib, String domain, String item, Class<? extends ReleaseAction> subClass) {
         super(teaseLib, domain, ReflectionUtils.normalizeClassName(subClass) + "." + item);
     }
 
@@ -30,13 +30,13 @@ public abstract class ReleaseAction extends ActionState {
     }
 
     @Override
-    public Persistence removeFrom(Object... peers2) {
+    public State removeFrom(Object... peers2) {
         performReleaseActionIfNecessary();
         return super.removeFrom(peers2);
     }
 
     @Override
-    public Persistence remove() {
+    public State remove() {
         performReleaseActionIfNecessary();
         return super.remove();
     }

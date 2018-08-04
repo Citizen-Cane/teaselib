@@ -1,7 +1,6 @@
 package teaselib.core;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import java.util.concurrent.TimeUnit;
 
@@ -11,22 +10,19 @@ import org.junit.Test;
 import teaselib.Body;
 import teaselib.State;
 import teaselib.Toys;
-import teaselib.core.TeaseLib;
 import teaselib.test.TestScript;
 
 public class StateScopeTests {
-
     private State somethingOnNipples;
-    private TestScript script;
     private TeaseLib.PersistentString peerStorage;
 
     @Before
     public void before() {
-        script = TestScript.getOne();
+        TestScript script = TestScript.getOne();
         script.teaseLib.freezeTime();
+
         somethingOnNipples = script.state(Body.OnNipples);
-        peerStorage = script.teaseLib.new PersistentString(
-                TeaseLib.DefaultDomain, Body.class.getName(),
+        peerStorage = script.teaseLib.new PersistentString(TeaseLib.DefaultDomain, Body.class.getName(),
                 Body.OnNipples.name() + ".state.peers");
     }
 
@@ -44,12 +40,12 @@ public class StateScopeTests {
     }
 
     private void assertThatStateIsPersisted() {
-        somethingOnNipples.applyTo(Toys.Nipple_Clamps).over(30, TimeUnit.MINUTES);
+        somethingOnNipples.applyTo(Toys.Nipple_Clamps);
         assertTrue(somethingOnNipples.applied());
         assertFalse(peerStorage.available());
 
-        somethingOnNipples.applyTo(Toys.Nipple_Clamps).over(30, TimeUnit.MINUTES)
-                .remember();
+        somethingOnNipples.applyTo(Toys.Nipple_Clamps).over(30, TimeUnit.MINUTES);
+        assertTrue(somethingOnNipples.applied());
         assertTrue(peerStorage.available());
         String value = peerStorage.value();
         assertTrue(value.contains(Toys.Nipple_Clamps.name()));
@@ -62,5 +58,4 @@ public class StateScopeTests {
         assertTrue(somethingOnNipples.expired());
         assertFalse(peerStorage.available());
     }
-
 }

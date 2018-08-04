@@ -1,11 +1,9 @@
-/**
- * 
- */
 package teaselib.util;
 
 import static org.junit.Assert.*;
 
 import java.util.ArrayList;
+import java.util.concurrent.TimeUnit;
 
 import org.junit.Test;
 
@@ -243,9 +241,10 @@ public class ItemIdentityTest {
     @Test
     public void testItemPersistanceAndRestoreSimple() {
         TestScript script = TestScript.getOne();
+        script.debugger.freezeTime();
 
         Item gag = script.item(Toys.Gag);
-        gag.apply().remember();
+        gag.apply().over(1, TimeUnit.HOURS);
         assertTrue(gag.applied());
 
         script.debugger.clearStateMaps();
@@ -258,6 +257,7 @@ public class ItemIdentityTest {
     @Test
     public void testItemInstancePersistAndRestoreWithAttributes() {
         TestScript script = TestScript.getOne();
+        script.debugger.freezeTime();
 
         Item ringGag = applyRingGagAndRemember(script);
         verifyApplied(script, ringGag);
@@ -273,6 +273,7 @@ public class ItemIdentityTest {
     @Test
     public void testItemRestoreSequenceWhenReferencedToysHaveBeenRealizedFirst() {
         TestScript script = TestScript.getOne();
+        script.debugger.freezeTime();
 
         Item ringGag = applyRingGagAndRemember(script);
         verifyApplied(script, ringGag);
@@ -293,7 +294,7 @@ public class ItemIdentityTest {
         Item ringGag = gags.query(Toys.Gags.Ring_Gag).get();
 
         assertFalse(ringGag.is(Body.InMouth));
-        ringGag.apply().remember();
+        ringGag.apply().over(1, TimeUnit.HOURS);
         return ringGag;
     }
 

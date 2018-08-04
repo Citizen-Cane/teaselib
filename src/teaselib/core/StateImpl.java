@@ -316,13 +316,16 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
     }
 
     @Override
-    public State.Persistence over(long limit, TimeUnit unit) {
+    public State over(long limit, TimeUnit unit) {
         return over(new DurationImpl(this.stateMaps.teaseLib, limit, unit));
     }
 
     @Override
-    public Persistence over(Duration duration) {
+    public State over(Duration duration) {
         this.duration = duration;
+        if (duration.limit(TimeUnit.MILLISECONDS) != TEMPORARY) {
+            remember();
+        }
         return this;
     }
 
@@ -338,8 +341,7 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
         return maximum;
     }
 
-    @Override
-    public void remember() {
+    private void remember() {
         updatePersistence();
         for (Object s : peers) {
             StateImpl peer = state(s);
@@ -372,7 +374,7 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
     }
 
     @Override
-    public Persistence remove() {
+    public State remove() {
         if (!peers.isEmpty()) {
             Object[] copyOfPeers = new Object[peers.size()];
             for (Object peer : peers.toArray(copyOfPeers)) {
@@ -390,7 +392,7 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
     }
 
     @Override
-    public Persistence removeFrom(Object... peers2) {
+    public State removeFrom(Object... peers2) {
         if (peers2.length == 0) {
             throw new IllegalArgumentException("removeFrom requires at least one peer");
         }

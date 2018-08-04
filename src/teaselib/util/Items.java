@@ -297,14 +297,6 @@ public class Items extends ArrayList<Item> {
         return this;
     }
 
-    public Items remember(long duration, TimeUnit unit) {
-        for (Item item : this) {
-            item.apply().over(duration, unit).remember();
-            ;
-        }
-        return this;
-    }
-
     public void remove() {
         for (Item item : this) {
             item.remove();

@@ -7,7 +7,6 @@ import java.util.concurrent.TimeUnit;
 
 import teaselib.Duration;
 import teaselib.State;
-import teaselib.State.Persistence;
 
 public class StateOptionsProxy extends AbstractProxy<State.Options> implements State.Options {
     public StateOptionsProxy(String namespace, State.Options options) {
@@ -15,17 +14,12 @@ public class StateOptionsProxy extends AbstractProxy<State.Options> implements S
     }
 
     @Override
-    public void remember() {
-        state.remember();
+    public State over(long duration, TimeUnit unit) {
+        return new StateProxy(namespace, state.over(duration, unit));
     }
 
     @Override
-    public Persistence over(long duration, TimeUnit unit) {
-        return new StatePersistenceProxy(namespace, state.over(duration, unit));
-    }
-
-    @Override
-    public Persistence over(Duration duration) {
-        return new StatePersistenceProxy(namespace, state.over(duration));
+    public State over(Duration duration) {
+        return new StateProxy(namespace, state.over(duration));
     }
 }

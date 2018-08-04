@@ -1,9 +1,6 @@
 package teaselib.core;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import java.util.concurrent.TimeUnit;
 
@@ -42,6 +39,7 @@ public class StateTests {
     public void testPersistentStateAndNamespaceAttribute() {
         TestScript script = TestScript.getOne();
         script.teaseLib.freezeTime();
+
         State somethingOnNipples = script.state(Body.OnNipples);
         assertTrue(somethingOnNipples.expired());
         assertFalse(somethingOnNipples.applied());
@@ -51,9 +49,7 @@ public class StateTests {
         assertTrue(somethingOnNipples.applied());
         assertFalse(somethingOnNipples.expired());
         assertEquals(30, somethingOnNipples.duration().remaining(TimeUnit.MINUTES));
-
-        assertEquals(0, script.persistence.storage.size());
-        somethingOnNipples.applyTo(Toys.Nipple_Clamps).over(30, TimeUnit.MINUTES).remember();
+        assertEquals(5, script.persistence.storage.size());
 
         // Assert that when a state is applied then
         // the namespace of the script is applied to that state

@@ -11,6 +11,7 @@ import java.util.stream.Collectors;
 
 import teaselib.Duration;
 import teaselib.State;
+import teaselib.core.TeaseLib.PersistentBoolean;
 import teaselib.core.TeaseLib.PersistentString;
 import teaselib.core.devices.ActionState;
 import teaselib.core.state.AbstractProxy;
@@ -30,7 +31,9 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
 
     private final Set<Object> peers = new HashSet<>();
     private final Set<Object> attributes = new HashSet<>();
+    private boolean applied = false;
 
+    private final PersistentBoolean appliedStorage;
     private final PersistentString durationStorage;
     private final PersistentString peerStorage;
     private final PersistentString attributeStorage;
@@ -58,19 +61,26 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
 
         this.domain = domain;
         this.item = item;
+        this.appliedStorage = persistentApplied(domain, item);
         this.durationStorage = persistentDuration(domain, item);
         this.peerStorage = persistentPeers(domain, item);
         this.attributeStorage = persistentAttributes(domain, item);
 
-        this.duration = new DurationImpl(this.stateMaps.teaseLib, 0, REMOVED, TimeUnit.SECONDS);
+        this.duration = new DurationImpl(this.stateMaps.teaseLib, 0, 0, TimeUnit.SECONDS);
 
+        restoreApplied();
         restoreDuration();
         restoreAttributes();
         restorePeers();
+
     }
 
     public StateImpl(TeaseLib teaseLib, String domain, Object item) {
         this(teaseLib.stateMaps, domain, item);
+    }
+
+    private TeaseLib.PersistentBoolean persistentApplied(String domain, Object item) {
+        return persistentBoolean(domain, item, "applied");
     }
 
     private TeaseLib.PersistentString persistentDuration(String domain, Object item) {
@@ -85,13 +95,23 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
         return persistentString(domain, item, "attributes");
     }
 
+    private PersistentBoolean persistentBoolean(String domain, Object item, String name) {
+        return this.stateMaps.teaseLib.new PersistentBoolean(domain, QualifiedItem.namespaceOf(item),
+                QualifiedItem.nameOf(item) + ".state" + "." + name);
+    }
+
     private PersistentString persistentString(String domain, Object item, String name) {
         return this.stateMaps.teaseLib.new PersistentString(domain, QualifiedItem.namespaceOf(item),
                 QualifiedItem.nameOf(item) + ".state" + "." + name);
     }
 
+    private void restoreApplied() {
+        applied = appliedStorage.value();
+    }
+
     private void restoreDuration() {
         if (isPersisted()) {
+            // TODO Refactor persistence to duration class
             String[] argv = durationStorage.value().split(" ");
             long start = Long.parseLong(argv[0]);
             long limit = string2limit(argv[1]);
@@ -101,9 +121,7 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
 
     private static long string2limit(String limitString) {
         long limit;
-        if (limitString.equals(REMOVED_KEYWORD)) {
-            limit = REMOVED;
-        } else if (limitString.equals(TEMPORARY_KEYWORD)) {
+        if (limitString.equals(TEMPORARY_KEYWORD)) {
             limit = TEMPORARY;
         } else if (limitString.equals(INDEFINITELY_KEYWORD)) {
             limit = INDEFINITELY;
@@ -164,6 +182,10 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
         }
     }
 
+    private void persistApplied() {
+        appliedStorage.set(applied);
+    }
+
     private void persistDuration() {
         String startValue = Long.toString(duration.start(TimeUnit.SECONDS));
         long limit = duration.limit(TimeUnit.SECONDS);
@@ -174,8 +196,8 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
 
     private String limit2String(long limit) {
         String limitString;
-        if (limit <= REMOVED) {
-            limitString = REMOVED_KEYWORD;
+        if (limit < 0) {
+            throw new IllegalArgumentException(Long.toString(limit));
         } else if (limit == TEMPORARY) {
             limitString = TEMPORARY_KEYWORD;
         } else if (limit == INDEFINITELY) {
@@ -242,6 +264,10 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
                 StateImpl state = state(attribute);
                 state.applyInternal(item);
             }
+        }
+
+        if (!stateAppliesBeforehand(attributes)) {
+            setApplied();
         }
         return this;
     }
@@ -351,7 +377,7 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
 
     @Override
     public boolean applied() {
-        return duration.limit(TimeUnit.SECONDS) > REMOVED;
+        return applied;
     }
 
     @Override
@@ -435,6 +461,7 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
     }
 
     private void updatePersistence() {
+        persistApplied();
         persistDuration();
         persistPeers();
         persistAttributes();
@@ -454,13 +481,18 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
     }
 
     private void removePersistence() {
+        appliedStorage.clear();
         durationStorage.clear();
         peerStorage.clear();
         attributeStorage.clear();
     }
 
+    private void setApplied() {
+        applied = true;
+    }
+
     private void setRemoved() {
-        over(REMOVED, TimeUnit.SECONDS);
+        applied = false;
     }
 
     @Override
@@ -483,6 +515,7 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
         result = prime * result + ((attributeStorage == null) ? 0 : attributeStorage.hashCode());
         result = prime * result + ((attributes == null) ? 0 : attributes.hashCode());
         result = prime * result + ((domain == null) ? 0 : domain.hashCode());
+        result = prime * result + ((appliedStorage == null) ? 0 : appliedStorage.hashCode());
         result = prime * result + ((duration == null) ? 0 : duration.hashCode());
         result = prime * result + ((durationStorage == null) ? 0 : durationStorage.hashCode());
         result = prime * result + ((item == null) ? 0 : item.hashCode());
@@ -521,6 +554,11 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
             if (other.domain != null)
                 return false;
         } else if (!domain.equals(other.domain))
+            return false;
+        if (appliedStorage == null) {
+            if (other.appliedStorage != null)
+                return false;
+        } else if (!appliedStorage.equals(other.appliedStorage))
             return false;
         if (duration == null) {
             if (other.duration != null)

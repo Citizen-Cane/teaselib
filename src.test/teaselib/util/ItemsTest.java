@@ -242,7 +242,7 @@ public class ItemsTest {
         Item collar = script.item(Toys.Collar);
         assertFalse(collar.applied());
 
-        assertTrue(collar.duration().remaining(TimeUnit.SECONDS) < State.REMOVED);
+        assertTrue(collar.duration().remaining(TimeUnit.SECONDS) < State.TEMPORARY);
     }
 
     @Test

@@ -49,7 +49,7 @@ public class StateTests {
         assertTrue(somethingOnNipples.applied());
         assertFalse(somethingOnNipples.expired());
         assertEquals(30, somethingOnNipples.duration().remaining(TimeUnit.MINUTES));
-        assertEquals(5, script.persistence.storage.size());
+        assertEquals(7, script.persistence.storage.size());
 
         // Assert that when a state is applied then
         // the namespace of the script is applied to that state
@@ -62,7 +62,6 @@ public class StateTests {
         // the namespace is only added automatically to Body.SomethingOnNipples
         // because thats the state our test script applied,
         // and empty attribute lists aren't persisted
-        assertEquals(5, script.persistence.storage.size());
 
         assertTrue(script.persistence.storage.containsKey("Toys.Nipple_Clamps.state.duration"));
         assertTrue(script.persistence.storage.containsKey("Toys.Nipple_Clamps.state.peers"));
@@ -82,6 +81,8 @@ public class StateTests {
         assertFalse(script.state(Toys.Nipple_Clamps).is(Body.OnNipples));
         assertFalse(script.state(Toys.Nipple_Clamps).is(script.namespace));
 
+        assertFalse(somethingOnNipples.expired());
+        script.debugger.advanceTime(30, TimeUnit.MINUTES);
         assertTrue(somethingOnNipples.expired());
         assertFalse(somethingOnNipples.applied());
     }

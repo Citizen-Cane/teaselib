@@ -3,7 +3,6 @@ package teaselib;
 import java.util.concurrent.TimeUnit;
 
 public interface State {
-    public static final long REMOVED = -1;
     public static final long TEMPORARY = 0;
 
     public static final long INDEFINITELY = Long.MAX_VALUE;

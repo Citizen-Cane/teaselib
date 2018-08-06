@@ -3,7 +3,6 @@ package teaselib.core;
 import static java.util.concurrent.TimeUnit.*;
 import static org.junit.Assert.*;
 import static org.junit.Assume.*;
-import static teaselib.State.*;
 import static teaselib.core.StateMapsPersistenceTest.Locks.*;
 import static teaselib.core.StateMapsPersistenceTest.NestedTestBody.*;
 import static teaselib.core.StateMapsPersistenceTest.NestedTestToys.*;
@@ -193,7 +192,7 @@ public class StateMapsPersistenceTest extends StateMaps {
         assertFalse(state(TEST_DOMAIN, NestedTestToys.Chastity_Device).applied());
         assertFalse(state(TEST_DOMAIN, NestedTestToys.Wrist_Restraints).applied());
 
-        state(TEST_DOMAIN, Chastity_Device).applyTo(SomethingOnPenis, CannotJerkOff).over(INDEFINITELY, HOURS);
+        state(TEST_DOMAIN, Chastity_Device).applyTo(SomethingOnPenis, CannotJerkOff).over(48, HOURS);
         state(TEST_DOMAIN, Chastity_Device_Lock).applyTo(Chastity_Device).over(24, TimeUnit.HOURS);
 
         clearStatesMapsOrNot();
@@ -266,7 +265,10 @@ public class StateMapsPersistenceTest extends StateMaps {
         assertFalse(state(TEST_DOMAIN, NestedTestBody.SomethingOnPenis).applied());
         assertFalse(state(TEST_DOMAIN, NestedTestBody.CannotJerkOff).applied());
 
+        assertFalse(state(TEST_DOMAIN, NestedTestToys.Chastity_Device).expired());
+        teaseLib.advanceTime(24, TimeUnit.HOURS);
         assertTrue(state(TEST_DOMAIN, NestedTestToys.Chastity_Device).expired());
+
         assertTrue(state(TEST_DOMAIN, Locks.Chastity_Device_Lock).expired());
         assertTrue(state(TEST_DOMAIN, NestedTestToys.Wrist_Restraints).expired());
         assertTrue(state(TEST_DOMAIN, NestedTestBody.WristsTiedBehindBack).expired());
@@ -301,7 +303,7 @@ public class StateMapsPersistenceTest extends StateMaps {
 
         if (isRemembered()) {
             Map<String, String> storage = script.persistence.storage;
-            assertEquals(6, storage.size());
+            assertEquals(9, storage.size());
             // The teaselib package names are stripped from names of persisted
             // items, so it's just Toys.*
             assertTrue(storage.containsKey(TEST_DOMAIN + "." + stripPath(Toys_Chastity_Device) + ".state.duration"));
@@ -344,13 +346,13 @@ public class StateMapsPersistenceTest extends StateMaps {
 
     @Test
     public void testPersistenceOfDuratioElapsedOfRemovedItems() {
-        state(TEST_DOMAIN, Toys.Enema_Kit).apply().over(24, TimeUnit.HOURS);
+        state(TEST_DOMAIN, Toys.Enema_Kit).apply().over(1, TimeUnit.HOURS);
 
         clearStatesMapsOrNot();
 
         if (isRemembered()) {
             Map<String, String> storage = script.persistence.storage;
-            assertEquals(1, storage.size());
+            assertEquals(2, storage.size());
         }
 
         assertTrue(state(TEST_DOMAIN, Toys.Enema_Kit).applied());
@@ -367,11 +369,14 @@ public class StateMapsPersistenceTest extends StateMaps {
         }
 
         assertFalse(state(TEST_DOMAIN, Toys.Enema_Kit).applied());
+
+        assertFalse(state(TEST_DOMAIN, Toys.Enema_Kit).expired());
+        script.debugger.advanceTime(1, HOURS);
         assertTrue(state(TEST_DOMAIN, Toys.Enema_Kit).expired());
 
         clearStatesMapsOrNot();
 
-        teaseLib.advanceTime(1, TimeUnit.DAYS);
+        teaseLib.advanceTime(23, TimeUnit.HOURS);
         Duration duration = state(TEST_DOMAIN, Toys.Enema_Kit).duration();
         assertEquals(86400, duration.elapsed(TimeUnit.SECONDS));
         assertEquals(24, duration.elapsed(TimeUnit.HOURS));

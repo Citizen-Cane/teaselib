@@ -1,9 +1,7 @@
 package teaselib.core;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static teaselib.Household.Clothes_Pegs;
+import static org.junit.Assert.*;
+import static teaselib.Household.*;
 
 import java.util.concurrent.TimeUnit;
 
@@ -278,7 +276,7 @@ public class StateMapsApplyTest extends StateMaps {
     @Test
     public void testThatStateDefaultValueEqualsRemovedALongTimeAgo() {
         assertEquals(0, state(TEST_DOMAIN, Clothes_Pegs).duration().start(TimeUnit.SECONDS));
-        assertEquals(State.REMOVED, state(TEST_DOMAIN, Clothes_Pegs).duration().limit(TimeUnit.SECONDS));
+        assertEquals(State.TEMPORARY, state(TEST_DOMAIN, Clothes_Pegs).duration().limit(TimeUnit.SECONDS));
     }
 
     @Test

@@ -70,11 +70,11 @@ public class StateMapsTestRemember extends StateMaps {
     }
 
     @Test
-    public void testRememberedItemsAreCompletlyRemoved() {
+    public void testRememberedItemsAreCompletelyRemoved() {
         state(TEST_DOMAIN, Toys.Wrist_Restraints).applyTo(Posture.WristsTiedBehindBack, Body.CantJerkOff);
         state(TEST_DOMAIN, Toys.Chastity_Device).applyTo(Body.OnPenis, Body.CantJerkOff).over(24, TimeUnit.HOURS);
 
-        assertEquals(6, persistence.storage.size());
+        assertEquals(9, persistence.storage.size());
 
         state(TEST_DOMAIN, Toys.Chastity_Device).remove();
 
@@ -106,7 +106,7 @@ public class StateMapsTestRemember extends StateMaps {
         assertTrue(state(TEST_DOMAIN, Body.OnPenis).applied());
         assertTrue(state(TEST_DOMAIN, Body.CantJerkOff).applied());
 
-        assertEquals(6, persistence.storage.size());
+        assertEquals(9, persistence.storage.size());
 
         state(TEST_DOMAIN, Toys.Chastity_Device).remove();
 

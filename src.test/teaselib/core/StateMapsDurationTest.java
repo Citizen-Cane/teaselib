@@ -1,8 +1,6 @@
 package teaselib.core;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import java.util.concurrent.TimeUnit;
 
@@ -146,7 +144,7 @@ public class StateMapsDurationTest extends StateMaps {
 
         state(TEST_DOMAIN, Toys.Chastity_Device).remove();
         assertFalse(state(TEST_DOMAIN, Toys.Chastity_Device).applied());
-        assertTrue(state(TEST_DOMAIN, Toys.Chastity_Device).expired());
+        assertFalse(state(TEST_DOMAIN, Toys.Chastity_Device).expired());
 
         assertFalse(state(TEST_DOMAIN, Body.OnPenis).applied());
         assertFalse(state(TEST_DOMAIN, Body.OnPenis).applied());

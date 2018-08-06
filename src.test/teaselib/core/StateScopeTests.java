@@ -15,10 +15,11 @@ import teaselib.test.TestScript;
 public class StateScopeTests {
     private State somethingOnNipples;
     private TeaseLib.PersistentString peerStorage;
+    TestScript script;
 
     @Before
     public void before() {
-        TestScript script = TestScript.getOne();
+        script = TestScript.getOne();
         script.teaseLib.freezeTime();
 
         somethingOnNipples = script.state(Body.OnNipples);
@@ -30,6 +31,20 @@ public class StateScopeTests {
     public void testLocalState() {
         assertThatByDefaultStateIsTemporary();
         assertThatStateIsPersisted();
+
+        script.debugger.advanceTime(45, TimeUnit.MINUTES);
+        assertTrue(somethingOnNipples.expired());
+
+        assertThatRemovedStateIsStillAvailableButNotPersisted();
+    }
+
+    @Test
+    public void testLocalStateWhenRemovingBeforeExpired() {
+        assertThatByDefaultStateIsTemporary();
+        assertThatStateIsPersisted();
+
+        assertFalse(somethingOnNipples.expired());
+
         assertThatRemovedStateIsStillAvailableButNotPersisted();
     }
 
@@ -55,7 +70,6 @@ public class StateScopeTests {
     private void assertThatRemovedStateIsStillAvailableButNotPersisted() {
         somethingOnNipples.remove();
         assertFalse(somethingOnNipples.applied());
-        assertTrue(somethingOnNipples.expired());
         assertFalse(peerStorage.available());
     }
 }

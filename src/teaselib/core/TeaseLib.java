@@ -263,7 +263,9 @@ public class TeaseLib {
     }
 
     void freezeTime() {
-        frozenTime.set(getTime(TimeUnit.MILLISECONDS));
+        if (!isTimeFrozen()) {
+            frozenTime.set(getTime(TimeUnit.MILLISECONDS));
+        }
     }
 
     void advanceTime(long duration, TimeUnit unit) {

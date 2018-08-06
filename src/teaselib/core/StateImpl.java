@@ -197,7 +197,7 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
     private String limit2String(long limit) {
         String limitString;
         if (limit < 0) {
-            throw new IllegalArgumentException(Long.toString(limit));
+            limitString = Long.toString(duration.limit(TimeUnit.SECONDS));
         } else if (limit == TEMPORARY) {
             limitString = TEMPORARY_KEYWORD;
         } else if (limit == INDEFINITELY) {

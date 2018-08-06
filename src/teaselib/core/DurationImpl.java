@@ -15,12 +15,23 @@ public class DurationImpl implements Duration {
     }
 
     public DurationImpl(TeaseLib teaseLib, long limit, TimeUnit unit) {
+        // TODO Resolve: start is explicitly DURATION_TIME_UNIT but limit is unit whereas in the other constructor start
+        // is the same unit as limit - calling this(...) doesn't work, probably becasue there are too much conversions
+        // this(teaseLib, teaseLib.getTime(unit), limit, unit);
+        if (limit < 0) {
+            throw new IllegalArgumentException("Duration limit must be 0 or positive: " + Long.toString(limit));
+        }
+
         this.teaseLib = teaseLib;
         this.start = this.teaseLib.getTime(TeaseLib.DURATION_TIME_UNIT);
         this.limits = convertToMillis(limit, unit);
     }
 
     public DurationImpl(TeaseLib teaseLib, long start, long limit, TimeUnit unit) {
+        if (limit < 0) {
+            throw new IllegalArgumentException("Duration limit must be 0 or positive: " + Long.toString(limit));
+        }
+
         this.teaseLib = teaseLib;
         this.start = convertToMillis(start, unit);
         this.limits = convertToMillis(limit, unit);

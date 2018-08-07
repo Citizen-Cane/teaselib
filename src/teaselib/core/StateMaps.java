@@ -3,7 +3,9 @@ package teaselib.core;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
+import teaselib.Duration;
 import teaselib.State;
 import teaselib.core.state.StateProxy;
 import teaselib.core.util.Persist;
@@ -109,8 +111,20 @@ public class StateMaps {
             if (state == null) {
                 state = new StateImpl(this, domain, item.value());
                 stateMap.put(key, state);
+                handleAutoRemoval(state);
+
             }
             return state;
+        }
+    }
+
+    private void handleAutoRemoval(State state) {
+        if (state.expired()) {
+            Duration duration = state.duration();
+            long autoRemovalTime = duration.end(TimeUnit.SECONDS) + duration.limit(TimeUnit.SECONDS);
+            if (autoRemovalTime > teaseLib.getTime(TimeUnit.SECONDS)) {
+                state.remove();
+            }
         }
     }
 

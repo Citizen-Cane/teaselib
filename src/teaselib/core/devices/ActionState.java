@@ -4,7 +4,6 @@ import java.util.Arrays;
 import java.util.List;
 
 import teaselib.core.StateImpl;
-import teaselib.core.StateMaps;
 import teaselib.core.TeaseLib;
 import teaselib.core.util.Persist;
 import teaselib.core.util.QualifiedItem;

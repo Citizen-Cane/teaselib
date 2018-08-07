@@ -164,7 +164,7 @@ public class TeaseLib {
         try (URLClassLoader classLoader = (URLClassLoader) Thread.currentThread().getContextClassLoader();) {
             Class<URLClassLoader> classLoaderClass = URLClassLoader.class;
             try {
-                Method method = classLoaderClass.getDeclaredMethod("addURL", (Class<URL>) URL.class);
+                Method method = classLoaderClass.getDeclaredMethod("addURL", URL.class);
                 method.setAccessible(true);
                 method.invoke(classLoader, classPath.toURI().toURL());
                 logger.info("Added class path {}", classPath.getAbsolutePath());

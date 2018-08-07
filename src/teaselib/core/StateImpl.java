@@ -52,7 +52,7 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
         }
     }
 
-    public StateImpl(StateMaps stateMaps, String domain, Object item) {
+    StateImpl(StateMaps stateMaps, String domain, Object item) {
         this.stateMaps = stateMaps;
 
         if ((item instanceof State) && !(item instanceof Item)) {
@@ -72,10 +72,9 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
         restoreDuration();
         restoreAttributes();
         restorePeers();
-
     }
 
-    public StateImpl(TeaseLib teaseLib, String domain, Object item) {
+    protected StateImpl(TeaseLib teaseLib, String domain, Object item) {
         this(teaseLib.stateMaps, domain, item);
     }
 

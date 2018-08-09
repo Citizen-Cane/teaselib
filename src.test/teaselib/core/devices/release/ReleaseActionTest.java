@@ -1,12 +1,8 @@
 package teaselib.core.devices.release;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
+import java.util.Arrays;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -77,14 +73,45 @@ public class ReleaseActionTest {
         restraints.apply();
         restraints.applyTo(action);
 
-        // start(action);
-
         restraints.remove();
 
         assertEquals(true, TestReleaseActionState.Success.getAndSet(false));
         assertEquals(true, actionState.removed);
         // different instance
         assertEquals(false, restored.removed);
+    }
+
+    @Test
+    public void testReleaseActionStatesAreSingletons() {
+        TestScript script = TestScript.getOne();
+        String domain = TeaseLib.DefaultDomain;
+        String devicePath = "KeyRelease/MyPhoton/1";
+
+        String action = Persist.persistedInstance(TestReleaseActionState.class, Arrays.asList(domain, devicePath));
+        State actionState1 = script.state(action);
+        State actionState2 = script.state(action);
+
+        assertEquals(actionState1, actionState2);
+        assertSame(((StateProxy) actionState1).state, ((StateProxy) actionState2).state);
+    }
+
+    @Test
+    public void testReleaseActionStateQualifiedPersistedDirectly() {
+        TestScript script = TestScript.getOne();
+        String domain = TeaseLib.DefaultDomain;
+        String devicePath = "KeyRelease/MyPhoton/1";
+
+        String action = Persist.persistedInstance(TestReleaseActionState.class, Arrays.asList(domain, devicePath));
+        State actionState = script.state(action);
+        assertFalse(actionState.applied());
+
+        Item restraints = script.item(Toys.Wrist_Restraints);
+        restraints.apply();
+        restraints.applyTo(action);
+        assertTrue(actionState.applied());
+
+        restraints.remove();
+        assertFalse(actionState.applied());
     }
 
     @Test
@@ -171,17 +198,45 @@ public class ReleaseActionTest {
     }
 
     @Test
-    public void testReleaseActionInstanceScriptSuccessfulFinish() throws Exception {
-        assertEquals(false, TestReleaseActionState.Success.getAndSet(false));
+    public void testReleaseActionInstanceScriptSuccessfulFinish() throws ReflectiveOperationException {
         TestScript script = TestScript.getOne();
-        try {
-            script.teaseLib.run(BugFreeScript.class.getName());
-        } catch (Exception e) {
-            if (!(e instanceof IllegalStateException)) {
-                throw e;
-            }
-        }
+        assertEquals(false, TestReleaseActionState.Success.getAndSet(false));
 
+        script.teaseLib.run(BugFreeScript.class.getName());
+        assertEquals(false, TestReleaseActionState.Success.getAndSet(false));
+    }
+
+    @Test
+    public void testReleaseActionStatesWorkAsSingletons() {
+        TestScript script = TestScript.getOne();
+        String devicePath = "KeyRelease/MyPhoton/1";
+
+        TestReleaseActionState actionState1 = script.teaseLib.state(TeaseLib.DefaultDomain,
+                new TestReleaseActionState(script.teaseLib, devicePath));
+        TestReleaseActionState actionState2 = script.teaseLib.state(TeaseLib.DefaultDomain,
+                new TestReleaseActionState(script.teaseLib, devicePath));
+        assertSame(actionState1, actionState2);
+
+        TestReleaseActionState actionState3 = script.teaseLib.state(TeaseLib.DefaultDomain,
+                new TestReleaseActionState(script.teaseLib, devicePath));
+        assertSame(actionState3, actionState1);
+        TestReleaseActionState actionState4a = new TestReleaseActionState(script.teaseLib, devicePath);
+        assertSame(actionState3, script.teaseLib.state(TeaseLib.DefaultDomain, actionState4a));
+        actionState3.apply();
+        assertSame(actionState3, script.teaseLib.state(TeaseLib.DefaultDomain, actionState4a));
+    }
+
+    @Test
+    public void testReleaseActionInstanceCanBeUsedMultuipleTimes() throws ReflectiveOperationException {
+        TestScript script = TestScript.getOne();
+
+        assertEquals(false, TestReleaseActionState.Success.getAndSet(false));
+        script.teaseLib.run(BugFreeScript.class.getName());
+        assertEquals(false, TestReleaseActionState.Success.getAndSet(false));
+
+        assertEquals(false, TestReleaseActionState.Success.getAndSet(false));
+        // TODO must be able to apply release actions multiple times
+        script.teaseLib.run(BugFreeScript.class.getName());
         assertEquals(false, TestReleaseActionState.Success.getAndSet(false));
     }
 

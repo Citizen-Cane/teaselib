@@ -12,11 +12,11 @@ import teaselib.core.util.ReflectionUtils;
 public abstract class ReleaseAction extends ActionState {
     boolean actionPerformed = false;
 
-    public ReleaseAction(TeaseLib teaseLib, String domain, String item, Class<? extends ReleaseAction> subClass) {
+    protected ReleaseAction(TeaseLib teaseLib, String domain, String item, Class<? extends ReleaseAction> subClass) {
         super(teaseLib, domain, ReflectionUtils.normalizeClassName(subClass) + "." + item);
     }
 
-    public ReleaseAction(Persist.Storage storage, Class<? extends ReleaseAction> implementationClass) {
+    protected ReleaseAction(Persist.Storage storage, Class<? extends ReleaseAction> implementationClass) {
         this(storage.getInstance(TeaseLib.class), storage.next(), storage.next(), implementationClass);
     }
 

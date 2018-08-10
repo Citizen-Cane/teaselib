@@ -138,9 +138,8 @@ public class Persist {
 
     // TODO package or private - used by StateImpl
     public static String className(String persisted) {
-        String className = persisted.substring(CLASS_NAME.length(),
+        return persisted.substring(CLASS_NAME.length(),
                 persisted.indexOf(CLASS_VALUE_SEPARATOR + STRING_REPRESENTATION));
-        return className;
     }
 
     // TODO package or private - used by StateImpl

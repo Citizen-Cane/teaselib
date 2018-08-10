@@ -4,14 +4,12 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import teaselib.State;
-import teaselib.core.Script;
 import teaselib.core.TeaseLib;
 import teaselib.core.devices.BatteryLevel;
 import teaselib.core.devices.Device;
 import teaselib.core.devices.DeviceCache;
 import teaselib.core.devices.ReleaseAction;
-import teaselib.core.state.StateProxy;
+import teaselib.core.devices.release.ReleaseActionTest.TestReleaseActionState;
 import teaselib.core.util.Persist;
 
 // TODO Should be a device -> just remember the device path instead of the additional index
@@ -171,8 +169,11 @@ public class Actuator implements Device {
         }
     }
 
-    public State releaseAction(Script script) {
-        return new StateProxy(script.namespace, script.teaseLib.state(TeaseLib.DefaultDomain,
-                new ActuatorReleaseAction(script.teaseLib, TeaseLib.DefaultDomain, keyRelease, getDevicePath())));
+    public String releaseAction() {
+        return getReleaseAction(TeaseLib.DefaultDomain, getDevicePath());
+    }
+
+    private static String getReleaseAction(String domain, String devicePath) {
+        return Persist.persistedInstance(TestReleaseActionState.class, Arrays.asList(domain, devicePath));
     }
 }

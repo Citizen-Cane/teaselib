@@ -22,7 +22,6 @@ import teaselib.util.ItemImpl;
 
 public class StateImpl implements State, State.Options, StateMaps.Attributes {
     private static final String TEMPORARY_KEYWORD = "TEMPORARY";
-    private static final String REMOVED_KEYWORD = "REMOVED";
     private static final String INDEFINITELY_KEYWORD = "INDEFINITELY";
 
     private final StateMaps stateMaps;
@@ -476,7 +475,7 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
     }
 
     private boolean isPersisted() {
-        return durationStorage.available();
+        return appliedStorage.available();
     }
 
     private void removePersistence() {

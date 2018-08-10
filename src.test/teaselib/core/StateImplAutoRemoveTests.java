@@ -7,6 +7,7 @@ import java.util.concurrent.TimeUnit;
 import org.junit.Test;
 
 import teaselib.State;
+import teaselib.TeaseScript;
 import teaselib.test.TestScript;
 
 public class StateImplAutoRemoveTests {
@@ -27,42 +28,71 @@ public class StateImplAutoRemoveTests {
 
         assertFalse(state.applied());
         assertTrue(state.expired());
+        assertFalse(part.applied());
+        assertTrue(part.expired());
 
         state.applyTo(TestStates.BODY_PART).over(2, TimeUnit.HOURS);
-        // TODO Resolve : body part is temporary but should be duration
-        assertApplied(state, part);
-        assertPersisted(debugger, state, part);
-        assertExpired(debugger, state, part);
-        assertAutoRemoved(debugger, state, part);
+
+        assertApplied(script);
+        assertPersisted(script, debugger);
+        assertExpired(script, debugger);
+        assertPersistedAndRestored(script, debugger);
+        assertAutoRemoved(script, debugger);
     }
 
-    private static void assertApplied(State state, State part) {
+    private static void assertApplied(TeaseScript script) {
+        State state = script.state(TestStates.TEST_STATE);
+        State part = script.state(TestStates.BODY_PART);
+
         assertTrue(state.applied());
         assertFalse(state.expired());
         assertTrue(part.applied());
         assertFalse(part.expired());
     }
 
-    private static void assertPersisted(Debugger debugger, State state, State part) {
+    private static void assertPersisted(TeaseScript script, Debugger debugger) {
         debugger.clearStateMaps();
+
+        State state = script.state(TestStates.TEST_STATE);
+        State part = script.state(TestStates.BODY_PART);
+
         assertTrue(state.applied());
         assertFalse(state.expired());
         assertTrue(part.applied());
         assertFalse(part.expired());
     }
 
-    private static void assertExpired(Debugger debugger, State state, State part) {
-        debugger.clearStateMaps();
+    private static void assertExpired(TeaseScript script, Debugger debugger) {
         debugger.advanceTime(2, TimeUnit.HOURS);
+
+        State state = script.state(TestStates.TEST_STATE);
+        State part = script.state(TestStates.BODY_PART);
+
         assertTrue(state.applied());
         assertTrue(state.expired());
         assertTrue(part.applied());
         assertTrue(part.expired());
     }
 
-    private static void assertAutoRemoved(Debugger debugger, State state, State part) {
+    private static void assertPersistedAndRestored(TeaseScript script, Debugger debugger) {
+        debugger.clearStateMaps();
+
+        State state = script.state(TestStates.TEST_STATE);
+        State part = script.state(TestStates.BODY_PART);
+
+        assertTrue(state.applied());
+        assertTrue(state.expired());
+        assertTrue(part.applied());
+        assertTrue(part.expired());
+    }
+
+    private static void assertAutoRemoved(TeaseScript script, Debugger debugger) {
         debugger.clearStateMaps();
         debugger.advanceTime(2, TimeUnit.HOURS);
+
+        State state = script.state(TestStates.TEST_STATE);
+        State part = script.state(TestStates.BODY_PART);
+
         assertFalse(state.applied());
         assertTrue(state.expired());
         assertFalse(part.applied());

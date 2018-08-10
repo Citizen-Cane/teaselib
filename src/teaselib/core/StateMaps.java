@@ -2,6 +2,7 @@ package teaselib.core;
 
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -78,6 +79,8 @@ public class StateMaps {
 
     private State state(String domain, QualifiedItem item) {
         if (Persist.isPersistedString(item.toString())) {
+            // TODO extract the qualified item directly from the persisted object
+            // in order to obtain the key without creating an instance
             State state = Persist.from(item.toString(), clazz -> teaseLib);
             item = QualifiedItem.of(((StateImpl) state).item);
             StateMap stateMap = stateMap(domain, item);
@@ -87,7 +90,6 @@ public class StateMaps {
                 return state;
             } else {
                 return stateMap.get(key);
-
             }
         } else if (item.value() instanceof StateImpl) {
             StateImpl stateImpl = (StateImpl) item.value();
@@ -111,21 +113,36 @@ public class StateMaps {
             if (state == null) {
                 state = new StateImpl(this, domain, item.value());
                 stateMap.put(key, state);
-                handleAutoRemoval(state);
-
+                if (mustBeAutoRemoved(state)) {
+                    scheduledForAutoRemoval.add(state);
+                }
             }
             return state;
         }
     }
 
-    private void handleAutoRemoval(State state) {
+    private Set<State> scheduledForAutoRemoval = new HashSet<>();
+
+    private boolean mustBeAutoRemoved(State state) {
         if (state.expired()) {
             Duration duration = state.duration();
-            long autoRemovalTime = duration.end(TimeUnit.SECONDS) + duration.limit(TimeUnit.SECONDS);
-            if (autoRemovalTime > teaseLib.getTime(TimeUnit.SECONDS)) {
-                state.remove();
+            long limit = duration.limit(TimeUnit.SECONDS);
+            if (limit > State.TEMPORARY) {
+                long now = teaseLib.getTime(TimeUnit.SECONDS);
+                long autoRemovalTime = duration.end(TimeUnit.SECONDS) + limit / 2;
+                if (now >= autoRemovalTime) {
+                    return true;
+                }
             }
         }
+        return false;
+    }
+
+    void handleAutoRemoval() {
+        for (State state : scheduledForAutoRemoval) {
+            state.remove();
+        }
+        scheduledForAutoRemoval.clear();
     }
 
     public static boolean hasAllAttributes(Set<Object> availableAttributes, Object[] desiredAttributes) {

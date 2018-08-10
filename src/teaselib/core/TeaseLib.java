@@ -819,11 +819,13 @@ public class TeaseLib {
      * @return The item state.
      */
     public <T extends Object> State state(String domain, T item) {
-        return stateMaps.state(domain, item);
+        State state = stateMaps.state(domain, item);
+        stateMaps.handleAutoRemoval();
+        return state;
     }
 
-    public <T extends State> T state(String domain, T item) {
-        return stateMaps.state(domain, item);
+    public <T extends State> T state(String domain, T state) {
+        return stateMaps.state(domain, state);
     }
 
     /**

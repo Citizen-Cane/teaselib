@@ -84,7 +84,7 @@ public class StateMaps {
             State state = Persist.from(item.toString(), clazz -> teaseLib);
             item = QualifiedItem.of(((StateImpl) state).item);
             StateMap stateMap = stateMap(domain, item);
-            String key = item.toString().toLowerCase();
+            String key = item.name().toString().toLowerCase();
             if (!stateMap.contains(key)) {
                 stateMap.put(key, state);
                 return state;

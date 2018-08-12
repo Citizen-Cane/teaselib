@@ -32,7 +32,8 @@ public abstract class ReleaseAction extends ActionState {
     @Override
     public State removeFrom(Object... peers2) {
         performReleaseActionIfNecessary();
-        return super.removeFrom(peers2);
+        super.removeFrom(peers2);
+        return remove();
     }
 
     @Override

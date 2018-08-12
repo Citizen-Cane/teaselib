@@ -260,8 +260,6 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
             if (!peers.contains(attribute)) {
                 peers.add(attribute);
                 StateImpl state = state(attribute);
-                // TODO Applying the item value breaks beforeHand since testing class doesn't work anymoreasyq<XX
-                // -> apply state directly
                 state.applyInternal(item);
             }
         }

@@ -181,8 +181,6 @@ public class ReleaseActionTest {
         assertTrue(handCuffs.is(script.namespace));
         assertTrue(handCuffs.is(script.namespace));
 
-        // start(action);
-
         Item otherCuffs = script.items(Toys.Wrist_Restraints).query(Material.Leather).get();
         assertNotEquals(handCuffs, otherCuffs);
         otherCuffs.remove();
@@ -244,7 +242,7 @@ public class ReleaseActionTest {
         String devicePath2 = "KeyRelease/MyPhoton/2";
 
         State removeRestraintsAction = script.teaseLib.state(domain, getTestReleaseAction(domain, devicePath1));
-        State removeChainsAction = script.teaseLib.state(domain, getTestReleaseAction(domain, devicePath1));
+        State removeChainsAction = script.teaseLib.state(domain, getTestReleaseAction(domain, devicePath2));
 
         Items restraints = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints, Toys.Collar);
         restraints.apply();
@@ -262,8 +260,8 @@ public class ReleaseActionTest {
         assertTrue(removeChainsAction.applied());
         assertTrue(removeRestraintsAction.applied());
 
-        Item someChains = chains.get(Toys.Chains);
-        someChains.remove();
+        Item singleChainItem = chains.get(Toys.Chains);
+        singleChainItem.remove();
         assertFalse(removeChainsAction.applied());
         assertTrue(removeRestraintsAction.applied());
         assertTrue(chains.anyApplied());
@@ -310,7 +308,7 @@ public class ReleaseActionTest {
         assertFalse(releaseAction.applied());
 
         assertEquals(true, TestReleaseActionState.Success.getAndSet(false));
-        assertEquals(true, ((TestReleaseActionState) releaseAction).removed);
+        assertEquals(true, (((TestReleaseActionState) ((StateProxy) releaseAction).state)).removed);
     }
 
     @Test

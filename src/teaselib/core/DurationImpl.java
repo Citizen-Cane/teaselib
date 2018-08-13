@@ -4,27 +4,25 @@ import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
 import teaselib.Duration;
+import teaselib.util.DurationFormat;
 
 public class DurationImpl implements Duration {
     private final TeaseLib teaseLib;
     private final long start;
-    private final long limits;
+    private final long limit;
 
     public DurationImpl(TeaseLib teaseLib) {
         this(teaseLib, 0, TeaseLib.DURATION_TIME_UNIT);
     }
 
     public DurationImpl(TeaseLib teaseLib, long limit, TimeUnit unit) {
-        // TODO Resolve: start is explicitly DURATION_TIME_UNIT but limit is unit whereas in the other constructor start
-        // is the same unit as limit - calling this(...) doesn't work, probably becasue there are too much conversions
-        // this(teaseLib, teaseLib.getTime(unit), limit, unit);
         if (limit < 0) {
             throw new IllegalArgumentException("Duration limit must be 0 or positive: " + Long.toString(limit));
         }
 
         this.teaseLib = teaseLib;
         this.start = this.teaseLib.getTime(TeaseLib.DURATION_TIME_UNIT);
-        this.limits = convertToMillis(limit, unit);
+        this.limit = convertToMillis(limit, unit);
     }
 
     public DurationImpl(TeaseLib teaseLib, long start, long limit, TimeUnit unit) {
@@ -34,7 +32,7 @@ public class DurationImpl implements Duration {
 
         this.teaseLib = teaseLib;
         this.start = convertToMillis(start, unit);
-        this.limits = convertToMillis(limit, unit);
+        this.limit = convertToMillis(limit, unit);
     }
 
     private static long convertToMillis(long value, TimeUnit unit) {
@@ -62,7 +60,7 @@ public class DurationImpl implements Duration {
 
     @Override
     public long limit(TimeUnit unit) {
-        return convertToUnit(limits, unit);
+        return convertToUnit(limit, unit);
     }
 
     @Override
@@ -73,33 +71,34 @@ public class DurationImpl implements Duration {
 
     @Override
     public long remaining(TimeUnit unit) {
-        return convertToUnit(limits - elapsed(TeaseLib.DURATION_TIME_UNIT), unit);
+        return convertToUnit(limit - elapsed(TeaseLib.DURATION_TIME_UNIT), unit);
     }
 
     @Override
     public long end(TimeUnit unit) {
-        if (limits >= Long.MAX_VALUE - start) {
+        if (limit >= Long.MAX_VALUE - start) {
             return Long.MAX_VALUE;
         } else {
-            return convertToUnit(start + limits, unit);
+            return convertToUnit(start + limit, unit);
         }
     }
 
     @Override
     public boolean expired() {
-        return this.teaseLib.getTime(TeaseLib.DURATION_TIME_UNIT) - start >= limits;
+        return this.teaseLib.getTime(TeaseLib.DURATION_TIME_UNIT) - start >= limit;
     }
 
     @Override
     public String toString() {
-        return new Date(start(TimeUnit.MILLISECONDS)) + "+" + limits;
+        return new Date(start(TimeUnit.MILLISECONDS))
+                + (limit > 0 ? "+" + DurationFormat.toString(limit, TeaseLib.DURATION_TIME_UNIT) : "");
     }
 
     @Override
     public int hashCode() {
         final int prime = 31;
         int result = 1;
-        result = prime * result + (int) (limits ^ (limits >>> 32));
+        result = prime * result + (int) (limit ^ (limit >>> 32));
         result = prime * result + (int) (start ^ (start >>> 32));
         return result;
     }
@@ -113,7 +112,7 @@ public class DurationImpl implements Duration {
         if (getClass() != obj.getClass())
             return false;
         DurationImpl other = (DurationImpl) obj;
-        if (limits != other.limits)
+        if (limit != other.limit)
             return false;
         if (start != other.start)
             return false;

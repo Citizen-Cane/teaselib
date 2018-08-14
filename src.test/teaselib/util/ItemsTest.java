@@ -312,4 +312,24 @@ public class ItemsTest {
         assertEquals(Toys.Wrist_Restraints, values[0]);
         assertEquals(Toys.Ankle_Restraints, values[1]);
     }
+
+    @Test
+    public void testAnyApplied() {
+        TestScript script = TestScript.getOne();
+
+        Items restraints = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints);
+
+        assertFalse(restraints.anyApplied());
+
+        script.item(Toys.Wrist_Restraints).apply();
+        assertTrue(restraints.anyApplied());
+        assertFalse(restraints.allApplied());
+
+        script.item(Toys.Ankle_Restraints).apply();
+        assertTrue(restraints.anyApplied());
+        assertTrue(restraints.allApplied());
+
+        restraints.remove();
+        assertFalse(restraints.anyApplied());
+    }
 }

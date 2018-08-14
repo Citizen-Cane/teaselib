@@ -29,6 +29,10 @@ public final class ReflectionUtils {
         return clazz.getName().replace('$', '.');
     }
 
+    public static String qualified(Class<?> clazz, String name) {
+        return normalizeClassName(clazz) + "." + name;
+    }
+
     public static String absolutePath(Package p) {
         return "/" + p.getName().replace('.', '/') + '/';
     }

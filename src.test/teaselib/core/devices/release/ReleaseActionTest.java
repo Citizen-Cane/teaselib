@@ -287,17 +287,26 @@ public class ReleaseActionTest {
 
         Item restraints = script.item(Toys.Wrist_Restraints);
         assertFalse(releaseAction.applied());
+        assertFalse(restraints.is(script.namespace));
+        assertFalse(restraints.is(releaseAction));
 
         releaseAction.applyTo(restraints);
         assertTrue(releaseAction.is(script.namespace));
-        assertFalse(restraints.applied());
+        assertTrue(releaseAction.is(restraints));
         assertTrue(releaseAction.applied());
+
+        assertFalse(restraints.applied());
+        assertTrue(restraints.is(script.namespace));
+        assertTrue(restraints.is(releaseAction));
 
         restraints.apply();
         assertTrue(restraints.applied());
         assertTrue(restraints.is(script.namespace));
-        assertTrue(releaseAction.is(script.namespace));
+        assertTrue(restraints.is(releaseAction));
+
         assertTrue(releaseAction.applied());
+        assertTrue(releaseAction.is(script.namespace));
+        assertTrue(releaseAction.is(restraints));
         assertTrue(releaseAction.is(Toys.Wrist_Restraints));
 
         restraints.remove();

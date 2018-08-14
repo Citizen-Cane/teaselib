@@ -148,6 +148,7 @@ public class StateMaps {
     public static boolean hasAllAttributes(Set<Object> availableAttributes, Object[] desiredAttributes) {
         return Arrays.stream(desiredAttributes).map(desiredAttribute -> QualifiedItem.of(stripState(desiredAttribute)))
                 .filter(desiredQualifiedAttribute -> availableAttributes.stream()
+                        .map(availableAttribute -> QualifiedItem.of(stripState(availableAttribute)))
                         .anyMatch(desiredQualifiedAttribute::equals))
                 .count() == desiredAttributes.length;
     }

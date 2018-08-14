@@ -105,11 +105,7 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
     }
 
     private boolean stateContainsAll(Object... attributes) {
-        if (!applied()) {
-            return false;
-        } else {
-            return teaseLib.state(domain, item).is(attributes);
-        }
+        return teaseLib.state(domain, item).is(attributes);
     }
 
     public Set<Object> peers() {

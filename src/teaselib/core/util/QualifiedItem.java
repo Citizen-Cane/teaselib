@@ -19,9 +19,9 @@ public abstract class QualifiedItem {
 
     public static String namespaceOf(Object item) {
         if (item instanceof Enum<?>) {
-            return ReflectionUtils.normalizeClassName(item.getClass());
+            return ReflectionUtils.normalizedClassName(item.getClass());
         } else if (item instanceof Class) {
-            return ReflectionUtils.normalizeClassName((Class<?>) item);
+            return ReflectionUtils.normalizedClassName((Class<?>) item);
         } else if (item instanceof String) {
             String string = (String) item;
             if (string.contains(".")) {

@@ -13,7 +13,7 @@ public abstract class ReleaseAction extends ActionState {
     boolean actionPerformed = false;
 
     protected ReleaseAction(TeaseLib teaseLib, String domain, String item, Class<? extends ReleaseAction> subClass) {
-        super(teaseLib, domain, ReflectionUtils.normalizeClassName(subClass) + "." + item);
+        super(teaseLib, domain, ReflectionUtils.normalizedClassName(subClass) + "." + item);
     }
 
     protected ReleaseAction(Persist.Storage storage, Class<? extends ReleaseAction> implementationClass) {

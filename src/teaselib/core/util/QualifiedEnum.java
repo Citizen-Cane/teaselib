@@ -33,7 +33,7 @@ public class QualifiedEnum extends AbstractQualifiedItem<Enum<?>> {
 
     @Override
     public String namespace() {
-        return ReflectionUtils.normalizeClassName(value.getClass());
+        return ReflectionUtils.normalizedClassName(value.getClass());
     }
 
     @Override

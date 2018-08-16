@@ -39,8 +39,15 @@ public class Actuators implements Iterable<Actuator> {
     }
 
     public Actuator get(long duration, TimeUnit unit) {
-        List<Long> durations = stream().map(actuator -> actuator.available(unit)).collect(Collectors.toList());
-        return get(getActuatorIndex(duration, durations));
+        return get(getActuatorIndex(duration, durations(unit)));
+    }
+
+    public Actuators available() {
+        return new Actuators(stream().filter(actuator -> !actuator.isRunning()).collect(Collectors.toList()));
+    }
+
+    private List<Long> durations(TimeUnit unit) {
+        return stream().map(actuator -> actuator.available(unit)).collect(Collectors.toList());
     }
 
     static int getActuatorIndex(long duration, List<Long> durations) {
@@ -51,17 +58,25 @@ public class Actuators implements Iterable<Actuator> {
         int maxActuator = unset;
         for (int actuator = 0; actuator < durations.size(); actuator++) {
             long availableDuration = durations.get(actuator);
-            long difference = availableDuration - duration;
-            if (0 <= difference && difference < bestDifferenceSoFar) {
+            if (duration <= 0 && availableDuration < bestDifferenceSoFar) {
                 bestActuator = actuator;
-                bestDifferenceSoFar = difference;
-            }
-            if (availableDuration > maxDuration) {
+                bestDifferenceSoFar = availableDuration;
                 maxDuration = availableDuration;
                 maxActuator = actuator;
+            } else {
+                long difference = availableDuration - duration;
+                if (0 <= difference && difference < bestDifferenceSoFar) {
+                    bestActuator = actuator;
+                    bestDifferenceSoFar = difference;
+                }
+                if (availableDuration > maxDuration) {
+                    maxDuration = availableDuration;
+                    maxActuator = actuator;
+                }
             }
         }
         return bestActuator != unset ? bestActuator : maxActuator;
+
     }
 
     // TODO instead of min/max provide interface that can deal with more than two actuators and a duration

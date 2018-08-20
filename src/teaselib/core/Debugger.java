@@ -91,6 +91,10 @@ public class Debugger {
         addResponse(new ResponseAction(match, response));
     }
 
+    public void addResponse(String match, Callable<Response> response) {
+        debugInputMethod.getResponses().add(new ResponseAction(match, response));
+    }
+
     public void addResponse(ResponseAction responseAction) {
         debugInputMethod.getResponses().add(responseAction);
     }

@@ -79,17 +79,20 @@ public class StateMaps {
 
     private State state(String domain, QualifiedItem item) {
         if (Persist.isPersistedString(item.toString())) {
-            // TODO extract the qualified item directly from the persisted object
-            // in order to obtain the key without creating an instance
-            State state = Persist.from(item.toString(), clazz -> teaseLib);
-            item = QualifiedItem.of(((StateImpl) state).item);
-            StateMap stateMap = stateMap(domain, item);
-            String key = item.name().toString().toLowerCase();
-            if (!stateMap.contains(key)) {
-                stateMap.put(key, state);
-                return state;
+            StateMap stateMapForPersistedKey = stateMap(domain, item);
+            State existing = stateMapForPersistedKey.get(item.toString());
+            if (existing != null) {
+                return existing;
             } else {
-                return stateMap.get(key);
+                String persistedKey = item.toString();
+                State state = Persist.from(persistedKey, clazz -> teaseLib);
+                stateMapForPersistedKey.put(persistedKey, state);
+
+                QualifiedItem qualifiedItem = QualifiedItem.of(((StateImpl) state).item);
+                StateMap stateMapForQualifiedKey = stateMap(domain, qualifiedItem);
+                String qualifiedKey = qualifiedItem.name().toLowerCase();
+                stateMapForQualifiedKey.put(qualifiedKey, state);
+                return state;
             }
         } else if (item.value() instanceof StateImpl) {
             StateImpl stateImpl = (StateImpl) item.value();

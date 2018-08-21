@@ -18,11 +18,13 @@ import teaselib.State;
 import teaselib.TeaseScript;
 import teaselib.Toys;
 import teaselib.core.ResourceLoader;
+import teaselib.core.StateImpl;
 import teaselib.core.TeaseLib;
 import teaselib.core.devices.ReleaseAction;
 import teaselib.core.state.StateProxy;
 import teaselib.core.util.Persist;
 import teaselib.core.util.Persist.Storage;
+import teaselib.core.util.ReflectionUtils;
 import teaselib.test.TestScript;
 import teaselib.util.Item;
 import teaselib.util.Items;
@@ -65,6 +67,21 @@ public class ReleaseActionTest {
 
         assertEquals(actionState1, actionState2);
         assertSame(((StateProxy) actionState1).state, ((StateProxy) actionState2).state);
+    }
+
+    @Test
+    public void testThatActionStatesCannotBeInstanciatedFromQualifiedString() {
+        TestScript script = TestScript.getOne();
+        String domain = TeaseLib.DefaultDomain;
+        String devicePath1 = "KeyRelease/MyPhoton/1";
+        String devicePath2 = "KeyRelease/MyPhoton/2";
+
+        String action = getTestReleaseAction(domain, devicePath1);
+        State actionState1 = script.state(action);
+        State actionState2 = script.state(ReflectionUtils.qualified(TestReleaseActionState.class, devicePath2));
+
+        assertEquals(TestReleaseActionState.class, ((StateProxy) actionState1).state.getClass());
+        assertEquals(StateImpl.class, ((StateProxy) actionState2).state.getClass());
     }
 
     @Test

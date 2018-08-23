@@ -5,11 +5,12 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import teaselib.core.TeaseLib;
+import teaselib.core.devices.ActionState;
 import teaselib.core.devices.BatteryLevel;
 import teaselib.core.devices.Device;
 import teaselib.core.devices.DeviceCache;
 import teaselib.core.devices.ReleaseAction;
-import teaselib.core.devices.release.ReleaseActionTest.TestReleaseActionState;
+import teaselib.core.devices.release.Actuator.ActuatorReleaseAction;
 import teaselib.core.util.Persist;
 
 // TODO Should be a device -> just remember the device path instead of the additional index
@@ -170,10 +171,6 @@ public class Actuator implements Device {
     }
 
     public String releaseAction() {
-        return getReleaseAction(TeaseLib.DefaultDomain, getDevicePath());
-    }
-
-    private static String getReleaseAction(String domain, String devicePath) {
-        return Persist.persistedInstance(TestReleaseActionState.class, Arrays.asList(domain, devicePath));
+        return ActionState.persistedInstance(ActuatorReleaseAction.class, TeaseLib.DefaultDomain, getDevicePath());
     }
 }

@@ -13,6 +13,21 @@ import teaselib.core.util.QualifiedItem;
  *
  */
 public abstract class ActionState extends StateImpl implements Persist.Persistable {
+    public static final class None extends ActionState {
+        public None(TeaseLib teaseLib, String domain, Object item) {
+            super(teaseLib, domain, item);
+        }
+
+        @Override
+        protected boolean performAction() {
+            return true;
+        }
+    }
+
+    public static String persistedInstance(Class<? extends ActionState> clazz, String domain, String item) {
+        return Persist.persistedInstance(clazz, Arrays.asList(domain, item));
+    }
+
     public ActionState(TeaseLib teaseLib, String domain, Object item) {
         super(teaseLib, domain, item);
     }

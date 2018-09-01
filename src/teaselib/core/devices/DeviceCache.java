@@ -16,6 +16,18 @@ public class DeviceCache<T extends Device> {
 
     private static final char PathSeparator = '/';
 
+    public static final class DeviceNotFoundException extends IllegalArgumentException {
+        private static final long serialVersionUID = 1L;
+
+        public DeviceNotFoundException(String message) {
+            super(message);
+        }
+
+        public DeviceNotFoundException(String message, Throwable cause) {
+            super(message, cause);
+        }
+    }
+
     public DeviceCache<T> addFactory(DeviceFactory<? extends T> factory) {
         factories.put(factory.getDeviceClass(), factory);
         return this;
@@ -56,13 +68,18 @@ public class DeviceCache<T extends Device> {
         try {
             String deviceClassName = getDeviceClass(devicePath);
             DeviceFactory<? extends T> deviceFactory = factories.get(deviceClassName);
+            if (deviceFactory == null) {
+                throw new DeviceNotFoundException("Factory for" + deviceClassName + " not found");
+            }
             T device = deviceFactory.getDevice(devicePath);
             if (device == null) {
-                throw new NullPointerException(devicePath);
+                throw new DeviceNotFoundException(devicePath);
             }
             return device;
+        } catch (RuntimeException e) {
+            throw e;
         } catch (Exception e) {
-            throw new IllegalArgumentException(devicePath, e);
+            throw new DeviceNotFoundException(devicePath, e);
         }
     }
 

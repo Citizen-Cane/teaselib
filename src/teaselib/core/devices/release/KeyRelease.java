@@ -16,7 +16,6 @@ import teaselib.core.devices.remote.RemoteDeviceMessage;
 import teaselib.core.devices.remote.RemoteDevices;
 
 public class KeyRelease implements Device, Device.Creatable {
-
     private static final class MyDeviceFactory extends DeviceFactory<KeyRelease> {
         private MyDeviceFactory(String deviceClass, Devices devices, Configuration configuration) {
             super(deviceClass, devices, configuration);
@@ -38,7 +37,7 @@ public class KeyRelease implements Device, Device.Creatable {
             } else {
                 DeviceCache<RemoteDevice> deviceCache = devices.get(RemoteDevice.class);
                 RemoteDevice device = deviceCache.getDevice(deviceName);
-                return new KeyRelease(device, devices, this);
+                return new KeyRelease(devices, this, device);
             }
         }
     }
@@ -108,10 +107,10 @@ public class KeyRelease implements Device, Device.Creatable {
     private String[] releaseKeys = { "" };
 
     KeyRelease(Devices devices, DeviceFactory<KeyRelease> factory) {
-        this(RemoteDevices.WaitingForConnection, devices, factory);
+        this(devices, factory, RemoteDevices.WaitingForConnection);
     }
 
-    KeyRelease(RemoteDevice remoteDevice, Devices devices, DeviceFactory<KeyRelease> factory) {
+    KeyRelease(Devices devices, DeviceFactory<KeyRelease> factory, RemoteDevice remoteDevice) {
         this.remoteDevice = remoteDevice;
         this.devices = devices;
         this.factory = factory;

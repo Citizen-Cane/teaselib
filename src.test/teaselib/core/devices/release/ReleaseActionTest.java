@@ -21,14 +21,20 @@ import teaselib.core.ResourceLoader;
 import teaselib.core.StateImpl;
 import teaselib.core.TeaseLib;
 import teaselib.core.devices.ReleaseAction;
+import teaselib.core.devices.remote.RemoteDevices;
 import teaselib.core.state.StateProxy;
 import teaselib.core.util.Persist;
 import teaselib.core.util.Persist.Storage;
 import teaselib.core.util.ReflectionUtils;
+import teaselib.test.TestDeviceFactory;
 import teaselib.test.TestScript;
 import teaselib.util.Item;
 import teaselib.util.Items;
 
+/**
+ * @author Citizen-Cane
+ *
+ */
 public class ReleaseActionTest {
     public static final class TestReleaseActionState extends ReleaseAction {
         static final AtomicBoolean Success = new AtomicBoolean(false);
@@ -341,12 +347,13 @@ public class ReleaseActionTest {
     public void ensureThatActuatorAlwaysReturnsTheSameReleaseActionInstance() {
         TestScript script = TestScript.getOne();
 
-        Actuator a = new Actuator(new KeyRelease(null, null, null) {
-            @Override
-            public String getDevicePath() {
-                return "KeyRelease/10.1.1.11/Test";
-            }
-        }, 0);
+        TestDeviceFactory<KeyRelease> factory = new TestDeviceFactory<>("KeyRelease", script.teaseLib.devices,
+                script.teaseLib.config);
+        script.teaseLib.devices.get(KeyRelease.class).addFactory(factory);
+        KeyRelease keyRelease = new KeyRelease(script.teaseLib.devices, factory, RemoteDevices.WaitingForConnection);
+
+        factory.setTestDevice(keyRelease);
+        Actuator a = new Actuator(keyRelease, 0);
 
         State releaseAction1 = script.state(a.releaseAction());
         State releaseAction2 = script.state(a.releaseAction());

@@ -13,7 +13,7 @@ public class RemoteDevices {
     public static final RemoteDevice WaitingForConnection = new RemoteDevice() {
         @Override
         public String getDevicePath() {
-            return DeviceCache.createDevicePath(WaitingForConnection, WaitingForConnection);
+            return WaitingForConnection;
         }
 
         @Override
@@ -74,6 +74,10 @@ public class RemoteDevices {
         public void send(RemoteDeviceMessage message) {
         }
 
+        @Override
+        public String toString() {
+            return getDevicePath();
+        }
     };
 
     public static List<RemoteDevice> devicesThatSupport(String serviceName, Devices devices) {

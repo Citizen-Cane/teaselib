@@ -10,7 +10,6 @@ import teaselib.core.devices.BatteryLevel;
 import teaselib.core.devices.Device;
 import teaselib.core.devices.DeviceCache;
 import teaselib.core.devices.ReleaseAction;
-import teaselib.core.devices.release.Actuator.ActuatorReleaseAction;
 import teaselib.core.util.Persist;
 
 // TODO Should be a device -> just remember the device path instead of the additional index

@@ -1,5 +1,6 @@
 package teaselib.stimulation.ext;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
@@ -56,7 +57,9 @@ public class EStimControllerSetup extends TeaseScript {
 
     public EStimController run() {
         EStimController stim = getController();
-        return EStimController.init(stim, adjustLevels(stim, attachElectrodes(getDevice())));
+        StimulationDevice device = getDevice();
+        device.setMode(Output.EStim, Wiring.INFERENCE_CHANNEL);
+        return EStimController.init(stim, adjustLevels(stim, attachElectrodes(device)));
     }
 
     private StimulationDevice getDevice() {
@@ -115,28 +118,31 @@ public class EStimControllerSetup extends TeaseScript {
         // TODO Can't check channel count since the device isn't wired up -> enum physical channels or reset wiring
         // TODO Mixed mode (EStim/Vibrator) is possible, so don't check too much here - handle in instructions instead
         device.setMode(device.output, Wiring.Independent);
-        List<Stimulator> stimulators = device.stimulators().stream().filter(EstimOutput).collect(Collectors.toList());
 
-        if (stimulators.isEmpty()) {
+        List<Stimulator> estims = device.stimulators().stream().filter(EstimOutput).collect(Collectors.toList());
+        List<Stimulator> vibrators = device.stimulators().stream().filter(VibrationOutput).collect(Collectors.toList());
+
+        if (estims.isEmpty() && vibrators.isEmpty()) {
             return handleManualDevice(device);
         }
 
-        if (stimulators.size() != 2 || stimulators.stream().filter(ContinousOutput).count() > 0
-                || stimulators.stream().filter(VibrationOutput).count() > 0) {
+        // TODO Handle vibrators first -> vib at penis tip or in cunt, then estim punishment
+        if (estims.size() != 2 || estims.stream().filter(ContinousOutput).count() > 0
+                || estims.stream().filter(VibrationOutput).count() > 0) {
             return handleMoreThanTwoPhysicalChannels();
         } else {
             return wireUpDualPhysicalChannelDevice(device);
         }
     }
 
-    private static StimulationDevice handleMoreThanTwoPhysicalChannels() {
-        throw new UnsupportedOperationException("Only devices with 2 physical estim-channels are supported for now");
-    }
-
     private StimulationDevice handleManualDevice(StimulationDevice device) {
         append("Tell me when you're ready, #slave.");
         agree("I'm wired up, #title");
         return device;
+    }
+
+    private static StimulationDevice handleMoreThanTwoPhysicalChannels() {
+        throw new UnsupportedOperationException("Only devices with 2 physical estim-channels are supported for now");
     }
 
     private StimulationDevice wireUpDualPhysicalChannelDevice(StimulationDevice device) {
@@ -204,11 +210,7 @@ public class EStimControllerSetup extends TeaseScript {
         adjustlevelsInstructions(device);
         append("Let's try it:");
 
-        reply(() -> {
-            while (iterateIntentions(stim)) { // do
-            }
-
-        }, "All channels adjusted, #title");
+        testIntenttions(stim);
 
         return device;
     }
@@ -222,40 +224,39 @@ public class EStimControllerSetup extends TeaseScript {
         }
     }
 
-    private boolean iterateIntentions(EStimController stim) {
+    private boolean testIntenttions(EStimController stim) {
         // TODO What is perceived stronger on pain or tease level:
-        // constant input or burst pulse
+        // constant input or burst pulse?
         // return new ConstantWave(2.0);
         Stimulation stimulation = (stimulator, intensity) -> {
             double mimimalSignalDuration = stimulator.minimalSignalDuration();
             return new BurstSquareWave(2, mimimalSignalDuration, 1.0 - mimimalSignalDuration);
         };
 
+        List<String> answers = new ArrayList<>();
         for (Intention intention : Intention.values()) {
-            while (true) {
-                if (intention == Intention.Pace) {
-                    replace("Pace!");
-                } else if (intention == Intention.Tease) {
-                    replace("Tease!");
-                } else if (intention == Intention.Pain) {
-                    replace("Pain!");
-                }
+            answers.add(intention.name());
+        }
+        String allAdjusted = "All channels adjusted, #title";
+        answers.add(allAdjusted);
 
-                stim.play(intention, stimulation);
-                stim.complete(intention);
-
-                String againPlease = "Again please, #title";
-                String nextPlease = "Next please, #title";
-                // listen to "next please" input and advance, but keep buttons displayed
-                // TODO Include answer from script function -> nested function
-                String todoNestedAnswer = "All channels adjusted, #title";
-                String answer = reply(againPlease, nextPlease, todoNestedAnswer);
-                if (answer == nextPlease) {
-                    break;
-                } else if (answer == todoNestedAnswer) {
-                    return false;
-                }
+        while (true) {
+            String answer = reply(answers);
+            if (answer == allAdjusted) {
+                break;
             }
+
+            if (answer.equals(Intention.Pace.name())) {
+                replace("Pace!");
+            } else if (answer.equals(Intention.Tease.name())) {
+                replace("Tease!");
+            } else if (answer.equals(Intention.Pain.name())) {
+                replace("Pain!");
+            }
+
+            Intention intention = Intention.values()[answers.indexOf(answer)];
+            stim.play(intention, stimulation);
+            stim.complete(intention);
         }
 
         return true;

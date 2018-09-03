@@ -169,10 +169,14 @@ public class VideoCaptureDeviceCV extends VideoCaptureDevice /* extends WiredDev
             if (!videoCapture.isOpened()) {
                 throw new IllegalArgumentException("Camera not opened: " + getClass().getName() + ":" + deviceId);
             }
-            captureSize.width((int) videoCapture.get(CAP_PROP_FRAME_WIDTH));
-            captureSize.height((int) videoCapture.get(CAP_PROP_FRAME_HEIGHT));
-            fps = videoCapture.get(opencv_videoio.CAP_PROP_FPS);
+            updateCameraProps();
         }
+    }
+
+    private void updateCameraProps() {
+        captureSize.width((int) videoCapture.get(CAP_PROP_FRAME_WIDTH));
+        captureSize.height((int) videoCapture.get(CAP_PROP_FRAME_HEIGHT));
+        fps = videoCapture.get(opencv_videoio.CAP_PROP_FPS);
     }
 
     @Override
@@ -217,8 +221,12 @@ public class VideoCaptureDeviceCV extends VideoCaptureDevice /* extends WiredDev
 
     @Override
     public void resolution(Size size) {
+        if (!active()) {
+            throw new IllegalStateException("Camera not open");
+        }
         videoCapture.set(CAP_PROP_FRAME_WIDTH, size.width());
         videoCapture.set(CAP_PROP_FRAME_HEIGHT, size.height());
+
         double actual = videoCapture.get(opencv_videoio.CAP_PROP_FPS);
         if (actual > 0.0 && fps == 0.0) {
             fps(actual);
@@ -227,6 +235,9 @@ public class VideoCaptureDeviceCV extends VideoCaptureDevice /* extends WiredDev
             videoCapture.set(opencv_videoio.CAP_PROP_FPS, fps);
             fps(fps);
         }
+
+        updateCameraProps();
+
     }
 
     @Override

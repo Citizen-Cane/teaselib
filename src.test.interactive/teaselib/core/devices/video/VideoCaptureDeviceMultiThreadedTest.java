@@ -1,5 +1,7 @@
 package teaselib.core.devices.video;
 
+import static org.junit.Assert.*;
+
 import org.bytedeco.javacpp.opencv_core.Mat;
 import org.bytedeco.javacpp.opencv_core.Size;
 import org.bytedeco.javacpp.opencv_highgui;
@@ -31,11 +33,15 @@ public class VideoCaptureDeviceMultiThreadedTest {
     }
 
     private static void capture(VideoCaptureDevice vc) {
-        try (Size size = new Size(320, 240);) {
+        try (Size size = new Size(640, 480);) {
+            vc.resolution(size);
             vc.fps(30);
             vc.open();
-            vc.resolution(size);
+            assertEquals(size.width(), vc.resolution().width());
+            assertEquals(size.height(), vc.resolution().height());
             for (Mat mat : vc) {
+                assertEquals(size.width(), mat.cols());
+                assertEquals(size.height(), mat.rows());
                 opencv_highgui.imshow("Test", mat);
                 if (org.bytedeco.javacpp.opencv_highgui.waitKey(30) >= 0 || Thread.currentThread().isInterrupted()) {
                     break;

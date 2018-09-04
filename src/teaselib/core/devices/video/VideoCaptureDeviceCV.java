@@ -75,9 +75,9 @@ public class VideoCaptureDeviceCV extends VideoCaptureDevice /* extends WiredDev
                         try {
                             videoCapture.open();
                         } catch (IllegalArgumentException e) {
-                            // Ignore
+                            break;
                         }
-                        if (videoCapture.connected()) {
+                        if (videoCapture.active()) {
                             videoCapture.close();
                             devices.add(videoCapture);
                         } else {
@@ -128,7 +128,11 @@ public class VideoCaptureDeviceCV extends VideoCaptureDevice /* extends WiredDev
         this.deviceName = deviceName;
         this.factory = factory;
         this.videoCapture = new VideoCapture();
-        this.deviceId = UseVideoInput ? VideoCaptureDeviceVideoInput.getDeviceIDFromName(deviceName)
+        this.deviceId = getDeviceIDFromName(deviceName);
+    }
+
+    private static int getDeviceIDFromName(String deviceName) {
+        return UseVideoInput ? VideoCaptureDeviceVideoInput.getDeviceIDFromName(deviceName)
                 : Integer.parseInt(DeviceCache.getDeviceName(deviceName));
     }
 
@@ -195,7 +199,7 @@ public class VideoCaptureDeviceCV extends VideoCaptureDevice /* extends WiredDev
             if (WaitingForConnection.equals(deviceName)) {
                 return false;
             } else {
-                deviceId = VideoCaptureDeviceVideoInput.getDeviceIDFromName(deviceName);
+                this.deviceId = getDeviceIDFromName(deviceName);
                 factory.connectDevice(this);
                 return true;
             }

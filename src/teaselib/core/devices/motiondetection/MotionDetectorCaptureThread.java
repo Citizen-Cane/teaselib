@@ -76,9 +76,9 @@ class MotionDetectorCaptureThread extends Thread {
     }
 
     private void openVideoCaptureDevice(VideoCaptureDevice videoCaptureDevice) {
-        videoCaptureDevice.fps(fps);
         videoCaptureDevice.open();
         videoCaptureDevice.resolution(videoCaptureDevice.getResolutions().getMatchingOrSimilar(DesiredProcessingSize));
+        videoCaptureDevice.fps(fps);
         this.fps = FramesPerSecond.getFps(videoCaptureDevice.fps(), desiredFps);
         this.fpsVideoStatistics = new FramesPerSecond((int) fps);
         this.fpsFrameTasksStatistics = new FramesPerSecond((int) fps);

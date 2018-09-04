@@ -19,6 +19,9 @@ public abstract class VideoCaptureDevice implements Iterable<Mat>, Device.Creata
                         .addFactory(VideoCaptureDeviceCV.getDeviceFactory(devices, configuration));
             }
         }
+        // VideoCaptureDeviceCV mixes up opencv and videoInput device enumeration
+        // TODO Resolve VideoCaptureDeviceCV design issues and instantiate the correct factory
+        // (videoInput for Windows, VC otherwise) here
         return Instance;
     }
 

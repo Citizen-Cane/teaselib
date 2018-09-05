@@ -25,8 +25,6 @@ import teaselib.video.ResolutionList;
 import teaselib.video.VideoCaptureDevice;
 import teaselib.video.VideoCaptureDevices;
 
-// TODO upgrade to source level 1.8 -> change back to interface
-
 public class VideoCaptureDeviceCV extends VideoCaptureDevice /* extends WiredDevice */ {
     private static final Logger logger = LoggerFactory.getLogger(VideoCaptureDeviceCV.class);
 
@@ -228,6 +226,7 @@ public class VideoCaptureDeviceCV extends VideoCaptureDevice /* extends WiredDev
         if (!active()) {
             throw new IllegalStateException("Camera not open");
         }
+
         videoCapture.set(CAP_PROP_FRAME_WIDTH, size.width());
         videoCapture.set(CAP_PROP_FRAME_HEIGHT, size.height());
 
@@ -241,7 +240,6 @@ public class VideoCaptureDeviceCV extends VideoCaptureDevice /* extends WiredDev
         }
 
         updateCameraProps();
-
     }
 
     @Override

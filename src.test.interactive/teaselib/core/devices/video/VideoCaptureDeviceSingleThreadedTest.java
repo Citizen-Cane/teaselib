@@ -17,17 +17,57 @@ import teaselib.video.VideoCaptureDevice;
 
 public class VideoCaptureDeviceSingleThreadedTest {
     @Test
+    public void testVideoCaptureOpeClose() {
+        Configuration config = DebugSetup.getConfiguration();
+        Devices devices = new Devices(config);
+        VideoCaptureDevice vc = devices.get(VideoCaptureDevice.class).getDefaultDevice();
+        DeviceCache.connect(vc);
+        assertFalse(vc.active());
+
+        for (int i = 0; i < 2; i++)
+            try (Size vga = new Size(640, 480); Size hd = new Size(1280, 720);) {
+                try {
+                    assertEquals(VideoCaptureDevice.DefaultResolution.width(), vc.resolution().width());
+                    assertEquals(VideoCaptureDevice.DefaultResolution.height(), vc.resolution().height());
+                } catch (IllegalStateException e) {
+                    // Correct
+                }
+
+                vc.open();
+                vc.resolution(hd);
+                assertEquals(hd.width(), vc.resolution().width());
+                assertEquals(hd.height(), vc.resolution().height());
+
+                Iterator<Mat> video = vc.iterator();
+                Mat image = video.next();
+                assertEquals(hd.width(), image.cols());
+                assertEquals(hd.height(), image.rows());
+
+                vc.resolution(vga);
+                assertEquals(vga.width(), vc.resolution().width());
+                assertEquals(vga.height(), vc.resolution().height());
+
+                image = video.next();
+                assertEquals(hd.width(), image.cols());
+                assertEquals(hd.height(), image.rows());
+
+                vc.close();
+            }
+    }
+
+    @Test
     public void testVideoCaptureResolutionSwitch() {
         Configuration config = DebugSetup.getConfiguration();
         Devices devices = new Devices(config);
         VideoCaptureDevice vc = devices.get(VideoCaptureDevice.class).getDefaultDevice();
         DeviceCache.connect(vc);
+        assertFalse(vc.active());
 
         try (Size vga = new Size(640, 480); Size hd = new Size(1280, 720);) {
             try {
                 vc.resolution(hd);
-                assertEquals(0, vc.resolution().width());
-                assertEquals(0, vc.resolution().height());
+                assertEquals(VideoCaptureDevice.DefaultResolution.width(), vc.resolution().width());
+                assertEquals(VideoCaptureDevice.DefaultResolution.width(), vc.resolution().height());
             } catch (IllegalStateException e) {
                 // Correct
             }
@@ -60,6 +100,7 @@ public class VideoCaptureDeviceSingleThreadedTest {
         Devices devices = new Devices(config);
         VideoCaptureDevice vc = devices.get(VideoCaptureDevice.class).getDefaultDevice();
         DeviceCache.connect(vc);
+        assertFalse(vc.active());
 
         capture(vc);
 

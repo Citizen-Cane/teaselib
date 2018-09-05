@@ -20,23 +20,23 @@ public class VideoCaptureDeviceMultiThreadedTest {
         Devices devices = new Devices(config);
         VideoCaptureDevice vc = devices.get(VideoCaptureDevice.class).getDefaultDevice();
         DeviceCache.connect(vc);
+        assertFalse(vc.active());
 
         Thread capture = new Thread(() -> capture(vc));
         capture.start();
-        Thread.sleep(2000);
+        Thread.sleep(5000);
 
         capture.interrupt();
         capture.join();
 
-        // Close device to avoid crash on system exit
         vc.close();
     }
 
     private static void capture(VideoCaptureDevice vc) {
         try (Size size = new Size(640, 480);) {
+            vc.open();
             vc.resolution(size);
             vc.fps(30);
-            vc.open();
             assertEquals(size.width(), vc.resolution().width());
             assertEquals(size.height(), vc.resolution().height());
             for (Mat mat : vc) {

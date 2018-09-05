@@ -22,12 +22,6 @@ import teaselib.video.ResolutionList;
 import teaselib.video.VideoCaptureDevice;
 import teaselib.video.VideoCaptureDevices;
 
-// TODO set & get frame rate
-// TODO set exposure
-// detect disconnect
-// reconnect to same camera -> here
-// reconnect to new camera -> application
-
 public class VideoCaptureDeviceVideoInput extends VideoCaptureDevice /* extends WiredDevice */ {
     private static final Logger logger = LoggerFactory.getLogger(VideoCaptureDeviceVideoInput.class);
 
@@ -128,6 +122,9 @@ public class VideoCaptureDeviceVideoInput extends VideoCaptureDevice /* extends 
             vi = new videoInput();
             vi.setUseCallback(true);
             vi.setAutoReconnectOnFreeze(deviceId, true, 100);
+            vi.setupDevice(deviceId);
+
+            updateCameraProps();
         }
     }
 
@@ -158,7 +155,7 @@ public class VideoCaptureDeviceVideoInput extends VideoCaptureDevice /* extends 
 
     @Override
     public boolean active() {
-        return connected() && vi.isDeviceSetup(deviceId);
+        return connected() && vi != null && vi.isDeviceSetup(deviceId);
     }
 
     @Override
@@ -173,9 +170,10 @@ public class VideoCaptureDeviceVideoInput extends VideoCaptureDevice /* extends 
 
     @Override
     public void resolution(Size size) {
-        if (!getResolutions().contains(size)) {
-            throw new IllegalArgumentException(size.width() + "," + size.height());
+        if (!active()) {
+            throw new IllegalStateException("Camera not open");
         }
+
         if (size == DefaultResolution) {
             vi.setupDevice(deviceId);
         } else {
@@ -184,61 +182,15 @@ public class VideoCaptureDeviceVideoInput extends VideoCaptureDevice /* extends 
         if (!active()) {
             throw new IllegalArgumentException("Camera not opened: " + getDevicePath() + ":" + deviceId);
         }
-        setExposure();
-        setData(vi.getWidth(deviceId), vi.getHeight(deviceId));
+
+        updateCameraProps();
     }
 
-    private void setData(int width, int height) {
+    private void updateCameraProps() {
+        int width = vi.getWidth(deviceId);
+        int height = vi.getHeight(deviceId);
         captureSize = new Size(width, height);
         mat = new Mat(captureSize.height(), captureSize.width(), opencv_core.CV_8UC3);
-    }
-
-    private void setExposure() {
-        // set exposure time via Microsoft IAMCameraControl interface
-        // based on example code from
-        // http://stackoverflow.com/questions/36459563/getting-setting-camera-led-status-light-iusing-videoinput-logitech-c930e
-        @SuppressWarnings("unused")
-        int CameraControl_Pan = 0;
-        @SuppressWarnings("unused")
-        int CameraControl_Tilt = 1;
-        @SuppressWarnings("unused")
-        int CameraControl_Roll = 2;
-        @SuppressWarnings("unused")
-        int CameraControl_Zoom = 3;
-        int CameraControl_Exposure = 4;
-        @SuppressWarnings("unused")
-        int CameraControl_Iris = 5;
-        @SuppressWarnings("unused")
-        int CameraControl_Focus = 6;
-
-        int CameraControl_Flags_Auto = 0x0001;
-        int CameraControl_Flags_Manual = 0x0002;
-
-        int[] min = { 0 };
-        int[] max = { 0 };
-        int[] steppingDelta = { 0 };
-        int[] currentValue = { 0 };
-        int[] flags = { 0 };
-        int[] defaultValue = { 0 };
-
-        vi.getVideoSettingCamera(deviceId, CameraControl_Exposure, min, max, steppingDelta, currentValue, flags,
-                defaultValue);
-
-        if (currentValue[0] > 0) {
-            int exposure;
-            if (fps > 0) {
-                exposure = (int) (1000.0 / fps);
-                if (exposure < min[0]) {
-                    exposure = min[0];
-                } else if (exposure > max[0]) {
-                    exposure = max[0];
-                }
-            } else {
-                exposure = currentValue[0];
-            }
-            vi.setVideoSettingCamera(deviceId, CameraControl_Exposure, exposure,
-                    exposure > 0 ? CameraControl_Flags_Manual : CameraControl_Flags_Auto, false);
-        }
     }
 
     @Override

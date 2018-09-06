@@ -22,6 +22,13 @@ import teaselib.video.ResolutionList;
 import teaselib.video.VideoCaptureDevice;
 import teaselib.video.VideoCaptureDevices;
 
+/**
+ * videoInput-based implementation of video capture device. Has some issues (fails tests) but on the other hand the
+ * videoInput interface has some features opencv hasn't, so let's keep this for now as a backup.
+ * 
+ * @author Citizen-Cane
+ *
+ */
 public class VideoCaptureDeviceVideoInput extends VideoCaptureDevice /* extends WiredDevice */ {
     private static final Logger logger = LoggerFactory.getLogger(VideoCaptureDeviceVideoInput.class);
 
@@ -118,12 +125,14 @@ public class VideoCaptureDeviceVideoInput extends VideoCaptureDevice /* extends 
         if (!connected()) {
             connect();
         }
-        if (connected() && vi == null) {
-            vi = new videoInput();
-            vi.setUseCallback(true);
-            vi.setAutoReconnectOnFreeze(deviceId, true, 100);
-            vi.setupDevice(deviceId);
+        if (connected()) {
+            if (vi == null) {
+                vi = new videoInput();
+                vi.setUseCallback(true);
+                vi.setAutoReconnectOnFreeze(deviceId, true, 100);
+            }
 
+            vi.setupDevice(deviceId, DefaultResolution.width(), DefaultResolution.height());
             updateCameraProps();
         }
     }
@@ -174,11 +183,9 @@ public class VideoCaptureDeviceVideoInput extends VideoCaptureDevice /* extends 
             throw new IllegalStateException("Camera not open");
         }
 
-        if (size == DefaultResolution) {
-            vi.setupDevice(deviceId);
-        } else {
-            vi.setupDevice(deviceId, size.width(), size.height());
-        }
+        vi.stopDevice(deviceId);
+        vi.setupDevice(deviceId, size.width(), size.height());
+
         if (!active()) {
             throw new IllegalArgumentException("Camera not opened: " + getDevicePath() + ":" + deviceId);
         }

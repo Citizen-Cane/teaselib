@@ -17,81 +17,66 @@ import teaselib.video.VideoCaptureDevice;
 
 public class VideoCaptureDeviceSingleThreadedTest {
     @Test
-    public void testVideoCaptureOpeClose() {
-        Configuration config = DebugSetup.getConfiguration();
-        Devices devices = new Devices(config);
-        VideoCaptureDevice vc = devices.get(VideoCaptureDevice.class).getDefaultDevice();
-        DeviceCache.connect(vc);
-        assertFalse(vc.active());
+    public void testVideoCaptureOpenClose() {
+        VideoCaptureDevice vc = getDevice();
 
-        for (int i = 0; i < 2; i++)
+        for (int i = 0; i < 2; i++) {
             try (Size vga = new Size(640, 480); Size hd = new Size(1280, 720);) {
-                try {
-                    assertEquals(VideoCaptureDevice.DefaultResolution.width(), vc.resolution().width());
-                    assertEquals(VideoCaptureDevice.DefaultResolution.height(), vc.resolution().height());
-                } catch (IllegalStateException e) {
-                    // Correct
-                }
-
-                vc.open();
-                vc.resolution(hd);
-                assertEquals(hd.width(), vc.resolution().width());
-                assertEquals(hd.height(), vc.resolution().height());
-
-                Iterator<Mat> video = vc.iterator();
-                Mat image = video.next();
-                assertEquals(hd.width(), image.cols());
-                assertEquals(hd.height(), image.rows());
-
-                vc.resolution(vga);
-                assertEquals(vga.width(), vc.resolution().width());
-                assertEquals(vga.height(), vc.resolution().height());
-
-                image = video.next();
-                assertEquals(hd.width(), image.cols());
-                assertEquals(hd.height(), image.rows());
-
-                vc.close();
+                testRrsolutionSwitch(vc, vga, hd);
             }
+        }
     }
 
     @Test
     public void testVideoCaptureResolutionSwitch() {
+        VideoCaptureDevice vc = getDevice();
+
+        try (Size vga = new Size(640, 480); Size hd = new Size(1280, 720);) {
+            testRrsolutionSwitch(vc, vga, hd);
+        }
+    }
+
+    private static VideoCaptureDevice getDevice() {
         Configuration config = DebugSetup.getConfiguration();
         Devices devices = new Devices(config);
         VideoCaptureDevice vc = devices.get(VideoCaptureDevice.class).getDefaultDevice();
         DeviceCache.connect(vc);
         assertFalse(vc.active());
+        assertEquals(VideoCaptureDevice.DefaultResolution.width(), vc.resolution().width());
+        assertEquals(VideoCaptureDevice.DefaultResolution.height(), vc.resolution().height());
+        return vc;
+    }
 
-        try (Size vga = new Size(640, 480); Size hd = new Size(1280, 720);) {
-            try {
-                vc.resolution(hd);
-                assertEquals(VideoCaptureDevice.DefaultResolution.width(), vc.resolution().width());
-                assertEquals(VideoCaptureDevice.DefaultResolution.width(), vc.resolution().height());
-            } catch (IllegalStateException e) {
-                // Correct
-            }
-
-            vc.open();
+    private static void testRrsolutionSwitch(VideoCaptureDevice vc, Size vga, Size hd) {
+        try {
             vc.resolution(hd);
-            assertEquals(hd.width(), vc.resolution().width());
-            assertEquals(hd.height(), vc.resolution().height());
-
-            Iterator<Mat> video = vc.iterator();
-            Mat image = video.next();
-            assertEquals(hd.width(), image.cols());
-            assertEquals(hd.height(), image.rows());
-
-            vc.resolution(vga);
-            assertEquals(vga.width(), vc.resolution().width());
-            assertEquals(vga.height(), vc.resolution().height());
-
-            image = video.next();
-            assertEquals(hd.width(), image.cols());
-            assertEquals(hd.height(), image.rows());
-
-            vc.close();
+            fail();
+        } catch (IllegalStateException e) {
+            // Correct
         }
+
+        vc.open();
+        assertTrue(vc.resolution().width() > 0);
+        assertTrue(vc.resolution().height() > 0);
+        Iterator<Mat> video = vc.iterator();
+
+        vc.resolution(hd);
+        Mat image = video.next();
+        assertEquals(hd.width(), image.cols());
+        assertEquals(hd.height(), image.rows());
+
+        assertEquals(hd.width(), vc.resolution().width());
+        assertEquals(hd.height(), vc.resolution().height());
+
+        vc.resolution(vga);
+        image = video.next();
+        assertEquals(hd.width(), image.cols());
+        assertEquals(hd.height(), image.rows());
+
+        assertEquals(vga.width(), vc.resolution().width());
+        assertEquals(vga.height(), vc.resolution().height());
+
+        vc.close();
     }
 
     @Test

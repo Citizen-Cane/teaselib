@@ -17,15 +17,13 @@ public abstract class VideoCaptureDevice implements Iterable<Mat>, Device.Creata
             if (Instance == null) {
                 Instance = new DeviceCache<VideoCaptureDevice>()
                         .addFactory(VideoCaptureDeviceCV.getDeviceFactory(devices, configuration));
+                // .addFactory(VideoCaptureDeviceVideoInput.getDeviceFactory(devices, configuration));
             }
         }
-        // VideoCaptureDeviceCV mixes up opencv and videoInput device enumeration
-        // TODO Resolve VideoCaptureDeviceCV design issues and instantiate the correct factory
-        // (videoInput for Windows, VC otherwise) here
         return Instance;
     }
 
-    public static final Size DefaultResolution = new Size(0, 0);
+    public static final Size DefaultResolution = new Size(640, 480);
 
     public static final double DefaultFPS = 0.0;
 

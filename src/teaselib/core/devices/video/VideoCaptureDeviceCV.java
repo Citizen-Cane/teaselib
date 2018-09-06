@@ -25,6 +25,14 @@ import teaselib.video.ResolutionList;
 import teaselib.video.VideoCaptureDevice;
 import teaselib.video.VideoCaptureDevices;
 
+/**
+ * OpenCV-based video capture device. On Windows, videoInout is used to find out the device names, and to sort devices
+ * front to rear (if they have that word in the device name) in order to provide the front camera as the default device
+ * (notebooks and smart phones).
+ * 
+ * @author Citizen-Cane
+ *
+ */
 public class VideoCaptureDeviceCV extends VideoCaptureDevice /* extends WiredDevice */ {
     private static final Logger logger = LoggerFactory.getLogger(VideoCaptureDeviceCV.class);
 
@@ -38,6 +46,7 @@ public class VideoCaptureDeviceCV extends VideoCaptureDevice /* extends WiredDev
         }
 
         @Override
+        // TODO refactor device enumeration into sub-classes (videoInput vs opencv device numbers)
         public List<String> enumerateDevicePaths(Map<String, VideoCaptureDeviceCV> deviceCache) {
             final List<String> devicePaths;
             if (UseVideoInput) {

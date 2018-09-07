@@ -198,6 +198,11 @@ public class XInputStimulationDevice extends StimulationDevice {
     }
 
     @Override
+    public void playAll(StimulationTargets targets) {
+        stream.playAll(targets);
+    }
+
+    @Override
     public void append(StimulationTargets targets) {
         stream.append(targets);
     }

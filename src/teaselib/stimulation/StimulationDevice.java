@@ -83,6 +83,11 @@ public abstract class StimulationDevice implements Device.Creatable {
         }
 
         @Override
+        public void playAll(StimulationTargets targets) {
+            // Ignore
+        }
+
+        @Override
         public void append(StimulationTargets targets) {
             // Ignore
         }
@@ -117,8 +122,30 @@ public abstract class StimulationDevice implements Device.Creatable {
 
     public abstract List<Stimulator> stimulators();
 
+    /**
+     * Plays the targets in the current stream. Playing targets will be replaced, but targets on free chaneels will be
+     * mixed in.
+     * 
+     * @param targets
+     */
     public abstract void play(StimulationTargets targets);
 
+    /**
+     * Play all the targets, replacing any currently playing.
+     * 
+     * @param targets
+     */
+    public abstract void playAll(StimulationTargets targets);
+
+    /**
+     * Appends targets to the current stream. The current targets will be completed first, and the new ones seamlessly
+     * appended without resetting any stimulation outputs.
+     * <p>
+     * THis method almost behaves like play(), complete(), play(), but without stopping the sampler thread or clearing
+     * stimulation outputs.
+     * 
+     * @param targets
+     */
     public abstract void append(StimulationTargets targets);
 
     public abstract void stop();

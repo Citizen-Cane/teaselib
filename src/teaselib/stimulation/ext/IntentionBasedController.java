@@ -52,6 +52,8 @@ public class IntentionBasedController<T extends Enum<?>, B extends Enum<?>> {
         return play(intention, stimulation, 0);
     }
 
+    // TODO Add support for playAll(), append()
+    
     public IntentionBasedController<T, B> play(T intention, Stimulation stimulation, double durationSeconds) {
         long startMillis = 0;
         long durationMillis = TimeUnit.SECONDS.toMillis((long) durationSeconds);

@@ -60,6 +60,7 @@ public class XInputStimulationControllerTest {
         sleep(1000);
         logger.info("Stop");
         device.stop();
+        // TODO Stop does not work after the sampler task has been cancelled
 
         Stimulation stimulation = (stimulator, intensity) -> {
             double mimimalSignalDuration = stimulator.minimalSignalDuration();

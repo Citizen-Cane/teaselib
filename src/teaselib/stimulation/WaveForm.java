@@ -14,19 +14,18 @@ import java.util.List;
 // TODO Turn into interface and ArrayListBased waveform implementation, because arrays will be inefficient for
 // non-rectangular waveforms - this is closely tied to the XInput-Controller since that one is happy with square waves
 public class WaveForm implements Iterable<WaveForm.Sample> {
-
     public static final double MIN = 0.0;
     public static final double MAX = 1.0;
     public static final double MEAN = (MAX - MIN) / 2.0;
 
-    public static final WaveForm NONE = WaveForm.empty();
+    public static final WaveForm NONE = new WaveForm();
 
     public static class Entry {
         public final double amplitude;
         public final long durationMillis;
 
         public Entry(double amplitude, long durationMillis) {
-            if (durationMillis < 0)
+            if (durationMillis <= 0)
                 throw new IllegalArgumentException("Duration must be positive: " + durationMillis);
             this.amplitude = amplitude;
             this.durationMillis = durationMillis;
@@ -73,12 +72,6 @@ public class WaveForm implements Iterable<WaveForm.Sample> {
         this.end = 0;
     }
 
-    private static WaveForm empty() {
-        WaveForm empty = new WaveForm();
-        empty.add(0, 0);
-        return empty;
-    }
-
     public WaveForm(long startMillis, WaveForm waveForm) {
         this();
         add(0.0, startMillis);
@@ -87,8 +80,8 @@ public class WaveForm implements Iterable<WaveForm.Sample> {
         }
     }
 
-    public void add(double amplitude, long timeStampMillis) {
-        add(new Entry(amplitude, timeStampMillis));
+    public void add(double amplitude, long durationMillis) {
+        add(new Entry(amplitude, durationMillis));
     }
 
     private void add(Entry entry) {

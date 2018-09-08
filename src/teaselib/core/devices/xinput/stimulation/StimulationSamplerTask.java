@@ -151,6 +151,7 @@ public abstract class StimulationSamplerTask {
         }
     }
 
+    // TODO Thread ends when error occurs - non-blocking queue, wait on lock to wait for next batch, submit future again
     private void run() {
         try {
             while (!Thread.currentThread().isInterrupted()) {
@@ -181,16 +182,12 @@ public abstract class StimulationSamplerTask {
             playSamples(samples);
 
             long durationMillis = samples.getDurationMillis();
-            if (durationMillis == Long.MAX_VALUE && !iterator.hasNext()) {
+            if (durationMillis == Long.MAX_VALUE && !iterator.hasNext()
+                    || playNext.await(durationMillis, TimeUnit.MILLISECONDS)) {
                 // skip infinite sample duration at the end of the waveform
                 // - stimulation output is set to 0 automatically when the task is done
                 // -> this allows for continuous appending of additional stimulations
                 // TODO waveform duration is finite, so the infinite delay is irregular -> remove
-                break;
-            } else if (durationMillis == 0) {
-                // TODO Investigate 0 durations - should be skipped, but should also not be submitted by iterator
-                continue;
-            } else if (playNext.await(durationMillis, TimeUnit.MILLISECONDS)) {
                 break;
             }
         }

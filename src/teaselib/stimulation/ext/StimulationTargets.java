@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
@@ -275,11 +276,12 @@ public class StimulationTargets implements Iterable<Samples> {
     }
 
     public StimulationTargets continuedStimulation(StimulationTargets replacement, long startMillis) {
-        StimulationTargets continuation = new StimulationTargets(stimulators);
-
-        if (replacement == null || size() != replacement.size())
+        Objects.requireNonNull(replacement);
+        if (size() != replacement.size()) {
             throw new IllegalArgumentException(replacement.toString());
+        }
 
+        StimulationTargets continuation = new StimulationTargets(stimulators);
         for (int i = 0; i < stimulators.size(); i++) {
             Stimulator stimulator = stimulators.get(i);
             if (stimulator != replacement.stimulators.get(i))

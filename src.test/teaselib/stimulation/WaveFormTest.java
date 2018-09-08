@@ -86,7 +86,7 @@ public class WaveFormTest {
     @Test
     public void testWhip() {
         TestStimulator stim = new TestStimulator();
-        Whip whip = new Whip(1, 0);
+        Whip whip = new Whip(1, 1.0);
         stim.play(whip.waveform(stim, 0), 0, 0);
         logger.info("{}", stim.waveForm);
 

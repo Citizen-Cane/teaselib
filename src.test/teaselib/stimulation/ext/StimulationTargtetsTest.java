@@ -1,8 +1,6 @@
 package teaselib.stimulation.ext;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.*;
 
 import java.util.Iterator;
 import java.util.concurrent.TimeUnit;
@@ -322,6 +320,7 @@ public class StimulationTargtetsTest {
 
         Iterator<Samples> secondStim = continued.iterator();
         while (secondStim.hasNext()) {
+            @SuppressWarnings("unused")
             Samples samples = secondStim.next();
         }
     }

@@ -22,10 +22,20 @@ public class Whip implements Stimulation {
     private final double periodDurationSeconds;
 
     public Whip() {
-        this(1, DEFAULT_PERIOD_SECONDS);
+        this(1);
+    }
+
+    public Whip(int strokes) {
+        this(strokes, DEFAULT_PERIOD_SECONDS);
     }
 
     public Whip(int strokes, double periodDurationSeconds) {
+        if (strokes <= 0) {
+            throw new IllegalArgumentException("Strokes must be greater than 0");
+        }
+        if (periodDurationSeconds <= 0) {
+            throw new IllegalArgumentException("Period seconds must be greater than 0");
+        }
         this.strokes = strokes;
         this.periodDurationSeconds = periodDurationSeconds;
     }
@@ -33,6 +43,8 @@ public class Whip implements Stimulation {
     @Override
     public WaveForm waveform(Stimulator stimulator, int intensity) {
         double on = stimulator.minimalSignalDuration() * Stimulation.spreadRange(1.0, 2.0, intensity);
-        return new BurstSquareWave(strokes, on, Math.max(0, this.periodDurationSeconds - on));
+        return new BurstSquareWave(strokes, //
+                Math.min(on, periodDurationSeconds), //
+                Math.max(0, this.periodDurationSeconds - on));
     }
 }

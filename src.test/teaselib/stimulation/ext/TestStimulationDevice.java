@@ -9,7 +9,7 @@ import teaselib.core.devices.BatteryLevel;
 import teaselib.stimulation.StimulationDevice;
 import teaselib.stimulation.Stimulator;
 
-final class TestStimulationDevice extends StimulationDevice {
+public final class TestStimulationDevice extends StimulationDevice {
     List<Stimulator> stimulators = new ArrayList<>();
 
     public Stimulator add(Stimulator stimulator) {

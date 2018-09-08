@@ -10,13 +10,16 @@ package teaselib.stimulation;
 public class SquareWave extends WaveForm {
 
     public SquareWave(long onTimeMillis, long offTimeMillis) {
-        add(MAX, onTimeMillis);
-        add(MIN, offTimeMillis);
+        if (onTimeMillis > 0) {
+            add(MAX, onTimeMillis);
+        }
+        if (offTimeMillis > 0) {
+            add(MIN, offTimeMillis);
+        }
     }
 
     public SquareWave(double onTimeSeconds, double offTimeSeconds) {
-        add(MAX, toMillis(onTimeSeconds));
-        add(MIN, toMillis(offTimeSeconds));
+        this(toMillis(onTimeSeconds), toMillis(offTimeSeconds));
     }
 
     public static SquareWave get(double periodSeconds, double onPercentage) {

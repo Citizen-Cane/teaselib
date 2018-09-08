@@ -6,15 +6,12 @@ package teaselib.stimulation.ext;
 import teaselib.stimulation.StimulationDevice;
 import teaselib.stimulation.Stimulator;
 import teaselib.stimulation.WaveForm;
-import teaselib.stimulation.Stimulator.ChannelDependency;
-import teaselib.stimulation.Stimulator.Output;
-import teaselib.stimulation.Stimulator.Signal;
 
-final class TestStimulator implements Stimulator {
+public final class TestStimulator implements Stimulator {
     final StimulationDevice device;
     final int id;
 
-    TestStimulator(StimulationDevice device, int id) {
+    public TestStimulator(StimulationDevice device, int id) {
         this.device = device;
         this.id = id;
     }

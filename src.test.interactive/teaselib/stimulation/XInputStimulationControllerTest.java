@@ -46,6 +46,34 @@ public class XInputStimulationControllerTest {
     }
 
     @Test
+    public void testStimulationSimpleErrors() throws InterruptedException {
+        logger.info("Connected to {}", device);
+        device.setMode(Output.Vibration, Wiring.INFERENCE_CHANNEL);
+        assertEquals(3, device.stimulators().size());
+
+        EStimController stim = new EStimController();
+        EStimController.init(stim, device);
+
+        StimulationTargets constantSignal = constantSignal(device, 10, TimeUnit.SECONDS);
+        logger.info("Playing {}", constantSignal);
+        device.play(constantSignal);
+        sleep(1000);
+        logger.info("Stop");
+        device.stop();
+
+        Stimulation stimulation = (stimulator, intensity) -> {
+            double mimimalSignalDuration = stimulator.minimalSignalDuration();
+            return new BurstSquareWave(2, mimimalSignalDuration, 1.0 - mimimalSignalDuration);
+        };
+
+        logger.info("Playing {} {}", Intention.Pace, stimulation);
+        stim.play(Intention.Pace, stimulation);
+        logger.info("Completing");
+        stim.complete(Intention.Pace);
+        logger.info("Done");
+    }
+
+    @Test
     public void testStimulationSampling() throws InterruptedException {
         logger.info("Connected to {}", device);
         device.setMode(Output.Vibration, Wiring.INFERENCE_CHANNEL);
@@ -60,7 +88,8 @@ public class XInputStimulationControllerTest {
         sleep(1000);
         logger.info("Stop");
         device.stop();
-        // TODO Stop does not work after the sampler task has been cancelled
+        // Stop does not work after the sampler task has been cancelled
+        // TODO assert that device is stopped and sampler task is done or idle
 
         Stimulation stimulation = (stimulator, intensity) -> {
             double mimimalSignalDuration = stimulator.minimalSignalDuration();
@@ -73,10 +102,10 @@ public class XInputStimulationControllerTest {
             logger.info("Playing {} {}", intention, stimulation);
             stim.play(intention, stimulation);
             logger.info("Completing");
+            // Completing mixes constant signal? plus pace together, emitting a 0 duration sample
             stim.complete(intention);
         }
-        sleep(250);
-        stim.stop();
+        // TODO Check all completed
 
         logger.info("Playing multiple patterns");
         // TODO overload method with duration parameter for each channel
@@ -104,13 +133,14 @@ public class XInputStimulationControllerTest {
 
         logger.info("Playing Walk repeated {}", walkRepeated);
         stim.play(Intention.Pace, walkRepeated, 2.0);
-        logger.info("Completing");
+        logger.info("Completing walkRepeated");
         stim.complete();
 
         logger.info("Playing Walk repeated {}", walkRepeated);
         stim.play(Intention.Pace, walkRepeated, 2.0);
-        logger.info("Stopping");
+        logger.info("Stopping walkRepeated");
         stim.stop(Intention.Pace);
+        logger.info("Done");
     }
 
     private static void sleep(long millis) throws InterruptedException {

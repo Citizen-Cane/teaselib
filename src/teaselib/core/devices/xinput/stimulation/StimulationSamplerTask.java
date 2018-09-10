@@ -1,5 +1,6 @@
 package teaselib.core.devices.xinput.stimulation;
 
+import java.util.Date;
 import java.util.Iterator;
 import java.util.Objects;
 import java.util.concurrent.BlockingQueue;
@@ -28,7 +29,6 @@ public abstract class StimulationSamplerTask {
 
     private Future<?> future;
     private long startTimeMillis;
-    private Samples samples;
 
     public StimulationSamplerTask() {
         runSampleThread();
@@ -37,25 +37,26 @@ public abstract class StimulationSamplerTask {
     public void play(StimulationTargets targets) {
         Objects.requireNonNull(targets);
 
-        startSampleThread();
-        long now = System.currentTimeMillis();
         StimulationTargets previous = playing.get();
         if (previous != null) {
-            // TODO continued playing will be slightly off from actual time duration because
-            // the sampler ignores execution time between await() calls
             prepareToPlayNext();
-            queue(previous.continuedStimulation(targets, now - startTimeMillis), now);
+            long now = System.currentTimeMillis();
+            queue(previous.continuedStimulation(targets, now - startTimeMillis));
         } else {
-            queue(targets, now);
+            queue(targets);
         }
     }
 
     public void playAll(StimulationTargets targets) {
+        Objects.requireNonNull(targets);
+
         prepareToPlayNext();
         queue(targets);
     }
 
     public void append(StimulationTargets targets) {
+        Objects.requireNonNull(targets);
+
         queue(targets);
     }
 
@@ -71,36 +72,20 @@ public abstract class StimulationSamplerTask {
     /**
      * Play new targets after the current has been finished.
      * 
-     * @param newTargets
+     * @param targets
      * @param now
      */
-    private void queue(StimulationTargets newTargets) {
+    private void queue(StimulationTargets targets) {
+        ensureSampleThreadIsRunning();
         try {
-            playList.put(newTargets);
-            startTimeMillis = System.currentTimeMillis();
+            offer(targets);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new ScriptInterruptedException(e);
         }
     }
 
-    /**
-     * Play new targets after the current has been finished.
-     * 
-     * @param newTargets
-     * @param now
-     */
-    private void queue(StimulationTargets newTargets, long now) {
-        try {
-            playList.put(newTargets);
-            startTimeMillis = now;
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new ScriptInterruptedException(e);
-        }
-    }
-
-    private void startSampleThread() {
+    private void ensureSampleThreadIsRunning() {
         if (future == null) {
             runSampleThread();
         } else if (future.isCancelled()) {
@@ -116,21 +101,19 @@ public abstract class StimulationSamplerTask {
     }
 
     public void stop() {
-        try {
-            if (future != null && !future.isCancelled() && !future.isDone()) {
-                future.cancel(true);
-            }
-            handleExceptions();
-        } finally {
-            // race condition If cancel() returns before current set starts
-            // TODO handleExceptions() does not wait for future to complete
-            // playing.set(null);
+        if (future != null && !future.isCancelled() && !future.isDone()) {
+            future.cancel(true);
+        } else {
+            convertExecutionToRuntimeException();
         }
     }
 
     public void complete() {
         try {
-            playList.put(StimulationTargets.None);
+            while (future != null && !future.isCancelled() && !future.isDone()) {
+                if (offer(StimulationTargets.None, 1, TimeUnit.SECONDS))
+                    break;
+            }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new ScriptInterruptedException(e);
@@ -138,11 +121,25 @@ public abstract class StimulationSamplerTask {
         handleExceptions();
     }
 
+    private void offer(StimulationTargets targets) throws InterruptedException {
+        while (!offer(targets, 1, TimeUnit.SECONDS)) {
+            handleExceptions();
+        }
+    }
+
+    private boolean offer(StimulationTargets targets, long duration, TimeUnit unit) throws InterruptedException {
+        return playList.offer(targets, duration, unit);
+    }
+
     private void handleExceptions() {
+        if (!future.isCancelled() && future.isDone()) {
+            convertExecutionToRuntimeException();
+        }
+    }
+
+    private void convertExecutionToRuntimeException() {
         try {
-            if (!future.isCancelled() && future.isDone()) {
-                future.get();
-            }
+            future.get();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new ScriptInterruptedException(e);
@@ -157,6 +154,7 @@ public abstract class StimulationSamplerTask {
             while (!Thread.currentThread().isInterrupted()) {
                 playing.set(playList.take());
                 lock.lockInterruptibly();
+                startTimeMillis = System.currentTimeMillis();
                 try {
                     if (playing.get() == StimulationTargets.None) {
                         clearSamples();
@@ -177,13 +175,15 @@ public abstract class StimulationSamplerTask {
 
     private void renderSamples(StimulationTargets targets) throws InterruptedException {
         Iterator<Samples> iterator = targets.iterator();
+        Date date = new Date();
         while (iterator.hasNext()) {
-            samples = iterator.next();
+            Samples samples = iterator.next();
             playSamples(samples);
 
             long durationMillis = samples.getDurationMillis();
-            if (durationMillis == Long.MAX_VALUE && !iterator.hasNext()
-                    || playNext.await(durationMillis, TimeUnit.MILLISECONDS)) {
+            long timeStampMillis = samples.getTimeStampMillis();
+            date.setTime(startTimeMillis + timeStampMillis + durationMillis);
+            if (durationMillis == Long.MAX_VALUE && !iterator.hasNext() || playNext.awaitUntil(date)) {
                 // skip infinite sample duration at the end of the waveform
                 // - stimulation output is set to 0 automatically when the task is done
                 // -> this allows for continuous appending of additional stimulations

@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -171,10 +170,12 @@ public class TeaseLib {
 
                 TeaseLib teaseLib = new TeaseLib(host, persistence);
                 teaseLib.run(script);
-            } catch (IOException | RuntimeException e) {
+            } catch (MainScriptConstructorMissingException e) {
+                throw e;
+            } catch (IOException | RuntimeException | ReflectiveOperationException e) {
                 throw e;
             } catch (Exception e) {
-                throw new ReflectiveOperationException("Could not add URL to system classloader");
+                throw new ReflectiveOperationException("Could not add URL to system classloader", e);
             }
         }
     }
@@ -195,14 +196,25 @@ public class TeaseLib {
                 logger.error(ignored.getMessage(), ignored);
             }
             throw t;
-        } finally {
-            host.show(null, "");
         }
+        host.show(null, "");
     }
 
-    private RunnableScript script(Class<RunnableScript> scriptClass)
-            throws NoSuchMethodException, InstantiationException, IllegalAccessException, InvocationTargetException {
-        Constructor<?> mainscriptConstructor = scriptClass.getConstructor(TeaseLib.class);
+    static class MainScriptConstructorMissingException extends NoSuchMethodException {
+        public MainScriptConstructorMissingException(NoSuchMethodException e) {
+            super("Missing mainscript constructor " + e.getMessage());
+        }
+
+        private static final long serialVersionUID = 1L;
+    }
+
+    private RunnableScript script(Class<RunnableScript> scriptClass) throws ReflectiveOperationException {
+        Constructor<?> mainscriptConstructor;
+        try {
+            mainscriptConstructor = scriptClass.getConstructor(TeaseLib.class);
+        } catch (NoSuchMethodException e) {
+            throw new MainScriptConstructorMissingException(e);
+        }
         return (RunnableScript) mainscriptConstructor.newInstance(this);
     }
 

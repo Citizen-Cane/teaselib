@@ -170,8 +170,6 @@ public class TeaseLib {
 
                 TeaseLib teaseLib = new TeaseLib(host, persistence);
                 teaseLib.run(script);
-            } catch (MainScriptConstructorMissingException e) {
-                throw e;
             } catch (IOException | RuntimeException | ReflectiveOperationException e) {
                 throw e;
             } catch (Exception e) {

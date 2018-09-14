@@ -540,7 +540,7 @@ public abstract class TeaseScript extends TeaseScriptMath {
     }
 
     public final void chat(String chat) {
-        showChoices(Arrays.asList(Answer.yes(chat), Answer.no(chat)), null, Intention.Chat);
+        showChoices(Arrays.asList(Answer.resume(chat)), null, Intention.Chat);
     }
 
     public final void chat(Answer chat) {

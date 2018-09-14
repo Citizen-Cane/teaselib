@@ -1,6 +1,7 @@
 package teaselib.core.ui;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -21,8 +22,22 @@ public class Choices extends ArrayList<Choice> {
         return stream().map(choice -> choice.gesture).collect(Collectors.toList());
     }
 
-    public Choices(List<Choice> c) {
-        super(c);
+    public Choices(List<Choice> choices) {
+        super(choices);
+        checkForDuplicates(this);
+    }
+
+    private static void checkForDuplicates(Choices choices) {
+        check(choices.toText(), "Duplicate result text");
+        check(choices.toDisplay(), "Duplicate display texts");
+        check(choices.toGestures().stream().filter(gesture -> gesture != Gesture.None).collect(Collectors.toList()),
+                "Duplicate gestures");
+    }
+
+    private static <T> void check(List<T> choices, String message) {
+        if (choices.size() > new HashSet<>(choices).size()) {
+            throw new IllegalArgumentException(message + ": " + choices);
+        }
     }
 
     public Choices(int size) {

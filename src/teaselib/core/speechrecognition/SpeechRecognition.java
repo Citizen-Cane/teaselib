@@ -171,6 +171,9 @@ public class SpeechRecognition {
                 } catch (Throwable t) {
                     logger.error(t.getMessage(), t);
                     sr = null;
+                    throw new RuntimeException(t);
+                    // TODO Handle COM-error 0x8004503a SPERR_NOT_FOUND
+                    // -> download speech recognition pack for the selected language
                 }
             });
         } catch (InterruptedException e) {

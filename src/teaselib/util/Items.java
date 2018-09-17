@@ -9,7 +9,6 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import teaselib.core.state.ItemProxy;
 import teaselib.core.util.QualifiedItem;
@@ -41,16 +40,17 @@ public class Items extends ArrayList<Item> {
         super(capacity);
     }
 
-    public Stream<Item> filter(Predicate<? super Item> predicate) {
-        return stream().filter(predicate);
+    public Items filter(Predicate<? super Item> predicate) {
+        List<Item> list = stream().filter(predicate).collect(Collectors.toList());
+        return new Items(list);
     }
 
     public boolean anyAvailable() {
-        return filter(Item::isAvailable).count() > 0;
+        return stream().filter(Item::isAvailable).count() > 0;
     }
 
     public boolean allAvailable() {
-        return filter(Item::isAvailable).count() == size();
+        return stream().filter(Item::isAvailable).count() == size();
     }
 
     public boolean anyApplicable() {
@@ -78,15 +78,15 @@ public class Items extends ArrayList<Item> {
     }
 
     public Items getAvailable() {
-        return new Items(filter(Item::isAvailable).collect(Collectors.toList()));
+        return new Items(filter(Item::isAvailable));
     }
 
     public Items getApplicable() {
-        return new Items(filter(Item::canApply).collect(Collectors.toList()));
+        return new Items(filter(Item::canApply));
     }
 
     public Items getApplied() {
-        return new Items(filter(Item::applied).collect(Collectors.toList()));
+        return new Items(filter(Item::applied));
     }
 
     // TODO Changes meaning of canApply to allAvailable() && allApplicable() - but canApply is used to solely in

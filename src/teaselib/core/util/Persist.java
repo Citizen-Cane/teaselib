@@ -1,6 +1,7 @@
 package teaselib.core.util;
 
 import java.lang.reflect.Constructor;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
@@ -9,7 +10,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class Persist {
-    public static final String PERSISTED_STRING_SEPARATOR = " ";
+    private static final String PERSISTED_STRING_SEPARATOR = " ";
 
     private static final String CLASS_NAME = "Class=";
     private static final String ELEMENT_SEPARATOR = " ";
@@ -40,7 +41,7 @@ public class Persist {
         }
 
         // TODO private - used by PersistTest - replace with call to other constructor
-        Storage(String serialized) {
+        public Storage(String serialized) {
             this(fields(serialized));
         }
 
@@ -48,8 +49,8 @@ public class Persist {
             return Persist.from(field.next());
         }
 
-        private static List<String> fields(String serialized) {
-            return Arrays.asList(serialized.split(" "));
+        private static List<String> fields(String persistedValues) {
+            return fromList(persistedValues);
         }
 
         public boolean hasNext() {
@@ -64,6 +65,14 @@ public class Persist {
                 throw new IllegalArgumentException("Provide class factory for " + clazz.getName());
             }
         }
+    }
+
+    public static String persist(Collection<?> persistable) {
+        String className = persistable.getClass().getName();
+        Collection<?> values = persistable;
+        // TODO Resolve code duplication with persistedInstance(String className, List<String> values)
+        List<String> persistedValues = values.stream().map(Persist::persist).collect(Collectors.toList());
+        return persistedInstance(className, joinPersistedValues(persistedValues));
     }
 
     public static String persist(Object persistable) {
@@ -86,13 +95,14 @@ public class Persist {
         return persistedInstance(object, joinPersistedValues(values));
     }
 
+    // TODO Generalize since just needed by ActionState -> any type, similar to persist(Collection<?>
     public static String persistedInstance(Class<? extends Persistable> clazz, List<String> values) {
         return persistedInstance(clazz.getName(), values);
     }
 
     public static String persistedInstance(String className, List<String> values) {
-        return persistedInstance(className,
-                joinPersistedValues(values.stream().map(Persist::persist).collect(Collectors.toList())));
+        List<String> persistedValues = values.stream().map(Persist::persist).collect(Collectors.toList());
+        return persistedInstance(className, joinPersistedValues(persistedValues));
     }
 
     private static String persistedInstance(Object object, String persistedValues) {
@@ -113,13 +123,10 @@ public class Persist {
 
     private static String joinPersistedValues(List<String> list) {
         StringBuilder serialized = new StringBuilder();
-        boolean insertSeparator = false;
+        serialized.append(list.size());
         for (String string : list) {
-            if (insertSeparator) {
-                serialized.append(ELEMENT_SEPARATOR);
-            }
+            serialized.append(ELEMENT_SEPARATOR);
             serialized.append(string);
-            insertSeparator = true;
         }
         return serialized.toString();
     }
@@ -136,6 +143,47 @@ public class Persist {
         return deserialize(className(persisted), persistedValue(persisted), Optional.of(factory));
     }
 
+    // TODO Review, as this just splits the list values, but does not restore the list itself
+    public static List<String> fromList(String persistedList) {
+        String[] array = splitTopLevelElements(persistedList);
+        int size = Integer.parseInt(array[0]);
+        String[] values = hackAroundNestedObjects(array);
+        if (size != values.length) {
+            throw new IllegalArgumentException(
+                    "Persisted value list size mismatch: " + size + "!= sizeof" + Arrays.toString(values));
+        }
+        return Arrays.asList(values);
+    }
+
+    private static String[] hackAroundNestedObjects(String[] array) {
+        String[] valuesFlat = Arrays.copyOfRange(array, 1, array.length);
+
+        // Hack around until we have a good solution for nested objects
+        List<String> topLevel = new ArrayList<>();
+        Iterator<String> value = Arrays.asList(valuesFlat).iterator();
+        while (value.hasNext()) {
+            String string = value.next();
+            if (string.equals("Class=teaselib.util.ItemImpl;Value=2")) {
+                StringBuilder nested = new StringBuilder();
+                nested.append(string);
+                nested.append(PERSISTED_STRING_SEPARATOR);
+                nested.append(value.next());
+                nested.append(PERSISTED_STRING_SEPARATOR);
+                nested.append(value.next());
+                topLevel.add(nested.toString());
+            } else {
+                topLevel.add(string);
+            }
+        }
+
+        return topLevel.toArray(new String[0]);
+    }
+
+    private static String[] splitTopLevelElements(String persistedList) {
+        String[] array = persistedList.split(Persist.PERSISTED_STRING_SEPARATOR);
+        return array;
+    }
+
     // TODO package or private - used by StateImpl
     public static String className(String persisted) {
         return persisted.substring(CLASS_NAME.length(),
@@ -149,25 +197,35 @@ public class Persist {
     }
 
     @SuppressWarnings("unchecked")
-    private static <T> T deserialize(String className, String stringRepresentation, Optional<Factory> factory) {
+    private static <T> T deserialize(String className, String persisted, Optional<Factory> factory) {
         try {
             Class<?> clazz = Class.forName(className);
             if (clazz.isEnum()) {
                 @SuppressWarnings("rawtypes")
                 Class<Enum> enumClass = (Class<Enum>) clazz;
-                Enum<?> enumValue = Enum.valueOf(enumClass, stringRepresentation);
+                // One field exactly
+                Enum<?> enumValue = Enum.valueOf(enumClass, persisted);
                 return (T) enumValue;
+            } else if (Iterable.class.isAssignableFrom(clazz)) {
+                // Probably all fields of the string
+                List<String> values = Persist.fromList(persisted);
+                List<?> restored = new ArrayList<>();
+                for (String value : values) {
+                    restored.add(from(value));
+                }
+                return (T) restored;
             } else if (Persist.Persistable.class.isAssignableFrom(clazz)) {
                 Constructor<?> constructor = clazz.getDeclaredConstructor(Persist.Storage.class);
-                List<String> fields = Storage.fields(stringRepresentation);
+                // n fields, followed by more fields
+                List<String> fields = Storage.fields(persisted);
                 Storage storage = factory.isPresent() ? new Storage(fields, factory.get()) : new Storage(fields);
                 return (T) constructor.newInstance(storage);
-            } else {
+            } else { // default string constructor
                 Constructor<?> constructor = clazz.getDeclaredConstructor(String.class);
-                return (T) constructor.newInstance(stringRepresentation);
+                return (T) constructor.newInstance(persisted);
             }
         } catch (ReflectiveOperationException e) {
-            throw new IllegalArgumentException("Cannot restore " + className + ":" + stringRepresentation, e);
+            throw new IllegalArgumentException("Cannot restore " + className + ":" + persisted, e);
         }
     }
 

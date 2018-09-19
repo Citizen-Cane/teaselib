@@ -61,7 +61,7 @@ public class TeaseLib {
 
     public final Host host;
     private final Persistence persistence;
-    private final UserItems userItems;
+    final UserItems userItems;
     public final TeaseLibLogger transcript;
 
     public final Configuration config;

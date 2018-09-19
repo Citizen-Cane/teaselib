@@ -101,6 +101,7 @@ public class Debugger {
 
     public void clearStateMaps() {
         teaseLib.stateMaps.clear();
+        ((UserItemsImpl) teaseLib.userItems).clearCachedItems();
     }
 
     public void addResponses(Collection<ResponseAction> responses) {

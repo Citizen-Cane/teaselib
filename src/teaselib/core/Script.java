@@ -219,6 +219,7 @@ public abstract class Script {
         }
     }
 
+    // TODO Refactor prependedMessage/renderMessage fields to global pool to make prepend/append work across scripts
     private final List<Message> prependedMessages = new ArrayList<>();
     private RenderMessage renderMessage = null;
 

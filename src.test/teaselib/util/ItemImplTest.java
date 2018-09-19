@@ -387,5 +387,4 @@ public class ItemImplTest {
         assertEquals(wristRestraints, temporaryWristRestraints);
         assertTrue(temporaryItems.contains(Toys.Wrist_Restraints));
     }
-
 }

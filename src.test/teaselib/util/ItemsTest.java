@@ -6,6 +6,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.junit.Test;
 
+import teaselib.Accessoires;
 import teaselib.Body;
 import teaselib.Clothes;
 import teaselib.Features;
@@ -331,5 +332,62 @@ public class ItemsTest {
 
         restraints.remove();
         assertFalse(restraints.anyApplied());
+    }
+
+    @Test
+    public void testWhatItemHasBeenApplied() {
+        TestScript script = TestScript.getOne();
+        script.addTestUserItems();
+
+        assertFalse(script.state(Toys.Wrist_Restraints).applied());
+
+        Item leatherCuffs = script.items(Toys.Wrist_Restraints).query(Material.Leather).get();
+        Item handCuffs = script.items(Toys.Wrist_Restraints).query(Material.Metal).get();
+
+        assertNotEquals(leatherCuffs, handCuffs);
+
+        leatherCuffs.apply();
+
+        assertTrue(script.state(Body.WristsTied).is(leatherCuffs));
+        assertFalse(script.state(Body.WristsTied).is(handCuffs));
+
+        assertTrue(leatherCuffs.applied());
+        assertFalse(handCuffs.applied());
+    }
+
+    @Test
+    public void testAppliedItems() {
+        TestScript script = TestScript.getOne();
+        script.addTestUserItems();
+
+        Items restraints = script.items(Toys.Wrist_Restraints);
+        assertEquals(2, restraints.size());
+
+        script.item(Toys.Wrist_Restraints).apply();
+
+        Items applied = script.items(Toys.Wrist_Restraints).query(script.namespace).getApplied();
+        assertEquals(1, applied.size());
+
+        Items applied2 = script.items(Toys.values(), Clothes.values(), Accessoires.values()).query(script.namespace)
+                .filter(Item::applied).filter(Item::expired);
+        assertEquals(1, applied2.size());
+    }
+
+    @Test
+    public void testExplicitelyAppliedItems() {
+        TestScript script = TestScript.getOne();
+        script.addTestUserItems();
+
+        Items restraints = script.items(Toys.Wrist_Restraints);
+        assertEquals(2, restraints.size());
+
+        restraints.get().apply();
+
+        Items applied = script.items(Toys.Wrist_Restraints).query(script.namespace).getApplied();
+        assertEquals(1, applied.size());
+
+        Items applied2 = script.items(Toys.values(), Clothes.values(), Accessoires.values()).query(script.namespace)
+                .filter(Item::applied);
+        assertEquals(1, applied2.size());
     }
 }

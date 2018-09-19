@@ -15,6 +15,7 @@ import teaselib.State;
 import teaselib.core.StateImpl;
 import teaselib.core.StateMaps;
 import teaselib.core.TeaseLib;
+import teaselib.core.devices.ActionState;
 import teaselib.core.state.AbstractProxy;
 import teaselib.core.util.Persist;
 import teaselib.core.util.Persist.Persistable;
@@ -55,14 +56,15 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
         this.attributes = attributes(item, attributes);
     }
 
-    public static ItemImpl restore(TeaseLib teaseLib, String domain, Persist.Storage storage) {
+    public static ItemImpl restoreFromUserItems(TeaseLib teaseLib, String domain, Persist.Storage storage) {
+        String item = storage.next();
         String guid = storage.next();
-        return (ItemImpl) teaseLib.item(domain, guid);
+        return (ItemImpl) teaseLib.getByGuid(domain, item, guid);
     }
 
     @Override
     public List<String> persisted() {
-        return Arrays.asList(Persist.persist(guid));
+        return Arrays.asList(Persist.persist(QualifiedItem.of(item).toString()), Persist.persist(guid));
     }
 
     private static Set<Object> attributes(Object item, Object[] attributes) {
@@ -125,7 +127,13 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
 
     @Override
     public boolean applied() {
-        return teaseLib.state(domain, item).applied();
+        if (teaseLib.state(domain, item).applied()) {
+            long count = peers().stream().filter(peer -> !(peer instanceof ActionState))
+                    .filter(peer -> teaseLib.state(domain, peer).is(this)).count();
+            return count == peers().size();
+        } else {
+            return false;
+        }
     }
 
     @Override

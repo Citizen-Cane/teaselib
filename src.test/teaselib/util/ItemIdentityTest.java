@@ -14,6 +14,7 @@ import teaselib.TeaseScript;
 import teaselib.Toys;
 import teaselib.core.TeaseLib;
 import teaselib.core.state.ItemProxy;
+import teaselib.core.util.Persist;
 import teaselib.test.TestScript;
 
 /**
@@ -239,6 +240,26 @@ public class ItemIdentityTest {
     }
 
     @Test
+    public void testItemImplPersistance() {
+        TestScript script = TestScript.getOne();
+        script.debugger.freezeTime();
+        ItemImpl gag = (ItemImpl) ((ItemProxy) script.item(Toys.Gag)).item;
+
+        String persisted = Persist.persist(gag);
+        Persist.Storage storage = new Persist.Storage(Persist.persistedValue((persisted)));
+        Item restored = ItemImpl.restoreFromUserItems(script.teaseLib, TeaseLib.DefaultDomain, storage);
+
+        assertSame(gag, restored);
+
+        script.debugger.clearStateMaps();
+        Persist.Storage storage2 = new Persist.Storage(Persist.persistedValue((persisted)));
+        Item restored2 = ItemImpl.restoreFromUserItems(script.teaseLib, TeaseLib.DefaultDomain, storage2);
+
+        assertNotSame(gag, restored2);
+        assertEquals(gag, restored2);
+    }
+
+    @Test
     public void testItemPersistanceAndRestoreSimple() {
         TestScript script = TestScript.getOne();
         script.debugger.freezeTime();
@@ -267,6 +288,12 @@ public class ItemIdentityTest {
         Items gags = script.items(Toys.Gag);
         ringGag = gags.query(Toys.Gags.Ring_Gag).get();
 
+        State inMouth = script.state(Body.InMouth);
+        assertTrue(inMouth.applied());
+        assertTrue(inMouth.is(Toys.Gag));
+        assertTrue(inMouth.is(Toys.Gags.Ring_Gag));
+        assertTrue(inMouth.is(script.namespace));
+
         verifyApplied(script, ringGag);
     }
 
@@ -282,6 +309,9 @@ public class ItemIdentityTest {
 
         State inMouth = script.state(Body.InMouth);
         assertTrue(inMouth.applied());
+        assertTrue(inMouth.is(Toys.Gag));
+        assertTrue(inMouth.is(Toys.Gags.Ring_Gag));
+        assertTrue(inMouth.is(script.namespace));
 
         Items gags = script.items(Toys.Gag);
         ringGag = gags.query(Toys.Gags.Ring_Gag).get();

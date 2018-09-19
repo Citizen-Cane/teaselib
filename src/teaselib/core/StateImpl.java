@@ -130,10 +130,20 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
     }
 
     private void restorePeers() {
+        // TODO Restoring straight forward does not work since we have to process ItemImpl separately
+        // if (peerStorage.available()) {
+        // peers.addAll(Persist.from(peerStorage.value()));
+        //
+        // if (peers.isEmpty()) {
+        // remove();
+        // }
+        // }
+
         if (peerStorage.available()) {
-            String[] serializedPeers = peerStorage.value().split(Persist.PERSISTED_STRING_SEPARATOR);
-            for (String serializedPeer : serializedPeers) {
-                restorePersistedPeer(serializedPeer);
+            String persisted = peerStorage.value();
+            List<String> presistedPeers = Persist.fromList(Persist.persistedValue(persisted));
+            for (String persistedPeer : presistedPeers) {
+                restorePersistedPeer(persistedPeer);
             }
 
             if (peers.isEmpty()) {
@@ -144,8 +154,8 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
 
     private void restorePersistedPeer(String persistedPeer) {
         if (Persist.className(persistedPeer).equals(ItemImpl.class.getName())) {
-            Persist.Storage storage = new Persist.Storage(Arrays.asList(Persist.persistedValue(persistedPeer)));
-            ItemImpl peer = ItemImpl.restore(stateMaps.teaseLib, domain, storage);
+            Persist.Storage storage = new Persist.Storage(Persist.fromList(Persist.persistedValue(persistedPeer)));
+            ItemImpl peer = ItemImpl.restoreFromUserItems(stateMaps.teaseLib, domain, storage);
             addPeerThatHasBeenPersistedWithMe(peer, QualifiedItem.of(peer.item));
         } else {
             addAppliedOrPersistedPeer(Persist.<Object> from(persistedPeer));
@@ -173,10 +183,7 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
 
     private void restoreAttributes() {
         if (attributeStorage.available()) {
-            String[] serializedAttributes = attributeStorage.value().split(Persist.PERSISTED_STRING_SEPARATOR);
-            for (String serializedAttribute : serializedAttributes) {
-                attributes.add(Persist.from(serializedAttribute));
-            }
+            attributes.addAll(Persist.from(attributeStorage.value()));
         }
     }
 
@@ -210,14 +217,7 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
         if (peers.isEmpty()) {
             peerStorage.clear();
         } else {
-            StringBuilder s = new StringBuilder();
-            for (Object peer : peers) {
-                if (s.length() > 0) {
-                    s.append(Persist.PERSISTED_STRING_SEPARATOR);
-                }
-                s.append(Persist.persist(peer));
-            }
-            peerStorage.set(s.toString());
+            peerStorage.set(Persist.persist(peers));
         }
     }
 
@@ -225,14 +225,7 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
         if (attributes.isEmpty()) {
             attributeStorage.clear();
         } else {
-            StringBuilder persisted = new StringBuilder();
-            for (Object attribute : attributes) {
-                if (persisted.length() > 0) {
-                    persisted.append(Persist.PERSISTED_STRING_SEPARATOR);
-                }
-                persisted.append(Persist.persist(attribute));
-            }
-            attributeStorage.set(persisted.toString());
+            attributeStorage.set(Persist.persist(attributes));
         }
     }
 

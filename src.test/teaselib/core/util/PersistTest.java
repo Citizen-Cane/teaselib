@@ -37,10 +37,12 @@ public class PersistTest {
         assertEquals(Boolean.valueOf(true), Persist.from(Persist.persist(Boolean.valueOf(true))));
     }
 
-    @Test(expected = UnsupportedOperationException.class)
+    @Test
     public void testPersistCollection() throws Exception {
         Collection<?> test = Arrays.asList("Foo", 1, 2L, 2.7f, 3.14159, false, true);
-        assertEquals(test, Persist.from(Persist.persist(test)));
+        String persisted = Persist.persist(test);
+        Collection<?> restored = Persist.from(persisted);
+        assertEquals(test, restored);
     }
 
     public static final class PersistableImplementation<T> extends ArrayList<T> implements Persist.Persistable {
@@ -82,6 +84,7 @@ public class PersistTest {
         assertEquals(Double.valueOf(3.14159d), storage.next());
         assertEquals(false, storage.next());
         assertEquals(true, storage.next());
+        assertFalse(storage.hasNext());
 
         storage = new Persist.Storage(Persist.persistedValue(persisted));
         List<Object> restored = new ArrayList<>(7);

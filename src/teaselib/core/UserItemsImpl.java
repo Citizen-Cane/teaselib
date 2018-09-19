@@ -87,6 +87,10 @@ public class UserItemsImpl implements UserItems {
         Objects.requireNonNull(url);
 
         loadOrder.add(url);
+        clearCachedItems();
+    }
+
+    public void clearCachedItems() {
         domainMap.clear();
     }
 

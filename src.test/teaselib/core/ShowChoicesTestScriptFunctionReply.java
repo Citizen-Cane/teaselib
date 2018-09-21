@@ -44,7 +44,7 @@ public class ShowChoicesTestScriptFunctionReply extends ShowChoicesAbstractTest 
 
         script.say("In main script.");
         assertEquals("Stop", script.reply(() -> {
-            script.queueRenderer(new DebugInfiniteDelay(script.teaseLib));
+            script.scriptRenderer.queueRenderer(new DebugInfiniteDelay(script.teaseLib));
             script.say("Inside script function.");
         }, "Stop"));
         script.say("Resuming main script");
@@ -62,7 +62,7 @@ public class ShowChoicesTestScriptFunctionReply extends ShowChoicesAbstractTest 
             assertEquals("No Level 1", script.reply("Yes Level 1", "No Level 1"));
 
             assertEquals("Stop script function 2", script.reply(() -> {
-                script.queueRenderer(new DebugInfiniteDelay(script.teaseLib));
+                script.scriptRenderer.queueRenderer(new DebugInfiniteDelay(script.teaseLib));
                 script.say("Inside script function 2.");
             }, "Stop script function 2"));
 
@@ -86,7 +86,7 @@ public class ShowChoicesTestScriptFunctionReply extends ShowChoicesAbstractTest 
                 assertEquals("No Level 2", script.reply("No Level 2", "Yes Level 2"));
 
                 assertEquals("Stop script function 3", script.reply(() -> {
-                    script.queueRenderer(new DebugInfiniteDelay(script.teaseLib));
+                    script.scriptRenderer.queueRenderer(new DebugInfiniteDelay(script.teaseLib));
                     script.say("Inside script function 3.");
                 }, "Stop script function 3"));
 

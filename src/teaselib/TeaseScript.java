@@ -97,7 +97,7 @@ public abstract class TeaseScript extends TeaseScriptMath {
         if (Boolean.parseBoolean(teaseLib.config.get(Config.Render.InstructionalImages))) {
             try {
                 MediaRenderer desktopItem = new RenderDesktopItem(teaseLib, resources, path);
-                queueRenderer(desktopItem);
+                scriptRenderer.queueRenderer(desktopItem);
             } catch (IOException e) {
                 if (Boolean.parseBoolean(teaseLib.config.get(Config.Debug.StopOnRenderError))) {
                     throw ExceptionUtil.asRuntimeException(e);
@@ -111,7 +111,7 @@ public abstract class TeaseScript extends TeaseScriptMath {
     public void setBackgroundSound(String path) {
         if (Boolean.parseBoolean(teaseLib.config.get(Config.Render.Sound))) {
             try {
-                queueBackgropundRenderer(new RenderSound(resources, path, teaseLib));
+                scriptRenderer.queueBackgroundRenderer(new RenderSound(resources, path, teaseLib));
             } catch (IOException e) {
                 ExceptionUtil.handleException(e, teaseLib.config, logger);
             }
@@ -121,7 +121,7 @@ public abstract class TeaseScript extends TeaseScriptMath {
     public void setSound(String path) {
         if (Boolean.parseBoolean(teaseLib.config.get(Config.Render.Sound))) {
             try {
-                queueRenderer(new RenderSound(resources, path, teaseLib));
+                scriptRenderer.queueRenderer(new RenderSound(resources, path, teaseLib));
             } catch (IOException e) {
                 ExceptionUtil.handleException(e, teaseLib.config, logger);
             }
@@ -139,7 +139,7 @@ public abstract class TeaseScript extends TeaseScriptMath {
      *            How long to wait.
      */
     public void setDuration(int seconds) {
-        queueRenderer(new RenderDelay(seconds, teaseLib));
+        scriptRenderer.queueRenderer(new RenderDelay(seconds, teaseLib));
     }
 
     public final void prepend(String... message) {

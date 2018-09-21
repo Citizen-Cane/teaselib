@@ -319,7 +319,7 @@ public class ReleaseActionTest {
         assertTrue(releaseAction.applied());
 
         assertFalse(restraints.applied());
-        assertTrue(restraints.is(script.namespace));
+        assertFalse(restraints.is(script.namespace));
         assertTrue(restraints.is(releaseAction));
 
         restraints.apply();

@@ -1,7 +1,6 @@
 package teaselib.core;
 
 import java.lang.reflect.Constructor;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -20,14 +19,7 @@ import teaselib.Gadgets;
 import teaselib.Message;
 import teaselib.Mood;
 import teaselib.Replay;
-import teaselib.Replay.Position;
 import teaselib.ScriptFunction;
-import teaselib.core.media.MediaRenderer;
-import teaselib.core.media.MediaRenderer.Threaded;
-import teaselib.core.media.MediaRendererQueue;
-import teaselib.core.media.RenderInterTitle;
-import teaselib.core.media.RenderMessage;
-import teaselib.core.media.RenderedMessage;
 import teaselib.core.media.RenderedMessage.Decorator;
 import teaselib.core.media.ScriptMessageDecorator;
 import teaselib.core.speechrecognition.SpeechRecognitionResult.Confidence;
@@ -59,38 +51,10 @@ public abstract class Script {
     public final Actor actor;
     public final String namespace;
 
+    public final ScriptRenderer scriptRenderer;
+
     protected String mood = Mood.Neutral;
     protected String displayImage = Message.ActorImage;
-
-    private final MediaRendererQueue renderQueue;
-    private final List<MediaRenderer> queuedRenderers = new ArrayList<>();
-    private final List<MediaRenderer.Threaded> backgroundRenderers = new ArrayList<>();
-
-    private List<MediaRenderer> playedRenderers = null;
-
-    public class ReplayImpl implements Replay {
-        final List<MediaRenderer> renderers;
-
-        public ReplayImpl(List<MediaRenderer> renderers) {
-            super();
-            logger.info("Remembering renderers in replay {}", this);
-            this.renderers = new ArrayList<>(renderers);
-        }
-
-        @Override
-        public void replay(Replay.Position replayPosition) {
-            synchronized (queuedRenderers) {
-                logger.info("Replaying renderers from replay {}", this);
-                // Finish current set before replaying
-                completeMandatory();
-                // Restore the prompt that caused running the SR-rejected script
-                // as soon as possible
-                endAll();
-                renderQueue.replay(renderers, replayPosition);
-                playedRenderers = renderers;
-            }
-        }
-    }
 
     /**
      * Construct a new main-script instance
@@ -100,7 +64,7 @@ public abstract class Script {
      */
     protected Script(TeaseLib teaseLib, ResourceLoader resources, Actor actor, String namespace) {
         this(teaseLib, resources, actor, namespace, //
-                getOrDefault(teaseLib, MediaRendererQueue.class, MediaRendererQueue::new),
+                getOrDefault(teaseLib, ScriptRenderer.class, ScriptRenderer::new),
                 getOrDefault(teaseLib, TextToSpeechPlayer.class, () -> new TextToSpeechPlayer(teaseLib.config)));
 
         getOrDefault(teaseLib, Shower.class, () -> new Shower(teaseLib.host));
@@ -119,16 +83,16 @@ public abstract class Script {
      * @param actor
      */
     protected Script(Script script, Actor actor) {
-        this(script.teaseLib, script.resources, actor, script.namespace, script.renderQueue,
+        this(script.teaseLib, script.resources, actor, script.namespace, script.scriptRenderer,
                 script.teaseLib.globals.get(TextToSpeechPlayer.class));
     }
 
     private Script(TeaseLib teaseLib, ResourceLoader resources, Actor actor, String namespace,
-            MediaRendererQueue renderQueue, TextToSpeechPlayer textToSpeech) {
+            ScriptRenderer scriptRenderer, TextToSpeechPlayer textToSpeech) {
         this.teaseLib = teaseLib;
         this.resources = resources;
         this.actor = actor;
-        this.renderQueue = renderQueue;
+        this.scriptRenderer = scriptRenderer;
         this.namespace = namespace.replace(" ", "_");
 
         textToSpeech.acquireVoice(actor, resources);
@@ -179,11 +143,11 @@ public abstract class Script {
     }
 
     public void completeStarts() {
-        renderQueue.completeStarts();
+        scriptRenderer.completeStarts();
     }
 
     public void completeMandatory() {
-        renderQueue.completeMandatories();
+        scriptRenderer.completeMandatory();
     }
 
     /**
@@ -193,92 +157,44 @@ public abstract class Script {
      * This won't display a button, it just waits. Background threads will continue to run.
      */
     public void completeAll() {
-        renderQueue.completeAll();
-        renderQueue.endAll();
+        scriptRenderer.completeAll();
     }
 
     /**
      * Stop rendering and end all render threads
      */
     public void endAll() {
-        renderQueue.endAll();
-        stopBackgroundRenderers();
+        scriptRenderer.endAll();
     }
 
     protected void renderIntertitle(String... text) {
-        if (!prependedMessages.isEmpty()) {
-            throw new IllegalStateException("renderIntertitle doesn't support prepended messages");
-        }
         try {
-            RenderInterTitle interTitle = new RenderInterTitle(
-                    new Message(actor, expandTextVariables(Arrays.asList(text))), teaseLib);
-            renderMessage(interTitle);
+            scriptRenderer.renderIntertitle(teaseLib, new Message(actor, expandTextVariables(Arrays.asList(text))));
         } finally {
             displayImage = Message.ActorImage;
             mood = Mood.Neutral;
         }
     }
 
-    // TODO Refactor prependedMessage/renderMessage fields to global pool to make prepend/append work across scripts
-    private final List<Message> prependedMessages = new ArrayList<>();
-    private RenderMessage renderMessage = null;
-
     protected void prependMessage(Message message) {
-        renderMessage = null;
-        prependedMessages.add(message);
+        scriptRenderer.prependMessage(message);
     }
 
     protected void renderMessage(Message message, boolean useTTS) {
+        Optional<TextToSpeechPlayer> textToSpeech = getTextToSpeech(useTTS);
         try {
-            Optional<TextToSpeechPlayer> textToSpeech = useTTS
-                    ? Optional.ofNullable(teaseLib.globals.get(TextToSpeechPlayer.class))
-                    : Optional.empty();
-            RenderedMessage.Decorator[] decorators = decorators(textToSpeech);
-            List<RenderedMessage> messages = new ArrayList<>(prependedMessages.size() + 1);
-            prependedMessages.stream().forEach(prepended -> messages.add(RenderedMessage.of(prepended, decorators)));
-            prependedMessages.clear();
-            messages.add(RenderedMessage.of(message, decorators));
-            renderMessage = new RenderMessage(teaseLib, renderQueue, resources, textToSpeech, actor, messages);
-            renderMessage(renderMessage);
+            scriptRenderer.renderMessage(teaseLib, resources, message, decorators(textToSpeech), textToSpeech);
         } finally {
             displayImage = Message.ActorImage;
             mood = Mood.Neutral;
         }
     }
 
-    protected void appendMessage(Message message) {
-        if (renderMessage == null) {
-            renderMessage(message, true);
-        } else {
-            if (!renderMessage.append(rendered(message))) {
-                replay();
-            }
-        }
-    }
-
-    protected void replaceMessage(Message message) {
-        if (renderMessage == null) {
-            renderMessage(message, true);
-        } else {
-            if (!renderMessage.replace(rendered(message))) {
-                replay();
-            }
-        }
-    }
-
-    private RenderedMessage rendered(Message message) {
-        Decorator[] decorators = decorators(renderMessage.getTextToSpeech());
-        return RenderedMessage.of(message, decorators);
-    }
-
-    private void replay() {
-        if (renderMessage.hasCompletedMandatory()) {
-            renderMessage.completeAll();
-            renderMessage.replay(Position.FromCurrentPosition);
-            renderQueue.submit(renderMessage);
-        } else {
-            throw new IllegalStateException("Can only replay afer completing mandatory " + renderMessage);
-        }
+    private Optional<TextToSpeechPlayer> getTextToSpeech(boolean useTTS) {
+        Optional<TextToSpeechPlayer> textToSpeech = useTTS
+                ? Optional.ofNullable(teaseLib.globals.get(TextToSpeechPlayer.class))
+                : Optional.empty();
+        return textToSpeech;
     }
 
     Decorator[] decorators(Optional<TextToSpeechPlayer> textToSpeech) {
@@ -286,71 +202,14 @@ public abstract class Script {
                 this::expandTextVariables, textToSpeech).messageModifiers();
     }
 
-    private void renderMessage(MediaRenderer renderMessage) {
-        synchronized (renderQueue) {
-            synchronized (queuedRenderers) {
-                queueRenderer(renderMessage);
-                // Remember this set for replay
-                playedRenderers = new ArrayList<>(queuedRenderers);
-                // Remember in order to clear queued before completing
-                // previous set
-                List<MediaRenderer> nextSet = new ArrayList<>(queuedRenderers);
-                // Must clear queue for next set before completing current,
-                // because if the current set is cancelled,
-                // the next set must be discarded
-                queuedRenderers.clear();
-                // Now the current set can be completed, and canceling the
-                // current set will result in an empty next set
-                completeAll();
-
-                // Start a new message in the log
-                teaseLib.transcript.info("");
-                renderQueue.start(nextSet);
-            }
-            startBackgroundRenderers();
-            renderQueue.completeStarts();
-        }
+    protected void appendMessage(Message message) {
+        Optional<TextToSpeechPlayer> textToSpeech = getTextToSpeech(true);
+        scriptRenderer.appendMessage(teaseLib, resources, message, decorators(textToSpeech), textToSpeech);
     }
 
-    protected void queueRenderers(List<MediaRenderer> renderers) {
-        synchronized (queuedRenderers) {
-            queuedRenderers.addAll(renderers);
-        }
-    }
-
-    protected void queueRenderer(MediaRenderer renderer) {
-        synchronized (queuedRenderers) {
-            queuedRenderers.add(renderer);
-        }
-    }
-
-    protected void queueBackgropundRenderer(MediaRenderer.Threaded renderer) {
-        synchronized (backgroundRenderers) {
-            backgroundRenderers.add(renderer);
-        }
-    }
-
-    private void startBackgroundRenderers() {
-        synchronized (backgroundRenderers) {
-            cleanupCompletedBackgroundRenderers();
-            backgroundRenderers.stream().filter(t -> !t.hasCompletedStart()).forEach(this::startBackgroundRenderer);
-        }
-    }
-
-    private void cleanupCompletedBackgroundRenderers() {
-        backgroundRenderers.stream().filter(Threaded::hasCompletedAll).collect(Collectors.toList()).stream()
-                .forEach(backgroundRenderers::remove);
-    }
-
-    private void startBackgroundRenderer(MediaRenderer.Threaded renderer) {
-        renderQueue.submit(renderer);
-    }
-
-    private void stopBackgroundRenderers() {
-        synchronized (backgroundRenderers) {
-            backgroundRenderers.stream().filter(t -> !t.hasCompletedAll()).forEach(renderQueue::interruptAndJoin);
-            backgroundRenderers.clear();
-        }
+    protected void replaceMessage(Message message) {
+        Optional<TextToSpeechPlayer> textToSpeech = getTextToSpeech(true);
+        scriptRenderer.replaceMessage(teaseLib, resources, message, decorators(textToSpeech), textToSpeech);
     }
 
     protected final String showChoices(List<Answer> answers) {
@@ -392,7 +251,7 @@ public abstract class Script {
 
         waitToStartScriptFunction(scriptFunction);
         if (scriptFunction == null || scriptFunction.relation != ScriptFunction.Relation.Autonomous) {
-            stopBackgroundRenderers();
+            scriptRenderer.stopBackgroundRenderers();
         }
 
         Prompt prompt = getPrompt(inputMethods, scriptFunction, choices);
@@ -445,7 +304,7 @@ public abstract class Script {
 
         if (teaseLib.item(TeaseLib.DefaultDomain, Gadgets.Webcam).isAvailable()
                 && choices.toGestures().stream().filter(gesture -> gesture != Gesture.None).count() > 0) {
-            inputMethods.add(new HeadGestureInputMethod(renderQueue.getExecutorService(),
+            inputMethods.add(new HeadGestureInputMethod(scriptRenderer.getExecutorService(),
                     teaseLib.devices.get(MotionDetector.class)::getDefaultDevice));
         }
 
@@ -468,7 +327,7 @@ public abstract class Script {
     }
 
     public Replay getReplay() {
-        return new ReplayImpl(playedRenderers);
+        return scriptRenderer.getReplay();
     }
 
     private void waitToStartScriptFunction(final ScriptFunction scriptFunction) {

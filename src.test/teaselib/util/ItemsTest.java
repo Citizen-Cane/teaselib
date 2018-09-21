@@ -6,7 +6,6 @@ import java.util.concurrent.TimeUnit;
 
 import org.junit.Test;
 
-import teaselib.Accessoires;
 import teaselib.Body;
 import teaselib.Clothes;
 import teaselib.Features;
@@ -14,6 +13,7 @@ import teaselib.Material;
 import teaselib.State;
 import teaselib.TeaseScript;
 import teaselib.Toys;
+import teaselib.core.state.ItemProxy;
 import teaselib.core.util.QualifiedItem;
 import teaselib.test.TestScript;
 import teaselib.util.math.Varieties;
@@ -365,12 +365,10 @@ public class ItemsTest {
 
         script.item(Toys.Wrist_Restraints).apply();
 
-        Items applied = script.items(Toys.Wrist_Restraints).query(script.namespace).getApplied();
+        Items applied = script.items(Toys.Wrist_Restraints).getApplied();
         assertEquals(1, applied.size());
-
-        Items applied2 = script.items(Toys.values(), Clothes.values(), Accessoires.values()).query(script.namespace)
-                .filter(Item::applied).filter(Item::expired);
-        assertEquals(1, applied2.size());
+        assertTrue(applied.get().is(restraints.get()));
+        assertEquals(restraints.get(), applied.get());
     }
 
     @Test
@@ -383,11 +381,62 @@ public class ItemsTest {
 
         restraints.get().apply();
 
-        Items applied = script.items(Toys.Wrist_Restraints).query(script.namespace).getApplied();
+        Items applied = script.items(Toys.Wrist_Restraints).getApplied();
         assertEquals(1, applied.size());
+    }
 
-        Items applied2 = script.items(Toys.values(), Clothes.values(), Accessoires.values()).query(script.namespace)
-                .filter(Item::applied);
-        assertEquals(1, applied2.size());
+    // TODO test that query doesn't work with namespace and show how to do it right
+
+    @Test
+    public void testQueryItemInstanceAttributesDontInterferWithApplied() {
+        TestScript script = TestScript.getOne();
+        script.debugger.freezeTime();
+
+        Items gags1 = script.items(Toys.Gag);
+        Item ringGag = gags1.query(Toys.Gags.Ring_Gag).get();
+        assertTrue(ringGag.is(Toys.Gags.Ring_Gag));
+        ringGag.apply();
+        assertTrue(ringGag.applied());
+        assertTrue(script.state(Body.InMouth).is(ringGag));
+        // assertTrue(script.state(Toys.Gag).is(ringGag)); // ???
+
+        Items gags2 = script.items(Toys.Gag);
+        Item ringGag2 = gags2.query(Toys.Gags.Ring_Gag).get();
+        assertEquals(ringGag, ringGag2);
+        assertNotSame(ringGag, ringGag2);
+        assertEquals(((ItemProxy) ringGag).item, ((ItemProxy) ringGag2).item);
+
+        assertTrue(ringGag.is(Toys.Gags.Ring_Gag));
+
+        // "Is this gag applied"
+        assertTrue(ringGag2.applied());
+        // "Is the object in your mouth this ring gag?"
+        assertTrue(script.state(Body.InMouth).is(ringGag2));
+        // TODO Answers the question "Is the applied gag this ring gag?"
+        // assertTrue(script.state(Toys.Gag).is(ringGag2)); // ???
+
+        Items gags3 = script.items(Toys.Gag);
+        Item muzzleGag = gags3.query(Toys.Gags.Muzzle_Gag).get();
+
+        assertNotSame(ringGag2, muzzleGag);
+        assertTrue(muzzleGag.is(Toys.Gag));
+        assertTrue(muzzleGag.is(Toys.Gags.Muzzle_Gag));
+        assertFalse(script.state(Toys.Gag).is(muzzleGag));
+
+        assertFalse(muzzleGag.applied());
+        assertFalse(script.state(Body.InMouth).is(muzzleGag));
+
+        // TODO inconsistency because only the state is checked - but this is what we want if we don't care about the
+        // actual item
+        // -> can this be resolved by also generating an anonymous item without attributes and return that if nothing is
+        // queried?
+        // - Don't want that - instead just query state to see if Toys.Gag is applied, query item to find out which
+        // TODO Evaluate the ramifications of changing to this paradigm: state generic, item special
+
+        assertTrue(script.state(Toys.Gag).is(Body.InMouth));
+        assertTrue(script.state(Body.InMouth).is(Toys.Gag));
+
+        assertFalse(muzzleGag.is(Body.InMouth));
+        assertFalse(muzzleGag.is(Toys.Gags.Ring_Gag));
     }
 }

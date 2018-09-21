@@ -9,6 +9,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import teaselib.Duration;
 import teaselib.State;
@@ -92,6 +93,20 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
     @Override
     public String toString() {
         return guid + " " + attributes + " " + teaseLib.state(domain, item).toString();
+    }
+
+    boolean has(Object... attributes2) {
+        return Stream.concat(attributes.stream(), Arrays.stream(defaultPeers))
+                .filter(element -> contains(attributes2, QualifiedItem.of(element))).count() == attributes2.length;
+    }
+
+    static boolean contains(Object[] attributes2, QualifiedItem item) {
+        for (Object object : attributes2) {
+            if (QualifiedItem.of(object).equals(item)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override

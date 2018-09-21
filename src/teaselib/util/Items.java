@@ -105,13 +105,6 @@ public class Items extends ArrayList<Item> {
         return firstAvailableOrNotFound();
     }
 
-    /**
-     * Get a suitable item matching all attributes
-     * 
-     * @param attributes
-     * @return An item that matches all attributes, or the first available, or {@link Item#NotFound}.
-     */
-
     public final Item get(Enum<?> item) {
         return item(QualifiedItem.of(item));
     }
@@ -144,23 +137,29 @@ public class Items extends ArrayList<Item> {
         return new Items(this);
     }
 
+    /**
+     * Get all items matching the supplied attributes
+     * 
+     * @param attributes
+     * @return An item that matches all attributes, or the first available, or {@link Item#NotFound}.
+     */
     @SafeVarargs
     public final Items query(Enum<?>... attributes) {
-        return getQueryImpl(attributes);
+        return queryImpl(attributes);
     }
 
     public final Items query(String... attributes) {
-        return getQueryImpl(attributes);
+        return queryImpl(attributes);
     }
 
     @SafeVarargs
-    public final <S> Items getQueryImpl(S... attributes) {
+    public final <S> Items queryImpl(S... attributes) {
         if (attributes.length == 0) {
             return this;
         } else {
             Items matching = new Items();
             for (Item item : this) {
-                if (item.is(attributes)) {
+                if (itemImpl(item).has(attributes)) {
                     matching.add(item);
                 }
             }

@@ -156,7 +156,7 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
         if (Persist.className(persistedPeer).equals(ItemImpl.class.getName())) {
             Persist.Storage storage = new Persist.Storage(Persist.fromList(Persist.persistedValue(persistedPeer)));
             ItemImpl peer = ItemImpl.restoreFromUserItems(stateMaps.teaseLib, domain, storage);
-            addPeerThatHasBeenPersistedWithMe(peer, QualifiedItem.of(peer.item));
+            addPeerThatHasBeenPersistedWithMe(peer, QualifiedItem.of(peer));
         } else {
             addAppliedOrPersistedPeer(Persist.<Object> from(persistedPeer));
         }
@@ -172,6 +172,8 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
                 peers.add(peer);
             }
         } else if (persistentDuration(domain, peer).available()) {
+            peers.add(peer);
+        } else if (qualifiedPeer.value() instanceof Item) {
             peers.add(peer);
         }
     }

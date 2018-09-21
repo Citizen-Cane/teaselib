@@ -276,25 +276,41 @@ public class ItemIdentityTest {
     }
 
     @Test
+    public void testItemInstancePersistAndRestoreWithAttributesSmallTest() {
+        TestScript script = TestScript.getOne();
+        script.debugger.freezeTime();
+
+        Items gags1 = script.items(Toys.Gag);
+        Item persisted = gags1.query(Toys.Gags.Ring_Gag).get();
+        persisted.apply().over(1, TimeUnit.HOURS);
+
+        script.debugger.clearStateMaps();
+
+        Items gags = script.items(Toys.Gag);
+        Item restored = gags.query(Toys.Gags.Ring_Gag).get();
+
+        State inMouth = script.state(Body.InMouth);
+        assertTrue(inMouth.is(restored));
+        assertTrue(restored.applied());
+    }
+
+    @Test
     public void testItemInstancePersistAndRestoreWithAttributes() {
         TestScript script = TestScript.getOne();
         script.debugger.freezeTime();
 
         Item ringGag = applyRingGagAndRemember(script);
-        verifyApplied(script, ringGag);
+        verifyInMouth(script);
+        verifyGagApplied(script, ringGag);
 
         script.debugger.clearStateMaps();
 
         Items gags = script.items(Toys.Gag);
-        ringGag = gags.query(Toys.Gags.Ring_Gag).get();
+        Item ringGag2 = gags.query(Toys.Gags.Ring_Gag).get();
+        assertNotSame(ringGag, ringGag2);
 
-        State inMouth = script.state(Body.InMouth);
-        assertTrue(inMouth.applied());
-        assertTrue(inMouth.is(Toys.Gag));
-        assertTrue(inMouth.is(Toys.Gags.Ring_Gag));
-        assertTrue(inMouth.is(script.namespace));
-
-        verifyApplied(script, ringGag);
+        verifyInMouth(script);
+        verifyGagApplied(script, ringGag2);
     }
 
     @Test
@@ -303,20 +319,16 @@ public class ItemIdentityTest {
         script.debugger.freezeTime();
 
         Item ringGag = applyRingGagAndRemember(script);
-        verifyApplied(script, ringGag);
+        verifyInMouth(script);
+        verifyGagApplied(script, ringGag);
 
         script.debugger.clearStateMaps();
 
-        State inMouth = script.state(Body.InMouth);
-        assertTrue(inMouth.applied());
-        assertTrue(inMouth.is(Toys.Gag));
-        assertTrue(inMouth.is(Toys.Gags.Ring_Gag));
-        assertTrue(inMouth.is(script.namespace));
+        verifyInMouth(script);
 
         Items gags = script.items(Toys.Gag);
-        ringGag = gags.query(Toys.Gags.Ring_Gag).get();
-
-        verifyApplied(script, ringGag);
+        Item ringGag2 = gags.query(Toys.Gags.Ring_Gag).get();
+        verifyGagApplied(script, ringGag2);
     }
 
     private static Item applyRingGagAndRemember(TestScript script) {
@@ -328,10 +340,19 @@ public class ItemIdentityTest {
         return ringGag;
     }
 
-    private static void verifyApplied(TestScript script, Item ringGag) {
-        assertTrue(ringGag.applied());
-        assertTrue(ringGag.is(Body.InMouth));
-        assertTrue(ringGag.is(script.state(Body.InMouth)));
+    private static void verifyInMouth(TestScript script) {
+        State inMouth = script.state(Body.InMouth);
+        assertTrue(inMouth.applied());
+        assertTrue(inMouth.is(Toys.Gag));
+        assertTrue(inMouth.is(Toys.Gags.Ring_Gag));
+    }
+
+    private static void verifyGagApplied(TestScript script, Item gag) {
+        assertTrue(gag.applied());
+        assertTrue(gag.is(Body.InMouth));
+        assertTrue(gag.is(script.state(Body.InMouth)));
+        State inMouth = script.state(Body.InMouth);
+        assertTrue(inMouth.is(gag));
     }
 
     @Test

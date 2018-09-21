@@ -286,6 +286,10 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
         this.attributes.addAll(Arrays.asList(attributes));
     }
 
+    public Set<Object> getAttributes() {
+        return Collections.unmodifiableSet(attributes);
+    }
+
     @Override
     public boolean is(Object... attributes) {
         if (attributes.length == 1 && attributes[0] instanceof List<?>) {

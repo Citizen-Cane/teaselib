@@ -96,8 +96,12 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
     }
 
     boolean has(Object... attributes2) {
-        return Stream.concat(attributes.stream(), Arrays.stream(defaultPeers))
-                .filter(element -> contains(attributes2, QualifiedItem.of(element))).count() == attributes2.length;
+        Stream<Object> attributesAndPeers = Stream.concat(attributes.stream(), Arrays.stream(defaultPeers));
+        return has(attributesAndPeers, attributes2);
+    }
+
+    private static boolean has(Stream<Object> available, Object... desired) {
+        return available.filter(element -> contains(desired, QualifiedItem.of(element))).count() == desired.length;
     }
 
     static boolean contains(Object[] attributes2, QualifiedItem item) {
@@ -110,15 +114,20 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
     }
 
     @Override
-    public boolean is(Object... attributes) {
-        if (attributes.length > 0) {
-            if (stateContainsAll(attributes)) {
-                return true;
-            } else {
-                return StateMaps.hasAllAttributes(this.attributes, attributes);
-            }
-        } else
+    public boolean is(Object... attributes2) {
+        if (attributes2.length == 0)
             return false;
+        if (has(this.attributes.stream(), attributes2))
+            return true;
+
+        if (StateMaps.hasAllAttributes(((StateImpl) teaseLib.state(domain, item)).getAttributes(), attributes2))
+            return applied();
+
+        long count = peerCount(Arrays.stream(attributes2));
+        if (count < attributes2.length)
+            return false;
+
+        return stateContainsAll(attributes2);
     }
 
     private boolean stateContainsAll(Object... attributes) {
@@ -143,12 +152,16 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
     @Override
     public boolean applied() {
         if (teaseLib.state(domain, item).applied()) {
-            long count = peers().stream().filter(peer -> !(peer instanceof ActionState))
-                    .filter(peer -> teaseLib.state(domain, peer).is(this)).count();
+            long count = peerCount(peers().stream());
             return count == peers().size();
         } else {
             return false;
         }
+    }
+
+    private long peerCount(Stream<?> stream) {
+        return stream.filter(peer -> !(peer instanceof ActionState))
+                .filter(peer -> teaseLib.state(domain, peer).is(this)).count();
     }
 
     @Override

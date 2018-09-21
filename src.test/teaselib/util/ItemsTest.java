@@ -9,6 +9,7 @@ import org.junit.Test;
 import teaselib.Body;
 import teaselib.Clothes;
 import teaselib.Features;
+import teaselib.Household;
 import teaselib.Material;
 import teaselib.State;
 import teaselib.TeaseScript;
@@ -412,7 +413,7 @@ public class ItemsTest {
         assertTrue(ringGag2.applied());
         // "Is the object in your mouth this ring gag?"
         assertTrue(script.state(Body.InMouth).is(ringGag2));
-        // TODO Answers the question "Is the applied gag this ring gag?"
+        // TODO Answer the question "Is the applied gag this ring gag?"
         // assertTrue(script.state(Toys.Gag).is(ringGag2)); // ???
 
         Items gags3 = script.items(Toys.Gag);
@@ -426,17 +427,47 @@ public class ItemsTest {
         assertFalse(muzzleGag.applied());
         assertFalse(script.state(Body.InMouth).is(muzzleGag));
 
-        // TODO inconsistency because only the state is checked - but this is what we want if we don't care about the
-        // actual item
-        // -> can this be resolved by also generating an anonymous item without attributes and return that if nothing is
-        // queried?
-        // - Don't want that - instead just query state to see if Toys.Gag is applied, query item to find out which
-        // TODO Evaluate the ramifications of changing to this paradigm: state generic, item special
-
         assertTrue(script.state(Toys.Gag).is(Body.InMouth));
         assertTrue(script.state(Body.InMouth).is(Toys.Gag));
 
+        assertFalse(muzzleGag.applied());
         assertFalse(muzzleGag.is(Body.InMouth));
         assertFalse(muzzleGag.is(Toys.Gags.Ring_Gag));
+        assertFalse(muzzleGag.is(script.namespace));
+    }
+
+    @Test
+    public void testQueryDifferentItemsOfAKIndDontInterferShort() {
+        TestScript script = TestScript.getOne();
+        script.debugger.freezeTime();
+
+        Items gags = script.items(Toys.Gag);
+        Item ringGag = gags.query(Toys.Gags.Ring_Gag).get();
+        ringGag.apply();
+        assertTrue(ringGag.applied());
+        assertTrue(ringGag.is(Body.InMouth));
+        assertTrue(ringGag.is(Toys.Gags.Ring_Gag));
+        assertTrue(ringGag.is(script.namespace));
+
+        Item muzzleGag = gags.query(Toys.Gags.Muzzle_Gag).get();
+        assertFalse(muzzleGag.applied());
+        assertFalse(muzzleGag.is(Body.InMouth));
+        assertFalse(muzzleGag.is(Toys.Gags.Ring_Gag));
+        assertFalse(muzzleGag.is(script.namespace));
+    }
+
+    @Test
+    public void documentDifferenceBetweenItemAndState() {
+        TeaseScript script = TestScript.getOne();
+
+        script.item(Household.Clothes_Pegs).applyTo(Body.OnNipples);
+        assertTrue(script.item(Body.OnNipples).applied());
+
+        assertTrue(script.item(Household.Clothes_Pegs).applied());
+        assertTrue(script.item(Household.Clothes_Pegs).is(Body.OnNipples));
+        assertTrue(script.item(Household.Clothes_Pegs).is(script.namespace));
+
+        assertTrue(script.state(Body.OnNipples).is(Household.Clothes_Pegs));
+        assertFalse(script.item(Body.OnNipples).is(Household.Clothes_Pegs));
     }
 }

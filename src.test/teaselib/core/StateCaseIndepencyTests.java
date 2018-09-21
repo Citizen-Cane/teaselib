@@ -1,7 +1,6 @@
 package teaselib.core;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import org.junit.Test;
 
@@ -61,6 +60,7 @@ public class StateCaseIndepencyTests {
         assertTrue(script.item(Toys.Collar).expired());
 
         script.item(Toys.Collar).apply();
+        assertTrue(script.item(Toys.Collar).is(Body.AroundNeck));
 
         assertTrue(script.item(Toys.Collar).is(script.namespace));
         assertTrue(script.item("teaselib.Toys.Collar").is(script.namespace));
@@ -81,13 +81,13 @@ public class StateCaseIndepencyTests {
         assertTrue(script.item(Household.Clothes_Pegs).applied());
         assertTrue(script.item(Household.Clothes_Pegs).is(script.namespace));
         assertTrue(script.item("teaselib.household.clothes_pegs").is(script.namespace));
-
         assertTrue(script.item("teaselib.Household.Clothes_Pegs").is(script.namespace));
         assertTrue(script.item("teaselib.Household.Clothes_Pegs").is(script.namespace.toLowerCase()));
 
-        assertTrue(script.item(Body.OnNipples).is(Household.Clothes_Pegs));
-        assertTrue(script.item(Body.OnNipples).is("teaselib.Household.Clothes_Pegs"));
-        assertTrue(script.item(Body.OnNipples).is("TEASELIB.household.cLOTHES_pEGS"));
+        assertTrue(script.state(Body.OnNipples).is("teaselib.household.clothes_pegs"));
+        assertTrue(script.state(Body.OnNipples).is(Household.Clothes_Pegs));
+        assertTrue(script.state(Body.OnNipples).is("teaselib.Household.Clothes_Pegs"));
+        assertTrue(script.state(Body.OnNipples).is("TEASELIB.household.cLOTHES_pEGS"));
 
         assertTrue(script.item(Household.Clothes_Pegs).is("teaseLib.Body.OnNipples"));
         assertTrue(script.item(Household.Clothes_Pegs).is("teaseLib.body.onnipples"));

@@ -118,16 +118,14 @@ public class ScriptRenderer {
         prependedMessages.add(message);
     }
 
-    // Actor is eventually used for logging and transscript but nothing else
-    // TODO Decide whether to remove parameter?
     void renderMessage(TeaseLib teaseLib, ResourceLoader resources, Message message, Decorator[] decorators,
             Optional<TextToSpeechPlayer> textToSpeech) {
-        // TODO Add interface to build rendered message in Script class
-        // -> no teaseLib or resources here
         List<RenderedMessage> messages = new ArrayList<>(prependedMessages.size() + 1);
         prependedMessages.stream().forEach(prepended -> messages.add(RenderedMessage.of(prepended, decorators)));
         prependedMessages.clear();
         messages.add(RenderedMessage.of(message, decorators));
+        // Actor is eventually used for logging and transscript but nothing else
+        // TODO Decide whether to remove parameter?
         renderMessage = new RenderMessage(teaseLib, renderQueue, resources, textToSpeech, message.actor, messages);
         renderMessage(teaseLib, renderMessage);
     }

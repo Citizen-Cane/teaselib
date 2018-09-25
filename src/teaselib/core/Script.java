@@ -191,10 +191,9 @@ public abstract class Script {
     }
 
     private Optional<TextToSpeechPlayer> getTextToSpeech(boolean useTTS) {
-        Optional<TextToSpeechPlayer> textToSpeech = useTTS
+        return useTTS
                 ? Optional.ofNullable(teaseLib.globals.get(TextToSpeechPlayer.class))
                 : Optional.empty();
-        return textToSpeech;
     }
 
     Decorator[] decorators(Optional<TextToSpeechPlayer> textToSpeech) {

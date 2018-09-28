@@ -2,8 +2,8 @@ package teaselib.core.devices;
 
 import teaselib.State;
 import teaselib.core.TeaseLib;
-import teaselib.core.util.Persist;
 import teaselib.core.util.ReflectionUtils;
+import teaselib.core.util.Storage;
 
 /**
  * @author Citizen-Cane
@@ -16,7 +16,7 @@ public abstract class ReleaseAction extends ActionState {
         super(teaseLib, domain, ReflectionUtils.normalizedClassName(subClass) + "." + item);
     }
 
-    protected ReleaseAction(Persist.Storage storage, Class<? extends ReleaseAction> implementationClass) {
+    protected ReleaseAction(Storage storage, Class<? extends ReleaseAction> implementationClass) {
         this(storage.getInstance(TeaseLib.class), storage.next(), storage.next(), implementationClass);
     }
 

@@ -10,8 +10,6 @@ import java.util.stream.Collectors;
 
 import org.junit.Test;
 
-import teaselib.core.util.Persist.PersistedObject;
-
 public class PersistTest {
     @Test
     public void testPersisted() throws Exception {
@@ -79,7 +77,7 @@ public class PersistTest {
             super(values);
         }
 
-        public PersistableImplementation(Persist.Storage storage) {
+        public PersistableImplementation(Storage storage) {
             while (storage.hasNext()) {
                 add(storage.next());
             }
@@ -102,7 +100,7 @@ public class PersistTest {
         Persist.Persistable persistable = new PersistableImplementation<>(values);
         String persisted = Persist.persist(persistable);
 
-        Persist.Storage storage = new PersistedObject(persisted).toStorage();
+        Storage storage = new PersistedObject(persisted).toStorage();
 
         assertEquals("Foo", storage.next());
         assertEquals(Integer.valueOf(1), storage.next());
@@ -131,7 +129,7 @@ public class PersistTest {
             this.values = Arrays.asList(values);
         }
 
-        public NamedArrayList(Persist.Storage storage) {
+        public NamedArrayList(Storage storage) {
             this.name = storage.next();
             this.values = storage.next();
             assertFalse(storage.hasNext());

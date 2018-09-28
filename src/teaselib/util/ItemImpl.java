@@ -21,6 +21,7 @@ import teaselib.core.state.AbstractProxy;
 import teaselib.core.util.Persist;
 import teaselib.core.util.Persist.Persistable;
 import teaselib.core.util.QualifiedItem;
+import teaselib.core.util.Storage;
 
 /**
  * @author Citizen-Cane
@@ -57,7 +58,7 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
         this.attributes = attributes(item, attributes);
     }
 
-    public static ItemImpl restoreFromUserItems(TeaseLib teaseLib, String domain, Persist.Storage storage) {
+    public static ItemImpl restoreFromUserItems(TeaseLib teaseLib, String domain, Storage storage) {
         String item = storage.next();
         String guid = storage.next();
         return (ItemImpl) teaseLib.getByGuid(domain, item, guid);

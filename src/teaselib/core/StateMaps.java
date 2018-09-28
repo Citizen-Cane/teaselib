@@ -10,6 +10,7 @@ import teaselib.Duration;
 import teaselib.State;
 import teaselib.core.state.StateProxy;
 import teaselib.core.util.Persist;
+import teaselib.core.util.PersistedObject;
 import teaselib.core.util.QualifiedItem;
 import teaselib.util.ItemImpl;
 
@@ -78,7 +79,7 @@ public class StateMaps {
     }
 
     private State state(String domain, QualifiedItem item) {
-        if (Persist.isPersistedString(item.toString())) {
+        if (PersistedObject.isPersistedString(item.toString())) {
             StateMap stateMapForPersistedKey = stateMap(domain, item);
             State existing = stateMapForPersistedKey.get(item.toString());
             if (existing != null) {

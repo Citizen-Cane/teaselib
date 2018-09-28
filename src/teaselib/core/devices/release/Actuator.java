@@ -11,6 +11,7 @@ import teaselib.core.devices.Device;
 import teaselib.core.devices.DeviceCache;
 import teaselib.core.devices.ReleaseAction;
 import teaselib.core.util.Persist;
+import teaselib.core.util.Storage;
 
 // TODO Should be a device -> just remember the device path instead of the additional index
 
@@ -148,7 +149,7 @@ public class Actuator implements Device {
             return Arrays.asList(Persist.persist(domain), Persist.persist(item.toString()));
         }
 
-        public ActuatorReleaseAction(Persist.Storage storage) {
+        public ActuatorReleaseAction(Storage storage) {
             this(storage.getInstance(TeaseLib.class), storage.next(), storage.next());
         }
 

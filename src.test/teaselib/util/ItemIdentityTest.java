@@ -15,6 +15,7 @@ import teaselib.Toys;
 import teaselib.core.TeaseLib;
 import teaselib.core.state.ItemProxy;
 import teaselib.core.util.Persist;
+import teaselib.core.util.Persist.PersistedObject;
 import teaselib.test.TestScript;
 
 /**
@@ -246,13 +247,13 @@ public class ItemIdentityTest {
         ItemImpl gag = (ItemImpl) ((ItemProxy) script.item(Toys.Gag)).item;
 
         String persisted = Persist.persist(gag);
-        Persist.Storage storage = new Persist.Storage(Persist.persistedValue((persisted)));
+        Persist.Storage storage = new PersistedObject(persisted).toStorage();
         Item restored = ItemImpl.restoreFromUserItems(script.teaseLib, TeaseLib.DefaultDomain, storage);
 
         assertSame(gag, restored);
 
         script.debugger.clearStateMaps();
-        Persist.Storage storage2 = new Persist.Storage(Persist.persistedValue((persisted)));
+        Persist.Storage storage2 = new PersistedObject(persisted).toStorage();
         Item restored2 = ItemImpl.restoreFromUserItems(script.teaseLib, TeaseLib.DefaultDomain, storage2);
 
         assertNotSame(gag, restored2);
@@ -292,6 +293,31 @@ public class ItemIdentityTest {
         State inMouth = script.state(Body.InMouth);
         assertTrue(inMouth.is(restored));
         assertTrue(restored.applied());
+    }
+
+    @Test
+    public void testItemNamespace() {
+        TestScript script = TestScript.getOne();
+        script.debugger.freezeTime();
+
+        Items gags = script.items(Toys.Gag);
+        Item ringGag = gags.query(Toys.Gags.Ring_Gag).get();
+        ringGag.apply();
+
+        Item muzzleGag = gags.query(Toys.Gags.Muzzle_Gag).get();
+
+        assertTrue(ringGag.applied());
+        assertFalse(muzzleGag.applied());
+
+        State inMouth = script.state(Body.InMouth);
+        assertTrue(inMouth.is(ringGag));
+        assertFalse(inMouth.is(muzzleGag));
+
+        assertTrue(inMouth.is(script.namespace));
+        assertFalse(script.item(Body.InMouth).is(script.namespace));
+
+        assertTrue(ringGag.is(script.namespace));
+        assertFalse(muzzleGag.is(script.namespace));
     }
 
     @Test

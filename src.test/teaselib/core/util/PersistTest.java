@@ -6,24 +6,51 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.junit.Test;
+
+import teaselib.core.util.Persist.PersistedObject;
 
 public class PersistTest {
     @Test
     public void testPersisted() throws Exception {
-        String test = "foobar";
+        String test = "Foo";
         String serialized = Persist.persist(test);
 
-        assertEquals("Class=java.lang.String;Value=foobar", serialized);
+        assertEquals("Class=java.lang.String;Value=Foo", serialized);
     }
 
     @Test
     public void testPersistFromString() throws Exception {
-        String serialized = "Class=java.lang.String;Value=foobar";
+        String serialized = "Class=java.lang.String;Value=Foo";
         String deserialized = Persist.from(serialized);
 
-        assertEquals("foobar", deserialized);
+        assertEquals("Foo", deserialized);
+    }
+
+    @Test
+    public void testPersistToString() throws Exception {
+        String persisted = Persist.persist("Foo");
+        assertEquals("Class=java.lang.String;Value=Foo", persisted);
+    }
+
+    enum Foo {
+        Bar
+    }
+
+    @Test
+    public void testPersistFromEnum() throws Exception {
+        String serialized = "Class=teaselib.core.util.PersistTest$Foo;Value=Bar";
+        Foo deserialized = Persist.from(serialized);
+
+        assertEquals(Foo.Bar, deserialized);
+    }
+
+    @Test
+    public void testPersistToEnum() throws Exception {
+        String persisted = Persist.persist(Foo.Bar);
+        assertEquals("Class=teaselib.core.util.PersistTest$Foo;Value=Bar", persisted);
     }
 
     @Test
@@ -69,13 +96,13 @@ public class PersistTest {
     }
 
     @Test
-    public void testStorage() throws Exception {
+    public void testPersistableImplementation() throws Exception {
         List<Object> values = Arrays.asList(new Object[] { "Foo", 1, 2L, 2.7f, 3.14159, false, true });
 
         Persist.Persistable persistable = new PersistableImplementation<>(values);
         String persisted = Persist.persist(persistable);
 
-        Persist.Storage storage = new Persist.Storage(Persist.persistedValue(persisted));
+        Persist.Storage storage = new PersistedObject(persisted).toStorage();
 
         assertEquals("Foo", storage.next());
         assertEquals(Integer.valueOf(1), storage.next());
@@ -86,13 +113,46 @@ public class PersistTest {
         assertEquals(true, storage.next());
         assertFalse(storage.hasNext());
 
-        storage = new Persist.Storage(Persist.persistedValue(persisted));
+        storage = new PersistedObject(persisted).toStorage();
         List<Object> restored = new ArrayList<>(7);
         for (int i = 0; i < 7; i++) {
             restored.add(storage.next());
         }
 
         assertEquals(values, restored);
+    }
+
+    public static final class NamedArrayList implements Persist.Persistable {
+        final String name;
+        final List<Object> values;
+
+        NamedArrayList(String name, Object... values) {
+            this.name = name;
+            this.values = Arrays.asList(values);
+        }
+
+        public NamedArrayList(Persist.Storage storage) {
+            this.name = storage.next();
+            this.values = storage.next();
+            assertFalse(storage.hasNext());
+        }
+
+        @Override
+        public List<String> persisted() {
+            return Arrays.stream(new Object[] { name, values }).map(Persist::persist).collect(Collectors.toList());
+        }
+    }
+
+    @Test
+    public void testPersistableImplementationNested() throws Exception {
+        Object[] values = { "Foo", 1, 2L, 2.7f, 3.14159, false, true };
+
+        NamedArrayList persistable = new NamedArrayList("Test", values);
+        String persisted = Persist.persist(persistable);
+
+        NamedArrayList restored = Persist.from(persisted);
+        assertEquals(persistable.name, restored.name);
+        assertEquals(persistable.values, restored.values);
     }
 
     @Test

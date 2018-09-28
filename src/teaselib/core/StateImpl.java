@@ -16,6 +16,7 @@ import teaselib.core.TeaseLib.PersistentString;
 import teaselib.core.devices.ActionState;
 import teaselib.core.state.AbstractProxy;
 import teaselib.core.util.Persist;
+import teaselib.core.util.Persist.PersistedObject;
 import teaselib.core.util.QualifiedItem;
 import teaselib.util.Item;
 import teaselib.util.ItemImpl;
@@ -130,18 +131,9 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
     }
 
     private void restorePeers() {
-        // TODO Restoring straight forward does not work since we have to process ItemImpl separately
-        // if (peerStorage.available()) {
-        // peers.addAll(Persist.from(peerStorage.value()));
-        //
-        // if (peers.isEmpty()) {
-        // remove();
-        // }
-        // }
-
         if (peerStorage.available()) {
             String persisted = peerStorage.value();
-            List<String> presistedPeers = Persist.fromList(Persist.persistedValue(persisted));
+            List<String> presistedPeers = new Persist.PersistedObject(persisted).toValues();
             for (String persistedPeer : presistedPeers) {
                 restorePersistedPeer(persistedPeer);
             }
@@ -153,8 +145,8 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
     }
 
     private void restorePersistedPeer(String persistedPeer) {
-        if (Persist.className(persistedPeer).equals(ItemImpl.class.getName())) {
-            Persist.Storage storage = new Persist.Storage(Persist.fromList(Persist.persistedValue(persistedPeer)));
+        if (PersistedObject.className(persistedPeer).equals(ItemImpl.class.getName())) {
+            Persist.Storage storage = new Persist.Storage(new PersistedObject(persistedPeer).toValues());
             ItemImpl peer = ItemImpl.restoreFromUserItems(stateMaps.teaseLib, domain, storage);
             addPeerThatHasBeenPersistedWithMe(peer, QualifiedItem.of(peer));
         } else {

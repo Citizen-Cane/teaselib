@@ -1,5 +1,6 @@
 package teaselib.core;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
@@ -134,7 +135,7 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
     private void restorePeers() {
         if (peerStorage.available()) {
             String persisted = peerStorage.value();
-            List<String> presistedPeers = new PersistedObject(persisted).toValues();
+            List<String> presistedPeers = new PersistedObject(ArrayList.class, persisted).toValues();
             for (String persistedPeer : presistedPeers) {
                 restorePersistedPeer(persistedPeer);
             }
@@ -147,7 +148,7 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
 
     private void restorePersistedPeer(String persistedPeer) {
         if (PersistedObject.className(persistedPeer).equals(ItemImpl.class.getName())) {
-            Storage storage = new PersistedObject(persistedPeer).toStorage();
+            Storage storage = Storage.from(persistedPeer);
             ItemImpl peer = ItemImpl.restoreFromUserItems(stateMaps.teaseLib, domain, storage);
             addPeerThatHasBeenPersistedWithMe(peer, QualifiedItem.of(peer));
         } else {
@@ -178,7 +179,7 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
 
     private void restoreAttributes() {
         if (attributeStorage.available()) {
-            attributes.addAll(Persist.from(attributeStorage.value()));
+            attributes.addAll(Persist.from(ArrayList.class, attributeStorage.value()));
         }
     }
 
@@ -212,7 +213,7 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
         if (peers.isEmpty()) {
             peerStorage.clear();
         } else {
-            peerStorage.set(Persist.persist(peers));
+            peerStorage.set(Persist.persistValues(peers));
         }
     }
 
@@ -220,7 +221,7 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
         if (attributes.isEmpty()) {
             attributeStorage.clear();
         } else {
-            attributeStorage.set(Persist.persist(attributes));
+            attributeStorage.set(Persist.persistValues(attributes));
         }
     }
 

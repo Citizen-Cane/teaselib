@@ -15,7 +15,6 @@ import teaselib.Toys;
 import teaselib.core.TeaseLib;
 import teaselib.core.state.ItemProxy;
 import teaselib.core.util.Persist;
-import teaselib.core.util.PersistedObject;
 import teaselib.core.util.Storage;
 import teaselib.test.TestScript;
 
@@ -248,13 +247,13 @@ public class ItemIdentityTest {
         ItemImpl gag = (ItemImpl) ((ItemProxy) script.item(Toys.Gag)).item;
 
         String persisted = Persist.persist(gag);
-        Storage storage = new PersistedObject(persisted).toStorage();
+        Storage storage = Storage.from(persisted);
         Item restored = ItemImpl.restoreFromUserItems(script.teaseLib, TeaseLib.DefaultDomain, storage);
 
         assertSame(gag, restored);
 
         script.debugger.clearStateMaps();
-        Storage storage2 = new PersistedObject(persisted).toStorage();
+        Storage storage2 = Storage.from(persisted);
         Item restored2 = ItemImpl.restoreFromUserItems(script.teaseLib, TeaseLib.DefaultDomain, storage2);
 
         assertNotSame(gag, restored2);

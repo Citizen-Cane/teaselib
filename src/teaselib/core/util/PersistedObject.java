@@ -1,6 +1,7 @@
 package teaselib.core.util;
 
 import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -32,8 +33,13 @@ public class PersistedObject {
         this.values = flatSplit(persistedValue);
     }
 
-    PersistedObject(String className, List<String> values) {
-        this.className = className;
+    public PersistedObject(Class<?> clazz, String persistedValue) {
+        this.className = clazz.getName();
+        this.values = flatSplit(persistedValue);
+    }
+
+    PersistedObject(Class<?> clazz, List<String> values) {
+        this.className = clazz.getName();
         this.values = values;
     }
 
@@ -94,10 +100,24 @@ public class PersistedObject {
     @Override
     public String toString() {
         StringBuilder persisted = new StringBuilder();
+        classToString(persisted);
+        valueToString(persisted);
+        return persisted.toString();
+    }
+
+    public String toValueString() {
+        StringBuilder persisted = new StringBuilder();
+        valueToString(persisted);
+        return persisted.toString();
+    }
+
+    private void classToString(StringBuilder persisted) {
         persisted.append(CLASS_NAME);
         persisted.append(className);
         persisted.append(CLASS_VALUE_SEPARATOR);
+    }
 
+    private void valueToString(StringBuilder persisted) {
         if (values.size() > 1) {
             persisted.append(STRING_REPRESENTATION_MULTIPLE_VALUES_LEADER);
             persisted.append(values.size());
@@ -105,10 +125,7 @@ public class PersistedObject {
         } else {
             persisted.append(STRING_REPRESENTATION_SINGLE_VALUE);
         }
-
         persisted.append(joinPersistedValues(values));
-
-        return persisted.toString();
     }
 
     public <T> T toInstance() {
@@ -178,7 +195,7 @@ public class PersistedObject {
                 Enum<?> enumValue = Enum.valueOf(enumClass, persistedValues.get(0));
                 return (T) enumValue;
             } else if (Iterable.class.isAssignableFrom(clazz)) {
-                List<?> restored = new ArrayList<>();
+                Collection<?> restored = restoreOrReplaceCollectionInstance(clazz);
                 for (String value : persistedValues) {
                     restored.add(new PersistedObject(value).toInstance());
                 }
@@ -196,6 +213,21 @@ public class PersistedObject {
         } catch (ReflectiveOperationException e) {
             throw new IllegalArgumentException("Cannot restore " + className + ":" + persistedValues, e);
         }
+    }
+
+    private static Collection<?> restoreOrReplaceCollectionInstance(Class<?> clazz)
+            throws NoSuchMethodException, InstantiationException, IllegalAccessException, InvocationTargetException {
+        Constructor<?> constructor;
+        try {
+            constructor = clazz.getDeclaredConstructor();
+        } catch (NoSuchMethodException e) {
+            if (List.class.isAssignableFrom(clazz)) {
+                constructor = ArrayList.class.getDeclaredConstructor();
+            } else {
+                throw e;
+            }
+        }
+        return (Collection<?>) constructor.newInstance();
     }
 
     private static String persistElement(Object persistable) {

@@ -36,4 +36,8 @@ public class Storage {
             throw new IllegalArgumentException("Provide class factory for " + clazz.getName());
         }
     }
+
+    public static Storage from(String persisted) {
+        return new PersistedObject(persisted).toStorage();
+    }
 }

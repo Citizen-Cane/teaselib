@@ -100,7 +100,7 @@ public class PersistTest {
         Persist.Persistable persistable = new PersistableImplementation<>(values);
         String persisted = Persist.persist(persistable);
 
-        Storage storage = new PersistedObject(persisted).toStorage();
+        Storage storage = Storage.from(persisted);
 
         assertEquals("Foo", storage.next());
         assertEquals(Integer.valueOf(1), storage.next());
@@ -111,7 +111,7 @@ public class PersistTest {
         assertEquals(true, storage.next());
         assertFalse(storage.hasNext());
 
-        storage = new PersistedObject(persisted).toStorage();
+        storage = Storage.from(persisted);
         List<Object> restored = new ArrayList<>(7);
         for (int i = 0; i < 7; i++) {
             restored.add(storage.next());

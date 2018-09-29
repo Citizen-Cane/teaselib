@@ -16,12 +16,20 @@ public class Persist {
         return new PersistedObject(instance).toString();
     }
 
+    public static String persistValues(Object instance) {
+        return new PersistedObject(instance).toValueString();
+    }
+
     public static String persistedInstance(Class<? extends Persistable> clazz, List<String> values) {
-        return new PersistedObject(clazz.getName(), new PersistedObject(values).toValues()).toString();
+        return new PersistedObject(clazz, new PersistedObject(values).toValues()).toString();
     }
 
     public static <T> T from(String persisted) {
         return new PersistedObject(persisted).toInstance();
+    }
+
+    public static <T> T from(Class<?> clazz, String persistedValue) {
+        return new PersistedObject(clazz, persistedValue).toInstance();
     }
 
     public static <T> T from(String persisted, Factory factory) {

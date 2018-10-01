@@ -3,7 +3,6 @@ package teaselib.core.debug;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -28,10 +27,6 @@ public class DebugPersistence implements Persistence {
     public static final String True = "true";
     public static final String False = "false";
 
-    public static final class Storage extends HashMap<String, String> {
-        private static final long serialVersionUID = 1L;
-    }
-
     public final Map<String, String> storage;
 
     private final PropertyNameMapping nameMapping;
@@ -45,7 +40,7 @@ public class DebugPersistence implements Persistence {
     }
 
     public DebugPersistence(PropertyNameMapping propertyNameMapping) {
-        this(new Storage(), propertyNameMapping);
+        this(new DebugStorage(), propertyNameMapping);
     }
 
     public DebugPersistence(Map<String, String> storage, PropertyNameMapping propertyNameMapping) {

@@ -201,7 +201,13 @@ public class PersistedObject {
                 }
                 return (T) restored;
             } else if (Persist.Persistable.class.isAssignableFrom(clazz)) {
-                Constructor<?> constructor = clazz.getDeclaredConstructor(Storage.class);
+                Constructor<?> constructor;
+                try {
+                    constructor = clazz.getDeclaredConstructor(Storage.class);
+                } catch (NoSuchMethodException e) {
+                    throw new NoSuchMethodException(
+                            "Constructor " + clazz.getSimpleName() + "(Storage) missing for class " + clazz.getName());
+                }
                 // n fields, followed by more fields
                 Storage storage = factory.isPresent() ? new Storage(persistedValues, factory.get())
                         : new Storage(persistedValues);

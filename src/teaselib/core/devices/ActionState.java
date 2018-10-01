@@ -7,15 +7,26 @@ import teaselib.core.StateImpl;
 import teaselib.core.TeaseLib;
 import teaselib.core.util.Persist;
 import teaselib.core.util.QualifiedItem;
+import teaselib.core.util.Storage;
 
 /**
  * @author Citizen-Cane
  *
  */
 public abstract class ActionState extends StateImpl implements Persist.Persistable {
-    public static final class None extends ActionState {
-        public None(TeaseLib teaseLib, String domain, Object item) {
+    public static final class NotAvailable extends ActionState {
+        public NotAvailable(TeaseLib teaseLib, String domain, Object item) {
             super(teaseLib, domain, item);
+        }
+
+        public NotAvailable(Storage storage) {
+            this(storage.getInstance(TeaseLib.class), storage.next(), storage.next());
+        }
+
+        public static String stateName() {
+            return ActionState.persistedInstance(ActionState.NotAvailable.class, TeaseLib.DefaultDomain,
+                    "ReleaseAction.NotAvailable");
+
         }
 
         @Override

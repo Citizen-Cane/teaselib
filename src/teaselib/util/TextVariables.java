@@ -1,9 +1,8 @@
 package teaselib.util;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -28,8 +27,8 @@ public class TextVariables implements Iterable<Enum<?>> {
     private static final Pattern textVariablePattern = Pattern.compile("(?i)#\\w+",
             Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE);
 
-    private final Map<Enum<?>, String> entries = new HashMap<>();
-    private final Map<String, String> keys2names = new HashMap<>();
+    private final Map<Enum<?>, String> entries = new LinkedHashMap<>();
+    private final Map<String, String> keys2names = new LinkedHashMap<>();
 
     public TextVariables(TextVariables... textVariables) {
         for (TextVariables tV : textVariables) {
@@ -75,29 +74,28 @@ public class TextVariables implements Iterable<Enum<?>> {
         return keys2names.get(key);
     }
 
-    public String expand(String text) {
-        return expand(Arrays.asList(text)).get(0);
-    }
-
     public List<String> expand(List<String> texts) {
         List<String> expanded = new ArrayList<>(texts.size());
         for (String text : texts) {
-            Matcher m = textVariablePattern.matcher(text);
-            StringBuffer sb = new StringBuffer();
-            while (m.find()) {
-                String name = m.group().substring(1);
-                String key = name.toLowerCase();
-                String replacement = contains(key) ? get(key) : name;
-                boolean undefined = replacement == null;
-                if (undefined) {
-                    replacement = name;
-                }
-                m.appendReplacement(sb, Matcher.quoteReplacement(replacement));
-            }
-            m.appendTail(sb);
-            expanded.add(sb.toString());
+            expanded.add(expand(text));
         }
         return expanded;
     }
 
+    public String expand(String text) {
+        Matcher m = textVariablePattern.matcher(text);
+        StringBuffer sb = new StringBuffer();
+        while (m.find()) {
+            String name = m.group().substring(1);
+            String key = name.toLowerCase();
+            String replacement = contains(key) ? get(key) : name;
+            boolean undefined = replacement == null;
+            if (undefined) {
+                replacement = name;
+            }
+            m.appendReplacement(sb, Matcher.quoteReplacement(replacement));
+        }
+        m.appendTail(sb);
+        return sb.toString();
+    }
 }

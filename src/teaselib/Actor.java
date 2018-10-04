@@ -52,6 +52,10 @@ public class Actor {
      */
     public final String key;
 
+    /**
+     * Actor specific text variables. These don't contain neither the session text variables nor the defaults, so in
+     * order to properly expand a message call {@link teaselib.core.Script#expandTextVariables}.
+     */
     public final TextVariables textVariables;
 
     /**
@@ -143,5 +147,4 @@ public class Actor {
     public Locale locale() {
         return locale;
     }
-
 }

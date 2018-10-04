@@ -191,9 +191,7 @@ public abstract class Script {
     }
 
     private Optional<TextToSpeechPlayer> getTextToSpeech(boolean useTTS) {
-        return useTTS
-                ? Optional.ofNullable(teaseLib.globals.get(TextToSpeechPlayer.class))
-                : Optional.empty();
+        return useTTS ? Optional.ofNullable(teaseLib.globals.get(TextToSpeechPlayer.class)) : Optional.empty();
     }
 
     Decorator[] decorators(Optional<TextToSpeechPlayer> textToSpeech) {
@@ -351,11 +349,15 @@ public abstract class Script {
         }
     }
 
-    private List<String> expandTextVariables(List<String> prompts) {
+    public List<String> expandTextVariables(List<String> prompts) {
         return allTextVariables().expand(prompts);
     }
 
-    private String expandTextVariables(String s) {
+    /**
+     * Expand text variables. Expands all text variables({@link teaselib.util.TextVariables#Defaults},
+     * {@link teaselib.core.TeaseLib#getTextVariables}, {@link teaselib.Actor#textVariables}.
+     */
+    public String expandTextVariables(String s) {
         return allTextVariables().expand(s);
     }
 

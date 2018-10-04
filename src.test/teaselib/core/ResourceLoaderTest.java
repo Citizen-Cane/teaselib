@@ -89,7 +89,7 @@ public class ResourceLoaderTest {
     }
 
     @Test
-    public void testResourceLoadingCaseRelative() {
+    public void testResourceLoadingCaseSensitive() {
         TestScript script = TestScript.getOne(getClass());
 
         assertEquals(1, script.resources("util/bar.txt").size());

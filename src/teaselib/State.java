@@ -7,6 +7,8 @@ public interface State {
 
     public static final long INDEFINITELY = Long.MAX_VALUE;
 
+    public static String Available = "Available";
+
     Options apply();
 
     Options applyTo(Object... items);

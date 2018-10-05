@@ -1,9 +1,16 @@
 package teaselib.core.devices;
 
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
+import teaselib.Duration;
+import teaselib.State;
 import teaselib.core.StateImpl;
+import teaselib.core.StateMaps;
 import teaselib.core.TeaseLib;
 import teaselib.core.util.Persist;
 import teaselib.core.util.QualifiedItem;
@@ -26,11 +33,48 @@ public abstract class ActionState extends StateImpl implements Persist.Persistab
         public static String stateName() {
             return ActionState.persistedInstance(ActionState.NotAvailable.class, TeaseLib.DefaultDomain,
                     "ReleaseAction.NotAvailable");
+        }
 
+        private static final Set<Object> intrinsicAttributes = Collections
+                .unmodifiableSet(new HashSet<>(Arrays.asList(State.Available)));
+
+        @Override
+        public boolean is(Object... attributes) {
+            return StateMaps.hasAllAttributes(intrinsicAttributes, attributes) && super.is(attributes);
+        }
+
+        @Override
+        public Options apply() {
+            // Ignore
+            return this;
+        }
+
+        @Override
+        public Options applyTo(Object... attributes) {
+            // Ignore
+            return this;
+        }
+
+        @Override
+        public void applyAttributes(Object... attributes) {
+            // Ignore
+        }
+
+        @Override
+        public State over(long limit, TimeUnit unit) {
+            // Ignore
+            return this;
+        }
+
+        @Override
+        public State over(Duration duration) {
+            // Ignore
+            return this;
         }
 
         @Override
         protected boolean performAction() {
+            // Ignore
             return true;
         }
     }

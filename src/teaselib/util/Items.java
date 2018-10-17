@@ -102,7 +102,7 @@ public class Items extends ArrayList<Item> {
      * @return First item
      */
     public Item get() {
-        return firstAvailableOrNotFound();
+        return getAppliedOrFirstAvailableOrNotFound();
     }
 
     public final Item get(Enum<?> item) {
@@ -122,14 +122,19 @@ public class Items extends ArrayList<Item> {
         return Item.NotFound;
     }
 
-    private Item firstAvailableOrNotFound() {
-        List<Item> available = getAvailable();
-        if (!available.isEmpty()) {
-            return available.get(0);
-        } else if (!isEmpty()) {
-            return get(0);
+    private Item getAppliedOrFirstAvailableOrNotFound() {
+        List<Item> applied = getApplied();
+        if (!applied.isEmpty()) {
+            return applied.get(0);
         } else {
-            return Item.NotFound;
+            List<Item> available = getAvailable();
+            if (!available.isEmpty()) {
+                return available.get(0);
+            } else if (!isEmpty()) {
+                return get(0);
+            } else {
+                return Item.NotFound;
+            }
         }
     }
 

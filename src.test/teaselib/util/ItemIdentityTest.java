@@ -425,4 +425,41 @@ public class ItemIdentityTest {
         assertTrue(script.item(Toys.Gag).applied());
         assertTrue(script.state(Toys.Gag).applied());
     }
+
+    @Test
+    public void testThatQueriedItemAppliesStateAsWell2() {
+        TestScript script = TestScript.getOne();
+        script.debugger.freezeTime();
+
+        Item gag = script.items(Toys.Gag).query(Toys.Gags.Ring_Gag).get();
+        gag.apply().over(1, TimeUnit.HOURS);
+        assertTrue(gag.applied());
+        assertTrue(script.state(Toys.Gag).applied());
+
+        script.debugger.clearStateMaps();
+
+        Item restored = script.items(Toys.Gag).query(Toys.Gags.Ring_Gag).get();
+        assertTrue(restored.applied());
+        assertTrue(script.state(Toys.Gag).applied());
+    }
+
+    @Test
+    public void testThatAppliedItemCanBeTestedWithGenericQuery() {
+        TestScript script = TestScript.getOne();
+        script.debugger.freezeTime();
+
+        Item gag = script.items(Toys.Gag).query(Toys.Gags.Ring_Gag).get();
+        gag.apply().over(1, TimeUnit.HOURS);
+        assertTrue(gag.applied());
+        assertTrue(script.item(Toys.Gag).applied());
+        assertTrue(script.item(Toys.Gag).is(Toys.Gags.Ring_Gag));
+
+        script.debugger.clearStateMaps();
+
+        Item restored = script.items(Toys.Gag).query(Toys.Gags.Ring_Gag).get();
+        assertTrue(restored.applied());
+        assertTrue(script.item(Toys.Gag).applied());
+        assertTrue(script.item(Toys.Gag).is(Toys.Gags.Ring_Gag));
+    }
+
 }

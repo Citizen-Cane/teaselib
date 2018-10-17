@@ -410,4 +410,19 @@ public class ItemIdentityTest {
         assertEquals(clothesPegsByEnum, clothesPegsByString);
         assertTrue(((ItemProxy) clothesPegsByEnum).state == ((ItemProxy) clothesPegsByString).state);
     }
+
+    @Test
+    public void testThatItemAppliesStateAsWell() {
+        TestScript script = TestScript.getOne();
+        script.debugger.freezeTime();
+
+        script.item(Toys.Gag).apply().over(1, TimeUnit.HOURS);
+        assertTrue(script.item(Toys.Gag).applied());
+        assertTrue(script.state(Toys.Gag).applied());
+
+        script.debugger.clearStateMaps();
+
+        assertTrue(script.item(Toys.Gag).applied());
+        assertTrue(script.state(Toys.Gag).applied());
+    }
 }

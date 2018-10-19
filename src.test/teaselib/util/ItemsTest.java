@@ -306,11 +306,13 @@ public class ItemsTest {
     @Test
     public void testItemValues() {
         TestScript script = TestScript.getOne();
+        script.addTestUserItems();
 
         Items restraints = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints);
+        assertEquals(3, restraints.size());
 
-        Object[] values = restraints.values();
-
+        Object[] values = restraints.valueSet();
+        assertEquals(2, values.length);
         assertEquals(Toys.Wrist_Restraints, values[0]);
         assertEquals(Toys.Ankle_Restraints, values[1]);
     }
@@ -469,5 +471,58 @@ public class ItemsTest {
 
         assertTrue(script.state(Body.OnNipples).is(Household.Clothes_Pegs));
         assertFalse(script.item(Body.OnNipples).is(Household.Clothes_Pegs));
+    }
+
+    @Test
+    public void testThatApplyingItemsIsCompatibleToApplyingSingleItem() {
+        TestScript script = TestScript.getOne();
+        script.addTestUserItems();
+
+        Items restraints = script.items(Toys.Wrist_Restraints);
+        assertEquals(2, restraints.size());
+
+        restraints.apply();
+
+        Items applied = script.items(Toys.Wrist_Restraints).getApplied();
+        assertEquals(1, applied.size());
+    }
+
+    @Test
+    public void testThatRemoveOnlyRemovingSingleItem() {
+        TestScript script = TestScript.getOne();
+        script.addTestUserItems();
+
+        Items gags = script.items(Toys.Gag);
+        assertEquals(5, gags.size());
+
+        gags.get(0).apply();
+        assertTrue(gags.get(0).applied());
+        assertFalse(gags.get(1).applied());
+
+        gags.get(1).apply();
+        assertTrue(gags.get(0).applied());
+        assertTrue(gags.get(1).applied());
+
+        gags.get(0).remove();
+        // This removes both ItemImpl instances -> test fails - debug in StateImpl.remove()
+        assertEquals(1, gags.getApplied().size());
+
+        gags.get(1).remove();
+        assertEquals(0, gags.getApplied().size());
+    }
+
+    @Test
+    public void testThatRemovingItemsIsCompatibleToRemovingSingleItem() {
+        TestScript script = TestScript.getOne();
+        script.addTestUserItems();
+
+        Items restraints = script.items(Toys.Wrist_Restraints);
+        assertEquals(2, restraints.size());
+
+        restraints.stream().forEach(Item::apply);
+        assertEquals(2, restraints.getApplied().size());
+
+        restraints.remove();
+        assertEquals(1, restraints.getApplied().size());
     }
 }

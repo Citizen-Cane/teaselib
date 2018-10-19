@@ -4,7 +4,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
@@ -114,7 +116,7 @@ public class Items extends ArrayList<Item> {
     }
 
     private final Item item(QualifiedItem item) {
-        for (Item mine : this) {
+        for (Item mine : this.firstOfEachKind()) {
             if (QualifiedItem.of(mine).equals(item)) {
                 return mine;
             }
@@ -281,29 +283,63 @@ public class Items extends ArrayList<Item> {
     }
 
     public Items apply() {
-        for (Item item : this) {
+        for (Item item : this.firstOfEachKind()) {
             item.apply();
         }
         return this;
     }
 
     public Items applyTo(Object... peers) {
-        for (Item item : this) {
+        for (Item item : this.firstOfEachKind()) {
             item.applyTo(peers);
         }
         return this;
     }
 
     public Items over(long duration, TimeUnit unit) {
-        for (Item item : this) {
+        for (Item item : this.firstOfEachKind()) {
             item.apply().over(duration, unit);
         }
         return this;
     }
 
     public void remove() {
-        for (Item item : this) {
+        for (Item item : this.firstOfEachKind()) {
             item.remove();
+        }
+    }
+
+    private Items firstOfEachKind() {
+        Items firstOfEachKind = new Items();
+        Set<QualifiedItem> kinds = new HashSet<>();
+
+        for (Object item : this.valueSet()) {
+            QualifiedItem kind = QualifiedItem.of(item);
+            if (!kinds.contains(kind)) {
+                kinds.add(kind);
+                firstOfEachKind.add(getFirstAvailableOrNotFound(item));
+            }
+        }
+        return firstOfEachKind;
+    }
+
+    private Item getFirstAvailableOrNotFound(Object item) {
+        Item firstAvailable = getApplied().findFirst(item);
+        if (firstAvailable == Item.NotFound) {
+            firstAvailable = getAvailable().findFirst(item);
+            if (firstAvailable == Item.NotFound) {
+                firstAvailable = findFirst(item);
+            }
+        }
+        return firstAvailable;
+    }
+
+    private Item findFirst(Object item) {
+        Optional<Item> first = stream().filter(i -> i.is(item)).findFirst();
+        if (first.isPresent()) {
+            return first.get();
+        } else {
+            return Item.NotFound;
         }
     }
 
@@ -324,9 +360,9 @@ public class Items extends ArrayList<Item> {
         return items;
     }
 
-    public Object[] values() {
-        Object[] values = new Object[size()];
-        return stream().map(item -> itemImpl(item).item).collect(Collectors.toList()).toArray(values);
+    public Object[] valueSet() {
+        return stream().map(item -> itemImpl(item).item).collect(Collectors.toCollection(LinkedHashSet::new))
+                .toArray(new Object[0]);
     }
 
     private static ItemImpl itemImpl(Item item) {

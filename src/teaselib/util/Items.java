@@ -289,11 +289,28 @@ public class Items extends ArrayList<Item> {
         return this;
     }
 
+    // TODO Split to string and enum, since states would be passed in as proxies
     public Items applyTo(Object... peers) {
         for (Item item : this.firstOfEachKind()) {
-            item.applyTo(peers);
+            item.applyTo(removeProxies(peers));
         }
         return this;
+    }
+
+    private static Object[] removeProxies(Object... peers) {
+        Object[] proxiesRemoved = new Object[peers.length];
+        for (int i = 0; i < peers.length; i++) {
+            proxiesRemoved[i] = removeProxy(peers[i]);
+        }
+        return proxiesRemoved;
+    }
+
+    private static Object removeProxy(Object item) {
+        if (item instanceof Item) {
+            return itemImpl((Item) item);
+        } else {
+            return item;
+        }
     }
 
     public Items over(long duration, TimeUnit unit) {

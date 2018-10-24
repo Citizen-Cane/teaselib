@@ -539,7 +539,7 @@ public class ItemsTest {
     }
 
     @Test
-    public void testThatRemoveOnlyRemovingSingleItemExplicit() {
+    public void testThatRemoveSingleItemExplicit() {
         TestScript script = TestScript.getOne();
         script.addTestUserItems();
 
@@ -553,30 +553,49 @@ public class ItemsTest {
         gag0.applyTo(Body.InMouth);
         assertTrue(gag0.applied());
         assertFalse(gag1.applied());
-        assertFalse(script.state(Toys.Gag).is(gag0));
-        assertFalse(script.state(Toys.Gag).is(gag1));
 
         gag1.applyTo(Body.InMouth);
         assertTrue(gag0.applied());
         assertTrue(gag1.applied());
-        assertFalse(script.state(Toys.Gag).is(gag0));
-        assertFalse(script.state(Toys.Gag).is(gag1));
-
-        // TODO removeFrom should remove item completely if all peers have been removed
-        // gag0.removeFrom(Body.InMouth);
 
         gag0.remove();
-        assertFalse(script.state(Toys.Gag).is(gag0));
-        assertFalse(script.state(Toys.Gag).is(gag1));
-        // TODO Doesn't work because gag0 got a reference to itself due to applyTo()
         assertFalse(gag0.applied());
         assertTrue(gag1.applied());
         assertEquals(1, gags.getApplied().size());
         assertTrue(inMouth.applied());
 
         gag1.remove();
-        assertFalse(script.state(Toys.Gag).is(gag0));
-        assertFalse(script.state(Toys.Gag).is(gag1));
+        assertEquals(0, gags.getApplied().size());
+        assertFalse(inMouth.applied());
+    }
+
+    @Test
+    public void testRemoveFromSingleItemExplicit() {
+        TestScript script = TestScript.getOne();
+        script.addTestUserItems();
+
+        Items gags = script.items(Toys.Gag);
+        assertEquals(5, gags.size());
+
+        Item gag0 = gags.get(0);
+        Item gag1 = gags.get(1);
+        State inMouth = script.state(Body.InMouth);
+
+        gag0.applyTo(Body.InMouth);
+        assertTrue(gag0.applied());
+        assertFalse(gag1.applied());
+
+        gag1.applyTo(Body.InMouth);
+        assertTrue(gag0.applied());
+        assertTrue(gag1.applied());
+
+        gag0.removeFrom(Body.InMouth);
+        assertFalse(gag0.applied());
+        assertTrue(gag1.applied());
+        assertEquals(1, gags.getApplied().size());
+        assertTrue(inMouth.applied());
+
+        gag1.removeFrom(Body.InMouth);
         assertEquals(0, gags.getApplied().size());
         assertFalse(inMouth.applied());
     }

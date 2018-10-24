@@ -5,7 +5,6 @@ import static org.junit.Assert.*;
 import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 
-import org.junit.Ignore;
 import org.junit.Test;
 
 import teaselib.Body;
@@ -472,7 +471,6 @@ public class ItemIdentityTest {
     }
 
     @Test
-    @Ignore
     // TODO This should work as well, but without adding item instance to item state
     public void testThatStateIsItem() {
         TestScript script = TestScript.getOne();
@@ -485,7 +483,6 @@ public class ItemIdentityTest {
     }
 
     @Test
-    @Ignore
     // TODO This should work as well, but without adding item instance to item state
     public void testThatStateIsItemWhenAppliedExplicitely() {
         TestScript script = TestScript.getOne();

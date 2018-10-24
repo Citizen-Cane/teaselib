@@ -5,6 +5,7 @@ import static org.junit.Assert.*;
 import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import teaselib.Body;
@@ -23,7 +24,6 @@ import teaselib.test.TestScript;
  *
  */
 public class ItemIdentityTest {
-
     @Test
     public void testRetrievingTheIdenticalItem() {
         TeaseScript script = TestScript.getOne();
@@ -154,33 +154,25 @@ public class ItemIdentityTest {
         verifyAllPegsRemoved(script, nipples, clothesPegsOnNipples);
     }
 
-    @Test(expected = AssertionError.class)
-    public void testApplyLotsOfItemInstancesAndRemovePegsAtOnceDoesntWork() {
+    @Test
+    public void testApplyLotsOfItemInstancesAndRemovePegsAtOnce() {
         TestScript script = TestScript.getOne();
         State nipples = script.state(Body.OnNipples);
         ArrayList<Item> clothesPegsOnNipples = placeClothesPegs(script, nipples);
 
-        // Doesn't work because the specific {@code item(Household.Clothes_Pegs)} instance has ever been added
-        // When adding specific instances, those have to be removed explicitly or all at once
         script.item(Household.Clothes_Pegs).removeFrom(Body.OnNipples);
 
-        @SuppressWarnings("unused")
-        State pegs = script.state(Household.Clothes_Pegs);
         verifyAllPegsRemoved(script, nipples, clothesPegsOnNipples);
     }
 
-    @Test(expected = AssertionError.class)
-    public void testApplyLotsOfItemInstancesAndRemoveFromNipplesAtOnceDoesntWork() {
+    @Test
+    public void testApplyLotsOfItemInstancesAndRemoveFromNipplesAtOnce() {
         TestScript script = TestScript.getOne();
         State nipples = script.state(Body.OnNipples);
         ArrayList<Item> clothesPegsOnNipples = placeClothesPegs(script, nipples);
 
-        // Doesn't work because no Body.OnNipples instance has ever been added,
-        // and Body.OnNipples isn't an item anyway - trying to remove the wrong way
         script.item(Body.OnNipples).removeFrom(Household.Clothes_Pegs);
 
-        @SuppressWarnings("unused")
-        State pegs = script.state(Household.Clothes_Pegs);
         verifyAllPegsRemoved(script, nipples, clothesPegsOnNipples);
     }
 
@@ -217,7 +209,11 @@ public class ItemIdentityTest {
     }
 
     private static void verifyAllPegsRemoved(TestScript script, State nipples, ArrayList<Item> clothesPegsOnNipples) {
-        assertFalse(script.item(Household.Clothes_Pegs).applied());
+        State pegs = script.state(Household.Clothes_Pegs);
+        assertFalse(pegs.applied());
+
+        Item clothesPegs = script.item(Household.Clothes_Pegs);
+        assertFalse(clothesPegs.applied());
         assertFalse(nipples.applied());
 
         for (Item peg : clothesPegsOnNipples) {
@@ -382,7 +378,7 @@ public class ItemIdentityTest {
     }
 
     @Test
-    public void testCanApplyMultipleInstances() {
+    public void testCanApplyMultipleInstancesWithoutDefaultPeers() {
         TestScript script = TestScript.getOne();
 
         ArrayList<Item> clothesPegsOnNipples = getClothesPegs(script, 10);
@@ -391,13 +387,26 @@ public class ItemIdentityTest {
             assertTrue(peg.canApply());
             peg.applyTo(Body.OnNipples);
 
-            @SuppressWarnings("unused")
             State pegs = script.state(Household.Clothes_Pegs);
-
+            assertTrue(pegs.applied());
             assertTrue(peg.applied());
-            assertFalse(peg.canApply());
             assertTrue(peg.is(peg));
+
+            assertTrue(peg.canApply());
         }
+    }
+
+    @Test
+    public void testCanApplySingleInstancesWithDefaultPeers() {
+        TestScript script = TestScript.getOne();
+
+        Item nippleClamps = script.item(Toys.Nipple_Clamps);
+        assertTrue(nippleClamps.canApply());
+        nippleClamps.apply();
+        assertTrue(nippleClamps.applied());
+        assertTrue(nippleClamps.is(nippleClamps));
+
+        assertFalse(nippleClamps.canApply());
     }
 
     @Test
@@ -462,4 +471,29 @@ public class ItemIdentityTest {
         assertTrue(script.item(Toys.Gag).is(Toys.Gags.Ring_Gag));
     }
 
+    @Test
+    @Ignore
+    // TODO This should work as well, but without adding item instance to item state
+    public void testThatStateIsItem() {
+        TestScript script = TestScript.getOne();
+        script.debugger.freezeTime();
+
+        Item item = script.item(Toys.Gag);
+        item.apply();
+        assertTrue(item.is(item));
+        assertTrue(script.state(Toys.Gag).is(item));
+    }
+
+    @Test
+    @Ignore
+    // TODO This should work as well, but without adding item instance to item state
+    public void testThatStateIsItemWhenAppliedExplicitely() {
+        TestScript script = TestScript.getOne();
+        script.debugger.freezeTime();
+
+        Item item = script.item(Household.Clothes_Pegs);
+        item.apply();
+        assertTrue(item.is(item));
+        assertTrue(script.state(Household.Clothes_Pegs).is(item));
+    }
 }

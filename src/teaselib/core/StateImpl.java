@@ -245,7 +245,7 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
             setTemporary();
         }
 
-        for (Object attribute : attributes) {
+        for (Object attribute : AbstractProxy.removeProxies(attributes)) {
             if (!peers.contains(attribute)) {
                 peers.add(attribute);
                 StateImpl state = state(attribute);
@@ -414,17 +414,21 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
             throw new IllegalArgumentException("removeFrom requires at least one peer");
         }
 
-        for (Object peer : peers2) {
+        for (Object peer : AbstractProxy.removeProxies(peers2)) {
             if (peer instanceof List<?> || peer instanceof Object[]) {
                 throw new IllegalArgumentException();
             }
 
             if (peers.contains(peer)) {
                 peers.remove(peer);
+
                 if (!(peer instanceof ItemImpl)) {
                     removeRepresentingItems(peer);
                 }
-                state(peer).removeFrom(item);
+
+                if (!anyMoreItemInstanceOfSameKind(peer)) {
+                    state(peer).removeFrom(item);
+                }
             }
 
             if (allPeersAreTemporary() && isPersisted()) {
@@ -440,11 +444,25 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
         return this;
     }
 
-    private void removeRepresentingItems(Object rawItem) {
-        for (Object object : new HashSet<>(peers)) {
-            if (object instanceof ItemImpl) {
-                ItemImpl itemImpl = (ItemImpl) object;
-                if (itemImpl.item == rawItem) {
+    public boolean anyMoreItemInstanceOfSameKind(Object value) {
+        // if (!(value instanceof Item))
+        // return false;
+
+        return instancesOfSameKind(value) > 0;
+    }
+
+    public long instancesOfSameKind(Object value) {
+        Object requested = value instanceof Item ? ((ItemImpl) value).item : value;
+        return peers.stream().filter(peer -> {
+            return (peer instanceof ItemImpl && ((ItemImpl) peer).item == requested);
+        }).count();
+    }
+
+    private void removeRepresentingItems(Object value) {
+        for (Object peer : new HashSet<>(peers)) {
+            if (peer instanceof ItemImpl) {
+                ItemImpl itemImpl = (ItemImpl) peer;
+                if (itemImpl.item == value) {
                     peers.remove(itemImpl);
                 }
             }
@@ -575,5 +593,4 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
             return false;
         return true;
     }
-
 }

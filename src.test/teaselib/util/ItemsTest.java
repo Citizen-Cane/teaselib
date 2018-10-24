@@ -488,6 +488,28 @@ public class ItemsTest {
     }
 
     @Test
+    public void testRemovingMultipleItems() {
+        TestScript script = TestScript.getOne();
+        script.addTestUserItems();
+
+        Items ballTorture = script.items(Toys.Ball_Stretcher, Toys.Humbler);
+        assertEquals(2, ballTorture.size());
+
+        ballTorture.apply();
+        assertEquals(2, ballTorture.getApplied().size());
+        ballTorture.remove();
+        assertEquals(0, ballTorture.getApplied().size());
+
+        ballTorture.apply();
+        assertEquals(2, ballTorture.getApplied().size());
+
+        script.item(Toys.Humbler).remove();
+        assertEquals(1, ballTorture.getApplied().size());
+        script.item(Toys.Ball_Stretcher).remove();
+        assertEquals(0, ballTorture.getApplied().size());
+    }
+
+    @Test
     public void testThatRemoveOnlyRemovingSingleItem() {
         TestScript script = TestScript.getOne();
         script.addTestUserItems();
@@ -495,20 +517,68 @@ public class ItemsTest {
         Items gags = script.items(Toys.Gag);
         assertEquals(5, gags.size());
 
-        gags.get(0).apply();
-        assertTrue(gags.get(0).applied());
-        assertFalse(gags.get(1).applied());
+        Item gag0 = gags.get(0);
+        Item gag1 = gags.get(1);
+        State inMouth = script.state(Body.InMouth);
 
-        gags.get(1).apply();
-        assertTrue(gags.get(0).applied());
-        assertTrue(gags.get(1).applied());
+        gag0.apply();
+        assertTrue(gag0.applied());
+        assertFalse(gag1.applied());
 
-        gags.get(0).remove();
-        // This removes both ItemImpl instances -> test fails - debug in StateImpl.remove()
+        gag1.apply();
+        assertTrue(gag0.applied());
+        assertTrue(gag1.applied());
+
+        gag0.remove();
         assertEquals(1, gags.getApplied().size());
+        assertTrue(inMouth.applied());
 
-        gags.get(1).remove();
+        gag1.remove();
         assertEquals(0, gags.getApplied().size());
+        assertFalse(inMouth.applied());
+    }
+
+    @Test
+    public void testThatRemoveOnlyRemovingSingleItemExplicit() {
+        TestScript script = TestScript.getOne();
+        script.addTestUserItems();
+
+        Items gags = script.items(Toys.Gag);
+        assertEquals(5, gags.size());
+
+        Item gag0 = gags.get(0);
+        Item gag1 = gags.get(1);
+        State inMouth = script.state(Body.InMouth);
+
+        gag0.applyTo(Body.InMouth);
+        assertTrue(gag0.applied());
+        assertFalse(gag1.applied());
+        assertFalse(script.state(Toys.Gag).is(gag0));
+        assertFalse(script.state(Toys.Gag).is(gag1));
+
+        gag1.applyTo(Body.InMouth);
+        assertTrue(gag0.applied());
+        assertTrue(gag1.applied());
+        assertFalse(script.state(Toys.Gag).is(gag0));
+        assertFalse(script.state(Toys.Gag).is(gag1));
+
+        // TODO removeFrom should remove item completely if all peers have been removed
+        // gag0.removeFrom(Body.InMouth);
+
+        gag0.remove();
+        assertFalse(script.state(Toys.Gag).is(gag0));
+        assertFalse(script.state(Toys.Gag).is(gag1));
+        // TODO Doesn't work because gag0 got a reference to itself due to applyTo()
+        assertFalse(gag0.applied());
+        assertTrue(gag1.applied());
+        assertEquals(1, gags.getApplied().size());
+        assertTrue(inMouth.applied());
+
+        gag1.remove();
+        assertFalse(script.state(Toys.Gag).is(gag0));
+        assertFalse(script.state(Toys.Gag).is(gag1));
+        assertEquals(0, gags.getApplied().size());
+        assertFalse(inMouth.applied());
     }
 
     @Test

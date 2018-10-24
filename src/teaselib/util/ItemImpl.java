@@ -208,7 +208,6 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
         applyInstanceTo(items);
 
         State state = teaseLib.state(domain, item);
-        state.applyTo(this);
         applyMyAttributesTo(state);
 
         return state.applyTo(items);
@@ -241,9 +240,22 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
         relevantPeers.addAll(attributes);
 
         for (Object peer : relevantPeers) {
-            State peerState = teaseLib.state(domain, peer);
-            peerState.removeFrom(this);
-            peerState.removeFrom(this.item);
+            StateImpl peerState = (StateImpl) teaseLib.state(domain, peer);
+            long instancesOfSameKind = peerState.instancesOfSameKind(this);
+
+            // Some tests assert that removing a similar item also works (gates of hell vs chastity belt)
+            // - this is implicitly resolved by removing the state completely on removing the last item instance
+            if (peerState.anyMoreItemInstanceOfSameKind(this)) {
+                peerState.removeFrom(this);
+                if (peerState.anyMoreItemInstanceOfSameKind(this)) {
+                    if (instancesOfSameKind > 1 && instancesOfSameKind > peerState.instancesOfSameKind(this)) {
+                        // Gross hack to remove just the item instance
+                        // TODO Remove all applied attributes that belongs to the item
+                        // TODO Make this work with items of same kind but different default peers
+                        return this;
+                    }
+                }
+            }
         }
 
         return state.remove();

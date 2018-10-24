@@ -1,5 +1,10 @@
 package teaselib.core.state;
 
+import teaselib.State;
+import teaselib.core.StateImpl;
+import teaselib.util.Item;
+import teaselib.util.ItemImpl;
+
 public class AbstractProxy<T> {
 
     protected final String namespace;
@@ -29,4 +34,35 @@ public class AbstractProxy<T> {
         return state.hashCode();
     }
 
+    public static Object[] removeProxies(Object... peers) {
+        Object[] proxiesRemoved = new Object[peers.length];
+        for (int i = 0; i < peers.length; i++) {
+            proxiesRemoved[i] = removeProxy(peers[i]);
+        }
+        return proxiesRemoved;
+    }
+
+    public static Object removeProxy(Object item) {
+        if (item instanceof Item) {
+            return itemImpl((Item) item);
+        } else if (item instanceof State) {
+            return stateImpl((State) item);
+        } else {
+            return item;
+        }
+    }
+
+    public static ItemImpl itemImpl(Item item) {
+        if (item instanceof ItemProxy)
+            return itemImpl(((ItemProxy) item).item);
+        else
+            return (ItemImpl) item;
+    }
+
+    public static StateImpl stateImpl(State state) {
+        if (state instanceof StateProxy)
+            return stateImpl(((StateProxy) state).state);
+        else
+            return (StateImpl) state;
+    }
 }

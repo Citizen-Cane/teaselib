@@ -52,7 +52,7 @@ public class StateMaps {
                 toString.append("state:" + state.item.toString());
             } else if (object instanceof ItemImpl) {
                 ItemImpl item = (ItemImpl) object;
-                toString.append("item:" + item.item.toString());
+                toString.append("item:" + item.guid.toString());
             } else {
                 toString.append(QualifiedItem.of(object).toString());
             }

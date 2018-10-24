@@ -12,7 +12,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-import teaselib.core.state.ItemProxy;
+import teaselib.core.state.AbstractProxy;
 import teaselib.core.util.QualifiedItem;
 import teaselib.util.math.Combinations;
 import teaselib.util.math.Varieties;
@@ -292,25 +292,9 @@ public class Items extends ArrayList<Item> {
     // TODO Split to string and enum, since states would be passed in as proxies
     public Items applyTo(Object... peers) {
         for (Item item : this.firstOfEachKind()) {
-            item.applyTo(removeProxies(peers));
+            item.applyTo(AbstractProxy.removeProxies(peers));
         }
         return this;
-    }
-
-    private static Object[] removeProxies(Object... peers) {
-        Object[] proxiesRemoved = new Object[peers.length];
-        for (int i = 0; i < peers.length; i++) {
-            proxiesRemoved[i] = removeProxy(peers[i]);
-        }
-        return proxiesRemoved;
-    }
-
-    private static Object removeProxy(Object item) {
-        if (item instanceof Item) {
-            return itemImpl((Item) item);
-        } else {
-            return item;
-        }
     }
 
     public Items over(long duration, TimeUnit unit) {
@@ -383,9 +367,6 @@ public class Items extends ArrayList<Item> {
     }
 
     private static ItemImpl itemImpl(Item item) {
-        if (item instanceof ItemProxy)
-            return itemImpl(((ItemProxy) item).item);
-        else
-            return (ItemImpl) item;
+        return AbstractProxy.itemImpl(item);
     }
 }

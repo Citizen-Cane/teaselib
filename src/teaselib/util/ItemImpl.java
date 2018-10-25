@@ -256,8 +256,6 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
     public State remove() {
         StateImpl state = (StateImpl) teaseLib.state(domain, item);
         if (state.peers().contains(this.guid)) {
-            state.removeFrom(this.guid);
-
             HashSet<Object> relevantPeers = new HashSet<>(state.peers());
             relevantPeers.addAll(Arrays.asList(defaultPeers));
             relevantPeers.addAll(attributes);
@@ -281,6 +279,7 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
                 }
             }
 
+            releaseInstanceGuid();
             return state.remove();
         } else {
             return this;
@@ -290,10 +289,22 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
     @Override
     public final State removeFrom(Object... peer) {
         State state = teaseLib.state(domain, item);
-        state.removeFrom(this.guid);
-        return state.removeFrom(peer);
+        State removeFrom = state.removeFrom(peer);
+        releaseInstanceGuid();
+        return removeFrom;
     }
 
+    public void releaseInstanceGuid() {
+        for (Object peer : defaultPeers) {
+            StateImpl peerState = (StateImpl) teaseLib.state(domain, peer);
+            if (peerState.peers().contains(this)) {
+                return;
+            }
+        }
+        StateImpl state = (StateImpl) teaseLib.state(domain, item);
+        state.removeFrom(this.guid);
+    }
+    
     @Override
     public void applyAttributes(Object... attributes) {
         ((StateMaps.Attributes) teaseLib.state(domain, item)).applyAttributes(attributes);

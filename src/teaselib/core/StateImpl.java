@@ -467,7 +467,7 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
                 ItemImpl itemImpl = (ItemImpl) peer;
                 if (QualifiedItem.of(itemImpl.item).equals(QualifiedItem.of(value))) {
                     peers.remove(itemImpl);
-                    state(value).removeFrom(itemImpl.guid);
+                    itemImpl.releaseInstanceGuid();
                 }
             }
         }

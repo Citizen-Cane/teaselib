@@ -245,6 +245,8 @@ public class ReleaseActionTest {
         assertTrue(removeRestraintsAction.applied());
 
         chains.remove();
+        // TODO There are still restraints peers attached to the chains and bell
+        // - all peers but the bell' action state are removed on removing the restraints
         assertFalse(removeChainsAction.applied());
         assertTrue(removeRestraintsAction.applied());
         assertFalse(chains.anyApplied());

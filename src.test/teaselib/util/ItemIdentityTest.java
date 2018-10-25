@@ -104,6 +104,12 @@ public class ItemIdentityTest {
         Item otherChastityDevice = script.items(Toys.Chastity_Device).query(Toys.Chastity_Devices.Belt).get();
         otherChastityDevice.remove();
 
+        // Removing the wrong item doesn't work
+        assertTrue(chastityDevice.applied());
+        assertTrue(onPenis.applied());
+
+        // Instead just remove the default item
+        script.item(Toys.Chastity_Device).remove();
         assertFalse(chastityDevice.applied());
         assertFalse(onPenis.applied());
     }
@@ -125,6 +131,12 @@ public class ItemIdentityTest {
                 .query("teaselib.Toys.Chastity_Devices.Belt").get();
         otherChastityDevice.remove();
 
+        // Removing the wrong item doesn't work
+        assertTrue(chastityDevice.applied());
+        assertTrue(onPenis.applied());
+
+        // Instead just remove the default item
+        script.item("teaselib.Toys.Chastity_Device").remove();
         assertFalse(chastityDevice.applied());
         assertFalse(onPenis.applied());
     }
@@ -148,18 +160,41 @@ public class ItemIdentityTest {
         State nipples = script.state(Body.OnNipples);
         ArrayList<Item> clothesPegsOnNipples = placeClothesPegs(script, nipples);
 
-        script.item(Household.Clothes_Pegs).remove();
+        // remove just on item instance
+        clothesPegsOnNipples.remove(0).remove();
+        assertTrue(script.state(Household.Clothes_Pegs).applied());
+        // Testing script default item doesn'twork here,
+        // since we've created a lot of temporary items ourselves
+        script.state(Household.Clothes_Pegs).remove();
 
         verifyAllPegsRemoved(script, nipples, clothesPegsOnNipples);
     }
 
     @Test
-    public void testApplyLotsOfItemInstancesAndRemovePegsAtOnce() {
+    public void testApplyLotsOfItemInstancesAndRemovingAlreadyRemovedDoesntRemoveAll() {
         TestScript script = TestScript.getOne();
         State nipples = script.state(Body.OnNipples);
-        ArrayList<Item> clothesPegsOnNipples = placeClothesPegs(script, nipples);
+        State clothesPinsState = script.state(Household.Clothes_Pegs);
 
-        script.item(Household.Clothes_Pegs).removeFrom(Body.OnNipples);
+        assertFalse(clothesPinsState.applied());
+        placeClothesPegs(script, nipples);
+        Item notApplied = script.item(Household.Clothes_Pegs);
+        assertFalse(notApplied.applied());
+
+        assertTrue(clothesPinsState.applied());
+        notApplied.remove();
+        assertTrue(clothesPinsState.applied());
+    }
+
+    @Test
+    public void testApplyLotsOfItemInstancesAndRemovePegsAtOnce() {
+        TestScript script = TestScript.getOne();
+
+        State clothesPegs = script.state(Household.Clothes_Pegs);
+        State nipples = script.state(Body.OnNipples);
+
+        ArrayList<Item> clothesPegsOnNipples = placeClothesPegs(script, nipples);
+        clothesPegs.removeFrom(Body.OnNipples);
 
         verifyAllPegsRemoved(script, nipples, clothesPegsOnNipples);
     }
@@ -170,7 +205,8 @@ public class ItemIdentityTest {
         State nipples = script.state(Body.OnNipples);
         ArrayList<Item> clothesPegsOnNipples = placeClothesPegs(script, nipples);
 
-        script.item(Body.OnNipples).removeFrom(Household.Clothes_Pegs);
+        assertTrue(script.state(Body.OnNipples).applied());
+        script.state(Body.OnNipples).removeFrom(Household.Clothes_Pegs);
 
         verifyAllPegsRemoved(script, nipples, clothesPegsOnNipples);
     }
@@ -180,6 +216,7 @@ public class ItemIdentityTest {
         ArrayList<Item> clothesPegsOnNipples = getClothesPegs(script, numberOfPegs);
 
         for (Item peg : clothesPegsOnNipples) {
+            assertFalse(peg.applied());
             peg.applyTo(Body.OnNipples);
         }
         assertTrue(nipples.applied());
@@ -384,6 +421,7 @@ public class ItemIdentityTest {
 
         for (Item peg : clothesPegsOnNipples) {
             assertTrue(peg.canApply());
+            assertFalse(peg.applied());
             peg.applyTo(Body.OnNipples);
 
             State pegs = script.state(Household.Clothes_Pegs);
@@ -391,7 +429,7 @@ public class ItemIdentityTest {
             assertTrue(peg.applied());
             assertTrue(peg.is(peg));
 
-            assertTrue(peg.canApply());
+            assertFalse(peg.canApply());
         }
     }
 

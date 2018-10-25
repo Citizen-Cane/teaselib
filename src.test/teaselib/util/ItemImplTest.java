@@ -177,7 +177,7 @@ public class ItemImplTest {
         assertTrue(script.state(Toys.Wrist_Restraints).is(script.namespace));
         assertTrue(script.state(Body.WristsTied).is(script.namespace));
 
-        script.item(Body.WristsTied).remove();
+        script.state(Body.WristsTied).remove();
         assertFalse(script.state(Body.WristsTied).applied());
 
         assertFalse(script.state(Body.WristsTied).is(script.namespace));
@@ -197,7 +197,7 @@ public class ItemImplTest {
         assertTrue(script.state(Toys.Ankle_Restraints).is(script.namespace));
         assertTrue(script.state(Body.AnklesTied).is(script.namespace));
 
-        script.item(Body.WristsTied).remove();
+        script.state(Body.WristsTied).remove();
         assertFalse(script.state(Body.WristsTied).applied());
 
         assertFalse(script.state(Body.WristsTied).is(script.namespace));

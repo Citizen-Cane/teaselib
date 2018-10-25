@@ -300,7 +300,10 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
     private boolean allItemInstancesFoundInPeers(Object... attributes) {
         List<Object> instances = Arrays.stream(attributes).filter(attribute -> attribute instanceof Item)
                 .map(AbstractProxy::removeProxy).collect(Collectors.toList());
-        return peers().containsAll(instances);
+        List<String> guids = Arrays.stream(attributes).filter(attribute -> attribute instanceof Item)
+                .map(AbstractProxy::removeProxy).map(instance -> ((ItemImpl) instance).guid)
+                .collect(Collectors.toList());
+        return peers().containsAll(instances) || peers().containsAll(guids);
     }
 
     private Set<Object> attributesAndPeers() {
@@ -462,8 +465,9 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
         for (Object peer : new HashSet<>(peers)) {
             if (peer instanceof ItemImpl) {
                 ItemImpl itemImpl = (ItemImpl) peer;
-                if (itemImpl.item == value) {
+                if (QualifiedItem.of(itemImpl.item).equals(QualifiedItem.of(value))) {
                     peers.remove(itemImpl);
+                    state(value).removeFrom(itemImpl.guid);
                 }
             }
         }

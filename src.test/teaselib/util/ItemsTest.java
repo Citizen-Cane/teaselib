@@ -26,7 +26,9 @@ public class ItemsTest {
 
         script.state(Clothes.Stockings).apply();
         assertTrue(script.state(Clothes.Stockings).applied());
-        assertTrue(script.item(Clothes.Stockings).applied());
+        // TODO Would be true if only a single item existed
+        // -> to resolve applying state should also apply default item - review
+        assertFalse(script.item(Clothes.Stockings).applied());
 
         Items items = script.items(Clothes.Garter_Belt);
         items.apply();
@@ -44,6 +46,7 @@ public class ItemsTest {
 
         Items items = script.items(Clothes.Garter_Belt);
         items.apply();
+        assertTrue(script.state(Clothes.Garter_Belt).applied());
         assertTrue(script.item(Clothes.Garter_Belt).applied());
     }
 
@@ -459,17 +462,23 @@ public class ItemsTest {
     }
 
     @Test
-    public void documentDifferenceBetweenItemAndState() {
+    public void documentThatApplyingStateDoesntApplyItems() {
         TeaseScript script = TestScript.getOne();
 
         script.item(Household.Clothes_Pegs).applyTo(Body.OnNipples);
-        assertTrue(script.item(Body.OnNipples).applied());
+
+        assertTrue(script.state(Household.Clothes_Pegs).applied());
+        assertTrue(script.state(Household.Clothes_Pegs).is(Body.OnNipples));
+        assertTrue(script.state(Household.Clothes_Pegs).is(script.namespace));
 
         assertTrue(script.item(Household.Clothes_Pegs).applied());
         assertTrue(script.item(Household.Clothes_Pegs).is(Body.OnNipples));
         assertTrue(script.item(Household.Clothes_Pegs).is(script.namespace));
 
+        assertTrue(script.state(Body.OnNipples).applied());
         assertTrue(script.state(Body.OnNipples).is(Household.Clothes_Pegs));
+
+        assertFalse(script.item(Body.OnNipples).applied());
         assertFalse(script.item(Body.OnNipples).is(Household.Clothes_Pegs));
     }
 

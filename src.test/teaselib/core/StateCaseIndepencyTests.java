@@ -75,8 +75,8 @@ public class StateCaseIndepencyTests {
         TeaseScript script = TestScript.getOne();
 
         script.item("teaselib.household.clothes_pegs").applyTo("teaseLib.body.onnipples");
-        assertTrue(script.item(Body.OnNipples).applied());
-        assertTrue(script.item("TeaseLib.Body.OnNipples").applied());
+        assertTrue(script.state(Body.OnNipples).applied());
+        assertTrue(script.state("TeaseLib.Body.OnNipples").applied());
 
         assertTrue(script.item(Household.Clothes_Pegs).applied());
         assertTrue(script.item(Household.Clothes_Pegs).is(script.namespace));

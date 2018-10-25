@@ -159,11 +159,12 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
 
     @Override
     public boolean applied() {
-        if (teaseLib.state(domain, item).applied()) {
+        State state = teaseLib.state(domain, item);
+        if (state.applied()) {
             if (defaultPeers.length > 0) {
                 return appliedToPeers();
             } else {
-                return true;
+                return ((StateImpl) state).peers().contains(guid);
             }
         } else {
             return false;
@@ -204,6 +205,7 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
             applyInstanceTo(defaultPeers);
         }
 
+        state.applyTo(this.guid);
         applyMyAttributesTo(state);
         return (State.Options) state;
     }
@@ -228,6 +230,7 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
 
         State state = teaseLib.state(domain, item);
         applyMyAttributesTo(state);
+        state.applyTo(this.guid);
         return state.applyTo(items);
     }
 
@@ -252,36 +255,43 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
     @Override
     public State remove() {
         StateImpl state = (StateImpl) teaseLib.state(domain, item);
+        if (state.peers().contains(this.guid)) {
+            state.removeFrom(this.guid);
 
-        HashSet<Object> relevantPeers = new HashSet<>(state.peers());
-        relevantPeers.addAll(Arrays.asList(defaultPeers));
-        relevantPeers.addAll(attributes);
+            HashSet<Object> relevantPeers = new HashSet<>(state.peers());
+            relevantPeers.addAll(Arrays.asList(defaultPeers));
+            relevantPeers.addAll(attributes);
 
-        for (Object peer : relevantPeers) {
-            StateImpl peerState = (StateImpl) teaseLib.state(domain, peer);
-            long instancesOfSameKind = peerState.instancesOfSameKind(this);
+            for (Object peer : relevantPeers) {
+                StateImpl peerState = (StateImpl) teaseLib.state(domain, peer);
+                long instancesOfSameKind = peerState.instancesOfSameKind(this);
 
-            // Some tests assert that removing a similar item also works (gates of hell vs chastity belt)
-            // - this is implicitly resolved by removing the state completely on removing the last item instance
-            if (peerState.anyMoreItemInstanceOfSameKind(this)) {
-                peerState.removeFrom(this);
+                // Some tests assert that removing a similar item also works (gates of hell vs chastity belt)
+                // - this is implicitly resolved by removing the state completely on removing the last item instance
                 if (peerState.anyMoreItemInstanceOfSameKind(this)) {
-                    if (instancesOfSameKind > 1 && instancesOfSameKind > peerState.instancesOfSameKind(this)) {
-                        // Gross hack to remove just the item instance
-                        // TODO Remove all applied attributes that belongs to the item
-                        // TODO Make this work with items of same kind but different default peers
-                        return this;
+                    peerState.removeFrom(this);
+                    if (peerState.anyMoreItemInstanceOfSameKind(this)) {
+                        if (instancesOfSameKind > 1 && instancesOfSameKind > peerState.instancesOfSameKind(this)) {
+                            // Gross hack to remove just the item instance
+                            // TODO Remove all applied attributes that belongs to the item
+                            // TODO Make this work with items of same kind but different default peers
+                            return this;
+                        }
                     }
                 }
             }
-        }
 
-        return state.remove();
+            return state.remove();
+        } else {
+            return this;
+        }
     }
 
     @Override
     public final State removeFrom(Object... peer) {
-        return teaseLib.state(domain, item).removeFrom(peer);
+        State state = teaseLib.state(domain, item);
+        state.removeFrom(this.guid);
+        return state.removeFrom(peer);
     }
 
     @Override

@@ -190,7 +190,7 @@ public class ReleaseActionTest {
     }
 
     @Test
-    public void testReleaseActionInstanceRemoveOtherToyOfSameType() {
+    public void testReleaseActionInstanceRemoveDefaultToy() {
         TestScript script = TestScript.getOne();
         script.addTestUserItems();
 
@@ -201,15 +201,16 @@ public class ReleaseActionTest {
         Item handCuffs = script.items(Toys.Wrist_Restraints).query(Material.Metal).get();
         handCuffs.apply();
         handCuffs.applyTo(releaseAction);
-        assertTrue(handCuffs.is(script.namespace));
+        assertTrue(handCuffs.applied());
         assertTrue(handCuffs.is(script.namespace));
 
-        Item otherCuffs = script.items(Toys.Wrist_Restraints).query(Material.Leather).get();
-        assertNotEquals(handCuffs, otherCuffs);
-        otherCuffs.remove();
+        Item defaultCuffs = script.item(Toys.Wrist_Restraints);
+        assertTrue(defaultCuffs.applied());
+        defaultCuffs.remove();
+        assertEquals(handCuffs, defaultCuffs);
 
-        assertFalse(otherCuffs.applied());
-        assertFalse(otherCuffs.is(script.namespace));
+        assertFalse(defaultCuffs.applied());
+        assertFalse(defaultCuffs.is(script.namespace));
         assertFalse(releaseAction.is(script.namespace));
         assertFalse(releaseAction.applied());
 

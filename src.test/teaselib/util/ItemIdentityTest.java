@@ -409,7 +409,7 @@ public class ItemIdentityTest {
     }
 
     @Test
-    public void testItemIdentity() {
+    public void testItemIdentityEnumVsString() {
         TestScript script = TestScript.getOne();
 
         Item clothesPegsByEnum = script.item(Household.Clothes_Pegs);
@@ -471,6 +471,21 @@ public class ItemIdentityTest {
     }
 
     @Test
+    public void testThatItemIsNotOtherItem() {
+        TestScript script = TestScript.getOne();
+        script.debugger.freezeTime();
+
+        Item item = script.items(Toys.Gag).query(Toys.Gags.Ring_Gag).get();
+        item.apply();
+        assertTrue(item.is(item));
+
+        Item item2 = script.items(Toys.Gag).query(Toys.Gags.Bit_Gag).get();
+        assertNotEquals(item, item2);
+        assertFalse(item.is(item2));
+        // TODO comparing items works via has(all attributes) but should check peers for item instance
+    }
+
+    @Test
     // TODO This should work as well, but without adding item instance to item state
     public void testThatStateIsItem() {
         TestScript script = TestScript.getOne();
@@ -478,7 +493,12 @@ public class ItemIdentityTest {
 
         Item item = script.item(Toys.Gag);
         item.apply();
-        assertTrue(item.is(item));
+        assertTrue(script.item(Toys.Gag).applied());
+        assertTrue(script.state(Toys.Gag).applied());
+        assertTrue(script.state(Body.InMouth).is(item));
+        // TODO Requires item instance applied to item state but we decided against this - values is only applied to
+        // peers, not to itself
+        // -> can be resolved via peers
         assertTrue(script.state(Toys.Gag).is(item));
     }
 
@@ -490,7 +510,11 @@ public class ItemIdentityTest {
 
         Item item = script.item(Household.Clothes_Pegs);
         item.apply();
-        assertTrue(item.is(item));
+        assertTrue(script.item(Household.Clothes_Pegs).applied());
+        assertTrue(script.state(Household.Clothes_Pegs).applied());
+        // TODO Requires item instance applied to item state but we decided against this - values is only applied to
+        // peers, not to itself
+        // -> can be resolved via peersmust be added to item state itself
         assertTrue(script.state(Household.Clothes_Pegs).is(item));
     }
 }

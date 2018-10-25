@@ -115,15 +115,22 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
     }
 
     @Override
-    public boolean is(Object... attributes2) {
-        if (attributes2.length == 0)
+    // TODO Try to reduce number of checks
+    public boolean is(Object... attributes3) {
+        // TODO fails release action test - proxy removed from action state
+        // -> wrong test afterwards - this slipped through
+        Object[] attributes2 = attributes3; // AbstractProxy.removeProxies(attributes3);
+        if (attributes2.length == 0) {
             return false;
-        if (has(this.attributes.stream(), attributes2))
+        } else if (attributes2.length == 1 && attributes2[0] instanceof Item) {
+            return AbstractProxy.removeProxy(attributes2[0]) == this;
+        } else if (has(this.attributes.stream(), attributes2))
             return true;
 
         if (StateMaps.hasAllAttributes(((StateImpl) teaseLib.state(domain, item)).getAttributes(), attributes2))
             return applied();
 
+        // TODO Replace by stricter check
         long count = peerCount(Arrays.stream(attributes2));
         if (count < attributes2.length)
             return false;
@@ -153,11 +160,23 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
     @Override
     public boolean applied() {
         if (teaseLib.state(domain, item).applied()) {
-            long count = peerCount(peers().stream());
-            return count == peers().size();
+            if (defaultPeers.length > 0) {
+                return appliedToPeers();
+            } else {
+                return true;
+            }
         } else {
             return false;
         }
+    }
+
+    private boolean appliedToPeers() {
+        if (defaultPeers.length == 0) {
+            return true;
+        } else
+            return peers().stream().filter(peer -> !(peer instanceof ActionState)).anyMatch(peer -> {
+                return ((StateImpl) teaseLib.state(domain, peer)).peers().contains(this);
+            });
     }
 
     private long peerCount(Stream<?> stream) {
@@ -209,7 +228,6 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
 
         State state = teaseLib.state(domain, item);
         applyMyAttributesTo(state);
-
         return state.applyTo(items);
     }
 

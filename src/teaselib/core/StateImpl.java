@@ -298,9 +298,9 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
     }
 
     private boolean allItemInstancesFoundInPeers(Object... attributes) {
-        List<Object> items = Arrays.stream(attributes).filter(attribute -> attribute instanceof Item)
-                .collect(Collectors.toList());
-        return items.stream().filter(attribute -> peers.stream().anyMatch(attribute::equals)).count() == items.size();
+        List<Object> instances = Arrays.stream(attributes).filter(attribute -> attribute instanceof Item)
+                .map(AbstractProxy::removeProxy).collect(Collectors.toList());
+        return peers().containsAll(instances);
     }
 
     private Set<Object> attributesAndPeers() {

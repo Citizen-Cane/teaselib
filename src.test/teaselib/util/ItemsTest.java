@@ -510,7 +510,7 @@ public class ItemsTest {
     }
 
     @Test
-    public void testThatRemoveOnlyRemovingSingleItem() {
+    public void testRemoveSingleItem() {
         TestScript script = TestScript.getOne();
         script.addTestUserItems();
 
@@ -539,7 +539,7 @@ public class ItemsTest {
     }
 
     @Test
-    public void testThatRemoveSingleItemExplicit() {
+    public void testRemoveSingleItemImplicit() {
         TestScript script = TestScript.getOne();
         script.addTestUserItems();
 
@@ -591,6 +591,7 @@ public class ItemsTest {
 
         gag0.removeFrom(Body.InMouth);
         assertFalse(gag0.applied());
+        // TODO State removed too early
         assertTrue(gag1.applied());
         assertEquals(1, gags.getApplied().size());
         assertTrue(inMouth.applied());

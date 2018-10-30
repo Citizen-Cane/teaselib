@@ -253,7 +253,7 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
     }
 
     @Override
-    public State remove() {
+    public void remove() {
         StateImpl state = (StateImpl) teaseLib.state(domain, item);
         if (state.peers().contains(this.guid)) {
             HashSet<Object> relevantPeers = new HashSet<>(state.peers());
@@ -273,21 +273,19 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
                             // Gross hack to remove just the item instance
                             // TODO Remove all applied attributes that belongs to the item
                             // TODO Make this work with items of same kind but different default peers
-                            return this;
+                            return;
                         }
                     }
                 }
             }
 
             releaseInstanceGuid();
-            return state.remove();
-        } else {
-            return this;
+            state.remove();
         }
     }
 
     @Override
-    public final State removeFrom(Object... peers) {
+    public void removeFrom(Object... peers) {
         StateImpl state = (StateImpl) teaseLib.state(domain, item);
         if (state.peers().contains(this.guid)) {
             for (Object peer : peers) {
@@ -298,7 +296,6 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
                 }
             }
         }
-        return this;
     }
 
     public void releaseInstanceGuid() {

@@ -51,12 +51,12 @@ public interface Item extends State {
         }
 
         @Override
-        public State remove() {
+        public void remove() {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public State removeFrom(Object... peer) {
+        public void removeFrom(Object... peers) {
             throw new UnsupportedOperationException();
         }
 

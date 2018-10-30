@@ -61,13 +61,13 @@ public class StateProxy extends AbstractProxy<State> implements State, StateMaps
     }
 
     @Override
-    public State remove() {
-        return new StateProxy(namespace, state.remove());
+    public void remove() {
+        state.remove();
     }
 
     @Override
-    public State removeFrom(Object... peer) {
-        return new StateProxy(namespace, state.removeFrom(peer));
+    public void removeFrom(Object... peers) {
+        state.removeFrom(peers);
     }
 
     @Override

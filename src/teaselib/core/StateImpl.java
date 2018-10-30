@@ -394,7 +394,7 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
     }
 
     @Override
-    public State remove() {
+    public void remove() {
         if (!peers.isEmpty()) {
             Object[] copyOfPeers = new Object[peers.size()];
             for (Object peer : peers.toArray(copyOfPeers)) {
@@ -408,11 +408,10 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
         if (isPersisted()) {
             removePersistence();
         }
-        return this;
     }
 
     @Override
-    public State removeFrom(Object... peers2) {
+    public void removeFrom(Object... peers2) {
         if (peers2.length == 0) {
             throw new IllegalArgumentException("removeFrom requires at least one peer");
         }
@@ -444,7 +443,6 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
         } else if (isPersisted()) {
             updatePersistence();
         }
-        return this;
     }
 
     public boolean anyMoreItemInstanceOfSameKind(Object value) {

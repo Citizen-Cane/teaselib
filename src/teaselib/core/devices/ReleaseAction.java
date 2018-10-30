@@ -1,6 +1,5 @@
 package teaselib.core.devices;
 
-import teaselib.State;
 import teaselib.core.TeaseLib;
 import teaselib.core.util.ReflectionUtils;
 import teaselib.core.util.Storage;
@@ -30,16 +29,16 @@ public abstract class ReleaseAction extends ActionState {
     }
 
     @Override
-    public State removeFrom(Object... peers2) {
+    public void removeFrom(Object... peers2) {
         performReleaseActionIfNecessary();
         super.removeFrom(peers2);
-        return remove();
+        remove();
     }
 
     @Override
-    public State remove() {
+    public void remove() {
         performReleaseActionIfNecessary();
-        return super.remove();
+        super.remove();
     }
 
     protected void performReleaseActionIfNecessary() {

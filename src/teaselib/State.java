@@ -21,9 +21,9 @@ public interface State {
 
     Duration duration();
 
-    State remove();
+    void remove();
 
-    State removeFrom(Object... peers);
+    void removeFrom(Object... peers);
 
     interface Options {
         State over(long duration, TimeUnit unit);

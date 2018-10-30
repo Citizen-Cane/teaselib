@@ -1,8 +1,11 @@
 package teaselib.core;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -13,6 +16,7 @@ import teaselib.core.util.Persist;
 import teaselib.core.util.PersistedObject;
 import teaselib.core.util.QualifiedItem;
 import teaselib.util.ItemImpl;
+import teaselib.util.Items;
 
 public class StateMaps {
     final TeaseLib teaseLib;
@@ -155,6 +159,25 @@ public class StateMaps {
                         .map(availableAttribute -> QualifiedItem.of(stripState(availableAttribute)))
                         .anyMatch(desiredQualifiedAttribute::equals))
                 .count() == desiredAttributes.length;
+    }
+
+    public static Object[] flatten(Object[] peers) {
+        List<Object> flattenedPeers = new ArrayList<>(peers.length);
+        for (Object peer : peers) {
+            if (peer instanceof Items) {
+                Items items = (Items) peer;
+                flattenedPeers.addAll(items.firstOfEachKind());
+            } else if (peer instanceof Collection) {
+                Collection<?> collection = (Collection<?>) peer;
+                flattenedPeers.addAll(collection);
+            } else if (peer instanceof Object[]) {
+                List<Object> list = Arrays.asList(peer);
+                flattenedPeers.addAll(list);
+            } else {
+                flattenedPeers.add(peer);
+            }
+        }
+        return flattenedPeers.toArray(new Object[flattenedPeers.size()]);
     }
 
     private static Object stripState(Object value) {

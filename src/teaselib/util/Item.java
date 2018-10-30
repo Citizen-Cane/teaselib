@@ -31,7 +31,7 @@ public interface Item extends State {
         }
 
         @Override
-        public State.Options applyTo(Object... items) {
+        public State.Options applyTo(Object... peers) {
             throw new UnsupportedOperationException();
         }
 

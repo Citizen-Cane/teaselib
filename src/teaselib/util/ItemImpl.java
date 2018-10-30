@@ -211,27 +211,20 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
     }
 
     @Override
-    public State.Options applyTo(Object... items) {
-        if (items.length == 0 && defaultPeers.length == 0) {
+    public State.Options applyTo(Object... peers) {
+        if (peers.length == 0 && defaultPeers.length == 0) {
             throw new IllegalArgumentException("Item without default peers must be applied with explicit peer list");
         }
 
-        // TODO Implement a generic solution for processing arrays, lists, and Items class instances
-        // (used by Rakhee key release setup)
-
-        for (Object s : items) {
-            if (s instanceof List || s instanceof Object[]) {
-                throw new IllegalArgumentException("Applying lists and arrays isn't supported yet: " + s);
-            }
-        }
+        peers = StateMaps.flatten(peers);
 
         applyInstanceTo(defaultPeers);
-        applyInstanceTo(items);
+        applyInstanceTo(peers);
 
         State state = teaseLib.state(domain, item);
         applyMyAttributesTo(state);
         state.applyTo(this.guid);
-        return state.applyTo(items);
+        return state.applyTo(peers);
     }
 
     private void applyMyAttributesTo(State state) {

@@ -140,8 +140,8 @@ public class Items extends ArrayList<Item> {
         }
     }
 
-    public Items all() {
-        return new Items(this);
+    public List<Item> all() {
+        return new ArrayList<>(this);
     }
 
     /**
@@ -310,7 +310,7 @@ public class Items extends ArrayList<Item> {
         }
     }
 
-    private Items firstOfEachKind() {
+    public Items firstOfEachKind() {
         Items firstOfEachKind = new Items();
         Set<QualifiedItem> kinds = new HashSet<>();
 

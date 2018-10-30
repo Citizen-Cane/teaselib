@@ -390,14 +390,14 @@ public class ItemImplTest {
     }
 
     @Test
-    public void testRemoveSingleItemFromMultipleToSamePeer() {
+    public void testRemoveOneOfMultipleItemsToSamePeer() {
         TestScript script = TestScript.getOne();
 
         Items restraints = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints, Toys.Collar);
         restraints.apply();
 
         Items chains = script.items(Toys.Chains, Household.Bell);
-        chains.forEach(restraints::applyTo);
+        chains.applyTo(restraints);
         assertTrue(chains.allApplied());
         assertTrue(restraints.allApplied());
 
@@ -407,9 +407,13 @@ public class ItemImplTest {
         singleChainItem.remove();
         assertTrue(bell.applied());
 
+        assertTrue(chains.anyApplied());
+        assertFalse(chains.allApplied());
         assertTrue(restraints.allApplied());
 
         Item wristRestraints = restraints.get(Toys.Wrist_Restraints);
+        // TODO remove immediately removes the bell guid,
+        // but the bell is still attached to ankles and collar
         wristRestraints.remove();
         assertTrue(chains.anyApplied());
         assertFalse(restraints.allApplied());

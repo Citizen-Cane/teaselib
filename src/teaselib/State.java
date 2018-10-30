@@ -11,7 +11,7 @@ public interface State {
 
     Options apply();
 
-    Options applyTo(Object... items);
+    Options applyTo(Object... peers);
 
     boolean is(Object... attributes);
 

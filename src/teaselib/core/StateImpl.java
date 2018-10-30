@@ -2,6 +2,7 @@ package teaselib.core;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
@@ -232,15 +233,11 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
 
     @Override
     public State.Options applyTo(Object... attributes) {
-        applyInternal(attributes);
+        applyInternal(StateMaps.flatten(attributes));
         return this;
     }
 
     protected State applyInternal(Object... attributes) {
-        if (attributes.length == 1 && attributes[0] instanceof List<?>) {
-            throw new IllegalArgumentException();
-        }
-
         if (!applied() && !stateAppliesBeforehand(attributes)) {
             setTemporary();
         }
@@ -417,7 +414,7 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
         }
 
         for (Object peer : AbstractProxy.removeProxies(peers2)) {
-            if (peer instanceof List<?> || peer instanceof Object[]) {
+            if (peer instanceof Collection<?> || peer instanceof Object[]) {
                 throw new IllegalArgumentException();
             }
 

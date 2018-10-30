@@ -275,11 +275,8 @@ public class ReleaseActionTest {
         restraints.applyTo(removeRestraintsAction);
 
         Items chains = script.items(Toys.Chains, Household.Bell);
-        chains.apply();
         chains.applyTo(removeChainsAction);
-        for (Item restraint : restraints) {
-            chains.applyTo(restraint);
-        }
+        chains.applyTo(restraints);
 
         assertTrue(chains.allApplied());
         assertTrue(restraints.allApplied());
@@ -287,6 +284,8 @@ public class ReleaseActionTest {
         assertTrue(removeRestraintsAction.applied());
 
         Item singleChainItem = chains.get(Toys.Chains);
+        // TODO remove also removes the bell guid,
+        // but the bell is still attached to restraints
         singleChainItem.remove();
 
         assertFalse(removeChainsAction.applied());

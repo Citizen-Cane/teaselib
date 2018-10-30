@@ -5,6 +5,7 @@ import static org.junit.Assert.*;
 import org.junit.Test;
 
 import teaselib.Body;
+import teaselib.Household;
 import teaselib.Length;
 import teaselib.Material;
 import teaselib.Posture;
@@ -386,5 +387,37 @@ public class ItemImplTest {
 
         assertEquals(wristRestraints, temporaryWristRestraints);
         assertTrue(temporaryItems.contains(Toys.Wrist_Restraints));
+    }
+
+    @Test
+    public void testRemoveSingleItemFromMultipleToSamePeer() {
+        TestScript script = TestScript.getOne();
+
+        Items restraints = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints, Toys.Collar);
+        restraints.apply();
+
+        Items chains = script.items(Toys.Chains, Household.Bell);
+        chains.forEach(restraints::applyTo);
+        assertTrue(chains.allApplied());
+        assertTrue(restraints.allApplied());
+
+        Item singleChainItem = chains.get(Toys.Chains);
+        Item bell = script.item(Household.Bell);
+        assertTrue(bell.applied());
+        singleChainItem.remove();
+        assertTrue(bell.applied());
+
+        assertTrue(restraints.allApplied());
+
+        Item wristRestraints = restraints.get(Toys.Wrist_Restraints);
+        wristRestraints.remove();
+        assertTrue(chains.anyApplied());
+        assertFalse(restraints.allApplied());
+
+        bell.remove();
+        assertFalse(chains.anyApplied());
+
+        script.items(Toys.Ankle_Restraints, Toys.Collar).remove();
+        assertFalse(restraints.anyApplied());
     }
 }

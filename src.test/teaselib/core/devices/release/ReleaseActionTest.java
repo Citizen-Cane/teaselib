@@ -288,8 +288,10 @@ public class ReleaseActionTest {
 
         Item singleChainItem = chains.get(Toys.Chains);
         singleChainItem.remove();
+
         assertFalse(removeChainsAction.applied());
         assertTrue(removeRestraintsAction.applied());
+
         assertTrue(chains.anyApplied());
         assertFalse(chains.allApplied());
         assertTrue(restraints.allApplied());

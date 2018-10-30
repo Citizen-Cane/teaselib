@@ -287,11 +287,18 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
     }
 
     @Override
-    public final State removeFrom(Object... peer) {
-        State state = teaseLib.state(domain, item);
-        State removeFrom = state.removeFrom(peer);
-        releaseInstanceGuid();
-        return removeFrom;
+    public final State removeFrom(Object... peers) {
+        StateImpl state = (StateImpl) teaseLib.state(domain, item);
+        if (state.peers().contains(this.guid)) {
+            for (Object peer : peers) {
+                StateImpl remove = (StateImpl) teaseLib.state(domain, peer);
+                remove.removeFrom(this);
+                if (!state.anyMoreItemInstanceOfSameKind(this.value)) {
+                    remove.removeFrom(peer);
+                }
+            }
+        }
+        return this;
     }
 
     public void releaseInstanceGuid() {
@@ -304,7 +311,7 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
         StateImpl state = (StateImpl) teaseLib.state(domain, item);
         state.removeFrom(this.guid);
     }
-    
+
     @Override
     public void applyAttributes(Object... attributes) {
         ((StateMaps.Attributes) teaseLib.state(domain, item)).applyAttributes(attributes);

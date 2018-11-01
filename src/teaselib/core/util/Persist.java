@@ -3,7 +3,13 @@ package teaselib.core.util;
 import java.util.List;
 
 public class Persist {
+    /**
+     * @author citizen-cane
+     *
+     *         Implementing also requires to implements a constructor {@link Persistable}).<init>({@link Storage})
+     */
     public interface Persistable {
+        // TODO Storage instance as parameter or return value
         List<String> persisted();
     }
 

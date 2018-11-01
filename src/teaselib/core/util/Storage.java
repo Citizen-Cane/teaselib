@@ -7,6 +7,7 @@ import java.util.Optional;
 import teaselib.core.util.Persist.Factory;
 
 public class Storage {
+    // TODO version field
     private final Iterator<String> field;
     private final Optional<Factory> factory;
 

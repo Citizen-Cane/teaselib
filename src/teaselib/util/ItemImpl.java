@@ -31,7 +31,7 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
     final TeaseLib teaseLib;
 
     public final String domain;
-    public final String guid;
+    public final ItemGuid guid;
     public final Object item;
     public final String displayName;
     public final TeaseLib.PersistentBoolean value;
@@ -42,26 +42,26 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
         return item.toString().replace("_", " ");
     }
 
-    public ItemImpl(TeaseLib teaseLib, Object item, String domain, String guid, String displayName) {
+    public ItemImpl(TeaseLib teaseLib, Object item, String domain, ItemGuid guid, String displayName) {
         this(teaseLib, item, domain, guid, displayName, new Object[] {}, new Object[] {});
     }
 
-    public ItemImpl(TeaseLib teaseLib, Object item, String domain, String guid, String displayName,
+    public ItemImpl(TeaseLib teaseLib, Object item, String domain, ItemGuid guid, String displayName,
             Object[] defaultPeers, Object[] attributes) {
         this.teaseLib = teaseLib;
         this.item = item;
         this.domain = domain;
         this.guid = guid;
         this.displayName = displayName;
-        this.value = teaseLib.new PersistentBoolean(domain, QualifiedItem.namespaceOf(item), guid);
+        this.value = teaseLib.new PersistentBoolean(domain, QualifiedItem.namespaceOf(item), guid.name());
         this.defaultPeers = defaultPeers;
         this.attributes = attributes(item, attributes);
     }
 
     public static ItemImpl restoreFromUserItems(TeaseLib teaseLib, String domain, Storage storage) {
         String item = storage.next();
-        String guid = storage.next();
-        return (ItemImpl) teaseLib.getByGuid(domain, item, guid);
+        ItemGuid guid = storage.next();
+        return (ItemImpl) teaseLib.getByGuid(domain, item, guid.name());
     }
 
     @Override
@@ -93,7 +93,7 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
 
     @Override
     public String toString() {
-        return guid + " " + attributes + " " + teaseLib.state(domain, item).toString();
+        return guid.name() + " " + attributes + " " + teaseLib.state(domain, item).toString();
     }
 
     boolean has(Object... attributes2) {
@@ -254,19 +254,23 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
             relevantPeers.addAll(attributes);
 
             for (Object peer : relevantPeers) {
-                StateImpl peerState = (StateImpl) teaseLib.state(domain, peer);
-                long instancesOfSameKind = peerState.instancesOfSameKind(this);
+                if (!(peer instanceof ItemGuid)) {
+                    StateImpl peerState = (StateImpl) teaseLib.state(domain, peer);
+                    long instancesOfSameKind = peerState.instancesOfSameKind(this);
 
-                // Some tests assert that removing a similar item also works (gates of hell vs chastity belt)
-                // - this is implicitly resolved by removing the state completely on removing the last item instance
-                if (peerState.anyMoreItemInstanceOfSameKind(this)) {
-                    peerState.removeFrom(this);
+                    // Some tests assert that removing a similar item also works (gates of hell vs chastity belt)
+                    // - this is implicitly resolved by removing the state completely on removing the last item instance
                     if (peerState.anyMoreItemInstanceOfSameKind(this)) {
-                        if (instancesOfSameKind > 1 && instancesOfSameKind > peerState.instancesOfSameKind(this)) {
-                            // Gross hack to remove just the item instance
-                            // TODO Remove all applied attributes that belongs to the item
-                            // TODO Make this work with items of same kind but different default peers
-                            return;
+                        // TODO Bell guid is removed here
+                        peerState.removeFrom(this);
+                        state.removeFrom(this.guid);
+                        if (peerState.anyMoreItemInstanceOfSameKind(this)) {
+                            if (instancesOfSameKind > 1 && instancesOfSameKind > peerState.instancesOfSameKind(this)) {
+                                // Gross hack to remove just the item instance
+                                // TODO Remove all applied attributes that belongs to the item
+                                // TODO Make this work with items of same kind but different default peers
+                                return;
+                            }
                         }
                     }
                 }
@@ -292,14 +296,22 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
     }
 
     public void releaseInstanceGuid() {
-        for (Object peer : defaultPeers) {
-            StateImpl peerState = (StateImpl) teaseLib.state(domain, peer);
-            if (peerState.peers().contains(this)) {
-                return;
+        StateImpl state = (StateImpl) teaseLib.state(domain, item);
+        for (Object peer : state.peers()) {
+            if (!(peer instanceof ItemGuid)) {
+                StateImpl peerState = (StateImpl) teaseLib.state(domain, peer);
+                if (peerState.peers().contains(this) || peersReferenceMe(state)) {
+                    return;
+                }
             }
         }
-        StateImpl state = (StateImpl) teaseLib.state(domain, item);
         state.removeFrom(this.guid);
+    }
+
+    private static boolean peersReferenceMe(StateImpl state) {
+        Set<Object> peers = state.peers();
+        return peers.stream().filter(peer -> !(peer instanceof ItemGuid)).filter(peer -> peer instanceof ItemImpl)
+                .map(peer -> (ItemImpl) peer).map(itemImpl -> itemImpl.guid).filter(peers::contains).count() > 0;
     }
 
     @Override

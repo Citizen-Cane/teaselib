@@ -45,6 +45,7 @@ import teaselib.core.util.ReflectionUtils;
 import teaselib.functional.RunnableScript;
 import teaselib.motiondetection.MotionDetector;
 import teaselib.util.Item;
+import teaselib.util.ItemGuid;
 import teaselib.util.ItemImpl;
 import teaselib.util.Items;
 import teaselib.util.PersistenceLogger;
@@ -863,8 +864,10 @@ public class TeaseLib {
         for (Entry<String, StateMapCache> entry : stateMaps.cache.entrySet()) {
             for (Entry<String, StateMap> entry2 : entry.getValue().entrySet()) {
                 for (Entry<Object, State> entry3 : entry2.getValue().states.entrySet()) {
-                    if (entry3.getValue().duration().limit(TimeUnit.SECONDS) == State.TEMPORARY) {
-                        items.add(item(entry.getKey(), ((StateImpl) entry3.getValue()).item));
+                    StateImpl state = (StateImpl) entry3.getValue();
+                    if (!ItemGuid.isGuid(state.item.toString())
+                            && state.duration().limit(TimeUnit.SECONDS) == State.TEMPORARY) {
+                        items.add(item(entry.getKey(), state.item));
                     }
                 }
             }
@@ -892,7 +895,7 @@ public class TeaseLib {
     public Item getByGuid(String domain, Object item, String guid) {
         Items items = items(domain, item);
         for (Item i : items) {
-            if (((ItemImpl) i).guid.equals(guid)) {
+            if (((ItemImpl) i).guid.name().equals(guid)) {
                 return i;
             }
         }

@@ -40,6 +40,7 @@ import teaselib.core.util.QualifiedEnum;
 import teaselib.core.util.QualifiedItem;
 import teaselib.core.util.ReflectionUtils;
 import teaselib.util.Item;
+import teaselib.util.ItemGuid;
 import teaselib.util.ItemImpl;
 
 public class UserItemsImpl implements UserItems {
@@ -153,14 +154,14 @@ public class UserItemsImpl implements UserItems {
 
         String enumName = "teaselib." + itemClass.getNodeName() + "." + itemName;
         Enum<?> enumValue = ReflectionUtils.getEnum(QualifiedItem.of(enumName));
-        return new ItemImpl(teaseLib, enumValue, domain, guid, //
+        return new ItemImpl(teaseLib, enumValue, domain, new ItemGuid(guid), //
                 displayName, defaults(new QualifiedEnum(enumValue)), //
                 itemAttributes.toArray());
     }
 
     private ItemImpl[] getDefaultItem(String domain, QualifiedItem item) {
-        return new ItemImpl[] {
-                new ItemImpl(teaseLib, item.value(), domain, item.name(), ItemImpl.createDisplayName(item)) };
+        return new ItemImpl[] { new ItemImpl(teaseLib, item.value(), domain, new ItemGuid(item.name()),
+                ItemImpl.createDisplayName(item)) };
     }
 
     @Override
@@ -201,7 +202,7 @@ public class UserItemsImpl implements UserItems {
     private static void addItems(ItemMap itemMap, List<ItemImpl> items) {
         for (ItemImpl item : items) {
             Map<String, Item> allItemsOfThisType = itemMap.getOrDefault(item.item, LinkedHashMap<String, Item>::new);
-            allItemsOfThisType.put(item.guid, item);
+            allItemsOfThisType.put(item.guid.name(), item);
         }
     }
 

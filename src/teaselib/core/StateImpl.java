@@ -22,6 +22,7 @@ import teaselib.core.util.PersistedObject;
 import teaselib.core.util.QualifiedItem;
 import teaselib.core.util.Storage;
 import teaselib.util.Item;
+import teaselib.util.ItemGuid;
 import teaselib.util.ItemImpl;
 
 public class StateImpl implements State, State.Options, StateMaps.Attributes {
@@ -60,6 +61,10 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
 
         if ((item instanceof State) && !(item instanceof Item)) {
             throw new IllegalArgumentException(item.toString());
+        }
+
+        if (item instanceof ItemGuid) {
+            throw new IllegalArgumentException("Guids cannot be states: " + item.toString());
         }
 
         this.domain = domain;
@@ -245,8 +250,10 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
         for (Object attribute : AbstractProxy.removeProxies(attributes)) {
             if (!peers.contains(attribute)) {
                 peers.add(attribute);
-                StateImpl state = state(attribute);
-                state.applyInternal(item);
+                if (!(attribute instanceof ItemGuid)) {
+                    StateImpl state = state(attribute);
+                    state.applyInternal(item);
+                }
             }
         }
 
@@ -257,7 +264,9 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
     }
 
     private boolean stateAppliesBeforehand(Object... attributes) {
-        return attributes.length == 1 && state(attributes[0]) instanceof ActionState;
+        // TODO Test all elements
+        return attributes.length == 1 && !(attributes[0] instanceof ItemGuid)
+                && state(attributes[0]) instanceof ActionState;
     }
 
     private void setTemporary() {
@@ -297,7 +306,7 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
     private boolean allItemInstancesFoundInPeers(Object... attributes) {
         List<Object> instances = Arrays.stream(attributes).filter(attribute -> attribute instanceof Item)
                 .map(AbstractProxy::removeProxy).collect(Collectors.toList());
-        List<String> guids = Arrays.stream(attributes).filter(attribute -> attribute instanceof Item)
+        List<ItemGuid> guids = Arrays.stream(attributes).filter(attribute -> attribute instanceof Item)
                 .map(AbstractProxy::removeProxy).map(instance -> ((ItemImpl) instance).guid)
                 .collect(Collectors.toList());
         return peers().containsAll(instances) || peers().containsAll(guids);
@@ -326,8 +335,10 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
     private Set<Object> attributesOfDirectPeers() {
         Set<Object> attributesOfDirectPeers = new HashSet<>();
         for (Object peer : this.peers) {
-            StateImpl peerState = state(peer);
-            attributesOfDirectPeers.addAll(peerState.attributes);
+            if (!(peer instanceof ItemGuid)) {
+                StateImpl peerState = state(peer);
+                attributesOfDirectPeers.addAll(peerState.attributes);
+            }
         }
         return attributesOfDirectPeers;
     }
@@ -349,10 +360,12 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
     @Override
     public Duration duration() {
         Duration maximum = this.duration;
-        for (Object s : peers) {
-            StateImpl peer = state(s);
-            if (peer.duration.remaining(TimeUnit.SECONDS) > maximum.remaining(TimeUnit.SECONDS)) {
-                maximum = peer.duration;
+        for (Object peer : peers) {
+            if (!(peer instanceof ItemGuid)) {
+                StateImpl peerState = state(peer);
+                if (peerState.duration.remaining(TimeUnit.SECONDS) > maximum.remaining(TimeUnit.SECONDS)) {
+                    maximum = peerState.duration;
+                }
             }
         }
         return maximum;
@@ -360,9 +373,11 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
 
     private void remember() {
         updatePersistence();
-        for (Object s : peers) {
-            StateImpl peer = state(s);
-            peer.updatePersistence();
+        for (Object peer : peers) {
+            if (!(peer instanceof ItemGuid)) {
+                StateImpl peerState = state(peer);
+                peerState.updatePersistence();
+            }
         }
     }
 
@@ -377,9 +392,11 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
             return isExpired();
         } else {
             for (Object peer : peers) {
-                StateImpl peerState = state(peer);
-                if (!peerState.isExpired()) {
-                    return false;
+                if (!(peer instanceof ItemGuid)) {
+                    StateImpl peerState = state(peer);
+                    if (!peerState.isExpired()) {
+                        return false;
+                    }
                 }
             }
             return true;
@@ -395,7 +412,11 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
         if (!peers.isEmpty()) {
             Object[] copyOfPeers = new Object[peers.size()];
             for (Object peer : peers.toArray(copyOfPeers)) {
-                state(peer).removeFrom(item);
+                if (peer instanceof ItemGuid) {
+                    peers.remove(peer);
+                } else {
+                    state(peer).removeFrom(item);
+                }
             }
             peers.clear();
         }
@@ -421,12 +442,14 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
             if (peers.contains(peer)) {
                 peers.remove(peer);
 
-                if (!(peer instanceof ItemImpl)) {
-                    removeRepresentingItems(peer);
-                }
+                if (!(peer instanceof ItemGuid)) {
+                    if (!(peer instanceof ItemImpl)) {
+                        removeRepresentingItems(peer);
+                    }
 
-                if (!anyMoreItemInstanceOfSameKind(peer)) {
-                    state(peer).removeFrom(item);
+                    if (!anyMoreItemInstanceOfSameKind(peer)) {
+                        state(peer).removeFrom(item);
+                    }
                 }
             }
 
@@ -443,9 +466,6 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
     }
 
     public boolean anyMoreItemInstanceOfSameKind(Object value) {
-        // if (!(value instanceof Item))
-        // return false;
-
         return instancesOfSameKind(value) > 0;
     }
 
@@ -477,7 +497,9 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
 
     private boolean allPeersAreTemporary() {
         for (Object peer : peers) {
-            if (state(peer).isPersisted()) {
+            if (peer instanceof ItemGuid) {
+                continue;
+            } else if (state(peer).isPersisted()) {
                 return false;
             }
         }

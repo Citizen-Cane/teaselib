@@ -26,7 +26,7 @@ public class ItemImplTest {
         String storageName = fooBar.name();
         TeaseLib.PersistentBoolean value = script.teaseLib.new PersistentBoolean(TeaseLib.DefaultDomain,
                 fooBar.namespace(), storageName);
-        Item item = new ItemImpl(script.teaseLib, fooBar, TeaseLib.DefaultDomain, storageName,
+        Item item = new ItemImpl(script.teaseLib, fooBar, TeaseLib.DefaultDomain, new ItemGuid(storageName),
                 ItemImpl.createDisplayName(fooBar.name()));
 
         item.setAvailable(false);
@@ -46,8 +46,8 @@ public class ItemImplTest {
     public void testIs() throws Exception {
         TeaseScript script = TestScript.getOne();
         Foo[] peers = new Foo[] {};
-        Item item = new ItemImpl(script.teaseLib, Foo.Bar, TeaseLib.DefaultDomain, "Foo.Bar", "Foo Bar", peers,
-                new Object[] { Size.Large, Length.Long });
+        Item item = new ItemImpl(script.teaseLib, Foo.Bar, TeaseLib.DefaultDomain, new ItemGuid("Foo_Bar"), "Foo Bar",
+                peers, new Object[] { Size.Large, Length.Long });
 
         assertTrue(item.is(Size.Large));
         assertFalse(item.is(Size.Small));
@@ -62,8 +62,8 @@ public class ItemImplTest {
     public void testIs_EmptyArg() throws Exception {
         TeaseScript script = TestScript.getOne();
         Foo[] peers = new Foo[] {};
-        Item item = new ItemImpl(script.teaseLib, Foo.Bar, TeaseLib.DefaultDomain, "Foo.Bar", "Foo Bar", peers,
-                new Object[] { Size.Large, Length.Long });
+        Item item = new ItemImpl(script.teaseLib, Foo.Bar, TeaseLib.DefaultDomain, new ItemGuid("Foo_Bar"), "Foo Bar",
+                peers, new Object[] { Size.Large, Length.Long });
 
         assertFalse(item.is());
     }
@@ -72,8 +72,8 @@ public class ItemImplTest {
     public void testIsHandlesArrays() throws Exception {
         TeaseScript script = TestScript.getOne();
         Foo[] peers = new Foo[] {};
-        Item item = new ItemImpl(script.teaseLib, Foo.Bar, TeaseLib.DefaultDomain, "Foo.Bar", "Foo Bar", peers,
-                new Object[] { Size.Large, Length.Long });
+        Item item = new ItemImpl(script.teaseLib, Foo.Bar, TeaseLib.DefaultDomain, new ItemGuid("Foo_Bar"), "Foo Bar",
+                peers, new Object[] { Size.Large, Length.Long });
 
         assertTrue(item.is(new Object[] { Size.Large }));
         assertFalse(item.is(new Object[] { Size.Small }));
@@ -188,9 +188,11 @@ public class ItemImplTest {
 
     @Test
     public void testApply1toNAndRemoveTheOtherWayAround() {
-        TeaseScript script = TestScript.getOne();
+        TestScript script = TestScript.getOne();
+        script.addTestUserItems();
+        Items restraints = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints).prefer(Material.Metal);
 
-        script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints).apply();
+        restraints.apply();
         assertTrue(script.state(Body.WristsTied).applied());
         assertTrue(script.state(Toys.Wrist_Restraints).is(script.namespace));
         assertTrue(script.state(Body.WristsTied).is(script.namespace));

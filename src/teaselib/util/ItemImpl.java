@@ -1,6 +1,3 @@
-/**
- * 
- */
 package teaselib.util;
 
 import java.util.Arrays;
@@ -106,16 +103,10 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
     }
 
     static boolean contains(Object[] attributes2, QualifiedItem item) {
-        for (Object object : attributes2) {
-            if (QualifiedItem.of(object).equals(item)) {
-                return true;
-            }
-        }
-        return false;
+        return Arrays.stream(attributes2).map(QualifiedItem::of).anyMatch(i -> i.equals(item));
     }
 
     @Override
-    // TODO Try to reduce number of checks
     public boolean is(Object... attributes3) {
         // TODO fails release action test - proxy removed from action state
         // -> wrong test afterwards - this slipped through
@@ -127,7 +118,7 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
         } else if (has(this.attributes.stream(), attributes2))
             return true;
 
-        if (StateMaps.hasAllAttributes(((StateImpl) teaseLib.state(domain, item)).getAttributes(), attributes2))
+        if (StateMaps.hasAllAttributes((state(item)).getAttributes(), attributes2))
             return applied();
 
         // TODO Replace by stricter check
@@ -139,7 +130,7 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
     }
 
     private boolean stateContainsAll(Object... attributes) {
-        return teaseLib.state(domain, item).is(attributes);
+        return state(item).is(attributes);
     }
 
     public Set<Object> peers() {
@@ -148,23 +139,21 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
 
     @Override
     public boolean canApply() {
-        for (Object peer : defaultPeers) {
-            if (teaseLib.state(domain, peer).applied()) {
-                return false;
-            }
+        if (defaultPeers.length > 0) {
+            return Arrays.stream(defaultPeers).map(this::state).allMatch(state -> !state.applied());
+        } else {
+            return !state(item).is(this);
         }
-        State state = teaseLib.state(domain, item);
-        return !state.is(this);
     }
 
     @Override
     public boolean applied() {
-        State state = teaseLib.state(domain, item);
+        StateImpl state = state(item);
         if (state.applied()) {
             if (defaultPeers.length > 0) {
                 return appliedToPeers();
             } else {
-                return ((StateImpl) state).peers().contains(guid);
+                return containsMyGuid(state);
             }
         } else {
             return false;
@@ -175,14 +164,11 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
         if (defaultPeers.length == 0) {
             return true;
         } else
-            return peers().stream().filter(peer -> !(peer instanceof ActionState)).anyMatch(peer -> {
-                return ((StateImpl) teaseLib.state(domain, peer)).peers().contains(this);
-            });
+            return peers().stream().filter(ItemImpl::isntActionState).map(this::state).anyMatch(this::containsMe);
     }
 
     private long peerCount(Stream<?> stream) {
-        return stream.filter(peer -> !(peer instanceof ActionState))
-                .filter(peer -> teaseLib.state(domain, peer).is(this)).count();
+        return stream.filter(ItemImpl::isntActionState).map(this::state).filter(this::stateIsThis).count();
     }
 
     @Override
@@ -234,7 +220,7 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
 
     private void applyInstanceTo(Object... items) {
         for (Object peer : items) {
-            teaseLib.state(domain, peer).applyTo(this);
+            state(peer).applyTo(this);
         }
     }
 
@@ -248,14 +234,14 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
     @Override
     public void remove() {
         StateImpl state = (StateImpl) teaseLib.state(domain, item);
-        if (state.peers().contains(this.guid)) {
+        if (containsMyGuid(state)) {
             HashSet<Object> relevantPeers = new HashSet<>(state.peers());
             relevantPeers.addAll(Arrays.asList(defaultPeers));
             relevantPeers.addAll(attributes);
 
             for (Object peer : relevantPeers) {
                 if (!(peer instanceof ItemGuid)) {
-                    StateImpl peerState = (StateImpl) teaseLib.state(domain, peer);
+                    StateImpl peerState = state(peer);
                     long instancesOfSameKind = peerState.instancesOfSameKind(this);
 
                     // Some tests assert that removing a similar item also works (gates of hell vs chastity belt)
@@ -283,10 +269,10 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
 
     @Override
     public void removeFrom(Object... peers) {
-        StateImpl state = (StateImpl) teaseLib.state(domain, item);
-        if (state.peers().contains(this.guid)) {
+        StateImpl state = state(item);
+        if (containsMyGuid(state)) {
             for (Object peer : peers) {
-                StateImpl remove = (StateImpl) teaseLib.state(domain, peer);
+                StateImpl remove = state(peer);
                 remove.removeFrom(this);
                 if (!state.anyMoreItemInstanceOfSameKind(this.value)) {
                     remove.removeFrom(peer);
@@ -296,22 +282,49 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
     }
 
     public void releaseInstanceGuid() {
-        StateImpl state = (StateImpl) teaseLib.state(domain, item);
-        for (Object peer : state.peers()) {
-            if (!(peer instanceof ItemGuid)) {
-                StateImpl peerState = (StateImpl) teaseLib.state(domain, peer);
-                if (peerState.peers().contains(this) || peersReferenceMe(state)) {
-                    return;
-                }
-            }
+        StateImpl state = state(item);
+        if (peersReferenceMe(state)) {
+            return;
         }
+
+        if (state.peers().stream().filter(ItemImpl::isntItemGuid).map(this::state).filter(this::containsMe).count() > 0)
+            return;
+
         state.removeFrom(this.guid);
+    }
+
+    private StateImpl state(Object peer) {
+        return (StateImpl) teaseLib.state(domain, peer);
+    }
+
+    private boolean containsMe(StateImpl state) {
+        return state.peers().contains(this);
+    }
+
+    private boolean containsMyGuid(StateImpl state) {
+        return state.peers().contains(this.guid);
+    }
+
+    private static boolean isntActionState(Object peer) {
+        return !(peer instanceof ActionState);
+    }
+
+    private static boolean isntItemGuid(Object peer) {
+        return !(peer instanceof ItemGuid);
+    }
+
+    private static boolean isItemImpl(Object peer) {
+        return peer instanceof ItemImpl;
+    }
+
+    private boolean stateIsThis(StateImpl state) {
+        return state.is(this);
     }
 
     private static boolean peersReferenceMe(StateImpl state) {
         Set<Object> peers = state.peers();
-        return peers.stream().filter(peer -> !(peer instanceof ItemGuid)).filter(peer -> peer instanceof ItemImpl)
-                .map(peer -> (ItemImpl) peer).map(itemImpl -> itemImpl.guid).filter(peers::contains).count() > 0;
+        return peers.stream().filter(ItemImpl::isItemImpl).map(peer -> (ItemImpl) peer).map(itemImpl -> itemImpl.guid)
+                .filter(peers::contains).count() > 0;
     }
 
     @Override

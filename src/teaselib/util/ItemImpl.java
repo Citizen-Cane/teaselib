@@ -1,5 +1,6 @@
 package teaselib.util;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -233,37 +234,19 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
 
     @Override
     public void remove() {
-        StateImpl state = (StateImpl) teaseLib.state(domain, item);
+        StateImpl state = state(item);
         if (containsMyGuid(state)) {
-            HashSet<Object> relevantPeers = new HashSet<>(state.peers());
-            relevantPeers.addAll(Arrays.asList(defaultPeers));
-            relevantPeers.addAll(attributes);
-
-            for (Object peer : relevantPeers) {
+            for (Object peer : new ArrayList<>(state.peers())) {
                 if (!(peer instanceof ItemGuid)) {
                     StateImpl peerState = state(peer);
-                    long instancesOfSameKind = peerState.instancesOfSameKind(this);
-
-                    // Some tests assert that removing a similar item also works (gates of hell vs chastity belt)
-                    // - this is implicitly resolved by removing the state completely on removing the last item instance
-                    if (peerState.anyMoreItemInstanceOfSameKind(this)) {
-                        // TODO Bell guid is removed here
-                        peerState.removeFrom(this);
-                        state.removeFrom(this.guid);
-                        if (peerState.anyMoreItemInstanceOfSameKind(this)) {
-                            if (instancesOfSameKind > 1 && instancesOfSameKind > peerState.instancesOfSameKind(this)) {
-                                // Gross hack to remove just the item instance
-                                // TODO Remove all applied attributes that belongs to the item
-                                // TODO Make this work with items of same kind but different default peers
-                                return;
-                            }
-                        }
-                    }
+                    peerState.removeFrom(this);
+                    state.removeFrom(this.guid);
                 }
             }
 
-            releaseInstanceGuid();
-            state.remove();
+            if (state.peers().stream().noneMatch(ItemGuid::isItemGuid) && releaseInstanceGuid()) {
+                state.remove();
+            }
         }
     }
 
@@ -272,25 +255,26 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
         StateImpl state = state(item);
         if (containsMyGuid(state)) {
             for (Object peer : peers) {
-                StateImpl remove = state(peer);
-                remove.removeFrom(this);
-                if (!state.anyMoreItemInstanceOfSameKind(this.value)) {
-                    remove.removeFrom(peer);
+                if (!(peer instanceof ItemGuid)) {
+                    StateImpl peerState = state(peer);
+                    peerState.removeFrom(this);
                 }
             }
         }
     }
 
-    public void releaseInstanceGuid() {
+    public boolean releaseInstanceGuid() {
         StateImpl state = state(item);
         if (peersReferenceMe(state)) {
-            return;
+            return false;
         }
 
-        if (state.peers().stream().filter(ItemGuid::isntItemGuid).map(this::state).filter(this::containsMe).count() > 0)
-            return;
+        if (state.peers().stream().filter(ItemGuid::isntItemGuid).map(this::state).anyMatch(this::containsMe)) {
+            return false;
+        }
 
         state.removeFrom(this.guid);
+        return true;
     }
 
     private StateImpl state(Object peer) {

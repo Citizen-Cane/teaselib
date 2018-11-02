@@ -49,6 +49,10 @@ public class ItemGuid implements Persistable {
         return name.startsWith(HEADER);
     }
 
+    public static boolean isItemGuid(Object object) {
+        return object instanceof ItemGuid;
+    }
+
     public static boolean isntItemGuid(Object object) {
         return !(object instanceof ItemGuid);
     }

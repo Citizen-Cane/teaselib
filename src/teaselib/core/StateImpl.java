@@ -7,9 +7,11 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import teaselib.Duration;
 import teaselib.State;
@@ -264,9 +266,12 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
     }
 
     private boolean stateAppliesBeforehand(Object... attributes) {
-        // TODO Test all elements
-        return attributes.length == 1 && !(attributes[0] instanceof ItemGuid)
-                && state(attributes[0]) instanceof ActionState;
+        if (attributes.length == 0) {
+            return false;
+        } else {
+            return Arrays.stream(attributes).filter(ItemGuid::isntItemGuid).map(this::state)
+                    .allMatch(ActionState::isActionState);
+        }
     }
 
     private void setTemporary() {
@@ -333,14 +338,8 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
     }
 
     private Set<Object> attributesOfDirectPeers() {
-        Set<Object> attributesOfDirectPeers = new HashSet<>();
-        for (Object peer : this.peers) {
-            if (!(peer instanceof ItemGuid)) {
-                StateImpl peerState = state(peer);
-                attributesOfDirectPeers.addAll(peerState.attributes);
-            }
-        }
-        return attributesOfDirectPeers;
+        return peers().stream().filter(ItemGuid::isntItemGuid).map(this::state).map(state -> state.attributes)
+                .flatMap(Set::stream).collect(Collectors.toSet());
     }
 
     @Override
@@ -359,16 +358,15 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
 
     @Override
     public Duration duration() {
-        Duration maximum = this.duration;
-        for (Object peer : peers) {
-            if (!(peer instanceof ItemGuid)) {
-                StateImpl peerState = state(peer);
-                if (peerState.duration.remaining(TimeUnit.SECONDS) > maximum.remaining(TimeUnit.SECONDS)) {
-                    maximum = peerState.duration;
-                }
-            }
+        Optional<Duration> maximum = Stream
+                .concat(Stream.of(this.duration),
+                        peers.stream().filter(ItemGuid::isntItemGuid).map(this::state).map(state -> state.duration))
+                .max((a, b) -> Long.compare(a.remaining(TimeUnit.SECONDS), b.remaining(TimeUnit.SECONDS)));
+        if (maximum.isPresent()) {
+            return maximum.get();
+        } else {
+            return duration;
         }
-        return maximum;
     }
 
     private void remember() {

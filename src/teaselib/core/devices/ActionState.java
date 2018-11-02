@@ -79,6 +79,14 @@ public abstract class ActionState extends StateImpl implements Persist.Persistab
         }
     }
 
+    public static boolean isActionState(Object object) {
+        return object instanceof ActionState;
+    }
+
+    public static boolean isntActionState(Object object) {
+        return !(object instanceof ActionState);
+    }
+
     public static String persistedInstance(Class<? extends ActionState> clazz, String domain, String item) {
         return Persist.persistedInstance(clazz, Arrays.asList(domain, item));
     }

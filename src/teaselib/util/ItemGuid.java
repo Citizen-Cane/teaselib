@@ -49,6 +49,10 @@ public class ItemGuid implements Persistable {
         return name.startsWith(HEADER);
     }
 
+    public static boolean isntItemGuid(Object object) {
+        return !(object instanceof ItemGuid);
+    }
+
     @Override
     public List<String> persisted() {
         return Arrays.asList(Persist.persist(name));

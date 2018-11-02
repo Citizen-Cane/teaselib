@@ -164,11 +164,11 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
         if (defaultPeers.length == 0) {
             return true;
         } else
-            return peers().stream().filter(ItemImpl::isntActionState).map(this::state).anyMatch(this::containsMe);
+            return peers().stream().filter(ActionState::isntActionState).map(this::state).anyMatch(this::containsMe);
     }
 
     private long peerCount(Stream<?> stream) {
-        return stream.filter(ItemImpl::isntActionState).map(this::state).filter(this::stateIsThis).count();
+        return stream.filter(ActionState::isntActionState).map(this::state).filter(this::stateIsThis).count();
     }
 
     @Override
@@ -287,7 +287,7 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
             return;
         }
 
-        if (state.peers().stream().filter(ItemImpl::isntItemGuid).map(this::state).filter(this::containsMe).count() > 0)
+        if (state.peers().stream().filter(ItemGuid::isntItemGuid).map(this::state).filter(this::containsMe).count() > 0)
             return;
 
         state.removeFrom(this.guid);
@@ -303,14 +303,6 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
 
     private boolean containsMyGuid(StateImpl state) {
         return state.peers().contains(this.guid);
-    }
-
-    private static boolean isntActionState(Object peer) {
-        return !(peer instanceof ActionState);
-    }
-
-    private static boolean isntItemGuid(Object peer) {
-        return !(peer instanceof ItemGuid);
     }
 
     private static boolean isItemImpl(Object peer) {

@@ -14,7 +14,6 @@ import teaselib.State;
 import teaselib.core.StateImpl;
 import teaselib.core.StateMaps;
 import teaselib.core.TeaseLib;
-import teaselib.core.devices.ActionState;
 import teaselib.core.state.AbstractProxy;
 import teaselib.core.util.Persist;
 import teaselib.core.util.Persist.Persistable;
@@ -94,9 +93,9 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
         return guid.name() + " " + attributes + " " + teaseLib.state(domain, item).toString();
     }
 
-    boolean has(Object... attributes2) {
+    boolean has(Object... desired) {
         Stream<Object> attributesAndPeers = Stream.concat(attributes.stream(), Arrays.stream(defaultPeers));
-        return has(attributesAndPeers, attributes2);
+        return has(attributesAndPeers, desired);
     }
 
     private static boolean has(Stream<Object> available, Object... desired) {
@@ -109,9 +108,7 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
 
     @Override
     public boolean is(Object... attributes3) {
-        // TODO fails release action test - proxy removed from action state
-        // -> wrong test afterwards - this slipped through
-        Object[] attributes2 = attributes3; // AbstractProxy.removeProxies(attributes3);
+        Object[] attributes2 = AbstractProxy.removeProxies(attributes3);
         if (attributes2.length == 0) {
             return false;
         } else if (attributes2.length == 1 && attributes2[0] instanceof Item) {
@@ -134,14 +131,10 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
         return state(item).is(attributes);
     }
 
-    public Set<Object> peers() {
-        return new HashSet<>(Arrays.asList(defaultPeers));
-    }
-
     @Override
     public boolean canApply() {
         if (defaultPeers.length > 0) {
-            return Arrays.stream(defaultPeers).map(this::state).allMatch(state -> !state.applied());
+            return defaultStates().allMatch(state -> !state.applied());
         } else {
             return !state(item).is(this);
         }
@@ -152,7 +145,7 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
         StateImpl state = state(item);
         if (state.applied()) {
             if (defaultPeers.length > 0) {
-                return appliedToPeers();
+                return defaultStates().anyMatch(this::containsMe);
             } else {
                 return containsMyGuid(state);
             }
@@ -161,15 +154,8 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
         }
     }
 
-    private boolean appliedToPeers() {
-        if (defaultPeers.length == 0) {
-            return true;
-        } else
-            return peers().stream().filter(ActionState::isntActionState).map(this::state).anyMatch(this::containsMe);
-    }
-
     private long peerCount(Stream<?> stream) {
-        return stream.filter(ActionState::isntActionState).map(this::state).filter(this::stateIsThis).count();
+        return stream.map(this::state).filter(this::stateIsThis).count();
     }
 
     @Override
@@ -208,7 +194,7 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
         applyInstanceTo(defaultPeers);
         applyInstanceTo(peers);
 
-        State state = teaseLib.state(domain, item);
+        State state = state(item);
         applyMyAttributesTo(state);
         state.applyTo(this.guid);
         return state.applyTo(peers);
@@ -269,12 +255,21 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
             return false;
         }
 
-        if (state.peers().stream().filter(ItemGuid::isntItemGuid).map(this::state).anyMatch(this::containsMe)) {
+        if (peerStates().anyMatch(this::containsMe)) {
             return false;
         }
 
         state.removeFrom(this.guid);
         return true;
+    }
+
+    private <T> Stream<StateImpl> peerStates() {
+        StateImpl state = state(item);
+        return state.peers().stream().filter(ItemGuid::isntItemGuid).map(this::state);
+    }
+
+    private Stream<StateImpl> defaultStates() {
+        return Arrays.stream(defaultPeers).map(this::state);
     }
 
     private StateImpl state(Object peer) {
@@ -305,7 +300,7 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
 
     @Override
     public void applyAttributes(Object... attributes) {
-        ((StateMaps.Attributes) teaseLib.state(domain, item)).applyAttributes(attributes);
+        state(item).applyAttributes(attributes);
     }
 
     @Override

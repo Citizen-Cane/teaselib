@@ -112,17 +112,16 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
         if (attributes2.length == 0) {
             return false;
         } else if (attributes2.length == 1 && attributes2[0] instanceof Item) {
-            return AbstractProxy.removeProxy(attributes2[0]) == this;
+            return attributes2[0] == this;
         } else if (has(this.attributes.stream(), attributes2))
             return true;
 
         if (StateMaps.hasAllAttributes((state(item)).getAttributes(), attributes2))
             return applied();
 
-        // TODO Replace by stricter check
-        long count = peerCount(Arrays.stream(attributes2));
-        if (count < attributes2.length)
+        if (!Arrays.stream(attributes2).map(this::state).allMatch(this::stateIsThis)) {
             return false;
+        }
 
         return stateContainsAll(attributes2);
     }
@@ -154,23 +153,19 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
         }
     }
 
-    private long peerCount(Stream<?> stream) {
-        return stream.map(this::state).filter(this::stateIsThis).count();
-    }
-
     @Override
     public boolean expired() {
-        return teaseLib.state(domain, item).expired();
+        return state(item).expired();
     }
 
     @Override
     public Duration duration() {
-        return teaseLib.state(domain, item).duration();
+        return state(item).duration();
     }
 
     @Override
     public State.Options apply() {
-        State state = teaseLib.state(domain, item);
+        StateImpl state = state(item);
 
         if (defaultPeers.length == 0) {
             state.apply();
@@ -180,7 +175,7 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
 
         state.applyTo(this.guid);
         applyMyAttributesTo(state);
-        return (State.Options) state;
+        return state;
     }
 
     @Override
@@ -194,15 +189,15 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
         applyInstanceTo(defaultPeers);
         applyInstanceTo(peers);
 
-        State state = state(item);
+        StateImpl state = state(item);
         applyMyAttributesTo(state);
         state.applyTo(this.guid);
         return state.applyTo(peers);
     }
 
-    private void applyMyAttributesTo(State state) {
+    private void applyMyAttributesTo(StateImpl state) {
         Object[] array = new Object[attributes.size()];
-        ((StateMaps.Attributes) state).applyAttributes(attributes.toArray(array));
+        state.applyAttributes(attributes.toArray(array));
     }
 
     private void applyInstanceTo(Object... items) {
@@ -255,17 +250,12 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
             return false;
         }
 
-        if (peerStates().anyMatch(this::containsMe)) {
+        if (state.peerStates().anyMatch(this::containsMe)) {
             return false;
         }
 
         state.removeFrom(this.guid);
         return true;
-    }
-
-    private <T> Stream<StateImpl> peerStates() {
-        StateImpl state = state(item);
-        return state.peers().stream().filter(ItemGuid::isntItemGuid).map(this::state);
     }
 
     private Stream<StateImpl> defaultStates() {

@@ -269,9 +269,18 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
         if (attributes.length == 0) {
             return false;
         } else {
-            return Arrays.stream(attributes).filter(ItemGuid::isntItemGuid).map(this::state)
-                    .allMatch(ActionState::isActionState);
+            return states(Arrays.stream(attributes)).allMatch(ActionState::isActionState);
         }
+    }
+
+    public Stream<StateImpl> peerStates() {
+        StateImpl state = state(item);
+        Stream<Object> stream = state.peers().stream();
+        return states(stream);
+    }
+
+    public Stream<StateImpl> states(Stream<Object> stream) {
+        return stream.filter(ItemGuid::isntItemGuid).map(this::state);
     }
 
     private void setTemporary() {
@@ -284,11 +293,7 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
 
     @Override
     public void applyAttributes(Object... attributes) {
-        if (attributes.length == 1 && attributes[0] instanceof List<?>) {
-            throw new IllegalArgumentException();
-        }
-
-        this.attributes.addAll(Arrays.asList(attributes));
+        this.attributes.addAll(Arrays.asList(StateMaps.flatten(attributes)));
     }
 
     public Set<Object> getAttributes() {
@@ -297,37 +302,30 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
 
     @Override
     public boolean is(Object... attributes) {
-        if (attributes.length == 1 && attributes[0] instanceof List<?>) {
-            throw new IllegalArgumentException();
-        }
-
-        if (!allItemInstancesFoundInPeers(attributes)) {
+        Object[] flattenedAttributes = StateMaps.flatten(AbstractProxy.removeProxies(attributes));
+        if (!allItemInstancesFoundInPeers(flattenedAttributes)) {
             return false;
         }
 
-        return StateMaps.hasAllAttributes(attributesAndPeers(), attributes);
+        return StateMaps.hasAllAttributes(attributesAndPeers(), flattenedAttributes);
     }
 
     private boolean allItemInstancesFoundInPeers(Object... attributes) {
         List<Object> instances = Arrays.stream(attributes).filter(attribute -> attribute instanceof Item)
-                .map(AbstractProxy::removeProxy).collect(Collectors.toList());
-        List<ItemGuid> guids = Arrays.stream(attributes).filter(attribute -> attribute instanceof Item)
-                .map(AbstractProxy::removeProxy).map(instance -> ((ItemImpl) instance).guid)
+                .collect(Collectors.toList());
+        List<ItemGuid> guids = instances.stream().map(instance -> ((ItemImpl) instance).guid)
                 .collect(Collectors.toList());
         return peers().containsAll(instances) || peers().containsAll(guids);
     }
 
     private Set<Object> attributesAndPeers() {
         Set<Object> all = new HashSet<>();
-        all.addAll(myAttributesAndPeers());
         all.addAll(attributesOfDirectPeers());
-
-        for (Object peer : myAttributesAndPeers()) {
-            if (peer instanceof ItemImpl) {
-                all.addAll(((ItemImpl) peer).attributesAndPeers());
-            }
-        }
+        all.addAll(myAttributesAndPeers());
         return all;
+        // TODO Seems reasonable but doesn't work
+        // return Stream.concat(Stream.of(attributesOfDirectPeers()),
+        // Stream.of(myAttributesAndPeers())).collect(Collectors.toSet());
     }
 
     private Set<Object> myAttributesAndPeers() {
@@ -338,8 +336,7 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
     }
 
     private Set<Object> attributesOfDirectPeers() {
-        return peers().stream().filter(ItemGuid::isntItemGuid).map(this::state).map(state -> state.attributes)
-                .flatMap(Set::stream).collect(Collectors.toSet());
+        return peerStates().map(state -> state.attributes).flatMap(Set::stream).collect(Collectors.toSet());
     }
 
     @Override
@@ -358,9 +355,7 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
 
     @Override
     public Duration duration() {
-        Optional<Duration> maximum = Stream
-                .concat(Stream.of(this.duration),
-                        peers.stream().filter(ItemGuid::isntItemGuid).map(this::state).map(state -> state.duration))
+        Optional<Duration> maximum = Stream.concat(Stream.of(this.duration), peerStates().map(state -> state.duration))
                 .max((a, b) -> Long.compare(a.remaining(TimeUnit.SECONDS), b.remaining(TimeUnit.SECONDS)));
         if (maximum.isPresent()) {
             return maximum.get();

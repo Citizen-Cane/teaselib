@@ -311,32 +311,16 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
     }
 
     private boolean allItemInstancesFoundInPeers(Object... attributes) {
-        List<Object> instances = Arrays.stream(attributes).filter(attribute -> attribute instanceof Item)
-                .collect(Collectors.toList());
-        List<ItemGuid> guids = instances.stream().map(instance -> ((ItemImpl) instance).guid)
-                .collect(Collectors.toList());
+        List<ItemImpl> instances = Arrays.stream(attributes).filter(attribute -> attribute instanceof ItemImpl)
+                .map(itemImpl -> (ItemImpl) itemImpl).collect(Collectors.toList());
+        List<ItemGuid> guids = instances.stream().map(instance -> instance.guid).collect(Collectors.toList());
         return peers().containsAll(instances) || peers().containsAll(guids);
     }
 
     private Set<Object> attributesAndPeers() {
-        Set<Object> all = new HashSet<>();
-        all.addAll(attributesOfDirectPeers());
-        all.addAll(myAttributesAndPeers());
-        return all;
-        // TODO Seems reasonable but doesn't work
-        // return Stream.concat(Stream.of(attributesOfDirectPeers()),
-        // Stream.of(myAttributesAndPeers())).collect(Collectors.toSet());
-    }
-
-    private Set<Object> myAttributesAndPeers() {
-        Set<Object> myAttributesAndPeers = new HashSet<>();
-        myAttributesAndPeers.addAll(this.peers);
-        myAttributesAndPeers.addAll(this.attributes);
-        return myAttributesAndPeers;
-    }
-
-    private Set<Object> attributesOfDirectPeers() {
-        return peerStates().map(state -> state.attributes).flatMap(Set::stream).collect(Collectors.toSet());
+        Stream<Object> myAttributeAndPeers = Stream.concat(peers.stream(), attributes.stream());
+        Stream<Object> attributesOfDirectPeers = peerStates().map(state -> state.attributes).flatMap(Set::stream);
+        return Stream.concat(myAttributeAndPeers, attributesOfDirectPeers).collect(Collectors.toSet());
     }
 
     @Override

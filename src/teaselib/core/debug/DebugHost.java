@@ -104,7 +104,7 @@ public class DebugHost implements Host, HostInputMethod.Backend {
 
     @Override
     public boolean dismissChoices(List<Choice> choices) {
-        logger.info("Dismiss " + choices + " @ " + Thread.currentThread().getStackTrace()[1].toString());
+        logger.info("Dismiss {} @ {}", choices, Thread.currentThread().getStackTrace()[1]);
 
         replySection.lock();
         try {
@@ -117,7 +117,7 @@ public class DebugHost implements Host, HostInputMethod.Backend {
             }
 
             if (!replySection.hasWaiters(click)) {
-                logger.warn("Dismiss called on latch already counted down: " + choices);
+                logger.warn("Dismiss called on latch already counted down: {}", choices);
             } else {
                 try {
                     getClickableChoices(choices).stream().forEach(Runnable::run);

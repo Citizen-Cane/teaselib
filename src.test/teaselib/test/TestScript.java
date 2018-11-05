@@ -13,6 +13,7 @@ import teaselib.core.configuration.DebugSetup;
 import teaselib.core.configuration.Setup;
 import teaselib.core.debug.DebugHost;
 import teaselib.core.debug.DebugPersistence;
+import teaselib.core.util.ExceptionUtil;
 import teaselib.core.util.PropertyNameMapping;
 
 public class TestScript extends TeaseScript {
@@ -98,6 +99,14 @@ public class TestScript extends TeaseScript {
         this.host = dummyHost;
         this.persistence = dummyPersistence;
         this.debugger = new Debugger(teaseLib);
+    }
+
+    public static TeaseLib setup() {
+        try {
+            return new TeaseLib(new DebugHost(), new DebugPersistence(), new DebugSetup());
+        } catch (IOException e) {
+            throw ExceptionUtil.asRuntimeException(e);
+        }
     }
 
     public void addTestUserItems() {

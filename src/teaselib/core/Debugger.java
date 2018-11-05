@@ -52,14 +52,26 @@ public class Debugger {
 
     private final DebugInputMethod debugInputMethod;
 
+    public Debugger(Script script) {
+        this(script.teaseLib);
+    }
+
+    public Debugger(Script script, DebugInputMethod debugInputMethod) {
+        this(script.teaseLib, debugInputMethod);
+    }
+
     public Debugger(TeaseLib teaseLib) {
         this(teaseLib, () -> {
         });
     }
 
     public Debugger(TeaseLib teaseLib, Runnable debugInputMethodHandler) {
+        this(teaseLib, new ResponseDebugInputMethod(debugInputMethodHandler));
+    }
+
+    public Debugger(TeaseLib teaseLib, DebugInputMethod debugInputMethod) {
         this.teaseLib = teaseLib;
-        this.debugInputMethod = new DebugInputMethod(debugInputMethodHandler);
+        this.debugInputMethod = debugInputMethod;
         attach();
     }
 
@@ -92,11 +104,13 @@ public class Debugger {
     }
 
     public void addResponse(String match, Callable<Response> response) {
-        debugInputMethod.getResponses().add(new ResponseAction(match, response));
+        // TODO Resolve cast, for instance by input method priority (first coverage, then defined response)
+        // -> use multiple debug methods
+        ((ResponseDebugInputMethod) debugInputMethod).getResponses().add(new ResponseAction(match, response));
     }
 
     public void addResponse(ResponseAction responseAction) {
-        debugInputMethod.getResponses().add(responseAction);
+        ((ResponseDebugInputMethod) debugInputMethod).getResponses().add(responseAction);
     }
 
     public void clearStateMaps() {
@@ -111,6 +125,6 @@ public class Debugger {
     }
 
     public void replyScriptFunction(String string) {
-        debugInputMethod.replyScriptFunction(string);
+        ((ResponseDebugInputMethod) debugInputMethod).replyScriptFunction(string);
     }
 }

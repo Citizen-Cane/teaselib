@@ -3,6 +3,8 @@ package teaselib.core;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+import teaselib.functional.RunnableScript;
+
 /**
  * @author Citizen-Cane
  *
@@ -12,6 +14,17 @@ public class CodeCoverage<T extends Script> {
     private final Consumer<T> runner;
 
     private boolean hasMorePaths = true;
+
+    @SuppressWarnings("unchecked")
+    public <S extends RunnableScript> CodeCoverage(Supplier<S> scriptSupplier) {
+        this.supplier = (Supplier<T>) scriptSupplier;
+        this.runner = (Consumer<T>) new Consumer<S>() {
+            @Override
+            public void accept(S t) {
+                t.run();
+            }
+        };
+    }
 
     public CodeCoverage(Supplier<T> scriptSupplier, Consumer<T> runner) {
         this.supplier = scriptSupplier;

@@ -283,7 +283,7 @@ public abstract class Script {
         teaseLib.host.endScene();
 
         logger.info("{}", prompt);
-        teaseLib.transcript.info("< " + choice);
+        teaseLib.transcript.info("< " + (choice.gesture != Gesture.None ? choice.gesture + ": " : "") + choice.display);
 
         return choice;
     }

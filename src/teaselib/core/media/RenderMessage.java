@@ -71,7 +71,7 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
     private AbstractMessage lastSection;
 
     private final Lock messageRenderingInProgressLock = new ReentrantLock();
-    private final Condition messageRenderingModifierTaken = messageRenderingInProgressLock.newCondition();
+    private final Condition messageRenderingModifierApplied = messageRenderingInProgressLock.newCondition();
     private final AtomicReference<UnaryOperator<List<RenderedMessage>>> messageModifier = new AtomicReference<>(null);
 
     private String displayImage = null;
@@ -135,34 +135,25 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
 
     private boolean applyMessageModifier(RenderedMessage message, UnaryOperator<List<RenderedMessage>> unaryOperator) {
         prefetchImages(message);
-        UnaryOperator<List<RenderedMessage>> alreadyScheduledOperator = messageModifier.getAndSet(unaryOperator);
-        if (alreadyScheduledOperator != null) {
-            throw new IllegalStateException(message.toString());
-        } else {
+        try {
+            messageRenderingInProgressLock.lockInterruptibly();
             try {
-                if (messageRenderingInProgressLock.tryLock()) {
-                    try {
-                        awaitModifierAppliedByRenderThreadOrCompletedMandatory();
-                    } finally {
-                        messageRenderingInProgressLock.unlock();
-                    }
-                }
-                return modifierApplied();
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new ScriptInterruptedException(e);
+                awaitModifierAppliedByRenderThreadOrCompletedMandatory();
+                messageModifier.getAndSet(unaryOperator);
+                return !hasCompletedMandatory();
+            } finally {
+                messageRenderingInProgressLock.unlock();
             }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new ScriptInterruptedException(e);
         }
     }
 
     private void awaitModifierAppliedByRenderThreadOrCompletedMandatory() throws InterruptedException {
-        while (!(hasCompletedMandatory()) && messageModifier.get() != null) {
-            messageRenderingModifierTaken.await();
+        while (!hasCompletedMandatory() && messageModifier.get() != null) {
+            messageRenderingModifierApplied.await();
         }
-    }
-
-    private boolean modifierApplied() {
-        return messageModifier.get() == null;
     }
 
     private RenderedMessage getLastMessage() {
@@ -215,6 +206,8 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
                 renderQueue.interrupt(currentRenderer);
             if (backgroundSoundRenderer != null)
                 renderQueue.interrupt(backgroundSoundRenderer);
+
+            messageModifier.set(null);
             throw e;
         } finally {
             signalMessageModifierApplied();
@@ -224,7 +217,7 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
     private void signalMessageModifierApplied() throws InterruptedException {
         messageRenderingInProgressLock.lockInterruptibly();
         try {
-            messageRenderingModifierTaken.signalAll();
+            messageRenderingModifierApplied.signalAll();
         } finally {
             messageRenderingInProgressLock.unlock();
         }
@@ -232,15 +225,12 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
 
     private boolean applyPendingMessageModification() {
         UnaryOperator<List<RenderedMessage>> operator = messageModifier.getAndSet(null);
-        boolean applied = operator != null;
-        if (applied) {
-            apply(operator, messages);
+        if (operator != null) {
+            operator.apply(messages);
+            return true;
+        } else {
+            return false;
         }
-        return applied;
-    }
-
-    private static void apply(UnaryOperator<List<RenderedMessage>> operator, List<RenderedMessage> messages) {
-        operator.apply(messages);
     }
 
     private void play() throws IOException, InterruptedException {

@@ -14,4 +14,9 @@ public interface InputMethod {
 
     Map<String, Runnable> getHandlers();
 
+    public interface Listener {
+        void promptShown(Prompt prompt);
+
+        void promptDismissed(Prompt prompt);
+    }
 }

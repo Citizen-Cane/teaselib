@@ -1,12 +1,15 @@
 package teaselib.core;
 
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import teaselib.core.ui.InputMethod;
 import teaselib.core.ui.Prompt;
 
 /**
@@ -18,19 +21,18 @@ public class CodeCoverageInputMethod implements DebugInputMethod {
 
     private final AtomicReference<Prompt> activePrompt = new AtomicReference<>();
 
-    public CodeCoverageInputMethod() {
-    }
+    Set<InputMethod.Listener> eventListeners = new LinkedHashSet<>();
 
     @Override
     public void show(Prompt prompt) {
+        firePromptShown(prompt);
+
         // TODO script functions timeout
-        // TODO Manual hints for script functions
-        logger.info("Choosing {}", prompt.choices.get(0));
-        prompt.signalResult(this, 0);
     }
 
     @Override
     public boolean dismiss(Prompt prompt) throws InterruptedException {
+        firePromptDismissed(prompt);
         activePrompt.set(null);
         return true;
     }
@@ -47,6 +49,22 @@ public class CodeCoverageInputMethod implements DebugInputMethod {
 
     @Override
     public void detach(TeaseLib teaseLib) {
+    }
+
+    public void addEventListener(InputMethod.Listener e) {
+        eventListeners.add(e);
+    }
+
+    public void removeEventListener(InputMethod.Listener e) {
+        eventListeners.remove(e);
+    }
+
+    private void firePromptShown(Prompt prompt) {
+        eventListeners.stream().forEach(e -> e.promptShown(prompt));
+    }
+
+    private void firePromptDismissed(Prompt prompt) {
+        eventListeners.stream().forEach(e -> e.promptDismissed(prompt));
     }
 
     @Override

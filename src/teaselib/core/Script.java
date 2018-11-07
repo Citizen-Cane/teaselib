@@ -282,8 +282,9 @@ public abstract class Script {
         endAll();
         teaseLib.host.endScene();
 
-        logger.info("{}", prompt);
-        teaseLib.transcript.info("< " + (choice.gesture != Gesture.None ? choice.gesture + ": " : "") + choice.display);
+        String chosen = "< " + (choice.gesture != Gesture.None ? choice.gesture + ": " : "") + choice.display;
+        logger.info("{}", chosen);
+        teaseLib.transcript.info(chosen);
 
         return choice;
     }

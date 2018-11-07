@@ -123,7 +123,11 @@ public class Prompt {
     public synchronized void setResultOnce(InputMethod inputMethod, int value) {
         if (result == Prompt.UNDEFINED) {
             this.inputMethod = inputMethod;
-            result = value;
+            if (value < 0 || value >= choices.size()) {
+                throw new IndexOutOfBoundsException(toString() + ": " + inputMethod.toString() + ": " + value);
+            } else {
+                result = value;
+            }
         } else {
             throw new IllegalStateException("Prompt " + this + " already set to " + inputMethod + " -> " + value);
         }

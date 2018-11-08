@@ -32,7 +32,6 @@ public class TestMotionDetector {
         // TODO Resolve NPE when sleep is missing (wait for motion & presence data to be initialized)
         DeviceCache.connect(motionDetector);
         Thread.sleep(1000);
-        Movement movement = MotionDetector.movement(motionDetector);
 
         // using an amount < 1.0 ignores small pauses while moving
         // respectively ignores slight motions while standing still

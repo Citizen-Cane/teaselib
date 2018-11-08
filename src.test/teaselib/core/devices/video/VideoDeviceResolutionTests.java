@@ -17,8 +17,7 @@ public class VideoDeviceResolutionTests {
     @Test
     public void testFindingSimilarResolution() {
         try (Size desired = new Size(1920, 1080);) {
-            Size resolution = resolutions.getMatchingOrSimilar(desired);
-            assertEquals(resolution, resolutions.get(0));
+            assertEquals(resolutions.get(0), resolutions.getMatchingOrSimilar(desired));
         }
         try (Size desired = new Size(800, 600);) {
             assertEquals(resolutions.get(2), resolutions.getMatchingOrSimilar(desired));

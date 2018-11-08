@@ -1,13 +1,7 @@
 package teaselib.core;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
-import java.io.IOException;
 import java.util.List;
 
 import org.junit.Test;
@@ -82,7 +76,7 @@ public class UserItemsImplTest {
     }
 
     @Test
-    public void testUserItems() throws IOException {
+    public void testUserItems() {
         TestScript script = TestScript.getOne();
         UserItems userItems = configureUserItems(script);
 
@@ -92,7 +86,7 @@ public class UserItemsImplTest {
         testGadgets(userItems);
     }
 
-    private UserItems configureUserItems(TestScript script) throws IOException {
+    private static UserItems configureUserItems(TestScript script) {
         UserItems userItems = new UserItemsImpl(script.teaseLib);
         userItems.addItems(script.getClass().getResource("useritems.xml"));
         return userItems;

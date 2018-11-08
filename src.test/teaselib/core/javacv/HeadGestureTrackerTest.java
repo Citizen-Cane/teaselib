@@ -14,7 +14,6 @@ import teaselib.motiondetection.Gesture;
 public class HeadGestureTrackerTest {
     private static final long SHAKETIME = (HeadGestureTracker.GestureMinDuration
             + HeadGestureTracker.GestureMaxDuration) / (2 * HeadGestureTracker.NumberOfDirections);
-    private static final int NUMBER_OF_SUPPORTED_DIRECTIONS = 6;
     private static final int DIRECTION_SIZE_AT_640 = (int) (640
             * HeadGestureTracker.MINIMUM_DIRECTION_SIZE_FRACTION_OF_VIDEO);
 

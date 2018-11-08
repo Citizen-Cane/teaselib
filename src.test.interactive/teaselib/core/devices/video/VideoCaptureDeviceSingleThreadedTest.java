@@ -22,7 +22,7 @@ public class VideoCaptureDeviceSingleThreadedTest {
 
         for (int i = 0; i < 2; i++) {
             try (Size vga = new Size(640, 480); Size hd = new Size(1280, 720);) {
-                testRrsolutionSwitch(vc, vga, hd);
+                testResolutionSwitch(vc, vga, hd);
             }
         }
     }
@@ -32,7 +32,7 @@ public class VideoCaptureDeviceSingleThreadedTest {
         VideoCaptureDevice vc = getDevice();
 
         try (Size vga = new Size(640, 480); Size hd = new Size(1280, 720);) {
-            testRrsolutionSwitch(vc, vga, hd);
+            testResolutionSwitch(vc, vga, hd);
         }
     }
 
@@ -47,7 +47,7 @@ public class VideoCaptureDeviceSingleThreadedTest {
         return vc;
     }
 
-    private static void testRrsolutionSwitch(VideoCaptureDevice vc, Size vga, Size hd) {
+    private static void testResolutionSwitch(VideoCaptureDevice vc, Size vga, Size hd) {
         try {
             vc.resolution(hd);
             fail();
@@ -61,20 +61,22 @@ public class VideoCaptureDeviceSingleThreadedTest {
         Iterator<Mat> video = vc.iterator();
 
         vc.resolution(hd);
-        Mat image = video.next();
-        assertEquals(hd.width(), image.cols());
-        assertEquals(hd.height(), image.rows());
+        try (Mat image = video.next();) {
+            assertEquals(hd.width(), image.cols());
+            assertEquals(hd.height(), image.rows());
 
-        assertEquals(hd.width(), vc.resolution().width());
-        assertEquals(hd.height(), vc.resolution().height());
+            assertEquals(hd.width(), vc.resolution().width());
+            assertEquals(hd.height(), vc.resolution().height());
+        }
 
         vc.resolution(vga);
-        image = video.next();
-        assertEquals(hd.width(), image.cols());
-        assertEquals(hd.height(), image.rows());
+        try (Mat image = video.next();) {
+            assertEquals(hd.width(), image.cols());
+            assertEquals(hd.height(), image.rows());
 
-        assertEquals(vga.width(), vc.resolution().width());
-        assertEquals(vga.height(), vc.resolution().height());
+            assertEquals(vga.width(), vc.resolution().width());
+            assertEquals(vga.height(), vc.resolution().height());
+        }
 
         vc.close();
     }

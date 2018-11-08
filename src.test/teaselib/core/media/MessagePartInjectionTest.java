@@ -36,6 +36,7 @@ public class MessagePartInjectionTest {
                     this::expandTextVariables, Optional.empty()).messageModifiers();
         }
 
+        @Override
         public String expandTextVariables(String text) {
             return text;
         }

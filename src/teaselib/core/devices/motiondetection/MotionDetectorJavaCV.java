@@ -174,6 +174,7 @@ public class MotionDetectorJavaCV extends MotionDetector /* extends WiredDevice 
         return captureThread.proximity.await(expected, timeoutSeconds);
     }
 
+    @Override
     public boolean await(Pose expected, double timeoutSeconds) {
         if (!active()) {
             return handleInactive(timeoutSeconds);

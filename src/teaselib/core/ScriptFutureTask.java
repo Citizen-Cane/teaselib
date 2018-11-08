@@ -1,6 +1,6 @@
 package teaselib.core;
 
-import static java.util.concurrent.TimeUnit.HOURS;
+import static java.util.concurrent.TimeUnit.*;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
@@ -28,7 +28,7 @@ public class ScriptFutureTask extends FutureTask<Void> {
     private final AtomicBoolean timedOut = new AtomicBoolean(false);
     private final Prompt prompt;
 
-    private AtomicBoolean dismissed = new AtomicBoolean(false);
+    private final AtomicBoolean dismissed = new AtomicBoolean(false);
     private Throwable throwable = null;
 
     public ScriptFutureTask(Script script, ScriptFunction scriptFunction, Prompt prompt) {
@@ -38,7 +38,7 @@ public class ScriptFutureTask extends FutureTask<Void> {
                 try {
                     scriptFunction.setResult(scriptFunction.call());
                     if (Thread.interrupted()) {
-                        throw new ScriptInterruptedException();
+                        throw new InterruptedException();
                     }
                     script.completeAll();
                     return null;
@@ -54,9 +54,9 @@ public class ScriptFutureTask extends FutureTask<Void> {
 
     @Override
     public void run() {
-        super.run();
-
         try {
+            super.run();
+
             logger.info("Script task {} is finishing", prompt);
             prompt.lock.lockInterruptibly();
             try {
@@ -66,6 +66,7 @@ public class ScriptFutureTask extends FutureTask<Void> {
                 prompt.lock.unlock();
             }
         } catch (InterruptedException | ScriptInterruptedException e) {
+            Thread.currentThread().interrupt();
             handleScriptTaskInterrupted();
         } catch (Exception e) {
             if (throwable == null) {

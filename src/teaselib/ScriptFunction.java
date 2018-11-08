@@ -36,7 +36,7 @@ public class ScriptFunction {
         Confirmation
     }
 
-    CallableScript<String> script;
+    private final CallableScript<String> script;
     /**
      * The type of this script function;
      */

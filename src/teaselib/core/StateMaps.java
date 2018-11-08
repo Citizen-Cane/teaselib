@@ -151,7 +151,9 @@ public class StateMaps {
     }
 
     void handleAutoRemoval() {
-        for (State state : scheduledForAutoRemoval) {
+        // TODO Copying the original set resolves a concurrent modification issue
+        // However, auto-removal should only happen at startup, or before starting a main script
+        for (State state : new ArrayList<>(scheduledForAutoRemoval)) {
             state.remove();
         }
         scheduledForAutoRemoval.clear();

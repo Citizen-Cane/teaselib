@@ -1,8 +1,7 @@
 package teaselib.core.configuration;
 
-import static teaselib.core.configuration.Configuration.DEFAULTS;
-import static teaselib.core.configuration.TeaseLibConfigSetup.ITEM_DEFAULT_STORE_FILENAME;
-import static teaselib.core.configuration.TeaseLibConfigSetup.PRONUNCIATION_DIRECTORY;
+import static teaselib.core.configuration.Configuration.*;
+import static teaselib.core.configuration.TeaseLibConfigSetup.*;
 
 import java.io.File;
 
@@ -13,7 +12,7 @@ import teaselib.core.speechrecognition.SpeechRecognitionResult.Confidence;
 import teaselib.core.texttospeech.TextToSpeechPlayer;
 
 public final class DebugSetup implements Setup {
-    boolean stopOnRenderError = true;
+    boolean ignoreMissingResources = true;
     boolean enableRemoteDeviceAccess = false;
     boolean enableOutput = false;
     boolean enableInput = false;
@@ -32,8 +31,8 @@ public final class DebugSetup implements Setup {
     }
 
     private void applyTeaseLibConfiguration(Configuration config) {
-        config.set(Config.Debug.StopOnAssetNotFound, Boolean.toString(stopOnRenderError));
-        config.set(Config.Debug.StopOnRenderError, Boolean.toString(stopOnRenderError));
+        config.set(Config.Debug.StopOnAssetNotFound, Boolean.toString(ignoreMissingResources));
+        config.set(Config.Debug.StopOnRenderError, Boolean.toString(ignoreMissingResources));
         config.set(Config.Debug.LogDetails, Boolean.toString(false));
     }
 
@@ -66,7 +65,7 @@ public final class DebugSetup implements Setup {
         }
     }
 
-    private void loadDefaultItemStores(Configuration config) {
+    private static void loadDefaultItemStores(Configuration config) {
         config.set(UserItemsImpl.Settings.ITEM_DEFAULT_STORE, DEFAULTS + ITEM_DEFAULT_STORE_FILENAME);
     }
 
@@ -82,8 +81,8 @@ public final class DebugSetup implements Setup {
         return config;
     }
 
-    public DebugSetup continueOnRenderErrors() {
-        stopOnRenderError = false;
+    public DebugSetup ignoreMissingResources() {
+        ignoreMissingResources = false;
         return this;
     }
 

@@ -2,8 +2,8 @@ package teaselib.core;
 
 import static java.util.concurrent.TimeUnit.*;
 
-import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.FutureTask;
@@ -29,23 +29,22 @@ public class ScriptFutureTask extends FutureTask<Void> {
     private final Prompt prompt;
 
     private final AtomicBoolean dismissed = new AtomicBoolean(false);
+    private final CountDownLatch cancellationCompletion = new CountDownLatch(1);
+
     private Throwable throwable = null;
 
     public ScriptFutureTask(Script script, ScriptFunction scriptFunction, Prompt prompt) {
-        super(new Callable<Void>() {
-            @Override
-            public Void call() throws Exception {
-                try {
-                    scriptFunction.setResult(scriptFunction.call());
-                    if (Thread.interrupted()) {
-                        throw new InterruptedException();
-                    }
-                    script.completeAll();
-                    return null;
-                } catch (Exception e) {
-                    script.endAll();
-                    throw e;
+        super(() -> {
+            try {
+                scriptFunction.setResult(scriptFunction.call());
+                if (Thread.interrupted()) {
+                    throw new InterruptedException();
                 }
+                script.completeAll();
+                return null;
+            } catch (Exception e) {
+                script.endAll();
+                throw e;
             }
         });
         this.scriptFunction = scriptFunction;
@@ -57,8 +56,8 @@ public class ScriptFutureTask extends FutureTask<Void> {
         try {
             super.run();
 
-            logger.info("Script task {} is finishing", prompt);
             prompt.lock.lockInterruptibly();
+            logger.info("Script task {} is finishing", prompt);
             try {
                 timedOut.set(prompt.result() == Prompt.UNDEFINED);
                 prompt.click.signalAll();
@@ -75,6 +74,7 @@ public class ScriptFutureTask extends FutureTask<Void> {
                 logger.error(e.getMessage(), e);
             }
         } finally {
+            cancellationCompletion.countDown();
             logger.info("Script task {} finished", prompt);
         }
     }
@@ -92,8 +92,10 @@ public class ScriptFutureTask extends FutureTask<Void> {
 
     @Override
     protected void setException(Throwable t) {
-        if (dismissed.get() && t instanceof ScriptInterruptedException) {
+        if (dismissed.get() && (t instanceof ScriptInterruptedException || t instanceof InterruptedException)) {
             logger.info("Script task {} already dismissed", prompt);
+        } else if (t instanceof InterruptedException) {
+            throwable = new ScriptInterruptedException((InterruptedException) t);
         } else {
             throwable = t;
             logger.info("{}:@{} stored - will be forwarded", t.getClass().getSimpleName(), t.hashCode());
@@ -118,7 +120,7 @@ public class ScriptFutureTask extends FutureTask<Void> {
             logger.info("Waiting for script task {} to join", prompt);
             get();
         } catch (CancellationException e) {
-            // Ignore
+            cancellationCompletion.await();
         } catch (ExecutionException e) {
             throw ExceptionUtil.asRuntimeException(ExceptionUtil.reduce(e));
         } finally {

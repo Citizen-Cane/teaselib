@@ -7,6 +7,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
@@ -202,10 +203,14 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
                 }
             }
         } catch (InterruptedException | ScriptInterruptedException e) {
-            if (currentRenderer != null)
+            if (currentRenderer != null) {
                 renderQueue.interrupt(currentRenderer);
-            if (backgroundSoundRenderer != null)
+                currentRenderer = null;
+            }
+            if (backgroundSoundRenderer != null) {
                 renderQueue.interrupt(backgroundSoundRenderer);
+                backgroundSoundRenderer = null;
+            }
 
             messageModifier.set(null);
             throw e;

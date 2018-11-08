@@ -62,12 +62,9 @@ public class Prompt {
         }
     }
 
-    void cancelScriptTask() throws InterruptedException {
-        if (scriptTask != null) {
-            if (!scriptTask.isCancelled() && !scriptTask.isDone()) {
-                scriptTask.cancel(true);
-            }
-            scriptTask.join();
+    void cancelScriptTask() {
+        if (scriptTask != null && !scriptTask.isCancelled() && !scriptTask.isDone()) {
+            scriptTask.cancel(true);
         }
     }
 

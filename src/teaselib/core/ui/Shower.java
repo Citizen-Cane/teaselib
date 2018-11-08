@@ -41,6 +41,7 @@ public class Shower {
             return choice;
         } finally {
             prompt.lock.unlock();
+            prompt.joinScriptTask();
         }
     }
 
@@ -61,7 +62,6 @@ public class Shower {
 
     private Choice result(Prompt prompt, int resultIndex) throws InterruptedException {
         if (resultIndex == Prompt.DISMISSED) {
-            prompt.joinScriptTask();
             prompt.forwardErrorsAsRuntimeException();
         } else if (prompt.inputHandlerKey != Prompt.NONE) {
             try {

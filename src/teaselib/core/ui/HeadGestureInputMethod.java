@@ -28,7 +28,7 @@ public class HeadGestureInputMethod extends AbstractInputMethod {
     private static final List<Gesture> SupportedGestures = Arrays.asList(Gesture.Nod, Gesture.Shake);
 
     @Override
-    protected int awaitResult(Prompt prompt) throws InterruptedException, ExecutionException {
+    protected int handleShow(Prompt prompt) throws InterruptedException, ExecutionException {
         return awaitGesture(motionDetector.get(), prompt);
     }
 
@@ -56,7 +56,6 @@ public class HeadGestureInputMethod extends AbstractInputMethod {
 
     @Override
     protected boolean handleDismiss(Prompt prompt) throws InterruptedException {
-        replySection.lockInterruptibly();
         return true;
     }
 

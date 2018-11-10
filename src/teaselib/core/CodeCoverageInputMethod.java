@@ -3,12 +3,11 @@ package teaselib.core;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.ExecutorService;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import teaselib.core.ui.AbstractInputMethod;
 import teaselib.core.ui.InputMethod;
 import teaselib.core.ui.Prompt;
 
@@ -16,39 +15,38 @@ import teaselib.core.ui.Prompt;
  * @author Citizen-Cane
  *
  */
-public class CodeCoverageInputMethod implements DebugInputMethod {
-    private static final Logger logger = LoggerFactory.getLogger(CodeCoverageInputMethod.class);
-
-    private final AtomicReference<Prompt> activePrompt = new AtomicReference<>();
-
+public class CodeCoverageInputMethod extends AbstractInputMethod implements DebugInputMethod {
     Set<InputMethod.Listener> eventListeners = new LinkedHashSet<>();
 
-    @Override
-    public void show(Prompt prompt) {
-        firePromptShown(prompt);
-
-        // TODO script functions timeout
+    public CodeCoverageInputMethod(ExecutorService executor) {
+        super(executor);
     }
 
     @Override
-    public boolean dismiss(Prompt prompt) throws InterruptedException {
+    public int handleShow(Prompt prompt) {
+        return firePromptShown(prompt);
+        // TODO script function timeout
+    }
+
+    @Override
+    public boolean handleDismiss(Prompt prompt) throws InterruptedException {
         firePromptDismissed(prompt);
-        activePrompt.set(null);
         return true;
     }
 
     @Override
     public Map<String, Runnable> getHandlers() {
-        HashMap<String, Runnable> handlers = new HashMap<>();
-        return handlers;
+        return new HashMap<>();
     }
 
     @Override
     public void attach(TeaseLib teaseLib) {
+        // Ignore
     }
 
     @Override
     public void detach(TeaseLib teaseLib) {
+        // Ignore
     }
 
     public void addEventListener(InputMethod.Listener e) {
@@ -59,21 +57,17 @@ public class CodeCoverageInputMethod implements DebugInputMethod {
         eventListeners.remove(e);
     }
 
-    private void firePromptShown(Prompt prompt) {
-        eventListeners.stream().forEach(e -> e.promptShown(prompt));
+    private int firePromptShown(Prompt prompt) {
+        Optional<Integer> result = eventListeners.stream().map(e -> e.promptShown(prompt))
+                .reduce(CodeCoverageInputMethod::firstResult);
+        return result.isPresent() ? result.get() : Prompt.UNDEFINED;
+    }
+
+    private static int firstResult(int a, int b) {
+        return a == Prompt.UNDEFINED ? b : a;
     }
 
     private void firePromptDismissed(Prompt prompt) {
         eventListeners.stream().forEach(e -> e.promptDismissed(prompt));
-    }
-
-    @Override
-    public String toString() {
-        Prompt prompt = activePrompt.get();
-        if (prompt != null) {
-            return prompt.toString();
-        } else {
-            return "<no active prompt>";
-        }
     }
 }

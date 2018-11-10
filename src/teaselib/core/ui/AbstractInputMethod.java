@@ -6,13 +6,22 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import teaselib.core.ScriptInterruptedException;
+import teaselib.core.util.ExceptionUtil;
 
 /**
  * @author Citizen-Cane
  *
  */
 public abstract class AbstractInputMethod implements InputMethod {
+    private static final Logger logger = LoggerFactory.getLogger(AbstractInputMethod.class);
+
     protected final ExecutorService executor;
     protected final ReentrantLock replySection = new ReentrantLock(true);
 
@@ -38,6 +47,12 @@ public abstract class AbstractInputMethod implements InputMethod {
                     }
 
                     return awaitAndSignalResult(prompt);
+                } catch (InterruptedException | ScriptInterruptedException e) {
+                    throw e;
+                } catch (Throwable e) {
+                    logger.error(e.getMessage(), e);
+                    throw e;
+                    // TODO Store error in prompt and check after click.await() returns
                 } finally {
                     replySection.unlock();
                 }
@@ -54,18 +69,18 @@ public abstract class AbstractInputMethod implements InputMethod {
 
     private Integer awaitAndSignalResult(Prompt prompt) throws InterruptedException, ExecutionException {
         if (prompt.result() == Prompt.UNDEFINED) {
-            int result = awaitResult(prompt);
+            int result = handleShow(prompt);
             signalResult(prompt, result);
         }
         return prompt.result();
     }
 
-    protected abstract int awaitResult(Prompt prompt) throws InterruptedException, ExecutionException;
+    protected abstract int handleShow(Prompt prompt) throws InterruptedException, ExecutionException;
 
     private void signalResult(Prompt prompt, int result) throws InterruptedException {
         prompt.lock.lockInterruptibly();
         try {
-            if (!prompt.paused() && prompt.result() == Prompt.UNDEFINED) {
+            if (!prompt.paused() /* && prompt.result() == Prompt.UNDEFINED */) {
                 prompt.signalResult(this, result);
             }
         } finally {
@@ -75,13 +90,43 @@ public abstract class AbstractInputMethod implements InputMethod {
 
     @Override
     public final boolean dismiss(Prompt prompt) throws InterruptedException {
-        if (worker.isCancelled() || worker.isDone()) {
+        if (worker.isDone()) {
+            try {
+                worker.get();
+            } catch (ExecutionException e) {
+                throw ExceptionUtil.asRuntimeException(ExceptionUtil.reduce(e));
+            }
             return false;
+        } else if (worker.isCancelled()) {
+            return false;
+        } else {
+            worker.cancel(true);
         }
-        worker.cancel(true);
 
         try {
-            return handleDismiss(prompt);
+            boolean dismissChoices = false;
+
+            boolean tryLock = replySection.tryLock();
+            while (!tryLock) {
+                dismissChoices = handleDismiss(prompt);
+                tryLock = replySection.tryLock();
+                if (tryLock) {
+                    break;
+                }
+                prompt.lock.lockInterruptibly();
+                try {
+                    tryLock = prompt.click.await(100, TimeUnit.MILLISECONDS);
+                } finally {
+                    prompt.lock.unlock();
+                }
+            }
+
+            return dismissChoices;
+        } catch (InterruptedException | ScriptInterruptedException e) {
+            throw e;
+        } catch (Throwable e) {
+            logger.error(e.getMessage(), e);
+            throw e;
         } finally {
             if (replySection.isHeldByCurrentThread()) {
                 replySection.unlock();
@@ -95,5 +140,4 @@ public abstract class AbstractInputMethod implements InputMethod {
     public Map<String, Runnable> getHandlers() {
         return Collections.emptyMap();
     }
-
 }

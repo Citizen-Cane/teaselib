@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.TimeUnit;
 
 /**
  * @author Citizen-Cane
@@ -26,30 +25,13 @@ public class HostInputMethod extends AbstractInputMethod {
     }
 
     @Override
-    protected int awaitResult(Prompt prompt) throws InterruptedException, ExecutionException {
+    protected int handleShow(Prompt prompt) throws InterruptedException, ExecutionException {
         return host.reply(prompt.choices);
     }
 
     @Override
     protected boolean handleDismiss(Prompt prompt) throws InterruptedException {
-        boolean dismissChoices = false;
-
-        boolean tryLock = replySection.tryLock();
-        while (!tryLock) {
-            dismissChoices = host.dismissChoices(prompt.choices);
-            tryLock = replySection.tryLock();
-            if (tryLock) {
-                break;
-            }
-            prompt.lock.lockInterruptibly();
-            try {
-                tryLock = prompt.click.await(100, TimeUnit.MILLISECONDS);
-            } finally {
-                prompt.lock.unlock();
-            }
-        }
-
-        return dismissChoices;
+        return host.dismissChoices(prompt.choices);
     }
 
     @Override

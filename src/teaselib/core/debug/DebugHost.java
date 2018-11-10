@@ -13,8 +13,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import teaselib.core.Audio;
-import teaselib.core.Debugger;
-import teaselib.core.Debugger.Response;
 import teaselib.core.Host;
 import teaselib.core.ResourceLoader;
 import teaselib.core.ScriptInterruptedException;
@@ -85,19 +83,13 @@ public class DebugHost implements Host, HostInputMethod.Backend {
         return new ArrayList<>(values);
     }
 
-    int selectedIndex = 0;
-
     final ReentrantLock replySection = new ReentrantLock(true);
     final Condition click = replySection.newCondition();
 
     private List<Runnable> getClickableChoices(List<Choice> choices) {
         List<Runnable> clickables = new ArrayList<>(choices.size());
         for (int i = 0; i < choices.size(); i++) {
-            final int j = i;
-            clickables.add(() -> {
-                selectedIndex = j;
-                click.signal();
-            });
+            clickables.add(click::signal);
         }
         return clickables;
     }
@@ -137,18 +129,6 @@ public class DebugHost implements Host, HostInputMethod.Backend {
         }
     }
 
-    static class Reply {
-        final int index;
-        final Debugger.Response response;
-        final String match;
-
-        Reply(int index, Response response, String match) {
-            this.index = index;
-            this.response = response;
-            this.match = match;
-        }
-    }
-
     @Override
     public InputMethod inputMethod() {
         return inputMethod;
@@ -177,8 +157,8 @@ public class DebugHost implements Host, HostInputMethod.Backend {
 
                 return Prompt.DISMISSED;
             } finally {
-                replySection.unlock();
                 currentChoices = Collections.emptyList();
+                replySection.unlock();
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();

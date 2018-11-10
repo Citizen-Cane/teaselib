@@ -121,7 +121,7 @@ public class Prompt {
         if (result == Prompt.UNDEFINED) {
             this.inputMethod = inputMethod;
             if (value < 0 || value >= choices.size()) {
-                throw new IndexOutOfBoundsException(toString() + ": " + inputMethod.toString() + ": " + value);
+                throw new IndexOutOfBoundsException(value + "->" + toString() + ": " + inputMethod.toString());
             } else {
                 result = value;
             }
@@ -204,5 +204,4 @@ public class Prompt {
             return choice(result).display;
         }
     }
-
 }

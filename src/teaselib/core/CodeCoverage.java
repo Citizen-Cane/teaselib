@@ -1,8 +1,8 @@
 package teaselib.core;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
@@ -49,7 +49,7 @@ public class CodeCoverage<T extends Script> {
         DecisionList decisions = current.next();
         Iterator<Integer> index = new ArrayList<>(decisions).iterator();
 
-        Set<Prompt> used = new HashSet<>();
+        Set<Prompt> used = new LinkedHashSet<>();
         InputMethod.Listener e = new InputMethod.Listener() {
             @Override
             public int promptShown(Prompt prompt) {
@@ -62,6 +62,9 @@ public class CodeCoverage<T extends Script> {
                 int result;
                 if (index.hasNext()) {
                     result = index.next();
+                    if (result >= prompt.choices.size()) {
+                        throw new IndexOutOfBoundsException(result + "->" + toString() + ": " + prompt);
+                    }
                 } else {
                     result = 0;
 

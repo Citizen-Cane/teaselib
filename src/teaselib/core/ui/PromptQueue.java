@@ -14,12 +14,10 @@ public class PromptQueue {
     public int show(Script script, Prompt prompt) throws InterruptedException {
         Prompt activePrompt = active.get();
 
-        if (activePrompt != null) {
-            if (prompt != activePrompt) {
-                throw new IllegalStateException("Prompt " + prompt + " already showing");
-            } else {
-                pause(activePrompt);
-            }
+        if (prompt == activePrompt) {
+            throw new IllegalStateException("Prompt " + prompt + " already showing");
+        } else if (activePrompt != null) {
+            pause(activePrompt);
         }
 
         makePromptActive(prompt);
@@ -65,6 +63,10 @@ public class PromptQueue {
     }
 
     public boolean dismiss(Prompt prompt) {
+        if (prompt != active.get()) {
+            throw new IllegalStateException("Prompt " + prompt + " not showing");
+        }
+
         if (prompt.result() == Prompt.UNDEFINED) {
             prompt.setResultOnce(null, Prompt.DISMISSED);
             return dismissPrompt(prompt);

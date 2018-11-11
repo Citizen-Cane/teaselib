@@ -69,12 +69,6 @@ public class Prompt {
         }
     }
 
-    void forwardErrorsAsRuntimeException() {
-        if (scriptTask != null) {
-            scriptTask.forwardErrorsAsRuntimeException();
-        }
-    }
-
     Choice choice(int resultIndex) {
         if (scriptTask != null && scriptTask.timedOut()) {
             return TIMEOUT;

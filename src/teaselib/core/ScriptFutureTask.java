@@ -87,7 +87,11 @@ public class ScriptFutureTask extends FutureTask<Void> {
     @Override
     public boolean cancel(boolean mayInterruptIfRunning) {
         dismissed.set(true);
-        return super.cancel(mayInterruptIfRunning);
+        try {
+            return super.cancel(mayInterruptIfRunning);
+        } finally {
+            forwardErrorsAsRuntimeException();
+        }
     }
 
     @Override
@@ -126,6 +130,7 @@ public class ScriptFutureTask extends FutureTask<Void> {
         } finally {
             logger.info("Joined script task {}", prompt);
         }
+        forwardErrorsAsRuntimeException();
     }
 
     public boolean timedOut() {
@@ -140,7 +145,7 @@ public class ScriptFutureTask extends FutureTask<Void> {
         return scriptFunction.getResult();
     }
 
-    public void forwardErrorsAsRuntimeException() {
+    private void forwardErrorsAsRuntimeException() {
         Throwable t = getException();
         if (t != null) {
             throwException(t);

@@ -62,7 +62,7 @@ public class Shower {
 
     private Choice result(Prompt prompt, int resultIndex) throws InterruptedException {
         if (resultIndex == Prompt.DISMISSED) {
-            prompt.forwardErrorsAsRuntimeException();
+            return prompt.choice(resultIndex);
         } else if (prompt.inputHandlerKey != Prompt.NONE) {
             try {
                 invokeHandler(prompt);
@@ -75,10 +75,8 @@ public class Shower {
             return result(prompt, promptQueue.showExisting(prompt));
         } else {
             prompt.cancelScriptTask();
-            prompt.forwardErrorsAsRuntimeException();
+            return prompt.choice(resultIndex);
         }
-
-        return prompt.choice(resultIndex);
     }
 
     private void invokeHandler(Prompt prompt) {

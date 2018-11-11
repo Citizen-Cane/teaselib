@@ -9,9 +9,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import teaselib.core.ScriptInterruptedException;
 import teaselib.core.util.ExceptionUtil;
 
@@ -20,8 +17,6 @@ import teaselib.core.util.ExceptionUtil;
  *
  */
 public abstract class AbstractInputMethod implements InputMethod {
-    private static final Logger logger = LoggerFactory.getLogger(AbstractInputMethod.class);
-
     protected final ExecutorService executor;
     protected final ReentrantLock replySection = new ReentrantLock(true);
 
@@ -50,9 +45,8 @@ public abstract class AbstractInputMethod implements InputMethod {
                 } catch (InterruptedException | ScriptInterruptedException e) {
                     throw e;
                 } catch (Throwable e) {
-                    logger.error(e.getMessage(), e);
+                    prompt.setException(e);
                     throw e;
-                    // TODO Store error in prompt and check after click.await() returns
                 } finally {
                     replySection.unlock();
                 }
@@ -80,7 +74,7 @@ public abstract class AbstractInputMethod implements InputMethod {
     private void signalResult(Prompt prompt, int result) throws InterruptedException {
         prompt.lock.lockInterruptibly();
         try {
-            if (!prompt.paused() /* && prompt.result() == Prompt.UNDEFINED */) {
+            if (!prompt.paused()) {
                 prompt.signalResult(this, result);
             }
         } finally {
@@ -125,7 +119,7 @@ public abstract class AbstractInputMethod implements InputMethod {
         } catch (InterruptedException | ScriptInterruptedException e) {
             throw e;
         } catch (Throwable e) {
-            logger.error(e.getMessage(), e);
+            prompt.setException(e);
             throw e;
         } finally {
             if (replySection.isHeldByCurrentThread()) {

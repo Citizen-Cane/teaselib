@@ -35,6 +35,7 @@ public class Prompt {
     final AtomicBoolean paused = new AtomicBoolean(false);
 
     private int result;
+    private Throwable exception;
 
     String inputHandlerKey = NONE;
     private InputMethod inputMethod;
@@ -114,6 +115,13 @@ public class Prompt {
     }
 
     public synchronized int result() {
+        if (exception != null) {
+            if (exception instanceof Exception) {
+                throw ExceptionUtil.asRuntimeException(ExceptionUtil.reduce((Exception) exception));
+            } else {
+                throw ExceptionUtil.asRuntimeException(exception);
+            }
+        }
         return result;
     }
 
@@ -172,6 +180,20 @@ public class Prompt {
             throw e;
         } catch (Exception e) {
             throw ExceptionUtil.asRuntimeException(e);
+        }
+    }
+
+    public void setException(Throwable throwable) {
+        this.exception = throwable;
+        this.result = Prompt.UNDEFINED;
+        if (lock.isHeldByCurrentThread()) {
+            click.signal();
+        } else if (lock.tryLock()) {
+            try {
+                click.signal();
+            } finally {
+                lock.unlock();
+            }
         }
     }
 

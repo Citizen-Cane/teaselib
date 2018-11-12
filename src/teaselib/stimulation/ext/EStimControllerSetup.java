@@ -56,10 +56,12 @@ public class EStimControllerSetup extends TeaseScript {
     }
 
     public EStimController run() {
-        EStimController stim = getController();
         StimulationDevice device = getDevice();
         device.setMode(Output.EStim, Wiring.INFERENCE_CHANNEL);
-        return EStimController.init(stim, adjustLevels(stim, attachElectrodes(device)));
+        EStimController stim = getController();
+        EStimController.init(stim, device);
+        adjustLevels(stim, attachElectrodes(device));
+        return stim;
     }
 
     private StimulationDevice getDevice() {
@@ -136,7 +138,7 @@ public class EStimControllerSetup extends TeaseScript {
     }
 
     private StimulationDevice handleManualDevice(StimulationDevice device) {
-        append("Tell me when you're ready, #slave.");
+        append("Tell me when you've wired yourself up and are ready to test, #slave.");
         agree("I'm wired up, #title");
         return device;
     }
@@ -205,14 +207,12 @@ public class EStimControllerSetup extends TeaseScript {
         return targets;
     }
 
-    private StimulationDevice adjustLevels(EStimController stim, StimulationDevice device) {
-        EStimController.init(stim, device);
-        adjustlevelsInstructions(device);
-        append("Let's try it:");
-
-        testIntenttions(stim);
-
-        return device;
+    private void adjustLevels(EStimController stim, StimulationDevice device) {
+        if (!device.stimulators().isEmpty()) {
+            adjustlevelsInstructions(device);
+            append("Let's try it:");
+            testIntentions(stim);
+        }
     }
 
     private void adjustlevelsInstructions(StimulationDevice device) {
@@ -224,7 +224,7 @@ public class EStimControllerSetup extends TeaseScript {
         }
     }
 
-    private boolean testIntenttions(EStimController stim) {
+    private boolean testIntentions(EStimController stim) {
         // TODO What is perceived stronger on pain or tease level:
         // constant input or burst pulse?
         // return new ConstantWave(2.0);

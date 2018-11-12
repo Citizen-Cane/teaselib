@@ -44,7 +44,7 @@ public abstract class StimulationDevice implements Device.Creatable {
 
         @Override
         public String getDevicePath() {
-            return "ManualEStimDevice";
+            return "ManualEStimDevice/Mock";
         }
 
         @Override
@@ -95,6 +95,11 @@ public abstract class StimulationDevice implements Device.Creatable {
         @Override
         public void complete() {
             // Ignore
+        }
+
+        @Override
+        public String toString() {
+            return getDevicePath();
         }
     };
 

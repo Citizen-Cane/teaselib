@@ -128,6 +128,17 @@ public abstract class TeaseScript extends TeaseScriptMath {
         }
     }
 
+    public MediaRenderer.Threaded getSound(String path) {
+        if (Boolean.parseBoolean(teaseLib.config.get(Config.Render.Sound))) {
+            try {
+                return new RenderSound(resources, path, teaseLib);
+            } catch (IOException e) {
+                ExceptionUtil.handleException(e, teaseLib.config, logger);
+            }
+        }
+        return new RenderDelay(0, teaseLib);
+    }
+
     public void setMood(String mood) {
         this.mood = mood;
     }

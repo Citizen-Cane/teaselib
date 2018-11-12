@@ -66,6 +66,10 @@ public class ScriptRenderer {
         stopBackgroundRenderers();
     }
 
+    boolean hasCompletedMandatory() {
+        return renderQueue.hasCompletedMandatory();
+    }
+
     void renderIntertitle(TeaseLib teaseLib, Message message) {
         if (!prependedMessages.isEmpty()) {
             throw new IllegalStateException("renderIntertitle doesn't support prepended messages");

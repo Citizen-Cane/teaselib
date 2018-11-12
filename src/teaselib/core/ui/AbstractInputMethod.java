@@ -6,7 +6,6 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 
 import teaselib.core.ScriptInterruptedException;
@@ -35,10 +34,6 @@ public abstract class AbstractInputMethod implements InputMethod {
                 try {
                     synchronized (this) {
                         notifyAll();
-                    }
-
-                    if (Thread.interrupted()) {
-                        throw new InterruptedException();
                     }
 
                     return awaitAndSignalResult(prompt);
@@ -106,12 +101,6 @@ public abstract class AbstractInputMethod implements InputMethod {
                 tryLock = replySection.tryLock();
                 if (tryLock) {
                     break;
-                }
-                prompt.lock.lockInterruptibly();
-                try {
-                    tryLock = prompt.click.await(100, TimeUnit.MILLISECONDS);
-                } finally {
-                    prompt.lock.unlock();
                 }
             }
 

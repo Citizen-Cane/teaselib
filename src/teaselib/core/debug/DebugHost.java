@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -112,7 +113,10 @@ public class DebugHost implements Host, HostInputMethod.Backend {
                 logger.warn("Dismiss called on latch already counted down: {}", choices);
             } else {
                 try {
-                    getClickableChoices(choices).stream().forEach(Runnable::run);
+                    Optional<Runnable> choice = getClickableChoices(choices).stream().findFirst();
+                    if (choice.isPresent()) {
+                        choice.get().run();
+                    }
                 } catch (Exception e) {
                     throw ExceptionUtil.asRuntimeException(e);
                 }
@@ -149,7 +153,9 @@ public class DebugHost implements Host, HostInputMethod.Backend {
                     throw new ScriptInterruptedException();
                 }
 
-                click.await();
+                while (!currentChoices.isEmpty()) {
+                    click.await();
+                }
 
                 if (replySection.hasWaiters(click)) {
                     throw new IllegalStateException("Reply - still waiting on click");

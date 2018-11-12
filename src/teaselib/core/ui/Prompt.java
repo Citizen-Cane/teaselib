@@ -164,7 +164,9 @@ public class Prompt {
         try {
             boolean dismissed = false;
             for (InputMethod inputMethod : inputMethods) {
-                dismissed &= inputMethod.dismiss(this);
+                if (inputMethod != this.inputMethod) {
+                    dismissed &= inputMethod.dismiss(this);
+                }
             }
             return dismissed;
         } catch (InterruptedException e) {

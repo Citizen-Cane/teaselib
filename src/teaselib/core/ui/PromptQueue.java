@@ -15,7 +15,7 @@ public class PromptQueue {
         Prompt activePrompt = active.get();
 
         if (prompt == activePrompt) {
-            throw new IllegalStateException("Prompt " + prompt + " already showing");
+            throw new IllegalStateException("Already showing " + prompt);
         } else if (activePrompt != null) {
             pause(activePrompt);
         }

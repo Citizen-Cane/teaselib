@@ -10,7 +10,6 @@ import teaselib.Config.SpeechRecognition.Intention;
 import teaselib.Message;
 import teaselib.Replay;
 import teaselib.ScriptFunction;
-import teaselib.core.media.MediaRendererQueue;
 import teaselib.util.SpeechRecognitionRejectedScript;
 
 final class SpeechRecognitionRejectedScriptAdapter extends SpeechRecognitionRejectedScript {
@@ -86,12 +85,12 @@ final class SpeechRecognitionRejectedScriptAdapter extends SpeechRecognitionReje
             // - TimeoutBehavior.TimeoutBehavior.InDubioMitius
             log(speechRecognitionRejectedScript, scriptFunction.relation.toString() + " script functions running");
             return false;
-        } else if (!teaseLib.globals.get(MediaRendererQueue.class).hasCompletedMandatory()) {
+        } else if (scriptRenderer.hasCompletedMandatory()) {
             // must complete all to avoid parallel rendering, see {@link Message#ShowChoices}
-            log(speechRecognitionRejectedScript, "Message rendering still in progress");
+            log(speechRecognitionRejectedScript, "message rendering still in progress");
             return false;
         } else if (!speechRecognitionRejectedScript.canRun()) {
-            log(speechRecognitionRejectedScript, "RecognitionRejectedScript  .canRun() returned false - skipping");
+            log(speechRecognitionRejectedScript, "RecognitionRejectedScript.canRun() returned false");
             return false;
         } else {
             return true;
@@ -100,8 +99,7 @@ final class SpeechRecognitionRejectedScriptAdapter extends SpeechRecognitionReje
 
     private static void log(Script speechRecognitionRejectedScript, String message) {
         if (logger.isInfoEnabled()) {
-            String skipping = " - skipping RecognitionRejectedScript " + speechRecognitionRejectedScript;
-            logger.info("{} {}", message, skipping);
+            logger.info("{} - skipping RecognitionRejectedScript {}", message, speechRecognitionRejectedScript);
         }
     }
 }

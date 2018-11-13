@@ -1,14 +1,17 @@
 package teaselib.core;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import teaselib.Actor;
 import teaselib.Message;
 import teaselib.Replay;
 import teaselib.Replay.Position;
@@ -71,7 +74,7 @@ public class ScriptRenderer {
     }
 
     void renderIntertitle(TeaseLib teaseLib, Message message) {
-        if (!prependedMessages.isEmpty()) {
+        if (hasPrependedMessages()) {
             throw new IllegalStateException("renderIntertitle doesn't support prepended messages");
         }
 
@@ -79,7 +82,7 @@ public class ScriptRenderer {
         renderMessage(teaseLib, interTitle);
     }
 
-    public class ReplayImpl implements Replay {
+    class ReplayImpl implements Replay {
         final List<MediaRenderer> renderers;
 
         public ReplayImpl(List<MediaRenderer> renderers) {
@@ -122,15 +125,28 @@ public class ScriptRenderer {
         prependedMessages.add(message);
     }
 
+    void renderPrependedMessages(TeaseLib teaseLib, ResourceLoader resources, Actor actor, Decorator[] decorators,
+            Optional<TextToSpeechPlayer> textToSpeech) {
+        renderMessages(teaseLib, resources, actor, Collections.emptyList(), decorators, textToSpeech);
+    }
+
+    boolean hasPrependedMessages() {
+        return !prependedMessages.isEmpty();
+    }
+
     void renderMessage(TeaseLib teaseLib, ResourceLoader resources, Message message, Decorator[] decorators,
             Optional<TextToSpeechPlayer> textToSpeech) {
-        List<RenderedMessage> messages = new ArrayList<>(prependedMessages.size() + 1);
-        prependedMessages.stream().forEach(prepended -> messages.add(RenderedMessage.of(prepended, decorators)));
+        renderMessages(teaseLib, resources, message.actor, Collections.singletonList(message), decorators,
+                textToSpeech);
+    }
+
+    void renderMessages(TeaseLib teaseLib, ResourceLoader resources, Actor actor, List<Message> messages,
+            Decorator[] decorators, Optional<TextToSpeechPlayer> textToSpeech) {
+        Stream<Message> all = Stream.concat(prependedMessages.stream(), messages.stream());
+        List<RenderedMessage> renderedMessages = all.map(m -> RenderedMessage.of(m, decorators))
+                .collect(Collectors.toList());
         prependedMessages.clear();
-        messages.add(RenderedMessage.of(message, decorators));
-        // Actor is eventually used for logging and transscript but nothing else
-        // TODO Decide whether to remove parameter?
-        renderMessage = new RenderMessage(teaseLib, renderQueue, resources, textToSpeech, message.actor, messages);
+        renderMessage = new RenderMessage(teaseLib, renderQueue, resources, textToSpeech, actor, renderedMessages);
         renderMessage(teaseLib, renderMessage);
     }
 
@@ -181,7 +197,7 @@ public class ScriptRenderer {
         }
     }
 
-    protected void queueRenderers(List<MediaRenderer> renderers) {
+    void queueRenderers(List<MediaRenderer> renderers) {
         synchronized (queuedRenderers) {
             queuedRenderers.addAll(renderers);
         }

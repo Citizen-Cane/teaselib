@@ -240,6 +240,11 @@ public abstract class Script {
      */
     protected String showChoices(List<Answer> answers, ScriptFunction scriptFunction,
             Config.SpeechRecognition.Intention intention) {
+        if (scriptRenderer.hasPrependedMessages()) {
+            Optional<TextToSpeechPlayer> textToSpeech = getTextToSpeech(true);
+            scriptRenderer.renderPrependedMessages(teaseLib, resources, actor, decorators(textToSpeech), textToSpeech);
+        }
+
         QualifiedItem value = QualifiedItem.of(teaseLib.config.get(intention));
         Confidence recognitionConfidence = ReflectionUtils.getEnum(Confidence.class, value);
 

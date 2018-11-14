@@ -1,6 +1,6 @@
 package teaselib.core;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 import org.junit.Test;
 
@@ -38,7 +38,7 @@ public class ScriptFunctionReturnValueTest {
         return TEST;
     }
 
-    private String returnAfterDelay(TeaseScript script) {
+    private static String returnAfterDelay(TeaseScript script) {
         script.say("something");
         return TEST;
     }

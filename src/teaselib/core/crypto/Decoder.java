@@ -57,9 +57,7 @@ public class Decoder extends CipherUtility {
         pkCipher.init(Cipher.DECRYPT_MODE, pk);
         // read AES key, cannot be closed because closing the cipher stream
         // would close the input stream
-        @SuppressWarnings("resource")
-        CipherInputStream cis = new CipherInputStream(is, pkCipher);
-        aesKey = new AESKey(cis);
+        aesKey = new AESKey(new CipherInputStream(is, pkCipher));
     }
 
     public void decrypt(InputStream is, OutputStream os)
@@ -69,9 +67,7 @@ public class Decoder extends CipherUtility {
         // Cannot close the data input stream, as this would also close the
         // cipher input stream as well as the original input stream,
         // which must not be closed
-        @SuppressWarnings("resource")
-        DataInputStream dis = new DataInputStream(cis);
-        long size = dis.readLong();
+        long size = new DataInputStream(cis).readLong();
         Stream.copy(cis, os, size);
     }
 }

@@ -49,8 +49,7 @@ public class VideoDeviceResolutionTests {
         }
     }
 
-    // @Test
-    @SuppressWarnings("resource")
+    @Test
     public void testGetResolutionBeforeDeviceOpen() {
         Configuration config = DebugSetup.getConfiguration();
         Devices devices = new Devices(config);
@@ -65,7 +64,6 @@ public class VideoDeviceResolutionTests {
     }
 
     @Test
-    @SuppressWarnings("resource")
     public void testSmallestFit() {
         Size bestFit1 = ResolutionList.getSmallestFit(new Size(1920, 1080), new Size(320, 240));
         assertEquals(320, bestFit1.width());

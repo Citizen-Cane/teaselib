@@ -3,6 +3,7 @@ package teaselib.core.devices.video;
 import static org.junit.Assert.*;
 
 import org.bytedeco.javacpp.opencv_core.Size;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import teaselib.core.configuration.Configuration;
@@ -50,6 +51,9 @@ public class VideoDeviceResolutionTests {
     }
 
     @Test
+    @Ignore
+    // TODO Test is hardware based - move to hardware-connected category
+    // TODO Test causes test runner process to hang at exit
     public void testGetResolutionBeforeDeviceOpen() {
         Configuration config = DebugSetup.getConfiguration();
         Devices devices = new Devices(config);

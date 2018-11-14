@@ -1,6 +1,6 @@
 package teaselib.core;
 
-import static java.util.concurrent.TimeUnit.*;
+import static java.util.concurrent.TimeUnit.HOURS;
 
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CountDownLatch;
@@ -17,7 +17,7 @@ import teaselib.core.concurrency.NamedExecutorService;
 import teaselib.core.ui.Prompt;
 import teaselib.core.util.ExceptionUtil;
 
-public class ScriptFutureTask extends FutureTask<Void> {
+public class ScriptFutureTask extends FutureTask<String> {
     private static final Logger logger = LoggerFactory.getLogger(ScriptFutureTask.class);
 
     // TODO Move to MediaRenderQueue
@@ -25,7 +25,6 @@ public class ScriptFutureTask extends FutureTask<Void> {
             HOURS);
 
     private final ScriptFunction scriptFunction;
-    private final AtomicBoolean timedOut = new AtomicBoolean(false);
     private final Prompt prompt;
 
     private final AtomicBoolean dismissed = new AtomicBoolean(false);
@@ -36,12 +35,12 @@ public class ScriptFutureTask extends FutureTask<Void> {
     public ScriptFutureTask(Script script, ScriptFunction scriptFunction, Prompt prompt) {
         super(() -> {
             try {
-                scriptFunction.setResult(scriptFunction.call());
+                String result = scriptFunction.call();
                 if (Thread.interrupted()) {
                     throw new InterruptedException();
                 }
                 script.completeAll();
-                return null;
+                return result;
             } catch (Exception e) {
                 script.endAll();
                 throw e;
@@ -59,7 +58,6 @@ public class ScriptFutureTask extends FutureTask<Void> {
             prompt.lock.lockInterruptibly();
             logger.info("Script task {} is finishing", prompt);
             try {
-                timedOut.set(prompt.result() == Prompt.UNDEFINED);
                 prompt.click.signalAll();
             } finally {
                 prompt.lock.unlock();
@@ -116,33 +114,32 @@ public class ScriptFutureTask extends FutureTask<Void> {
 
     public void execute() {
         logger.info("Execute script task {}", prompt);
+        throwable = null;
         Executor.execute(this);
     }
 
     public void join() throws InterruptedException {
-        try {
-            logger.info("Waiting for script task {} to join", prompt);
-            get();
-        } catch (CancellationException e) {
-            cancellationCompletion.await();
-        } catch (ExecutionException e) {
-            throw ExceptionUtil.asRuntimeException(ExceptionUtil.reduce(e));
-        } finally {
-            logger.info("Joined script task {}", prompt);
-        }
-        forwardErrorsAsRuntimeException();
-    }
-
-    public boolean timedOut() {
-        return timedOut.get();
     }
 
     public ScriptFunction.Relation getRelation() {
         return scriptFunction.relation;
     }
 
-    public String getScriptFunctionResult() {
-        return scriptFunction.getResult();
+    @Override
+    public String get() throws InterruptedException, ExecutionException {
+        try {
+            logger.info("Waiting for script task {} to join", prompt);
+            String result = super.get();
+            forwardErrorsAsRuntimeException();
+            return result;
+        } catch (CancellationException e) {
+            cancellationCompletion.await();
+            throw e;
+        } catch (ExecutionException e) {
+            throw e;
+        } finally {
+            logger.info("Joined script task {}", prompt);
+        }
     }
 
     private void forwardErrorsAsRuntimeException() {

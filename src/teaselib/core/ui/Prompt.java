@@ -16,7 +16,7 @@ import teaselib.core.ScriptInterruptedException;
 import teaselib.core.util.ExceptionUtil;
 
 public class Prompt {
-    private static final Choice TIMEOUT = new Choice(ScriptFunction.Timeout, ScriptFunction.Timeout);
+    private static final Choice SCRIPTFUNCTION_TIMEOUT = new Choice(ScriptFunction.Timeout, ScriptFunction.Timeout);
     public static final int DISMISSED = -1;
     public static final int UNDEFINED = Integer.MIN_VALUE;
 
@@ -70,30 +70,13 @@ public class Prompt {
     }
 
     Choice choice(int resultIndex) {
-        if (scriptTask != null && scriptTask.timedOut()) {
-            return TIMEOUT;
+        Choice choice;
+        if (resultIndex == Prompt.DISMISSED || resultIndex == UNDEFINED) {
+            choice = SCRIPTFUNCTION_TIMEOUT;
         } else {
-            Choice choice = scriptTask != null ? scriptTaskResult(scriptTask) : null;
-            if (choice == null) {
-                if (resultIndex == Prompt.DISMISSED) {
-                    choice = TIMEOUT;
-                } else if (resultIndex == UNDEFINED) {
-                    throw new IllegalStateException("Undefined prompt result for " + this);
-                } else {
-                    choice = choices.get(resultIndex);
-                }
-            }
-            return choice;
+            choice = choices.get(resultIndex);
         }
-    }
-
-    private static Choice scriptTaskResult(ScriptFutureTask scriptTask) {
-        String scriptFunctionResult = scriptTask.getScriptFunctionResult();
-        if (scriptFunctionResult != null) {
-            return new Choice(scriptFunctionResult, scriptFunctionResult);
-        } else {
-            return null;
-        }
+        return choice;
     }
 
     void executeInputMethodHandler() {

@@ -2,12 +2,15 @@ package teaselib.core.ui;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
+import java.util.concurrent.ExecutionException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import teaselib.core.Host;
 import teaselib.core.Script;
+import teaselib.core.ScriptFutureTask;
+import teaselib.core.util.ExceptionUtil;
 
 public class Shower {
     private static final Logger logger = LoggerFactory.getLogger(Shower.class);
@@ -25,11 +28,11 @@ public class Shower {
     }
 
     public Choice show(Script script, Prompt prompt) throws InterruptedException {
+        Choice choice;
         prompt.lock.lockInterruptibly();
         try {
             pauseCurrent();
 
-            Choice choice;
             try {
                 choice = showNew(script, prompt);
             } catch (Exception e) {
@@ -38,10 +41,19 @@ public class Shower {
             }
 
             resumePrevious();
-            return choice;
         } finally {
             prompt.lock.unlock();
-            prompt.joinScriptTask();
+        }
+
+        ScriptFutureTask scriptTask = prompt.scriptTask;
+        if (scriptTask != null && !scriptTask.isCancelled() && scriptTask.isDone()) {
+            try {
+                return new Choice(scriptTask.get());
+            } catch (ExecutionException e) {
+                throw ExceptionUtil.asRuntimeException(ExceptionUtil.reduce(e));
+            }
+        } else {
+            return choice;
         }
     }
 

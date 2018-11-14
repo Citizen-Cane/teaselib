@@ -1,6 +1,3 @@
-/**
- * 
- */
 package teaselib;
 
 import teaselib.functional.CallableScript;
@@ -42,12 +39,6 @@ public class ScriptFunction {
      */
     public final Relation relation;
 
-    /**
-     * The result of the script function. Initialized with the default value to state that the function just ended.
-     * Setting the result causes that value to be returned by {@link TeaseScript#reply}.
-     */
-    private String result = null;
-
     public ScriptFunction(RunnableScript script) {
         this(script, Relation.Autonomous);
     }
@@ -70,13 +61,5 @@ public class ScriptFunction {
 
     public String call() {
         return script.call();
-    }
-
-    public void setResult(String result) {
-        this.result = result;
-    }
-
-    public String getResult() {
-        return result;
     }
 }

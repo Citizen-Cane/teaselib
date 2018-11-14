@@ -73,7 +73,8 @@ public class EStimControllerSetup extends TeaseScript {
             say("Get your EStim device and turn on the controller!");
             String manualDevice = "I only have a manual device";
             String notAvailable = "I'm sorry, #title, but I don't have any";
-            String result = reply(chooser::connectDevice, manualDevice, notAvailable);
+            // String result = reply(chooser::supplyDebugInstance, manualDevice, notAvailable);
+            String result = reply(chooser::connect, manualDevice, notAvailable);
             if (result == Chooser.CONNECTED) {
                 return chooser.device;
             } else {
@@ -86,6 +87,12 @@ public class EStimControllerSetup extends TeaseScript {
         static final String CONNECTED = "Device Connected";
         static final String CANCELLED = "Cancelled";
         StimulationDevice device;
+
+        String supplyDebugInstance() {
+            say("Supplying debug instance.");
+            device = teaseLib.devices.get(StimulationDevice.class).getDefaultDevice();
+            return CONNECTED;
+        }
 
         String connectDevice() {
             do {

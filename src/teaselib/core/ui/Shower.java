@@ -34,7 +34,7 @@ public class Shower {
             pauseCurrent();
 
             try {
-                choice = showNew(script, prompt);
+                choice = showNew(prompt);
             } catch (Exception e) {
                 resumeAfterException();
                 throw e;
@@ -65,10 +65,10 @@ public class Shower {
         }
     }
 
-    private Choice showNew(Script script, Prompt prompt) throws InterruptedException {
+    private Choice showNew(Prompt prompt) throws InterruptedException {
         stack.push(prompt);
 
-        int resultIndex = promptQueue.show(script, prompt);
+        int resultIndex = promptQueue.show(prompt);
         return result(prompt, resultIndex);
     }
 

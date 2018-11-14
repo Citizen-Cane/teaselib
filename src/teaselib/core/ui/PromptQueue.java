@@ -2,8 +2,6 @@ package teaselib.core.ui;
 
 import java.util.concurrent.atomic.AtomicReference;
 
-import teaselib.core.Script;
-
 /**
  * @author Citizen-Cane
  *
@@ -11,7 +9,7 @@ import teaselib.core.Script;
 public class PromptQueue {
     private final AtomicReference<Prompt> active = new AtomicReference<>();
 
-    public int show(Script script, Prompt prompt) throws InterruptedException {
+    public int show(Prompt prompt) throws InterruptedException {
         Prompt activePrompt = active.get();
 
         if (prompt == activePrompt) {
@@ -22,8 +20,8 @@ public class PromptQueue {
 
         makePromptActive(prompt);
 
-        if (prompt.scriptFunction != null) {
-            prompt.executeScriptTask(script);
+        if (prompt.scriptTask != null) {
+            prompt.executeScriptTask();
         }
 
         return showExisting(prompt);

@@ -256,7 +256,7 @@ public abstract class Script {
             scriptRenderer.stopBackgroundRenderers();
         }
 
-        Prompt prompt = getPrompt(inputMethods, scriptFunction, choices);
+        Prompt prompt = getPrompt(choices, inputMethods, scriptFunction);
         return showPrompt(prompt).text;
     }
 
@@ -314,8 +314,8 @@ public abstract class Script {
         return inputMethods;
     }
 
-    private static Prompt getPrompt(InputMethods inputMethods, ScriptFunction scriptFunction, Choices choices) {
-        Prompt prompt = new Prompt(choices, scriptFunction, inputMethods);
+    private Prompt getPrompt(Choices choices, InputMethods inputMethods, ScriptFunction scriptFunction) {
+        Prompt prompt = new Prompt(this, choices, inputMethods, scriptFunction);
         logger.info("Prompt: {}", prompt);
         for (InputMethod inputMethod : inputMethods) {
             logger.info("{} {}", inputMethod.getClass().getSimpleName(), inputMethod);

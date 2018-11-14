@@ -23,44 +23,37 @@ public class Prompt {
     static final String NONE = "None";
 
     public final Choices choices;
-    public final ScriptFunction scriptFunction;
-
     final List<InputMethod> inputMethods;
-    // TODO script task can be final -> remove script function
-    ScriptFutureTask scriptTask;
+    final ScriptFutureTask scriptTask;
 
     public final ReentrantLock lock;
     public final Condition click;
 
-    final AtomicBoolean paused = new AtomicBoolean(false);
+    private final AtomicBoolean paused = new AtomicBoolean(false);
 
     private int result;
     private Throwable exception;
 
     String inputHandlerKey = NONE;
-    private InputMethod inputMethod;
+    private InputMethod resultInputMethod;
 
-    public Prompt(Choices choices, ScriptFunction scriptFunction, List<InputMethod> inputMethods) {
-        super();
+    public Prompt(Choices choices, List<InputMethod> inputMethods) {
+        this(null, choices, inputMethods, null);
+    }
+
+    public Prompt(Script script, Choices choices, List<InputMethod> inputMethods, ScriptFunction scriptFunction) {
         this.choices = choices;
-        this.scriptFunction = scriptFunction;
-
         this.inputMethods = inputMethods;
+        this.scriptTask = scriptFunction != null ? new ScriptFutureTask(script, scriptFunction, this) : null;
+
         this.lock = new ReentrantLock();
         this.click = lock.newCondition();
 
         this.result = Prompt.UNDEFINED;
     }
 
-    void executeScriptTask(Script script) {
-        scriptTask = new ScriptFutureTask(script, scriptFunction, this);
+    void executeScriptTask() {
         scriptTask.execute();
-    }
-
-    void joinScriptTask() throws InterruptedException {
-        if (scriptTask != null) {
-            scriptTask.join();
-        }
     }
 
     void cancelScriptTask() {
@@ -104,10 +97,10 @@ public class Prompt {
 
     public synchronized void setResultOnce(InputMethod inputMethod, int value) {
         if (result == Prompt.UNDEFINED) {
-            this.inputMethod = inputMethod;
             if (value < 0 || value >= choices.size()) {
                 throw new IndexOutOfBoundsException(value + "->" + toString() + ": " + inputMethod.toString());
             } else {
+                this.resultInputMethod = inputMethod;
                 result = value;
             }
         } else {
@@ -147,7 +140,7 @@ public class Prompt {
         try {
             boolean dismissed = false;
             for (InputMethod inputMethod : inputMethods) {
-                if (inputMethod != this.inputMethod) {
+                if (inputMethod != this.resultInputMethod) {
                     dismissed &= inputMethod.dismiss(this);
                 }
             }
@@ -191,7 +184,8 @@ public class Prompt {
         String scriptTaskDescription = scriptTask != null ? scriptTask.getRelation() + " " : " ";
         String isPaused = paused.get() ? " paused" : "";
         String resultString = " result=" + toString(result);
-        String inputMethodName = inputMethod != null ? "(input method =" + inputMethod.getClass().getSimpleName() + ")"
+        String inputMethodName = resultInputMethod != null
+                ? "(input method =" + resultInputMethod.getClass().getSimpleName() + ")"
                 : "";
         return scriptTaskDescription + choices.toString() + " " + lockState + isPaused + resultString + inputMethodName;
     }

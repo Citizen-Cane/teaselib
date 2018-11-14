@@ -37,7 +37,7 @@ public class SpeechRecognitionTests {
 
         SpeechRecognitionInputMethod inputMethod = new SpeechRecognitionInputMethod(sr, TestConfidence,
                 Optional.empty());
-        Prompt prompt = new Prompt(TestChoices, null, Arrays.asList(inputMethod));
+        Prompt prompt = new Prompt(TestChoices, Arrays.asList(inputMethod));
 
         prompt.lock.lockInterruptibly();
         try {

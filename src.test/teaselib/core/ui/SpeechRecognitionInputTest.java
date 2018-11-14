@@ -25,7 +25,7 @@ public class SpeechRecognitionInputTest {
         SpeechRecognition sr = new SpeechRecognizer(DebugSetup.getConfiguration()).get(new Locale("en-us"));
 
         SpeechRecognitionInputMethod inputMethod = new SpeechRecognitionInputMethod(sr, confidence, Optional.empty());
-        Prompt prompt = new Prompt(Choices, null, Arrays.asList(inputMethod));
+        Prompt prompt = new Prompt(Choices, Arrays.asList(inputMethod));
 
         prompt.lock.lockInterruptibly();
         try {

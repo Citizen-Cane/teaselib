@@ -118,9 +118,6 @@ public class ScriptFutureTask extends FutureTask<String> {
         Executor.execute(this);
     }
 
-    public void join() throws InterruptedException {
-    }
-
     public ScriptFunction.Relation getRelation() {
         return scriptFunction.relation;
     }

@@ -17,18 +17,21 @@ public class ScriptFunctionReturnValueTest {
     @Test
     public void testThatScriptFunctionWithoutDelayReturnsCorrectValue() {
         TestScript script = TestScript.getOne();
-        String wrong = "wrong";
+        script.debugger.freezeTime();
+        String choice = "false";
+        script.debugger.addResponse(choice, Debugger.Response.Ignore);
 
-        assertEquals(TEST, script.reply(this::returnImmediately, wrong));
+        assertEquals(TEST, script.reply(this::returnImmediately, choice));
     }
 
     @Test
     public void testThatScriptFunctionWithDelayReturnsCorrectValue() {
         TestScript script = TestScript.getOne();
-        String choice = "wrong";
+        script.debugger.freezeTime();
+        String choice = "false";
         script.debugger.addResponse(choice, Debugger.Response.Ignore);
 
-        assertEquals(TEST, script.reply(returnAfterDelay(script), choice));
+        assertEquals(TEST, script.reply(() -> returnAfterDelay(script), choice));
     }
 
     private String returnImmediately() {

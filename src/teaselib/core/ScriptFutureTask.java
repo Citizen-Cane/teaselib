@@ -1,7 +1,5 @@
 package teaselib.core;
 
-import static java.util.concurrent.TimeUnit.HOURS;
-
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
@@ -13,23 +11,18 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import teaselib.ScriptFunction;
-import teaselib.core.concurrency.NamedExecutorService;
 import teaselib.core.ui.Prompt;
 import teaselib.core.util.ExceptionUtil;
 
 public class ScriptFutureTask extends FutureTask<String> {
     private static final Logger logger = LoggerFactory.getLogger(ScriptFutureTask.class);
 
-    // TODO Move to MediaRenderQueue
-    private static final ExecutorService Executor = NamedExecutorService.newUnlimitedThreadPool("Script task", 1,
-            HOURS);
-
     private final ScriptFunction scriptFunction;
     private final Prompt prompt;
+    private final ExecutorService executor;
 
     private final AtomicBoolean dismissed = new AtomicBoolean(false);
     private final CountDownLatch cancellationCompletion = new CountDownLatch(1);
-
     private Throwable throwable = null;
 
     public ScriptFutureTask(Script script, ScriptFunction scriptFunction, Prompt prompt) {
@@ -48,6 +41,7 @@ public class ScriptFutureTask extends FutureTask<String> {
         });
         this.scriptFunction = scriptFunction;
         this.prompt = prompt;
+        this.executor = script.getScriptFuntionExecutorService();
     }
 
     @Override
@@ -115,7 +109,7 @@ public class ScriptFutureTask extends FutureTask<String> {
     public void execute() {
         logger.info("Execute script task {}", prompt);
         throwable = null;
-        Executor.execute(this);
+        executor.execute(this);
     }
 
     public ScriptFunction.Relation getRelation() {

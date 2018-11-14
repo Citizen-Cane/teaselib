@@ -4,6 +4,7 @@ import java.lang.reflect.Constructor;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.ExecutorService;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -307,7 +308,7 @@ public abstract class Script {
 
         if (teaseLib.item(TeaseLib.DefaultDomain, Gadgets.Webcam).isAvailable()
                 && choices.toGestures().stream().filter(gesture -> gesture != Gesture.None).count() > 0) {
-            inputMethods.add(new HeadGestureInputMethod(scriptRenderer.getExecutorService(),
+            inputMethods.add(new HeadGestureInputMethod(scriptRenderer.getInputMethodExecutorService(),
                     teaseLib.devices.get(MotionDetector.class)::getDefaultDevice));
         }
 
@@ -370,5 +371,9 @@ public abstract class Script {
     private TextVariables allTextVariables() {
         return new TextVariables(TextVariables.Defaults, teaseLib.getTextVariables(actor.locale()),
                 actor.textVariables);
+    }
+
+    ExecutorService getScriptFuntionExecutorService() {
+        return scriptRenderer.getScriptFunctionExecutorService();
     }
 }

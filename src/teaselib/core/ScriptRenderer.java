@@ -1,5 +1,7 @@
 package teaselib.core;
 
+import static java.util.concurrent.TimeUnit.*;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -15,6 +17,7 @@ import teaselib.Actor;
 import teaselib.Message;
 import teaselib.Replay;
 import teaselib.Replay.Position;
+import teaselib.core.concurrency.NamedExecutorService;
 import teaselib.core.media.MediaRenderer;
 import teaselib.core.media.MediaRenderer.Threaded;
 import teaselib.core.media.MediaRendererQueue;
@@ -32,6 +35,11 @@ public class ScriptRenderer {
     private static final Logger logger = LoggerFactory.getLogger(ScriptRenderer.class);
 
     private final MediaRendererQueue renderQueue = new MediaRendererQueue();
+    private final ExecutorService scriptFunctionExecutor = NamedExecutorService.newUnlimitedThreadPool("Script task", 1,
+            HOURS);
+    private final ExecutorService inputMethodExecutor = NamedExecutorService.newUnlimitedThreadPool("Input method", 1,
+            HOURS);
+
     private final List<MediaRenderer> queuedRenderers = new ArrayList<>();
     private final List<MediaRenderer.Threaded> backgroundRenderers = new ArrayList<>();
 
@@ -238,7 +246,11 @@ public class ScriptRenderer {
         }
     }
 
-    ExecutorService getExecutorService() {
-        return renderQueue.getExecutorService();
+    ExecutorService getScriptFunctionExecutorService() {
+        return scriptFunctionExecutor;
+    }
+
+    ExecutorService getInputMethodExecutorService() {
+        return inputMethodExecutor;
     }
 }

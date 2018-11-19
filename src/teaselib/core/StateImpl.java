@@ -301,13 +301,32 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
     }
 
     @Override
+    // TODO classes and instances in a single query
     public boolean is(Object... attributes) {
         Object[] flattenedAttributes = StateMaps.flatten(AbstractProxy.removeProxies(attributes));
+
+        Set<Object> attributesAndPeers = attributesAndPeers();
+        if (appliedToClass(attributesAndPeers, flattenedAttributes)) {
+            return true;
+        }
+
         if (!allItemInstancesFoundInPeers(flattenedAttributes)) {
             return false;
         }
 
-        return StateMaps.hasAllAttributes(attributesAndPeers(), flattenedAttributes);
+        if (StateMaps.hasAllAttributes(attributesAndPeers, flattenedAttributes)) {
+            return true;
+        }
+
+        return false;
+    }
+
+    public boolean appliedToClass(Set<Object> availableAttributes, Object[] desiredAttributes) {
+        Stream<StateImpl> availableStates = states(availableAttributes.stream());
+        return Arrays.stream(desiredAttributes).filter(desiredAttribute -> desiredAttribute instanceof Class)
+                .map(clazz -> (Class<?>) clazz)
+                .filter(desiredAttribute -> availableStates.map(Object::getClass).anyMatch(desiredAttribute::isAssignableFrom))
+                .count() == desiredAttributes.length;
     }
 
     private boolean allItemInstancesFoundInPeers(Object... attributes) {

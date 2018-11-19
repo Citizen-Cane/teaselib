@@ -348,6 +348,35 @@ public class ReleaseActionTest {
     }
 
     @Test
+    public void testThatReleaseActionStateIsQueryable() {
+        TestScript script = TestScript.getOne();
+
+        String domain = TeaseLib.DefaultDomain;
+        String devicePath = "KeyRelease/MyPhoton/1";
+        State releaseAction = script.state(getTestReleaseAction(domain, devicePath));
+
+        Item restraints = script.item(Toys.Wrist_Restraints);
+        State restraintsState = script.state(Toys.Wrist_Restraints);
+        assertFalse(restraints.is(ReleaseAction.class));
+        assertFalse(restraintsState.is(ReleaseAction.class));
+
+        releaseAction.applyTo(restraints);
+        assertTrue(restraints.is(ReleaseAction.class));
+        assertTrue(restraintsState.is(ReleaseAction.class));
+
+        restraints.apply();
+        assertTrue(restraints.is(ReleaseAction.class));
+        assertTrue(restraintsState.is(ReleaseAction.class));
+
+        restraints.remove();
+        assertFalse(restraints.is(ReleaseAction.class));
+        assertFalse(restraintsState.is(ReleaseAction.class));
+
+        assertEquals(true, TestReleaseActionState.Success.getAndSet(false));
+        assertEquals(true, (((TestReleaseActionState) ((StateProxy) releaseAction).state)).removed);
+    }
+
+    @Test
     public void ensureThatActuatorAlwaysReturnsTheSameReleaseActionInstance() {
         TestScript script = TestScript.getOne();
 

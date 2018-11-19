@@ -163,6 +163,9 @@
 		<Item item="Wife" guid="wife" displayName="Wife">
 		</Item>
 
+		<Item item="Strap_On" guid="strap_on" displayName="Strap-on">
+		</Item>
+
 	</Toys>
 
 
@@ -381,11 +384,11 @@
 		<Item item="Harness" guid="harness" displayName="Harness">
 		</Item>
 
-		<Item item="Mask" guid="mask" displayName="Mask">
+		<Item item="Hood" guid="hood" displayName="Hood">
 		</Item>
 
-
 	</Clothes>
+
 
 	<Accessoires>
 		<Item item="Apron" guid="apron" displayName="Apron">
@@ -394,6 +397,8 @@
 		<Item item="Belt" guid="belt" displayName="Belt">
 		</Item>
 
+		<Item item="Bonnet" guid="bonnet" displayName="Bonnet">
+		</Item>
 
 		<Item item="Gloves" guid="gloves" displayName="Gloves">
 		</Item>
@@ -419,9 +424,6 @@
 		</Item>
 
 		<Item item="Breast_Forms" guid="breast_forms" displayName="Breast forms">
-		</Item>
-
-		<Item item="Strap_On" guid="strap_on" displayName="Strap-on">
 		</Item>
 
 		<Item item="Wig" guid="wig" displayName="Wig">

@@ -3,6 +3,7 @@ package teaselib;
 public enum Accessoires {
     Apron,
     Belt,
+    Bonnet,
     Gloves,
     Handbag,
     Makeup,
@@ -13,7 +14,6 @@ public enum Accessoires {
 
     // Crossdressing
     Breast_Forms,
-    Strap_On,
     Wig,
 
     ;
@@ -31,10 +31,9 @@ public enum Accessoires {
     public static final Accessoires[] Male = { Tie, Gloves };
     public static final Accessoires[] Female = { Belt, Gloves, Handbag, Jewelry, Makeup, Princess_Tiara, Scarf };
 
-    public static final Accessoires[] Fetish = { Strap_On };
-    public static final Accessoires[] Maid = { Apron }; // TODO Bonnet
+    public static final Accessoires[] Maid = { Apron, Bonnet };
     public static final Accessoires[] Crossdressing = { Breast_Forms, Wig };
 
-    public static final Accessoires[][] Categories = { Male, Female, Fetish, Maid, Crossdressing };
+    public static final Accessoires[][] Categories = { Male, Female, Maid, Crossdressing };
 
 }

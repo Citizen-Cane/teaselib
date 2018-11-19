@@ -1,6 +1,3 @@
-/**
- * 
- */
 package teaselib;
 
 /**
@@ -46,9 +43,12 @@ public enum Clothes {
     // Fetish
     Corset,
     Harness,
-    Mask,
-    // TODO In BDSM context, a hood is full head cover with holes for eyes, nose and mouth, otherwise a head harness
-    // A mask is similar but also different, more like for wearing a costume -> resolve
+
+    /**
+     * In the BDSM context, a hood is full head cover with optional holes for eyes, nose and mouth, otherwise a head
+     * harness. A mask is similar but also different, as for disguising the wearers identity.
+     */
+    Hood,
 
     ;
 
@@ -119,7 +119,7 @@ public enum Clothes {
     public static final Clothes[] FemaleClothing = { Blouse, Dress, Jacket, Shirt, Skirt, Sweater, Tanktop, Trousers,
             Vest, Shoes };
 
-    public static final Clothes[] Fetish = { Corset, Harness, Mask };
+    public static final Clothes[] Fetish = { Corset, Harness, Hood };
 
     public static final Clothes[][] Categories = { MaleUnderwear, MaleClothing, FemaleUnderwear, FemaleClothing,
             Fetish };

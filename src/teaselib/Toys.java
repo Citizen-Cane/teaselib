@@ -53,6 +53,8 @@ public enum Toys {
     Husband,
     Wife,
 
+    Strap_On,
+
     ;
 
     public enum ClampType implements Item.Attribute {
@@ -111,7 +113,7 @@ public enum Toys {
     public static final Toys Female[] = { Clit_Clamp, Pussy_Clamps, VaginalInsert };
     public static final Toys Male[] = { Ball_Stretcher, Chastity_Device, Cock_Ring, Glans_Ring, Humbler, Masturbator };
     public static final Toys Stimulation[] = { Vibrator, EStim_Device };
-    public static final Toys Partner[] = { Doll, Husband, Wife };
+    public static final Toys Partner[] = { Doll, Husband, Wife, Strap_On };
 
     public static final Toys[] Categories[] = { Essential, Bondage, Backdoor, Female, Male, Stimulation, Partner };
 }

@@ -249,11 +249,7 @@ public class UserItemsImpl implements UserItems {
     }
 
     private static Enum<?>[] getAccessoiresDefaults(QualifiedItem item) {
-        if (item.is(Accessoires.Strap_On)) {
-            return new Body[] { Body.CrotchRoped };
-        } else {
-            return new Body[] {};
-        }
+        return new Body[] {};
     }
 
     private static Enum<?>[] getGadgetsDefaults(QualifiedItem item) {
@@ -330,6 +326,8 @@ public class UserItemsImpl implements UserItems {
             return new Body[] {};
         } else if (item.is(Toys.Wife)) {
             return new Body[] {};
+        } else if (item.is(Toys.Strap_On)) {
+            return new Body[] { Body.CrotchRoped };
         } else {
             throw new IllegalArgumentException("Defaults not defined for " + item);
         }

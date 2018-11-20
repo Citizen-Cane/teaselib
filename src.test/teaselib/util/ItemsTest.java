@@ -2,6 +2,8 @@ package teaselib.util;
 
 import static org.junit.Assert.*;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.Test;
@@ -314,10 +316,10 @@ public class ItemsTest {
         Items restraints = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints);
         assertEquals(3, restraints.size());
 
-        Object[] values = restraints.valueSet();
-        assertEquals(2, values.length);
-        assertEquals(Toys.Wrist_Restraints, values[0]);
-        assertEquals(Toys.Ankle_Restraints, values[1]);
+        List<Object> values = new ArrayList<>(restraints.valueSet());
+        assertEquals(2, values.size());
+        assertEquals(Toys.Wrist_Restraints, values.get(0));
+        assertEquals(Toys.Ankle_Restraints, values.get(1));
     }
 
     @Test

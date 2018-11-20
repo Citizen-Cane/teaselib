@@ -48,35 +48,43 @@ public class Items extends ArrayList<Item> {
     }
 
     public boolean anyAvailable() {
-        return stream().filter(Item::isAvailable).count() > 0;
+        return stream().anyMatch(Item::isAvailable);
     }
 
     public boolean allAvailable() {
-        return stream().filter(Item::isAvailable).count() == size();
+        return stream().allMatch(Item::isAvailable);
     }
 
     public boolean anyApplicable() {
-        return stream().filter(Item::canApply).count() > 0;
+        return stream().anyMatch(Item::canApply);
     }
 
     public boolean allApplicable() {
-        return stream().filter(Item::canApply).count() == size();
+        return stream().allMatch(Item::canApply);
     }
 
     public boolean anyApplied() {
-        return stream().filter(Item::applied).count() > 0;
+        return stream().anyMatch(Item::applied);
     }
 
     public boolean allApplied() {
-        return stream().filter(Item::applied).count() == size();
+        return stream().allMatch(Item::applied);
+    }
+
+    public boolean someAre(Object... attributes) {
+        return stream().anyMatch(item -> item.is(attributes));
+    }
+
+    public boolean allAre(Object... attributes) {
+        return stream().allMatch(item -> item.is(attributes));
     }
 
     public boolean anyExpired() {
-        return stream().filter(Item::expired).count() > 0;
+        return stream().anyMatch(Item::expired);
     }
 
     public boolean allExpired() {
-        return stream().filter(Item::expired).count() == size();
+        return stream().allMatch(Item::expired);
     }
 
     public Items getAvailable() {
@@ -361,9 +369,8 @@ public class Items extends ArrayList<Item> {
         return items;
     }
 
-    public Object[] valueSet() {
-        return stream().map(item -> itemImpl(item).item).collect(Collectors.toCollection(LinkedHashSet::new))
-                .toArray(new Object[0]);
+    public Set<Object> valueSet() {
+        return stream().map(item -> itemImpl(item).item).collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
     private static ItemImpl itemImpl(Item item) {

@@ -286,7 +286,15 @@ public class ReleaseActionTest {
         Item singleChainItem = chains.get(Toys.Chains);
         // TODO remove also removes the bell guid,
         // but the bell is still attached to restraints
+        assertTrue(chains.get(Household.Bell).applied());
+        assertTrue(chains.get(Household.Bell).is(Toys.Wrist_Restraints));
+        // assertTrue(chains.get(Household.Bell).is(restraints.get(Toys.Wrist_Restraints)));
+        // assertTrue(chains.get(Household.Bell).is(restraints));
         singleChainItem.remove();
+        assertTrue(chains.get(Household.Bell).applied());
+        assertTrue(chains.get(Household.Bell).is(Toys.Wrist_Restraints));
+        // assertTrue(chains.get(Household.Bell).is(restraints.get(Toys.Wrist_Restraints)));
+        // assertTrue(chains.get(Household.Bell).is(restraints));
 
         assertFalse(removeChainsAction.applied());
         assertTrue(removeRestraintsAction.applied());
@@ -374,6 +382,54 @@ public class ReleaseActionTest {
 
         assertEquals(true, TestReleaseActionState.Success.getAndSet(false));
         assertEquals(true, (((TestReleaseActionState) ((StateProxy) releaseAction).state)).removed);
+    }
+
+    @Test
+    public void testThatReleaseActionStateIsQueryableOnMultipleItems() {
+        TestScript script = TestScript.getOne();
+
+        String domain = TeaseLib.DefaultDomain;
+        String devicePath1 = "KeyRelease/MyPhoton/1";
+        String devicePath2 = "KeyRelease/MyPhoton/2";
+
+        State removeRestraintsAction = script.teaseLib.state(domain, getTestReleaseAction(domain, devicePath1));
+        State removeChainsAction = script.teaseLib.state(domain, getTestReleaseAction(domain, devicePath2));
+
+        Items restraints = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints, Toys.Collar);
+        restraints.apply();
+        restraints.applyTo(removeRestraintsAction);
+        assertTrue(restraints.allAre(ReleaseAction.class));
+
+        Items chains = script.items(Toys.Chains, Household.Bell);
+        assertFalse(chains.allAre(ReleaseAction.class));
+
+        chains.applyTo(removeChainsAction);
+        chains.applyTo(restraints);
+
+        assertTrue(chains.allAre(ReleaseAction.class));
+
+        Item singleChainItem = chains.get(Toys.Chains);
+        singleChainItem.remove();
+
+        assertFalse(chains.allAre(ReleaseAction.class));
+        assertTrue(chains.someAre(ReleaseAction.class));
+
+        assertFalse(chains.valueSet().stream()
+                .allMatch(value -> script.teaseLib.state(TeaseLib.DefaultDomain, value).is(ReleaseAction.class)));
+
+        Item wristRestraints = restraints.get(Toys.Wrist_Restraints);
+        wristRestraints.remove();
+
+        assertFalse(restraints.allAre(ReleaseAction.class));
+        assertTrue(restraints.someAre(ReleaseAction.class));
+
+        chains.remove();
+        assertFalse(chains.allAre(ReleaseAction.class));
+        assertFalse(chains.someAre(ReleaseAction.class));
+
+        restraints.remove();
+        assertFalse(restraints.allAre(ReleaseAction.class));
+        assertFalse(restraints.someAre(ReleaseAction.class));
     }
 
     @Test

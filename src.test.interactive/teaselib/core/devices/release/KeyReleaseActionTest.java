@@ -22,6 +22,8 @@ public class KeyReleaseActionTest {
         KeyRelease keyRelease = deviceCache.getDefaultDevice();
 
         for (Actuator actuator : KeyReleaseTest.connect(keyRelease)) {
+            // TODO Resolve white space persistency issue since
+            // the test fails badly when the device name contains white space
             State releaseAction = script.state(actuator.releaseAction());
             KeyReleaseTest.arm(actuator);
 

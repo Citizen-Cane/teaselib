@@ -37,7 +37,7 @@ bool TeaseLibService::isCommand(const UDPMessage& received, const char* serviceC
 }
 
 unsigned int TeaseLibService::processIdPacket(char* buffer) {
-  const String deviceId = "My Photon";
+  const String deviceId = "My_Photon";
   const char* parameters[] = {deviceId, deviceAddress, "1", services[0]->name, services[0]->description, services[0]->version};
   return UDPMessage("services", parameters, sizeof(parameters)/sizeof(char*)).toBuffer(buffer);
 }

@@ -2,6 +2,7 @@ package teaselib.core.ui;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 
 import org.slf4j.Logger;
@@ -46,9 +47,11 @@ public class Shower {
         }
 
         ScriptFutureTask scriptTask = prompt.scriptTask;
-        if (scriptTask != null && !scriptTask.isCancelled() && scriptTask.isDone()) {
+        if (scriptTask != null) {
             try {
                 return new Choice(scriptTask.get());
+            } catch (CancellationException e) {
+                return choice;
             } catch (ExecutionException e) {
                 throw ExceptionUtil.asRuntimeException(ExceptionUtil.reduce(e));
             }

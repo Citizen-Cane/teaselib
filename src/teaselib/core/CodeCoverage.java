@@ -103,4 +103,13 @@ public class CodeCoverage<T extends Script> {
             debugger.detach();
         }
     }
+
+    /**
+     * Run all branches
+     */
+    public void runAll() {
+        while (hasNext()) {
+            run();
+        }
+    }
 }

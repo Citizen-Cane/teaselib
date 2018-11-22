@@ -45,7 +45,7 @@ public class ScriptRenderer {
 
     private List<MediaRenderer> playedRenderers = null;
     private final List<Message> prependedMessages = new ArrayList<>();
-    private RenderMessage renderMessage = null;
+    RenderMessage renderMessage = null;
 
     ScriptRenderer() {
     }

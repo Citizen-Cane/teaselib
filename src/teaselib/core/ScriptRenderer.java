@@ -74,6 +74,8 @@ public class ScriptRenderer {
      */
     void endAll() {
         renderQueue.endAll();
+        // TODO decide whether background renderers should be stopped manually
+        // - > additional flexibility
         stopBackgroundRenderers();
     }
 

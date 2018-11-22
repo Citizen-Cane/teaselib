@@ -285,6 +285,8 @@ public abstract class Script {
             Thread.currentThread().interrupt();
             throw new ScriptInterruptedException();
         }
+        // TODO endAll() cancels renderers, but doesn't wait for completion
+        // -> integrate this with endScene() which is just there to workaround the delay until the next say() command
         endAll();
         teaseLib.host.endScene();
 

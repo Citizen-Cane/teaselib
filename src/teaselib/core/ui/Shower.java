@@ -9,7 +9,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import teaselib.core.Host;
-import teaselib.core.Script;
 import teaselib.core.ScriptFutureTask;
 import teaselib.core.util.ExceptionUtil;
 
@@ -28,7 +27,7 @@ public class Shower {
         this.promptQueue = new PromptQueue();
     }
 
-    public Choice show(Script script, Prompt prompt) throws InterruptedException {
+    public Choice show(Prompt prompt) throws InterruptedException {
         Choice choice;
         prompt.lock.lockInterruptibly();
         try {

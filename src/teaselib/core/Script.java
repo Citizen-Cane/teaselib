@@ -280,7 +280,7 @@ public abstract class Script {
     private Choice showPrompt(Prompt prompt) {
         Choice choice;
         try {
-            choice = teaseLib.globals.get(Shower.class).show(this, prompt);
+            choice = teaseLib.globals.get(Shower.class).show(prompt);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new ScriptInterruptedException();

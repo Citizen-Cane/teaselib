@@ -6,7 +6,7 @@ package teaselib;
  *
  */
 public enum Posture {
-    AnklesTied,
+    AnklesTiedTogether,
     WristsTiedInFront,
     WristsTiedBehindBack,
 

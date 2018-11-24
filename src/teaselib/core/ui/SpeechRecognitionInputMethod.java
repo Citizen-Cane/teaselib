@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -95,7 +96,9 @@ public class SpeechRecognitionInputMethod implements InputMethod {
                             logLackOfConfidence(result);
                         }
                     } else {
+                        disableSpeechRecognition();
                         signal(result.index);
+                        active.set(null);
                     }
                 }
             } else {
@@ -144,8 +147,8 @@ public class SpeechRecognitionInputMethod implements InputMethod {
 
     @Override
     public synchronized void show(Prompt prompt) {
+        Objects.requireNonNull(prompt);
         active.set(prompt);
-
         enableSpeechRecognition();
     }
 
@@ -158,10 +161,9 @@ public class SpeechRecognitionInputMethod implements InputMethod {
         } else if (activePrompt != prompt) {
             throw new IllegalStateException("Trying to dismiss wrong prompt");
         } else {
-            boolean dismissed = prompt.result() == Prompt.UNDEFINED;
             disableSpeechRecognition();
             active.set(null);
-            return dismissed;
+            return prompt.result() == Prompt.UNDEFINED;
         }
     }
 

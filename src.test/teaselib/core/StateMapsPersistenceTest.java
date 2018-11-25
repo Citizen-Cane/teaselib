@@ -1,11 +1,16 @@
 package teaselib.core;
 
-import static java.util.concurrent.TimeUnit.*;
-import static org.junit.Assert.*;
-import static org.junit.Assume.*;
-import static teaselib.core.StateMapsPersistenceTest.Locks.*;
-import static teaselib.core.StateMapsPersistenceTest.NestedTestBody.*;
-import static teaselib.core.StateMapsPersistenceTest.NestedTestToys.*;
+import static java.util.concurrent.TimeUnit.HOURS;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assume.assumeFalse;
+import static teaselib.core.StateMapsPersistenceTest.Locks.Chastity_Device_Lock;
+import static teaselib.core.StateMapsPersistenceTest.NestedTestBody.CannotJerkOff;
+import static teaselib.core.StateMapsPersistenceTest.NestedTestBody.SomethingOnPenis;
+import static teaselib.core.StateMapsPersistenceTest.NestedTestBody.WristsTiedBehindBack;
+import static teaselib.core.StateMapsPersistenceTest.NestedTestToys.Chastity_Device;
+import static teaselib.core.StateMapsPersistenceTest.NestedTestToys.Wrist_Restraints;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -18,6 +23,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
+import teaselib.Body;
 import teaselib.Duration;
 import teaselib.Toys;
 import teaselib.core.debug.DebugPersistence;
@@ -345,7 +351,7 @@ public class StateMapsPersistenceTest extends StateMaps {
     }
 
     @Test
-    public void testPersistenceOfDuratioElapsedOfRemovedItems() {
+    public void testPersistenceOfElapsedDurationOfRemovedState() {
         state(TEST_DOMAIN, Toys.Enema_Kit).apply().over(1, TimeUnit.HOURS);
 
         clearStatesMapsOrNot();
@@ -357,7 +363,7 @@ public class StateMapsPersistenceTest extends StateMaps {
 
         assertTrue(state(TEST_DOMAIN, Toys.Enema_Kit).applied());
 
-        state(TEST_DOMAIN, Toys.Enema_Kit).remove(); // .remember();
+        state(TEST_DOMAIN, Toys.Enema_Kit).remove();
 
         // TODO implement "last used" to make this test meaningful again
         assumeFalse("TODO implement \"last used\" to make this test meaningful again", isRemembered());
@@ -370,6 +376,7 @@ public class StateMapsPersistenceTest extends StateMaps {
 
         assertFalse(state(TEST_DOMAIN, Toys.Enema_Kit).applied());
 
+        // False because we removed the item early
         assertFalse(state(TEST_DOMAIN, Toys.Enema_Kit).expired());
         script.debugger.advanceTime(1, HOURS);
         assertTrue(state(TEST_DOMAIN, Toys.Enema_Kit).expired());
@@ -378,6 +385,46 @@ public class StateMapsPersistenceTest extends StateMaps {
 
         teaseLib.advanceTime(23, TimeUnit.HOURS);
         Duration duration = state(TEST_DOMAIN, Toys.Enema_Kit).duration();
+        assertEquals(86400, duration.elapsed(TimeUnit.SECONDS));
+        assertEquals(24, duration.elapsed(TimeUnit.HOURS));
+        assertEquals(1, duration.elapsed(TimeUnit.DAYS));
+    }
+
+    @Test
+    public void testPersistenceOfElapsedDurationOfRemovedStateWithPeers() {
+        state(TEST_DOMAIN, Toys.Ball_Stretcher).applyTo(Body.OnBalls).over(1, TimeUnit.HOURS);
+
+        clearStatesMapsOrNot();
+
+        if (isRemembered()) {
+            Map<String, String> storage = script.persistence.storage;
+            assertEquals(6, storage.size());
+        }
+
+        assertTrue(state(TEST_DOMAIN, Toys.Ball_Stretcher).applied());
+
+        state(TEST_DOMAIN, Toys.Ball_Stretcher).removeFrom(Body.OnBalls);
+
+        // TODO implement "last used" to make this test meaningful again
+        assumeFalse("TODO implement \"last used\" to make this test meaningful again", isRemembered());
+        if (isRemembered()) {
+            Map<String, String> storage = script.persistence.storage;
+            assertEquals(1, storage.size());
+            // TODO assert that the complete duration+limit is still persisted
+            // -> allows to check last usage time
+        }
+
+        assertFalse(state(TEST_DOMAIN, Toys.Ball_Stretcher).applied());
+
+        // False because we removed the item early
+        assertFalse(state(TEST_DOMAIN, Toys.Ball_Stretcher).expired());
+        script.debugger.advanceTime(1, HOURS);
+        assertTrue(state(TEST_DOMAIN, Toys.Ball_Stretcher).expired());
+
+        clearStatesMapsOrNot();
+
+        teaseLib.advanceTime(23, TimeUnit.HOURS);
+        Duration duration = state(TEST_DOMAIN, Toys.Ball_Stretcher).duration();
         assertEquals(86400, duration.elapsed(TimeUnit.SECONDS));
         assertEquals(24, duration.elapsed(TimeUnit.HOURS));
         assertEquals(1, duration.elapsed(TimeUnit.DAYS));

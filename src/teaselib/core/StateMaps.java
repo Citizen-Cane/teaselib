@@ -20,7 +20,6 @@ import teaselib.util.ItemImpl;
 import teaselib.util.Items;
 
 public class StateMaps {
-    final TeaseLib teaseLib;
 
     public interface Attributes {
         void applyAttributes(Object... attributes);
@@ -34,14 +33,18 @@ public class StateMaps {
         private static final long serialVersionUID = 1L;
     }
 
+    final TeaseLib teaseLib;
+    long startupTimeSeconds;
     final Domains cache = new Domains();
 
     public StateMaps(TeaseLib teaseLib) {
         this.teaseLib = teaseLib;
+        clear();
     }
 
     void clear() {
         cache.clear();
+        this.startupTimeSeconds = teaseLib.getTime(TimeUnit.SECONDS);
     }
 
     static String toStringWithoutRecursion(Set<Object> peers) {
@@ -140,9 +143,8 @@ public class StateMaps {
             Duration duration = state.duration();
             long limit = duration.limit(TimeUnit.SECONDS);
             if (limit > State.TEMPORARY) {
-                long now = teaseLib.getTime(TimeUnit.SECONDS);
                 long autoRemovalTime = duration.end(TimeUnit.SECONDS) + limit / 2;
-                if (now >= autoRemovalTime) {
+                if (autoRemovalTime < startupTimeSeconds) {
                     return true;
                 }
             }
@@ -151,12 +153,11 @@ public class StateMaps {
     }
 
     void handleAutoRemoval() {
-        // TODO Copying the original set resolves a concurrent modification issue
-        // However, auto-removal should only happen at startup, or before starting a main script
-        for (State state : new ArrayList<>(scheduledForAutoRemoval)) {
+        ArrayList<State> autoRemove = new ArrayList<>(scheduledForAutoRemoval);
+        scheduledForAutoRemoval.clear();
+        for (State state : autoRemove) {
             state.remove();
         }
-        scheduledForAutoRemoval.clear();
     }
 
     public static boolean hasAllAttributes(Set<Object> availableAttributes, Object[] desiredAttributes) {

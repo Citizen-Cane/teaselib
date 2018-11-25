@@ -67,7 +67,7 @@ public class TeaseLib {
 
     public final Configuration config;
     public final ObjectMap globals = new ObjectMap();
-    final StateMaps stateMaps = new StateMaps(this);
+    final StateMaps stateMaps;
     public final Devices devices;
 
     private AtomicLong frozenTime = new AtomicLong(Long.MIN_VALUE);
@@ -94,6 +94,7 @@ public class TeaseLib {
         this.userItems = persistence.getUserItems(this);
         this.transcript = newTranscriptLogger(host.getLocation(Location.Log));
 
+        this.stateMaps = new StateMaps(this);
         this.devices = new Devices(config);
 
         bindMotionDetectorToVideoRenderer();

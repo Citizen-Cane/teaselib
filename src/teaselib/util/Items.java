@@ -6,6 +6,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -18,6 +19,19 @@ import teaselib.util.math.Combinations;
 import teaselib.util.math.Varieties;
 
 /**
+ * Represents a set of items to be used.
+ * <p>
+ * Items can be queried in a couple of ways, allowing the script to request items with certain attributes, falling back
+ * to available items, dealing with non-availability and asking for the "best" set.
+ * <p>
+ * Most methods that work with single items can be use with multiple items too.
+ * <p>
+ * Before performing any query, the non-index-based methods use or return always the item is always the one applied, or
+ * the first available. A a result, applying multiple items works as if applying single items of each kind one-by-one.
+ * <p>
+ * However, wWhen performing a {@link Items#prefer} or {@link Items#query} command, only the requested item instances
+ * are retained.
+ * 
  * @author Citizen-Cane
  *
  */
@@ -99,15 +113,8 @@ public class Items extends ArrayList<Item> {
         return new Items(filter(Item::applied));
     }
 
-    // TODO Changes meaning of canApply to allAvailable() && allApplicable() - but canApply is used to solely in
-    // mine-maid to check body state
-    @Deprecated
-    public boolean usable() {
-        return allAvailable() && allApplicable();
-    }
-
     /**
-     * Return a
+     * Return applied or first available item.
      * 
      * @return First item
      */
@@ -190,7 +197,6 @@ public class Items extends ArrayList<Item> {
         return containsImpl(item);
     }
 
-    // TODO fails, similar to item(...) but without QualifiedItem wrap
     private <S> boolean containsImpl(S item) {
         for (Item i : this) {
             if (QualifiedItem.of(i).equals(item)) {
@@ -240,6 +246,16 @@ public class Items extends ArrayList<Item> {
         return preferred;
     }
 
+    /**
+     * Return all combinations of item sets:
+     * <li>All combinations of the items are returned, the resulting sets will contain one item per kind. To receive
+     * combinations that match the intention of the script, use:
+     * <li>{@link Items#query} to retain only the items that match a specific criteria
+     * <li>{@link Items#prefer} to retain the items that match a specific criteria, or any other available item. Get the
+     * best combination of items via {@link Varieties#reduce} with argument {@link Items#best}
+     * 
+     * @return
+     */
     public Varieties<Items> varieties() {
         int variety = getVariety();
         Combinations<Item[]> combinations = Combinations.combinationsK(variety, toArray());
@@ -265,15 +281,27 @@ public class Items extends ArrayList<Item> {
     }
 
     /**
-     * Select the items that match best
+     * Select the items that match best. This can be the one that has the most attributes in common, or something the
+     * user has pre-selected via the user interface (like the "Dresser App" that has been around a few years ago).
      * 
      * @param a
      * @param b
      * @return
      */
     public static Items best(Items a, @SuppressWarnings("unused") Items b) {
-        // TODO Define "best" and find the best item
-        return a;
+        // TODO Allow user interface to set Items that have priority, so that the user can select Items in advance.
+        // TODO Count attributes of each set that appear in multiple items,
+        // and return the items set that has more "in common"
+        // Count unique attributes found, then for each attribute add numberOfOccurences*count to rate sets higher
+
+        long maxA = counts(a).values().stream().reduce(Math::max).orElse(0L);
+        long maxB = counts(b).values().stream().reduce(Math::max).orElse(0L);
+
+        return maxA >= maxB ? a : b;
+    }
+
+    private static Map<QualifiedItem, Long> counts(Items items) {
+        return items.stream().collect(Collectors.groupingBy(QualifiedItem::of, Collectors.counting()));
     }
 
     /**
@@ -290,6 +318,11 @@ public class Items extends ArrayList<Item> {
         return prefer(preferred).getAvailable();
     }
 
+    /**
+     * Applies each item. If the list contains multiple items of the same kind, only the first of each kind is applied.
+     * 
+     * @return the items.
+     */
     public Items apply() {
         for (Item item : this.firstOfEachKind()) {
             item.apply();
@@ -297,7 +330,12 @@ public class Items extends ArrayList<Item> {
         return this;
     }
 
-    // TODO Split to string and enum, since states would be passed in as proxies
+    /**
+     * Applies each item to the given peers. If there are multiple items of the same kind, only the first of each kind
+     * is applied. To apply to multiple instances, apply each through {@link Items#all}
+     * 
+     * @return the items.
+     */
     public Items applyTo(Object... peers) {
         for (Item item : this.firstOfEachKind()) {
             item.applyTo(AbstractProxy.removeProxies(peers));

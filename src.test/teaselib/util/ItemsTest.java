@@ -1,6 +1,10 @@
 package teaselib.util;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -178,6 +182,12 @@ public class ItemsTest {
 
         assertTrue(gags.contains("teaselib.Toys.Gag"));
         assertFalse(gags.contains("teaselib.Toys.Buttplug"));
+
+        assertFalse(gags.contains(script.state(Toys.Gag)));
+        assertFalse(gags.contains(script.state(Toys.Buttplug)));
+
+        assertTrue(gags.contains(script.item(Toys.Gag)));
+        assertFalse(gags.contains(script.item(Toys.Buttplug)));
     }
 
     @Test

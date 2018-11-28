@@ -201,7 +201,7 @@ public class UserItemsImpl implements UserItems {
 
     private static void addItems(ItemMap itemMap, List<ItemImpl> items) {
         for (ItemImpl item : items) {
-            Map<String, Item> allItemsOfThisType = itemMap.getOrDefault(item.item, LinkedHashMap<String, Item>::new);
+            Map<String, Item> allItemsOfThisType = itemMap.getOrDefault(item.value, LinkedHashMap<String, Item>::new);
             allItemsOfThisType.put(item.guid.name(), item);
         }
     }

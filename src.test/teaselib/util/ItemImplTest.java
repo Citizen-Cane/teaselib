@@ -1,6 +1,8 @@
 package teaselib.util;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 
@@ -105,7 +107,7 @@ public class ItemImplTest {
         assertFalse(script.state(Body.InButt).is(Toys.Anal.Beads));
         assertFalse(script.state(Body.InButt).is(Body.Orifice.Anal));
 
-        Item analBeads1 = script.items(Toys.Buttplug).query(Toys.Anal.Beads).get();
+        Item analBeads1 = script.items(Toys.Buttplug).matching(Toys.Anal.Beads).get();
         analBeads1.apply();
 
         assertTrue(script.state(Toys.Buttplug).applied());
@@ -118,7 +120,7 @@ public class ItemImplTest {
         assertTrue(script.state(Body.InButt).is(Toys.Anal.Beads));
         assertTrue(script.state(Body.InButt).is(Body.Orifice.Anal));
 
-        Item analBeads2 = script.items(Toys.Buttplug).query(Toys.Anal.Beads).get();
+        Item analBeads2 = script.items(Toys.Buttplug).matching(Toys.Anal.Beads).get();
         assertTrue(analBeads2.is(Toys.Anal.Beads));
         analBeads2.remove();
 
@@ -148,7 +150,7 @@ public class ItemImplTest {
         assertFalse(script.state(Toys.Wrist_Restraints).applied());
 
         // Wrists are not only tied, but also tied behind back
-        script.items(Toys.Wrist_Restraints).query(Material.Leather).get().applyTo(Posture.WristsTiedBehindBack);
+        script.items(Toys.Wrist_Restraints).matching(Material.Leather).get().applyTo(Posture.WristsTiedBehindBack);
 
         assertTrue(script.state(Toys.Wrist_Restraints).applied());
         assertTrue(script.state(Toys.Wrist_Restraints).is(Material.Leather));
@@ -190,7 +192,9 @@ public class ItemImplTest {
     public void testApply1toNAndRemoveTheOtherWayAround() {
         TestScript script = TestScript.getOne();
         script.addTestUserItems();
-        Items restraints = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints).prefer(Material.Metal);
+        Items restraints = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints);
+        restraints.stream().forEach(item -> item.setAvailable(true));
+        restraints = restraints.prefer(Material.Metal);
 
         restraints.apply();
         assertTrue(script.state(Body.WristsTied).applied());
@@ -241,7 +245,7 @@ public class ItemImplTest {
 
         assertFalse(script.state(Toys.Wrist_Restraints).applied());
 
-        Item wristRestraints = script.items(Toys.Wrist_Restraints).query(Material.Leather).get();
+        Item wristRestraints = script.items(Toys.Wrist_Restraints).matching(Material.Leather).get();
 
         assertFalse(wristRestraints.applied());
         assertTrue(wristRestraints.canApply());
@@ -265,7 +269,7 @@ public class ItemImplTest {
 
         assertFalse(script.state(Toys.Gag).applied());
 
-        Item gag = script.items(Toys.Gag).query(Toys.Gags.Ball_Gag).get();
+        Item gag = script.items(Toys.Gag).matching(Toys.Gags.Ball_Gag).get();
 
         assertFalse(gag.applied());
         assertTrue(gag.canApply());
@@ -296,7 +300,7 @@ public class ItemImplTest {
 
         // Wrists are not only tied, but also tied behind back
 
-        script.items(Toys_Wrist_Restraints).query(leather).get().applyTo(Body_WristsTiedBehindBack);
+        script.items(Toys_Wrist_Restraints).matching(leather).get().applyTo(Body_WristsTiedBehindBack);
 
         assertTrue(script.state(Toys_Wrist_Restraints).applied());
         assertTrue(script.state(Toys_Wrist_Restraints).is(leather));
@@ -330,7 +334,7 @@ public class ItemImplTest {
 
         // Wrists are not only tied, but also tied behind back
 
-        script.items(Toys_Wrist_Restraints).query(leather).get().applyTo(Posture_WristsTiedBehindBack);
+        script.items(Toys_Wrist_Restraints).matching(leather).get().applyTo(Posture_WristsTiedBehindBack);
 
         assertTrue(script.state(Toys.Wrist_Restraints).applied());
         assertTrue(script.state(Toys_Wrist_Restraints).is(leather));
@@ -381,11 +385,11 @@ public class ItemImplTest {
 
         assertFalse(script.state(Toys.Wrist_Restraints).applied());
 
-        Item wristRestraints = script.items(Toys.Wrist_Restraints).query(Material.Leather).get();
+        Item wristRestraints = script.items(Toys.Wrist_Restraints).matching(Material.Leather).get();
         wristRestraints.applyTo(Posture.WristsTiedBehindBack);
 
         Items temporaryItems = script.teaseLib.temporaryItems();
-        Item temporaryWristRestraints = temporaryItems.query(Toys.Wrist_Restraints).get();
+        Item temporaryWristRestraints = temporaryItems.matching(Toys.Wrist_Restraints).get();
 
         assertEquals(wristRestraints, temporaryWristRestraints);
         assertTrue(temporaryItems.contains(Toys.Wrist_Restraints));

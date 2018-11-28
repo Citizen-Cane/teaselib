@@ -4,10 +4,6 @@ import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.function.BinaryOperator;
-import java.util.stream.Collector;
-
-import teaselib.util.Items;
 
 /**
  * @author Citizen-Cane
@@ -40,21 +36,10 @@ public class Combinations<T> extends ArrayList<T> {
     @SafeVarargs
     public static <T> Combinations<T[]> combinationsK(int k, T... items) {
         Combinations<T[]> combinations = new Combinations<>();
-        T[] result = (T[]) Array.newInstance(items[0].getClass(), k);
-        combinations2(items, k, 0, result, combinations);
+        if (items.length > 0) {
+            T[] result = (T[]) Array.newInstance(items[0].getClass(), k);
+            combinations2(items, k, 0, result, combinations);
+        }
         return combinations;
-    }
-
-    public static Collector<Items, Combinations<Items>, Combinations<Items>> toCombinations() {
-        return Collector.of(Combinations<Items>::new, //
-                (items, item) -> items.add(item), //
-                (items1, items2) -> {
-                    items1.addAll(items2);
-                    return items1;
-                }, Collector.Characteristics.UNORDERED);
-    }
-
-    public T reduce(BinaryOperator<T> accumulator) {
-        return stream().reduce(get(0), accumulator);
     }
 }

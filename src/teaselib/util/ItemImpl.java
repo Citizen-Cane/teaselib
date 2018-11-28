@@ -29,9 +29,9 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
 
     public final String domain;
     public final ItemGuid guid;
-    public final Object item;
+    public final Object value;
     public final String displayName;
-    public final TeaseLib.PersistentBoolean value;
+    private final TeaseLib.PersistentBoolean available;
     public final Object[] defaultPeers;
     public final Set<Object> attributes;
 
@@ -46,11 +46,11 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
     public ItemImpl(TeaseLib teaseLib, Object item, String domain, ItemGuid guid, String displayName,
             Object[] defaultPeers, Object[] attributes) {
         this.teaseLib = teaseLib;
-        this.item = item;
+        this.value = item;
         this.domain = domain;
         this.guid = guid;
         this.displayName = displayName;
-        this.value = teaseLib.new PersistentBoolean(domain, QualifiedItem.namespaceOf(item), guid.name());
+        this.available = teaseLib.new PersistentBoolean(domain, QualifiedItem.namespaceOf(item), guid.name());
         this.defaultPeers = defaultPeers;
         this.attributes = attributes(item, attributes);
     }
@@ -63,7 +63,7 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
 
     @Override
     public List<String> persisted() {
-        return Arrays.asList(Persist.persist(QualifiedItem.of(item).toString()), Persist.persist(guid));
+        return Arrays.asList(Persist.persist(QualifiedItem.of(value).toString()), Persist.persist(guid));
     }
 
     private static Set<Object> attributes(Object item, Object[] attributes) {
@@ -75,12 +75,12 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
 
     @Override
     public boolean isAvailable() {
-        return value.value();
+        return available.value();
     }
 
     @Override
     public void setAvailable(boolean isAvailable) {
-        value.set(isAvailable);
+        available.set(isAvailable);
     }
 
     @Override
@@ -90,7 +90,7 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
 
     @Override
     public String toString() {
-        return guid.name() + " " + attributes + " " + teaseLib.state(domain, item).toString();
+        return guid.name() + " " + attributes + " " + teaseLib.state(domain, value).toString();
     }
 
     boolean has(Object... desired) {
@@ -117,7 +117,7 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
         } else if (has(this.attributes.stream(), attributes2))
             return true;
 
-        if (StateMaps.hasAllAttributes((state(item)).getAttributes(), attributes2))
+        if (StateMaps.hasAllAttributes((state(value)).getAttributes(), attributes2))
             return applied();
 
         if (state(this).appliedToClass(state(this).peers(), attributes2)) {
@@ -132,7 +132,7 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
     }
 
     private boolean stateContainsAll(Object... attributes) {
-        return state(item).is(attributes);
+        return state(value).is(attributes);
     }
 
     @Override
@@ -140,13 +140,13 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
         if (defaultPeers.length > 0) {
             return defaultStates().allMatch(state -> !state.applied());
         } else {
-            return !state(item).is(this);
+            return !state(value).is(this);
         }
     }
 
     @Override
     public boolean applied() {
-        StateImpl state = state(item);
+        StateImpl state = state(value);
         if (state.applied()) {
             if (defaultPeers.length > 0) {
                 return defaultStates().anyMatch(this::containsMe);
@@ -160,17 +160,17 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
 
     @Override
     public boolean expired() {
-        return state(item).expired();
+        return state(value).expired();
     }
 
     @Override
     public Duration duration() {
-        return state(item).duration();
+        return state(value).duration();
     }
 
     @Override
     public State.Options apply() {
-        StateImpl state = state(item);
+        StateImpl state = state(value);
 
         if (defaultPeers.length == 0) {
             state.apply();
@@ -194,7 +194,7 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
         applyInstanceTo(defaultPeers);
         applyInstanceTo(peers);
 
-        StateImpl state = state(item);
+        StateImpl state = state(value);
         applyMyAttributesTo(state);
         state.applyTo(this.guid);
         return state.applyTo(peers);
@@ -220,7 +220,7 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
 
     @Override
     public void remove() {
-        StateImpl state = state(item);
+        StateImpl state = state(value);
         if (containsMyGuid(state)) {
             for (Object peer : new ArrayList<>(state.peers())) {
                 if (!(peer instanceof ItemGuid)) {
@@ -238,7 +238,7 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
 
     @Override
     public void removeFrom(Object... peers) {
-        StateImpl state = state(item);
+        StateImpl state = state(value);
         if (containsMyGuid(state)) {
             for (Object peer : peers) {
                 if (!(peer instanceof ItemGuid)) {
@@ -250,7 +250,7 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
     }
 
     public boolean releaseInstanceGuid() {
-        StateImpl state = state(item);
+        StateImpl state = state(value);
         if (peersReferenceMe(state)) {
             return false;
         }
@@ -295,7 +295,7 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
 
     @Override
     public void applyAttributes(Object... attributes) {
-        state(item).applyAttributes(attributes);
+        state(value).applyAttributes(attributes);
     }
 
     @Override
@@ -305,10 +305,10 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
         result = prime * result + ((attributes == null) ? 0 : attributes.hashCode());
         result = prime * result + ((displayName == null) ? 0 : displayName.hashCode());
         result = prime * result + ((domain == null) ? 0 : domain.hashCode());
-        result = prime * result + ((item == null) ? 0 : item.hashCode());
+        result = prime * result + ((value == null) ? 0 : value.hashCode());
         result = prime * result + Arrays.hashCode(defaultPeers);
         result = prime * result + ((teaseLib == null) ? 0 : teaseLib.hashCode());
-        result = prime * result + ((value == null) ? 0 : value.hashCode());
+        result = prime * result + ((available == null) ? 0 : available.hashCode());
         return result;
     }
 
@@ -344,10 +344,10 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
                 return false;
         } else if (!domain.equals(other.domain))
             return false;
-        if (item == null) {
-            if (other.item != null)
+        if (value == null) {
+            if (other.value != null)
                 return false;
-        } else if (!item.equals(other.item))
+        } else if (!value.equals(other.value))
             return false;
         if (!Arrays.equals(defaultPeers, other.defaultPeers))
             return false;
@@ -356,10 +356,10 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
                 return false;
         } else if (!teaseLib.equals(other.teaseLib))
             return false;
-        if (value == null) {
-            if (other.value != null)
+        if (available == null) {
+            if (other.available != null)
                 return false;
-        } else if (!value.equals(other.value))
+        } else if (!available.equals(other.available))
             return false;
         return true;
     }

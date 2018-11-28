@@ -77,7 +77,7 @@ public class ItemsTest {
         assertFalse(gags.anyAvailable());
         assertFalse(gags.get(0).is(Toys.Gags.Ring_Gag));
 
-        Item ringGag = gags.query(Toys.Gags.Ring_Gag).get();
+        Item ringGag = gags.matching(Toys.Gags.Ring_Gag).get();
         assertTrue(ringGag.is(Toys.Gags.Ring_Gag));
 
         ringGag.setAvailable(true);
@@ -107,7 +107,7 @@ public class ItemsTest {
 
         assertFalse(gags.anyAvailable());
 
-        Item ringGag = gags.query(Toys.Gags.Ring_Gag).get();
+        Item ringGag = gags.matching(Toys.Gags.Ring_Gag).get();
         assertTrue(ringGag.is(Toys.Gags.Ring_Gag));
 
         assertEquals(0, gags.getAvailable().size());
@@ -128,11 +128,11 @@ public class ItemsTest {
 
         Items gags = script.items(Toys.Gag);
 
-        Items bitGags = gags.query(Toys.Gags.Bit_Gag, Body.Orifice.Oral);
+        Items bitGags = gags.matching(Toys.Gags.Bit_Gag, Body.Orifice.Oral);
         assertEquals(1, bitGags.size());
 
         Item bitGag = bitGags.get(0);
-        Item sameRingGag = gags.query(Toys.Gags.Bit_Gag).get();
+        Item sameRingGag = gags.matching(Toys.Gags.Bit_Gag).get();
 
         assertEquals(sameRingGag, bitGag);
     }
@@ -146,20 +146,20 @@ public class ItemsTest {
         assertNotEquals(Item.NotFound, gags.get());
         assertFalse(gags.get().isAvailable());
 
-        Item bitGag = gags.query(Toys.Gags.Bit_Gag).get();
+        Item bitGag = gags.matching(Toys.Gags.Bit_Gag).get();
         assertTrue(bitGag.is(Toys.Gags.Bit_Gag));
 
-        Item penisGag = gags.query(Toys.Gags.Penis_Gag).get();
+        Item penisGag = gags.matching(Toys.Gags.Penis_Gag).get();
         penisGag.setAvailable(true);
 
         assertEquals(penisGag, gags.get());
-        assertEquals(bitGag, gags.query(Toys.Gags.Bit_Gag).get());
+        assertEquals(bitGag, gags.matching(Toys.Gags.Bit_Gag).get());
 
-        assertFalse(gags.query(Toys.Gags.Bit_Gag).get().isAvailable());
-        assertTrue(gags.query(Toys.Gags.Penis_Gag).get().isAvailable());
+        assertFalse(gags.matching(Toys.Gags.Bit_Gag).get().isAvailable());
+        assertTrue(gags.matching(Toys.Gags.Penis_Gag).get().isAvailable());
 
         assertEquals(penisGag, gags.get());
-        assertTrue(gags.query(Toys.Gags.Penis_Gag).get().isAvailable());
+        assertTrue(gags.matching(Toys.Gags.Penis_Gag).get().isAvailable());
 
         Item noRingGag = gags.prefer(Toys.Gags.Ring_Gag).get();
         assertEquals(penisGag, noRingGag);
@@ -204,7 +204,7 @@ public class ItemsTest {
         }
         assertTrue(script.items(Toys.Collar).getAvailable().isEmpty());
 
-        Item penisGag = gags.query(Toys.Gags.Penis_Gag).get();
+        Item penisGag = gags.matching(Toys.Gags.Penis_Gag).get();
         penisGag.setAvailable(true);
 
         assertEquals(1, script.items(Toys.Gag).getAvailable().size());
@@ -217,10 +217,10 @@ public class ItemsTest {
         Items buttPlugs = script.items(Toys.Buttplug);
         assertTrue(buttPlugs.size() > 1);
 
-        Item analBeads = buttPlugs.query(Toys.Anal.Beads).get();
+        Item analBeads = buttPlugs.matching(Toys.Anal.Beads).get();
         assertNotEquals(Item.NotFound, analBeads);
 
-        Items allAnalbeads = script.items(Toys.Buttplug).query(Toys.Anal.Beads);
+        Items allAnalbeads = script.items(Toys.Buttplug).matching(Toys.Anal.Beads);
         assertTrue(allAnalbeads.size() == 1);
         assertEquals(analBeads, allAnalbeads.get(0));
     }
@@ -289,10 +289,21 @@ public class ItemsTest {
     @Test
     public void testVarieties() {
         TestScript script = TestScript.getOne();
+        script.addTestUserItems();
+        script.addTestUserItems2();
+
+        Items none = script.items(new Enum<?>[] {});
+        assertTrue(none.varieties().isEmpty());
 
         Items inventory = script.items(Toys.Collar, Toys.Ankle_Restraints, Toys.Wrist_Restraints, Toys.Chains);
-        Varieties<Items> varieties = inventory.prefer(Features.Lockable, Material.Leather).varieties();
-        Items restraints = varieties.reduce(Items::best);
+        inventory.stream().forEach(item -> item.setAvailable(true));
+
+        Varieties<Items> all = inventory.varieties();
+        assertEquals(2, all.size());
+
+        Varieties<Items> preferred = inventory.prefer(Features.Lockable, Material.Leather).varieties();
+        assertEquals(1, preferred.size());
+        Items restraints = preferred.reduce(Items::best);
         assertEquals(4, restraints.size());
 
         Item collar = restraints.get(Toys.Collar);
@@ -359,8 +370,8 @@ public class ItemsTest {
 
         assertFalse(script.state(Toys.Wrist_Restraints).applied());
 
-        Item leatherCuffs = script.items(Toys.Wrist_Restraints).query(Material.Leather).get();
-        Item handCuffs = script.items(Toys.Wrist_Restraints).query(Material.Metal).get();
+        Item leatherCuffs = script.items(Toys.Wrist_Restraints).matching(Material.Leather).get();
+        Item handCuffs = script.items(Toys.Wrist_Restraints).matching(Material.Metal).get();
 
         assertNotEquals(leatherCuffs, handCuffs);
 
@@ -405,13 +416,15 @@ public class ItemsTest {
 
     // TODO test that query doesn't work with namespace and show how to do it right
 
+    // TODO test that query doesn't work with namespace and show how to do it right
+
     @Test
-    public void testQueryItemInstanceAttributesDontInterferWithApplied() {
+    public void testMatchingItemInstanceAttributesDontInterferWithApplied() {
         TestScript script = TestScript.getOne();
         script.debugger.freezeTime();
 
         Items gags1 = script.items(Toys.Gag);
-        Item ringGag = gags1.query(Toys.Gags.Ring_Gag).get();
+        Item ringGag = gags1.matching(Toys.Gags.Ring_Gag).get();
         assertTrue(ringGag.is(Toys.Gags.Ring_Gag));
         ringGag.apply();
         assertTrue(ringGag.applied());
@@ -419,7 +432,7 @@ public class ItemsTest {
         // assertTrue(script.state(Toys.Gag).is(ringGag)); // ???
 
         Items gags2 = script.items(Toys.Gag);
-        Item ringGag2 = gags2.query(Toys.Gags.Ring_Gag).get();
+        Item ringGag2 = gags2.matching(Toys.Gags.Ring_Gag).get();
         assertEquals(ringGag, ringGag2);
         assertNotSame(ringGag, ringGag2);
         assertEquals(((ItemProxy) ringGag).item, ((ItemProxy) ringGag2).item);
@@ -434,7 +447,7 @@ public class ItemsTest {
         // assertTrue(script.state(Toys.Gag).is(ringGag2)); // ???
 
         Items gags3 = script.items(Toys.Gag);
-        Item muzzleGag = gags3.query(Toys.Gags.Muzzle_Gag).get();
+        Item muzzleGag = gags3.matching(Toys.Gags.Muzzle_Gag).get();
 
         assertNotSame(ringGag2, muzzleGag);
         assertTrue(muzzleGag.is(Toys.Gag));
@@ -454,19 +467,19 @@ public class ItemsTest {
     }
 
     @Test
-    public void testQueryDifferentItemsOfAKIndDontInterferShort() {
+    public void testMatchingDifferentItemsOfAKIndDontInterferShort() {
         TestScript script = TestScript.getOne();
         script.debugger.freezeTime();
 
         Items gags = script.items(Toys.Gag);
-        Item ringGag = gags.query(Toys.Gags.Ring_Gag).get();
+        Item ringGag = gags.matching(Toys.Gags.Ring_Gag).get();
         ringGag.apply();
         assertTrue(ringGag.applied());
         assertTrue(ringGag.is(Body.InMouth));
         assertTrue(ringGag.is(Toys.Gags.Ring_Gag));
         assertTrue(ringGag.is(script.namespace));
 
-        Item muzzleGag = gags.query(Toys.Gags.Muzzle_Gag).get();
+        Item muzzleGag = gags.matching(Toys.Gags.Muzzle_Gag).get();
         assertFalse(muzzleGag.applied());
         assertFalse(muzzleGag.is(Body.InMouth));
         assertFalse(muzzleGag.is(Toys.Gags.Ring_Gag));

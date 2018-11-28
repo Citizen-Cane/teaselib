@@ -30,10 +30,10 @@ public class Varieties<T> extends ArrayList<T> {
     }
 
     public static <T> boolean isVariety(Collection<T> collection) {
-        Set<T> set = new HashSet<>();
+        Set<T> unique = new HashSet<>();
         for (T t : collection) {
-            if (!set.contains(t)) {
-                set.add(t);
+            if (!unique.contains(t)) {
+                unique.add(t);
             } else {
                 return false;
             }

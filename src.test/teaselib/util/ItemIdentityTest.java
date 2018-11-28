@@ -28,10 +28,10 @@ public class ItemIdentityTest {
         TeaseScript script = TestScript.getOne();
 
         Items gags = script.items(Toys.Gag);
-        Item ringGag = gags.query(Toys.Gags.Ring_Gag).get();
+        Item ringGag = gags.matching(Toys.Gags.Ring_Gag).get();
         assertTrue(ringGag.is(Toys.Gags.Ring_Gag));
 
-        Item sameRingGag = script.items(Toys.Gag).query(Toys.Gags.Ring_Gag).get();
+        Item sameRingGag = script.items(Toys.Gag).matching(Toys.Gags.Ring_Gag).get();
 
         assertEquals(ringGag, sameRingGag);
 
@@ -44,7 +44,7 @@ public class ItemIdentityTest {
         TeaseScript script = TestScript.getOne();
         Items gags = script.items(Toys.Gag);
 
-        Item ringGag = gags.query(Toys.Gags.Ring_Gag).get();
+        Item ringGag = gags.matching(Toys.Gags.Ring_Gag).get();
         assertFalse(ringGag.is(Body.InMouth));
 
         ringGag.apply();
@@ -62,7 +62,7 @@ public class ItemIdentityTest {
     public void testComparingItemsAndStateWorks() {
         TeaseScript script = TestScript.getOne();
         Items gags = script.items(Toys.Gag);
-        Item ringGag = gags.query(Toys.Gags.Ring_Gag).get();
+        Item ringGag = gags.matching(Toys.Gags.Ring_Gag).get();
 
         assertFalse(ringGag.is(Body.InMouth));
         ringGag.apply();
@@ -93,7 +93,7 @@ public class ItemIdentityTest {
     public void testItemInstanceRemoveAnyInstance() {
         TestScript script = TestScript.getOne();
 
-        Item chastityDevice = script.items(Toys.Chastity_Device).query(Toys.Chastity_Devices.Gates_of_Hell).get();
+        Item chastityDevice = script.items(Toys.Chastity_Device).matching(Toys.Chastity_Devices.Gates_of_Hell).get();
         State onPenis = script.state(Body.OnPenis);
 
         chastityDevice.apply();
@@ -101,7 +101,7 @@ public class ItemIdentityTest {
         assertTrue(chastityDevice.applied());
         assertTrue(onPenis.applied());
 
-        Item otherChastityDevice = script.items(Toys.Chastity_Device).query(Toys.Chastity_Devices.Belt).get();
+        Item otherChastityDevice = script.items(Toys.Chastity_Device).matching(Toys.Chastity_Devices.Belt).get();
         otherChastityDevice.remove();
 
         // Removing the wrong item doesn't work
@@ -119,7 +119,7 @@ public class ItemIdentityTest {
         TestScript script = TestScript.getOne();
 
         Item chastityDevice = script.items("teaselib.Toys.Chastity_Device")
-                .query("teaselib.Toys.Chastity_Devices.Gates_of_Hell").get();
+                .matching("teaselib.Toys.Chastity_Devices.Gates_of_Hell").get();
         State onPenis = script.state("teaselib.Body.OnPenis");
 
         chastityDevice.apply();
@@ -128,7 +128,7 @@ public class ItemIdentityTest {
         assertTrue(onPenis.applied());
 
         Item otherChastityDevice = script.items("teaselib.Toys.Chastity_Device")
-                .query("teaselib.Toys.Chastity_Devices.Belt").get();
+                .matching("teaselib.Toys.Chastity_Devices.Belt").get();
         otherChastityDevice.remove();
 
         // Removing the wrong item doesn't work
@@ -263,7 +263,7 @@ public class ItemIdentityTest {
         TestScript script = TestScript.getOne();
 
         Items gags = script.items(Toys.Gag);
-        Item ringGag = gags.query(Toys.Gags.Ring_Gag).get();
+        Item ringGag = gags.matching(Toys.Gags.Ring_Gag).get();
 
         Item sameRingGag = script.teaseLib.getByGuid(TeaseLib.DefaultDomain, Toys.Gag, "ring_gag");
 
@@ -315,13 +315,13 @@ public class ItemIdentityTest {
         script.debugger.freezeTime();
 
         Items gags1 = script.items(Toys.Gag);
-        Item persisted = gags1.query(Toys.Gags.Ring_Gag).get();
+        Item persisted = gags1.matching(Toys.Gags.Ring_Gag).get();
         persisted.apply().over(1, TimeUnit.HOURS);
 
         script.debugger.clearStateMaps();
 
         Items gags = script.items(Toys.Gag);
-        Item restored = gags.query(Toys.Gags.Ring_Gag).get();
+        Item restored = gags.matching(Toys.Gags.Ring_Gag).get();
 
         State inMouth = script.state(Body.InMouth);
         assertTrue(inMouth.is(restored));
@@ -334,10 +334,10 @@ public class ItemIdentityTest {
         script.debugger.freezeTime();
 
         Items gags = script.items(Toys.Gag);
-        Item ringGag = gags.query(Toys.Gags.Ring_Gag).get();
+        Item ringGag = gags.matching(Toys.Gags.Ring_Gag).get();
         ringGag.apply();
 
-        Item muzzleGag = gags.query(Toys.Gags.Muzzle_Gag).get();
+        Item muzzleGag = gags.matching(Toys.Gags.Muzzle_Gag).get();
 
         assertTrue(ringGag.applied());
         assertFalse(muzzleGag.applied());
@@ -365,7 +365,7 @@ public class ItemIdentityTest {
         script.debugger.clearStateMaps();
 
         Items gags = script.items(Toys.Gag);
-        Item ringGag2 = gags.query(Toys.Gags.Ring_Gag).get();
+        Item ringGag2 = gags.matching(Toys.Gags.Ring_Gag).get();
         assertNotSame(ringGag, ringGag2);
 
         verifyInMouth(script);
@@ -386,13 +386,13 @@ public class ItemIdentityTest {
         verifyInMouth(script);
 
         Items gags = script.items(Toys.Gag);
-        Item ringGag2 = gags.query(Toys.Gags.Ring_Gag).get();
+        Item ringGag2 = gags.matching(Toys.Gags.Ring_Gag).get();
         verifyGagApplied(script, ringGag2);
     }
 
     private static Item applyRingGagAndRemember(TestScript script) {
         Items gags = script.items(Toys.Gag);
-        Item ringGag = gags.query(Toys.Gags.Ring_Gag).get();
+        Item ringGag = gags.matching(Toys.Gags.Ring_Gag).get();
 
         assertFalse(ringGag.is(Body.InMouth));
         ringGag.apply().over(1, TimeUnit.HOURS);
@@ -478,14 +478,14 @@ public class ItemIdentityTest {
         TestScript script = TestScript.getOne();
         script.debugger.freezeTime();
 
-        Item gag = script.items(Toys.Gag).query(Toys.Gags.Ring_Gag).get();
+        Item gag = script.items(Toys.Gag).matching(Toys.Gags.Ring_Gag).get();
         gag.apply().over(1, TimeUnit.HOURS);
         assertTrue(gag.applied());
         assertTrue(script.state(Toys.Gag).applied());
 
         script.debugger.clearStateMaps();
 
-        Item restored = script.items(Toys.Gag).query(Toys.Gags.Ring_Gag).get();
+        Item restored = script.items(Toys.Gag).matching(Toys.Gags.Ring_Gag).get();
         assertTrue(restored.applied());
         assertTrue(script.state(Toys.Gag).applied());
     }
@@ -495,7 +495,7 @@ public class ItemIdentityTest {
         TestScript script = TestScript.getOne();
         script.debugger.freezeTime();
 
-        Item gag = script.items(Toys.Gag).query(Toys.Gags.Ring_Gag).get();
+        Item gag = script.items(Toys.Gag).matching(Toys.Gags.Ring_Gag).get();
         gag.apply().over(1, TimeUnit.HOURS);
         assertTrue(gag.applied());
         assertTrue(script.item(Toys.Gag).applied());
@@ -503,7 +503,7 @@ public class ItemIdentityTest {
 
         script.debugger.clearStateMaps();
 
-        Item restored = script.items(Toys.Gag).query(Toys.Gags.Ring_Gag).get();
+        Item restored = script.items(Toys.Gag).matching(Toys.Gags.Ring_Gag).get();
         assertTrue(restored.applied());
         assertTrue(script.item(Toys.Gag).applied());
         assertTrue(script.item(Toys.Gag).is(Toys.Gags.Ring_Gag));
@@ -514,11 +514,11 @@ public class ItemIdentityTest {
         TestScript script = TestScript.getOne();
         script.debugger.freezeTime();
 
-        Item item = script.items(Toys.Gag).query(Toys.Gags.Ring_Gag).get();
+        Item item = script.items(Toys.Gag).matching(Toys.Gags.Ring_Gag).get();
         item.apply();
         assertTrue(item.is(item));
 
-        Item item2 = script.items(Toys.Gag).query(Toys.Gags.Bit_Gag).get();
+        Item item2 = script.items(Toys.Gag).matching(Toys.Gags.Bit_Gag).get();
         assertNotEquals(item, item2);
         assertFalse(item.is(item2));
         // TODO comparing items works via has(all attributes) but should check peers for item instance

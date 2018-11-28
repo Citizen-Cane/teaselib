@@ -55,13 +55,13 @@ class QualifiedItemImpl extends AbstractQualifiedItem<Item> {
         return QualifiedItem.of(item(value)).toString();
     }
 
-    private static Object item(Item value) {
-        if (value instanceof ItemProxy) {
-            return ((ItemImpl) ((ItemProxy) value).item).item;
-        } else if (value instanceof ItemImpl) {
-            return ((ItemImpl) value).item;
+    private static Object item(Item item) {
+        if (item instanceof ItemProxy) {
+            return ((ItemImpl) ((ItemProxy) item).item).value;
+        } else if (item instanceof ItemImpl) {
+            return ((ItemImpl) item).value;
         } else {
-            throw new UnsupportedOperationException(value.toString());
+            throw new UnsupportedOperationException(item.toString());
         }
     }
 }

@@ -48,7 +48,7 @@ public class ToyPersistenceTests {
             assertTrue(script.persistence.storage.containsKey("Toys.ball_gag"));
         }
 
-        Item highHeels = script.teaseLib.items(Clothes.Partner, Clothes.Shoes).query(Clothes.Footwear.High_Heels).get();
+        Item highHeels = script.teaseLib.items(Clothes.Partner, Clothes.Shoes).matching(Clothes.Footwear.High_Heels).get();
         highHeels.setAvailable(true);
 
         assertTrue("Domain item storage unsupported",
@@ -69,7 +69,7 @@ public class ToyPersistenceTests {
             assertTrue(script.persistence.storage.containsKey(Toys.class.getSimpleName() + ".ball_gag"));
         }
 
-        script.teaseLib.items(TeaseLib.DefaultDomain, Clothes.Shoes).query(Clothes.Footwear.High_Heels).get()
+        script.teaseLib.items(TeaseLib.DefaultDomain, Clothes.Shoes).matching(Clothes.Footwear.High_Heels).get()
                 .setAvailable(true);
         assertTrue(script.persistence.storage.containsKey(Clothes.class.getSimpleName() + ".high_heels"));
     }
@@ -81,7 +81,7 @@ public class ToyPersistenceTests {
         script.teaseLib.item(Clothes.Partner, Toys.Collar).setAvailable(true);
         assertTrue(script.persistence.storage.containsKey("Partner." + Toys.class.getSimpleName() + ".collar"));
 
-        script.teaseLib.items(Clothes.Doll, Clothes.Shoes).query(Clothes.Footwear.High_Heels).get().setAvailable(true);
+        script.teaseLib.items(Clothes.Doll, Clothes.Shoes).matching(Clothes.Footwear.High_Heels).get().setAvailable(true);
         assertTrue(script.persistence.storage.containsKey("Doll." + Clothes.class.getSimpleName() + ".high_heels"));
     }
 }

@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BinaryOperator;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -166,16 +167,16 @@ public class Items extends ArrayList<Item> {
      * @return An item that matches all attributes, or the first available, or {@link Item#NotFound}.
      */
     @SafeVarargs
-    public final Items query(Enum<?>... attributes) {
-        return queryImpl(attributes);
+    public final Items matching(Enum<?>... attributes) {
+        return matchingImpl(attributes);
     }
 
-    public final Items query(String... attributes) {
-        return queryImpl(attributes);
+    public final Items matching(String... attributes) {
+        return matchingImpl(attributes);
     }
 
     @SafeVarargs
-    public final <S> Items queryImpl(S... attributes) {
+    public final <S> Items matchingImpl(S... attributes) {
         if (attributes.length == 0) {
             return this;
         } else {
@@ -207,43 +208,40 @@ public class Items extends ArrayList<Item> {
     }
 
     /**
-     * Get matching or available items. Try to match available items with the requested attributes first. If not
-     * possible, match as many items as possible, then complete set with available non-matching items. Finally add
-     * unavailable items to complete the set.
+     * Get matching or available items:
+     * <li>First try to match available items with the requested attributes.
+     * <li>If not possible, match as many items as possible. then complete set with available non-matching items.
+     * <li>Finally add unavailable items to complete the set.
+     * <p>
      * 
      * @param attributes
      *            The preferred attributes to match.
-     * @return Preferred items matching requested attributes, filled up with non-matching items as a fall-back.
+     * @return Preferred available items matching requested attributes, filled up with non-matching available items as a
+     *         fall-back. The Item list may be empty if none of the requesteed items are available.
      */
-    @SafeVarargs
-    // TODO Improve behavior and add more tests
-    // TODO rate attributes in the order listed (first higher rated)
-    public final <S> Items prefer(S... attributes) {
+    public <S> Items prefer(Object... attributes) {
         Set<QualifiedItem> found = new HashSet<>();
         Items preferred = new Items();
 
         for (Item item : this) {
-            if (item.is(attributes)) {
-                found.add(QualifiedItem.of(item));
+            if (item.is(attributes) && item.isAvailable()) {
+                found.add(QualifiedItem.of(itemValue(item)));
                 preferred.add(item);
             }
         }
 
         for (Item item : this) {
             if (!found.contains(QualifiedItem.of(item)) && item.isAvailable()) {
-                found.add(QualifiedItem.of(item));
-                preferred.add(item);
-            }
-        }
-
-        for (Item item : this) {
-            if (!found.contains(QualifiedItem.of(item))) {
-                found.add(QualifiedItem.of(item));
+                found.add(QualifiedItem.of(itemValue(item)));
                 preferred.add(item);
             }
         }
 
         return preferred;
+    }
+
+    public Items reduce(BinaryOperator<Items> accumulator) {
+        return varieties().reduce(accumulator);
     }
 
     /**
@@ -259,10 +257,13 @@ public class Items extends ArrayList<Item> {
     public Varieties<Items> varieties() {
         int variety = getVariety();
         Combinations<Item[]> combinations = Combinations.combinationsK(variety, toArray());
-        return combinations.stream().map(Arrays::asList)
-                .filter(combination -> Varieties.isVariety(combination.stream().map(QualifiedItem::of)
-                        .map(QualifiedItem::toString).collect(Collectors.toList())))
-                .map(Items::new).collect(Varieties.toVarieties());
+        return combinations.stream().map(Arrays::asList).filter(this::isVariety).map(Items::new)
+                .collect(Varieties.toVarieties());
+    }
+
+    private boolean isVariety(List<Item> combination) {
+        return Varieties.isVariety(
+                combination.stream().map(QualifiedItem::of).map(QualifiedItem::toString).collect(Collectors.toList()));
     }
 
     private int getVariety() {
@@ -284,24 +285,20 @@ public class Items extends ArrayList<Item> {
      * Select the items that match best. This can be the one that has the most attributes in common, or something the
      * user has pre-selected via the user interface (like the "Dresser App" that has been around a few years ago).
      * 
-     * @param a
-     * @param b
-     * @return
+     * @param itemsA
+     * @param itemsB
+     * @return The items that is match better.
      */
-    public static Items best(Items a, @SuppressWarnings("unused") Items b) {
-        // TODO Allow user interface to set Items that have priority, so that the user can select Items in advance.
-        // TODO Count attributes of each set that appear in multiple items,
-        // and return the items set that has more "in common"
+    public static Items best(Items itemsA, Items itemsB) {
         // Count unique attributes found, then for each attribute add numberOfOccurences*count to rate sets higher
-
-        long maxA = counts(a).values().stream().reduce(Math::max).orElse(0L);
-        long maxB = counts(b).values().stream().reduce(Math::max).orElse(0L);
-
-        return maxA >= maxB ? a : b;
+        long maxA = attributesOfAvailable(itemsA).values().stream().reduce(Math::max).orElse(0L);
+        long maxB = attributesOfAvailable(itemsB).values().stream().reduce(Math::max).orElse(0L);
+        return maxA >= maxB ? itemsA : itemsB;
     }
 
-    private static Map<QualifiedItem, Long> counts(Items items) {
-        return items.stream().collect(Collectors.groupingBy(QualifiedItem::of, Collectors.counting()));
+    private static Map<QualifiedItem, Long> attributesOfAvailable(Items items) {
+        return items.stream().filter(Item::isAvailable)
+                .collect(Collectors.groupingBy(QualifiedItem::of, Collectors.counting()));
     }
 
     /**
@@ -314,8 +311,8 @@ public class Items extends ArrayList<Item> {
      * @return
      */
     public <S> Items selectApplicableSet(@SuppressWarnings("unchecked") S... preferred) {
-        // TODO improve this - at least just return one item of each kind
-        return prefer(preferred).getAvailable();
+        Varieties<Items> varieties = prefer(preferred).varieties();
+        return varieties.reduce(Items::best);
     }
 
     /**
@@ -408,10 +405,14 @@ public class Items extends ArrayList<Item> {
     }
 
     public Set<Object> valueSet() {
-        return stream().map(item -> itemImpl(item).item).collect(Collectors.toCollection(LinkedHashSet::new));
+        return stream().map(item -> itemImpl(item).value).collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
     private static ItemImpl itemImpl(Item item) {
         return AbstractProxy.itemImpl(item);
+    }
+
+    private static QualifiedItem itemValue(Item item) {
+        return QualifiedItem.of(itemImpl(item).value);
     }
 }

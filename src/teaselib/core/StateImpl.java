@@ -50,7 +50,7 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
         if (item instanceof AbstractProxy<?>) {
             return state(((AbstractProxy<?>) item).state);
         } else if (item instanceof ItemImpl) {
-            return state(((ItemImpl) item).item);
+            return state(((ItemImpl) item).value);
         } else if (item instanceof StateImpl) {
             return (StateImpl) item;
         } else {
@@ -466,9 +466,9 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
     }
 
     public long instancesOfSameKind(Object value) {
-        Object requested = value instanceof Item ? ((ItemImpl) value).item : value;
+        Object requested = value instanceof Item ? ((ItemImpl) value).value : value;
         return peers.stream().filter(peer -> {
-            return (peer instanceof ItemImpl && ((ItemImpl) peer).item == requested);
+            return (peer instanceof ItemImpl && ((ItemImpl) peer).value == requested);
         }).count();
     }
 
@@ -476,7 +476,7 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
         for (Object peer : new HashSet<>(peers)) {
             if (peer instanceof ItemImpl) {
                 ItemImpl itemImpl = (ItemImpl) peer;
-                if (QualifiedItem.of(itemImpl.item).equals(QualifiedItem.of(value))) {
+                if (QualifiedItem.of(itemImpl.value).equals(QualifiedItem.of(value))) {
                     peers.remove(itemImpl);
                     itemImpl.releaseInstanceGuid();
                 }

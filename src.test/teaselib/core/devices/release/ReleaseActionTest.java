@@ -198,7 +198,7 @@ public class ReleaseActionTest {
         String devicePath = "KeyRelease/MyPhoton/1";
         State releaseAction = script.teaseLib.state(domain, getTestReleaseAction(domain, devicePath));
 
-        Item handCuffs = script.items(Toys.Wrist_Restraints).query(Material.Metal).get();
+        Item handCuffs = script.items(Toys.Wrist_Restraints).matching(Material.Metal).get();
         handCuffs.apply();
         handCuffs.applyTo(releaseAction);
         assertTrue(handCuffs.applied());

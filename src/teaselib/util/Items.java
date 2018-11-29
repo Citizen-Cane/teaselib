@@ -27,8 +27,9 @@ import teaselib.util.math.Varieties;
  * <p>
  * Most methods that work with single items can be use with multiple items too.
  * <p>
- * Before performing any query, the non-index-based methods use or return always the item is always the one applied, or
- * the first available. A a result, applying multiple items works as if applying single items of each kind one-by-one.
+ * Before performing queries ({@link Items#prefer}, {@link Items#matching},{@link Items#queryInventory}), the
+ * non-index-based methods use or return always the item that is applied, or the first available. A a result, applying
+ * multiple items works as if applying single items of each kind one-by-one.
  * <p>
  * However, wWhen performing a {@link Items#prefer} or {@link Items#query} command, only the requested item instances
  * are retained.
@@ -117,16 +118,26 @@ public class Items extends ArrayList<Item> {
     /**
      * Return applied or first available item.
      * 
-     * @return First item
+     * @return First item or {@link Item#NotFound}
      */
     public Item get() {
         return getAppliedOrFirstAvailableOrNotFound();
     }
 
+    /**
+     * Return applied or first available item with the supplied value.
+     * 
+     * @return First item or {@link Item#NotFound}
+     */
     public final Item get(Enum<?> item) {
         return item(QualifiedItem.of(item));
     }
 
+    /**
+     * Return applied or first available item with the supplied value.
+     * 
+     * @return First item or {@link Item#NotFound}
+     */
     public final Item item(String item) {
         return item(QualifiedItem.of(item));
     }
@@ -161,33 +172,55 @@ public class Items extends ArrayList<Item> {
     }
 
     /**
-     * Get all items matching the supplied attributes
+     * Get all items matching the supplied attributes. Only available items are returned.
      * 
      * @param attributes
-     * @return An item that matches all attributes, or the first available, or {@link Item#NotFound}.
+     * @return Available items that match all of the attributes.
      */
-    @SafeVarargs
     public final Items matching(Enum<?>... attributes) {
-        return matchingImpl(attributes);
+        return matchingImpl((Object[]) attributes);
     }
 
     public final Items matching(String... attributes) {
-        return matchingImpl(attributes);
+        return matchingImpl((Object[]) attributes);
     }
 
-    @SafeVarargs
-    public final <S> Items matchingImpl(S... attributes) {
+    public final Items matchingImpl(Object... attributes) {
+        Items matching = queryInventoryImpl(attributes);
+        return matching.getAvailable();
+    }
+
+    /**
+     * Get all items matching the supplied attributes. This method also returns non-available items.
+     * 
+     * @param attributes
+     * @return Available items that match all of the attributes.
+     */
+    /**
+     * @param attributes
+     * @return
+     */
+    public final Items queryInventory(Enum<?>... attributes) {
+        return queryInventoryImpl((Object[]) attributes);
+    }
+
+    public final Items queryInventory(String... attributes) {
+        return queryInventoryImpl((Object[]) attributes);
+    }
+
+    private Items queryInventoryImpl(Object... attributes) {
+        Items matching;
         if (attributes.length == 0) {
-            return this;
+            matching = new Items(this);
         } else {
-            Items matching = new Items();
+            matching = new Items();
             for (Item item : this) {
                 if (itemImpl(item).has(attributes)) {
                     matching.add(item);
                 }
             }
-            return matching;
         }
+        return matching;
     }
 
     public boolean contains(Enum<?> item) {
@@ -219,7 +252,15 @@ public class Items extends ArrayList<Item> {
      * @return Preferred available items matching requested attributes, filled up with non-matching available items as a
      *         fall-back. The Item list may be empty if none of the requesteed items are available.
      */
-    public <S> Items prefer(Object... attributes) {
+    public <S> Items prefer(Enum<?>... attributes) {
+        return preferImpl((Object[]) attributes);
+    }
+
+    public <S> Items prefer(String... attributes) {
+        return preferImpl((Object[]) attributes);
+    }
+
+    private Items preferImpl(Object... attributes) {
         Set<QualifiedItem> found = new HashSet<>();
         Items preferred = new Items();
 
@@ -305,14 +346,10 @@ public class Items extends ArrayList<Item> {
      * Select matching items and return a set of them. Build all combinations of available items, see if they can be
      * applied, choose one of the candidates.
      * 
-     * @param prefrerred
-     *            Preferred attributes of the selected set.
-     * 
      * @return
      */
-    public <S> Items selectApplicableSet(@SuppressWarnings("unchecked") S... preferred) {
-        Varieties<Items> varieties = prefer(preferred).varieties();
-        return varieties.reduce(Items::best);
+    public Items best() {
+        return varieties().reduce(Items::best);
     }
 
     /**

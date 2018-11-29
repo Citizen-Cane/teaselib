@@ -1,6 +1,11 @@
 package teaselib.util;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
@@ -10,7 +15,6 @@ import org.junit.Test;
 import teaselib.Body;
 import teaselib.Household;
 import teaselib.State;
-import teaselib.TeaseScript;
 import teaselib.Toys;
 import teaselib.core.TeaseLib;
 import teaselib.core.state.ItemProxy;
@@ -25,7 +29,8 @@ import teaselib.test.TestScript;
 public class ItemIdentityTest {
     @Test
     public void testRetrievingTheIdenticalItem() {
-        TeaseScript script = TestScript.getOne();
+        TestScript script = TestScript.getOne();
+        script.setAvailable(Toys.values());
 
         Items gags = script.items(Toys.Gag);
         Item ringGag = gags.matching(Toys.Gags.Ring_Gag).get();
@@ -41,7 +46,9 @@ public class ItemIdentityTest {
 
     @Test
     public void testApplyingTheIdenticalItem() {
-        TeaseScript script = TestScript.getOne();
+        TestScript script = TestScript.getOne();
+        script.setAvailable(Toys.values());
+
         Items gags = script.items(Toys.Gag);
 
         Item ringGag = gags.matching(Toys.Gags.Ring_Gag).get();
@@ -60,7 +67,9 @@ public class ItemIdentityTest {
 
     @Test
     public void testComparingItemsAndStateWorks() {
-        TeaseScript script = TestScript.getOne();
+        TestScript script = TestScript.getOne();
+        script.setAvailable(Toys.values());
+
         Items gags = script.items(Toys.Gag);
         Item ringGag = gags.matching(Toys.Gags.Ring_Gag).get();
 
@@ -92,6 +101,7 @@ public class ItemIdentityTest {
     @Test
     public void testItemInstanceRemoveAnyInstance() {
         TestScript script = TestScript.getOne();
+        script.setAvailable(Toys.values());
 
         Item chastityDevice = script.items(Toys.Chastity_Device).matching(Toys.Chastity_Devices.Gates_of_Hell).get();
         State onPenis = script.state(Body.OnPenis);
@@ -117,6 +127,7 @@ public class ItemIdentityTest {
     @Test
     public void testItemInstanceRemoveAnyInstanceStringBased() {
         TestScript script = TestScript.getOne();
+        script.setAvailable(Toys.values());
 
         Item chastityDevice = script.items("teaselib.Toys.Chastity_Device")
                 .matching("teaselib.Toys.Chastity_Devices.Gates_of_Hell").get();
@@ -261,6 +272,7 @@ public class ItemIdentityTest {
     @Test
     public void testUserItemsInstanciatingAndCaching() {
         TestScript script = TestScript.getOne();
+        script.setAvailable(Toys.values());
 
         Items gags = script.items(Toys.Gag);
         Item ringGag = gags.matching(Toys.Gags.Ring_Gag).get();
@@ -313,6 +325,7 @@ public class ItemIdentityTest {
     public void testItemInstancePersistAndRestoreWithAttributesSmallTest() {
         TestScript script = TestScript.getOne();
         script.debugger.freezeTime();
+        script.setAvailable(Toys.values());
 
         Items gags1 = script.items(Toys.Gag);
         Item persisted = gags1.matching(Toys.Gags.Ring_Gag).get();
@@ -332,6 +345,7 @@ public class ItemIdentityTest {
     public void testItemNamespace() {
         TestScript script = TestScript.getOne();
         script.debugger.freezeTime();
+        script.setAvailable(Toys.values());
 
         Items gags = script.items(Toys.Gag);
         Item ringGag = gags.matching(Toys.Gags.Ring_Gag).get();
@@ -357,6 +371,7 @@ public class ItemIdentityTest {
     public void testItemInstancePersistAndRestoreWithAttributes() {
         TestScript script = TestScript.getOne();
         script.debugger.freezeTime();
+        script.setAvailable(Toys.values());
 
         Item ringGag = applyRingGagAndRemember(script);
         verifyInMouth(script);
@@ -376,6 +391,7 @@ public class ItemIdentityTest {
     public void testItemRestoreSequenceWhenReferencedToysHaveBeenRealizedFirst() {
         TestScript script = TestScript.getOne();
         script.debugger.freezeTime();
+        script.setAvailable(Toys.values());
 
         Item ringGag = applyRingGagAndRemember(script);
         verifyInMouth(script);
@@ -477,6 +493,7 @@ public class ItemIdentityTest {
     public void testThatQueriedItemAppliesStateAsWell2() {
         TestScript script = TestScript.getOne();
         script.debugger.freezeTime();
+        script.setAvailable(Toys.values());
 
         Item gag = script.items(Toys.Gag).matching(Toys.Gags.Ring_Gag).get();
         gag.apply().over(1, TimeUnit.HOURS);
@@ -494,6 +511,7 @@ public class ItemIdentityTest {
     public void testThatAppliedItemCanBeTestedWithGenericQuery() {
         TestScript script = TestScript.getOne();
         script.debugger.freezeTime();
+        script.setAvailable(Toys.values());
 
         Item gag = script.items(Toys.Gag).matching(Toys.Gags.Ring_Gag).get();
         gag.apply().over(1, TimeUnit.HOURS);
@@ -513,6 +531,7 @@ public class ItemIdentityTest {
     public void testThatItemIsNotOtherItem() {
         TestScript script = TestScript.getOne();
         script.debugger.freezeTime();
+        script.setAvailable(Toys.values());
 
         Item item = script.items(Toys.Gag).matching(Toys.Gags.Ring_Gag).get();
         item.apply();

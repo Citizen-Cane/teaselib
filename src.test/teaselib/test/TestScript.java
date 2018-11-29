@@ -117,6 +117,10 @@ public class TestScript extends TeaseScript {
         addCustomUserItems("useritems2.xml");
     }
 
+    public void setAvailable(Enum<?>... items) {
+        items(items).stream().forEach(item -> item.setAvailable(true));
+    }
+
     private void addCustomUserItems(String resourcePath) {
         teaseLib.addUserItems(getClass().getResource(resourcePath));
     }

@@ -1,6 +1,10 @@
 package teaselib.core.devices.release;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
 
 import java.util.Arrays;
 import java.util.Locale;
@@ -193,6 +197,7 @@ public class ReleaseActionTest {
     public void testReleaseActionInstanceRemoveDefaultToy() {
         TestScript script = TestScript.getOne();
         script.addTestUserItems();
+        script.setAvailable(Toys.values());
 
         String domain = TeaseLib.DefaultDomain;
         String devicePath = "KeyRelease/MyPhoton/1";

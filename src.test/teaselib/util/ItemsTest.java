@@ -123,7 +123,7 @@ public class ItemsTest {
     }
 
     @Test
-    public void testAll() {
+    public void testMatching() {
         TestScript script = TestScript.getOne();
         script.addTestUserItems();
         script.setAvailable(Toys.values());
@@ -138,8 +138,6 @@ public class ItemsTest {
 
         assertEquals(sameRingGag, bitGag);
     }
-
-    // TODO Test any/All with empty list
 
     @Test
     public void testGet() {
@@ -207,13 +205,43 @@ public class ItemsTest {
         for (Item item : script.items(Toys.Gag)) {
             assertFalse(item.isAvailable());
         }
+        assertFalse(gags.anyAvailable());
+
         assertTrue(script.items(Toys.Collar).getAvailable().isEmpty());
 
         Item penisGag = gags.queryInventory(Toys.Gags.Penis_Gag).get();
         penisGag.setAvailable(true);
 
+        assertTrue(gags.anyAvailable());
         assertEquals(1, script.items(Toys.Gag).getAvailable().size());
         assertEquals(penisGag, script.items(Toys.Gag).getAvailable().get(0));
+    }
+
+    @Test
+    public void testItemsNone() {
+        assertFalse(Items.None.anyAvailable());
+        assertFalse(Items.None.allAvailable());
+        assertFalse(Items.None.anyApplied());
+        assertFalse(Items.None.allApplied());
+        assertFalse(Items.None.anyApplicable());
+        assertFalse(Items.None.allApplicable());
+        assertFalse(Items.None.someAre("foobar"));
+        assertFalse(Items.None.allAre("foobar"));
+        assertTrue(Items.None.anyExpired());
+        assertTrue(Items.None.allExpired());
+    }
+
+    @Test
+    public void testAll() {
+        TestScript script = TestScript.getOne();
+        Items gags = script.items(Toys.values());
+        assertFalse(gags.allAvailable());
+
+        gags.get().setAvailable(true);
+        assertFalse(gags.allAvailable());
+
+        script.setAvailable(Toys.values());
+        assertTrue(gags.allAvailable());
     }
 
     @Test
@@ -294,20 +322,31 @@ public class ItemsTest {
     }
 
     @Test
-    public void testVarieties() {
+    public void testVarietiesNone() {
+        TestScript script = TestScript.getOne();
+        Items none = script.items(new Enum<?>[] {});
+        assertTrue(none.varieties().isEmpty());
+    }
+
+    @Test
+    public void testVarietiesAll() {
         TestScript script = TestScript.getOne();
         script.addTestUserItems();
         script.addTestUserItems2();
 
-        Items none = script.items(new Enum<?>[] {});
-        assertTrue(none.varieties().isEmpty());
+        Items inventory = script.items(Toys.Collar, Toys.Ankle_Restraints, Toys.Wrist_Restraints, Toys.Chains);
+        Varieties<Items> all = inventory.varieties();
+        assertEquals(2, all.size());
+    }
+
+    @Test
+    public void testVarietiesBestAtributes() {
+        TestScript script = TestScript.getOne();
+        script.addTestUserItems();
+        script.addTestUserItems2();
 
         Items inventory = script.items(Toys.Collar, Toys.Ankle_Restraints, Toys.Wrist_Restraints, Toys.Chains);
         inventory.stream().forEach(item -> item.setAvailable(true));
-
-        Varieties<Items> all = inventory.varieties();
-        assertEquals(2, all.size());
-
         Varieties<Items> preferred = inventory.prefer(Features.Lockable, Material.Leather).varieties();
         assertEquals(1, preferred.size());
         Items restraints = preferred.reduce(Items::best);
@@ -322,6 +361,27 @@ public class ItemsTest {
         assertNotEquals(Item.NotFound, anklecuffs);
         assertNotEquals(Item.NotFound, wristCuffs);
         assertNotEquals(Item.NotFound, chains);
+    }
+
+    @Test
+    public void testVarietiesBestApplied() {
+        TestScript script = TestScript.getOne();
+        script.addTestUserItems();
+        script.addTestUserItems2();
+
+        Items inventory = script.items(Toys.Collar, Toys.Ankle_Restraints, Toys.Wrist_Restraints, Toys.Chains);
+        testApplied(inventory, Material.Leather);
+        testApplied(inventory, Material.Metal);
+    }
+
+    private void testApplied(Items inventory, Material material) {
+        Varieties<Items> all = inventory.varieties();
+        assertEquals(2, all.size());
+        Items metalCuffs = inventory.queryInventory(Toys.Wrist_Restraints, material);
+        assertFalse(metalCuffs.isEmpty());
+        metalCuffs.apply();
+        Items metalCuffsApplied = all.reduce(Items::best);
+        assertTrue(metalCuffsApplied.get(Toys.Wrist_Restraints).is(material));
     }
 
     @Test

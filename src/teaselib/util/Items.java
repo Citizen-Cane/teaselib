@@ -33,6 +33,9 @@ import teaselib.util.math.Varieties;
  * <p>
  * However, wWhen performing a {@link Items#prefer} or {@link Items#query} command, only the requested item instances
  * are retained.
+ * <p>
+ * TODO use sets the user has pre-selected via the user interface (like the "Dresser App" that has been around a few
+ * years ago).
  * 
  * @author Citizen-Cane
  *
@@ -68,6 +71,9 @@ public class Items extends ArrayList<Item> {
     }
 
     public boolean allAvailable() {
+        if (isEmpty()) {
+            return false;
+        }
         return stream().allMatch(Item::isAvailable);
     }
 
@@ -76,6 +82,9 @@ public class Items extends ArrayList<Item> {
     }
 
     public boolean allApplicable() {
+        if (isEmpty()) {
+            return false;
+        }
         return stream().allMatch(Item::canApply);
     }
 
@@ -84,6 +93,9 @@ public class Items extends ArrayList<Item> {
     }
 
     public boolean allApplied() {
+        if (isEmpty()) {
+            return false;
+        }
         return stream().allMatch(Item::applied);
     }
 
@@ -92,10 +104,16 @@ public class Items extends ArrayList<Item> {
     }
 
     public boolean allAre(Object... attributes) {
+        if (isEmpty()) {
+            return false;
+        }
         return stream().allMatch(item -> item.is(attributes));
     }
 
     public boolean anyExpired() {
+        if (isEmpty()) {
+            return true;
+        }
         return stream().anyMatch(Item::expired);
     }
 
@@ -252,11 +270,11 @@ public class Items extends ArrayList<Item> {
      * @return Preferred available items matching requested attributes, filled up with non-matching available items as a
      *         fall-back. The Item list may be empty if none of the requesteed items are available.
      */
-    public <S> Items prefer(Enum<?>... attributes) {
+    public Items prefer(Enum<?>... attributes) {
         return preferImpl((Object[]) attributes);
     }
 
-    public <S> Items prefer(String... attributes) {
+    public Items prefer(String... attributes) {
         return preferImpl((Object[]) attributes);
     }
 
@@ -323,18 +341,23 @@ public class Items extends ArrayList<Item> {
     }
 
     /**
-     * Select the items that match best. This can be the one that has the most attributes in common, or something the
-     * user has pre-selected via the user interface (like the "Dresser App" that has been around a few years ago).
+     * Select the items that match best:
+     * <li>prefer sets that have items already applied
+     * <li>Choose the set that has the most attributes in common
      * 
      * @param itemsA
      * @param itemsB
      * @return The items that is match better.
      */
     public static Items best(Items itemsA, Items itemsB) {
-        // Count unique attributes found, then for each attribute add numberOfOccurences*count to rate sets higher
-        long maxA = attributesOfAvailable(itemsA).values().stream().reduce(Math::max).orElse(0L);
-        long maxB = attributesOfAvailable(itemsB).values().stream().reduce(Math::max).orElse(0L);
-        return maxA >= maxB ? itemsA : itemsB;
+        long a = itemsA.getAvailable().size();
+        long b = itemsB.getAvailable().size();
+        if (a == b) {
+            // Count unique attributes found, then for each attribute add numberOfOccurences*count to rate sets higher
+            a = attributesOfAvailable(itemsA).values().stream().reduce(Math::max).orElse(0L);
+            b = attributesOfAvailable(itemsB).values().stream().reduce(Math::max).orElse(0L);
+        }
+        return a >= b ? itemsA : itemsB;
     }
 
     private static Map<QualifiedItem, Long> attributesOfAvailable(Items items) {

@@ -391,20 +391,6 @@ public class Items extends ArrayList<Item> {
     }
 
     /**
-     * Select matching items and return a set with a single instance of each kind.
-     * 
-     * @return Items list containing a single instance of each kind.
-     */
-    public Items any() {
-        // TODO any suggests some randomness, but make it session-constant
-        // TODO any() can be removed completely by shuffeling the result of teaseLib.items(...)
-        // - per default, the fist applied, available, or listed item is used
-        // -> shuffle the list per kind according to some session-constant randomness
-        // + no need to call any() anymore
-        return varieties().reduce(Items::best);
-    }
-
-    /**
      * Applies each item. If the list contains multiple items of the same kind, only the first of each kind is applied.
      * 
      * @return the items.

@@ -850,6 +850,10 @@ public class TeaseLib {
      */
     @SafeVarargs
     public final <T extends Object> Items items(String domain, T... values) {
+        // TODO add some randomness in the order of which items of each kind, but make it session-constant
+        // - per default, the fist applied, available, or listed item is used
+        // -> shuffle the list per kind according to some session-constant randomness
+        // TODO provide a set of default item set by the script or user interface to select items for a session
         Items items = new Items(values.length);
         for (T item : values) {
             items.addAll(userItems.get(domain, QualifiedItem.of(item)));

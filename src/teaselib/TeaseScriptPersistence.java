@@ -107,8 +107,7 @@ public abstract class TeaseScriptPersistence extends Script {
      * @param values
      * @return A list of items whose names are based on the enumeration members
      */
-    @SafeVarargs
-    public final <T extends Enum<?>> Items items(T... values) {
+    public Items items(Enum<?>... values) {
         return defaultDomain.items(values);
     }
 
@@ -132,8 +131,7 @@ public abstract class TeaseScriptPersistence extends Script {
         return defaultDomain.item(value);
     }
 
-    @SafeVarargs
-    public final <T extends Enum<?>> Items items(T[]... values) {
+    public Items items(Enum<?>[]... values) {
         return defaultDomain.items(values);
     }
 

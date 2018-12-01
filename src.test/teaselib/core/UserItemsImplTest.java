@@ -1,6 +1,11 @@
 package teaselib.core;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.util.List;
 
@@ -103,14 +108,13 @@ public class UserItemsImplTest {
         // Overwrite by user items
         script.addTestUserItems();
         assertEquals(1, script.items(Toys.Humbler).size());
-        assertTrue(script.item(Toys.Humbler).is(Material.Wood));
+        assertTrue(script.items(Toys.Humbler).get(0).is(Material.Wood));
 
         // additional items via custom user items
         script.addTestUserItems2();
         assertEquals(2, script.items(Toys.Humbler).size());
-        for (Item item : script.items(Toys.Humbler)) {
-            assertTrue(item.is(Material.Wood));
-        }
+        assertTrue(script.items(Toys.Humbler).get(0).is(Material.Wood));
+        assertTrue(script.items(Toys.Humbler).get(1).is(Material.Metal));
     }
 
     private static void testToys(UserItems userItems) {

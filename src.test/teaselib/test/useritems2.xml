@@ -5,7 +5,7 @@
 <Items>
 	<Toys>
 		<Item item="Humbler" guid="my_humbler" displayName="My Humbler">
-			<Attribute> Material.Wood </Attribute>
+			<Attribute>Material.Metal</Attribute>
 			<Attribute> Features.Lockable </Attribute>
 		</Item>
 	</Toys>

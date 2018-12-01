@@ -10,7 +10,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import java.util.function.BinaryOperator;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -156,6 +155,10 @@ public class Items extends ArrayList<Item> {
      * 
      * @return First item or {@link Item#NotFound}
      */
+    public final Item item(Enum<?> item) {
+        return item(QualifiedItem.of(item));
+    }
+
     public final Item item(String item) {
         return item(QualifiedItem.of(item));
     }
@@ -260,7 +263,8 @@ public class Items extends ArrayList<Item> {
 
     /**
      * Get matching or available items:
-     * <li>First try to match available items with the requested attributes.
+     * <li>First try to match applied items.
+     * <li>second try to match available items with the requested attributes.
      * <li>If not possible, match as many items as possible. then complete set with available non-matching items.
      * <li>Finally add unavailable items to complete the set.
      * <p>
@@ -268,19 +272,36 @@ public class Items extends ArrayList<Item> {
      * @param attributes
      *            The preferred attributes to match.
      * @return Preferred available items matching requested attributes, filled up with non-matching available items as a
-     *         fall-back. The Item list may be empty if none of the requesteed items are available.
+     *         fall-back. The Item list may be empty if none of the requested items are available.
      */
     public Items prefer(Enum<?>... attributes) {
-        return preferImpl((Object[]) attributes);
+        return completeOrPrefer((Object[]) attributes);
     }
 
     public Items prefer(String... attributes) {
-        return preferImpl((Object[]) attributes);
+        return completeOrPrefer((Object[]) attributes);
+    }
+
+    private Items completeOrPrefer(Object... attributes) {
+        Varieties<Items> varieties = varieties();
+        List<Items> applied = varieties.stream().filter(Items::anyApplied).collect(Collectors.toList());
+        if (applied.isEmpty()) {
+            return preferImpl(attributes);
+        } else {
+            return applied.stream().reduce(Items::best).orElse(Items.None);
+        }
     }
 
     private Items preferImpl(Object... attributes) {
         Set<QualifiedItem> found = new HashSet<>();
         Items preferred = new Items();
+
+        for (Item item : this) {
+            if (item.applied()) {
+                found.add(QualifiedItem.of(itemValue(item)));
+                preferred.add(item);
+            }
+        }
 
         for (Item item : this) {
             if (item.is(attributes) && item.isAvailable()) {
@@ -299,10 +320,6 @@ public class Items extends ArrayList<Item> {
         return preferred;
     }
 
-    public Items reduce(BinaryOperator<Items> accumulator) {
-        return varieties().reduce(accumulator);
-    }
-
     /**
      * Return all combinations of item sets:
      * <li>All combinations of the items are returned, the resulting sets will contain one item per kind. To receive
@@ -313,7 +330,7 @@ public class Items extends ArrayList<Item> {
      * 
      * @return
      */
-    public Varieties<Items> varieties() {
+    Varieties<Items> varieties() {
         int variety = getVariety();
         Combinations<Item[]> combinations = Combinations.combinationsK(variety, toArray());
         return combinations.stream().map(Arrays::asList).filter(this::isVariety).map(Items::new)
@@ -349,7 +366,9 @@ public class Items extends ArrayList<Item> {
      * @param itemsB
      * @return The items that is match better.
      */
-    public static Items best(Items itemsA, Items itemsB) {
+    static Items best(Items itemsA, Items itemsB) {
+        // TODO Improve attribute matching for applied items - decide whether to consider preferred or matching attributes
+        // - currently there is no attribute matching at all
         long a = itemsA.getAvailable().size();
         long b = itemsB.getAvailable().size();
         if (a == b) {
@@ -366,12 +385,12 @@ public class Items extends ArrayList<Item> {
     }
 
     /**
-     * Select matching items and return a set of them. Build all combinations of available items, see if they can be
-     * applied, choose one of the candidates.
+     * Select matching items and return a set with a single instance of each kind.
      * 
-     * @return
+     * @return Items list containing a single instance of each kind.
      */
-    public Items best() {
+    public Items any() {
+        // TODO ayn suggests some randomness, but make it session-constant)
         return varieties().reduce(Items::best);
     }
 

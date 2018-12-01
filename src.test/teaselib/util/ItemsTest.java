@@ -344,12 +344,10 @@ public class ItemsTest {
         TestScript script = TestScript.getOne();
         script.addTestUserItems();
         script.addTestUserItems2();
+        script.setAvailable(Toys.values());
 
         Items inventory = script.items(Toys.Collar, Toys.Ankle_Restraints, Toys.Wrist_Restraints, Toys.Chains);
-        inventory.stream().forEach(item -> item.setAvailable(true));
-        Varieties<Items> preferred = inventory.prefer(Features.Lockable, Material.Leather).varieties();
-        assertEquals(1, preferred.size());
-        Items restraints = preferred.reduce(Items::best);
+        Items restraints = inventory.prefer(Features.Lockable, Material.Leather);
         assertEquals(4, restraints.size());
 
         Item collar = restraints.get(Toys.Collar);
@@ -364,17 +362,17 @@ public class ItemsTest {
     }
 
     @Test
-    public void testVarietiesBestApplied() {
+    public void testVarietiesBestAppliedInSet() {
         TestScript script = TestScript.getOne();
         script.addTestUserItems();
         script.addTestUserItems2();
 
         Items inventory = script.items(Toys.Collar, Toys.Ankle_Restraints, Toys.Wrist_Restraints, Toys.Chains);
-        testApplied(inventory, Material.Leather);
-        testApplied(inventory, Material.Metal);
+        testAnyWithAppliedItem(inventory, Material.Leather);
+        testAnyWithAppliedItem(inventory, Material.Metal);
     }
 
-    private void testApplied(Items inventory, Material material) {
+    private void testAnyWithAppliedItem(Items inventory, Material material) {
         Varieties<Items> all = inventory.varieties();
         assertEquals(2, all.size());
         Items metalCuffs = inventory.queryInventory(Toys.Wrist_Restraints, material);
@@ -382,6 +380,25 @@ public class ItemsTest {
         metalCuffs.apply();
         Items metalCuffsApplied = all.reduce(Items::best);
         assertTrue(metalCuffsApplied.get(Toys.Wrist_Restraints).is(material));
+    }
+
+    @Test
+    public void testVarietiesBestAppliedNotInSet() {
+        TestScript script = TestScript.getOne();
+        script.addTestUserItems();
+        script.addTestUserItems2();
+        script.setAvailable(Toys.values());
+
+        Items allMetal = script.items(Toys.Wrist_Restraints, Toys.Humbler).prefer(Material.Metal);
+        assertTrue(allMetal.item(Toys.Wrist_Restraints).is(Material.Metal));
+        assertTrue(allMetal.item(Toys.Humbler).is(Material.Metal));
+
+        script.items(Toys.Wrist_Restraints).matching(Material.Leather).get().apply();
+        Items alreadyApplied = script.items(Toys.Wrist_Restraints, Toys.Humbler).prefer(Material.Metal);
+        assertTrue(alreadyApplied.item(Toys.Wrist_Restraints).is(Material.Leather));
+        assertTrue(alreadyApplied.item(Toys.Humbler).is(Material.Metal));
+        // TODO Improve attribute matching for applied items
+        // - decide whether to consider preferred or matching attributes
     }
 
     @Test

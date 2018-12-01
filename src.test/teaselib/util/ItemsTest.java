@@ -1,10 +1,6 @@
 package teaselib.util;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -372,14 +368,14 @@ public class ItemsTest {
         testAnyWithAppliedItem(inventory, Material.Metal);
     }
 
-    private void testAnyWithAppliedItem(Items inventory, Material material) {
+    private static void testAnyWithAppliedItem(Items inventory, Material material) {
         Varieties<Items> all = inventory.varieties();
         assertEquals(2, all.size());
-        Items metalCuffs = inventory.queryInventory(Toys.Wrist_Restraints, material);
-        assertFalse(metalCuffs.isEmpty());
-        metalCuffs.apply();
-        Items metalCuffsApplied = all.reduce(Items::best);
-        assertTrue(metalCuffsApplied.get(Toys.Wrist_Restraints).is(material));
+        Items cuffs = inventory.queryInventory(Toys.Wrist_Restraints, material);
+        assertFalse(cuffs.isEmpty());
+        cuffs.apply();
+        Items appliedCuffs = all.reduce(Items::best);
+        assertTrue(appliedCuffs.get(Toys.Wrist_Restraints).is(material));
     }
 
     @Test
@@ -399,6 +395,7 @@ public class ItemsTest {
         assertTrue(alreadyApplied.item(Toys.Humbler).is(Material.Metal));
         // TODO Improve attribute matching for applied items
         // - decide whether to consider preferred or matching attributes
+        // -> matching applied -> ??? - matching requested -> Metal
     }
 
     @Test

@@ -275,24 +275,29 @@ public class Items extends ArrayList<Item> {
      *         fall-back. The Item list may be empty if none of the requested items are available.
      */
     public Items prefer(Enum<?>... attributes) {
-        return completeOrPrefer((Object[]) attributes);
+        return appliedOrPreferred((Object[]) attributes);
     }
 
     public Items prefer(String... attributes) {
-        return completeOrPrefer((Object[]) attributes);
+        return appliedOrPreferred((Object[]) attributes);
     }
 
-    private Items completeOrPrefer(Object... attributes) {
+    private Items appliedOrPreferred(Object... attributes) {
         Varieties<Items> varieties = varieties();
         List<Items> applied = varieties.stream().filter(Items::anyApplied).collect(Collectors.toList());
         if (applied.isEmpty()) {
-            return preferImpl(attributes);
+            return preferredItems(attributes);
         } else {
-            return applied.stream().reduce(Items::best).orElse(Items.None);
+            return appliedItemsPlusRemainingPreferred(applied, attributes);
         }
     }
 
-    private Items preferImpl(Object... attributes) {
+    private static Items appliedItemsPlusRemainingPreferred(List<Items> applied, Object... attributes) {
+        // TODO select best set based on attributes of applied items as well as requested items
+        return applied.stream().reduce(Items::best).orElse(Items.None);
+    }
+
+    private Items preferredItems(Object... attributes) {
         Set<QualifiedItem> found = new HashSet<>();
         Items preferred = new Items();
 
@@ -367,7 +372,8 @@ public class Items extends ArrayList<Item> {
      * @return The items that is match better.
      */
     static Items best(Items itemsA, Items itemsB) {
-        // TODO Improve attribute matching for applied items - decide whether to consider preferred or matching attributes
+        // TODO Improve attribute matching for applied items
+        // - decide whether to consider preferred or matching attributes
         // - currently there is no attribute matching at all
         long a = itemsA.getAvailable().size();
         long b = itemsB.getAvailable().size();
@@ -390,7 +396,11 @@ public class Items extends ArrayList<Item> {
      * @return Items list containing a single instance of each kind.
      */
     public Items any() {
-        // TODO ayn suggests some randomness, but make it session-constant)
+        // TODO any suggests some randomness, but make it session-constant
+        // TODO any() can be removed completely by shuffeling the result of teaseLib.items(...)
+        // - per default, the fist applied, available, or listed item is used
+        // -> shuffle the list per kind according to some session-constant randomness
+        // + no need to call any() anymore
         return varieties().reduce(Items::best);
     }
 

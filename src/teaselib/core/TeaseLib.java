@@ -830,13 +830,13 @@ public class TeaseLib {
      *            The enumeration member to return the state for
      * @return The item state.
      */
-    public <T extends Object> State state(String domain, T item) {
+    public State state(String domain, Object item) {
         State state = stateMaps.state(domain, item);
         stateMaps.handleAutoRemoval();
         return state;
     }
 
-    public <T extends State> T state(String domain, T state) {
+    public State state(String domain, State state) {
         return stateMaps.state(domain, state);
     }
 
@@ -848,14 +848,13 @@ public class TeaseLib {
      * 
      * @return A list of items whose names are based on the enumeration members
      */
-    @SafeVarargs
-    public final <T extends Object> Items items(String domain, T... values) {
+    public Items items(String domain, Object... values) {
         // TODO add some randomness in the order of which items of each kind, but make it session-constant
         // - per default, the fist applied, available, or listed item is used
         // -> shuffle the list per kind according to some session-constant randomness
         // TODO provide a set of default item set by the script or user interface to select items for a session
         Items items = new Items(values.length);
-        for (T item : values) {
+        for (Object item : values) {
             items.addAll(userItems.get(domain, QualifiedItem.of(item)));
         }
         return items;

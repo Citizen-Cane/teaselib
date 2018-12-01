@@ -34,10 +34,9 @@ public abstract class TeaseScriptPersistence extends Script {
             this.name = name;
         }
 
-        @SafeVarargs
-        public final <T extends Enum<?>> Items items(T... values) {
+        public Items items(Enum<?>... values) {
             if (values.length > 0) {
-                return proxiesOf(teaseLib.items(name, values));
+                return proxiesOf(teaseLib.items(name, (Object[]) values));
             } else {
                 return Items.None;
             }
@@ -45,7 +44,7 @@ public abstract class TeaseScriptPersistence extends Script {
 
         public Items items(String... values) {
             if (values.length > 0) {
-                return proxiesOf(teaseLib.items(name, values));
+                return proxiesOf(teaseLib.items(name, (Object[]) values));
             } else {
                 return Items.None;
             }
@@ -179,7 +178,7 @@ public abstract class TeaseScriptPersistence extends Script {
         return teaseLib.new PersistentSequence<>(TeaseLib.DefaultDomain, namespace, name, values);
     }
 
-    public <T extends Enum<?>> State state(T item) {
+    public State state(Enum<?> item) {
         return new StateProxy(namespace, teaseLib.state(TeaseLib.DefaultDomain, item));
     }
 

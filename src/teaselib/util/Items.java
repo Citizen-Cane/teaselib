@@ -505,8 +505,8 @@ public class Items implements Iterable<Item> {
         return elements.iterator();
     }
 
-    // TODO remove
-    public int size() {
+    @Deprecated
+    int size() {
         return elements.size();
     }
 

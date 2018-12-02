@@ -5,6 +5,7 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import teaselib.core.ResourceLoader;
 import teaselib.core.Script;
@@ -138,7 +139,7 @@ public class TeaseScriptMath extends TeaseScriptPersistenceUtil {
     }
 
     private <T> List<T> addRandomizedElements(List<T> list, T[] elements, int n) {
-        T last = list.size() > 0 ? list.get(list.size() - 1) : null;
+        T last = !list.isEmpty() ? list.get(list.size() - 1) : null;
         for (int i = 0; i < n; i++) {
             T t = null;
             while (last == (t = elements[random(0, elements.length - 1)])) {
@@ -164,7 +165,8 @@ public class TeaseScriptMath extends TeaseScriptPersistenceUtil {
 
     public Item random(Items items) {
         if (!items.isEmpty()) {
-            return items.get(random(0, items.size() - 1));
+            List<Item> itemList = items.stream().collect(Collectors.toList());
+            return itemList.get(random(0, itemList.size() - 1));
         } else {
             return Item.NotFound;
         }

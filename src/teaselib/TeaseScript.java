@@ -350,7 +350,7 @@ public abstract class TeaseScript extends TeaseScriptMath {
             // TODO Should be SpeechDetectedEvent
             recognitionRejected = (sender, eventArgs) -> {
                 if (!ignoreTimeoutInDubioMitius.get()) {
-                    logger.info("-" + scriptFunctionThread.getName() + " - : timeout disabled " + timeoutBehavior);
+                    logger.info("-{} - : timeout disabled {}", scriptFunctionThread.getName(), timeoutBehavior);
                     ignoreTimeoutInDubioMitius.set(true);
                 }
             };
@@ -594,16 +594,19 @@ public abstract class TeaseScript extends TeaseScriptMath {
     }
 
     public boolean showItems(String caption, Items items, boolean allowCancel) {
-        List<String> choices = new ArrayList<>(items.size());
-        List<Boolean> values = new ArrayList<>(items.size());
-        for (int i = 0; i < items.size(); i++) {
-            choices.add(items.get(i).displayName());
-            values.add(items.get(i).isAvailable());
+        List<Item> itemList = new ArrayList<>();
+        List<String> choices = new ArrayList<>();
+        List<Boolean> values = new ArrayList<>();
+        for (Item item : items) {
+            itemList.add(item);
+            choices.add(item.displayName());
+            values.add(item.isAvailable());
         }
+
         List<Boolean> results = showItems(caption, choices, values, allowCancel);
         if (results != null) {
-            for (int i = 0; i < items.size(); i++) {
-                items.get(i).setAvailable(results.get(i));
+            for (int i = 0; i < itemList.size(); i++) {
+                itemList.get(i).setAvailable(results.get(i));
             }
             return true;
         }

@@ -1,12 +1,8 @@
 package teaselib.core;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
+import java.util.Iterator;
 import java.util.List;
 
 import org.junit.Test;
@@ -102,19 +98,22 @@ public class UserItemsImplTest {
         TestScript script = TestScript.getOne();
 
         // Default
-        assertEquals(1, script.items(Toys.Humbler).size());
-        assertFalse(script.item(Toys.Humbler).is(Material.Wood));
+        Iterator<Item> humblers = script.items(Toys.Humbler).iterator();
+        assertFalse(humblers.next().is(Material.Wood));
+        assertFalse(humblers.hasNext());
 
         // Overwrite by user items
         script.addTestUserItems();
-        assertEquals(1, script.items(Toys.Humbler).size());
-        assertTrue(script.items(Toys.Humbler).get(0).is(Material.Wood));
+        Iterator<Item> humblers1 = script.items(Toys.Humbler).iterator();
+        assertTrue(humblers1.next().is(Material.Wood));
+        assertFalse(humblers1.hasNext());
 
         // additional items via custom user items
         script.addTestUserItems2();
-        assertEquals(2, script.items(Toys.Humbler).size());
-        assertTrue(script.items(Toys.Humbler).get(0).is(Material.Wood));
-        assertTrue(script.items(Toys.Humbler).get(1).is(Material.Metal));
+        Iterator<Item> humblers2 = script.items(Toys.Humbler).iterator();
+        assertTrue(humblers2.next().is(Material.Wood));
+        assertTrue(humblers2.next().is(Material.Metal));
+        assertFalse(humblers2.hasNext());
     }
 
     private static void testToys(UserItems userItems) {

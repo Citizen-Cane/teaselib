@@ -505,7 +505,6 @@ public class Items implements Iterable<Item> {
         return elements.iterator();
     }
 
-    @Deprecated
     int size() {
         return elements.size();
     }
@@ -517,11 +516,6 @@ public class Items implements Iterable<Item> {
 
     public Stream<Item> stream() {
         return elements.stream();
-    }
-
-    @Deprecated
-    public Item get(int index) {
-        return elements.get(index);
     }
 
     public Set<Object> valueSet() {

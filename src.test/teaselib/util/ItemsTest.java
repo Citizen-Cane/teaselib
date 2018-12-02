@@ -3,6 +3,7 @@ package teaselib.util;
 import static org.junit.Assert.*;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -72,7 +73,7 @@ public class ItemsTest {
         Items gags = script.items(Toys.Gag);
 
         assertFalse(gags.anyAvailable());
-        assertFalse(gags.get(0).is(Toys.Gags.Ring_Gag));
+        assertFalse(gags.get().is(Toys.Gags.Ring_Gag));
 
         Item ringGag = gags.queryInventory(Toys.Gags.Ring_Gag).get();
         assertTrue(ringGag.is(Toys.Gags.Ring_Gag));
@@ -82,16 +83,15 @@ public class ItemsTest {
 
         Items sameGags = script.items(Toys.Gag);
         assertTrue(sameGags.anyAvailable());
-        assertFalse(gags.get(0).is(Toys.Gags.Ring_Gag));
+        assertTrue(sameGags.get().is(Toys.Gags.Ring_Gag));
 
         Item sameRingGag = script.item(Toys.Gag);
         assertTrue(sameRingGag.isAvailable());
         assertTrue(sameRingGag.is(Toys.Gags.Ring_Gag));
 
-        Item againTheSameGag = script.items(Toys.Gag).getAvailable().get(0);
+        Item againTheSameGag = script.items(Toys.Gag).getAvailable().get();
         assertTrue(againTheSameGag.isAvailable());
         assertTrue(againTheSameGag.is(Toys.Gags.Ring_Gag));
-        assertFalse(gags.get(0).is(Toys.Gags.Ring_Gag));
 
         assertEquals(ringGag, sameRingGag);
         assertEquals(ringGag, againTheSameGag);
@@ -114,7 +114,7 @@ public class ItemsTest {
         ringGag.setAvailable(true);
         assertTrue(ringGag.isAvailable());
 
-        assertEquals(ringGag, gags.getAvailable().get(0));
+        assertEquals(ringGag, gags.get());
 
     }
 
@@ -129,10 +129,10 @@ public class ItemsTest {
         Items bitGags = gags.matching(Toys.Gags.Bit_Gag, Body.Orifice.Oral);
         assertEquals(1, bitGags.size());
 
-        Item bitGag = bitGags.get(0);
-        Item sameRingGag = gags.matching(Toys.Gags.Bit_Gag).get();
+        Item bitGag = bitGags.get();
+        Item sameBitGag = gags.matching(Toys.Gags.Bit_Gag).get();
 
-        assertEquals(sameRingGag, bitGag);
+        assertEquals(sameBitGag, bitGag);
     }
 
     @Test
@@ -207,7 +207,7 @@ public class ItemsTest {
 
         assertTrue(gags.anyAvailable());
         assertEquals(1, script.items(Toys.Gag).getAvailable().size());
-        assertEquals(penisGag, script.items(Toys.Gag).getAvailable().get(0));
+        assertEquals(penisGag, script.items(Toys.Gag).getAvailable().get());
     }
 
     @Test
@@ -250,7 +250,7 @@ public class ItemsTest {
 
         Items allAnalbeads = script.items(Toys.Buttplug).matching(Toys.Anal.Beads);
         assertTrue(allAnalbeads.size() == 1);
-        assertEquals(analBeads, allAnalbeads.get(0));
+        assertEquals(analBeads, allAnalbeads.get());
     }
 
     @Test
@@ -632,8 +632,9 @@ public class ItemsTest {
         Items gags = script.items(Toys.Gag);
         assertEquals(5, gags.size());
 
-        Item gag0 = gags.get(0);
-        Item gag1 = gags.get(1);
+        Iterator<Item> gag = gags.iterator();
+        Item gag0 = gag.next();
+        Item gag1 = gag.next();
         State inMouth = script.state(Body.InMouth);
 
         gag0.apply();
@@ -661,8 +662,9 @@ public class ItemsTest {
         Items gags = script.items(Toys.Gag);
         assertEquals(5, gags.size());
 
-        Item gag0 = gags.get(0);
-        Item gag1 = gags.get(1);
+        Iterator<Item> gag = gags.iterator();
+        Item gag0 = gag.next();
+        Item gag1 = gag.next();
         State inMouth = script.state(Body.InMouth);
 
         gag0.applyTo(Body.InMouth);
@@ -692,8 +694,9 @@ public class ItemsTest {
         Items gags = script.items(Toys.Gag);
         assertEquals(5, gags.size());
 
-        Item gag0 = gags.get(0);
-        Item gag1 = gags.get(1);
+        Iterator<Item> gag = gags.iterator();
+        Item gag0 = gag.next();
+        Item gag1 = gag.next();
         State inMouth = script.state(Body.InMouth);
 
         gag0.applyTo(Body.InMouth);

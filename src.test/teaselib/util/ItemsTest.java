@@ -199,8 +199,7 @@ public class ItemsTest {
             assertFalse(item.isAvailable());
         }
         assertFalse(gags.anyAvailable());
-
-        assertTrue(script.items(Toys.Collar).getAvailable().isEmpty());
+        assertFalse(script.items(Toys.Collar).anyAvailable());
 
         Item penisGag = gags.queryInventory(Toys.Gags.Penis_Gag).get();
         penisGag.setAvailable(true);
@@ -222,6 +221,18 @@ public class ItemsTest {
         assertFalse(Items.None.allAre("foobar"));
         assertTrue(Items.None.anyExpired());
         assertTrue(Items.None.allExpired());
+
+        TestScript script = TestScript.getOne();
+        Items gags = script.items(Toys.values());
+
+        assertFalse(gags.equals(Items.None));
+        assertFalse(Items.None.equals(gags));
+        assertTrue(Items.None.equals(Items.None));
+        assertTrue(gags.equals(gags));
+
+        Items none = new Items();
+        assertTrue(none.equals(Items.None));
+        assertTrue(Items.None.equals(none));
     }
 
     @Test
@@ -369,7 +380,7 @@ public class ItemsTest {
         Varieties<Items> all = inventory.varieties();
         assertEquals(2, all.size());
         Items cuffs = inventory.queryInventory(Toys.Wrist_Restraints, material);
-        assertFalse(cuffs.isEmpty());
+        assertFalse(cuffs.equals(Items.None));
         cuffs.apply();
         Items appliedCuffs = all.reduce(Items::best);
         assertTrue(appliedCuffs.get(Toys.Wrist_Restraints).is(material));

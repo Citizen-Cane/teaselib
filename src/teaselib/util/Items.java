@@ -509,11 +509,6 @@ public class Items implements Iterable<Item> {
         return elements.size();
     }
 
-    // TODO remove
-    public boolean isEmpty() {
-        return elements.isEmpty();
-    }
-
     public Stream<Item> stream() {
         return elements.stream();
     }
@@ -528,5 +523,40 @@ public class Items implements Iterable<Item> {
 
     private static QualifiedItem itemValue(Item item) {
         return QualifiedItem.of(itemImpl(item).value);
+    }
+
+    /*
+     * (non-Javadoc)
+     * 
+     * @see java.lang.Object#hashCode()
+     */
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + ((elements == null) ? 0 : elements.hashCode());
+        return result;
+    }
+
+    /*
+     * (non-Javadoc)
+     * 
+     * @see java.lang.Object#equals(java.lang.Object)
+     */
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        Items other = (Items) obj;
+        if (elements == null) {
+            if (other.elements != null)
+                return false;
+        } else if (!elements.equals(other.elements))
+            return false;
+        return true;
     }
 }

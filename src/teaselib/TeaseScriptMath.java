@@ -164,8 +164,8 @@ public class TeaseScriptMath extends TeaseScriptPersistenceUtil {
     }
 
     public Item random(Items items) {
-        if (!items.isEmpty()) {
-            List<Item> itemList = items.stream().collect(Collectors.toList());
+        List<Item> itemList = items.stream().collect(Collectors.toList());
+        if (!itemList.isEmpty()) {
             return itemList.get(random(0, itemList.size() - 1));
         } else {
             return Item.NotFound;

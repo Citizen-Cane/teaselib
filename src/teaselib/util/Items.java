@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -12,6 +13,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import teaselib.core.state.AbstractProxy;
 import teaselib.core.util.QualifiedItem;
@@ -39,85 +41,89 @@ import teaselib.util.math.Varieties;
  * @author Citizen-Cane
  *
  */
-public class Items extends ArrayList<Item> {
-    private static final long serialVersionUID = 1L;
-
+public class Items implements Iterable<Item> {
     public static final Items None = new Items();
 
+    private final ArrayList<Item> elements;
+
     public Items() {
-        super();
+        elements = new ArrayList<>();
+    }
+
+    public Items(Items items) {
+        elements = new ArrayList<>(items.elements);
     }
 
     public Items(Collection<? extends Item> items) {
-        super(items);
+        elements = new ArrayList<>(items);
     }
 
     public Items(Item[] items) {
-        super(Arrays.asList(items));
+        this(Arrays.asList(items));
     }
 
     public Items(int capacity) {
-        super(capacity);
+        elements = new ArrayList<>(capacity);
     }
 
     public Items filter(Predicate<? super Item> predicate) {
-        List<Item> list = stream().filter(predicate).collect(Collectors.toList());
+        List<Item> list = elements.stream().filter(predicate).collect(Collectors.toList());
         return new Items(list);
     }
 
     public boolean anyAvailable() {
-        return stream().anyMatch(Item::isAvailable);
+        return elements.stream().anyMatch(Item::isAvailable);
     }
 
     public boolean allAvailable() {
-        if (isEmpty()) {
+        if (elements.isEmpty()) {
             return false;
         }
-        return stream().allMatch(Item::isAvailable);
+        return elements.stream().allMatch(Item::isAvailable);
     }
 
     public boolean anyApplicable() {
-        return stream().anyMatch(Item::canApply);
+        return elements.stream().anyMatch(Item::canApply);
     }
 
     public boolean allApplicable() {
-        if (isEmpty()) {
+        if (elements.isEmpty()) {
             return false;
         }
-        return stream().allMatch(Item::canApply);
+        return elements.stream().allMatch(Item::canApply);
     }
 
     public boolean anyApplied() {
-        return stream().anyMatch(Item::applied);
+        return elements.stream().anyMatch(Item::applied);
     }
 
     public boolean allApplied() {
-        if (isEmpty()) {
+        if (elements.isEmpty()) {
             return false;
         }
-        return stream().allMatch(Item::applied);
+        return elements.stream().allMatch(Item::applied);
     }
 
     public boolean someAre(Object... attributes) {
-        return stream().anyMatch(item -> item.is(attributes));
+        return elements.stream().anyMatch(item -> item.is(attributes));
     }
 
     public boolean allAre(Object... attributes) {
-        if (isEmpty()) {
+        if (elements.isEmpty()) {
             return false;
         }
-        return stream().allMatch(item -> item.is(attributes));
+        return elements.stream().allMatch(item -> item.is(attributes));
     }
 
     public boolean anyExpired() {
-        if (isEmpty()) {
+        if (elements.isEmpty()) {
             return true;
         }
-        return stream().anyMatch(Item::expired);
+        return elements.stream().anyMatch(Item::expired);
     }
 
     public boolean allExpired() {
-        return stream().allMatch(Item::expired);
+        return elements.stream().allMatch(Item::expired);
     }
 
     public Items getAvailable() {
@@ -173,23 +179,19 @@ public class Items extends ArrayList<Item> {
     }
 
     private Item getAppliedOrFirstAvailableOrNotFound() {
-        List<Item> applied = getApplied();
+        List<Item> applied = getApplied().elements;
         if (!applied.isEmpty()) {
             return applied.get(0);
         } else {
-            List<Item> available = getAvailable();
+            List<Item> available = getAvailable().elements;
             if (!available.isEmpty()) {
                 return available.get(0);
-            } else if (!isEmpty()) {
-                return get(0);
+            } else if (!elements.isEmpty()) {
+                return elements.get(0);
             } else {
                 return Item.NotFound;
             }
         }
-    }
-
-    public List<Item> all() {
-        return new ArrayList<>(this);
     }
 
     /**
@@ -235,9 +237,9 @@ public class Items extends ArrayList<Item> {
             matching = new Items(this);
         } else {
             matching = new Items();
-            for (Item item : this) {
+            for (Item item : elements) {
                 if (itemImpl(item).has(attributes)) {
-                    matching.add(item);
+                    matching.elements.add(item);
                 }
             }
         }
@@ -252,13 +254,33 @@ public class Items extends ArrayList<Item> {
         return containsImpl(item);
     }
 
+    public boolean contains(Item item) {
+        return elements.contains(item);
+    }
+
     private <S> boolean containsImpl(S item) {
-        for (Item i : this) {
+        for (Item i : elements) {
             if (QualifiedItem.of(i).equals(item)) {
                 return true;
             }
         }
         return false;
+    }
+
+    public void clear() {
+        elements.clear();
+    }
+
+    public void add(Item item) {
+        elements.add(item);
+    }
+
+    public void addAll(Items items) {
+        addAll(items.elements);
+    }
+
+    public void addAll(Collection<Item> items) {
+        elements.addAll(items);
     }
 
     /**
@@ -301,24 +323,24 @@ public class Items extends ArrayList<Item> {
         Set<QualifiedItem> found = new HashSet<>();
         Items preferred = new Items();
 
-        for (Item item : this) {
+        for (Item item : elements) {
             if (item.applied()) {
                 found.add(QualifiedItem.of(itemValue(item)));
-                preferred.add(item);
+                preferred.elements.add(item);
             }
         }
 
-        for (Item item : this) {
+        for (Item item : elements) {
             if (item.is(attributes) && item.isAvailable()) {
                 found.add(QualifiedItem.of(itemValue(item)));
-                preferred.add(item);
+                preferred.elements.add(item);
             }
         }
 
-        for (Item item : this) {
+        for (Item item : elements) {
             if (!found.contains(QualifiedItem.of(item)) && item.isAvailable()) {
                 found.add(QualifiedItem.of(itemValue(item)));
-                preferred.add(item);
+                preferred.elements.add(item);
             }
         }
 
@@ -349,17 +371,16 @@ public class Items extends ArrayList<Item> {
 
     private int getVariety() {
         Set<String> types = new HashSet<>();
-        for (Item item : this) {
+        for (Item item : elements) {
             types.add(QualifiedItem.of(item).toString());
         }
 
         return types.size();
     }
 
-    @Override
     public Item[] toArray() {
-        Item[] array = new Item[size()];
-        return super.toArray(array);
+        Item[] array = new Item[elements.size()];
+        return elements.toArray(array);
     }
 
     /**
@@ -375,17 +396,17 @@ public class Items extends ArrayList<Item> {
         // TODO Improve attribute matching for applied items
         // - decide whether to consider preferred or matching attributes
         // - currently there is no attribute matching at all
-        long a = itemsA.getAvailable().size();
-        long b = itemsB.getAvailable().size();
+        long a = itemsA.getAvailable().elements.size();
+        long b = itemsB.getAvailable().elements.size();
         if (a == b) {
             // Count unique attributes found, then for each attribute add numberOfOccurences*count to rate sets higher
-            a = attributesOfAvailable(itemsA).values().stream().reduce(Math::max).orElse(0L);
-            b = attributesOfAvailable(itemsB).values().stream().reduce(Math::max).orElse(0L);
+            a = attributesOfAvailable(itemsA.elements).values().stream().reduce(Math::max).orElse(0L);
+            b = attributesOfAvailable(itemsB.elements).values().stream().reduce(Math::max).orElse(0L);
         }
         return a >= b ? itemsA : itemsB;
     }
 
-    private static Map<QualifiedItem, Long> attributesOfAvailable(Items items) {
+    private static Map<QualifiedItem, Long> attributesOfAvailable(List<Item> items) {
         return items.stream().filter(Item::isAvailable)
                 .collect(Collectors.groupingBy(QualifiedItem::of, Collectors.counting()));
     }
@@ -409,26 +430,26 @@ public class Items extends ArrayList<Item> {
      * @return the items.
      */
     public Items applyTo(Object... peers) {
-        for (Item item : this.firstOfEachKind()) {
+        for (Item item : firstOfEachKind()) {
             item.applyTo(AbstractProxy.removeProxies(peers));
         }
         return this;
     }
 
     public Items over(long duration, TimeUnit unit) {
-        for (Item item : this.firstOfEachKind()) {
+        for (Item item : firstOfEachKind()) {
             item.apply().over(duration, unit);
         }
         return this;
     }
 
     public void remove() {
-        for (Item item : this.firstOfEachKind()) {
+        for (Item item : firstOfEachKind()) {
             item.remove();
         }
     }
 
-    public Items firstOfEachKind() {
+    public Collection<Item> firstOfEachKind() {
         Items firstOfEachKind = new Items();
         Set<QualifiedItem> kinds = new HashSet<>();
 
@@ -436,10 +457,10 @@ public class Items extends ArrayList<Item> {
             QualifiedItem kind = QualifiedItem.of(item);
             if (!kinds.contains(kind)) {
                 kinds.add(kind);
-                firstOfEachKind.add(getFirstAvailableOrNotFound(item));
+                firstOfEachKind.elements.add(getFirstAvailableOrNotFound(item));
             }
         }
-        return firstOfEachKind;
+        return firstOfEachKind.elements;
     }
 
     private Item getFirstAvailableOrNotFound(Object item) {
@@ -454,7 +475,7 @@ public class Items extends ArrayList<Item> {
     }
 
     private Item findFirst(Object item) {
-        Optional<Item> first = stream().filter(i -> i.is(item)).findFirst();
+        Optional<Item> first = elements.stream().filter(i -> i.is(item)).findFirst();
         if (first.isPresent()) {
             return first.get();
         } else {
@@ -469,18 +490,42 @@ public class Items extends ArrayList<Item> {
      */
     public Items items(Enum<?>... itemOrAttribute) {
         Items items = new Items();
-        for (Item item : this) {
+        for (Item item : elements) {
             for (Enum<?> any : itemOrAttribute) {
                 if (item.is(any)) {
-                    items.add(item);
+                    items.elements.add(item);
                 }
             }
         }
         return items;
     }
 
+    @Override
+    public Iterator<Item> iterator() {
+        return elements.iterator();
+    }
+
+    // TODO remove
+    public int size() {
+        return elements.size();
+    }
+
+    // TODO remove
+    public boolean isEmpty() {
+        return elements.isEmpty();
+    }
+
+    public Stream<Item> stream() {
+        return elements.stream();
+    }
+
+    @Deprecated
+    public Item get(int index) {
+        return elements.get(index);
+    }
+
     public Set<Object> valueSet() {
-        return stream().map(item -> itemImpl(item).value).collect(Collectors.toCollection(LinkedHashSet::new));
+        return elements.stream().map(item -> itemImpl(item).value).collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
     private static ItemImpl itemImpl(Item item) {

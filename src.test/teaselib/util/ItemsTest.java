@@ -182,9 +182,6 @@ public class ItemsTest {
         assertTrue(gags.contains("teaselib.Toys.Gag"));
         assertFalse(gags.contains("teaselib.Toys.Buttplug"));
 
-        assertFalse(gags.contains(script.state(Toys.Gag)));
-        assertFalse(gags.contains(script.state(Toys.Buttplug)));
-
         assertTrue(gags.contains(script.item(Toys.Gag)));
         assertFalse(gags.contains(script.item(Toys.Buttplug)));
     }

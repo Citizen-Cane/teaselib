@@ -242,6 +242,15 @@ public abstract class TeaseScript extends TeaseScriptMath {
     }
 
     /**
+     * {@inheritDoc}
+     * 
+     * @param item
+     */
+    public void show(Items items) {
+        // TODO Show item images
+    }
+
+    /**
      * Show an intertitle ({@link https://en.wikipedia.org/wiki/Intertitle}) to reveal information or give instructions
      * that are encessary to bring the script foraward, but aren't suitable to be given by a character.
      * <p>

@@ -5,6 +5,7 @@
 <!ELEMENT Clothes (Item)*>
 <!ELEMENT Gadgets (Item)*>
 <!ELEMENT Item (Attribute)*>
+<!ELEMENT Item (DefaultPeer)*>
 <!ATTLIST Item 
 	item CDATA #REQUIRED
 	guid CDATA #REQUIRED

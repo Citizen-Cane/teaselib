@@ -140,23 +140,29 @@ public class UserItemsImpl implements UserItems {
         String guid = attributes.getNamedItem("guid").getNodeValue();
         String displayName = attributes.getNamedItem("displayName").getNodeValue();
 
+        String enumName = "teaselib." + itemClass.getNodeName() + "." + itemName;
+        Enum<?> enumValue = ReflectionUtils.getEnum(QualifiedItem.of(enumName));
+        List<Enum<?>> defaultPeers = new ArrayList<>(Arrays.asList(defaults(new QualifiedEnum(enumValue))));
         List<Enum<?>> itemAttributes = new ArrayList<>();
+
         NodeList childNodes = itemNode.getChildNodes();
         for (int i = 0; i < childNodes.getLength(); i++) {
-            Node attributeNode = childNodes.item(i);
-            if (attributeNode.getNodeType() == Node.ELEMENT_NODE) {
-                if ("Attribute".equalsIgnoreCase(attributeNode.getNodeName())) {
-                    String enumClassName = "teaselib." + attributeNode.getTextContent().trim();
+            Node node = childNodes.item(i);
+            if (node.getNodeType() == Node.ELEMENT_NODE) {
+                if ("Attribute".equalsIgnoreCase(node.getNodeName())) {
+                    String enumClassName = "teaselib." + node.getTextContent().trim();
                     itemAttributes.add(ReflectionUtils.getEnum(QualifiedItem.of(enumClassName)));
+                }
+                if ("DefaultPeer".equalsIgnoreCase(node.getNodeName())) {
+                    String enumClassName = "teaselib." + node.getTextContent().trim();
+                    defaultPeers.add(ReflectionUtils.getEnum(QualifiedItem.of(enumClassName)));
                 }
             }
         }
 
-        String enumName = "teaselib." + itemClass.getNodeName() + "." + itemName;
-        Enum<?> enumValue = ReflectionUtils.getEnum(QualifiedItem.of(enumName));
         return new ItemImpl(teaseLib, enumValue, domain, new ItemGuid(guid), //
-                displayName, defaults(new QualifiedEnum(enumValue)), //
-                itemAttributes.toArray());
+                displayName, defaultPeers.toArray(new Enum<?>[defaultPeers.size()]), //
+                itemAttributes.toArray(new Enum<?>[itemAttributes.size()]));
     }
 
     private ItemImpl[] getDefaultItem(String domain, QualifiedItem item) {

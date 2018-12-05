@@ -24,21 +24,30 @@
 		<Item item="Gag" guid="ball_gag" displayName="Ball gag">
 			<Attribute> Toys.Gags.Ball_Gag </Attribute>
 			<Attribute> Body.Orifice.Oral </Attribute>
+			<DefaultPeer> Body.InMouth </DefaultPeer>
+			<DefaultPeer> Body.CantLick </DefaultPeer>
 		</Item>
 		<Item item="Gag" guid="bit_gag" displayName="Bit gag">
 			<Attribute> Toys.Gags.Bit_Gag </Attribute>
 			<Attribute> Body.Orifice.Oral </Attribute>
+			<DefaultPeer> Body.InMouth </DefaultPeer>
+			<DefaultPeer> Body.CantLick </DefaultPeer>
 		</Item>
 		<Item item="Gag" guid="muzzle_gag" displayName="Muzzle gag">
 			<Attribute> Toys.Gags.Muzzle_Gag </Attribute>
 			<Attribute> Body.Orifice.Oral </Attribute>
+			<DefaultPeer> Body.InMouth </DefaultPeer>
+			<DefaultPeer> Body.CantLick </DefaultPeer>
 		</Item>
 		<Item item="Gag" guid="penis_gag" displayName="Penis gag">
 			<Attribute> Toys.Gags.Penis_Gag </Attribute>
 			<Attribute> Body.Orifice.Oral </Attribute>
+			<DefaultPeer> Body.InMouth </DefaultPeer>
+			<DefaultPeer> Body.CantLick </DefaultPeer>
 		</Item>
 		<Item item="Gag" guid="ring_gag" displayName="Ring gag">
 			<Attribute> Toys.Gags.Ring_Gag </Attribute>
+			<DefaultPeer> Body.InMouth </DefaultPeer>
 			<Attribute> Body.Orifice.Oral </Attribute>
 		</Item>
 		

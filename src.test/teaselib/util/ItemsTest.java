@@ -1,6 +1,10 @@
 package teaselib.util;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -718,14 +722,16 @@ public class ItemsTest {
         assertTrue(gag0.applied());
         assertTrue(gag1.applied());
 
-        gag0.removeFrom(Body.InMouth);
+        // TODO should be gag0.defaultPeers()
+        gag0.removeFrom(Body.InMouth, Body.CantLick);
         assertFalse(gag0.applied());
         // TODO State removed too early
         assertTrue(gag1.applied());
         assertEquals(1, gags.getApplied().size());
         assertTrue(inMouth.applied());
 
-        gag1.removeFrom(Body.InMouth);
+        // TODO should be gag1.defaultPeers()
+        gag1.removeFrom(Body.InMouth, Body.CantLick);
         assertEquals(0, gags.getApplied().size());
         assertFalse(inMouth.applied());
     }

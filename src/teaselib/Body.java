@@ -11,6 +11,7 @@ public enum Body {
     InMouth,
     AroundNeck,
     AroundWaist,
+
     CrotchRoped,
     Harnessed,
 
@@ -28,6 +29,8 @@ public enum Body {
 
     AnklesTied,
     WristsTied,
+
+    CantLick,
 
     ;
 

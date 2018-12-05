@@ -54,6 +54,11 @@ public abstract class VideoRendererJavaCV implements VideoRenderer {
     }
 
     private void renderFrame(Mat video) {
+        // Must show window before setting the position,
+        // to ensure that the position is updated when the position has changed
+        // - looks like OpenCV caches the position values,
+        // but doesn't apply them when the window is not visible
+        org.bytedeco.javacpp.opencv_highgui.imshow(name, video);
         try (Point position = getPosition(type, video.cols(), video.rows());) {
             if (position.x() != x || position.y() != y) {
                 x = position.x();
@@ -61,7 +66,6 @@ public abstract class VideoRendererJavaCV implements VideoRenderer {
                 org.bytedeco.javacpp.opencv_highgui.moveWindow(name, x, y);
             }
         }
-        org.bytedeco.javacpp.opencv_highgui.imshow(name, video);
         pumpMessages();
     }
 

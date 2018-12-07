@@ -139,7 +139,7 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
             messageRenderingInProgressLock.lockInterruptibly();
             try {
                 awaitModifierAppliedByRenderThreadOrCompletedMandatory();
-                messageModifier.getAndSet(unaryOperator);
+                messageModifier.set(unaryOperator);
                 return !hasCompletedMandatory();
             } finally {
                 messageRenderingInProgressLock.unlock();
@@ -180,27 +180,21 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
 
     @Override
     public void renderMedia() throws IOException, InterruptedException {
-        applyPendingMessageModification();
-        if (messages.isEmpty()) {
-            throw new IllegalStateException();
-        }
-
         try {
+            applyPendingMessageModifierAsResultOfReplay();
+
             boolean processMessages = true;
             while (processMessages) {
-                signalMessageModifierApplied();
-
                 boolean emptyMessage = messages.get(0).isEmpty();
                 if (emptyMessage) {
                     show(null, Mood.Neutral);
                 } else {
                     play();
                 }
-                if (!applyPendingMessageModification()) {
-                    processMessages = false;
-                    finalizeRendering();
-                }
+
+                processMessages = applyMessageModifer();
             }
+            finalizeRendering();
         } catch (InterruptedException | ScriptInterruptedException e) {
             if (currentRenderer != null) {
                 renderQueue.interrupt(currentRenderer);
@@ -211,29 +205,38 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
                 backgroundSoundRenderer = null;
             }
 
-            messageModifier.set(null);
+            if (messageModifier.getAndSet(null) != null) {
+                signalMessageModifierApplied();
+            }
             throw e;
-        } finally {
-            signalMessageModifierApplied();
         }
     }
 
-    private void signalMessageModifierApplied() throws InterruptedException {
-        messageRenderingInProgressLock.lockInterruptibly();
+    private void applyPendingMessageModifierAsResultOfReplay() {
+        if (!applyMessageModifer()) {
+            if (messages.isEmpty()) {
+                throw new IllegalStateException();
+            }
+        }
+    }
+
+    private boolean applyMessageModifer() {
+        UnaryOperator<List<RenderedMessage>> operator = messageModifier.getAndSet(null);
+        if (operator != null) {
+            operator.apply(messages);
+            signalMessageModifierApplied();
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    private void signalMessageModifierApplied() {
+        messageRenderingInProgressLock.lock();
         try {
             messageRenderingModifierApplied.signalAll();
         } finally {
             messageRenderingInProgressLock.unlock();
-        }
-    }
-
-    private boolean applyPendingMessageModification() {
-        UnaryOperator<List<RenderedMessage>> operator = messageModifier.getAndSet(null);
-        if (operator != null) {
-            operator.apply(messages);
-            return true;
-        } else {
-            return false;
         }
     }
 

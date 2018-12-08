@@ -11,10 +11,12 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -853,30 +855,30 @@ public class TeaseLib {
         // - per default, the fist applied, available, or listed item is used
         // -> shuffle the list per kind according to some session-constant randomness
         // TODO provide a set of default item set by the script or user interface to select items for a session
-        Items items = new Items(values.length);
+        List<Item> items = new ArrayList<>();
         for (Object item : values) {
             items.addAll(userItems.get(domain, QualifiedItem.of(item)));
         }
-        return items;
+        return new Items(items);
     }
 
     /**
      * @return All temporary items
      */
     public Items temporaryItems() {
-        Items items = new Items();
+        List<Item> temporaryItems = new ArrayList<>();
         for (Entry<String, StateMapCache> entry : stateMaps.cache.entrySet()) {
             for (Entry<String, StateMap> entry2 : entry.getValue().entrySet()) {
                 for (Entry<Object, State> entry3 : entry2.getValue().states.entrySet()) {
                     StateImpl state = (StateImpl) entry3.getValue();
                     if (!ItemGuid.isGuid(state.item.toString())
                             && state.duration().limit(TimeUnit.SECONDS) == State.TEMPORARY) {
-                        items.add(item(entry.getKey(), state.item));
+                        temporaryItems.add(item(entry.getKey(), state.item));
                     }
                 }
             }
         }
-        return items;
+        return new Items(temporaryItems);
     }
 
     /**

@@ -234,7 +234,7 @@ public class ItemsTest {
         assertTrue(Items.None.equals(Items.None));
         assertTrue(gags.equals(gags));
 
-        Items none = new Items();
+        Items none = new Items(new Item[] {});
         assertTrue(none.equals(Items.None));
         assertTrue(Items.None.equals(none));
     }
@@ -749,5 +749,80 @@ public class ItemsTest {
 
         restraints.remove();
         assertEquals(1, restraints.getApplied().size());
+    }
+
+    @Test
+    public void testOrElseItemsEnum() {
+        TestScript script = TestScript.getOne();
+        script.addTestUserItems();
+
+        Items restraints1 = script.items(Toys.Wrist_Restraints);
+        assertEquals(2, restraints1.size());
+
+        Items restraints2 = script.items(Toys.Wrist_Restraints).orElseItems(Toys.Wrist_Restraints);
+        assertEquals(restraints1, restraints2);
+    }
+
+    @Test
+    public void testOrElseItemsString() {
+        TestScript script = TestScript.getOne();
+        script.addTestUserItems();
+
+        Items restraints1 = script.items("teaselib.Toys.Wrist_Restraints");
+        assertEquals(2, restraints1.size());
+
+        Items restraints2 = script.items("teaselib.Toys.Wrist_Restraints")
+                .orElseItems("teaselib.Toys.Wrist_Restraints");
+        assertEquals(restraints1, restraints2);
+    }
+
+    @Test
+    public void testOrElsePreferEnum() {
+        TestScript script = TestScript.getOne();
+        script.addTestUserItems();
+        script.setAvailable(Toys.Wrist_Restraints);
+
+        assertTrue(script.items(Toys.Wrist_Restraints).someAre(Material.Metal));
+
+        Items restraints = script.items(Toys.Wrist_Restraints).matching(Material.Wood).orElsePrefer(Material.Metal);
+        assertTrue(restraints.allAre(Material.Metal));
+    }
+
+    @Test
+    public void testOrElsePreferString() {
+        TestScript script = TestScript.getOne();
+        script.addTestUserItems();
+        script.setAvailable(Toys.Wrist_Restraints);
+
+        assertTrue(script.items("teaselib.Toys.Wrist_Restraints").someAre("teaselib.Material.Metal"));
+
+        Items restraints = script.items("teaselib.Toys.Wrist_Restraints").matching("teaselib.Material.Wood")
+                .orElsePrefer("teaselib.Material.Metal");
+        assertTrue(restraints.allAre("teaselib.Material.Metal"));
+    }
+
+    @Test
+    public void testOrElseMatchingEnum() {
+        TestScript script = TestScript.getOne();
+        script.addTestUserItems();
+        script.setAvailable(Toys.Wrist_Restraints);
+
+        assertTrue(script.items(Toys.Wrist_Restraints).someAre(Material.Metal));
+
+        Items restraints = script.items(Toys.Wrist_Restraints).matching(Material.Wood).orElseMatching(Material.Metal);
+        assertTrue(restraints.allAre(Material.Metal));
+    }
+
+    @Test
+    public void testOrElseMatchingString() {
+        TestScript script = TestScript.getOne();
+        script.addTestUserItems();
+        script.setAvailable(Toys.Wrist_Restraints);
+
+        assertTrue(script.items("teaselib.Toys.Wrist_Restraints").someAre("teaselib.Material.Metal"));
+
+        Items restraints = script.items("teaselib.Toys.Wrist_Restraints").matching("teaselib.Material.Wood")
+                .orElseMatching("teaselib.Material.Metal");
+        assertTrue(restraints.allAre("teaselib.Material.Metal"));
     }
 }

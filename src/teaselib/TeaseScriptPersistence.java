@@ -3,6 +3,9 @@
  */
 package teaselib;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import teaselib.core.ResourceLoader;
 import teaselib.core.Script;
 import teaselib.core.TeaseLib;
@@ -60,19 +63,19 @@ public abstract class TeaseScriptPersistence extends Script {
 
         @SafeVarargs
         public final <T extends Enum<?>> Items items(T[]... values) {
-            Items items = new Items();
+            List<Item> items = new ArrayList<>();
             for (T[] s : values) {
-                items.addAll(items(s));
+                Items.addTo(items, items(s));
             }
-            return items;
+            return new Items(items);
         }
 
         public Items items(String[]... values) {
-            Items items = new Items();
+            List<Item> items = new ArrayList<>();
             for (String[] s : values) {
-                items.addAll(items(s));
+                Items.addTo(items, items(s));
             }
-            return items;
+            return new Items(items);
         }
 
         @Override
@@ -81,7 +84,7 @@ public abstract class TeaseScriptPersistence extends Script {
         }
 
         private Items proxiesOf(Items items) {
-            Items proxies = new Items();
+            List<Item> proxies = new ArrayList<>();
             for (Item item : items) {
                 if (item instanceof ItemProxy) {
                     proxies.add(item);
@@ -89,7 +92,7 @@ public abstract class TeaseScriptPersistence extends Script {
                     proxies.add(new ItemProxy(namespace, item));
                 }
             }
-            return proxies;
+            return new Items(proxies);
         }
     }
 

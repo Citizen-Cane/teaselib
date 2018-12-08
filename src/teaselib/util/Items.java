@@ -3,6 +3,7 @@ package teaselib.util;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
@@ -42,33 +43,31 @@ import teaselib.util.math.Varieties;
  *
  */
 public class Items implements Iterable<Item> {
-    public static final Items None = new Items();
+    public static final Items None = new Items(Collections.emptyList());
 
-    private final ArrayList<Item> elements;
-
-    public Items() {
-        elements = new ArrayList<>();
-    }
+    private final List<Item> elements;
+    private final List<Item> inventory;
 
     public Items(Items items) {
-        elements = new ArrayList<>(items.elements);
-    }
-
-    public Items(Collection<? extends Item> items) {
-        elements = new ArrayList<>(items);
+        this(new ArrayList<>(items.elements), items.inventory);
     }
 
     public Items(Item[] items) {
         this(Arrays.asList(items));
     }
 
-    public Items(int capacity) {
-        elements = new ArrayList<>(capacity);
+    public Items(List<Item> items) {
+        this(items, Collections.unmodifiableList(new ArrayList<>(items)));
+    }
+
+    private Items(List<Item> elements, List<Item> inventory) {
+        this.elements = elements;
+        this.inventory = inventory;
     }
 
     public Items filter(Predicate<? super Item> predicate) {
         List<Item> list = elements.stream().filter(predicate).collect(Collectors.toList());
-        return new Items(list);
+        return new Items(list, inventory);
     }
 
     public boolean anyAvailable() {
@@ -232,18 +231,19 @@ public class Items implements Iterable<Item> {
     }
 
     private Items queryInventoryImpl(Object... attributes) {
-        Items matching;
+        Items matchingItems;
         if (attributes.length == 0) {
-            matching = new Items(this);
+            matchingItems = new Items(this);
         } else {
-            matching = new Items();
+            List<Item> matching = new ArrayList<>();
             for (Item item : elements) {
                 if (itemImpl(item).has(attributes)) {
-                    matching.elements.add(item);
+                    matching.add(item);
                 }
             }
+            matchingItems = new Items(matching, inventory);
         }
-        return matching;
+        return matchingItems;
     }
 
     public boolean contains(Enum<?> item) {
@@ -271,14 +271,17 @@ public class Items implements Iterable<Item> {
         elements.clear();
     }
 
+    @Deprecated
     public void add(Item item) {
         elements.add(item);
     }
 
+    @Deprecated
     public void addAll(Items items) {
         addAll(items.elements);
     }
 
+    @Deprecated
     public void addAll(Collection<Item> items) {
         elements.addAll(items);
     }
@@ -321,30 +324,30 @@ public class Items implements Iterable<Item> {
 
     private Items preferredItems(Object... attributes) {
         Set<QualifiedItem> found = new HashSet<>();
-        Items preferred = new Items();
+        List<Item> preferred = new ArrayList<>();
 
         for (Item item : elements) {
             if (item.applied()) {
                 found.add(QualifiedItem.of(itemValue(item)));
-                preferred.elements.add(item);
+                preferred.add(item);
             }
         }
 
         for (Item item : elements) {
             if (item.is(attributes) && item.isAvailable()) {
                 found.add(QualifiedItem.of(itemValue(item)));
-                preferred.elements.add(item);
+                preferred.add(item);
             }
         }
 
         for (Item item : elements) {
             if (!found.contains(QualifiedItem.of(item)) && item.isAvailable()) {
                 found.add(QualifiedItem.of(itemValue(item)));
-                preferred.elements.add(item);
+                preferred.add(item);
             }
         }
 
-        return preferred;
+        return new Items(preferred, inventory);
     }
 
     /**
@@ -450,17 +453,17 @@ public class Items implements Iterable<Item> {
     }
 
     public Collection<Item> firstOfEachKind() {
-        Items firstOfEachKind = new Items();
+        List<Item> firstOfEachKind = new ArrayList<>();
         Set<QualifiedItem> kinds = new HashSet<>();
 
         for (Object item : this.valueSet()) {
             QualifiedItem kind = QualifiedItem.of(item);
             if (!kinds.contains(kind)) {
                 kinds.add(kind);
-                firstOfEachKind.elements.add(getFirstAvailableOrNotFound(item));
+                firstOfEachKind.add(getFirstAvailableOrNotFound(item));
             }
         }
-        return firstOfEachKind.elements;
+        return firstOfEachKind;
     }
 
     private Item getFirstAvailableOrNotFound(Object item) {
@@ -489,15 +492,23 @@ public class Items implements Iterable<Item> {
      * @return A sublist containing the requested items, or {@link Item#NotFound} for any missing item.
      */
     public Items items(Enum<?>... itemOrAttribute) {
-        Items items = new Items();
+        return itemsImpl((Object[]) itemOrAttribute);
+    }
+
+    public Items items(String... itemOrAttribute) {
+        return itemsImpl((Object[]) itemOrAttribute);
+    }
+
+    public Items itemsImpl(Object... itemOrAttribute) {
+        List<Item> items = new ArrayList<>();
         for (Item item : elements) {
-            for (Enum<?> any : itemOrAttribute) {
+            for (Object any : itemOrAttribute) {
                 if (item.is(any)) {
-                    items.elements.add(item);
+                    items.add(item);
                 }
             }
         }
-        return items;
+        return new Items(items, inventory);
     }
 
     @Override
@@ -558,5 +569,38 @@ public class Items implements Iterable<Item> {
         } else if (!elements.equals(other.elements))
             return false;
         return true;
+    }
+
+    public List<Item> addTo(List<Item> list) {
+        list.addAll(elements);
+        return list;
+    }
+
+    public static List<Item> addTo(List<Item> list, Items items) {
+        return items.addTo(list);
+    }
+
+    public Items orElseItems(Enum<?>... items) {
+        return anyAvailable() ? this : new Items(inventory).items(items);
+    }
+
+    public Items orElseItems(String... items) {
+        return anyAvailable() ? this : new Items(inventory).items(items);
+    }
+
+    public Items orElsePrefer(Enum<?>... attributes) {
+        return anyAvailable() ? this : new Items(inventory).prefer(attributes);
+    }
+
+    public Items orElsePrefer(String... attributes) {
+        return anyAvailable() ? this : new Items(inventory).prefer(attributes);
+    }
+
+    public Items orElseMatching(Enum<?>... attributes) {
+        return anyAvailable() ? this : new Items(inventory).matching(attributes);
+    }
+
+    public Items orElseMatching(String... attributes) {
+        return anyAvailable() ? this : new Items(inventory).matching(attributes);
     }
 }

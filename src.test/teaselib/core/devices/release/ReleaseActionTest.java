@@ -14,7 +14,7 @@ import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import teaselib.Household;
+import teaselib.Accessoires;
 import teaselib.MainScript;
 import teaselib.Material;
 import teaselib.Sexuality.Gender;
@@ -237,7 +237,7 @@ public class ReleaseActionTest {
         restraints.apply();
         restraints.applyTo(removeRestraintsAction);
 
-        Items chains = script.items(Toys.Chains, Household.Bell);
+        Items chains = script.items(Toys.Chains, Accessoires.Bells);
         chains.apply();
         chains.applyTo(removeChainsAction);
         for (Item restraint : restraints) {
@@ -279,7 +279,7 @@ public class ReleaseActionTest {
         restraints.apply();
         restraints.applyTo(removeRestraintsAction);
 
-        Items chains = script.items(Toys.Chains, Household.Bell);
+        Items chains = script.items(Toys.Chains, Accessoires.Bells);
         chains.applyTo(removeChainsAction);
         chains.applyTo(restraints);
 
@@ -291,13 +291,13 @@ public class ReleaseActionTest {
         Item singleChainItem = chains.get(Toys.Chains);
         // TODO remove also removes the bell guid,
         // but the bell is still attached to restraints
-        assertTrue(chains.get(Household.Bell).applied());
-        assertTrue(chains.get(Household.Bell).is(Toys.Wrist_Restraints));
+        assertTrue(chains.get(Accessoires.Bells).applied());
+        assertTrue(chains.get(Accessoires.Bells).is(Toys.Wrist_Restraints));
         // assertTrue(chains.get(Household.Bell).is(restraints.get(Toys.Wrist_Restraints)));
         // assertTrue(chains.get(Household.Bell).is(restraints));
         singleChainItem.remove();
-        assertTrue(chains.get(Household.Bell).applied());
-        assertTrue(chains.get(Household.Bell).is(Toys.Wrist_Restraints));
+        assertTrue(chains.get(Accessoires.Bells).applied());
+        assertTrue(chains.get(Accessoires.Bells).is(Toys.Wrist_Restraints));
         // assertTrue(chains.get(Household.Bell).is(restraints.get(Toys.Wrist_Restraints)));
         // assertTrue(chains.get(Household.Bell).is(restraints));
 
@@ -405,7 +405,7 @@ public class ReleaseActionTest {
         restraints.applyTo(removeRestraintsAction);
         assertTrue(restraints.allAre(ReleaseAction.class));
 
-        Items chains = script.items(Toys.Chains, Household.Bell);
+        Items chains = script.items(Toys.Chains, Accessoires.Bells);
         assertFalse(chains.allAre(ReleaseAction.class));
 
         chains.applyTo(removeChainsAction);

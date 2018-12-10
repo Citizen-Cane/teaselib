@@ -6,8 +6,8 @@ import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 
+import teaselib.Accessoires;
 import teaselib.Body;
-import teaselib.Household;
 import teaselib.Length;
 import teaselib.Material;
 import teaselib.Posture;
@@ -409,13 +409,13 @@ public class ItemImplTest {
         Items restraints = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints, Toys.Collar);
         restraints.apply();
 
-        Items chains = script.items(Toys.Chains, Household.Bell);
+        Items chains = script.items(Toys.Chains, Accessoires.Bells);
         chains.applyTo(restraints);
         assertTrue(chains.allApplied());
         assertTrue(restraints.allApplied());
 
         Item singleChainItem = chains.get(Toys.Chains);
-        Item bell = script.item(Household.Bell);
+        Item bell = script.item(Accessoires.Bells);
         assertTrue(bell.applied());
         singleChainItem.remove();
         assertTrue(bell.applied());

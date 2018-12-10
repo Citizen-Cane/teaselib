@@ -26,5 +26,6 @@ public class SexScriptsPropertyNameMappingTest {
 
         assertEquals("cigarette", m.mapName("", Household.class.getSimpleName(), Household.Cigarettes.name()));
         assertEquals("clothespins", m.mapName("", Household.class.getSimpleName(), Household.Clothes_Pegs.name()));
+        assertEquals("tampon", m.mapName("", Household.class.getSimpleName(), Household.Tampons.name()));
     }
 }

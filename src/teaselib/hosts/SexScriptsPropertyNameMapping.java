@@ -64,6 +64,8 @@ public class SexScriptsPropertyNameMapping extends PropertyNameMapping {
             return "clothespins";
         } else if (is(Household.Cigarettes, path, name)) {
             return "cigarette";
+        } else if (is(Household.Tampons, path, name)) {
+            return "tampon";
         } else if ("Sexuality$Orientation".equals(path) && Sexuality.Orientation.LikesMales.name().equals(name)) {
             return "likemale";
         } else if ("Sexuality$Orientation".equals(path) && Sexuality.Orientation.LikesFemales.name().equals(name)) {

@@ -179,10 +179,6 @@
 
 
 	<Household>
-		<Item item="Bell" guid="bell" displayName="Bell">
-			<Attribute> Material.Metal </Attribute>
-		</Item>
-
 		<Item item="Balloons" guid="balloons" displayName="Balloons">
 			<Attribute> Material.Rubber </Attribute>
 			<Attribute> Features.Inflatable </Attribute>
@@ -234,7 +230,7 @@
 			<Attribute> Household.LubeType.Baby_Oil </Attribute>
 		</Item>
 
-		<Item item="Padlocks" guid="padlocks" displayName="Padlocks">
+		<Item item="Padlock" guid="padlock" displayName="Padlock">
 		</Item>
 
 		<Item item="Rubber_Bands" guid="rubber_bands" displayName="Rubber bands">
@@ -249,7 +245,7 @@
 		<Item item="Shrinkwrap" guid="shrinkwrap" displayName="Shrinkwrap">
 		</Item>
 
-		<Item item="Tampon" guid="tampon" displayName="Tampon">
+		<Item item="Tampons" guid="tampons" displayName="Tampons">
 		</Item>
 
 		<Item item="Weight" guid="weight" displayName="Weight">
@@ -401,6 +397,10 @@
 
 	<Accessoires>
 		<Item item="Apron" guid="apron" displayName="Apron">
+		</Item>
+
+		<Item item="Bells" guid="bells" displayName="Bells">
+			<Attribute> Material.Metal </Attribute>
 		</Item>
 
 		<Item item="Belt" guid="belt" displayName="Belt">

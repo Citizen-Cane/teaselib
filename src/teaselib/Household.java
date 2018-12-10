@@ -1,7 +1,6 @@
 package teaselib;
 
 public enum Household {
-    Bell,
     Balloons,
     Candle,
     Cigarettes,
@@ -16,13 +15,13 @@ public enum Household {
     Icecubes,
     Leash,
     Lube,
-    Padlocks,
+    Padlock,
     Rubber_Bands,
     Ruler,
     Sewing_Box,
     Shoe_Lace,
     Shrinkwrap,
-    Tampon,
+    Tampons,
     Vacuum_Cleaner,
     Weight,
     Wooden_Spoon,
@@ -36,12 +35,12 @@ public enum Household {
         Water_Based,
     }
 
-    public static final Household[] Discipline = { Hairbrush, Ruler, Wooden_Spoon, Clothes_Pegs };
-    public static final Household[] Bondage = { Padlocks, Shoe_Lace, Shrinkwrap, Duct_Tape, Leash };
-    public static final Household[] Utilities = { Heat_Rub, Lube, Balloons, Bell, Condoms, Diaper, Rubber_Bands, Tampon,
-            Weight };
-    public static final Household[] Tools = { Dust_Pan, Sewing_Box, Vacuum_Cleaner };
-    public static final Household[] Kitchen = { Ice_Tray, Icecubes, Candle, Cigarettes };
+    public static final Household[] Discipline = { Clothes_Pegs, Weight, Hairbrush, Ruler, Wooden_Spoon };
+    public static final Household[] Bondage = { Padlock, Shoe_Lace, Shrinkwrap, Duct_Tape, Leash };
+    public static final Household[] Commodities = { Balloons, Candle, Cigarettes, Condoms, Diaper, Heat_Rub, Lube,
+            Rubber_Bands, Tampons };
+    public static final Household[] Aids = { Dust_Pan, Sewing_Box, Vacuum_Cleaner };
+    public static final Household[] Kitchen = { Ice_Tray, Icecubes };
 
-    public static final Household[] Categories[] = { Discipline, Bondage, Utilities, Kitchen, Tools };
+    public static final Household[] Categories[] = { Discipline, Bondage, Commodities, Kitchen, Aids };
 }

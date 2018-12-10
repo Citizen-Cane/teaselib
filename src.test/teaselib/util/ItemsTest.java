@@ -825,4 +825,45 @@ public class ItemsTest {
                 .orElseMatching("teaselib.Material.Metal");
         assertTrue(restraints.allAre("teaselib.Material.Metal"));
     }
+
+    @Test
+    public void testWithoutEnum() {
+        TestScript script = TestScript.getOne();
+
+        Items all = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints);
+        assertEquals(2, all.size());
+        assertEquals(script.item(Toys.Ankle_Restraints), all.item(Toys.Ankle_Restraints));
+        assertEquals(script.item(Toys.Wrist_Restraints), all.item(Toys.Wrist_Restraints));
+
+        Items without = all.without(Toys.Ankle_Restraints);
+        assertEquals(1, without.size());
+        assertEquals(Item.NotFound, without.item(Toys.Ankle_Restraints));
+        assertEquals(script.item(Toys.Wrist_Restraints), without.item(Toys.Wrist_Restraints));
+
+        assertEquals(script.item(Toys.Wrist_Restraints),
+                without.orElseItems(Toys.Ankle_Restraints, Toys.Wrist_Restraints).item(Toys.Wrist_Restraints));
+        assertEquals(script.item(Toys.Ankle_Restraints),
+                without.orElseItems(Toys.Ankle_Restraints).item(Toys.Ankle_Restraints));
+    }
+
+    @Test
+    public void testWithoutString() {
+        TestScript script = TestScript.getOne();
+
+        Items all = script.items("teaselib.Toys.Wrist_Restraints", "teaselib.Toys.Ankle_Restraints");
+        assertEquals(2, all.size());
+        assertEquals(script.item("teaselib.Toys.Ankle_Restraints"), all.item("teaselib.Toys.Ankle_Restraints"));
+        assertEquals(script.item("teaselib.Toys.Wrist_Restraints"), all.item("teaselib.Toys.Wrist_Restraints"));
+
+        Items without = all.without("teaselib.Toys.Ankle_Restraints");
+        assertEquals(1, without.size());
+        assertEquals(Item.NotFound, without.item("teaselib.Toys.Ankle_Restraints"));
+        assertEquals(script.item("teaselib.Toys.Wrist_Restraints"), without.item("teaselib.Toys.Wrist_Restraints"));
+
+        assertEquals(script.item(Toys.Wrist_Restraints),
+                without.orElseItems("teaselib.Toys.Ankle_Restraints", "teaselib.Toys.Wrist_Restraints")
+                        .item("teaselib.Toys.Wrist_Restraints"));
+        assertEquals(script.item(Toys.Ankle_Restraints),
+                without.orElseItems("teaselib.Toys.Ankle_Restraints").item("teaselib.Toys.Ankle_Restraints"));
+    }
 }

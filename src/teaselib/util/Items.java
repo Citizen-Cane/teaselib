@@ -13,6 +13,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -265,25 +266,6 @@ public class Items implements Iterable<Item> {
             }
         }
         return false;
-    }
-
-    public void clear() {
-        elements.clear();
-    }
-
-    @Deprecated
-    public void add(Item item) {
-        elements.add(item);
-    }
-
-    @Deprecated
-    public void addAll(Items items) {
-        addAll(items.elements);
-    }
-
-    @Deprecated
-    public void addAll(Collection<Item> items) {
-        elements.addAll(items);
     }
 
     /**
@@ -602,5 +584,24 @@ public class Items implements Iterable<Item> {
 
     public Items orElseMatching(String... attributes) {
         return anyAvailable() ? this : new Items(inventory).matching(attributes);
+    }
+
+    public Items orElse(Supplier<Items> items) {
+        return anyAvailable() ? this : items.get();
+    }
+
+    public Items without(Enum<?>... values) {
+        return withoutImpl((Object[]) values);
+    }
+
+    public Items without(String... values) {
+        return withoutImpl((Object[]) values);
+
+    }
+
+    public Items withoutImpl(Object... values) {
+        return new Items(
+                stream().filter(item -> Arrays.stream(values).noneMatch(item::is)).collect(Collectors.toList()),
+                inventory);
     }
 }

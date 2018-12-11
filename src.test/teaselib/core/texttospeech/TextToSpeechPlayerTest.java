@@ -1,6 +1,8 @@
 package teaselib.core.texttospeech;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
@@ -42,7 +44,8 @@ public class TextToSpeechPlayerTest {
 
     @Test
     public void testPlainInitialization() {
-        Configuration config = DebugSetup.getConfiguration();
+        Configuration config = new Configuration();
+        new DebugSetup().withOutput().applyTo(config);
         TextToSpeechPlayer tts = new TextToSpeechPlayer(config, testTTS);
 
         assertEquals(MR_FOO, tts.getVoiceFor(new Actor("Mr.Foo", Voice.Male, Locale.forLanguageTag("en-uk"))));
@@ -52,7 +55,8 @@ public class TextToSpeechPlayerTest {
 
     @Test
     public void testPreferredAndIgnored() {
-        Configuration config = DebugSetup.getConfiguration();
+        Configuration config = new Configuration();
+        new DebugSetup().withOutput().applyTo(config);
 
         config.set(TextToSpeechPlayer.Settings.Voices, getClass().getResource("voices.properties").getPath());
         assertTrue(new File(config.get(TextToSpeechPlayer.Settings.Voices)).exists());
@@ -66,7 +70,8 @@ public class TextToSpeechPlayerTest {
 
     @Test
     public void testReload() {
-        Configuration config = DebugSetup.getConfiguration();
+        Configuration config = new Configuration();
+        new DebugSetup().withOutput().applyTo(config);
 
         config.set(TextToSpeechPlayer.Settings.Voices, getClass().getResource("voices.properties").getPath());
         assertTrue(new File(config.get(TextToSpeechPlayer.Settings.Voices)).exists());
@@ -137,8 +142,9 @@ public class TextToSpeechPlayerTest {
     }
 
     @Test
-    public void testTextTOSpeechPlayerPhonemeDictionarySetup() throws InterruptedException {
-        Configuration config = DebugSetup.getConfiguration();
+    public void testTextToSpeechPlayerPhonemeDictionarySetup() throws InterruptedException {
+        Configuration config = new Configuration();
+        new DebugSetup().withOutput().withDictionaries().applyTo(config);
 
         config.set(TextToSpeechPlayer.Settings.Pronunciation, getClass().getResource("pronunciation").getPath());
         assertTrue(new File(config.get(TextToSpeechPlayer.Settings.Pronunciation)).exists());
@@ -157,6 +163,7 @@ public class TextToSpeechPlayerTest {
         });
 
         TextToSpeechPlayer textToSpeechPlayer = new TextToSpeechPlayer(config, tts);
+        // TODO Should throw without pronunciation dictionary in setup but oesn't
         textToSpeechPlayer.speak(new Actor("Mr.Foo", Voice.Male, Locale.forLanguageTag("en-au")), "Hello",
                 Mood.Neutral);
     }

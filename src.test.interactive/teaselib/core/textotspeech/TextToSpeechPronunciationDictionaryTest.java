@@ -90,7 +90,6 @@ public class TextToSpeechPronunciationDictionaryTest {
         Configuration config = DebugSetup.getConfiguration();
         config.set(TextToSpeechPlayer.Settings.Pronunciation, path);
         TextToSpeechPlayer tts = new TextToSpeechPlayer(config);
-        tts.load();
         return tts;
     }
 

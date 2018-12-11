@@ -31,15 +31,18 @@ import teaselib.core.configuration.Configuration;
 import teaselib.core.util.ExceptionUtil;
 
 public class TextToSpeechPlayer {
-    private static final String SIMULATED_SPEECH_TAG = "SimulatedSpeech=";
-
     private static final Logger logger = LoggerFactory.getLogger(TextToSpeechPlayer.class);
+
+    private static final String SIMULATED_SPEECH_TAG = "SimulatedSpeech=";
 
     private static final String ACQUIRE_VOICE_ON_FIRST_USE = "ACQUIRE_VOICE_ON_FIRST_USE";
 
-    TextToSpeech textToSpeech;
+    private final Configuration config;
+    private final TextToSpeech textToSpeech;
+    private final PronunciationDictionary pronunciationDictionary;
+
+    private final PreferredVoices preferredVoices = new PreferredVoices();
     private final Set<ResourceLoader> loadedActorVoiceProperties = new HashSet<>();
-    private final PronunciationDictionary pronounciationDictionary;
 
     /**
      * voice guid to voice
@@ -76,35 +79,41 @@ public class TextToSpeechPlayer {
         Pronunciation;
     }
 
-    private final Configuration config;
-    private final PreferredVoices preferredVoices;
-
     public TextToSpeechPlayer(Configuration config) {
+        this(config, new TextToSpeech());
+    }
+
+    TextToSpeechPlayer(Configuration config, TextToSpeechImplementation textToSpeechImplementation) {
+        this(config, new TextToSpeech(textToSpeechImplementation));
+    }
+
+    public TextToSpeechPlayer(Configuration config, TextToSpeech textToSpeech) {
+        this(config, textToSpeech, loadPronunciationDictionary(config));
+    }
+
+    public TextToSpeechPlayer(Configuration config, TextToSpeech textToSpeech,
+            PronunciationDictionary pronunciationDictionary) {
         this.config = config;
+        this.textToSpeech = textToSpeech;
+        this.pronunciationDictionary = pronunciationDictionary;
+
+        if (Boolean.parseBoolean(config.get(Config.Render.Speech))) {
+            loadVoices();
+        }
+    }
+
+    private static PronunciationDictionary loadPronunciationDictionary(Configuration config) {
+        PronunciationDictionary pronounciationDictionary;
         if (config.has(Settings.Pronunciation)) {
             try {
-                this.pronounciationDictionary = new PronunciationDictionary(
-                        new File(config.get(Settings.Pronunciation)));
+                pronounciationDictionary = new PronunciationDictionary(new File(config.get(Settings.Pronunciation)));
             } catch (IOException e) {
                 throw ExceptionUtil.asRuntimeException(e);
             }
         } else {
-            this.pronounciationDictionary = PronunciationDictionary.empty();
+            pronounciationDictionary = PronunciationDictionary.empty();
         }
-        preferredVoices = new PreferredVoices();
-    }
-
-    TextToSpeechPlayer(Configuration config, TextToSpeechImplementation textToSpeechImplementation) {
-        this(config);
-        this.textToSpeech = new TextToSpeech(textToSpeechImplementation);
-        loadVoices();
-    }
-
-    public void load() {
-        if (this.textToSpeech == null) {
-            this.textToSpeech = new TextToSpeech();
-            loadVoices();
-        }
+        return pronounciationDictionary;
     }
 
     public void reload() {
@@ -127,7 +136,7 @@ public class TextToSpeechPlayer {
         Set<String> ignoredVoiceGuids = preferredVoices.getDisabledVoiceGuids();
 
         try {
-            textToSpeech.initPhoneticDictionary(pronounciationDictionary);
+            textToSpeech.initPhoneticDictionary(pronunciationDictionary);
         } catch (IOException e) {
             logger.warn(e.getMessage(), e);
         }
@@ -150,22 +159,23 @@ public class TextToSpeechPlayer {
 
     private static void logPreferredVoices(Map<String, Voice> voices, Map<String, String> preferredVoiceGuids) {
         for (Entry<String, String> entry : preferredVoiceGuids.entrySet()) {
-            logger.info("Preferring voice " + voices.get(entry.getKey()) + "=" + entry.getValue());
+            logger.info("Preferring voice {}={}", voices.get(entry.getKey()), entry.getValue());
         }
     }
 
     public static void logOtherVoices(Map<String, Voice> voices, Map<String, String> preferredVoiceGuids,
             Set<String> ignoredVoiceGuids) {
-        for (String key : voices.keySet()) {
+        for (Entry<String, Voice> entry : voices.entrySet()) {
+            String key = entry.getKey();
             if (!preferredVoiceGuids.containsKey(key) && !ignoredVoiceGuids.contains(key)) {
-                logger.info("Using voice " + voices.get(key).toString());
+                logger.info("Using voice {}", voices.get(key));
             }
         }
     }
 
     private static void logIgnoredVoices(Map<String, Voice> voices, Set<String> ignoredVoiceGuids) {
         for (String guid : ignoredVoiceGuids) {
-            logger.info("Ignoring voice " + voices.get(guid));
+            logger.info("Ignoring voice {}", voices.get(guid));
         }
     }
 
@@ -242,32 +252,40 @@ public class TextToSpeechPlayer {
         usedVoices.add(voiceGuid);
         String speechResources = PrerecordedSpeechStorage.SpeechDirName + "/" + actorKey + "/" + voiceGuid + "/";
         actorKey2SpeechResourcesLocation.put(actorKey, speechResources);
-        logger.info("Actor " + actorKey + ": using prerecorded voice '" + voiceGuid + "'");
+        logger.info("Actor {}: using prerecorded voice '{}'", actorKey, voiceGuid);
     }
 
-    private void useTTSVoice(String actorKey, String voiceGuid) {
+    public void useTTSVoice(String actorKey, String voiceGuid) {
         Voice voice = voices.get(voiceGuid);
         if (voice != null) {
-            logger.info("Actor key=" + actorKey + ": using TTS voice '" + voiceGuid + "'");
+            logger.info("Actor key={}: using TTS voice '{}'", actorKey, voiceGuid);
             actorKey2TTSVoice.put(actorKey, voice);
             usedVoices.add(voiceGuid);
         } else {
-            logger.info("Actor key=" + actorKey + ": assigned voice '" + voiceGuid + "' not available");
+            logger.info("Actor key={}: assigned voice '{}' not available", actorKey, voiceGuid);
             throw new IllegalArgumentException(actorKey + "->" + voiceGuid);
         }
     }
 
     Voice getVoiceFor(Actor actor) {
-        if (actorKey2TTSVoice.containsKey(actor.key)) {
+        if (hasTTSVoice(actor)) {
             return actorKey2TTSVoice.get(actor.key);
-        } else if (actorKey2ReservedVoiceGuid.containsKey(actor.key)) {
+        } else if (hasReservedVoice(actor)) {
             return getReservedVoice(actor);
         } else {
             return getMatchingOrBestVoiceFor(actor);
         }
     }
 
-    private Voice getReservedVoice(Actor actor) {
+    public boolean hasTTSVoice(Actor actor) {
+        return actorKey2TTSVoice.containsKey(actor.key);
+    }
+
+    public boolean hasReservedVoice(Actor actor) {
+        return actorKey2ReservedVoiceGuid.containsKey(actor.key);
+    }
+
+    public Voice getReservedVoice(Actor actor) {
         String voiceGuid = actorKey2ReservedVoiceGuid.get(actor.key);
 
         ensureNotPrerecordedVoice(actor);
@@ -281,16 +299,17 @@ public class TextToSpeechPlayer {
         }
     }
 
-    String getAssignedVoiceFor(Actor actor) {
+    String getPrerecordedVoiceGuidFor(Actor actor) {
         return actorKey2PrerecordedVoiceGuid.get(actor.key);
     }
 
     private Voice getMatchingOrBestVoiceFor(Actor actor) {
         Voice voice = null;
-        String guid = getAssignedVoiceFor(actor);
+        String guid = getPrerecordedVoiceGuidFor(actor);
         if (guid != null) {
             voice = voices.get(guid);
         }
+
         if (voice == null && voices.size() > 0) {
             voice = getMatchingVoiceFor(actor);
         }
@@ -328,19 +347,21 @@ public class TextToSpeechPlayer {
             }
         }
         // Reuse voice of first non-dominant actor
-        for (String actorName : actorKey2TTSVoice.keySet()) {
-            if (!isDominantActor(actorName) && actorKey2TTSVoice.get(actorName).gender() == actor.gender) {
-                return reuseVoice(actor, actorName);
+        for (Entry<String, Voice> entry : actorKey2TTSVoice.entrySet()) {
+            String key = entry.getKey();
+            if (!isDominantActor(key) && actorKey2TTSVoice.get(key).gender() == actor.gender) {
+                return reuseVoice(actor, key);
             }
         }
         // voice of default dominant actor
-        for (String actorKey : actorKey2TTSVoice.keySet()) {
-            if (isDominantActor(actorKey) && actorKey2TTSVoice.get(actorKey).gender() == actor.gender) {
-                return reuseVoice(actor, actorKey);
+        for (Entry<String, Voice> entry : actorKey2TTSVoice.entrySet()) {
+            String key = entry.getKey();
+            if (isDominantActor(key) && actorKey2TTSVoice.get(key).gender() == actor.gender) {
+                return reuseVoice(actor, key);
             }
         }
         // No voice
-        logger.warn("No voice available for '" + actor.toString() + "'");
+        logger.warn("No voice available for '{}'", actor);
         return null;
     }
 
@@ -353,13 +374,13 @@ public class TextToSpeechPlayer {
     }
 
     private static void useVoice(Actor actor, Voice voice) {
-        logger.info("Actor " + actor.toString() + " uses voice " + voice.guid());
+        logger.info("Actor {} uses voice {}", actor, voice);
     }
 
     private Voice reuseVoice(Actor actor, String reusedActorKey) {
         Voice voice = actorKey2TTSVoice.get(reusedActorKey);
         actorKey2TTSVoice.put(actor.key, voice);
-        logger.warn("Actor " + actor.toString() + " re-uses voice " + voice.guid() + " of actor " + reusedActorKey);
+        logger.warn("Actor {} re-uses voice {} of actor {}", actor, voice, reusedActorKey);
         return voice;
     }
 
@@ -391,7 +412,9 @@ public class TextToSpeechPlayer {
         Voice voice = getVoiceFor(actor);
         if (voice != TextToSpeech.None) {
             try {
-                textToSpeech.speak(voice, pronounciationDictionary.correct(voice, prompt), new String[] { mood });
+                // TODO consuming exception renders TextToSpeechPlayerTest.testTextTOSpeechPlayerPhonemeDictionarySetup
+                // useless
+                textToSpeech.speak(voice, pronunciationDictionary.correct(voice, prompt), new String[] { mood });
             } catch (IOException e) {
                 logger.warn(e.getMessage(), e);
             } catch (RuntimeException e) {
@@ -407,7 +430,7 @@ public class TextToSpeechPlayer {
         Voice voice = getVoiceFor(actor);
         if (voice != TextToSpeech.None) {
             try {
-                return textToSpeech.speak(voice, pronounciationDictionary.correct(voice, prompt), file,
+                return textToSpeech.speak(voice, pronunciationDictionary.correct(voice, prompt), file,
                         new String[] { mood });
             } catch (IOException e) {
                 throw ExceptionUtil.asRuntimeException(e);

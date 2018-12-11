@@ -14,7 +14,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
@@ -48,7 +47,6 @@ public class TextToSpeechRecorder {
 
     private final ResourceLoader resources;
     private final StorageSynchronizer storage;
-    private final Map<String, Voice> voices;
     private final Set<String> actors = new HashSet<>();
     private final ActorVoices actorVoices;
     private final TextToSpeechPlayer ttsPlayer;
@@ -136,9 +134,7 @@ public class TextToSpeechRecorder {
         this.textVariables = textVariables;
 
         this.ttsPlayer = new TextToSpeechPlayer(config);
-        this.ttsPlayer.load();
         this.buildStart = System.currentTimeMillis();
-        this.voices = ttsPlayer.textToSpeech.getVoices();
         this.storage = new StorageSynchronizer(new PrerecordedSpeechZipStorage(path, resources.getRoot(), name));
         this.actorVoices = new ActorVoices(resources);
         logger.info("Build start: {} with {} encoding threads", new Date(buildStart), storage.getEncodingThreads());
@@ -158,7 +154,6 @@ public class TextToSpeechRecorder {
         logger.info("Scanning script '{}'", scanner.getScriptName());
         Set<String> created = new HashSet<>();
         for (Message message : scanner) {
-
             Actor actor = message.actor;
             Voice voice = getVoice(actor);
             if (!actors.contains(actor.key)) {
@@ -254,18 +249,24 @@ public class TextToSpeechRecorder {
     }
 
     private Voice getVoice(Actor actor) {
-        String voiceGuid = ttsPlayer.getAssignedVoiceFor(actor);
+        String voiceGuid = ttsPlayer.getPrerecordedVoiceGuidFor(actor);
 
         final Voice voice;
         if (voiceGuid == null) {
+            boolean hasVoice = ttsPlayer.hasTTSVoice(actor) || ttsPlayer.hasReservedVoice(actor);
+            if (!hasVoice) {
+                throw new IllegalArgumentException(
+                        "No assigned voice for actor '" + actor.key + "' in " + ActorVoices.VoicesFilename);
+            }
             voice = ttsPlayer.getVoiceFor(actor);
         } else {
-            voice = voices.get(voiceGuid);
+            ttsPlayer.useTTSVoice(actor.key, voiceGuid);
+            voice = ttsPlayer.getVoiceFor(actor);
         }
 
         if (voice == null) {
             throw new IllegalArgumentException(
-                    "Voice for actor '" + actor + "' not found in " + ActorVoices.VoicesFilename);
+                    "Voice for actor '" + actor.key + "' not found in " + ActorVoices.VoicesFilename);
         }
         return voice;
     }

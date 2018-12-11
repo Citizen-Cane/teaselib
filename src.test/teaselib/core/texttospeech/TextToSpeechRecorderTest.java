@@ -23,6 +23,7 @@ import org.junit.rules.TemporaryFolder;
 import teaselib.Actor;
 import teaselib.Message;
 import teaselib.Message.Type;
+import teaselib.Mood;
 import teaselib.Sexuality.Gender;
 import teaselib.core.AbstractMessage;
 import teaselib.core.ResourceLoader;
@@ -68,7 +69,6 @@ public class TextToSpeechRecorderTest {
         ResourceLoader resources = new ResourceLoader(this.getClass(),
                 ResourceLoader.absolute(ReflectionUtils.packagePath(getClass())));
 
-        tts.load();
         tts.loadActorVoiceProperties(resources);
         tts.acquireVoice(actor, resources);
 
@@ -80,9 +80,8 @@ public class TextToSpeechRecorderTest {
         List<Future<String>> futures = new ArrayList<>();
 
         for (int i = 0; i < n; i++) {
-            String fileName = Integer.toString(i);
-            futures.add(executor.submit(
-                    () -> tts.textToSpeech.speak(tts.getVoiceFor(actor), "This is a test.", new File(path, fileName))));
+            File testFile = new File(path, Integer.toString(i));
+            futures.add(executor.submit(() -> tts.speak(actor, "This is a test.", Mood.Neutral, testFile)));
         }
 
         List<String> fileNames = new ArrayList<>();
@@ -189,7 +188,7 @@ public class TextToSpeechRecorderTest {
 
     TextToSpeechRecorder recordVoices(ScriptScanner scriptScanner, File path, String name, ResourceLoader resources)
             throws IOException, InterruptedException, ExecutionException {
-        DebugSetup setup = new DebugSetup().withDictionaries();
+        DebugSetup setup = new DebugSetup().withDictionaries().withOutput();
         Configuration configuration = setup.applyTo(new Configuration());
         TextToSpeechRecorder recorder = new TextToSpeechRecorder(path, name, resources, new TextVariables(),
                 configuration);

@@ -1,7 +1,8 @@
 package teaselib.core.configuration;
 
-import static teaselib.core.configuration.Configuration.*;
-import static teaselib.core.configuration.TeaseLibConfigSetup.*;
+import static teaselib.core.configuration.Configuration.DEFAULTS;
+import static teaselib.core.configuration.TeaseLibConfigSetup.ITEM_DEFAULT_STORE_FILENAME;
+import static teaselib.core.configuration.TeaseLibConfigSetup.PRONUNCIATION_DIRECTORY;
 
 import java.io.File;
 

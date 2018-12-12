@@ -24,7 +24,11 @@ public class TestScript extends TeaseScript {
     public static final String TestScriptNamespace = TestScript.class.getSimpleName() + " " + "Namespace";
 
     public static final Actor newActor() {
-        return new Actor("Test", Gender.Feminine, Locale.US);
+        return newActor(Gender.Feminine);
+    }
+
+    public static Actor newActor(Gender gender) {
+        return new Actor("Test", gender, Locale.US);
     }
 
     public static TestScript getOne() {

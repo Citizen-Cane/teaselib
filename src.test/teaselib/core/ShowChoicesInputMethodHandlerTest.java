@@ -1,11 +1,10 @@
 package teaselib.core;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Locale;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.Before;
@@ -23,6 +22,7 @@ import teaselib.core.configuration.DebugSetup;
 import teaselib.core.debug.DebugHost;
 import teaselib.core.debug.DebugPersistence;
 import teaselib.test.IntegrationTests;
+import teaselib.test.TestScript;
 
 @Category(IntegrationTests.class)
 @RunWith(Parameterized.class)
@@ -58,7 +58,7 @@ public class ShowChoicesInputMethodHandlerTest {
     @Before
     public void init() throws IOException {
         TeaseLib teaseLib = new TeaseLib(new DebugHost(), new DebugPersistence(), new DebugSetup());
-        Actor actor = teaseLib.getDominant(Gender.Masculine, Locale.US);
+        Actor actor = TestScript.newActor(Gender.Masculine);
         ResourceLoader resourceLoader = new ResourceLoader(this.getClass());
 
         script = new RunnableTestScript(teaseLib, resourceLoader, actor, "foobar") {

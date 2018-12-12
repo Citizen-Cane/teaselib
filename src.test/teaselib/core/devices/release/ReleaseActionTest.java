@@ -7,7 +7,6 @@ import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 import java.util.Arrays;
-import java.util.Locale;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.junit.Before;
@@ -120,8 +119,7 @@ public class ReleaseActionTest {
 
     public static class BuggyScript extends TeaseScript implements MainScript {
         public BuggyScript(TeaseLib teaseLib) {
-            super(teaseLib, new ResourceLoader(BuggyScript.class), teaseLib.getDominant(Gender.Feminine, Locale.UK),
-                    "test");
+            super(teaseLib, new ResourceLoader(BuggyScript.class), TestScript.newActor(Gender.Feminine), "test");
         }
 
         @Override
@@ -154,8 +152,7 @@ public class ReleaseActionTest {
 
     public static class BugFreeScript extends TeaseScript implements MainScript {
         public BugFreeScript(TeaseLib teaseLib) {
-            super(teaseLib, new ResourceLoader(BuggyScript.class), teaseLib.getDominant(Gender.Feminine, Locale.UK),
-                    "test");
+            super(teaseLib, new ResourceLoader(BuggyScript.class), TestScript.newActor(Gender.Feminine), "test");
         }
 
         @Override

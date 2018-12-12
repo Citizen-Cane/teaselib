@@ -9,11 +9,32 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class TextVariables implements Iterable<Enum<?>> {
+    /**
+     * Form of address for the user.
+     * 
+     * @author Citizen-Cane
+     *
+     */
     public enum Names {
         /**
-         * Name of the slave.
+         * Short-hand for slave title.
          */
         Slave,
+
+        /**
+         * slave title.
+         */
+        Slave_Title,
+
+        /**
+         * slave name.
+         */
+        Slave_Name,
+
+        /**
+         * slave full name.
+         */
+        Slave_FullName,
     }
 
     public static final TextVariables Defaults = createDefaults();

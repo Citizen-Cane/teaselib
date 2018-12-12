@@ -13,6 +13,7 @@ public final class TeaseLibConfigSetup implements Setup {
     private static final String NETWORK_PROPERTIES = "network.properties";
     public static final String VOICES_PROPERTIES = "voices.properties";
     public static final String PRONUNCIATION_DIRECTORY = "pronunciation";
+    private static final String IDENTITY_PROPERTIES = "identities.properties";
 
     static final String ITEM_DEFAULT_STORE_FILENAME = "items.xml";
     static final String ITEM_TEMPLATE_STORE_FILENAME = "useritems_template.xml";
@@ -33,15 +34,13 @@ public final class TeaseLibConfigSetup implements Setup {
         addTeaseLibDefaults(config);
         addNetworkDefaults(config);
         addSpeechDefaults(config);
+        addIdentitiesDefaults(config);
 
         return config;
     }
 
     private void addTeaseLibDefaults(Configuration config) throws IOException {
-        config.add(Configuration.DEFAULTS + TEASELIB_PROPERTIES);
-        File teaseLibProperties = new File(userPath, TEASELIB_PROPERTIES);
-        config.addUserFile(Configuration.DEFAULTS + TEASELIB_PROPERTIES, teaseLibProperties);
-        config.add(teaseLibProperties);
+        addUserConfig(config, TEASELIB_PROPERTIES);
 
         config.set(UserItemsImpl.Settings.ITEM_DEFAULT_STORE, Configuration.DEFAULTS + ITEM_DEFAULT_STORE_FILENAME);
         config.addUserFile(UserItemsImpl.Settings.ITEM_USER_STORE,
@@ -49,10 +48,7 @@ public final class TeaseLibConfigSetup implements Setup {
     }
 
     private void addNetworkDefaults(Configuration config) throws IOException {
-        config.add(Configuration.DEFAULTS + NETWORK_PROPERTIES);
-        File networkProperties = new File(userPath, NETWORK_PROPERTIES);
-        config.addUserFile(Configuration.DEFAULTS + NETWORK_PROPERTIES, networkProperties);
-        config.add(networkProperties);
+        addUserConfig(config, NETWORK_PROPERTIES);
     }
 
     private void addSpeechDefaults(Configuration config) throws IOException {
@@ -60,5 +56,16 @@ public final class TeaseLibConfigSetup implements Setup {
                 new File(userPath, VOICES_PROPERTIES));
         config.set(TextToSpeechPlayer.Settings.Pronunciation,
                 new File(teaseLibPath, PRONUNCIATION_DIRECTORY).getAbsolutePath());
+    }
+
+    private void addIdentitiesDefaults(Configuration config) throws IOException {
+        addUserConfig(config, IDENTITY_PROPERTIES);
+    }
+
+    private void addUserConfig(Configuration config, String properties) throws IOException {
+        config.add(Configuration.DEFAULTS + properties);
+        File userConfig = new File(userPath, properties);
+        config.addUserFile(Configuration.DEFAULTS + properties, userConfig);
+        config.add(userConfig);
     }
 }

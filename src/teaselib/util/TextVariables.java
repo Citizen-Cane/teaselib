@@ -11,7 +11,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import teaselib.Actor;
-import teaselib.Actor.FormOfAddress;
 import teaselib.Sexuality.Gender;
 import teaselib.core.TeaseLib;
 
@@ -125,18 +124,22 @@ public class TextVariables implements Iterable<Enum<?>> {
     public void addUserIdentity(TeaseLib teaseLib, String domain, Locale locale) {
         Gender gender = teaseLib.new PersistentEnum<>(domain, Gender.class).value();
         String language = locale.getLanguage();
+        String namespace = userNamespace(gender);
 
-        // TODO Config is technical -> get from user properties
-        String string = teaseLib.config.get(qualifiedUserName(gender, Actor.FormOfAddress.Title, language));
+        String string = teaseLib.getString(domain, namespace, qualifiedName(Actor.FormOfAddress.Title, language));
         put(Names.Slave, string);
         put(Names.Slave_Title, string);
-        put(Names.Slave_Name, teaseLib.config.get(qualifiedUserName(gender, Actor.FormOfAddress.Name, language)));
+        put(Names.Slave_Name, teaseLib.getString(domain, namespace, qualifiedName(Actor.FormOfAddress.Name, language)));
         put(Names.Slave_FullName,
-                teaseLib.config.get(qualifiedUserName(gender, Actor.FormOfAddress.FullName, language)));
+                teaseLib.getString(domain, namespace, qualifiedName(Actor.FormOfAddress.FullName, language)));
     }
 
-    private static String qualifiedUserName(Gender gender, FormOfAddress formOfAddress, String language) {
-        return qualifiedName(Names.User.name(), gender.name(), formOfAddress.name(), language);
+    private static String userNamespace(Gender gender) {
+        return qualifiedName(Names.User.name(), gender.name());
+    }
+
+    private static String qualifiedName(Enum<?> part1, String part2) {
+        return qualifiedName(part1.name(), part2);
     }
 
     private static String qualifiedName(String... parts) {

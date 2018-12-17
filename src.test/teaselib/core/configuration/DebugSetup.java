@@ -75,7 +75,7 @@ public final class DebugSetup implements Setup {
 
     private static void loadIdentities(Configuration config) {
         try {
-            config.add(Configuration.DEFAULTS + TeaseLibConfigSetup.IDENTITY_PROPERTIES);
+            config.addDefaultProperties(Configuration.DEFAULTS, TeaseLibConfigSetup.IDENTITY_PROPERTIES, "user");
         } catch (IOException e) {
             throw ExceptionUtil.asRuntimeException(e);
         }

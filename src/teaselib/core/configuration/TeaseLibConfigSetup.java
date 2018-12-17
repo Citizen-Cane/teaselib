@@ -40,7 +40,7 @@ public final class TeaseLibConfigSetup implements Setup {
     }
 
     private void addTeaseLibDefaults(Configuration config) throws IOException {
-        addUserConfig(config, TEASELIB_PROPERTIES);
+        config.add(Configuration.DEFAULTS, TEASELIB_PROPERTIES, userPath);
 
         config.set(UserItemsImpl.Settings.ITEM_DEFAULT_STORE, Configuration.DEFAULTS + ITEM_DEFAULT_STORE_FILENAME);
         config.addUserFile(UserItemsImpl.Settings.ITEM_USER_STORE,
@@ -48,7 +48,7 @@ public final class TeaseLibConfigSetup implements Setup {
     }
 
     private void addNetworkDefaults(Configuration config) throws IOException {
-        addUserConfig(config, NETWORK_PROPERTIES);
+        config.add(Configuration.DEFAULTS, NETWORK_PROPERTIES, userPath);
     }
 
     private void addSpeechDefaults(Configuration config) throws IOException {
@@ -59,13 +59,7 @@ public final class TeaseLibConfigSetup implements Setup {
     }
 
     private void addIdentitiesDefaults(Configuration config) throws IOException {
-        addUserConfig(config, IDENTITY_PROPERTIES);
+        config.addUserProperties(Configuration.DEFAULTS, IDENTITY_PROPERTIES, userPath, "user");
     }
 
-    private void addUserConfig(Configuration config, String properties) throws IOException {
-        config.add(Configuration.DEFAULTS + properties);
-        File userConfig = new File(userPath, properties);
-        config.addUserFile(Configuration.DEFAULTS + properties, userConfig);
-        config.add(userConfig);
-    }
 }

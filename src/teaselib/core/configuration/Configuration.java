@@ -5,13 +5,17 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
 
 import teaselib.core.util.FileUtilities;
 import teaselib.core.util.QualifiedItem;
 import teaselib.core.util.ReflectionUtils;
+import teaselib.core.util.SortedProperties;
 
 public class Configuration {
     static final String DEFAULTS = ReflectionUtils.absolutePath(Configuration.class) + "defaults/";
@@ -30,12 +34,57 @@ public class Configuration {
         setup.applyTo(this);
     }
 
-    public void addUserFile(Enum<?> setting, String templateResource, File userFile) throws IOException {
-        set(setting, userFile.getAbsolutePath());
-        addUserFile(templateResource, userFile);
+    public void add(String defaults, String properties, File userPath) throws IOException {
+        add(defaults + properties);
+        File userConfig = new File(userPath, properties);
+        createUserFileIfNotExisits(defaults + properties, userConfig);
+        add(userConfig);
     }
 
-    public void addUserFile(String templateResource, File userFile) throws IOException {
+    private final Map<String, Properties> userPropertiesNamespaceMapping = new HashMap<>();
+
+    public void addDefaultProperties(String defaults, String properties, String... namespaces) throws IOException {
+        addUserProperties(defaults, properties, null, Arrays.asList(namespaces));
+    }
+
+    public void addUserProperties(String defaults, String properties, File userPath, String... namespaces)
+            throws IOException {
+        addUserProperties(defaults, properties, userPath, Arrays.asList(namespaces));
+    }
+
+    public void addUserProperties(String defaults, String properties, File userPath, List<String> namespaces)
+            throws IOException {
+        SortedProperties p = new SortedProperties();
+
+        if (userPath != null) {
+            File file = new File(userPath, properties);
+            createUserFileIfNotExisits(defaults + properties, file);
+            try (InputStream stream = new FileInputStream(file)) {
+                Objects.requireNonNull(stream, "User properties file not found:" + properties);
+                p.load(stream);
+                // TODO Save to disk on write
+            }
+        } else {
+            try (InputStream stream = getClass().getResourceAsStream(defaults + properties)) {
+                p.load(stream);
+            }
+        }
+
+        for (String string : namespaces) {
+            userPropertiesNamespaceMapping.put(string, p);
+        }
+    }
+
+    public Properties getProperties(String namespace) {
+        throw new UnsupportedOperationException("TODO implement!");
+    }
+
+    public void addUserFile(Enum<?> setting, String templateResource, File userFile) throws IOException {
+        set(setting, userFile.getAbsolutePath());
+        createUserFileIfNotExisits(templateResource, userFile);
+    }
+
+    public void createUserFileIfNotExisits(String templateResource, File userFile) throws IOException {
         if (!userFile.exists()) {
             FileUtilities.copy(templateResource, userFile);
         }
@@ -134,4 +183,5 @@ public class Configuration {
         System.getProperties().setProperty(property.toString(), value);
         return this;
     }
+
 }

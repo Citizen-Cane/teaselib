@@ -1,18 +1,23 @@
 package teaselib.util;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import teaselib.Actor;
+import teaselib.Actor.FormOfAddress;
+import teaselib.Sexuality.Gender;
+import teaselib.core.TeaseLib;
+
 public class TextVariables implements Iterable<Enum<?>> {
     /**
-     * Form of address for the user.
-     * 
-     * @author Citizen-Cane
+     * How to address the submissive.
      *
      */
     public enum Names {
@@ -35,14 +40,11 @@ public class TextVariables implements Iterable<Enum<?>> {
          * slave full name.
          */
         Slave_FullName,
-    }
 
-    public static final TextVariables Defaults = createDefaults();
-
-    private static TextVariables createDefaults() {
-        TextVariables defaults = new TextVariables();
-        defaults.put(Names.Slave, "slave");
-        return defaults;
+        User,
+        User_Title,
+        User_Name,
+        USer_FullName
     }
 
     private static final Pattern textVariablePattern = Pattern.compile("(?i)#\\w+",
@@ -119,4 +121,37 @@ public class TextVariables implements Iterable<Enum<?>> {
         m.appendTail(sb);
         return sb.toString();
     }
+
+    public void addUserIdentity(TeaseLib teaseLib, String domain, Locale locale) {
+        Gender gender = teaseLib.new PersistentEnum<>(domain, Gender.class).value();
+        String language = locale.getLanguage();
+
+        // TODO Config is technical -> get from user properties
+        String string = teaseLib.config.get(qualifiedUserName(gender, Actor.FormOfAddress.Title, language));
+        put(Names.Slave, string);
+        put(Names.Slave_Title, string);
+        put(Names.Slave_Name, teaseLib.config.get(qualifiedUserName(gender, Actor.FormOfAddress.Name, language)));
+        put(Names.Slave_FullName,
+                teaseLib.config.get(qualifiedUserName(gender, Actor.FormOfAddress.FullName, language)));
+    }
+
+    private static String qualifiedUserName(Gender gender, FormOfAddress formOfAddress, String language) {
+        return qualifiedName(Names.User.name(), gender.name(), formOfAddress.name(), language);
+    }
+
+    private static String qualifiedName(String... parts) {
+        Iterator<String> part = Arrays.asList(parts).iterator();
+        StringBuilder qualifiedName = new StringBuilder(part.next().toLowerCase());
+        while (part.hasNext()) {
+            qualifiedName.append(".");
+            qualifiedName.append(part.next().toLowerCase());
+        }
+        return qualifiedName.toString();
+    }
+
+    @Override
+    public String toString() {
+        return entries.toString();
+    }
+
 }

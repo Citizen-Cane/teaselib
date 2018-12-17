@@ -770,8 +770,11 @@ public class TeaseLib {
         return makePropertyName(domain, name.getClass().getName(), name.name());
     }
 
-    public TextVariables getTextVariables(Locale locale) {
-        return persistence.getTextVariables(locale);
+    public TextVariables getTextVariables(String domain, Locale locale) {
+        TextVariables variables = new TextVariables();
+        variables.addUserIdentity(this, domain, locale);
+        variables.addAll(persistence.getTextVariables(locale));
+        return variables;
     }
 
     public class PersistentSequence<T extends Enum<T>> {

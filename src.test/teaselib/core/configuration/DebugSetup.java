@@ -5,12 +5,14 @@ import static teaselib.core.configuration.TeaseLibConfigSetup.ITEM_DEFAULT_STORE
 import static teaselib.core.configuration.TeaseLibConfigSetup.PRONUNCIATION_DIRECTORY;
 
 import java.io.File;
+import java.io.IOException;
 
 import teaselib.Config;
 import teaselib.core.UserItemsImpl;
 import teaselib.core.devices.remote.LocalNetworkDevice;
 import teaselib.core.speechrecognition.SpeechRecognitionResult.Confidence;
 import teaselib.core.texttospeech.TextToSpeechPlayer;
+import teaselib.core.util.ExceptionUtil;
 
 public final class DebugSetup implements Setup {
     boolean ignoreMissingResources = true;
@@ -27,6 +29,7 @@ public final class DebugSetup implements Setup {
         applyOutput(config);
         applyDictionanries(config);
         loadDefaultItemStores(config);
+        loadIdentities(config);
 
         return config;
     }
@@ -68,6 +71,14 @@ public final class DebugSetup implements Setup {
 
     private static void loadDefaultItemStores(Configuration config) {
         config.set(UserItemsImpl.Settings.ITEM_DEFAULT_STORE, DEFAULTS + ITEM_DEFAULT_STORE_FILENAME);
+    }
+
+    private static void loadIdentities(Configuration config) {
+        try {
+            config.add(Configuration.DEFAULTS + TeaseLibConfigSetup.IDENTITY_PROPERTIES);
+        } catch (IOException e) {
+            throw ExceptionUtil.asRuntimeException(e);
+        }
     }
 
     public static Configuration getConfiguration() {

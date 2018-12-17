@@ -13,7 +13,7 @@ public final class TeaseLibConfigSetup implements Setup {
     private static final String NETWORK_PROPERTIES = "network.properties";
     public static final String VOICES_PROPERTIES = "voices.properties";
     public static final String PRONUNCIATION_DIRECTORY = "pronunciation";
-    private static final String IDENTITY_PROPERTIES = "identities.properties";
+    public static final String IDENTITY_PROPERTIES = "identities.properties";
 
     static final String ITEM_DEFAULT_STORE_FILENAME = "items.xml";
     static final String ITEM_TEMPLATE_STORE_FILENAME = "useritems_template.xml";

@@ -39,9 +39,17 @@ public class TestScript extends TeaseScript {
         }
     }
 
+    public static TestScript getOne(Actor actor) {
+        try {
+            return new TestScript(new DebugHost(), new DebugPersistence(), new DebugSetup(), actor);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public static TestScript getOne(Setup setup) {
         try {
-            return new TestScript(new DebugHost(), new DebugPersistence(), setup);
+            return new TestScript(new DebugHost(), new DebugPersistence(), setup, newActor());
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -65,7 +73,7 @@ public class TestScript extends TeaseScript {
 
     public static TestScript getOne(String resourceRoot) {
         try {
-            return new TestScript(new DebugHost(), new DebugPersistence(), resourceRoot);
+            return new TestScript(new DebugHost(), new DebugPersistence(), resourceRoot, newActor());
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -76,32 +84,33 @@ public class TestScript extends TeaseScript {
     }
 
     protected TestScript(Setup setup) throws IOException {
-        this(new DebugHost(), new DebugPersistence(), setup);
+        this(new DebugHost(), new DebugPersistence(), setup, newActor());
     }
 
     TestScript(DebugHost dummyHost, DebugPersistence dummyPersistence) throws IOException {
         this(dummyHost, dummyPersistence, new ResourceLoader(TestScript.class, ResourceLoader.ResourcesInProjectFolder),
-                new DebugSetup());
+                new DebugSetup(), newActor());
     }
 
-    TestScript(DebugHost dummyHost, DebugPersistence dummyPersistence, Setup setup) throws IOException {
+    TestScript(DebugHost dummyHost, DebugPersistence dummyPersistence, Setup setup, Actor actor) throws IOException {
         this(dummyHost, dummyPersistence, new ResourceLoader(TestScript.class, ResourceLoader.ResourcesInProjectFolder),
-                setup);
+                setup, actor);
     }
 
     TestScript(DebugHost dummyHost, DebugPersistence dummyPersistence, Class<?> resourceRoot) throws IOException {
-        this(dummyHost, dummyPersistence, new ResourceLoader(resourceRoot), new DebugSetup());
+        this(dummyHost, dummyPersistence, new ResourceLoader(resourceRoot), new DebugSetup(), newActor());
     }
 
-    public TestScript(DebugHost debugHost, DebugPersistence debugPersistence, String resourceRoot) throws IOException {
-        this(debugHost, debugPersistence, new ResourceLoader(TestScript.class, resourceRoot), new DebugSetup());
-    }
-
-    TestScript(DebugHost dummyHost, DebugPersistence dummyPersistence, ResourceLoader resourceLoader, Setup setup)
+    public TestScript(DebugHost debugHost, DebugPersistence debugPersistence, String resourceRoot, Actor actor)
             throws IOException {
-        super(new TeaseLib(dummyHost, dummyPersistence, setup), resourceLoader, newActor(), TestScriptNamespace);
-        this.host = dummyHost;
-        this.persistence = dummyPersistence;
+        this(debugHost, debugPersistence, new ResourceLoader(TestScript.class, resourceRoot), new DebugSetup(), actor);
+    }
+
+    TestScript(DebugHost host, DebugPersistence persistence, ResourceLoader resourceLoader, Setup setup, Actor actor)
+            throws IOException {
+        super(new TeaseLib(host, persistence, setup), resourceLoader, actor, TestScriptNamespace);
+        this.host = host;
+        this.persistence = persistence;
         this.debugger = new Debugger(teaseLib);
     }
 

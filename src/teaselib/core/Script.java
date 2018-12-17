@@ -371,7 +371,7 @@ public abstract class Script {
     }
 
     private TextVariables allTextVariables() {
-        return new TextVariables(TextVariables.Defaults, teaseLib.getTextVariables(actor.locale()),
+        return new TextVariables(teaseLib.getTextVariables(TeaseLib.DefaultDomain, actor.locale()),
                 actor.textVariables);
     }
 

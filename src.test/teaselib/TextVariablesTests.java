@@ -1,6 +1,6 @@
 package teaselib;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 import java.util.Arrays;
 import java.util.List;
@@ -9,6 +9,7 @@ import java.util.Locale;
 import org.junit.Test;
 
 import teaselib.Sexuality.Gender;
+import teaselib.test.TestScript;
 import teaselib.util.TextVariables;
 
 public class TextVariablesTests {
@@ -24,14 +25,6 @@ public class TextVariablesTests {
         testData.put(Names.Second, "Paul");
         testData.put(Names.Third, "Mary");
         return testData;
-    }
-
-    @Test
-    public void testDefaultMatching() {
-        String expected = "You're My slave.";
-        String acual = TextVariables.Defaults
-                .expand("You're My #" + TextVariables.Defaults.get(TextVariables.Names.Slave) + ".");
-        assertEquals(expected, acual);
     }
 
     @Test
@@ -60,7 +53,7 @@ public class TextVariablesTests {
     public void testNonExisting() {
         List<String> expected = Arrays.asList("Yes, AAaa", "No, aAAa");
         List<String> actual = Arrays.asList("Yes, #AAaa", "No, #aAAa");
-        assertEquals(expected, TextVariables.Defaults.expand(actual));
+        assertEquals(expected, new TextVariables().expand(actual));
     }
 
     @Test
@@ -71,4 +64,31 @@ public class TextVariablesTests {
         List<String> actual = Arrays.asList("Yes, #name", "No, #FullName");
         assertEquals(expected, actor.textVariables.expand(actual));
     }
+
+    @Test
+    public void testDefaultsMasculine() {
+        TestScript script = TestScript.getOne(TestScript.newActor(Gender.Masculine));
+
+        script.persistentEnum(Gender.class).set(Gender.Masculine);
+
+        assertEquals("en", script.actor.locale().getLanguage());
+        assertEquals("slave", script.expandTextVariables("#slave"));
+        assertEquals("slave", script.expandTextVariables("#slave_title"));
+        assertEquals("Slave", script.expandTextVariables("#slave_name"));
+        assertEquals("Slave", script.expandTextVariables("#slave_fullname"));
+    }
+
+    @Test
+    public void testDefaultsFeminine() {
+        TestScript script = TestScript.getOne(TestScript.newActor(Gender.Masculine));
+
+        script.persistentEnum(Gender.class).set(Gender.Feminine);
+
+        assertEquals("en", script.actor.locale().getLanguage());
+        assertEquals("slave-girl", script.expandTextVariables("#slave"));
+        assertEquals("slave-girl", script.expandTextVariables("#slave_title"));
+        assertEquals("Slave-girl", script.expandTextVariables("#slave_name"));
+        assertEquals("Slave-girl", script.expandTextVariables("#slave_fullname"));
+    }
+
 }

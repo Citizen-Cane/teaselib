@@ -6,10 +6,11 @@ import org.junit.Test;
 
 import teaselib.Household;
 import teaselib.Toys;
+import teaselib.core.debug.DebugPersistence;
 import teaselib.core.util.PropertyNameMapping;
 
 public class SexScriptsPropertyNameMappingTest {
-    final PropertyNameMapping m = new SexScriptsPropertyNameMapping();
+    private final PropertyNameMapping m = new SexScriptsPropertyNameMapping(new DebugPersistence());
 
     @Test
     public void testPathMapping() throws Exception {

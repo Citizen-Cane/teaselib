@@ -27,6 +27,10 @@ public class SexScriptsPropertyNameMapping extends PropertyNameMapping {
     private static final String INTRO_FEMALE = "intro.female";
     private static final Set<String> LOWER_CASE_NAMES = new HashSet<>(Arrays.asList("Toys", "Clothes", "Household"));
 
+    public SexScriptsPropertyNameMapping(Persistence persistence) {
+        super(persistence);
+    }
+
     @Override
     public String mapDomain(String domain, String path, String name) {
         if ("Male".equals(domain) && Clothes.class.getSimpleName().equals(path)) {
@@ -89,46 +93,46 @@ public class SexScriptsPropertyNameMapping extends PropertyNameMapping {
     }
 
     @Override
-    public boolean has(String name, Persistence persistence) {
+    public boolean has(String name) {
         if (SEXUALITY_SEX.equals(name)) {
-            return persistence.has(INTRO_FEMALE);
+            return super.has(INTRO_FEMALE);
         } else {
-            return super.has(name, persistence);
+            return super.has(name);
         }
     }
 
     @Override
-    public String get(String name, Persistence persistence) {
+    public String get(String name) {
         if (SEXUALITY_SEX.equals(name)) {
-            if ("true".equals(persistence.get(INTRO_FEMALE))) {
+            if ("true".equals(super.get(INTRO_FEMALE))) {
                 return Sex.Female.name();
             } else {
                 return Sex.Male.name();
             }
         } else {
-            return super.get(name, persistence);
+            return super.get(name);
         }
     }
 
     @Override
-    public void set(String name, String value, Persistence persistence) {
+    public void set(String name, String value) {
         if (SEXUALITY_SEX.equals(name)) {
             if ("Female".equals(value)) {
-                persistence.set(INTRO_FEMALE, false);
+                super.set(INTRO_FEMALE, false);
             } else {
-                persistence.set(INTRO_FEMALE, true);
+                super.set(INTRO_FEMALE, true);
             }
         } else {
-            super.set(name, value, persistence);
+            super.set(name, value);
         }
     }
 
     @Override
-    public void clear(String name, Persistence persistence) {
+    public void clear(String name) {
         if (SEXUALITY_SEX.equals(name)) {
-            persistence.clear(INTRO_FEMALE);
+            super.clear(INTRO_FEMALE);
         } else {
-            super.clear(name, persistence);
+            super.clear(name);
         }
     }
 

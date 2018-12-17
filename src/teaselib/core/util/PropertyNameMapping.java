@@ -1,17 +1,28 @@
 package teaselib.core.util;
 
+import java.io.IOException;
+import java.util.Locale;
+
+import teaselib.Actor;
+import teaselib.Sexuality.Gender;
 import teaselib.Toys;
 import teaselib.core.Persistence;
 import teaselib.core.TeaseLib;
-import teaselib.util.Items;
+import teaselib.core.UserItems;
+import teaselib.util.PersistenceLogger;
+import teaselib.util.TextVariables;
 
-public class PropertyNameMapping {
-    public static final PropertyNameMapping PassThrough = new PropertyNameMapping();
-
-    public static final String DefaultDomain = new String();
-    public static final String None = new String();
+public class PropertyNameMapping implements Persistence {
+    public static final String DefaultDomain = "";
+    public static final String None = "";
 
     protected static final String[] StrippedPackageNames = { "teaselib", "teaselib.scripts" };
+
+    private final Persistence persistence;
+
+    public PropertyNameMapping(Persistence persistence) {
+        this.persistence = new PersistenceLogger(persistence);
+    }
 
     /**
      * @param domain
@@ -84,43 +95,47 @@ public class PropertyNameMapping {
         return name;
     }
 
-    public boolean has(String name, Persistence persistence) {
+    public boolean has(String name) {
         return persistence.has(name);
     }
 
-    public String get(String name, Persistence persistence) {
+    public String get(String name) {
         return persistence.get(name);
     }
 
-    public boolean getBoolean(String name, Persistence persistence) {
+    public boolean getBoolean(String name) {
         return persistence.getBoolean(name);
     }
 
-    public void set(String name, String value, Persistence persistence) {
+    public void set(String name, String value) {
         persistence.set(name, value);
     }
 
-    public void set(String name, boolean value, Persistence persistence) {
+    public void set(String name, boolean value) {
         persistence.set(name, value);
     }
 
-    public void clear(String name, Persistence persistence) {
+    public void clear(String name) {
         persistence.clear(name);
     }
 
-    /**
-     * Obtain pre-defined items from the hosting application.
-     * 
-     * @param teaseLib
-     *            A TeaseLib instance used for retrieving items from persistence
-     * @param item
-     *            The item to obtain additional entries for
-     * 
-     * @return A list of items, all of type T and the value of the input
-     *         argument, but with additional extras defined by the mapping.
-     */
-    public <T> Items userItems(TeaseLib teaseLib, T item) {
-        return Items.None;
+    public UserItems getUserItems(TeaseLib teaseLib) throws IOException {
+        return persistence.getUserItems(teaseLib);
+    }
+
+    @Override
+    public TextVariables getTextVariables(Locale locale) {
+        return persistence.getTextVariables(locale);
+    }
+
+    @Override
+    public Actor getDominant(Gender gender, Locale locale) {
+        return persistence.getDominant(gender, locale);
+    }
+
+    @Override
+    public PropertyNameMapping getNameMapping() {
+        return this;
     }
 
 }

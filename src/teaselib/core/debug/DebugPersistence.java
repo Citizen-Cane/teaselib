@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.function.Function;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,28 +30,29 @@ public class DebugPersistence implements Persistence {
 
     public final Map<String, String> storage;
 
-    private final PropertyNameMapping nameMapping;
+    private final Function<Persistence, PropertyNameMapping> propertyMappingSupplier;
 
     public DebugPersistence() {
-        this(new PropertyNameMapping());
+        this(new DebugStorage());
     }
 
     public DebugPersistence(Map<String, String> storage) {
-        this(storage, new PropertyNameMapping());
+        this(storage, (persistence) -> new PropertyNameMapping(persistence));
     }
 
-    public DebugPersistence(PropertyNameMapping propertyNameMapping) {
-        this(new DebugStorage(), propertyNameMapping);
+    public DebugPersistence(Function<Persistence, PropertyNameMapping> propertyMappingSupplier) {
+        this(new DebugStorage(), propertyMappingSupplier);
     }
 
-    public DebugPersistence(Map<String, String> storage, PropertyNameMapping propertyNameMapping) {
+    public DebugPersistence(Map<String, String> storage,
+            Function<Persistence, PropertyNameMapping> propertyMappingSupplier) {
         this.storage = storage;
-        this.nameMapping = propertyNameMapping;
+        this.propertyMappingSupplier = propertyMappingSupplier;
     }
 
     @Override
     public PropertyNameMapping getNameMapping() {
-        return nameMapping;
+        return propertyMappingSupplier.apply(this);
     }
 
     @Override

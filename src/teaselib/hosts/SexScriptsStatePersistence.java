@@ -31,7 +31,6 @@ public class SexScriptsStatePersistence implements Persistence {
     private static final String TRUE = "true";
 
     private final ss.IScript host;
-    private final PropertyNameMapping nameMapping = new SexScriptsPropertyNameMapping();
 
     public SexScriptsStatePersistence(IScript host) {
         this.host = host;
@@ -57,7 +56,7 @@ public class SexScriptsStatePersistence implements Persistence {
 
     @Override
     public PropertyNameMapping getNameMapping() {
-        return nameMapping;
+        return new SexScriptsPropertyNameMapping(this);
     }
 
     @Override
@@ -83,25 +82,21 @@ public class SexScriptsStatePersistence implements Persistence {
 
     @Override
     public String get(String name) {
-        name = getNameMapping().mapName(PropertyNameMapping.None, PropertyNameMapping.None, name);
         return host.loadString(name);
     }
 
     @Override
     public void set(String name, String value) {
-        name = getNameMapping().mapName(PropertyNameMapping.None, PropertyNameMapping.None, name);
         host.save(name, value);
     }
 
     @Override
     public void set(String name, boolean value) {
-        name = getNameMapping().mapName(PropertyNameMapping.None, PropertyNameMapping.None, name);
         set(name, value ? TRUE : FALSE);
     }
 
     @Override
     public void clear(String name) {
-        name = getNameMapping().mapName(PropertyNameMapping.None, PropertyNameMapping.None, name);
         host.save(name, null);
     }
 

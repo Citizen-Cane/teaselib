@@ -1,6 +1,8 @@
 package teaselib;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 
@@ -30,7 +32,7 @@ public class GenderAndSexTest {
 
     @Test
     public void testSexScriptsSexMapping() {
-        TestScript script = TestScript.getOne(new SexScriptsPropertyNameMapping());
+        TestScript script = TestScript.getOne(SexScriptsPropertyNameMapping::new);
 
         PersistentEnum<Sex> sex = script.persistentEnum(Sex.class);
         assertFalse(sex.available());
@@ -49,7 +51,7 @@ public class GenderAndSexTest {
 
     @Test
     public void testSexScriptsSexualOrientationMappingAndMappingOfNestedEnums() {
-        TestScript script = TestScript.getOne(new SexScriptsPropertyNameMapping());
+        TestScript script = TestScript.getOne(SexScriptsPropertyNameMapping::new);
 
         PersistentBoolean likesMales = script.persistentBoolean(Sexuality.Orientation.LikesMales);
         assertFalse(likesMales.available());

@@ -50,7 +50,6 @@ import teaselib.util.Item;
 import teaselib.util.ItemGuid;
 import teaselib.util.ItemImpl;
 import teaselib.util.Items;
-import teaselib.util.PersistenceLogger;
 import teaselib.util.TeaseLibLogger;
 import teaselib.util.TextVariables;
 
@@ -63,7 +62,7 @@ public class TeaseLib {
     private static final String TranscriptLogFileName = "TeaseLib session transcript.log";
 
     public final Host host;
-    private final Persistence persistence;
+    private final PropertyNameMapping persistence;
     final UserItems userItems;
     public final TeaseLibLogger transcript;
 
@@ -90,7 +89,7 @@ public class TeaseLib {
         logJavaProperties();
 
         this.host = host;
-        this.persistence = new PersistenceLogger(persistence);
+        this.persistence = persistence.getNameMapping();
         this.config = new Configuration(setup);
 
         this.userItems = persistence.getUserItems(this);
@@ -342,11 +341,11 @@ public class TeaseLib {
         }
 
         public void clear() {
-            persistence.getNameMapping().clear(name, persistence);
+            persistence.clear(name);
         }
 
         public boolean available() {
-            return persistence.getNameMapping().has(name, persistence);
+            return persistence.has(name);
         }
 
         public PersistentValue<T> defaultValue(T defaultValue) {
@@ -430,8 +429,8 @@ public class TeaseLib {
 
         @Override
         public Boolean value() {
-            if (persistence.getNameMapping().has(name, persistence)) {
-                return persistence.getNameMapping().getBoolean(name, persistence);
+            if (persistence.has(name)) {
+                return persistence.getBoolean(name);
             } else {
                 return defaultValue;
             }
@@ -443,7 +442,7 @@ public class TeaseLib {
 
         @Override
         public PersistentValue<Boolean> set(Boolean value) {
-            persistence.getNameMapping().set(name, value, persistence);
+            persistence.set(name, value);
             return this;
         }
 
@@ -479,7 +478,7 @@ public class TeaseLib {
 
         @Override
         public Integer value() {
-            String value = persistence.getNameMapping().get(name, persistence);
+            String value = persistence.get(name);
             if (value == null) {
                 return defaultValue;
             } else {
@@ -493,7 +492,7 @@ public class TeaseLib {
 
         @Override
         public PersistentValue<Integer> set(Integer value) {
-            persistence.getNameMapping().set(name, Integer.toString(value), persistence);
+            persistence.set(name, Integer.toString(value));
             return this;
         }
     }
@@ -523,7 +522,7 @@ public class TeaseLib {
 
         @Override
         public Long value() {
-            String value = persistence.getNameMapping().get(name, persistence);
+            String value = persistence.get(name);
             if (value == null) {
                 return defaultValue;
             } else {
@@ -537,7 +536,7 @@ public class TeaseLib {
 
         @Override
         public PersistentValue<Long> set(Long value) {
-            persistence.getNameMapping().set(name, Long.toString(value), persistence);
+            persistence.set(name, Long.toString(value));
             return this;
         }
     }
@@ -565,7 +564,7 @@ public class TeaseLib {
 
         @Override
         public Double value() {
-            String value = persistence.getNameMapping().get(name, persistence);
+            String value = persistence.get(name);
             if (value == null) {
                 return defaultValue;
             } else {
@@ -579,7 +578,7 @@ public class TeaseLib {
 
         @Override
         public PersistentValue<Double> set(Double value) {
-            persistence.getNameMapping().set(name, Double.toString(value), persistence);
+            persistence.set(name, Double.toString(value));
             return this;
         }
     }
@@ -607,7 +606,7 @@ public class TeaseLib {
 
         @Override
         public String value() {
-            String value = persistence.getNameMapping().get(name, persistence);
+            String value = persistence.get(name);
             if (value == null) {
                 return defaultValue;
             } else {
@@ -617,7 +616,7 @@ public class TeaseLib {
 
         @Override
         public PersistentValue<String> set(String value) {
-            persistence.getNameMapping().set(name, value, persistence);
+            persistence.set(name, value);
             return this;
         }
     }
@@ -645,8 +644,8 @@ public class TeaseLib {
         @Override
         public T value() {
             T any = defaultValue;
-            if (persistence.getNameMapping().has(name, persistence)) {
-                String valueAsString = persistence.getNameMapping().get(name, persistence);
+            if (persistence.has(name)) {
+                String valueAsString = persistence.get(name);
                 @SuppressWarnings({ "unchecked", "static-access" })
                 T value = (T) any.valueOf(any.getClass(), valueAsString);
                 if (value == null) {
@@ -661,21 +660,21 @@ public class TeaseLib {
 
         @Override
         public PersistentValue<T> set(T value) {
-            persistence.getNameMapping().set(name, value.name(), persistence);
+            persistence.set(name, value.name());
             return this;
         }
     }
 
     public void clear(String domain, String namespace, String name) {
-        persistence.getNameMapping().clear(makePropertyName(domain, namespace, name), persistence);
+        persistence.clear(makePropertyName(domain, namespace, name));
     }
 
     public void clear(String domain, Enum<?> name) {
-        persistence.getNameMapping().clear(makePropertyName(domain, name), persistence);
+        persistence.clear(makePropertyName(domain, name));
     }
 
     public void set(String domain, Enum<?> name, boolean value) {
-        persistence.getNameMapping().set(makePropertyName(domain, name), value, persistence);
+        persistence.set(makePropertyName(domain, name), value);
     }
 
     public void set(String domain, Enum<?> name, int value) {
@@ -691,11 +690,11 @@ public class TeaseLib {
     }
 
     public void set(String domain, Enum<?> name, String value) {
-        persistence.getNameMapping().set(makePropertyName(domain, name), value, persistence);
+        persistence.set(makePropertyName(domain, name), value);
     }
 
     public void set(String domain, String namespace, String name, boolean value) {
-        persistence.getNameMapping().set(makePropertyName(domain, namespace, name), value, persistence);
+        persistence.set(makePropertyName(domain, namespace, name), value);
     }
 
     public void set(String domain, String namespace, String name, int value) {
@@ -711,11 +710,11 @@ public class TeaseLib {
     }
 
     public void set(String domain, String namespace, String name, String value) {
-        persistence.getNameMapping().set(makePropertyName(domain, namespace, name), value, persistence);
+        persistence.set(makePropertyName(domain, namespace, name), value);
     }
 
     public boolean getBoolean(String domain, String namespace, String name) {
-        return persistence.getNameMapping().getBoolean(makePropertyName(domain, namespace, name), persistence);
+        return persistence.getBoolean(makePropertyName(domain, namespace, name));
     }
 
     public double getFloat(String domain, String namespace, String name) {
@@ -731,11 +730,11 @@ public class TeaseLib {
     }
 
     public String getString(String domain, String namespace, String name) {
-        return persistence.getNameMapping().get(makePropertyName(domain, namespace, name), persistence);
+        return persistence.get(makePropertyName(domain, namespace, name));
     }
 
     public boolean getBoolean(String domain, Enum<?> name) {
-        return persistence.getNameMapping().getBoolean(makePropertyName(domain, name), persistence);
+        return persistence.getBoolean(makePropertyName(domain, name));
     }
 
     public double getFloat(String domain, Enum<?> name) {
@@ -751,11 +750,11 @@ public class TeaseLib {
     }
 
     public String getString(String domain, Enum<?> name) {
-        return persistence.getNameMapping().get(makePropertyName(domain, name), persistence);
+        return persistence.get(makePropertyName(domain, name));
     }
 
     private String makePropertyName(String domain, String path, String name) {
-        PropertyNameMapping nameMapping = persistence.getNameMapping();
+        PropertyNameMapping nameMapping = persistence;
 
         String strippedPath = nameMapping.stripPath(domain, path, name);
 

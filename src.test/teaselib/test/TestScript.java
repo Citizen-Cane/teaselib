@@ -2,11 +2,13 @@ package teaselib.test;
 
 import java.io.IOException;
 import java.util.Locale;
+import java.util.function.Function;
 
 import teaselib.Actor;
 import teaselib.Sexuality.Gender;
 import teaselib.TeaseScript;
 import teaselib.core.Debugger;
+import teaselib.core.Persistence;
 import teaselib.core.ResourceLoader;
 import teaselib.core.TeaseLib;
 import teaselib.core.configuration.DebugSetup;
@@ -55,7 +57,7 @@ public class TestScript extends TeaseScript {
         }
     }
 
-    public static TestScript getOne(PropertyNameMapping propertyNameMapping) {
+    public static TestScript getOne(Function<Persistence, PropertyNameMapping> propertyNameMapping) {
         try {
             return new TestScript(new DebugHost(), new DebugPersistence(propertyNameMapping));
         } catch (IOException e) {
@@ -87,7 +89,7 @@ public class TestScript extends TeaseScript {
         this(new DebugHost(), new DebugPersistence(), setup, newActor());
     }
 
-    TestScript(DebugHost dummyHost, DebugPersistence dummyPersistence) throws IOException {
+    public TestScript(DebugHost dummyHost, DebugPersistence dummyPersistence) throws IOException {
         this(dummyHost, dummyPersistence, new ResourceLoader(TestScript.class, ResourceLoader.ResourcesInProjectFolder),
                 new DebugSetup(), newActor());
     }

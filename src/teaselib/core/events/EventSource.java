@@ -42,14 +42,14 @@ public class EventSource<S, T extends EventArgs> {
     }
 
     public synchronized void run(S sender, T eventArgs) {
-        logger.info(name + ", " + delegates.size() + " listeners " + eventArgs.toString());
+        logger.info("{} , {} listeners {}", name, delegates.size(), eventArgs);
         if (initial != null) {
             runDelegate(sender, eventArgs, initial);
         }
-        for (Event<S, T> delegate : delegates) {
+        for (Event<S, T> delegate : new ArrayList<>(delegates)) {
             runDelegate(sender, eventArgs, delegate);
             if (eventArgs.consumed) {
-                logger.info("Event " + eventArgs.toString() + " consumed");
+                logger.info("Event {} consumed", eventArgs);
                 break;
             }
         }

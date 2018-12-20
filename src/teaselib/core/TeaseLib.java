@@ -40,9 +40,11 @@ import teaselib.core.debug.TimeAdvanceListener;
 import teaselib.core.debug.TimeAdvancedEvent;
 import teaselib.core.devices.Devices;
 import teaselib.core.devices.remote.LocalNetworkDevice;
+import teaselib.core.util.ConfigFileMapping;
 import teaselib.core.util.ObjectMap;
 import teaselib.core.util.PropertyNameMapping;
 import teaselib.core.util.QualifiedItem;
+import teaselib.core.util.QualifiedName;
 import teaselib.core.util.ReflectionUtils;
 import teaselib.functional.RunnableScript;
 import teaselib.motiondetection.MotionDetector;
@@ -88,9 +90,9 @@ public class TeaseLib {
         logJavaVersion();
         logJavaProperties();
 
-        this.host = host;
-        this.persistence = persistence.getNameMapping();
         this.config = new Configuration(setup);
+        this.host = host;
+        this.persistence = new ConfigFileMapping(config, persistence.getNameMapping());
 
         this.userItems = persistence.getUserItems(this);
         this.transcript = newTranscriptLogger(host.getLocation(Location.Log));
@@ -327,7 +329,7 @@ public class TeaseLib {
     }
 
     protected abstract class PersistentValue<T> {
-        public final String name;
+        public final QualifiedName name;
         protected T defaultValue;
 
         protected PersistentValue(String domain, String namespace, String name, T defaultValue) {
@@ -753,7 +755,7 @@ public class TeaseLib {
         return persistence.get(makePropertyName(domain, name));
     }
 
-    private String makePropertyName(String domain, String path, String name) {
+    private QualifiedName makePropertyName(String domain, String path, String name) {
         PropertyNameMapping nameMapping = persistence;
 
         String strippedPath = nameMapping.stripPath(domain, path, name);
@@ -762,11 +764,12 @@ public class TeaseLib {
         String mappedPath = nameMapping.mapPath(domain, strippedPath, name);
         String mappedName = nameMapping.mapName(domain, strippedPath, name);
 
-        return nameMapping.buildPath(mappedDomain, mappedPath, mappedName);
+        return new QualifiedName(mappedDomain, mappedPath, mappedName);
     }
 
-    private String makePropertyName(String domain, Enum<?> name) {
-        return makePropertyName(domain, name.getClass().getName(), name.name());
+    private QualifiedName makePropertyName(String domain, Enum<?> enumName) {
+        QualifiedItem qualifiedEnum = QualifiedItem.of(enumName);
+        return makePropertyName(domain, qualifiedEnum.namespace(), qualifiedEnum.name());
     }
 
     public TextVariables getTextVariables(String domain, Locale locale) {

@@ -95,27 +95,27 @@ public class PropertyNameMapping implements Persistence {
         return name;
     }
 
-    public boolean has(String name) {
+    public boolean has(QualifiedName name) {
         return persistence.has(name);
     }
 
-    public String get(String name) {
+    public String get(QualifiedName name) {
         return persistence.get(name);
     }
 
-    public boolean getBoolean(String name) {
+    public boolean getBoolean(QualifiedName name) {
         return persistence.getBoolean(name);
     }
 
-    public void set(String name, String value) {
+    public void set(QualifiedName name, String value) {
         persistence.set(name, value);
     }
 
-    public void set(String name, boolean value) {
+    public void set(QualifiedName name, boolean value) {
         persistence.set(name, value);
     }
 
-    public void clear(String name) {
+    public void clear(QualifiedName name) {
         persistence.clear(name);
     }
 

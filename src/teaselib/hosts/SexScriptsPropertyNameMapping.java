@@ -11,6 +11,7 @@ import teaselib.Sexuality.Sex;
 import teaselib.Toys;
 import teaselib.core.Persistence;
 import teaselib.core.util.PropertyNameMapping;
+import teaselib.core.util.QualifiedName;
 
 /**
  * Map TeaseLib enumerations to SexSripts state, and correct a few naming issues, precisely the use of british vs us
@@ -23,8 +24,9 @@ import teaselib.core.util.PropertyNameMapping;
  *
  */
 public class SexScriptsPropertyNameMapping extends PropertyNameMapping {
-    private static final String SEXUALITY_SEX = "Sexuality.Sex";
-    private static final String INTRO_FEMALE = "intro.female";
+    public static final QualifiedName SEXUALITY_SEX = new QualifiedName("", "Sexuality", "Sex");
+    public static final QualifiedName INTRO_FEMALE = new QualifiedName("", "intro", "female");
+
     private static final Set<String> LOWER_CASE_NAMES = new HashSet<>(Arrays.asList("Toys", "Clothes", "Household"));
 
     public SexScriptsPropertyNameMapping(Persistence persistence) {
@@ -93,8 +95,8 @@ public class SexScriptsPropertyNameMapping extends PropertyNameMapping {
     }
 
     @Override
-    public boolean has(String name) {
-        if (SEXUALITY_SEX.equals(name)) {
+    public boolean has(QualifiedName name) {
+        if (SEXUALITY_SEX.equals(name.toString())) {
             return super.has(INTRO_FEMALE);
         } else {
             return super.has(name);
@@ -102,7 +104,7 @@ public class SexScriptsPropertyNameMapping extends PropertyNameMapping {
     }
 
     @Override
-    public String get(String name) {
+    public String get(QualifiedName name) {
         if (SEXUALITY_SEX.equals(name)) {
             if ("true".equals(super.get(INTRO_FEMALE))) {
                 return Sex.Female.name();
@@ -115,7 +117,7 @@ public class SexScriptsPropertyNameMapping extends PropertyNameMapping {
     }
 
     @Override
-    public void set(String name, String value) {
+    public void set(QualifiedName name, String value) {
         if (SEXUALITY_SEX.equals(name)) {
             if ("Female".equals(value)) {
                 super.set(INTRO_FEMALE, false);
@@ -128,7 +130,7 @@ public class SexScriptsPropertyNameMapping extends PropertyNameMapping {
     }
 
     @Override
-    public void clear(String name) {
+    public void clear(QualifiedName name) {
         if (SEXUALITY_SEX.equals(name)) {
             super.clear(INTRO_FEMALE);
         } else {

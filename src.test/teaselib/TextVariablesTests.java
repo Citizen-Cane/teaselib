@@ -91,4 +91,6 @@ public class TextVariablesTests {
         assertEquals("Slave-girl", script.expandTextVariables("#slave_fullname"));
     }
 
+    // TODO Test that covers TeaseLibCOnfigSetup, with writable identities user file, and host properties
+
 }

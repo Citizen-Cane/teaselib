@@ -10,6 +10,7 @@ import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 
 import teaselib.core.TeaseLib;
+import teaselib.core.util.QualifiedName;
 import teaselib.hosts.SexScriptsPropertyNameMapping;
 import teaselib.test.TestScript;
 import teaselib.util.Item;
@@ -45,9 +46,11 @@ public class ToyPersistenceTests {
 
         gag.setAvailable(true);
         if (script.persistence.getNameMapping() instanceof SexScriptsPropertyNameMapping) {
-            assertTrue(script.persistence.storage.containsKey("Toys.ballgag"));
+            assertTrue(script.persistence.storage
+                    .containsKey(QualifiedName.of(TeaseLib.DefaultDomain, "Toys", "ballgag")));
         } else {
-            assertTrue(script.persistence.storage.containsKey("Toys.ball_gag"));
+            assertTrue(script.persistence.storage
+                    .containsKey(QualifiedName.of(TeaseLib.DefaultDomain, "Toys", "ball_gag")));
         }
 
         Item highHeels = script.teaseLib.items(Clothes.Partner, Clothes.Shoes)
@@ -55,7 +58,7 @@ public class ToyPersistenceTests {
         highHeels.setAvailable(true);
 
         assertTrue("Domain item storage unsupported",
-                script.persistence.storage.containsKey("Partner.Clothes.high_heels"));
+                script.persistence.storage.containsKey(QualifiedName.of("Partner", "Clothes", "high_heels")));
     }
 
     @Test
@@ -67,14 +70,17 @@ public class ToyPersistenceTests {
 
         gag.setAvailable(true);
         if (script.persistence.getNameMapping() instanceof SexScriptsPropertyNameMapping) {
-            assertTrue(script.persistence.storage.containsKey(Toys.class.getSimpleName() + ".ballgag"));
+            assertTrue(script.persistence.storage
+                    .containsKey(QualifiedName.of(TeaseLib.DefaultDomain, Toys.class.getSimpleName(), "ballgag")));
         } else {
-            assertTrue(script.persistence.storage.containsKey(Toys.class.getSimpleName() + ".ball_gag"));
+            assertTrue(script.persistence.storage
+                    .containsKey(QualifiedName.of(TeaseLib.DefaultDomain, Toys.class.getSimpleName(), "ball_gag")));
         }
 
         script.teaseLib.items(TeaseLib.DefaultDomain, Clothes.Shoes).queryInventory(Clothes.Footwear.High_Heels).get()
                 .setAvailable(true);
-        assertTrue(script.persistence.storage.containsKey(Clothes.class.getSimpleName() + ".high_heels"));
+        assertTrue(script.persistence.storage
+                .containsKey(QualifiedName.of(TeaseLib.DefaultDomain, Clothes.class.getSimpleName(), "high_heels")));
     }
 
     @Test
@@ -82,10 +88,12 @@ public class ToyPersistenceTests {
         TestScript script = TestScript.getOne();
 
         script.teaseLib.item(Clothes.Partner, Toys.Collar).setAvailable(true);
-        assertTrue(script.persistence.storage.containsKey("Partner." + Toys.class.getSimpleName() + ".collar"));
+        assertTrue(script.persistence.storage
+                .containsKey(QualifiedName.of(Clothes.Partner, Toys.class.getSimpleName(), "collar")));
 
         script.teaseLib.items(Clothes.Doll, Clothes.Shoes).queryInventory(Clothes.Footwear.High_Heels).get()
                 .setAvailable(true);
-        assertTrue(script.persistence.storage.containsKey("Doll." + Clothes.class.getSimpleName() + ".high_heels"));
+        assertTrue(script.persistence.storage
+                .containsKey(QualifiedName.of(Clothes.Doll, Clothes.class.getSimpleName(), "high_heels")));
     }
 }

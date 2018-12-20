@@ -15,11 +15,12 @@ import org.slf4j.LoggerFactory;
 import teaselib.Actor;
 import teaselib.Images;
 import teaselib.Sexuality.Gender;
-import teaselib.core.UserItemsImpl;
 import teaselib.core.Persistence;
 import teaselib.core.TeaseLib;
 import teaselib.core.UserItems;
+import teaselib.core.UserItemsImpl;
 import teaselib.core.util.PropertyNameMapping;
+import teaselib.core.util.QualifiedName;
 import teaselib.util.TextVariables;
 
 public class DebugPersistence implements Persistence {
@@ -28,7 +29,7 @@ public class DebugPersistence implements Persistence {
     public static final String True = "true";
     public static final String False = "false";
 
-    public final Map<String, String> storage;
+    public final Map<QualifiedName, String> storage;
 
     private final Function<Persistence, PropertyNameMapping> propertyMappingSupplier;
 
@@ -36,7 +37,7 @@ public class DebugPersistence implements Persistence {
         this(new DebugStorage());
     }
 
-    public DebugPersistence(Map<String, String> storage) {
+    public DebugPersistence(Map<QualifiedName, String> storage) {
         this(storage, (persistence) -> new PropertyNameMapping(persistence));
     }
 
@@ -44,7 +45,7 @@ public class DebugPersistence implements Persistence {
         this(new DebugStorage(), propertyMappingSupplier);
     }
 
-    public DebugPersistence(Map<String, String> storage,
+    public DebugPersistence(Map<QualifiedName, String> storage,
             Function<Persistence, PropertyNameMapping> propertyMappingSupplier) {
         this.storage = storage;
         this.propertyMappingSupplier = propertyMappingSupplier;
@@ -61,17 +62,17 @@ public class DebugPersistence implements Persistence {
     }
 
     @Override
-    public boolean has(String name) {
+    public boolean has(QualifiedName name) {
         return storage.containsKey(name);
     }
 
     @Override
-    public String get(String name) {
+    public String get(QualifiedName name) {
         return storage.get(name);
     }
 
     @Override
-    public void set(String name, String value) {
+    public void set(QualifiedName name, String value) {
         if (value == null) {
             clear(name);
         } else {
@@ -80,7 +81,7 @@ public class DebugPersistence implements Persistence {
     }
 
     @Override
-    public boolean getBoolean(String name) {
+    public boolean getBoolean(QualifiedName name) {
         String value = get(name);
         if (value == null) {
             return false;
@@ -90,12 +91,12 @@ public class DebugPersistence implements Persistence {
     }
 
     @Override
-    public void set(String name, boolean value) {
+    public void set(QualifiedName name, boolean value) {
         set(name, value ? True : False);
     }
 
     @Override
-    public void clear(String name) {
+    public void clear(QualifiedName name) {
         storage.remove(name);
     }
 
@@ -117,12 +118,12 @@ public class DebugPersistence implements Persistence {
     }
 
     public void printStorage() {
-        List<Entry<String, String>> entryList = new ArrayList<>(storage.entrySet());
+        List<Entry<QualifiedName, String>> entryList = new ArrayList<>(storage.entrySet());
         Collections.sort(entryList, (o1, o2) -> o1.getKey().compareTo(o2.getKey()));
         if (logger.isInfoEnabled()) {
-            logger.info("Storage: " + storage.size() + " entries");
-            for (Entry<String, String> entry : entryList) {
-                logger.info(entry.getKey() + "=" + entry.getValue());
+            logger.info("Storage: {} entries", storage.size());
+            for (Entry<QualifiedName, String> entry : entryList) {
+                logger.info("{}={}", entry.getKey(), entry.getValue());
             }
         }
     }

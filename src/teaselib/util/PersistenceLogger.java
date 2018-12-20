@@ -11,6 +11,7 @@ import teaselib.core.Persistence;
 import teaselib.core.TeaseLib;
 import teaselib.core.UserItems;
 import teaselib.core.util.PropertyNameMapping;
+import teaselib.core.util.QualifiedName;
 
 public class PersistenceLogger implements Persistence {
     private final org.slf4j.Logger logger;
@@ -33,40 +34,40 @@ public class PersistenceLogger implements Persistence {
     }
 
     @Override
-    public boolean has(String name) {
+    public boolean has(QualifiedName name) {
         boolean exists = persistence.has(name);
         logger.debug(name + (exists ? " exists" : " doesn't exist"));
         return exists;
     }
 
     @Override
-    public String get(String name) {
+    public String get(QualifiedName name) {
         String value = persistence.get(name);
         logger.debug("get(" + name + ") = " + value);
         return value;
     }
 
     @Override
-    public void set(String name, String value) {
+    public void set(QualifiedName name, String value) {
         logger.debug("set " + name + " = " + value);
         persistence.set(name, value);
     }
 
     @Override
-    public boolean getBoolean(String name) {
+    public boolean getBoolean(QualifiedName name) {
         boolean value = persistence.getBoolean(name);
         logger.debug("get(" + name + ")  = " + value);
         return value;
     }
 
     @Override
-    public void set(String name, boolean value) {
+    public void set(QualifiedName name, boolean value) {
         logger.debug("set " + name + " = " + value);
         persistence.set(name, value);
     }
 
     @Override
-    public void clear(String name) {
+    public void clear(QualifiedName name) {
         if (persistence.has(name)) {
             logger.debug("cleared " + name);
         }

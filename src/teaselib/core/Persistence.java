@@ -6,6 +6,7 @@ import java.util.Locale;
 import teaselib.Actor;
 import teaselib.Sexuality.Gender;
 import teaselib.core.util.PropertyNameMapping;
+import teaselib.core.util.QualifiedName;
 import teaselib.util.TextVariables;
 
 public interface Persistence {
@@ -14,22 +15,22 @@ public interface Persistence {
 
     UserItems getUserItems(TeaseLib teaseLib) throws IOException;
 
-    boolean has(String name);
+    boolean has(QualifiedName name);
 
     /**
      * @param name
      *            The name of the property
      * @return The value of the property or null if not found
      */
-    String get(String name);
+    String get(QualifiedName name);
 
-    void set(String name, String value);
+    void set(QualifiedName name, String value);
 
-    boolean getBoolean(String name);
+    boolean getBoolean(QualifiedName name);
 
-    void set(String name, boolean value);
+    void set(QualifiedName name, boolean value);
 
-    void clear(String name);
+    void clear(QualifiedName name);
 
     /**
      * Text variables may depend on the locale of the script. For instance, if the name of the slave can't be pronounced

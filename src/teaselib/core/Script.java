@@ -14,6 +14,7 @@ import org.slf4j.LoggerFactory;
 import teaselib.Actor;
 import teaselib.Answer;
 import teaselib.Answer.Meaning;
+import teaselib.Body;
 import teaselib.Config;
 import teaselib.Config.SpeechRecognition.Intention;
 import teaselib.Gadgets;
@@ -309,6 +310,7 @@ public abstract class Script {
         }
 
         if (teaseLib.item(TeaseLib.DefaultDomain, Gadgets.Webcam).isAvailable()
+                && teaseLib.state(TeaseLib.DefaultDomain, Body.InMouth).applied()
                 && choices.toGestures().stream().filter(gesture -> gesture != Gesture.None).count() > 0) {
             inputMethods.add(new HeadGestureInputMethod(scriptRenderer.getInputMethodExecutorService(),
                     teaseLib.devices.get(MotionDetector.class)::getDefaultDevice));

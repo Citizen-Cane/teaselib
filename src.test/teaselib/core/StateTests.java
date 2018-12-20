@@ -1,6 +1,9 @@
 package teaselib.core;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
 
 import java.util.concurrent.TimeUnit;
 
@@ -12,6 +15,7 @@ import teaselib.Material;
 import teaselib.State;
 import teaselib.Toys;
 import teaselib.core.state.StateProxy;
+import teaselib.core.util.QualifiedName;
 import teaselib.test.TestScript;
 import teaselib.util.Item;
 
@@ -63,13 +67,19 @@ public class StateTests {
         // because thats the state our test script applied,
         // and empty attribute lists aren't persisted
 
-        assertTrue(script.persistence.storage.containsKey("Toys.Nipple_Clamps.state.duration"));
-        assertTrue(script.persistence.storage.containsKey("Toys.Nipple_Clamps.state.peers"));
-        assertFalse(script.persistence.storage.containsKey("Toys.Nipple_Clamps.state.attributes"));
+        assertTrue(script.persistence.storage
+                .containsKey(QualifiedName.of(TeaseLib.DefaultDomain, "Toys", "Nipple_Clamps.state.duration")));
+        assertTrue(script.persistence.storage
+                .containsKey(QualifiedName.of(TeaseLib.DefaultDomain, "Toys", "Nipple_Clamps.state.peers")));
+        assertFalse(script.persistence.storage
+                .containsKey(QualifiedName.of(TeaseLib.DefaultDomain, "Toys", "Nipple_Clamps.state.attributes")));
 
-        assertTrue(script.persistence.storage.containsKey("Body.OnNipples.state.peers"));
-        assertTrue(script.persistence.storage.containsKey("Body.OnNipples.state.duration"));
-        assertTrue(script.persistence.storage.containsKey("Body.OnNipples.state.attributes"));
+        assertTrue(script.persistence.storage
+                .containsKey(QualifiedName.of(TeaseLib.DefaultDomain, "Body", "OnNipples.state.peers")));
+        assertTrue(script.persistence.storage
+                .containsKey(QualifiedName.of(TeaseLib.DefaultDomain, "Body", "OnNipples.state.duration")));
+        assertTrue(script.persistence.storage
+                .containsKey(QualifiedName.of(TeaseLib.DefaultDomain, "Body", "OnNipples.state.attributes")));
 
         assertEquals(0, ((StateProxy) script.state(script.namespace)).peers().size());
 

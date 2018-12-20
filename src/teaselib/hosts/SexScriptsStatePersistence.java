@@ -18,6 +18,7 @@ import teaselib.core.TeaseLib;
 import teaselib.core.UserItems;
 import teaselib.core.UserItemsImpl;
 import teaselib.core.util.PropertyNameMapping;
+import teaselib.core.util.QualifiedName;
 import teaselib.core.util.Stream;
 import teaselib.util.TextVariables;
 
@@ -66,12 +67,16 @@ public class SexScriptsStatePersistence implements Persistence {
     }
 
     @Override
+    public boolean has(QualifiedName name) {
+        return has(name.toString());
+    }
+
     public boolean has(String name) {
         return get(name) != null;
     }
 
     @Override
-    public boolean getBoolean(String name) {
+    public boolean getBoolean(QualifiedName name) {
         String value = get(name);
         if (value == null) {
             return false;
@@ -81,23 +86,27 @@ public class SexScriptsStatePersistence implements Persistence {
     }
 
     @Override
+    public String get(QualifiedName name) {
+        return get(name.toString());
+    }
+
     public String get(String name) {
         return host.loadString(name);
     }
 
     @Override
-    public void set(String name, String value) {
-        host.save(name, value);
+    public void set(QualifiedName name, String value) {
+        host.save(name.toString(), value);
     }
 
     @Override
-    public void set(String name, boolean value) {
+    public void set(QualifiedName name, boolean value) {
         set(name, value ? TRUE : FALSE);
     }
 
     @Override
-    public void clear(String name) {
-        host.save(name, null);
+    public void clear(QualifiedName name) {
+        host.save(name.toString(), null);
     }
 
     @Override

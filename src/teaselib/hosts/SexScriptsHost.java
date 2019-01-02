@@ -40,6 +40,7 @@ import ss.IScript;
 import ss.desktop.MainFrame;
 import teaselib.core.Audio;
 import teaselib.core.Host;
+import teaselib.core.Persistence;
 import teaselib.core.ResourceLoader;
 import teaselib.core.ScriptInterruptedException;
 import teaselib.core.VideoRenderer;
@@ -52,6 +53,7 @@ import teaselib.core.ui.HostInputMethod;
 import teaselib.core.ui.InputMethod;
 import teaselib.core.util.ExceptionUtil;
 import teaselib.core.util.FileUtilities;
+import teaselib.core.util.PropertyNameMappingPersistence;
 import teaselib.util.Interval;
 
 /**
@@ -102,6 +104,15 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
     private Runnable onQuitHandler = null;
 
     private final InputMethod inputMethod;
+
+    public static Host from(IScript script) {
+        return new SexScriptsHost(script);
+    }
+
+    public static Persistence persistence(IScript script) {
+        return new PropertyNameMappingPersistence(new SexScriptsPersistence(script),
+                new SexScriptsPropertyNameMapping());
+    }
 
     public SexScriptsHost(ss.IScript script) {
         this.ss = script;

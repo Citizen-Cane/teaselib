@@ -17,12 +17,11 @@ import teaselib.core.Persistence;
 import teaselib.core.TeaseLib;
 import teaselib.core.UserItems;
 import teaselib.core.UserItemsImpl;
-import teaselib.core.util.PropertyNameMapping;
 import teaselib.core.util.QualifiedName;
 import teaselib.core.util.Stream;
 import teaselib.util.TextVariables;
 
-public class SexScriptsStatePersistence implements Persistence {
+public class SexScriptsPersistence implements Persistence {
     private static final Logger logger = LoggerFactory.getLogger(SexScriptsHost.class);
 
     private static final String DATA_PROPERTIES = "data.properties";
@@ -32,9 +31,8 @@ public class SexScriptsStatePersistence implements Persistence {
     private static final String TRUE = "true";
 
     private final ss.IScript host;
-    PropertyNameMapping nameMapping = new SexScriptsPropertyNameMapping();
 
-    public SexScriptsStatePersistence(IScript host) {
+    public SexScriptsPersistence(IScript host) {
         this.host = host;
         if (has(PROPERTY_FILE_VALID_TAG)) {
             makeDataPropertiesBackup();
@@ -62,13 +60,9 @@ public class SexScriptsStatePersistence implements Persistence {
         return new UserItemsImpl(teaseLib);
     }
 
-    private QualifiedName map(QualifiedName name) {
-        return nameMapping.map(name);
-    }
-
     @Override
     public boolean has(QualifiedName name) {
-        return has(map(name).toString());
+        return has(name.toString());
     }
 
     private boolean has(String name) {
@@ -77,7 +71,7 @@ public class SexScriptsStatePersistence implements Persistence {
 
     @Override
     public boolean getBoolean(QualifiedName name) {
-        String value = get(map(name));
+        String value = get(name);
         if (value == null) {
             return false;
         } else {
@@ -87,7 +81,7 @@ public class SexScriptsStatePersistence implements Persistence {
 
     @Override
     public String get(QualifiedName name) {
-        return get(map(name).toString());
+        return get(name.toString());
     }
 
     private String get(String name) {
@@ -96,7 +90,12 @@ public class SexScriptsStatePersistence implements Persistence {
 
     @Override
     public void set(QualifiedName name, String value) {
-        set(map(name).toString(), value);
+        set(name.toString(), value);
+    }
+
+    @Override
+    public void set(QualifiedName name, boolean value) {
+        set(name.toString(), value ? TRUE : FALSE);
     }
 
     private void set(String name, String value) {
@@ -104,21 +103,8 @@ public class SexScriptsStatePersistence implements Persistence {
     }
 
     @Override
-    public void set(QualifiedName name, boolean value) {
-        set(map(name).toString(), value);
-    }
-
-    private void set(String name, boolean value) {
-        set(name, value ? TRUE : FALSE);
-    }
-
-    @Override
     public void clear(QualifiedName name) {
-        clear(map(name).toString());
-    }
-
-    private void clear(String name) {
-        host.save(name, null);
+        host.save(name.toString(), null);
     }
 
     @Override

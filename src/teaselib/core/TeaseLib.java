@@ -42,7 +42,6 @@ import teaselib.core.devices.Devices;
 import teaselib.core.devices.remote.LocalNetworkDevice;
 import teaselib.core.util.ConfigFileMapping;
 import teaselib.core.util.ObjectMap;
-import teaselib.core.util.PropertyNameMapping;
 import teaselib.core.util.QualifiedItem;
 import teaselib.core.util.QualifiedName;
 import teaselib.core.util.ReflectionUtils;
@@ -58,13 +57,13 @@ import teaselib.util.TextVariables;
 public class TeaseLib {
     private static final Logger logger = LoggerFactory.getLogger(TeaseLib.class);
 
-    public static final String DefaultDomain = PropertyNameMapping.DefaultDomain;
-    public static final String DefaultName = PropertyNameMapping.None;
+    public static final String DefaultDomain = "";
+    public static final String DefaultName = "";
 
     private static final String TranscriptLogFileName = "TeaseLib session transcript.log";
 
     public final Host host;
-    private final PropertyNameMapping persistence;
+    private final Persistence persistence;
     final UserItems userItems;
     public final TeaseLibLogger transcript;
 
@@ -92,7 +91,7 @@ public class TeaseLib {
 
         this.config = new Configuration(setup);
         this.host = host;
-        this.persistence = new ConfigFileMapping(config, persistence.getNameMapping());
+        this.persistence = new ConfigFileMapping(config, persistence);
 
         this.userItems = persistence.getUserItems(this);
         this.transcript = newTranscriptLogger(host.getLocation(Location.Log));
@@ -333,12 +332,12 @@ public class TeaseLib {
         protected T defaultValue;
 
         protected PersistentValue(String domain, String namespace, String name, T defaultValue) {
-            this.name = makePropertyName(domain, namespace, name);
+            this.name = QualifiedName.of(domain, namespace, name);
             this.defaultValue = defaultValue;
         }
 
-        protected PersistentValue(String domain, Enum<?> name, T defaultValue) {
-            this.name = makePropertyName(domain, name);
+        protected PersistentValue(String domain, Enum<?> item, T defaultValue) {
+            this.name = QualifiedName.of(domain, item);
             this.defaultValue = defaultValue;
         }
 
@@ -668,15 +667,15 @@ public class TeaseLib {
     }
 
     public void clear(String domain, String namespace, String name) {
-        persistence.clear(makePropertyName(domain, namespace, name));
+        persistence.clear(QualifiedName.of(domain, namespace, name));
     }
 
     public void clear(String domain, Enum<?> name) {
-        persistence.clear(makePropertyName(domain, name));
+        persistence.clear(QualifiedName.of(domain, name));
     }
 
     public void set(String domain, Enum<?> name, boolean value) {
-        persistence.set(makePropertyName(domain, name), value);
+        persistence.set(QualifiedName.of(domain, name), value);
     }
 
     public void set(String domain, Enum<?> name, int value) {
@@ -692,11 +691,11 @@ public class TeaseLib {
     }
 
     public void set(String domain, Enum<?> name, String value) {
-        persistence.set(makePropertyName(domain, name), value);
+        persistence.set(QualifiedName.of(domain, name), value);
     }
 
     public void set(String domain, String namespace, String name, boolean value) {
-        persistence.set(makePropertyName(domain, namespace, name), value);
+        persistence.set(QualifiedName.of(domain, namespace, name), value);
     }
 
     public void set(String domain, String namespace, String name, int value) {
@@ -712,11 +711,11 @@ public class TeaseLib {
     }
 
     public void set(String domain, String namespace, String name, String value) {
-        persistence.set(makePropertyName(domain, namespace, name), value);
+        persistence.set(QualifiedName.of(domain, namespace, name), value);
     }
 
     public boolean getBoolean(String domain, String namespace, String name) {
-        return persistence.getBoolean(makePropertyName(domain, namespace, name));
+        return persistence.getBoolean(QualifiedName.of(domain, namespace, name));
     }
 
     public double getFloat(String domain, String namespace, String name) {
@@ -732,11 +731,11 @@ public class TeaseLib {
     }
 
     public String getString(String domain, String namespace, String name) {
-        return persistence.get(makePropertyName(domain, namespace, name));
+        return persistence.get(QualifiedName.of(domain, namespace, name));
     }
 
     public boolean getBoolean(String domain, Enum<?> name) {
-        return persistence.getBoolean(makePropertyName(domain, name));
+        return persistence.getBoolean(QualifiedName.of(domain, name));
     }
 
     public double getFloat(String domain, Enum<?> name) {
@@ -752,24 +751,7 @@ public class TeaseLib {
     }
 
     public String getString(String domain, Enum<?> name) {
-        return persistence.get(makePropertyName(domain, name));
-    }
-
-    private QualifiedName makePropertyName(String domain, String path, String name) {
-        PropertyNameMapping nameMapping = persistence;
-
-        String strippedPath = nameMapping.stripPath(domain, path, name);
-
-        String mappedDomain = nameMapping.mapDomain(domain, strippedPath, name);
-        String mappedPath = nameMapping.mapPath(domain, strippedPath, name);
-        String mappedName = nameMapping.mapName(domain, strippedPath, name);
-
-        return new QualifiedName(mappedDomain, mappedPath, mappedName);
-    }
-
-    private QualifiedName makePropertyName(String domain, Enum<?> enumName) {
-        QualifiedItem qualifiedEnum = QualifiedItem.of(enumName);
-        return makePropertyName(domain, qualifiedEnum.namespace(), qualifiedEnum.name());
+        return persistence.get(QualifiedName.of(domain, name));
     }
 
     public TextVariables getTextVariables(String domain, Locale locale) {

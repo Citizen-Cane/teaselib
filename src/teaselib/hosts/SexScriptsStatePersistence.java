@@ -32,6 +32,7 @@ public class SexScriptsStatePersistence implements Persistence {
     private static final String TRUE = "true";
 
     private final ss.IScript host;
+    PropertyNameMapping nameMapping = new SexScriptsPropertyNameMapping();
 
     public SexScriptsStatePersistence(IScript host) {
         this.host = host;
@@ -56,28 +57,27 @@ public class SexScriptsStatePersistence implements Persistence {
     }
 
     @Override
-    public PropertyNameMapping getNameMapping() {
-        return new SexScriptsPropertyNameMapping(this);
-    }
-
-    @Override
     public UserItems getUserItems(TeaseLib teaseLib) throws IOException {
         // TODO Load SexScripts specific user items
         return new UserItemsImpl(teaseLib);
     }
 
-    @Override
-    public boolean has(QualifiedName name) {
-        return has(name.toString());
+    private QualifiedName map(QualifiedName name) {
+        return nameMapping.map(name);
     }
 
-    public boolean has(String name) {
+    @Override
+    public boolean has(QualifiedName name) {
+        return has(map(name).toString());
+    }
+
+    private boolean has(String name) {
         return get(name) != null;
     }
 
     @Override
     public boolean getBoolean(QualifiedName name) {
-        String value = get(name);
+        String value = get(map(name));
         if (value == null) {
             return false;
         } else {
@@ -87,26 +87,38 @@ public class SexScriptsStatePersistence implements Persistence {
 
     @Override
     public String get(QualifiedName name) {
-        return get(name.toString());
+        return get(map(name).toString());
     }
 
-    public String get(String name) {
+    private String get(String name) {
         return host.loadString(name);
     }
 
     @Override
     public void set(QualifiedName name, String value) {
-        host.save(name.toString(), value);
+        set(map(name).toString(), value);
+    }
+
+    private void set(String name, String value) {
+        host.save(name, value);
     }
 
     @Override
     public void set(QualifiedName name, boolean value) {
+        set(map(name).toString(), value);
+    }
+
+    private void set(String name, boolean value) {
         set(name, value ? TRUE : FALSE);
     }
 
     @Override
     public void clear(QualifiedName name) {
-        host.save(name.toString(), null);
+        clear(map(name).toString());
+    }
+
+    private void clear(String name) {
+        host.save(name, null);
     }
 
     @Override

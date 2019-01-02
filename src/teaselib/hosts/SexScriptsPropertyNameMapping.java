@@ -9,7 +9,7 @@ import teaselib.Household;
 import teaselib.Sexuality;
 import teaselib.Sexuality.Sex;
 import teaselib.Toys;
-import teaselib.core.Persistence;
+import teaselib.core.TeaseLib;
 import teaselib.core.util.PropertyNameMapping;
 import teaselib.core.util.QualifiedName;
 
@@ -17,7 +17,7 @@ import teaselib.core.util.QualifiedName;
  * Map TeaseLib enumerations to SexSripts state, and correct a few naming issues, precisely the use of british vs us
  * english.
  * 
- * All code and comments in teaselib is written (or at least supposed to be written) in american english, but everything
+ * All code and comments in teaselib is written (or at least supposed to be written) in us english, but everything
  * relevant to the user is uk english, as a tribute to "english discipline".
  * 
  * @author Citizen-Cane
@@ -29,113 +29,126 @@ public class SexScriptsPropertyNameMapping extends PropertyNameMapping {
 
     private static final Set<String> LOWER_CASE_NAMES = new HashSet<>(Arrays.asList("Toys", "Clothes", "Household"));
 
-    public SexScriptsPropertyNameMapping(Persistence persistence) {
-        super(persistence);
-    }
+    // @Override
+    // public boolean has(Persistence persistence, QualifiedName name) {
+    // if (SEXUALITY_SEX.equals(name)) {
+    // return persistence.has(INTRO_FEMALE);
+    // } else {
+    // return persistence.has(name);
+    // }
+    // }
+    //
+    // @Override
+    // public String get(Persistence persistence, QualifiedName name) {
+    // if (SEXUALITY_SEX.equals(name)) {
+    // if ("true".equalsIgnoreCase(persistence.get(INTRO_FEMALE))) {
+    // return Sex.Female.name();
+    // } else {
+    // return Sex.Male.name();
+    // }
+    // } else {
+    // return persistence.get(name);
+    // }
+    // }
+    //
+    // @Override
+    // public void set(Persistence persistence, QualifiedName name, String value) {
+    // if (SEXUALITY_SEX.equals(name)) {
+    // if (Sex.Female.name().equalsIgnoreCase((value))) {
+    // persistence.set(INTRO_FEMALE, false);
+    // } else {
+    // persistence.set(INTRO_FEMALE, true);
+    // }
+    // } else {
+    // persistence.set(name, value);
+    // }
+    // }
+    //
+    // @Override
+    // public void clear(Persistence persistence, QualifiedName name) {
+    // if (SEXUALITY_SEX.equals(name)) {
+    // persistence.clear(INTRO_FEMALE);
+    // } else {
+    // persistence.clear(name);
+    // }
+    // }
+
+    // TODO Map Sexuality.Sex to intro.female -> check that key exists and can be cleared
+    // TODO For Sexuality.Sex, return intro.female ? Female : Male
 
     @Override
-    public String mapDomain(String domain, String path, String name) {
-        if ("Male".equals(domain) && Clothes.class.getSimpleName().equals(path)) {
-            return DefaultDomain;
-        } else if ("Female".equals(domain) && Clothes.class.getSimpleName().equals(path)) {
-            return DefaultDomain;
+    protected QualifiedName mapDomainsAndPaths(QualifiedName name) {
+        if (name.domainEquals("Male") && name.namespaceEquals(Clothes.class.getSimpleName())) {
+            return name.withDomain(TeaseLib.DefaultDomain);
+        } else if (name.domainEquals("Female") && name.namespaceEquals(Clothes.class.getSimpleName())) {
+            return name.withDomain(TeaseLib.DefaultDomain);
+        } else if (name.equals(Sexuality.Orientation.LikesMales)) {
+            return QualifiedName.of(name.domain, "intro", "likemale");
+        } else if (name.equals(Sexuality.Orientation.LikesFemales)) {
+            return QualifiedName.of(name.domain, "intro", "likefemale");
+        } else if (name.equalsClass(Sexuality.Sex.class)) {
+            return QualifiedName.of(name.domain, INTRO_FEMALE.namespace, INTRO_FEMALE.name);
+        } else if (name.namespaceEquals(Household.class.getSimpleName())) {
+            return name.withNamespace("toys");
+        } else if (lowerCaseRequired(name.namespace)) {
+            return name.withNamespace(name.namespace.toLowerCase());
         } else {
-            return super.mapDomain(domain, path, name);
+            return name;
         }
     }
 
     @Override
-    public String mapPath(String domain, String path, String name) {
-        String mappedPath = super.mapPath(domain, path, name);
-        if ("Sexuality$Orientation".equalsIgnoreCase(path)) {
-            return "intro";
-        } else if (Household.class.getSimpleName().equalsIgnoreCase(path)) {
-            return "toys";
-        } else if (lowerCaseRequired(path)) {
-            return mappedPath.toLowerCase();
+    protected QualifiedName mapNames(QualifiedName name) {
+        if (is(Toys.Gag, Toys.Gags.Ball_Gag.name(), name)) {
+            return name.withName("ballgag");
+        } else if (is(Toys.Cock_Ring, name)) {
+            return name.withName("cockring");
+        } else if (is(Toys.EStim_Device, name)) {
+            return name.withName("estim");
+        } else if (is(Household.Clothes_Pegs, name)) {
+            return name.withName("clothespins");
+        } else if (is(Household.Cigarettes, name)) {
+            return name.withName("cigarette");
+        } else if (is(Household.Tampons, name)) {
+            return name.withName("tampon");
         } else {
-            return mappedPath;
+            return name;
         }
     }
 
     @Override
-    public String mapName(String domain, String path, String name) {
-        if (is(Toys.Gag, Toys.Gags.Ball_Gag.name(), path, name)) {
-            return "ballgag";
-        } else if (is(Toys.Cock_Ring, path, name)) {
-            return "cockring";
-        } else if (is(Toys.EStim_Device, path, name)) {
-            return "estim";
-        } else if (is(Household.Clothes_Pegs, path, name)) {
-            return "clothespins";
-        } else if (is(Household.Cigarettes, path, name)) {
-            return "cigarette";
-        } else if (is(Household.Tampons, path, name)) {
-            return "tampon";
-        } else if ("Sexuality$Orientation".equals(path) && Sexuality.Orientation.LikesMales.name().equals(name)) {
-            return "likemale";
-        } else if ("Sexuality$Orientation".equals(path) && Sexuality.Orientation.LikesFemales.name().equals(name)) {
-            return "likefemale";
-        } else {
-            String mappedName = super.mapName(domain, path, name);
-            if (lowerCaseRequired(path)) {
-                return mappedName.toLowerCase();
-            } else {
-                return mappedName;
-            }
-        }
-    }
-
-    private static boolean is(Enum<?> item, String guid, String path, String name) {
-        return item.getClass().getSimpleName().equals(path) && guid.equalsIgnoreCase(name);
-    }
-
-    private static boolean is(Enum<?> item, String path, String name) {
-        return item.getClass().getSimpleName().equals(path) && item.name().equalsIgnoreCase(name);
-    }
-
-    @Override
-    public boolean has(QualifiedName name) {
-        if (SEXUALITY_SEX.equals(name.toString())) {
-            return super.has(INTRO_FEMALE);
-        } else {
-            return super.has(name);
-        }
-    }
-
-    @Override
-    public String get(QualifiedName name) {
-        if (SEXUALITY_SEX.equals(name)) {
-            if ("true".equals(super.get(INTRO_FEMALE))) {
+    protected String mapValueFromHost(QualifiedName name, String value) {
+        if (INTRO_FEMALE.equals(name)) {
+            if ("true".equalsIgnoreCase(value)) {
                 return Sex.Female.name();
             } else {
                 return Sex.Male.name();
             }
         } else {
-            return super.get(name);
+            return value;
         }
     }
 
     @Override
-    public void set(QualifiedName name, String value) {
-        if (SEXUALITY_SEX.equals(name)) {
-            if ("Female".equals(value)) {
-                super.set(INTRO_FEMALE, false);
+    protected String mapValueToHost(QualifiedName name, String value) {
+        if (name.equals(SEXUALITY_SEX)) {
+            if (Sex.Female.name().equalsIgnoreCase((value))) {
+                return Boolean.toString(true);
             } else {
-                super.set(INTRO_FEMALE, true);
+                return Boolean.toString(false);
             }
         } else {
-            super.set(name, value);
+            return value;
         }
     }
 
-    @Override
-    public void clear(QualifiedName name) {
-        if (SEXUALITY_SEX.equals(name)) {
-            super.clear(INTRO_FEMALE);
-        } else {
-            super.clear(name);
-        }
+    private static boolean is(Enum<?> item, String guid, QualifiedName name) {
+        return item.getClass().getSimpleName().equalsIgnoreCase(name.namespace) && guid.equalsIgnoreCase(name.name);
+    }
+
+    private static boolean is(Enum<?> item, QualifiedName name) {
+        return item.getClass().getSimpleName().equalsIgnoreCase(name.namespace)
+                && item.name().equalsIgnoreCase(name.name);
     }
 
     private static boolean lowerCaseRequired(String path) {

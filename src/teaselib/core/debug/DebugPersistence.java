@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.function.Function;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,29 +30,23 @@ public class DebugPersistence implements Persistence {
 
     public final Map<QualifiedName, String> storage;
 
-    private final Function<Persistence, PropertyNameMapping> propertyMappingSupplier;
+    private final PropertyNameMapping nameMapping;
 
     public DebugPersistence() {
         this(new DebugStorage());
     }
 
     public DebugPersistence(Map<QualifiedName, String> storage) {
-        this(storage, (persistence) -> new PropertyNameMapping(persistence));
+        this(storage, PropertyNameMapping.DEFAULT);
     }
 
-    public DebugPersistence(Function<Persistence, PropertyNameMapping> propertyMappingSupplier) {
-        this(new DebugStorage(), propertyMappingSupplier);
+    public DebugPersistence(PropertyNameMapping nameMapping) {
+        this(new DebugStorage(), nameMapping);
     }
 
-    public DebugPersistence(Map<QualifiedName, String> storage,
-            Function<Persistence, PropertyNameMapping> propertyMappingSupplier) {
+    public DebugPersistence(Map<QualifiedName, String> storage, PropertyNameMapping nameMapping) {
         this.storage = storage;
-        this.propertyMappingSupplier = propertyMappingSupplier;
-    }
-
-    @Override
-    public PropertyNameMapping getNameMapping() {
-        return propertyMappingSupplier.apply(this);
+        this.nameMapping = nameMapping;
     }
 
     @Override
@@ -61,22 +54,26 @@ public class DebugPersistence implements Persistence {
         return new UserItemsImpl(teaseLib);
     }
 
+    private QualifiedName mapped(QualifiedName name) {
+        return nameMapping.map(name);
+    }
+
     @Override
     public boolean has(QualifiedName name) {
-        return storage.containsKey(name);
+        return storage.containsKey(mapped(name));
     }
 
     @Override
     public String get(QualifiedName name) {
-        return storage.get(name);
+        return nameMapping.get(name, () -> storage.get(mapped(name)));
     }
 
     @Override
     public void set(QualifiedName name, String value) {
         if (value == null) {
-            clear(name);
+            clear(mapped(name));
         } else {
-            storage.put(name, value);
+            nameMapping.set(name, value, (v) -> storage.put(mapped(name), v));
         }
     }
 
@@ -97,7 +94,7 @@ public class DebugPersistence implements Persistence {
 
     @Override
     public void clear(QualifiedName name) {
-        storage.remove(name);
+        storage.remove(mapped(name));
     }
 
     @Override

@@ -10,7 +10,6 @@ import teaselib.Sexuality.Gender;
 import teaselib.core.Persistence;
 import teaselib.core.TeaseLib;
 import teaselib.core.UserItems;
-import teaselib.core.util.PropertyNameMapping;
 import teaselib.core.util.QualifiedName;
 
 public class PersistenceLogger implements Persistence {
@@ -21,11 +20,6 @@ public class PersistenceLogger implements Persistence {
         super();
         this.persistence = persistence;
         this.logger = LoggerFactory.getLogger(persistence.getClass());
-    }
-
-    @Override
-    public PropertyNameMapping getNameMapping() {
-        return persistence.getNameMapping();
     }
 
     @Override

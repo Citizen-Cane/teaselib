@@ -1,141 +1,52 @@
 package teaselib.core.util;
 
-import java.io.IOException;
-import java.util.Locale;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
-import teaselib.Actor;
-import teaselib.Sexuality.Gender;
-import teaselib.Toys;
-import teaselib.core.Persistence;
-import teaselib.core.TeaseLib;
-import teaselib.core.UserItems;
-import teaselib.util.PersistenceLogger;
-import teaselib.util.TextVariables;
+public abstract class PropertyNameMapping {
+    public static final PropertyNameMapping DEFAULT = new PropertyNameMapping() {
 
-public class PropertyNameMapping implements Persistence {
-    public static final String DefaultDomain = "";
-    public static final String None = "";
-
-    protected static final String[] StrippedPackageNames = { "teaselib", "teaselib.scripts" };
-
-    private final Persistence persistence;
-
-    public PropertyNameMapping(Persistence persistence) {
-        this.persistence = new PersistenceLogger(persistence);
-    }
-
-    /**
-     * @param domain
-     * @param path
-     * @param name
-     * @return
-     */
-    public String stripPath(String domain, String path, String name) {
-        for (String packageName : StrippedPackageNames) {
-            String string = packageName + ".";
-            if (path.startsWith(string)) {
-                path = path.substring(string.length());
-            }
+        @Override
+        protected QualifiedName mapDomainsAndPaths(QualifiedName name) {
+            return name;
         }
-        return path;
-    }
 
-    /**
-     * @param domain
-     * @param path
-     * @param name
-     * @return
-     */
-    public String mapDomain(String domain, String path, String name) {
-        return domain;
-    }
-
-    /**
-     * @param domain
-     * @param path
-     * @param name
-     * @return
-     */
-    public String mapPath(String domain, String path, String name) {
-        return path;
-    }
-
-    /**
-     * @param domain
-     * @param path
-     * @param name
-     * @return
-     */
-    public String mapName(String domain, String path, String name) {
-        return name;
-    }
-
-    public String buildPath(String... parts) {
-        if (parts.length == 0) {
-            return None;
-        } else {
-            StringBuilder path = new StringBuilder(parts[0]);
-            for (int i = 1; i < parts.length; i++) {
-                if (!None.equalsIgnoreCase(parts[i])) {
-                    if (path.length() > 0) {
-                        path.append(".");
-                    }
-                    path.append(parts[i]);
-                }
-            }
-            return path.toString().replace("$", ".");
+        @Override
+        protected QualifiedName mapNames(QualifiedName name) {
+            return name;
         }
-    }
 
-    public static String reduceToSimpleName(String name, Class<Toys> clazz) {
-        String className = clazz.getName();
-        if (name.startsWith(className)) {
-            return clazz.getSimpleName() + "." + name.substring(className.length());
+        @Override
+        protected String mapValueFromHost(QualifiedName name, String value) {
+            return value;
         }
-        return name;
+
+        @Override
+        protected String mapValueToHost(QualifiedName name, String value) {
+            return value;
+        }
+
+    };
+
+    public QualifiedName map(QualifiedName name) {
+        return mapDomainsAndPaths(mapNames(name));
     }
 
-    public boolean has(QualifiedName name) {
-        return persistence.has(name);
+    protected abstract QualifiedName mapDomainsAndPaths(QualifiedName name);
+
+    protected abstract QualifiedName mapNames(QualifiedName name);
+
+    protected abstract String mapValueFromHost(QualifiedName name, String value);
+
+    protected abstract String mapValueToHost(QualifiedName name, String value);
+
+    public final String get(QualifiedName name, Supplier<String> value) {
+        return mapValueFromHost(map(name), value.get());
     }
 
-    public String get(QualifiedName name) {
-        return persistence.get(name);
-    }
-
-    public boolean getBoolean(QualifiedName name) {
-        return persistence.getBoolean(name);
-    }
-
-    public void set(QualifiedName name, String value) {
-        persistence.set(name, value);
-    }
-
-    public void set(QualifiedName name, boolean value) {
-        persistence.set(name, value);
-    }
-
-    public void clear(QualifiedName name) {
-        persistence.clear(name);
-    }
-
-    public UserItems getUserItems(TeaseLib teaseLib) throws IOException {
-        return persistence.getUserItems(teaseLib);
-    }
-
-    @Override
-    public TextVariables getTextVariables(Locale locale) {
-        return persistence.getTextVariables(locale);
-    }
-
-    @Override
-    public Actor getDominant(Gender gender, Locale locale) {
-        return persistence.getDominant(gender, locale);
-    }
-
-    @Override
-    public PropertyNameMapping getNameMapping() {
-        return this;
+    // TODO Use void function with name, value parameter pair instead of consumer
+    public final void set(QualifiedName name, String value, Consumer<String> persistence) {
+        persistence.accept(mapValueToHost(name, value));
     }
 
 }

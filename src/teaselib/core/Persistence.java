@@ -5,13 +5,10 @@ import java.util.Locale;
 
 import teaselib.Actor;
 import teaselib.Sexuality.Gender;
-import teaselib.core.util.PropertyNameMapping;
 import teaselib.core.util.QualifiedName;
 import teaselib.util.TextVariables;
 
 public interface Persistence {
-
-    PropertyNameMapping getNameMapping();
 
     UserItems getUserItems(TeaseLib teaseLib) throws IOException;
 

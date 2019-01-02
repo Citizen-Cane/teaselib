@@ -2,13 +2,11 @@ package teaselib.test;
 
 import java.io.IOException;
 import java.util.Locale;
-import java.util.function.Function;
 
 import teaselib.Actor;
 import teaselib.Sexuality.Gender;
 import teaselib.TeaseScript;
 import teaselib.core.Debugger;
-import teaselib.core.Persistence;
 import teaselib.core.ResourceLoader;
 import teaselib.core.TeaseLib;
 import teaselib.core.configuration.DebugSetup;
@@ -16,7 +14,7 @@ import teaselib.core.configuration.Setup;
 import teaselib.core.debug.DebugHost;
 import teaselib.core.debug.DebugPersistence;
 import teaselib.core.util.ExceptionUtil;
-import teaselib.core.util.PropertyNameMapping;
+import teaselib.hosts.SexScriptsPropertyNameMapping;
 
 public class TestScript extends TeaseScript {
     public final DebugHost host;
@@ -57,14 +55,6 @@ public class TestScript extends TeaseScript {
         }
     }
 
-    public static TestScript getOne(Function<Persistence, PropertyNameMapping> propertyNameMapping) {
-        try {
-            return new TestScript(new DebugHost(), new DebugPersistence(propertyNameMapping));
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
     public static TestScript getOne(Class<?> resourceRoot) {
         try {
             return new TestScript(new DebugHost(), new DebugPersistence(), resourceRoot);
@@ -76,6 +66,14 @@ public class TestScript extends TeaseScript {
     public static TestScript getOne(String resourceRoot) {
         try {
             return new TestScript(new DebugHost(), new DebugPersistence(), resourceRoot, newActor());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static TestScript getOne(SexScriptsPropertyNameMapping propertyNameMapping) {
+        try {
+            return new TestScript(new DebugHost(), new DebugPersistence(propertyNameMapping));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

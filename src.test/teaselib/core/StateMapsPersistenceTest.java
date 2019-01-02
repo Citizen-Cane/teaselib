@@ -337,12 +337,14 @@ public class StateMapsPersistenceTest extends StateMaps {
             assertEquals(0, storage.size());
             // The teaselib package names are stripped from names of persisted
             // items, so it's just Toys.*
-            assertFalse(storage.containsKey(TEST_DOMAIN + "." + stripPath(Toys_Chastity_Device) + ".state.duration"));
-            assertFalse(storage.containsKey(TEST_DOMAIN + "." + stripPath(Toys_Chastity_Device) + ".state.peers"));
-            assertFalse(storage.containsKey(TEST_DOMAIN + "." + stripPath(Body_SomethingOnPenis) + ".state.duration"));
-            assertFalse(storage.containsKey(TEST_DOMAIN + "." + stripPath(Body_SomethingOnPenis) + ".state.peers"));
-            assertFalse(storage.containsKey(TEST_DOMAIN + "." + stripPath(Body_CannotJerkOff) + ".state.duration"));
-            assertFalse(storage.containsKey(TEST_DOMAIN + "." + stripPath(Body_CannotJerkOff) + ".state.peers"));
+            assertFalse(
+                    storage.containsKey(QualifiedName.of(TEST_DOMAIN, Toys_Chastity_Device + ".state", "duration")));
+            assertFalse(storage.containsKey(QualifiedName.of(TEST_DOMAIN, Toys_Chastity_Device + ".state", "peers")));
+            assertFalse(
+                    storage.containsKey(QualifiedName.of(TEST_DOMAIN, Body_SomethingOnPenis + ".state", "duration")));
+            assertFalse(storage.containsKey(QualifiedName.of(TEST_DOMAIN, Body_SomethingOnPenis + ".state", "peers")));
+            assertFalse(storage.containsKey(QualifiedName.of(TEST_DOMAIN, Body_CannotJerkOff + ".state", "duration")));
+            assertFalse(storage.containsKey(QualifiedName.of(TEST_DOMAIN, Body_CannotJerkOff + ".state", "peers")));
         }
 
         state(TEST_DOMAIN, Toys_Wrist_Restraints).remove();
@@ -429,9 +431,5 @@ public class StateMapsPersistenceTest extends StateMaps {
         assertEquals(86400, duration.elapsed(TimeUnit.SECONDS));
         assertEquals(24, duration.elapsed(TimeUnit.HOURS));
         assertEquals(1, duration.elapsed(TimeUnit.DAYS));
-    }
-
-    private String stripPath(String name) {
-        return persistence.getNameMapping().stripPath(null, name, null);
     }
 }

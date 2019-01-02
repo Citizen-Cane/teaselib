@@ -1,21 +1,41 @@
 package teaselib.core.util;
 
+import java.util.Objects;
+
 public class QualifiedName implements Comparable<QualifiedName> {
     private static final char SEPARATOR = '.';
     public static final String NONE = "";
 
-    public static Object of(String domain, String namespace, String name) {
-        return new QualifiedName(domain, namespace, name);
+    protected static final String[] StrippedPackageNames = { "teaselib", "teaselib.scripts" };
+
+    private static String stripPath(String path) {
+        for (String packageName : StrippedPackageNames) {
+            String string = packageName + ".";
+            if (path.startsWith(string)) {
+                path = path.substring(string.length());
+            }
+        }
+        return path;
     }
 
-    private final String domain;
-    private final String namespace;
-    private final String name;
+    public static QualifiedName of(String domain, String namespace, String name) {
+        return new QualifiedName(domain, stripPath(namespace), name);
+    }
 
-    // TODO Enums, nested classes ($),
-    // None is needed to model default domain, sexscripts variable names
+    public static QualifiedName of(String domain, Enum<?> item) {
+        QualifiedItem qualifiedItem = QualifiedItem.of(item);
+        return QualifiedName.of(domain, stripPath(qualifiedItem.namespace()), qualifiedItem.name());
+    }
+
+    public final String domain;
+    public final String namespace;
+    public final String name;
+
     public QualifiedName(String domain, String namespace, String name) {
-        super();
+        Objects.requireNonNull(domain);
+        Objects.requireNonNull(namespace);
+        Objects.requireNonNull(name);
+
         this.domain = domain;
         this.namespace = namespace;
         this.name = name;
@@ -75,6 +95,42 @@ public class QualifiedName implements Comparable<QualifiedName> {
         } else if (!namespace.equals(other.namespace))
             return false;
         return true;
+    }
+
+    public QualifiedName withDomain(String domain) {
+        return QualifiedName.of(domain, this.namespace, this.name);
+    }
+
+    public QualifiedName withNamespace(String namespace) {
+        return QualifiedName.of(this.domain, namespace, this.name);
+    }
+
+    public QualifiedName withName(String name) {
+        return QualifiedName.of(this.domain, this.namespace, name);
+    }
+
+    public boolean domainEquals(String domain) {
+        return this.domain.equalsIgnoreCase(domain);
+    }
+
+    public boolean namespaceEquals(String namespace) {
+        return this.namespace.equalsIgnoreCase(namespace);
+    }
+
+    public boolean nameEquals(String name) {
+        return this.name.equalsIgnoreCase(name);
+    }
+
+    public boolean equals(Enum<?> item) {
+        QualifiedItem qualifiedItem = QualifiedItem.of(item);
+        return this.namespace.equalsIgnoreCase(stripPath(qualifiedItem.namespace()))
+                && this.name.equalsIgnoreCase(qualifiedItem.name());
+    }
+
+    public boolean equalsClass(Class<?> clazz) {
+        QualifiedItem qualifiedItem = QualifiedItem.of(ReflectionUtils.normalizedClassName(clazz));
+        return this.namespace.equalsIgnoreCase(stripPath(qualifiedItem.namespace()))
+                && this.name.equalsIgnoreCase(qualifiedItem.name());
     }
 
 }

@@ -29,53 +29,6 @@ public class SexScriptsPropertyNameMapping extends PropertyNameMapping {
 
     private static final Set<String> LOWER_CASE_NAMES = new HashSet<>(Arrays.asList("Toys", "Clothes", "Household"));
 
-    // @Override
-    // public boolean has(Persistence persistence, QualifiedName name) {
-    // if (SEXUALITY_SEX.equals(name)) {
-    // return persistence.has(INTRO_FEMALE);
-    // } else {
-    // return persistence.has(name);
-    // }
-    // }
-    //
-    // @Override
-    // public String get(Persistence persistence, QualifiedName name) {
-    // if (SEXUALITY_SEX.equals(name)) {
-    // if ("true".equalsIgnoreCase(persistence.get(INTRO_FEMALE))) {
-    // return Sex.Female.name();
-    // } else {
-    // return Sex.Male.name();
-    // }
-    // } else {
-    // return persistence.get(name);
-    // }
-    // }
-    //
-    // @Override
-    // public void set(Persistence persistence, QualifiedName name, String value) {
-    // if (SEXUALITY_SEX.equals(name)) {
-    // if (Sex.Female.name().equalsIgnoreCase((value))) {
-    // persistence.set(INTRO_FEMALE, false);
-    // } else {
-    // persistence.set(INTRO_FEMALE, true);
-    // }
-    // } else {
-    // persistence.set(name, value);
-    // }
-    // }
-    //
-    // @Override
-    // public void clear(Persistence persistence, QualifiedName name) {
-    // if (SEXUALITY_SEX.equals(name)) {
-    // persistence.clear(INTRO_FEMALE);
-    // } else {
-    // persistence.clear(name);
-    // }
-    // }
-
-    // TODO Map Sexuality.Sex to intro.female -> check that key exists and can be cleared
-    // TODO For Sexuality.Sex, return intro.female ? Female : Male
-
     @Override
     protected QualifiedName mapDomainsAndPaths(QualifiedName name) {
         if (name.domainEquals("Male") && name.namespaceEquals(Clothes.class.getSimpleName())) {

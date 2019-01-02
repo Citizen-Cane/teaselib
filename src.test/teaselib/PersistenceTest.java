@@ -31,8 +31,8 @@ public class PersistenceTest {
                 script.namespace, name));
         assertTrue(b.value() == false);
         b.set();
-        assertEquals(DebugPersistence.True, script.getString(name));
-        assertEquals(DebugPersistence.True, script.teaseLib
+        assertEquals(DebugPersistence.TRUE, script.getString(name));
+        assertEquals(DebugPersistence.TRUE, script.teaseLib
                 .getString(TeaseLib.DefaultDomain, script.namespace, name));
         assertTrue(b.available() == true);
         b.clear();
@@ -41,8 +41,8 @@ public class PersistenceTest {
                 script.namespace, name));
         assertTrue(b.available() == false);
         b.set(false);
-        assertEquals(DebugPersistence.False, script.getString(name));
-        assertEquals(DebugPersistence.False, script.teaseLib
+        assertEquals(DebugPersistence.FALSE, script.getString(name));
+        assertEquals(DebugPersistence.FALSE, script.teaseLib
                 .getString(TeaseLib.DefaultDomain, script.namespace, name));
         assertTrue(b.available() == true);
         script.teaseLib.clear(TeaseLib.DefaultDomain, script.namespace, name);
@@ -63,12 +63,12 @@ public class PersistenceTest {
                 script.namespace, name));
         b.set(false);
         assertTrue(b.available() == true);
-        assertEquals(DebugPersistence.False, script.getString(name));
-        assertEquals(DebugPersistence.False, script.teaseLib
+        assertEquals(DebugPersistence.FALSE, script.getString(name));
+        assertEquals(DebugPersistence.FALSE, script.teaseLib
                 .getString(TeaseLib.DefaultDomain, script.namespace, name));
         b.set();
-        assertEquals(DebugPersistence.True, script.getString(name));
-        assertEquals(DebugPersistence.True, script.teaseLib
+        assertEquals(DebugPersistence.TRUE, script.getString(name));
+        assertEquals(DebugPersistence.TRUE, script.teaseLib
                 .getString(TeaseLib.DefaultDomain, script.namespace, name));
         assertTrue(b.available() == true);
         b.clear();

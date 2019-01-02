@@ -22,16 +22,19 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import teaselib.Body;
 import teaselib.Duration;
 import teaselib.Toys;
-import teaselib.core.debug.DebugPersistence;
 import teaselib.core.util.QualifiedName;
 import teaselib.test.TestScript;
 
 @RunWith(Parameterized.class)
 public class StateMapsPersistenceTest extends StateMaps {
+    private static final Logger logger = LoggerFactory.getLogger(StateMapsPersistenceTest.class);
+
     public static final String TEST_DOMAIN = "test";
 
     enum Locks {
@@ -50,7 +53,7 @@ public class StateMapsPersistenceTest extends StateMaps {
     }
 
     final TestScript script;
-    final DebugPersistence persistence;
+    final Persistence persistence;
     final TestParameter rememberState;
 
     enum TestParameter {
@@ -79,7 +82,7 @@ public class StateMapsPersistenceTest extends StateMaps {
 
     @Before
     public void initStorage() {
-        persistence.storage.clear();
+        script.storage.clear();
 
         assertFalse(state(TEST_DOMAIN, NestedTestToys.Chastity_Device).applied());
         assertFalse(state(TEST_DOMAIN, Locks.Chastity_Device_Lock).applied());
@@ -92,7 +95,7 @@ public class StateMapsPersistenceTest extends StateMaps {
 
     void clearStatesMapsOrNot() {
         if (isRemembered()) {
-            persistence.printStorage();
+            script.storage.printTo(logger);
             clear();
         }
     }
@@ -309,7 +312,7 @@ public class StateMapsPersistenceTest extends StateMaps {
         assertEquals(!isRemembered(), state(TEST_DOMAIN, Body_WristsTiedBehindBack).applied());
 
         if (isRemembered()) {
-            Map<QualifiedName, String> storage = script.persistence.storage;
+            Map<QualifiedName, String> storage = script.storage;
             assertEquals(9, storage.size());
             // The teaselib package names are stripped from names of persisted
             // items, so it's just Toys.*
@@ -333,7 +336,7 @@ public class StateMapsPersistenceTest extends StateMaps {
         assertEquals(!isRemembered(), state(TEST_DOMAIN, Body_CannotJerkOff).applied());
 
         if (isRemembered()) {
-            Map<QualifiedName, String> storage = script.persistence.storage;
+            Map<QualifiedName, String> storage = script.storage;
             assertEquals(0, storage.size());
             // The teaselib package names are stripped from names of persisted
             // items, so it's just Toys.*
@@ -360,7 +363,7 @@ public class StateMapsPersistenceTest extends StateMaps {
         clearStatesMapsOrNot();
 
         if (isRemembered()) {
-            Map<QualifiedName, String> storage = script.persistence.storage;
+            Map<QualifiedName, String> storage = script.storage;
             assertEquals(2, storage.size());
         }
 
@@ -371,7 +374,7 @@ public class StateMapsPersistenceTest extends StateMaps {
         // TODO implement "last used" to make this test meaningful again
         assumeFalse("TODO implement \"last used\" to make this test meaningful again", isRemembered());
         if (isRemembered()) {
-            Map<QualifiedName, String> storage = script.persistence.storage;
+            Map<QualifiedName, String> storage = script.storage;
             assertEquals(1, storage.size());
             // TODO assert that the complete duration+limit is still persisted
             // -> allows to check last usage time
@@ -400,8 +403,7 @@ public class StateMapsPersistenceTest extends StateMaps {
         clearStatesMapsOrNot();
 
         if (isRemembered()) {
-            Map<QualifiedName, String> storage = script.persistence.storage;
-            assertEquals(6, storage.size());
+            assertEquals(6, script.storage.size());
         }
 
         assertTrue(state(TEST_DOMAIN, Toys.Ball_Stretcher).applied());
@@ -411,8 +413,7 @@ public class StateMapsPersistenceTest extends StateMaps {
         // TODO implement "last used" to make this test meaningful again
         assumeFalse("TODO implement \"last used\" to make this test meaningful again", isRemembered());
         if (isRemembered()) {
-            Map<QualifiedName, String> storage = script.persistence.storage;
-            assertEquals(1, storage.size());
+            assertEquals(1, script.storage.size());
             // TODO assert that the complete duration+limit is still persisted
             // -> allows to check last usage time
         }

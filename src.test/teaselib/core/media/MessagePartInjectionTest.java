@@ -1,6 +1,6 @@
 package teaselib.core.media;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -17,18 +17,22 @@ import teaselib.Mood;
 import teaselib.core.AbstractMessage;
 import teaselib.core.configuration.DebugSetup;
 import teaselib.core.configuration.Setup;
+import teaselib.core.debug.DebugHost;
+import teaselib.core.debug.DebugStorage;
 import teaselib.test.TestScript;
 import teaselib.util.RandomImages;
 
 public class MessagePartInjectionTest {
+    // DebugStorage storage = new DebugStorage();
+
     private final class DecoratingTestScript extends TestScript {
 
-        public DecoratingTestScript() throws IOException {
-            super();
+        public DecoratingTestScript(Setup setup) throws IOException {
+            this(setup, new DebugStorage());
         }
 
-        public DecoratingTestScript(Setup setup) throws IOException {
-            super(setup);
+        public DecoratingTestScript(Setup setup, DebugStorage storage) throws IOException {
+            super(new DebugHost(), TestScript.newDebugPersistence(storage), storage, setup);
         }
 
         public RenderedMessage.Decorator[] getDecorators() {
@@ -81,7 +85,7 @@ public class MessagePartInjectionTest {
 
     @Test
     public void testEmptyMessage() throws IOException {
-        DecoratingTestScript script = new DecoratingTestScript();
+        DecoratingTestScript script = new DecoratingTestScript(new DebugSetup());
         Message message = new Message(script.actor);
         script.setImage("foobar.jpg");
         RenderedMessage parsed = decorate(script, message);

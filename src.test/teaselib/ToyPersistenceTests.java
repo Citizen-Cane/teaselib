@@ -44,15 +44,14 @@ public class ToyPersistenceTests {
         assertTrue(gag.is(Toys.Gags.Ball_Gag));
 
         gag.setAvailable(true);
-        assertTrue(
-                script.persistence.storage.containsKey(QualifiedName.of(TeaseLib.DefaultDomain, "Toys", "ball_gag")));
+        assertTrue(script.storage.containsKey(QualifiedName.of(TeaseLib.DefaultDomain, "Toys", "ball_gag")));
 
         Item highHeels = script.teaseLib.items(Clothes.Partner, Clothes.Shoes)
                 .queryInventory(Clothes.Footwear.High_Heels).get();
         highHeels.setAvailable(true);
 
         assertTrue("Domain item storage unsupported",
-                script.persistence.storage.containsKey(QualifiedName.of("Partner", "Clothes", "high_heels")));
+                script.storage.containsKey(QualifiedName.of("Partner", "Clothes", "high_heels")));
     }
 
     @Test
@@ -63,12 +62,12 @@ public class ToyPersistenceTests {
         assertTrue(gag.is(Toys.Gags.Ball_Gag));
 
         gag.setAvailable(true);
-        assertTrue(script.persistence.storage
+        assertTrue(script.storage
                 .containsKey(QualifiedName.of(TeaseLib.DefaultDomain, Toys.class.getSimpleName(), "ball_gag")));
 
         script.teaseLib.items(TeaseLib.DefaultDomain, Clothes.Shoes).queryInventory(Clothes.Footwear.High_Heels).get()
                 .setAvailable(true);
-        assertTrue(script.persistence.storage
+        assertTrue(script.storage
                 .containsKey(QualifiedName.of(TeaseLib.DefaultDomain, Clothes.class.getSimpleName(), "high_heels")));
     }
 
@@ -77,12 +76,11 @@ public class ToyPersistenceTests {
         TestScript script = TestScript.getOne();
 
         script.teaseLib.item(Clothes.Partner, Toys.Collar).setAvailable(true);
-        assertTrue(script.persistence.storage
-                .containsKey(QualifiedName.of(Clothes.Partner, Toys.class.getSimpleName(), "collar")));
+        assertTrue(script.storage.containsKey(QualifiedName.of(Clothes.Partner, Toys.class.getSimpleName(), "collar")));
 
         script.teaseLib.items(Clothes.Doll, Clothes.Shoes).queryInventory(Clothes.Footwear.High_Heels).get()
                 .setAvailable(true);
-        assertTrue(script.persistence.storage
+        assertTrue(script.storage
                 .containsKey(QualifiedName.of(Clothes.Doll, Clothes.class.getSimpleName(), "high_heels")));
     }
 }

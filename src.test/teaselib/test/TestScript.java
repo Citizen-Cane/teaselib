@@ -7,18 +7,23 @@ import teaselib.Actor;
 import teaselib.Sexuality.Gender;
 import teaselib.TeaseScript;
 import teaselib.core.Debugger;
+import teaselib.core.Persistence;
 import teaselib.core.ResourceLoader;
 import teaselib.core.TeaseLib;
 import teaselib.core.configuration.DebugSetup;
 import teaselib.core.configuration.Setup;
 import teaselib.core.debug.DebugHost;
 import teaselib.core.debug.DebugPersistence;
+import teaselib.core.debug.DebugStorage;
 import teaselib.core.util.ExceptionUtil;
+import teaselib.core.util.PropertyNameMapping;
+import teaselib.core.util.PropertyNameMappingPersistence;
 import teaselib.hosts.SexScriptsPropertyNameMapping;
 
 public class TestScript extends TeaseScript {
     public final DebugHost host;
-    public final DebugPersistence persistence;
+    public final Persistence persistence;
+    public final DebugStorage storage;
     public final Debugger debugger;
 
     public static final String TestScriptNamespace = TestScript.class.getSimpleName() + " " + "Namespace";
@@ -32,94 +37,120 @@ public class TestScript extends TeaseScript {
     }
 
     public static TestScript getOne() {
+        DebugStorage storage = new DebugStorage();
         try {
-            return new TestScript();
+            return new TestScript(new DebugHost(), newDebugPersistence(storage), storage);
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw ExceptionUtil.asRuntimeException(e);
         }
     }
 
     public static TestScript getOne(Actor actor) {
+        DebugStorage storage = new DebugStorage();
         try {
-            return new TestScript(new DebugHost(), new DebugPersistence(), new DebugSetup(), actor);
+            return new TestScript(new DebugHost(), newDebugPersistence(storage), storage, new DebugSetup(), actor);
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw ExceptionUtil.asRuntimeException(e);
         }
     }
 
     public static TestScript getOne(Setup setup) {
+        DebugStorage storage = new DebugStorage();
         try {
-            return new TestScript(new DebugHost(), new DebugPersistence(), setup, newActor());
+            return new TestScript(new DebugHost(), newDebugPersistence(storage), storage, setup, newActor());
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw ExceptionUtil.asRuntimeException(e);
         }
     }
 
     public static TestScript getOne(Class<?> resourceRoot) {
+        DebugStorage storage = new DebugStorage();
         try {
-            return new TestScript(new DebugHost(), new DebugPersistence(), resourceRoot);
+            return new TestScript(new DebugHost(), newDebugPersistence(storage), storage, resourceRoot);
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw ExceptionUtil.asRuntimeException(e);
         }
     }
 
     public static TestScript getOne(String resourceRoot) {
+        DebugStorage storage = new DebugStorage();
         try {
-            return new TestScript(new DebugHost(), new DebugPersistence(), resourceRoot, newActor());
+            return new TestScript(new DebugHost(), newDebugPersistence(storage), storage, resourceRoot, newActor());
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw ExceptionUtil.asRuntimeException(e);
         }
     }
 
     public static TestScript getOne(SexScriptsPropertyNameMapping propertyNameMapping) {
+        DebugStorage storage = new DebugStorage();
         try {
-            return new TestScript(new DebugHost(), new DebugPersistence(propertyNameMapping));
+            return new TestScript(new DebugHost(), newDebugPersistence(propertyNameMapping, storage), storage);
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw ExceptionUtil.asRuntimeException(e);
         }
     }
 
-    protected TestScript() throws IOException {
-        this(new DebugHost(), new DebugPersistence());
+    // protected TestScript() throws IOException {
+    // this(new DebugHost(), newDebugPersistence());
+    // }
+    //
+    // protected TestScript(Setup setup) throws IOException {
+    // this(new DebugHost(), newDebugPersistence(), storage, setup, newActor());
+    // }
+
+    public TestScript(DebugHost debugHost, Persistence debugPersistence, DebugStorage storage) throws IOException {
+        this(debugHost, debugPersistence, storage,
+                new ResourceLoader(TestScript.class, ResourceLoader.ResourcesInProjectFolder), new DebugSetup(),
+                newActor());
     }
 
-    protected TestScript(Setup setup) throws IOException {
-        this(new DebugHost(), new DebugPersistence(), setup, newActor());
-    }
-
-    public TestScript(DebugHost dummyHost, DebugPersistence dummyPersistence) throws IOException {
-        this(dummyHost, dummyPersistence, new ResourceLoader(TestScript.class, ResourceLoader.ResourcesInProjectFolder),
-                new DebugSetup(), newActor());
-    }
-
-    TestScript(DebugHost dummyHost, DebugPersistence dummyPersistence, Setup setup, Actor actor) throws IOException {
-        this(dummyHost, dummyPersistence, new ResourceLoader(TestScript.class, ResourceLoader.ResourcesInProjectFolder),
-                setup, actor);
-    }
-
-    TestScript(DebugHost dummyHost, DebugPersistence dummyPersistence, Class<?> resourceRoot) throws IOException {
-        this(dummyHost, dummyPersistence, new ResourceLoader(resourceRoot), new DebugSetup(), newActor());
-    }
-
-    public TestScript(DebugHost debugHost, DebugPersistence debugPersistence, String resourceRoot, Actor actor)
+    public TestScript(DebugHost debugHost, Persistence debugPersistence, DebugStorage storage, Setup setup)
             throws IOException {
-        this(debugHost, debugPersistence, new ResourceLoader(TestScript.class, resourceRoot), new DebugSetup(), actor);
+        this(debugHost, debugPersistence, storage,
+                new ResourceLoader(TestScript.class, ResourceLoader.ResourcesInProjectFolder), setup, newActor());
     }
 
-    TestScript(DebugHost host, DebugPersistence persistence, ResourceLoader resourceLoader, Setup setup, Actor actor)
+    TestScript(DebugHost debugHost, Persistence debugPersistence, DebugStorage storage, Setup setup, Actor actor)
             throws IOException {
+        this(debugHost, debugPersistence, storage,
+                new ResourceLoader(TestScript.class, ResourceLoader.ResourcesInProjectFolder), setup, actor);
+    }
+
+    TestScript(DebugHost debugHost, Persistence debugPersistence, DebugStorage storage, Class<?> resourceRoot)
+            throws IOException {
+        this(debugHost, debugPersistence, storage, new ResourceLoader(resourceRoot), new DebugSetup(), newActor());
+    }
+
+    public TestScript(DebugHost debugHost, Persistence debugPersistence, DebugStorage storage, String resourceRoot,
+            Actor actor) throws IOException {
+        this(debugHost, debugPersistence, storage, new ResourceLoader(TestScript.class, resourceRoot), new DebugSetup(),
+                actor);
+    }
+
+    TestScript(DebugHost host, Persistence persistence, DebugStorage storage, ResourceLoader resourceLoader,
+            Setup setup, Actor actor) throws IOException {
         super(new TeaseLib(host, persistence, setup), resourceLoader, actor, TestScriptNamespace);
         this.host = host;
         this.persistence = persistence;
+        this.storage = storage;
         this.debugger = new Debugger(teaseLib);
     }
 
     public static TeaseLib setup() {
+        DebugStorage storage = new DebugStorage();
         try {
-            return new TeaseLib(new DebugHost(), new DebugPersistence(), new DebugSetup());
+            return new TeaseLib(new DebugHost(), newDebugPersistence(storage), new DebugSetup());
         } catch (IOException e) {
             throw ExceptionUtil.asRuntimeException(e);
         }
+    }
+
+    protected static Persistence newDebugPersistence(DebugStorage storage) {
+        return newDebugPersistence(PropertyNameMapping.NONE, storage);
+    }
+
+    private static Persistence newDebugPersistence(PropertyNameMapping propertyNameMapping, DebugStorage storage) {
+        return new PropertyNameMappingPersistence(new DebugPersistence(storage), propertyNameMapping);
     }
 
     public void addTestUserItems() {
@@ -140,6 +171,6 @@ public class TestScript extends TeaseScript {
 
     @Override
     public String toString() {
-        return "namespace=" + namespace + ", storage=" + persistence.storage.toString();
+        return "namespace=" + namespace + ", storage=" + storage;
     }
 }

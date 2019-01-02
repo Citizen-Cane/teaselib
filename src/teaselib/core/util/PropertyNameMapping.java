@@ -4,7 +4,7 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 public abstract class PropertyNameMapping {
-    public static final PropertyNameMapping DEFAULT = new PropertyNameMapping() {
+    public static final PropertyNameMapping NONE = new PropertyNameMapping() {
 
         @Override
         protected QualifiedName mapDomainsAndPaths(QualifiedName name) {

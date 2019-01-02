@@ -1,6 +1,8 @@
 package teaselib.core;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.util.concurrent.TimeUnit;
 
@@ -10,25 +12,25 @@ import teaselib.Body;
 import teaselib.Posture;
 import teaselib.State;
 import teaselib.Toys;
-import teaselib.core.debug.DebugPersistence;
+import teaselib.core.debug.DebugStorage;
 import teaselib.test.TestScript;
 
 public class StateMapsTestRemember extends StateMaps {
     public static final String TEST_DOMAIN = "test";
 
-    enum Locks {
+    private enum Locks {
         Chastity_Device_Lock
     }
 
-    final DebugPersistence persistence;
+    private final DebugStorage storage;
 
     public StateMapsTestRemember() {
         this(TestScript.getOne());
     }
 
-    StateMapsTestRemember(TestScript script) {
+    private StateMapsTestRemember(TestScript script) {
         super(script.teaseLib);
-        persistence = script.persistence;
+        storage = script.storage;
         teaseLib.freezeTime();
     }
 
@@ -74,11 +76,11 @@ public class StateMapsTestRemember extends StateMaps {
         state(TEST_DOMAIN, Toys.Wrist_Restraints).applyTo(Posture.WristsTiedBehindBack, Body.CantJerkOff);
         state(TEST_DOMAIN, Toys.Chastity_Device).applyTo(Body.OnPenis, Body.CantJerkOff).over(24, TimeUnit.HOURS);
 
-        assertEquals(9, persistence.storage.size());
+        assertEquals(9, storage.size());
 
         state(TEST_DOMAIN, Toys.Chastity_Device).remove();
 
-        assertEquals(0, persistence.storage.size());
+        assertEquals(0, storage.size());
 
         assertFalse(state(TEST_DOMAIN, Toys.Chastity_Device).applied());
         assertFalse(state(TEST_DOMAIN, Body.OnPenis).applied());
@@ -106,11 +108,11 @@ public class StateMapsTestRemember extends StateMaps {
         assertTrue(state(TEST_DOMAIN, Body.OnPenis).applied());
         assertTrue(state(TEST_DOMAIN, Body.CantJerkOff).applied());
 
-        assertEquals(9, persistence.storage.size());
+        assertEquals(9, storage.size());
 
         state(TEST_DOMAIN, Toys.Chastity_Device).remove();
 
-        assertEquals(0, persistence.storage.size());
+        assertEquals(0, storage.size());
 
         assertFalse(state(TEST_DOMAIN, Toys.Chastity_Device).applied());
         assertFalse(state(TEST_DOMAIN, Body.OnPenis).applied());

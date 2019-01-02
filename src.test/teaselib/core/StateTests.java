@@ -36,7 +36,7 @@ public class StateTests {
         assertTrue(somethingOnNipples.expired());
         assertFalse(somethingOnNipples.applied());
 
-        assertEquals(0, script.persistence.storage.size());
+        assertEquals(0, script.storage.size());
     }
 
     @Test
@@ -47,13 +47,13 @@ public class StateTests {
         State somethingOnNipples = script.state(Body.OnNipples);
         assertTrue(somethingOnNipples.expired());
         assertFalse(somethingOnNipples.applied());
-        assertEquals(0, script.persistence.storage.size());
+        assertEquals(0, script.storage.size());
 
         somethingOnNipples.applyTo(Toys.Nipple_Clamps).over(30, TimeUnit.MINUTES);
         assertTrue(somethingOnNipples.applied());
         assertFalse(somethingOnNipples.expired());
         assertEquals(30, somethingOnNipples.duration().remaining(TimeUnit.MINUTES));
-        assertEquals(7, script.persistence.storage.size());
+        assertEquals(7, script.storage.size());
 
         // Assert that when a state is applied then
         // the namespace of the script is applied to that state
@@ -67,24 +67,24 @@ public class StateTests {
         // because thats the state our test script applied,
         // and empty attribute lists aren't persisted
 
-        assertTrue(script.persistence.storage
+        assertTrue(script.storage
                 .containsKey(QualifiedName.of(TeaseLib.DefaultDomain, "Toys", "Nipple_Clamps.state.duration")));
-        assertTrue(script.persistence.storage
+        assertTrue(script.storage
                 .containsKey(QualifiedName.of(TeaseLib.DefaultDomain, "Toys", "Nipple_Clamps.state.peers")));
-        assertFalse(script.persistence.storage
+        assertFalse(script.storage
                 .containsKey(QualifiedName.of(TeaseLib.DefaultDomain, "Toys", "Nipple_Clamps.state.attributes")));
 
-        assertTrue(script.persistence.storage
-                .containsKey(QualifiedName.of(TeaseLib.DefaultDomain, "Body", "OnNipples.state.peers")));
-        assertTrue(script.persistence.storage
+        assertTrue(
+                script.storage.containsKey(QualifiedName.of(TeaseLib.DefaultDomain, "Body", "OnNipples.state.peers")));
+        assertTrue(script.storage
                 .containsKey(QualifiedName.of(TeaseLib.DefaultDomain, "Body", "OnNipples.state.duration")));
-        assertTrue(script.persistence.storage
+        assertTrue(script.storage
                 .containsKey(QualifiedName.of(TeaseLib.DefaultDomain, "Body", "OnNipples.state.attributes")));
 
         assertEquals(0, ((StateProxy) script.state(script.namespace)).peers().size());
 
         somethingOnNipples.remove();
-        assertEquals(0, script.persistence.storage.size());
+        assertEquals(0, script.storage.size());
 
         assertFalse(somethingOnNipples.is(script.namespace));
         assertFalse(somethingOnNipples.is(Toys.Nipple_Clamps));

@@ -1,6 +1,6 @@
 package teaselib.core;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 import java.util.Optional;
 
@@ -25,7 +25,16 @@ public class ScriptTest {
     @Test
     public void testScriptVariableOverride() {
         Script script = TestScript.getOne();
-        script.actor.textVariables.put(TextVariables.Names.Slave, "Anne");
+        script.actor.textVariables.put(TextVariables.Slave.Slave, "Anne");
+        Message message = new Message(script.actor, "Listen #slave:");
+
+        assertEquals("Listen Anne:", text(script, message));
+    }
+
+    @Test
+    public void testScriptVariableOverrideUpdatesAlias() {
+        Script script = TestScript.getOne();
+        script.actor.textVariables.put(TextVariables.Slave.Slave_Name, "Anne");
         Message message = new Message(script.actor, "Listen #slave:");
 
         assertEquals("Listen Anne:", text(script, message));
@@ -38,10 +47,10 @@ public class ScriptTest {
 
         assertEquals("Listen slave:", text(script, message));
 
-        script.actor.textVariables.put(TextVariables.Names.Slave, "Anne");
+        script.actor.textVariables.put(TextVariables.Slave.Slave, "Anne");
         assertEquals("Listen Anne:", text(script, message));
 
-        script.actor.textVariables.remove(TextVariables.Names.Slave);
+        script.actor.textVariables.remove(TextVariables.Slave.Slave);
         assertEquals("Listen slave:", text(script, message));
     }
 

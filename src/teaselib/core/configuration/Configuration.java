@@ -10,20 +10,31 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Properties;
 
 import teaselib.core.util.FileUtilities;
 import teaselib.core.util.QualifiedItem;
 import teaselib.core.util.ReflectionUtils;
-import teaselib.core.util.SortedProperties;
 
+/**
+ * Builds a chain of property files to store a system configuration.
+ * <li>default settings
+ * <li>user configuration
+ * <li>system properties (as -D option)
+ * <li>non-persistent session properties (changed at runtime)
+ * 
+ * @author Citizen-Cane
+ *
+ */
 public class Configuration {
     static final String DEFAULTS = ReflectionUtils.absolutePath(Configuration.class) + "defaults/";
 
-    private final List<Properties> defaults = new ArrayList<>();
-    Properties persistentProperties;
+    private final Map<String, ConfigurationFile> userPropertiesNamespaceMapping = new HashMap<>();
 
-    final Properties sessionProperties = new Properties();
+    private final List<Properties> defaultProperties = new ArrayList<>();
+    private final Properties sessionProperties = new Properties();
+    private Properties persistentProperties;
 
     public Configuration() {
         persistentProperties = sessionProperties;
@@ -41,10 +52,12 @@ public class Configuration {
         add(userConfig);
     }
 
-    private final Map<String, Properties> userPropertiesNamespaceMapping = new HashMap<>();
-
     public void addDefaultProperties(String defaults, String properties, String... namespaces) throws IOException {
         addUserProperties(defaults, properties, null, Arrays.asList(namespaces));
+    }
+
+    public void addDefaultProperties(String defaults, String properties, List<String> namespaces) throws IOException {
+        addUserProperties(defaults, properties, null, namespaces);
     }
 
     public void addUserProperties(String defaults, String properties, File userPath, String... namespaces)
@@ -54,7 +67,7 @@ public class Configuration {
 
     public void addUserProperties(String defaults, String properties, File userPath, List<String> namespaces)
             throws IOException {
-        SortedProperties p = new SortedProperties();
+        ConfigurationFile p = new ConfigurationFile();
 
         if (userPath != null) {
             File file = new File(userPath, properties);
@@ -62,7 +75,12 @@ public class Configuration {
             try (InputStream stream = new FileInputStream(file)) {
                 Objects.requireNonNull(stream, "User properties file not found:" + properties);
                 p.load(stream);
-                // TODO Save to disk on write
+
+                // TODO Setup a service that writes file-based user properties back to disk
+                // - ConfigurationFile has "dirty" flag, save file every few seconds, but with a delay
+                // -> allows to change multiple settings at once without write excess
+                // ! block writes while writing, until using CopyOnWrite property map
+                // - performance is not so much important, the file will rarely be written
             }
         } else {
             try (InputStream stream = getClass().getResourceAsStream(defaults + properties)) {
@@ -75,8 +93,8 @@ public class Configuration {
         }
     }
 
-    public Properties getProperties(String namespace) {
-        throw new UnsupportedOperationException("TODO implement!");
+    public Optional<ConfigurationFile> getUserSettings(String namespace) {
+        return Optional.ofNullable(userPropertiesNamespaceMapping.get(namespace));
     }
 
     public void addUserFile(Enum<?> setting, String templateResource, File userFile) throws IOException {
@@ -92,30 +110,30 @@ public class Configuration {
 
     public void add(File file) throws IOException {
         ConfigurationFile configurationFile;
-        if (defaults.isEmpty()) {
+        if (defaultProperties.isEmpty()) {
             configurationFile = new ConfigurationFile();
         } else {
-            configurationFile = new ConfigurationFile(defaults.get(defaults.size() - 1));
+            configurationFile = new ConfigurationFile(defaultProperties.get(defaultProperties.size() - 1));
         }
         try (FileInputStream fileInputStream = new FileInputStream(file)) {
             configurationFile.load(fileInputStream);
         }
-        defaults.add(configurationFile);
+        defaultProperties.add(configurationFile);
         persistentProperties = configurationFile;
     }
 
     public void add(String configResource) throws IOException {
         ConfigurationFile configurationFile;
-        if (defaults.isEmpty()) {
+        if (defaultProperties.isEmpty()) {
             configurationFile = new ConfigurationFile();
         } else {
-            configurationFile = new ConfigurationFile(defaults.get(defaults.size() - 1));
+            configurationFile = new ConfigurationFile(defaultProperties.get(defaultProperties.size() - 1));
         }
         try (InputStream fileInputStream = getClass().getResourceAsStream(configResource)) {
             Objects.requireNonNull(fileInputStream, "Configuration file not found:" + configResource);
             configurationFile.load(fileInputStream);
         }
-        defaults.add(configurationFile);
+        defaultProperties.add(configurationFile);
         persistentProperties = configurationFile;
     }
 

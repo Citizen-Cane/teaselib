@@ -11,12 +11,9 @@ import teaselib.core.texttospeech.TextToSpeechPlayer;
 public final class TeaseLibConfigSetup implements Setup {
     private static final String TEASELIB_PROPERTIES = "teaselib.properties";
     private static final String NETWORK_PROPERTIES = "network.properties";
-    public static final String VOICES_PROPERTIES = "voices.properties";
-    public static final String PRONUNCIATION_DIRECTORY = "pronunciation";
-    public static final String IDENTITY_PROPERTIES = "identities.properties";
+    private static final String VOICES_PROPERTIES = "voices.properties";
 
-    static final String ITEM_DEFAULT_STORE_FILENAME = "items.xml";
-    static final String ITEM_TEMPLATE_STORE_FILENAME = "useritems_template.xml";
+    private static final String ITEM_TEMPLATE_STORE_FILENAME = "useritems_template.xml";
     private static final String ITEM_USER_STORE_FILENAME = "useritems.xml";
 
     private final File teaseLibPath;
@@ -59,7 +56,7 @@ public final class TeaseLibConfigSetup implements Setup {
     }
 
     private void addIdentitiesDefaults(Configuration config) throws IOException {
-        config.addUserProperties(Configuration.DEFAULTS, IDENTITY_PROPERTIES, userPath, "user");
+        config.addUserProperties(Configuration.DEFAULTS, IDENTITY_PROPERTIES, userPath, IDENTITY_PROPERTIES_NAMESPACES);
     }
 
 }

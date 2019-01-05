@@ -33,7 +33,11 @@ public class TestScript extends TeaseScript {
     }
 
     public static Actor newActor(Gender gender) {
-        return new Actor("Test", gender, Locale.US);
+        return newActor(gender, Locale.US);
+    }
+
+    public static Actor newActor(Gender gender, Locale locale) {
+        return new Actor("Test", gender, locale);
     }
 
     public static TestScript getOne() {

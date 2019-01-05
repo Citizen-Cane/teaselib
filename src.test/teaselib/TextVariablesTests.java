@@ -66,29 +66,55 @@ public class TextVariablesTests {
     }
 
     @Test
-    public void testDefaultsMasculine() {
-        TestScript script = TestScript.getOne(TestScript.newActor(Gender.Masculine));
+    public void testDefaultsMasculineEn() {
+        TestScript script = TestScript.getOne(TestScript.newActor(Gender.Feminine, Locale.UK));
 
         script.persistentEnum(Gender.class).set(Gender.Masculine);
 
         assertEquals("en", script.actor.locale().getLanguage());
         assertEquals("slave", script.expandTextVariables("#slave"));
         assertEquals("slave", script.expandTextVariables("#slave_title"));
-        assertEquals("Slave", script.expandTextVariables("#slave_name"));
+        assertEquals("slave", script.expandTextVariables("#slave_name"));
         assertEquals("Slave", script.expandTextVariables("#slave_fullname"));
     }
 
     @Test
-    public void testDefaultsFeminine() {
-        TestScript script = TestScript.getOne(TestScript.newActor(Gender.Masculine));
+    public void testDefaultsFeminineEn() {
+        TestScript script = TestScript.getOne(TestScript.newActor(Gender.Masculine, Locale.UK));
 
         script.persistentEnum(Gender.class).set(Gender.Feminine);
 
         assertEquals("en", script.actor.locale().getLanguage());
         assertEquals("slave-girl", script.expandTextVariables("#slave"));
         assertEquals("slave-girl", script.expandTextVariables("#slave_title"));
-        assertEquals("Slave-girl", script.expandTextVariables("#slave_name"));
+        assertEquals("slave-girl", script.expandTextVariables("#slave_name"));
         assertEquals("Slave-girl", script.expandTextVariables("#slave_fullname"));
+    }
+
+    @Test
+    public void testDefaultsMasculineDe() {
+        TestScript script = TestScript.getOne(TestScript.newActor(Gender.Feminine, Locale.GERMAN));
+
+        script.persistentEnum(Gender.class).set(Gender.Masculine);
+
+        assertEquals("de", script.actor.locale().getLanguage());
+        assertEquals("Sklave", script.expandTextVariables("#slave"));
+        assertEquals("Sklave", script.expandTextVariables("#slave_title"));
+        assertEquals("Sklave", script.expandTextVariables("#slave_name"));
+        assertEquals("Sklave", script.expandTextVariables("#slave_fullname"));
+    }
+
+    @Test
+    public void testDefaultsFemimineDe() {
+        TestScript script = TestScript.getOne(TestScript.newActor(Gender.Masculine, Locale.GERMAN));
+
+        script.persistentEnum(Gender.class).set(Gender.Feminine);
+
+        assertEquals("de", script.actor.locale().getLanguage());
+        assertEquals("Sklavin", script.expandTextVariables("#slave"));
+        assertEquals("Sklavin", script.expandTextVariables("#slave_title"));
+        assertEquals("Sklavin", script.expandTextVariables("#slave_name"));
+        assertEquals("Sklavin", script.expandTextVariables("#slave_fullname"));
     }
 
     // TODO Test that covers TeaseLibConfigSetup, with writable identities user file, and host properties

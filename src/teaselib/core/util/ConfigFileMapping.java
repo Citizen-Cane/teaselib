@@ -2,6 +2,7 @@ package teaselib.core.util;
 
 import java.io.IOException;
 import java.util.Locale;
+import java.util.Optional;
 
 import teaselib.Actor;
 import teaselib.Sexuality.Gender;
@@ -9,6 +10,7 @@ import teaselib.core.Persistence;
 import teaselib.core.TeaseLib;
 import teaselib.core.UserItems;
 import teaselib.core.configuration.Configuration;
+import teaselib.core.configuration.ConfigurationFile;
 import teaselib.util.TextVariables;
 
 public class ConfigFileMapping implements Persistence {
@@ -22,38 +24,81 @@ public class ConfigFileMapping implements Persistence {
     }
 
     @Override
+    public boolean has(QualifiedName name) {
+        Optional<ConfigurationFile> properties = config.getUserSettings(name.namespace);
+        if (properties.isPresent() && properties.get().has(name.toString())) {
+            return true;
+        } else {
+            return persistence.has(name);
+        }
+    }
+
+    @Override
     public String get(QualifiedName name) {
-        return persistence.get(name);
+        if (persistence.has(name)) {
+            return persistence.get(name);
+        } else {
+            Optional<ConfigurationFile> properties = config.getUserSettings(name.namespace);
+            if (properties.isPresent()) {
+                return properties.get().get(name.toString());
+            } else {
+                return persistence.get(name);
+            }
+        }
     }
 
     @Override
     public boolean getBoolean(QualifiedName name) {
-        return persistence.getBoolean(name);
+        if (persistence.has(name)) {
+            return persistence.getBoolean(name);
+        } else {
+            Optional<ConfigurationFile> properties = config.getUserSettings(name.namespace);
+            if (properties.isPresent()) {
+                return properties.get().getBoolean(name.toString());
+            } else {
+                return persistence.getBoolean(name);
+            }
+        }
     }
 
     @Override
     public void set(QualifiedName name, String value) {
-        persistence.set(name, value);
+        Optional<ConfigurationFile> properties = config.getUserSettings(name.namespace);
+        if (properties.isPresent()) {
+            properties.get().set(name.toString(), value);
+            if (persistence.has(name)) {
+                persistence.set(name, value);
+            }
+        } else {
+            persistence.set(name, value);
+        }
     }
 
     @Override
     public void set(QualifiedName name, boolean value) {
-        persistence.set(name, value);
+        Optional<ConfigurationFile> properties = config.getUserSettings(name.namespace);
+        if (properties.isPresent()) {
+            properties.get().set(name.toString(), value);
+            if (persistence.has(name)) {
+                persistence.set(name, value);
+            }
+        } else {
+            persistence.set(name, value);
+        }
     }
 
     @Override
     public void clear(QualifiedName name) {
+        Optional<ConfigurationFile> properties = config.getUserSettings(name.namespace);
+        if (properties.isPresent()) {
+            properties.get().clear(name.toString());
+        }
         persistence.clear(name);
     }
 
     @Override
     public UserItems getUserItems(TeaseLib teaseLib) throws IOException {
         return persistence.getUserItems(teaseLib);
-    }
-
-    @Override
-    public boolean has(QualifiedName name) {
-        return persistence.has(name);
     }
 
     @Override

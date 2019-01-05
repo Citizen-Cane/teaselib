@@ -8,12 +8,15 @@ import teaselib.util.TextVariables;
 
 public class Actor {
     public class Key {
-        public final static String DominantFemale = "Dominant_Female";
-        public final static String DominantMale = "Dominant_Male";
+        private Key() {
+        }
+
+        public static final String DominantFemale = "Dominant_Female";
+        public static final String DominantMale = "Dominant_Male";
     }
 
     /**
-     * How to address the actor.
+     * How to address the actor, to be used as manner of address in spoken language.
      *
      */
     public enum FormOfAddress {
@@ -28,7 +31,7 @@ public class Actor {
         Master,
 
         /**
-         * The actor's short- or surname.
+         * The actor's given name or title, but not both.
          */
         Name,
         /**

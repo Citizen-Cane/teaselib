@@ -14,36 +14,39 @@ import teaselib.Actor;
 import teaselib.Sexuality.Gender;
 import teaselib.core.TeaseLib;
 
+/**
+ * 
+ * Text variables are place holders in shown or spoken text, that are replaced at runtime. variables are embedded in
+ * text by pre-fixing the variable name with a #, for instance "There you are, #slave".
+ * <p>
+ *
+ */
 public class TextVariables implements Iterable<Enum<?>> {
     /**
      * How to address the submissive.
      *
      */
-    public enum Names {
+    public enum Slave {
         /**
-         * Short-hand for slave title.
+         * Short-hand for name.
          */
         Slave,
 
         /**
-         * slave title.
+         * title.
          */
         Slave_Title,
 
         /**
-         * slave name.
+         * given name, nick name or title, only one of them.
          */
         Slave_Name,
 
         /**
-         * slave full name.
+         * 
+         * full name, for instance "#title #name"
          */
         Slave_FullName,
-
-        User,
-        User_Title,
-        User_Name,
-        USer_FullName
     }
 
     private static final Pattern textVariablePattern = Pattern.compile("(?i)#\\w+",
@@ -126,16 +129,23 @@ public class TextVariables implements Iterable<Enum<?>> {
         String language = locale.getLanguage();
         String namespace = userNamespace(gender);
 
-        String string = teaseLib.getString(domain, namespace, qualifiedName(Actor.FormOfAddress.Title, language));
-        put(Names.Slave, string);
-        put(Names.Slave_Title, string);
-        put(Names.Slave_Name, teaseLib.getString(domain, namespace, qualifiedName(Actor.FormOfAddress.Name, language)));
-        put(Names.Slave_FullName,
+        String name = teaseLib.getString(domain, namespace, qualifiedName(Actor.FormOfAddress.Name, language));
+        // TODO Slave.Slave is an alias, not a type -> must be handled as such,
+        // since multiple entries for the same block name changes in script
+        // (for an example on how scripts handle this see Rakhee Maid training)
+        // TODO Simplify names: Slave -> Alias to Slave_Name
+        // TODO remove "Slave_" from all other entries, but keep the text
+        // variable name pattern "Slave_VAR"
+        put(Slave.Slave, name);
+        put(Slave.Slave_Name, name);
+        put(Slave.Slave_Title,
+                teaseLib.getString(domain, namespace, qualifiedName(Actor.FormOfAddress.Title, language)));
+        put(Slave.Slave_FullName,
                 teaseLib.getString(domain, namespace, qualifiedName(Actor.FormOfAddress.FullName, language)));
     }
 
     private static String userNamespace(Gender gender) {
-        return qualifiedName(Names.User.name(), gender.name());
+        return qualifiedName("user", gender.name());
     }
 
     private static String qualifiedName(Enum<?> part1, String part2) {

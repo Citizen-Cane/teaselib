@@ -1,8 +1,6 @@
 package teaselib.core.configuration;
 
 import static teaselib.core.configuration.Configuration.DEFAULTS;
-import static teaselib.core.configuration.TeaseLibConfigSetup.ITEM_DEFAULT_STORE_FILENAME;
-import static teaselib.core.configuration.TeaseLibConfigSetup.PRONUNCIATION_DIRECTORY;
 
 import java.io.File;
 import java.io.IOException;
@@ -75,7 +73,7 @@ public final class DebugSetup implements Setup {
 
     private static void loadIdentities(Configuration config) {
         try {
-            config.addDefaultProperties(Configuration.DEFAULTS, TeaseLibConfigSetup.IDENTITY_PROPERTIES, "user");
+            config.addDefaultProperties(Configuration.DEFAULTS, IDENTITY_PROPERTIES, IDENTITY_PROPERTIES_NAMESPACES);
         } catch (IOException e) {
             throw ExceptionUtil.asRuntimeException(e);
         }

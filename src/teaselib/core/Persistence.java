@@ -10,8 +10,6 @@ import teaselib.util.TextVariables;
 
 public interface Persistence {
 
-    UserItems getUserItems(TeaseLib teaseLib) throws IOException;
-
     boolean has(QualifiedName name);
 
     /**
@@ -28,6 +26,8 @@ public interface Persistence {
     void set(QualifiedName name, boolean value);
 
     void clear(QualifiedName name);
+
+    UserItems getUserItems(TeaseLib teaseLib) throws IOException;
 
     /**
      * Text variables may depend on the locale of the script. For instance, if the name of the slave can't be pronounced

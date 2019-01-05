@@ -110,7 +110,8 @@ public class SexScriptsPersistence implements Persistence {
     @Override
     public TextVariables getTextVariables(Locale locale) {
         TextVariables variables = new TextVariables();
-        variables.put(TextVariables.Names.Slave, getLocalized("intro.name", locale));
+        variables.put(TextVariables.Slave.Slave, getLocalized("intro.name", locale));
+        variables.put(TextVariables.Slave.Slave_Name, getLocalized("intro.name", locale));
         return variables;
     }
 

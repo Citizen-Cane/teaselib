@@ -1,6 +1,6 @@
 package teaselib;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 import java.util.Arrays;
 import java.util.List;
@@ -11,6 +11,7 @@ import org.junit.Test;
 import teaselib.Sexuality.Gender;
 import teaselib.test.TestScript;
 import teaselib.util.TextVariables;
+import teaselib.util.TextVariables.FormOfAddress;
 
 public class TextVariablesTests {
     enum Names {
@@ -21,9 +22,9 @@ public class TextVariablesTests {
 
     private static TextVariables createTestData() {
         TextVariables testData = new TextVariables();
-        testData.put(Names.First, "Peter");
-        testData.put(Names.Second, "Paul");
-        testData.put(Names.Third, "Mary");
+        testData.set(Names.First, "Peter");
+        testData.set(Names.Second, "Paul");
+        testData.set(Names.Third, "Mary");
         return testData;
     }
 
@@ -59,8 +60,8 @@ public class TextVariablesTests {
     @Test
     public void testActor() {
         Actor actor = new Actor("Miss Mary", "Ma'am", Gender.Feminine, Locale.UK);
-        List<String> expected = Arrays.asList("Yes, " + actor.textVariables.get(Actor.FormOfAddress.Name),
-                "No, " + actor.textVariables.get(Actor.FormOfAddress.FullName));
+        List<String> expected = Arrays.asList("Yes, " + actor.textVariables.get(FormOfAddress.Name),
+                "No, " + actor.textVariables.get(FormOfAddress.FullName));
         List<String> actual = Arrays.asList("Yes, #name", "No, #FullName");
         assertEquals(expected, actor.textVariables.expand(actual));
     }

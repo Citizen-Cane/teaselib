@@ -1,6 +1,6 @@
 package teaselib.core;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 import java.util.Optional;
 
@@ -25,7 +25,18 @@ public class ScriptTest {
     @Test
     public void testScriptVariableOverride() {
         Script script = TestScript.getOne();
-        script.actor.textVariables.put(TextVariables.Slave.Slave, "Anne");
+
+        script.actor.textVariables.set(TextVariables.Identity.Slave_Name, "Anne");
+        Message message = new Message(script.actor, "Listen #slave:");
+
+        assertEquals("Listen Anne:", text(script, message));
+    }
+
+    @Test
+    public void testScriptVariableOverrideAliasKey() {
+        Script script = TestScript.getOne();
+
+        script.actor.textVariables.set(TextVariables.Identity.Alias.Slave, "Anne");
         Message message = new Message(script.actor, "Listen #slave:");
 
         assertEquals("Listen Anne:", text(script, message));
@@ -34,7 +45,7 @@ public class ScriptTest {
     @Test
     public void testScriptVariableOverrideUpdatesAlias() {
         Script script = TestScript.getOne();
-        script.actor.textVariables.put(TextVariables.Slave.Slave_Name, "Anne");
+        script.actor.textVariables.set(TextVariables.Identity.Slave_Name, "Anne");
         Message message = new Message(script.actor, "Listen #slave:");
 
         assertEquals("Listen Anne:", text(script, message));
@@ -47,10 +58,24 @@ public class ScriptTest {
 
         assertEquals("Listen slave:", text(script, message));
 
-        script.actor.textVariables.put(TextVariables.Slave.Slave, "Anne");
+        script.actor.textVariables.set(TextVariables.Identity.Slave_Name, "Anne");
         assertEquals("Listen Anne:", text(script, message));
 
-        script.actor.textVariables.remove(TextVariables.Slave.Slave);
+        script.actor.textVariables.remove(TextVariables.Identity.Slave_Name);
+        assertEquals("Listen slave:", text(script, message));
+    }
+
+    @Test
+    public void testScriptVariableOverrideAndUndoAlias() {
+        Script script = TestScript.getOne();
+        Message message = new Message(script.actor, "Listen #slave:");
+
+        assertEquals("Listen slave:", text(script, message));
+
+        script.actor.textVariables.set(TextVariables.Identity.Alias.Slave, "Anne");
+        assertEquals("Listen Anne:", text(script, message));
+
+        script.actor.textVariables.remove(TextVariables.Identity.Alias.Slave);
         assertEquals("Listen slave:", text(script, message));
     }
 

@@ -10,7 +10,6 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import teaselib.Actor;
 import teaselib.Sexuality.Gender;
 import teaselib.core.TeaseLib;
 
@@ -21,82 +20,136 @@ import teaselib.core.TeaseLib;
  * <p>
  *
  */
-public class TextVariables implements Iterable<Enum<?>> {
+public class TextVariables implements Iterable<String> {
     /**
      * How to address the submissive.
      *
      */
-    public enum Slave {
+    public enum Identity {
+    /**
+     * title.
+     */
+    Slave_Title,
+
+    /**
+     * given name, nick name or title, only one of them.
+     */
+    Slave_Name,
+
+    /**
+     * 
+     * full name, for instance "#title #name"
+     */
+    Slave_FullName
+
+        ;
+
+        public enum Alias {
+            /**
+             * Short-hand for name.
+             */
+            Slave
+        }
+    }
+
+    /**
+     * How to address the actor, to be used as manner of address in spoken language.
+     *
+     */
+    public enum FormOfAddress {
         /**
-         * Short-hand for name.
+         * The actor's title or honorific, as Mistress/Master, Miss/Sir
          */
-        Slave,
+        Title,
 
         /**
-         * title.
+         * The actor's given name or title, but not both.
          */
-        Slave_Title,
-
+        Name,
         /**
-         * given name, nick name or title, only one of them.
+         * The actor's full or family name, prefixed by the title or honorific.
          */
-        Slave_Name,
+        FullName
 
-        /**
-         * 
-         * full name, for instance "#title #name"
-         */
-        Slave_FullName,
+        ;
+
+        enum Alias {
+            Miss,
+            Mistress,
+            Sir,
+            Master,
+        }
     }
 
     private static final Pattern textVariablePattern = Pattern.compile("(?i)#\\w+",
             Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE);
 
-    private final Map<Enum<?>, String> entries = new LinkedHashMap<>();
     private final Map<String, String> keys2names = new LinkedHashMap<>();
+
+    private final Map<String, String> aliases = new LinkedHashMap<>();
 
     public TextVariables(TextVariables... textVariables) {
         for (TextVariables tV : textVariables) {
-            addAll(tV);
+            setAll(tV);
         }
+
+        setAlias(Identity.Alias.Slave, Identity.Slave_Name);
+        setAlias(FormOfAddress.Alias.Miss, FormOfAddress.Title);
+        setAlias(FormOfAddress.Alias.Sir, FormOfAddress.Title);
+        setAlias(FormOfAddress.Alias.Mistress, FormOfAddress.Title);
+        setAlias(FormOfAddress.Alias.Master, FormOfAddress.Title);
     }
 
-    public void addAll(TextVariables textVariables) {
-        entries.putAll(textVariables.entries);
-        for (Enum<?> var : textVariables) {
-            keys2names.put(var.name().toLowerCase(), entries.get(var));
+    public void setAll(TextVariables textVariables) {
+        for (String var : textVariables) {
+            keys2names.put(var, textVariables.get(var));
         }
+        aliases.putAll(textVariables.aliases);
     }
 
-    public String put(Enum<?> key, String value) {
-        entries.put(key, value);
-        return keys2names.put(key.name().toLowerCase(), value);
+    public String set(Enum<?> name, String value) {
+        return keys2names.put(resolveAlias(name.name().toLowerCase()), value);
     }
 
-    public void remove(Enum<?> key) {
-        entries.remove(key);
-        keys2names.remove(key.name().toLowerCase());
+    public String set(String name, String value) {
+        return keys2names.put(resolveAlias(name.toLowerCase()), value);
+    }
+
+    public String setAlias(Enum<?> alias, Enum<?> name) {
+        return setAlias(alias.name(), name.name());
+    }
+
+    public String setAlias(String alias, String name) {
+        return aliases.put(alias.toLowerCase(), name.toLowerCase());
+    }
+
+    public void remove(Enum<?> name) {
+        remove(resolveAlias(name.name()));
+    }
+
+    public void remove(String name) {
+        keys2names.remove(resolveAlias(name.toLowerCase()));
     }
 
     @Override
-    public Iterator<Enum<?>> iterator() {
-        return entries.keySet().iterator();
+    public Iterator<String> iterator() {
+        return keys2names.keySet().iterator();
     }
 
-    public boolean contains(Enum<?> key) {
-        return entries.containsKey(key);
+    public boolean contains(String name) {
+        return keys2names.containsKey(resolveAlias(name));
     }
 
-    public boolean contains(String key) {
-        return keys2names.containsKey(key);
+    public String get(Enum<?> name) {
+        return get(name.name());
     }
 
-    public String get(Enum<?> key) {
-        return entries.get(key);
+    public String get(String name) {
+        return keys2names.get(resolveAlias(name).toLowerCase());
     }
 
-    public String get(String key) {
-        return keys2names.get(key);
+    private String resolveAlias(String key) {
+        return aliases.getOrDefault(key, key);
     }
 
     public List<String> expand(List<String> texts) {
@@ -124,24 +177,17 @@ public class TextVariables implements Iterable<Enum<?>> {
         return sb.toString();
     }
 
-    public void addUserIdentity(TeaseLib teaseLib, String domain, Locale locale) {
+    public void setUserIdentity(TeaseLib teaseLib, String domain, Locale locale) {
         Gender gender = teaseLib.new PersistentEnum<>(domain, Gender.class).value();
         String language = locale.getLanguage();
         String namespace = userNamespace(gender);
 
-        String name = teaseLib.getString(domain, namespace, qualifiedName(Actor.FormOfAddress.Name, language));
-        // TODO Slave.Slave is an alias, not a type -> must be handled as such,
-        // since multiple entries for the same block name changes in script
-        // (for an example on how scripts handle this see Rakhee Maid training)
-        // TODO Simplify names: Slave -> Alias to Slave_Name
-        // TODO remove "Slave_" from all other entries, but keep the text
-        // variable name pattern "Slave_VAR"
-        put(Slave.Slave, name);
-        put(Slave.Slave_Name, name);
-        put(Slave.Slave_Title,
-                teaseLib.getString(domain, namespace, qualifiedName(Actor.FormOfAddress.Title, language)));
-        put(Slave.Slave_FullName,
-                teaseLib.getString(domain, namespace, qualifiedName(Actor.FormOfAddress.FullName, language)));
+        String name = teaseLib.getString(domain, namespace, qualifiedName(FormOfAddress.Name, language));
+        set(Identity.Slave_Name.name(), name);
+        set(Identity.Slave_Title.name(),
+                teaseLib.getString(domain, namespace, qualifiedName(FormOfAddress.Title, language)));
+        set(Identity.Slave_FullName.name(),
+                teaseLib.getString(domain, namespace, qualifiedName(FormOfAddress.FullName, language)));
     }
 
     private static String userNamespace(Gender gender) {
@@ -164,7 +210,7 @@ public class TextVariables implements Iterable<Enum<?>> {
 
     @Override
     public String toString() {
-        return entries.toString();
+        return keys2names.toString();
     }
 
 }

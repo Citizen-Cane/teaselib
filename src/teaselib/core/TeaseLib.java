@@ -756,8 +756,8 @@ public class TeaseLib {
 
     public TextVariables getTextVariables(String domain, Locale locale) {
         TextVariables variables = new TextVariables();
-        variables.addUserIdentity(this, domain, locale);
-        variables.addAll(persistence.getTextVariables(locale));
+        variables.setUserIdentity(this, domain, locale);
+        variables.setAll(persistence.getTextVariables(locale));
         return variables;
     }
 

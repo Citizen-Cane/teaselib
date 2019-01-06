@@ -5,6 +5,7 @@ import java.util.Locale;
 import teaselib.Sexuality.Gender;
 import teaselib.util.SpeechRecognitionRejectedScript;
 import teaselib.util.TextVariables;
+import teaselib.util.TextVariables.FormOfAddress;
 
 public class Actor {
     public class Key {
@@ -13,31 +14,6 @@ public class Actor {
 
         public static final String DominantFemale = "Dominant_Female";
         public static final String DominantMale = "Dominant_Male";
-    }
-
-    /**
-     * How to address the actor, to be used as manner of address in spoken language.
-     *
-     */
-    public enum FormOfAddress {
-        /**
-         * The actor's title or honorific, as Mistress/Master, Miss/Sir
-         */
-        Title,
-
-        Miss,
-        Mistress,
-        Sir,
-        Master,
-
-        /**
-         * The actor's given name or title, but not both.
-         */
-        Name,
-        /**
-         * The actor's full or family name, prefixed by the title or honorific.
-         */
-        FullName
     }
 
     /**
@@ -114,13 +90,9 @@ public class Actor {
     }
 
     private void addTextVariables(String title, String fullName, String name) {
-        textVariables.put(FormOfAddress.Title, title);
-        textVariables.put(FormOfAddress.Miss, title);
-        textVariables.put(FormOfAddress.Sir, title);
-        textVariables.put(FormOfAddress.Mistress, title);
-        textVariables.put(FormOfAddress.Master, title);
-        textVariables.put(FormOfAddress.FullName, fullName);
-        textVariables.put(FormOfAddress.Name, name);
+        textVariables.set(FormOfAddress.Title, title);
+        textVariables.set(FormOfAddress.FullName, fullName);
+        textVariables.set(FormOfAddress.Name, name);
     }
 
     private static String key(String fullName) {
@@ -139,7 +111,7 @@ public class Actor {
     }
 
     public String get(Enum<?> formOfAddress) {
-        return textVariables.get(formOfAddress);
+        return textVariables.get(formOfAddress.name());
     }
 
     @Override

@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -31,6 +32,7 @@ public class Configuration {
     static final String DEFAULTS = ReflectionUtils.absolutePath(Configuration.class) + "defaults/";
 
     private final Map<String, ConfigurationFile> userPropertiesNamespaceMapping = new HashMap<>();
+    final PersistentConfigurationFiles persistentConfigurationFiles = new PersistentConfigurationFiles();
 
     private final List<Properties> defaultProperties = new ArrayList<>();
     private final Properties sessionProperties = new Properties();
@@ -38,6 +40,7 @@ public class Configuration {
 
     public Configuration() {
         persistentProperties = sessionProperties;
+
     }
 
     public Configuration(Setup setup) throws IOException {
@@ -53,11 +56,11 @@ public class Configuration {
     }
 
     public void addDefaultProperties(String defaults, String properties, String... namespaces) throws IOException {
-        addUserProperties(defaults, properties, null, Arrays.asList(namespaces));
+        addUserProperties(Optional.of(defaults), properties, Optional.empty(), Arrays.asList(namespaces));
     }
 
     public void addDefaultProperties(String defaults, String properties, List<String> namespaces) throws IOException {
-        addUserProperties(defaults, properties, null, namespaces);
+        addUserProperties(Optional.of(defaults), properties, Optional.empty(), namespaces);
     }
 
     public void addUserProperties(String defaults, String properties, File userPath, String... namespaces)
@@ -67,24 +70,30 @@ public class Configuration {
 
     public void addUserProperties(String defaults, String properties, File userPath, List<String> namespaces)
             throws IOException {
-        ConfigurationFile p = new ConfigurationFile();
+        addUserProperties(Optional.of(defaults), properties, Optional.of(userPath), namespaces);
+    }
 
-        if (userPath != null) {
-            File file = new File(userPath, properties);
-            createUserFileIfNotExisits(defaults + properties, file);
-            try (InputStream stream = new FileInputStream(file)) {
-                Objects.requireNonNull(stream, "User properties file not found:" + properties);
-                p.load(stream);
+    public void addScriptSettings(String properties, File userPath, String namespace) throws IOException {
+        addUserProperties(Optional.empty(), properties, Optional.of(userPath), Arrays.asList(namespace));
+    }
 
-                // TODO Setup a service that writes file-based user properties back to disk
-                // - ConfigurationFile has "dirty" flag, save file every few seconds, but with a delay
-                // -> allows to change multiple settings at once without write excess
-                // ! block writes while writing, until using CopyOnWrite property map
-                // - performance is not so much important, the file will rarely be written
+    private void addUserProperties(Optional<String> defaults, String properties, Optional<File> userPath,
+            List<String> namespaces) throws IOException {
+        ConfigurationFile p;
+
+        if (userPath.isPresent()) {
+            File userFile = new File(userPath.get(), properties);
+            if (defaults.isPresent()) {
+                createUserFileIfNotExisits(defaults + properties, userFile);
             }
+
+            p = persistentConfigurationFiles.newFile(Paths.get(userPath.get().getAbsolutePath(), properties));
         } else {
-            try (InputStream stream = getClass().getResourceAsStream(defaults + properties)) {
-                p.load(stream);
+            p = new ConfigurationFile();
+            if (defaults.isPresent()) {
+                try (InputStream stream = getClass().getResourceAsStream(defaults.get() + properties)) {
+                    p.load(stream);
+                }
             }
         }
 

@@ -38,9 +38,10 @@ public class Configuration {
     private final Properties sessionProperties = new Properties();
     private Properties persistentProperties;
 
-    public Configuration() {
-        persistentProperties = sessionProperties;
+    Optional<File> userPath = Optional.empty();
 
+    public Configuration() {
+        this.persistentProperties = sessionProperties;
     }
 
     public Configuration(Setup setup) throws IOException {
@@ -56,50 +57,69 @@ public class Configuration {
     }
 
     public void addDefaultProperties(String defaults, String properties, String... namespaces) throws IOException {
-        addUserProperties(Optional.of(defaults), properties, Optional.empty(), Arrays.asList(namespaces));
+        addDefaultUserProperties(Optional.of(defaults), properties, Arrays.asList(namespaces));
     }
 
     public void addDefaultProperties(String defaults, String properties, List<String> namespaces) throws IOException {
-        addUserProperties(Optional.of(defaults), properties, Optional.empty(), namespaces);
+        addDefaultUserProperties(Optional.of(defaults), properties, namespaces);
     }
 
-    public void addUserProperties(String defaults, String properties, File userPath, String... namespaces)
+    public void addPersistentUserProperties(String defaults, String properties, File userPath, String... namespaces)
             throws IOException {
-        addUserProperties(defaults, properties, userPath, Arrays.asList(namespaces));
+        addPersistentUserProperties(defaults, properties, userPath, Arrays.asList(namespaces));
     }
 
-    public void addUserProperties(String defaults, String properties, File userPath, List<String> namespaces)
+    public void addPersistentUserProperties(String defaults, String properties, File userPath, List<String> namespaces)
             throws IOException {
-        addUserProperties(Optional.of(defaults), properties, Optional.of(userPath), namespaces);
+        addPersistentUserProperties(Optional.of(defaults), properties, userPath, namespaces);
     }
 
-    public void addScriptSettings(String properties, File userPath, String namespace) throws IOException {
-        addUserProperties(Optional.empty(), properties, Optional.of(userPath), Arrays.asList(namespace));
-    }
-
-    private void addUserProperties(Optional<String> defaults, String properties, Optional<File> userPath,
-            List<String> namespaces) throws IOException {
-        ConfigurationFile p;
-
+    public void addScriptSettings(String properties, String namespace) throws IOException {
         if (userPath.isPresent()) {
-            File userFile = new File(userPath.get(), properties);
-            if (defaults.isPresent()) {
-                createUserFileIfNotExisits(defaults + properties, userFile);
-            }
-
-            p = persistentConfigurationFiles.newFile(Paths.get(userPath.get().getAbsolutePath(), properties));
+            addPersistentUserProperties(Optional.empty(), properties, userPath.get(), Arrays.asList(namespace));
         } else {
-            p = new ConfigurationFile();
-            if (defaults.isPresent()) {
-                try (InputStream stream = getClass().getResourceAsStream(defaults.get() + properties)) {
-                    p.load(stream);
-                }
+            addDefaultUserProperties(Optional.empty(), properties, Arrays.asList(namespace));
+        }
+    }
+
+    private void addDefaultUserProperties(Optional<String> defaults, String properties, List<String> namespaces)
+            throws IOException {
+        if (namespaceAlreadyRegistered(namespaces)) {
+            throw new IllegalArgumentException("Namespace already registered: " + namespaces);
+        }
+
+        ConfigurationFile p = new ConfigurationFile();
+        if (defaults.isPresent()) {
+            try (InputStream stream = getClass().getResourceAsStream(defaults.get() + properties)) {
+                p.load(stream);
             }
         }
 
         for (String string : namespaces) {
             userPropertiesNamespaceMapping.put(string, p);
         }
+    }
+
+    void addPersistentUserProperties(Optional<String> defaultResource, String properties, File persistentPath,
+            List<String> namespaces) throws IOException {
+        if (namespaceAlreadyRegistered(namespaces)) {
+            throw new IllegalArgumentException("Namespace already registered: " + namespaces);
+        }
+
+        File userFile = new File(persistentPath, properties);
+        if (defaultResource.isPresent()) {
+            createUserFileIfNotExisits(defaultResource + properties, userFile);
+        }
+        ConfigurationFile p = persistentConfigurationFiles
+                .newFile(Paths.get(persistentPath.getAbsolutePath(), properties));
+
+        for (String string : namespaces) {
+            userPropertiesNamespaceMapping.put(string, p);
+        }
+    }
+
+    private boolean namespaceAlreadyRegistered(List<String> namespaces) {
+        return namespaces.stream().anyMatch(userPropertiesNamespaceMapping::containsKey);
     }
 
     public Optional<ConfigurationFile> getUserSettings(String namespace) {

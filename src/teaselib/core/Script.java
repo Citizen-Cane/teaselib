@@ -1,5 +1,6 @@
 package teaselib.core;
 
+import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.util.Arrays;
 import java.util.List;
@@ -72,6 +73,12 @@ public abstract class Script {
         getOrDefault(teaseLib, Shower.class, () -> new Shower(teaseLib.host));
         getOrDefault(teaseLib, InputMethods.class, InputMethods::new);
         getOrDefault(teaseLib, SpeechRecognizer.class, () -> new SpeechRecognizer(teaseLib.config));
+
+        try {
+            teaseLib.config.addScriptSettings(namespace, namespace);
+        } catch (IOException e) {
+            ExceptionUtil.handleException(e, teaseLib.config, logger);
+        }
     }
 
     private static <T> T getOrDefault(TeaseLib teaseLib, Class<T> clazz, Supplier<T> supplier) {

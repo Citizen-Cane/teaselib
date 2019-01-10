@@ -2,6 +2,7 @@ package teaselib.core.configuration;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Optional;
 
 import teaselib.core.Host;
 import teaselib.core.Host.Location;
@@ -33,6 +34,7 @@ public final class TeaseLibConfigSetup implements Setup {
         addSpeechDefaults(config);
         addIdentitiesDefaults(config);
 
+        config.userPath = Optional.of(userPath);
         return config;
     }
 
@@ -56,7 +58,8 @@ public final class TeaseLibConfigSetup implements Setup {
     }
 
     private void addIdentitiesDefaults(Configuration config) throws IOException {
-        config.addUserProperties(Configuration.DEFAULTS, IDENTITY_PROPERTIES, userPath, IDENTITY_PROPERTIES_NAMESPACES);
+        config.addPersistentUserProperties(Configuration.DEFAULTS, IDENTITY_PROPERTIES, userPath,
+                IDENTITY_PROPERTIES_NAMESPACES);
     }
 
 }

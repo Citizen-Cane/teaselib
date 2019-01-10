@@ -6,6 +6,8 @@ import static org.junit.Assert.assertFalse;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.Optional;
 import java.util.Properties;
 
 import org.junit.Rule;
@@ -26,7 +28,8 @@ public class PersistentConfigurationFileTest {
         File file = new File(folder.getRoot(), "test.properties");
         assertFalse(file.exists());
 
-        config.addScriptSettings("test.properties", folder.getRoot(), script.namespace);
+        config.addPersistentUserProperties(Optional.empty(), "test.properties", folder.getRoot(),
+                Arrays.asList(script.namespace));
         script.persistentBoolean("testVariableName").set(true);
         config.persistentConfigurationFiles.flush();
 

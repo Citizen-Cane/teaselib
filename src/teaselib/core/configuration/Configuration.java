@@ -30,6 +30,7 @@ import teaselib.core.util.ReflectionUtils;
  */
 public class Configuration {
     static final String DEFAULTS = ReflectionUtils.absolutePath(Configuration.class) + "defaults/";
+    static final String PROPERTIES_EXTENSION = ".properties";
 
     private final Map<String, ConfigurationFile> userPropertiesNamespaceMapping = new HashMap<>();
     final PersistentConfigurationFiles persistentConfigurationFiles = new PersistentConfigurationFiles();
@@ -76,9 +77,11 @@ public class Configuration {
 
     public void addScriptSettings(String properties, String namespace) throws IOException {
         if (userPath.isPresent()) {
-            addPersistentUserProperties(Optional.empty(), properties, userPath.get(), Arrays.asList(namespace));
+            File scriptSettingsFolder = new File(userPath.get(), "Script Settings");
+            addPersistentUserProperties(Optional.empty(), properties + PROPERTIES_EXTENSION, scriptSettingsFolder,
+                    Arrays.asList(namespace));
         } else {
-            addDefaultUserProperties(Optional.empty(), properties, Arrays.asList(namespace));
+            addDefaultUserProperties(Optional.empty(), properties + PROPERTIES_EXTENSION, Arrays.asList(namespace));
         }
     }
 
@@ -106,15 +109,17 @@ public class Configuration {
             throw new IllegalArgumentException("Namespace already registered: " + namespaces);
         }
 
+        persistentPath.mkdirs();
         File userFile = new File(persistentPath, properties);
+
         if (defaultResource.isPresent()) {
             createUserFileIfNotExisits(defaultResource + properties, userFile);
         }
         ConfigurationFile p = persistentConfigurationFiles
                 .newFile(Paths.get(persistentPath.getAbsolutePath(), properties));
 
-        for (String string : namespaces) {
-            userPropertiesNamespaceMapping.put(string, p);
+        for (String namespace : namespaces) {
+            userPropertiesNamespaceMapping.put(namespace, p);
         }
     }
 
@@ -123,7 +128,8 @@ public class Configuration {
     }
 
     public Optional<ConfigurationFile> getUserSettings(String namespace) {
-        return Optional.ofNullable(userPropertiesNamespaceMapping.get(namespace));
+        return userPropertiesNamespaceMapping.entrySet().stream().filter((e) -> namespace.startsWith(e.getKey()))
+                .map(e -> e.getValue()).findFirst();
     }
 
     public void addUserFile(Enum<?> setting, String templateResource, File userFile) throws IOException {

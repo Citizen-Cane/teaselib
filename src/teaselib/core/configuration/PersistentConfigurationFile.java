@@ -11,7 +11,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.swing.Timer;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class PersistentConfigurationFile extends ConfigurationFile {
+    private static final Logger logger = LoggerFactory.getLogger(PersistentConfigurationFile.class);
+
     private static final long serialVersionUID = 1L;
 
     private final Path path;
@@ -51,21 +56,25 @@ public class PersistentConfigurationFile extends ConfigurationFile {
     }
 
     private Void writeTask() throws IOException {
-        Path backupPath = path.resolveSibling(path.getFileName() + ".backup");
-        Path tempPath = path.resolveSibling(path.getFileName() + ".temp");
-        try (OutputStream outputStream = Files.newOutputStream(tempPath)) {
-            // TODO Properties base class is doomed anyway, just replace the cruft with something good
-            this.save(outputStream, "Teaselib settings file");
-        }
+        try {
+            Path backupPath = path.resolveSibling(path.getFileName() + ".backup");
+            Path tempPath = path.resolveSibling(path.getFileName() + ".temp");
+            try (OutputStream outputStream = Files.newOutputStream(tempPath)) {
+                // TODO Properties base class is legacy cruft -> replace it with own implementation
+                this.save(outputStream, "Teaselib settings file");
+            }
 
-        if (backupPath.toFile().exists()) {
-            Files.delete(backupPath);
+            if (backupPath.toFile().exists()) {
+                Files.delete(backupPath);
+            }
+            if (path.toFile().exists()) {
+                Files.move(path, backupPath);
+            }
+            Files.move(tempPath, path);
+        } catch (Throwable t) {
+            // TODO Forward error to main script on next read, or interrupt main thread
+            logger.error(t.getMessage(), t);
         }
-        if (path.toFile().exists()) {
-            Files.move(path, backupPath);
-        }
-        Files.move(tempPath, path);
-
         return null;
     }
 

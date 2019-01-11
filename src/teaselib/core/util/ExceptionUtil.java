@@ -14,6 +14,31 @@ public class ExceptionUtil {
     private ExceptionUtil() {
     }
 
+    /**
+     * Tries to reduce the exception to its cause. Allows to reduce exceptions in a typed way with a single statement.
+     * 
+     * @param e
+     *            The exception to reduce.
+     * @return The reduced runtime-exception.
+     * @throws E
+     *             if e cannot be reduced.
+     */
+    public static <E extends Exception> RuntimeException reduced(E e) throws E {
+        Exception reduced = ExceptionUtil.reduce(e);
+        if (reduced == e) {
+            throw e;
+        } else {
+            return ExceptionUtil.asRuntimeException(reduced);
+        }
+    }
+
+    /**
+     * Tries to remove the exception wrappers like ExecutionException or InvocationTargetException
+     * 
+     * @param e
+     *            The exception to reduce to its cause.
+     * @return The original exception, or its cause.
+     */
     public static Exception reduce(Exception e) {
         if (canReduce(e)) {
             Throwable cause = e.getCause();

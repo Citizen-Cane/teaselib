@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -41,6 +42,7 @@ import teaselib.core.debug.TimeAdvancedEvent;
 import teaselib.core.devices.Devices;
 import teaselib.core.devices.remote.LocalNetworkDevice;
 import teaselib.core.util.ConfigFileMapping;
+import teaselib.core.util.ExceptionUtil;
 import teaselib.core.util.ObjectMap;
 import teaselib.core.util.QualifiedItem;
 import teaselib.core.util.QualifiedName;
@@ -217,7 +219,11 @@ public class TeaseLib {
         } catch (NoSuchMethodException e) {
             throw new MainScriptConstructorMissingException(e);
         }
-        return (RunnableScript) mainscriptConstructor.newInstance(this);
+        try {
+            return (RunnableScript) mainscriptConstructor.newInstance(this);
+        } catch (InvocationTargetException e) {
+            throw ExceptionUtil.reduced(e);
+        }
     }
 
     /**

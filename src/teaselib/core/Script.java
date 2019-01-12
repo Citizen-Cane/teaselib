@@ -139,7 +139,7 @@ public abstract class Script {
     private <T extends Script> Constructor<T> findScriptConstructor(Class<T> scriptClass) {
         Class<?> type = this.getClass();
         while (type != null) {
-            for (Constructor<T> constructor : (Constructor<T>[]) scriptClass.getConstructors()) {
+            for (Constructor<T> constructor : (Constructor<T>[]) scriptClass.getDeclaredConstructors()) {
                 Class<?>[] parameterTypes = constructor.getParameterTypes();
                 if (parameterTypes.length == 1 && parameterTypes[0] == type) {
                     return constructor;

@@ -21,7 +21,7 @@ public class PersistentConfigurationFiles {
         Runtime.getRuntime().addShutdownHook(fileWriterShutdownHook);
     }
 
-    PersistentConfigurationFile newFile(Path path) throws IOException {
+    PersistentConfigurationFile openFile(Path path) throws IOException {
         PersistentConfigurationFile persistentConfigurationFile = new PersistentConfigurationFile(path, this);
         elements.add(persistentConfigurationFile);
         return persistentConfigurationFile;

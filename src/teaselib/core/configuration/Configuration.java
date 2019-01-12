@@ -53,7 +53,7 @@ public class Configuration {
     public void add(String defaults, String properties, File userPath) throws IOException {
         add(defaults + properties);
         File userConfig = new File(userPath, properties);
-        createUserFileIfNotExisits(defaults + properties, userConfig);
+        initUserFileWithDefaults(defaults + properties, userConfig);
         add(userConfig);
     }
 
@@ -89,17 +89,15 @@ public class Configuration {
             throws IOException {
         if (namespaceAlreadyRegistered(namespaces)) {
             throw new IllegalArgumentException("Namespace already registered: " + namespaces);
-        }
-
-        ConfigurationFile p = new ConfigurationFile();
-        if (defaults.isPresent()) {
-            try (InputStream stream = getClass().getResourceAsStream(defaults.get() + properties)) {
-                p.load(stream);
+        } else {
+            ConfigurationFile configurationFile = new ConfigurationFile();
+            if (defaults.isPresent()) {
+                try (InputStream stream = getClass().getResourceAsStream(defaults.get() + properties)) {
+                    configurationFile.load(stream);
+                }
             }
-        }
 
-        for (String string : namespaces) {
-            userPropertiesNamespaceMapping.put(string, p);
+            registerNamespaces(namespaces, configurationFile);
         }
     }
 
@@ -107,24 +105,28 @@ public class Configuration {
             List<String> namespaces) throws IOException {
         if (namespaceAlreadyRegistered(namespaces)) {
             throw new IllegalArgumentException("Namespace already registered: " + namespaces);
-        }
+        } else {
+            persistentPath.mkdirs();
+            File userFile = new File(persistentPath, properties);
 
-        persistentPath.mkdirs();
-        File userFile = new File(persistentPath, properties);
+            if (defaultResource.isPresent()) {
+                initUserFileWithDefaults(defaultResource + properties, userFile);
+            }
 
-        if (defaultResource.isPresent()) {
-            createUserFileIfNotExisits(defaultResource + properties, userFile);
-        }
-        ConfigurationFile p = persistentConfigurationFiles
-                .newFile(Paths.get(persistentPath.getAbsolutePath(), properties));
-
-        for (String namespace : namespaces) {
-            userPropertiesNamespaceMapping.put(namespace, p);
+            ConfigurationFile configurationFile = persistentConfigurationFiles
+                    .openFile(Paths.get(persistentPath.getAbsolutePath(), properties));
+            registerNamespaces(namespaces, configurationFile);
         }
     }
 
     private boolean namespaceAlreadyRegistered(List<String> namespaces) {
         return namespaces.stream().anyMatch(userPropertiesNamespaceMapping::containsKey);
+    }
+
+    private void registerNamespaces(List<String> namespaces, ConfigurationFile p) {
+        for (String namespace : namespaces) {
+            userPropertiesNamespaceMapping.put(namespace, p);
+        }
     }
 
     public Optional<ConfigurationFile> getUserSettings(String namespace) {
@@ -134,10 +136,10 @@ public class Configuration {
 
     public void addUserFile(Enum<?> setting, String templateResource, File userFile) throws IOException {
         set(setting, userFile.getAbsolutePath());
-        createUserFileIfNotExisits(templateResource, userFile);
+        initUserFileWithDefaults(templateResource, userFile);
     }
 
-    public void createUserFileIfNotExisits(String templateResource, File userFile) throws IOException {
+    public void initUserFileWithDefaults(String templateResource, File userFile) throws IOException {
         if (!userFile.exists()) {
             FileUtilities.copy(templateResource, userFile);
         }

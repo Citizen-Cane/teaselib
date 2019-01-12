@@ -151,6 +151,11 @@ public class ReleaseActionTest {
     }
 
     public static class BugFreeScript extends TeaseScript implements MainScript {
+
+        public BugFreeScript(TestScript script) {
+            super(script);
+        }
+
         public BugFreeScript(TeaseLib teaseLib) {
             super(teaseLib, new ResourceLoader(BuggyScript.class), TestScript.newActor(Gender.Feminine), "test");
         }
@@ -181,12 +186,12 @@ public class ReleaseActionTest {
         TestScript script = TestScript.getOne();
 
         assertEquals(false, TestReleaseActionState.Success.getAndSet(false));
-        script.teaseLib.run(BugFreeScript.class.getName());
+        script.script(BugFreeScript.class).run();
         assertEquals(false, TestReleaseActionState.Success.getAndSet(false));
 
         assertEquals(false, TestReleaseActionState.Success.getAndSet(false));
         // TODO must be able to apply release actions multiple times
-        script.teaseLib.run(BugFreeScript.class.getName());
+        script.script(BugFreeScript.class).run();
         assertEquals(false, TestReleaseActionState.Success.getAndSet(false));
     }
 

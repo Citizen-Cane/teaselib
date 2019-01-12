@@ -117,7 +117,7 @@ public class ReleaseActionTest {
         assertFalse(releaseAction.applied());
     }
 
-    public static class BuggyScript extends TeaseScript implements MainScript {
+    public static abstract class BuggyScript extends TeaseScript implements MainScript {
         public BuggyScript(TeaseLib teaseLib) {
             super(teaseLib, new ResourceLoader(BuggyScript.class), TestScript.newActor(Gender.Feminine), "test");
         }
@@ -130,28 +130,67 @@ public class ReleaseActionTest {
 
             Item restraints = item(Toys.Wrist_Restraints);
             restraints.apply();
-            restraints.applyTo(releaseAction);
+            state(Toys.Wrist_Restraints).applyTo(releaseAction);
 
-            throw new IllegalStateException();
+            throwSomething();
+        }
+
+        public abstract void throwSomething();
+    }
+
+    public static class BuggyScript1 extends BuggyScript {
+        public BuggyScript1(TeaseLib teaseLib) {
+            super(teaseLib);
+        }
+
+        public class TestException extends RuntimeException {
+            private static final long serialVersionUID = 1L;
+        }
+
+        @Override
+        public void throwSomething() {
+            throw new TestException();
         }
     }
 
     @Test
-    public void testReleaseActionInstanceErrorHandling() throws Exception {
+    public void testReleaseActionInstanceErrorHandlingException() throws Exception {
         TestScript script = TestScript.getOne();
         try {
-            script.teaseLib.run(BuggyScript.class.getName());
-        } catch (Exception e) {
-            if (!(e instanceof IllegalStateException)) {
-                throw e;
-            }
-        } finally {
-            assertEquals(true, TestReleaseActionState.Success.getAndSet(false));
+            script.teaseLib.run(BuggyScript1.class.getName());
+        } catch (BuggyScript1.TestException e) {
+            assertEquals("Release actions not triggered on unhandled script exception", true,
+                    TestReleaseActionState.Success.getAndSet(false));
+        }
+    }
+
+    public static class BuggyScript2 extends BuggyScript {
+        public BuggyScript2(TeaseLib teaseLib) {
+            super(teaseLib);
+        }
+
+        public class TestError extends Error {
+            private static final long serialVersionUID = 1L;
+        }
+
+        @Override
+        public void throwSomething() {
+            throw new TestError();
+        }
+    }
+
+    @Test
+    public void testReleaseActionInstanceErrorHandlingError() throws Exception {
+        TestScript script = TestScript.getOne();
+        try {
+            script.teaseLib.run(BuggyScript2.class.getName());
+        } catch (BuggyScript2.TestError e) {
+            assertEquals("Release actions not triggered on unhandled script error", true,
+                    TestReleaseActionState.Success.getAndSet(false));
         }
     }
 
     public static class BugFreeScript extends TeaseScript implements MainScript {
-
         public BugFreeScript(TestScript script) {
             super(script);
         }
@@ -177,7 +216,7 @@ public class ReleaseActionTest {
         TestScript script = TestScript.getOne();
         assertEquals(false, TestReleaseActionState.Success.getAndSet(false));
 
-        script.teaseLib.run(BugFreeScript.class.getName());
+        script.script(BugFreeScript.class).run();
         assertEquals(false, TestReleaseActionState.Success.getAndSet(false));
     }
 
@@ -189,8 +228,6 @@ public class ReleaseActionTest {
         script.script(BugFreeScript.class).run();
         assertEquals(false, TestReleaseActionState.Success.getAndSet(false));
 
-        assertEquals(false, TestReleaseActionState.Success.getAndSet(false));
-        // TODO must be able to apply release actions multiple times
         script.script(BugFreeScript.class).run();
         assertEquals(false, TestReleaseActionState.Success.getAndSet(false));
     }

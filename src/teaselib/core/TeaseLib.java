@@ -215,7 +215,7 @@ public class TeaseLib {
     private RunnableScript script(Class<RunnableScript> scriptClass) throws ReflectiveOperationException {
         Constructor<?> mainscriptConstructor;
         try {
-            mainscriptConstructor = scriptClass.getConstructor(TeaseLib.class);
+            mainscriptConstructor = scriptClass.getDeclaredConstructor(TeaseLib.class);
         } catch (NoSuchMethodException e) {
             throw new MainScriptConstructorMissingException(e);
         }

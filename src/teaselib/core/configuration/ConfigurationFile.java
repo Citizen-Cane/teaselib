@@ -37,7 +37,11 @@ public class ConfigurationFile extends SortedProperties {
     }
 
     public void set(String key, String value) {
-        setProperty(key, value);
+        if (value == null) {
+            clear(key);
+        } else {
+            setProperty(key, value);
+        }
     }
 
     public void set(String key, boolean value) {

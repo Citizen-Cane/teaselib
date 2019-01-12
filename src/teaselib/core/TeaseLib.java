@@ -158,33 +158,40 @@ public class TeaseLib {
         }
     }
 
-    public static void run(Host host, Persistence persistence, File classPath, String script)
-            throws ReflectiveOperationException, IOException {
-        if (!classPath.exists()) {
-            throw new FileNotFoundException(classPath.getAbsolutePath());
-        }
+    public static void run(Host host, Persistence persistence, File scriptClassPath, String script)
+            throws IOException, ReflectiveOperationException {
+        run(host, persistence, scriptClassPath, new TeaseLibConfigSetup(host), script);
+    }
 
-        host.showInterTitle("");
+    public static void run(Host host, Persistence persistence, File scriptClassPath, Setup setup, String script)
+            throws ReflectiveOperationException, IOException {
+        if (!scriptClassPath.exists()) {
+            throw new FileNotFoundException(scriptClassPath.getAbsolutePath());
+        }
 
         try (URLClassLoader classLoader = (URLClassLoader) Thread.currentThread().getContextClassLoader();) {
             Class<URLClassLoader> classLoaderClass = URLClassLoader.class;
-            try {
-                Method method = classLoaderClass.getDeclaredMethod("addURL", URL.class);
-                method.setAccessible(true);
-                method.invoke(classLoader, classPath.toURI().toURL());
-                logger.info("Added class path {}", classPath.getAbsolutePath());
-
-                TeaseLib teaseLib = new TeaseLib(host, persistence);
-                teaseLib.run(script);
-            } catch (IOException | RuntimeException | ReflectiveOperationException e) {
-                throw e;
-            } catch (Exception e) {
-                throw new ReflectiveOperationException("Could not add URL to system classloader", e);
-            }
+            Method method = classLoaderClass.getDeclaredMethod("addURL", URL.class);
+            method.setAccessible(true);
+            method.invoke(classLoader, scriptClassPath.toURI().toURL());
+            logger.info("Added class path {}", scriptClassPath.getAbsolutePath());
+            run(host, persistence, setup, script);
         }
     }
 
-    public void run(String scriptName) throws ReflectiveOperationException {
+    public static void run(Host host, Persistence persistence, Setup setup, String script) throws IOException {
+        try {
+            TeaseLib teaseLib = new TeaseLib(host, persistence, setup);
+            teaseLib.run(script);
+        } catch (IOException e) {
+            throw e;
+        } catch (Exception e) {
+            throw ExceptionUtil.asRuntimeException(e);
+        }
+    }
+
+    private void run(String scriptName) throws ReflectiveOperationException {
+        host.showInterTitle("");
         try {
             logger.info("Running script {}", scriptName);
 

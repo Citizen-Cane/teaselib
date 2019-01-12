@@ -9,6 +9,7 @@ import teaselib.TeaseScript;
 import teaselib.core.Debugger;
 import teaselib.core.Persistence;
 import teaselib.core.ResourceLoader;
+import teaselib.core.Script;
 import teaselib.core.TeaseLib;
 import teaselib.core.configuration.DebugSetup;
 import teaselib.core.configuration.Setup;
@@ -26,7 +27,7 @@ public class TestScript extends TeaseScript {
     public final DebugStorage storage;
     public final Debugger debugger;
 
-    public static final String TestScriptNamespace = TestScript.class.getSimpleName() + " " + "Namespace";
+    public static final String NAMESPACE = TestScript.class.getSimpleName() + " " + "Namespace";
 
     public static final Actor newActor() {
         return newActor(Gender.Feminine);
@@ -94,14 +95,6 @@ public class TestScript extends TeaseScript {
         }
     }
 
-    // protected TestScript() throws IOException {
-    // this(new DebugHost(), newDebugPersistence());
-    // }
-    //
-    // protected TestScript(Setup setup) throws IOException {
-    // this(new DebugHost(), newDebugPersistence(), storage, setup, newActor());
-    // }
-
     public TestScript(DebugHost debugHost, Persistence debugPersistence, DebugStorage storage) throws IOException {
         this(debugHost, debugPersistence, storage,
                 new ResourceLoader(TestScript.class, ResourceLoader.ResourcesInProjectFolder), new DebugSetup(),
@@ -133,7 +126,7 @@ public class TestScript extends TeaseScript {
 
     TestScript(DebugHost host, Persistence persistence, DebugStorage storage, ResourceLoader resourceLoader,
             Setup setup, Actor actor) throws IOException {
-        super(new TeaseLib(host, persistence, setup), resourceLoader, actor, TestScriptNamespace);
+        super(new TeaseLib(host, persistence, setup), resourceLoader, actor, NAMESPACE);
         this.host = host;
         this.persistence = persistence;
         this.storage = storage;
@@ -144,6 +137,15 @@ public class TestScript extends TeaseScript {
         DebugStorage storage = new DebugStorage();
         try {
             return new TeaseLib(new DebugHost(), newDebugPersistence(storage), new DebugSetup());
+        } catch (IOException e) {
+            throw ExceptionUtil.asRuntimeException(e);
+        }
+    }
+
+    public static void run(Class<? extends Script> script) {
+        DebugStorage storage = new DebugStorage();
+        try {
+            TeaseLib.run(new DebugHost(), newDebugPersistence(storage), new DebugSetup(), script.getName());
         } catch (IOException e) {
             throw ExceptionUtil.asRuntimeException(e);
         }

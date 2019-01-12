@@ -29,7 +29,7 @@ public class ShowChoicesSample extends TeaseScript {
      */
     public ShowChoicesSample() throws IOException {
         super(new TeaseLib(new DebugHost(), new DebugPersistence()), new ResourceLoader(ShowChoicesSample.class),
-                TestScript.newActor(), TestScript.TestScriptNamespace);
+                TestScript.newActor(), TestScript.NAMESPACE);
     }
 
     @Test

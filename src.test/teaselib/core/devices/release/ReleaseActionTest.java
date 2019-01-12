@@ -157,7 +157,7 @@ public class ReleaseActionTest {
     public void testReleaseActionInstanceErrorHandlingException() throws Exception {
         TestScript script = TestScript.getOne();
         try {
-            script.teaseLib.run(BuggyScript1.class.getName());
+            TestScript.run(BuggyScript1.class);
         } catch (BuggyScript1.TestException e) {
             assertEquals("Release actions not triggered on unhandled script exception", true,
                     TestReleaseActionState.Success.getAndSet(false));
@@ -183,7 +183,7 @@ public class ReleaseActionTest {
     public void testReleaseActionInstanceErrorHandlingError() throws Exception {
         TestScript script = TestScript.getOne();
         try {
-            script.teaseLib.run(BuggyScript2.class.getName());
+            TestScript.run(BuggyScript2.class);
         } catch (BuggyScript2.TestError e) {
             assertEquals("Release actions not triggered on unhandled script error", true,
                     TestReleaseActionState.Success.getAndSet(false));

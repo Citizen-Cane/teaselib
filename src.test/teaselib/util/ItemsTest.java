@@ -13,6 +13,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.junit.Test;
 
+import teaselib.Accessoires;
 import teaselib.Body;
 import teaselib.Clothes;
 import teaselib.Features;
@@ -866,4 +867,30 @@ public class ItemsTest {
         assertEquals(script.item(Toys.Ankle_Restraints),
                 without.orElseItems("teaselib.Toys.Ankle_Restraints").item("teaselib.Toys.Ankle_Restraints"));
     }
+
+    @Test
+    public void testItemAppliedToItems() {
+        TestScript script = TestScript.getOne();
+
+        Items restraints = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints, Toys.Collar).apply();
+        Items chains = script.items(Toys.Chains, Accessoires.Bells).applyTo(restraints);
+
+        Item singleChainItem = chains.get(Toys.Chains);
+        assertTrue(chains.get(Accessoires.Bells).applied());
+        assertTrue(chains.get(Accessoires.Bells).is(Toys.Wrist_Restraints));
+        // TODO bell item is applied to restraints item
+        assertTrue(chains.get(Accessoires.Bells).is(restraints.get(Toys.Wrist_Restraints)));
+        // TODO bell item attached to all restraints items
+        assertTrue(chains.get(Accessoires.Bells).is(restraints));
+        singleChainItem.remove();
+        assertTrue(chains.get(Accessoires.Bells).applied());
+        assertTrue(chains.get(Accessoires.Bells).is(Toys.Wrist_Restraints));
+        // TODO bell item is applied to restraints item
+        assertTrue(chains.get(Accessoires.Bells).is(restraints.get(Toys.Wrist_Restraints)));
+        // TODO bell item attached to all restraints items
+        assertTrue(chains.get(Accessoires.Bells).is(restraints));
+
+        // TODO update ReleaseActionTest.testReleaseActionMultiLevelReleaseWhenOnlySingleItemIsRemoved
+    }
+
 }

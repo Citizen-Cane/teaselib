@@ -328,17 +328,19 @@ public class ReleaseActionTest {
         assertTrue(removeRestraintsAction.applied());
 
         Item singleChainItem = chains.get(Toys.Chains);
-        // TODO remove also removes the bell guid,
-        // but the bell is still attached to restraints
         assertTrue(chains.get(Accessoires.Bells).applied());
         assertTrue(chains.get(Accessoires.Bells).is(Toys.Wrist_Restraints));
-        // assertTrue(chains.get(Household.Bell).is(restraints.get(Toys.Wrist_Restraints)));
-        // assertTrue(chains.get(Household.Bell).is(restraints));
+        // TODO bell item is applied to restraints item
+        // assertTrue(chains.get(Accessoires.Bells).is(restraints.get(Toys.Wrist_Restraints)));
+        // TODO bell item attached to all restraints items
+        // assertTrue(chains.get(Accessoires.Bells).is(restraints));
         singleChainItem.remove();
         assertTrue(chains.get(Accessoires.Bells).applied());
         assertTrue(chains.get(Accessoires.Bells).is(Toys.Wrist_Restraints));
-        // assertTrue(chains.get(Household.Bell).is(restraints.get(Toys.Wrist_Restraints)));
-        // assertTrue(chains.get(Household.Bell).is(restraints));
+        // TODO bell item is applied to restraints item as a state
+        // assertTrue(chains.get(Accessoires.Bells).is(restraints.get(Toys.Wrist_Restraints)));
+        // TODO bell item attached to all restraints items
+        // assertTrue(chains.get(Accessoires.Bells).is(restraints));
 
         assertFalse(removeChainsAction.applied());
         assertTrue(removeRestraintsAction.applied());

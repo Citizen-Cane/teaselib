@@ -107,13 +107,15 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
     }
 
     @Override
-    // TODO classes and instances in a single query
     public boolean is(Object... attributes3) {
         Object[] attributes2 = AbstractProxy.removeProxies(attributes3);
         if (attributes2.length == 0) {
             return false;
         } else if (attributes2.length == 1 && attributes2[0] instanceof Item) {
-            return attributes2[0] == this;
+            // TODO Remove these special cases:
+            // attributes2[0] == this -> ItemIdentityTest.testThatItemIsNotOtherItem
+            // state(value).is(attributes2[0]) -> ItemsTest.testItemAppliedToItems
+            return attributes2[0] == this || state(value).is(attributes2[0]);
         } else if (has(this.attributes.stream(), attributes2))
             return true;
 
@@ -124,11 +126,15 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
             return true;
         }
 
-        if (!Arrays.stream(attributes2).map(this::state).allMatch(this::stateIsThis)) {
+        if (!stateAppliesToMe(attributes2)) {
             return false;
         }
 
         return stateContainsAll(attributes2);
+    }
+
+    private boolean stateAppliesToMe(Object[] attributes2) {
+        return Arrays.stream(StateMaps.flatten(attributes2)).map(this::state).allMatch(this::stateIsThis);
     }
 
     private boolean stateContainsAll(Object... attributes) {

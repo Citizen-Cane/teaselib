@@ -1,10 +1,6 @@
 package teaselib.util;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -876,21 +872,31 @@ public class ItemsTest {
         Items chains = script.items(Toys.Chains, Accessoires.Bells).applyTo(restraints);
 
         Item singleChainItem = chains.get(Toys.Chains);
-        assertTrue(chains.get(Accessoires.Bells).applied());
-        assertTrue(chains.get(Accessoires.Bells).is(Toys.Wrist_Restraints));
-        // TODO bell item is applied to restraints item
-        assertTrue(chains.get(Accessoires.Bells).is(restraints.get(Toys.Wrist_Restraints)));
-        // TODO bell item attached to all restraints items
-        assertTrue(chains.get(Accessoires.Bells).is(restraints));
-        singleChainItem.remove();
-        assertTrue(chains.get(Accessoires.Bells).applied());
-        assertTrue(chains.get(Accessoires.Bells).is(Toys.Wrist_Restraints));
-        // TODO bell item is applied to restraints item
-        assertTrue(chains.get(Accessoires.Bells).is(restraints.get(Toys.Wrist_Restraints)));
-        // TODO bell item attached to all restraints items
-        assertTrue(chains.get(Accessoires.Bells).is(restraints));
+        Item bells = chains.get(Accessoires.Bells);
+        State bellsState = script.state(Accessoires.Bells);
+        assertTrue(bells.applied());
+        assertTrue(bells.is(Toys.Wrist_Restraints));
 
-        // TODO update ReleaseActionTest.testReleaseActionMultiLevelReleaseWhenOnlySingleItemIsRemoved
+        Item wristRestraints = restraints.get(Toys.Wrist_Restraints);
+        State wristRestraintsState = script.state(Toys.Wrist_Restraints);
+        assertTrue(bellsState.is(wristRestraintsState));
+        assertTrue(wristRestraintsState.is(bellsState));
+
+        assertTrue(bells.is(wristRestraints));
+        assertTrue(wristRestraints.is(bells));
+        assertTrue(bells.is(restraints));
+
+        assertFalse(bells.is(singleChainItem));
+        assertFalse(singleChainItem.is(bells));
+        assertFalse(bells.is(chains));
+        assertTrue(chains.someAre(bells));
+        assertFalse(chains.allAre(bells));
+
+        singleChainItem.remove();
+        assertTrue(bells.applied());
+        assertTrue(bells.is(Toys.Wrist_Restraints));
+        assertTrue(bells.is(wristRestraints));
+        assertTrue(bells.is(restraints));
     }
 
 }

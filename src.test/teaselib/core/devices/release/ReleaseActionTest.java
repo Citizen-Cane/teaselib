@@ -1,10 +1,6 @@
 package teaselib.core.devices.release;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -155,7 +151,6 @@ public class ReleaseActionTest {
 
     @Test
     public void testReleaseActionInstanceErrorHandlingException() throws Exception {
-        TestScript script = TestScript.getOne();
         try {
             TestScript.run(BuggyScript1.class);
         } catch (BuggyScript1.TestException e) {
@@ -181,7 +176,6 @@ public class ReleaseActionTest {
 
     @Test
     public void testReleaseActionInstanceErrorHandlingError() throws Exception {
-        TestScript script = TestScript.getOne();
         try {
             TestScript.run(BuggyScript2.class);
         } catch (BuggyScript2.TestError e) {
@@ -212,7 +206,7 @@ public class ReleaseActionTest {
     }
 
     @Test
-    public void testReleaseActionInstanceScriptSuccessfulFinish() throws ReflectiveOperationException {
+    public void testReleaseActionInstanceScriptSuccessfulFinish() {
         TestScript script = TestScript.getOne();
         assertEquals(false, TestReleaseActionState.Success.getAndSet(false));
 
@@ -221,7 +215,7 @@ public class ReleaseActionTest {
     }
 
     @Test
-    public void testReleaseActionInstanceCanBeUsedMultuipleTimes() throws ReflectiveOperationException {
+    public void testReleaseActionInstanceCanBeUsedMultuipleTimes() {
         TestScript script = TestScript.getOne();
 
         assertEquals(false, TestReleaseActionState.Success.getAndSet(false));
@@ -330,17 +324,13 @@ public class ReleaseActionTest {
         Item singleChainItem = chains.get(Toys.Chains);
         assertTrue(chains.get(Accessoires.Bells).applied());
         assertTrue(chains.get(Accessoires.Bells).is(Toys.Wrist_Restraints));
-        // TODO bell item is applied to restraints item
-        // assertTrue(chains.get(Accessoires.Bells).is(restraints.get(Toys.Wrist_Restraints)));
-        // TODO bell item attached to all restraints items
-        // assertTrue(chains.get(Accessoires.Bells).is(restraints));
+        assertTrue(chains.get(Accessoires.Bells).is(restraints.get(Toys.Wrist_Restraints)));
+        assertTrue(chains.get(Accessoires.Bells).is(restraints));
         singleChainItem.remove();
         assertTrue(chains.get(Accessoires.Bells).applied());
         assertTrue(chains.get(Accessoires.Bells).is(Toys.Wrist_Restraints));
-        // TODO bell item is applied to restraints item as a state
-        // assertTrue(chains.get(Accessoires.Bells).is(restraints.get(Toys.Wrist_Restraints)));
-        // TODO bell item attached to all restraints items
-        // assertTrue(chains.get(Accessoires.Bells).is(restraints));
+        assertTrue(chains.get(Accessoires.Bells).is(restraints.get(Toys.Wrist_Restraints)));
+        assertTrue(chains.get(Accessoires.Bells).is(restraints));
 
         assertFalse(removeChainsAction.applied());
         assertTrue(removeRestraintsAction.applied());

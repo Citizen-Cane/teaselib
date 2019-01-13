@@ -1,11 +1,6 @@
 package teaselib.util;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
@@ -528,18 +523,34 @@ public class ItemIdentityTest {
     }
 
     @Test
+    public void testThatItemIsNotOtherItemOfSameKind() {
+        TestScript script = TestScript.getOne();
+        script.debugger.freezeTime();
+        script.setAvailable(Toys.values());
+
+        Item ringGag = script.items(Toys.Gag).matching(Toys.Gags.Ring_Gag).get();
+        ringGag.apply();
+        assertTrue(ringGag.is(ringGag));
+
+        Item bitGag = script.items(Toys.Gag).matching(Toys.Gags.Bit_Gag).get();
+        assertNotEquals(ringGag, bitGag);
+        assertFalse(ringGag.is(bitGag));
+        // TODO comparing items works via has(all attributes) but should check peers for item instance
+    }
+
+    @Test
     public void testThatItemIsNotOtherItem() {
         TestScript script = TestScript.getOne();
         script.debugger.freezeTime();
         script.setAvailable(Toys.values());
 
-        Item item = script.items(Toys.Gag).matching(Toys.Gags.Ring_Gag).get();
-        item.apply();
-        assertTrue(item.is(item));
+        Item ringGag = script.items(Toys.Gag).matching(Toys.Gags.Ring_Gag).get();
+        ringGag.apply();
+        assertTrue(ringGag.is(ringGag));
 
-        Item item2 = script.items(Toys.Gag).matching(Toys.Gags.Bit_Gag).get();
-        assertNotEquals(item, item2);
-        assertFalse(item.is(item2));
+        Item analBeads = script.items(Toys.Buttplug).matching(Toys.Anal.Beads).get();
+        assertNotEquals(ringGag, analBeads);
+        assertFalse(ringGag.is(analBeads));
         // TODO comparing items works via has(all attributes) but should check peers for item instance
     }
 

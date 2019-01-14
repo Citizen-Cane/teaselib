@@ -279,7 +279,7 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
         return states(stream);
     }
 
-    public Stream<StateImpl> states(Stream<Object> stream) {
+    public Stream<StateImpl> states(Stream<? extends Object> stream) {
         return stream.filter(ItemGuid::isntItemGuid).map(this::state);
     }
 
@@ -304,29 +304,34 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
     // TODO classes and instances in a single query
     public boolean is(Object... attributes) {
         Object[] flattenedAttributes = StateMaps.flatten(AbstractProxy.removeProxies(attributes));
-
         Set<Object> attributesAndPeers = attributesAndPeers();
-        if (appliedToClass(attributesAndPeers, flattenedAttributes)) {
+        if (appliedToClassValues(attributesAndPeers, flattenedAttributes)) {
             return true;
-        }
-
-        if (!allItemInstancesFoundInPeers(flattenedAttributes)) {
+        } else if (appliedToClassState(attributesAndPeers, flattenedAttributes)) {
+            return true;
+        } else if (!allItemInstancesFoundInPeers(flattenedAttributes)) {
+            return false;
+        } else if (StateMaps.hasAllAttributes(attributesAndPeers, flattenedAttributes)) {
+            return true;
+        } else {
             return false;
         }
-
-        if (StateMaps.hasAllAttributes(attributesAndPeers, flattenedAttributes)) {
-            return true;
-        }
-
-        return false;
     }
 
-    public boolean appliedToClass(Set<Object> availableAttributes, Object[] desiredAttributes) {
-        Stream<StateImpl> availableStates = states(availableAttributes.stream());
-        return Arrays.stream(desiredAttributes).filter(desiredAttribute -> desiredAttribute instanceof Class)
-                .map(clazz -> (Class<?>) clazz)
-                .filter(desiredAttribute -> availableStates.map(Object::getClass).anyMatch(desiredAttribute::isAssignableFrom))
-                .count() == desiredAttributes.length;
+    public boolean appliedToClassState(Set<Object> availableAttributes, Object[] desiredAttributes) {
+        return appliedToClass(states(availableAttributes.stream()), desiredAttributes);
+
+    }
+
+    public boolean appliedToClassValues(Set<Object> availableAttributes, Object[] desiredAttributes) {
+        return appliedToClass(availableAttributes.stream(), desiredAttributes);
+    }
+
+    private boolean appliedToClass(Stream<? extends Object> available, Object[] desired) {
+        return Arrays.stream(desired).filter(desiredAttribute -> desiredAttribute instanceof Class)
+                .map(clazz -> (Class<?>) clazz).filter(desiredAttribute -> available.map(Object::getClass)
+                        .anyMatch(desiredAttribute::isAssignableFrom))
+                .count() == desired.length;
     }
 
     private boolean allItemInstancesFoundInPeers(Object... attributes) {

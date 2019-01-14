@@ -107,6 +107,7 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
     }
 
     @Override
+    // TODO Doesn't work on mixed queries item.is(class, value, state);
     public boolean is(Object... attributes3) {
         Object[] attributes2 = AbstractProxy.removeProxies(attributes3);
         if (attributes2.length == 0) {
@@ -118,19 +119,19 @@ public class ItemImpl implements Item, StateMaps.Attributes, Persistable {
             return attributes2[0] == this || state(value).is(attributes2[0]);
         } else if (has(this.attributes.stream(), attributes2))
             return true;
-
-        if (StateMaps.hasAllAttributes((state(value)).getAttributes(), attributes2))
-            return applied();
-
-        if (state(this).appliedToClass(state(this).peers(), attributes2)) {
-            return true;
+        else {
+            if (StateMaps.hasAllAttributes((state(value)).getAttributes(), attributes2)) {
+                return applied();
+            } else if (state(this).appliedToClassValues(attributes, attributes2)) {
+                return true;
+            } else if (state(this).appliedToClassState(state(this).peers(), attributes2)) {
+                return true;
+            } else if (!stateAppliesToMe(attributes2)) {
+                return false;
+            } else {
+                return stateContainsAll(attributes2);
+            }
         }
-
-        if (!stateAppliesToMe(attributes2)) {
-            return false;
-        }
-
-        return stateContainsAll(attributes2);
     }
 
     private boolean stateAppliesToMe(Object[] attributes2) {

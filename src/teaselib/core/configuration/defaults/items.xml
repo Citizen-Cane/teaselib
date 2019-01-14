@@ -81,6 +81,7 @@
 		</Item>
 
 		<Item item="Chains" guid="chains" displayName="Chains">
+			<Attribute> Material.Metal </Attribute>
 		</Item>
 
 		<Item item="Spreader_Bar" guid="spreader_bar" displayName="Spreader bar">

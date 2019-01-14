@@ -8,6 +8,7 @@ import org.junit.Test;
 
 import teaselib.Accessoires;
 import teaselib.Body;
+import teaselib.Household;
 import teaselib.Length;
 import teaselib.Material;
 import teaselib.Posture;
@@ -437,4 +438,15 @@ public class ItemImplTest {
         script.items(Toys.Ankle_Restraints, Toys.Collar).remove();
         assertFalse(restraints.anyApplied());
     }
+
+    @Test
+    public void testIsClass() {
+        TestScript script = TestScript.getOne();
+
+        Item woodenSpoon = script.item(Household.Wooden_Spoon);
+        assertTrue(woodenSpoon.is(Material.Wood));
+        assertTrue(woodenSpoon.is(Material.class));
+
+    }
+
 }

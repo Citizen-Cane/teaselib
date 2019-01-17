@@ -9,6 +9,7 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import teaselib.core.CodeCoverageDecisionCollector.DecisionList;
+import teaselib.core.CodeCoverageDecisionCollector.DecisionList.Entry;
 import teaselib.core.concurrency.NamedExecutorService;
 import teaselib.core.ui.InputMethod;
 import teaselib.core.ui.Prompt;
@@ -47,7 +48,7 @@ public class CodeCoverage<T extends Script> {
         debugger.freezeTime();
 
         DecisionList decisions = current.next();
-        Iterator<Integer> index = new ArrayList<>(decisions).iterator();
+        Iterator<DecisionList.Entry> index = new ArrayList<>(decisions).iterator();
 
         Set<Prompt> used = new LinkedHashSet<>();
         InputMethod.Listener e = new InputMethod.Listener() {
@@ -61,9 +62,12 @@ public class CodeCoverage<T extends Script> {
 
                 int result;
                 if (index.hasNext()) {
-                    result = index.next();
-                    if (result >= prompt.choices.size()) {
-                        throw new IndexOutOfBoundsException(result + "->" + toString() + ": " + prompt);
+                    Entry next = index.next();
+                    if (prompt.choices.equals(next.prompt.choices)) {
+                        result = next.result;
+                    } else {
+                        throw new IllegalStateException("Indeterministic behavior detected: Expected prompt"
+                                + next.prompt.choices.toText() + " but got " + prompt.choices.toText());
                     }
                 } else {
                     result = 0;
@@ -71,11 +75,11 @@ public class CodeCoverage<T extends Script> {
                     int choices = prompt.choices.size();
                     if (choices > 1) {
                         for (int i = 1; i < choices; i++) {
-                            DecisionList clone = new DecisionList(decisions, i);
+                            DecisionList clone = new DecisionList(decisions, i, prompt);
                             decisionVariants.add(clone);
                         }
                     }
-                    decisions.add(0);
+                    decisions.add(0, prompt);
                 }
 
                 return result;
@@ -83,8 +87,9 @@ public class CodeCoverage<T extends Script> {
 
             @Override
             public void promptDismissed(Prompt prompt) {
-                // Ignore
+                throw new IllegalStateException("Prompt dismissed by other input method: " + prompt);
             }
+
         };
         debugInputMethod.addEventListener(e);
 

@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.NoSuchElementException;
 
 import teaselib.core.CodeCoverageDecisionCollector.DecisionList;
+import teaselib.core.ui.Prompt;
 
 /**
  *
@@ -24,16 +25,31 @@ import teaselib.core.CodeCoverageDecisionCollector.DecisionList;
  */
 
 public class CodeCoverageDecisionCollector implements Iterable<DecisionList> {
-    public static final class DecisionList extends ArrayList<Integer> {
+    public static final class DecisionList extends ArrayList<DecisionList.Entry> {
+        class Entry {
+            final int result;
+            final Prompt prompt;
+
+            private Entry(int n, Prompt prompt) {
+                super();
+                this.result = n;
+                this.prompt = prompt;
+            }
+        }
+
         public DecisionList() {
         }
 
-        public DecisionList(DecisionList decisions, int i) {
-            addAll(decisions);
-            add(i);
+        public DecisionList(DecisionList decisions, int i, Prompt prompt) {
+            super.addAll(decisions);
+            super.add(new Entry(i, prompt));
         }
 
         private static final long serialVersionUID = 1L;
+
+        public void add(int result, Prompt prompt) {
+            super.add(new Entry(result, prompt));
+        }
     }
 
     private List<DecisionList> coverage = new ArrayList<>();

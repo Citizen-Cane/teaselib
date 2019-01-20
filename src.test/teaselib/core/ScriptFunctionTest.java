@@ -49,6 +49,10 @@ public class ScriptFunctionTest {
 
     static abstract class RunnableTestScript extends TeaseScript implements RunnableScript {
 
+        public RunnableTestScript(TeaseLib teaseLib) {
+            super(teaseLib, new ResourceLoader(RunnableTestScript.class), TestScript.newActor(), TestScript.NAMESPACE);
+        }
+
         public RunnableTestScript(Script script) {
             super(script);
         }
@@ -57,10 +61,17 @@ public class ScriptFunctionTest {
 
     @Test
     public void testThatCallableScriptFunctionHasCompletedWhenNextSayStatementIsExecuted() {
-        TestScript mainScript = TestScript.getOne();
         AtomicReference<String> result = new AtomicReference<>(null);
 
-        CodeCoverage<TeaseScript> codeCoverage = new CodeCoverage<>(() -> new RunnableTestScript(mainScript) {
+        RunnableTestScript mainScript = new RunnableTestScript(TestScript.teaseLib()) {
+            @Override
+            public void run() {
+                // Empty
+            }
+        };
+
+        CodeCoverage<Script> codeCoverage = new CodeCoverage<>();
+        codeCoverage.runAll(() -> new RunnableTestScript(mainScript) {
             @Override
             public void run() {
                 say("In main script.");
@@ -73,19 +84,24 @@ public class ScriptFunctionTest {
                 say("Resuming main script.");
             }
         });
-        codeCoverage.runAll();
-
-        assertEquals("Stop", result.get());
+        assertEquals(ScriptFunction.Timeout, result.get());
         assertTrue("Sccript function still running while resuming to main script thread",
                 mainScript.scriptRenderer.renderMessage.toString().indexOf("Resuming main script.") >= 0);
     }
 
     @Test
     public void testThatRunnableScriptFunctionHasCompletedWhenNextSayStatementIsExecuted() {
-        TestScript mainScript = TestScript.getOne();
         AtomicReference<String> result = new AtomicReference<>(null);
 
-        CodeCoverage<TeaseScript> codeCoverage = new CodeCoverage<>(() -> new RunnableTestScript(mainScript) {
+        RunnableTestScript mainScript = new RunnableTestScript(TestScript.teaseLib()) {
+            @Override
+            public void run() {
+                // Empty
+            }
+        };
+
+        CodeCoverage<TeaseScript> codeCoverage = new CodeCoverage<>();
+        codeCoverage.runAll(() -> new RunnableTestScript(mainScript) {
             @Override
             public void run() {
                 say("In main script.");
@@ -97,10 +113,8 @@ public class ScriptFunctionTest {
                 say("Resuming main script.");
             }
         });
-        codeCoverage.runAll();
-
         assertEquals("Stop", result.get());
-        assertTrue("Sccript function still running while resuming to main script thread",
+        assertTrue("Script function still running while resuming to main script thread",
                 mainScript.scriptRenderer.renderMessage.toString().indexOf("Resuming main script.") >= 0);
     }
 

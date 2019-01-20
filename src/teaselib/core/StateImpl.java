@@ -327,7 +327,7 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
         return appliedToClass(availableAttributes.stream(), desiredAttributes);
     }
 
-    private boolean appliedToClass(Stream<? extends Object> available, Object[] desired) {
+    private static boolean appliedToClass(Stream<? extends Object> available, Object[] desired) {
         return Arrays.stream(desired).filter(desiredAttribute -> desiredAttribute instanceof Class)
                 .map(clazz -> (Class<?>) clazz).filter(desiredAttribute -> available.map(Object::getClass)
                         .anyMatch(desiredAttribute::isAssignableFrom))

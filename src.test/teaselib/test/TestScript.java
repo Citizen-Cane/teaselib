@@ -19,7 +19,6 @@ import teaselib.core.debug.DebugStorage;
 import teaselib.core.util.ExceptionUtil;
 import teaselib.core.util.PropertyNameMapping;
 import teaselib.core.util.PropertyNameMappingPersistence;
-import teaselib.hosts.SexScriptsPropertyNameMapping;
 
 public class TestScript extends TeaseScript {
     public final DebugHost host;
@@ -86,7 +85,7 @@ public class TestScript extends TeaseScript {
         }
     }
 
-    public static TestScript getOne(SexScriptsPropertyNameMapping propertyNameMapping) {
+    public static TestScript getOne(PropertyNameMapping propertyNameMapping) {
         DebugStorage storage = new DebugStorage();
         try {
             return new TestScript(new DebugHost(), newDebugPersistence(propertyNameMapping, storage), storage);
@@ -133,7 +132,7 @@ public class TestScript extends TeaseScript {
         this.debugger = new Debugger(teaseLib);
     }
 
-    public static TeaseLib setup() {
+    public static TeaseLib teaseLib() {
         DebugStorage storage = new DebugStorage();
         try {
             return new TeaseLib(new DebugHost(), newDebugPersistence(storage), new DebugSetup());

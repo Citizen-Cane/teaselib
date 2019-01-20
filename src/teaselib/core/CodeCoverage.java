@@ -20,30 +20,22 @@ import teaselib.functional.RunnableScript;
  *
  */
 public class CodeCoverage<T extends Script> {
-    private final Supplier<T> supplier;
-    private final Consumer<T> runner;
     private final CodeCoverageInputMethod debugInputMethod = new CodeCoverageInputMethod(
             NamedExecutorService.singleThreadedQueue(getClass().getSimpleName(), 10, TimeUnit.SECONDS));
     private final CodeCoverageDecisionCollector decisionVariants = new CodeCoverageDecisionCollector();
     private final Iterator<DecisionList> current = decisionVariants.iterator();
 
-    @SuppressWarnings("unchecked")
-    public <S extends RunnableScript> CodeCoverage(Supplier<S> scriptSupplier) {
-        this.supplier = (Supplier<T>) scriptSupplier;
-        this.runner = s -> ((S) s).run();
-    }
-
-    public CodeCoverage(Supplier<T> scriptSupplier, Consumer<T> runner) {
-        this.supplier = scriptSupplier;
-        this.runner = runner;
-    }
-
     public boolean hasNext() {
         return current.hasNext();
     }
 
-    public void run() {
-        T script = supplier.get();
+    @SuppressWarnings("unchecked")
+    public <S extends RunnableScript> void run(Supplier<S> scriptSupplier) {
+        run((Supplier<T>) scriptSupplier, s -> ((S) s).run());
+    }
+
+    public void run(Supplier<T> scriptSupplier, Consumer<T> runner) {
+        T script = scriptSupplier.get();
         Debugger debugger = new Debugger(script, debugInputMethod);
         debugger.freezeTime();
 
@@ -112,9 +104,15 @@ public class CodeCoverage<T extends Script> {
     /**
      * Run all branches
      */
-    public void runAll() {
+    public <S extends RunnableScript> void runAll(Supplier<S> scriptSupplier) {
         while (hasNext()) {
-            run();
+            run(scriptSupplier);
+        }
+    }
+
+    public void runAll(Supplier<T> scriptSupplier, Consumer<T> runner) {
+        while (hasNext()) {
+            run(scriptSupplier, runner);
         }
     }
 }

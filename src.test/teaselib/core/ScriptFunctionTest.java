@@ -84,7 +84,9 @@ public class ScriptFunctionTest {
                 say("Resuming main script.");
             }
         });
-        assertEquals(ScriptFunction.Timeout, result.get());
+        // Result should be indeed "Stop" since code coverage doesn't know about timed buttons and presses "Stop"
+        // immediately - however due to timing issues the result is sometimes "Timeout"
+        assertEquals("Stop", result.get());
         assertTrue("Sccript function still running while resuming to main script thread",
                 mainScript.scriptRenderer.renderMessage.toString().indexOf("Resuming main script.") >= 0);
     }

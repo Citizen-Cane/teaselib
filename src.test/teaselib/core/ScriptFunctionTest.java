@@ -75,18 +75,14 @@ public class ScriptFunctionTest {
             @Override
             public void run() {
                 say("In main script.");
-                // TODO Indeterministic behavior of reply statement (stop or timeout) because of
-                // race condition between code coverage input handler and the script function
                 result.set(reply(() -> {
                     say("Inside script function.");
                     return ScriptFunction.Timeout;
-                }, "Stop"));
+                }, "Finsished"));
                 say("Resuming main script.");
             }
         });
-        // Result should be indeed "Stop" since code coverage doesn't know about timed buttons and presses "Stop"
-        // immediately - however due to timing issues the result is sometimes "Timeout"
-        assertEquals("Stop", result.get());
+        assertEquals("Finsished", result.get());
         assertTrue("Sccript function still running while resuming to main script thread",
                 mainScript.scriptRenderer.renderMessage.toString().indexOf("Resuming main script.") >= 0);
     }
@@ -107,15 +103,13 @@ public class ScriptFunctionTest {
             @Override
             public void run() {
                 say("In main script.");
-                // TODO Indeterministic behavior of reply statement (stop or timeout) because of
-                // race condition between code coverage input handler and the script function
                 result.set(reply(() -> {
                     say("Inside script function.");
-                }, "Stop"));
+                }, "Finsished"));
                 say("Resuming main script.");
             }
         });
-        assertEquals("Stop", result.get());
+        assertEquals("Finsished", result.get());
         assertTrue("Script function still running while resuming to main script thread",
                 mainScript.scriptRenderer.renderMessage.toString().indexOf("Resuming main script.") >= 0);
     }

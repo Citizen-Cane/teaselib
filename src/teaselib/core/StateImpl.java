@@ -274,12 +274,11 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
     }
 
     public Stream<StateImpl> peerStates() {
-        StateImpl state = state(item);
-        Stream<Object> stream = state.peers().stream();
+        Stream<Object> stream = new HashSet<>(peers).stream();
         return states(stream);
     }
 
-    public Stream<StateImpl> states(Stream<? extends Object> stream) {
+    private Stream<StateImpl> states(Stream<? extends Object> stream) {
         return stream.filter(ItemGuid::isntItemGuid).map(this::state);
     }
 
@@ -338,7 +337,7 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
         List<ItemImpl> instances = Arrays.stream(attributes).filter(attribute -> attribute instanceof ItemImpl)
                 .map(itemImpl -> (ItemImpl) itemImpl).collect(Collectors.toList());
         List<ItemGuid> guids = instances.stream().map(instance -> instance.guid).collect(Collectors.toList());
-        return peers().containsAll(instances) || peers().containsAll(guids);
+        return peers.containsAll(instances) || peers.containsAll(guids);
     }
 
     private Set<Object> attributesAndPeers() {
@@ -363,7 +362,8 @@ public class StateImpl implements State, State.Options, StateMaps.Attributes {
 
     @Override
     public Duration duration() {
-        Optional<Duration> maximum = Stream.concat(Stream.of(this.duration), peerStates().map(state -> state.duration))
+        Stream<Duration> durations = peerStates().map(state -> state.duration);
+        Optional<Duration> maximum = Stream.concat(Stream.of(this.duration), durations)
                 .max((a, b) -> Long.compare(a.remaining(TimeUnit.SECONDS), b.remaining(TimeUnit.SECONDS)));
         if (maximum.isPresent()) {
             return maximum.get();

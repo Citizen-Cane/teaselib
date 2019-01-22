@@ -552,6 +552,10 @@ public abstract class TeaseScript extends TeaseScriptMath {
         return showChoices(Arrays.asList(Answer.no(no)), new ScriptFunction(script)) == no;
     }
 
+    public final boolean deny(CallableScript<String> script, String no) {
+        return showChoices(Arrays.asList(Answer.no(no)), new ScriptFunction(script)) == no;
+    }
+
     public final void agree(String yes) {
         showChoices(Arrays.asList(Answer.yes(yes)));
     }
@@ -564,12 +568,20 @@ public abstract class TeaseScript extends TeaseScriptMath {
         return showChoices(Arrays.asList(Answer.yes(yes)), new ScriptFunction(script)) == yes;
     }
 
+    public final boolean agree(CallableScript<String> script, String yes) {
+        return showChoices(Arrays.asList(Answer.yes(yes)), new ScriptFunction(script)) == yes;
+    }
+
     public final void chat(String chat) {
         showChoices(Arrays.asList(Answer.resume(chat)), null, Intention.Chat);
     }
 
     public final void chat(Answer chat) {
         showChoices(Arrays.asList(chat), null, Intention.Chat);
+    }
+
+    public final void chat(ScriptFunction scriptFunction, Answer chat) {
+        showChoices(Arrays.asList(chat), scriptFunction, Intention.Chat);
     }
 
     public final void chat(RunnableScript script, Answer chat) {

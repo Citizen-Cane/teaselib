@@ -62,8 +62,8 @@ public class Shower {
     private void resumeAfterException() {
         try {
             resumePrevious();
-        } catch (Exception e) {
-            logger.error(e.getMessage(), e);
+        } catch (Exception ignore) {
+            logger.error(ignore.getMessage(), ignore);
         }
     }
 

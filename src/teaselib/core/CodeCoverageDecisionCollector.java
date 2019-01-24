@@ -35,6 +35,12 @@ public class CodeCoverageDecisionCollector implements Iterable<DecisionList> {
                 this.result = n;
                 this.prompt = prompt;
             }
+
+            @Override
+            public String toString() {
+                return prompt.choices.toText() + "-> result=" + result;
+            }
+
         }
 
         public DecisionList() {

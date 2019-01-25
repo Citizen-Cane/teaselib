@@ -52,6 +52,10 @@ public class Prompt {
         this.result = Prompt.UNDEFINED;
     }
 
+    public boolean hasScriptFunction() {
+        return scriptTask != null;
+    }
+
     void executeScriptTask() {
         scriptTask.execute();
     }

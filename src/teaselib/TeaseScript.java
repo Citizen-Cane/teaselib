@@ -419,6 +419,11 @@ public abstract class TeaseScript extends TeaseScriptMath {
      *            How speech recognition is handled when the timeout has been reached
      * @return A script function that accomplishes the described behavior.
      */
+
+    public ScriptFunction timeoutWithConfirmation(long seconds) {
+        return timeoutWithConfirmation(seconds, TimeoutBehavior.InDubioProDuriore);
+    }
+
     public ScriptFunction timeoutWithConfirmation(long seconds, SpeechRecognition.TimeoutBehavior timeoutBehavior) {
         return new ScriptFunction(() -> {
             String result = awaitTimeout(seconds, timeoutBehavior);
@@ -440,6 +445,10 @@ public abstract class TeaseScript extends TeaseScriptMath {
      *            How speech recognition is handled when the timeout has been reached
      * @return A script function that accomplishes the described behavior.
      */
+    public ScriptFunction timeoutWithAutoConfirmation(long seconds) {
+        return timeoutWithAutoConfirmation(seconds, TimeoutBehavior.InDubioProDuriore);
+    }
+
     public ScriptFunction timeoutWithAutoConfirmation(long seconds, SpeechRecognition.TimeoutBehavior timeoutBehavior) {
         return new ScriptFunction(() -> awaitTimeout(seconds, timeoutBehavior), Relation.Confirmation);
     }

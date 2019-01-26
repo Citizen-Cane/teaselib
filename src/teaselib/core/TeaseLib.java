@@ -37,6 +37,8 @@ import teaselib.core.StateMaps.StateMapCache;
 import teaselib.core.configuration.Configuration;
 import teaselib.core.configuration.Setup;
 import teaselib.core.configuration.TeaseLibConfigSetup;
+import teaselib.core.debug.CheckPoint;
+import teaselib.core.debug.CheckPointListener;
 import teaselib.core.debug.TimeAdvanceListener;
 import teaselib.core.debug.TimeAdvancedEvent;
 import teaselib.core.devices.Devices;
@@ -74,9 +76,10 @@ public class TeaseLib {
     final StateMaps stateMaps;
     public final Devices devices;
 
-    private AtomicLong frozenTime = new AtomicLong(Long.MIN_VALUE);
-    private AtomicLong timeOffsetMillis = new AtomicLong(0);
+    private final AtomicLong frozenTime = new AtomicLong(Long.MIN_VALUE);
+    private final AtomicLong timeOffsetMillis = new AtomicLong(0);
     private final Set<TimeAdvanceListener> timeAdvanceListeners = new HashSet<>();
+    private final Set<CheckPointListener> checkPointListeners = new HashSet<>();
 
     public TeaseLib(final Host host, Persistence persistence) throws IOException {
         this(host, persistence, new TeaseLibConfigSetup(host));
@@ -268,6 +271,20 @@ public class TeaseLib {
     private void fireTimeAdvanced() {
         for (TimeAdvanceListener timeAdvancedListener : timeAdvanceListeners) {
             timeAdvancedListener.timeAdvanced(new TimeAdvancedEvent(this));
+        }
+    }
+
+    void addCheckPointListener(CheckPointListener listener) {
+        checkPointListeners.add(listener);
+    }
+
+    void removeCheckPointListener(CheckPointListener listener) {
+        checkPointListeners.remove(listener);
+    }
+
+    public void checkPointReached(CheckPoint checkPoint) {
+        for (CheckPointListener checkPointListener : checkPointListeners) {
+            checkPointListener.checkPointReached(checkPoint);
         }
     }
 

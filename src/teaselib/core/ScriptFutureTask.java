@@ -11,6 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import teaselib.ScriptFunction;
+import teaselib.core.debug.CheckPoint;
 import teaselib.core.ui.Prompt;
 import teaselib.core.util.ExceptionUtil;
 
@@ -28,7 +29,9 @@ public class ScriptFutureTask extends FutureTask<String> {
     public ScriptFutureTask(Script script, ScriptFunction scriptFunction, Prompt prompt) {
         super(() -> {
             try {
+                script.teaseLib.checkPointReached(CheckPoint.ScriptFunction.Started);
                 String result = scriptFunction.call();
+                script.teaseLib.checkPointReached(CheckPoint.ScriptFunction.Finished);
                 if (Thread.interrupted()) {
                     throw new InterruptedException();
                 }

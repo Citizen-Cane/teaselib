@@ -5,15 +5,20 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.BrokenBarrierException;
+import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
+import teaselib.core.debug.CheckPoint;
+import teaselib.core.debug.CheckPointListener;
 import teaselib.core.debug.TimeAdvanceListener;
 import teaselib.core.debug.TimeAdvancedEvent;
 import teaselib.core.ui.AbstractInputMethod;
 import teaselib.core.ui.InputMethod;
 import teaselib.core.ui.Prompt;
+import teaselib.core.util.ExceptionUtil;
 
 /**
  * @author Citizen-Cane
@@ -22,9 +27,9 @@ import teaselib.core.ui.Prompt;
 public class CodeCoverageInputMethod extends AbstractInputMethod implements DebugInputMethod {
     Set<InputMethod.Listener> eventListeners = new LinkedHashSet<>();
 
-    private final TimeAdvanceListener timeAdvanceListener = e -> {
-        handleTimeAdvance(e);
-    };
+    private final TimeAdvanceListener timeAdvanceListener = this::handleTimeAdvance;
+
+    private final CheckPointListener checkPointListener = this::handleCheckPointReached;
 
     public CodeCoverageInputMethod(ExecutorService executor) {
         super(executor);
@@ -33,6 +38,8 @@ public class CodeCoverageInputMethod extends AbstractInputMethod implements Debu
     private final AtomicReference<Prompt> activePrompt = new AtomicReference<>();
     private final AtomicInteger result = new AtomicInteger();
 
+    CyclicBarrier rendevouz = new CyclicBarrier(2);
+
     @Override
     public int handleShow(Prompt prompt) {
         activePrompt.set(prompt);
@@ -40,12 +47,12 @@ public class CodeCoverageInputMethod extends AbstractInputMethod implements Debu
         if (prompt.hasScriptFunction()) {
             try {
                 synchronized (this) {
-                    while (result.get() < Prompt.DISMISSED) {
-                        wait(Integer.MAX_VALUE);
-                    }
+                    rendevouz.await();
                 }
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
+            } catch (BrokenBarrierException e) {
+                // Ignore
             }
             return result.get();
         } else {
@@ -53,24 +60,35 @@ public class CodeCoverageInputMethod extends AbstractInputMethod implements Debu
         }
     }
 
-    private void handleTimeAdvance(TimeAdvancedEvent e) {
-        Prompt prompt = activePrompt.get();
-        if (prompt != null && prompt.hasScriptFunction()) {
-            result.set(firePromptShown(prompt));
-            activePrompt.set(null);
-            synchronized (this) {
-                notifyAll();
+    private void handleCheckPointReached(CheckPoint checkPoint) {
+        if (checkPoint == CheckPoint.ScriptFunction.Started) {
+            try {
+                Prompt prompt = activePrompt.getAndSet(null);
+                result.set(firePromptShown(prompt));
+                rendevouz.await();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            } catch (BrokenBarrierException e) {
+                throw ExceptionUtil.asRuntimeException(e);
             }
+        } else if (checkPoint == CheckPoint.ScriptFunction.Finished) {
+            rendevouz.reset();
         }
     }
 
+    private void handleTimeAdvance(TimeAdvancedEvent e) {
+        // Prompt prompt = activePrompt.get();
+        // if (prompt != null && prompt.hasScriptFunction()) {
+        // result.set(firePromptShown(prompt));
+        // activePrompt.set(null);
+        // }
+    }
+
     @Override
-    public boolean handleDismiss(Prompt prompt) throws InterruptedException {
+    public boolean handleDismiss(Prompt prompt) {
         activePrompt.set(null);
+        rendevouz.reset();
         firePromptDismissed(prompt);
-        synchronized (this) {
-            notifyAll();
-        }
         return true;
     }
 
@@ -82,11 +100,13 @@ public class CodeCoverageInputMethod extends AbstractInputMethod implements Debu
     @Override
     public void attach(TeaseLib teaseLib) {
         teaseLib.addTimeAdvancedListener(timeAdvanceListener);
+        teaseLib.addCheckPointListener(checkPointListener);
     }
 
     @Override
     public void detach(TeaseLib teaseLib) {
         teaseLib.removeTimeAdvancedListener(timeAdvanceListener);
+        teaseLib.removeCheckPointListener(checkPointListener);
     }
 
     public void addEventListener(InputMethod.Listener e) {

@@ -80,10 +80,11 @@ public class CodeCoverage<T extends Script> {
             @Override
             public void promptDismissed(Prompt prompt) {
                 if (prompt.result() <= Prompt.DISMISSED) {
-                    // TODO Sort out timeout cases:
-                    // - script functions with dialogs
-                    // - timeout for confirming buttons - no text, just a delay -> write test
-                    throw new IllegalStateException("Prompt dismissed by other input method: " + prompt);
+                    if (prompt.result() == Prompt.UNDEFINED) {
+                        throw new IllegalStateException("Failed to dismiss prompt " + prompt);
+                    } else {
+                        throw new IllegalStateException("Prompt dismissed by other input method: " + prompt);
+                    }
                 }
             }
 

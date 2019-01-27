@@ -6,4 +6,7 @@ public interface CheckPoint {
         Finished
     }
 
+    enum Script implements CheckPoint {
+        NewMessage
+    }
 }

@@ -18,6 +18,7 @@ import teaselib.Message;
 import teaselib.Replay;
 import teaselib.Replay.Position;
 import teaselib.core.concurrency.NamedExecutorService;
+import teaselib.core.debug.CheckPoint;
 import teaselib.core.media.MediaRenderer;
 import teaselib.core.media.MediaRenderer.Threaded;
 import teaselib.core.media.MediaRendererQueue;
@@ -197,6 +198,7 @@ public class ScriptRenderer {
                 // Now the current set can be completed, and canceling the
                 // current set will result in an empty next set
                 completeAll();
+                teaseLib.checkPointReached(CheckPoint.Script.NewMessage);
 
                 // Start a new message in the log
                 teaseLib.transcript.info("");

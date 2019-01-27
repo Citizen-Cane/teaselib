@@ -31,7 +31,6 @@ public class ScriptFutureTask extends FutureTask<String> {
             try {
                 script.teaseLib.checkPointReached(CheckPoint.ScriptFunction.Started);
                 String result = scriptFunction.call();
-                script.teaseLib.checkPointReached(CheckPoint.ScriptFunction.Finished);
                 if (Thread.interrupted()) {
                     throw new InterruptedException();
                 }
@@ -40,6 +39,8 @@ public class ScriptFutureTask extends FutureTask<String> {
             } catch (Exception e) {
                 script.endAll();
                 throw e;
+            } finally {
+                script.teaseLib.checkPointReached(CheckPoint.ScriptFunction.Finished);
             }
         });
         this.scriptFunction = scriptFunction;

@@ -63,7 +63,9 @@ public class ExceptionUtil {
         if (t instanceof RuntimeException) {
             return (RuntimeException) t;
         } else {
-            return new RuntimeException(t.getClass().getSimpleName() + ": " + t.getMessage(), t);
+            String name = t.getClass().getSimpleName();
+            String message = t.getMessage();
+            return new RuntimeException(name + (message != null ? ": " + message : ""), t);
         }
     }
 

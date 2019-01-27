@@ -46,9 +46,7 @@ public class CodeCoverageInputMethod extends AbstractInputMethod implements Debu
         result.set(Prompt.UNDEFINED);
         if (prompt.hasScriptFunction()) {
             try {
-                synchronized (this) {
-                    rendevouz.await();
-                }
+                rendevouz.await();
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             } catch (BrokenBarrierException e) {
@@ -62,26 +60,44 @@ public class CodeCoverageInputMethod extends AbstractInputMethod implements Debu
 
     private void handleCheckPointReached(CheckPoint checkPoint) {
         if (checkPoint == CheckPoint.ScriptFunction.Started) {
+            // try {
+            // Prompt prompt = activePrompt.getAndSet(null);
+            // result.set(firePromptShown(prompt));
+            // rendevouz.await();
+            // } catch (InterruptedException e) {
+            // Thread.currentThread().interrupt();
+            // } catch (BrokenBarrierException e) {
+            // throw ExceptionUtil.asRuntimeException(e);
+            // }
+            Prompt prompt = activePrompt.getAndSet(null);
+            result.set(firePromptShown(prompt));
+        } else if (checkPoint == CheckPoint.ScriptFunction.Finished) {
+            rendevouz.reset();
+            synchronized (this) {
+                try {
+                    while (true) {
+                        wait(Integer.MAX_VALUE);
+                    }
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+            }
+        }
+    }
+
+    private void handleTimeAdvance(@SuppressWarnings("unused") TimeAdvancedEvent timeAdvancedEvent) {
+        Prompt prompt = activePrompt.get();
+        if (prompt != null && prompt.hasScriptFunction()) {
+            activePrompt.set(null);
             try {
-                Prompt prompt = activePrompt.getAndSet(null);
-                result.set(firePromptShown(prompt));
+                // result.set(firePromptShown(prompt));
                 rendevouz.await();
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             } catch (BrokenBarrierException e) {
                 throw ExceptionUtil.asRuntimeException(e);
             }
-        } else if (checkPoint == CheckPoint.ScriptFunction.Finished) {
-            rendevouz.reset();
         }
-    }
-
-    private void handleTimeAdvance(TimeAdvancedEvent e) {
-        // Prompt prompt = activePrompt.get();
-        // if (prompt != null && prompt.hasScriptFunction()) {
-        // result.set(firePromptShown(prompt));
-        // activePrompt.set(null);
-        // }
     }
 
     @Override

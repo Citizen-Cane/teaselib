@@ -1,7 +1,6 @@
 package teaselib.core;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -60,7 +59,7 @@ public class ScriptFunctionTest {
 
     }
 
-    private RunnableTestScript getMainScript() {
+    private static RunnableTestScript getMainScript() {
         RunnableTestScript mainScript = new RunnableTestScript(TestScript.teaseLib()) {
             @Override
             public void run() {
@@ -68,6 +67,25 @@ public class ScriptFunctionTest {
             }
         };
         return mainScript;
+    }
+
+    @Test
+    public void testSimpleScript() {
+        AtomicReference<String> result = new AtomicReference<>(null);
+        RunnableTestScript mainScript = getMainScript();
+
+        CodeCoverage<Script> codeCoverage = new CodeCoverage<>();
+        codeCoverage.runAll(() -> new RunnableTestScript(mainScript) {
+            @Override
+            public void run() {
+                say("In main script.");
+                result.set(reply("Finished"));
+                say("Still in main script.");
+            }
+        });
+        assertEquals("Finished", result.get());
+        assertTrue("Wrong text in message renderer",
+                mainScript.scriptRenderer.renderMessage.toString().indexOf("Still in main script.") >= 0);
     }
 
     @Test
@@ -88,7 +106,7 @@ public class ScriptFunctionTest {
             }
         });
         assertEquals("Finished", result.get());
-        assertTrue("Sccript function still running while resuming to main script thread",
+        assertTrue("Script function still running while resuming to main script thread",
                 mainScript.scriptRenderer.renderMessage.toString().indexOf("Resuming main script.") >= 0);
     }
 

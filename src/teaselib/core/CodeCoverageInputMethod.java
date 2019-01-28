@@ -62,48 +62,61 @@ public class CodeCoverageInputMethod extends AbstractInputMethod implements Debu
 
     private void handleCheckPointReached(CheckPoint checkPoint) {
         if (checkPoint == CheckPoint.ScriptFunction.Started) {
-            try {
-                checkPointScriptFunctionStarted.await();
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            } catch (BrokenBarrierException e) {
-                throw ExceptionUtil.asRuntimeException(e);
+            synchronizeWithPrompt();
+        } else if (checkPoint == CheckPoint.Script.NewMessage) {
+            Prompt prompt = activePrompt.get();
+            if (prompt != null && prompt.hasScriptFunction() && result.get() != Prompt.UNDEFINED) {
+                activePrompt.set(null);
+                forwardResult();
             }
         } else if (checkPoint == CheckPoint.ScriptFunction.Finished) {
-            activePrompt.set(null);
+            Prompt prompt = activePrompt.getAndSet(null);
+            if (prompt != null) {
+                forwardResult();
+                awaitPendingAdvanceTimeEvents();
+            }
+        }
+    }
+
+    private void synchronizeWithPrompt() {
+        try {
+            checkPointScriptFunctionStarted.await();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        } catch (BrokenBarrierException e) {
+            throw ExceptionUtil.asRuntimeException(e);
+        }
+    }
+
+    private void forwardResult() {
+        try {
+            checkPointScriptFunctionFinished.await();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        } catch (BrokenBarrierException e) {
+            throw ExceptionUtil.asRuntimeException(e);
+        }
+    }
+
+    private void awaitPendingAdvanceTimeEvents() {
+        // TODO Blocks script function without advance time event
+        // - we don't know if there are any time advances pending so we have to wait
+        synchronized (this) {
             try {
-                checkPointScriptFunctionFinished.await();
+                while (true) {
+                    wait(Integer.MAX_VALUE);
+                }
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
-            } catch (BrokenBarrierException e) {
-                throw ExceptionUtil.asRuntimeException(e);
-            }
-
-            // TODO Blocks script function without advance time event
-            synchronized (this) {
-                try {
-                    while (true) {
-                        wait(Integer.MAX_VALUE);
-                    }
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                }
             }
         }
     }
 
     private void handleTimeAdvance(@SuppressWarnings("unused") TimeAdvancedEvent timeAdvancedEvent) {
+        // TODO Refactor this into getAndUpdate()
         Prompt prompt = activePrompt.get();
         if (prompt != null && prompt.hasScriptFunction()) {
-            activePrompt.set(null);
             result.set(firePromptShown(prompt));
-            // try {
-            // checkPointScriptFunctionFinished.await();
-            // } catch (InterruptedException e) {
-            // Thread.currentThread().interrupt();
-            // } catch (BrokenBarrierException e) {
-            // throw ExceptionUtil.asRuntimeException(e);
-            // }
         }
     }
 

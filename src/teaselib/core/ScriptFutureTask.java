@@ -28,8 +28,8 @@ public class ScriptFutureTask extends FutureTask<String> {
 
     public ScriptFutureTask(Script script, ScriptFunction scriptFunction, Prompt prompt) {
         super(() -> {
+            script.teaseLib.checkPointReached(CheckPoint.ScriptFunction.Started);
             try {
-                script.teaseLib.checkPointReached(CheckPoint.ScriptFunction.Started);
                 String result = scriptFunction.call();
                 if (Thread.interrupted()) {
                     throw new InterruptedException();

@@ -40,6 +40,17 @@ public class CheckPointTest {
     @Test
     public void testCheckPointNewMeessage() throws Exception {
         TestScript script = TestScript.getOne();
+        CheckPointTester checkPoints = genericSequential();
+
+        script.teaseLib.addCheckPointListener(checkPoints);
+        script.say("test");
+        script.teaseLib.removeCheckPointListener(checkPoints);
+
+        checkPoints.throwCatchedException();
+        assertEquals(1, checkPoints.actual.get());
+    }
+
+    private CheckPointTester genericSequential() {
         CheckPointTester checkPoints = new CheckPointTester() {
             @Override
             public void checkPointReached(CheckPoint checkPoint) {
@@ -50,38 +61,17 @@ public class CheckPointTest {
                 }
             }
         };
-
-        script.teaseLib.addCheckPointListener(checkPoints);
-        script.say("test");
-        script.completeAll();
-        script.teaseLib.removeCheckPointListener(checkPoints);
-
-        checkPoints.throwCatchedException();
-        assertEquals(1, checkPoints.actual.get());
+        return checkPoints;
     }
 
     @Test
     public void testCheckPointScriptFunction() throws Exception {
         TestScript script = TestScript.getOne();
-        CheckPointTester checkPoints = new CheckPointTester() {
-            @Override
-            public void checkPointReached(CheckPoint checkPoint) {
-                if (checkPoint == CheckPoint.ScriptFunction.Started) {
-                    assertEquals(1, actual.incrementAndGet());
-                } else if (checkPoint == CheckPoint.Script.NewMessage) {
-                    assertEquals(2, actual.incrementAndGet());
-                } else if (checkPoint == CheckPoint.ScriptFunction.Finished) {
-                    assertEquals(3, actual.incrementAndGet());
-                } else {
-                    unhandled(checkPoint);
-                }
-            }
-        };
+        CheckPointTester checkPoints = genericScriptFunction(false);
 
         script.debugger.addResponse("Finished", Response.Ignore);
         script.teaseLib.addCheckPointListener(checkPoints);
         assertEquals(ScriptFunction.Timeout, script.reply(() -> script.say("test"), "Finished"));
-        script.completeAll();
         script.teaseLib.removeCheckPointListener(checkPoints);
 
         checkPoints.throwCatchedException();
@@ -91,6 +81,38 @@ public class CheckPointTest {
     @Test
     public void testCheckPointScriptFunctionAndTimeListener() throws Exception {
         TestScript script = TestScript.getOne();
+        CheckPointTester checkPoints = genericScriptFunction(true);
+        TimeAdvanceListener tal = e -> assertEquals(3, checkPoints.actual.incrementAndGet());
+
+        script.debugger.addResponse("Finished", Response.Ignore);
+        script.teaseLib.addCheckPointListener(checkPoints);
+        script.teaseLib.addTimeAdvancedListener(tal);
+        assertEquals(ScriptFunction.Timeout, script.reply(() -> script.say("test"), "Finished"));
+        script.teaseLib.removeCheckPointListener(checkPoints);
+        script.teaseLib.removeTimeAdvancedListener(tal);
+
+        checkPoints.throwCatchedException();
+        assertEquals(4, checkPoints.actual.get());
+    }
+
+    @Test
+    public void testCheckPointScriptFunctionAndTimeListenerWithResponse() throws Exception {
+        TestScript script = TestScript.getOne();
+        CheckPointTester checkPoints = genericScriptFunction(true);
+        TimeAdvanceListener tal = e -> assertEquals(3, checkPoints.actual.incrementAndGet());
+
+        script.debugger.addResponse("Finished", Response.Choose);
+        script.teaseLib.addCheckPointListener(checkPoints);
+        script.teaseLib.addTimeAdvancedListener(tal);
+        assertEquals("Finished", script.reply(() -> script.say("test"), "Finished"));
+        script.teaseLib.removeCheckPointListener(checkPoints);
+        script.teaseLib.removeTimeAdvancedListener(tal);
+
+        checkPoints.throwCatchedException();
+        assertEquals(0, checkPoints.actual.get());
+    }
+
+    private CheckPointTester genericScriptFunction(boolean withTimeAdvanceListener) {
         CheckPointTester checkPoints = new CheckPointTester() {
             @Override
             public void checkPointReached(CheckPoint checkPoint) {
@@ -99,25 +121,13 @@ public class CheckPointTest {
                 } else if (checkPoint == CheckPoint.Script.NewMessage) {
                     assertEquals(2, actual.incrementAndGet());
                 } else if (checkPoint == CheckPoint.ScriptFunction.Finished) {
-                    assertEquals(4, actual.incrementAndGet());
+                    assertEquals(withTimeAdvanceListener ? 4 : 3, actual.incrementAndGet());
                 } else {
                     unhandled(checkPoint);
                 }
             }
         };
-
-        TimeAdvanceListener tal = e -> assertEquals(3, checkPoints.actual.incrementAndGet());
-
-        script.debugger.addResponse("Finished", Response.Ignore);
-        script.teaseLib.addCheckPointListener(checkPoints);
-        script.teaseLib.addTimeAdvancedListener(tal);
-        assertEquals(ScriptFunction.Timeout, script.reply(() -> script.say("test"), "Finished"));
-        script.completeAll();
-        script.teaseLib.removeCheckPointListener(checkPoints);
-        script.teaseLib.removeTimeAdvancedListener(tal);
-
-        checkPoints.throwCatchedException();
-        assertEquals(4, checkPoints.actual.get());
+        return checkPoints;
     }
 
 }

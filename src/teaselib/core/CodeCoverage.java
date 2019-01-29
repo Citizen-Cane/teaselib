@@ -47,7 +47,7 @@ public class CodeCoverage<T extends Script> {
             @Override
             public int promptShown(Prompt prompt) {
                 if (used.contains(prompt)) {
-                    throw new IllegalAccessError();
+                    throw new IllegalAccessError("Prompt reused");
                 } else {
                     used.add(prompt);
                 }

@@ -60,15 +60,42 @@ public class CodeCoverageInputMethod extends AbstractInputMethod implements Debu
     private void handleCheckPointReached(CheckPoint checkPoint) {
         if (checkPoint == CheckPoint.ScriptFunction.Started) {
             synchronizeWithPrompt();
-            activePrompt.getAndUpdate(this::setResult);
+            activePrompt.getAndUpdate(this::forwardResult);
         } else if (checkPoint == CheckPoint.Script.NewMessage) {
-            activePrompt.getAndUpdate(this::setResult);
+            activePrompt.getAndUpdate(this::forwardResult);
+            // TODO Should work but doesn't
+            activePrompt.getAndUpdate(this::setAndForwardResult);
         } else if (checkPoint == CheckPoint.ScriptFunction.Finished) {
-            activePrompt.getAndUpdate(this::setResultAndAwaitPendingEvents);
+            activePrompt.getAndUpdate(this::forwardResultAndAwaitPendingEvents);
         }
     }
 
+    private void handleTimeAdvance(@SuppressWarnings("unused") TimeAdvancedEvent timeAdvancedEvent) {
+        activePrompt.getAndUpdate(this::setResult);
+        // TODO should work but doesn't
+        // activePrompt.getAndUpdate(this::setAndForwardResult);
+    }
+
     Prompt setResult(Prompt prompt) {
+        if (prompt != null && prompt.hasScriptFunction()) {
+            result.set(firePromptShown(prompt));
+            return prompt;
+        } else {
+            return prompt;
+        }
+    }
+
+    Prompt setAndForwardResult(Prompt prompt) {
+        if (prompt != null && prompt.hasScriptFunction() && result.get() != Prompt.UNDEFINED) {
+            result.set(firePromptShown(prompt));
+            forwardResult();
+            return null;
+        } else {
+            return prompt;
+        }
+    }
+
+    Prompt forwardResult(Prompt prompt) {
         if (prompt != null && prompt.hasScriptFunction() && result.get() != Prompt.UNDEFINED) {
             forwardResult();
             return null;
@@ -77,9 +104,11 @@ public class CodeCoverageInputMethod extends AbstractInputMethod implements Debu
         }
     }
 
-    Prompt setResultAndAwaitPendingEvents(Prompt prompt) {
+    Prompt forwardResultAndAwaitPendingEvents(Prompt prompt) {
         if (prompt != null && prompt.hasScriptFunction() && result.get() != Prompt.UNDEFINED) {
             forwardResult();
+            // TODO Blocks script function without advance time event
+            // - we don't know if there are any time advances pending so we have to wait
             awaitPendingAdvanceTimeEvents();
             return null;
         } else {
@@ -108,8 +137,6 @@ public class CodeCoverageInputMethod extends AbstractInputMethod implements Debu
     }
 
     private void awaitPendingAdvanceTimeEvents() {
-        // TODO Blocks script function without advance time event
-        // - we don't know if there are any time advances pending so we have to wait
         synchronized (this) {
             try {
                 while (true) {
@@ -118,24 +145,6 @@ public class CodeCoverageInputMethod extends AbstractInputMethod implements Debu
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             }
-        }
-    }
-
-    private void handleTimeAdvance(@SuppressWarnings("unused") TimeAdvancedEvent timeAdvancedEvent) {
-        activePrompt.getAndUpdate(this::setResultAndDismiss);
-    }
-
-    Prompt setResultAndDismiss(Prompt prompt) {
-        if (prompt != null && prompt.hasScriptFunction()) {
-            result.set(firePromptShown(prompt));
-
-            // TODO should work but doesn't
-            // forwardResult();
-            // return null;
-
-            return prompt;
-        } else {
-            return prompt;
         }
     }
 

@@ -64,9 +64,12 @@ public class CodeCoverageInputMethod extends AbstractInputMethod implements Debu
         } else if (checkPoint == CheckPoint.Script.NewMessage) {
             activePrompt.getAndUpdate(this::forwardResult);
             // TODO Should work but doesn't
-            activePrompt.getAndUpdate(this::setAndForwardResult);
+            // activePrompt.getAndUpdate(this::setAndForwardResult);
         } else if (checkPoint == CheckPoint.ScriptFunction.Finished) {
-            activePrompt.getAndUpdate(this::forwardResultAndAwaitPendingEvents);
+            activePrompt.getAndUpdate(this::forwardResult);
+            // TODO Blocks script function without advance time event
+            // - we don't know if there are any time advances pending so we have to wait
+            awaitPendingAdvanceTimeEvents();
         }
     }
 
@@ -104,18 +107,6 @@ public class CodeCoverageInputMethod extends AbstractInputMethod implements Debu
         }
     }
 
-    Prompt forwardResultAndAwaitPendingEvents(Prompt prompt) {
-        if (prompt != null && prompt.hasScriptFunction() && result.get() != Prompt.UNDEFINED) {
-            forwardResult();
-            // TODO Blocks script function without advance time event
-            // - we don't know if there are any time advances pending so we have to wait
-            awaitPendingAdvanceTimeEvents();
-            return null;
-        } else {
-            return prompt;
-        }
-    }
-
     private void synchronizeWithPrompt() {
         try {
             checkPointScriptFunctionStarted.await();
@@ -138,12 +129,14 @@ public class CodeCoverageInputMethod extends AbstractInputMethod implements Debu
 
     private void awaitPendingAdvanceTimeEvents() {
         synchronized (this) {
-            try {
-                while (true) {
-                    wait(Integer.MAX_VALUE);
+            if (!Thread.currentThread().isInterrupted()) {
+                try {
+                    while (true) {
+                        wait(Integer.MAX_VALUE);
+                    }
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
                 }
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
             }
         }
     }

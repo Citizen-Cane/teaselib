@@ -37,6 +37,7 @@ public class Shower {
                 choice = showNew(prompt);
             } catch (Exception e) {
                 resumeAfterException();
+                throwScriptTaskException(prompt);
                 throw e;
             }
 
@@ -56,6 +57,19 @@ public class Shower {
             }
         } else {
             return choice;
+        }
+    }
+
+    private void throwScriptTaskException(Prompt prompt) throws InterruptedException {
+        ScriptFutureTask scriptTask = prompt.scriptTask;
+        if (scriptTask != null) {
+            try {
+                scriptTask.get();
+            } catch (CancellationException ignore) {
+                // ignore
+            } catch (ExecutionException e1) {
+                throw ExceptionUtil.asRuntimeException(ExceptionUtil.reduce(e1));
+            }
         }
     }
 

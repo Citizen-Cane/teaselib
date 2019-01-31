@@ -35,12 +35,12 @@ public class ScriptFutureTask extends FutureTask<String> {
                     throw new InterruptedException();
                 }
                 script.completeAll();
-                return result;
-            } catch (Exception e) {
-                script.endAll();
-                throw e;
-            } finally {
                 script.teaseLib.checkPointReached(CheckPoint.ScriptFunction.Finished);
+                return result;
+            } catch (Throwable t) {
+                script.endAll();
+                throw t;
+            } finally {
             }
         });
         this.scriptFunction = scriptFunction;
@@ -64,11 +64,7 @@ public class ScriptFutureTask extends FutureTask<String> {
             Thread.currentThread().interrupt();
             handleScriptTaskInterrupted();
         } catch (Exception e) {
-            if (throwable == null) {
-                setException(e);
-            } else {
-                logger.error(e.getMessage(), e);
-            }
+            handleException(e);
         } finally {
             cancellationCompletion.countDown();
             logger.info("Script task {} finished", prompt);
@@ -78,6 +74,14 @@ public class ScriptFutureTask extends FutureTask<String> {
     private void handleScriptTaskInterrupted() {
         logger.info("Script task {} interrupted", prompt);
         Thread.interrupted();
+    }
+
+    private void handleException(Exception e) {
+        if (throwable == null) {
+            setException(e);
+        } else {
+            logger.error(e.getMessage(), e);
+        }
     }
 
     @Override

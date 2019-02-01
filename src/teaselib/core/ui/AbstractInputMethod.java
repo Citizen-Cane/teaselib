@@ -79,14 +79,14 @@ public abstract class AbstractInputMethod implements InputMethod {
 
     @Override
     public final boolean dismiss(Prompt prompt) throws InterruptedException {
-        if (worker.isDone()) {
+        if (worker.isCancelled()) {
+            return false;
+        } else if (worker.isDone()) {
             try {
                 worker.get();
             } catch (ExecutionException e) {
                 throw ExceptionUtil.asRuntimeException(ExceptionUtil.reduce(e));
             }
-            return false;
-        } else if (worker.isCancelled()) {
             return false;
         } else {
             worker.cancel(true);

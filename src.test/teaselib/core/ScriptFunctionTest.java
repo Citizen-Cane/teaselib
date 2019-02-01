@@ -1,6 +1,7 @@
 package teaselib.core;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -178,8 +179,9 @@ public class ScriptFunctionTest {
         AtomicReference<String> result = new AtomicReference<>(null);
         RunnableTestScript mainScript = getMainScript();
 
+        // TODO Reused prompt
         CodeCoverage<TeaseScript> codeCoverage = new CodeCoverage<>();
-        codeCoverage.runAll(() -> new RunnableTestScript(mainScript) {
+        codeCoverage.run(() -> new RunnableTestScript(mainScript) {
             @Override
             public void run() {
                 say("In main script.");
@@ -187,6 +189,7 @@ public class ScriptFunctionTest {
                 say("Resuming main script.");
             }
         });
+
         assertEquals("Finished", result.get());
         assertTrue("Script function still running while resuming to main script thread",
                 mainScript.scriptRenderer.renderMessage.toString().indexOf("Resuming main script.") >= 0);

@@ -80,7 +80,7 @@ public class CodeCoverageInputMethod extends AbstractInputMethod implements Debu
     }
 
     Prompt setResult(Prompt prompt) {
-        if (prompt != null && prompt.hasScriptFunction()) {
+        if (hasScriptFunction(prompt) && resultNotSet()) {
             result.set(firePromptShown(prompt));
             return prompt;
         } else {
@@ -89,7 +89,7 @@ public class CodeCoverageInputMethod extends AbstractInputMethod implements Debu
     }
 
     Prompt setAndForwardResult(Prompt prompt) {
-        if (prompt != null && prompt.hasScriptFunction() && result.get() != Prompt.UNDEFINED) {
+        if (hasScriptFunction(prompt) && resultNotSet()) {
             result.set(firePromptShown(prompt));
             forwardResult();
             return null;
@@ -99,12 +99,24 @@ public class CodeCoverageInputMethod extends AbstractInputMethod implements Debu
     }
 
     Prompt forwardResult(Prompt prompt) {
-        if (prompt != null && prompt.hasScriptFunction() && result.get() != Prompt.UNDEFINED) {
+        if (hasScriptFunction(prompt) && resultSet()) {
             forwardResult();
             return null;
         } else {
             return prompt;
         }
+    }
+
+    private boolean hasScriptFunction(Prompt prompt) {
+        return prompt != null && prompt.hasScriptFunction();
+    }
+
+    private boolean resultNotSet() {
+        return result.get() == Prompt.UNDEFINED;
+    }
+
+    private boolean resultSet() {
+        return result.get() != Prompt.UNDEFINED;
     }
 
     private void synchronizeWithPrompt() {

@@ -61,21 +61,27 @@ public class CodeCoverageInputMethod extends AbstractInputMethod implements Debu
         if (checkPoint == CheckPoint.ScriptFunction.Started) {
             synchronizeWithPrompt();
             activePrompt.getAndUpdate(this::forwardResult);
+            // TODO Resolves infinite wait at end - awaitPendingAdvanceTimeEvents
+            // -> however timeout test would be indeterministic
+            // activePrompt.getAndUpdate(this::setAndForwardResult);
         } else if (checkPoint == CheckPoint.Script.NewMessage) {
             activePrompt.getAndUpdate(this::forwardResult);
-            // TODO Should work but doesn't
+            // TODO Should work but doesn't - sometimes script function blocks
             // activePrompt.getAndUpdate(this::setAndForwardResult);
         } else if (checkPoint == CheckPoint.ScriptFunction.Finished) {
             activePrompt.getAndUpdate(this::forwardResult);
             // TODO Blocks script function without advance time event
             // - we don't know if there are any time advances pending so we have to wait
             awaitPendingAdvanceTimeEvents();
+            // activePrompt.getAndUpdate(this::setAndForwardResult);
         }
     }
 
     private void handleTimeAdvance(@SuppressWarnings("unused") TimeAdvancedEvent timeAdvancedEvent) {
         activePrompt.getAndUpdate(this::setResult);
         // TODO should work but doesn't
+        // TODO Since forward has to wait until the prompt is ready,
+        // a broken barrier exception will be thrown into the script thread
         // activePrompt.getAndUpdate(this::setAndForwardResult);
     }
 

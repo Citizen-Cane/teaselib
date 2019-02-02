@@ -1,6 +1,8 @@
 package teaselib.core.texttospeech;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.util.Map;
 import java.util.Map.Entry;
@@ -19,8 +21,8 @@ public class TextToSpeechInfrastructureTest {
     public void testGetVoicesIsOrdered() {
         Assume.assumeTrue(Environment.SYSTEM == Environment.Windows);
 
-        Map<String, Voice> actual = new TextToSpeech().getVoices();
-        Map<String, Voice> expected = new TextToSpeech().getVoices();
+        Map<String, Voice> actual = TextToSpeech.allSystemVoices().getVoices();
+        Map<String, Voice> expected = TextToSpeech.allSystemVoices().getVoices();
         assertEquals(expected, actual);
     }
 
@@ -28,7 +30,7 @@ public class TextToSpeechInfrastructureTest {
     public void testBlacklistedVoicesAreIgnored() {
         Assume.assumeTrue(Environment.SYSTEM == Environment.Windows);
 
-        Map<String, Voice> voices = new TextToSpeech().getVoices();
+        Map<String, Voice> voices = TextToSpeech.allSystemVoices().getVoices();
         for (Entry<String, Voice> voice : voices.entrySet()) {
             for (String blackListed : TextToSpeech.BlackList) {
                 assertFalse(voice.getKey().equals(blackListed));
@@ -39,17 +41,17 @@ public class TextToSpeechInfrastructureTest {
     @Test
     public void testVoiceEnumeration() throws InterruptedException {
         Assume.assumeTrue(Environment.SYSTEM == Environment.Windows);
-        TextToSpeech textToSpeech = new TextToSpeech();
+        TextToSpeech textToSpeech = TextToSpeech.allSystemVoices();
         enumVoices(textToSpeech);
 
         Thread thread = new Thread(() -> {
-            TextToSpeech textToSpeech2 = new TextToSpeech();
+            TextToSpeech textToSpeech2 = TextToSpeech.allSystemVoices();
             enumVoices(textToSpeech2);
         });
         thread.start();
         thread.join();
 
-        TextToSpeech textToSpeech3 = new TextToSpeech();
+        TextToSpeech textToSpeech3 = TextToSpeech.allSystemVoices();
         enumVoices(textToSpeech3);
     }
 

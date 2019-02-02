@@ -48,7 +48,7 @@ public class SpeechRecognitionPronunciationDictionaryTest {
     public void testSpeechRecognitionPronunciation() throws InterruptedException, IOException {
         PronunciationDictionary pronunciationDictionary = new PronunciationDictionary(
                 new File(getClass().getResource("pronunciation").getPath()));
-        TextToSpeech textToSpeech = new TextToSpeech();
+        TextToSpeech textToSpeech = TextToSpeech.allSystemVoices();
         textToSpeech.initPhoneticDictionary(pronunciationDictionary);
 
         SpeechRecognition speechRecognition = new SpeechRecognizer(new Configuration()).get(Locale.US);

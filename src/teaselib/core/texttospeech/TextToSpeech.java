@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -66,8 +67,16 @@ public class TextToSpeech {
         throw new IllegalStateException("TTS engine not initialized");
     }
 
-    public TextToSpeech() {
-        for (String name : implementations()) {
+    public static TextToSpeech allSystemVoices() {
+        return new TextToSpeech(ttsProviderClassNames());
+    }
+
+    public static TextToSpeech none() {
+        return new TextToSpeech(Collections.emptySet());
+    }
+
+    public TextToSpeech(Set<String> speechProviderClassNames) {
+        for (String name : speechProviderClassNames) {
             addImplementation(name);
         }
     }
@@ -80,7 +89,7 @@ public class TextToSpeech {
         addImplementation(ttsClass);
     }
 
-    private static Set<String> implementations() {
+    static Set<String> ttsProviderClassNames() {
         Set<String> names = new HashSet<>();
         addVendorSpecificSDKs(names);
         addOperatingSpecificSDKs(names);

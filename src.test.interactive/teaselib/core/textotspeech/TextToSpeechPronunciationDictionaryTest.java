@@ -57,7 +57,7 @@ public class TextToSpeechPronunciationDictionaryTest {
     @Test
     public void testPronunciationOfCum() throws InterruptedException {
         String prompt = "Cum.";
-        TextToSpeech textToSpeech = new TextToSpeech();
+        TextToSpeech textToSpeech = TextToSpeech.allSystemVoices();
         textToSpeech.speak(textToSpeech.getVoices().get(VOICE_ENGLISH_WINDOWS_DESKTOP_CORRECT), prompt);
         textToSpeech.speak(textToSpeech.getVoices().get(VOICE_ENGLISH_WINDOWS_MOBILE_CORRECT), prompt);
         textToSpeech.speak(textToSpeech.getVoices().get(VOICE_ENGLISH_SPPECH_SERVER_ZIRA_PRO_WRONG_BUT_BETTER_QUALITY),
@@ -102,7 +102,7 @@ public class TextToSpeechPronunciationDictionaryTest {
     public void testSAPIPronuncuationWithPhoneticDictionary() throws InterruptedException, IOException {
         PronunciationDictionary pronunciationDictionary = new PronunciationDictionary(
                 new File(getClass().getResource("pronunciation").getPath()));
-        TextToSpeech textToSpeech = new TextToSpeech();
+        TextToSpeech textToSpeech = TextToSpeech.allSystemVoices();
         textToSpeech.initPhoneticDictionary(pronunciationDictionary);
         // Speaks "Madame" as "Hello" as defined in the dictionary
         textToSpeech.speak(textToSpeech.getVoices().get(VOICE_GERMAN), "Jawohl, Madame.");

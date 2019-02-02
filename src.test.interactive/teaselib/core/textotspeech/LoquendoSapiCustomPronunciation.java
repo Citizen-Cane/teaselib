@@ -1,6 +1,6 @@
 package teaselib.core.textotspeech;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertTrue;
 
 import java.util.Map;
 
@@ -96,7 +96,7 @@ public class LoquendoSapiCustomPronunciation {
     @Test
     public void testCustomPronunciation() throws InterruptedException {
         Assume.assumeTrue(Environment.SYSTEM == Environment.Windows);
-        TextToSpeech textToSpeech = new TextToSpeech();
+        TextToSpeech textToSpeech = TextToSpeech.allSystemVoices();
 
         Map<String, Voice> voices = textToSpeech.getVoices();
         assertTrue(voices.size() > 1);

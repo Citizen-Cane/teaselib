@@ -1,6 +1,7 @@
 package teaselib.core.texttospeech;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
@@ -22,7 +23,7 @@ public class TextToSpeechVoicesTest {
     @ClassRule
     public static final TemporaryFolder testFolder = new TemporaryFolder();
 
-    private static final TextToSpeech textToSpeech = new TextToSpeech();
+    private static final TextToSpeech textToSpeech = TextToSpeech.allSystemVoices();
 
     @Parameters(name = "Voice ={0}")
     public static Iterable<Voice> voices() {

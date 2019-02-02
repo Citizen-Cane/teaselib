@@ -1,6 +1,6 @@
 package teaselib.core.textotspeech;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertTrue;
 
 import java.util.Arrays;
 import java.util.List;
@@ -39,7 +39,7 @@ public class MicrosoftSapiCustomPronunciationTestEnglish {
     @BeforeClass
     public static void initSpeech() {
         Assume.assumeTrue(Environment.SYSTEM == Environment.Windows);
-        textToSpeech = new TextToSpeech();
+        textToSpeech = TextToSpeech.allSystemVoices();
 
         Map<String, Voice> voices = textToSpeech.getVoices();
         assertTrue(voices.size() > 1);

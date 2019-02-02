@@ -80,7 +80,8 @@ public class TextToSpeechPlayer {
     }
 
     public TextToSpeechPlayer(Configuration config) {
-        this(config, new TextToSpeech());
+        this(config, Boolean.parseBoolean(config.get(Config.Render.Speech)) ? TextToSpeech.allSystemVoices()
+                : TextToSpeech.none());
     }
 
     TextToSpeechPlayer(Configuration config, TextToSpeechImplementation textToSpeechImplementation) {

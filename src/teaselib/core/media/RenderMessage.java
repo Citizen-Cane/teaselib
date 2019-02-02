@@ -49,8 +49,8 @@ import teaselib.util.Interval;
 public class RenderMessage extends MediaRendererThread implements ReplayableMediaRenderer {
     private static final Logger logger = LoggerFactory.getLogger(RenderMessage.class);
 
-    private static final Set<Message.Type> ManuallyLoggedMessageTypes = new HashSet<>(
-            Arrays.asList(Message.Type.Text, Message.Type.Image, Message.Type.Mood, Message.Type.Speech));
+    private static final Set<Message.Type> ManuallyLoggedMessageTypes = new HashSet<>(Arrays.asList(Message.Type.Text,
+            Message.Type.Image, Message.Type.Mood, Message.Type.Speech, Message.Type.Delay));
 
     private static final Set<Type> SoundTypes = new HashSet<>(
             Arrays.asList(Type.Speech, Type.Sound, Type.BackgroundSound));
@@ -289,8 +289,7 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
 
             boolean last = currentMessage == messages.size();
             if (!last && textToSpeechPlayer != null && !lastSectionHasDelay(message)) {
-                renderTimeSpannedPart(new RenderDelay(
-                        Double.parseDouble(ScriptMessageDecorator.DelayBetweenParagraphs.value), teaseLib));
+                renderTimeSpannedPart(delay(ScriptMessageDecorator.DELAY_BETWEEN_PARAGRAPHS_SECONDS));
             }
         }
     }
@@ -304,7 +303,7 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
         completeSectionAll();
 
         if (getTextToSpeech().isPresent() && !lastSection.contains(Type.Delay)) {
-            renderTimeSpannedPart(new RenderDelay(DELAY_AT_END_OF_MESSAGE, teaseLib));
+            renderTimeSpannedPart(delay(DELAY_AT_END_OF_MESSAGE));
             completeSectionMandatory();
             completeSectionAll();
         }
@@ -531,9 +530,13 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
         } else {
             double delay = geteDelaySeconds(part.value);
             if (delay > 0) {
-                renderTimeSpannedPart(new RenderDelay(delay, teaseLib));
+                renderTimeSpannedPart(delay(delay));
             }
         }
+    }
+
+    private RenderDelay delay(double seconds) {
+        return new RenderDelay(seconds, seconds > ScriptMessageDecorator.DELAY_BETWEEN_PARAGRAPHS_SECONDS, teaseLib);
     }
 
     private double geteDelaySeconds(String args) {

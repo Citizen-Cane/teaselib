@@ -17,11 +17,13 @@ import teaselib.core.configuration.Configuration;
 import teaselib.core.texttospeech.TextToSpeechPlayer;
 
 public class ScriptMessageDecorator {
-    private static final long DELAY_BETWEEN_PARAGRAPHS = 500;
-    private static final long DELAY_FOR_APPEND = 0;
+    private static final long DELAY_BETWEEN_PARAGRAPHS_MILLIS = 500;
+    private static final long DELAY_FOR_APPEND_MILLIS = 0;
 
-    static final MessagePart DelayBetweenParagraphs = delay(DELAY_BETWEEN_PARAGRAPHS);
-    static final MessagePart DelayAfterAppend = delay(DELAY_FOR_APPEND);
+    static final double DELAY_BETWEEN_PARAGRAPHS_SECONDS = 5.0;
+
+    static final MessagePart DelayBetweenParagraphs = delay(DELAY_BETWEEN_PARAGRAPHS_MILLIS);
+    static final MessagePart DelayAfterAppend = delay(DELAY_FOR_APPEND_MILLIS);
 
     private static Set<MessagePart> generatedDelays = new HashSet<>(
             Arrays.asList(DelayAfterAppend, DelayBetweenParagraphs));

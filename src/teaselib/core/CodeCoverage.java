@@ -43,7 +43,7 @@ public class CodeCoverage<T extends Script> {
         Iterator<DecisionList.Entry> index = new ArrayList<>(decisions).iterator();
 
         Set<Prompt> used = new LinkedHashSet<>();
-        InputMethod.Listener e = new InputMethod.Listener() {
+        InputMethod.Listener inputMethodListener = new InputMethod.Listener() {
             @Override
             public int promptShown(Prompt prompt) {
                 if (used.contains(prompt)) {
@@ -89,7 +89,7 @@ public class CodeCoverage<T extends Script> {
             }
 
         };
-        debugInputMethod.addEventListener(e);
+        debugInputMethod.addEventListener(inputMethodListener);
 
         script.teaseLib.transcript.info("");
         script.teaseLib.transcript.info("");
@@ -102,7 +102,7 @@ public class CodeCoverage<T extends Script> {
             script.teaseLib.transcript.info("Decisions: " + decisions.toString());
             script.teaseLib.transcript.info("-----------------------------------------------------------");
         } finally {
-            debugInputMethod.removeEventListener(e);
+            debugInputMethod.removeEventListener(inputMethodListener);
             debugger.detach();
         }
     }

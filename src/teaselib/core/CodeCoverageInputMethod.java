@@ -18,7 +18,6 @@ import teaselib.core.debug.TimeAdvancedEvent;
 import teaselib.core.ui.AbstractInputMethod;
 import teaselib.core.ui.InputMethod;
 import teaselib.core.ui.Prompt;
-import teaselib.core.util.ExceptionUtil;
 
 /**
  * @author Citizen-Cane
@@ -37,7 +36,6 @@ public class CodeCoverageInputMethod extends AbstractInputMethod implements Debu
     private final AtomicReference<Prompt> activePrompt = new AtomicReference<>();
     private final AtomicInteger result = new AtomicInteger();
 
-    CyclicBarrier checkPointScriptFunctionStarted = new CyclicBarrier(2);
     CyclicBarrier checkPointScriptFunctionFinished = new CyclicBarrier(2);
 
     @Override
@@ -46,11 +44,13 @@ public class CodeCoverageInputMethod extends AbstractInputMethod implements Debu
         result.set(Prompt.UNDEFINED);
         if (prompt.hasScriptFunction()) {
             try {
-                checkPointScriptFunctionStarted.await();
                 checkPointScriptFunctionFinished.await();
                 return result.get();
             } catch (BrokenBarrierException e) {
                 throw new InterruptedException();
+            } finally {
+                activePrompt.set(null);
+                checkPointScriptFunctionFinished.reset();
             }
         } else {
             return firePromptShown(activePrompt.get());
@@ -59,7 +59,6 @@ public class CodeCoverageInputMethod extends AbstractInputMethod implements Debu
 
     private void handleCheckPointReached(CheckPoint checkPoint) {
         if (checkPoint == CheckPoint.ScriptFunction.Started) {
-            synchronizeWithPrompt();
             activePrompt.getAndUpdate(this::forwardResult);
             // TODO Resolves infinite wait at end - awaitPendingAdvanceTimeEvents
             // -> however timeout test would be indeterministic
@@ -72,17 +71,17 @@ public class CodeCoverageInputMethod extends AbstractInputMethod implements Debu
             activePrompt.getAndUpdate(this::forwardResult);
             // TODO Blocks script function without advance time event
             // - we don't know if there are any time advances pending so we have to wait
-            awaitPendingAdvanceTimeEvents();
+            // awaitPendingAdvanceTimeEvents();
             // activePrompt.getAndUpdate(this::setAndForwardResult);
         }
     }
 
     private void handleTimeAdvance(@SuppressWarnings("unused") TimeAdvancedEvent timeAdvancedEvent) {
-        activePrompt.getAndUpdate(this::setResult);
+        // activePrompt.getAndUpdate(this::setResult);
         // TODO should work but doesn't
         // TODO Since forward has to wait until the prompt is ready,
         // a broken barrier exception will be thrown into the script thread
-        // activePrompt.getAndUpdate(this::setAndForwardResult);
+        activePrompt.getAndUpdate(this::setAndForwardResult);
     }
 
     Prompt setResult(Prompt prompt) {
@@ -113,7 +112,7 @@ public class CodeCoverageInputMethod extends AbstractInputMethod implements Debu
         }
     }
 
-    private boolean hasScriptFunction(Prompt prompt) {
+    private static boolean hasScriptFunction(Prompt prompt) {
         return prompt != null && prompt.hasScriptFunction();
     }
 
@@ -125,44 +124,24 @@ public class CodeCoverageInputMethod extends AbstractInputMethod implements Debu
         return result.get() != Prompt.UNDEFINED;
     }
 
-    private void synchronizeWithPrompt() {
-        try {
-            checkPointScriptFunctionStarted.await();
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        } catch (BrokenBarrierException e) {
-            throw ExceptionUtil.asRuntimeException(e);
-        }
-    }
-
     private void forwardResult() {
         try {
-            checkPointScriptFunctionFinished.await();
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        } catch (BrokenBarrierException e) {
-            throw ExceptionUtil.asRuntimeException(e);
-        }
-    }
-
-    private void awaitPendingAdvanceTimeEvents() {
-        synchronized (this) {
-            if (!Thread.currentThread().isInterrupted()) {
-                try {
-                    while (true) {
+            synchronized (this) {
+                if (!Thread.currentThread().isInterrupted()) {
+                    checkPointScriptFunctionFinished.await();
+                    while (!Thread.currentThread().isInterrupted()) {
                         wait(Integer.MAX_VALUE);
                     }
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
                 }
             }
+        } catch (InterruptedException | BrokenBarrierException e) {
+            Thread.currentThread().interrupt();
         }
     }
 
     @Override
     public boolean handleDismiss(Prompt prompt) {
         activePrompt.set(null);
-        checkPointScriptFunctionStarted.reset();
         checkPointScriptFunctionFinished.reset();
 
         firePromptDismissed(prompt);

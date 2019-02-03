@@ -1,11 +1,9 @@
 package teaselib.core;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.junit.Ignore;
 import org.junit.Test;
 
 import teaselib.ScriptFunction;
@@ -133,8 +131,6 @@ public class ScriptFunctionTest {
                 mainScript.scriptRenderer.renderMessage.toString().indexOf("Resuming main script.") >= 0);
     }
 
-    // TODO Blocks because no time advance event
-    @Ignore
     @Test
     public void testEmptyScriptFunctionAlwaysTimesOut() {
         AtomicReference<String> result = new AtomicReference<>(null);

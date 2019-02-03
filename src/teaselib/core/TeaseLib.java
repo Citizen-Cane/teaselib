@@ -248,6 +248,9 @@ public class TeaseLib {
             if (isTimeFrozen()) {
                 advanceTime(duration, unit);
                 fireTimeAdvanced();
+                if (Thread.interrupted()) {
+                    throw new ScriptInterruptedException();
+                }
             } else {
                 try {
                     unit.sleep(duration);

@@ -123,6 +123,7 @@ public class TestScript extends TeaseScript {
                 actor);
     }
 
+    @SuppressWarnings("resource")
     TestScript(DebugHost host, Persistence persistence, DebugStorage storage, ResourceLoader resourceLoader,
             Setup setup, Actor actor) throws IOException {
         super(new TeaseLib(host, persistence, setup), resourceLoader, actor, NAMESPACE);

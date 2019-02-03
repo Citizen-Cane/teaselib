@@ -32,7 +32,7 @@ import teaselib.core.texttospeech.TextToSpeechPlayer;
  * @author Citizen-Cane
  *
  */
-public class ScriptRenderer {
+public class ScriptRenderer implements AutoCloseable {
     private static final Logger logger = LoggerFactory.getLogger(ScriptRenderer.class);
 
     private final MediaRendererQueue renderQueue = new MediaRendererQueue();
@@ -49,6 +49,14 @@ public class ScriptRenderer {
     RenderMessage renderMessage = null;
 
     ScriptRenderer() {
+    }
+
+    @Override
+    public void close() throws Exception {
+        // TODO Crashes badly after a while in Debug
+        scriptFunctionExecutor.shutdown();
+        inputMethodExecutor.shutdown();
+        renderQueue.getExecutorService().shutdown();
     }
 
     void completeStarts() {

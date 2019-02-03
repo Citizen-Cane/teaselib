@@ -58,7 +58,7 @@ import teaselib.util.Items;
 import teaselib.util.TeaseLibLogger;
 import teaselib.util.TextVariables;
 
-public class TeaseLib {
+public class TeaseLib implements AutoCloseable {
     private static final Logger logger = LoggerFactory.getLogger(TeaseLib.class);
 
     public static final String DefaultDomain = "";
@@ -183,8 +183,7 @@ public class TeaseLib {
     }
 
     public static void run(Host host, Persistence persistence, Setup setup, String script) throws IOException {
-        try {
-            TeaseLib teaseLib = new TeaseLib(host, persistence, setup);
+        try (TeaseLib teaseLib = new TeaseLib(host, persistence, setup)) {
             teaseLib.run(script);
         } catch (IOException e) {
             throw e;
@@ -234,6 +233,11 @@ public class TeaseLib {
         } catch (InvocationTargetException e) {
             throw ExceptionUtil.reduced(e);
         }
+    }
+
+    @Override
+    public void close() throws Exception {
+        globals.close();
     }
 
     /**

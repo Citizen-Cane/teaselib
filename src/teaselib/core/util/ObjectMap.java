@@ -1,10 +1,13 @@
 package teaselib.core.util;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 import java.util.function.Supplier;
 
-public class ObjectMap {
+public class ObjectMap implements AutoCloseable {
     private final Map<Object, Supplier<?>> suppliers = new HashMap<>();
     private final Map<Object, Object> realized = new HashMap<>();
 
@@ -76,6 +79,36 @@ public class ObjectMap {
             } else {
                 return null;
             }
+        }
+    }
+
+    /*
+     * (non-Javadoc)
+     * 
+     * @see java.io.Closeable#close()
+     */
+    @Override
+    public void close() throws Exception {
+        Exception first = null;
+        Set<Object> closed = new HashSet<>();
+        for (Entry<Object, Object> entry : realized.entrySet()) {
+            if (entry.getValue() instanceof AutoCloseable) {
+                try {
+                    ((AutoCloseable) entry.getValue()).close();
+                } catch (Exception e) {
+                    if (first == null) {
+                        first = e;
+                    }
+                } finally {
+                    closed.add(entry.getKey());
+                }
+            }
+        }
+
+        closed.stream().forEach(realized::remove);
+
+        if (first != null) {
+            throw first;
         }
     }
 }

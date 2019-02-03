@@ -104,6 +104,11 @@ public class CodeCoverage<T extends Script> {
         } finally {
             debugInputMethod.removeEventListener(inputMethodListener);
             debugger.detach();
+            try {
+                script.teaseLib.close();
+            } catch (Exception e) {
+                script.teaseLib.transcript.error(e.getMessage(), e);
+            }
         }
     }
 

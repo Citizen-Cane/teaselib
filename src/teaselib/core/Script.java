@@ -109,11 +109,13 @@ public abstract class Script {
 
     private static final String SCRIPT_INSTANCES = "ScriptInstances";
 
+    @SuppressWarnings("resource")
     public <T extends Script> T script(Class<T> scriptClass) {
         ObjectMap scripts = getScriptStorage();
         return getScript(scriptClass, scripts);
     }
 
+    @SuppressWarnings("resource")
     private ObjectMap getScriptStorage() {
         ObjectMap scripts = teaseLib.globals.get(SCRIPT_INSTANCES);
         if (scripts == null) {

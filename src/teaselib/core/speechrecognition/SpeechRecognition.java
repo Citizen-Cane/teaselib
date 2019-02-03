@@ -151,34 +151,42 @@ public class SpeechRecognition {
         }
     }
 
+    SpeechRecognition() {
+        this(null);
+    }
+
     SpeechRecognition(Locale locale) {
         // First add the progress events, because we don't want to get events
         // consumed before setting the in-progress state
         this.events = new SpeechRecognitionEvents<>(lockSpeechRecognitionInProgress, unlockSpeechRecognitionInProgress);
         this.locale = locale;
-        try {
-            delegateThread.run(() -> {
-                try {
-                    if (Environment.SYSTEM == Environment.Windows) {
-                        sr = new TeaseLibSR();
-                        sr.init(events, SpeechRecognition.this.locale);
-                    } else {
-                        sr = Unsupported.Instance;
+        if (locale == null) {
+            sr = Unsupported.Instance;
+        } else {
+            try {
+                delegateThread.run(() -> {
+                    try {
+                        if (Environment.SYSTEM == Environment.Windows) {
+                            sr = new TeaseLibSR();
+                            sr.init(events, SpeechRecognition.this.locale);
+                        } else {
+                            sr = Unsupported.Instance;
+                        }
+                    } catch (UnsatisfiedLinkError e) {
+                        logger.error(e.getMessage(), e);
+                        sr = null;
+                    } catch (Throwable t) {
+                        logger.error(t.getMessage(), t);
+                        sr = null;
+                        throw new RuntimeException(t);
+                        // TODO Handle COM-error 0x8004503a SPERR_NOT_FOUND
+                        // -> download speech recognition pack for the selected language
                     }
-                } catch (UnsatisfiedLinkError e) {
-                    logger.error(e.getMessage(), e);
-                    sr = null;
-                } catch (Throwable t) {
-                    logger.error(t.getMessage(), t);
-                    sr = null;
-                    throw new RuntimeException(t);
-                    // TODO Handle COM-error 0x8004503a SPERR_NOT_FOUND
-                    // -> download speech recognition pack for the selected language
-                }
-            });
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new ScriptInterruptedException(e);
+                });
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new ScriptInterruptedException(e);
+            }
         }
         // add the SpeechDetectionEventHandler listeners now to ensure
         // other listeners downstream receive only the correct event,

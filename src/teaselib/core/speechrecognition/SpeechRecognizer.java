@@ -6,6 +6,7 @@ import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
 
+import teaselib.Config;
 import teaselib.core.configuration.Configuration;
 
 /**
@@ -26,9 +27,15 @@ public class SpeechRecognizer {
             if (speechRecognitionInstances.containsKey(locale)) {
                 return speechRecognitionInstances.get(locale);
             } else {
-                SpeechRecognition speechRecognition = new SpeechRecognition(locale);
-                speechRecognitionInstances.put(locale, speechRecognition);
-                return speechRecognition;
+                if (Boolean.parseBoolean(config.get(Config.InputMethod.SpeechRecognition))) {
+                    SpeechRecognition speechRecognition = new SpeechRecognition(locale);
+                    speechRecognitionInstances.put(locale, speechRecognition);
+                    return speechRecognition;
+                } else {
+                    SpeechRecognition none = new SpeechRecognition();
+                    speechRecognitionInstances.put(locale, none);
+                    return none;
+                }
             }
         }
     }

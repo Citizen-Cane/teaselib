@@ -1,11 +1,13 @@
 package teaselib.core.ui;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Locale;
 import java.util.Optional;
 
 import org.junit.Test;
 
+import teaselib.core.configuration.Configuration;
 import teaselib.core.configuration.DebugSetup;
 import teaselib.core.speechrecognition.SpeechRecognition;
 import teaselib.core.speechrecognition.SpeechRecognitionResult.Confidence;
@@ -21,8 +23,10 @@ public class SpeechRecognitionInputTest {
     private final Confidence confidence = Confidence.High;
 
     @Test
-    public void testSpeechRecognitionInputMethod() throws InterruptedException {
-        SpeechRecognition sr = new SpeechRecognizer(DebugSetup.getConfiguration()).get(new Locale("en-us"));
+    public void testSpeechRecognitionInputMethod() throws InterruptedException, IOException {
+        DebugSetup setup = new DebugSetup().withInput();
+        Configuration config = new Configuration(setup);
+        SpeechRecognition sr = new SpeechRecognizer(config).get(new Locale("en-us"));
 
         SpeechRecognitionInputMethod inputMethod = new SpeechRecognitionInputMethod(sr, confidence, Optional.empty());
         Prompt prompt = new Prompt(Choices, Arrays.asList(inputMethod));

@@ -238,6 +238,9 @@ public class TeaseLib implements AutoCloseable {
     @Override
     public void close() throws Exception {
         globals.close();
+        if (host instanceof AutoCloseable) {
+            ((AutoCloseable) host).close();
+        }
     }
 
     /**

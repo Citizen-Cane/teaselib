@@ -28,19 +28,29 @@ import teaselib.core.ui.InputMethod;
 import teaselib.core.ui.Prompt;
 import teaselib.core.util.ExceptionUtil;
 
-public class DebugHost implements Host, HostInputMethod.Backend {
+public class DebugHost implements Host, HostInputMethod.Backend, AutoCloseable {
     private static final Logger logger = LoggerFactory.getLogger(DebugHost.class);
 
     static final Point javacvDebugWindow = new Point(80, 80);
 
+    private final NamedExecutorService executorService;
     private final InputMethod inputMethod;
+
+    private final ReentrantLock replySection = new ReentrantLock(true);
+    private final Condition click = replySection.newCondition();
 
     private List<Choice> currentChoices = Collections.emptyList();
 
     public DebugHost() {
         super();
-        Thread.currentThread().setName(getClass().getSimpleName() + " Script");
-        inputMethod = new HostInputMethod(NamedExecutorService.singleThreadedQueue(getClass().getSimpleName()), this);
+        Thread.currentThread().setName(getClass().getSimpleName() + " main script thread");
+        executorService = NamedExecutorService.singleThreadedQueue(HostInputMethod.class.getSimpleName());
+        inputMethod = new HostInputMethod(executorService, this);
+    }
+
+    @Override
+    public void close() throws Exception {
+        executorService.shutdown();
     }
 
     @Override
@@ -83,9 +93,6 @@ public class DebugHost implements Host, HostInputMethod.Backend {
             boolean allowCancel) {
         return new ArrayList<>(values);
     }
-
-    final ReentrantLock replySection = new ReentrantLock(true);
-    final Condition click = replySection.newCondition();
 
     private List<Runnable> getClickableChoices(List<Choice> choices) {
         List<Runnable> clickables = new ArrayList<>(choices.size());

@@ -57,6 +57,7 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
 
     private static final double DELAY_AT_END_OF_MESSAGE = 2.0;
 
+    private final AtomicReference<Thread> renderThread = new AtomicReference<>();
     private final Prefetcher<byte[]> imageFetcher = new Prefetcher<>();
 
     private final MediaRendererQueue renderQueue;
@@ -138,7 +139,21 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
         try {
             messageRenderingInProgressLock.lockInterruptibly();
             try {
-                awaitModifierAppliedByRenderThreadOrCompletedMandatory();
+                // TODO Replace with design that matches requirements better:
+                // + single RenderMessage instance per render queue
+                // + single thread that never ends and blocking queue, or single threaded executor
+                // + say, append, replace are equal ops (currently say is the main op, append/replace special add-ons)
+                // +> MessageRenderer isn't a threaded media renderer anymore
+                // +> RenderSay/Show/Append/Replace become MediaRenderer.THreaded
+                // +> Replay becomes a threaded media renderer 
+                // TODO Resolve design flaws of the current approach:
+                // - no queue, but the operations are sequential with a before/after relationship
+                // - too many synchronizers
+                // - too many states
+                while (renderThread.get() != null && !hasCompletedMandatory() && messageModifier.get() != null) {
+                    // messageRenderingModifierApplied.await(100, TimeUnit.MICROSECONDS);
+                    messageRenderingModifierApplied.await();
+                }
                 messageModifier.set(unaryOperator);
                 return !hasCompletedMandatory();
             } finally {
@@ -147,12 +162,6 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new ScriptInterruptedException(e);
-        }
-    }
-
-    private void awaitModifierAppliedByRenderThreadOrCompletedMandatory() throws InterruptedException {
-        while (!hasCompletedMandatory() && messageModifier.get() != null) {
-            messageRenderingModifierApplied.await();
         }
     }
 
@@ -180,11 +189,11 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
 
     @Override
     public void renderMedia() throws IOException, InterruptedException {
+        renderThread.set(Thread.currentThread());
         try {
             applyPendingMessageModifierAsResultOfReplay();
 
-            boolean processMessages = true;
-            while (processMessages) {
+            do {
                 boolean emptyMessage = messages.get(0).isEmpty();
                 if (emptyMessage) {
                     show(null, Mood.Neutral);
@@ -192,24 +201,31 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
                     play();
                 }
 
-                processMessages = applyMessageModifer();
-            }
-            finalizeRendering();
+            } while (applyMessageModifer());
         } catch (InterruptedException | ScriptInterruptedException e) {
-            if (currentRenderer != null) {
-                renderQueue.interrupt(currentRenderer);
-                currentRenderer = null;
-            }
-            if (backgroundSoundRenderer != null) {
-                renderQueue.interrupt(backgroundSoundRenderer);
-                backgroundSoundRenderer = null;
-            }
-
-            if (messageModifier.getAndSet(null) != null) {
-                signalMessageModifierApplied();
-            }
+            cancelMessage();
             throw e;
+        } finally {
+            dead();
+            signalMessageModifierApplied();
         }
+    }
+
+    private void cancelMessage() {
+        if (currentRenderer != null) {
+            renderQueue.interrupt(currentRenderer);
+            currentRenderer = null;
+        }
+        if (backgroundSoundRenderer != null) {
+            renderQueue.interrupt(backgroundSoundRenderer);
+            backgroundSoundRenderer = null;
+        }
+
+        messageModifier.getAndSet(null);
+    }
+
+    private void dead() {
+        renderThread.set(null);
     }
 
     private void applyPendingMessageModifierAsResultOfReplay() {
@@ -221,14 +237,24 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
     }
 
     private boolean applyMessageModifer() {
-        UnaryOperator<List<RenderedMessage>> operator = messageModifier.getAndSet(null);
+        messageModifier.updateAndGet(this::updateMessageModifierState);
+        return haveMoreMessages();
+    }
+
+    private UnaryOperator<List<RenderedMessage>> updateMessageModifierState(
+            UnaryOperator<List<RenderedMessage>> operator) {
         if (operator != null) {
             operator.apply(messages);
-            signalMessageModifierApplied();
-            return true;
-        } else {
-            return false;
         }
+
+        if (!haveMoreMessages()) {
+            finalizeRendering();
+        }
+
+        if (operator != null) {
+            signalMessageModifierApplied();
+        }
+        return null;
     }
 
     private void signalMessageModifierApplied() {
@@ -278,12 +304,8 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
     }
 
     private void renderMessages() throws IOException, InterruptedException {
-        while (true) {
-            RenderedMessage message;
-            if (currentMessage >= messages.size()) {
-                break;
-            }
-            message = messages.get(currentMessage);
+        while (haveMoreMessages()) {
+            RenderedMessage message = messages.get(currentMessage);
             renderMessage(message);
             currentMessage++;
 
@@ -292,6 +314,10 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
                 renderTimeSpannedPart(delay(ScriptMessageDecorator.DELAY_BETWEEN_PARAGRAPHS_SECONDS));
             }
         }
+    }
+
+    private boolean haveMoreMessages() {
+        return currentMessage < messages.size();
     }
 
     private static boolean lastSectionHasDelay(RenderedMessage message) {

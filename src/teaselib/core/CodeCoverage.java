@@ -74,6 +74,10 @@ public class CodeCoverage<T extends Script> {
                     decisions.add(0, prompt);
                 }
 
+                // TODO advance time when frozen to simulate elapsed time while answering prompts and performing tasks
+                // -> otherwise toy durations in scripts will be too long,
+                // and code coverage paths will be different from real script execution
+
                 return result;
             }
 

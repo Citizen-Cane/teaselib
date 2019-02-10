@@ -1,11 +1,10 @@
 package teaselib.core;
 
-import static java.util.concurrent.TimeUnit.*;
+import static java.util.concurrent.TimeUnit.HOURS;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -16,17 +15,15 @@ import org.slf4j.LoggerFactory;
 import teaselib.Actor;
 import teaselib.Message;
 import teaselib.Replay;
-import teaselib.Replay.Position;
 import teaselib.core.concurrency.NamedExecutorService;
 import teaselib.core.debug.CheckPoint;
 import teaselib.core.media.MediaRenderer;
 import teaselib.core.media.MediaRenderer.Threaded;
 import teaselib.core.media.MediaRendererQueue;
+import teaselib.core.media.MessageRendererQueue;
 import teaselib.core.media.RenderInterTitle;
-import teaselib.core.media.RenderMessage;
 import teaselib.core.media.RenderedMessage;
 import teaselib.core.media.RenderedMessage.Decorator;
-import teaselib.core.texttospeech.TextToSpeechPlayer;
 
 /**
  * @author Citizen-Cane
@@ -46,17 +43,19 @@ public class ScriptRenderer implements AutoCloseable {
 
     private List<MediaRenderer> playedRenderers = null;
     private final List<Message> prependedMessages = new ArrayList<>();
-    RenderMessage renderMessage = null;
 
-    ScriptRenderer() {
+    final MessageRendererQueue messageRenderer;
+
+    ScriptRenderer(TeaseLib teaseLib) {
+        this.messageRenderer = new MessageRendererQueue(teaseLib, new MediaRendererQueue(renderQueue));
     }
 
     @Override
     public void close() throws Exception {
-        // TODO Crashes badly after a while in Debug
         scriptFunctionExecutor.shutdown();
         inputMethodExecutor.shutdown();
         renderQueue.getExecutorService().shutdown();
+        messageRenderer.close();
     }
 
     void completeStarts() {
@@ -129,66 +128,64 @@ public class ScriptRenderer implements AutoCloseable {
         return new ReplayImpl(playedRenderers);
     }
 
-    void replayFromCurrentPosition() {
-        if (renderMessage.hasCompletedMandatory()) {
-            renderMessage.completeAll();
-            renderMessage.replay(Position.FromCurrentPosition);
-            renderQueue.submit(renderMessage);
-        } else {
-            throw new IllegalStateException("Can only replay afer completing mandatory " + renderMessage);
-        }
-    }
-
     void prependMessage(Message message) {
-        renderMessage = null;
         prependedMessages.add(message);
     }
 
-    void renderPrependedMessages(TeaseLib teaseLib, ResourceLoader resources, Actor actor, Decorator[] decorators,
-            Optional<TextToSpeechPlayer> textToSpeech) {
-        renderMessages(teaseLib, resources, actor, Collections.emptyList(), decorators, textToSpeech);
+    void renderPrependedMessages(TeaseLib teaseLib, ResourceLoader resources, Actor actor, Decorator[] decorators) {
+        renderMessages(teaseLib, resources, actor, Collections.emptyList(), decorators);
     }
 
     boolean hasPrependedMessages() {
         return !prependedMessages.isEmpty();
     }
 
-    void renderMessage(TeaseLib teaseLib, ResourceLoader resources, Message message, Decorator[] decorators,
-            Optional<TextToSpeechPlayer> textToSpeech) {
-        renderMessages(teaseLib, resources, message.actor, Collections.singletonList(message), decorators,
-                textToSpeech);
+    void renderMessage(TeaseLib teaseLib, ResourceLoader resources, Message message, Decorator[] decorators) {
+        renderMessages(teaseLib, resources, message.actor, Collections.singletonList(message), decorators);
     }
 
     void renderMessages(TeaseLib teaseLib, ResourceLoader resources, Actor actor, List<Message> messages,
-            Decorator[] decorators, Optional<TextToSpeechPlayer> textToSpeech) {
+            Decorator[] decorators) {
+        List<RenderedMessage> renderedMessages = convertMessagesToRendered(messages, decorators);
+
+        // TODO run method of media renderer should start rendering
+        // -> currently it's started when say() is called
+
+        // TODO submitting new renderer internally -> old will be executed to end
+        // - original idea was to append to the existing if continue if possible,
+        // but in that case we can't return the original media renderer interface
+        // -> only return the batch, don't run yet -> queue in batch.run()
+        // TODO render section delay in queue, so it's not part of the paragraph anymore
+
+        // Workaround: keep it for now, renderer is started and queued
+        // waited for and ended
+        MediaRenderer say = messageRenderer.say(actor, renderedMessages, resources);
+        renderMessage(teaseLib, say);
+    }
+
+    void appendMessage(TeaseLib teaseLib, ResourceLoader resources, Actor actor, Message message,
+            Decorator[] decorators) {
+        // TODO Actor of last message? or change actor
+        List<RenderedMessage> renderedMessages = convertMessagesToRendered(Collections.singletonList(message),
+                decorators);
+        MediaRenderer say = messageRenderer.append(actor, renderedMessages, resources);
+        renderMessage(teaseLib, say);
+    }
+
+    void replaceMessage(TeaseLib teaseLib, ResourceLoader resources, Actor actor, Message message,
+            Decorator[] decorators) {
+        List<RenderedMessage> renderedMessages = convertMessagesToRendered(Collections.singletonList(message),
+                decorators);
+        MediaRenderer say = messageRenderer.replace(actor, renderedMessages, resources);
+        renderMessage(teaseLib, say);
+    }
+
+    private List<RenderedMessage> convertMessagesToRendered(List<Message> messages, Decorator[] decorators) {
         Stream<Message> all = Stream.concat(prependedMessages.stream(), messages.stream());
-        List<RenderedMessage> renderedMessages = all.map(m -> RenderedMessage.of(m, decorators))
+        List<RenderedMessage> renderedMessages = all.map(message -> RenderedMessage.of(message, decorators))
                 .collect(Collectors.toList());
         prependedMessages.clear();
-        renderMessage = new RenderMessage(teaseLib, renderQueue, resources, textToSpeech, actor, renderedMessages);
-        renderMessage(teaseLib, renderMessage);
-    }
-
-    void appendMessage(TeaseLib teaseLib, ResourceLoader resources, Message message, Decorator[] decorators,
-            Optional<TextToSpeechPlayer> textToSpeech) {
-        if (renderMessage == null) {
-            renderMessage(teaseLib, resources, message, decorators, textToSpeech);
-        } else {
-            if (!renderMessage.append(RenderedMessage.of(message, decorators))) {
-                replayFromCurrentPosition();
-            }
-        }
-    }
-
-    void replaceMessage(TeaseLib teaseLib, ResourceLoader resources, Message message, Decorator[] decorators,
-            Optional<TextToSpeechPlayer> textToSpeech) {
-        if (renderMessage == null) {
-            renderMessage(teaseLib, resources, message, decorators, textToSpeech);
-        } else {
-            if (!renderMessage.replace(RenderedMessage.of(message, decorators))) {
-                replayFromCurrentPosition();
-            }
-        }
+        return renderedMessages;
     }
 
     private void renderMessage(TeaseLib teaseLib, MediaRenderer renderMessage) {

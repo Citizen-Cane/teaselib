@@ -67,8 +67,7 @@ public abstract class Script {
      */
     protected Script(TeaseLib teaseLib, ResourceLoader resources, Actor actor, String namespace) {
         this(teaseLib, resources, actor, namespace, //
-                getOrDefault(teaseLib, ScriptRenderer.class, ScriptRenderer::new),
-                getOrDefault(teaseLib, TextToSpeechPlayer.class, () -> new TextToSpeechPlayer(teaseLib.config)));
+                getOrDefault(teaseLib, ScriptRenderer.class, () -> new ScriptRenderer(teaseLib)));
 
         getOrDefault(teaseLib, Shower.class, () -> new Shower(teaseLib.host));
         getOrDefault(teaseLib, InputMethods.class, InputMethods::new);
@@ -92,19 +91,18 @@ public abstract class Script {
      * @param actor
      */
     protected Script(Script script, Actor actor) {
-        this(script.teaseLib, script.resources, actor, script.namespace, script.scriptRenderer,
-                script.teaseLib.globals.get(TextToSpeechPlayer.class));
+        this(script.teaseLib, script.resources, actor, script.namespace, script.scriptRenderer);
     }
 
     private Script(TeaseLib teaseLib, ResourceLoader resources, Actor actor, String namespace,
-            ScriptRenderer scriptRenderer, TextToSpeechPlayer textToSpeech) {
+            ScriptRenderer scriptRenderer) {
         this.teaseLib = teaseLib;
         this.resources = resources;
         this.actor = actor;
         this.scriptRenderer = scriptRenderer;
         this.namespace = namespace.replace(" ", "_");
 
-        textToSpeech.acquireVoice(actor, resources);
+        scriptRenderer.messageRenderer.textToSpeechPlayer.acquireVoice(actor, resources);
     }
 
     private static final String SCRIPT_INSTANCES = "ScriptInstances";
@@ -194,7 +192,7 @@ public abstract class Script {
     protected void renderMessage(Message message, boolean useTTS) {
         Optional<TextToSpeechPlayer> textToSpeech = getTextToSpeech(useTTS);
         try {
-            scriptRenderer.renderMessage(teaseLib, resources, message, decorators(textToSpeech), textToSpeech);
+            scriptRenderer.renderMessage(teaseLib, resources, message, decorators(textToSpeech));
         } finally {
             displayImage = Message.ActorImage;
             mood = Mood.Neutral;
@@ -202,7 +200,7 @@ public abstract class Script {
     }
 
     private Optional<TextToSpeechPlayer> getTextToSpeech(boolean useTTS) {
-        return useTTS ? Optional.ofNullable(teaseLib.globals.get(TextToSpeechPlayer.class)) : Optional.empty();
+        return useTTS ? Optional.of(scriptRenderer.messageRenderer.textToSpeechPlayer) : Optional.empty();
     }
 
     Decorator[] decorators(Optional<TextToSpeechPlayer> textToSpeech) {
@@ -211,13 +209,13 @@ public abstract class Script {
     }
 
     protected void appendMessage(Message message) {
-        Optional<TextToSpeechPlayer> textToSpeech = getTextToSpeech(true);
-        scriptRenderer.appendMessage(teaseLib, resources, message, decorators(textToSpeech), textToSpeech);
+        scriptRenderer.appendMessage(teaseLib, resources, actor, message,
+                decorators(Optional.of(scriptRenderer.messageRenderer.textToSpeechPlayer)));
     }
 
     protected void replaceMessage(Message message) {
-        Optional<TextToSpeechPlayer> textToSpeech = getTextToSpeech(true);
-        scriptRenderer.replaceMessage(teaseLib, resources, message, decorators(textToSpeech), textToSpeech);
+        scriptRenderer.replaceMessage(teaseLib, resources, actor, message,
+                decorators(Optional.of(scriptRenderer.messageRenderer.textToSpeechPlayer)));
     }
 
     protected final String showChoices(List<Answer> answers) {
@@ -253,7 +251,7 @@ public abstract class Script {
             Config.SpeechRecognition.Intention intention) {
         if (scriptRenderer.hasPrependedMessages()) {
             Optional<TextToSpeechPlayer> textToSpeech = getTextToSpeech(true);
-            scriptRenderer.renderPrependedMessages(teaseLib, resources, actor, decorators(textToSpeech), textToSpeech);
+            scriptRenderer.renderPrependedMessages(teaseLib, resources, actor, decorators(textToSpeech));
         }
 
         QualifiedItem value = QualifiedItem.of(teaseLib.config.get(intention));

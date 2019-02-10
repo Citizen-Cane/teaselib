@@ -68,11 +68,7 @@ public class CodeCoverageInputMethod extends AbstractInputMethod implements Debu
             // TODO Should work but doesn't - sometimes script function blocks
             // activePrompt.getAndUpdate(this::setAndForwardResult);
         } else if (checkPoint == CheckPoint.ScriptFunction.Finished) {
-            activePrompt.getAndUpdate(this::forwardResult);
-            // TODO Blocks script function without advance time event
-            // - we don't know if there are any time advances pending so we have to wait
-            // awaitPendingAdvanceTimeEvents();
-            // activePrompt.getAndUpdate(this::setAndForwardResult);
+            activePrompt.getAndUpdate(this::forwardResultAndHandleTimeout);
         }
     }
 
@@ -129,14 +125,40 @@ public class CodeCoverageInputMethod extends AbstractInputMethod implements Debu
             synchronized (this) {
                 if (!Thread.currentThread().isInterrupted()) {
                     checkPointScriptFunctionFinished.await();
-                    while (!Thread.currentThread().isInterrupted()) {
-                        wait(Integer.MAX_VALUE);
-                    }
                 }
             }
         } catch (InterruptedException | BrokenBarrierException e) {
             Thread.currentThread().interrupt();
         }
+    }
+
+    Prompt forwardResultAndHandleTimeout(Prompt prompt) {
+        if (hasScriptFunction(prompt) && resultSet()) {
+            forwardResult();
+            return null;
+        } else {
+            // TODO Must be here instead of TimeAdvance
+            if (!Thread.currentThread().isInterrupted()) {
+                synchronized (this) {
+                    try {
+                        // TODO Blocks since the prompt isn0t dismissed,
+                        // and on timeouts the script function is never interrupted
+                        // TODO If not waiting at all, there's no chance for code coverage
+                        // to dismiss before the timeout triggers
+
+                        // while (!Thread.currentThread().isInterrupted()) {
+                        // wait(Integer.MAX_VALUE);
+                        // }
+
+                        // TODO Resolve ugly workaround
+                        wait(1000);
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                    }
+                }
+            }
+        }
+        return prompt;
     }
 
     @Override

@@ -15,6 +15,7 @@ import org.slf4j.LoggerFactory;
 import teaselib.Replay;
 import teaselib.core.ScriptInterruptedException;
 import teaselib.core.concurrency.NamedExecutorService;
+import teaselib.core.media.MessageRendererQueue.Batch;
 import teaselib.core.util.ExceptionUtil;
 
 public class MediaRendererQueue {
@@ -76,6 +77,7 @@ public class MediaRendererQueue {
 
     private void play(List<MediaRenderer> mediaRenderers) {
         for (MediaRenderer r : mediaRenderers) {
+            // TODO Resolve interfaces - Batch has its own thread already
             if (r instanceof MediaRenderer.Threaded) {
                 submit((MediaRenderer.Threaded) r);
             } else {
@@ -216,7 +218,27 @@ public class MediaRendererQueue {
         synchronized (activeRenderers) {
             // TODO Must be managed by named executor service
             // setThreadName(nameForActiveThread());
-            Future<?> future = executor.submit(mediaRenderer);
+            Future<?> future;
+            // TODO Batch renderer facade and ThreadedMediaRendererhave duplicated code -> merge
+            // TODO encapsulate this instanceof branches into the referenced classes
+            if (mediaRenderer instanceof Batch.RendererFacade) {
+                mediaRenderer.run();
+                future = ((Batch.RendererFacade) mediaRenderer).getTask();
+            } else if (mediaRenderer instanceof MediaRendererThread) {
+                future = new MediaFutureTask<MediaRendererThread>((MediaRendererThread) mediaRenderer,
+                        (Future<Void>) executor.submit(mediaRenderer)) {
+                    @Override
+                    public boolean cancel(boolean mayInterruptIfRunning) {
+                        boolean cancel = super.cancel(mayInterruptIfRunning);
+                        mediaRenderer.startCompleted();
+                        mediaRenderer.mandatoryCompleted();
+                        mediaRenderer.allCompleted();
+                        return cancel;
+                    }
+                };
+            } else {
+                future = executor.submit(mediaRenderer);
+            }
             activeRenderers.put(mediaRenderer, future);
             return future;
         }
@@ -228,6 +250,8 @@ public class MediaRendererQueue {
             throw new IllegalArgumentException(mediaRenderer.toString());
         } else {
             if (!future.isDone() && !future.isCancelled()) {
+                future.cancel(true);
+            } else {
                 future.cancel(true);
             }
             return future;

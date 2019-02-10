@@ -121,7 +121,7 @@ public abstract class MediaRendererThread implements MediaRenderer.Threaded {
     /**
      * Called by the base class only to signal that the renderer has completed.
      */
-    private final void allCompleted() {
+    final void allCompleted() {
         completedAll.countDown();
         if (logger.isDebugEnabled()) {
             logger.debug("{} completed all after {}", getClass().getSimpleName(), getElapsedSecondsFormatted());

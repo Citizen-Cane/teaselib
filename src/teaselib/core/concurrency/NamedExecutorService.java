@@ -32,7 +32,11 @@ public class NamedExecutorService extends ThreadPoolExecutor {
     }
 
     private NamedExecutorService(String name, long keepAliveTime, TimeUnit unit) {
-        super(1, 1, keepAliveTime, unit, new LinkedBlockingQueue<Runnable>(), (ThreadFactory) r -> {
+        this(name, keepAliveTime, unit, new LinkedBlockingQueue<Runnable>());
+    }
+
+    private NamedExecutorService(String name, long keepAliveTime, TimeUnit unit, BlockingQueue<Runnable> queue) {
+        super(1, 1, keepAliveTime, unit, queue, (ThreadFactory) r -> {
             String namePattern = SINGLETHREADED_NAME_PATTERN;
             String threadName = String.format(namePattern, name);
             return new Thread(r, threadName);
@@ -60,5 +64,15 @@ public class NamedExecutorService extends ThreadPoolExecutor {
 
     public static NamedExecutorService singleThreadedQueue(String namePrefix, long keepAliveTime, TimeUnit unit) {
         return new NamedExecutorService(namePrefix, keepAliveTime, unit);
+    }
+
+    public static NamedExecutorService singleThreadedSynchronousQueue(String namePrefix, long keepAliveTime,
+            TimeUnit unit) {
+        return singleThreadedQueue(namePrefix, keepAliveTime, unit, new SynchronousQueue<>());
+    }
+
+    private static NamedExecutorService singleThreadedQueue(String namePrefix, long keepAliveTime, TimeUnit unit,
+            BlockingQueue<Runnable> queue) {
+        return new NamedExecutorService(namePrefix, keepAliveTime, unit, queue);
     }
 }

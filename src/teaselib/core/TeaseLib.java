@@ -23,6 +23,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -76,6 +77,7 @@ public class TeaseLib implements AutoCloseable {
     final StateMaps stateMaps;
     public final Devices devices;
 
+    private final AtomicReference<Thread> timeAdvanceThread = new AtomicReference<>(null);
     private final AtomicLong frozenTime = new AtomicLong(Long.MIN_VALUE);
     private final AtomicLong timeOffsetMillis = new AtomicLong(0);
     private final Set<TimeAdvanceListener> timeAdvanceListeners = new HashSet<>();
@@ -253,8 +255,10 @@ public class TeaseLib implements AutoCloseable {
     public void sleep(long duration, TimeUnit unit) {
         if (duration > 0) {
             if (isTimeFrozen()) {
-                advanceTime(duration, unit);
-                fireTimeAdvanced();
+                if (Thread.currentThread() == timeAdvanceThread.get()) {
+                    advanceTime(duration, unit);
+                    fireTimeAdvanced();
+                }
                 if (Thread.interrupted()) {
                     throw new ScriptInterruptedException();
                 }
@@ -319,6 +323,7 @@ public class TeaseLib implements AutoCloseable {
     void freezeTime() {
         if (!isTimeFrozen()) {
             frozenTime.set(getTime(TimeUnit.MILLISECONDS));
+            timeAdvanceThread.set(Thread.currentThread());
         }
     }
 
@@ -332,6 +337,7 @@ public class TeaseLib implements AutoCloseable {
 
     void resumeTime() {
         frozenTime.set(Long.MIN_VALUE);
+        timeAdvanceThread.set(null);
     }
 
     public TimeOfDay timeOfDay() {

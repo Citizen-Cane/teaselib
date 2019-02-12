@@ -251,8 +251,6 @@ public class MediaRendererQueue {
         } else {
             if (!future.isDone() && !future.isCancelled()) {
                 future.cancel(true);
-            } else {
-                future.cancel(true);
             }
             return future;
         }

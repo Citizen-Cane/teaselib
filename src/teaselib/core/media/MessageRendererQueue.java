@@ -1,7 +1,5 @@
 package teaselib.core.media;
 
-import static teaselib.core.concurrency.NamedExecutorService.singleThreadedSynchronousQueue;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -50,10 +48,10 @@ public class MessageRendererQueue implements AutoCloseable {
 
     private final TeaseLib teaseLib;
     private final MediaRendererQueue renderQueue;
-    // TODO Handle message decoratorr processing here in order to make textToSpeechPlayer private
+    // TODO Handle message decorator processing here in order to make textToSpeechPlayer private
     public final TextToSpeechPlayer textToSpeechPlayer;
 
-    private final NamedExecutorService executor = singleThreadedSynchronousQueue("Message renderer queue", 1,
+    private final NamedExecutorService executor = NamedExecutorService.singleThreadedQueue("Message renderer queue", 1,
             TimeUnit.HOURS);
     private final Prefetcher<byte[]> imageFetcher = new Prefetcher<>();
     private Future<?> running = null;
@@ -128,6 +126,7 @@ public class MessageRendererQueue implements AutoCloseable {
                         throw ExceptionUtil.asRuntimeException(e);
                     }
                 });
+
                 running = thisTask = new MediaFutureTask<RendererFacade>(renderer, (Future<Void>) future) {
                     @Override
                     public boolean cancel(boolean mayInterruptIfRunning) {

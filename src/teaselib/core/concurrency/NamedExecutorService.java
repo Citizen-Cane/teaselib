@@ -65,14 +65,4 @@ public class NamedExecutorService extends ThreadPoolExecutor {
     public static NamedExecutorService singleThreadedQueue(String namePrefix, long keepAliveTime, TimeUnit unit) {
         return new NamedExecutorService(namePrefix, keepAliveTime, unit);
     }
-
-    public static NamedExecutorService singleThreadedSynchronousQueue(String namePrefix, long keepAliveTime,
-            TimeUnit unit) {
-        return singleThreadedQueue(namePrefix, keepAliveTime, unit, new SynchronousQueue<>());
-    }
-
-    private static NamedExecutorService singleThreadedQueue(String namePrefix, long keepAliveTime, TimeUnit unit,
-            BlockingQueue<Runnable> queue) {
-        return new NamedExecutorService(namePrefix, keepAliveTime, unit, queue);
-    }
 }

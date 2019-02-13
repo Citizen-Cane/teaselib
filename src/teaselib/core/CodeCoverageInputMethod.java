@@ -59,25 +59,17 @@ public class CodeCoverageInputMethod extends AbstractInputMethod implements Debu
 
     private void handleCheckPointReached(CheckPoint checkPoint) {
         if (checkPoint == CheckPoint.ScriptFunction.Started) {
-            activePrompt.getAndUpdate(this::forwardResult);
-            // TODO Resolves infinite wait at end - awaitPendingAdvanceTimeEvents
-            // -> however timeout test would be indeterministic
-            // activePrompt.getAndUpdate(this::setAndForwardResult);
+            // debugger.addTimeAdvance(Thread.currentThread());
         } else if (checkPoint == CheckPoint.Script.NewMessage) {
-            activePrompt.getAndUpdate(this::forwardResult);
-            // TODO Should work but doesn't - sometimes script function blocks
-            // activePrompt.getAndUpdate(this::setAndForwardResult);
+            // Ignore
         } else if (checkPoint == CheckPoint.ScriptFunction.Finished) {
+            activePrompt.getAndUpdate(this::setResult);
             activePrompt.getAndUpdate(this::forwardResultAndHandleTimeout);
         }
     }
 
-    private void handleTimeAdvance(@SuppressWarnings("unused") TimeAdvancedEvent timeAdvancedEvent) {
-        // activePrompt.getAndUpdate(this::setResult);
-        // TODO should work but doesn't
-        // TODO Since forward has to wait until the prompt is ready,
-        // a broken barrier exception will be thrown into the script thread
-        activePrompt.getAndUpdate(this::setAndForwardResult);
+    private void handleTimeAdvance(TimeAdvancedEvent timeAdvancedEvent) {
+        // Ignore
     }
 
     Prompt setResult(Prompt prompt) {
@@ -135,30 +127,19 @@ public class CodeCoverageInputMethod extends AbstractInputMethod implements Debu
     Prompt forwardResultAndHandleTimeout(Prompt prompt) {
         if (hasScriptFunction(prompt) && resultSet()) {
             forwardResult();
-            return null;
-        } else {
-            // TODO Must be here instead of TimeAdvance
-            if (!Thread.currentThread().isInterrupted()) {
-                synchronized (this) {
-                    try {
-                        // TODO Blocks since the prompt isn0t dismissed,
-                        // and on timeouts the script function is never interrupted
-                        // TODO If not waiting at all, there's no chance for code coverage
-                        // to dismiss before the timeout triggers
-
-                        // while (!Thread.currentThread().isInterrupted()) {
-                        // wait(Integer.MAX_VALUE);
-                        // }
-
-                        // TODO Resolve ugly workaround
-                        wait(1000);
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                    }
+            synchronized (this) {
+                try {
+                    // Allows code coverage of whole script function and break right before finish
+                    // TODO Resolve the wait workaround
+                    wait(1000);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
                 }
             }
+            return null;
+        } else {
+            return prompt;
         }
-        return prompt;
     }
 
     @Override

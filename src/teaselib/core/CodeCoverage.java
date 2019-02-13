@@ -38,6 +38,7 @@ public class CodeCoverage<T extends Script> {
         T script = scriptSupplier.get();
         Debugger debugger = new Debugger(script, debugInputMethod);
         debugger.freezeTime();
+        debugger.advanceTimeAllThreads();
 
         DecisionList decisions = current.next();
         Iterator<DecisionList.Entry> index = new ArrayList<>(decisions).iterator();

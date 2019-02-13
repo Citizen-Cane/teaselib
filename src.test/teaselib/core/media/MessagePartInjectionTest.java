@@ -372,6 +372,7 @@ public class MessagePartInjectionTest {
     public void testMessageRendersWithMidDelay() throws IOException {
         DecoratingTestScript script = new DecoratingTestScript(new DebugSetup());
         script.debugger.freezeTime();
+        script.debugger.advanceTimeAllThreads();
 
         Message message = new Message(script.actor);
         message.add("Some text.");
@@ -402,6 +403,7 @@ public class MessagePartInjectionTest {
     public void testMessageRendersWithDelayAtEnd() throws IOException {
         DecoratingTestScript script = new DecoratingTestScript(new DebugSetup());
         script.debugger.freezeTime();
+        script.debugger.advanceTimeAllThreads();
 
         Message message = new Message(script.actor);
         message.add("Some text.");
@@ -426,6 +428,7 @@ public class MessagePartInjectionTest {
     public void testMessageWithSpeech() throws IOException {
         DecoratingTestScript script = new DecoratingTestScript(new DebugSetup().withInput().withOutput());
         script.debugger.freezeTime();
+        script.debugger.advanceTimeAllThreads();
         script.actor.images = new ActorTestImage("Actor.jpg");
 
         Message message = new Message(script.actor);

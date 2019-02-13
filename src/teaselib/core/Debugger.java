@@ -91,6 +91,10 @@ public class Debugger {
         teaseLib.freezeTime();
     }
 
+    public void advanceTimeAllThreads() {
+        teaseLib.advanceTimeAllThreads();
+    }
+
     public void resumeTime() {
         teaseLib.resumeTime();
     }
@@ -127,4 +131,5 @@ public class Debugger {
     public void replyScriptFunction(String string) {
         ((ResponseDebugInputMethod) debugInputMethod).replyScriptFunction(string);
     }
+
 }

@@ -255,7 +255,7 @@ public class TeaseLib implements AutoCloseable {
     public void sleep(long duration, TimeUnit unit) {
         if (duration > 0) {
             if (isTimeFrozen()) {
-                if (Thread.currentThread() == timeAdvanceThread.get()) {
+                if (timeAdvanceThread.get() == null || timeAdvanceThread.get() == Thread.currentThread()) {
                     advanceTime(duration, unit);
                     fireTimeAdvanced();
                 }
@@ -325,6 +325,10 @@ public class TeaseLib implements AutoCloseable {
             frozenTime.set(getTime(TimeUnit.MILLISECONDS));
             timeAdvanceThread.set(Thread.currentThread());
         }
+    }
+
+    void advanceTimeAllThreads() {
+        timeAdvanceThread.set(null);
     }
 
     void advanceTime(long duration, TimeUnit unit) {

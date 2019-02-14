@@ -74,7 +74,10 @@ public class CodeCoverageInputMethod extends AbstractInputMethod implements Debu
 
     Prompt setResult(Prompt prompt) {
         if (hasScriptFunction(prompt) && resultNotSet()) {
-            result.set(firePromptShown(prompt));
+            int choice = firePromptShown(prompt);
+            if (choice > Prompt.DISMISSED) {
+                result.set(choice);
+            }
             return prompt;
         } else {
             return prompt;

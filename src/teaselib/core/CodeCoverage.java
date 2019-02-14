@@ -63,16 +63,19 @@ public class CodeCoverage<T extends Script> {
                                 + next.prompt.choices.toText() + " but got " + prompt.choices.toText());
                     }
                 } else {
-                    result = 0;
-
+                    // TODO sanity check prompt indeterministic
+                    // TODO Seems to hang in endless script function (Fotze ficken und abspritzen)
+                    // - how to deal with that if it's indeed endless?
+                    result = prompt.hasScriptFunction() ? Prompt.DISMISSED : 0;
                     int choices = prompt.choices.size();
-                    if (choices > 1) {
-                        for (int i = 1; i < choices; i++) {
+                    int timeoutPaths = prompt.hasScriptFunction() ? 1 : 0;
+                    if (choices + timeoutPaths > 1) {
+                        for (int i = 1 - timeoutPaths; i < choices; i++) {
                             DecisionList clone = new DecisionList(decisions, i, prompt);
                             decisionVariants.add(clone);
                         }
                     }
-                    decisions.add(0, prompt);
+                    decisions.add(result, prompt);
                 }
 
                 // TODO advance time when frozen to simulate elapsed time while answering prompts and performing tasks
@@ -84,13 +87,14 @@ public class CodeCoverage<T extends Script> {
 
             @Override
             public void promptDismissed(Prompt prompt) {
-                if (prompt.result() <= Prompt.DISMISSED) {
-                    if (prompt.result() == Prompt.UNDEFINED) {
-                        throw new IllegalStateException("Failed to dismiss prompt " + prompt);
-                    } else {
-                        throw new IllegalStateException("Prompt dismissed by other input method: " + prompt);
-                    }
-                }
+                // TODO Decide if still needed (prompts checked via used prompts) 
+                // if (prompt.result() <= Prompt.DISMISSED) {
+                // if (prompt.result() == Prompt.UNDEFINED) {
+                // throw new IllegalStateException("Failed to dismiss prompt " + prompt);
+                // } else {
+                // throw new IllegalStateException("Prompt dismissed by other input method: " + prompt);
+                // }
+                // }
             }
 
         };

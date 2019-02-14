@@ -83,8 +83,11 @@ public class CodeCoverageInputMethod extends AbstractInputMethod implements Debu
 
     Prompt setAndForwardResult(Prompt prompt) {
         if (hasScriptFunction(prompt) && resultNotSet()) {
-            result.set(firePromptShown(prompt));
-            forwardResult();
+            int choice = firePromptShown(prompt);
+            if (choice > Prompt.DISMISSED) {
+                result.set(choice);
+                forwardResult();
+            }
             return null;
         } else {
             return prompt;
@@ -105,15 +108,18 @@ public class CodeCoverageInputMethod extends AbstractInputMethod implements Debu
     }
 
     private boolean resultNotSet() {
-        return result.get() == Prompt.UNDEFINED;
+        return result.get() <= Prompt.DISMISSED;
     }
 
     private boolean resultSet() {
-        return result.get() != Prompt.UNDEFINED;
+        return result.get() > Prompt.DISMISSED;
     }
 
     private void forwardResult() {
         try {
+            if (resultNotSet()) {
+                throw new IllegalArgumentException("Result must be set to choice");
+            }
             synchronized (this) {
                 if (!Thread.currentThread().isInterrupted()) {
                     checkPointScriptFunctionFinished.await();
@@ -127,13 +133,15 @@ public class CodeCoverageInputMethod extends AbstractInputMethod implements Debu
     Prompt forwardResultAndHandleTimeout(Prompt prompt) {
         if (hasScriptFunction(prompt) && resultSet()) {
             synchronized (this) {
-                forwardResult();
-                try {
-                    while (!Thread.currentThread().isInterrupted()) {
-                        wait();
+                if (resultSet()) {
+                    forwardResult();
+                    try {
+                        while (!Thread.currentThread().isInterrupted()) {
+                            wait();
+                        }
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
                     }
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
                 }
             }
             return null;

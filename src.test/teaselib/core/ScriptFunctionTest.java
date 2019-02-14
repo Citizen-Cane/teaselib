@@ -1,8 +1,10 @@
 package teaselib.core;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 
 import org.junit.Test;
 
@@ -60,41 +62,39 @@ public class ScriptFunctionTest {
     }
 
     private static RunnableTestScript getMainScript() {
-        RunnableTestScript mainScript = new RunnableTestScript(TestScript.teaseLib()) {
+        return new RunnableTestScript(TestScript.teaseLib()) {
             @Override
             public void run() {
                 // Empty
             }
         };
-        return mainScript;
     }
 
     @Test
     public void testSimpleScript() {
         AtomicReference<String> result = new AtomicReference<>(null);
-        RunnableTestScript mainScript = getMainScript();
 
         CodeCoverage<Script> codeCoverage = new CodeCoverage<>();
-        codeCoverage.runAll(() -> new RunnableTestScript(mainScript) {
+        Supplier<RunnableTestScript> scriptSupplier = () -> new RunnableTestScript(getMainScript()) {
             @Override
             public void run() {
                 say("In main script.");
                 result.set(reply("Finished"));
                 say("Still in main script.");
             }
-        });
+        };
+
+        codeCoverage.run(scriptSupplier);
         assertEquals("Finished", result.get());
-        // assertTrue("Wrong text in message renderer",
-        // mainScript.scriptRenderer.renderMessage.toString().indexOf("Still in main script.") >= 0);
+        assertFalse(codeCoverage.hasNext());
     }
 
     @Test
     public void testThatCallableScriptFunctionHasCompletedWhenNextSayStatementIsExecuted() {
         AtomicReference<String> result = new AtomicReference<>(null);
-        RunnableTestScript mainScript = getMainScript();
 
         CodeCoverage<Script> codeCoverage = new CodeCoverage<>();
-        codeCoverage.runAll(() -> new RunnableTestScript(mainScript) {
+        Supplier<RunnableTestScript> scriptSupplier = () -> new RunnableTestScript(getMainScript()) {
             @Override
             public void run() {
                 say("In main script.");
@@ -104,19 +104,23 @@ public class ScriptFunctionTest {
                 }, "Finished"));
                 say("Resuming main script.");
             }
-        });
+        };
+
+        codeCoverage.run(scriptSupplier);
+        assertEquals(ScriptFunction.Timeout, result.get());
+
+        codeCoverage.run(scriptSupplier);
         assertEquals("Finished", result.get());
-        // assertTrue("Script function still running while resuming to main script thread",
-        // mainScript.scriptRenderer.renderMessage.toString().indexOf("Resuming main script.") >= 0);
+
+        assertFalse(codeCoverage.hasNext());
     }
 
     @Test
     public void testThatRunnableScriptFunctionHasCompletedWhenNextSayStatementIsExecuted() {
         AtomicReference<String> result = new AtomicReference<>(null);
-        RunnableTestScript mainScript = getMainScript();
 
         CodeCoverage<TeaseScript> codeCoverage = new CodeCoverage<>();
-        codeCoverage.runAll(() -> new RunnableTestScript(mainScript) {
+        Supplier<RunnableTestScript> scriptSupplier = () -> new RunnableTestScript(getMainScript()) {
             @Override
             public void run() {
                 say("In main script.");
@@ -125,19 +129,23 @@ public class ScriptFunctionTest {
                 }, "Finished"));
                 say("Resuming main script.");
             }
-        });
+        };
+
+        codeCoverage.run(scriptSupplier);
+        assertEquals(ScriptFunction.Timeout, result.get());
+
+        codeCoverage.run(scriptSupplier);
         assertEquals("Finished", result.get());
-        // assertTrue("Script function still running while resuming to main script thread",
-        // mainScript.scriptRenderer.renderMessage.toString().indexOf("Resuming main script.") >= 0);
+
+        assertFalse(codeCoverage.hasNext());
     }
 
     @Test
     public void testEmptyScriptFunctionAlwaysTimesOut() {
         AtomicReference<String> result = new AtomicReference<>(null);
-        RunnableTestScript mainScript = getMainScript();
 
         CodeCoverage<TeaseScript> codeCoverage = new CodeCoverage<>();
-        codeCoverage.runAll(() -> new RunnableTestScript(mainScript) {
+        Supplier<RunnableTestScript> scriptSupplier = () -> new RunnableTestScript(getMainScript()) {
             @Override
             public void run() {
                 say("In main script.");
@@ -145,69 +153,128 @@ public class ScriptFunctionTest {
                 }, "Finished"));
                 say("Resuming main script.");
             }
-        });
+        };
+
+        codeCoverage.run(scriptSupplier);
         assertEquals(ScriptFunction.Timeout, result.get());
-        // assertTrue("Script function still running while resuming to main script thread",
-        // mainScript.scriptRenderer.renderMessage.toString().indexOf("Resuming main script.") >= 0);
+
+        codeCoverage.run(scriptSupplier);
+        assertEquals("Finished", result.get());
+
+        assertFalse(codeCoverage.hasNext());
     }
 
     @Test
     public void testDefaultScriptFunctionTimeout() {
         AtomicReference<String> result = new AtomicReference<>(null);
-        RunnableTestScript mainScript = getMainScript();
 
         CodeCoverage<TeaseScript> codeCoverage = new CodeCoverage<>();
-        codeCoverage.runAll(() -> new RunnableTestScript(mainScript) {
+        Supplier<RunnableTestScript> scriptSupplier = () -> new RunnableTestScript(getMainScript()) {
             @Override
             public void run() {
                 say("In main script.");
                 result.set(reply(timeout(5), "Finished"));
                 say("Resuming main script.");
             }
-        });
+        };
+
+        codeCoverage.run(scriptSupplier);
+        assertEquals(ScriptFunction.Timeout, result.get());
+
+        codeCoverage.run(scriptSupplier);
         assertEquals("Finished", result.get());
-        // assertTrue("Script function still running while resuming to main script thread",
-        // mainScript.scriptRenderer.renderMessage.toString().indexOf("Resuming main script.") >= 0);
+
+        assertFalse(codeCoverage.hasNext());
     }
 
     @Test
     public void testDefaultScriptFunctionTimeoutConfirm() {
         AtomicReference<String> result = new AtomicReference<>(null);
-        RunnableTestScript mainScript = getMainScript();
 
-        // TODO Reused prompt
         CodeCoverage<TeaseScript> codeCoverage = new CodeCoverage<>();
-        codeCoverage.run(() -> new RunnableTestScript(mainScript) {
+        Supplier<RunnableTestScript> scriptSupplier = () -> new RunnableTestScript(getMainScript()) {
             @Override
             public void run() {
                 say("In main script.");
                 result.set(reply(timeoutWithConfirmation(5), "Finished"));
                 say("Resuming main script.");
             }
-        });
+        };
 
+        codeCoverage.run(scriptSupplier);
+        assertEquals(ScriptFunction.Timeout, result.get());
+
+        codeCoverage.run(scriptSupplier);
         assertEquals("Finished", result.get());
-        // assertTrue("Script function still running while resuming to main script thread",
-        // mainScript.scriptRenderer.renderMessage.toString().indexOf("Resuming main script.") >= 0);
+
+        assertFalse(codeCoverage.hasNext());
     }
 
     @Test
     public void testDefaultScriptFunctionTimeoutAutoConfirm() {
         AtomicReference<String> result = new AtomicReference<>(null);
-        RunnableTestScript mainScript = getMainScript();
 
         CodeCoverage<TeaseScript> codeCoverage = new CodeCoverage<>();
-        codeCoverage.runAll(() -> new RunnableTestScript(mainScript) {
+        Supplier<RunnableTestScript> scriptSupplier = () -> new RunnableTestScript(getMainScript()) {
             @Override
             public void run() {
                 say("In main script.");
                 result.set(reply(timeoutWithAutoConfirmation(5), "Finished"));
                 say("Resuming main script.");
             }
-        });
+        };
+
+        codeCoverage.run(scriptSupplier);
+        assertEquals(ScriptFunction.Timeout, result.get());
+
+        codeCoverage.run(scriptSupplier);
         assertEquals("Finished", result.get());
-        // assertTrue("Script function still running while resuming to main script thread",
-        // mainScript.scriptRenderer.renderMessage.toString().indexOf("Resuming main script.") >= 0);
+
+        assertFalse(codeCoverage.hasNext());
+    }
+
+    @Test
+    public void testThatCodeCoverageCoversTimeout() {
+        AtomicReference<String> result1 = new AtomicReference<>(null);
+        AtomicReference<String> result2 = new AtomicReference<>(null);
+
+        CodeCoverage<TeaseScript> codeCoverage = new CodeCoverage<>();
+        Supplier<RunnableTestScript> scriptSupplier = () -> new RunnableTestScript(getMainScript()) {
+            @Override
+            public void run() {
+                result1.set(null);
+                say("In main script 1.");
+                result1.set(reply(() -> {
+                    say("Inside script function 1.");
+                }, "Finished 1"));
+                say("Resuming main script 1.");
+
+                result2.set(null);
+                say("In main script 2.");
+                result2.set(reply(() -> {
+                    say("Inside script function 2.");
+                }, "Finished 2"));
+                say("Resuming main script 2.");
+            }
+        };
+
+        codeCoverage.run(scriptSupplier);
+        assertEquals(ScriptFunction.Timeout, result1.get());
+        assertEquals(ScriptFunction.Timeout, result2.get());
+
+        codeCoverage.run(scriptSupplier);
+        assertEquals("Finished 1", result1.get());
+        assertEquals(ScriptFunction.Timeout, result2.get());
+
+        codeCoverage.run(scriptSupplier);
+        assertEquals(ScriptFunction.Timeout, result1.get());
+        assertEquals("Finished 2", result2.get());
+
+        codeCoverage.run(scriptSupplier);
+        assertEquals("Finished 1", result1.get());
+        assertEquals("Finished 2", result2.get());
+
+        assertFalse(codeCoverage.hasNext());
     }
 
 }

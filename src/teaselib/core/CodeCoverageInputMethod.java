@@ -59,7 +59,7 @@ public class CodeCoverageInputMethod extends AbstractInputMethod implements Debu
 
     private void handleCheckPointReached(CheckPoint checkPoint) {
         if (checkPoint == CheckPoint.ScriptFunction.Started) {
-            // debugger.addTimeAdvance(Thread.currentThread());
+            // Ignore
         } else if (checkPoint == CheckPoint.Script.NewMessage) {
             // Ignore
         } else if (checkPoint == CheckPoint.ScriptFunction.Finished) {
@@ -126,12 +126,12 @@ public class CodeCoverageInputMethod extends AbstractInputMethod implements Debu
 
     Prompt forwardResultAndHandleTimeout(Prompt prompt) {
         if (hasScriptFunction(prompt) && resultSet()) {
-            forwardResult();
             synchronized (this) {
+                forwardResult();
                 try {
-                    // Allows code coverage of whole script function and break right before finish
-                    // TODO Resolve the wait workaround
-                    wait(1000);
+                    while (!Thread.currentThread().isInterrupted()) {
+                        wait();
+                    }
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                 }
@@ -144,10 +144,12 @@ public class CodeCoverageInputMethod extends AbstractInputMethod implements Debu
 
     @Override
     public boolean handleDismiss(Prompt prompt) {
-        activePrompt.set(null);
-        checkPointScriptFunctionFinished.reset();
-
-        firePromptDismissed(prompt);
+        synchronized (this) {
+            activePrompt.set(null);
+            checkPointScriptFunctionFinished.reset();
+            firePromptDismissed(prompt);
+            notifyAll();
+        }
         return true;
     }
 

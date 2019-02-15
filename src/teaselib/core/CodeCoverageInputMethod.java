@@ -43,6 +43,10 @@ public class CodeCoverageInputMethod extends AbstractInputMethod implements Debu
         activePrompt.set(prompt);
         result.set(Prompt.UNDEFINED);
         if (prompt.hasScriptFunction()) {
+            int choice = firePromptShown(prompt);
+            if (choice > Prompt.DISMISSED) {
+                result.set(choice);
+            }
             try {
                 checkPointScriptFunctionFinished.await();
                 return result.get();
@@ -53,6 +57,49 @@ public class CodeCoverageInputMethod extends AbstractInputMethod implements Debu
                 checkPointScriptFunctionFinished.reset();
             }
         } else {
+            // TODO causes return -1 DISMISSED but no script function
+            // java.lang.IndexOutOfBoundsException: -1-> [Gesture=Nod text='Jawohl, #title' display='Jawohl, Frau
+            // Streng']
+            // waiting result=UNDEFINED: teaselib.core.CodeCoverageInputMethod@5dcd8c7a
+            // at teaselib.core.ui.Prompt.setResultOnce(Prompt.java:105)
+            // at teaselib.core.ui.Prompt.signalResult(Prompt.java:126)
+            // at teaselib.core.ui.AbstractInputMethod.signalResult(AbstractInputMethod.java:73)
+            // at teaselib.core.ui.AbstractInputMethod.awaitAndSignalResult(AbstractInputMethod.java:62)
+            // at teaselib.core.ui.AbstractInputMethod.access$0(AbstractInputMethod.java:59)
+            // at teaselib.core.ui.AbstractInputMethod$1.call(AbstractInputMethod.java:39)
+            // at teaselib.core.ui.AbstractInputMethod$1.call(AbstractInputMethod.java:1)
+            // at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:264)
+            // at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1128)
+            // at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:628)
+            // at java.base/java.lang.Thread.run(Thread.java:834)
+            //
+            // result of java.lang.IllegalStateException: Indeterministic behavior detected -> coverage returns
+            // DISMISSED of previous/next prompt
+            // : Expected prompt[Der Sklave ist bereit, #title] but got [Der Sklaven-Saft ist ausgelaufen, #title, Bitte
+            // melken Sie mich ab, #title]
+            // at teaselib.core.CodeCoverage$1.promptShown(CodeCoverage.java:62)
+            // at teaselib.core.CodeCoverageInputMethod.lambda$4(CodeCoverageInputMethod.java:193)
+            // at java.base/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:195)
+            // at java.base/java.util.Iterator.forEachRemaining(Iterator.java:133)
+            // at java.base/java.util.Spliterators$IteratorSpliterator.forEachRemaining(Spliterators.java:1801)
+            // at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:484)
+            // at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:474)
+            // at java.base/java.util.stream.ReduceOps$ReduceOp.evaluateSequential(ReduceOps.java:913)
+            // at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234)
+            // at java.base/java.util.stream.ReferencePipeline.reduce(ReferencePipeline.java:558)
+            // at teaselib.core.CodeCoverageInputMethod.firePromptShown(CodeCoverageInputMethod.java:194)
+            // at teaselib.core.CodeCoverageInputMethod.setResult(CodeCoverageInputMethod.java:77)
+            // at java.base/java.util.concurrent.atomic.AtomicReference.getAndUpdate(AtomicReference.java:187)
+            // at teaselib.core.CodeCoverageInputMethod.handleCheckPointReached(CodeCoverageInputMethod.java:66)
+            // at teaselib.core.TeaseLib.checkPointReached(TeaseLib.java:301)
+            // at teaselib.core.ScriptFutureTask.lambda$0(ScriptFutureTask.java:38)
+            // at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:264)
+            // at teaselib.core.ScriptFutureTask.run(ScriptFutureTask.java:54)
+            // at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1128)
+            // at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:628)
+            // at java.base/java.lang.Thread.run(Thread.java:834)
+            //
+
             return firePromptShown(activePrompt.get());
         }
     }
@@ -63,38 +110,12 @@ public class CodeCoverageInputMethod extends AbstractInputMethod implements Debu
         } else if (checkPoint == CheckPoint.Script.NewMessage) {
             // Ignore
         } else if (checkPoint == CheckPoint.ScriptFunction.Finished) {
-            activePrompt.getAndUpdate(this::setResult);
             activePrompt.getAndUpdate(this::forwardResultAndHandleTimeout);
         }
     }
 
     private void handleTimeAdvance(TimeAdvancedEvent timeAdvancedEvent) {
         // Ignore
-    }
-
-    Prompt setResult(Prompt prompt) {
-        if (hasScriptFunction(prompt) && resultNotSet()) {
-            int choice = firePromptShown(prompt);
-            if (choice > Prompt.DISMISSED) {
-                result.set(choice);
-            }
-            return prompt;
-        } else {
-            return prompt;
-        }
-    }
-
-    Prompt setAndForwardResult(Prompt prompt) {
-        if (hasScriptFunction(prompt) && resultNotSet()) {
-            int choice = firePromptShown(prompt);
-            if (choice > Prompt.DISMISSED) {
-                result.set(choice);
-                forwardResult();
-            }
-            return null;
-        } else {
-            return prompt;
-        }
     }
 
     Prompt forwardResult(Prompt prompt) {

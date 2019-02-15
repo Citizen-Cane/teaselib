@@ -90,6 +90,8 @@ public class Shower {
 
     private Choice result(Prompt prompt, int resultIndex) throws InterruptedException {
         if (resultIndex == Prompt.DISMISSED) {
+            // TODO join with else-branch, but the DISMISSED case must be first
+            prompt.cancelScriptTask();
             return prompt.choice(resultIndex);
         } else if (prompt.inputHandlerKey != Prompt.NONE) {
             try {
@@ -100,7 +102,7 @@ public class Shower {
             if (promptQueue.getActive() != prompt) {
                 promptQueue.resume(prompt);
             }
-            return result(prompt, promptQueue.showExisting(prompt));
+            return result(prompt, promptQueue.awaitResult(prompt));
         } else {
             prompt.cancelScriptTask();
             return prompt.choice(resultIndex);

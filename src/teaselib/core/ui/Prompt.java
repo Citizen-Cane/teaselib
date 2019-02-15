@@ -108,7 +108,17 @@ public class Prompt {
                 result = value;
             }
         } else {
-            throw new IllegalStateException("Prompt " + this + " already set to " + inputMethod + " -> " + value);
+            throw new IllegalStateException("Prompt " + this + " already set to " + inputMethod + " -> " + result);
+        }
+    }
+
+    public synchronized void setTimedOut() {
+        if (result == Prompt.UNDEFINED) {
+            // TODO Should be TIMEDOUT
+            result = Prompt.DISMISSED;
+        } else {
+            throw new IllegalStateException(
+                    "Prompt " + this + " already set to " + this.resultInputMethod + " -> " + result);
         }
     }
 

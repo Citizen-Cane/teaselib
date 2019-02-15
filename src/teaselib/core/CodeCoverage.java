@@ -87,14 +87,9 @@ public class CodeCoverage<T extends Script> {
 
             @Override
             public void promptDismissed(Prompt prompt) {
-                // TODO Decide if still needed (prompts checked via used prompts) 
-                // if (prompt.result() <= Prompt.DISMISSED) {
-                // if (prompt.result() == Prompt.UNDEFINED) {
-                // throw new IllegalStateException("Failed to dismiss prompt " + prompt);
-                // } else {
-                // throw new IllegalStateException("Prompt dismissed by other input method: " + prompt);
-                // }
-                // }
+                if (prompt.result() == Prompt.UNDEFINED && !prompt.paused()) {
+                    throw new IllegalStateException("Failed to dismiss prompt " + prompt);
+                }
             }
 
         };

@@ -24,13 +24,18 @@ public class PromptQueue {
             prompt.executeScriptTask();
         }
 
-        return showExisting(prompt);
+        return awaitResult(prompt);
     }
 
-    public int showExisting(Prompt prompt) throws InterruptedException {
+    public int awaitResult(Prompt prompt) throws InterruptedException {
         if (prompt.result() == Prompt.UNDEFINED) {
             prompt.click.await();
         }
+
+        if (prompt.result() == Prompt.UNDEFINED && !prompt.paused()) {
+            prompt.setTimedOut();
+        }
+
         dismissPrompt(prompt);
         return prompt.result();
     }
@@ -57,19 +62,6 @@ public class PromptQueue {
         active.set(prompt);
         for (InputMethod inputMethod : prompt.inputMethods) {
             inputMethod.show(prompt);
-        }
-    }
-
-    public boolean dismiss(Prompt prompt) {
-        if (prompt != active.get()) {
-            throw new IllegalStateException("Prompt " + prompt + " not showing");
-        }
-
-        if (prompt.result() == Prompt.UNDEFINED) {
-            prompt.setResultOnce(null, Prompt.DISMISSED);
-            return dismissPrompt(prompt);
-        } else {
-            return false;
         }
     }
 

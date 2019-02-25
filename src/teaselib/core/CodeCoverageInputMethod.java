@@ -26,23 +26,26 @@ import teaselib.core.ui.Prompt;
 public class CodeCoverageInputMethod extends AbstractInputMethod implements DebugInputMethod {
     Set<InputMethod.Listener> eventListeners = new LinkedHashSet<>();
 
-    private final TimeAdvanceListener timeAdvanceListener = this::handleTimeAdvance;
     private final CheckPointListener checkPointListener = this::handleCheckPointReached;
+    private final TimeAdvanceListener timeAdvanceListener = this::handleTimeAdvance;
+
+    private final AtomicReference<Prompt> activePrompt = new AtomicReference<>();
+    private final AtomicInteger result = new AtomicInteger();
+    private final CyclicBarrier checkPointScriptFunctionFinished = new CyclicBarrier(2);
 
     public CodeCoverageInputMethod(ExecutorService executor) {
         super(executor);
     }
-
-    private final AtomicReference<Prompt> activePrompt = new AtomicReference<>();
-    private final AtomicInteger result = new AtomicInteger();
-
-    CyclicBarrier checkPointScriptFunctionFinished = new CyclicBarrier(2);
 
     @Override
     public int handleShow(Prompt prompt) throws InterruptedException {
         activePrompt.set(prompt);
         result.set(Prompt.UNDEFINED);
         if (prompt.hasScriptFunction()) {
+            int choice = firePromptShown(prompt);
+            if (choice > Prompt.DISMISSED) {
+                result.set(choice);
+            }
             try {
                 checkPointScriptFunctionFinished.await();
                 return result.get();
@@ -63,47 +66,12 @@ public class CodeCoverageInputMethod extends AbstractInputMethod implements Debu
         } else if (checkPoint == CheckPoint.Script.NewMessage) {
             // Ignore
         } else if (checkPoint == CheckPoint.ScriptFunction.Finished) {
-            activePrompt.getAndUpdate(this::setResult);
             activePrompt.getAndUpdate(this::forwardResultAndHandleTimeout);
         }
     }
 
-    private void handleTimeAdvance(TimeAdvancedEvent timeAdvancedEvent) {
+    private void handleTimeAdvance(@SuppressWarnings("unused") TimeAdvancedEvent timeAdvancedEvent) {
         // Ignore
-    }
-
-    Prompt setResult(Prompt prompt) {
-        if (hasScriptFunction(prompt) && resultNotSet()) {
-            int choice = firePromptShown(prompt);
-            if (choice > Prompt.DISMISSED) {
-                result.set(choice);
-            }
-            return prompt;
-        } else {
-            return prompt;
-        }
-    }
-
-    Prompt setAndForwardResult(Prompt prompt) {
-        if (hasScriptFunction(prompt) && resultNotSet()) {
-            int choice = firePromptShown(prompt);
-            if (choice > Prompt.DISMISSED) {
-                result.set(choice);
-                forwardResult();
-            }
-            return null;
-        } else {
-            return prompt;
-        }
-    }
-
-    Prompt forwardResult(Prompt prompt) {
-        if (hasScriptFunction(prompt) && resultSet()) {
-            forwardResult();
-            return null;
-        } else {
-            return prompt;
-        }
     }
 
     private static boolean hasScriptFunction(Prompt prompt) {
@@ -118,22 +86,7 @@ public class CodeCoverageInputMethod extends AbstractInputMethod implements Debu
         return result.get() > Prompt.DISMISSED;
     }
 
-    private void forwardResult() {
-        try {
-            if (resultNotSet()) {
-                throw new IllegalArgumentException("Result must be set to choice");
-            }
-            synchronized (this) {
-                if (!Thread.currentThread().isInterrupted()) {
-                    checkPointScriptFunctionFinished.await();
-                }
-            }
-        } catch (InterruptedException | BrokenBarrierException e) {
-            Thread.currentThread().interrupt();
-        }
-    }
-
-    Prompt forwardResultAndHandleTimeout(Prompt prompt) {
+    private Prompt forwardResultAndHandleTimeout(Prompt prompt) {
         if (hasScriptFunction(prompt) && resultSet()) {
             synchronized (this) {
                 if (resultSet()) {
@@ -150,6 +103,21 @@ public class CodeCoverageInputMethod extends AbstractInputMethod implements Debu
             return null;
         } else {
             return prompt;
+        }
+    }
+
+    private void forwardResult() {
+        try {
+            if (resultNotSet()) {
+                throw new IllegalArgumentException("Result must be set to choice");
+            }
+            synchronized (this) {
+                if (!Thread.currentThread().isInterrupted()) {
+                    checkPointScriptFunctionFinished.await();
+                }
+            }
+        } catch (InterruptedException | BrokenBarrierException e) {
+            Thread.currentThread().interrupt();
         }
     }
 

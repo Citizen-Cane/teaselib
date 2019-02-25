@@ -40,10 +40,10 @@ public class SpeechDetectionEventHandler {
     private static final int HypothesisMinimumNumberOfVowelsDefault = 4;
 
     private final SpeechRecognition speechRecognizer;
-    private final Event<SpeechRecognitionImplementation, SpeechRecognitionStartedEventArgs> recognitionStarted;
-    private final Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs> speechDetected;
-    private final Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs> recognitionRejected;
-    private final Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs> recognitionCompleted;
+    private final Event<SpeechRecognitionControl, SpeechRecognitionStartedEventArgs> recognitionStarted;
+    private final Event<SpeechRecognitionControl, SpeechRecognizedEventArgs> speechDetected;
+    private final Event<SpeechRecognitionControl, SpeechRecognizedEventArgs> recognitionRejected;
+    private final Event<SpeechRecognitionControl, SpeechRecognizedEventArgs> recognitionCompleted;
 
     private PromptSplitter vowelSplitter = new LatinVowelSplitter(HypothesisMinimumNumberOfVowelsDefault);
     private PromptSplitter wordSplitter = new WordSplitter(HypothesisMinimumNumberOfWordsDefault);
@@ -98,7 +98,7 @@ public class SpeechDetectionEventHandler {
         return expectedConfidence;
     }
 
-    private Event<SpeechRecognitionImplementation, SpeechRecognitionStartedEventArgs> recognitionStarted() {
+    private Event<SpeechRecognitionControl, SpeechRecognitionStartedEventArgs> recognitionStarted() {
         return (sender, eventArgs) -> {
             if (!enabled) {
                 return;
@@ -108,7 +108,7 @@ public class SpeechDetectionEventHandler {
         };
     }
 
-    private Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs> speechDetected() {
+    private Event<SpeechRecognitionControl, SpeechRecognizedEventArgs> speechDetected() {
         return (sender, eventArgs) -> {
             if (!enabled) {
                 return;
@@ -130,7 +130,7 @@ public class SpeechDetectionEventHandler {
                 || result.hasHigherProbabilityThan(hypothesisResult);
     }
 
-    private Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs> recognitionRejected() {
+    private Event<SpeechRecognitionControl, SpeechRecognizedEventArgs> recognitionRejected() {
         return (sender, eventArgs) -> {
             if (!enabled) {
                 return;
@@ -181,7 +181,7 @@ public class SpeechDetectionEventHandler {
                 hypothesisResult.text, hypothesisResult.probability, expectedConfidence, reducedProbability);
     }
 
-    private Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs> recognitionCompleted() {
+    private Event<SpeechRecognitionControl, SpeechRecognizedEventArgs> recognitionCompleted() {
         return (sender, eventArgs) -> {
             SpeechRecognitionResult recognitionCompletedResult = eventArgs.result[0];
 
@@ -204,7 +204,7 @@ public class SpeechDetectionEventHandler {
         return result.confidence.probability >= confidence.probability;
     }
 
-    private void fireRecognitionCompletedEvent(SpeechRecognitionImplementation sender, SpeechRecognitionResult result) {
+    private void fireRecognitionCompletedEvent(SpeechRecognitionControl sender, SpeechRecognitionResult result) {
         SpeechRecognizedEventArgs recognitionCompletedEventArgs = new SpeechRecognizedEventArgs(result);
         speechRecognizer.events.recognitionCompleted.run(sender, recognitionCompletedEventArgs);
     }

@@ -14,7 +14,7 @@ import org.slf4j.LoggerFactory;
 import teaselib.core.events.Event;
 import teaselib.core.speechrecognition.AudioSignalProblems;
 import teaselib.core.speechrecognition.SpeechRecognition;
-import teaselib.core.speechrecognition.SpeechRecognitionImplementation;
+import teaselib.core.speechrecognition.SpeechRecognitionControl;
 import teaselib.core.speechrecognition.SpeechRecognitionResult;
 import teaselib.core.speechrecognition.SpeechRecognitionResult.Confidence;
 import teaselib.core.speechrecognition.events.AudioSignalProblemOccuredEventArgs;
@@ -40,11 +40,11 @@ public class SpeechRecognitionInputMethod implements InputMethod {
     final Optional<SpeechRecognitionRejectedScript> speechRecognitionRejectedScript;
     final AudioSignalProblems audioSignalProblems;
 
-    private final Event<SpeechRecognitionImplementation, SpeechRecognitionStartedEventArgs> speechRecognitionStartedEventHandler;
-    private final Event<SpeechRecognitionImplementation, AudioSignalProblemOccuredEventArgs> audioSignalProblemEventHandler;
-    private final Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs> speechDetectedEventHandler;
-    private final Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs> recognitionRejected;
-    private final Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs> recognitionCompleted;
+    private final Event<SpeechRecognitionControl, SpeechRecognitionStartedEventArgs> speechRecognitionStartedEventHandler;
+    private final Event<SpeechRecognitionControl, AudioSignalProblemOccuredEventArgs> audioSignalProblemEventHandler;
+    private final Event<SpeechRecognitionControl, SpeechRecognizedEventArgs> speechDetectedEventHandler;
+    private final Event<SpeechRecognitionControl, SpeechRecognizedEventArgs> recognitionRejected;
+    private final Event<SpeechRecognitionControl, SpeechRecognizedEventArgs> recognitionCompleted;
 
     private final AtomicReference<Prompt> active = new AtomicReference<>();
     private boolean speechRecognitionRejectedHandlerSignaled = false;

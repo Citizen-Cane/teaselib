@@ -85,7 +85,7 @@ extern "C"
     * Method:    startRecognition
     * Signature: (Ljava/util/Map;)V
     */
-    JNIEXPORT void JNICALL Java_teaselib_core_speechrecognition_implementation_TeaseLibSR_setChoices
+    JNIEXPORT void JNICALL Java_teaselib_core_speechrecognition_implementation_TeaseLibSR_setChoices__Ljava_util_List_2
     (JNIEnv *env, jobject jthis, jobject jchoices) {
         try {
             SpeechRecognizer* speechRecognizer = static_cast<SpeechRecognizer*>(NativeObject::get(env, jthis));
@@ -113,6 +113,16 @@ extern "C"
             // Forwarded automatically
         }
     }
+
+	/*
+ * Class:     teaselib_core_speechrecognition_implementation_TeaseLibSR
+ * Method:    setChoices
+ * Signature: (Ljava/lang/String;)V
+ */
+	JNIEXPORT void JNICALL Java_teaselib_core_speechrecognition_implementation_TeaseLibSR_setChoices__Ljava_lang_String_2
+	(JNIEnv *, jobject, jstring) {
+
+	}
 
     /*
     * Class:     teaselib_speechrecognition_implementation_TeaseLibSR

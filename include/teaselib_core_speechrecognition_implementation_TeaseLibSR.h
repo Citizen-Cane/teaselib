@@ -28,8 +28,16 @@ JNIEXPORT void JNICALL Java_teaselib_core_speechrecognition_implementation_Tease
  * Method:    setChoices
  * Signature: (Ljava/util/List;)V
  */
-JNIEXPORT void JNICALL Java_teaselib_core_speechrecognition_implementation_TeaseLibSR_setChoices
+JNIEXPORT void JNICALL Java_teaselib_core_speechrecognition_implementation_TeaseLibSR_setChoices__Ljava_util_List_2
   (JNIEnv *, jobject, jobject);
+
+/*
+ * Class:     teaselib_core_speechrecognition_implementation_TeaseLibSR
+ * Method:    setChoices
+ * Signature: (Ljava/lang/String;)V
+ */
+JNIEXPORT void JNICALL Java_teaselib_core_speechrecognition_implementation_TeaseLibSR_setChoices__Ljava_lang_String_2
+  (JNIEnv *, jobject, jstring);
 
 /*
  * Class:     teaselib_core_speechrecognition_implementation_TeaseLibSR

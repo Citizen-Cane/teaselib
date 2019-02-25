@@ -1,46 +1,52 @@
 package teaselib.core.speechrecognition;
 
-import java.util.List;
 import java.util.Locale;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public abstract class SpeechRecognitionImplementation {
+public abstract class SpeechRecognitionImplementation implements SpeechRecognitionControl {
     private static final Logger logger = LoggerFactory.getLogger(SpeechRecognitionImplementation.class);
 
-    /**
-     * Get a recognizer for the requested language
+    /*
+     * (non-Javadoc)
      * 
-     * @param languageCode
-     *            A language code in the form XX[X]-YY[Y], like en-us, en-uk, ger, etc.
+     * @see teaselib.core.speechrecognition.SpeechRecognitionControl#init(teaselib.core.speechrecognition.
+     * SpeechRecognitionEvents, java.util.Locale)
      */
-    public abstract void init(SpeechRecognitionEvents<SpeechRecognitionImplementation> events, Locale locale)
-            throws Throwable;
+    @Override
+    public abstract void init(SpeechRecognitionEvents<SpeechRecognitionControl> events, Locale locale) throws Throwable;
 
-    public abstract void setChoices(List<String> choices);
-
+    /*
+     * (non-Javadoc)
+     * 
+     * @see teaselib.core.speechrecognition.SpeechRecognitionControl#setMaxAlternates(int)
+     */
+    @Override
     public abstract void setMaxAlternates(int n);
 
-    /**
-     * Start recognition using the choices in the map
+    /*
+     * (non-Javadoc)
      * 
-     * @param choices
-     *            A map containing a key, and the recognition choice as the value. The key will be returned upon a
-     *            successful recognition.
+     * @see teaselib.core.speechrecognition.SpeechRecognitionControl#startRecognition()
      */
+    @Override
     public abstract void startRecognition();
 
-    /**
-     * Emulate a recognition by raising events using the emulated recognition result
+    /*
+     * (non-Javadoc)
      * 
-     * @param emulatedInput
+     * @see teaselib.core.speechrecognition.SpeechRecognitionControl#emulateRecognition(java.lang.String)
      */
+    @Override
     public abstract void emulateRecognition(String emulatedRecognitionResult);
 
-    /**
-     * Stop recognition. This clears the choice map, thus a new recognition has to be started afterwards
+    /*
+     * (non-Javadoc)
+     * 
+     * @see teaselib.core.speechrecognition.SpeechRecognitionControl#stopRecognition()
      */
+    @Override
     public abstract void stopRecognition();
 
     protected abstract void dispose();

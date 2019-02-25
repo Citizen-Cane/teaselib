@@ -19,6 +19,7 @@ import teaselib.core.speechrecognition.implementation.TeaseLibSR;
 import teaselib.core.speechrecognition.implementation.Unsupported;
 import teaselib.core.texttospeech.TextToSpeech;
 import teaselib.core.util.Environment;
+import teaselib.core.util.ExceptionUtil;
 
 public class SpeechRecognition {
     private static final Logger logger = LoggerFactory.getLogger(SpeechRecognition.class);
@@ -83,7 +84,7 @@ public class SpeechRecognition {
         TooSlow
     }
 
-    public final SpeechRecognitionEvents<SpeechRecognitionImplementation> events;
+    public final SpeechRecognitionEvents<SpeechRecognitionControl> events;
 
     private final Locale locale;
     private final SpeechDetectionEventHandler hypothesisEventHandler;
@@ -108,11 +109,11 @@ public class SpeechRecognition {
     private boolean speechRecognitionActive = false;
 
     // Allow other threads to wait for speech recognition to complete
-    private Event<SpeechRecognitionImplementation, SpeechRecognitionStartedEventArgs> lockSpeechRecognitionInProgress = (
+    private Event<SpeechRecognitionControl, SpeechRecognitionStartedEventArgs> lockSpeechRecognitionInProgress = (
             sender, args) -> lockSpeechRecognitionInProgressSyncObject();
 
-    private Event<SpeechRecognitionImplementation, SpeechRecognizedEventArgs> unlockSpeechRecognitionInProgress = (
-            sender, args) -> unlockSpeechRecognitionInProgressSyncObject();
+    private Event<SpeechRecognitionControl, SpeechRecognizedEventArgs> unlockSpeechRecognitionInProgress = (sender,
+            args) -> unlockSpeechRecognitionInProgressSyncObject();
 
     private Confidence recognitionConfidence;
 
@@ -175,12 +176,20 @@ public class SpeechRecognition {
                     } catch (UnsatisfiedLinkError e) {
                         logger.error(e.getMessage(), e);
                         sr = null;
+                    } catch (Exception e) {
+                        logger.error(e.getMessage(), e);
+                        sr = null;
+                        throw ExceptionUtil.asRuntimeException(e);
+                        // TODO Handle COM-error 0x8004503a SPERR_NOT_FOUND
+                        // -> download speech recognition pack for the selected language
+                    } catch (Error e) {
+                        logger.error(e.getMessage(), e);
+                        sr = null;
+                        throw e;
                     } catch (Throwable t) {
                         logger.error(t.getMessage(), t);
                         sr = null;
-                        throw new RuntimeException(t);
-                        // TODO Handle COM-error 0x8004503a SPERR_NOT_FOUND
-                        // -> download speech recognition pack for the selected language
+                        throw ExceptionUtil.asRuntimeException(t);
                     }
                 });
             } catch (InterruptedException e) {
@@ -280,9 +289,21 @@ public class SpeechRecognition {
         } else {
             hypothesisEventHandler.enable(false);
         }
-        sr.setChoices(SpeechRecognition.this.choices);
+
+        if (sr instanceof SpeechRecognitionSRGS) {
+            ((SpeechRecognitionChoices) sr).setChoices(srgs(SpeechRecognition.this.choices));
+        } else if (sr instanceof SpeechRecognitionChoices) {
+            ((SpeechRecognitionChoices) sr).setChoices(SpeechRecognition.this.choices);
+        } else {
+            throw new UnsupportedOperationException(SpeechRecognitionChoices.class.getSimpleName());
+        }
+
         SpeechRecognition.this.speechRecognitionActive = true;
         waitForPendingSpeechToComplete();
+    }
+
+    private List<String> srgs(List<String> choices) {
+        throw new UnsupportedOperationException("TODO Implements SRGS builder");
     }
 
     private void waitForPendingSpeechToComplete() {

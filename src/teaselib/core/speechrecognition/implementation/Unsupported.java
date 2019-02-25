@@ -1,8 +1,8 @@
 package teaselib.core.speechrecognition.implementation;
 
-import java.util.List;
 import java.util.Locale;
 
+import teaselib.core.speechrecognition.SpeechRecognitionControl;
 import teaselib.core.speechrecognition.SpeechRecognitionEvents;
 import teaselib.core.speechrecognition.SpeechRecognitionImplementation;
 
@@ -14,12 +14,7 @@ public class Unsupported extends SpeechRecognitionImplementation {
     public static final Unsupported Instance = new Unsupported();
 
     @Override
-    public void init(SpeechRecognitionEvents<SpeechRecognitionImplementation> events, Locale locale) throws Throwable {
-        // Ignore
-    }
-
-    @Override
-    public void setChoices(List<String> choices) {
+    public void init(SpeechRecognitionEvents<SpeechRecognitionControl> events, Locale locale) throws Throwable {
         // Ignore
     }
 

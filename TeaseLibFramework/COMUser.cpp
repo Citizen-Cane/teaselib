@@ -20,7 +20,7 @@ COMUser::COMUser()
 	}
 }
 
-COMUser::COMUser(std::tr1::function<void()> code)
+COMUser::COMUser(std::function<void()> code)
 : COMUser()
 {
 	code();

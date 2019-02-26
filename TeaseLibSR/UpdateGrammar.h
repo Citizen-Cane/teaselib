@@ -7,7 +7,7 @@
 class UpdateGrammar
 {
 public:
-	UpdateGrammar(CComPtr<ISpRecoContext> cpContext, std::tr1::function<void()> code);
+	UpdateGrammar(CComPtr<ISpRecoContext> cpContext, std::function<void()> code);
 	virtual ~UpdateGrammar();
 private:
 	CComPtr<ISpRecoContext> cpContext;

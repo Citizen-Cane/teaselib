@@ -5,10 +5,9 @@
 
 class COMUser
 {
-//	static unsigned long refCount;
 public:
 	COMUser();
-	COMUser(std::tr1::function<void()> code);
+	COMUser(std::function<void()> code);
 	virtual ~COMUser();
 protected:
 	typedef std::map<DWORD, unsigned long> RefCount;

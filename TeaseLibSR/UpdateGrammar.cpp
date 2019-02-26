@@ -3,7 +3,7 @@
 
 
 
-UpdateGrammar::UpdateGrammar(CComPtr<ISpRecoContext> cpContext, std::tr1::function<void()> code)
+UpdateGrammar::UpdateGrammar(CComPtr<ISpRecoContext> cpContext, std::function<void()> code)
 	: cpContext(cpContext)
 {
 	cpContext->Pause(NULL);

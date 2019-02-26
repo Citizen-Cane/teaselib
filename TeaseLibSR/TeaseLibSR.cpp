@@ -45,32 +45,19 @@ extern "C"
         }
     }
 
-    /*
-    * Class:     teaselib_speechrecognition_implementation_TeaseLibSR
-    * Method:    initSREventThread
-    * Signature: (Lteaselib/speechrecognition/implementation/TeaseLibSR;)V
-    */
-    JNIEXPORT void JNICALL Java_teaselib_core_speechrecognition_implementation_TeaseLibSR_initSREventThread
-    (JNIEnv *threadEnv, jobject jthis, jobject jthread) {
+	/*
+	 * Class:     teaselib_core_speechrecognition_implementation_TeaseLibSR
+	 * Method:    initSREventThread
+	 * Signature: (Ljava/util/concurrent/CountDownLatch;)V
+	 */
+	JNIEXPORT void JNICALL Java_teaselib_core_speechrecognition_implementation_TeaseLibSR_initSREventThread
+    (JNIEnv *threadEnv, jobject jthis, jobject jSignalInitialized) {
         try {
             SpeechRecognizer* speechRecognizer = static_cast<SpeechRecognizer*>(NativeObject::get(threadEnv, jthis));
             NativeObject::checkInitializedOrThrow(speechRecognizer);
-            COMUser([&speechRecognizer, &threadEnv, &jthis, &jthread]() {
+            COMUser([&speechRecognizer, &threadEnv, &jthis, &jSignalInitialized]() {
                 speechRecognizer->speechRecognitionInitContext();
-
-				threadEnv->CallVoidMethod(jthread, threadEnv->GetMethodID(threadEnv->GetObjectClass(jthread), "notifyAll", "()V"));
-                if (threadEnv->ExceptionCheck()) {
-                    throw new JNIException(threadEnv);
-                }
-
-                // notifyAll() doesn't cause the waiting threads to continue immediately,
-                // first the thread that obtains the monitor (that's us) has to leave the synchronized block
-                // We have to do it manually here, since
-                // the thread never leaves the synchronized() context that was established in TeaseLibSR.init()
-                threadEnv->MonitorExit(jthread);
-                if (threadEnv->ExceptionCheck()) {
-                    throw new JNIException(threadEnv);
-                }
+				threadEnv->CallVoidMethod(jSignalInitialized, threadEnv->GetMethodID(threadEnv->GetObjectClass(jSignalInitialized), "countDown", "()V"));
                 speechRecognizer->speechRecognitionEventHandlerThread(threadEnv);
             });
         } catch (NativeException *e) {
@@ -87,7 +74,7 @@ extern "C"
     */
     JNIEXPORT void JNICALL Java_teaselib_core_speechrecognition_implementation_TeaseLibSR_setChoices__Ljava_util_List_2
     (JNIEnv *env, jobject jthis, jobject jchoices) {
-        try {
+		try {
             SpeechRecognizer* speechRecognizer = static_cast<SpeechRecognizer*>(NativeObject::get(env, jthis));
             NativeObject::checkInitializedOrThrow(speechRecognizer);
             // jchoices is a set
@@ -121,7 +108,6 @@ extern "C"
  */
 	JNIEXPORT void JNICALL Java_teaselib_core_speechrecognition_implementation_TeaseLibSR_setChoices__Ljava_lang_String_2
 	(JNIEnv *, jobject, jstring) {
-
 	}
 
     /*

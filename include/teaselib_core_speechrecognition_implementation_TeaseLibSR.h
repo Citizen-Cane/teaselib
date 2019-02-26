@@ -18,7 +18,7 @@ JNIEXPORT void JNICALL Java_teaselib_core_speechrecognition_implementation_Tease
 /*
  * Class:     teaselib_core_speechrecognition_implementation_TeaseLibSR
  * Method:    initSREventThread
- * Signature: (Ljava/lang/Thread;)V
+ * Signature: (Ljava/util/concurrent/CountDownLatch;)V
  */
 JNIEXPORT void JNICALL Java_teaselib_core_speechrecognition_implementation_TeaseLibSR_initSREventThread
   (JNIEnv *, jobject, jobject);

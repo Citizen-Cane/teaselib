@@ -27,38 +27,33 @@ public class TeaseLibSR extends SpeechRecognitionImplementation
 
     @Override
     public void init(final SpeechRecognitionEvents<SpeechRecognitionControl> events, Locale locale) throws Throwable {
-        CountDownLatch awaitStart = new CountDownLatch(1);
-
+        CountDownLatch awaitInitialized = new CountDownLatch(1);
         Runnable speechRecognitionService = () -> {
             try {
                 String languageCode = languageCode(locale);
                 initSR(events, languageCode);
-                awaitStart.countDown();
-                // Never ends
-                initSREventThread(eventThread);
+                initSREventThread(awaitInitialized);
             } catch (Exception e) {
                 logger.warn(e.getMessage());
                 logger.info("-> trying language {}", locale.getLanguage());
                 initSR(events, locale.getLanguage());
                 try {
-                    initSREventThread(eventThread);
+                    initSREventThread(awaitInitialized);
                 } catch (Exception e1) {
                     logger.error(e.getMessage(), e);
                     eventThreadException = e;
                 }
             } finally {
-                awaitStart.countDown();
+                awaitInitialized.countDown();
             }
         };
 
         eventThread = new Thread(speechRecognitionService);
-        synchronized (eventThread) {
-            eventThread.setName("Speech Recognition event thread");
-            eventThread.start();
-            awaitStart.await();
-            if (eventThreadException != null) {
-                throw eventThreadException;
-            }
+        eventThread.setName("Speech Recognition event thread");
+        eventThread.start();
+        awaitInitialized.await();
+        if (eventThreadException != null) {
+            throw eventThreadException;
         }
     }
 
@@ -74,7 +69,7 @@ public class TeaseLibSR extends SpeechRecognitionImplementation
      * would cause the thread to get a default class loader, without the class path to teaselib, resulting in not being
      * able to create event objects
      */
-    private native void initSREventThread(Thread jthread);
+    private native void initSREventThread(CountDownLatch signalInitialized);
 
     @Override
     public native void setChoices(List<String> choices);

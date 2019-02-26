@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 
 import org.junit.Test;
 
@@ -20,7 +21,7 @@ public class SpeechRecognitionInputTest {
 
     private static final Choices Choices = new Choices(
             Arrays.asList(choice("I've spurted off, Miss"), choice("I give up, Miss"), choice("I have a dream")));
-    private final Confidence confidence = Confidence.High;
+    private static final Confidence confidence = Confidence.High;
 
     @Test
     public void testSpeechRecognitionInputMethod() throws InterruptedException, IOException {
@@ -35,7 +36,7 @@ public class SpeechRecognitionInputTest {
         try {
             inputMethod.show(prompt);
             sr.emulateRecogntion("I have a dream");
-            prompt.click.await();
+            prompt.click.await(10, TimeUnit.SECONDS);
             inputMethod.dismiss(prompt);
         } finally {
             prompt.lock.unlock();

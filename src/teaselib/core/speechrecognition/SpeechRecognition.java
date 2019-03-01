@@ -157,6 +157,10 @@ public class SpeechRecognition {
     }
 
     SpeechRecognition(Locale locale) {
+        this(locale, TeaseLibSR.class);
+    }
+
+    SpeechRecognition(Locale locale, Class<? extends SpeechRecognitionImplementation> srClass) {
         // First add the progress events, because we don't want to get events
         // consumed before setting the in-progress state
         this.events = new SpeechRecognitionEvents<>(lockSpeechRecognitionInProgress, unlockSpeechRecognitionInProgress);
@@ -168,7 +172,7 @@ public class SpeechRecognition {
                 delegateThread.run(() -> {
                     try {
                         if (Environment.SYSTEM == Environment.Windows) {
-                            sr = new TeaseLibSR();
+                            sr = srClass.getConstructor().newInstance();
                             sr.init(events, SpeechRecognition.this.locale);
                         } else {
                             sr = Unsupported.Instance;
@@ -203,6 +207,11 @@ public class SpeechRecognition {
         // RecognitionRejected-event and fire an recognized event instead
         hypothesisEventHandler = new SpeechDetectionEventHandler(this);
         hypothesisEventHandler.addEventListeners();
+    }
+
+    void close() {
+        sr.close();
+        sr = null;
     }
 
     private static boolean enableSpeechHypothesisHandlerGlobally() {
@@ -281,7 +290,7 @@ public class SpeechRecognition {
         }
     }
 
-    private void setupAndStartSR(final List<String> choices) {
+    private void setupAndStartSR(List<String> choices) {
         if (enableSpeechHypothesisHandlerGlobally() || SpeechRecognition.this.recognitionConfidence == Confidence.Low) {
             hypothesisEventHandler.setChoices(choices);
             hypothesisEventHandler.setExpectedConfidence(SpeechRecognition.this.recognitionConfidence);
@@ -290,19 +299,24 @@ public class SpeechRecognition {
             hypothesisEventHandler.enable(false);
         }
 
-        if (sr instanceof SpeechRecognitionSRGS) {
-            ((SpeechRecognitionChoices) sr).setChoices(srgs(SpeechRecognition.this.choices));
-        } else if (sr instanceof SpeechRecognitionChoices) {
-            ((SpeechRecognitionChoices) sr).setChoices(SpeechRecognition.this.choices);
-        } else {
-            throw new UnsupportedOperationException(SpeechRecognitionChoices.class.getSimpleName());
-        }
+        setChoices(choices);
 
         SpeechRecognition.this.speechRecognitionActive = true;
         waitForPendingSpeechToComplete();
     }
 
-    private List<String> srgs(List<String> choices) {
+    private void setChoices(List<String> choices) {
+        if (sr instanceof SpeechRecognitionSRGS) {
+            ((SpeechRecognitionSRGS) sr).setChoices(srgs(choices));
+        } else if (sr instanceof SpeechRecognitionChoices) {
+            ((SpeechRecognitionChoices) sr).setChoices(choices);
+        } else {
+            throw new UnsupportedOperationException(SpeechRecognitionChoices.class.getSimpleName());
+        }
+    }
+
+    String srgs(List<String> choices) {
+        // TODO For testing purposes overwrite anonymously
         throw new UnsupportedOperationException("TODO Implements SRGS builder");
     }
 

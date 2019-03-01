@@ -2,20 +2,37 @@
 #include "JNIString.h"
 
 
-JNIString::JNIString(JNIEnv *env, jstring string) : JNIObject(env, string) {
+template<> JNIStringT<wchar_t>::JNIStringT(JNIEnv *env, jstring string) 
+	: JNIObject(env, string) {
 	jboolean isCopy;
 	this->string = reinterpret_cast<const wchar_t*>(env->GetStringChars(string, &isCopy));
 }
 
-JNIString::JNIString(JNIEnv *env, const wchar_t * const string) : JNIObject(env, env->NewString(reinterpret_cast<const jchar*>(string), _tcslen(string))) {
+template<> JNIStringT<wchar_t>::JNIStringT(JNIEnv *env, const wchar_t * const string) 
+	: JNIObject(env, env->NewString(reinterpret_cast<const jchar*>(string), wcslen(string))) {
 	jboolean isCopy;
-	this->string = reinterpret_cast<const wchar_t*>(env->GetStringChars(static_cast<jstring>(jthis), &isCopy));
+	this->string = reinterpret_cast<const wchar_t*>(env->GetStringChars(jthis, &isCopy));
 }
 
-JNIString::~JNIString() {
-	env->ReleaseStringChars(static_cast<jstring>(jthis), reinterpret_cast<const jchar*>(string));
+template<> JNIStringT<wchar_t>::~JNIString() {
+	env->ReleaseStringChars(jthis, reinterpret_cast<const jchar*>(string));
 }
 
-JNIString::operator const wchar_t*() const {
-	return string;
+template<> JNIStringT<char>::JNIStringT(JNIEnv *env, jstring string)
+	: JNIObject(env, string) {
+	jboolean isCopy;
+	this->string = env->GetStringUTFChars(string, &isCopy);
 }
+
+template<> JNIStringT<char>::JNIStringT(JNIEnv *env, const char * const string)
+	: JNIObject(env, env->NewStringUTF(reinterpret_cast<const char*>(string))) {
+	jboolean isCopy;
+	this->string = env->GetStringUTFChars(jthis, &isCopy);
+}
+
+template<> JNIStringT<char>::~JNIStringT() {
+	env->ReleaseStringUTFChars(jthis, string);
+}
+
+template class JNIStringT<wchar_t>;
+template class JNIStringT<char>;

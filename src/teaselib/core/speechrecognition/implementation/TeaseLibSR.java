@@ -12,8 +12,7 @@ import teaselib.core.speechrecognition.SpeechRecognitionControl;
 import teaselib.core.speechrecognition.SpeechRecognitionEvents;
 import teaselib.core.speechrecognition.SpeechRecognitionImplementation;
 
-public class TeaseLibSR extends SpeechRecognitionImplementation
-        implements /* SpeechRecognitionSRGS, */ SpeechRecognitionChoices {
+public class TeaseLibSR extends SpeechRecognitionImplementation implements SpeechRecognitionChoices {
     private static final Logger logger = LoggerFactory.getLogger(TeaseLibSR.class);
 
     private long nativeObject;
@@ -93,12 +92,8 @@ public class TeaseLibSR extends SpeechRecognitionImplementation
     public native void dispose();
 
     @Override
-    protected void finalize() throws Throwable {
-        try {
-            dispose();
-        } catch (Throwable t) {
-            logger.error(t.getMessage(), t);
-        }
-        super.finalize();
+    public void close() {
+        // TODO Crashes -> stop SR thread ...
+        dispose();
     }
 }

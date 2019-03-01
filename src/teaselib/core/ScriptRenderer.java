@@ -51,7 +51,7 @@ public class ScriptRenderer implements AutoCloseable {
     }
 
     @Override
-    public void close() throws Exception {
+    public void close() {
         scriptFunctionExecutor.shutdown();
         inputMethodExecutor.shutdown();
         renderQueue.getExecutorService().shutdown();

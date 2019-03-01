@@ -66,7 +66,7 @@ public class MessageRendererQueue implements AutoCloseable {
     }
 
     @Override
-    public void close() throws Exception {
+    public void close() {
         executor.shutdown();
         executor.getQueue().drainTo(new ArrayList<>());
     }

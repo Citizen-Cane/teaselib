@@ -107,7 +107,20 @@ extern "C"
  * Signature: (Ljava/lang/String;)V
  */
 	JNIEXPORT void JNICALL Java_teaselib_core_speechrecognition_implementation_TeaseLibSR_setChoices__Ljava_lang_String_2
-	(JNIEnv *, jobject, jstring) {
+	(JNIEnv *env, jobject jthis, jstring jsrgs) {
+		try {
+			SpeechRecognizer* speechRecognizer = static_cast<SpeechRecognizer*>(NativeObject::get(env, jthis));
+			NativeObject::checkInitializedOrThrow(speechRecognizer);
+
+			JNIStringUTF8 srgs(env, jsrgs);
+			speechRecognizer->setChoices(srgs, srgs.length());
+		}
+		catch (NativeException *e) {
+			JNIException::throwNew(env, e);
+		}
+		catch (JNIException * /**e*/) {
+			// Forwarded automatically
+		}
 	}
 
     /*

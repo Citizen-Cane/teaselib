@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import teaselib.Config;
 import teaselib.core.configuration.Configuration;
@@ -13,7 +14,7 @@ import teaselib.core.configuration.Configuration;
  * @author Citizen-Cane
  *
  */
-public class SpeechRecognizer {
+public class SpeechRecognizer implements AutoCloseable {
     private final Map<Locale, SpeechRecognition> speechRecognitionInstances = new HashMap<>();
     @SuppressWarnings("unused")
     private final Configuration config;
@@ -38,6 +39,13 @@ public class SpeechRecognizer {
                 }
             }
         }
+    }
+
+    public void close() {
+        for (Entry<Locale, SpeechRecognition> entry : speechRecognitionInstances.entrySet()) {
+            entry.getValue().close();
+        }
+        speechRecognitionInstances.clear();
     }
 
     /**

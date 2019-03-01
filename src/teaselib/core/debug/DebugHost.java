@@ -49,7 +49,7 @@ public class DebugHost implements Host, HostInputMethod.Backend, AutoCloseable {
     }
 
     @Override
-    public void close() throws Exception {
+    public void close() {
         executorService.shutdown();
     }
 

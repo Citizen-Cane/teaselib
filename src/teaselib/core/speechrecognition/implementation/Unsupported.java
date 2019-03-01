@@ -42,4 +42,10 @@ public class Unsupported extends SpeechRecognitionImplementation {
     protected void dispose() {
         // Ignore
     }
+
+    @Override
+    public void close() {
+        // Ignore
+    }
+
 }

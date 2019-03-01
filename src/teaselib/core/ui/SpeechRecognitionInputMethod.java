@@ -96,6 +96,7 @@ public class SpeechRecognitionInputMethod implements InputMethod {
                             logLackOfConfidence(result);
                         }
                     } else {
+                        // TODO Call dismiss() to remove code duplication
                         disableSpeechRecognition();
                         signal(result.index);
                         active.set(null);

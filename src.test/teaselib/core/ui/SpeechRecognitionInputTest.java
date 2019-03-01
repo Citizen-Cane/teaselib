@@ -27,19 +27,21 @@ public class SpeechRecognitionInputTest {
     public void testSpeechRecognitionInputMethod() throws InterruptedException, IOException {
         DebugSetup setup = new DebugSetup().withInput();
         Configuration config = new Configuration(setup);
-        SpeechRecognition sr = new SpeechRecognizer(config).get(new Locale("en-us"));
+        try (SpeechRecognizer speechRecognizer = new SpeechRecognizer(config);) {
+            SpeechRecognition sr = speechRecognizer.get(new Locale("en-us"));
+            SpeechRecognitionInputMethod inputMethod = new SpeechRecognitionInputMethod(sr, confidence,
+                    Optional.empty());
+            Prompt prompt = new Prompt(Choices, Arrays.asList(inputMethod));
 
-        SpeechRecognitionInputMethod inputMethod = new SpeechRecognitionInputMethod(sr, confidence, Optional.empty());
-        Prompt prompt = new Prompt(Choices, Arrays.asList(inputMethod));
-
-        prompt.lock.lockInterruptibly();
-        try {
-            inputMethod.show(prompt);
-            sr.emulateRecogntion("I have a dream");
-            prompt.click.await(10, TimeUnit.SECONDS);
-            inputMethod.dismiss(prompt);
-        } finally {
-            prompt.lock.unlock();
+            prompt.lock.lockInterruptibly();
+            try {
+                inputMethod.show(prompt);
+                sr.emulateRecogntion("I have a dream");
+                prompt.click.await(10, TimeUnit.SECONDS);
+                inputMethod.dismiss(prompt);
+            } finally {
+                prompt.lock.unlock();
+            }
         }
     }
 }

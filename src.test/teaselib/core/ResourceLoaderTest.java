@@ -1,6 +1,9 @@
 package teaselib.core;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -14,6 +17,7 @@ import java.util.Collection;
 import org.junit.Test;
 
 import teaselib.core.util.ReflectionUtils;
+import teaselib.core.util.Stream;
 import teaselib.test.TestScript;
 
 /**
@@ -288,4 +292,13 @@ public class ResourceLoaderTest {
             assertNotNull(resourceStream);
         }
     }
+
+    @Test
+    public void resourceToStringResourceLoader() throws IOException {
+        ResourceLoader resources = new ResourceLoader(ResourceLoaderTest.class);
+        String xml = Stream.toString(resources.get(RESOURCE_1));
+        assertTrue(xml.length() > 0);
+        assertEquals("1", xml);
+    }
+
 }

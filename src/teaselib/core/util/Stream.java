@@ -1,14 +1,18 @@
 package teaselib.core.util;
 
+import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.util.stream.Collectors;
 
 /**
  * @author Citizen-Cane
  *
  */
+// TODO Rename to IOStream to resolve name collision with java.util.stream.Stream
 public class Stream {
 
     private Stream() {
@@ -60,4 +64,15 @@ public class Stream {
         }
         return true;
     }
+
+    public static String toString(InputStream resource) throws IOException {
+        try (InputStreamReader inputStreamReader = new InputStreamReader(resource);
+                BufferedReader bufferedReader = new BufferedReader(inputStreamReader);) {
+            java.util.stream.Stream<String> lines = bufferedReader.lines();
+            return lines.collect(Collectors.joining(System.lineSeparator()));
+        } finally {
+            resource.close();
+        }
+    }
+
 }

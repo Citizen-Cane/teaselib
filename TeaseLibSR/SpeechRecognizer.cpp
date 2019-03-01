@@ -47,7 +47,11 @@ SpeechRecognizer::~SpeechRecognizer() {
     if (hExitEvent != INVALID_HANDLE_VALUE) {
         SetEvent(hExitEvent);
     }
-    speechRecognitionThread.join();
+
+	// assert(false);
+	// TODO remember thread object or thread id
+    //speechRecognitionThread.join();
+
     env->DeleteGlobalRef(gjthis);
     env->DeleteGlobalRef(gjevents);
 }
@@ -55,6 +59,7 @@ SpeechRecognizer::~SpeechRecognizer() {
 void SpeechRecognizer::speechRecognitionEventHandlerThread(JNIEnv* threadEnv) {
     this->threadEnv = threadEnv;
     assert(threadEnv);
+//	speechRecognitionThread = std::this_thread::();
     recognizerStatus = speechRecognitionInitAudio();
     assert(SUCCEEDED(recognizerStatus));
     if (SUCCEEDED(recognizerStatus)) {
@@ -103,6 +108,10 @@ void SpeechRecognizer::speechRecognitionInitContext() {
         throw new NativeException(FAILED(hr) ? hr : E_INVALIDARG, (std::wstring(L"Unsupported language or region '") + locale +
                                   L"'. Please install the corresponding Windows language pack.").c_str());
     }
+
+	hr = grammarCompiler.CoCreateInstance(CLSID_SpW3CGrammarCompiler);
+	assert(SUCCEEDED(hr));
+	if (FAILED(hr)) throw new COMException(hr);
 
 	// Get the lang id in order to be able reset the grammar
 	hr = SpGetLanguageFromToken(cpRecognizerToken, &langID);
@@ -286,16 +295,47 @@ void SpeechRecognizer::setChoices(const Choices& choices) {
 		assert(SUCCEEDED(hr));
 		if (FAILED(hr)) throw new COMException(hr);
 
-		// activate the grammar since "construction" is finished, and ready for receiving recognitions
-		hr = cpGrammar->SetGrammarState(SPGS_ENABLED);
-		assert(SUCCEEDED(hr));
-		if (FAILED(hr)) throw new COMException(hr);
-		
 		// Set all top-level rules in the new grammar to the active state
 		hr = cpGrammar->SetRuleState(NULL, NULL, SPRS_ACTIVE);
 		assert(SUCCEEDED(hr));
 		if (FAILED(hr)) throw new COMException(hr);
 	});
+}
+
+void SpeechRecognizer::setChoices(const char* srgs, const size_t length) {
+	checkRecogizerStatus();
+
+	CComPtr<IStream> xml = SHCreateMemStream(reinterpret_cast<const BYTE*>(srgs), length);
+	if (!xml) throw new COMException(E_OUTOFMEMORY);
+	CComPtr<IStream> cfg = SHCreateMemStream(NULL, 65536);
+	if (!cfg) throw new COMException(E_OUTOFMEMORY);
+
+	HRESULT hr = grammarCompiler->CompileStream(xml, cfg, NULL, NULL, NULL, 0);
+	assert(SUCCEEDED(hr));
+	if (FAILED(hr)) throw new COMException(hr);
+
+	const LARGE_INTEGER start = { 0,0 };
+	ULARGE_INTEGER size = { 0,0 };
+	cfg->Seek(start, STREAM_SEEK_CUR, &size);
+	cfg->Seek(start, STREAM_SEEK_SET, NULL);
+
+	CComPtr<IStream> buffer;
+	hr = ::CreateStreamOnHGlobal(NULL, true, &buffer);
+	if (FAILED(hr)) throw new COMException(hr);
+	hr = IStream_Copy(cfg, buffer, size.LowPart);
+	if (FAILED(hr)) throw new COMException(hr);
+
+	HGLOBAL hGrammar;
+	hr = GetHGlobalFromStream(buffer, &hGrammar);
+	if (SUCCEEDED(hr)) {
+		hr = cpGrammar->LoadCmdFromMemory((SPBINARYGRAMMAR *)::GlobalLock(hGrammar), SPLO_DYNAMIC /* SPLO_STATIC*/);
+	}
+	GlobalUnlock(hGrammar);
+	if (FAILED(hr)) throw new COMException(hr);
+
+	hr = cpGrammar->SetRuleState(NULL, NULL, SPRS_ACTIVE);
+	assert(SUCCEEDED(hr));
+	if (FAILED(hr)) throw new COMException(hr);
 }
 
 void SpeechRecognizer::setMaxAlternates(const int maxAlternates) {

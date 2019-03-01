@@ -2,14 +2,22 @@
 
 #include "JNIObject.h"
 
-class JNIString : public JNIObject<jstring>
+template<typename T> class JNIStringT : public JNIObject<jstring>
 {
 public:
-	JNIString(JNIEnv *env, jstring string);
-	JNIString(JNIEnv *env, const wchar_t * const string);
-	virtual ~JNIString();
-	operator const wchar_t*() const;
+	JNIStringT(JNIEnv *env, jstring string);
+	JNIStringT(JNIEnv *env, const T * const string);
+	virtual ~JNIStringT();
+
+	operator const T*() const {
+		return string;
+	};
+	size_t length() const {
+		return env->GetStringLength(jthis);
+	};
 private:
-	const wchar_t *string;
+	const T *string;
 };
 
+typedef JNIStringT<wchar_t> JNIString;
+typedef JNIStringT<char> JNIStringUTF8;

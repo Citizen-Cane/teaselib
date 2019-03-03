@@ -34,10 +34,10 @@ jobject getConfidenceField(JNIEnv *env, signed char confidence) {
         assert(false);
         confidenceFieldName = "Low";
     }
-    jclass confidenceClass = JNIClass::getClass(env, "teaselib/core/speechrecognition/SpeechRecognitionResult$Confidence");
+    jclass confidenceClass = JNIClass::getClass(env, "teaselib/core/speechrecognition/Confidence");
     jobject confidenceValue = env->GetStaticObjectField(
                                   confidenceClass,
-                                  JNIClass::getStaticFieldID(env, confidenceClass, confidenceFieldName, "Lteaselib/core/speechrecognition/SpeechRecognitionResult$Confidence;"));
+                                  JNIClass::getStaticFieldID(env, confidenceClass, confidenceFieldName, "Lteaselib/core/speechrecognition/Confidence;"));
     return confidenceValue;
 }
 
@@ -70,13 +70,14 @@ void SpeechRecognizedEvent::fire(ISpRecoResult* pResult) {
 
             jobject confidenceValue = getConfidenceField(env, pAlternatePhrase->Rule.Confidence);
             jobject speechRecognitionResult = env->NewObject(
-                                                  speechRecognitionResultClass,
-                                                  JNIClass::getMethodID(env, speechRecognitionResultClass, "<init>",
-                                                          "(ILjava/lang/String;DLteaselib/core/speechrecognition/SpeechRecognitionResult$Confidence;)V"),
-                                                  index,
-                                                  JNIString(env, text).operator jstring(),
-                                                  pAlternatePhrase->Rule.SREngineConfidence,
-                                                  confidenceValue);
+				speechRecognitionResultClass,
+				JNIClass::getMethodID(env, speechRecognitionResultClass, "<init>",
+						"(ILjava/lang/String;Lteaselib/core/speechrecognition/Rule;FLteaselib/core/speechrecognition/Confidence;)V"),
+				index,
+				JNIString(env, text).operator jstring(),
+				NULL, // TODO Rule
+				pAlternatePhrase->Rule.SREngineConfidence,
+				confidenceValue);
             CoTaskMemFree(text);
             pPhraseAlt[i]->Release();
             if (env->ExceptionCheck()) throw new JNIException(env);
@@ -98,13 +99,14 @@ void SpeechRecognizedEvent::fire(ISpRecoResult* pResult) {
         const float SREngineConfidence = knownPhrase ? pPhrase->Rule.SREngineConfidence : 0.25;
         const unsigned char confidence = knownPhrase ? pPhrase->Rule.Confidence : SP_LOW_CONFIDENCE;
         jobject speechRecognitionResult = env->NewObject(
-                                                speechRecognitionResultClass,
-                                                JNIClass::getMethodID(env, speechRecognitionResultClass, "<init>",
-                                                        "(ILjava/lang/String;DLteaselib/core/speechrecognition/SpeechRecognitionResult$Confidence;)V"),
-                                                index,
-                                                JNIString(env, text).operator jstring(),
-                                                SREngineConfidence,
-                                                getConfidenceField(env, confidence));
+			speechRecognitionResultClass,
+			JNIClass::getMethodID(env, speechRecognitionResultClass, "<init>",
+				"(ILjava/lang/String;Lteaselib/core/speechrecognition/Rule;FLteaselib/core/speechrecognition/Confidence;)V"),
+			index,
+			JNIString(env, text).operator jstring(),
+			NULL, // TODO Rule
+			SREngineConfidence,
+			getConfidenceField(env, confidence));
         CoTaskMemFree(text);
 		CoTaskMemFree(pPhrase);
         if (env->ExceptionCheck()) throw new JNIException(env);

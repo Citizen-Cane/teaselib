@@ -7,7 +7,6 @@ import java.util.Optional;
 import org.junit.Before;
 import org.junit.Test;
 
-import teaselib.core.speechrecognition.SpeechRecognitionResult.Confidence;
 import teaselib.core.ui.Choice;
 import teaselib.core.ui.Choices;
 import teaselib.core.ui.Prompt;

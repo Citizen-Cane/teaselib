@@ -10,8 +10,8 @@ import org.junit.Test;
 
 import teaselib.core.configuration.Configuration;
 import teaselib.core.configuration.DebugSetup;
+import teaselib.core.speechrecognition.Confidence;
 import teaselib.core.speechrecognition.SpeechRecognition;
-import teaselib.core.speechrecognition.SpeechRecognitionResult.Confidence;
 import teaselib.core.speechrecognition.SpeechRecognizer;
 
 public class SpeechRecognitionInputTest {

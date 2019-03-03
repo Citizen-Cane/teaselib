@@ -25,7 +25,7 @@ import teaselib.Replay;
 import teaselib.ScriptFunction;
 import teaselib.core.media.RenderedMessage.Decorator;
 import teaselib.core.media.ScriptMessageDecorator;
-import teaselib.core.speechrecognition.SpeechRecognitionResult.Confidence;
+import teaselib.core.speechrecognition.Confidence;
 import teaselib.core.speechrecognition.SpeechRecognizer;
 import teaselib.core.texttospeech.TextToSpeechPlayer;
 import teaselib.core.ui.Choice;

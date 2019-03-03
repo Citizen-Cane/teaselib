@@ -8,7 +8,7 @@ import java.io.IOException;
 import teaselib.Config;
 import teaselib.core.UserItemsImpl;
 import teaselib.core.devices.remote.LocalNetworkDevice;
-import teaselib.core.speechrecognition.SpeechRecognitionResult.Confidence;
+import teaselib.core.speechrecognition.Confidence;
 import teaselib.core.texttospeech.TextToSpeechPlayer;
 import teaselib.core.util.ExceptionUtil;
 

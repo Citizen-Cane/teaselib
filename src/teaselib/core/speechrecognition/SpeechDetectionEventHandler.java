@@ -6,7 +6,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import teaselib.core.events.Event;
-import teaselib.core.speechrecognition.SpeechRecognitionResult.Confidence;
 import teaselib.core.speechrecognition.events.SpeechRecognitionStartedEventArgs;
 import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
 
@@ -139,7 +138,8 @@ public class SpeechDetectionEventHandler {
             } else if (hypothesisIsAcceptable()) {
                 eventArgs.consumed = true;
                 SpeechRecognitionResult elevatedResult = new SpeechRecognitionResult(hypothesisResult.index,
-                        hypothesisResult.text, expectedConfidence.probability, expectedConfidence);
+                        hypothesisResult.text, hypothesisResult.rule, expectedConfidence.probability,
+                        expectedConfidence);
                 logger.info(
                         "Forwarding rejected recognition event {} with accepted hypothesis {} as elevated result {}",
                         eventArgs, hypothesisResult, elevatedResult);
@@ -192,7 +192,8 @@ public class SpeechDetectionEventHandler {
                     && hypothesisIsAcceptable()) {
                 eventArgs.consumed = true;
                 SpeechRecognitionResult elevatedResult = new SpeechRecognitionResult(hypothesisResult.index,
-                        recognitionCompletedResult.text, expectedConfidence.probability, expectedConfidence);
+                        recognitionCompletedResult.text, recognitionCompletedResult.rule,
+                        expectedConfidence.probability, expectedConfidence);
                 logger.info("Replacing recognition result {} of accepted hypothesis {} as elevated result {}",
                         recognitionCompletedResult, hypothesisResult, elevatedResult);
                 fireRecognitionCompletedEvent(sender, elevatedResult);

@@ -13,10 +13,10 @@ import org.slf4j.LoggerFactory;
 
 import teaselib.core.events.Event;
 import teaselib.core.speechrecognition.AudioSignalProblems;
+import teaselib.core.speechrecognition.Confidence;
 import teaselib.core.speechrecognition.SpeechRecognition;
 import teaselib.core.speechrecognition.SpeechRecognitionControl;
 import teaselib.core.speechrecognition.SpeechRecognitionResult;
-import teaselib.core.speechrecognition.SpeechRecognitionResult.Confidence;
 import teaselib.core.speechrecognition.events.AudioSignalProblemOccuredEventArgs;
 import teaselib.core.speechrecognition.events.SpeechRecognitionStartedEventArgs;
 import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;

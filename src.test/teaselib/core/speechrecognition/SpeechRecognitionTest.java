@@ -12,7 +12,6 @@ import java.util.concurrent.TimeUnit;
 import org.junit.Test;
 
 import teaselib.core.ResourceLoader;
-import teaselib.core.speechrecognition.SpeechRecognitionResult.Confidence;
 import teaselib.core.speechrecognition.implementation.TeaseLibSR;
 import teaselib.core.speechrecognition.implementation.TeaseLibSRGS;
 import teaselib.core.ui.Choice;

@@ -12,7 +12,6 @@ import org.slf4j.LoggerFactory;
 import teaselib.core.ScriptInterruptedException;
 import teaselib.core.events.DelegateExecutor;
 import teaselib.core.events.Event;
-import teaselib.core.speechrecognition.SpeechRecognitionResult.Confidence;
 import teaselib.core.speechrecognition.events.SpeechRecognitionStartedEventArgs;
 import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
 import teaselib.core.speechrecognition.implementation.TeaseLibSR;

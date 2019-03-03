@@ -1,6 +1,6 @@
 package teaselib.core.speechrecognition;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -26,7 +26,7 @@ public class SpeechRecognitionTest {
     private static final Confidence confidence = Confidence.High;
 
     @Test
-    public void testSR() throws InterruptedException, IOException {
+    public void testSR() throws InterruptedException {
         SpeechRecognition sr = new SpeechRecognition(Locale.ENGLISH, TeaseLibSR.class);
         SpeechRecognitionInputMethod inputMethod = new SpeechRecognitionInputMethod(sr, confidence, Optional.empty());
         Prompt prompt = new Prompt(Choices, Arrays.asList(inputMethod));

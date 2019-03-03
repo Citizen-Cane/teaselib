@@ -44,46 +44,37 @@ jobject getConfidenceField(JNIEnv *env, signed char confidence) {
 void SpeechRecognizedEvent::fire(ISpRecoResult* pResult) {
     SPPHRASE* pPhrase;
     HRESULT hr = pResult->GetPhrase(&pPhrase);
-    if (FAILED(hr)) {
-        throw new COMException(hr);
-    }
+    if (FAILED(hr)) throw new COMException(hr);
+
     const size_t maxAlternates = 256;
     ISpPhraseAlt* pPhraseAlt[maxAlternates];
-    ULONG ulCount;
+    ULONG ulAlternatesCount;
     if (pPhrase->Rule.ulCountOfElements > 0) {
-        // get the top MY_MAX_ALTERNATES alternates to the entire recognized phrase
         hr = pResult->GetAlternates(
-                 pPhrase->Rule.ulFirstElement,
-                 pPhrase->Rule.ulCountOfElements,
+                 0,
+				 SPPR_ALL_ELEMENTS,
                  maxAlternates,
                  pPhraseAlt,
-                 &ulCount);
+                 &ulAlternatesCount);
+    if (FAILED(hr)) throw new COMException(hr);
     } else {
-        ulCount = 0;
+        ulAlternatesCount = 0;
     }
-    if (FAILED(hr)) {
-        throw new COMException(hr);
-    }
+
     jclass speechRecognitionResultClass = JNIClass::getClass(env, "teaselib/core/speechrecognition/SpeechRecognitionResult");
-    // Can allocate array only if there is at least one alternate phrase
-    jobjectArray speechRecognitionResults = ulCount > 0
-                                            ? env->NewObjectArray(ulCount, speechRecognitionResultClass, NULL)
-                                            : NULL;
-    if (env->ExceptionCheck()) {
-        throw new JNIException(env);
-    }
-    if (speechRecognitionResults) {
-        for (int i = 0; i < ulCount; i++) {
+	jobjectArray speechRecognitionResults = NULL;
+    if (ulAlternatesCount > 0) {
+		speechRecognitionResults = env->NewObjectArray(ulAlternatesCount, speechRecognitionResultClass, NULL);
+		if (env->ExceptionCheck()) throw new JNIException(env);
+        for (int i = 0; i < ulAlternatesCount; i++) {
             wchar_t* text;
             hr = pPhraseAlt[i]->GetText(SP_GETWHOLEPHRASE, SP_GETWHOLEPHRASE, false, &text, NULL);
-            if (FAILED(hr)) {
-                throw new COMException(hr);
-            }
+            if (FAILED(hr)) throw new COMException(hr);
+
             SPPHRASE* pAlternatePhrase;
-            HRESULT hr = pResult->GetPhrase(&pAlternatePhrase);
-            if (FAILED(hr)) {
-                throw new COMException(hr);
-            }
+            HRESULT hr = pPhraseAlt[i]->GetPhrase(&pAlternatePhrase);
+            if (FAILED(hr)) throw new COMException(hr);
+
             jint index = pAlternatePhrase->Rule.ulId;
             jobject confidenceValue = getConfidenceField(env, pAlternatePhrase->Rule.Confidence);
             jobject speechRecognitionResult = env->NewObject(
@@ -96,13 +87,10 @@ void SpeechRecognizedEvent::fire(ISpRecoResult* pResult) {
                                                   confidenceValue);
             CoTaskMemFree(text);
             pPhraseAlt[i]->Release();
-            if (env->ExceptionCheck()) {
-                throw new JNIException(env);
-            }
-            env->SetObjectArrayElement(speechRecognitionResults, i, speechRecognitionResult);
-            if (env->ExceptionCheck()) {
-                throw new JNIException(env);
-            }
+            if (env->ExceptionCheck()) throw new JNIException(env);
+
+			env->SetObjectArrayElement(speechRecognitionResults, i, speechRecognitionResult);
+            if (env->ExceptionCheck()) throw new JNIException(env);
         }
     } else {
         // Just use the text from the result - if there is one - from the result, for speechDetected or falseRecognition

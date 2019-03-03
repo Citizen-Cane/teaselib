@@ -8,16 +8,22 @@ import java.util.List;
  *
  */
 public class Rule {
+
     final String name;
     final int id;
-    final List<Rule> children;
+    final int fromElement;
+    final int toElement;
+
+    public final List<Rule> children;
     public final float probability;
     public final Confidence confidence;
 
-    public Rule(String name, int id, float probability, Confidence confidence) {
+    public Rule(String name, int id, int fromElement, int toElement, float probability, Confidence confidence) {
         super();
         this.name = name;
         this.id = id;
+        this.fromElement = fromElement;
+        this.toElement = toElement;
         this.children = new ArrayList<>();
         this.probability = probability;
         this.confidence = confidence;
@@ -26,4 +32,11 @@ public class Rule {
     public void add(Rule rule) {
         children.add(rule);
     }
+
+    @Override
+    public String toString() {
+        return name + " ruleid=" + id + " -> (" + fromElement + "," + toElement + ") @" + probability + "~" + confidence
+                + " children" + children;
+    }
+
 }

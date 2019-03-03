@@ -1,6 +1,8 @@
 package teaselib.core.speechrecognition;
 
+import java.util.Arrays;
 import java.util.List;
+import java.util.StringJoiner;
 
 public class SpeechRecognitionResult {
 
@@ -28,6 +30,16 @@ public class SpeechRecognitionResult {
     public boolean hasHigherProbabilityThan(SpeechRecognitionResult recognitionResult) {
         return probability > recognitionResult.probability
                 || confidence.probability > recognitionResult.confidence.probability;
+    }
+
+    public String getText(Rule rule) {
+        // TODO List sequence
+        List<String> elements = Arrays.asList(text.split(" "));
+        StringJoiner stringJoiner = new StringJoiner(" ");
+        for (String element : elements.subList(rule.fromElement, rule.toElement)) {
+            stringJoiner.add(element);
+        }
+        return stringJoiner.toString();
     }
 
     @Override

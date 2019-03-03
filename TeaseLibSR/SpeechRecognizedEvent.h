@@ -11,5 +11,7 @@ public:
 	virtual ~SpeechRecognizedEvent();
 
 	void fire(ISpRecoResult* pResult);
+private:
+	static jobject getRule(JNIEnv *env, const SPPHRASERULE* rule);
 };
 

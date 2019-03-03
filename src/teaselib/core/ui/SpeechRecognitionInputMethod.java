@@ -14,6 +14,7 @@ import org.slf4j.LoggerFactory;
 import teaselib.core.events.Event;
 import teaselib.core.speechrecognition.AudioSignalProblems;
 import teaselib.core.speechrecognition.Confidence;
+import teaselib.core.speechrecognition.Rule;
 import teaselib.core.speechrecognition.SpeechRecognition;
 import teaselib.core.speechrecognition.SpeechRecognitionControl;
 import teaselib.core.speechrecognition.SpeechRecognitionResult;
@@ -83,6 +84,13 @@ public class SpeechRecognitionInputMethod implements InputMethod {
         this.recognitionCompleted = (sender, eventArgs) -> {
             if (eventArgs.result.length == 1) {
                 SpeechRecognitionResult result = eventArgs.result[0];
+
+                // TODO process rules when recognizing via SRGS
+                logger.info(result.getText(result.rule));
+                for (Rule rule : result.rule.children) {
+                    logger.info("   " + result.getText(rule));
+                }
+
                 if (MUMBLE.equalsIgnoreCase(result.text)) {
                     logger.info("Completed speech recognized as mumble - ignored");
                 } else if (audioSignalProblems.occured()) {

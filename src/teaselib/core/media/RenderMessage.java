@@ -58,7 +58,7 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
     private static final double DELAY_AT_END_OF_MESSAGE = 2.0;
 
     private final AtomicReference<Thread> renderThread = new AtomicReference<>();
-    private final Prefetcher<byte[]> imageFetcher = new Prefetcher<>();
+    private final Prefetcher<byte[]> imageFetcher;
 
     private final MediaRendererQueue renderQueue;
 
@@ -86,6 +86,7 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
             throw new NullPointerException();
         }
 
+        this.imageFetcher = new Prefetcher<>(renderQueue.getExecutorService());
         this.renderQueue = new MediaRendererQueue(renderQueue);
         this.actor = actor;
         this.resources = resources;
@@ -145,7 +146,7 @@ public class RenderMessage extends MediaRendererThread implements ReplayableMedi
                 // + say, append, replace are equal ops (currently say is the main op, append/replace special add-ons)
                 // +> MessageRenderer isn't a threaded media renderer anymore
                 // +> RenderSay/Show/Append/Replace become MediaRenderer.THreaded
-                // +> Replay becomes a threaded media renderer 
+                // +> Replay becomes a threaded media renderer
                 // TODO Resolve design flaws of the current approach:
                 // - no queue, but the operations are sequential with a before/after relationship
                 // - too many synchronizers

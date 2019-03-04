@@ -10,17 +10,15 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
-import teaselib.core.concurrency.NamedExecutorService;
-
 public class Prefetcher<T> {
-    // TODO Move to MediaRenderQueue
-    private static final ExecutorService fetcher = NamedExecutorService.singleThreadedQueue("Resource Prefetcher");
+    private final ExecutorService executorService;
 
     private final Queue<String> resources = new ArrayDeque<>();
     private final Map<String, Callable<T>> toFetch = new HashMap<>();
     private final Map<String, Future<T>> fetched = new HashMap<>();
 
-    public Prefetcher() {
+    public Prefetcher(ExecutorService executorService) {
+        this.executorService = executorService;
     }
 
     public void add(String key, Callable<T> prefetcher) {
@@ -46,7 +44,7 @@ public class Prefetcher<T> {
     public void fetch(String key) {
         synchronized (this) {
             Callable<T> callable = toFetch.remove(key);
-            fetched.put(key, fetcher.submit(callable));
+            fetched.put(key, executorService.submit(callable));
         }
     }
 

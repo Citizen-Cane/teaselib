@@ -12,7 +12,7 @@ public class DelegateExecutor {
     private final ExecutorService workerThread;
 
     public DelegateExecutor(String name) {
-        workerThread = NamedExecutorService.singleThreadedQueue(name);
+        workerThread = NamedExecutorService.sameThread(name);
     }
 
     /**
@@ -21,6 +21,8 @@ public class DelegateExecutor {
      * @param delegate
      *            The delegate to execute in the delegate thread.
      */
+
+    // TODO Review all users and remove error handling where possible in order to handle errors here
     public void run(Runnable delegate) throws InterruptedException {
         try {
             Future<?> future = workerThread.submit(new Callable<Void>() {

@@ -53,7 +53,7 @@ public class MessageRendererQueue implements AutoCloseable {
 
     private final NamedExecutorService executor = NamedExecutorService.singleThreadedQueue("Message renderer queue", 1,
             TimeUnit.HOURS);
-    private final Prefetcher<byte[]> imageFetcher = new Prefetcher<>();
+    private final Prefetcher<byte[]> imageFetcher;
     private Future<?> running = null;
 
     private MediaRenderer.Threaded currentRenderer = null;
@@ -62,6 +62,7 @@ public class MessageRendererQueue implements AutoCloseable {
     public MessageRendererQueue(TeaseLib teaseLib, MediaRendererQueue renderQueue) {
         this.teaseLib = teaseLib;
         this.renderQueue = renderQueue;
+        this.imageFetcher = new Prefetcher<>(renderQueue.getExecutorService());
         this.textToSpeechPlayer = new TextToSpeechPlayer(teaseLib.config);
     }
 

@@ -1,4 +1,4 @@
-package teaselib.core.speechrecognition;
+package teaselib.core.speechrecognition.hypothesis;
 
 public class WordSplitter extends BasicSplitter {
 

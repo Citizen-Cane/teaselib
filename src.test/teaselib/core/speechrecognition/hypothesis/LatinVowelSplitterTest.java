@@ -1,4 +1,4 @@
-package teaselib.core.speechrecognition;
+package teaselib.core.speechrecognition.hypothesis;
 
 import static org.junit.Assert.assertEquals;
 
@@ -6,6 +6,9 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.junit.Test;
+
+import teaselib.core.speechrecognition.hypothesis.LatinVowelSplitter;
+import teaselib.core.speechrecognition.hypothesis.PromptSplitter;
 
 public class LatinVowelSplitterTest {
 
@@ -31,22 +34,22 @@ public class LatinVowelSplitterTest {
 
     @Test
     public void testMultipleChoices() {
-        int minimumVowelsForHypothesisREcognition = 8;
+        int minimumVowelsForHypothesisRecognition = 8;
         PromptSplitter latinVowelSplitter = new LatinVowelSplitter(
-                minimumVowelsForHypothesisREcognition);
-        assertEquals(minimumVowelsForHypothesisREcognition,
+                minimumVowelsForHypothesisRecognition);
+        assertEquals(minimumVowelsForHypothesisRecognition,
                 latinVowelSplitter.getMinimumForHypothesisRecognition());
 
         List<String> promptsWithDifferentStart = Arrays.asList(
                 "I'm waiting at the bar.",
                 "You're waiting in front of the house.");
-        assertEquals(minimumVowelsForHypothesisREcognition, latinVowelSplitter
+        assertEquals(minimumVowelsForHypothesisRecognition, latinVowelSplitter
                 .getMinimumForHypothesisRecognition(promptsWithDifferentStart));
 
         List<String> promptsWithCommonStart = Arrays.asList(
                 "I'm waiting at the bar.",
                 "I'm waiting in front of the house.");
-        assertEquals(3 + minimumVowelsForHypothesisREcognition, latinVowelSplitter
+        assertEquals(3 + minimumVowelsForHypothesisRecognition, latinVowelSplitter
                 .getMinimumForHypothesisRecognition(promptsWithCommonStart));
     }
 }

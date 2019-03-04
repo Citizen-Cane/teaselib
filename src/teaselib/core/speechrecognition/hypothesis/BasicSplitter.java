@@ -1,4 +1,4 @@
-package teaselib.core.speechrecognition;
+package teaselib.core.speechrecognition.hypothesis;
 
 import java.util.ArrayList;
 import java.util.List;

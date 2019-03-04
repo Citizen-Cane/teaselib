@@ -1,4 +1,4 @@
-package teaselib.core.speechrecognition;
+package teaselib.core.speechrecognition.hypothesis;
 
 import java.util.List;
 
@@ -6,6 +6,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import teaselib.core.events.Event;
+import teaselib.core.speechrecognition.Confidence;
+import teaselib.core.speechrecognition.SpeechRecognition;
+import teaselib.core.speechrecognition.SpeechRecognitionControl;
+import teaselib.core.speechrecognition.SpeechRecognitionResult;
 import teaselib.core.speechrecognition.events.SpeechRecognitionStartedEventArgs;
 import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
 
@@ -76,7 +80,7 @@ public class SpeechDetectionEventHandler {
         speechRecognizer.events.recognitionCompleted.remove(recognitionCompleted);
     }
 
-    void enable(boolean enable) {
+    public void enable(boolean enable) {
         this.enabled = enable;
     }
 

@@ -14,6 +14,7 @@ import teaselib.core.events.DelegateExecutor;
 import teaselib.core.events.Event;
 import teaselib.core.speechrecognition.events.SpeechRecognitionStartedEventArgs;
 import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
+import teaselib.core.speechrecognition.hypothesis.SpeechDetectionEventHandler;
 import teaselib.core.speechrecognition.implementation.TeaseLibSR;
 import teaselib.core.speechrecognition.implementation.Unsupported;
 import teaselib.core.texttospeech.TextToSpeech;
@@ -290,7 +291,8 @@ public class SpeechRecognition {
     }
 
     private void setupAndStartSR(List<String> choices) {
-        if (enableSpeechHypothesisHandlerGlobally() || SpeechRecognition.this.recognitionConfidence == Confidence.Low) {
+        if (!(sr instanceof SpeechRecognitionSRGS) && (enableSpeechHypothesisHandlerGlobally()
+                || SpeechRecognition.this.recognitionConfidence == Confidence.Low)) {
             hypothesisEventHandler.setChoices(choices);
             hypothesisEventHandler.setExpectedConfidence(SpeechRecognition.this.recognitionConfidence);
             hypothesisEventHandler.enable(true);
@@ -299,9 +301,10 @@ public class SpeechRecognition {
         }
 
         setChoices(choices);
-
         SpeechRecognition.this.speechRecognitionActive = true;
-        waitForPendingSpeechToComplete();
+        synchronized (TextToSpeech.AudioOutput) {
+            sr.startRecognition();
+        }
     }
 
     private void setChoices(List<String> choices) {
@@ -317,12 +320,6 @@ public class SpeechRecognition {
     String srgs(List<String> choices) {
         // TODO For testing purposes overwrite anonymously
         throw new UnsupportedOperationException("TODO Implements SRGS builder");
-    }
-
-    private void waitForPendingSpeechToComplete() {
-        synchronized (TextToSpeech.AudioOutput) {
-            sr.startRecognition();
-        }
     }
 
     private static void recognizerNotInitialized() {

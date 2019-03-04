@@ -19,9 +19,9 @@ import org.slf4j.LoggerFactory;
 
 import teaselib.core.configuration.Configuration;
 import teaselib.core.speechrecognition.Confidence;
-import teaselib.core.speechrecognition.SpeechDetectionEventHandler;
 import teaselib.core.speechrecognition.SpeechRecognition;
 import teaselib.core.speechrecognition.SpeechRecognizer;
+import teaselib.core.speechrecognition.hypothesis.SpeechDetectionEventHandler;
 import teaselib.core.texttospeech.TextToSpeech;
 import teaselib.core.texttospeech.Voice;
 import teaselib.core.util.Environment;

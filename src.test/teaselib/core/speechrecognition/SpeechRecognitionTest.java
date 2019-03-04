@@ -1,6 +1,6 @@
 package teaselib.core.speechrecognition;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -43,7 +43,7 @@ public class SpeechRecognitionTest {
     }
 
     @Test
-    public void testSRGS() throws InterruptedException, IOException {
+    public void testMicrosoftSRGSExampleCities() throws InterruptedException, IOException {
         ResourceLoader resources = new ResourceLoader(SpeechRecognitionTest.class);
         String cityTravel = Stream.toString(resources.get("cities_srg.xml"));
         SpeechRecognition sr = new SpeechRecognition(Locale.ENGLISH, TeaseLibSRGS.class) {
@@ -52,6 +52,7 @@ public class SpeechRecognitionTest {
                 return cityTravel;
             }
         };
+
         SpeechRecognitionInputMethod inputMethod = new SpeechRecognitionInputMethod(sr, confidence, Optional.empty());
         Prompt prompt = new Prompt(Choices, Arrays.asList(inputMethod));
 

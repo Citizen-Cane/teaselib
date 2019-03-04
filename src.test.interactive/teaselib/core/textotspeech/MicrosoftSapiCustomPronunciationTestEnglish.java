@@ -1,6 +1,6 @@
 package teaselib.core.textotspeech;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertTrue;
 
 import java.util.Arrays;
 import java.util.List;
@@ -126,19 +126,23 @@ public class MicrosoftSapiCustomPronunciationTestEnglish {
 
     @Test
     public void testPronunciationSAPIPronTagSpeechRecognition() throws InterruptedException {
-        SpeechRecognition speechRecognition = new SpeechRecognizer(new Configuration()).get(Locale.US);
-        CountDownLatch completed = new CountDownLatch(1);
-        // List<String> choices = Arrays.asList("<P DISP=\"replace\" PRON=\"H EH 1 L OW W ER 1 L D\"> replace </P>");
-        List<String> choices = Arrays.asList("<P>/Display/Word/H EH 1 L OW;</P>");
+        try (SpeechRecognizer speechRecognizer = new SpeechRecognizer(new Configuration());) {
+            SpeechRecognition speechRecognition = speechRecognizer.get(Locale.US);
+            CountDownLatch completed = new CountDownLatch(1);
+            // List<String> choices = Arrays.asList("<P DISP=\"replace\" PRON=\"H EH 1 L OW W ER 1 L D\"> replace
+            // </P>");
+            List<String> choices = Arrays.asList("<P>/Display/Word/H EH 1 L OW;</P>");
 
-        SpeechDetectionEventHandler speechDetectionEventHandler = new SpeechDetectionEventHandler(speechRecognition);
-        try {
-            speechDetectionEventHandler.addEventListeners();
-            speechRecognition.startRecognition(choices, Confidence.Normal);
-            completed.await();
-        } finally {
-            SpeechRecognition.completeSpeechRecognitionInProgress();
-            speechDetectionEventHandler.addEventListeners();
+            SpeechDetectionEventHandler speechDetectionEventHandler = new SpeechDetectionEventHandler(
+                    speechRecognition);
+            try {
+                speechDetectionEventHandler.addEventListeners();
+                speechRecognition.startRecognition(choices, Confidence.Normal);
+                completed.await();
+            } finally {
+                SpeechRecognition.completeSpeechRecognitionInProgress();
+                speechDetectionEventHandler.addEventListeners();
+            }
         }
     }
 

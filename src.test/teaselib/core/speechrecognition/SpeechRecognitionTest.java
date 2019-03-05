@@ -21,14 +21,14 @@ import teaselib.core.ui.SpeechRecognitionInputMethod;
 import teaselib.core.util.Stream;
 
 public class SpeechRecognitionTest {
-    private static final Choices Choices = new Choices(Arrays.asList(new Choice("Foobar")));
+    private static final Choices Foobar = new Choices(Arrays.asList(new Choice("Foobar")));
     private static final Confidence confidence = Confidence.High;
 
     @Test
     public void testSR() throws InterruptedException {
         SpeechRecognition sr = new SpeechRecognition(Locale.ENGLISH, TeaseLibSR.class);
         SpeechRecognitionInputMethod inputMethod = new SpeechRecognitionInputMethod(sr, confidence, Optional.empty());
-        Prompt prompt = new Prompt(Choices, Arrays.asList(inputMethod));
+        Prompt prompt = new Prompt(Foobar, Arrays.asList(inputMethod));
 
         prompt.lock.lockInterruptibly();
         try {
@@ -54,12 +54,32 @@ public class SpeechRecognitionTest {
         };
 
         SpeechRecognitionInputMethod inputMethod = new SpeechRecognitionInputMethod(sr, confidence, Optional.empty());
-        Prompt prompt = new Prompt(Choices, Arrays.asList(inputMethod));
+        Prompt prompt = new Prompt(Foobar, Arrays.asList(inputMethod));
 
         prompt.lock.lockInterruptibly();
         try {
             inputMethod.show(prompt);
             sr.emulateRecogntion("I would like to fly from Seattle to New York");
+            assertTrue("Prompt timed out - emulated speech recognition failed",
+                    prompt.click.await(10, TimeUnit.SECONDS));
+        } finally {
+            prompt.lock.unlock();
+        }
+    }
+
+    @Test
+    public void testSRGSBuilder() throws InterruptedException {
+        SpeechRecognition sr = new SpeechRecognition(Locale.ENGLISH, TeaseLibSRGS.class);
+
+        SpeechRecognitionInputMethod inputMethod = new SpeechRecognitionInputMethod(sr, confidence, Optional.empty());
+        Choices choices = new Choices(Arrays.asList(new Choice("Please Miss, one more"),
+                new Choice("Please Miss, one less"), new Choice("Please Miss, two more")));
+        Prompt prompt = new Prompt(choices, Arrays.asList(inputMethod));
+
+        prompt.lock.lockInterruptibly();
+        try {
+            inputMethod.show(prompt);
+            sr.emulateRecogntion("Please Miss, one more");
             assertTrue("Prompt timed out - emulated speech recognition failed",
                     prompt.click.await(10, TimeUnit.SECONDS));
         } finally {

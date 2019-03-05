@@ -6,6 +6,9 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.locks.ReentrantLock;
 
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.TransformerException;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,6 +20,10 @@ import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
 import teaselib.core.speechrecognition.hypothesis.SpeechDetectionEventHandler;
 import teaselib.core.speechrecognition.implementation.TeaseLibSR;
 import teaselib.core.speechrecognition.implementation.Unsupported;
+import teaselib.core.speechrecognition.srgs.ListSequence;
+import teaselib.core.speechrecognition.srgs.ListSequenceUtil;
+import teaselib.core.speechrecognition.srgs.ListSequences;
+import teaselib.core.speechrecognition.srgs.SRGSBuilder;
 import teaselib.core.texttospeech.TextToSpeech;
 import teaselib.core.util.Environment;
 import teaselib.core.util.ExceptionUtil;
@@ -318,8 +325,15 @@ public class SpeechRecognition {
     }
 
     String srgs(List<String> choices) {
-        // TODO For testing purposes overwrite anonymously
-        throw new UnsupportedOperationException("TODO Implements SRGS builder");
+        // TODO Doesn't work with mumble -> add test case without common slice
+        List<ListSequences<String>> slices = ListSequenceUtil.slice(choices);
+        SRGSBuilder<ListSequence<String>> srgs;
+        try {
+            srgs = new SRGSBuilder<>(slices);
+            return srgs.toString();
+        } catch (ParserConfigurationException | TransformerException e) {
+            throw ExceptionUtil.asRuntimeException(e);
+        }
     }
 
     private static void recognizerNotInitialized() {

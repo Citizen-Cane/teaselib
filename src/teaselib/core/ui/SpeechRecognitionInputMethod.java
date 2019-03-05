@@ -34,8 +34,6 @@ public class SpeechRecognitionInputMethod implements InputMethod {
 
     private static final String RECOGNITION_REJECTED_HANDLER_KEY = "Recognition Rejected";
 
-    private static final String MUMBLE = "mumble";
-
     final SpeechRecognition speechRecognizer;
     final Confidence expectedConfidence;
     final Optional<SpeechRecognitionRejectedScript> speechRecognitionRejectedScript;
@@ -70,10 +68,7 @@ public class SpeechRecognitionInputMethod implements InputMethod {
         };
         this.recognitionRejected = (sender, eventArgs) -> {
             if (eventArgs.result != null && eventArgs.result.length == 1) {
-                SpeechRecognitionResult result = eventArgs.result[0];
-                if (MUMBLE.equalsIgnoreCase(result.text)) {
-                    logger.info("Rejected speech recognized as mumble - ignored");
-                } else if (!speechRecognitionRejectedHandlerSignaled && speechRecognitionRejectedScript.isPresent()
+                if (!speechRecognitionRejectedHandlerSignaled && speechRecognitionRejectedScript.isPresent()
                         && speechRecognitionRejectedScript.get().canRun()) {
                     speechRecognitionRejectedHandlerSignaled = true;
                     signalHandlerInvocation(RECOGNITION_REJECTED_HANDLER_KEY);
@@ -91,9 +86,7 @@ public class SpeechRecognitionInputMethod implements InputMethod {
                     logger.info("   " + result.getText(rule));
                 }
 
-                if (MUMBLE.equalsIgnoreCase(result.text)) {
-                    logger.info("Completed speech recognized as mumble - ignored");
-                } else if (audioSignalProblems.occured()) {
+                if (audioSignalProblems.occured()) {
                     logAudioSignalProblem(result);
                 } else {
                     double penalty = audioSignalProblems.penalty();
@@ -188,7 +181,6 @@ public class SpeechRecognitionInputMethod implements InputMethod {
     private static List<String> addMumbleDetection(List<String> display) {
         List<String> choices = new ArrayList<>(display.size() + 1);
         choices.addAll(display);
-        choices.add(MUMBLE);
         return choices;
     }
 

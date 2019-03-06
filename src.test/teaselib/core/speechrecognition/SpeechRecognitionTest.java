@@ -60,8 +60,11 @@ public class SpeechRecognitionTest {
         try {
             inputMethod.show(prompt);
             sr.emulateRecogntion("I would like to fly from Seattle to New York");
-            assertTrue("Prompt timed out - emulated speech recognition failed",
-                    prompt.click.await(10, TimeUnit.SECONDS));
+            boolean dismissed = prompt.click.await(10, TimeUnit.SECONDS);
+            if (!dismissed) {
+                prompt.dismiss();
+            }
+            assertTrue("Prompt timed out - emulated speech recognition failed", dismissed);
         } finally {
             prompt.lock.unlock();
         }
@@ -80,8 +83,11 @@ public class SpeechRecognitionTest {
         try {
             inputMethod.show(prompt);
             sr.emulateRecogntion("Please Miss, one more");
-            assertTrue("Prompt timed out - emulated speech recognition failed",
-                    prompt.click.await(10, TimeUnit.SECONDS));
+            boolean dismissed = prompt.click.await(10, TimeUnit.SECONDS);
+            if (!dismissed) {
+                prompt.dismiss();
+            }
+            assertTrue("Prompt timed out - emulated speech recognition failed", dismissed);
         } finally {
             prompt.lock.unlock();
         }

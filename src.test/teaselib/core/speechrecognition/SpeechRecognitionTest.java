@@ -1,6 +1,6 @@
 package teaselib.core.speechrecognition;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -44,12 +44,26 @@ public class SpeechRecognitionTest {
 
     @Test
     public void testMicrosoftSRGSExampleCities() throws InterruptedException, IOException {
+        String resource = "cities_srg.xml";
+        String emulatedRecognitionResult = "I would like to fly from Seattle to New York";
+        emulateSpeechRecognition(resource, emulatedRecognitionResult, -1);
+    }
+
+    @Test
+    public void testHandcraftedSRGSExample() throws InterruptedException, IOException {
+        String resource = "handcrafted_srg.xml";
+        String emulatedRecognitionResult = "Please Miss two more";
+        emulateSpeechRecognition(resource, emulatedRecognitionResult, 2);
+    }
+
+    private static void emulateSpeechRecognition(String resource, String emulatedRecognitionResult,
+            int expectedResultIndex) throws IOException, InterruptedException {
         ResourceLoader resources = new ResourceLoader(SpeechRecognitionTest.class);
-        String cityTravel = Stream.toString(resources.get("cities_srg.xml"));
+        String xml = Stream.toString(resources.get(resource));
         SpeechRecognition sr = new SpeechRecognition(Locale.ENGLISH, TeaseLibSRGS.class) {
             @Override
             String srgs(List<String> choices) {
-                return cityTravel;
+                return xml;
             }
         };
 
@@ -59,12 +73,13 @@ public class SpeechRecognitionTest {
         prompt.lock.lockInterruptibly();
         try {
             inputMethod.show(prompt);
-            sr.emulateRecogntion("I would like to fly from Seattle to New York");
+            sr.emulateRecogntion(emulatedRecognitionResult);
             boolean dismissed = prompt.click.await(10, TimeUnit.SECONDS);
             if (!dismissed) {
                 prompt.dismiss();
             }
             assertTrue("Prompt timed out - emulated speech recognition failed", dismissed);
+            assertEquals(expectedResultIndex, prompt.result());
         } finally {
             prompt.lock.unlock();
         }
@@ -82,12 +97,13 @@ public class SpeechRecognitionTest {
         prompt.lock.lockInterruptibly();
         try {
             inputMethod.show(prompt);
-            sr.emulateRecogntion("Please Miss, one more");
+            sr.emulateRecogntion("Please Miss one less");
             boolean dismissed = prompt.click.await(10, TimeUnit.SECONDS);
             if (!dismissed) {
                 prompt.dismiss();
             }
             assertTrue("Prompt timed out - emulated speech recognition failed", dismissed);
+            assertEquals(1, prompt.result());
         } finally {
             prompt.lock.unlock();
         }

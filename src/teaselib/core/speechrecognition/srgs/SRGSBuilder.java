@@ -87,7 +87,7 @@ public class SRGSBuilder<T> {
         element.setAttributeNode(attr);
     }
 
-    private Document createDocument() throws ParserConfigurationException {
+    private static Document createDocument() throws ParserConfigurationException {
         DocumentBuilderFactory documentFactory = DocumentBuilderFactory.newInstance();
         DocumentBuilder documentBuilder = documentFactory.newDocumentBuilder();
         return documentBuilder.newDocument();

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<grammar xmlns="http://www.w3.org/2001/06/grammar" root="Rule_0" tag-format="semantics/1.0" version="1.0" xml:lang="en-US">
+  <!-- handcrafted_srg.xml:   
+    Defines an SRGS grammar for testing -->
+  <rule id="Rule_0" scope="public">
+    <item>Please Miss <ruleref uri="#Rule_1"/> </item>
+  </rule>
+  <rule id="Rule_1" scope="public">
+    <one-of>
+      <item>one more</item>
+      <item>one less</item>
+      <item>two more</item>
+    </one-of>
+  </rule>
+</grammar>

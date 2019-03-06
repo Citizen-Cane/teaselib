@@ -97,9 +97,17 @@ public class SpeechRecognitionInputMethod implements InputMethod {
                             logLackOfConfidence(result);
                         }
                     } else {
+                        // For sr instanceof SpeechRecognitionChoices the rule id matches the choice index
+                        // For sr instanceof SpeechRecognitionSGRS the rule id is always 0 (or the index of the main
+                        // rule)
+                        // TODO for srgs-based there are multiple choice indices within each sub-rule
+                        // TODO The name of each rule is:
+                        // SpeechRecognitionChoices: The choice
+                        // SpeechRecognitionSGRS: The rule name
+                        // -> call result.toString(rule) to get the chosen text
                         // TODO Call dismiss() to remove code duplication
                         disableSpeechRecognition();
-                        signal(result.index);
+                        signal(result.rule.id);
                         active.set(null);
                     }
                 }

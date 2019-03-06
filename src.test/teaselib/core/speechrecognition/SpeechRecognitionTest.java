@@ -21,40 +21,9 @@ import teaselib.core.ui.SpeechRecognitionInputMethod;
 import teaselib.core.util.Stream;
 
 public class SpeechRecognitionTest {
-    private static final Choices Foobar = new Choices(Arrays.asList(new Choice("Foobar")));
+    private static final Choices Foobar = new Choices(
+            Arrays.asList(new Choice("My name is Foo"), new Choice("My name is Bar")));
     private static final Confidence confidence = Confidence.High;
-
-    @Test
-    public void testSR() throws InterruptedException {
-        SpeechRecognition sr = new SpeechRecognition(Locale.ENGLISH, TeaseLibSR.class);
-        SpeechRecognitionInputMethod inputMethod = new SpeechRecognitionInputMethod(sr, confidence, Optional.empty());
-        Prompt prompt = new Prompt(Foobar, Arrays.asList(inputMethod));
-
-        prompt.lock.lockInterruptibly();
-        try {
-            inputMethod.show(prompt);
-            sr.emulateRecogntion("Foobar");
-            assertTrue("Prompt timed out - emulated speech recognition failed",
-                    prompt.click.await(10, TimeUnit.SECONDS));
-        } finally {
-            prompt.lock.unlock();
-        }
-
-    }
-
-    @Test
-    public void testMicrosoftSRGSExampleCities() throws InterruptedException, IOException {
-        String resource = "cities_srg.xml";
-        String emulatedRecognitionResult = "I would like to fly from Seattle to New York";
-        emulateSpeechRecognition(resource, emulatedRecognitionResult, -1);
-    }
-
-    @Test
-    public void testHandcraftedSRGSExample() throws InterruptedException, IOException {
-        String resource = "handcrafted_srg.xml";
-        String emulatedRecognitionResult = "Please Miss two more";
-        emulateSpeechRecognition(resource, emulatedRecognitionResult, 2);
-    }
 
     private static void emulateSpeechRecognition(String resource, String emulatedRecognitionResult,
             int expectedResultIndex) throws IOException, InterruptedException {
@@ -73,15 +42,63 @@ public class SpeechRecognitionTest {
         prompt.lock.lockInterruptibly();
         try {
             inputMethod.show(prompt);
-            sr.emulateRecogntion(emulatedRecognitionResult);
-            boolean dismissed = prompt.click.await(10, TimeUnit.SECONDS);
-            if (!dismissed) {
-                prompt.dismiss();
-            }
-            assertTrue("Prompt timed out - emulated speech recognition failed", dismissed);
-            assertEquals(expectedResultIndex, prompt.result());
+            awaitResult(sr, prompt, emulatedRecognitionResult, expectedResultIndex);
         } finally {
             prompt.lock.unlock();
+        }
+    }
+
+    private static void awaitResult(SpeechRecognition sr, Prompt prompt, String emulatedText, int expectedResultIndex)
+            throws InterruptedException {
+        sr.emulateRecogntion(emulatedText);
+        boolean dismissed = prompt.click.await(10, TimeUnit.SECONDS);
+        if (!dismissed) {
+            prompt.dismiss();
+        }
+        assertTrue("Prompt timed out - emulated speech recognition failed", dismissed);
+        assertEquals(expectedResultIndex, prompt.result());
+    }
+
+    @Test
+    public void testSR() throws InterruptedException {
+        SpeechRecognition sr = new SpeechRecognition(Locale.ENGLISH, TeaseLibSR.class);
+        SpeechRecognitionInputMethod inputMethod = new SpeechRecognitionInputMethod(sr, confidence, Optional.empty());
+        Prompt prompt = new Prompt(Foobar, Arrays.asList(inputMethod));
+
+        prompt.lock.lockInterruptibly();
+        try {
+            inputMethod.show(prompt);
+            awaitResult(sr, prompt, "My name is Bar", 1);
+        } finally {
+            prompt.lock.unlock();
+        }
+    }
+
+    @Test
+    public void testMicrosoftSRGSExampleCities() throws InterruptedException, IOException {
+        String resource = "cities_srg.xml";
+        String emulatedRecognitionResult = "I would like to fly from Miami to Los Angeles";
+        emulateSpeechRecognition(resource, emulatedRecognitionResult, 3);
+        // TODO Check second rule (to) == 1
+    }
+
+    @Test
+    public void testHandcraftedSRGSExample() throws InterruptedException, IOException {
+        String resource = "handcrafted_srg.xml";
+        String emulatedRecognitionResult = "Please Miss two more";
+        emulateSpeechRecognition(resource, emulatedRecognitionResult, 2);
+    }
+
+    @Test
+    public void testHandcraftedSRGSExampleRecognitionRejected() throws InterruptedException, IOException {
+        String resource = "handcrafted_srg.xml";
+        String emulatedRecognitionResult = "Please Miss some more";
+        try {
+            emulateSpeechRecognition(resource, emulatedRecognitionResult, -1);
+            // TODO Needs 10s to complete - way too long
+            fail("Speech recognized with wrong phrase");
+        } catch (AssertionError e) {
+            return;
         }
     }
 
@@ -97,13 +114,7 @@ public class SpeechRecognitionTest {
         prompt.lock.lockInterruptibly();
         try {
             inputMethod.show(prompt);
-            sr.emulateRecogntion("Please Miss one less");
-            boolean dismissed = prompt.click.await(10, TimeUnit.SECONDS);
-            if (!dismissed) {
-                prompt.dismiss();
-            }
-            assertTrue("Prompt timed out - emulated speech recognition failed", dismissed);
-            assertEquals(1, prompt.result());
+            awaitResult(sr, prompt, "Please Miss one less", 1);
         } finally {
             prompt.lock.unlock();
         }

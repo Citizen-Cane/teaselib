@@ -9,10 +9,10 @@ import java.util.List;
  */
 public class Rule {
 
-    final String name;
-    final int id;
-    final int fromElement;
-    final int toElement;
+    public final String name;
+    public final int id;
+    public final int fromElement;
+    public final int toElement;
 
     public final List<Rule> children;
     public final float probability;
@@ -35,8 +35,8 @@ public class Rule {
 
     @Override
     public String toString() {
-        return name + " ruleid=" + id + " -> (" + fromElement + "," + toElement + ") @" + probability + "~" + confidence
-                + " children" + children;
+        return "Name=" + name + " Id=" + id + " [" + fromElement + "," + toElement + "[ C=" + probability + "~"
+                + confidence + " children=" + children;
     }
 
 }

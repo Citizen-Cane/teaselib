@@ -19,12 +19,11 @@ SpeechRecognizedEvent::~SpeechRecognizedEvent() {
 
 jobject getConfidenceField(JNIEnv *env, signed char confidence) {
     const char* confidenceFieldName;
-    //public enum Confidence
-    //{
-    //  Low,
-    //  Normal,
-    //  High
-    //};
+    // public enum Confidence {
+    //   Low,
+    //   Normal,
+    //   High
+    // };
     if (confidence == SP_LOW_CONFIDENCE) {
         confidenceFieldName = "Low";
     } else if (confidence == SP_NORMAL_CONFIDENCE) {
@@ -35,24 +34,27 @@ jobject getConfidenceField(JNIEnv *env, signed char confidence) {
         assert(false);
         confidenceFieldName = "Low";
     }
-    jclass confidenceClass = JNIClass::getClass(env, "teaselib/core/speechrecognition/Confidence");
+
+	jclass confidenceClass = JNIClass::getClass(env, "teaselib/core/speechrecognition/Confidence");
     jobject confidenceValue = env->GetStaticObjectField(
-                                  confidenceClass,
-                                  JNIClass::getStaticFieldID(env, confidenceClass, confidenceFieldName, "Lteaselib/core/speechrecognition/Confidence;"));
-    return confidenceValue;
+		confidenceClass,
+		JNIClass::getStaticFieldID(env, confidenceClass, confidenceFieldName, "Lteaselib/core/speechrecognition/Confidence;"));
+	if (env->ExceptionCheck()) throw new JNIException(env);
+
+	return confidenceValue;
 }
 
 void SpeechRecognizedEvent::fire(ISpRecoResult* pResult) {
 	SPPHRASE* pPhrase = NULL;
 	HRESULT hr = pResult->GetPhrase(&pPhrase);
 	if (FAILED(hr)) throw new COMException(hr);
-	// Handle NULL rule as an result of a invalid srg xml
+	// TODO review handling of empty phrase as an result of an unrecognized phrase with emulateRecognition srg xml
 	if (pPhrase->Rule.pszName == NULL) return; //  throw new COMException(SPERR_EMPTY_RULE);
 
 	const size_t maxAlternates = 256;
     ISpPhraseAlt* pPhraseAlt[maxAlternates];
     ULONG ulAlternatesCount;
-	// Get alternates for all the elements (words) in the phrase
+	// Get alternates (alternate spellings) for all the elements (words) in the phrase
 	if (pPhrase->Rule.ulCountOfElements > 0) {
 		hr = pResult->GetAlternates(
 			pPhrase->Rule.ulFirstElement,
@@ -68,20 +70,17 @@ void SpeechRecognizedEvent::fire(ISpRecoResult* pResult) {
 
     jclass speechRecognitionResultClass = JNIClass::getClass(env, "teaselib/core/speechrecognition/SpeechRecognitionResult");
 	if (env->ExceptionCheck()) throw new JNIException(env);
+
 	jobjectArray speechRecognitionResults = NULL;
     if (ulAlternatesCount > 0) {
 		speechRecognitionResults = env->NewObjectArray(ulAlternatesCount, speechRecognitionResultClass, NULL);
 		if (env->ExceptionCheck()) throw new JNIException(env);
         for (int i = 0; i < ulAlternatesCount; i++) {
             SPPHRASE* pAlternatePhrase;
-            HRESULT hr = pPhraseAlt[i]->GetPhrase(&pAlternatePhrase);
+            hr = pPhraseAlt[i]->GetPhrase(&pAlternatePhrase);
             if (FAILED(hr)) throw new COMException(hr);
 
-			wchar_t* text;
-            hr = pPhraseAlt[i]->GetText(SP_GETWHOLEPHRASE, SP_GETWHOLEPHRASE, false, &text, NULL);
-            if (FAILED(hr)) throw new COMException(hr);
-
-			jobject speechRecognitionResult = getResult(pResult, pPhrase, speechRecognitionResultClass);
+			jobject speechRecognitionResult = getResult(pResult, pAlternatePhrase, speechRecognitionResultClass);
 			CoTaskMemFree(pAlternatePhrase);
             pPhraseAlt[i]->Release();
             if (env->ExceptionCheck()) throw new JNIException(env);
@@ -103,6 +102,7 @@ void SpeechRecognizedEvent::fire(ISpRecoResult* pResult) {
                             JNIClass::getMethodID(env, eventClass, "<init>", "([Lteaselib/core/speechrecognition/SpeechRecognitionResult;)V"),
                             speechRecognitionResults);
     if (env->ExceptionCheck()) throw new JNIException(env);
+
     __super::fire(eventArgs);
 }
 
@@ -113,15 +113,12 @@ jobject SpeechRecognizedEvent::getResult(ISpRecoResult* pResult, const SPPHRASE*
 
 	jobject speechRecognitionResult = env->NewObject(
 		speechRecognitionResultClass,
-		JNIClass::getMethodID(env, speechRecognitionResultClass, "<init>",
-			"(ILjava/lang/String;Lteaselib/core/speechrecognition/Rule;FLteaselib/core/speechrecognition/Confidence;)V"),
-		pPhrase->Rule.ulId,
-		JNIString(env, text).operator jstring(),
-		getRule(env, &pPhrase->Rule), // TODO Rule
-		pPhrase->Rule.SREngineConfidence,
-		getConfidenceField(env, pPhrase->Rule.Confidence));
+		JNIClass::getMethodID(env, speechRecognitionResultClass, "<init>", "(Ljava/lang/String;Lteaselib/core/speechrecognition/Rule;)V"),
+		static_cast<jstring>(JNIString(env, text)),
+		getRule(env, &pPhrase->Rule));
 	CoTaskMemFree(text);
 	if (env->ExceptionCheck()) throw new JNIException(env);
+
 	return speechRecognitionResult;
 }
 
@@ -131,7 +128,7 @@ jobject SpeechRecognizedEvent::getRule(JNIEnv *env, const SPPHRASERULE* rule) {
 		ruleClass,
 		JNIClass::getMethodID(env, ruleClass, "<init>",
 			"(Ljava/lang/String;IIIFLteaselib/core/speechrecognition/Confidence;)V"),
-		JNIString(env, rule->pszName).operator jstring(),
+		static_cast<jstring>(JNIString(env, rule->pszName)),
 		rule->ulId,
 		rule->ulFirstElement,
 		rule->ulFirstElement + rule->ulCountOfElements,
@@ -143,5 +140,6 @@ jobject SpeechRecognizedEvent::getRule(JNIEnv *env, const SPPHRASERULE* rule) {
 		env->CallVoidMethod(jRule, env->GetMethodID(ruleClass, "add", "(Lteaselib/core/speechrecognition/Rule;)V"), getRule(env, childRule));
 		if (env->ExceptionCheck()) throw new JNIException(env);
 	}
+
 	return jRule;
 }

@@ -131,8 +131,8 @@ public class SpeechRecognitionInputMethod implements InputMethod {
     }
 
     private static boolean confidenceIsHighEnough(SpeechRecognitionResult result, Confidence expected, double penalty) {
-        return result.probability - penalty * AUDIO_PROBLEM_PENALTY_WEIGHT >= expected.probability
-                && result.confidence.isAsHighAs(expected);
+        return result.rule.probability - penalty * AUDIO_PROBLEM_PENALTY_WEIGHT >= expected.probability
+                && result.rule.confidence.isAsHighAs(expected);
     }
 
     private void signal(int resultIndex) {

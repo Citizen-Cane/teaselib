@@ -8,28 +8,21 @@ public class SpeechRecognitionResult {
 
     public static final int UNKNOWN_PHRASE_INDEX = -1;
 
-    public final int index;
     public final String text;
     public final Rule rule;
-    public final float probability;
-    public final Confidence confidence;
 
-    public SpeechRecognitionResult(int index, String text, Rule rule, float propability, Confidence confidence) {
-        super();
-        this.index = index;
+    public SpeechRecognitionResult(String text, Rule rule) {
         this.text = text;
         this.rule = rule;
-        this.probability = propability;
-        this.confidence = confidence;
     }
 
     public boolean isChoice(List<String> choices) {
-        return UNKNOWN_PHRASE_INDEX < index && index < choices.size();
+        return UNKNOWN_PHRASE_INDEX < rule.id && rule.id < choices.size();
     }
 
     public boolean hasHigherProbabilityThan(SpeechRecognitionResult recognitionResult) {
-        return probability > recognitionResult.probability
-                || confidence.probability > recognitionResult.confidence.probability;
+        return rule.probability > recognitionResult.rule.probability
+                || rule.confidence.probability > recognitionResult.rule.confidence.probability;
     }
 
     public String getText(Rule rule) {
@@ -44,7 +37,7 @@ public class SpeechRecognitionResult {
 
     @Override
     public String toString() {
-        return "#" + index + ": " + text + " (" + probability + ") -> confidence="
-                + confidence.toString().toLowerCase();
+        return "#" + rule.id + ": " + text + " (" + rule.probability + ") -> confidence="
+                + rule.confidence.toString().toLowerCase();
     }
 }

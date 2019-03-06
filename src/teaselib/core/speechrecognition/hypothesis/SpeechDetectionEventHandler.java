@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 
 import teaselib.core.events.Event;
 import teaselib.core.speechrecognition.Confidence;
+import teaselib.core.speechrecognition.Rule;
 import teaselib.core.speechrecognition.SpeechRecognition;
 import teaselib.core.speechrecognition.SpeechRecognitionControl;
 import teaselib.core.speechrecognition.SpeechRecognitionResult;
@@ -128,7 +129,7 @@ public class SpeechDetectionEventHandler {
 
     private boolean acceptHypothesis(SpeechRecognitionResult result) {
         return hypothesisResult == null //
-                || result.index != hypothesisResult.index //
+                || result.rule.id != hypothesisResult.rule.id //
                 || promptSplitter.count(result.text) > promptSplitter.count(hypothesisResult.text) //
                 || result.hasHigherProbabilityThan(hypothesisResult);
     }
@@ -141,12 +142,15 @@ public class SpeechDetectionEventHandler {
                 return;
             } else if (hypothesisIsAcceptable()) {
                 eventArgs.consumed = true;
-                SpeechRecognitionResult elevatedResult = new SpeechRecognitionResult(hypothesisResult.index,
-                        hypothesisResult.text, hypothesisResult.rule, expectedConfidence.probability,
-                        expectedConfidence);
+                Rule elevatedRule = new Rule(hypothesisResult.rule.name, hypothesisResult.rule.id,
+                        hypothesisResult.rule.fromElement, hypothesisResult.rule.toElement,
+                        expectedConfidence.probability, expectedConfidence);
+                SpeechRecognitionResult elevatedResult = new SpeechRecognitionResult(hypothesisResult.text,
+                        elevatedRule);
                 logger.info(
                         "Forwarding rejected recognition event {} with accepted hypothesis {} as elevated result {}",
                         eventArgs, hypothesisResult, elevatedResult);
+
                 fireRecognitionCompletedEvent(sender, elevatedResult);
             }
         };
@@ -159,13 +163,13 @@ public class SpeechDetectionEventHandler {
             return false;
         } else if (count == minimumForHypothesisRecognition) {
             double reducedProbability = expectedConfidence.reducedProbability();
-            if (hypothesisResult.probability < reducedProbability) {
+            if (hypothesisResult.rule.probability < reducedProbability) {
                 excuseReducedPropability(reducedProbability);
                 return false;
             }
         } else {
             double reducedPropability = expectedConfidence.lower().probability;
-            if (hypothesisResult.probability < reducedPropability) {
+            if (hypothesisResult.rule.probability < reducedPropability) {
                 excuseReducedPropability(reducedPropability);
                 return false;
             }
@@ -182,31 +186,36 @@ public class SpeechDetectionEventHandler {
 
     private void excuseReducedPropability(double reducedProbability) {
         logger.info("Phrase '{}' confidence probability={} < requested confidence {} reduced probability={}",
-                hypothesisResult.text, hypothesisResult.probability, expectedConfidence, reducedProbability);
+                hypothesisResult.text, hypothesisResult.rule.probability, expectedConfidence, reducedProbability);
     }
 
     private Event<SpeechRecognitionControl, SpeechRecognizedEventArgs> recognitionCompleted() {
         return (sender, eventArgs) -> {
             SpeechRecognitionResult recognitionCompletedResult = eventArgs.result[0];
 
-            if (recognitionCompletedResult.confidence.isLowerThan(expectedConfidence) //
+            if (recognitionCompletedResult.rule.confidence.isLowerThan(expectedConfidence) //
                     && hypothesisResult != null //
-                    && hypothesisResult.index == recognitionCompletedResult.index //
+                    && hypothesisResult.rule.id == recognitionCompletedResult.rule.id //
                     && !confidenceIsHighEnough(recognitionCompletedResult, expectedConfidence) //
                     && hypothesisIsAcceptable()) {
                 eventArgs.consumed = true;
-                SpeechRecognitionResult elevatedResult = new SpeechRecognitionResult(hypothesisResult.index,
-                        recognitionCompletedResult.text, recognitionCompletedResult.rule,
+
+                Rule elevatedRule = new Rule(recognitionCompletedResult.rule.name, recognitionCompletedResult.rule.id,
+                        recognitionCompletedResult.rule.fromElement, recognitionCompletedResult.rule.toElement,
                         expectedConfidence.probability, expectedConfidence);
+                SpeechRecognitionResult elevatedResult1 = new SpeechRecognitionResult(recognitionCompletedResult.text,
+                        elevatedRule);
+                SpeechRecognitionResult elevatedResult = elevatedResult1;
                 logger.info("Replacing recognition result {} of accepted hypothesis {} as elevated result {}",
                         recognitionCompletedResult, hypothesisResult, elevatedResult);
+
                 fireRecognitionCompletedEvent(sender, elevatedResult);
             }
         };
     }
 
     private static boolean confidenceIsHighEnough(SpeechRecognitionResult result, Confidence confidence) {
-        return result.confidence.probability >= confidence.probability;
+        return result.rule.confidence.probability >= confidence.probability;
     }
 
     private void fireRecognitionCompletedEvent(SpeechRecognitionControl sender, SpeechRecognitionResult result) {

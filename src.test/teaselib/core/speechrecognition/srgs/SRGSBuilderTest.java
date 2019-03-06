@@ -37,6 +37,13 @@ public class SRGSBuilderTest {
     }
 
     @Test
+    public void verifyThatListSequenceToStringOutputsPlainWords() throws ParserConfigurationException, TransformerException {
+        ListSequence<String> test = new ListSequence<>(ListSequenceUtil.splitWords("The dog looked over the fence"));
+        assertFalse(test.toString().startsWith("["));
+        assertFalse(test.toString().endsWith("]"));
+    }
+
+    @Test
     public void testSRGSBuildFromListSequence() throws ParserConfigurationException, TransformerException {
         List<ListSequences<String>> slices = ListSequenceUtil.slice( //
                 "My dog jumped over the fence", //

@@ -325,7 +325,6 @@ public class SpeechRecognition {
     }
 
     String srgs(List<String> choices) {
-        // TODO Doesn't work with mumble -> add test case without common slice
         List<ListSequences<String>> slices = ListSequenceUtil.slice(choices);
         SRGSBuilder<ListSequence<String>> srgs;
         try {

@@ -77,6 +77,6 @@ public class ListSequence<T> extends ArrayList<T> {
 
     @Override
     public String toString() {
-        return stream().map(T::toString).collect(Collectors.joining(" ", "[", "]"));
+        return stream().map(T::toString).collect(Collectors.joining(" "));
     }
 }

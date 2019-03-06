@@ -68,11 +68,13 @@ public class SRGSBuilder<T> {
 
                 if (list != choices.get(choices.size() - 1)) {
                     Element ruleRef = document.createElement("ruleref");
-                    addAttribute(ruleRef, "uri", ruleNodePrefix + index);
+                    addAttribute(ruleRef, "uri", "#" + ruleNodePrefix + index);
                     rule.appendChild(ruleRef);
                 }
 
                 // TODO In cities_example, rule_ref is in node item node
+                // TODO Rule_1 is inside Rule_0 item -> see cities_srg.xml
+
             }
 
         }

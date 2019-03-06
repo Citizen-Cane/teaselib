@@ -324,12 +324,12 @@ void SpeechRecognizer::setChoices(const char* srgs, const size_t length) {
 	if (FAILED(hr)) throw new COMException(hr);
 	hr = IStream_Copy(cfg, buffer, size.LowPart);
 	if (FAILED(hr)) throw new COMException(hr);
-
+	
 	HGLOBAL hGrammar;
 	hr = GetHGlobalFromStream(buffer, &hGrammar);
-	if (SUCCEEDED(hr)) {
-		hr = cpGrammar->LoadCmdFromMemory((SPBINARYGRAMMAR *)::GlobalLock(hGrammar), SPLO_DYNAMIC /* SPLO_STATIC*/);
-	}
+	if (FAILED(hr)) throw new COMException(hr);
+
+	hr = cpGrammar->LoadCmdFromMemory((SPBINARYGRAMMAR *)::GlobalLock(hGrammar), SPLO_DYNAMIC /* SPLO_STATIC*/);
 	GlobalUnlock(hGrammar);
 	if (FAILED(hr)) throw new COMException(hr);
 

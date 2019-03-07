@@ -14,7 +14,6 @@ import org.slf4j.LoggerFactory;
 import teaselib.core.events.Event;
 import teaselib.core.speechrecognition.AudioSignalProblems;
 import teaselib.core.speechrecognition.Confidence;
-import teaselib.core.speechrecognition.Rule;
 import teaselib.core.speechrecognition.SpeechRecognition;
 import teaselib.core.speechrecognition.SpeechRecognitionControl;
 import teaselib.core.speechrecognition.SpeechRecognitionResult;
@@ -79,12 +78,7 @@ public class SpeechRecognitionInputMethod implements InputMethod {
         this.recognitionCompleted = (sender, eventArgs) -> {
             if (eventArgs.result.length == 1) {
                 SpeechRecognitionResult result = eventArgs.result[0];
-
-                // TODO process rules when recognizing via SRGS
-                logger.info(result.getText(result.rule));
-                for (Rule rule : result.rule.children) {
-                    logger.info("   " + result.getText(rule));
-                }
+                logger.info("\n{}", result.prettyPrint());
 
                 if (audioSignalProblems.occured()) {
                     logAudioSignalProblem(result);
@@ -105,6 +99,10 @@ public class SpeechRecognitionInputMethod implements InputMethod {
                         // SpeechRecognitionChoices: The choice
                         // SpeechRecognitionSGRS: The rule name
                         // -> call result.toString(rule) to get the chosen text
+                        // TODO rule.Id is always 0, <rule id="xxx" sets the rule name" -> no numeric rule id
+                        // furthermore rule id may not be a numeric string -> xml compiler error
+                        // <rule name="xxx" attribute doesn't exist -> search more examples
+
                         // TODO Call dismiss() to remove code duplication
                         disableSpeechRecognition();
                         signal(result.rule.id);

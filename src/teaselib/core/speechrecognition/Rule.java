@@ -36,7 +36,7 @@ public class Rule {
     @Override
     public String toString() {
         return "Name=" + name + " Id=" + id + " [" + fromElement + "," + toElement + "[ C=" + probability + "~"
-                + confidence + " children=" + children;
+                + confidence + " children=" + children.size();
     }
 
 }

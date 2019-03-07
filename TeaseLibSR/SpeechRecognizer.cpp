@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <iostream>
+#include <sstream>
 #include <thread>
 
 #include <assert.h>
@@ -302,6 +303,20 @@ void SpeechRecognizer::setChoices(const Choices& choices) {
 	});
 }
 
+class ErrorLog : public ISpErrorLog , CComPtr<ISpErrorLog> {
+public:
+	std::wstringstream errors;
+	HRESULT STDMETHODCALLTYPE AddError(
+		/* [in] */ const long lLineNumber,
+		/* [in] */ HRESULT hr,
+		/* [in] */ LPCWSTR pszDescription,
+		/* [in][annotation] */
+		_In_opt_  LPCWSTR pszHelpFile,
+		/* [in] */ DWORD dwHelpContext) {
+		errors << L"line=" << lLineNumber << L" hr=" << hr << " " << pszDescription << std::endl;
+	}
+};
+
 void SpeechRecognizer::setChoices(const char* srgs, const size_t length) {
 	checkRecogizerStatus();
 
@@ -310,7 +325,9 @@ void SpeechRecognizer::setChoices(const char* srgs, const size_t length) {
 	CComPtr<IStream> cfg = SHCreateMemStream(NULL, 65536);
 	if (!cfg) throw new COMException(E_OUTOFMEMORY);
 
-	HRESULT hr = grammarCompiler->CompileStream(xml, cfg, NULL, NULL, NULL, 0);
+	// TODO Provide IUnknown impl via ATL
+	ErrorLog errors;
+	HRESULT hr = grammarCompiler->CompileStream(xml, cfg, NULL, NULL, &errors, 0);
 	assert(SUCCEEDED(hr));
 	if (FAILED(hr)) throw new COMException(hr);
 

@@ -40,4 +40,23 @@ public class SpeechRecognitionResult {
         return "#" + rule.id + ": " + text + " (" + rule.probability + ") -> confidence="
                 + rule.confidence.toString().toLowerCase();
     }
+
+    public String prettyPrint() {
+        return prettyPrint(new StringBuilder(), rule, 0).toString();
+    }
+
+    private StringBuilder prettyPrint(StringBuilder rules, Rule rule, int indention) {
+        for (int i = 0; i < indention; ++i) {
+            rules.append("\t");
+        }
+        rules.append(getText(rule));
+        rules.append(" -> ");
+        rules.append(rule);
+        if (!rule.children.isEmpty()) {
+            rules.append("\n");
+            rule.children.stream().forEach(child -> prettyPrint(rules, child, indention + 1));
+        }
+        return rules;
+    }
+
 }

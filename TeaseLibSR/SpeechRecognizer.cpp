@@ -305,18 +305,39 @@ void SpeechRecognizer::setChoices(const Choices& choices) {
 	});
 }
 
+// TODO Deprecated - replace - CAtlComModule crashes
+CComModule _Module;
 
-class ErrorLog : public ISpErrorLog, public CComObjectRoot {
-	bool errorAdded = false;
+class ATL_NO_VTABLE ErrorLog : public CComObjectRoot, public ISpErrorLog {
 public:
-	std::wstringstream errors;
+	ErrorLog()
+	{
+	}
+
+	DECLARE_NOT_AGGREGATABLE(ErrorLog)
+	BEGIN_COM_MAP(ErrorLog)
+		COM_INTERFACE_ENTRY(ISpErrorLog)
+	END_COM_MAP()
+
+	DECLARE_PROTECT_FINAL_CONSTRUCT()
+
+	HRESULT FinalConstruct()
+	{
+		return S_OK;
+	}
+
+	void FinalRelease()
+	{
+	}
+
+
 	HRESULT STDMETHODCALLTYPE AddError(
 		/* [in] */ const long lLineNumber,
 		/* [in] */ HRESULT hr,
 		/* [in] */ LPCWSTR pszDescription,
 		/* [in][annotation] */
 		_In_opt_  LPCWSTR pszHelpFile,
-		/* [in] */ DWORD dwHelpContext) {
+		/* [in] */ DWORD dwHelpContext) override {
 		if (errorAdded) errors << std::endl;
 		errors << L"line " << lLineNumber;
 		errors << L" hr=0x" << std::uppercase << std::setfill(L'0') << std::setw(8) << std::hex << hr;
@@ -326,6 +347,10 @@ public:
 	}
 
 	bool empty() const { return !errorAdded; }
+	operator std::wstring() { return errors.str(); }
+private:
+	std::wstringstream errors;
+	bool errorAdded = false;
 };
 
 void SpeechRecognizer::setChoices(const char* srgs, const size_t length) {
@@ -336,9 +361,12 @@ void SpeechRecognizer::setChoices(const char* srgs, const size_t length) {
 	CComPtr<IStream> cfg = SHCreateMemStream(NULL, 65536);
 	if (!cfg) throw new COMException(E_OUTOFMEMORY);
 
-	CComObjectStack<ErrorLog> errors;
-	HRESULT hr = grammarCompiler->CompileStream(xml, cfg, NULL, NULL, &errors, 0);
-	if (!errors.empty()) throw new NativeException(hr, errors.errors.str().c_str());
+	CComObject<ErrorLog>* errors;
+	HRESULT hr = CComObject<ErrorLog>::CreateInstance(&errors);
+	if (FAILED(hr)) throw new COMException(hr);
+	CComPtr<ErrorLog> pErrors = errors;
+	hr = grammarCompiler->CompileStream(xml, cfg, NULL, NULL, pErrors, 0);
+	if (!errors->empty()) throw new NativeException(hr, *errors);
 	if (FAILED(hr)) throw new COMException(hr);
 
 	const LARGE_INTEGER start = { 0,0 };

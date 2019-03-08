@@ -1,6 +1,7 @@
 #include "stdafx.h"
 
 #include <algorithm>
+#include <iomanip>
 #include <iostream>
 #include <sstream>
 #include <thread>
@@ -11,6 +12,7 @@
 // sphelper in Windows 8.1 SDK uses deprecated function GetVersionEx,
 // so for the time being, we'll use a copy with the annoying stuff commented out or changed
 #include "sphelper.h"
+#include <atlcom.h>
 
 #include <COMException.h>
 
@@ -303,7 +305,9 @@ void SpeechRecognizer::setChoices(const Choices& choices) {
 	});
 }
 
-class ErrorLog : public ISpErrorLog , CComPtr<ISpErrorLog> {
+
+class ErrorLog : public ISpErrorLog, public CComObjectRoot {
+	bool errorAdded = false;
 public:
 	std::wstringstream errors;
 	HRESULT STDMETHODCALLTYPE AddError(
@@ -313,8 +317,15 @@ public:
 		/* [in][annotation] */
 		_In_opt_  LPCWSTR pszHelpFile,
 		/* [in] */ DWORD dwHelpContext) {
-		errors << L"line=" << lLineNumber << L" hr=" << hr << " " << pszDescription << std::endl;
+		if (errorAdded) errors << std::endl;
+		errors << L"line " << lLineNumber;
+		errors << L" hr=0x" << std::uppercase << std::setfill(L'0') << std::setw(8) << std::hex << hr;
+		errors << " " << pszDescription;
+		errorAdded = true;
+		return S_OK;
 	}
+
+	bool empty() const { return !errorAdded; }
 };
 
 void SpeechRecognizer::setChoices(const char* srgs, const size_t length) {
@@ -325,10 +336,9 @@ void SpeechRecognizer::setChoices(const char* srgs, const size_t length) {
 	CComPtr<IStream> cfg = SHCreateMemStream(NULL, 65536);
 	if (!cfg) throw new COMException(E_OUTOFMEMORY);
 
-	// TODO Provide IUnknown impl via ATL
-	ErrorLog errors;
+	CComObjectStack<ErrorLog> errors;
 	HRESULT hr = grammarCompiler->CompileStream(xml, cfg, NULL, NULL, &errors, 0);
-	assert(SUCCEEDED(hr));
+	if (!errors.empty()) throw new NativeException(hr, errors.errors.str().c_str());
 	if (FAILED(hr)) throw new COMException(hr);
 
 	const LARGE_INTEGER start = { 0,0 };

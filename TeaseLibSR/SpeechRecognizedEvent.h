@@ -13,6 +13,6 @@ public:
 	void fire(ISpRecoResult* pResult);
 private:
 	jobject getResult(ISpRecoResult * pResult, const SPPHRASE * pPhrase, const jclass speechRecognitionResultClass);
-	static jobject getRule(JNIEnv *env, const SPPHRASERULE* rule);
+	static jobject getRule(JNIEnv *env, ISpRecoResult* pResult, const SPPHRASERULE* rule);
 };
 

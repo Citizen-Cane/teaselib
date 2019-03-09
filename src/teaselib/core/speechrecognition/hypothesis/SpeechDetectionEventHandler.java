@@ -142,9 +142,10 @@ public class SpeechDetectionEventHandler {
                 return;
             } else if (hypothesisIsAcceptable()) {
                 eventArgs.consumed = true;
-                Rule elevatedRule = new Rule(hypothesisResult.rule.name, hypothesisResult.rule.id,
-                        hypothesisResult.rule.fromElement, hypothesisResult.rule.toElement,
+                Rule elevatedRule = new Rule(hypothesisResult.rule.name, hypothesisResult.rule.text,
+                        hypothesisResult.rule.id, hypothesisResult.rule.fromElement, hypothesisResult.rule.toElement,
                         expectedConfidence.probability, expectedConfidence);
+                elevatedRule.children.addAll(hypothesisResult.rule.children);
                 SpeechRecognitionResult elevatedResult = new SpeechRecognitionResult(hypothesisResult.text,
                         elevatedRule);
                 logger.info(
@@ -200,12 +201,12 @@ public class SpeechDetectionEventHandler {
                     && hypothesisIsAcceptable()) {
                 eventArgs.consumed = true;
 
-                Rule elevatedRule = new Rule(recognitionCompletedResult.rule.name, recognitionCompletedResult.rule.id,
-                        recognitionCompletedResult.rule.fromElement, recognitionCompletedResult.rule.toElement,
-                        expectedConfidence.probability, expectedConfidence);
-                SpeechRecognitionResult elevatedResult1 = new SpeechRecognitionResult(recognitionCompletedResult.text,
+                Rule elevatedRule = new Rule(recognitionCompletedResult.rule.name, recognitionCompletedResult.rule.text,
+                        recognitionCompletedResult.rule.id, recognitionCompletedResult.rule.fromElement,
+                        recognitionCompletedResult.rule.toElement, expectedConfidence.probability, expectedConfidence);
+                elevatedRule.children.addAll(recognitionCompletedResult.rule.children);
+                SpeechRecognitionResult elevatedResult = new SpeechRecognitionResult(recognitionCompletedResult.text,
                         elevatedRule);
-                SpeechRecognitionResult elevatedResult = elevatedResult1;
                 logger.info("Replacing recognition result {} of accepted hypothesis {} as elevated result {}",
                         recognitionCompletedResult, hypothesisResult, elevatedResult);
 

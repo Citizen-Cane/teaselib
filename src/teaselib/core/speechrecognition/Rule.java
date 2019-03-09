@@ -10,6 +10,7 @@ import java.util.List;
 public class Rule {
 
     public final String name;
+    public final String text;
     public final int id;
     public final int fromElement;
     public final int toElement;
@@ -18,9 +19,11 @@ public class Rule {
     public final float probability;
     public final Confidence confidence;
 
-    public Rule(String name, int id, int fromElement, int toElement, float probability, Confidence confidence) {
+    public Rule(String name, String text, int id, int fromElement, int toElement, float probability,
+            Confidence confidence) {
         super();
         this.name = name;
+        this.text = text;
         this.id = id;
         this.fromElement = fromElement;
         this.toElement = toElement;
@@ -36,7 +39,23 @@ public class Rule {
     @Override
     public String toString() {
         return "Name=" + name + " Id=" + id + " [" + fromElement + "," + toElement + "[ C=" + probability + "~"
-                + confidence + " children=" + children.size();
+                + confidence + " children=" + children.size() + " \"" + text + "\"";
+    }
+
+    public String prettyPrint() {
+        return prettyPrint(new StringBuilder(), this, 0).toString();
+    }
+
+    private static StringBuilder prettyPrint(StringBuilder rules, Rule rule, int indention) {
+        for (int i = 0; i < indention; ++i) {
+            rules.append("\t");
+        }
+        rules.append(rule);
+        if (!rule.children.isEmpty()) {
+            rules.append("\n");
+            rule.children.stream().forEach(child -> prettyPrint(rules, child, indention + 1));
+        }
+        return rules;
     }
 
 }

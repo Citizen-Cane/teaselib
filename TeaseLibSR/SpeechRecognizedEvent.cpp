@@ -115,29 +115,35 @@ jobject SpeechRecognizedEvent::getResult(ISpRecoResult* pResult, const SPPHRASE*
 		speechRecognitionResultClass,
 		JNIClass::getMethodID(env, speechRecognitionResultClass, "<init>", "(Ljava/lang/String;Lteaselib/core/speechrecognition/Rule;)V"),
 		static_cast<jstring>(JNIString(env, text)),
-		getRule(env, &pPhrase->Rule));
+		getRule(env, pResult, &pPhrase->Rule));
 	CoTaskMemFree(text);
 	if (env->ExceptionCheck()) throw new JNIException(env);
 
 	return speechRecognitionResult;
 }
 
-jobject SpeechRecognizedEvent::getRule(JNIEnv *env, const SPPHRASERULE* rule) {
+jobject SpeechRecognizedEvent::getRule(JNIEnv *env, ISpRecoResult* pResult, const SPPHRASERULE* rule) {
+	wchar_t* text;
+	HRESULT hr = pResult->GetText(rule->ulFirstElement, rule->ulCountOfElements, false, &text, NULL);
+	if (FAILED(hr)) throw new COMException(hr);
+
 	jclass ruleClass = JNIClass::getClass(env, "teaselib/core/speechrecognition/Rule");
 	jobject jRule = env->NewObject(
 		ruleClass,
 		JNIClass::getMethodID(env, ruleClass, "<init>",
-			"(Ljava/lang/String;IIIFLteaselib/core/speechrecognition/Confidence;)V"),
+			"(Ljava/lang/String;Ljava/lang/String;IIIFLteaselib/core/speechrecognition/Confidence;)V"),
 		static_cast<jstring>(JNIString(env, rule->pszName)),
+		static_cast<jstring>(JNIString(env, text)),
 		rule->ulId,
 		rule->ulFirstElement,
 		rule->ulFirstElement + rule->ulCountOfElements,
 		rule->SREngineConfidence,
 		getConfidenceField(env, rule->Confidence));
+	CoTaskMemFree(text);
 	if (env->ExceptionCheck()) throw new JNIException(env);
 
 	for (const SPPHRASERULE* childRule = rule->pFirstChild; childRule != NULL; childRule = childRule->pNextSibling) {
-		env->CallVoidMethod(jRule, env->GetMethodID(ruleClass, "add", "(Lteaselib/core/speechrecognition/Rule;)V"), getRule(env, childRule));
+		env->CallVoidMethod(jRule, env->GetMethodID(ruleClass, "add", "(Lteaselib/core/speechrecognition/Rule;)V"), getRule(env, pResult, childRule));
 		if (env->ExceptionCheck()) throw new JNIException(env);
 	}
 

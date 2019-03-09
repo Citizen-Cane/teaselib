@@ -78,7 +78,7 @@ public class SpeechRecognitionInputMethod implements InputMethod {
         this.recognitionCompleted = (sender, eventArgs) -> {
             if (eventArgs.result.length == 1) {
                 SpeechRecognitionResult result = eventArgs.result[0];
-                logger.info("\n{}", result.prettyPrint());
+                logger.info("rules \n{}", result.rule.prettyPrint());
 
                 if (audioSignalProblems.occured()) {
                     logAudioSignalProblem(result);

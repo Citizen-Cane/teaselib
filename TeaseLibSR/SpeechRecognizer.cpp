@@ -284,12 +284,13 @@ void SpeechRecognizer::setChoices(const Choices& choices) {
 		int n = 0;
 		CComPtr<ISpRecoGrammar>& cpGrammar = this->cpGrammar;
 		for_each(choices.begin(), choices.end(), [&cpGrammar, &n](const Choices::value_type & choice) {
-			const std::wstring ruleName = choice;
 			SPSTATEHANDLE hRule;
-			HRESULT hr = cpGrammar->GetRule(ruleName.c_str(), n++, SPRAF_TopLevel | SPRAF_Active, TRUE, &hRule);
+			std::wstringstream ruleName;
+			ruleName << L"Choice_" << n;
+			HRESULT hr = cpGrammar->GetRule(ruleName.str().c_str(), n++, SPRAF_TopLevel | SPRAF_Active, TRUE, &hRule);
 			assert(SUCCEEDED(hr));
 			if (FAILED(hr)) throw new COMException(hr);
-			hr = cpGrammar->AddWordTransition(hRule, NULL, ruleName.c_str(), L" ", SPWT_LEXICAL, 1, NULL);
+			hr = cpGrammar->AddWordTransition(hRule, NULL, choice.c_str(), L" ", SPWT_LEXICAL, 1, NULL);
 			assert(SUCCEEDED(hr));
 			if (FAILED(hr)) throw new COMException(hr);
 		});

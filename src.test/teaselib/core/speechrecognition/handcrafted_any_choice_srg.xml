@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<grammar xmlns="http://www.w3.org/2001/06/grammar" root="Main"
+	tag-format="semantics/1.0" version="1.0" xml:lang="en-US">
+	<!-- handcrafted_srg.xml: Defines an SRGS grammar for testing
+		Node Rule_1_Result is needed to access Rule_2_Choice_1 as its child 
+	 -->
+
+	<rule id="Main" scope="public">
+		<item>
+			<ruleref uri="#Rule_0" />
+			<tag> out.Rule_1_Result = rules.latest(); </tag>
+		</item>
+	</rule>
+
+	<rule id="Rule_0" scope="public">
+		<item>
+			Please Miss
+			<ruleref uri="#Rule_1" />
+		</item>
+	</rule>
+
+	<rule id="Rule_1" scope="public">
+		<one-of>
+			<item>
+				one more
+				<tag> out.Rule_1_Choice_0 = rules.latest(); </tag>
+				<ruleref uri="#Rule_2" />
+				<ruleref uri="#Rule_3" />
+			</item>
+			<item>
+				one less
+				<tag> out.Rule_1_Choice_1 = rules.latest(); </tag>
+				<ruleref uri="#Rule_2" />
+				<ruleref uri="#Rule_3" />
+			</item>
+			<item>
+				two more
+				<tag> out.Rule_1_Choice_2 = rules.latest(); </tag>
+				<ruleref uri="#Rule_2" />
+				<ruleref uri="#Rule_3" />
+			</item>
+		</one-of>
+		<tag> out.Rule_1_Result = rules.latest(); </tag>
+	</rule>
+
+
+	<rule id="Rule_2" scope="public">
+		<item>
+			strokes
+		</item>
+	</rule>
+
+	<rule id="Rule_3" scope="public">
+		<one-of>
+			<item>
+				okay
+				<tag> out.Rule_2_Choice_0 = rules.latest(); </tag>
+			</item>
+			<item>
+				May I
+				<tag> out.Rule_2_Choice_1 = rules.latest(); </tag>
+			</item>
+		</one-of>
+		<tag> out.Rule_2_Result = rules.latest(); </tag>
+	</rule>
+</grammar>

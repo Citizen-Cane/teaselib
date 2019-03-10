@@ -51,7 +51,7 @@ public class SpeechRecognitionTest {
     private static void awaitResult(SpeechRecognition sr, Prompt prompt, String emulatedText, int expectedResultIndex)
             throws InterruptedException {
         sr.emulateRecogntion(emulatedText);
-        boolean dismissed = prompt.click.await(10, TimeUnit.SECONDS);
+        boolean dismissed = prompt.click.await(5, TimeUnit.SECONDS);
         if (!dismissed) {
             prompt.dismiss();
         }
@@ -83,10 +83,31 @@ public class SpeechRecognitionTest {
     }
 
     @Test
-    public void testHandcraftedSRGSExample() throws InterruptedException, IOException {
-        String resource = "handcrafted_srg.xml";
-        String emulatedRecognitionResult = "Please Miss two more";
+    public void testHandcraftedChildren() throws InterruptedException, IOException {
+        String resource = "handcrafted_children_srg.xml";
+        String emulatedRecognitionResult = "Please Miss two more May I";
         emulateSpeechRecognition(resource, emulatedRecognitionResult, 2);
+    }
+
+    @Test
+    public void testHandcraftedSiblings() throws InterruptedException, IOException {
+        String resource = "handcrafted_siblings_srg.xml";
+        String emulatedRecognitionResult = "Please Miss two more May I";
+        emulateSpeechRecognition(resource, emulatedRecognitionResult, 2);
+    }
+
+    @Test
+    public void testHandcraftedAnyChoice() throws InterruptedException, IOException {
+        String resource = "handcrafted_any_choice_srg.xml";
+        String emulatedRecognitionResult = "Please Miss two more strokes May I";
+        emulateSpeechRecognition(resource, emulatedRecognitionResult, 2);
+    }
+
+    @Test
+    public void testHandcraftedSameChoice() throws InterruptedException, IOException {
+        String resource = "handcrafted_same_choice_srg.xml";
+        emulateSpeechRecognition(resource, "Yes Miss I've spurted off", 0);
+        emulateSpeechRecognition(resource, "No Miss I didn't spurt off", 1);
     }
 
     @Test

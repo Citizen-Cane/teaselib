@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<grammar xmlns="http://www.w3.org/2001/06/grammar" root="Main"
+	tag-format="semantics/1.0" version="1.0" xml:lang="en-US">
+	<!-- handcrafted_srg.xml: Defines an SRGS grammar for testing
+		Node Rule_1_Result is needed to access Rule_2_Choice_1 as its child
+	 
+	<example>  Yes Miss I've spurted off </example>
+	<example>  No Miss I didn't spurt off </example>
+	 -->
+	
+	<rule id="Main" scope="public">
+		<item>
+			<ruleref uri="#Rule_0_0" />
+		</item>
+	</rule>
+
+	<rule id="Rule_0_0" scope="public">
+		<item>
+			Yes
+			<tag> out.Rule_0_Choice_0 = rules.latest(); </tag>
+			<ruleref uri="#Rule_1" />
+			<ruleref uri="#Rule_2_0" />
+			<ruleref uri="#Rule_3" />
+		</item>
+	</rule>
+
+	<rule id="Rule_0_1" scope="public">
+		<item>
+			No
+			<tag> out.Rule_0_Choice_1 = rules.latest(); </tag>
+			<ruleref uri="#Rule_1" />
+			<ruleref uri="#Rule_2_1" />
+			<ruleref uri="#Rule_3" />
+		</item>
+	</rule>
+
+	<rule id="Rule_1" scope="public">
+		<item>
+			Miss
+		</item>
+	</rule>
+
+	<rule id="Rule_2_0" scope="public">
+		<item>
+			I've spurted
+			<tag> out.Rule_2_Choice_0 = rules.latest(); </tag>
+		</item>
+	</rule>
+
+	<rule id="Rule_2_1" scope="public">
+		<item>
+			I didn't spurt
+			<tag> out.Rule_2_Choice_1 = rules.latest(); </tag>
+		</item>
+	</rule>
+
+	<rule id="Rule_3" scope="public">
+		<item>
+			off
+		</item>
+	</rule>
+
+</grammar>

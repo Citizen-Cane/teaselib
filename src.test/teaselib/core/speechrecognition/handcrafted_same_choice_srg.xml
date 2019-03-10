@@ -9,9 +9,14 @@
 	 -->
 	
 	<rule id="Main" scope="public">
-		<item>
-			<ruleref uri="#Rule_0_0" />
-		</item>
+		<one-of>
+			<item>
+				<ruleref uri="#Rule_0_0" />
+			</item>
+			<item>
+				<ruleref uri="#Rule_0_1" />
+			</item>
+		</one-of>
 	</rule>
 
 	<rule id="Rule_0_0" scope="public">

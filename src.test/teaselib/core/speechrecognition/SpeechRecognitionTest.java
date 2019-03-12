@@ -1,6 +1,8 @@
 package teaselib.core.speechrecognition;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -74,12 +76,12 @@ public class SpeechRecognitionTest {
         }
     }
 
-    @Test
+    @Test(expected = IllegalArgumentException.class)
     public void testMicrosoftSRGSExampleCities() throws InterruptedException, IOException {
         String resource = "cities_srg.xml";
         String emulatedRecognitionResult = "I would like to fly from Miami to Los Angeles";
         emulateSpeechRecognition(resource, emulatedRecognitionResult, 3);
-        // TODO Check second rule (to) == 1
+        // fails since the example doesn't contain rules that match the teaselib srgs speech recognition naming scheme
     }
 
     @Test
@@ -112,7 +114,7 @@ public class SpeechRecognitionTest {
 
     @Test
     public void testHandcraftedSRGSExampleRecognitionRejected() throws InterruptedException, IOException {
-        String resource = "handcrafted_srg.xml";
+        String resource = "handcrafted_children_srg.xml";
         String emulatedRecognitionResult = "Please Miss some more";
         try {
             emulateSpeechRecognition(resource, emulatedRecognitionResult, -1);

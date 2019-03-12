@@ -1,5 +1,8 @@
 #include "stdafx.h"
 
+#include <sstream>
+#include <vector>
+
 #include <atlbase.h>
 #include <sapi.h>
 #include <sperror.h>
@@ -134,7 +137,7 @@ jobject SpeechRecognizedEvent::getRule(JNIEnv *env, ISpRecoResult* pResult, cons
 			"(Ljava/lang/String;Ljava/lang/String;IIIFLteaselib/core/speechrecognition/Confidence;)V"),
 		static_cast<jstring>(JNIString(env, rule->pszName)),
 		static_cast<jstring>(JNIString(env, text)),
-		rule->ulId,
+		choiceIndex(rule),
 		rule->ulFirstElement,
 		rule->ulFirstElement + rule->ulCountOfElements,
 		rule->SREngineConfidence,
@@ -149,3 +152,32 @@ jobject SpeechRecognizedEvent::getRule(JNIEnv *env, ISpRecoResult* pResult, cons
 
 	return jRule;
 }
+
+std::vector<std::wstring> split(const std::wstring& string, wchar_t delimiter) {
+	std::vector<std::wstring> tokens;
+	if (!string.empty()) {
+		const size_t bufferSize = 256;
+		wchar_t element[bufferSize];
+		std::wistringstream stream(string);
+		do {
+			stream.getline(element, bufferSize, delimiter);
+			tokens.push_back(std::wstring(element));
+		} while (stream.good());
+	}
+	return tokens;
+}
+
+int SpeechRecognizedEvent::choiceIndex(const SPPHRASERULE* rule) {
+	std::vector<std::wstring> tokens = split(rule->pszName, L'_');
+	if (tokens.size() < 2) {
+		return INT_MIN;
+	} else if (tokens.size() < 3) {
+			return rule->ulId;
+	} else {
+		// TODO Return rule index as well to indicate sequence of rule
+		const int rule_index = std::stoi(tokens.at(1));
+		const int choice_index = std::stoi(tokens.at(2));
+		return choice_index;
+	}
+}
+

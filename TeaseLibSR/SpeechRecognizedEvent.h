@@ -14,5 +14,6 @@ public:
 private:
 	jobject getResult(ISpRecoResult * pResult, const SPPHRASE * pPhrase, const jclass speechRecognitionResultClass);
 	static jobject getRule(JNIEnv *env, ISpRecoResult* pResult, const SPPHRASERULE* rule);
+	static int choiceIndex(const SPPHRASERULE * rule);
 };
 

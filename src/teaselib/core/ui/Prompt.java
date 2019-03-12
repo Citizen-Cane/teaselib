@@ -85,7 +85,7 @@ public class Prompt {
                 return;
             }
         }
-        throw new IllegalArgumentException("No handler for " + key + " in " + this);
+        forwardToScriptAndThrow(new IllegalArgumentException("No handler for " + key + " in " + this));
     }
 
     public synchronized int result() {
@@ -102,23 +102,22 @@ public class Prompt {
     public synchronized void setResultOnce(InputMethod inputMethod, int value) {
         if (result == Prompt.UNDEFINED) {
             if (value < 0 || value >= choices.size()) {
-                throw new IndexOutOfBoundsException(value + "->" + toString() + ": " + inputMethod.toString());
+                forwardToScriptAndThrow(new IndexOutOfBoundsException(value + "->" + this + ": " + inputMethod));
             } else {
                 this.resultInputMethod = inputMethod;
                 result = value;
             }
         } else {
-            throw new IllegalStateException("Prompt " + this + " already set to " + inputMethod + " -> " + result);
+            forwardAndThrowResultAlreadySet();
         }
     }
 
     public synchronized void setTimedOut() {
         if (result == Prompt.UNDEFINED) {
-            // TODO Should be TIMEDOUT
+            // TODO Should be TIMED_OUT
             result = Prompt.DISMISSED;
         } else {
-            throw new IllegalStateException(
-                    "Prompt " + this + " already set to " + this.resultInputMethod + " -> " + result);
+            forwardAndThrowResultAlreadySet();
         }
     }
 
@@ -128,8 +127,18 @@ public class Prompt {
         if (!paused()) {
             click.signalAll();
         } else {
-            throw new IllegalStateException(inputMethod + " tried to signal paused prompt " + this);
+            forwardToScriptAndThrow(new IllegalStateException(inputMethod + " tried to signal paused prompt " + this));
         }
+    }
+
+    private void forwardAndThrowResultAlreadySet() {
+        String message = "Prompt " + this + " already set to " + resultInputMethod + " -> " + result;
+        forwardToScriptAndThrow(new IllegalStateException(message));
+    }
+
+    private void forwardToScriptAndThrow(RuntimeException e) {
+        setException(e);
+        throw e;
     }
 
     public void signalHandlerInvocation(String handlerKey) {
@@ -201,7 +210,7 @@ public class Prompt {
         String inputMethodName = resultInputMethod != null
                 ? "(input method =" + resultInputMethod.getClass().getSimpleName() + ")"
                 : "";
-        return scriptTaskDescription + choices.toString() + " " + lockState + isPaused + resultString + inputMethodName;
+        return scriptTaskDescription + choices + " " + lockState + isPaused + resultString + inputMethodName;
     }
 
     private String toString(int result) {

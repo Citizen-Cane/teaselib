@@ -251,8 +251,12 @@ void SpeechRecognizer::speechRecognitionEventHandlerLoop(HANDLE* rghEvents) {
                         break;
                     }
                     }
-                } catch (NativeException *e) {
-                    // TODO log in teaselib via JNIException::throwNew(env, e) and restart on java side
+				} catch (std::exception *e) {
+					assert(false);
+					wprintf(L"std::exception: %s\n", e->what());
+				}
+				catch (NativeException *e) {
+					// TODO log in teaselib via JNIException::throwNew(env, e) and restart on java side
                     assert(false);
                     wprintf(L"Native exception 0x%x: %s\n", e->errorCode, e->message.c_str());
                 } catch (JNIException *e) {

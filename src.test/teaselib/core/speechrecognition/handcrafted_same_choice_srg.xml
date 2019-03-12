@@ -11,30 +11,30 @@
 	<rule id="Main" scope="public">
 		<one-of>
 			<item>
-				<ruleref uri="#Rule_0_0" />
+				<ruleref uri="#Choice_0_0" />
 			</item>
 			<item>
-				<ruleref uri="#Rule_0_1" />
+				<ruleref uri="#Choice_0_1" />
 			</item>
 		</one-of>
 	</rule>
 
-	<rule id="Rule_0_0" scope="public">
+	<rule id="Choice_0_0" scope="public">
 		<item>
 			Yes
 			<tag> out.Rule_0_Choice_0 = rules.latest(); </tag>
 			<ruleref uri="#Rule_1" />
-			<ruleref uri="#Rule_2_0" />
+			<ruleref uri="#Choice_2_0" />
 			<ruleref uri="#Rule_3" />
 		</item>
 	</rule>
 
-	<rule id="Rule_0_1" scope="public">
+	<rule id="Choice_0_1" scope="public">
 		<item>
 			No
 			<tag> out.Rule_0_Choice_1 = rules.latest(); </tag>
 			<ruleref uri="#Rule_1" />
-			<ruleref uri="#Rule_2_1" />
+			<ruleref uri="#Choice_2_1" />
 			<ruleref uri="#Rule_3" />
 		</item>
 	</rule>
@@ -45,14 +45,14 @@
 		</item>
 	</rule>
 
-	<rule id="Rule_2_0" scope="public">
+	<rule id="Choice_2_0" scope="public">
 		<item>
 			I've spurted
 			<tag> out.Rule_2_Choice_0 = rules.latest(); </tag>
 		</item>
 	</rule>
 
-	<rule id="Rule_2_1" scope="public">
+	<rule id="Choice_2_1" scope="public">
 		<item>
 			I didn't spurt
 			<tag> out.Rule_2_Choice_1 = rules.latest(); </tag>

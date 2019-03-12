@@ -14,6 +14,7 @@ import org.slf4j.LoggerFactory;
 import teaselib.core.events.Event;
 import teaselib.core.speechrecognition.AudioSignalProblems;
 import teaselib.core.speechrecognition.Confidence;
+import teaselib.core.speechrecognition.Rule;
 import teaselib.core.speechrecognition.SpeechRecognition;
 import teaselib.core.speechrecognition.SpeechRecognitionControl;
 import teaselib.core.speechrecognition.SpeechRecognitionResult;
@@ -91,28 +92,36 @@ public class SpeechRecognitionInputMethod implements InputMethod {
                             logLackOfConfidence(result);
                         }
                     } else {
-                        // For sr instanceof SpeechRecognitionChoices the rule id matches the choice index
-                        // For sr instanceof SpeechRecognitionSGRS the rule id is always 0 (or the index of the main
-                        // rule)
-                        // TODO for srgs-based there are multiple choice indices within each sub-rule
-                        // TODO The name of each rule is:
-                        // SpeechRecognitionChoices: The choice
-                        // SpeechRecognitionSGRS: The rule name
-                        // -> call result.toString(rule) to get the chosen text
-                        // TODO rule.Id is always 0, <rule id="xxx" sets the rule name" -> no numeric rule id
-                        // furthermore rule id may not be a numeric string -> xml compiler error
-                        // <rule name="xxx" attribute doesn't exist -> search more examples
-
-                        // TODO Call dismiss() to remove code duplication
                         disableSpeechRecognition();
-                        signal(result.rule.id);
-                        active.set(null);
+                        try {
+                            List<Integer> results = gatherResults(result.rule);
+                            if (results.isEmpty()) {
+                                throw new IllegalArgumentException("No chosen items found in rule: " + result.rule);
+                            } else {
+                                // TODO forward all choices to prompt
+                                signal(results.get(0));
+                            }
+                        } catch (Exception e) {
+                            active.get().setException(e);
+                        } finally {
+                            active.set(null);
+                        }
                     }
                 }
             } else {
                 logger.info("Ignoring none or more than one result");
             }
         };
+    }
+
+    private List<Integer> gatherResults(Rule rule) {
+        ArrayList<Integer> results = new ArrayList<>();
+        if (rule.id > Prompt.DISMISSED) {
+            // TODO rename id to choice or item (srgs element name)
+            results.add(rule.id);
+        }
+        rule.children.stream().forEach(child -> results.addAll(gatherResults(child)));
+        return results;
     }
 
     private void logLackOfConfidence(SpeechRecognitionResult result) {

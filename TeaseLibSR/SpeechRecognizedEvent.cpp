@@ -1,6 +1,7 @@
 #include "stdafx.h"
 
 #include <sstream>
+#include <set>
 #include <vector>
 
 #include <atlbase.h>
@@ -12,6 +13,8 @@
 #include "JNIString.h"
 
 #include "SpeechRecognizedEvent.h"
+
+using namespace std;
 
 SpeechRecognizedEvent::SpeechRecognizedEvent(JNIEnv *env, jobject sender, jobject jevent, const char* name)
     : Event(env, sender, jevent, name) {
@@ -109,35 +112,40 @@ void SpeechRecognizedEvent::fire(ISpRecoResult* pResult) {
     __super::fire(eventArgs);
 }
 
+
 jobject SpeechRecognizedEvent::getResult(ISpRecoResult* pResult, const SPPHRASE* pPhrase, const jclass speechRecognitionResultClass) {
 	wchar_t* text;
 	HRESULT hr = pResult->GetText(SP_GETWHOLEPHRASE, SP_GETWHOLEPHRASE, false, &text, NULL);
 	if (FAILED(hr)) throw new COMException(hr);
 
+	const SemanticResults semanticResults(pPhrase->pProperties);
+
 	jobject speechRecognitionResult = env->NewObject(
 		speechRecognitionResultClass,
 		JNIClass::getMethodID(env, speechRecognitionResultClass, "<init>", "(Ljava/lang/String;Lteaselib/core/speechrecognition/Rule;)V"),
 		static_cast<jstring>(JNIString(env, text)),
-		getRule(env, pResult, &pPhrase->Rule));
+		getRule(env, pResult, &pPhrase->Rule, semanticResults));
 	CoTaskMemFree(text);
 	if (env->ExceptionCheck()) throw new JNIException(env);
 
 	return speechRecognitionResult;
 }
 
-jobject SpeechRecognizedEvent::getRule(JNIEnv *env, ISpRecoResult* pResult, const SPPHRASERULE* rule) {
+jobject SpeechRecognizedEvent::getRule(JNIEnv *env, ISpRecoResult* pResult, const SPPHRASERULE* rule, const SemanticResults& semanticResults) {
 	wchar_t* text;
 	HRESULT hr = pResult->GetText(rule->ulFirstElement, rule->ulCountOfElements, false, &text, NULL);
 	if (FAILED(hr)) throw new COMException(hr);
+
+	const RuleProperties ruleProperties(rule, semanticResults);
 
 	jclass ruleClass = JNIClass::getClass(env, "teaselib/core/speechrecognition/Rule");
 	jobject jRule = env->NewObject(
 		ruleClass,
 		JNIClass::getMethodID(env, ruleClass, "<init>",
 			"(Ljava/lang/String;Ljava/lang/String;IIIFLteaselib/core/speechrecognition/Confidence;)V"),
-		static_cast<jstring>(JNIString(env, rule->pszName)),
+		static_cast<jstring>(JNIString(env, ruleProperties.name.c_str())),
 		static_cast<jstring>(JNIString(env, text)),
-		choiceIndex(rule),
+		ruleProperties.choice_index,
 		rule->ulFirstElement,
 		rule->ulFirstElement + rule->ulCountOfElements,
 		rule->SREngineConfidence,
@@ -146,38 +154,56 @@ jobject SpeechRecognizedEvent::getRule(JNIEnv *env, ISpRecoResult* pResult, cons
 	if (env->ExceptionCheck()) throw new JNIException(env);
 
 	for (const SPPHRASERULE* childRule = rule->pFirstChild; childRule != NULL; childRule = childRule->pNextSibling) {
-		env->CallVoidMethod(jRule, env->GetMethodID(ruleClass, "add", "(Lteaselib/core/speechrecognition/Rule;)V"), getRule(env, pResult, childRule));
+		env->CallVoidMethod(jRule, env->GetMethodID(ruleClass, "add", "(Lteaselib/core/speechrecognition/Rule;)V"), getRule(env, pResult, childRule, semanticResults));
 		if (env->ExceptionCheck()) throw new JNIException(env);
 	}
 
 	return jRule;
 }
 
-std::vector<std::wstring> split(const std::wstring& string, wchar_t delimiter) {
-	std::vector<std::wstring> tokens;
+SemanticResults::SemanticResults(const SPPHRASEPROPERTY * pProperty) {
+	// TODO Gather semantic results from SPPHRASEPROPERTY hierarchy
+}
+
+RuleProperties::RuleProperties(const SPPHRASERULE * rule, const SemanticResults& semanticResults)
+: args(split(ruleName(rule, semanticResults), L'_'))
+, rule_index(ruleIndex(rule))
+, choice_index(choiceIndex(rule)) {
+}
+
+const vector<wstring> RuleProperties::split(const wstring& string, wchar_t delimiter) {
+	vector<wstring> tokens;
 	if (!string.empty()) {
 		const size_t bufferSize = 256;
 		wchar_t element[bufferSize];
-		std::wistringstream stream(string);
+		wistringstream stream(string);
 		do {
 			stream.getline(element, bufferSize, delimiter);
-			tokens.push_back(std::wstring(element));
+			tokens.push_back(wstring(element));
 		} while (stream.good());
 	}
 	return tokens;
 }
 
-int SpeechRecognizedEvent::choiceIndex(const SPPHRASERULE* rule) {
-	std::vector<std::wstring> tokens = split(rule->pszName, L'_');
-	if (tokens.size() < 2) {
+const wchar_t * RuleProperties::ruleName(const SPPHRASERULE * rule, const SemanticResults & semanticResults) {
+	// TODO Evaluate semantic results to match rule name with choice index
+	return rule->pszName;
+}
+
+int RuleProperties::ruleIndex(const SPPHRASERULE * rule) const {
+	if (args.size() < 2) {
 		return INT_MIN;
-	} else if (tokens.size() < 3) {
-			return rule->ulId;
 	} else {
-		// TODO Return rule index as well to indicate sequence of rule
-		const int rule_index = std::stoi(tokens.at(1));
-		const int choice_index = std::stoi(tokens.at(2));
-		return choice_index;
+		return stoi(args.at(1));
 	}
 }
 
+int RuleProperties::choiceIndex(const SPPHRASERULE* rule) const {
+	if (args.size() < 2) {
+		return INT_MIN;
+	} else if (args.size() < 3) {
+			return rule->ulId;
+	} else {
+		return stoi(args.at(2));
+	}
+}

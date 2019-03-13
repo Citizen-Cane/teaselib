@@ -40,6 +40,9 @@
 				<ruleref uri="#Choice_3" />
 			</item>
 		</one-of>
+	<!-- TODO Search SPPHRASEPROPERTIES.pProperties for choice_n
+		-> replace rule name with choice_n_m  -->
+    <tag> out.triggerSubsequentChoice_n_m_Properties = rules.latest(); </tag>
 	</rule>
 
 
@@ -53,11 +56,11 @@
 		<one-of>
 			<item>
 				okay
-				<tag> out.Choice_1_0 = rules.latest(); </tag>
+				<tag> out.Choice_3_0 = rules.latest(); </tag>
 			</item>
 			<item>
 				May I
-				<tag> out.Choice_1_1 = rules.latest(); </tag>
+				<tag> out.Choice_3_1 = rules.latest(); </tag>
 			</item>
 		</one-of>
 	</rule>

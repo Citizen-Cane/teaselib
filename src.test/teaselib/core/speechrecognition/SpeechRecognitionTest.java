@@ -24,7 +24,7 @@ import teaselib.core.util.Stream;
 
 public class SpeechRecognitionTest {
     private static final Choices Foobar = new Choices(
-            Arrays.asList(new Choice("My name is Foo"), new Choice("My name is Bar")));
+            Arrays.asList(new Choice("My name is Foo"), new Choice("My name is Bar"), new Choice("My name is Foobar")));
     private static final Confidence confidence = Confidence.High;
 
     private static void emulateSpeechRecognition(String resource, String emulatedRecognitionResult,
@@ -118,7 +118,7 @@ public class SpeechRecognitionTest {
         String emulatedRecognitionResult = "Please Miss some more";
         try {
             emulateSpeechRecognition(resource, emulatedRecognitionResult, -1);
-            // TODO Needs 10s to complete - way too long
+            // TODO Needs 5s to complete - way too long
             fail("Speech recognized with wrong phrase");
         } catch (AssertionError e) {
             return;

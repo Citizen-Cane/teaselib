@@ -1,7 +1,7 @@
 #include "stdafx.h"
 
 #include <sstream>
-#include <set>
+#include <map>
 #include <vector>
 
 #include <atlbase.h>
@@ -23,23 +23,21 @@ SpeechRecognizedEvent::SpeechRecognizedEvent(JNIEnv *env, jobject sender, jobjec
 SpeechRecognizedEvent::~SpeechRecognizedEvent() {
 }
 
+const char* getConfidenceFieldName(signed char confidence) {
+	if (confidence == SP_LOW_CONFIDENCE) {
+		return "Low";
+	} else if (confidence == SP_NORMAL_CONFIDENCE) {
+		return "Normal";
+	} else if (confidence == SP_HIGH_CONFIDENCE) {
+		return "High";
+	} else {
+		assert(false);
+		return  "Low";
+	}
+}
+
 jobject getConfidenceField(JNIEnv *env, signed char confidence) {
-    const char* confidenceFieldName;
-    // public enum Confidence {
-    //   Low,
-    //   Normal,
-    //   High
-    // };
-    if (confidence == SP_LOW_CONFIDENCE) {
-        confidenceFieldName = "Low";
-    } else if (confidence == SP_NORMAL_CONFIDENCE) {
-        confidenceFieldName = "Normal";
-    } else if (confidence == SP_HIGH_CONFIDENCE) {
-        confidenceFieldName = "High";
-    } else {
-        assert(false);
-        confidenceFieldName = "Low";
-    }
+    const char* confidenceFieldName = getConfidenceFieldName(confidence);
 
 	jclass confidenceClass = JNIClass::getClass(env, "teaselib/core/speechrecognition/Confidence");
     jobject confidenceValue = env->GetStaticObjectField(
@@ -49,6 +47,7 @@ jobject getConfidenceField(JNIEnv *env, signed char confidence) {
 
 	return confidenceValue;
 }
+
 
 void SpeechRecognizedEvent::fire(ISpRecoResult* pResult) {
 	SPPHRASE* pPhrase = NULL;
@@ -112,7 +111,6 @@ void SpeechRecognizedEvent::fire(ISpRecoResult* pResult) {
     __super::fire(eventArgs);
 }
 
-
 jobject SpeechRecognizedEvent::getResult(ISpRecoResult* pResult, const SPPHRASE* pPhrase, const jclass speechRecognitionResultClass) {
 	wchar_t* text;
 	HRESULT hr = pResult->GetText(SP_GETWHOLEPHRASE, SP_GETWHOLEPHRASE, false, &text, NULL);
@@ -136,16 +134,16 @@ jobject SpeechRecognizedEvent::getRule(JNIEnv *env, ISpRecoResult* pResult, cons
 	HRESULT hr = pResult->GetText(rule->ulFirstElement, rule->ulCountOfElements, false, &text, NULL);
 	if (FAILED(hr)) throw new COMException(hr);
 
-	const RuleProperties ruleProperties(rule, semanticResults);
+	const RuleName ruleNames(rule, semanticResults);
 
 	jclass ruleClass = JNIClass::getClass(env, "teaselib/core/speechrecognition/Rule");
 	jobject jRule = env->NewObject(
 		ruleClass,
 		JNIClass::getMethodID(env, ruleClass, "<init>",
 			"(Ljava/lang/String;Ljava/lang/String;IIIFLteaselib/core/speechrecognition/Confidence;)V"),
-		static_cast<jstring>(JNIString(env, ruleProperties.name.c_str())),
+		static_cast<jstring>(JNIString(env, ruleNames.name.c_str())),
 		static_cast<jstring>(JNIString(env, text)),
-		ruleProperties.choice_index,
+		ruleNames.choice_index,
 		rule->ulFirstElement,
 		rule->ulFirstElement + rule->ulCountOfElements,
 		rule->SREngineConfidence,
@@ -161,17 +159,36 @@ jobject SpeechRecognizedEvent::getRule(JNIEnv *env, ISpRecoResult* pResult, cons
 	return jRule;
 }
 
-SemanticResults::SemanticResults(const SPPHRASEPROPERTY * pProperty) {
-	// TODO Gather semantic results from SPPHRASEPROPERTY hierarchy
+SemanticResults::SemanticResults(const SPPHRASEPROPERTY * pProperty) 
+: names(semanticResults(pProperty)) {}
+
+SemanticResults::Names SemanticResults::semanticResults(const SPPHRASEPROPERTY * pProperty) {
+	Names names;
+	names.insert({ RuleName::withoutChoiceIndex(pProperty->pszName) , pProperty->pszName });
+	if (pProperty->pFirstChild) {
+		Names children = semanticResults(pProperty->pFirstChild);
+		names.insert(children.begin(), children.end());
+	}
+	if (pProperty->pNextSibling) {
+		Names children = semanticResults(pProperty->pNextSibling);
+		names.insert(children.begin(), children.end());
+	}
+	return names;
 }
 
-RuleProperties::RuleProperties(const SPPHRASERULE * rule, const SemanticResults& semanticResults)
-: args(split(ruleName(rule, semanticResults), L'_'))
+RuleName::RuleName(const SPPHRASERULE * rule, const SemanticResults& semanticResults)
+: name(ruleName(rule, semanticResults))
+, args(split(name, L'_'))
 , rule_index(ruleIndex(rule))
 , choice_index(choiceIndex(rule)) {
 }
 
-const vector<wstring> RuleProperties::split(const wstring& string, wchar_t delimiter) {
+std::wstring RuleName::withoutChoiceIndex(const wchar_t * pszName) {
+	const wstring name = std::wstring(pszName);
+	return name.substr(0, name.find_last_of('_'));
+}
+
+const vector<wstring> RuleName::split(const wstring& string, wchar_t delimiter) {
 	vector<wstring> tokens;
 	if (!string.empty()) {
 		const size_t bufferSize = 256;
@@ -185,12 +202,16 @@ const vector<wstring> RuleProperties::split(const wstring& string, wchar_t delim
 	return tokens;
 }
 
-const wchar_t * RuleProperties::ruleName(const SPPHRASERULE * rule, const SemanticResults & semanticResults) {
-	// TODO Evaluate semantic results to match rule name with choice index
-	return rule->pszName;
+const wchar_t * RuleName::ruleName(const SPPHRASERULE * rule, const SemanticResults & semanticResults) {
+	auto choice = semanticResults.names.find(rule->pszName);
+	if (choice != semanticResults.names.end()) {
+		return choice->second.c_str();
+	} else {
+		return rule->pszName;
+	}
 }
 
-int RuleProperties::ruleIndex(const SPPHRASERULE * rule) const {
+int RuleName::ruleIndex(const SPPHRASERULE * rule) const {
 	if (args.size() < 2) {
 		return INT_MIN;
 	} else {
@@ -198,8 +219,12 @@ int RuleProperties::ruleIndex(const SPPHRASERULE * rule) const {
 	}
 }
 
-int RuleProperties::choiceIndex(const SPPHRASERULE* rule) const {
-	if (args.size() < 2) {
+int RuleName::choiceIndex(const SPPHRASERULE* rule) const {
+	// TODO Must be 3 to insert semantic result, but thos breaks simple choices
+	// -> change either xml naming or naming of simple choices
+	// TODO simple choice sr chrashes -> fix regression
+	// if (args.size() < 2) {
+	if (args.size() < 3) {
 		return INT_MIN;
 	} else if (args.size() < 3) {
 			return rule->ulId;

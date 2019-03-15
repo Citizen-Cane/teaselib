@@ -164,14 +164,16 @@ SemanticResults::SemanticResults(const SPPHRASEPROPERTY * pProperty)
 
 SemanticResults::Names SemanticResults::semanticResults(const SPPHRASEPROPERTY * pProperty) {
 	Names names;
-	names.insert({ RuleName::withoutChoiceIndex(pProperty->pszName) , pProperty->pszName });
-	if (pProperty->pFirstChild) {
-		Names children = semanticResults(pProperty->pFirstChild);
-		names.insert(children.begin(), children.end());
-	}
-	if (pProperty->pNextSibling) {
-		Names children = semanticResults(pProperty->pNextSibling);
-		names.insert(children.begin(), children.end());
+	if (pProperty) {
+		names.insert({ RuleName::withoutChoiceIndex(pProperty->pszName) , pProperty->pszName });
+		if (pProperty->pFirstChild) {
+			Names children = semanticResults(pProperty->pFirstChild);
+			names.insert(children.begin(), children.end());
+		}
+		if (pProperty->pNextSibling) {
+			Names children = semanticResults(pProperty->pNextSibling);
+			names.insert(children.begin(), children.end());
+		}
 	}
 	return names;
 }
@@ -215,20 +217,22 @@ int RuleName::ruleIndex(const SPPHRASERULE * rule) const {
 	if (args.size() < 2) {
 		return INT_MIN;
 	} else {
-		return stoi(args.at(1));
+		try {
+			return stoi(args.at(1));
+		} catch (const std::exception& e) {
+			return INT_MIN;
+		}
 	}
 }
 
 int RuleName::choiceIndex(const SPPHRASERULE* rule) const {
-	// TODO Must be 3 to insert semantic result, but thos breaks simple choices
-	// -> change either xml naming or naming of simple choices
-	// TODO simple choice sr chrashes -> fix regression
-	// if (args.size() < 2) {
 	if (args.size() < 3) {
 		return INT_MIN;
-	} else if (args.size() < 3) {
-			return rule->ulId;
 	} else {
-		return stoi(args.at(2));
+		try {
+			return stoi(args.at(2));
+		} catch (const std::exception& e) {
+			return INT_MIN;
+		}
 	}
 }

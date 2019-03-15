@@ -290,7 +290,7 @@ void SpeechRecognizer::setChoices(const Choices& choices) {
 		for_each(choices.begin(), choices.end(), [&cpGrammar, &n](const Choices::value_type & choice) {
 			SPSTATEHANDLE hRule;
 			std::wstringstream ruleName;
-			ruleName << L"Choice_" << n;
+			ruleName << L"Choice_0_" << n;
 			HRESULT hr = cpGrammar->GetRule(ruleName.str().c_str(), n++, SPRAF_TopLevel | SPRAF_Active, TRUE, &hRule);
 			assert(SUCCEEDED(hr));
 			if (FAILED(hr)) throw new COMException(hr);

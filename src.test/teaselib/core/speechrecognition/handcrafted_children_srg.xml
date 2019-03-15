@@ -14,21 +14,21 @@
     elements seem to point to "the rest of the message"
     -->
   <rule id="Rule_0" scope="public">
-    <item>Please Miss <ruleref uri="#Rule_1"/> </item>
+    <item>Please Miss <ruleref uri="#Choice_1"/> </item>
     <tag> out.Rule_1_Result = rules.latest(); </tag>
   </rule>
-  <rule id="Rule_1" scope="public">
+  <rule id="Choice_1" scope="public">
     <one-of>
-      <item>one more <tag> out.Rule_1_Choice_0 = rules.latest(); </tag> <ruleref uri="#Rule_2"/> </item>
-      <item>one less <tag> out.Rule_1_Choice_1 = rules.latest(); </tag> <ruleref uri="#Rule_2"/> </item>
-      <item>two more <tag> out.Rule_1_Choice_2 = rules.latest(); </tag> <ruleref uri="#Rule_2"/> </item>
+      <item>one more <tag> out.Choice_1_0 = rules.latest(); </tag> <ruleref uri="#Choice_2"/> </item>
+      <item>one less <tag> out.Choice_1_1 = rules.latest(); </tag> <ruleref uri="#Choice_2"/> </item>
+      <item>two more <tag> out.Choice_1_2 = rules.latest(); </tag> <ruleref uri="#Choice_2"/> </item>
     </one-of>
-    <tag> out.Rule_2_Result = rules.latest(); </tag>
+    <tag> out.Choice_1_Result = rules.latest(); </tag>
   </rule>
-  <rule id="Rule_2" scope="public">
+  <rule id="Choice_2" scope="public">
     <one-of>
-	    <item>okay <tag> out.Rule_2_Choice_0 = rules.latest(); </tag> </item>
-	    <item>May I <tag> out.Rule_2_Choice_1 = rules.latest(); </tag> </item>
+	    <item>okay <tag> out.Choice_2_0 = rules.latest(); </tag> </item>
+	    <item>May I <tag> out.Choice_2_1 = rules.latest(); </tag> </item>
     </one-of>
   </rule>
 </grammar>

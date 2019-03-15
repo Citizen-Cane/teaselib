@@ -96,7 +96,7 @@ public class SpeechRecognitionInputMethod implements InputMethod {
                         try {
                             List<Integer> results = gatherResults(result.rule);
                             if (results.isEmpty()) {
-                                throw new IllegalArgumentException("No chosen items found in rule: " + result.rule);
+                                throw new IllegalArgumentException("No choice rules in: " + result.rule);
                             } else {
                                 // TODO forward all choices to prompt
                                 signal(results.get(0));

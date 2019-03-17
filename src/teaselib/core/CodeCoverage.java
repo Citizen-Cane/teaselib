@@ -46,7 +46,7 @@ public class CodeCoverage<T extends Script> {
         Set<Prompt> used = new LinkedHashSet<>();
         InputMethod.Listener inputMethodListener = new InputMethod.Listener() {
             @Override
-            public int promptShown(Prompt prompt) {
+            public Prompt.Result promptShown(Prompt prompt) {
                 if (used.contains(prompt)) {
                     throw new IllegalAccessError("Reused prompt: " + prompt.choices.toText());
                 } else {
@@ -66,7 +66,8 @@ public class CodeCoverage<T extends Script> {
                     // TODO sanity check prompt indeterministic
                     // TODO Seems to hang in endless script function (Fotze ficken und abspritzen)
                     // - how to deal with that if it's indeed endless?
-                    result = prompt.hasScriptFunction() ? Prompt.DISMISSED : 0;
+                    // TODO handle multiple choices
+                    result = prompt.hasScriptFunction() ? Prompt.Result.DISMISSED.elements.get(0) : 0;
                     int choices = prompt.choices.size();
                     int timeoutPaths = prompt.hasScriptFunction() ? 1 : 0;
                     if (choices + timeoutPaths > 1) {
@@ -82,12 +83,12 @@ public class CodeCoverage<T extends Script> {
                 // -> otherwise toy durations in scripts will be too long,
                 // and code coverage paths will be different from real script execution
 
-                return result;
+                return new Prompt.Result(result);
             }
 
             @Override
             public void promptDismissed(Prompt prompt) {
-                if (prompt.result() == Prompt.UNDEFINED && !prompt.paused()) {
+                if (prompt.result().equals(Prompt.Result.UNDEFINED) && !prompt.paused()) {
                     throw new IllegalStateException("Failed to dismiss prompt " + prompt);
                 }
             }

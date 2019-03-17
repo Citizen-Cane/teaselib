@@ -151,7 +151,7 @@ public class ResponseDebugInputMethod implements DebugInputMethod {
 
     private void choose(Prompt prompt, Result result) {
         logger.info("Choosing {}", result);
-        prompt.signalResult(this, result.index);
+        prompt.signalResult(this, new Prompt.Result(result.index));
     }
 
     @Override

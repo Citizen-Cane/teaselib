@@ -15,7 +15,7 @@ public interface InputMethod {
     Map<String, Runnable> getHandlers();
 
     public interface Listener {
-        int promptShown(Prompt prompt);
+        Prompt.Result promptShown(Prompt prompt);
 
         void promptDismissed(Prompt prompt);
     }

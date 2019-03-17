@@ -12,7 +12,7 @@ import java.util.concurrent.ExecutorService;
  */
 public class HostInputMethod extends AbstractInputMethod {
     public interface Backend {
-        int reply(Choices choices);
+        Prompt.Result reply(Choices choices);
 
         boolean dismissChoices(List<Choice> choices);
     }
@@ -25,7 +25,7 @@ public class HostInputMethod extends AbstractInputMethod {
     }
 
     @Override
-    protected int handleShow(Prompt prompt) throws InterruptedException, ExecutionException {
+    protected Prompt.Result handleShow(Prompt prompt) throws InterruptedException, ExecutionException {
         return host.reply(prompt.choices);
     }
 

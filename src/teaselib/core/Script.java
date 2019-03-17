@@ -266,7 +266,14 @@ public abstract class Script {
         }
 
         Prompt prompt = getPrompt(choices, inputMethods, scriptFunction);
-        return showPrompt(prompt).text;
+        Choice choice = showPrompt(prompt).get(0);
+        // TODO Multiple choices
+
+        String chosen = "< " + (choice.gesture != Gesture.None ? choice.gesture + ": " : "") + choice.display;
+        logger.info("{}", chosen);
+        teaseLib.transcript.info(chosen);
+
+        return choice.text;
     }
 
     private Choices choices(List<Answer> answers) {
@@ -285,8 +292,8 @@ public abstract class Script {
             return Gesture.None;
     }
 
-    private Choice showPrompt(Prompt prompt) {
-        Choice choice;
+    private List<Choice> showPrompt(Prompt prompt) {
+        List<Choice> choice;
         try {
             choice = teaseLib.globals.get(Shower.class).show(prompt);
         } catch (InterruptedException e) {
@@ -297,10 +304,6 @@ public abstract class Script {
         // -> integrate this with endScene() which is just there to workaround the delay until the next say() command
         endAll();
         teaseLib.host.endScene();
-
-        String chosen = "< " + (choice.gesture != Gesture.None ? choice.gesture + ": " : "") + choice.display;
-        logger.info("{}", chosen);
-        teaseLib.transcript.info(chosen);
 
         return choice;
     }

@@ -8,7 +8,6 @@ import java.util.Set;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import teaselib.core.debug.CheckPoint;
@@ -30,7 +29,7 @@ public class CodeCoverageInputMethod extends AbstractInputMethod implements Debu
     private final TimeAdvanceListener timeAdvanceListener = this::handleTimeAdvance;
 
     private final AtomicReference<Prompt> activePrompt = new AtomicReference<>();
-    private final AtomicInteger result = new AtomicInteger();
+    private final AtomicReference<Prompt.Result> result = new AtomicReference<>();
     private final CyclicBarrier checkPointScriptFunctionFinished = new CyclicBarrier(2);
 
     public CodeCoverageInputMethod(ExecutorService executor) {
@@ -38,12 +37,12 @@ public class CodeCoverageInputMethod extends AbstractInputMethod implements Debu
     }
 
     @Override
-    public int handleShow(Prompt prompt) throws InterruptedException {
+    public Prompt.Result handleShow(Prompt prompt) throws InterruptedException {
         activePrompt.set(prompt);
-        result.set(Prompt.UNDEFINED);
+        result.set(Prompt.Result.UNDEFINED);
         if (prompt.hasScriptFunction()) {
-            int choice = firePromptShown(prompt);
-            if (choice > Prompt.DISMISSED) {
+            Prompt.Result choice = firePromptShown(prompt);
+            if (choice.valid(prompt.choices)) {
                 result.set(choice);
             }
             try {
@@ -79,11 +78,11 @@ public class CodeCoverageInputMethod extends AbstractInputMethod implements Debu
     }
 
     private boolean resultNotSet() {
-        return result.get() <= Prompt.DISMISSED;
+        return !resultSet();
     }
 
     private boolean resultSet() {
-        return result.get() > Prompt.DISMISSED;
+        return result.get().valid(activePrompt.get().choices);
     }
 
     private Prompt forwardResultAndHandleTimeout(Prompt prompt) {
@@ -157,14 +156,14 @@ public class CodeCoverageInputMethod extends AbstractInputMethod implements Debu
         eventListeners.remove(e);
     }
 
-    private int firePromptShown(Prompt prompt) {
-        Optional<Integer> listenerResult = eventListeners.stream().map(e -> e.promptShown(prompt))
+    private Prompt.Result firePromptShown(Prompt prompt) {
+        Optional<Prompt.Result> listenerResult = eventListeners.stream().map(e -> e.promptShown(prompt))
                 .reduce(CodeCoverageInputMethod::firstResult);
-        return listenerResult.isPresent() ? listenerResult.get() : Prompt.UNDEFINED;
+        return listenerResult.isPresent() ? listenerResult.get() : Prompt.Result.UNDEFINED;
     }
 
-    private static int firstResult(int a, int b) {
-        return a == Prompt.UNDEFINED ? b : a;
+    private static Prompt.Result firstResult(Prompt.Result a, Prompt.Result b) {
+        return a == Prompt.Result.UNDEFINED ? b : a;
     }
 
     private void firePromptDismissed(Prompt prompt) {

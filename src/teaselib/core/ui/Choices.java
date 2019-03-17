@@ -1,6 +1,7 @@
 package teaselib.core.ui;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -25,6 +26,11 @@ public class Choices extends ArrayList<Choice> {
     public Choices(List<Choice> choices) {
         super(choices);
         checkForDuplicates(this);
+    }
+
+    public List<Choice> get(Prompt.Result result) {
+        // TODO Multiple choices
+        return Collections.singletonList(get(result.elements.get(0)));
     }
 
     private static void checkForDuplicates(Choices choices) {

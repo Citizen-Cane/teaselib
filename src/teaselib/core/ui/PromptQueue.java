@@ -9,7 +9,7 @@ import java.util.concurrent.atomic.AtomicReference;
 public class PromptQueue {
     private final AtomicReference<Prompt> active = new AtomicReference<>();
 
-    public int show(Prompt prompt) throws InterruptedException {
+    public Prompt.Result show(Prompt prompt) throws InterruptedException {
         Prompt activePrompt = active.get();
 
         if (prompt == activePrompt) {
@@ -27,12 +27,12 @@ public class PromptQueue {
         return awaitResult(prompt);
     }
 
-    public int awaitResult(Prompt prompt) throws InterruptedException {
-        if (prompt.result() == Prompt.UNDEFINED) {
+    public Prompt.Result awaitResult(Prompt prompt) throws InterruptedException {
+        if (prompt.result().equals(Prompt.Result.UNDEFINED)) {
             prompt.click.await();
         }
 
-        if (prompt.result() == Prompt.UNDEFINED && !prompt.paused()) {
+        if (prompt.result().equals(Prompt.Result.UNDEFINED) && !prompt.paused()) {
             prompt.setTimedOut();
         }
 
@@ -51,7 +51,7 @@ public class PromptQueue {
             }
         }
 
-        if (prompt.result() != Prompt.UNDEFINED)
+        if (!prompt.result().equals(Prompt.Result.UNDEFINED))
             return;
 
         prompt.resume();
@@ -67,7 +67,7 @@ public class PromptQueue {
 
     public boolean pause(Prompt prompt) {
         prompt.pause();
-        if (prompt.result() == Prompt.UNDEFINED) {
+        if (prompt.result().equals(Prompt.Result.UNDEFINED)) {
             return dismissPrompt(prompt);
         } else {
             return false;

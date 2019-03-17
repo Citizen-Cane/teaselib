@@ -51,6 +51,7 @@ import teaselib.core.ui.Choice;
 import teaselib.core.ui.Choices;
 import teaselib.core.ui.HostInputMethod;
 import teaselib.core.ui.InputMethod;
+import teaselib.core.ui.Prompt;
 import teaselib.core.util.ExceptionUtil;
 import teaselib.core.util.FileUtilities;
 import teaselib.core.util.PropertyNameMappingPersistence;
@@ -548,7 +549,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
     }
 
     @Override
-    public int reply(Choices choices) {
+    public Prompt.Result reply(Choices choices) {
         if (Thread.interrupted()) {
             throw new ScriptInterruptedException();
         }
@@ -563,13 +564,9 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
         // and won't clean up buttons
         // -> Execute it in a separate thread, and
         // cancel the same way as speech recognition
-        FutureTask<Integer> showChoices = new FutureTask<>(new Callable<Integer>() {
-            @Override
-            public Integer call() throws Exception {
-                return ss.getSelectedValue(null, choices.toDisplay());
-            }
-        });
-        int result;
+        FutureTask<Prompt.Result> showChoices = new FutureTask<>(
+                () -> new Prompt.Result(ss.getSelectedValue(null, choices.toDisplay())));
+        Prompt.Result result;
         showChoicesThreadPool.execute(showChoices);
         try {
             result = showChoices.get();
@@ -608,7 +605,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
             throw new ScriptInterruptedException(e);
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
-            result = -1;
+            result = Prompt.Result.DISMISSED;
         } finally {
             showPopupTask.cleanup();
         }

@@ -3,11 +3,14 @@
  */
 package teaselib.core.ui;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.stream.Collectors;
 
 import teaselib.ScriptFunction;
 import teaselib.core.Script;
@@ -16,9 +19,71 @@ import teaselib.core.ScriptInterruptedException;
 import teaselib.core.util.ExceptionUtil;
 
 public class Prompt {
-    private static final Choice SCRIPTFUNCTION_TIMEOUT = new Choice(ScriptFunction.Timeout, ScriptFunction.Timeout);
-    public static final int DISMISSED = -1;
-    public static final int UNDEFINED = Integer.MIN_VALUE;
+    private static final List<Choice> SCRIPTFUNCTION_TIMEOUT = Collections
+            .singletonList(new Choice(ScriptFunction.Timeout, ScriptFunction.Timeout));
+
+    public static class Result {
+        public static final Result UNDEFINED = new Result(Integer.MIN_VALUE);
+        public static final Result DISMISSED = new Result(-1);
+
+        public final List<Integer> elements;
+
+        public Result(Integer value) {
+            this.elements = Collections.singletonList(value);
+        }
+
+        public Result(Integer... values) {
+            this.elements = Collections.unmodifiableList(Arrays.asList(values));
+        }
+
+        public Result(List<Integer> values) {
+            this.elements = Collections.unmodifiableList(values);
+        }
+
+        @Override
+        public int hashCode() {
+            final int prime = 31;
+            int result = 1;
+            result = prime * result + ((elements == null) ? 0 : elements.hashCode());
+            return result;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj)
+                return true;
+            if (obj == null)
+                return false;
+            if (getClass() != obj.getClass())
+                return false;
+            Result other = (Result) obj;
+            if (elements == null) {
+                if (other.elements != null)
+                    return false;
+            } else if (!elements.equals(other.elements))
+                return false;
+            return true;
+        }
+
+        public boolean equals(Integer value) {
+            return elements.size() == 1 && elements.get(0).equals(value);
+        }
+
+        public boolean valid(Choices choices) {
+            for (Integer value : elements) {
+                if (value < 0 || value >= choices.size()) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        @Override
+        public String toString() {
+            return elements.toString();
+        }
+
+    }
 
     static final String NONE = "None";
 
@@ -31,7 +96,7 @@ public class Prompt {
 
     private final AtomicBoolean paused = new AtomicBoolean(false);
 
-    private int result;
+    private Result result;
     private Throwable exception;
 
     String inputHandlerKey = NONE;
@@ -49,7 +114,7 @@ public class Prompt {
         this.lock = new ReentrantLock();
         this.click = lock.newCondition();
 
-        this.result = Prompt.UNDEFINED;
+        this.result = Prompt.Result.UNDEFINED;
     }
 
     public boolean hasScriptFunction() {
@@ -66,12 +131,13 @@ public class Prompt {
         }
     }
 
-    Choice choice(int resultIndex) {
-        Choice choice;
-        if (resultIndex == Prompt.DISMISSED || resultIndex == UNDEFINED) {
+    // Eliminate result parameter -> it's always called with this.result
+    List<Choice> choice(Result result) {
+        List<Choice> choice;
+        if (result.equals(Prompt.Result.DISMISSED) || result.equals(Prompt.Result.UNDEFINED)) {
             choice = SCRIPTFUNCTION_TIMEOUT;
         } else {
-            choice = choices.get(resultIndex);
+            choice = choices.get(result);
         }
         return choice;
     }
@@ -88,7 +154,7 @@ public class Prompt {
         forwardToScriptAndThrow(new IllegalArgumentException("No handler for " + key + " in " + this));
     }
 
-    public synchronized int result() {
+    public synchronized Result result() {
         if (exception != null) {
             if (exception instanceof Exception) {
                 throw ExceptionUtil.asRuntimeException(ExceptionUtil.reduce((Exception) exception));
@@ -99,13 +165,13 @@ public class Prompt {
         return result;
     }
 
-    public synchronized void setResultOnce(InputMethod inputMethod, int value) {
-        if (result == Prompt.UNDEFINED) {
-            if (value < 0 || value >= choices.size()) {
-                forwardToScriptAndThrow(new IndexOutOfBoundsException(value + "->" + this + ": " + inputMethod));
+    public synchronized void setResultOnce(InputMethod inputMethod, Result result) {
+        if (this.result.equals(Prompt.Result.UNDEFINED)) {
+            if (!result.valid(choices)) {
+                forwardToScriptAndThrow(new IndexOutOfBoundsException(result + "->" + this + ": " + inputMethod));
             } else {
                 this.resultInputMethod = inputMethod;
-                result = value;
+                this.result = result;
             }
         } else {
             forwardAndThrowResultAlreadySet();
@@ -113,16 +179,16 @@ public class Prompt {
     }
 
     public synchronized void setTimedOut() {
-        if (result == Prompt.UNDEFINED) {
+        if (result.equals(Prompt.Result.UNDEFINED)) {
             // TODO Should be TIMED_OUT
-            result = Prompt.DISMISSED;
+            result = Prompt.Result.DISMISSED;
         } else {
             forwardAndThrowResultAlreadySet();
         }
     }
 
-    public void signalResult(InputMethod inputMethod, int resultIndex) {
-        setResultOnce(inputMethod, resultIndex);
+    public void signalResult(InputMethod inputMethod, Result result) {
+        setResultOnce(inputMethod, result);
 
         if (!paused()) {
             click.signalAll();
@@ -180,7 +246,7 @@ public class Prompt {
 
     public void setException(Throwable throwable) {
         this.exception = throwable;
-        this.result = Prompt.UNDEFINED;
+        this.result = Prompt.Result.UNDEFINED;
         if (lock.isHeldByCurrentThread()) {
             click.signal();
         } else if (lock.tryLock()) {
@@ -213,13 +279,14 @@ public class Prompt {
         return scriptTaskDescription + choices + " " + lockState + isPaused + resultString + inputMethodName;
     }
 
-    private String toString(int result) {
-        if (result == Prompt.UNDEFINED) {
+    private String toString(Prompt.Result result) {
+        if (result.equals(Prompt.Result.UNDEFINED)) {
             return "UNDEFINED";
-        } else if (result == Prompt.DISMISSED) {
+        } else if (result.equals(Prompt.Result.DISMISSED)) {
             return "DISMISSED";
         } else {
-            return choice(result).display;
+            List<Choice> choice = choice(result);
+            return choice.stream().map(c -> c.display).collect(Collectors.joining(" "));
         }
     }
 }

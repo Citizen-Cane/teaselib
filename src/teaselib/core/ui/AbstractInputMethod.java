@@ -19,7 +19,7 @@ public abstract class AbstractInputMethod implements InputMethod {
     protected final ExecutorService executor;
     protected final ReentrantLock replySection = new ReentrantLock(true);
 
-    private Future<Integer> worker;
+    private Future<Prompt.Result> worker;
 
     public AbstractInputMethod(ExecutorService executor) {
         this.executor = executor;
@@ -27,9 +27,9 @@ public abstract class AbstractInputMethod implements InputMethod {
 
     @Override
     public final void show(Prompt prompt) throws InterruptedException {
-        Callable<Integer> callable = new Callable<Integer>() {
+        Callable<Prompt.Result> callable = new Callable<Prompt.Result>() {
             @Override
-            public Integer call() throws Exception {
+            public Prompt.Result call() throws Exception {
                 replySection.lock();
                 try {
                     synchronized (this) {
@@ -50,23 +50,23 @@ public abstract class AbstractInputMethod implements InputMethod {
 
         synchronized (callable) {
             worker = executor.submit(callable);
-            while (!replySection.isLocked() && prompt.result() == Prompt.UNDEFINED) {
+            while (!replySection.isLocked() && prompt.result().equals(Prompt.Result.UNDEFINED)) {
                 callable.wait();
             }
         }
     }
 
-    private Integer awaitAndSignalResult(Prompt prompt) throws InterruptedException, ExecutionException {
-        if (prompt.result() == Prompt.UNDEFINED) {
-            int result = handleShow(prompt);
+    private Prompt.Result awaitAndSignalResult(Prompt prompt) throws InterruptedException, ExecutionException {
+        if (prompt.result() == Prompt.Result.UNDEFINED) {
+            Prompt.Result result = handleShow(prompt);
             signalResult(prompt, result);
         }
         return prompt.result();
     }
 
-    protected abstract int handleShow(Prompt prompt) throws InterruptedException, ExecutionException;
+    protected abstract Prompt.Result handleShow(Prompt prompt) throws InterruptedException, ExecutionException;
 
-    private void signalResult(Prompt prompt, int result) throws InterruptedException {
+    private void signalResult(Prompt prompt, Prompt.Result result) throws InterruptedException {
         prompt.lock.lockInterruptibly();
         try {
             if (!prompt.paused()) {

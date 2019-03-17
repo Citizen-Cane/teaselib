@@ -1,7 +1,9 @@
 package teaselib.core.ui;
 
 import java.util.ArrayDeque;
+import java.util.Collections;
 import java.util.Deque;
+import java.util.List;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 
@@ -27,8 +29,8 @@ public class Shower {
         this.promptQueue = new PromptQueue();
     }
 
-    public Choice show(Prompt prompt) throws InterruptedException {
-        Choice choice;
+    public List<Choice> show(Prompt prompt) throws InterruptedException {
+        List<Choice> choice;
         prompt.lock.lockInterruptibly();
         try {
             pauseCurrent();
@@ -49,7 +51,7 @@ public class Shower {
         ScriptFutureTask scriptTask = prompt.scriptTask;
         if (scriptTask != null) {
             try {
-                return new Choice(scriptTask.get());
+                return Collections.singletonList(new Choice(scriptTask.get()));
             } catch (CancellationException e) {
                 return choice;
             } catch (ExecutionException e) {
@@ -81,18 +83,18 @@ public class Shower {
         }
     }
 
-    private Choice showNew(Prompt prompt) throws InterruptedException {
+    private List<Choice> showNew(Prompt prompt) throws InterruptedException {
         stack.push(prompt);
 
-        int resultIndex = promptQueue.show(prompt);
-        return result(prompt, resultIndex);
+        Prompt.Result result = promptQueue.show(prompt);
+        return result(prompt, result);
     }
 
-    private Choice result(Prompt prompt, int resultIndex) throws InterruptedException {
-        if (resultIndex == Prompt.DISMISSED) {
+    private List<Choice> result(Prompt prompt, Prompt.Result result) throws InterruptedException {
+        if (result.equals(Prompt.Result.DISMISSED)) {
             // TODO join with else-branch, but the DISMISSED case must be first
             prompt.cancelScriptTask();
-            return prompt.choice(resultIndex);
+            return prompt.choice(result);
         } else if (prompt.inputHandlerKey != Prompt.NONE) {
             try {
                 invokeHandler(prompt);
@@ -105,12 +107,12 @@ public class Shower {
             return result(prompt, promptQueue.awaitResult(prompt));
         } else {
             prompt.cancelScriptTask();
-            return prompt.choice(resultIndex);
+            return prompt.choice(result);
         }
     }
 
     private void invokeHandler(Prompt prompt) {
-        if (prompt.result() != Prompt.UNDEFINED) {
+        if (!prompt.result().equals(Prompt.Result.UNDEFINED)) {
             throw new IllegalStateException("Prompt selected while invoking handler: " + prompt);
         }
 

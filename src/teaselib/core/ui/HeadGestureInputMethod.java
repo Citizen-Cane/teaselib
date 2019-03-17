@@ -28,24 +28,24 @@ public class HeadGestureInputMethod extends AbstractInputMethod {
     private static final List<Gesture> SupportedGestures = Arrays.asList(Gesture.Nod, Gesture.Shake);
 
     @Override
-    protected int handleShow(Prompt prompt) throws InterruptedException, ExecutionException {
+    protected Prompt.Result handleShow(Prompt prompt) throws InterruptedException, ExecutionException {
         return awaitGesture(motionDetector.get(), prompt);
     }
 
-    private static int awaitGesture(MotionDetector motionDetector, Prompt prompt) {
+    private static Prompt.Result awaitGesture(MotionDetector motionDetector, Prompt prompt) {
         return motionDetector.call(() -> {
             motionDetector.setSensitivity(MotionSensitivity.High);
             List<Gesture> gestures = prompt.choices.toGestures();
             while (!Thread.currentThread().isInterrupted()) {
                 Gesture gesture = motionDetector.await(gestures, Double.MAX_VALUE);
                 if (supported(gesture)) {
-                    int result = gestures.indexOf(gesture);
-                    if (result >= 0 && result < prompt.choices.size()) {
+                    Prompt.Result result = new Prompt.Result(gestures.indexOf(gesture));
+                    if (result.valid(prompt.choices)) {
                         return result;
                     }
                 }
             }
-            return Prompt.UNDEFINED;
+            return Prompt.Result.UNDEFINED;
         });
     }
 

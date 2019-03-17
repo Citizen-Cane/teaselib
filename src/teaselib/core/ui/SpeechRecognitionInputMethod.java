@@ -94,12 +94,11 @@ public class SpeechRecognitionInputMethod implements InputMethod {
                     } else {
                         disableSpeechRecognition();
                         try {
-                            List<Integer> results = gatherResults(result.rule);
-                            if (results.isEmpty()) {
+                            List<Integer> choices = gatherResults(result.rule);
+                            if (choices.isEmpty()) {
                                 throw new IllegalArgumentException("No choice rules in: " + result.rule);
                             } else {
-                                // TODO forward all choices to prompt
-                                signal(results.get(0));
+                                signal(new Prompt.Result(choices));
                             }
                         } catch (Exception e) {
                             active.get().setException(e);
@@ -116,7 +115,7 @@ public class SpeechRecognitionInputMethod implements InputMethod {
 
     private List<Integer> gatherResults(Rule rule) {
         ArrayList<Integer> results = new ArrayList<>();
-        if (rule.id > Prompt.DISMISSED) {
+        if (rule.id > Prompt.Result.DISMISSED.elements.get(0)) {
             // TODO rename id to choice or item (srgs element name)
             results.add(rule.id);
         }
@@ -142,11 +141,11 @@ public class SpeechRecognitionInputMethod implements InputMethod {
                 && result.rule.confidence.isAsHighAs(expected);
     }
 
-    private void signal(int resultIndex) {
+    private void signal(Prompt.Result result) {
         Prompt prompt = active.get();
         prompt.lock.lock();
         try {
-            prompt.signalResult(this, resultIndex);
+            prompt.signalResult(this, result);
         } finally {
             prompt.lock.unlock();
         }
@@ -180,7 +179,7 @@ public class SpeechRecognitionInputMethod implements InputMethod {
         } else {
             disableSpeechRecognition();
             active.set(null);
-            return prompt.result() == Prompt.UNDEFINED;
+            return prompt.result() == Prompt.Result.UNDEFINED;
         }
     }
 

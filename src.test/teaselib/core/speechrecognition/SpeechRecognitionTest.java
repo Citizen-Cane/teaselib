@@ -28,7 +28,7 @@ public class SpeechRecognitionTest {
     private static final Confidence confidence = Confidence.High;
 
     private static void emulateSpeechRecognition(String resource, String emulatedRecognitionResult,
-            int expectedResultIndex) throws IOException, InterruptedException {
+            Prompt.Result expected) throws IOException, InterruptedException {
         ResourceLoader resources = new ResourceLoader(SpeechRecognitionTest.class);
         String xml = Stream.toString(resources.get(resource));
         SpeechRecognition sr = new SpeechRecognition(Locale.ENGLISH, TeaseLibSRGS.class) {
@@ -44,13 +44,13 @@ public class SpeechRecognitionTest {
         prompt.lock.lockInterruptibly();
         try {
             inputMethod.show(prompt);
-            awaitResult(sr, prompt, emulatedRecognitionResult, expectedResultIndex);
+            awaitResult(sr, prompt, emulatedRecognitionResult, expected);
         } finally {
             prompt.lock.unlock();
         }
     }
 
-    private static void awaitResult(SpeechRecognition sr, Prompt prompt, String emulatedText, int expectedResultIndex)
+    private static void awaitResult(SpeechRecognition sr, Prompt prompt, String emulatedText, Prompt.Result expected)
             throws InterruptedException {
         sr.emulateRecogntion(emulatedText);
         boolean dismissed = prompt.click.await(5, TimeUnit.SECONDS);
@@ -58,7 +58,7 @@ public class SpeechRecognitionTest {
             prompt.dismiss();
         }
         assertTrue("Prompt timed out - emulated speech recognition failed: \"" + emulatedText + "\"", dismissed);
-        assertEquals(expectedResultIndex, prompt.result());
+        assertEquals(expected, prompt.result());
     }
 
     @Test
@@ -70,7 +70,7 @@ public class SpeechRecognitionTest {
         prompt.lock.lockInterruptibly();
         try {
             inputMethod.show(prompt);
-            awaitResult(sr, prompt, "My name is Bar", 1);
+            awaitResult(sr, prompt, "My name is Bar", new Prompt.Result(1));
         } finally {
             prompt.lock.unlock();
         }
@@ -80,7 +80,7 @@ public class SpeechRecognitionTest {
     public void testMicrosoftSRGSExampleCities() throws InterruptedException, IOException {
         String resource = "cities_srg.xml";
         String emulatedRecognitionResult = "I would like to fly from Miami to Los Angeles";
-        emulateSpeechRecognition(resource, emulatedRecognitionResult, 3);
+        emulateSpeechRecognition(resource, emulatedRecognitionResult, new Prompt.Result(3));
         // fails since the example doesn't contain rules that match the teaselib srgs speech recognition naming scheme
     }
 
@@ -88,49 +88,49 @@ public class SpeechRecognitionTest {
     public void testHandcraftedChildren() throws InterruptedException, IOException {
         String resource = "handcrafted_children_srg.xml";
         String emulatedRecognitionResult = "Please Miss two more May I";
-        emulateSpeechRecognition(resource, emulatedRecognitionResult, 2);
+        emulateSpeechRecognition(resource, emulatedRecognitionResult, new Prompt.Result(2, 1));
     }
 
     @Test
     public void testHandcraftedSiblings() throws InterruptedException, IOException {
         String resource = "handcrafted_siblings_srg.xml";
         String emulatedRecognitionResult = "Please Miss two more May I";
-        emulateSpeechRecognition(resource, emulatedRecognitionResult, 2);
+        emulateSpeechRecognition(resource, emulatedRecognitionResult, new Prompt.Result(2, 1));
     }
 
     @Test
     public void testHandcraftedAnyChoice() throws InterruptedException, IOException {
         String resource = "handcrafted_any_choice_srg.xml";
         String emulatedRecognitionResult = "Please Miss two more strokes May I";
-        emulateSpeechRecognition(resource, emulatedRecognitionResult, 2);
+        emulateSpeechRecognition(resource, emulatedRecognitionResult, new Prompt.Result(2, 1));
     }
 
     @Test
     public void testHandcraftedSameChoice() throws InterruptedException, IOException {
         String resource = "handcrafted_same_choice_srg.xml";
-        emulateSpeechRecognition(resource, "Yes Miss I've spurted off", 0);
-        emulateSpeechRecognition(resource, "No Miss I didn't spurt off", 1);
+        emulateSpeechRecognition(resource, "Yes Miss I've spurted off", new Prompt.Result(0, 0));
+        emulateSpeechRecognition(resource, "No Miss I didn't spurt off", new Prompt.Result(1, 1));
     }
 
     @Test
     public void testHandcraftedSameChoiceCommonStart() throws InterruptedException, IOException {
         String resource = "handcrafted_common_start.xml";
-        emulateSpeechRecognition(resource, "Dear Mistress I've spurted my load", 0);
-        emulateSpeechRecognition(resource, "Dear Mistress I didn't spurt off", 1);
+        emulateSpeechRecognition(resource, "Dear Mistress I've spurted my load", new Prompt.Result(0));
+        emulateSpeechRecognition(resource, "Dear Mistress I didn't spurt off", new Prompt.Result(1));
     }
 
     @Test
     public void testHandcraftedSameChoiceCommonEnd() throws InterruptedException, IOException {
         String resource = "handcrafted_common_end.xml";
-        emulateSpeechRecognition(resource, "I've spurted my load Dear Mistress", 0);
-        emulateSpeechRecognition(resource, "I didn't spurt off Dear Mistress", 1);
+        emulateSpeechRecognition(resource, "I've spurted my load Dear Mistress", new Prompt.Result(0));
+        emulateSpeechRecognition(resource, "I didn't spurt off Dear Mistress", new Prompt.Result(1));
     }
 
     @Test
     public void testHandcraftedSameChoiceCommonStartEnd() throws InterruptedException, IOException {
         String resource = "handcrafted_common_start_end.xml";
-        emulateSpeechRecognition(resource, "Dear Mistress I've spurted my load Miss", 0);
-        emulateSpeechRecognition(resource, "Dear Mistress I didn't spurt off Miss", 1);
+        emulateSpeechRecognition(resource, "Dear Mistress I've spurted my load Miss", new Prompt.Result(0));
+        emulateSpeechRecognition(resource, "Dear Mistress I didn't spurt off Miss", new Prompt.Result(1));
     }
 
     @Test
@@ -138,7 +138,7 @@ public class SpeechRecognitionTest {
         String resource = "handcrafted_children_srg.xml";
         String emulatedRecognitionResult = "Please Miss some more";
         try {
-            emulateSpeechRecognition(resource, emulatedRecognitionResult, -1);
+            emulateSpeechRecognition(resource, emulatedRecognitionResult, Prompt.Result.DISMISSED);
             // TODO Needs 5s to complete - way too long
             fail("Speech recognized with wrong phrase");
         } catch (AssertionError e) {
@@ -158,7 +158,7 @@ public class SpeechRecognitionTest {
         prompt.lock.lockInterruptibly();
         try {
             inputMethod.show(prompt);
-            awaitResult(sr, prompt, "Please Miss one less", 1);
+            awaitResult(sr, prompt, "Please Miss one less", new Prompt.Result(1));
         } finally {
             prompt.lock.unlock();
         }

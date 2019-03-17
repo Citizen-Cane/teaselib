@@ -146,7 +146,7 @@ public class DebugHost implements Host, HostInputMethod.Backend, AutoCloseable {
     }
 
     @Override
-    public int reply(Choices choices) {
+    public Prompt.Result reply(Choices choices) {
         logger.info("Reply {} @ {}", choices, Thread.currentThread().getStackTrace()[1]);
 
         try {
@@ -168,7 +168,7 @@ public class DebugHost implements Host, HostInputMethod.Backend, AutoCloseable {
                     throw new IllegalStateException("Reply - still waiting on click");
                 }
 
-                return Prompt.DISMISSED;
+                return Prompt.Result.DISMISSED;
             } finally {
                 currentChoices = Collections.emptyList();
                 replySection.unlock();

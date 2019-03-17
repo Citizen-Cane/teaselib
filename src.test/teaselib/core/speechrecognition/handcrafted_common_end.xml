@@ -12,57 +12,29 @@
 		<one-of>
 			<item>
 				<ruleref uri="#Choice_0_0" />
-				<ruleref uri="#Rule_1" />
-				<ruleref uri="#Choice_2_0" />
-				<ruleref uri="#Rule_3" />
 			</item>
 			<item>
 				<ruleref uri="#Choice_0_1" />
-				<ruleref uri="#Rule_1" />
-				<ruleref uri="#Choice_2_1" />
-				<ruleref uri="#Rule_3" />
 			</item>
 		</one-of>
+		<ruleref uri="#Rule_1" />
 	</rule>
 
 	<rule id="Choice_0_0" scope="private">
 		<item>
-			Yes
-			<tag> out.Rule_0_Choice_0 = rules.latest(); </tag>
+			I've spurted my load
 		</item>
 	</rule>
 
 	<rule id="Choice_0_1" scope="private">
 		<item>
-			No
-			<tag> out.Rule_0_Choice_1 = rules.latest(); </tag>
+			I didn't spurt off
 		</item>
 	</rule>
 
 	<rule id="Rule_1" scope="private">
 		<item>
-			Miss
+			Dear Mistress
 		</item>
 	</rule>
-
-	<rule id="Choice_2_0" scope="private">
-		<item>
-			I've spurted
-			<tag> out.Rule_2_Choice_0 = rules.latest(); </tag>
-		</item>
-	</rule>
-
-	<rule id="Choice_2_1" scope="private">
-		<item>
-			I didn't spurt
-			<tag> out.Rule_2_Choice_1 = rules.latest(); </tag>
-		</item>
-	</rule>
-
-	<rule id="Rule_3" scope="private">
-		<item>
-			off
-		</item>
-	</rule>
-
 </grammar>

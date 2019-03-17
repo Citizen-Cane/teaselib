@@ -57,7 +57,7 @@ public class SpeechRecognitionTest {
         if (!dismissed) {
             prompt.dismiss();
         }
-        assertTrue("Prompt timed out - emulated speech recognition failed", dismissed);
+        assertTrue("Prompt timed out - emulated speech recognition failed: \"" + emulatedText + "\"", dismissed);
         assertEquals(expectedResultIndex, prompt.result());
     }
 
@@ -110,6 +110,27 @@ public class SpeechRecognitionTest {
         String resource = "handcrafted_same_choice_srg.xml";
         emulateSpeechRecognition(resource, "Yes Miss I've spurted off", 0);
         emulateSpeechRecognition(resource, "No Miss I didn't spurt off", 1);
+    }
+
+    @Test
+    public void testHandcraftedSameChoiceCommonStart() throws InterruptedException, IOException {
+        String resource = "handcrafted_common_start.xml";
+        emulateSpeechRecognition(resource, "Dear Mistress I've spurted my load", 0);
+        emulateSpeechRecognition(resource, "Dear Mistress I didn't spurt off", 1);
+    }
+
+    @Test
+    public void testHandcraftedSameChoiceCommonEnd() throws InterruptedException, IOException {
+        String resource = "handcrafted_common_end.xml";
+        emulateSpeechRecognition(resource, "I've spurted my load Dear Mistress", 0);
+        emulateSpeechRecognition(resource, "I didn't spurt off Dear Mistress", 1);
+    }
+
+    @Test
+    public void testHandcraftedSameChoiceCommonStartEnd() throws InterruptedException, IOException {
+        String resource = "handcrafted_common_start_end.xml";
+        emulateSpeechRecognition(resource, "Dear Mistress I've spurted my load Miss", 0);
+        emulateSpeechRecognition(resource, "Dear Mistress I didn't spurt off Miss", 1);
     }
 
     @Test

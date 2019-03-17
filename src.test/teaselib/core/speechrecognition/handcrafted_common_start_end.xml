@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<grammar xmlns="http://www.w3.org/2001/06/grammar" root="Main"
+	tag-format="semantics/1.0" version="1.0" xml:lang="en-US">
+	<!-- handcrafted_srg.xml: Defines an SRGS grammar for testing
+		Node Rule_1_Result is needed to access Rule_2_Choice_1 as its child
+	 
+	<example>  Yes Miss I've spurted off </example>
+	<example>  No Miss I didn't spurt off </example>
+	 -->
+	
+	<rule id="Main" scope="public">
+		<ruleref uri="#Rule_0" />
+		<one-of>
+			<item>
+				<ruleref uri="#Choice_1_0" />
+			</item>
+			<item>
+				<ruleref uri="#Choice_1_1" />
+			</item>
+		</one-of>
+		<ruleref uri="#Rule_2" />
+	</rule>
+
+	<rule id="Rule_0" scope="private">
+		<item>
+			Dear Mistress
+		</item>
+	</rule>
+
+	<rule id="Choice_1_0" scope="private">
+		<item>
+			I've spurted my load
+		</item>
+	</rule>
+
+	<rule id="Choice_1_1" scope="private">
+		<item>
+			I didn't spurt off
+		</item>
+	</rule>
+
+	<rule id="Rule_2" scope="private">
+		<item>
+			Miss
+		</item>
+	</rule>
+</grammar>

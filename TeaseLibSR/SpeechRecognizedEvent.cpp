@@ -142,13 +142,15 @@ jobject SpeechRecognizedEvent::getRule(JNIEnv *env, ISpRecoResult* pResult, cons
 		JNIClass::getMethodID(env, ruleClass, "<init>",
 			"(Ljava/lang/String;Ljava/lang/String;IIIFLteaselib/core/speechrecognition/Confidence;)V"),
 		static_cast<jstring>(JNIString(env, ruleNames.name.c_str())),
-		static_cast<jstring>(JNIString(env, text)),
+		text ? static_cast<jstring>(JNIString(env, text)) : nullptr,
 		ruleNames.choice_index,
 		rule->ulFirstElement,
 		rule->ulFirstElement + rule->ulCountOfElements,
 		rule->SREngineConfidence,
 		getConfidenceField(env, rule->Confidence));
-	CoTaskMemFree(text);
+	if (text) {
+		CoTaskMemFree(text);
+	}
 	if (env->ExceptionCheck()) throw new JNIException(env);
 
 	for (const SPPHRASERULE* childRule = rule->pFirstChild; childRule != NULL; childRule = childRule->pNextSibling) {

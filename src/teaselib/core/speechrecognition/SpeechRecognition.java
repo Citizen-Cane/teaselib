@@ -95,7 +95,7 @@ public class SpeechRecognition {
 
     private final Locale locale;
     private final SpeechDetectionEventHandler hypothesisEventHandler;
-    private final DelegateExecutor delegateThread = new DelegateExecutor("Text-To-Speech dispatcher thread");
+    private final DelegateExecutor delegateThread = new DelegateExecutor("Speech Recognition dispatch");
 
     private SpeechRecognitionImplementation sr;
 
@@ -129,11 +129,16 @@ public class SpeechRecognition {
     private void lockSpeechRecognitionInProgressSyncObject() {
         try {
             delegateThread.run(() -> {
-                try {
-                    logger.debug("Locking speech recognition sync object");
-                    SpeechRecognitionInProgress.lock();
-                } catch (Throwable t) {
-                    logger.error(t.getMessage(), t);
+                // RenetrantLock is ref-counted,
+                // and startRecognition events can occur more than once
+                if (!SpeechRecognitionInProgress.isLocked()) {
+                    try {
+                        logger.debug("Locking speech recognition sync object");
+                        SpeechRecognitionInProgress.lockInterruptibly();
+                    } catch (Throwable t) {
+                        logger.error(t.getMessage(), t);
+                        throw ExceptionUtil.asRuntimeException(t);
+                    }
                 }
             });
         } catch (InterruptedException e) {
@@ -148,9 +153,14 @@ public class SpeechRecognition {
                 // Check because this is called as a completion event by the
                 // event source, and might be called twice when the
                 // hypothesis event handler generates a Completion event
-                if (SpeechRecognitionInProgress.isHeldByCurrentThread()) {
+                if (SpeechRecognitionInProgress.isLocked()) {
                     logger.debug("Unlocking speech recognition sync object");
-                    SpeechRecognitionInProgress.unlock();
+                    try {
+                        SpeechRecognitionInProgress.unlock();
+                    } catch (Throwable t) {
+                        logger.error(t.getMessage(), t);
+                        throw ExceptionUtil.asRuntimeException(t);
+                    }
                 }
             });
         } catch (InterruptedException e) {
@@ -349,15 +359,14 @@ public class SpeechRecognition {
             try {
                 SpeechRecognitionInProgress.lockInterruptibly();
             } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
                 throw new ScriptInterruptedException(e);
             } finally {
-                if (SpeechRecognitionInProgress.isHeldByCurrentThread()) {
+                if (SpeechRecognitionInProgress.isLocked()) {
                     SpeechRecognitionInProgress.unlock();
                     logger.info("Speech recognition in progress completed");
                 }
             }
-        } else {
-            logger.debug("Speech recognition sync object not locked");
         }
     }
 

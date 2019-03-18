@@ -82,7 +82,7 @@ public class TextToSpeech {
     }
 
     public TextToSpeech(TextToSpeechImplementation ttsImpl) {
-        addSDK(ttsImpl, newDelegateExecutor());
+        addSDK(ttsImpl, newDelegateExecutor(ttsImpl.sdkName()));
     }
 
     public TextToSpeech(Class<TextToSpeechImplementation> ttsClass) {
@@ -119,7 +119,7 @@ public class TextToSpeech {
     }
 
     private void addImplementation(Class<?> ttsClass) {
-        DelegateExecutor delegateThread = newDelegateExecutor();
+        DelegateExecutor delegateThread = newDelegateExecutor(ttsClass.getSimpleName());
 
         try {
             delegateThread.run(() -> {
@@ -172,8 +172,8 @@ public class TextToSpeech {
         return voices.containsKey(entry.getKey());
     }
 
-    private static DelegateExecutor newDelegateExecutor() {
-        return new DelegateExecutor("Speech Synthesis dispatcher thread");
+    private static DelegateExecutor newDelegateExecutor(String sdkName) {
+        return new DelegateExecutor(sdkName + "Text-To-Speech");
     }
 
     public Map<String, Voice> getVoices() {

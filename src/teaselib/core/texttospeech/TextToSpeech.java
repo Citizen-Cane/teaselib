@@ -15,7 +15,6 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 import teaselib.Sexuality.Gender;
-import teaselib.core.ScriptInterruptedException;
 import teaselib.core.events.DelegateExecutor;
 import teaselib.core.texttospeech.implementation.TeaseLibTTS;
 import teaselib.core.texttospeech.implementation.Unsupported;
@@ -121,20 +120,11 @@ public class TextToSpeech {
     private void addImplementation(Class<?> ttsClass) {
         DelegateExecutor delegateThread = newDelegateExecutor(ttsClass.getSimpleName());
 
-        try {
-            delegateThread.run(() -> {
-                try {
-                    Method getInstance = ttsClass.getDeclaredMethod("getInstance");
-                    TextToSpeechImplementation newTTS = (TextToSpeechImplementation) getInstance.invoke(this);
-                    addSDK(newTTS, delegateThread);
-                } catch (ReflectiveOperationException e) {
-                    throw ExceptionUtil.asRuntimeException(e);
-                }
-            });
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new ScriptInterruptedException(e);
-        }
+        delegateThread.run(() -> {
+            Method getInstance = ttsClass.getDeclaredMethod("getInstance");
+            TextToSpeechImplementation newTTS = (TextToSpeechImplementation) getInstance.invoke(this);
+            addSDK(newTTS, delegateThread);
+        });
     }
 
     private void addSDK(TextToSpeechImplementation ttsImpl, DelegateExecutor executor) {
@@ -187,7 +177,7 @@ public class TextToSpeech {
         return BlackList.contains(voice.guid());
     }
 
-    public void speak(Voice voice, String prompt) throws InterruptedException {
+    public void speak(Voice voice, String prompt) {
         speak(voice, prompt, new String[] {});
     }
 
@@ -198,7 +188,7 @@ public class TextToSpeech {
      *            Mood or other hints that might affect the prompt
      * @throws InterruptedException
      */
-    public void speak(Voice voice, String prompt, String[] hints) throws InterruptedException {
+    public void speak(Voice voice, String prompt, String[] hints) {
         TextToSpeechImplementation tts = voice.tts();
 
         if (tts != null && ttsSDKs.containsKey(tts.sdkName())) {
@@ -218,18 +208,17 @@ public class TextToSpeech {
         }
     }
 
-    public String speak(Voice voice, String prompt, File file) throws IOException, InterruptedException {
+    public String speak(Voice voice, String prompt, File file) throws IOException {
         return speak(voice, prompt, file, new String[] {});
     }
 
-    public String speak(Voice voice, String prompt, File file, String[] hints)
-            throws IOException, InterruptedException {
+    public String speak(Voice voice, String prompt, File file, String[] hints) throws IOException {
         StringBuilder soundFilePath = new StringBuilder();
         TextToSpeechImplementation tts = voice.tts();
 
         if (tts != null && ttsSDKs.containsKey(tts.sdkName())) {
             try {
-                run(tts, (Runnable) () -> {
+                run(tts, () -> {
                     try {
                         tts.setVoice(voice);
                         tts.setHints(hints);
@@ -260,15 +249,9 @@ public class TextToSpeech {
         }
     }
 
-    private static void run(TextToSpeechImplementation tts, Runnable delegate) throws InterruptedException {
-        try {
-            DelegateExecutor delegateExecutor = ttsExecutors.get(tts.sdkName());
-            delegateExecutor.run(delegate);
-        } catch (InterruptedException e) {
-            throw e;
-        } catch (Exception e) {
-            throw ExceptionUtil.asRuntimeException(ExceptionUtil.reduce(e));
-        }
+    private static void run(TextToSpeechImplementation tts, DelegateExecutor.Runnable delegate) {
+        DelegateExecutor delegateExecutor = ttsExecutors.get(tts.sdkName());
+        delegateExecutor.run(delegate);
     }
 
     public void stop(Voice voice) {
@@ -306,8 +289,6 @@ public class TextToSpeech {
                     }
                 });
             }
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
         } catch (RuntimeException e) {
             throwIOException(e);
         }

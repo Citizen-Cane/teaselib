@@ -97,7 +97,7 @@ public class SpeechRecognition {
     private final SpeechDetectionEventHandler hypothesisEventHandler;
     private final DelegateExecutor delegateThread = new DelegateExecutor("Speech Recognition dispatch");
 
-    private SpeechRecognitionImplementation sr;
+    private SpeechRecognitionImplementation sr = null;
 
     /**
      * Locked if a recognition is in progress, e.g. a start event has been fired, but the the recognition has neither
@@ -127,46 +127,26 @@ public class SpeechRecognition {
     private List<String> choices;
 
     private void lockSpeechRecognitionInProgressSyncObject() {
-        try {
-            delegateThread.run(() -> {
-                // RenetrantLock is ref-counted,
-                // and startRecognition events can occur more than once
-                if (!SpeechRecognitionInProgress.isLocked()) {
-                    try {
-                        logger.debug("Locking speech recognition sync object");
-                        SpeechRecognitionInProgress.lockInterruptibly();
-                    } catch (Throwable t) {
-                        logger.error(t.getMessage(), t);
-                        throw ExceptionUtil.asRuntimeException(t);
-                    }
-                }
-            });
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new ScriptInterruptedException(e);
-        }
+        delegateThread.run(() -> {
+            // RenetrantLock is ref-counted,
+            // and startRecognition events can occur more than once
+            if (!SpeechRecognitionInProgress.isLocked()) {
+                logger.debug("Locking speech recognition sync object");
+                SpeechRecognitionInProgress.lockInterruptibly();
+            }
+        });
     }
 
     private void unlockSpeechRecognitionInProgressSyncObject() {
-        try {
-            delegateThread.run(() -> {
-                // Check because this is called as a completion event by the
-                // event source, and might be called twice when the
-                // hypothesis event handler generates a Completion event
-                if (SpeechRecognitionInProgress.isLocked()) {
-                    logger.debug("Unlocking speech recognition sync object");
-                    try {
-                        SpeechRecognitionInProgress.unlock();
-                    } catch (Throwable t) {
-                        logger.error(t.getMessage(), t);
-                        throw ExceptionUtil.asRuntimeException(t);
-                    }
-                }
-            });
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new ScriptInterruptedException(e);
-        }
+        delegateThread.run(() -> {
+            // Check because this is called as a completion event by the
+            // event source, and might be called twice when the
+            // hypothesis event handler generates a Completion event
+            if (SpeechRecognitionInProgress.isLocked()) {
+                logger.debug("Unlocking speech recognition sync object");
+                SpeechRecognitionInProgress.unlock();
+            }
+        });
     }
 
     SpeechRecognition() {
@@ -185,38 +165,22 @@ public class SpeechRecognition {
         if (locale == null) {
             sr = Unsupported.Instance;
         } else {
-            try {
-                delegateThread.run(() -> {
-                    try {
-                        if (Environment.SYSTEM == Environment.Windows) {
-                            sr = srClass.getConstructor().newInstance();
-                            sr.init(events, SpeechRecognition.this.locale);
-                        } else {
-                            sr = Unsupported.Instance;
-                        }
-                    } catch (UnsatisfiedLinkError e) {
-                        logger.error(e.getMessage(), e);
-                        sr = null;
-                    } catch (Exception e) {
-                        logger.error(e.getMessage(), e);
-                        sr = null;
-                        throw ExceptionUtil.asRuntimeException(e);
-                        // TODO Handle COM-error 0x8004503a SPERR_NOT_FOUND
-                        // -> download speech recognition pack for the selected language
-                    } catch (Error e) {
-                        logger.error(e.getMessage(), e);
-                        sr = null;
-                        throw e;
-                    } catch (Throwable t) {
-                        logger.error(t.getMessage(), t);
-                        sr = null;
-                        throw ExceptionUtil.asRuntimeException(t);
+            delegateThread.run(() -> {
+                try {
+                    if (Environment.SYSTEM == Environment.Windows) {
+                        sr = srClass.getConstructor().newInstance();
+                        sr.init(events, SpeechRecognition.this.locale);
+                    } else {
+                        sr = Unsupported.Instance;
                     }
-                });
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new ScriptInterruptedException(e);
-            }
+                } catch (RuntimeException e) {
+                    // TODO Handle COM-error 0x8004503a SPERR_NOT_FOUND
+                    // -> download speech recognition pack for the selected language
+                    throw e;
+                } catch (Throwable t) {
+                    throw ExceptionUtil.asRuntimeException(t);
+                }
+            });
         }
         // add the SpeechDetectionEventHandler listeners now to ensure
         // other listeners downstream receive only the correct event,
@@ -240,15 +204,10 @@ public class SpeechRecognition {
         this.choices = choices;
         this.recognitionConfidence = recognitionConfidence;
         if (sr != null) {
-            try {
-                delegateThread.run(() -> {
-                    setupAndStartSR(SpeechRecognition.this.choices);
-                    logger.info("Speech recognition started");
-                });
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new ScriptInterruptedException(e);
-            }
+            delegateThread.run(() -> {
+                setupAndStartSR(SpeechRecognition.this.choices);
+                logger.info("Speech recognition started");
+            });
         } else {
             recognizerNotInitialized();
         }
@@ -256,15 +215,10 @@ public class SpeechRecognition {
 
     public void resumeRecognition() {
         if (sr != null) {
-            try {
-                delegateThread.run(() -> {
-                    setupAndStartSR(choices);
-                    logger.info("Speech recognition resumed");
-                });
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new ScriptInterruptedException(e);
-            }
+            delegateThread.run(() -> {
+                setupAndStartSR(choices);
+                logger.info("Speech recognition resumed");
+            });
         } else {
             recognizerNotInitialized();
         }
@@ -272,16 +226,11 @@ public class SpeechRecognition {
 
     public void restartRecognition() {
         if (sr != null) {
-            try {
-                delegateThread.run(() -> {
-                    sr.stopRecognition();
-                    setupAndStartSR(SpeechRecognition.this.choices);
-                    logger.info("Speech recognition restarted");
-                });
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new ScriptInterruptedException(e);
-            }
+            delegateThread.run(() -> {
+                sr.stopRecognition();
+                setupAndStartSR(SpeechRecognition.this.choices);
+                logger.info("Speech recognition restarted");
+            });
         } else {
             recognizerNotInitialized();
         }
@@ -294,9 +243,6 @@ public class SpeechRecognition {
                     sr.stopRecognition();
                     logger.info("Speech recognition stopped");
                 });
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new ScriptInterruptedException(e);
             } finally {
                 hypothesisEventHandler.enable(false);
                 SpeechRecognition.this.speechRecognitionActive = false;
@@ -381,17 +327,10 @@ public class SpeechRecognition {
 
     public void emulateRecogntion(String emulatedRecognitionResult) {
         if (sr != null) {
-            try {
-                delegateThread.run(() -> {
-                    sr.emulateRecognition(emulatedRecognitionResult);
-                    if (logger.isInfoEnabled()) {
-                        logger.info("Emulating recognition for '" + emulatedRecognitionResult + "'");
-                    }
-                });
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new ScriptInterruptedException(e);
-            }
+            delegateThread.run(() -> {
+                sr.emulateRecognition(emulatedRecognitionResult);
+                logger.info("Emulating recognition for '{}'", emulatedRecognitionResult);
+            });
         } else {
             recognizerNotInitialized();
         }

@@ -2,47 +2,38 @@
 <grammar xmlns="http://www.w3.org/2001/06/grammar" root="Main"
 	tag-format="semantics/1.0" version="1.0" xml:lang="en-US">
 	<!-- handcrafted_srg.xml: Defines an SRGS grammar for testing
-		Node Rule_1_Result is needed to access Rule_2_Choice_1 as its child 
 	 -->
 
 	<rule id="Main" scope="public">
 		<item>
 			<ruleref uri="#Rule_0" />
-			<tag> out.Rule_1_Result = rules.latest(); </tag>
+			<ruleref uri="#Choice_1" />
+			<ruleref uri="#Rule_2" />
+			<ruleref uri="#Choice_3" />
 		</item>
 	</rule>
 
 	<rule id="Rule_0" scope="public">
 		<item>
 			Please Miss
-			<ruleref uri="#Choice_0" />
 		</item>
 	</rule>
 
-	<rule id="Choice_0" scope="public">
+	<rule id="Choice_1" scope="public">
 		<one-of>
 			<item>
 				one more
-				<tag> out.Choice_0_0 = rules.latest(); </tag>
-				<ruleref uri="#Rule_2" />
-				<ruleref uri="#Choice_3" />
+				<tag> out.Choice_1_0 = rules.latest(); </tag>
 			</item>
 			<item>
 				one less
-				<tag> out.Choice_0_1 = rules.latest(); </tag>
-				<ruleref uri="#Rule_2" />
-				<ruleref uri="#Choice_3" />
+				<tag> out.Choice_1_1 = rules.latest(); </tag>
 			</item>
 			<item>
 				two more
-				<tag> out.Choice_0_2 = rules.latest(); </tag>
-				<ruleref uri="#Rule_2" />
-				<ruleref uri="#Choice_3" />
+				<tag> out.Choice_1_2 = rules.latest(); </tag>
 			</item>
 		</one-of>
-	<!-- TODO Search SPPHRASEPROPERTIES.pProperties for choice_n
-		-> replace rule name with choice_n_m  -->
-    <tag> out.triggerSubsequentChoice_n_m_Properties = rules.latest(); </tag>
 	</rule>
 
 
@@ -50,6 +41,7 @@
 		<item>
 			strokes
 		</item>
+	    <tag> out.triggerSubsequentChoice_n_m_Properties = rules.latest(); </tag>
 	</rule>
 
 	<rule id="Choice_3" scope="public">

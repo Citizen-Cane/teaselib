@@ -1,11 +1,11 @@
 package teaselib.core.speechrecognition.events;
 
-import teaselib.core.speechrecognition.SpeechRecognitionResult;
+import teaselib.core.speechrecognition.Rule;
 
 public class SpeechRecognizedEventArgs extends SpeechRecognitionEventArgs {
-    public final SpeechRecognitionResult result[];
+    public final Rule result[];
 
-    public SpeechRecognizedEventArgs(SpeechRecognitionResult... result) {
+    public SpeechRecognizedEventArgs(Rule... result) {
         this.result = result;
     }
 
@@ -13,11 +13,11 @@ public class SpeechRecognizedEventArgs extends SpeechRecognitionEventArgs {
     public String toString() {
         StringBuilder resultString = new StringBuilder();
         if (result != null) {
-            for (SpeechRecognitionResult r : result) {
+            for (Rule rule : result) {
                 if (resultString.length() > 0) {
                     resultString.append(", ");
                 }
-                resultString.append(r.toString());
+                resultString.append(rule.toString());
             }
         } else {
             resultString.append("<none>");

@@ -40,7 +40,8 @@ public:
 
 	void fire(ISpRecoResult* pResult);
 private:
-
-	jobject getResult(ISpRecoResult * pResult, const SPPHRASE * pPhrase, const jclass speechRecognitionResultClass);
-	static jobject getRule(JNIEnv *env, ISpRecoResult* pResult, const SPPHRASERULE* rule, const SemanticResults& semanticResults);
+	const jclass confidenceClass;
+	jobject  getConfidenceField(JNIEnv *env, signed char confidence) const;
+	const jclass ruleClass;
+	jobject getRule(ISpRecoResult* pResult, const SPPHRASERULE* rule, const SemanticResults& semanticResults) const;
 };

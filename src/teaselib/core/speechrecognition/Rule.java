@@ -36,6 +36,10 @@ public class Rule {
         children.add(rule);
     }
 
+    public boolean hasHigherProbabilityThan(Rule rule) {
+        return probability > rule.probability || confidence.probability > rule.confidence.probability;
+    }
+
     @Override
     public String toString() {
         return "Name=" + name + " Id=" + id + " [" + fromElement + "," + toElement + "[ C=" + probability + "~"

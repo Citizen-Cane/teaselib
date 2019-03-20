@@ -17,7 +17,6 @@ import teaselib.core.speechrecognition.Confidence;
 import teaselib.core.speechrecognition.Rule;
 import teaselib.core.speechrecognition.SpeechRecognition;
 import teaselib.core.speechrecognition.SpeechRecognitionControl;
-import teaselib.core.speechrecognition.SpeechRecognitionResult;
 import teaselib.core.speechrecognition.events.AudioSignalProblemOccuredEventArgs;
 import teaselib.core.speechrecognition.events.SpeechRecognitionStartedEventArgs;
 import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
@@ -61,7 +60,7 @@ public class SpeechRecognitionInputMethod implements InputMethod {
 
         this.speechDetectedEventHandler = (sender, eventArgs) -> {
             if (audioSignalProblems.occured() && speechRecognizer.isSpeechRecognitionInProgress()) {
-                SpeechRecognitionResult result = eventArgs.result[0];
+                Rule result = eventArgs.result[0];
                 logAudioSignalProblem(result);
                 speechRecognizer.restartRecognition();
             }
@@ -78,8 +77,8 @@ public class SpeechRecognitionInputMethod implements InputMethod {
 
         this.recognitionCompleted = (sender, eventArgs) -> {
             if (eventArgs.result.length == 1) {
-                SpeechRecognitionResult result = eventArgs.result[0];
-                logger.info("rules \n{}", result.rule.prettyPrint());
+                Rule result = eventArgs.result[0];
+                logger.info("rules \n{}", result.prettyPrint());
 
                 if (audioSignalProblems.occured()) {
                     logAudioSignalProblem(result);
@@ -94,9 +93,9 @@ public class SpeechRecognitionInputMethod implements InputMethod {
                     } else {
                         disableSpeechRecognition();
                         try {
-                            List<Integer> choices = gatherResults(result.rule);
+                            List<Integer> choices = gatherResults(result);
                             if (choices.isEmpty()) {
-                                throw new IllegalArgumentException("No choice rules in: " + result.rule);
+                                throw new IllegalArgumentException("No choice rules in: " + result);
                             } else {
                                 signal(new Prompt.Result(choices));
                             }
@@ -123,22 +122,22 @@ public class SpeechRecognitionInputMethod implements InputMethod {
         return results;
     }
 
-    private void logLackOfConfidence(SpeechRecognitionResult result) {
+    private void logLackOfConfidence(Rule result) {
         logger.info("Dropping result '{}' due to lack of confidence (expected {})", result, expectedConfidence);
     }
 
-    private void logAudioSignalProblem(SpeechRecognitionResult result) {
+    private void logAudioSignalProblem(Rule result) {
         logger.info("Dropping result '{}' due to audio signal problems {}", result, audioSignalProblems);
     }
 
-    private void logAudioSignalProblemPenalty(SpeechRecognitionResult result, double penalty) {
+    private void logAudioSignalProblemPenalty(Rule result, double penalty) {
         logger.info("Dropping result '{}' due to audio signal problem penalty  (required  {} + {} + = {})", result,
                 expectedConfidence, penalty, expectedConfidence.probability + penalty);
     }
 
-    private static boolean confidenceIsHighEnough(SpeechRecognitionResult result, Confidence expected, double penalty) {
-        return result.rule.probability - penalty * AUDIO_PROBLEM_PENALTY_WEIGHT >= expected.probability
-                && result.rule.confidence.isAsHighAs(expected);
+    private static boolean confidenceIsHighEnough(Rule result, Confidence expected, double penalty) {
+        return result.probability - penalty * AUDIO_PROBLEM_PENALTY_WEIGHT >= expected.probability
+                && result.confidence.isAsHighAs(expected);
     }
 
     private void signal(Prompt.Result result) {

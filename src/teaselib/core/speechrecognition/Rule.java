@@ -11,7 +11,8 @@ public class Rule {
 
     public final String name;
     public final String text;
-    public final int id;
+    public final int ruleIndex;
+    public final int choiceIndex;
     public final int fromElement;
     public final int toElement;
 
@@ -19,12 +20,21 @@ public class Rule {
     public final float probability;
     public final Confidence confidence;
 
-    public Rule(String name, String text, int id, int fromElement, int toElement, float probability,
-            Confidence confidence) {
-        super();
+    public Rule(Rule rule, Confidence confidence) {
+        this(rule, confidence.probability, confidence);
+    }
+
+    public Rule(Rule rule, float probability, Confidence confidence) {
+        this(rule.name, rule.text, rule.ruleIndex, rule.choiceIndex, rule.fromElement, rule.toElement, probability,
+                confidence);
+    }
+
+    public Rule(String name, String text, int ruleIndex, int choiceInddex, int fromElement, int toElement,
+            float probability, Confidence confidence) {
         this.name = name;
         this.text = text;
-        this.id = id;
+        this.ruleIndex = ruleIndex;
+        this.choiceIndex = choiceInddex;
         this.fromElement = fromElement;
         this.toElement = toElement;
         this.children = new ArrayList<>();
@@ -42,8 +52,9 @@ public class Rule {
 
     @Override
     public String toString() {
-        return "Name=" + name + " Id=" + id + " [" + fromElement + "," + toElement + "[ C=" + probability + "~"
-                + confidence + " children=" + children.size() + " \"" + text + "\"";
+        return "Name=" + name + " sequenceIndex=" + ruleIndex + " choiceIndex=" + choiceIndex + " [" + fromElement
+                + "," + toElement + "[ C=" + probability + "~" + confidence + " children=" + children.size() + " \""
+                + text + "\"";
     }
 
     public String prettyPrint() {

@@ -117,9 +117,10 @@ jobject SpeechRecognizedEvent::getRule(ISpRecoResult* pResult, const SPPHRASERUL
 	const RuleName ruleName(rule, semanticResults);
 	jobject jRule = env->NewObject(
 		ruleClass,
-		JNIClass::getMethodID(env, ruleClass, "<init>", "(Ljava/lang/String;Ljava/lang/String;IIIFLteaselib/core/speechrecognition/Confidence;)V"),
+		JNIClass::getMethodID(env, ruleClass, "<init>", "(Ljava/lang/String;Ljava/lang/String;IIIIFLteaselib/core/speechrecognition/Confidence;)V"),
 		static_cast<jstring>(JNIString(env, ruleName.name.c_str())),
 		text ? static_cast<jstring>(JNIString(env, text)) : nullptr,
+		ruleName.rule_index,
 		ruleName.choice_index,
 		rule->ulFirstElement,
 		rule->ulFirstElement + rule->ulCountOfElements,

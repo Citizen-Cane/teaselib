@@ -127,8 +127,10 @@ public class SpeechDetectionEventHandler {
     }
 
     private boolean acceptHypothesis(Rule rule) {
+        // TODO Check number of choices equal or higher to support multiple choices
         return hypothesisResult == null //
-                || rule.id != hypothesisResult.id //
+                || rule.ruleIndex != hypothesisResult.ruleIndex //
+                || rule.choiceIndex != hypothesisResult.choiceIndex //
                 || promptSplitter.count(rule.text) > promptSplitter.count(hypothesisResult.text) //
                 || rule.hasHigherProbabilityThan(hypothesisResult);
     }
@@ -141,9 +143,7 @@ public class SpeechDetectionEventHandler {
                 return;
             } else if (hypothesisIsAcceptable()) {
                 eventArgs.consumed = true;
-                Rule elevatedRule = new Rule(hypothesisResult.name, hypothesisResult.text, hypothesisResult.id,
-                        hypothesisResult.fromElement, hypothesisResult.toElement, expectedConfidence.probability,
-                        expectedConfidence);
+                Rule elevatedRule = new Rule(hypothesisResult, expectedConfidence);
                 elevatedRule.children.addAll(hypothesisResult.children);
                 logger.info(
                         "Forwarding rejected recognition event {} with accepted hypothesis {} as elevated result {}",
@@ -193,14 +193,12 @@ public class SpeechDetectionEventHandler {
 
             if (recognitionCompletedResult.confidence.isLowerThan(expectedConfidence) //
                     && hypothesisResult != null //
-                    && hypothesisResult.id == recognitionCompletedResult.id //
+                    && hypothesisResult.ruleIndex == recognitionCompletedResult.ruleIndex //
                     && !confidenceIsHighEnough(recognitionCompletedResult, expectedConfidence) //
                     && hypothesisIsAcceptable()) {
                 eventArgs.consumed = true;
 
-                Rule elevatedRule = new Rule(recognitionCompletedResult.name, recognitionCompletedResult.text,
-                        recognitionCompletedResult.id, recognitionCompletedResult.fromElement,
-                        recognitionCompletedResult.toElement, expectedConfidence.probability, expectedConfidence);
+                Rule elevatedRule = new Rule(recognitionCompletedResult, expectedConfidence);
                 elevatedRule.children.addAll(recognitionCompletedResult.children);
                 logger.info("Replacing recognition result {} of accepted hypothesis {} as elevated result {}",
                         recognitionCompletedResult, hypothesisResult, elevatedRule);

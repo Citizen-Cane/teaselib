@@ -5,18 +5,14 @@
 	 -->
 
 	<rule id="Main" scope="public">
-		<item>
-			<ruleref uri="#Rule_0" />
-			<ruleref uri="#Choice_1" />
-			<ruleref uri="#Rule_2" />
-			<ruleref uri="#Choice_3" />
-		</item>
+		<ruleref uri="#Rule_0" />
+		<ruleref uri="#Choice_1" />
+		<ruleref uri="#Rule_2" />
+		<ruleref uri="#Choice_3" />
 	</rule>
 
 	<rule id="Rule_0" scope="public">
-		<item>
 			Please Miss
-		</item>
 	</rule>
 
 	<rule id="Choice_1" scope="public">
@@ -38,9 +34,7 @@
 
 
 	<rule id="Rule_2" scope="public">
-		<item>
-			strokes
-		</item>
+		strokes
 	    <tag> out.triggerSubsequentChoice_n_m_Properties = rules.latest(); </tag>
 	</rule>
 

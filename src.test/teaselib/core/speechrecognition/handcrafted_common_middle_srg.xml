@@ -25,39 +25,27 @@
 	</rule>
 
 	<rule id="Choice_0_0" scope="private">
-		<item>
-			Yes
-		</item>
+		Yes
 	</rule>
 
 	<rule id="Choice_0_1" scope="private">
-		<item>
-			No
-		</item>
+		No
 	</rule>
 
 	<rule id="Rule_1" scope="private">
-		<item>
-			Miss
-		</item>
+		Miss
 	</rule>
 
 	<rule id="Choice_2_0" scope="private">
-		<item>
-			I've spurted
-		</item>
+		I've spurted
 	</rule>
 
 	<rule id="Choice_2_1" scope="private">
-		<item>
-			I didn't spurt
-		</item>
+		I didn't spurt
 	</rule>
 
 	<rule id="Rule_3" scope="private">
-		<item>
-			off
-		</item>
+		off
 	</rule>
 
 </grammar>

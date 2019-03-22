@@ -1,8 +1,9 @@
 package teaselib.core.speechrecognition.srgs;
 
 import java.io.StringWriter;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -21,15 +22,11 @@ import org.w3c.dom.Element;
 
 public class SRGSBuilder<T> {
     private static final String ruleNodePrefix = "Rule_";
+    private static final String choiceNodePrefix = "Choice_";
 
     private final Document document;
     private final List<? extends List<T>> choices;
     private final String xml;
-
-    @SafeVarargs
-    public SRGSBuilder(List<T>... choices) throws ParserConfigurationException, TransformerException {
-        this(Arrays.asList(choices));
-    }
 
     public SRGSBuilder(List<? extends List<T>> choices) throws ParserConfigurationException, TransformerException {
         this.document = createDocument();
@@ -46,39 +43,68 @@ public class SRGSBuilder<T> {
         addAttribute(grammar, "xml:lang", "en-US");
         addAttribute(grammar, "xmlns", "http://www.w3.org/2001/06/grammar");
         addAttribute(grammar, "tag-format", "semantics/1.0");
-        addAttribute(grammar, "root", ruleNodePrefix + index);
+        String mainRuleId = "Main";
+        addAttribute(grammar, "root", mainRuleId);
 
-        for (List<T> list : choices) {
-            if (!list.isEmpty()) {
-                Element rule = document.createElement("rule");
-                addAttribute(rule, "id", ruleNodePrefix + index++);
-                addAttribute(rule, "scope", "public");
-                grammar.appendChild(rule);
+        // Main
+        int max = maxSize(choices);
+        Element mainRule = createRule(mainRuleId);
+        grammar.appendChild(mainRule);
 
-                Element container = list.size() > 1 ? document.createElement("one-of") : rule;
-                for (T element : list) {
-                    Element item = document.createElement("item");
-                    item.appendChild(document.createTextNode(element.toString()));
-                    container.appendChild(item);
+        Element inventoryNode = document.createElement("one-of");
+        List<Element> inventoryItems = new ArrayList<>(max);
+        for (int i = 0; i < max; i++) {
+            Element inventoryItem = document.createElement("item");
+            inventoryItems.add(inventoryItem);
+            inventoryNode.appendChild(inventoryItem);
+        }
+        mainRule.appendChild(inventoryNode);
+
+        for (List<? extends T> speechPart : choices) {
+            if (!speechPart.isEmpty()) {
+                for (int i = 0; i < speechPart.size(); i++) {
+                    Element rule = document.createElement("rule");
+                    String ruleName = speechPart.size() > 1 ? choiceNodePrefix + index + "_" + i
+                            : ruleNodePrefix + index;
+                    addAttribute(rule, "id", ruleName);
+                    addAttribute(rule, "scope", "private");
+                    grammar.appendChild(rule);
+                    rule.appendChild(document.createTextNode(speechPart.get(i).toString()));
                 }
 
-                if (container != rule) {
-                    rule.appendChild(container);
+                if (speechPart.size() == 1) {
+                    for (Element element : inventoryItems) {
+                        Element ruleRef = document.createElement("ruleref");
+                        addAttribute(ruleRef, "uri", "#" + ruleNodePrefix + index);
+                        element.appendChild(ruleRef);
+                    }
+
+                } else if (speechPart.size() == inventoryItems.size()) {
+                    for (int i = 0; i < speechPart.size(); i++) {
+                        Element ruleRef = document.createElement("ruleref");
+                        addAttribute(ruleRef, "uri", "#" + choiceNodePrefix + index + "_" + i);
+                        inventoryItems.get(i).appendChild(ruleRef);
+                    }
+                } else {
+                    throw new IllegalArgumentException("Choices must be all different or all the sameh");
                 }
-
-                if (list != choices.get(choices.size() - 1)) {
-                    Element ruleRef = document.createElement("ruleref");
-                    addAttribute(ruleRef, "uri", "#" + ruleNodePrefix + index);
-                    rule.appendChild(ruleRef);
-                }
-
-                // TODO In cities_example, rule_ref is in node item node
-                // TODO Rule_1 is inside Rule_0 item -> see cities_srg.xml
-
+                index++;
             }
 
         }
         return toXML();
+    }
+
+    private int maxSize(List<? extends List<? extends T>> choices) {
+        Optional<? extends List<? extends T>> reduced = choices.stream().reduce((a, b) -> a.size() > b.size() ? a : b);
+        return reduced.isPresent() ? reduced.get().size() : 0;
+    }
+
+    private Element createRule(String mainRuleId) {
+        Element element = document.createElement("rule");
+        addAttribute(element, "id", mainRuleId);
+        addAttribute(element, "scope", "public");
+        return element;
     }
 
     private void addAttribute(Element element, String name, String value) {

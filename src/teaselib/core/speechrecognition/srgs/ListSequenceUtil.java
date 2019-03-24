@@ -9,14 +9,11 @@ public class ListSequenceUtil {
     private ListSequenceUtil() {
     }
 
-    // TODO Split only white space in order to hint speech recognition about
-    // pronunciation
     static String[] splitWords(String string) {
         if (string.isEmpty()) {
             return new String[] {};
         } else {
-            // Split multiple words \\W, resolve multiple split characters []+
-            return string.split("[\\W]+");
+            return string.split("[ .:,;\t\n_()]+");
         }
     }
 

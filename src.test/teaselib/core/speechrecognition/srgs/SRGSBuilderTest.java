@@ -1,6 +1,6 @@
 package teaselib.core.speechrecognition.srgs;
 
-import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -14,7 +14,7 @@ import org.junit.Test;
 public class SRGSBuilderTest {
 
     @Test
-    public void testSRGSBuildFromList() throws ParserConfigurationException, TransformerException {
+    public void testSRGSBuildFromListCommonEnd() throws ParserConfigurationException, TransformerException {
         List<List<String>> choices = new ArrayList<>();
         choices.add(Arrays.asList("Yes", "No"));
         choices.add(Arrays.asList("Miss"));
@@ -25,7 +25,7 @@ public class SRGSBuilderTest {
     }
 
     @Test
-    public void testSRGSBuildFromList2() throws ParserConfigurationException, TransformerException {
+    public void testSRGSBuildFromListCommonMiddle() throws ParserConfigurationException, TransformerException {
         List<List<String>> choices = new ArrayList<>();
         choices.add(Arrays.asList("Yes", "No"));
         choices.add(Arrays.asList("Miss"));
@@ -37,8 +37,7 @@ public class SRGSBuilderTest {
     }
 
     @Test
-    public void verifyThatListSequenceToStringOutputsPlainWords()
-            throws ParserConfigurationException, TransformerException {
+    public void verifyThatListSequenceToStringOutputsPlainWords() {
         ListSequence<String> test = new ListSequence<>(ListSequenceUtil.splitWords("The dog looked over the fence"));
         assertFalse(test.toString().startsWith("["));
         assertFalse(test.toString().endsWith("]"));

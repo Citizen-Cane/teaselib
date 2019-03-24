@@ -1,6 +1,7 @@
 package teaselib.core.ui;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -21,6 +22,10 @@ public class Choices extends ArrayList<Choice> {
 
     public List<Gesture> toGestures() {
         return stream().map(choice -> choice.gesture).collect(Collectors.toList());
+    }
+
+    public Choices(Choice... choices) {
+        this(Arrays.asList(choices));
     }
 
     public Choices(List<Choice> choices) {

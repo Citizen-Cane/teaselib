@@ -62,28 +62,24 @@ public class SRGSBuilder<T> {
 
         for (List<? extends T> speechPart : choices) {
             if (!speechPart.isEmpty()) {
+                String name = ruleName(index);
                 for (int i = 0; i < speechPart.size(); i++) {
                     Element rule = document.createElement("rule");
-                    String ruleName = speechPart.size() > 1 ? choiceNodePrefix + index + "_" + i
-                            : ruleNodePrefix + index;
+                    String ruleName = speechPart.size() > 1 ? choiceName(index, i) : name;
                     addAttribute(rule, "id", ruleName);
                     addAttribute(rule, "scope", "private");
-                    grammar.appendChild(rule);
                     rule.appendChild(document.createTextNode(speechPart.get(i).toString()));
+                    grammar.appendChild(rule);
                 }
 
                 if (speechPart.size() == 1) {
                     for (Element element : inventoryItems) {
-                        Element ruleRef = document.createElement("ruleref");
-                        addAttribute(ruleRef, "uri", "#" + ruleNodePrefix + index);
-                        element.appendChild(ruleRef);
+                        element.appendChild(ruleRef(name));
                     }
 
                 } else if (speechPart.size() == inventoryItems.size()) {
                     for (int i = 0; i < speechPart.size(); i++) {
-                        Element ruleRef = document.createElement("ruleref");
-                        addAttribute(ruleRef, "uri", "#" + choiceNodePrefix + index + "_" + i);
-                        inventoryItems.get(i).appendChild(ruleRef);
+                        inventoryItems.get(i).appendChild(ruleRef(choiceName(index, i)));
                     }
                 } else {
                     throw new IllegalArgumentException("Choices must be all different or all the sameh");
@@ -93,6 +89,20 @@ public class SRGSBuilder<T> {
 
         }
         return toXML();
+    }
+
+    private static String ruleName(int index) {
+        return ruleNodePrefix + index;
+    }
+
+    private static String choiceName(int index, int i) {
+        return choiceNodePrefix + index + "_" + i;
+    }
+
+    private Element ruleRef(String choiceRef) {
+        Element ruleRef = document.createElement("ruleref");
+        addAttribute(ruleRef, "uri", "#" + choiceRef);
+        return ruleRef;
     }
 
     private int maxSize(List<? extends List<? extends T>> choices) {

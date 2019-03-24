@@ -1,7 +1,6 @@
 package teaselib.core.speechrecognition.srgs;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -20,7 +19,7 @@ public class SRGSBuilderTest {
         choices.add(Arrays.asList("Yes", "No"));
         choices.add(Arrays.asList("Miss"));
         SRGSBuilder<String> srgs = new SRGSBuilder<>(choices);
-        String xml = srgs.toString();
+        String xml = srgs.toXML();
         assertFalse(xml.isEmpty());
         System.out.println(xml);
     }
@@ -32,7 +31,7 @@ public class SRGSBuilderTest {
         choices.add(Arrays.asList("Miss"));
         choices.add(Arrays.asList("Of course", "I'm sorry"));
         SRGSBuilder<String> srgs = new SRGSBuilder<>(choices);
-        String xml = srgs.toString();
+        String xml = srgs.toXML();
         assertFalse(xml.isEmpty());
         System.out.println(xml);
     }
@@ -52,7 +51,7 @@ public class SRGSBuilderTest {
                 "he dog jumped over the fence", //
                 "The dog jumped over the fence");
         SRGSBuilder<ListSequence<String>> srgs = new SRGSBuilder<>(slices);
-        String xml = srgs.toString();
+        String xml = srgs.toXML();
         assertFalse(xml.isEmpty());
         System.out.println(xml);
     }
@@ -68,7 +67,7 @@ public class SRGSBuilderTest {
                 String[] arg = args[Integer.parseInt(word.substring(1))];
                 choices.add(new ListSequence<>(arg));
             } else {
-                choices.add(new ListSequence<String>(word));
+                choices.add(new ListSequence<>(word));
             }
         }
 
@@ -78,8 +77,9 @@ public class SRGSBuilderTest {
         assertEquals(new ListSequence<>(args[1]), choices.get(2));
         assertEquals("Miss", choices.get(3).toString());
 
+        // TODO build builds same choice, must build any
         SRGSBuilder<String> srgs = new SRGSBuilder<>(choices);
-        String xml = srgs.toString();
+        String xml = srgs.toXML();
         assertFalse(xml.isEmpty());
         System.out.println(xml);
 

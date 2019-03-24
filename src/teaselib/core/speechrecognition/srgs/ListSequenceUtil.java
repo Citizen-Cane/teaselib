@@ -34,7 +34,7 @@ public class ListSequenceUtil {
 
         ListSequence<String> commonStart = choices.commonStart();
         if (!commonStart.isEmpty()) {
-            slices.add(new ListSequences<String>(commonStart));
+            slices.add(new ListSequences<>(commonStart));
         }
         ListSequences<String> remainder = commonStart.isEmpty() ? choices : choices.removeIncluding(commonStart);
 
@@ -43,7 +43,7 @@ public class ListSequenceUtil {
             if (!commonMiddle.isEmpty()) {
                 ListSequences<String> gap = remainder.removeFrom(commonMiddle);
                 slices.add(gap);
-                slices.add(new ListSequences<String>(commonMiddle));
+                slices.add(new ListSequences<>(commonMiddle));
             }
 
             if (commonMiddle.isEmpty()) {

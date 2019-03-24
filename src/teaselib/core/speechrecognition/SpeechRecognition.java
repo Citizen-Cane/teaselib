@@ -285,7 +285,7 @@ public class SpeechRecognition {
         SRGSBuilder<ListSequence<String>> srgs;
         try {
             srgs = new SRGSBuilder<>(slices);
-            return srgs.toString();
+            return srgs.toXML();
         } catch (ParserConfigurationException | TransformerException e) {
             throw ExceptionUtil.asRuntimeException(e);
         }

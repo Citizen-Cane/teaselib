@@ -1,6 +1,7 @@
 package teaselib.core.speechrecognition.srgs;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -54,6 +55,40 @@ public class SRGSBuilderTest {
         String xml = srgs.toString();
         assertFalse(xml.isEmpty());
         System.out.println(xml);
+    }
+
+    @Test
+    public void testSRGSBuilderMultipleChoices() throws ParserConfigurationException, TransformerException {
+        String template = "A %0 %1, Miss";
+        String[][] args = { { "leather", "rubber", "" }, { "ball", "bone", "Dildo" } };
+
+        ListSequences<String> choices = new ListSequences<>();
+        for (String word : ListSequenceUtil.splitWords(template)) {
+            if (word.startsWith("%")) {
+                String[] arg = args[Integer.parseInt(word.substring(1))];
+                choices.add(new ListSequence<>(arg));
+            } else {
+                choices.add(new ListSequence<String>(word));
+            }
+        }
+
+        assertEquals(4, choices.size());
+        assertEquals("A", choices.get(0).toString());
+        assertEquals(new ListSequence<>(args[0]), choices.get(1));
+        assertEquals(new ListSequence<>(args[1]), choices.get(2));
+        assertEquals("Miss", choices.get(3).toString());
+
+        SRGSBuilder<String> srgs = new SRGSBuilder<>(choices);
+        String xml = srgs.toString();
+        assertFalse(xml.isEmpty());
+        System.out.println(xml);
+
+        // assertRecognized(choices, "A rubber ball Miss", new Prompt.Result(0));
+        // assertRecognized(choices, "A leather ball Miss", new Prompt.Result(1));
+        // assertRecognized(choices, "A leather bone Miss", new Prompt.Result(1));
+        // assertRecognized(choices, "A rubber bone Miss", new Prompt.Result(0));
+        // assertRecognized(choices, "A dildo Miss", new Prompt.Result(1));
+        // assertRecognized(choices, "A rubber dildo Miss", new Prompt.Result(1));
     }
 
 }

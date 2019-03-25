@@ -8,7 +8,7 @@ import java.util.stream.Collectors;
 public class ListSequence<T> extends ArrayList<T> {
     private static final long serialVersionUID = 1L;
 
-    public ListSequence(T[] elements) {
+    public ListSequence(T... elements) {
         this(Arrays.asList(elements));
     }
 

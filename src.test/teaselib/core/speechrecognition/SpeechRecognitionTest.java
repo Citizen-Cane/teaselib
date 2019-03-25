@@ -1,15 +1,19 @@
 package teaselib.core.speechrecognition;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.util.Arrays;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import org.junit.Test;
 
 import teaselib.core.speechrecognition.implementation.TeaseLibSRGS;
+import teaselib.core.speechrecognition.srgs.ListSequenceUtil;
 import teaselib.core.ui.Choice;
 import teaselib.core.ui.Choices;
 import teaselib.core.ui.Prompt;
@@ -34,6 +38,9 @@ public class SpeechRecognitionTest {
 
     private static void emulateSpeechRecognition(Choices choices, String emulatedRecognitionResult,
             Prompt.Result expected) throws InterruptedException {
+        assertEquals("Emulated speech may not contain punctation: '" + emulatedRecognitionResult + "'",
+                Arrays.stream(ListSequenceUtil.splitWords(emulatedRecognitionResult)).collect(Collectors.joining(" ")),
+                emulatedRecognitionResult);
         SpeechRecognition sr = new SpeechRecognition(Locale.ENGLISH, TeaseLibSRGS.class);
         SpeechRecognitionInputMethod inputMethod = new SpeechRecognitionInputMethod(sr, confidence, Optional.empty());
         Prompt prompt = new Prompt(choices, Arrays.asList(inputMethod));
@@ -84,6 +91,30 @@ public class SpeechRecognitionTest {
         assertRecognized(choices, "I didn't spurt off Dear Mistress", new Prompt.Result(1));
         assertRejected(choices, "I didn't spurt my load Dear Mistress");
         assertRejected(choices, "I didn't spurt off Dear");
+    }
+
+    @Test
+    public void testSRGSBuilderCommonMiddle() throws InterruptedException {
+        Choices choices = new Choices(new Choice("Yes Miss, I've spurted off"),
+                new Choice("No Miss, I didn't spurt off"));
+
+        assertRecognized(choices, "Yes Miss I've spurted off", new Prompt.Result(0, 0));
+        assertRecognized(choices, "No Miss I didn't spurt off", new Prompt.Result(1, 1));
+        assertRejected(choices, "Yes Miss I didn't spurt off");
+        assertRejected(choices, "No Miss I've spurted off");
+        assertRejected(choices, "Miss I've spurted off");
+        assertRejected(choices, "Miss I didn't spurt off");
+    }
+
+    @Test
+    public void testSRGSBuilderCommonStartEnd() throws InterruptedException {
+        Choices choices = new Choices(new Choice("Dear Mistress, I've spurted my load, Miss"),
+                new Choice("Dear Mistress I didn't spurt off, Miss"));
+
+        assertRecognized(choices, "Dear Mistress I've spurted my load Miss", new Prompt.Result(0));
+        assertRecognized(choices, "Dear Mistress I didn't spurt off Miss", new Prompt.Result(1));
+        assertRejected(choices, "I didn't spurt my load Miss");
+        assertRejected(choices, "Dear Mistress I didn't spurt off");
     }
 
 }

@@ -9,7 +9,7 @@ public class ListSequenceUtil {
     private ListSequenceUtil() {
     }
 
-    static String[] splitWords(String string) {
+    public static String[] splitWords(String string) {
         if (string.isEmpty()) {
             return new String[] {};
         } else {

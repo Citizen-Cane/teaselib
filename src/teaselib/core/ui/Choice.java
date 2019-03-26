@@ -7,6 +7,10 @@ public class Choice {
     public final String text;
     public final String display;
 
+    public static String Display(Choice choice) {
+        return choice.display;
+    }
+
     public Choice(Gesture gesture, String choice, String display) {
         this.gesture = gesture;
         this.text = choice;

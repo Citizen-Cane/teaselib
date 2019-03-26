@@ -67,10 +67,18 @@ abstract class AbstractSRGSBuilder<T> {
         return ruleRef;
     }
 
-    Element createRule(String mainRuleId) {
+    Element createMainRule(String id) {
+        return createRule(id, "public");
+    }
+
+    Element createRule(String id) {
+        return createRule(id, "private");
+    }
+
+    private Element createRule(String id, String scope) {
         Element element = document.createElement("rule");
-        addAttribute(element, "id", mainRuleId);
-        addAttribute(element, "scope", "public");
+        addAttribute(element, "id", id);
+        addAttribute(element, "scope", scope);
         return element;
     }
 
@@ -78,6 +86,10 @@ abstract class AbstractSRGSBuilder<T> {
         Attr attr = document.createAttribute(name);
         attr.setValue(value);
         element.setAttributeNode(attr);
+    }
+
+    void appendText(Element element, String text) {
+        element.appendChild(document.createTextNode(text));
     }
 
     public String toXML() throws TransformerFactoryConfigurationError, TransformerException {

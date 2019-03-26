@@ -3,17 +3,26 @@ package teaselib.core.speechrecognition.srgs;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class ListSequence<T> extends ArrayList<T> {
     private static final long serialVersionUID = 1L;
 
+    private final transient Function<? super T, String> elementToString;
+
+    @SafeVarargs
     public ListSequence(T... elements) {
         this(Arrays.asList(elements));
     }
 
-    public ListSequence(List<? extends T> elements) {
+    public ListSequence(List<T> elements) {
+        this(elements, T::toString);
+    }
+
+    public ListSequence(List<T> elements, Function<T, String> elementToString) {
         super(elements);
+        this.elementToString = elementToString;
     }
 
     public boolean startsWith(List<? extends T> elements) {
@@ -77,6 +86,6 @@ public class ListSequence<T> extends ArrayList<T> {
 
     @Override
     public String toString() {
-        return stream().map(T::toString).collect(Collectors.joining(" "));
+        return stream().map(elementToString).collect(Collectors.joining(" "));
     }
 }

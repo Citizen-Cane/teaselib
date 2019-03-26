@@ -23,30 +23,32 @@ public class SRGSBuilder<T> extends AbstractSRGSBuilder<T> {
         int index = 0;
         for (List<? extends T> speechPart : choices) {
             if (!speechPart.isEmpty()) {
-                String name = ruleName(index);
-                for (int i = 0; i < speechPart.size(); i++) {
-                    Element rule = document.createElement("rule");
-                    String ruleName = speechPart.size() > 1 ? choiceName(index, i) : name;
-                    addAttribute(rule, "id", ruleName);
-                    addAttribute(rule, "scope", "private");
-                    rule.appendChild(document.createTextNode(speechPart.get(i).toString()));
-                    grammar.appendChild(rule);
-                }
-
-                if (speechPart.size() == 1) {
-                    for (Element element : inventoryItems) {
-                        element.appendChild(ruleRef(name));
-                    }
-
-                } else if (speechPart.size() == inventoryItems.size()) {
-                    for (int i = 0; i < speechPart.size(); i++) {
-                        inventoryItems.get(i).appendChild(ruleRef(choiceName(index, i)));
-                    }
-                } else {
-                    throw new IllegalArgumentException("Choices must be all different or all the sameh");
-                }
+                createRule(grammar, inventoryItems, index, speechPart);
                 index++;
             }
+        }
+    }
+
+    private void createRule(Element grammar, List<Element> inventoryItems, int index, List<? extends T> speechPart) {
+        String name = ruleName(index);
+        for (int i = 0; i < speechPart.size(); i++) {
+            String id = speechPart.size() > 1 ? choiceName(index, i) : name;
+            String text = speechPart.get(i).toString();
+            Element rule = createRule(id);
+            appendText(rule, text);
+            grammar.appendChild(rule);
+        }
+
+        if (speechPart.size() == 1) {
+            for (Element element : inventoryItems) {
+                element.appendChild(ruleRef(name));
+            }
+        } else if (speechPart.size() == inventoryItems.size()) {
+            for (int i = 0; i < speechPart.size(); i++) {
+                inventoryItems.get(i).appendChild(ruleRef(choiceName(index, i)));
+            }
+        } else {
+            throw new IllegalArgumentException("Choices must be all different or all the sameh");
         }
     }
 

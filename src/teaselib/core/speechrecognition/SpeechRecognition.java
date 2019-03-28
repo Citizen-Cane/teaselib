@@ -20,9 +20,9 @@ import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
 import teaselib.core.speechrecognition.hypothesis.SpeechDetectionEventHandler;
 import teaselib.core.speechrecognition.implementation.TeaseLibSR;
 import teaselib.core.speechrecognition.implementation.Unsupported;
-import teaselib.core.speechrecognition.srgs.ListSequence;
-import teaselib.core.speechrecognition.srgs.ListSequenceUtil;
-import teaselib.core.speechrecognition.srgs.ListSequences;
+import teaselib.core.speechrecognition.srgs.Sequence;
+import teaselib.core.speechrecognition.srgs.SequenceUtil;
+import teaselib.core.speechrecognition.srgs.Sequences;
 import teaselib.core.speechrecognition.srgs.SRGSBuilder;
 import teaselib.core.texttospeech.TextToSpeech;
 import teaselib.core.util.Environment;
@@ -281,10 +281,10 @@ public class SpeechRecognition {
     }
 
     String srgs(List<String> choices) {
-        List<ListSequences<String>> slices = ListSequenceUtil.slice(choices);
-        SRGSBuilder<ListSequence<String>> srgs;
+        List<Sequences<String>> phraseSequence = SequenceUtil.slice(choices);
+        SRGSBuilder<Sequence<String>> srgs;
         try {
-            srgs = new SRGSBuilder<>(slices);
+            srgs = new SRGSBuilder<>(phraseSequence);
             return srgs.toXML();
         } catch (ParserConfigurationException | TransformerException e) {
             throw ExceptionUtil.asRuntimeException(e);

@@ -48,7 +48,7 @@ public class SRGSBuilder<T> extends AbstractSRGSBuilder<T> {
                 inventoryItems.get(i).appendChild(ruleRef(choiceName(index, i)));
             }
         } else {
-            throw new IllegalArgumentException("Choices must be all different or all the sameh");
+            throw new IllegalArgumentException("Choices must be all different or all the same");
         }
     }
 

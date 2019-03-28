@@ -6,21 +6,21 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-public class ListSequence<T> extends ArrayList<T> {
+public class Sequence<T> extends ArrayList<T> {
     private static final long serialVersionUID = 1L;
 
     private final transient Function<? super T, String> elementToString;
 
     @SafeVarargs
-    public ListSequence(T... elements) {
+    public Sequence(T... elements) {
         this(Arrays.asList(elements));
     }
 
-    public ListSequence(List<T> elements) {
+    public Sequence(List<T> elements) {
         this(elements, T::toString);
     }
 
-    public ListSequence(List<T> elements, Function<T, String> elementToString) {
+    public Sequence(List<T> elements, Function<T, String> elementToString) {
         super(elements);
         this.elementToString = elementToString;
     }
@@ -74,11 +74,11 @@ public class ListSequence<T> extends ArrayList<T> {
         return true;
     }
 
-    public List<ListSequence<T>> subLists() {
-        List<ListSequence<T>> candidates = new ArrayList<>();
+    public List<Sequence<T>> subLists() {
+        List<Sequence<T>> candidates = new ArrayList<>();
         for (int n = size(); n > 0; --n) {
             for (int i = 0; i <= size() - n; ++i) {
-                candidates.add(new ListSequence<>(this.subList(i, i + n)));
+                candidates.add(new Sequence<>(this.subList(i, i + n)));
             }
         }
         return candidates;

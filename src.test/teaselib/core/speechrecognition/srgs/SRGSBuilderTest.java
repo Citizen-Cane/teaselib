@@ -41,19 +41,19 @@ public class SRGSBuilderTest {
 
     @Test
     public void verifyThatListSequenceToStringOutputsPlainWords() {
-        ListSequence<String> test = new ListSequence<>(ListSequenceUtil.splitWords("The dog looked over the fence"));
+        Sequence<String> test = new Sequence<>(SequenceUtil.splitWords("The dog looked over the fence"));
         assertFalse(test.toString().startsWith("["));
         assertFalse(test.toString().endsWith("]"));
     }
 
     @Test
     public void testSRGSBuildFromListSequence() throws ParserConfigurationException, TransformerException {
-        List<ListSequences<String>> slices = ListSequenceUtil.slice( //
+        List<Sequences<String>> slices = SequenceUtil.slice( //
                 "My dog jumped over the fence", //
                 "The dog looked over the fence", //
                 "he dog jumped over the fence", //
                 "The dog jumped over the fence");
-        SRGSBuilder<ListSequence<String>> srgs = new SRGSBuilder<>(slices);
+        SRGSBuilder<Sequence<String>> srgs = new SRGSBuilder<>(slices);
         String xml = srgs.toXML();
         assertFalse(xml.isEmpty());
         System.out.println(xml);
@@ -64,20 +64,20 @@ public class SRGSBuilderTest {
         String template = "A %0 %1, Miss";
         String[][] args = { { "leather", "rubber", "" }, { "ball", "bone", "Dildo" } };
 
-        ListSequences<String> choices = new ListSequences<>();
-        for (String word : ListSequenceUtil.splitWords(template)) {
+        Sequences<String> choices = new Sequences<>();
+        for (String word : SequenceUtil.splitWords(template)) {
             if (word.startsWith("%")) {
                 String[] arg = args[Integer.parseInt(word.substring(1))];
-                choices.add(new ListSequence<>(arg));
+                choices.add(new Sequence<>(arg));
             } else {
-                choices.add(new ListSequence<>(word));
+                choices.add(new Sequence<>(word));
             }
         }
 
         assertEquals(4, choices.size());
         assertEquals("A", choices.get(0).toString());
-        assertEquals(new ListSequence<>(args[0]), choices.get(1));
-        assertEquals(new ListSequence<>(args[1]), choices.get(2));
+        assertEquals(new Sequence<>(args[0]), choices.get(1));
+        assertEquals(new Sequence<>(args[1]), choices.get(2));
         assertEquals("Miss", choices.get(3).toString());
 
         // TODO build builds same choice, must build any
@@ -103,21 +103,21 @@ public class SRGSBuilderTest {
         Choice[] dogToy = { new Choice("ball"), new Choice("bone"), new Choice("Dildo") };
         Choice[][] args = { material, dogToy };
 
-        ListSequences<Choice> choices = new ListSequences<>();
-        for (String word : ListSequenceUtil.splitWords(template)) {
+        Sequences<Choice> choices = new Sequences<>();
+        for (String word : SequenceUtil.splitWords(template)) {
             if (word.startsWith("%")) {
                 Choice[] arg = args[Integer.parseInt(word.substring(1))];
-                choices.add(new ListSequence<>(arg));
+                choices.add(new Sequence<>(arg));
             } else {
                 // TODO production code would expand text variables
-                choices.add(new ListSequence<>(Arrays.asList(new Choice(word)), Choice::Display));
+                choices.add(new Sequence<>(Arrays.asList(new Choice(word)), Choice::Display));
             }
         }
 
         assertEquals(4, choices.size());
         assertEquals("A", choices.get(0).toString());
-        assertEquals(new ListSequence<>(args[0]), choices.get(1));
-        assertEquals(new ListSequence<>(args[1]), choices.get(2));
+        assertEquals(new Sequence<>(args[0]), choices.get(1));
+        assertEquals(new Sequence<>(args[1]), choices.get(2));
         assertEquals("Miss", choices.get(3).toString());
 
         // TODO build builds same choice, must build any

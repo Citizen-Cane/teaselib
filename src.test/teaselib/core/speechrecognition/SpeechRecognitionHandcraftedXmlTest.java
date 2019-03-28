@@ -17,7 +17,7 @@ import org.junit.Test;
 import teaselib.core.ResourceLoader;
 import teaselib.core.speechrecognition.implementation.TeaseLibSR;
 import teaselib.core.speechrecognition.implementation.TeaseLibSRGS;
-import teaselib.core.speechrecognition.srgs.ListSequenceUtil;
+import teaselib.core.speechrecognition.srgs.SequenceUtil;
 import teaselib.core.ui.Choice;
 import teaselib.core.ui.Choices;
 import teaselib.core.ui.Prompt;
@@ -42,7 +42,7 @@ public class SpeechRecognitionHandcraftedXmlTest {
     private static void emulateSpeechRecognition(String resource, String emulatedRecognitionResult,
             Prompt.Result expected) throws IOException, InterruptedException {
         assertEquals("Emulated speech may not contain punctation: '" + emulatedRecognitionResult + "'",
-                Arrays.stream(ListSequenceUtil.splitWords(emulatedRecognitionResult)).collect(Collectors.joining(" ")),
+                Arrays.stream(SequenceUtil.splitWords(emulatedRecognitionResult)).collect(Collectors.joining(" ")),
                 emulatedRecognitionResult);
         ResourceLoader resources = new ResourceLoader(SpeechRecognitionHandcraftedXmlTest.class);
         String xml = Stream.toString(resources.get(resource));

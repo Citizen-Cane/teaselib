@@ -13,7 +13,7 @@ import java.util.stream.Collectors;
 import org.junit.Test;
 
 import teaselib.core.speechrecognition.implementation.TeaseLibSRGS;
-import teaselib.core.speechrecognition.srgs.ListSequenceUtil;
+import teaselib.core.speechrecognition.srgs.SequenceUtil;
 import teaselib.core.ui.Choice;
 import teaselib.core.ui.Choices;
 import teaselib.core.ui.Prompt;
@@ -39,7 +39,7 @@ public class SpeechRecognitionTest {
     private static void emulateSpeechRecognition(Choices choices, String emulatedRecognitionResult,
             Prompt.Result expected) throws InterruptedException {
         assertEquals("Emulated speech may not contain punctation: '" + emulatedRecognitionResult + "'",
-                Arrays.stream(ListSequenceUtil.splitWords(emulatedRecognitionResult)).collect(Collectors.joining(" ")),
+                Arrays.stream(SequenceUtil.splitWords(emulatedRecognitionResult)).collect(Collectors.joining(" ")),
                 emulatedRecognitionResult);
         SpeechRecognition sr = new SpeechRecognition(Locale.ENGLISH, TeaseLibSRGS.class);
         SpeechRecognitionInputMethod inputMethod = new SpeechRecognitionInputMethod(sr, confidence, Optional.empty());

@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class Sequences<T> extends ArrayList<Sequence<T>> {
     private static final long serialVersionUID = 1L;
@@ -113,6 +114,10 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
                     listSequence.subList(listSequence.indexOf(match) + match.size(), listSequence.size())));
         }
         return subLists;
+    }
+
+    public List<String> toStrings() {
+        return stream().map(Sequence::toString).collect(Collectors.toList());
     }
 
 }

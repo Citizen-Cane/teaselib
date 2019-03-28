@@ -18,6 +18,7 @@ import teaselib.core.ResourceLoader;
 import teaselib.core.speechrecognition.implementation.TeaseLibSR;
 import teaselib.core.speechrecognition.implementation.TeaseLibSRGS;
 import teaselib.core.speechrecognition.srgs.SequenceUtil;
+import teaselib.core.speechrecognition.srgs.Sequences;
 import teaselib.core.ui.Choice;
 import teaselib.core.ui.Choices;
 import teaselib.core.ui.Prompt;
@@ -48,7 +49,7 @@ public class SpeechRecognitionHandcraftedXmlTest {
         String xml = Stream.toString(resources.get(resource));
         SpeechRecognition sr = new SpeechRecognition(Locale.ENGLISH, TeaseLibSRGS.class) {
             @Override
-            String srgs(List<String> choices) {
+            String srgs(List<Sequences<String>> choices) {
                 return xml;
             }
         };
@@ -69,7 +70,7 @@ public class SpeechRecognitionHandcraftedXmlTest {
     private static void awaitResult(SpeechRecognition sr, Prompt prompt, String emulatedText, Prompt.Result expected)
             throws InterruptedException {
         sr.emulateRecogntion(emulatedText);
-        boolean dismissed = prompt.click.await(5, TimeUnit.SECONDS);
+        boolean dismissed = prompt.click.await(3, TimeUnit.SECONDS);
         if (!dismissed) {
             prompt.dismiss();
         }

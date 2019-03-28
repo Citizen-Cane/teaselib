@@ -58,7 +58,7 @@ public class SpeechRecognitionTest {
     private static void awaitResult(SpeechRecognition sr, Prompt prompt, String emulatedText, Prompt.Result expected)
             throws InterruptedException {
         sr.emulateRecogntion(emulatedText);
-        boolean dismissed = prompt.click.await(5, TimeUnit.SECONDS);
+        boolean dismissed = prompt.click.await(3, TimeUnit.SECONDS);
         if (!dismissed) {
             prompt.dismiss();
         }

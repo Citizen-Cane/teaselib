@@ -18,6 +18,7 @@ import teaselib.core.speechrecognition.SpeechRecognition;
 import teaselib.core.speechrecognition.SpeechRecognitionControl;
 import teaselib.core.speechrecognition.SpeechRecognizer;
 import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
+import teaselib.core.speechrecognition.srgs.Phrases;
 import teaselib.core.texttospeech.PronunciationDictionary;
 import teaselib.core.texttospeech.TextToSpeech;
 
@@ -51,21 +52,23 @@ public class SpeechRecognitionPronunciationDictionaryTest {
         TextToSpeech textToSpeech = TextToSpeech.allSystemVoices();
         textToSpeech.initPhoneticDictionary(pronunciationDictionary);
 
-        SpeechRecognition speechRecognition = new SpeechRecognizer(new Configuration()).get(Locale.US);
-        CountDownLatch completed = new CountDownLatch(1);
-        List<String> choices = Arrays.asList("Bereit", "Madame");
+        try (SpeechRecognizer speechRecognizer = new SpeechRecognizer(new Configuration());) {
+            SpeechRecognition speechRecognition = speechRecognizer.get(Locale.US);
+            CountDownLatch completed = new CountDownLatch(1);
+            List<String> choices = Arrays.asList("Bereit", "Madame");
 
-        Event<SpeechRecognitionControl, SpeechRecognizedEventArgs> speechRecognized = (sender, eventArgs) -> completed
-                .countDown();
+            Event<SpeechRecognitionControl, SpeechRecognizedEventArgs> speechRecognized = (sender,
+                    eventArgs) -> completed.countDown();
 
-        speechRecognition.events.recognitionCompleted.add(speechRecognized);
-        try {
-            speechRecognition.startRecognition(choices, Confidence.Normal);
-            speechRecognition.emulateRecogntion("Hello");
-            completed.await();
-        } finally {
-            speechRecognition.events.recognitionCompleted.remove(speechRecognized);
-            SpeechRecognition.completeSpeechRecognitionInProgress();
+            speechRecognition.events.recognitionCompleted.add(speechRecognized);
+            try {
+                speechRecognition.startRecognition(Phrases.of(choices), Confidence.Normal);
+                speechRecognition.emulateRecogntion("Hello");
+                completed.await();
+            } finally {
+                speechRecognition.events.recognitionCompleted.remove(speechRecognized);
+                SpeechRecognition.completeSpeechRecognitionInProgress();
+            }
         }
     }
 }

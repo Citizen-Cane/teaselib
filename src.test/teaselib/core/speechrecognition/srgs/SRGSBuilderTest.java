@@ -126,6 +126,8 @@ public class SRGSBuilderTest {
         assertFalse(xml.isEmpty());
         System.out.println(xml);
 
+        // TODO This will work only if the host input methods supports multiple choices
+
         // assertRecognized(choices, "A rubber ball Miss", new Prompt.Result(0));
         // assertRecognized(choices, "A leather ball Miss", new Prompt.Result(1));
         // assertRecognized(choices, "A leather bone Miss", new Prompt.Result(1));

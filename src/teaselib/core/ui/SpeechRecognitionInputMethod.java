@@ -20,6 +20,7 @@ import teaselib.core.speechrecognition.SpeechRecognitionControl;
 import teaselib.core.speechrecognition.events.AudioSignalProblemOccuredEventArgs;
 import teaselib.core.speechrecognition.events.SpeechRecognitionStartedEventArgs;
 import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
+import teaselib.core.speechrecognition.srgs.Phrases;
 import teaselib.util.SpeechRecognitionRejectedScript;
 
 /**
@@ -187,13 +188,8 @@ public class SpeechRecognitionInputMethod implements InputMethod {
         speechRecognizer.events.speechDetected.add(speechDetectedEventHandler);
         speechRecognizer.events.recognitionRejected.add(recognitionRejected);
         speechRecognizer.events.recognitionCompleted.add(recognitionCompleted);
-        speechRecognizer.startRecognition(addMumbleDetection(active.get().choices.toDisplay()), expectedConfidence);
-    }
 
-    private static List<String> addMumbleDetection(List<String> display) {
-        List<String> choices = new ArrayList<>(display.size() + 1);
-        choices.addAll(display);
-        return choices;
+        speechRecognizer.startRecognition(Phrases.of(active.get().choices.toDisplay()), expectedConfidence);
     }
 
     private void disableSpeechRecognition() {

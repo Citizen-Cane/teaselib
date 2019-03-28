@@ -20,10 +20,10 @@ import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
 import teaselib.core.speechrecognition.hypothesis.SpeechDetectionEventHandler;
 import teaselib.core.speechrecognition.implementation.TeaseLibSR;
 import teaselib.core.speechrecognition.implementation.Unsupported;
-import teaselib.core.speechrecognition.srgs.Sequence;
-import teaselib.core.speechrecognition.srgs.SequenceUtil;
-import teaselib.core.speechrecognition.srgs.Sequences;
+import teaselib.core.speechrecognition.srgs.Phrases;
 import teaselib.core.speechrecognition.srgs.SRGSBuilder;
+import teaselib.core.speechrecognition.srgs.Sequence;
+import teaselib.core.speechrecognition.srgs.Sequences;
 import teaselib.core.texttospeech.TextToSpeech;
 import teaselib.core.util.Environment;
 import teaselib.core.util.ExceptionUtil;
@@ -124,7 +124,7 @@ public class SpeechRecognition {
 
     private Confidence recognitionConfidence;
 
-    private List<String> choices;
+    private Phrases phrases;
 
     private void lockSpeechRecognitionInProgressSyncObject() {
         delegateThread.run(() -> {
@@ -200,12 +200,13 @@ public class SpeechRecognition {
                 .compareToIgnoreCase(System.getProperty(EnableSpeechHypothesisHandlerGlobally, "true")) == 0;
     }
 
-    public void startRecognition(List<String> choices, Confidence recognitionConfidence) {
-        this.choices = choices;
+    // TODO Make class stateless by moving sr process into new class with final state - remember that class upstream
+    public void startRecognition(Phrases phrases, Confidence recognitionConfidence) {
+        this.phrases = phrases;
         this.recognitionConfidence = recognitionConfidence;
         if (sr != null) {
             delegateThread.run(() -> {
-                setupAndStartSR(SpeechRecognition.this.choices);
+                setupAndStartSR(SpeechRecognition.this.phrases);
                 logger.info("Speech recognition started");
             });
         } else {
@@ -216,7 +217,7 @@ public class SpeechRecognition {
     public void resumeRecognition() {
         if (sr != null) {
             delegateThread.run(() -> {
-                setupAndStartSR(choices);
+                setupAndStartSR(phrases);
                 logger.info("Speech recognition resumed");
             });
         } else {
@@ -228,7 +229,7 @@ public class SpeechRecognition {
         if (sr != null) {
             delegateThread.run(() -> {
                 sr.stopRecognition();
-                setupAndStartSR(SpeechRecognition.this.choices);
+                setupAndStartSR(SpeechRecognition.this.phrases);
                 logger.info("Speech recognition restarted");
             });
         } else {
@@ -253,38 +254,48 @@ public class SpeechRecognition {
         }
     }
 
-    private void setupAndStartSR(List<String> choices) {
+    private void setupAndStartSR(Phrases phrases) {
         if (!(sr instanceof SpeechRecognitionSRGS) && (enableSpeechHypothesisHandlerGlobally()
                 || SpeechRecognition.this.recognitionConfidence == Confidence.Low)) {
-            hypothesisEventHandler.setChoices(choices);
+            hypothesisEventHandler.setChoices(backwardCompatibleDeprecated(phrases));
             hypothesisEventHandler.setExpectedConfidence(SpeechRecognition.this.recognitionConfidence);
             hypothesisEventHandler.enable(true);
         } else {
             hypothesisEventHandler.enable(false);
         }
 
-        setChoices(choices);
+        setChoices(phrases);
         SpeechRecognition.this.speechRecognitionActive = true;
         synchronized (TextToSpeech.AudioOutput) {
             sr.startRecognition();
         }
     }
 
-    private void setChoices(List<String> choices) {
+    private void setChoices(Phrases phrases) {
         if (sr instanceof SpeechRecognitionSRGS) {
-            ((SpeechRecognitionSRGS) sr).setChoices(srgs(choices));
+            ((SpeechRecognitionSRGS) sr).setChoices(srgs(phrases));
         } else if (sr instanceof SpeechRecognitionChoices) {
-            ((SpeechRecognitionChoices) sr).setChoices(choices);
+            ((SpeechRecognitionChoices) sr).setChoices(backwardCompatibleDeprecated(phrases));
         } else {
             throw new UnsupportedOperationException(SpeechRecognitionChoices.class.getSimpleName());
         }
     }
 
-    String srgs(List<String> choices) {
-        List<Sequences<String>> phraseSequence = SequenceUtil.slice(choices);
+    private List<String> backwardCompatibleDeprecated(Phrases phrases) {
+        // TODO Wrong, expand back to single strings for backward compatibility
+        // - this is going to be deprecated anyway
+        // new Phrases.plain()
+        if (phrases.size() != 1)
+            throw new UnsupportedOperationException(
+                    "Constructing multiple-choice phrases: " + sr.getClass().getSimpleName());
+        return phrases.get(0).toStrings();
+    }
+
+    String srgs(List<Sequences<String>> choices) {
+        // List<Sequences<String>> phrases = SequenceUtil.slice(choices);
         SRGSBuilder<Sequence<String>> srgs;
         try {
-            srgs = new SRGSBuilder<>(phraseSequence);
+            srgs = new SRGSBuilder<>(choices);
             return srgs.toXML();
         } catch (ParserConfigurationException | TransformerException e) {
             throw ExceptionUtil.asRuntimeException(e);

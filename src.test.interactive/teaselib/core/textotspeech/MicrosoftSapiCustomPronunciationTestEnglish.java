@@ -22,6 +22,7 @@ import teaselib.core.speechrecognition.Confidence;
 import teaselib.core.speechrecognition.SpeechRecognition;
 import teaselib.core.speechrecognition.SpeechRecognizer;
 import teaselib.core.speechrecognition.hypothesis.SpeechDetectionEventHandler;
+import teaselib.core.speechrecognition.srgs.Phrases;
 import teaselib.core.texttospeech.TextToSpeech;
 import teaselib.core.texttospeech.Voice;
 import teaselib.core.util.Environment;
@@ -137,7 +138,8 @@ public class MicrosoftSapiCustomPronunciationTestEnglish {
                     speechRecognition);
             try {
                 speechDetectionEventHandler.addEventListeners();
-                speechRecognition.startRecognition(choices, Confidence.Normal);
+                Phrases phrases = Phrases.of(choices);
+                speechRecognition.startRecognition(phrases, Confidence.Normal);
                 completed.await();
             } finally {
                 SpeechRecognition.completeSpeechRecognitionInProgress();

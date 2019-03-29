@@ -21,20 +21,21 @@
 	</rule>
 
 	<rule id="Rule_0" scope="private">
-		<item>
-			Dear Mistress
-		</item>
+		<one-of>
+			<item>
+				Dear Mistress
+			</item>
+			<item>
+				Miss
+			</item>
+		</one-of>
 	</rule>
 
 	<rule id="Choice_1_0" scope="private">
-		<item>
 			I've spurted my load
-		</item>
 	</rule>
 
 	<rule id="Choice_1_1" scope="private">
-		<item>
-			I didn't spurt off
-		</item>
+		I didn't spurt off
 	</rule>
 </grammar>

@@ -135,8 +135,11 @@ public class SpeechRecognitionHandcraftedXmlTest {
         String resource = "srgs/handcrafted_common_start.xml";
         assertRecognized(resource, "Dear Mistress I've spurted my load", new Prompt.Result(0));
         assertRecognized(resource, "Dear Mistress I didn't spurt off", new Prompt.Result(1));
+        assertRecognized(resource, "Miss I've spurted my load", new Prompt.Result(0));
+        assertRecognized(resource, "Miss I didn't spurt off", new Prompt.Result(1));
         assertRejected(resource, "Okay Miss I've spurted my load");
         assertRejected(resource, "Dear Mistress I've spurted off");
+        assertRejected(resource, "Dear Miss I've spurted my load");
     }
 
     @Test

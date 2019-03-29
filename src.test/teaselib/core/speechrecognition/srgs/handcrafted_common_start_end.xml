@@ -22,26 +22,18 @@
 	</rule>
 
 	<rule id="Rule_0" scope="private">
-		<item>
-			Dear Mistress
-		</item>
+		Dear Mistress
 	</rule>
 
 	<rule id="Choice_1_0" scope="private">
-		<item>
-			I've spurted my load
-		</item>
+		I've spurted my load
 	</rule>
 
 	<rule id="Choice_1_1" scope="private">
-		<item>
-			I didn't spurt off
-		</item>
+		I didn't spurt off
 	</rule>
 
 	<rule id="Rule_2" scope="private">
-		<item>
-			Miss
-		</item>
+		Miss
 	</rule>
 </grammar>

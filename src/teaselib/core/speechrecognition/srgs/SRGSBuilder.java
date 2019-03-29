@@ -2,7 +2,6 @@ package teaselib.core.speechrecognition.srgs;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
@@ -54,7 +53,7 @@ public class SRGSBuilder<T> extends AbstractSRGSBuilder<T> {
 
     private List<Element> createMainRule(Element grammar) {
         Element mainRule = createRule(MAIN_RULE_NAME);
-        int max = maxSize(choices);
+        int max = SequenceUtil.max(choices);
         Element inventoryNode = document.createElement("one-of");
         List<Element> inventoryItems = new ArrayList<>(max);
         for (int i = 0; i < max; i++) {
@@ -69,11 +68,6 @@ public class SRGSBuilder<T> extends AbstractSRGSBuilder<T> {
 
     private static String choiceName(int index, int i) {
         return choiceNodePrefix + index + "_" + i;
-    }
-
-    private int maxSize(List<? extends List<? extends T>> choices) {
-        Optional<? extends List<? extends T>> reduced = choices.stream().reduce((a, b) -> a.size() > b.size() ? a : b);
-        return reduced.isPresent() ? reduced.get().size() : 0;
     }
 
 }

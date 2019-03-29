@@ -12,6 +12,7 @@ import java.util.stream.Collectors;
 
 import org.junit.Test;
 
+import teaselib.core.speechrecognition.implementation.TeaseLibSR;
 import teaselib.core.speechrecognition.implementation.TeaseLibSRGS;
 import teaselib.core.speechrecognition.srgs.SequenceUtil;
 import teaselib.core.ui.Choice;
@@ -67,6 +68,24 @@ public class SpeechRecognitionTest {
             assertEquals(expected, prompt.result());
         } else {
             assertFalse("Expected rejected: \"" + emulatedText + "\"", dismissed);
+        }
+    }
+
+    @Test
+    public void testSimpleSR() throws InterruptedException {
+        Choices foobar = new Choices(Arrays.asList(new Choice("My name is Foo"), new Choice("My name is Bar"),
+                new Choice("My name is Foobar")));
+
+        SpeechRecognition sr = new SpeechRecognition(Locale.ENGLISH, TeaseLibSR.class);
+        SpeechRecognitionInputMethod inputMethod = new SpeechRecognitionInputMethod(sr, confidence, Optional.empty());
+        Prompt prompt = new Prompt(foobar, Arrays.asList(inputMethod));
+
+        prompt.lock.lockInterruptibly();
+        try {
+            inputMethod.show(prompt);
+            awaitResult(sr, prompt, "My name is Bar", new Prompt.Result(1));
+        } finally {
+            prompt.lock.unlock();
         }
     }
 

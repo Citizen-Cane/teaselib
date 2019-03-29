@@ -15,7 +15,6 @@ import java.util.stream.Collectors;
 import org.junit.Test;
 
 import teaselib.core.ResourceLoader;
-import teaselib.core.speechrecognition.implementation.TeaseLibSR;
 import teaselib.core.speechrecognition.implementation.TeaseLibSRGS;
 import teaselib.core.speechrecognition.srgs.SequenceUtil;
 import teaselib.core.speechrecognition.srgs.Sequences;
@@ -79,21 +78,6 @@ public class SpeechRecognitionHandcraftedXmlTest {
             assertEquals(expected, prompt.result());
         } else {
             assertFalse("Expected rejected: \"" + emulatedText + "\"", dismissed);
-        }
-    }
-
-    @Test
-    public void testSR() throws InterruptedException {
-        SpeechRecognition sr = new SpeechRecognition(Locale.ENGLISH, TeaseLibSR.class);
-        SpeechRecognitionInputMethod inputMethod = new SpeechRecognitionInputMethod(sr, confidence, Optional.empty());
-        Prompt prompt = new Prompt(Foobar, Arrays.asList(inputMethod));
-
-        prompt.lock.lockInterruptibly();
-        try {
-            inputMethod.show(prompt);
-            awaitResult(sr, prompt, "My name is Bar", new Prompt.Result(1));
-        } finally {
-            prompt.lock.unlock();
         }
     }
 

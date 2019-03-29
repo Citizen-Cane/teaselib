@@ -14,4 +14,7 @@ public class Phrases extends ArrayList<Sequences<String>> {
         super(phrases);
     }
 
+    public Sequences<String> flatten() {
+        return Sequences.flatten(this);
+    }
 }

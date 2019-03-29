@@ -282,17 +282,13 @@ public class SpeechRecognition {
     }
 
     private List<String> backwardCompatibleDeprecated(Phrases phrases) {
-        // TODO Wrong, expand back to single strings for backward compatibility
-        // - this is going to be deprecated anyway
-        // new Phrases.plain()
-        if (phrases.size() != 1)
+        if (phrases.stream().filter(choices -> choices.size() > 1).count() > 1)
             throw new UnsupportedOperationException(
                     "Constructing multiple-choice phrases: " + sr.getClass().getSimpleName());
-        return phrases.get(0).toStrings();
+        return phrases.flatten().toStrings();
     }
 
     String srgs(List<Sequences<String>> choices) {
-        // List<Sequences<String>> phrases = SequenceUtil.slice(choices);
         SRGSBuilder<Sequence<String>> srgs;
         try {
             srgs = new SRGSBuilder<>(choices);

@@ -3,6 +3,7 @@ package teaselib.core.speechrecognition.srgs;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 public class SequenceUtil {
 
@@ -53,6 +54,11 @@ public class SequenceUtil {
             remainder = remainder.removeIncluding(commonMiddle);
         }
         return slices;
+    }
+
+    public static <T> int max(List<? extends List<? extends T>> choices) {
+        Optional<? extends List<? extends T>> reduced = choices.stream().reduce((a, b) -> a.size() > b.size() ? a : b);
+        return reduced.isPresent() ? reduced.get().size() : 0;
     }
 
 }

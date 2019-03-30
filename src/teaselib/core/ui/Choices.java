@@ -17,7 +17,7 @@ public class Choices extends ArrayList<Choice> {
     }
 
     public List<String> toDisplay() {
-        return stream().map(choice -> choice.display).collect(Collectors.toList());
+        return stream().map(Choice::Display).collect(Collectors.toList());
     }
 
     public List<Gesture> toGestures() {

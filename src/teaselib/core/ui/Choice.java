@@ -1,20 +1,27 @@
 package teaselib.core.ui;
 
+import java.util.Arrays;
+import java.util.Objects;
+
 import teaselib.motiondetection.Gesture;
 
 public class Choice {
     public final Gesture gesture;
     public final String text;
-    public final String display;
+    public final String[] display;
 
     public static String Display(Choice choice) {
-        return choice.display;
+        return choice.display[0];
     }
 
-    public Choice(Gesture gesture, String choice, String display) {
+    public Choice(Gesture gesture, String choice, String... display) {
         this.gesture = gesture;
         this.text = choice;
         this.display = display;
+    }
+
+    public Choice(String text, String... display) {
+        this(Gesture.None, text, display);
     }
 
     public Choice(String text, String display) {
@@ -22,7 +29,7 @@ public class Choice {
     }
 
     public Choice(String text) {
-        this(Gesture.None, text, text);
+        this(text, text);
     }
 
     @Override
@@ -61,6 +68,6 @@ public class Choice {
 
     @Override
     public String toString() {
-        return "Gesture=" + gesture + " text='" + text + "' display='" + display + "'";
+        return "Gesture=" + gesture + " text='" + text + "' display='" + Arrays.toString(display) + "'";
     }
 }

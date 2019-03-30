@@ -286,7 +286,7 @@ public class Prompt {
             return "DISMISSED";
         } else {
             List<Choice> choice = choice(result);
-            return choice.stream().map(c -> c.display).collect(Collectors.joining(" "));
+            return choice.stream().map(Choice::Display).collect(Collectors.joining(" "));
         }
     }
 }

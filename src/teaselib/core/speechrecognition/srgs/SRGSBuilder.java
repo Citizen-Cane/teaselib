@@ -56,8 +56,15 @@ public class SRGSBuilder<T> extends AbstractSRGSBuilder<T> {
             grammar.appendChild(rule);
 
             // TODO Single text items can be added to the rule right away
-            // - alternative phrases must be enumed via <one-of> <item> ... </one-of> </item>
-            String text = speechPart.get(i).toString();
+            // - alternative phrases must be enumerated via <one-of> <item> ... </one-of> </item>
+            // TODO Retrieve <one-of> elements from element:
+
+            // Wrong: speechPart=Sequence<String> -> element=String
+            // - correct those tests since they have to use Phrases (List<Sequences<E>)
+            // choices -> Phrases -> speechPart=Sequences<String> -> element=Sequence<String> -> toString
+            // Desired : Sequence<Choice> -> Choice -> enum display items
+            T element = speechPart.get(i);
+            String text = element.toString();
             appendText(rule, text);
         }
         return name;

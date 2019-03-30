@@ -1,9 +1,7 @@
 package teaselib.core.speechrecognition.srgs;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.*;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -18,9 +16,9 @@ public class SRGSBuilderTest {
 
     @Test
     public void testSRGSBuildFromListCommonEnd() throws ParserConfigurationException, TransformerException {
-        List<List<String>> choices = new ArrayList<>();
-        choices.add(Arrays.asList("Yes", "No"));
-        choices.add(Arrays.asList("Miss"));
+        Sequences<String> choices = new Sequences<>();
+        choices.add(new Sequence<>("Yes", "No"));
+        choices.add(new Sequence<>("Miss"));
         SRGSBuilder<String> srgs = new SRGSBuilder<>(choices);
         String xml = srgs.toXML();
         assertFalse(xml.isEmpty());
@@ -29,10 +27,10 @@ public class SRGSBuilderTest {
 
     @Test
     public void testSRGSBuildFromListCommonMiddle() throws ParserConfigurationException, TransformerException {
-        List<List<String>> choices = new ArrayList<>();
-        choices.add(Arrays.asList("Yes", "No"));
-        choices.add(Arrays.asList("Miss"));
-        choices.add(Arrays.asList("Of course", "I'm sorry"));
+        Sequences<String> choices = new Sequences<>();
+        choices.add(new Sequence<>("Yes", "No"));
+        choices.add(new Sequence<>("Miss"));
+        choices.add(new Sequence<>("Of course", "I'm sorry"));
         SRGSBuilder<String> srgs = new SRGSBuilder<>(choices);
         String xml = srgs.toXML();
         assertFalse(xml.isEmpty());
@@ -47,13 +45,36 @@ public class SRGSBuilderTest {
     }
 
     @Test
-    public void testSRGSBuildFromListSequence() throws ParserConfigurationException, TransformerException {
+    public void testSlice() {
         List<Sequences<String>> slices = SequenceUtil.slice( //
+                "My dog jumped over the fence", //
+                "The dog looked over the fence", //
+                "The dog jumped over the fence", //
+                "The dog jumped over the fence");
+        System.out.println(slices);
+
+        // TODO slice returns list of sequences, each containing a Sequence of of string
+        // -> Sequence<String> is the element type
+
+        // TODO in testSRGSBuilderMultipleChoiceResults the element type T is Choice
+        // - but Sequences requires it to be Sequence<T>
+        //
+
+        // SRGSBuilder needs:
+        // + phrase
+        // + phrase parts (choices or rule)
+        // choice display elements <one-of>
+        // -> List<List<Choice>>, and choice display is kind of a list as well
+    }
+
+    @Test
+    public void testSRGSBuildFromListSequence() throws ParserConfigurationException, TransformerException {
+        Phrases phrases = Phrases.of( //
                 "My dog jumped over the fence", //
                 "The dog looked over the fence", //
                 "he dog jumped over the fence", //
                 "The dog jumped over the fence");
-        SRGSBuilder<Sequence<String>> srgs = new SRGSBuilder<>(slices);
+        SRGSBuilder<Sequence<String>> srgs = new SRGSBuilder<>(phrases);
         String xml = srgs.toXML();
         assertFalse(xml.isEmpty());
         System.out.println(xml);
@@ -62,7 +83,7 @@ public class SRGSBuilderTest {
     @Test
     public void testSRGSBuilderMultipleStringResults() throws ParserConfigurationException, TransformerException {
         String template = "A %0 %1, Miss";
-        String[][] args = { { "leather", "rubber", "" }, { "ball", "bone", "Dildo" } };
+        String[][] args = { { "leather", "rubber", "" }, { "ball", "bone", "dildo" } };
 
         Sequences<String> choices = new Sequences<>();
         for (String word : SequenceUtil.splitWords(template)) {
@@ -98,16 +119,17 @@ public class SRGSBuilderTest {
 
     @Test
     public void testSRGSBuilderMultipleChoiceResults() throws ParserConfigurationException, TransformerException {
-        String template = "A %0 %1, Miss";
-        Choice[] material = { new Choice("Leather"), new Choice("rubber"), Optional };
-        Choice[] dogToy = { new Choice("ball"), new Choice("bone"), new Choice("Dildo") };
-        Choice[][] args = { material, dogToy };
+        String template = "A %0 %1, %2";
+        Choice[] material = { new Choice("leather"), new Choice("rubber"), Optional };
+        Choice[] dogToy = { new Choice("ball"), new Choice("bone"), new Choice("dildo") };
+        Choice[] formOfAddress = { new Choice("#title", "Miss", "Mistress", "dear Mistress") };
+        Choice[][] args = { material, dogToy, formOfAddress };
 
         Sequences<Choice> choices = new Sequences<>();
         for (String word : SequenceUtil.splitWords(template)) {
             if (word.startsWith("%")) {
                 Choice[] arg = args[Integer.parseInt(word.substring(1))];
-                choices.add(new Sequence<>(arg));
+                choices.add(new Sequence<>(arg, Choice::Display));
             } else {
                 // TODO production code would expand text variables
                 choices.add(new Sequence<>(Arrays.asList(new Choice(word)), Choice::Display));
@@ -120,13 +142,22 @@ public class SRGSBuilderTest {
         assertEquals(new Sequence<>(args[1]), choices.get(2));
         assertEquals("Miss", choices.get(3).toString());
 
+        assertEquals("A", choices.get(0).get(0).text);
+        assertEquals("leather", choices.get(1).get(0).text);
+        assertEquals("rubber", choices.get(1).get(1).text);
+        assertEquals("", choices.get(1).get(2).text);
+        assertEquals("ball", choices.get(2).get(0).text);
+        assertEquals("bone", choices.get(2).get(1).text);
+        assertEquals("dildo", choices.get(2).get(2).text);
+        assertEquals("#title", choices.get(3).get(0).text);
+
         // TODO build builds same choice, must build any
         SRGSBuilder<Choice> srgs = new SRGSBuilder<>(choices);
         String xml = srgs.toXML();
         assertFalse(xml.isEmpty());
         System.out.println(xml);
 
-        // TODO This will work only if the host input methods supports multiple choices
+        // TODO This would work only if the host input methods supports multiple choices
 
         // assertRecognized(choices, "A rubber ball Miss", new Prompt.Result(0));
         // assertRecognized(choices, "A leather ball Miss", new Prompt.Result(1));

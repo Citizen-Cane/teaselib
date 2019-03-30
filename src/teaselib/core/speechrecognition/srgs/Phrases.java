@@ -1,10 +1,15 @@
 package teaselib.core.speechrecognition.srgs;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class Phrases extends ArrayList<Sequences<String>> {
     private static final long serialVersionUID = 1L;
+
+    public static Phrases of(String... choices) {
+        return of(Arrays.asList(choices));
+    }
 
     public static Phrases of(List<String> choices) {
         return new Phrases(SequenceUtil.slice(choices));

@@ -16,6 +16,10 @@ public class Sequence<T> extends ArrayList<T> {
         this(Arrays.asList(elements));
     }
 
+    public Sequence(T[] elements, Function<T, String> elementToString) {
+        this(Arrays.asList(elements), elementToString);
+    }
+
     public Sequence(List<T> elements) {
         this(elements, T::toString);
     }
@@ -88,4 +92,5 @@ public class Sequence<T> extends ArrayList<T> {
     public String toString() {
         return stream().map(elementToString).collect(Collectors.joining(" "));
     }
+
 }

@@ -1,7 +1,6 @@
 package teaselib.core.ui;
 
 import java.util.Arrays;
-import java.util.Objects;
 
 import teaselib.motiondetection.Gesture;
 
@@ -36,7 +35,7 @@ public class Choice {
     public int hashCode() {
         final int prime = 31;
         int result = 1;
-        result = prime * result + ((display == null) ? 0 : display.hashCode());
+        result = prime * result + Arrays.hashCode(display);
         result = prime * result + ((gesture == null) ? 0 : gesture.hashCode());
         result = prime * result + ((text == null) ? 0 : text.hashCode());
         return result;
@@ -51,10 +50,7 @@ public class Choice {
         if (getClass() != obj.getClass())
             return false;
         Choice other = (Choice) obj;
-        if (display == null) {
-            if (other.display != null)
-                return false;
-        } else if (!display.equals(other.display))
+        if (!Arrays.equals(display, other.display))
             return false;
         if (gesture != other.gesture)
             return false;

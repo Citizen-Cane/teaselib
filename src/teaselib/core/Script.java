@@ -269,7 +269,7 @@ public abstract class Script {
         Choice choice = showPrompt(prompt).get(0);
         // TODO Multiple choices
 
-        String chosen = "< " + (choice.gesture != Gesture.None ? choice.gesture + ": " : "") + choice.display;
+        String chosen = "< " + choice;
         logger.info("{}", chosen);
         teaseLib.transcript.info(chosen);
 

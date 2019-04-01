@@ -189,7 +189,7 @@ public class SpeechRecognitionInputMethod implements InputMethod {
         speechRecognizer.events.recognitionRejected.add(recognitionRejected);
         speechRecognizer.events.recognitionCompleted.add(recognitionCompleted);
 
-        speechRecognizer.startRecognition(Phrases.of(active.get().choices.toDisplay()), expectedConfidence);
+        speechRecognizer.startRecognition(Phrases.ofPhrases(active.get().choices.toPhrases()), expectedConfidence);
     }
 
     private void disableSpeechRecognition() {

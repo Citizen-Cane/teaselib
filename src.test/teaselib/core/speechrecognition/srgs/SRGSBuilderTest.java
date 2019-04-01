@@ -1,6 +1,7 @@
 package teaselib.core.speechrecognition.srgs;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 import java.util.Arrays;
 import java.util.List;
@@ -122,17 +123,17 @@ public class SRGSBuilderTest {
         String template = "A %0 %1, %2";
         Choice[] material = { new Choice("leather"), new Choice("rubber"), Optional };
         Choice[] dogToy = { new Choice("ball"), new Choice("bone"), new Choice("dildo") };
-        Choice[] formOfAddress = { new Choice("#title", "Miss", "Mistress", "dear Mistress") };
+        Choice[] formOfAddress = { new Choice("#title", "Miss", "Miss", "Mistress", "dear Mistress") };
         Choice[][] args = { material, dogToy, formOfAddress };
 
+        // TODO Choice is not for building phrases since it cannot be converted into a sequence
         Sequences<Choice> choices = new Sequences<>();
         for (String word : SequenceUtil.splitWords(template)) {
             if (word.startsWith("%")) {
                 Choice[] arg = args[Integer.parseInt(word.substring(1))];
-                choices.add(new Sequence<>(arg, Choice::Display));
+                choices.add(new Sequence<>(arg, Choice::getDisplay));
             } else {
-                // TODO production code would expand text variables
-                choices.add(new Sequence<>(Arrays.asList(new Choice(word)), Choice::Display));
+                choices.add(new Sequence<>(Arrays.asList(new Choice(word)), Choice::getDisplay));
             }
         }
 
@@ -151,14 +152,13 @@ public class SRGSBuilderTest {
         assertEquals("dildo", choices.get(2).get(2).text);
         assertEquals("#title", choices.get(3).get(0).text);
 
-        // TODO build builds same choice, must build any
+        // TODO Implement SRGS builder that handles multiple independent choices
         SRGSBuilder<Choice> srgs = new SRGSBuilder<>(choices);
         String xml = srgs.toXML();
         assertFalse(xml.isEmpty());
         System.out.println(xml);
 
-        // TODO This would work only if the host input methods supports multiple choices
-
+        // TODO Implement host input method that supports multiple choices
         // assertRecognized(choices, "A rubber ball Miss", new Prompt.Result(0));
         // assertRecognized(choices, "A leather ball Miss", new Prompt.Result(1));
         // assertRecognized(choices, "A leather bone Miss", new Prompt.Result(1));

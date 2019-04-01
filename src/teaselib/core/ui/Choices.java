@@ -17,11 +17,20 @@ public class Choices extends ArrayList<Choice> {
     }
 
     public List<String> toDisplay() {
-        return stream().map(Choice::Display).collect(Collectors.toList());
+        return stream().map(Choice::getDisplay).collect(Collectors.toList());
     }
 
     public List<Gesture> toGestures() {
         return stream().map(choice -> choice.gesture).collect(Collectors.toList());
+    }
+
+    public List<List<String>> toPhrases() {
+        for (Choice choice : this) {
+            if (choice.phrases.size() != 1) {
+                throw new IllegalArgumentException(choice.toString());
+            }
+        }
+        return stream().map(choice -> choice.phrases).collect(Collectors.toList());
     }
 
     public Choices(Choice... choices) {

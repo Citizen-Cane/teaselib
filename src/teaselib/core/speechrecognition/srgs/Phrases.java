@@ -3,6 +3,7 @@ package teaselib.core.speechrecognition.srgs;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class Phrases extends ArrayList<Sequences<String>> {
     private static final long serialVersionUID = 1L;
@@ -21,5 +22,9 @@ public class Phrases extends ArrayList<Sequences<String>> {
 
     public Sequences<String> flatten() {
         return Sequences.flatten(this);
+    }
+
+    public static Phrases ofPhrases(List<List<String>> phrases) {
+        return of(phrases.stream().map(list -> list.get(0)).collect(Collectors.toList()));
     }
 }

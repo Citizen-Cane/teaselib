@@ -440,7 +440,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
                 final int comboboxIndex = j;
                 for (final int index : new Interval(choices)) {
                     final String text = model.getElementAt(j);
-                    if (text.contains(Choice.Display(choices.get(index)))) {
+                    if (text.contains(Choice.getDisplay(choices.get(index)))) {
                         clickableChoices.set(index, (Runnable) () -> ssComboBox.setSelectedIndex(comboboxIndex));
                     }
                 }
@@ -451,7 +451,7 @@ public class SexScriptsHost implements Host, HostInputMethod.Backend {
             for (final javax.swing.JButton button : buttons) {
                 for (int index : new Interval(choices)) {
                     String buttonText = button.getText();
-                    String choice = Choice.Display(choices.get(index));
+                    String choice = Choice.getDisplay(choices.get(index));
                     if (buttonText.contains(choice)) {
                         clickableChoices.set(index, () -> {
                             button.doClick();

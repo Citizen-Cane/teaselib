@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class Sequences<T> extends ArrayList<Sequence<T>> {
@@ -114,6 +115,11 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
                     listSequence.subList(listSequence.indexOf(match) + match.size(), listSequence.size())));
         }
         return subLists;
+    }
+
+    public int maxLength() {
+        Optional<? extends Sequence<T>> reduced = this.stream().reduce((a, b) -> a.size() > b.size() ? a : b);
+        return reduced.isPresent() ? reduced.get().size() : 0;
     }
 
     public List<String> toStrings() {

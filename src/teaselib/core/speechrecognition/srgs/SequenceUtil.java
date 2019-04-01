@@ -39,7 +39,7 @@ public class SequenceUtil {
         }
         Sequences<String> remainder = commonStart.isEmpty() ? choices : choices.removeIncluding(commonStart);
 
-        while (!remainder.get(0).isEmpty()) {
+        while (remainder.maxLength() > 0) {
             Sequence<String> commonMiddle = remainder.commonMiddle();
             if (!commonMiddle.isEmpty()) {
                 Sequences<String> gap = remainder.removeFrom(commonMiddle);

@@ -4,7 +4,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
 import java.util.Arrays;
-import java.util.List;
 
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
@@ -43,29 +42,6 @@ public class SRGSBuilderTest {
         Sequence<String> test = new Sequence<>(SequenceUtil.splitWords("The dog looked over the fence"));
         assertFalse(test.toString().startsWith("["));
         assertFalse(test.toString().endsWith("]"));
-    }
-
-    @Test
-    public void testSlice() {
-        List<Sequences<String>> slices = SequenceUtil.slice( //
-                "My dog jumped over the fence", //
-                "The dog looked over the fence", //
-                "The dog jumped over the fence", //
-                "The dog jumped over the fence");
-        System.out.println(slices);
-
-        // TODO slice returns list of sequences, each containing a Sequence of of string
-        // -> Sequence<String> is the element type
-
-        // TODO in testSRGSBuilderMultipleChoiceResults the element type T is Choice
-        // - but Sequences requires it to be Sequence<T>
-        //
-
-        // SRGSBuilder needs:
-        // + phrase
-        // + phrase parts (choices or rule)
-        // choice display elements <one-of>
-        // -> List<List<Choice>>, and choice display is kind of a list as well
     }
 
     @Test

@@ -281,9 +281,6 @@ public class SpeechRecognition {
     }
 
     private List<String> backwardCompatibleDeprecated(Phrases phrases) {
-        if (phrases.stream().filter(choices -> choices.size() > 1).count() > 1)
-            throw new UnsupportedOperationException(
-                    "Constructing multiple-choice phrases: " + sr.getClass().getSimpleName());
         return phrases.flatten().toStrings();
     }
 

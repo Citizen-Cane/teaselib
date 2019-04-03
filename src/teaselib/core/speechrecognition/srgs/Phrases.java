@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import teaselib.core.ui.Choice;
 import teaselib.core.ui.Choices;
 
 public class Phrases extends ArrayList<List<Sequence<String>>> {
@@ -37,9 +38,51 @@ public class Phrases extends ArrayList<List<Sequence<String>>> {
     }
 
     public static Phrases of(Choices choices) {
+        List<String> allPhrases = choices.stream().flatMap(choice -> choice.phrases.stream())
+                .collect(Collectors.toList());
+        List<Sequences<String>> sliced = SequenceUtil.slice(allPhrases);
+
+        int ruleIndex = 0;
+        AlternativePhrases phrases = new AlternativePhrases();
+        for (Sequences<String> slice : sliced) {
+            Rule rule = new Rule();
+            phrases.add(rule);
+            int itemIndex = 0;
+            Sequences<String> sequences = sliced.get(ruleIndex);
+            if (sequences.size() == 1) {
+                OneOf oneOf = new OneOf();
+                rule.add(oneOf);
+                oneOf.add(sequences.get(itemIndex).toString());
+            } else {
+                for (Choice choice : choices) {
+                    OneOf oneOf = new OneOf();
+                    rule.add(oneOf);
+                    for (int i = 0; i < choice.phrases.size(); i++) {
+                        oneOf.add(sequences.get(itemIndex + i).toString());
+                    }
+                    itemIndex += choice.phrases.size();
+                }
+            }
+            ruleIndex++;
+        }
         // TODO Phrases of all alternatives
         return null;
         // of(phrases.stream().map(list -> list.get(0)).collect(Collectors.toList()));
     }
 
+    // static class Item extends Sequence<String> {
+    // }
+
+    static class OneOf extends ArrayList<String> {
+    }
+
+    static class Rule extends ArrayList<OneOf> {
+    }
+
+    public static class AlternativePhrases extends ArrayList<Rule> {
+
+        public static AlternativePhrases of(Choices choices) {
+            return null;
+        }
+    }
 }

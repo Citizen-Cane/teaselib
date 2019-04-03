@@ -16,8 +16,8 @@ import org.junit.Test;
 
 import teaselib.core.ResourceLoader;
 import teaselib.core.speechrecognition.implementation.TeaseLibSRGS;
+import teaselib.core.speechrecognition.srgs.Sequence;
 import teaselib.core.speechrecognition.srgs.SequenceUtil;
-import teaselib.core.speechrecognition.srgs.Sequences;
 import teaselib.core.ui.Choice;
 import teaselib.core.ui.Choices;
 import teaselib.core.ui.Prompt;
@@ -48,7 +48,7 @@ public class SpeechRecognitionHandcraftedXmlTest {
         String xml = Stream.toString(resources.get(resource));
         SpeechRecognition sr = new SpeechRecognition(Locale.ENGLISH, TeaseLibSRGS.class) {
             @Override
-            String srgs(List<Sequences<String>> choices) {
+            String srgs(List<List<Sequence<String>>> choices) {
                 return xml;
             }
         };

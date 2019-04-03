@@ -23,7 +23,6 @@ import teaselib.core.speechrecognition.implementation.Unsupported;
 import teaselib.core.speechrecognition.srgs.Phrases;
 import teaselib.core.speechrecognition.srgs.SRGSBuilder;
 import teaselib.core.speechrecognition.srgs.Sequence;
-import teaselib.core.speechrecognition.srgs.Sequences;
 import teaselib.core.texttospeech.TextToSpeech;
 import teaselib.core.util.Environment;
 import teaselib.core.util.ExceptionUtil;
@@ -288,7 +287,7 @@ public class SpeechRecognition {
         return phrases.flatten().toStrings();
     }
 
-    String srgs(List<Sequences<String>> choices) {
+    String srgs(List<List<Sequence<String>>> choices) {
         SRGSBuilder<Sequence<String>> srgs;
         try {
             srgs = new SRGSBuilder<>(choices);

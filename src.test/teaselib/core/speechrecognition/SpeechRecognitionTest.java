@@ -136,4 +136,33 @@ public class SpeechRecognitionTest {
         assertRejected(choices, "Dear Mistress I didn't spurt off");
     }
 
+    @Test
+    public void testSRGSBuilderMultiplePhrases() throws InterruptedException {
+        String[] yes = { //
+                "Yes Miss, of course", //
+                "Yes, of course, Miss", //
+                "Yes, of course", //
+                "of course" };
+        String[] no = { //
+                "No Miss, of course not", //
+                "No, of course not, Miss", //
+                "No, of course not", //
+                "of course not" };
+        Choices choices = new Choices(new Choice("Yes #title, of course", "Yes Miss, of course", yes),
+                new Choice("No #title, of course not", "No Miss, of course not", no));
+        for (String phrase : yes) {
+            assertRecognized(choices, String.join(" ", SequenceUtil.splitWords(phrase)), new Prompt.Result(0));
+        }
+
+        for (String phrase : no) {
+            assertRecognized(choices, String.join(" ", SequenceUtil.splitWords(phrase)), new Prompt.Result(1));
+        }
+
+        assertRejected(choices, "Of not");
+        assertRejected(choices, "Yes Miss");
+
+        assertRejected(choices, "Of not");
+        assertRejected(choices, "No Miss");
+    }
+
 }

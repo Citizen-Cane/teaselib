@@ -25,11 +25,6 @@ public class Choices extends ArrayList<Choice> {
     }
 
     public List<List<String>> toPhrases() {
-        for (Choice choice : this) {
-            if (choice.phrases.size() != 1) {
-                throw new IllegalArgumentException(choice.toString());
-            }
-        }
         return stream().map(choice -> choice.phrases).collect(Collectors.toList());
     }
 

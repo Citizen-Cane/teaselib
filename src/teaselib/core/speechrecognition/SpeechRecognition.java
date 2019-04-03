@@ -18,7 +18,7 @@ import teaselib.core.events.Event;
 import teaselib.core.speechrecognition.events.SpeechRecognitionStartedEventArgs;
 import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
 import teaselib.core.speechrecognition.hypothesis.SpeechDetectionEventHandler;
-import teaselib.core.speechrecognition.implementation.TeaseLibSR;
+import teaselib.core.speechrecognition.implementation.TeaseLibSRGS;
 import teaselib.core.speechrecognition.implementation.Unsupported;
 import teaselib.core.speechrecognition.srgs.Phrases;
 import teaselib.core.speechrecognition.srgs.SRGSBuilder;
@@ -152,7 +152,7 @@ public class SpeechRecognition {
     }
 
     SpeechRecognition(Locale locale) {
-        this(locale, TeaseLibSR.class);
+        this(locale, TeaseLibSRGS.class);
     }
 
     SpeechRecognition(Locale locale, Class<? extends SpeechRecognitionImplementation> srClass) {
@@ -279,7 +279,7 @@ public class SpeechRecognition {
         }
     }
 
-    private List<String> backwardCompatibleDeprecated(Phrases phrases) {
+    private static List<String> backwardCompatibleDeprecated(Phrases phrases) {
         return phrases.flatten().toStrings();
     }
 

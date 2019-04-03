@@ -1,7 +1,6 @@
 package teaselib.core.speechrecognition.srgs;
 
 import java.io.StringWriter;
-import java.util.List;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -22,19 +21,19 @@ import org.w3c.dom.Element;
  * @author Citizen-Cane
  * 
  */
-abstract class AbstractSRGSBuilder<T> {
+abstract class AbstractSRGSBuilder {
 
     static final String MAIN_RULE_NAME = "Main";
     private static final String ruleNodePrefix = "Rule_";
     static final String choiceNodePrefix = "Choice_";
 
+    final Phrases phrases;
     final Document document;
-    final List<? extends List<T>> choices;
 
-    AbstractSRGSBuilder(List<? extends List<T>> choices)
+    AbstractSRGSBuilder(Phrases phrases)
             throws ParserConfigurationException, TransformerFactoryConfigurationError, TransformerException {
+        this.phrases = phrases;
         this.document = createDocument();
-        this.choices = choices;
         buildXML();
     }
 

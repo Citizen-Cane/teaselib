@@ -126,23 +126,4 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
         return stream().map(Sequence::toString).collect(Collectors.toList());
     }
 
-    public static <T> Sequences<T> flatten(List<List<Sequence<T>>> sequences) {
-        int size = SequenceUtil.max(sequences);
-        Sequences<T> flattened = new Sequences<>(size);
-        for (int i = 0; i < size; i++) {
-            Sequence<T> flat = new Sequence<>();
-
-            for (List<Sequence<T>> elements : sequences) {
-                if (elements.size() == 1) {
-                    flat.addAll(elements.get(0));
-                } else {
-                    flat.addAll(elements.get(i));
-                }
-            }
-
-            flattened.add(flat);
-        }
-        return flattened;
-    }
-
 }

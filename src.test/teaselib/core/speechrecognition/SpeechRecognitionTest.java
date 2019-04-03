@@ -1,8 +1,6 @@
 package teaselib.core.speechrecognition;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import java.util.Arrays;
 import java.util.Locale;
@@ -28,9 +26,9 @@ public class SpeechRecognitionTest {
 
     private static final Confidence confidence = Confidence.High;
 
-    private static void assertRecognized(Choices choices, String emulatedRecognitionResult, Prompt.Result expected)
+    private static void assertRecognized(Choices choices, String emulatedRecognitionResult, Prompt.Result expectedRules)
             throws InterruptedException {
-        emulateSpeechRecognition(choices, emulatedRecognitionResult, expected);
+        emulateSpeechRecognition(choices, emulatedRecognitionResult, expectedRules);
     }
 
     private static void assertRejected(Choices choices, String emulatedRecognitionResult) throws InterruptedException {
@@ -38,7 +36,7 @@ public class SpeechRecognitionTest {
     }
 
     private static void emulateSpeechRecognition(Choices choices, String emulatedRecognitionResult,
-            Prompt.Result expected) throws InterruptedException {
+            Prompt.Result expectedRules) throws InterruptedException {
         assertEquals("Emulated speech may not contain punctation: '" + emulatedRecognitionResult + "'",
                 withoutPunctation(emulatedRecognitionResult), emulatedRecognitionResult);
         SpeechRecognition sr = new SpeechRecognition(Locale.ENGLISH, TeaseLibSRGS.class);
@@ -48,7 +46,7 @@ public class SpeechRecognitionTest {
         prompt.lock.lockInterruptibly();
         try {
             inputMethod.show(prompt);
-            awaitResult(sr, prompt, emulatedRecognitionResult, expected);
+            awaitResult(sr, prompt, emulatedRecognitionResult, expectedRules);
         } finally {
             prompt.lock.unlock();
             sr.close();
@@ -59,16 +57,16 @@ public class SpeechRecognitionTest {
         return Arrays.stream(SequenceUtil.splitWords(text)).collect(Collectors.joining(" "));
     }
 
-    private static void awaitResult(SpeechRecognition sr, Prompt prompt, String emulatedText, Prompt.Result expected)
+    private static void awaitResult(SpeechRecognition sr, Prompt prompt, String emulatedText, Prompt.Result expectedRules)
             throws InterruptedException {
         sr.emulateRecogntion(emulatedText);
         boolean dismissed = prompt.click.await(3, TimeUnit.SECONDS);
         if (!dismissed) {
             prompt.dismiss();
         }
-        if (expected != null) {
+        if (expectedRules != null) {
             assertTrue("Expected recognition:: \"" + emulatedText + "\"", dismissed);
-            assertEquals(expected, prompt.result());
+            assertEquals(expectedRules, prompt.result());
         } else {
             assertFalse("Expected rejected: \"" + emulatedText + "\"", dismissed);
         }
@@ -205,11 +203,11 @@ public class SpeechRecognitionTest {
         Choices choices = new Choices(new Choice("Yes #title, of course", "Yes Miss, of course", yes),
                 new Choice("No #title, of course not", "No Miss, of course not", no));
         for (String phrase : yes) {
-            assertRecognized(choices, String.join(" ", SequenceUtil.splitWords(phrase)), new Prompt.Result(0));
+            assertRecognized(choices, String.join(" ", SequenceUtil.splitWords(phrase)), new Prompt.Result(0, 0));
         }
 
         for (String phrase : no) {
-            assertRecognized(choices, String.join(" ", SequenceUtil.splitWords(phrase)), new Prompt.Result(1));
+            assertRecognized(choices, String.join(" ", SequenceUtil.splitWords(phrase)), new Prompt.Result(1, 1));
         }
 
         assertRejected(choices, "Of not");

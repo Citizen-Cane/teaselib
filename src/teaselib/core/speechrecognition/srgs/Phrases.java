@@ -3,38 +3,97 @@ package teaselib.core.speechrecognition.srgs;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import teaselib.core.ui.Choice;
 import teaselib.core.ui.Choices;
 
-public class Phrases extends ArrayList<List<Sequence<String>>> {
+public class Phrases extends ArrayList<Phrases.Rule> {
     private static final long serialVersionUID = 1L;
+
+    public static Rule rule(String... items) {
+        return new Rule(items);
+    }
+
+    public static Rule rule(OneOf... items) {
+        return new Rule(items);
+    }
+
+    public static OneOf oneOf(String item) {
+        return new Phrases.OneOf(item);
+    }
+
+    public static OneOf oneOf(String... items) {
+        return new Phrases.OneOf(items);
+    }
+
+    static class OneOf extends ArrayList<String> {
+        private static final long serialVersionUID = 1L;
+
+        public OneOf() {
+        }
+
+        public OneOf(int capacity) {
+            super(capacity);
+        }
+
+        public OneOf(String item) {
+            add(item);
+        }
+
+        public OneOf(String... items) {
+            for (String item : items) {
+                add(item);
+            }
+        }
+    }
+
+    static class Rule extends ArrayList<OneOf> {
+        private static final long serialVersionUID = 1L;
+
+        public Rule() {
+        }
+
+        public Rule(String... items) {
+            for (String item : items) {
+                add(new OneOf(item));
+            }
+        }
+
+        public Rule(OneOf... items) {
+            for (OneOf item : items) {
+                add(item);
+            }
+        }
+    }
 
     public static Phrases of(String... choices) {
         return of(Arrays.asList(choices));
     }
 
     public static Phrases of(List<String> strings) {
-        return new Phrases(SequenceUtil.slice(strings));
+        return of(new Choices(strings.stream().map(Choice::new).collect(Collectors.toList())));
     }
 
-    private Phrases(List<Sequences<String>> phrases) {
-        super(phrases);
+    private Phrases() {
     }
 
     public Sequences<String> flatten() {
-        return Sequences.flatten(this);
-    }
-
-    public static Phrases ofPhrases(List<List<String>> phrases) {
-        return of(phrases.stream().map(list -> {
-            if (list.size() > 1) {
-                throw new UnsupportedOperationException("Multiple phrases: " + list);
+        int length = maxLength();
+        Sequences<String> flattened = new Sequences<>(length);
+        for (int i = 0; i < length; i++) {
+            Sequence<String> sequence = new Sequence<>();
+            for (Rule elements : this) {
+                if (elements.size() == 1) {
+                    sequence.addAll(elements.get(0));
+                } else {
+                    sequence.addAll(elements.get(i));
+                }
             }
-            // TODO Build phrases object with multiple phrase alternatives
-            return list.get(0);
-        }).collect(Collectors.toList()));
+            flattened.add(sequence);
+        }
+        return flattened;
     }
 
     public static Phrases of(Choices choices) {
@@ -42,47 +101,34 @@ public class Phrases extends ArrayList<List<Sequence<String>>> {
                 .collect(Collectors.toList());
         List<Sequences<String>> sliced = SequenceUtil.slice(allPhrases);
 
-        int ruleIndex = 0;
-        AlternativePhrases phrases = new AlternativePhrases();
-        for (Sequences<String> slice : sliced) {
+        Phrases phrases = new Phrases();
+        for (int ruleIndex = 0; ruleIndex < sliced.size(); ruleIndex++) {
             Rule rule = new Rule();
             phrases.add(rule);
             int itemIndex = 0;
             Sequences<String> sequences = sliced.get(ruleIndex);
             if (sequences.size() == 1) {
-                OneOf oneOf = new OneOf();
-                rule.add(oneOf);
-                oneOf.add(sequences.get(itemIndex).toString());
+                rule.add(new OneOf(sequences.get(itemIndex).toString()));
             } else {
                 for (Choice choice : choices) {
-                    OneOf oneOf = new OneOf();
-                    rule.add(oneOf);
-                    for (int i = 0; i < choice.phrases.size(); i++) {
+                    int size = choice.phrases.size();
+                    OneOf oneOf = new OneOf(size);
+                    for (int i = 0; i < size; i++) {
+                        // TODO Eliminate duplicates here or when building xml
                         oneOf.add(sequences.get(itemIndex + i).toString());
                     }
-                    itemIndex += choice.phrases.size();
+                    rule.add(oneOf);
+                    itemIndex += size;
                 }
             }
-            ruleIndex++;
         }
-        // TODO Phrases of all alternatives
-        return null;
-        // of(phrases.stream().map(list -> list.get(0)).collect(Collectors.toList()));
+
+        return phrases;
     }
 
-    // static class Item extends Sequence<String> {
-    // }
-
-    static class OneOf extends ArrayList<String> {
+    public int maxLength() {
+        Optional<Rule> reduced = stream().reduce((a, b) -> a.size() > b.size() ? a : b);
+        return reduced.isPresent() ? reduced.get().size() : 0;
     }
 
-    static class Rule extends ArrayList<OneOf> {
-    }
-
-    public static class AlternativePhrases extends ArrayList<Rule> {
-
-        public static AlternativePhrases of(Choices choices) {
-            return null;
-        }
-    }
 }

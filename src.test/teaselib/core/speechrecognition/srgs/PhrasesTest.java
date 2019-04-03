@@ -50,12 +50,10 @@ public class PhrasesTest {
 
         assertEquals(3, phrases.size());
 
-        assertEquals(
-                Phrases.rule(Phrases.oneOf("Yes Miss", "Yes", "Yes", ""), Phrases.oneOf("No Miss", "No", "No", "")),
+        assertEquals(Phrases.rule(Phrases.oneOf("Yes Miss", "Yes", ""), Phrases.oneOf("No Miss", "No", "")),
                 phrases.get(0));
         assertEquals(Phrases.rule(Phrases.oneOf("of course")), phrases.get(1));
-        assertEquals(Phrases.rule(Phrases.oneOf("", "Miss", "", ""), Phrases.oneOf("not", "not Miss", "not", "not")),
-                phrases.get(2));
+        assertEquals(Phrases.rule(Phrases.oneOf("", "Miss"), Phrases.oneOf("not", "not Miss")), phrases.get(2));
 
         SRGSBuilder srgs = new SRGSBuilder(phrases);
         String xml = srgs.toXML();

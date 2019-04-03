@@ -62,7 +62,6 @@ public class SRGSBuilder extends AbstractSRGSBuilder {
             } else {
                 Element oneOf = document.createElement("one-of");
                 for (String text : items) {
-                    // TODO Eliminate duplicates here or when slicing the phrase
                     // TODO starting or ending with the same words makes the distinct part optional ("No" vs "No Miss")
                     // -> must be a separate rule path
                     // TODO Empty items make the whole rule optional

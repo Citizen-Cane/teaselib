@@ -114,8 +114,10 @@ public class Phrases extends ArrayList<Phrases.Rule> {
                     int size = choice.phrases.size();
                     OneOf oneOf = new OneOf(size);
                     for (int i = 0; i < size; i++) {
-                        // TODO Eliminate duplicates here or when building xml
-                        oneOf.add(sequences.get(itemIndex + i).toString());
+                        String item = sequences.get(itemIndex + i).toString();
+                        if (!oneOf.contains(item)) {
+                            oneOf.add(item);
+                        }
                     }
                     rule.add(oneOf);
                     itemIndex += size;

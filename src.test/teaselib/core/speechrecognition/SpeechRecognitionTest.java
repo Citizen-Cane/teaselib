@@ -57,8 +57,8 @@ public class SpeechRecognitionTest {
         return Arrays.stream(SequenceUtil.splitWords(text)).collect(Collectors.joining(" "));
     }
 
-    private static void awaitResult(SpeechRecognition sr, Prompt prompt, String emulatedText, Prompt.Result expectedRules)
-            throws InterruptedException {
+    private static void awaitResult(SpeechRecognition sr, Prompt prompt, String emulatedText,
+            Prompt.Result expectedRules) throws InterruptedException {
         sr.emulateRecogntion(emulatedText);
         boolean dismissed = prompt.click.await(3, TimeUnit.SECONDS);
         if (!dismissed) {
@@ -129,8 +129,8 @@ public class SpeechRecognitionTest {
         emulateRecognition(sr, inputMethod, choices, ready3);
     }
 
-    private void emulateRecognition(SpeechRecognition sr, SpeechRecognitionInputMethod inputMethod, Choices choices,
-            String phrase) throws InterruptedException {
+    private static void emulateRecognition(SpeechRecognition sr, SpeechRecognitionInputMethod inputMethod,
+            Choices choices, String phrase) throws InterruptedException {
         Prompt prompt = new Prompt(choices, Arrays.asList(inputMethod));
         prompt.lock.lockInterruptibly();
         try {
@@ -210,11 +210,11 @@ public class SpeechRecognitionTest {
             assertRecognized(choices, String.join(" ", SequenceUtil.splitWords(phrase)), new Prompt.Result(1, 1));
         }
 
-        assertRejected(choices, "Of not");
         assertRejected(choices, "Yes Miss");
-
-        assertRejected(choices, "Of not");
         assertRejected(choices, "No Miss");
+
+        assertRejected(choices, "No Miss of course");
+        assertRejected(choices, "Of not");
     }
 
 }

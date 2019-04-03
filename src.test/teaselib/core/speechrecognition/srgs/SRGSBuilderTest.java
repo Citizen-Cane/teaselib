@@ -15,29 +15,6 @@ import teaselib.core.ui.Choices;
 
 public class SRGSBuilderTest {
 
-    // @Test
-    // public void testSRGSBuildFromListCommonEnd() throws ParserConfigurationException, TransformerException {
-    // Sequences<String> choices = new Sequences<>();
-    // choices.add(new Sequence<>("Yes", "No"));
-    // choices.add(new Sequence<>("Miss"));
-    // SRGSBuilder srgs = new SRGSBuilder(Phrases.of(choices));
-    // String xml = srgs.toXML();
-    // assertFalse(xml.isEmpty());
-    // System.out.println(xml);
-    // }
-    //
-    // @Test
-    // public void testSRGSBuildFromListCommonMiddle() throws ParserConfigurationException, TransformerException {
-    // Sequences<String> choices = new Sequences<>();
-    // choices.add(new Sequence<>("Yes", "No"));
-    // choices.add(new Sequence<>("Miss"));
-    // choices.add(new Sequence<>("Of course", "I'm sorry"));
-    // SRGSBuilder srgs = new SRGSBuilder(Phrases.of(choices));
-    // String xml = srgs.toXML();
-    // assertFalse(xml.isEmpty());
-    // System.out.println(xml);
-    // }
-
     @Test
     public void verifyThatListSequenceToStringOutputsPlainWords() {
         Sequence<String> test = new Sequence<>(SequenceUtil.splitWords("The dog looked over the fence"));

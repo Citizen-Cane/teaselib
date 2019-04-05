@@ -80,10 +80,10 @@ public class Phrases extends ArrayList<Phrases.Rule> {
     }
 
     public Sequences<String> flatten() {
-        int length = maxLength();
-        Sequences<String> flattened = new Sequences<>(length);
-        for (int i = 0; i < length; i++) {
-            Sequence<String> sequence = new Sequence<>();
+        int capaticy = maxLength();
+        StringSequences flattened = StringSequences.ignoreCase(capaticy);
+        for (int i = 0; i < capaticy; i++) {
+            StringSequence sequence = StringSequence.ignoreCase();
             for (Rule elements : this) {
                 if (elements.size() == 1) {
                     sequence.addAll(elements.get(0));
@@ -99,7 +99,7 @@ public class Phrases extends ArrayList<Phrases.Rule> {
     public static Phrases of(Choices choices) {
         List<String> allPhrases = choices.stream().flatMap(choice -> choice.phrases.stream())
                 .collect(Collectors.toList());
-        List<Sequences<String>> sliced = SequenceUtil.slice(allPhrases);
+        List<StringSequences> sliced = StringSequences.slice(allPhrases);
 
         Phrases phrases = new Phrases();
         for (int ruleIndex = 0; ruleIndex < sliced.size(); ruleIndex++) {

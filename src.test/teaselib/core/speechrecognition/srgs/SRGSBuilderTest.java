@@ -1,6 +1,7 @@
 package teaselib.core.speechrecognition.srgs;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 import java.util.Arrays;
 import java.util.stream.Collectors;
@@ -17,7 +18,7 @@ public class SRGSBuilderTest {
 
     @Test
     public void verifyThatListSequenceToStringOutputsPlainWords() {
-        Sequence<String> test = new Sequence<>(SequenceUtil.splitWords("The dog looked over the fence"));
+        StringSequence test = StringSequence.ignoreCase("The dog looked over the fence");
         assertFalse(test.toString().startsWith("["));
         assertFalse(test.toString().endsWith("]"));
     }
@@ -41,7 +42,7 @@ public class SRGSBuilderTest {
         String[][] args = { { "leather", "rubber", "" }, { "ball", "bone", "dildo" } };
 
         Sequences<String> choices = new Sequences<>();
-        for (String word : SequenceUtil.splitWords(template)) {
+        for (String word : StringSequence.splitWords(template)) {
             if (word.startsWith("%")) {
                 String[] arg = args[Integer.parseInt(word.substring(1))];
                 choices.add(new Sequence<>(arg));
@@ -83,7 +84,7 @@ public class SRGSBuilderTest {
 
         // TODO Choice is not for building phrases since it cannot be converted into a sequence
         Sequences<Choice> choices = new Sequences<>();
-        for (String word : SequenceUtil.splitWords(template)) {
+        for (String word : StringSequence.splitWords(template)) {
             if (word.startsWith("%")) {
                 Choice[] arg = args[Integer.parseInt(word.substring(1))];
                 choices.add(new Sequence<>(arg, Choice::getDisplay));

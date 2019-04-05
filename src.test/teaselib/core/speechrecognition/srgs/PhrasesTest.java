@@ -1,6 +1,6 @@
 package teaselib.core.speechrecognition.srgs;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
@@ -38,12 +38,12 @@ public class PhrasesTest {
                 "Yes Miss, of course", //
                 "Yes, of course, Miss", //
                 "Yes, of course", //
-                "of course" };
+                "Of course" };
         String[] no = { //
                 "No Miss, of course not", //
                 "No, of course not, Miss", //
                 "No, of course not", //
-                "of course not" };
+                "Of course not" };
         Choices choices = new Choices(new Choice("Yes #title, of course", "Yes Miss, of course", yes),
                 new Choice("No #title, of course not", "No Miss, of course not", no));
         Phrases phrases = Phrases.of(choices);

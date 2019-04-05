@@ -1,6 +1,8 @@
 package teaselib.core.speechrecognition;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.util.Arrays;
 import java.util.Locale;
@@ -12,7 +14,7 @@ import org.junit.Test;
 
 import teaselib.core.speechrecognition.implementation.TeaseLibSR;
 import teaselib.core.speechrecognition.implementation.TeaseLibSRGS;
-import teaselib.core.speechrecognition.srgs.SequenceUtil;
+import teaselib.core.speechrecognition.srgs.StringSequence;
 import teaselib.core.ui.Choice;
 import teaselib.core.ui.Choices;
 import teaselib.core.ui.Prompt;
@@ -54,7 +56,7 @@ public class SpeechRecognitionTest {
     }
 
     private static String withoutPunctation(String text) {
-        return Arrays.stream(SequenceUtil.splitWords(text)).collect(Collectors.joining(" "));
+        return Arrays.stream(StringSequence.splitWords(text)).collect(Collectors.joining(" "));
     }
 
     private static void awaitResult(SpeechRecognition sr, Prompt prompt, String emulatedText,
@@ -194,20 +196,20 @@ public class SpeechRecognitionTest {
                 "Yes Miss, of course", //
                 "Yes, of course, Miss", //
                 "Yes, of course", //
-                "of course" };
+                "Of course" };
         String[] no = { //
                 "No Miss, of course not", //
                 "No, of course not, Miss", //
                 "No, of course not", //
-                "of course not" };
+                "Of course not" };
         Choices choices = new Choices(new Choice("Yes #title, of course", "Yes Miss, of course", yes),
                 new Choice("No #title, of course not", "No Miss, of course not", no));
         for (String phrase : yes) {
-            assertRecognized(choices, String.join(" ", SequenceUtil.splitWords(phrase)), new Prompt.Result(0, 0));
+            assertRecognized(choices, String.join(" ", StringSequence.splitWords(phrase)), new Prompt.Result(0, 0));
         }
 
         for (String phrase : no) {
-            assertRecognized(choices, String.join(" ", SequenceUtil.splitWords(phrase)), new Prompt.Result(1, 1));
+            assertRecognized(choices, String.join(" ", StringSequence.splitWords(phrase)), new Prompt.Result(1, 1));
         }
 
         assertRejected(choices, "Yes Miss");

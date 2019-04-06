@@ -4,6 +4,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.stream.Collectors;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -11,8 +12,8 @@ import javax.xml.transform.TransformerException;
 
 import org.junit.Test;
 
+import teaselib.core.speechrecognition.srgs.Phrases.OneOf;
 import teaselib.core.ui.Choice;
-import teaselib.core.ui.Choices;
 
 public class SRGSBuilderTest {
 
@@ -36,42 +37,6 @@ public class SRGSBuilderTest {
         System.out.println(xml);
     }
 
-    @Test
-    public void testSRGSBuilderMultipleStringResults() throws ParserConfigurationException, TransformerException {
-        String template = "A %0 %1, Miss";
-        String[][] args = { { "leather", "rubber", "" }, { "ball", "bone", "dildo" } };
-
-        Sequences<String> choices = new Sequences<>();
-        for (String word : StringSequence.splitWords(template)) {
-            if (word.startsWith("%")) {
-                String[] arg = args[Integer.parseInt(word.substring(1))];
-                choices.add(new Sequence<>(arg));
-            } else {
-                choices.add(new Sequence<>(word));
-            }
-        }
-
-        assertEquals(4, choices.size());
-        assertEquals("A", choices.get(0).toString());
-        assertEquals(new Sequence<>(args[0]), choices.get(1));
-        assertEquals(new Sequence<>(args[1]), choices.get(2));
-        assertEquals("Miss", choices.get(3).toString());
-
-        // TODO build builds same choice, must build any
-        SRGSBuilder srgs = new SRGSBuilder(Phrases
-                .of(new Choices(choices.stream().map(seq -> new Choice(seq.toString())).collect(Collectors.toList()))));
-        String xml = srgs.toXML();
-        assertFalse(xml.isEmpty());
-        System.out.println(xml);
-
-        // assertRecognized(choices, "A rubber ball Miss", new Prompt.Result(0));
-        // assertRecognized(choices, "A leather ball Miss", new Prompt.Result(1));
-        // assertRecognized(choices, "A leather bone Miss", new Prompt.Result(1));
-        // assertRecognized(choices, "A rubber bone Miss", new Prompt.Result(0));
-        // assertRecognized(choices, "A dildo Miss", new Prompt.Result(1));
-        // assertRecognized(choices, "A rubber dildo Miss", new Prompt.Result(1));
-    }
-
     static final Choice Optional = new Choice("");
 
     @Test
@@ -82,45 +47,49 @@ public class SRGSBuilderTest {
         Choice[] formOfAddress = { new Choice("#title", "Miss", "Miss", "Mistress", "dear Mistress") };
         Choice[][] args = { material, dogToy, formOfAddress };
 
-        // TODO Choice is not for building phrases since it cannot be converted into a sequence
-        Sequences<Choice> choices = new Sequences<>();
+        Phrases phrases = Phrases.of(Collections.emptyList());
         for (String word : StringSequence.splitWords(template)) {
             if (word.startsWith("%")) {
                 Choice[] arg = args[Integer.parseInt(word.substring(1))];
-                choices.add(new Sequence<>(arg, Choice::getDisplay));
+                Phrases.Rule rule = new Phrases.Rule(
+                        Arrays.stream(arg).map((Choice c) -> new OneOf(c.phrases)).collect(Collectors.toList()));
+                phrases.add(rule);
             } else {
-                choices.add(new Sequence<>(Arrays.asList(new Choice(word)), Choice::getDisplay));
+                phrases.add(Phrases.rule(word));
             }
         }
 
-        assertEquals(4, choices.size());
-        assertEquals("A", choices.get(0).toString());
-        assertEquals(new Sequence<>(args[0]), choices.get(1));
-        assertEquals(new Sequence<>(args[1]), choices.get(2));
-        assertEquals("Miss", choices.get(3).toString());
+        assertEquals(4, phrases.size());
+        assertEquals("[[A]]", phrases.get(0).toString());
+        assertEquals(Phrases.rule("leather", "rubber", ""), phrases.get(1));
+        assertEquals(Phrases.rule("ball", "bone", "dildo"), phrases.get(2));
+        assertEquals(Phrases.rule(new OneOf("Miss", "Mistress", "dear Mistress")), phrases.get(3));
 
-        assertEquals("A", choices.get(0).get(0).text);
-        assertEquals("leather", choices.get(1).get(0).text);
-        assertEquals("rubber", choices.get(1).get(1).text);
-        assertEquals("", choices.get(1).get(2).text);
-        assertEquals("ball", choices.get(2).get(0).text);
-        assertEquals("bone", choices.get(2).get(1).text);
-        assertEquals("dildo", choices.get(2).get(2).text);
-        assertEquals("#title", choices.get(3).get(0).text);
+        assertEquals("A", phrases.get(0).get(0).get(0));
+        assertEquals("leather", phrases.get(1).get(0).get(0));
+        assertEquals("rubber", phrases.get(1).get(1).get(0));
+        assertEquals("", phrases.get(1).get(2).get(0));
+        assertEquals("ball", phrases.get(2).get(0).get(0));
+        assertEquals("bone", phrases.get(2).get(1).get(0));
+        assertEquals("dildo", phrases.get(2).get(2).get(0));
 
-        // TODO Implement SRGS builder that handles multiple independent choices
-        // SRGSBuilder srgs = new SRGSBuilder(choices);
-        // String xml = srgs.toXML();
-        // assertFalse(xml.isEmpty());
-        // System.out.println(xml);
+        assertEquals("Miss", phrases.get(3).get(0).get(0));
+        assertEquals("Mistress", phrases.get(3).get(0).get(1));
+        assertEquals("dear Mistress", phrases.get(3).get(0).get(2));
 
-        // TODO Implement host input method that supports multiple choices
-        // assertRecognized(choices, "A rubber ball Miss", new Prompt.Result(0));
-        // assertRecognized(choices, "A leather ball Miss", new Prompt.Result(1));
-        // assertRecognized(choices, "A leather bone Miss", new Prompt.Result(1));
-        // assertRecognized(choices, "A rubber bone Miss", new Prompt.Result(0));
-        // assertRecognized(choices, "A dildo Miss", new Prompt.Result(1));
-        // assertRecognized(choices, "A rubber dildo Miss", new Prompt.Result(1));
+        // TODO Implement SRGS builder that handles multiple independent phrases
+        SRGSBuilder srgs = new SRGSBuilder(phrases);
+        String xml = srgs.toXML();
+        assertFalse(xml.isEmpty());
+        System.out.println(xml);
+
+        // TODO Implement host input method that supports multiple phrases
+        // assertRecognized(phrases, "A rubber ball Miss", new Prompt.Result(0));
+        // assertRecognized(phrases, "A leather ball Miss", new Prompt.Result(1));
+        // assertRecognized(phrases, "A leather bone Miss", new Prompt.Result(1));
+        // assertRecognized(phrases, "A rubber bone Miss", new Prompt.Result(0));
+        // assertRecognized(phrases, "A dildo Miss", new Prompt.Result(1));
+        // assertRecognized(phrases, "A rubber dildo Miss", new Prompt.Result(1));
     }
 
 }

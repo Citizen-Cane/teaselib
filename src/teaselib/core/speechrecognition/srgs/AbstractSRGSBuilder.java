@@ -24,8 +24,8 @@ import org.w3c.dom.Element;
 abstract class AbstractSRGSBuilder {
 
     static final String MAIN_RULE_NAME = "Main";
-    private static final String ruleNodePrefix = "Rule_";
-    static final String choiceNodePrefix = "Choice_";
+    private static final String RULE_NODE_PREFIX = "Rule_";
+    static final String CHOICE_NODE_PREFIX = "Choice_";
 
     final Phrases phrases;
     final Document document;
@@ -46,7 +46,7 @@ abstract class AbstractSRGSBuilder {
     abstract void buildXML() throws TransformerFactoryConfigurationError, TransformerException;
 
     static String ruleName(int index) {
-        return ruleNodePrefix + index;
+        return RULE_NODE_PREFIX + index;
     }
 
     Element createGrammar() {

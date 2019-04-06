@@ -47,6 +47,12 @@ public class Phrases extends ArrayList<Phrases.Rule> {
                 add(item);
             }
         }
+
+        public OneOf(List<String> items) {
+            for (String item : items) {
+                add(item);
+            }
+        }
     }
 
     static class Rule extends ArrayList<OneOf> {
@@ -62,6 +68,12 @@ public class Phrases extends ArrayList<Phrases.Rule> {
         }
 
         public Rule(OneOf... items) {
+            for (OneOf item : items) {
+                add(item);
+            }
+        }
+
+        public Rule(List<OneOf> items) {
             for (OneOf item : items) {
                 add(item);
             }
@@ -102,30 +114,34 @@ public class Phrases extends ArrayList<Phrases.Rule> {
         List<StringSequences> sliced = StringSequences.slice(allPhrases);
 
         Phrases phrases = new Phrases();
-        for (int ruleIndex = 0; ruleIndex < sliced.size(); ruleIndex++) {
-            Rule rule = new Rule();
-            phrases.add(rule);
-            int itemIndex = 0;
-            Sequences<String> sequences = sliced.get(ruleIndex);
-            if (sequences.size() == 1) {
-                rule.add(new OneOf(sequences.get(itemIndex).toString()));
-            } else {
-                for (Choice choice : choices) {
-                    int size = choice.phrases.size();
-                    OneOf oneOf = new OneOf(size);
-                    for (int i = 0; i < size; i++) {
-                        String item = sequences.get(itemIndex + i).toString();
-                        if (!oneOf.contains(item)) {
-                            oneOf.add(item);
-                        }
-                    }
-                    rule.add(oneOf);
-                    itemIndex += size;
-                }
-            }
+        for (int index = 0; index < sliced.size(); index++) {
+            phrases.add(rule(choices, sliced, index));
         }
 
         return phrases;
+    }
+
+    private static Rule rule(Choices choices, List<StringSequences> sliced, int ruleIndex) {
+        Rule rule = new Rule();
+        Sequences<String> sequences = sliced.get(ruleIndex);
+        if (sequences.size() == 1) {
+            rule.add(new OneOf(sequences.get(0).toString()));
+        } else {
+            int itemIndex = 0;
+            for (Choice choice : choices) {
+                int size = choice.phrases.size();
+                OneOf oneOf = new OneOf(size);
+                for (int i = 0; i < size; i++) {
+                    String item = sequences.get(itemIndex + i).toString();
+                    if (!oneOf.contains(item)) {
+                        oneOf.add(item);
+                    }
+                }
+                rule.add(oneOf);
+                itemIndex += size;
+            }
+        }
+        return rule;
     }
 
     public int maxLength() {

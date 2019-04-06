@@ -57,7 +57,7 @@ public class SRGSBuilder extends AbstractSRGSBuilder {
 
             Phrases.OneOf items = speechPart.get(i);
             if (items.size() == 1) {
-                String text = items.get(0).toString();
+                String text = items.get(0);
                 appendText(rule, text);
             } else {
                 Element oneOf = document.createElement("one-of");
@@ -91,7 +91,7 @@ public class SRGSBuilder extends AbstractSRGSBuilder {
     }
 
     private static String choiceName(int index, int i) {
-        return choiceNodePrefix + index + "_" + i;
+        return CHOICE_NODE_PREFIX + index + "_" + i;
     }
 
 }

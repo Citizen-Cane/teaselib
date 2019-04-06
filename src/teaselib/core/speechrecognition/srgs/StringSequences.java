@@ -43,11 +43,15 @@ public class StringSequences extends Sequences<String> {
     }
 
     public static List<StringSequences> slice(List<String> choices) {
-        StringSequences sequences = StringSequences.ignoreCase(choices.size());
-        for (String choice : choices) {
-            sequences.add(StringSequence.ignoreCase(choice));
+        if (choices.isEmpty()) {
+            return Collections.emptyList();
+        } else {
+            StringSequences sequences = StringSequences.ignoreCase(choices.size());
+            for (String choice : choices) {
+                sequences.add(StringSequence.ignoreCase(choice));
+            }
+            return slice(sequences);
         }
-        return slice(sequences);
     }
 
     public static List<StringSequences> slice(StringSequences choices) {

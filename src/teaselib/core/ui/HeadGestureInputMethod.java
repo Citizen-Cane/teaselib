@@ -8,7 +8,9 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
+import teaselib.Answer.Meaning;
 import teaselib.motiondetection.Gesture;
 import teaselib.motiondetection.MotionDetector;
 import teaselib.motiondetection.MotionDetector.MotionSensitivity;
@@ -35,7 +37,8 @@ public class HeadGestureInputMethod extends AbstractInputMethod {
     private static Prompt.Result awaitGesture(MotionDetector motionDetector, Prompt prompt) {
         return motionDetector.call(() -> {
             motionDetector.setSensitivity(MotionSensitivity.High);
-            List<Gesture> gestures = prompt.choices.toGestures();
+            List<Gesture> gestures = prompt.choices.stream().map(HeadGestureInputMethod::gesture)
+                    .collect(Collectors.toList());
             while (!Thread.currentThread().isInterrupted()) {
                 Gesture gesture = motionDetector.await(gestures, Double.MAX_VALUE);
                 if (supported(gesture)) {
@@ -47,6 +50,15 @@ public class HeadGestureInputMethod extends AbstractInputMethod {
             }
             return Prompt.Result.UNDEFINED;
         });
+    }
+
+    private static Gesture gesture(Choice choice) {
+        if (choice.answer.meaning == Meaning.YES)
+            return Gesture.Nod;
+        else if (choice.answer.meaning == Meaning.NO)
+            return Gesture.Shake;
+        else
+            return Gesture.None;
     }
 
     private static boolean supported(Gesture gesture) {

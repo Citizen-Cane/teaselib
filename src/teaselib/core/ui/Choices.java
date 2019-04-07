@@ -7,21 +7,17 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import teaselib.motiondetection.Gesture;
+import teaselib.Answer.Meaning;
 
 public class Choices extends ArrayList<Choice> {
     private static final long serialVersionUID = 1L;
 
     public List<String> toText() {
-        return stream().map(choice -> choice.text).collect(Collectors.toList());
+        return stream().map(choice -> choice.answer.text.get(0)).collect(Collectors.toList());
     }
 
     public List<String> toDisplay() {
         return stream().map(Choice::getDisplay).collect(Collectors.toList());
-    }
-
-    public List<Gesture> toGestures() {
-        return stream().map(choice -> choice.gesture).collect(Collectors.toList());
     }
 
     public List<List<String>> toPhrases() {
@@ -43,9 +39,10 @@ public class Choices extends ArrayList<Choice> {
     }
 
     private static void checkForDuplicates(Choices choices) {
-        check(choices.toText(), "Duplicate result text");
+        check(choices.stream().flatMap(choice -> choice.answer.text.stream()).collect(Collectors.toList()),
+                "Duplicate result text");
         check(choices.toDisplay(), "Duplicate display texts");
-        check(choices.toGestures().stream().filter(gesture -> gesture != Gesture.None).collect(Collectors.toList()),
+        check(choices.stream().filter(choice -> choice.answer.meaning != Meaning.RESUME).collect(Collectors.toList()),
                 "Duplicate gestures");
     }
 

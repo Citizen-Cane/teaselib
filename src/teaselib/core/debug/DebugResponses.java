@@ -74,7 +74,8 @@ public class DebugResponses {
     public static Result getResponse(List<Choice> choices, ResponseAction entry, Result bestResult) {
         Pattern choice = WildcardPattern.compile(entry.match);
         for (int i = 0; i < choices.size(); i++) {
-            if (choice.matcher(choices.get(i).text).matches()
+            // TODO Match against all text elements
+            if (choice.matcher(choices.get(i).answer.text.get(0)).matches()
                     && (bestResult == null || bestResult.response == Response.Ignore)) {
                 try {
                     bestResult = new Result(entry.match, i, entry.getResponse().call());

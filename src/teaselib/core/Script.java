@@ -40,7 +40,6 @@ import teaselib.core.util.ExceptionUtil;
 import teaselib.core.util.ObjectMap;
 import teaselib.core.util.QualifiedItem;
 import teaselib.core.util.ReflectionUtils;
-import teaselib.motiondetection.Gesture;
 import teaselib.motiondetection.MotionDetector;
 import teaselib.util.SpeechRecognitionRejectedScript;
 import teaselib.util.TextVariables;
@@ -273,30 +272,14 @@ public abstract class Script {
         logger.info("{}", chosen);
         teaseLib.transcript.info(chosen);
 
-        int index = choices.indexOf(choice);
-        if (index >= 0) {
-            return answers.get(index);
-        } else {
-            // TODO resolves issues with this in user scripts (timeout, etc.)
-            return Answer.resume(choice.text);
-        }
+        return choice.answer;
     }
 
     private Choices choices(List<Answer> answers) {
-        List<Choice> choices = answers
-                .stream().map(answer -> new Choice(gesture(answer), answer.text.get(0),
-                        expandTextVariables(answer.text.get(0)), expandTextVariables(answer.text)))
+        List<Choice> choices = answers.stream().map(
+                answer -> new Choice(answer, expandTextVariables(answer.text.get(0)), expandTextVariables(answer.text)))
                 .collect(Collectors.toList());
         return new Choices(choices);
-    }
-
-    private static Gesture gesture(Answer answer) {
-        if (answer.meaning == Meaning.YES)
-            return Gesture.Nod;
-        else if (answer.meaning == Meaning.NO)
-            return Gesture.Shake;
-        else
-            return Gesture.None;
     }
 
     private List<Choice> showPrompt(Prompt prompt) {
@@ -328,7 +311,7 @@ public abstract class Script {
 
         if (teaseLib.item(TeaseLib.DefaultDomain, Gadgets.Webcam).isAvailable()
                 && teaseLib.state(TeaseLib.DefaultDomain, Body.InMouth).applied()
-                && choices.toGestures().stream().filter(gesture -> gesture != Gesture.None).count() > 0) {
+                && choices.stream().filter(choice -> choice.answer.meaning != Meaning.RESUME).count() > 0) {
             inputMethods.add(new HeadGestureInputMethod(scriptRenderer.getInputMethodExecutorService(),
                     teaseLib.devices.get(MotionDetector.class)::getDefaultDevice));
         }

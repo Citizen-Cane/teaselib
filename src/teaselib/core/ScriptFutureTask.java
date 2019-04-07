@@ -10,12 +10,13 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import teaselib.Answer;
 import teaselib.ScriptFunction;
 import teaselib.core.debug.CheckPoint;
 import teaselib.core.ui.Prompt;
 import teaselib.core.util.ExceptionUtil;
 
-public class ScriptFutureTask extends FutureTask<String> {
+public class ScriptFutureTask extends FutureTask<Answer> {
     private static final Logger logger = LoggerFactory.getLogger(ScriptFutureTask.class);
 
     private final ScriptFunction scriptFunction;
@@ -30,7 +31,7 @@ public class ScriptFutureTask extends FutureTask<String> {
         super(() -> {
             script.teaseLib.checkPointReached(CheckPoint.ScriptFunction.Started);
             try {
-                String result = scriptFunction.call();
+                Answer result = scriptFunction.call();
                 if (Thread.interrupted()) {
                     throw new InterruptedException();
                 }
@@ -125,10 +126,10 @@ public class ScriptFutureTask extends FutureTask<String> {
     }
 
     @Override
-    public String get() throws InterruptedException, ExecutionException {
+    public Answer get() throws InterruptedException, ExecutionException {
         try {
             logger.info("Waiting for script task {} to join", prompt);
-            String result = super.get();
+            Answer result = super.get();
             forwardErrorsAsRuntimeException();
             return result;
         } catch (CancellationException e) {

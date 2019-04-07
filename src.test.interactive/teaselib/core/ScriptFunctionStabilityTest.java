@@ -8,7 +8,7 @@ import static org.junit.Assert.*;
 import org.junit.Before;
 import org.junit.Test;
 
-import teaselib.TeaseScript;
+import teaselib.ScriptFunction;
 import teaselib.core.configuration.DebugSetup;
 import teaselib.test.TestScript;
 
@@ -56,7 +56,7 @@ public class ScriptFunctionStabilityTest {
 
         for (int i = 0; i < ITERATIONS; i++) {
             script.say("In main script.");
-            assertEquals(TeaseScript.Timeout, script.reply(() -> {
+            assertEquals(ScriptFunction.TimeoutString, script.reply(() -> {
                 script.say("Start of script function 1.");
                 assertEquals("No Level 1", script.reply("Yes Level 1", "No Level 1"));
 
@@ -79,10 +79,10 @@ public class ScriptFunctionStabilityTest {
 
         for (int i = 0; i < ITERATIONS; i++) {
             script.say("In main script.");
-            assertEquals(TeaseScript.Timeout, script.reply(() -> {
+            assertEquals(ScriptFunction.TimeoutString, script.reply(() -> {
                 script.say("Start of script function 1.");
 
-                assertEquals(TeaseScript.Timeout, script.reply(() -> {
+                assertEquals(ScriptFunction.TimeoutString, script.reply(() -> {
                     script.say("Start of script function 2.");
                     assertEquals("No Level 2", script.reply("No Level 2", "Yes Level 2"));
 

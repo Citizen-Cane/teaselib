@@ -21,6 +21,10 @@ public class Choice {
         this.phrases = phrases;
     }
 
+    public Choice(Answer answer) {
+        this(answer, answer.text.get(0), answer.text);
+    }
+
     public Choice(Answer answer, String display) {
         this(answer, display, Collections.singletonList(display));
     }

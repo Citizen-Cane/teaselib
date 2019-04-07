@@ -23,25 +23,6 @@ public class Answers extends ArrayList<Answer> {
         super(size);
     }
 
-    /**
-     * Searches all answers in the list for the given string.
-     * 
-     * @param answer
-     *            The string to search for.
-     * @return Returns the index of the {@link Answer} that contains the string, or -1 if not found.
-     */
-    public int indexOf(String answer) {
-        int index = 0;
-        for (Answer element : this) {
-            if (element.text.equals(answer)) {
-                return index;
-            } else {
-                index++;
-            }
-        }
-        return -1;
-    }
-
     protected static Answers of(List<String> text) {
         Answers answers = new Answers(text.size());
         for (String answer : text) {

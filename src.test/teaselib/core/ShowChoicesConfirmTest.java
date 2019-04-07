@@ -37,7 +37,7 @@ public class ShowChoicesConfirmTest {
         script.debugger.addResponse(new Debugger.ResponseAction(choice, chooseAfterTimeout(script, start, 1000)));
 
         script.say("Foobar");
-        assertEquals(ScriptFunction.Timeout,
+        assertEquals(ScriptFunction.TimeoutString,
                 script.reply(script.timeoutWithConfirmation(1, TimeoutBehavior.InDubioContraReum), choice));
     }
 

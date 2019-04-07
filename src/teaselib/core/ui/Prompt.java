@@ -20,7 +20,7 @@ import teaselib.core.util.ExceptionUtil;
 
 public class Prompt {
     private static final List<Choice> SCRIPTFUNCTION_TIMEOUT = Collections
-            .singletonList(new Choice(ScriptFunction.Timeout, ScriptFunction.Timeout));
+            .singletonList(new Choice(ScriptFunction.Timeout));
 
     public static class Result {
         public static final Result UNDEFINED = new Result(Integer.MIN_VALUE);

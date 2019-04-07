@@ -15,7 +15,7 @@ import org.junit.runners.MethodSorters;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
-import teaselib.TeaseScript;
+import teaselib.ScriptFunction;
 import teaselib.test.IntegrationTests;
 
 @Category(IntegrationTests.class)
@@ -59,7 +59,7 @@ public class ShowChoicesTestErrorHandling extends ShowChoicesAbstractTest {
         debugger.addResponse("Stop", Debugger.Response.Ignore);
 
         script.say("In main script.");
-        assertEquals(TeaseScript.Timeout, script.reply(() -> {
+        assertEquals(ScriptFunction.TimeoutString, script.reply(() -> {
             if (throwWhen == THROW_RIGHT_AT_START)
                 throwTestException();
             script.say("Inside script function.");
@@ -77,7 +77,7 @@ public class ShowChoicesTestErrorHandling extends ShowChoicesAbstractTest {
         debugger.addResponse("No", Debugger.Response.Choose);
 
         script.say("In main script.");
-        assertEquals(TeaseScript.Timeout, script.reply(() -> {
+        assertEquals(ScriptFunction.TimeoutString, script.reply(() -> {
             script.say("Start of script function.");
             if (throwWhen == THROW_RIGHT_AT_START)
                 throwTestException();
@@ -96,11 +96,11 @@ public class ShowChoicesTestErrorHandling extends ShowChoicesAbstractTest {
         debugger.addResponse("Wow*", Debugger.Response.Choose);
 
         script.say("In main script.");
-        assertEquals(TeaseScript.Timeout, script.reply(() -> {
+        assertEquals(ScriptFunction.TimeoutString, script.reply(() -> {
             script.say("Start of script function 1.");
             assertEquals("No Level 1", script.reply("Yes Level 1", "No Level 1"));
 
-            assertEquals(TeaseScript.Timeout, script.reply(() -> {
+            assertEquals(ScriptFunction.TimeoutString, script.reply(() -> {
                 script.say("Start of script function 2.");
                 if (throwWhen == THROW_RIGHT_AT_START)
                     throwTestException();
@@ -124,15 +124,15 @@ public class ShowChoicesTestErrorHandling extends ShowChoicesAbstractTest {
         debugger.addResponse("Oh*3", Debugger.Response.Choose);
 
         script.say("In main script.");
-        assertEquals(TeaseScript.Timeout, script.reply(() -> {
+        assertEquals(ScriptFunction.TimeoutString, script.reply(() -> {
             script.say("Start of script function 1.");
             assertEquals("No Level 1", script.reply("Yes Level 1", "No Level 1"));
 
-            assertEquals(TeaseScript.Timeout, script.reply(() -> {
+            assertEquals(ScriptFunction.TimeoutString, script.reply(() -> {
                 script.say("Start of script function 2.");
                 assertEquals("Wow Level 2", script.reply("Wow Level 2", "Oh Level 2"));
 
-                assertEquals(TeaseScript.Timeout, script.reply(() -> {
+                assertEquals(ScriptFunction.TimeoutString, script.reply(() -> {
                     script.say("Start of script function 3.");
                     if (throwWhen == THROW_RIGHT_AT_START)
                         throwTestException();

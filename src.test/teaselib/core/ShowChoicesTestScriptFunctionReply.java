@@ -13,7 +13,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.MethodSorters;
 import org.junit.runners.Parameterized;
 
-import teaselib.TeaseScript;
+import teaselib.ScriptFunction;
 import teaselib.test.IntegrationTests;
 
 @Category(IntegrationTests.class)
@@ -57,7 +57,7 @@ public class ShowChoicesTestScriptFunctionReply extends ShowChoicesAbstractTest 
         debugger.addResponse("Stop*", Debugger.Response.Choose);
 
         script.say("In main script.");
-        assertEquals(TeaseScript.Timeout, script.reply(() -> {
+        assertEquals(ScriptFunction.TimeoutString, script.reply(() -> {
             script.say("Start of script function 1.");
             assertEquals("No Level 1", script.reply("Yes Level 1", "No Level 1"));
 
@@ -78,10 +78,10 @@ public class ShowChoicesTestScriptFunctionReply extends ShowChoicesAbstractTest 
         debugger.addResponse("Stop*", Debugger.Response.Choose);
 
         script.say("In main script.");
-        assertEquals(TeaseScript.Timeout, script.reply(() -> {
+        assertEquals(ScriptFunction.TimeoutString, script.reply(() -> {
             script.say("Start of script function 1.");
 
-            assertEquals(TeaseScript.Timeout, script.reply(() -> {
+            assertEquals(ScriptFunction.TimeoutString, script.reply(() -> {
                 script.say("Start of script function 2.");
                 assertEquals("No Level 2", script.reply("No Level 2", "Yes Level 2"));
 

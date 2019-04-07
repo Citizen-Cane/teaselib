@@ -1,7 +1,6 @@
 package teaselib.core;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.*;
 
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
@@ -100,14 +99,14 @@ public class ScriptFunctionTest {
                 say("In main script.");
                 result.set(reply(() -> {
                     say("Inside script function.");
-                    return ScriptFunction.Timeout;
+                    return ScriptFunction.TimeoutString;
                 }, "Finished"));
                 say("Resuming main script.");
             }
         };
 
         codeCoverage.run(scriptSupplier);
-        assertEquals(ScriptFunction.Timeout, result.get());
+        assertEquals(ScriptFunction.TimeoutString, result.get());
 
         codeCoverage.run(scriptSupplier);
         assertEquals("Finished", result.get());
@@ -132,7 +131,7 @@ public class ScriptFunctionTest {
         };
 
         codeCoverage.run(scriptSupplier);
-        assertEquals(ScriptFunction.Timeout, result.get());
+        assertEquals(ScriptFunction.TimeoutString, result.get());
 
         codeCoverage.run(scriptSupplier);
         assertEquals("Finished", result.get());
@@ -156,7 +155,7 @@ public class ScriptFunctionTest {
         };
 
         codeCoverage.run(scriptSupplier);
-        assertEquals(ScriptFunction.Timeout, result.get());
+        assertEquals(ScriptFunction.TimeoutString, result.get());
 
         codeCoverage.run(scriptSupplier);
         assertEquals("Finished", result.get());
@@ -179,7 +178,7 @@ public class ScriptFunctionTest {
         };
 
         codeCoverage.run(scriptSupplier);
-        assertEquals(ScriptFunction.Timeout, result.get());
+        assertEquals(ScriptFunction.TimeoutString, result.get());
 
         codeCoverage.run(scriptSupplier);
         assertEquals("Finished", result.get());
@@ -202,7 +201,7 @@ public class ScriptFunctionTest {
         };
 
         codeCoverage.run(scriptSupplier);
-        assertEquals(ScriptFunction.Timeout, result.get());
+        assertEquals(ScriptFunction.TimeoutString, result.get());
 
         codeCoverage.run(scriptSupplier);
         assertEquals("Finished", result.get());
@@ -225,7 +224,7 @@ public class ScriptFunctionTest {
         };
 
         codeCoverage.run(scriptSupplier);
-        assertEquals(ScriptFunction.Timeout, result.get());
+        assertEquals(ScriptFunction.TimeoutString, result.get());
 
         codeCoverage.run(scriptSupplier);
         assertEquals("Finished", result.get());
@@ -259,15 +258,15 @@ public class ScriptFunctionTest {
         };
 
         codeCoverage.run(scriptSupplier);
-        assertEquals(ScriptFunction.Timeout, result1.get());
-        assertEquals(ScriptFunction.Timeout, result2.get());
+        assertEquals(ScriptFunction.TimeoutString, result1.get());
+        assertEquals(ScriptFunction.TimeoutString, result2.get());
 
         codeCoverage.run(scriptSupplier);
         assertEquals("Finished 1", result1.get());
-        assertEquals(ScriptFunction.Timeout, result2.get());
+        assertEquals(ScriptFunction.TimeoutString, result2.get());
 
         codeCoverage.run(scriptSupplier);
-        assertEquals(ScriptFunction.Timeout, result1.get());
+        assertEquals(ScriptFunction.TimeoutString, result1.get());
         assertEquals("Finished 2", result2.get());
 
         codeCoverage.run(scriptSupplier);

@@ -9,9 +9,14 @@ import teaselib.functional.RunnableScript;
  */
 public class ScriptFunction {
     /**
+     * Return string to state that the script function has timed out.
+     */
+    public static final String TimeoutString = "Timeout";
+
+    /**
      * Return value to state that the script function has timed out.
      */
-    public static final String Timeout = "Timeout";
+    public static final Answer Timeout = Answer.resume(TimeoutString);
 
     /**
      * To sleep infinitely.
@@ -33,7 +38,7 @@ public class ScriptFunction {
         Confirmation
     }
 
-    private final CallableScript<String> script;
+    private final CallableScript<Answer> script;
     /**
      * The type of this script function;
      */
@@ -50,16 +55,16 @@ public class ScriptFunction {
         }, relation);
     }
 
-    public ScriptFunction(CallableScript<String> script) {
+    public ScriptFunction(CallableScript<Answer> script) {
         this(script, Relation.Autonomous);
     }
 
-    public ScriptFunction(CallableScript<String> script, Relation relation) {
+    public ScriptFunction(CallableScript<Answer> script, Relation relation) {
         this.script = script;
         this.relation = relation;
     }
 
-    public String call() {
+    public Answer call() {
         return script.call();
     }
 }

@@ -37,11 +37,6 @@ public abstract class TeaseScript extends TeaseScriptMath {
     private static final Logger logger = LoggerFactory.getLogger(TeaseScript.class);
 
     /**
-     * see {@link teaselib.ScriptFunction#Timeout}
-     */
-    public static final String Timeout = ScriptFunction.Timeout;
-
-    /**
      * Create a sub-script with the same actor as the parent.
      * 
      * @param script
@@ -312,7 +307,8 @@ public abstract class TeaseScript extends TeaseScriptMath {
     }
 
     public final String reply(CallableScript<String> script, List<String> text) {
-        return showChoices(Answers.of(text), new ScriptFunction(script)).text.get(0);
+        CallableScript<Answer> stringAdapter = () -> Answer.resume(script.call());
+        return showChoices(Answers.of(text), new ScriptFunction(stringAdapter)).text.get(0);
     }
 
     /**
@@ -336,10 +332,11 @@ public abstract class TeaseScript extends TeaseScriptMath {
     }
 
     public final String reply(CallableScript<String> script, String text, String... more) {
-        return showChoices(Answers.of(text, more), new ScriptFunction(script)).text.get(0);
+        CallableScript<Answer> stringAdapter = () -> Answer.resume(script.call());
+        return showChoices(Answers.of(text, more), new ScriptFunction(stringAdapter)).text.get(0);
     }
 
-    protected String awaitTimeout(long seconds, SpeechRecognition.TimeoutBehavior timeoutBehavior) {
+    protected Answer awaitTimeout(long seconds, SpeechRecognition.TimeoutBehavior timeoutBehavior) {
         AtomicBoolean ignoreTimeoutInDubioMitius = new AtomicBoolean(false);
 
         Event<SpeechRecognitionControl, SpeechRecognizedEventArgs> recognitionRejected;
@@ -370,13 +367,13 @@ public abstract class TeaseScript extends TeaseScriptMath {
                 speechDetectedEvents.remove(recognitionRejected);
             }
         }
-        String result;
+        Answer result;
         if (ignoreTimeoutInDubioMitius.get()) {
             logger.info(/* relation + */ " timeout ignored {}", timeoutBehavior);
             result = null;
         } else {
             logger.info("Script function confirm timeout");
-            result = Timeout;
+            result = ScriptFunction.Timeout;
         }
 
         return result;
@@ -426,7 +423,7 @@ public abstract class TeaseScript extends TeaseScriptMath {
 
     public ScriptFunction timeoutWithConfirmation(long seconds, SpeechRecognition.TimeoutBehavior timeoutBehavior) {
         return new ScriptFunction(() -> {
-            String result = awaitTimeout(seconds, timeoutBehavior);
+            Answer result = awaitTimeout(seconds, timeoutBehavior);
             sleep(ScriptFunction.Infinite, TimeUnit.SECONDS);
             return result;
         }, Relation.Confirmation);
@@ -495,7 +492,7 @@ public abstract class TeaseScript extends TeaseScriptMath {
         return showChoices(Answers.of(answer, more), new ScriptFunction(script));
     }
 
-    public final Answer reply(CallableScript<String> script, Answer answer, Answer... more) {
+    public final Answer reply(CallableScript<Answer> script, Answer answer, Answer... more) {
         return showChoices(Answers.of(answer, more), new ScriptFunction(script));
     }
 
@@ -562,7 +559,7 @@ public abstract class TeaseScript extends TeaseScriptMath {
         return showChoices(Arrays.asList(Answer.no(no)), new ScriptFunction(script)).text.get(0) == no;
     }
 
-    public final boolean deny(CallableScript<String> script, String no) {
+    public final boolean deny(CallableScript<Answer> script, String no) {
         return showChoices(Arrays.asList(Answer.no(no)), new ScriptFunction(script)).text.get(0) == no;
     }
 
@@ -578,7 +575,7 @@ public abstract class TeaseScript extends TeaseScriptMath {
         return showChoices(Arrays.asList(Answer.yes(yes)), new ScriptFunction(script)).text.get(0) == yes;
     }
 
-    public final boolean agree(CallableScript<String> script, String yes) {
+    public final boolean agree(CallableScript<Answer> script, String yes) {
         return showChoices(Arrays.asList(Answer.yes(yes)), new ScriptFunction(script)).text.get(0) == yes;
     }
 
@@ -598,7 +595,7 @@ public abstract class TeaseScript extends TeaseScriptMath {
         showChoices(Arrays.asList(chat), new ScriptFunction(script), Intention.Chat);
     }
 
-    public final void chat(CallableScript<String> script, Answer chat) {
+    public final void chat(CallableScript<Answer> script, Answer chat) {
         showChoices(Arrays.asList(chat), new ScriptFunction(script), Intention.Chat);
     }
 

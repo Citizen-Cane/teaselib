@@ -32,7 +32,7 @@ public class ShowChoicesAutoConfirmTest {
         script.debugger.addResponse(choice, Debugger.Response.Ignore);
 
         script.say("Foobar");
-        assertEquals(ScriptFunction.Timeout,
+        assertEquals(ScriptFunction.TimeoutString,
                 script.reply(script.timeoutWithAutoConfirmation(1, TimeoutBehavior.InDubioContraReum), choice));
     }
 }

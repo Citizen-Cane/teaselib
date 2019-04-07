@@ -45,12 +45,12 @@ public class KeyReleaseSetup extends TeaseScript {
                 append(Mood.Strict, "Please activate the key release device you want to use!");
                 showInterTitle("Activating key release device!");
                 Answer no = Answer.no("It doesn't work, #title");
-                String deviceConnected = "Device connected, #title";
+                Answer deviceConnected = Answer.resume("Device connected, #title");
                 Answer reply = reply(new ScriptFunction(() -> {
                     DeviceCache.connect(keyRelease);
                     return deviceConnected;
-                }, Relation.Confirmation), Answer.yes(deviceConnected), no);
-                if (reply.text.contains(deviceConnected)) {
+                }, Relation.Confirmation), deviceConnected, no);
+                if (reply == deviceConnected) {
                     if (keyRelease.connected()) {
                         showInterTitle("Device connected.");
                     } else {

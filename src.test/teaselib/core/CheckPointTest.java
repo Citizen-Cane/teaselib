@@ -1,6 +1,6 @@
 package teaselib.core;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -50,7 +50,7 @@ public class CheckPointTest {
         assertEquals(1, checkPoints.actual.get());
     }
 
-    private CheckPointTester genericSequential() {
+    private static CheckPointTester genericSequential() {
         CheckPointTester checkPoints = new CheckPointTester() {
             @Override
             public void checkPointReached(CheckPoint checkPoint) {
@@ -71,7 +71,7 @@ public class CheckPointTest {
 
         script.debugger.addResponse("Finished", Response.Ignore);
         script.teaseLib.addCheckPointListener(checkPoints);
-        assertEquals(ScriptFunction.Timeout, script.reply(() -> script.say("test"), "Finished"));
+        assertEquals(ScriptFunction.TimeoutString, script.reply(() -> script.say("test"), "Finished"));
         script.teaseLib.removeCheckPointListener(checkPoints);
 
         checkPoints.throwCatchedException();
@@ -88,7 +88,7 @@ public class CheckPointTest {
         script.debugger.addResponse("Finished", Response.Ignore);
         script.teaseLib.addCheckPointListener(checkPoints);
         script.teaseLib.addTimeAdvancedListener(tal);
-        assertEquals(ScriptFunction.Timeout, script.reply(() -> script.say("test"), "Finished"));
+        assertEquals(ScriptFunction.TimeoutString, script.reply(() -> script.say("test"), "Finished"));
         script.teaseLib.removeCheckPointListener(checkPoints);
         script.teaseLib.removeTimeAdvancedListener(tal);
 
@@ -108,7 +108,7 @@ public class CheckPointTest {
         script.debugger.addResponse("Finished", Response.Ignore);
         script.teaseLib.addCheckPointListener(checkPoints);
         script.teaseLib.addTimeAdvancedListener(tal);
-        assertEquals(ScriptFunction.Timeout, script.reply(() -> script.say("test"), "Finished"));
+        assertEquals(ScriptFunction.TimeoutString, script.reply(() -> script.say("test"), "Finished"));
         script.teaseLib.removeCheckPointListener(checkPoints);
         script.teaseLib.removeTimeAdvancedListener(tal);
 
@@ -133,7 +133,7 @@ public class CheckPointTest {
         assertEquals(0, checkPoints.actual.get());
     }
 
-    private CheckPointTester genericScriptFunction(boolean withTimeAdvanceListener) {
+    private static CheckPointTester genericScriptFunction(boolean withTimeAdvanceListener) {
         return new CheckPointTester() {
             @Override
             public void checkPointReached(CheckPoint checkPoint) {

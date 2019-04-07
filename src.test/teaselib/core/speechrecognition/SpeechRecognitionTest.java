@@ -1,8 +1,6 @@
 package teaselib.core.speechrecognition;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import java.util.Arrays;
 import java.util.Locale;
@@ -217,6 +215,16 @@ public class SpeechRecognitionTest {
 
         assertRejected(choices, "No Miss of course");
         assertRejected(choices, "Of not");
+    }
+
+    @Test
+    public void testSRGSBuilderMultiplePhrasesAreDistinct() throws InterruptedException {
+        String[] yes = { //
+                "Yes Miss, of course", //
+                "Of course, Miss" };
+        Choices choices = new Choices(new Choice("Yes #title, of course", "Yes Miss, of course", yes));
+
+        assertRejected(choices, "Of course");
     }
 
 }

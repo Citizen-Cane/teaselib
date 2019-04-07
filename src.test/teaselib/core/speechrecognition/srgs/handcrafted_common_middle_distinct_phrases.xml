@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<grammar xmlns="http://www.w3.org/2001/06/grammar" root="Main"
+	tag-format="semantics/1.0" version="1.0" xml:lang="en-US">
+	<!-- handcrafted_srg.xml: Defines an SRGS grammar for testing
+		Node Rule_1_Result is needed to access Rule_2_Choice_1 as its child
+	 
+	<example>  Yes Miss of course </example>
+	<example>  Of course Miss </example>
+	 -->
+	
+	<rule id="Main" scope="public">
+		<one-of>
+			<item>
+				<ruleref uri="#Choice_0_0" />
+				<ruleref uri="#Rule_1" />
+			</item>
+			<item>
+				<ruleref uri="#Rule_1" />
+				<ruleref uri="#Choice_2_0" />
+			</item>
+		</one-of>
+	</rule>
+
+	<rule id="Choice_0_0" scope="private">
+		Yes Miss
+	</rule>
+
+	<rule id="Rule_1" scope="private">
+		of course
+	</rule>
+
+	<rule id="Choice_2_0" scope="private">
+		Miss
+	</rule>
+
+</grammar>

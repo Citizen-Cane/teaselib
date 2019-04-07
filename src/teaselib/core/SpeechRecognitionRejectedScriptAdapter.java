@@ -50,7 +50,7 @@ final class SpeechRecognitionRejectedScriptAdapter extends SpeechRecognitionReje
     }
 
     @Override
-    protected String showChoices(List<Answer> answers, ScriptFunction scriptFunction, Intention intention) {
+    protected Answer showChoices(List<Answer> answers, ScriptFunction scriptFunction, Intention intention) {
         finishedWithPrompt = true;
         return super.showChoices(answers, scriptFunction, intention);
     }

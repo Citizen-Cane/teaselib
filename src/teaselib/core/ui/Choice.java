@@ -1,6 +1,7 @@
 package teaselib.core.ui;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import teaselib.motiondetection.Gesture;
@@ -15,19 +16,19 @@ public class Choice {
         return choice.display;
     }
 
-    public Choice(Gesture gesture, String choice, String display, String... phrases) {
+    public Choice(Gesture gesture, String choice, String display, List<String> phrases) {
         this.gesture = gesture;
         this.text = choice;
         this.display = display;
-        this.phrases = (Arrays.asList(phrases));
+        this.phrases = phrases;
     }
 
     public Choice(Gesture gesture, String text, String display) {
-        this(gesture, text, display, display);
+        this(gesture, text, display, Collections.singletonList(display));
     }
 
     public Choice(String text, String display, String... phrases) {
-        this(Gesture.None, text, display, phrases);
+        this(Gesture.None, text, display, Arrays.asList(phrases));
     }
 
     public Choice(String text, String display) {

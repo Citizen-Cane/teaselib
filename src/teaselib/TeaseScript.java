@@ -276,7 +276,7 @@ public abstract class TeaseScript extends TeaseScriptMath {
      * @return The choice object that has been selected by the user.
      */
     public final String reply(List<String> text) {
-        return showChoices(Answers.of(text), null);
+        return showChoices(Answers.of(text), null).text.get(0);
     }
 
     /**
@@ -290,7 +290,7 @@ public abstract class TeaseScript extends TeaseScriptMath {
      * @return The choice object that has been selected by the user.
      */
     public final String reply(String answer, String... more) {
-        return showChoices(Answers.of(answer, more));
+        return showChoices(Answers.of(answer, more)).text.get(0);
     }
 
     /**
@@ -304,15 +304,15 @@ public abstract class TeaseScript extends TeaseScriptMath {
      */
 
     public final String reply(ScriptFunction scriptFunction, List<String> text) {
-        return showChoices(Answers.of(text), scriptFunction);
+        return showChoices(Answers.of(text), scriptFunction).text.get(0);
     }
 
     public final String reply(RunnableScript script, List<String> text) {
-        return showChoices(Answers.of(text), new ScriptFunction(script));
+        return showChoices(Answers.of(text), new ScriptFunction(script)).text.get(0);
     }
 
     public final String reply(CallableScript<String> script, List<String> text) {
-        return showChoices(Answers.of(text), new ScriptFunction(script));
+        return showChoices(Answers.of(text), new ScriptFunction(script)).text.get(0);
     }
 
     /**
@@ -328,15 +328,15 @@ public abstract class TeaseScript extends TeaseScriptMath {
      */
 
     public final String reply(ScriptFunction scriptFunction, String text, String... more) {
-        return showChoices(Answers.of(text, more), scriptFunction);
+        return showChoices(Answers.of(text, more), scriptFunction).text.get(0);
     }
 
     public final String reply(RunnableScript script, String text, String... more) {
-        return showChoices(Answers.of(text, more), new ScriptFunction(script));
+        return showChoices(Answers.of(text, more), new ScriptFunction(script)).text.get(0);
     }
 
     public final String reply(CallableScript<String> script, String text, String... more) {
-        return showChoices(Answers.of(text, more), new ScriptFunction(script));
+        return showChoices(Answers.of(text, more), new ScriptFunction(script)).text.get(0);
     }
 
     protected String awaitTimeout(long seconds, SpeechRecognition.TimeoutBehavior timeoutBehavior) {
@@ -483,48 +483,48 @@ public abstract class TeaseScript extends TeaseScriptMath {
         return answers.indexOf(showChoices(answers));
     }
 
-    public final String reply(Answer... answers) {
+    public final Answer reply(Answer... answers) {
         return showChoices(Arrays.asList(answers));
     }
 
-    public final String reply(ScriptFunction scriptFunction, Answer answer, Answer... more) {
+    public final Answer reply(ScriptFunction scriptFunction, Answer answer, Answer... more) {
         return showChoices(Answers.of(answer, more), scriptFunction);
     }
 
-    public final String reply(RunnableScript script, Answer answer, Answer... more) {
+    public final Answer reply(RunnableScript script, Answer answer, Answer... more) {
         return showChoices(Answers.of(answer, more), new ScriptFunction(script));
     }
 
-    public final String reply(CallableScript<String> script, Answer answer, Answer... more) {
+    public final Answer reply(CallableScript<String> script, Answer answer, Answer... more) {
         return showChoices(Answers.of(answer, more), new ScriptFunction(script));
     }
 
-    public final String reply(ScriptFunction scriptFunction, Answers answers) {
+    public final Answer reply(ScriptFunction scriptFunction, Answers answers) {
         return showChoices(answers, scriptFunction);
     }
 
-    public final String reply(Intention intention, Answer... answers) {
+    public final Answer reply(Intention intention, Answer... answers) {
         return showChoices(Arrays.asList(answers), null, intention);
     }
 
-    public final String reply(ScriptFunction scriptFunction, Intention intention, Answer... answers) {
+    public final Answer Answer(ScriptFunction scriptFunction, Intention intention, Answer... answers) {
         return showChoices(Arrays.asList(answers), scriptFunction, intention);
     }
 
-    public final String reply(ScriptFunction scriptFunction, Intention intention, Answers answers) {
+    public final Answer Answer(ScriptFunction scriptFunction, Intention intention, Answers answers) {
         return showChoices(answers, scriptFunction, intention);
     }
 
     public final String reply(Intention intention, String answer) {
-        return showChoices(Answers.of(answer), null, intention);
+        return showChoices(Answers.of(answer), null, intention).text.get(0);
     }
 
     public final String reply(Intention intention, List<String> answers) {
-        return showChoices(Answers.of(answers), null, intention);
+        return showChoices(Answers.of(answers), null, intention).text.get(0);
     }
 
     public final String reply(ScriptFunction scriptFunction, Intention intention, List<String> answers) {
-        return showChoices(Answers.of(answers), scriptFunction, intention);
+        return showChoices(Answers.of(answers), scriptFunction, intention).text.get(0);
     }
 
     /**
@@ -538,15 +538,16 @@ public abstract class TeaseScript extends TeaseScriptMath {
      * @return True if {@code yes} has been selected, false if {@code no} has been selected.
      */
     public final boolean askYN(String yes, String no) {
-        return showChoices(Arrays.asList(Answer.yes(yes), Answer.no(no)), null) == yes;
+        return showChoices(Arrays.asList(Answer.yes(yes), Answer.no(no)), null).text.get(0) == yes;
     }
 
     public final boolean askYN(ScriptFunction scriptFunction, String yes, String no) {
-        return showChoices(Arrays.asList(Answer.yes(yes), Answer.no(no)), scriptFunction) == yes;
+        return showChoices(Arrays.asList(Answer.yes(yes), Answer.no(no)), scriptFunction).text.get(0) == yes;
     }
 
     public final boolean askYN(RunnableScript script, String yes, String no) {
-        return showChoices(Arrays.asList(Answer.yes(yes), Answer.no(no)), new ScriptFunction(script)) == yes;
+        return showChoices(Arrays.asList(Answer.yes(yes), Answer.no(no)), new ScriptFunction(script)).text
+                .get(0) == yes;
     }
 
     public final void deny(String no) {
@@ -554,15 +555,15 @@ public abstract class TeaseScript extends TeaseScriptMath {
     }
 
     public final boolean deny(ScriptFunction scriptFunction, String no) {
-        return showChoices(Arrays.asList(Answer.no(no)), scriptFunction) == no;
+        return showChoices(Arrays.asList(Answer.no(no)), scriptFunction).text.get(0) == no;
     }
 
     public final boolean deny(RunnableScript script, String no) {
-        return showChoices(Arrays.asList(Answer.no(no)), new ScriptFunction(script)) == no;
+        return showChoices(Arrays.asList(Answer.no(no)), new ScriptFunction(script)).text.get(0) == no;
     }
 
     public final boolean deny(CallableScript<String> script, String no) {
-        return showChoices(Arrays.asList(Answer.no(no)), new ScriptFunction(script)) == no;
+        return showChoices(Arrays.asList(Answer.no(no)), new ScriptFunction(script)).text.get(0) == no;
     }
 
     public final void agree(String yes) {
@@ -570,15 +571,15 @@ public abstract class TeaseScript extends TeaseScriptMath {
     }
 
     public final boolean agree(ScriptFunction scriptFunction, String yes) {
-        return showChoices(Arrays.asList(Answer.yes(yes)), scriptFunction) == yes;
+        return showChoices(Arrays.asList(Answer.yes(yes)), scriptFunction).text.get(0) == yes;
     }
 
     public final boolean agree(RunnableScript script, String yes) {
-        return showChoices(Arrays.asList(Answer.yes(yes)), new ScriptFunction(script)) == yes;
+        return showChoices(Arrays.asList(Answer.yes(yes)), new ScriptFunction(script)).text.get(0) == yes;
     }
 
     public final boolean agree(CallableScript<String> script, String yes) {
-        return showChoices(Arrays.asList(Answer.yes(yes)), new ScriptFunction(script)) == yes;
+        return showChoices(Arrays.asList(Answer.yes(yes)), new ScriptFunction(script)).text.get(0) == yes;
     }
 
     public final void chat(String chat) {

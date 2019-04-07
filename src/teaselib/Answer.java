@@ -1,5 +1,8 @@
 package teaselib;
 
+import java.util.Collections;
+import java.util.List;
+
 /**
  * @author Citizen-Cane
  *
@@ -11,7 +14,7 @@ public class Answer {
         RESUME
     }
 
-    public final String text;
+    public final List<String> text;
     public final Meaning meaning;
 
     public static Answer yes(String text) {
@@ -27,7 +30,7 @@ public class Answer {
     }
 
     public Answer(String text, Meaning meaning) {
-        this.text = text;
+        this.text = Collections.singletonList(text);
         this.meaning = meaning;
     }
 

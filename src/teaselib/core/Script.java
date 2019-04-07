@@ -218,7 +218,7 @@ public abstract class Script {
                 decorators(Optional.of(scriptRenderer.messageRenderer.textToSpeechPlayer)));
     }
 
-    protected final String showChoices(List<Answer> answers) {
+    protected final Answer showChoices(List<Answer> answers) {
         return showChoices(answers, null);
     }
 
@@ -227,7 +227,7 @@ public abstract class Script {
      * 
      * @see Script#showChoices(List, ScriptFunction, Confidence)
      */
-    protected final String showChoices(List<Answer> answers, ScriptFunction scriptFunction) {
+    protected final Answer showChoices(List<Answer> answers, ScriptFunction scriptFunction) {
         return showChoices(answers, scriptFunction,
                 scriptFunction != null || answers.size() > 1 ? Intention.Decide : Intention.Confirm);
     }
@@ -247,7 +247,7 @@ public abstract class Script {
      * @return The choice made by the user, {@link ScriptFunction#Timeout} if the function has ended, or a custom result
      *         value set by the script function.
      */
-    protected String showChoices(List<Answer> answers, ScriptFunction scriptFunction,
+    protected Answer showChoices(List<Answer> answers, ScriptFunction scriptFunction,
             Config.SpeechRecognition.Intention intention) {
         if (scriptRenderer.hasPrependedMessages()) {
             Optional<TextToSpeechPlayer> textToSpeech = getTextToSpeech(true);
@@ -273,12 +273,19 @@ public abstract class Script {
         logger.info("{}", chosen);
         teaseLib.transcript.info(chosen);
 
-        return choice.text;
+        int index = choices.indexOf(choice);
+        if (index >= 0) {
+            return answers.get(index);
+        } else {
+            // TODO resolves issues with this in user scripts (timeout, etc.)
+            return Answer.resume(choice.text);
+        }
     }
 
     private Choices choices(List<Answer> answers) {
-        List<Choice> choices = answers.stream()
-                .map(answer -> new Choice(gesture(answer), answer.text, expandTextVariables(answer.text)))
+        List<Choice> choices = answers
+                .stream().map(answer -> new Choice(gesture(answer), answer.text.get(0),
+                        expandTextVariables(answer.text.get(0)), expandTextVariables(answer.text)))
                 .collect(Collectors.toList());
         return new Choices(choices);
     }
@@ -370,16 +377,16 @@ public abstract class Script {
         }
     }
 
-    public List<String> expandTextVariables(List<String> prompts) {
-        return allTextVariables().expand(prompts);
+    public List<String> expandTextVariables(List<String> strings) {
+        return allTextVariables().expand(strings);
     }
 
     /**
      * Expand text variables. Expands all text variables({@link teaselib.util.TextVariables#Defaults},
      * {@link teaselib.core.TeaseLib#getTextVariables}, {@link teaselib.Actor#textVariables}.
      */
-    public String expandTextVariables(String s) {
-        return allTextVariables().expand(s);
+    public String expandTextVariables(String string) {
+        return allTextVariables().expand(string);
     }
 
     private TextVariables allTextVariables() {

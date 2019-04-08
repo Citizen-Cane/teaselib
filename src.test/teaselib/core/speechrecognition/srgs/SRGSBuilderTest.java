@@ -3,9 +3,9 @@ package teaselib.core.speechrecognition.srgs;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.Collections;
-import java.util.stream.Collectors;
+import java.util.List;
 
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
@@ -48,22 +48,26 @@ public class SRGSBuilderTest {
         Choice[][] args = { material, dogToy, formOfAddress };
 
         Phrases phrases = Phrases.of(Collections.emptyList());
+        int ruleIndex = 0;
         for (String word : StringSequence.splitWords(template)) {
             if (word.startsWith("%")) {
                 Choice[] arg = args[Integer.parseInt(word.substring(1))];
-                Phrases.Rule rule = new Phrases.Rule(
-                        Arrays.stream(arg).map((Choice c) -> new OneOf(c.phrases)).collect(Collectors.toList()));
+                List<OneOf> items = new ArrayList<>();
+                Phrases.Rule rule = new Phrases.Rule(ruleIndex++, items);
+                for (int choiceIndex = 0; choiceIndex < arg.length; choiceIndex++) {
+                    rule.add(new OneOf(choiceIndex, arg[choiceIndex].phrases));
+                }
                 phrases.add(rule);
             } else {
-                phrases.add(Phrases.rule(word));
+                phrases.add(Phrases.rule(ruleIndex++, word));
             }
         }
 
         assertEquals(4, phrases.size());
         assertEquals("[[A]]", phrases.get(0).toString());
-        assertEquals(Phrases.rule("leather", "rubber", ""), phrases.get(1));
-        assertEquals(Phrases.rule("ball", "bone", "dildo"), phrases.get(2));
-        assertEquals(Phrases.rule(new OneOf("Miss", "Mistress", "dear Mistress")), phrases.get(3));
+        assertEquals(Phrases.rule(0, "leather", "rubber", ""), phrases.get(1));
+        assertEquals(Phrases.rule(0, "ball", "bone", "dildo"), phrases.get(2));
+        assertEquals(Phrases.rule(0, new OneOf(2, "Miss", "Mistress", "dear Mistress")), phrases.get(3));
 
         assertEquals("A", phrases.get(0).get(0).get(0));
         assertEquals("leather", phrases.get(1).get(0).get(0));

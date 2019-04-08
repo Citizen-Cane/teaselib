@@ -17,6 +17,8 @@ import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
+import teaselib.core.speechrecognition.srgs.Phrases.Rule;
+
 /**
  * @author Citizen-Cane
  * 
@@ -45,8 +47,8 @@ abstract class AbstractSRGSBuilder {
 
     abstract void buildXML() throws TransformerFactoryConfigurationError, TransformerException;
 
-    static String ruleName(int index) {
-        return RULE_NODE_PREFIX + index;
+    static String ruleName(Rule rule) {
+        return RULE_NODE_PREFIX + rule.index;
     }
 
     Element createGrammar() {

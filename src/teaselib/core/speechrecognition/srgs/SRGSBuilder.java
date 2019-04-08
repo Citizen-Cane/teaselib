@@ -9,6 +9,8 @@ import javax.xml.transform.TransformerFactoryConfigurationError;
 
 import org.w3c.dom.Element;
 
+import teaselib.core.speechrecognition.srgs.Phrases.Rule;
+
 public class SRGSBuilder extends AbstractSRGSBuilder {
     public SRGSBuilder(Phrases phrases) throws ParserConfigurationException, TransformerException {
         super(phrases);
@@ -19,11 +21,9 @@ public class SRGSBuilder extends AbstractSRGSBuilder {
         Element grammar = createGrammar();
         List<Element> inventoryItems = createMainRule(grammar);
 
-        int index = 0;
-        for (Phrases.Rule speechPart : phrases) {
-            if (!speechPart.isEmpty()) {
-                createRule(grammar, inventoryItems, index, speechPart);
-                index++;
+        for (Phrases.Rule rule : phrases) {
+            if (!rule.isEmpty()) {
+                createRule(grammar, inventoryItems, rule);
             }
         }
     }
@@ -43,22 +43,22 @@ public class SRGSBuilder extends AbstractSRGSBuilder {
         return inventoryItems;
     }
 
-    private void createRule(Element grammar, List<Element> inventoryItems, int index, Phrases.Rule speechPart) {
-        String name = createRule(grammar, index, speechPart);
-        addRuleToInventory(inventoryItems, index, speechPart, name);
+    private void createRule(Element grammar, List<Element> inventoryItems, Phrases.Rule speechPart) {
+        String name = createRule(grammar, speechPart);
+        addRuleToInventory(inventoryItems, speechPart, name);
     }
 
-    private String createRule(Element grammar, int index, Phrases.Rule speechPart) {
-        String name = ruleName(index);
-        for (int i = 0; i < speechPart.size(); i++) {
-            String id = speechPart.size() > 1 ? choiceName(index, i) : name;
-            Element rule = createRule(id);
-            grammar.appendChild(rule);
+    private String createRule(Element grammar, Phrases.Rule rule) {
+        String name = ruleName(rule);
+        for (Phrases.OneOf items : rule) {
 
-            Phrases.OneOf items = speechPart.get(i);
+            String id = rule.size() > 1 ? choiceName(rule, items.choiceIndex) : name;
+            Element ruleElement = createRule(id);
+            grammar.appendChild(ruleElement);
+
             if (items.size() == 1) {
                 String text = items.get(0);
-                appendText(rule, text);
+                appendText(ruleElement, text);
             } else {
                 Element oneOf = document.createElement("one-of");
                 for (String text : items) {
@@ -67,31 +67,39 @@ public class SRGSBuilder extends AbstractSRGSBuilder {
                     // TODO Empty items make the whole rule optional
                     // -> must be a separate rule path
                     Element item = document.createElement("item");
-                    appendText(item, text);
                     oneOf.appendChild(item);
+                    appendText(item, text);
                 }
-                rule.appendChild(oneOf);
+                ruleElement.appendChild(oneOf);
             }
         }
         return name;
     }
 
-    private void addRuleToInventory(List<Element> inventoryItems, int index, Phrases.Rule speechPart, String name) {
-        if (speechPart.size() == 1) {
-            for (Element element : inventoryItems) {
-                element.appendChild(ruleRef(name));
-            }
-        } else if (speechPart.size() == inventoryItems.size()) {
-            for (int i = 0; i < speechPart.size(); i++) {
-                inventoryItems.get(i).appendChild(ruleRef(choiceName(index, i)));
-            }
+    private void addRuleToInventory(List<Element> inventoryItems, Phrases.Rule rule, String name) {
+        if (rule.size() == 1) {
+            appendRuleRefToAllChoices(inventoryItems, name);
+        } else if (rule.size() == inventoryItems.size()) {
+            appendRuleRefToEachChoice(inventoryItems, rule);
         } else {
             throw new IllegalArgumentException("Choices must be all different or all the same");
         }
     }
 
-    private static String choiceName(int index, int i) {
-        return CHOICE_NODE_PREFIX + index + "_" + i;
+    private void appendRuleRefToAllChoices(List<Element> inventoryItems, String name) {
+        for (Element element : inventoryItems) {
+            element.appendChild(ruleRef(name));
+        }
+    }
+
+    private void appendRuleRefToEachChoice(List<Element> inventoryItems, Phrases.Rule rule) {
+        for (int choiceIndex = 0; choiceIndex < rule.size(); choiceIndex++) {
+            inventoryItems.get(choiceIndex).appendChild(ruleRef(choiceName(rule, choiceIndex)));
+        }
+    }
+
+    private static String choiceName(Rule rule, int choiceIndex) {
+        return CHOICE_NODE_PREFIX + rule.index + "_" + choiceIndex;
     }
 
 }

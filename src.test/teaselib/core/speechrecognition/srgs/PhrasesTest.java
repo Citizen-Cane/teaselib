@@ -22,9 +22,9 @@ public class PhrasesTest {
 
         assertEquals(3, phrases.size());
 
-        assertEquals(new Phrases.Rule("Yes Miss", "No"), phrases.get(0));
-        assertEquals(new Phrases.Rule("of course"), phrases.get(1));
-        assertEquals(new Phrases.Rule("", "not Miss"), phrases.get(2));
+        assertEquals(new Phrases.Rule(0, "Yes Miss", "No"), phrases.get(0));
+        assertEquals(new Phrases.Rule(1, "of course"), phrases.get(1));
+        assertEquals(new Phrases.Rule(2, "", "not Miss"), phrases.get(2));
 
         SRGSBuilder srgs = new SRGSBuilder(phrases);
         String xml = srgs.toXML();
@@ -50,10 +50,11 @@ public class PhrasesTest {
 
         assertEquals(3, phrases.size());
 
-        assertEquals(Phrases.rule(Phrases.oneOf("Yes Miss", "Yes", ""), Phrases.oneOf("No Miss", "No", "")),
+        assertEquals(Phrases.rule(0, Phrases.oneOf(0, "Yes Miss", "Yes", ""), Phrases.oneOf(1, "No Miss", "No", "")),
                 phrases.get(0));
-        assertEquals(Phrases.rule(Phrases.oneOf("of course")), phrases.get(1));
-        assertEquals(Phrases.rule(Phrases.oneOf("", "Miss"), Phrases.oneOf("not", "not Miss")), phrases.get(2));
+        assertEquals(Phrases.rule(1, Phrases.oneOf(0, "of course")), phrases.get(1));
+        assertEquals(Phrases.rule(2, Phrases.oneOf(0, "", "Miss"), Phrases.oneOf(1, "not", "not Miss")),
+                phrases.get(2));
 
         SRGSBuilder srgs = new SRGSBuilder(phrases);
         String xml = srgs.toXML();

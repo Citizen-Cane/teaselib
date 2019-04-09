@@ -27,14 +27,14 @@ public class Geom {
 
     public static List<Partition<Rect>.Group> partition(List<Rect> rectangles, int distance) {
         final int distance2 = distance * distance;
-        Partition.Members<Rect> members = (rect1, rect2) -> distance2(rect1, rect2) < distance2;
-        Partition.Join<Rect> order = (rect1, rect2) -> {
+        Partition.Siblings<Rect> closeToEachOther = (rect1, rect2) -> distance2(rect1, rect2) < distance2;
+        Partition.Join<Rect> joinRectangles = (rect1, rect2) -> {
             Rect group = new Rect(rect1);
             join(group, rect2, group);
             return group;
         };
-        Comparator<Rect> comperator = (r1, r2) -> r1.area() - r2.area();
-        Partition<Rect> partition = new Partition<>(rectangles, members, order, comperator);
+        Comparator<Rect> largest = (r1, r2) -> r1.area() - r2.area();
+        Partition<Rect> partition = new Partition<>(rectangles, closeToEachOther, joinRectangles, largest);
         return partition.groups;
     }
 

@@ -10,7 +10,7 @@ import java.util.function.Consumer;
 
 public class Partition<K> {
     @FunctionalInterface
-    public static interface Members<K> {
+    public static interface Siblings<K> {
         boolean similar(K item1, K item2);
     }
 
@@ -20,7 +20,7 @@ public class Partition<K> {
     }
 
     public final List<Group> groups;
-    final Members<K> measure;
+    final Siblings<K> siblings;
     final Join<K> join;
 
     public class Group implements Iterable<K> {
@@ -66,20 +66,20 @@ public class Partition<K> {
         }
     }
 
-    public Partition(List<K> items, Members<K> measure) {
+    public Partition(List<K> items, Siblings<K> measure) {
         this(items, measure, (a, b) -> a, null);
     }
 
-    public Partition(List<K> items, Members<K> measure, Join<K> order) {
+    public Partition(List<K> items, Siblings<K> measure, Join<K> order) {
         this(items, measure, order, null);
     }
 
-    public Partition(List<K> items, Members<K> measure, Join<K> order, final Comparator<K> comperator) {
-        this.measure = measure;
-        this.join = order;
+    public Partition(List<K> items, Siblings<K> siblings, Join<K> joiner, final Comparator<K> comperator) {
+        this.siblings = siblings;
+        this.join = joiner;
         this.groups = new ArrayList<>();
 
-        createInitialGroups(items, measure);
+        createInitialGroups(items);
         joinGroups();
 
         if (comperator != null) {
@@ -87,11 +87,11 @@ public class Partition<K> {
         }
     }
 
-    private void createInitialGroups(List<K> items, Members<K> measure) {
+    private void createInitialGroups(List<K> items) {
         for (K item : items) {
             boolean grouped = false;
             for (Group group : groups) {
-                if (measure.similar(item, group.orderingElement)) {
+                if (siblings.similar(item, group.orderingElement)) {
                     group.join(new Group(item));
                     grouped = true;
                     break;
@@ -108,15 +108,16 @@ public class Partition<K> {
         do {
             groupsJoined = false;
             for (int i = groups.size() - 1; i >= 0; i--) {
-                groupsJoined = joinGroup(groupsJoined, i);
+                groupsJoined = joinGroup(i);
             }
         } while (groupsJoined && groups.size() > 1);
     }
 
-    private boolean joinGroup(boolean groupsJoined, int i) {
+    private boolean joinGroup(int i) {
+        Group groupI = groups.get(i);
+        boolean groupsJoined = false;
         for (int j = 0; j < groups.size(); j++) {
             if (i != j) {
-                Group groupI = groups.get(i);
                 Group groupJ = groups.get(j);
                 if (similar(groupI, groupJ)) {
                     groupJ.join(groupI);
@@ -145,7 +146,7 @@ public class Partition<K> {
 
     private boolean similarToGroup(K item, Group group) {
         for (K k : group) {
-            if (measure.similar(k, item)) {
+            if (siblings.similar(k, item)) {
                 return true;
             }
         }

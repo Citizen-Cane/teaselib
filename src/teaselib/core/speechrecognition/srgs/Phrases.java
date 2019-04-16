@@ -16,12 +16,12 @@ public class Phrases extends ArrayList<Phrases.Rule> {
 
     static final int COMMON_RULE = Integer.MIN_VALUE;
 
-    public static Rule rule(int ruleIndex, String... items) {
-        return new Rule(ruleIndex, items);
+    public static Rule rule(int group, int ruleIndex, String... items) {
+        return new Rule(group, ruleIndex, items);
     }
 
-    public static Rule rule(int ruleIndex, OneOf... items) {
-        return new Rule(ruleIndex, items);
+    public static Rule rule(int group, int ruleIndex, OneOf... items) {
+        return new Rule(group, ruleIndex, items);
     }
 
     public static OneOf oneOf(int choiceIndex, String item) {
@@ -93,13 +93,16 @@ public class Phrases extends ArrayList<Phrases.Rule> {
     static class Rule extends ArrayList<OneOf> {
         private static final long serialVersionUID = 1L;
 
+        final int group;
         final int index;
 
-        public Rule(int ruleIndex) {
+        public Rule(int group, int ruleIndex) {
+            this.group = group;
             this.index = ruleIndex;
         }
 
-        public Rule(int ruleIndex, String... items) {
+        public Rule(int group, int ruleIndex, String... items) {
+            this.group = group;
             this.index = ruleIndex;
             int choiceIndex = 0;
             for (String item : items) {
@@ -107,11 +110,12 @@ public class Phrases extends ArrayList<Phrases.Rule> {
             }
         }
 
-        public Rule(int ruleIndex, OneOf... items) {
-            this(ruleIndex, Arrays.asList(items));
+        public Rule(int group, int ruleIndex, OneOf... items) {
+            this(group, ruleIndex, Arrays.asList(items));
         }
 
-        public Rule(int ruleIndex, List<OneOf> items) {
+        public Rule(int group, int ruleIndex, List<OneOf> items) {
+            this.group = group;
             this.index = ruleIndex;
             for (OneOf item : items) {
                 add(item);
@@ -148,7 +152,7 @@ public class Phrases extends ArrayList<Phrases.Rule> {
 
         @Override
         public String toString() {
-            return "rule " + index + " = " + super.toString();
+            return "rule group=" + group + " id=" + index + " = " + super.toString();
         }
 
     }
@@ -180,7 +184,6 @@ public class Phrases extends ArrayList<Phrases.Rule> {
                     if (rule.index == ruleIndex) {
                         OneOf items = rule.get(0);
                         if (rule.size() == 1 && items.size() == 1) {
-                            // TODO Choice index of common item must be Integer.MIN_VALUE
                             if (items.choiceIndex == choiceIndex || items.choiceIndex == COMMON_RULE) {
                                 word = items.get(0);
                             }
@@ -226,8 +229,10 @@ public class Phrases extends ArrayList<Phrases.Rule> {
         return StringSequences.slice(a, b).stream().filter(seq -> seq.size() == 1).count() > 0;
     }
 
+    static final int FIRST_GROUP = 0;
+
     private static Rule rule(Choices choices, List<StringSequences> sliced, int ruleIndex) {
-        Rule rule = new Rule(ruleIndex);
+        Rule rule = new Rule(FIRST_GROUP, ruleIndex);
         Sequences<String> sequences = sliced.get(ruleIndex);
         if (sequences.size() == 1) {
             rule.add(new OneOf(COMMON_RULE, sequences.get(0).toString()));
@@ -260,7 +265,7 @@ public class Phrases extends ArrayList<Phrases.Rule> {
                 List<StringSequences> sliced = StringSequences.slice(items);
 
                 for (int ruleIndex = 0; ruleIndex < sliced.size(); ruleIndex++) {
-                    Rule rule = new Rule(ruleIndex);
+                    Rule rule = new Rule(choiceGroups.groups.indexOf(group), ruleIndex);
                     Sequences<String> sequences = sliced.get(ruleIndex);
                     if (sequences.size() == 1) {
                         rule.add(new OneOf(choiceIndex, sequences.get(0).toString()));

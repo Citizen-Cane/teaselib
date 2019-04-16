@@ -9,8 +9,6 @@ import javax.xml.transform.TransformerFactoryConfigurationError;
 
 import org.w3c.dom.Element;
 
-import teaselib.core.speechrecognition.srgs.Phrases.Rule;
-
 public class SRGSBuilder extends AbstractSRGSBuilder {
     public SRGSBuilder(Phrases phrases) throws ParserConfigurationException, TransformerException {
         super(phrases);
@@ -51,7 +49,6 @@ public class SRGSBuilder extends AbstractSRGSBuilder {
     private String createRule(Element grammar, Phrases.Rule rule) {
         String name = ruleName(rule);
         for (Phrases.OneOf items : rule) {
-
             String id = rule.size() > 1 ? choiceName(rule, items.choiceIndex) : name;
             Element ruleElement = createRule(id);
             grammar.appendChild(ruleElement);
@@ -96,10 +93,6 @@ public class SRGSBuilder extends AbstractSRGSBuilder {
         for (int choiceIndex = 0; choiceIndex < rule.size(); choiceIndex++) {
             inventoryItems.get(choiceIndex).appendChild(ruleRef(choiceName(rule, choiceIndex)));
         }
-    }
-
-    private static String choiceName(Rule rule, int choiceIndex) {
-        return CHOICE_NODE_PREFIX + rule.index + "_" + choiceIndex;
     }
 
 }

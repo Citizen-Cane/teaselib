@@ -48,26 +48,27 @@ public class SRGSBuilderTest {
         Choice[][] args = { material, dogToy, formOfAddress };
 
         Phrases phrases = Phrases.of(Collections.emptyList());
+        int groupIndex = 0;
         int ruleIndex = 0;
         for (String word : StringSequence.splitWords(template)) {
             if (word.startsWith("%")) {
                 Choice[] arg = args[Integer.parseInt(word.substring(1))];
                 List<OneOf> items = new ArrayList<>();
-                Phrases.Rule rule = new Phrases.Rule(ruleIndex++, items);
+                Phrases.Rule rule = new Phrases.Rule(groupIndex, ruleIndex++, items);
                 for (int choiceIndex = 0; choiceIndex < arg.length; choiceIndex++) {
                     rule.add(new OneOf(choiceIndex, arg[choiceIndex].phrases));
                 }
                 phrases.add(rule);
             } else {
-                phrases.add(Phrases.rule(ruleIndex++, word));
+                phrases.add(Phrases.rule(groupIndex, ruleIndex++, word));
             }
         }
 
         assertEquals(4, phrases.size());
-        assertEquals(Phrases.rule(0, "A"), phrases.get(0));
-        assertEquals(Phrases.rule(1, "leather", "rubber", ""), phrases.get(1));
-        assertEquals(Phrases.rule(2, "ball", "bone", "dildo"), phrases.get(2));
-        assertEquals(Phrases.rule(3, new OneOf(0, "Miss", "Mistress", "dear Mistress")), phrases.get(3));
+        assertEquals(Phrases.rule(0, 0, "A"), phrases.get(0));
+        assertEquals(Phrases.rule(0, 1, "leather", "rubber", ""), phrases.get(1));
+        assertEquals(Phrases.rule(0, 2, "ball", "bone", "dildo"), phrases.get(2));
+        assertEquals(Phrases.rule(0, 3, new OneOf(0, "Miss", "Mistress", "dear Mistress")), phrases.get(3));
 
         assertEquals("A", phrases.get(0).get(0).get(0));
         assertEquals("leather", phrases.get(1).get(0).get(0));

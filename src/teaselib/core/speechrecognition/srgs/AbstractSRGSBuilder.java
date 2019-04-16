@@ -48,7 +48,11 @@ abstract class AbstractSRGSBuilder {
     abstract void buildXML() throws TransformerFactoryConfigurationError, TransformerException;
 
     static String ruleName(Rule rule) {
-        return RULE_NODE_PREFIX + rule.index;
+        return RULE_NODE_PREFIX + rule.index + "__group_" + rule.group;
+    }
+
+    static String choiceName(Rule rule, int choiceIndex) {
+        return CHOICE_NODE_PREFIX + rule.index + "_" + choiceIndex + "__group_" + rule.group;
     }
 
     Element createGrammar() {

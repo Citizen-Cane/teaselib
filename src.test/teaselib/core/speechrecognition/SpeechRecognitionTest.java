@@ -1,6 +1,8 @@
 package teaselib.core.speechrecognition;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.util.Arrays;
 import java.util.Locale;
@@ -74,19 +76,36 @@ public class SpeechRecognitionTest {
 
     @Test
     public void testSimpleSR() throws InterruptedException {
-        Choices foobar = new Choices(Arrays.asList(new Choice("My name is Foo"), new Choice("My name is Bar"),
+        Choices choices = new Choices(Arrays.asList(new Choice("My name is Foo"), new Choice("My name is Bar"),
                 new Choice("My name is Foobar")));
 
         SpeechRecognition sr = new SpeechRecognition(Locale.ENGLISH, TeaseLibSR.class);
-        SpeechRecognitionInputMethod inputMethod = new SpeechRecognitionInputMethod(sr, confidence, Optional.empty());
-        Prompt prompt = new Prompt(foobar, Arrays.asList(inputMethod));
 
-        prompt.lock.lockInterruptibly();
-        try {
-            inputMethod.show(prompt);
-            awaitResult(sr, prompt, "My name is Bar", new Prompt.Result(1));
-        } finally {
-            prompt.lock.unlock();
+        for (Choice choice : choices) {
+            SpeechRecognitionInputMethod inputMethod = new SpeechRecognitionInputMethod(sr, confidence,
+                    Optional.empty());
+            Prompt prompt = new Prompt(choices, Arrays.asList(inputMethod));
+            prompt.lock.lockInterruptibly();
+            try {
+                inputMethod.show(prompt);
+                awaitResult(sr, prompt, choice.phrases.get(0), new Prompt.Result(choices.indexOf(choice)));
+            } finally {
+                prompt.lock.unlock();
+            }
+        }
+
+        String[] rejected = { "My name is", "FooBar" };
+        for (String speech : rejected) {
+            SpeechRecognitionInputMethod inputMethod = new SpeechRecognitionInputMethod(sr, confidence,
+                    Optional.empty());
+            Prompt prompt = new Prompt(choices, Arrays.asList(inputMethod));
+            prompt.lock.lockInterruptibly();
+            try {
+                inputMethod.show(prompt);
+                awaitResult(sr, prompt, speech, null);
+            } finally {
+                prompt.lock.unlock();
+            }
         }
     }
 
@@ -218,13 +237,108 @@ public class SpeechRecognitionTest {
     }
 
     @Test
-    public void testSRGSBuilderMultiplePhrasesAreDistinct() throws InterruptedException {
+    public void testSRGSBuilderMultiplePhrasesOfSingleChoiceAreDistinct() throws InterruptedException {
         String[] yes = { //
                 "Yes Miss, of course", //
                 "Of course, Miss" };
         Choices choices = new Choices(new Choice("Yes #title, of course", "Yes Miss, of course", yes));
 
         assertRejected(choices, "Of course");
+    }
+
+    @Test
+    public void testSRGSBuilderMultiplePhrasesOfMultipleChoicesAreDistinct() throws InterruptedException {
+        String[] yes = { //
+                "Yes Miss, of course", //
+                "Yes, of course, Miss", //
+                "Yes, of course" };
+        String[] no = { //
+                "No Miss, of course not", //
+                "No, of course not, Miss", //
+                "No, of course not" };
+        Choices choices = new Choices(new Choice("Yes #title, of course", "Yes Miss, of course", yes),
+                new Choice("No #title, of course not", "No Miss, of course not", no));
+        for (String phrase : yes) {
+            assertRecognized(choices, String.join(" ", StringSequence.splitWords(phrase)), new Prompt.Result(0, 0));
+        }
+
+        for (String phrase : no) {
+            assertRecognized(choices, String.join(" ", StringSequence.splitWords(phrase)), new Prompt.Result(1, 1));
+        }
+
+        assertRejected(choices, "Yes Miss");
+        assertRejected(choices, "No Miss");
+
+        assertRejected(choices, "No Miss of course");
+        assertRejected(choices, "Of not");
+
+        assertRejected(choices, "Of course");
+        assertRejected(choices, "Of course not");
+    }
+
+    @Test
+    public void testSRGSBuilderMultiplePhrasesOfMultipleChoicesAreDistinctWithOptionalParts()
+            throws InterruptedException {
+        String[] yes = { //
+                "Yes Miss, of course", //
+                "Yes, of course, Miss", //
+                "Yes, of course", //
+                "Of course", //
+                "I have it" };
+        String[] no = { //
+                "No Miss, of course not", //
+                "No, of course not, Miss", //
+                "No, of course not", //
+                "Of course not", //
+                "I don't have it" };
+        Choices choices = new Choices(new Choice("Yes #title, of course", "Yes Miss, of course", yes),
+                new Choice("No #title, of course not", "No Miss, of course not", no));
+        for (String phrase : yes) {
+            assertRecognized(choices, String.join(" ", StringSequence.splitWords(phrase)), new Prompt.Result(0, 0));
+        }
+
+        for (String phrase : no) {
+            assertRecognized(choices, String.join(" ", StringSequence.splitWords(phrase)), new Prompt.Result(1, 1));
+        }
+
+        assertRejected(choices, "Yes Miss");
+        assertRejected(choices, "No Miss");
+
+        assertRejected(choices, "No Miss of course");
+        assertRejected(choices, "Of not");
+    }
+
+    @Test
+    public void testSRGSBuilderMultiplePhrasesOfMultipleChoicesAreDistinctWithoutOptionalParts()
+            throws InterruptedException {
+        String[] yes = { //
+                "Yes Miss, of course", //
+                "Yes, of course, Miss", //
+                "Yes, of course", //
+                "I have it" };
+        String[] no = { //
+                "No Miss, of course not", //
+                "No, of course not, Miss", //
+                "No, of course not", //
+                "I don't have it" };
+        Choices choices = new Choices(new Choice("Yes #title, of course", "Yes Miss, of course", yes),
+                new Choice("No #title, of course not", "No Miss, of course not", no));
+        for (String phrase : yes) {
+            assertRecognized(choices, String.join(" ", StringSequence.splitWords(phrase)), new Prompt.Result(0, 0));
+        }
+
+        for (String phrase : no) {
+            assertRecognized(choices, String.join(" ", StringSequence.splitWords(phrase)), new Prompt.Result(1, 1));
+        }
+
+        assertRejected(choices, "Yes Miss");
+        assertRejected(choices, "No Miss");
+
+        assertRejected(choices, "No Miss of course");
+        assertRejected(choices, "Of not");
+
+        assertRejected(choices, "Of course");
+        assertRejected(choices, "Of course not");
     }
 
 }

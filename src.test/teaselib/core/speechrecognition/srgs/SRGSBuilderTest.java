@@ -64,10 +64,10 @@ public class SRGSBuilderTest {
         }
 
         assertEquals(4, phrases.size());
-        assertEquals("[[A]]", phrases.get(0).toString());
-        assertEquals(Phrases.rule(0, "leather", "rubber", ""), phrases.get(1));
-        assertEquals(Phrases.rule(0, "ball", "bone", "dildo"), phrases.get(2));
-        assertEquals(Phrases.rule(0, new OneOf(2, "Miss", "Mistress", "dear Mistress")), phrases.get(3));
+        assertEquals(Phrases.rule(0, "A"), phrases.get(0));
+        assertEquals(Phrases.rule(1, "leather", "rubber", ""), phrases.get(1));
+        assertEquals(Phrases.rule(2, "ball", "bone", "dildo"), phrases.get(2));
+        assertEquals(Phrases.rule(3, new OneOf(0, "Miss", "Mistress", "dear Mistress")), phrases.get(3));
 
         assertEquals("A", phrases.get(0).get(0).get(0));
         assertEquals("leather", phrases.get(1).get(0).get(0));

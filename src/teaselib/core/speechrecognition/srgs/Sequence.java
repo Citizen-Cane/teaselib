@@ -86,7 +86,7 @@ public class Sequence<T> extends ArrayList<T> {
 
     @Override
     public String toString() {
-        return stream().map(T::toString).collect(Collectors.joining(" "));
+        return stream().map(T::toString).filter(t -> !t.isEmpty()).collect(Collectors.joining(" "));
     }
 
 }

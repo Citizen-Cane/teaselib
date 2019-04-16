@@ -30,7 +30,7 @@ public class SRGSBuilder extends AbstractSRGSBuilder {
 
     private List<Element> createMainRule(Element grammar) {
         Element mainRule = createRule(MAIN_RULE_NAME);
-        int max = phrases.maxLength();
+        int max = phrases.choices();
         Element inventoryNode = document.createElement("one-of");
         List<Element> inventoryItems = new ArrayList<>(max);
         for (int i = 0; i < max; i++) {

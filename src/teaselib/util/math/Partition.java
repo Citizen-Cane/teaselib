@@ -24,17 +24,20 @@ public class Partition<K> {
     final Join<K> join;
 
     public class Group implements Iterable<K> {
-        K orderingElement;
-        private final List<K> items = new ArrayList<>();
+        public final List<K> items;
+        private final List<K> writableItems;
+        private K orderingElement;
 
         Group(K item) {
-            items.add(item);
+            this.writableItems = new ArrayList<>();
+            this.items = Collections.unmodifiableList(writableItems);
+            writableItems.add(item);
             orderingElement = item;
         }
 
         void join(Group group) {
             orderingElement = join.groups(orderingElement, group.orderingElement);
-            items.addAll(group.items);
+            writableItems.addAll(group.items);
         }
 
         @Override
@@ -74,23 +77,26 @@ public class Partition<K> {
         this(items, measure, order, null);
     }
 
-    public Partition(List<K> items, Siblings<K> siblings, Join<K> joiner, final Comparator<K> comperator) {
+    public Partition(List<K> items, Siblings<K> siblings, Join<K> joiner, Comparator<K> comperator) {
         this.siblings = siblings;
         this.join = joiner;
-        this.groups = new ArrayList<>();
+        this.groups = Collections.unmodifiableList(partitionOf(items, comperator));
+    }
 
-        createInitialGroups(items);
-        joinGroups();
-
+    private List<Group> partitionOf(List<K> items, Comparator<K> comperator) {
+        List<Group> partitions = createInitialGroups(items);
         if (comperator != null) {
-            sortGroupsByOrderingElementLargestFirst(comperator);
+            return sortByOrderingElementLargestFirst(join(partitions), comperator);
+        } else {
+            return partitions;
         }
     }
 
-    private void createInitialGroups(List<K> items) {
+    private List<Group> createInitialGroups(List<K> items) {
+        List<Group> initialGroups = new ArrayList<>();
         for (K item : items) {
             boolean grouped = false;
-            for (Group group : groups) {
+            for (Group group : initialGroups) {
                 if (siblings.similar(item, group.orderingElement)) {
                     group.join(new Group(item));
                     grouped = true;
@@ -98,22 +104,24 @@ public class Partition<K> {
                 }
             }
             if (!grouped) {
-                groups.add(new Group(item));
+                initialGroups.add(new Group(item));
             }
         }
+        return initialGroups;
     }
 
-    private void joinGroups() {
+    private List<Group> join(List<Group> groups) {
         boolean groupsJoined;
         do {
             groupsJoined = false;
             for (int i = groups.size() - 1; i >= 0; i--) {
-                groupsJoined = joinGroup(i);
+                groupsJoined = join(groups, i);
             }
         } while (groupsJoined && groups.size() > 1);
+        return groups;
     }
 
-    private boolean joinGroup(int i) {
+    private boolean join(List<Group> groups, int i) {
         Group groupI = groups.get(i);
         boolean groupsJoined = false;
         for (int j = 0; j < groups.size(); j++) {
@@ -130,9 +138,10 @@ public class Partition<K> {
         return groupsJoined;
     }
 
-    private void sortGroupsByOrderingElementLargestFirst(final Comparator<K> comperator) {
+    private List<Group> sortByOrderingElementLargestFirst(List<Group> groups, Comparator<K> comperator) {
         Comparator<Group> c = (Group g1, Group g2) -> -comperator.compare(g1.orderingElement, g2.orderingElement);
         Collections.sort(groups, c);
+        return groups;
     }
 
     private boolean similar(Group group1, Group group2) {

@@ -9,9 +9,12 @@ import java.util.stream.Collectors;
 
 import teaselib.core.ui.Choice;
 import teaselib.core.ui.Choices;
+import teaselib.util.math.Partition;
 
 public class Phrases extends ArrayList<Phrases.Rule> {
     private static final long serialVersionUID = 1L;
+
+    static final int COMMON_RULE = Integer.MIN_VALUE;
 
     public static Rule rule(int ruleIndex, String... items) {
         return new Rule(ruleIndex, items);
@@ -57,6 +60,34 @@ public class Phrases extends ArrayList<Phrases.Rule> {
                 add(item);
             }
         }
+
+        @Override
+        public int hashCode() {
+            final int prime = 31;
+            int result = super.hashCode();
+            result = prime * result + choiceIndex;
+            return result;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj)
+                return true;
+            if (!super.equals(obj))
+                return false;
+            if (getClass() != obj.getClass())
+                return false;
+            OneOf other = (OneOf) obj;
+            if (choiceIndex != other.choiceIndex)
+                return false;
+            return true;
+        }
+
+        @Override
+        public String toString() {
+            return "choice " + choiceIndex + " = " + super.toString();
+        }
+
     }
 
     static class Rule extends ArrayList<OneOf> {
@@ -86,6 +117,40 @@ public class Phrases extends ArrayList<Phrases.Rule> {
                 add(item);
             }
         }
+
+        @Override
+        public int hashCode() {
+            final int prime = 31;
+            int result = super.hashCode();
+            result = prime * result + index;
+            return result;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj)
+                return true;
+            if (!super.equals(obj))
+                return false;
+            if (getClass() != obj.getClass())
+                return false;
+            Rule other = (Rule) obj;
+            if (index != other.index)
+                return false;
+            return true;
+        }
+
+        int choices() {
+            return stream().reduce((a, b) -> {
+                return a.choiceIndex > b.choiceIndex ? a : b;
+            }).orElseGet(() -> new OneOf(0)).choiceIndex + 1;
+        }
+
+        @Override
+        public String toString() {
+            return "rule " + index + " = " + super.toString();
+        }
+
     }
 
     public static Phrases of(String... choices) {
@@ -100,18 +165,38 @@ public class Phrases extends ArrayList<Phrases.Rule> {
     }
 
     public Sequences<String> flatten() {
-        int capaticy = maxLength();
-        StringSequences flattened = StringSequences.ignoreCase(capaticy);
-        for (int i = 0; i < capaticy; i++) {
+        int choices = choices();
+        StringSequences flattened = StringSequences.ignoreCase(choices);
+        for (int i = 0; i < choices; i++) {
             StringSequence sequence = StringSequence.ignoreCase();
-            for (Rule elements : this) {
-                if (elements.size() == 1) {
-                    sequence.addAll(elements.get(0));
-                } else {
-                    sequence.addAll(elements.get(i));
+            flattened.add(sequence);
+        }
+
+        int rules = rules();
+        for (int choiceIndex = 0; choiceIndex < choices; choiceIndex++) {
+            for (int ruleIndex = 0; ruleIndex < rules; ruleIndex++) {
+                for (Rule rule : this) {
+                    String word = "";
+                    if (rule.index == ruleIndex) {
+                        OneOf items = rule.get(0);
+                        if (rule.size() == 1 && items.size() == 1) {
+                            // TODO Choice index of common item must be Integer.MIN_VALUE
+                            if (items.choiceIndex == choiceIndex || items.choiceIndex == COMMON_RULE) {
+                                word = items.get(0);
+                            }
+                        } else {
+                            for (OneOf item : rule) {
+                                if (item.choiceIndex == choiceIndex) {
+                                    // Flatten can only flat first phrase
+                                    word = item.get(0);
+                                    break;
+                                }
+                            }
+                        }
+                        flattened.get(choiceIndex).add(word);
+                    }
                 }
             }
-            flattened.add(sequence);
         }
         return flattened;
     }
@@ -119,21 +204,33 @@ public class Phrases extends ArrayList<Phrases.Rule> {
     public static Phrases of(Choices choices) {
         List<String> allPhrases = choices.stream().flatMap(choice -> choice.phrases.stream())
                 .collect(Collectors.toList());
-        List<StringSequences> sliced = StringSequences.slice(allPhrases);
-
-        Phrases phrases = new Phrases();
-        for (int index = 0; index < sliced.size(); index++) {
-            phrases.add(rule(choices, sliced, index));
+        Partition<String> phraseGroups = new Partition<>(allPhrases, Phrases::haveCommonParts);
+        if (phraseGroups.groups.size() <= 1) {
+            return sliceAllChoicesTogether(choices, allPhrases);
+        } else {
+            // TODO Group phrases and slice groups to improve common word rules
+            return sliceEachChoiceSeparately(choices);
         }
+    }
 
+    private static Phrases sliceAllChoicesTogether(Choices choices, List<String> allPhrases) {
+        List<StringSequences> sliced = StringSequences.slice(allPhrases);
+        Phrases phrases = new Phrases();
+        for (int ruleIndex = 0; ruleIndex < sliced.size(); ruleIndex++) {
+            phrases.add(rule(choices, sliced, ruleIndex));
+        }
         return phrases;
+    }
+
+    static boolean haveCommonParts(String a, String b) {
+        return StringSequences.slice(a, b).stream().filter(seq -> seq.size() == 1).count() > 0;
     }
 
     private static Rule rule(Choices choices, List<StringSequences> sliced, int ruleIndex) {
         Rule rule = new Rule(ruleIndex);
         Sequences<String> sequences = sliced.get(ruleIndex);
         if (sequences.size() == 1) {
-            rule.add(new OneOf(0, sequences.get(0).toString()));
+            rule.add(new OneOf(COMMON_RULE, sequences.get(0).toString()));
         } else {
             int itemIndex = 0;
             int choiceIndex = 0;
@@ -153,9 +250,55 @@ public class Phrases extends ArrayList<Phrases.Rule> {
         return rule;
     }
 
-    public int maxLength() {
-        Optional<Rule> reduced = stream().reduce((a, b) -> a.size() > b.size() ? a : b);
-        return reduced.isPresent() ? reduced.get().size() : 0;
+    private static Phrases sliceEachChoiceSeparately(Choices choices) {
+        Phrases phrases = new Phrases();
+        for (int choiceIndex = 0; choiceIndex < choices.size(); choiceIndex++) {
+            Choice choice = choices.get(choiceIndex);
+            Partition<String> choiceGroups = new Partition<>(choice.phrases, Phrases::haveCommonParts);
+            for (Partition<String>.Group group : choiceGroups.groups) {
+                List<String> items = group.items;
+                List<StringSequences> sliced = StringSequences.slice(items);
+
+                for (int ruleIndex = 0; ruleIndex < sliced.size(); ruleIndex++) {
+                    Rule rule = new Rule(ruleIndex);
+                    Sequences<String> sequences = sliced.get(ruleIndex);
+                    if (sequences.size() == 1) {
+                        rule.add(new OneOf(choiceIndex, sequences.get(0).toString()));
+                    } else {
+                        OneOf oneOf = createOneOfs(sequences, items, choiceIndex);
+                        rule.add(oneOf);
+                    }
+                    phrases.add(rule);
+                }
+            }
+        }
+        return phrases;
+    }
+
+    private static OneOf createOneOfs(Sequences<String> sequences, List<String> items, int choiceIndex) {
+        int size = items.size();
+        OneOf oneOf = new OneOf(choiceIndex, size);
+        for (int i = 0; i < size; i++) {
+            String item = sequences.get(i).toString();
+            if (!oneOf.contains(item)) {
+                oneOf.add(item);
+            }
+        }
+        return oneOf;
+    }
+
+    public int choices() {
+        Optional<Rule> reduced = stream().reduce((a, b) -> {
+            return a.choices() > b.choices() ? a : b;
+        });
+        return reduced.isPresent() ? reduced.get().choices() : 1;
+    }
+
+    public int rules() {
+        Optional<Rule> reduced = stream().reduce((a, b) -> {
+            return a.index > b.index ? a : b;
+        });
+        return reduced.isPresent() ? reduced.get().index + 1 : 1;
     }
 
 }

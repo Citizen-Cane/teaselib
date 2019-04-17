@@ -9,6 +9,8 @@ import javax.xml.transform.TransformerFactoryConfigurationError;
 
 import org.w3c.dom.Element;
 
+import teaselib.core.speechrecognition.srgs.Phrases.OneOf;
+
 public class SRGSBuilder extends AbstractSRGSBuilder {
     public SRGSBuilder(Phrases phrases) throws ParserConfigurationException, TransformerException {
         super(phrases);
@@ -42,14 +44,13 @@ public class SRGSBuilder extends AbstractSRGSBuilder {
     }
 
     private void createRule(Element grammar, List<Element> inventoryItems, Phrases.Rule speechPart) {
-        String name = createRule(grammar, speechPart);
-        addRuleToInventory(inventoryItems, speechPart, name);
+        createRule(grammar, speechPart);
+        addRuleToInventory(inventoryItems, speechPart);
     }
 
-    private String createRule(Element grammar, Phrases.Rule rule) {
-        String name = ruleName(rule);
+    private void createRule(Element grammar, Phrases.Rule rule) {
         for (Phrases.OneOf items : rule) {
-            String id = rule.size() > 1 ? choiceName(rule, items.choiceIndex) : name;
+            String id = items.choiceIndex != Phrases.COMMON_RULE ? choiceName(rule, items.choiceIndex) : ruleName(rule);
             Element ruleElement = createRule(id);
             grammar.appendChild(ruleElement);
 
@@ -57,6 +58,9 @@ public class SRGSBuilder extends AbstractSRGSBuilder {
                 String text = items.get(0);
                 appendText(ruleElement, text);
             } else {
+                // TODO each group must be sorted into a different one-of item inside the main rule
+                // SpeechRecognitionTest.testSRGSBuilderMultiplePhrasesOfMultipleChoicesAreDistinctWithoutOptionalParts()
+                // FIX all groups end up in the same </item> node -> should be another <one-of>
                 Element oneOf = document.createElement("one-of");
                 for (String text : items) {
                     // TODO starting or ending with the same words makes the distinct part optional ("No" vs "No Miss")
@@ -70,28 +74,25 @@ public class SRGSBuilder extends AbstractSRGSBuilder {
                 ruleElement.appendChild(oneOf);
             }
         }
-        return name;
     }
 
-    private void addRuleToInventory(List<Element> inventoryItems, Phrases.Rule rule, String name) {
-        if (rule.size() == 1) {
-            appendRuleRefToAllChoices(inventoryItems, name);
-        } else if (rule.size() == inventoryItems.size()) {
-            appendRuleRefToEachChoice(inventoryItems, rule);
-        } else {
-            throw new IllegalArgumentException("Choices must be all different or all the same");
+    private void addRuleToInventory(List<Element> inventoryItems, Phrases.Rule rule) {
+        for (int choiceIndex = 0; choiceIndex < rule.size(); choiceIndex++) {
+            OneOf items = rule.get(choiceIndex);
+            if (items.choiceIndex == Phrases.COMMON_RULE) {
+                if (rule.size() > 1) {
+                    throw new IllegalArgumentException("There may be only one entry per common rule");
+                }
+                appendRuleRefToAllChoices(inventoryItems, ruleName(rule));
+            } else {
+                inventoryItems.get(items.choiceIndex).appendChild(ruleRef(choiceName(rule, items.choiceIndex)));
+            }
         }
     }
 
     private void appendRuleRefToAllChoices(List<Element> inventoryItems, String name) {
         for (Element element : inventoryItems) {
             element.appendChild(ruleRef(name));
-        }
-    }
-
-    private void appendRuleRefToEachChoice(List<Element> inventoryItems, Phrases.Rule rule) {
-        for (int choiceIndex = 0; choiceIndex < rule.size(); choiceIndex++) {
-            inventoryItems.get(choiceIndex).appendChild(ruleRef(choiceName(rule, choiceIndex)));
         }
     }
 

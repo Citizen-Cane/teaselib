@@ -2,6 +2,7 @@ package teaselib.core.speechrecognition.srgs;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -70,17 +71,17 @@ public class SRGSBuilderTest {
         assertEquals(Phrases.rule(0, 2, "ball", "bone", "dildo"), phrases.get(2));
         assertEquals(Phrases.rule(0, 3, new OneOf(0, "Miss", "Mistress", "dear Mistress")), phrases.get(3));
 
-        assertEquals("A", phrases.get(0).get(0).get(0));
-        assertEquals("leather", phrases.get(1).get(0).get(0));
-        assertEquals("rubber", phrases.get(1).get(1).get(0));
-        assertEquals("", phrases.get(1).get(2).get(0));
-        assertEquals("ball", phrases.get(2).get(0).get(0));
-        assertEquals("bone", phrases.get(2).get(1).get(0));
-        assertEquals("dildo", phrases.get(2).get(2).get(0));
+        assertTrue(phrases.get(0).get(0).contains("A"));
+        assertTrue(phrases.get(1).get(0).contains("leather"));
+        assertTrue(phrases.get(1).get(1).contains("rubber"));
+        assertTrue(phrases.get(1).get(2).contains(""));
+        assertTrue(phrases.get(2).get(0).contains("ball"));
+        assertTrue(phrases.get(2).get(1).contains("bone"));
+        assertTrue(phrases.get(2).get(2).contains("dildo"));
 
-        assertEquals("Miss", phrases.get(3).get(0).get(0));
-        assertEquals("Mistress", phrases.get(3).get(0).get(1));
-        assertEquals("dear Mistress", phrases.get(3).get(0).get(2));
+        assertTrue(phrases.get(3).get(0).contains("Miss"));
+        assertTrue(phrases.get(3).get(0).contains("Mistress"));
+        assertTrue(phrases.get(3).get(0).contains("dear Mistress"));
 
         // TODO Implement SRGS builder that handles multiple independent phrases
         SRGSBuilder srgs = new SRGSBuilder(phrases);

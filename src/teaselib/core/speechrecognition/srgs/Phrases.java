@@ -3,6 +3,7 @@ package teaselib.core.speechrecognition.srgs;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -32,7 +33,7 @@ public class Phrases extends ArrayList<Phrases.Rule> {
         return new Phrases.OneOf(choiceIndex, items);
     }
 
-    static class OneOf extends ArrayList<String> {
+    static class OneOf extends HashSet<String> {
         private static final long serialVersionUID = 1L;
 
         final int choiceIndex;
@@ -185,13 +186,13 @@ public class Phrases extends ArrayList<Phrases.Rule> {
                         OneOf items = rule.get(0);
                         if (rule.size() == 1 && items.size() == 1) {
                             if (items.choiceIndex == choiceIndex || items.choiceIndex == COMMON_RULE) {
-                                word = items.get(0);
+                                word = items.iterator().next();
                             }
                         } else {
                             for (OneOf item : rule) {
                                 if (item.choiceIndex == choiceIndex) {
                                     // Flatten can only flat first phrase
-                                    word = item.get(0);
+                                    word = item.iterator().next();
                                     break;
                                 }
                             }

@@ -71,7 +71,7 @@ public class SRGSBuilder extends AbstractSRGSBuilder {
             grammar.appendChild(ruleElement);
 
             if (items.size() == 1) {
-                String text = items.get(0);
+                String text = items.iterator().next();
                 appendText(ruleElement, text);
             } else {
                 // TODO each group must be sorted into a different one-of item inside the main rule

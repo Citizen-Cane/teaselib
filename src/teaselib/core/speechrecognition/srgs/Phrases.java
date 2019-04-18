@@ -152,7 +152,7 @@ public class Phrases extends ArrayList<Phrases.Rule> {
 
         @Override
         public String toString() {
-            return "rule group=" + group + " id=" + index + " = " + super.toString();
+            return "rule group=" + group + " index=" + index + " = " + super.toString();
         }
 
     }
@@ -290,6 +290,13 @@ public class Phrases extends ArrayList<Phrases.Rule> {
             }
         }
         return oneOf;
+    }
+
+    public int groups() {
+        Optional<Rule> reduced = stream().reduce((a, b) -> {
+            return a.group > b.group ? a : b;
+        });
+        return reduced.isPresent() ? reduced.get().group + 1 : 1;
     }
 
     public int choices() {

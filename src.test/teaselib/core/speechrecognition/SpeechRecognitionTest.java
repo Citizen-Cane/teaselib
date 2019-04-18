@@ -28,19 +28,18 @@ public class SpeechRecognitionTest {
 
     private static final Confidence confidence = Confidence.High;
 
-    private static void assertRecognized(Choices choices, String emulatedRecognitionResult, Prompt.Result expectedRules)
+    private static void assertRecognized(Choices choices, String phrase, Prompt.Result expected)
             throws InterruptedException {
-        emulateSpeechRecognition(choices, emulatedRecognitionResult, expectedRules);
+        emulateSpeechRecognition(choices, withoutPunctation(phrase), expected);
     }
 
-    private static void assertRejected(Choices choices, String emulatedRecognitionResult) throws InterruptedException {
-        emulateSpeechRecognition(choices, emulatedRecognitionResult, null);
+    private static void assertRejected(Choices choices, String phrase) throws InterruptedException {
+        emulateSpeechRecognition(choices, withoutPunctation(phrase), null);
     }
 
-    private static void emulateSpeechRecognition(Choices choices, String emulatedRecognitionResult,
-            Prompt.Result expectedRules) throws InterruptedException {
-        assertEquals("Emulated speech may not contain punctation: '" + emulatedRecognitionResult + "'",
-                withoutPunctation(emulatedRecognitionResult), emulatedRecognitionResult);
+    private static void emulateSpeechRecognition(Choices choices, String phrase, Prompt.Result expected)
+            throws InterruptedException {
+        assertEquals("Emulated speech may not contain punctation: '" + phrase + "'", withoutPunctation(phrase), phrase);
         SpeechRecognition sr = new SpeechRecognition(Locale.ENGLISH, TeaseLibSRGS.class);
         SpeechRecognitionInputMethod inputMethod = new SpeechRecognitionInputMethod(sr, confidence, Optional.empty());
         Prompt prompt = new Prompt(choices, Arrays.asList(inputMethod));
@@ -48,7 +47,7 @@ public class SpeechRecognitionTest {
         prompt.lock.lockInterruptibly();
         try {
             inputMethod.show(prompt);
-            awaitResult(sr, prompt, emulatedRecognitionResult, expectedRules);
+            awaitResult(sr, prompt, phrase, expected);
         } finally {
             prompt.lock.unlock();
             sr.close();
@@ -222,11 +221,11 @@ public class SpeechRecognitionTest {
         Choices choices = new Choices(new Choice("Yes #title, of course", "Yes Miss, of course", yes),
                 new Choice("No #title, of course not", "No Miss, of course not", no));
         for (String phrase : yes) {
-            assertRecognized(choices, String.join(" ", StringSequence.splitWords(phrase)), new Prompt.Result(0, 0));
+            assertRecognized(choices, withoutPunctation(phrase), new Prompt.Result(0, 0));
         }
 
         for (String phrase : no) {
-            assertRecognized(choices, String.join(" ", StringSequence.splitWords(phrase)), new Prompt.Result(1, 1));
+            assertRecognized(choices, withoutPunctation(phrase), new Prompt.Result(1, 1));
         }
 
         assertRejected(choices, "Yes Miss");
@@ -259,11 +258,11 @@ public class SpeechRecognitionTest {
         Choices choices = new Choices(new Choice("Yes #title, of course", "Yes Miss, of course", yes),
                 new Choice("No #title, of course not", "No Miss, of course not", no));
         for (String phrase : yes) {
-            assertRecognized(choices, String.join(" ", StringSequence.splitWords(phrase)), new Prompt.Result(0, 0));
+            assertRecognized(choices, withoutPunctation(phrase), new Prompt.Result(0, 0));
         }
 
         for (String phrase : no) {
-            assertRecognized(choices, String.join(" ", StringSequence.splitWords(phrase)), new Prompt.Result(1, 1));
+            assertRecognized(choices, withoutPunctation(phrase), new Prompt.Result(1, 1));
         }
 
         assertRejected(choices, "Yes Miss");
@@ -293,13 +292,18 @@ public class SpeechRecognitionTest {
                 "I don't have it" };
         Choices choices = new Choices(new Choice("Yes #title, of course", "Yes Miss, of course", yes),
                 new Choice("No #title, of course not", "No Miss, of course not", no));
-        for (String phrase : yes) {
-            assertRecognized(choices, String.join(" ", StringSequence.splitWords(phrase)), new Prompt.Result(0, 0));
-        }
 
-        for (String phrase : no) {
-            assertRecognized(choices, String.join(" ", StringSequence.splitWords(phrase)), new Prompt.Result(1, 1));
-        }
+        assertRecognized(choices, withoutPunctation("Yes Miss, of course"), new Prompt.Result(0, 0, 0));
+        assertRecognized(choices, withoutPunctation("Yes, of course, Miss"), new Prompt.Result(0, 0, 0));
+        assertRecognized(choices, withoutPunctation("Yes, of course"), new Prompt.Result(0, 0, 0));
+        assertRecognized(choices, withoutPunctation("of course"), new Prompt.Result(0, 0, 0));
+        assertRecognized(choices, withoutPunctation("I have it"), new Prompt.Result(0));
+
+        assertRecognized(choices, withoutPunctation("No Miss, of course not"), new Prompt.Result(1, 1, 1));
+        assertRecognized(choices, withoutPunctation("No, of course not, Miss"), new Prompt.Result(1, 1, 1));
+        assertRecognized(choices, withoutPunctation("No, of course not"), new Prompt.Result(1, 1, 1));
+        assertRecognized(choices, withoutPunctation("of course not"), new Prompt.Result(1, 1, 1));
+        assertRecognized(choices, withoutPunctation("I don't have it"), new Prompt.Result(1));
 
         assertRejected(choices, "Yes Miss");
         assertRejected(choices, "No Miss");
@@ -323,13 +327,16 @@ public class SpeechRecognitionTest {
                 "I don't have it" };
         Choices choices = new Choices(new Choice("Yes #title, of course", "Yes Miss, of course", yes),
                 new Choice("No #title, of course not", "No Miss, of course not", no));
-        for (String phrase : yes) {
-            assertRecognized(choices, String.join(" ", StringSequence.splitWords(phrase)), new Prompt.Result(0, 0));
-        }
 
-        for (String phrase : no) {
-            assertRecognized(choices, String.join(" ", StringSequence.splitWords(phrase)), new Prompt.Result(1, 1));
-        }
+        assertRecognized(choices, withoutPunctation("Yes Miss, of course"), new Prompt.Result(0, 0, 0, 0));
+        assertRecognized(choices, withoutPunctation("Yes, of course, Miss"), new Prompt.Result(0, 0, 0, 0));
+        assertRecognized(choices, withoutPunctation("Yes, of course"), new Prompt.Result(0, 0, 0, 0));
+        assertRecognized(choices, withoutPunctation("I have it"), new Prompt.Result(0));
+
+        assertRecognized(choices, withoutPunctation("No Miss, of course not"), new Prompt.Result(1, 1, 1, 1));
+        assertRecognized(choices, withoutPunctation("No, of course not, Miss"), new Prompt.Result(1, 1, 1, 1));
+        assertRecognized(choices, withoutPunctation("No, of course not"), new Prompt.Result(1, 1, 1, 1));
+        assertRecognized(choices, withoutPunctation("I don't have it"), new Prompt.Result(1));
 
         assertRejected(choices, "Yes Miss");
         assertRejected(choices, "No Miss");

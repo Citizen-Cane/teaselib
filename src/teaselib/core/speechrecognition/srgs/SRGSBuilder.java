@@ -1,7 +1,7 @@
 package teaselib.core.speechrecognition.srgs;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
@@ -19,7 +19,7 @@ public class SRGSBuilder extends AbstractSRGSBuilder {
     @Override
     void buildXML() throws TransformerFactoryConfigurationError, TransformerException {
         Element grammar = createGrammar();
-        List<Element> inventoryItems = createMainRule(grammar);
+        Map<String, Element> inventoryItems = createMainRule(grammar);
 
         for (Phrases.Rule rule : phrases) {
             if (!rule.isEmpty()) {
@@ -28,24 +28,40 @@ public class SRGSBuilder extends AbstractSRGSBuilder {
         }
     }
 
-    private List<Element> createMainRule(Element grammar) {
+    private Map<String, Element> createMainRule(Element grammar) {
         Element mainRule = createRule(MAIN_RULE_NAME);
-        int max = phrases.choices();
+        grammar.appendChild(mainRule);
+        return createInventory(mainRule);
+    }
+
+    private Map<String, Element> createInventory(Element mainRule) {
         Element inventoryNode = document.createElement("one-of");
-        List<Element> inventoryItems = new ArrayList<>(max);
-        for (int i = 0; i < max; i++) {
-            Element inventoryItem = document.createElement("item");
-            inventoryItems.add(inventoryItem);
-            inventoryNode.appendChild(inventoryItem);
+        Map<String, Element> inventoryItems = new LinkedHashMap<>();
+        // TODO Phrases may contain multiple rules with the same items -> reuse them
+        // SpeechRecognitionTest.testSRGSBuilderMultiplePhrasesOfMultipleChoicesAreDistinctWithoutOptionalParts()
+        for (Phrases.Rule rule : phrases) {
+            if (rule.index != Phrases.COMMON_RULE) {
+                for (Phrases.OneOf item : rule) {
+                    String inventoryKey = inventoryKey(rule, item);
+                    if (!inventoryItems.containsKey(inventoryKey)) {
+                        Element inventoryItem = document.createElement("item");
+                        inventoryItems.put(inventoryKey, inventoryItem);
+                        inventoryNode.appendChild(inventoryItem);
+                    }
+                }
+            }
         }
         mainRule.appendChild(inventoryNode);
-        grammar.appendChild(mainRule);
         return inventoryItems;
     }
 
-    private void createRule(Element grammar, List<Element> inventoryItems, Phrases.Rule speechPart) {
-        createRule(grammar, speechPart);
-        addRuleToInventory(inventoryItems, speechPart);
+    private static String inventoryKey(Phrases.Rule rule, OneOf item) {
+        return item.choiceIndex + "_" + rule.group;
+    }
+
+    private void createRule(Element grammar, Map<String, Element> inventoryItems, Phrases.Rule rule) {
+        createRule(grammar, rule);
+        addRuleToInventory(inventoryItems, rule);
     }
 
     private void createRule(Element grammar, Phrases.Rule rule) {
@@ -76,22 +92,23 @@ public class SRGSBuilder extends AbstractSRGSBuilder {
         }
     }
 
-    private void addRuleToInventory(List<Element> inventoryItems, Phrases.Rule rule) {
+    private void addRuleToInventory(Map<String, Element> inventoryItems, Phrases.Rule rule) {
         for (int choiceIndex = 0; choiceIndex < rule.size(); choiceIndex++) {
             OneOf items = rule.get(choiceIndex);
             if (items.choiceIndex == Phrases.COMMON_RULE) {
                 if (rule.size() > 1) {
                     throw new IllegalArgumentException("There may be only one entry per common rule");
                 }
+                // TODO optimize by adding common start/end rules directly to main rule
                 appendRuleRefToAllChoices(inventoryItems, ruleName(rule));
             } else {
-                inventoryItems.get(items.choiceIndex).appendChild(ruleRef(choiceName(rule, items.choiceIndex)));
+                inventoryItems.get(inventoryKey(rule, items)).appendChild(ruleRef(choiceName(rule, items.choiceIndex)));
             }
         }
     }
 
-    private void appendRuleRefToAllChoices(List<Element> inventoryItems, String name) {
-        for (Element element : inventoryItems) {
+    private void appendRuleRefToAllChoices(Map<String, Element> inventoryItems, String name) {
+        for (Element element : inventoryItems.values()) {
             element.appendChild(ruleRef(name));
         }
     }

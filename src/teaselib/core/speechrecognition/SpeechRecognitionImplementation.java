@@ -9,5 +9,6 @@ public abstract class SpeechRecognitionImplementation implements SpeechRecogniti
 
     protected abstract void dispose();
 
+    @Override
     public abstract void close();
 }

@@ -21,7 +21,7 @@ public:
 
 	virtual ~NativeObject()	{
 		if (jthis) {
-			env->DeleteGlobalRef(this->jthis);
+			env->DeleteGlobalRef(jthis);
 		}
 	}
 
@@ -31,9 +31,9 @@ public:
 
 	NativeObject &operator=(jobject rvalue) {
 		if (jthis) {
-			env->DeleteGlobalRef(this->jthis);
+			env->DeleteGlobalRef(jthis);
 		}
-		this->jthis = env->NewGlobalRef(rvalue);
+		jthis = env->NewGlobalRef(rvalue);
 		return *this;
 	}
 

@@ -93,7 +93,6 @@ public class TeaseLibSR extends SpeechRecognitionImplementation implements Speec
 
     @Override
     public void close() {
-        // TODO Crashes -> stop SR thread ...
         dispose();
     }
 }

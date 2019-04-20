@@ -1,5 +1,6 @@
 #pragma once
 
+#include <mutex>
 #include <string>
 #include <thread>
 #include <vector>
@@ -32,16 +33,11 @@ public:
 	void stopRecognition();
 	void emulateRecognition(const wchar_t const * emulatedRecognitionResult);
 private:
-	std::thread speechRecognitionThread;
-	HANDLE hExitEvent;
-	HRESULT recognizerStatus;
-
-	void speechRecognitionEventHandlerLoop(HANDLE* rghEvents);
+	void speechRecognitionEventHandlerLoop(HANDLE hSpeechNotifyEvent, HANDLE hExitEvent);
 	HRESULT speechRecognitionInitAudio();
 	HRESULT speechRecognitionInitInterests();
-
-	std::wstring locale;
-	LANGID langID;
+	HRESULT resetGrammar();
+	void checkRecogizerStatus();
 
 	CComPtr<ISpGrammarCompiler> grammarCompiler;
 	CComPtr<ISpRecognizer> cpRecognizer;
@@ -49,11 +45,13 @@ private:
 	CComPtr<ISpAudio> cpAudioIn;
 	CComPtr<ISpRecoGrammar> cpGrammar;
 
-	jobject gjthis;
-	jobject gjevents;
+	const std::wstring locale;
+	LANGID langID;
+	const HANDLE hExitEvent;
+	jobject jevents;
 	JNIEnv* threadEnv;
 
-	HRESULT resetGrammar();
-	void checkRecogizerStatus();
+	std::mutex eventHandlerThread;
+	HRESULT recognizerStatus;
 };
 

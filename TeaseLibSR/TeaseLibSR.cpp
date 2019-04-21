@@ -51,17 +51,17 @@ extern "C"
 	 * Signature: (Ljava/util/concurrent/CountDownLatch;)V
 	 */
 	JNIEXPORT void JNICALL Java_teaselib_core_speechrecognition_implementation_TeaseLibSR_initSREventThread
-    (JNIEnv *threadEnv, jobject jthis, jobject jSignalInitialized) {
+    (JNIEnv *env, jobject jthis, jobject jSignalInitialized) {
         try {
-            SpeechRecognizer* speechRecognizer = static_cast<SpeechRecognizer*>(NativeObject::get(threadEnv, jthis));
+            SpeechRecognizer* speechRecognizer = static_cast<SpeechRecognizer*>(NativeObject::get(env, jthis));
             NativeObject::checkInitializedOrThrow(speechRecognizer);
-            COMUser([&speechRecognizer, &threadEnv, &jthis, &jSignalInitialized]() {
+            COMUser([&speechRecognizer, &env, &jthis, &jSignalInitialized]() {
                 speechRecognizer->speechRecognitionInitContext();
-				threadEnv->CallVoidMethod(jSignalInitialized, threadEnv->GetMethodID(threadEnv->GetObjectClass(jSignalInitialized), "countDown", "()V"));
-                speechRecognizer->speechRecognitionEventHandlerThread(threadEnv);
+				env->CallVoidMethod(jSignalInitialized, env->GetMethodID(env->GetObjectClass(jSignalInitialized), "countDown", "()V"));
+                speechRecognizer->speechRecognitionEventHandlerThread();
             });
         } catch (NativeException *e) {
-            JNIException::throwNew(threadEnv, e);
+            JNIException::throwNew(env, e);
         } catch (JNIException * /**e*/) {
             // Forwarded automatically
         }

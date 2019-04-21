@@ -23,7 +23,7 @@ public:
 	SpeechRecognizer(JNIEnv *env, jobject jthis, jobject jevents, const wchar_t* recognizerAttributes);
 	virtual ~SpeechRecognizer();
 	void speechRecognitionInitContext();
-	void speechRecognitionEventHandlerThread(JNIEnv* threadEnv);
+	void speechRecognitionEventHandlerThread();
 
 	void setChoices(const Choices& choices);
 	
@@ -49,7 +49,6 @@ private:
 	LANGID langID;
 	const HANDLE hExitEvent;
 	jobject jevents;
-	JNIEnv* threadEnv;
 
 	std::mutex eventHandlerThread;
 	HRESULT recognizerStatus;

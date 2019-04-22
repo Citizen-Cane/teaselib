@@ -5,21 +5,15 @@
 #include <NativeException.h>
 #include <JNIException.h>
 
-class NativeObject {
+class JObject {
 public:
-	NativeObject(JNIEnv *env) : env(env) {
+	JObject(JNIEnv* env) : env(env), jthis(nullptr) {
 	}
 
-	NativeObject(JNIEnv *env, jobject jthis) : env(env), jthis(env->NewGlobalRef(jthis)) {
-		jclass nativeObjectClass = env->GetObjectClass(jthis);
-		if (env->ExceptionCheck()) throw new JNIException(env);
-
-		const jlong nativeObject = reinterpret_cast<jlong>(this);
-		env->SetLongField(jthis, env->GetFieldID(nativeObjectClass, "nativeObject", "J"), nativeObject);
-		if (env->ExceptionCheck()) throw new JNIException(env);
+	JObject(JNIEnv* env, jobject jthis) : env(env), jthis(env->NewGlobalRef(jthis)) {
 	}
 
-	virtual ~NativeObject()	{
+	virtual ~JObject() {
 		if (jthis) {
 			env->DeleteGlobalRef(jthis);
 		}
@@ -29,12 +23,34 @@ public:
 		return jthis;
 	}
 
-	NativeObject &operator=(jobject rvalue) {
+	JObject &operator=(jobject rvalue) {
 		if (jthis) {
 			env->DeleteGlobalRef(jthis);
 		}
 		jthis = env->NewGlobalRef(rvalue);
 		return *this;
+	}
+
+protected:
+	JNIEnv* env;
+	jobject jthis;
+};
+
+class NativeObject : public JObject {
+public:
+	NativeObject(JNIEnv *env) : JObject(env, nullptr) {
+	}
+
+	NativeObject(JNIEnv *env, jobject jthis) : JObject(env, jthis) {
+		jclass nativeObjectClass = env->GetObjectClass(jthis);
+		if (env->ExceptionCheck()) throw new JNIException(env);
+
+		const jlong nativeObject = reinterpret_cast<jlong>(this);
+		env->SetLongField(jthis, env->GetFieldID(nativeObjectClass, "nativeObject", "J"), nativeObject);
+		if (env->ExceptionCheck()) throw new JNIException(env);
+	}
+
+	virtual ~NativeObject() {
 	}
 
 	static NativeObject* get(JNIEnv * env, jobject jthis) {
@@ -71,7 +87,4 @@ public:
 			throw new NativeException(E_POINTER, L"Unitialized native object");
 		}
 	}
-protected:
-	jobject jthis;
-	JNIEnv *env;
 };

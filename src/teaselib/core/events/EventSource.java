@@ -6,13 +6,13 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class EventSource<S, T extends EventArgs> {
+public class EventSource<T extends EventArgs> {
     private static final Logger logger = LoggerFactory.getLogger(EventSource.class);
 
     private final String name;
-    private final List<Event<S, T>> delegates = new ArrayList<>();
-    final Event<S, T> initial;
-    final Event<S, T> completing;
+    private final List<Event<T>> delegates = new ArrayList<>();
+    final Event<T> initial;
+    final Event<T> completing;
 
     public EventSource(String name) {
         this.name = name;
@@ -20,47 +20,47 @@ public class EventSource<S, T extends EventArgs> {
         this.completing = null;
     }
 
-    public EventSource(String name, Event<S, T> initial, Event<S, T> completing) {
+    public EventSource(String name, Event<T> initial, Event<T> completing) {
         this.name = name;
         this.initial = initial;
         this.completing = completing;
     }
 
-    public synchronized void add(Event<S, T> delegate) {
+    public synchronized void add(Event<T> delegate) {
         delegates.add(delegate);
     }
 
-    public synchronized void remove(Event<S, T> delegate) {
+    public synchronized void remove(Event<T> delegate) {
         boolean removed = delegates.remove(delegate);
         if (!removed) {
             throw new IllegalArgumentException("Removing event " + delegate.toString() + "failed.");
         }
     }
 
-    public synchronized boolean contains(Event<S, T> delegate) {
+    public synchronized boolean contains(Event<T> delegate) {
         return delegates.contains(delegate);
     }
 
-    public synchronized void run(S sender, T eventArgs) {
+    public synchronized void run(T eventArgs) {
         logger.info("{} , {} listeners {}", name, delegates.size(), eventArgs);
         if (initial != null) {
-            runDelegate(sender, eventArgs, initial);
+            runDelegate(eventArgs, initial);
         }
-        for (Event<S, T> delegate : new ArrayList<>(delegates)) {
-            runDelegate(sender, eventArgs, delegate);
+        for (Event<T> delegate : new ArrayList<>(delegates)) {
+            runDelegate(eventArgs, delegate);
             if (eventArgs.consumed) {
                 logger.info("Event {} consumed", eventArgs);
                 break;
             }
         }
         if (completing != null) {
-            runDelegate(sender, eventArgs, completing);
+            runDelegate(eventArgs, completing);
         }
     }
 
-    private void runDelegate(S sender, T eventArgs, Event<S, T> delegate) {
+    private void runDelegate(T eventArgs, Event<T> delegate) {
         try {
-            delegate.run(sender, eventArgs);
+            delegate.run(eventArgs);
         } catch (Throwable t) {
             logger.error(t.getMessage(), t);
         }

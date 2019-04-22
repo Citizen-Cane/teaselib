@@ -4,12 +4,9 @@
 
 #include "AudioLevelSignalProblemOccuredEvent.h"
 
-AudioLevelSignalProblemOccuredEvent::AudioLevelSignalProblemOccuredEvent(JNIEnv *env, jobject sender, jobject jevent, const char* name)
-    : Event(env, sender, jevent, name) {
-}
-
-AudioLevelSignalProblemOccuredEvent::~AudioLevelSignalProblemOccuredEvent() {
-}
+AudioLevelSignalProblemOccuredEvent::AudioLevelSignalProblemOccuredEvent(JNIEnv *env, jobject jevent, const char* name)
+    : Event(env,  jevent, name)
+{}
 
 void AudioLevelSignalProblemOccuredEvent::fire(const SPINTERFERENCE interference) {
     const char* audioSignalProblemFieldName;

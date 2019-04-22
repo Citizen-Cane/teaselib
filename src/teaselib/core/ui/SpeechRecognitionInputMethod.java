@@ -16,7 +16,6 @@ import teaselib.core.speechrecognition.AudioSignalProblems;
 import teaselib.core.speechrecognition.Confidence;
 import teaselib.core.speechrecognition.Rule;
 import teaselib.core.speechrecognition.SpeechRecognition;
-import teaselib.core.speechrecognition.SpeechRecognitionControl;
 import teaselib.core.speechrecognition.events.AudioSignalProblemOccuredEventArgs;
 import teaselib.core.speechrecognition.events.SpeechRecognitionStartedEventArgs;
 import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
@@ -39,11 +38,11 @@ public class SpeechRecognitionInputMethod implements InputMethod {
     final Optional<SpeechRecognitionRejectedScript> speechRecognitionRejectedScript;
     final AudioSignalProblems audioSignalProblems;
 
-    private final Event<SpeechRecognitionControl, SpeechRecognitionStartedEventArgs> speechRecognitionStartedEventHandler;
-    private final Event<SpeechRecognitionControl, AudioSignalProblemOccuredEventArgs> audioSignalProblemEventHandler;
-    private final Event<SpeechRecognitionControl, SpeechRecognizedEventArgs> speechDetectedEventHandler;
-    private final Event<SpeechRecognitionControl, SpeechRecognizedEventArgs> recognitionRejected;
-    private final Event<SpeechRecognitionControl, SpeechRecognizedEventArgs> recognitionCompleted;
+    private final Event<SpeechRecognitionStartedEventArgs> speechRecognitionStartedEventHandler;
+    private final Event<AudioSignalProblemOccuredEventArgs> audioSignalProblemEventHandler;
+    private final Event<SpeechRecognizedEventArgs> speechDetectedEventHandler;
+    private final Event<SpeechRecognizedEventArgs> recognitionRejected;
+    private final Event<SpeechRecognizedEventArgs> recognitionCompleted;
 
     private final AtomicReference<Prompt> active = new AtomicReference<>();
     private boolean speechRecognitionRejectedHandlerSignaled = false;
@@ -55,18 +54,18 @@ public class SpeechRecognitionInputMethod implements InputMethod {
         this.speechRecognitionRejectedScript = speechRecognitionRejectedScript;
         this.audioSignalProblems = new AudioSignalProblems();
 
-        this.speechRecognitionStartedEventHandler = (sender, eventArgs) -> audioSignalProblems.clear();
+        this.speechRecognitionStartedEventHandler = (eventArgs) -> audioSignalProblems.clear();
 
-        this.audioSignalProblemEventHandler = (sender, audioSignal) -> audioSignalProblems.add(audioSignal.problem);
+        this.audioSignalProblemEventHandler = (audioSignal) -> audioSignalProblems.add(audioSignal.problem);
 
-        this.speechDetectedEventHandler = (sender, eventArgs) -> {
+        this.speechDetectedEventHandler = (eventArgs) -> {
             if (audioSignalProblems.occured() && speechRecognizer.isSpeechRecognitionInProgress()) {
                 Rule result = eventArgs.result[0];
                 logAudioSignalProblem(result);
                 speechRecognizer.restartRecognition();
             }
         };
-        this.recognitionRejected = (sender, eventArgs) -> {
+        this.recognitionRejected = (eventArgs) -> {
             if (eventArgs.result != null && eventArgs.result.length == 1) {
                 if (!speechRecognitionRejectedHandlerSignaled && speechRecognitionRejectedScript.isPresent()
                         && speechRecognitionRejectedScript.get().canRun()) {
@@ -76,7 +75,7 @@ public class SpeechRecognitionInputMethod implements InputMethod {
             }
         };
 
-        this.recognitionCompleted = (sender, eventArgs) -> {
+        this.recognitionCompleted = (eventArgs) -> {
             if (eventArgs.result.length == 1) {
                 Rule result = eventArgs.result[0];
                 logger.info("rules \n{}", result.prettyPrint());

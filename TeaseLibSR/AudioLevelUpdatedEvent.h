@@ -2,12 +2,10 @@
 
 #include <Event.h>
 
-class AudioLevelUpdatedEvent : public Event
-{
+class AudioLevelUpdatedEvent : public Event {
 public:
-	AudioLevelUpdatedEvent(JNIEnv *env, jobject sender, jobject jsource, const char* name);
-	virtual ~AudioLevelUpdatedEvent();
-
+	AudioLevelUpdatedEvent(JNIEnv *env, jobject jsource, const char* name);
+	
 	void fire(const int audioLevel);
 };
 

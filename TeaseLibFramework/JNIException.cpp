@@ -6,8 +6,7 @@
 #include "JNIString.h"
 #include "NativeException.h"
 
-void JNIException::throwNew(JNIEnv* env, NativeException *e)
-{
+void JNIException::throwNew(JNIEnv* env, NativeException *e) {
 	assert(!env->ExceptionCheck());
 	jclass runtimeClass = env->FindClass(e->runtimeClass);
 	JNIString message(env, e->message.c_str());
@@ -21,19 +20,20 @@ void JNIException::throwNew(JNIEnv* env, NativeException *e)
 }
 
 JNIException::JNIException(JNIEnv *env)
-: JNIException(env, env->ExceptionOccurred())
-{
-	assert(false);
-}
-
-JNIException::JNIException(JNIEnv *env, jthrowable throwable)
-: JNIObject(env, throwable)
-{
+: JNIException(env, env->ExceptionOccurred()) {
 	env->ExceptionClear();
 }
 
-JNIString JNIException::getMessage() const
-{
+JNIException::JNIException(JNIEnv *env, jthrowable throwable)
+: JNIObject(env, throwable) {
+	env->ExceptionClear();
+}
+
+void JNIException::rethrow() const {
+	env->Throw(jthis);
+}
+
+JNIString JNIException::getMessage() const {
 	jclass runtimeClass = env->GetObjectClass(jthis);
 	jstring message = static_cast<jstring>(env->CallObjectMethod(jthis, getMethodID("toString", "()Ljava/lang/String;")));
 	assert(message);

@@ -4,12 +4,9 @@
 
 #include "AudioLevelUpdatedEvent.h"
 
-AudioLevelUpdatedEvent::AudioLevelUpdatedEvent(JNIEnv *env, jobject sender, jobject jsource, const char* name)
-    : Event(env, sender, jsource, name) {
-}
-
-AudioLevelUpdatedEvent::~AudioLevelUpdatedEvent() {
-}
+AudioLevelUpdatedEvent::AudioLevelUpdatedEvent(JNIEnv *env, jobject jsource, const char* name)
+    : Event(env,  jsource, name)
+{}
 
 void AudioLevelUpdatedEvent::fire(const int audioLevel) {
     // TODO Implement

@@ -9,7 +9,6 @@ import teaselib.core.events.Event;
 import teaselib.core.speechrecognition.Confidence;
 import teaselib.core.speechrecognition.Rule;
 import teaselib.core.speechrecognition.SpeechRecognition;
-import teaselib.core.speechrecognition.SpeechRecognitionControl;
 import teaselib.core.speechrecognition.events.SpeechRecognitionStartedEventArgs;
 import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
 
@@ -43,10 +42,10 @@ public class SpeechDetectionEventHandler {
     private static final int HypothesisMinimumNumberOfVowelsDefault = 4;
 
     private final SpeechRecognition speechRecognizer;
-    private final Event<SpeechRecognitionControl, SpeechRecognitionStartedEventArgs> recognitionStarted;
-    private final Event<SpeechRecognitionControl, SpeechRecognizedEventArgs> speechDetected;
-    private final Event<SpeechRecognitionControl, SpeechRecognizedEventArgs> recognitionRejected;
-    private final Event<SpeechRecognitionControl, SpeechRecognizedEventArgs> recognitionCompleted;
+    private final Event<SpeechRecognitionStartedEventArgs> recognitionStarted;
+    private final Event<SpeechRecognizedEventArgs> speechDetected;
+    private final Event<SpeechRecognizedEventArgs> recognitionRejected;
+    private final Event<SpeechRecognizedEventArgs> recognitionCompleted;
 
     private PromptSplitter vowelSplitter = new LatinVowelSplitter(HypothesisMinimumNumberOfVowelsDefault);
     private PromptSplitter wordSplitter = new WordSplitter(HypothesisMinimumNumberOfWordsDefault);
@@ -101,8 +100,8 @@ public class SpeechDetectionEventHandler {
         return expectedConfidence;
     }
 
-    private Event<SpeechRecognitionControl, SpeechRecognitionStartedEventArgs> recognitionStarted() {
-        return (sender, eventArgs) -> {
+    private Event<SpeechRecognitionStartedEventArgs> recognitionStarted() {
+        return (eventArgs) -> {
             if (!enabled) {
                 return;
             } else {
@@ -111,8 +110,8 @@ public class SpeechDetectionEventHandler {
         };
     }
 
-    private Event<SpeechRecognitionControl, SpeechRecognizedEventArgs> speechDetected() {
-        return (sender, eventArgs) -> {
+    private Event<SpeechRecognizedEventArgs> speechDetected() {
+        return (eventArgs) -> {
             if (!enabled) {
                 return;
             } else {
@@ -135,8 +134,8 @@ public class SpeechDetectionEventHandler {
                 || rule.hasHigherProbabilityThan(hypothesisResult);
     }
 
-    private Event<SpeechRecognitionControl, SpeechRecognizedEventArgs> recognitionRejected() {
-        return (sender, eventArgs) -> {
+    private Event<SpeechRecognizedEventArgs> recognitionRejected() {
+        return (eventArgs) -> {
             if (!enabled) {
                 return;
             } else if (hypothesisResult == null) {
@@ -149,7 +148,7 @@ public class SpeechDetectionEventHandler {
                         "Forwarding rejected recognition event {} with accepted hypothesis {} as elevated result {}",
                         eventArgs, hypothesisResult, elevatedRule);
 
-                fireRecognitionCompletedEvent(sender, elevatedRule);
+                fireRecognitionCompletedEvent(elevatedRule);
             }
         };
     }
@@ -187,8 +186,8 @@ public class SpeechDetectionEventHandler {
                 hypothesisResult.text, hypothesisResult.probability, expectedConfidence, reducedProbability);
     }
 
-    private Event<SpeechRecognitionControl, SpeechRecognizedEventArgs> recognitionCompleted() {
-        return (sender, eventArgs) -> {
+    private Event<SpeechRecognizedEventArgs> recognitionCompleted() {
+        return (eventArgs) -> {
             Rule recognitionCompletedResult = eventArgs.result[0];
 
             if (recognitionCompletedResult.confidence.isLowerThan(expectedConfidence) //
@@ -203,7 +202,7 @@ public class SpeechDetectionEventHandler {
                 logger.info("Replacing recognition result {} of accepted hypothesis {} as elevated result {}",
                         recognitionCompletedResult, hypothesisResult, elevatedRule);
 
-                fireRecognitionCompletedEvent(sender, elevatedRule);
+                fireRecognitionCompletedEvent(elevatedRule);
             }
         };
     }
@@ -212,8 +211,8 @@ public class SpeechDetectionEventHandler {
         return result.confidence.probability >= confidence.probability;
     }
 
-    private void fireRecognitionCompletedEvent(SpeechRecognitionControl sender, Rule result) {
+    private void fireRecognitionCompletedEvent(Rule result) {
         SpeechRecognizedEventArgs recognitionCompletedEventArgs = new SpeechRecognizedEventArgs(result);
-        speechRecognizer.events.recognitionCompleted.run(sender, recognitionCompletedEventArgs);
+        speechRecognizer.events.recognitionCompleted.run(recognitionCompletedEventArgs);
     }
 }

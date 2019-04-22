@@ -15,6 +15,7 @@
 #include <atlcom.h>
 
 #include <COMException.h>
+#include "UnsupportedLanguageException.h"
 
 #include "AudioLevelUpdatedEvent.h"
 #include "AudioLevelSignalProblemOccuredEvent.h"
@@ -26,99 +27,44 @@
 
 using namespace std;
 
-SpeechRecognizer::SpeechRecognizer(JNIEnv *env, jobject jthis, jobject jevents, const wchar_t* locale)
+SpeechRecognizer::SpeechRecognizer(JNIEnv *env, jobject jthis, const wchar_t* locale)
     : NativeObject(env, jthis)
     , locale(locale)
 	, langID(0x0000)
-	, recognizerStatus(S_OK)
-    , hExitEvent(CreateEvent(NULL, FALSE, FALSE, NULL))
-    , jevents(env->NewGlobalRef(jevents)) {
+	, eventHandler(nullptr)
+{
     assert(env);
     assert(jthis);
-	assert(hExitEvent);
-    assert(jevents);
     assert(locale);
-    if (jevents == NULL) {
-        throw new NativeException(E_POINTER, L"Events");
-    }
-    if (locale == NULL) {
-        throw new NativeException(E_POINTER, L"Locale");
-    }
-	if (hExitEvent == NULL) {
-		throw new NativeException(E_FAIL, L"Exit Event");
-	}
+    if (locale == NULL) throw new NativeException(E_POINTER, L"Locale");
+
+	initContext();
 }
 
 SpeechRecognizer::~SpeechRecognizer() {
-	if (hExitEvent != NULL) {
-		unique_lock<mutex> lock(eventHandlerThread, std::defer_lock);
-		if (!lock.try_lock()) {
-			SetEvent(hExitEvent);
-			lock.lock();
-		}
-		lock.unlock();
-		CloseHandle(hExitEvent);
-	}
-
-	assert(jthis == nullptr);
-	assert(jevents== nullptr);
+	delete eventHandler;
 }
 
-void SpeechRecognizer::speechRecognitionEventHandlerThread(const std::function<void(void)>& signal) {
-	lock_guard<mutex> lock(eventHandlerThread);
-	signal();
-
-	shared_ptr<SpeechRecognizer> releaseNativeObjects(this, [](SpeechRecognizer* speechRecognizer) {
-		speechRecognizer->env->DeleteGlobalRef(speechRecognizer->jevents);
-		speechRecognizer->jevents = nullptr;
-		speechRecognizer->env->DeleteGlobalRef(speechRecognizer->jthis);
-		speechRecognizer->jthis = nullptr;
-	});
-
-	recognizerStatus = speechRecognitionInitAudio();
-	assert(SUCCEEDED(recognizerStatus));
-	if (SUCCEEDED(recognizerStatus)) {
-		recognizerStatus = speechRecognitionInitInterests();
-		assert(SUCCEEDED(recognizerStatus));
-		// Establish a Win32 event to signal when speech events are available
-		HANDLE hSpeechNotifyEvent = INVALID_HANDLE_VALUE;
-		recognizerStatus = cpContext->SetNotifyWin32Event();
-		assert(SUCCEEDED(recognizerStatus));
-		if (SUCCEEDED(recognizerStatus)) {
-			// Establish a separate win32 event to signal event loop exit
-			hSpeechNotifyEvent = cpContext->GetNotifyEventHandle();
-			if (INVALID_HANDLE_VALUE == hSpeechNotifyEvent) {
-				// Notification handle unsupported
-				recognizerStatus = E_NOINTERFACE;
-			}
-			assert(SUCCEEDED(recognizerStatus));
-			if (SUCCEEDED(recognizerStatus)) {
-				speechRecognitionEventHandlerLoop(hSpeechNotifyEvent);
-			}
-		}
-	}
-}
-
-void SpeechRecognizer::speechRecognitionInitContext() {
-    TCHAR languageID[MAX_PATH];
-    const int size = GetLocaleInfoEx(locale.c_str(), LOCALE_ILANGUAGE, languageID, MAX_PATH);
+void SpeechRecognizer::initContext() {
+	TCHAR languageID[MAX_PATH];
+	const int size = GetLocaleInfoEx(locale.c_str(), LOCALE_ILANGUAGE, languageID, MAX_PATH);
 	assert(size > 0);
 	if (size == 0) throw new NativeException(E_INVALIDARG, locale.c_str());
 
-    const wchar_t* langIDWithoutTrailingZeros = languageID;
-    while (*langIDWithoutTrailingZeros == '0') {
-        langIDWithoutTrailingZeros++;
-    }
-    const std::wstring recognizerAttributes = std::wstring(L"language=") + langIDWithoutTrailingZeros;
-    // Find the best matching installed recognizer for the language
-    CComPtr<ISpObjectToken> cpRecognizerToken;
-    HRESULT hr = SpFindBestToken(SPCAT_RECOGNIZERS, recognizerAttributes.c_str(), NULL, &cpRecognizerToken);
+	const wchar_t* langIDWithoutTrailingZeros = languageID;
+	while (*langIDWithoutTrailingZeros == '0') {
+		langIDWithoutTrailingZeros++;
+	}
+	const std::wstring recognizerAttributes = std::wstring(L"language=") + langIDWithoutTrailingZeros;
+	// Find the best matching installed recognizer for the language
+	CComPtr<ISpObjectToken> cpRecognizerToken;
+	HRESULT hr = SpFindBestToken(SPCAT_RECOGNIZERS, recognizerAttributes.c_str(), NULL, &cpRecognizerToken);
 	assert(SUCCEEDED(hr));
 	if (FAILED(hr)) throw new COMException(hr);
 	if (cpRecognizerToken == NULL) {
-        throw new NativeException(FAILED(hr) ? hr : E_INVALIDARG, (std::wstring(L"Unsupported language or region '") + locale +
-                                  L"'. Please install the corresponding Windows language pack.").c_str());
-    }
+		throw new UnsupportedLanguageException(FAILED(hr) ? hr : E_INVALIDARG, (std::wstring(L"Unsupported language or region '") + locale +
+			L"'. Please install the corresponding Windows language pack.").c_str());
+	}
 
 	hr = grammarCompiler.CoCreateInstance(CLSID_SpW3CGrammarCompiler);
 	assert(SUCCEEDED(hr));
@@ -152,28 +98,95 @@ void SpeechRecognizer::speechRecognitionInitContext() {
 	hr = cpContext->CreateGrammar(0, &cpGrammar);
 	assert(SUCCEEDED(hr));
 	if (FAILED(hr)) throw new COMException(hr);
+
+	hr = speechRecognitionInitAudio();
+	assert(SUCCEEDED(hr));
+	if (FAILED(hr)) throw new COMException(hr);
+
 }
 
 HRESULT SpeechRecognizer::speechRecognitionInitAudio() {
-    // Initialize an audio object to use the default audio input of the system and set the recognizer to use it
-    HRESULT hr = cpAudioIn.CoCreateInstance(CLSID_SpMMAudioIn);
-    assert(SUCCEEDED(hr));
-    // This will typically use the microphone input
-    if (SUCCEEDED(hr)) {
-        hr = cpRecognizer->SetInput(cpAudioIn, TRUE);
-        assert(SUCCEEDED(hr));
-        if (SUCCEEDED(hr)) {
-            // Populate a WAVEFORMATEX struct with our desired output audio format information.
-            WAVEFORMATEX* pWfexCoMemRetainedAudioFormat = NULL;
-            GUID guidRetainedAudioFormat = GUID_NULL;
-            hr = SpConvertStreamFormatEnum(SPSF_16kHz16BitMono, &guidRetainedAudioFormat, &pWfexCoMemRetainedAudioFormat);
-            assert(SUCCEEDED(hr));
-        }
-    }
-    return hr;
+	// Initialize an audio object to use the default audio input of the system and set the recognizer to use it
+	HRESULT hr = cpAudioIn.CoCreateInstance(CLSID_SpMMAudioIn);
+	assert(SUCCEEDED(hr));
+	// This will typically use the microphone input
+	if (SUCCEEDED(hr)) {
+		hr = cpRecognizer->SetInput(cpAudioIn, TRUE);
+		assert(SUCCEEDED(hr));
+		if (SUCCEEDED(hr)) {
+			// Populate a WAVEFORMATEX struct with our desired output audio format information.
+			WAVEFORMATEX* pWfexCoMemRetainedAudioFormat = NULL;
+			GUID guidRetainedAudioFormat = GUID_NULL;
+			hr = SpConvertStreamFormatEnum(SPSF_16kHz16BitMono, &guidRetainedAudioFormat, &pWfexCoMemRetainedAudioFormat);
+			assert(SUCCEEDED(hr));
+		}
+	}
+	return hr;
 }
 
-HRESULT SpeechRecognizer::speechRecognitionInitInterests() {
+void SpeechRecognizer::startEventHandler(JNIEnv* eventHandlerEnv, jobject jevents, const std::function<void(void)>& signalInitialized) {
+	this->eventHandler = new SpeechRecognizer::EventHandler(eventHandlerEnv, jevents, cpContext);
+	eventHandler->processEvents(signalInitialized);
+}
+
+SpeechRecognizer::EventHandler::EventHandler(JNIEnv* env, jobject jevents, ISpRecoContext * cpContext)
+	: JObject(env, jevents)
+	, cpContext(cpContext)
+	, hExitEvent(CreateEvent(NULL, FALSE, FALSE, NULL))
+	, recognizerStatus(S_OK)
+{
+	assert(hExitEvent);
+	if (hExitEvent == NULL) {
+		throw new NativeException(E_FAIL, L"Exit Event");
+	}
+}
+
+SpeechRecognizer::EventHandler::~EventHandler() {
+	if (hExitEvent != NULL) {
+		unique_lock<mutex> lock(thread, std::defer_lock);
+		if (!lock.try_lock()) {
+			SetEvent(hExitEvent);
+			lock.lock();
+		}
+		lock.unlock();
+		CloseHandle(hExitEvent);
+	}
+
+	 assert(jthis == nullptr);
+}
+
+void SpeechRecognizer::EventHandler::processEvents(const std::function<void(void)>& signalInitialized) {
+	lock_guard<mutex> lock(thread);
+	signalInitialized();
+
+	shared_ptr<EventHandler> releaseNativeObjects(this, [](EventHandler* eventHandler) {
+		eventHandler->env->DeleteGlobalRef(eventHandler->jthis);
+		eventHandler->jthis = nullptr;
+	});
+
+	recognizerStatus = speechRecognitionInitInterests();
+	assert(SUCCEEDED(recognizerStatus));
+	if (SUCCEEDED(recognizerStatus)) {
+		// Establish a Win32 event to signal when speech events are available
+		HANDLE hSpeechNotifyEvent = INVALID_HANDLE_VALUE;
+		recognizerStatus = cpContext->SetNotifyWin32Event();
+		assert(SUCCEEDED(recognizerStatus));
+		if (SUCCEEDED(recognizerStatus)) {
+			// Establish a separate win32 event to signal event loop exit
+			hSpeechNotifyEvent = cpContext->GetNotifyEventHandle();
+			if (INVALID_HANDLE_VALUE == hSpeechNotifyEvent) {
+				// Notification handle unsupported
+				recognizerStatus = E_NOINTERFACE;
+			}
+			assert(SUCCEEDED(recognizerStatus));
+			if (SUCCEEDED(recognizerStatus)) {
+				eventLoop(hSpeechNotifyEvent);
+			}
+		}
+	}
+}
+
+HRESULT SpeechRecognizer::EventHandler::speechRecognitionInitInterests() {
     // Subscribe to the speech recognition event and end stream event
     ULONGLONG ullEventInterest =
         SPFEI(SPEI_PHRASE_START) |
@@ -187,7 +200,7 @@ HRESULT SpeechRecognizer::speechRecognitionInitInterests() {
     return hr;
 }
 
-void SpeechRecognizer::speechRecognitionEventHandlerLoop(HANDLE hSpeechNotifyEvent) {
+void SpeechRecognizer::EventHandler::eventLoop(HANDLE hSpeechNotifyEvent) {
     // Speech recognition event loop
     bool interrupted = false;
     while (!interrupted && SUCCEEDED(recognizerStatus)) {
@@ -205,7 +218,7 @@ void SpeechRecognizer::speechRecognitionEventHandlerLoop(HANDLE hSpeechNotifyEve
                     switch (spevent.eEventId) {
 						case SPEI_PHRASE_START: {
 							// Start of recognition
-							SpeechRecognitionStartedEvent(env, jthis, jevents, "recognitionStarted").fire();
+							SpeechRecognitionStartedEvent(env, jthis, "recognitionStarted").fire();
 							break;
 						}
 						case SPEI_HYPOTHESIS: {
@@ -216,7 +229,7 @@ void SpeechRecognizer::speechRecognitionEventHandlerLoop(HANDLE hSpeechNotifyEve
 							if (SUCCEEDED(recognizerStatus)) {
 								// TODO No alternate phrases, but may produce the correct text -> create event with a single result object
 								// wprintf(L"Hypothesis event received, text=\"%s\"\r\n", pszCoMemResultText);
-								SpeechRecognizedEvent(env, jthis, jevents, "speechDetected").fire(pResult);
+								SpeechRecognizedEvent(env, jthis, "speechDetected").fire(pResult);
 							}
 							if (NULL != pszCoMemResultText) {
 								CoTaskMemFree(pszCoMemResultText);
@@ -230,7 +243,7 @@ void SpeechRecognizer::speechRecognitionEventHandlerLoop(HANDLE hSpeechNotifyEve
 							recognizerStatus = pResult->GetText(SP_GETWHOLEPHRASE, SP_GETWHOLEPHRASE, false, &pszCoMemResultText, NULL);
 							if (SUCCEEDED(recognizerStatus)) {
 								// wprintf(L"False Recognition event received, text=\"%s\"\r\n", pszCoMemResultText);
-								SpeechRecognizedEvent(env, jthis, jevents, "recognitionRejected").fire(pResult);
+								SpeechRecognizedEvent(env, jthis, "recognitionRejected").fire(pResult);
 							}
 							if (NULL != pszCoMemResultText) {
 								CoTaskMemFree(pszCoMemResultText);
@@ -240,20 +253,20 @@ void SpeechRecognizer::speechRecognitionEventHandlerLoop(HANDLE hSpeechNotifyEve
 						case SPEI_RECOGNITION: {
 							// Successful recognition
 							ISpRecoResult* pResult = spevent.RecoResult();
-							SpeechRecognizedEvent(env, jthis, jevents, "recognitionCompleted").fire(pResult);
+							SpeechRecognizedEvent(env, jthis, "recognitionCompleted").fire(pResult);
 							break;
 						}
 						case SPEI_TTS_AUDIO_LEVEL: {
 							// Audio level for level meter
 							assert(spevent.lParam == 0);
-							AudioLevelUpdatedEvent(env, jthis, jevents, "audioLevelUpdated").fire(spevent.wParam);
+							AudioLevelUpdatedEvent(env, jthis, "audioLevelUpdated").fire(spevent.wParam);
 							break;
 						}
 						case SPEI_INTERFERENCE: {
 							// Audio interference
 							SPINTERFERENCE interference = static_cast<SPINTERFERENCE>(spevent.lParam);
 							assert(spevent.wParam == 0);
-							AudioLevelSignalProblemOccuredEvent(env, jthis, jevents, "audioSignalProblemOccured").fire(interference);
+							AudioLevelSignalProblemOccuredEvent(env, jthis, "audioSignalProblemOccured").fire(interference);
 							break;
 						}
 						case SPEI_RECO_STATE_CHANGE: {
@@ -289,7 +302,7 @@ void SpeechRecognizer::speechRecognitionEventHandlerLoop(HANDLE hSpeechNotifyEve
 void SpeechRecognizer::setChoices(const Choices& choices) {
 	checkRecogizerStatus();
 
-	UpdateGrammar(cpContext, [&choices, this]() {
+	UpdateGrammar code(cpContext, [&choices, this]() {
 		HRESULT hr = resetGrammar();
 		if (FAILED(hr)) throw new COMException(hr);
 
@@ -439,7 +452,7 @@ void SpeechRecognizer::stopRecognition() {
 	if (FAILED(hr)) throw new COMException(hr);
 }
 
-void SpeechRecognizer::emulateRecognition(const wchar_t const * emulatedRecognitionResult) {
+void SpeechRecognizer::emulateRecognition(const wchar_t * emulatedRecognitionResult) {
 	checkRecogizerStatus();
 
 	CComPtr<ISpPhraseBuilder> cpPhrase;
@@ -463,11 +476,12 @@ HRESULT SpeechRecognizer::resetGrammar() {
 }
 
 void SpeechRecognizer::checkRecogizerStatus() {
-	// TODO Resolve thread initialization issue in java coclass - instance must be created outside handler thread
-	// thisInstance.checkThread();
+	checkThread();
 
-	assert(SUCCEEDED(recognizerStatus));
-	if (FAILED(recognizerStatus)) throw new COMException(recognizerStatus);
+	if (FAILED(eventHandler->recognizerStatus)) {
+		assert(false);
+		throw new COMException(eventHandler->recognizerStatus);
+	}
 
 	if (!cpContext) {
 		throw new COMException(E_UNEXPECTED);

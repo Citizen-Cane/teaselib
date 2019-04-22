@@ -89,7 +89,7 @@ public class SpeechRecognition {
         TooSlow
     }
 
-    public final SpeechRecognitionEvents<SpeechRecognitionControl> events;
+    public final SpeechRecognitionEvents events;
 
     private final Locale locale;
     private final SpeechDetectionEventHandler hypothesisEventHandler;
@@ -114,10 +114,10 @@ public class SpeechRecognition {
     private boolean speechRecognitionActive = false;
 
     // Allow other threads to wait for speech recognition to complete
-    private Event<SpeechRecognitionControl, SpeechRecognitionStartedEventArgs> lockSpeechRecognitionInProgress = (
-            sender, args) -> lockSpeechRecognitionInProgressSyncObject();
+    private Event<SpeechRecognitionStartedEventArgs> lockSpeechRecognitionInProgress = (
+            args) -> lockSpeechRecognitionInProgressSyncObject();
 
-    private Event<SpeechRecognitionControl, SpeechRecognizedEventArgs> unlockSpeechRecognitionInProgress = (sender,
+    private Event<SpeechRecognizedEventArgs> unlockSpeechRecognitionInProgress = (
             args) -> unlockSpeechRecognitionInProgressSyncObject();
 
     private Confidence recognitionConfidence;
@@ -158,7 +158,7 @@ public class SpeechRecognition {
     SpeechRecognition(Locale locale, Class<? extends SpeechRecognitionImplementation> srClass) {
         // First add the progress events, because we don't want to get events
         // consumed before setting the in-progress state
-        this.events = new SpeechRecognitionEvents<>(lockSpeechRecognitionInProgress, unlockSpeechRecognitionInProgress);
+        this.events = new SpeechRecognitionEvents(lockSpeechRecognitionInProgress, unlockSpeechRecognitionInProgress);
         this.locale = locale;
         if (locale == null) {
             sr = Unsupported.Instance;

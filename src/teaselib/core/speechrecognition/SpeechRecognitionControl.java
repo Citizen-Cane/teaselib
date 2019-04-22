@@ -10,7 +10,7 @@ public interface SpeechRecognitionControl {
      * @param languageCode
      *            A language code in the form XX[X]-YY[Y], like en-us, en-uk, ger, etc.
      */
-    void init(SpeechRecognitionEvents<SpeechRecognitionControl> events, Locale locale) throws Throwable;
+    void init(SpeechRecognitionEvents events, Locale locale) throws Throwable;
 
     void setMaxAlternates(int n);
 

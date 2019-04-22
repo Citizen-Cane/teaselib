@@ -5,9 +5,8 @@
 class SpeechRecognitionStartedEvent : public Event
 {
 public:
-	SpeechRecognitionStartedEvent(JNIEnv *env, jobject sender, jobject jsource, const char* name);
-	virtual ~SpeechRecognitionStartedEvent();
-
+	SpeechRecognitionStartedEvent(JNIEnv *env, jobject jsource, const char* name);
+	
 	void fire();
 };
 

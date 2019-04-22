@@ -42,12 +42,10 @@ extern "C"
 					speechSynthesizer = new SpeechSynthesizer(env, jthis);
 				}
 				speechSynthesizer->addLexiconEntry(JNIString(env, locale), JNIString(env, word), static_cast<SPPARTOFSPEECH>(partOfSpeech), JNIString(env, pronunciation));
-			}
-			catch (NativeException *e) {
+			} catch (NativeException *e) {
 				JNIException::throwNew(env, e);
-			}
-			catch (JNIException /**e*/) {
-				// Forwarded automatically
+			} catch (JNIException* e) {
+				e->rethrow();
 			}
 		}
 
@@ -64,13 +62,12 @@ extern "C"
 				speechSynthesizer = new SpeechSynthesizer(env, jthis);
 			}
 			return speechSynthesizer->voiceList();
-		}
-		catch (NativeException *e) {
+		} catch (NativeException *e) {
 			JNIException::throwNew(env, e);
+		} catch (JNIException* e) {
+			e->rethrow();
 		}
-		catch (JNIException /**e*/) {
-			// Forwarded automatically
-		}
+		return nullptr;
 	}
 
     /*
@@ -87,21 +84,23 @@ extern "C"
 			const Voice* voice = static_cast<const Voice*>(NativeObject::get(env, jvoice));
             // A null voice is a valid value, it denotes the system default voice
 			speechSynthesizer->setVoice(voice);
-        } catch (NativeException *e) {
-            JNIException::throwNew(env, e);
-        } catch (JNIException /**e*/) {
-            // Forwarded automatically
-        }
+		} catch (NativeException* e) {
+			JNIException::throwNew(env, e);
+		} catch (JNIException* e) {
+			e->rethrow();
+		}
     }
 
-    jobjectArray getHints(JNIEnv* env, jobject jthis) {
-        jclass jclass = env->GetObjectClass(jthis);
-        jobjectArray hints = (jobjectArray) env->GetObjectField(jthis, env->GetFieldID(jclass, "hints", "[Ljava/lang/String;"));
-        if (env->ExceptionCheck()) {
-            throw new JNIException(env);
-        }
-        return hints;
-    }
+	extern "C++" {
+		jobjectArray getHints(JNIEnv* env, jobject jthis) {
+			jclass jclass = env->GetObjectClass(jthis);
+			jobjectArray hints = (jobjectArray)env->GetObjectField(jthis, env->GetFieldID(jclass, "hints", "[Ljava/lang/String;"));
+			if (env->ExceptionCheck()) {
+				throw new JNIException(env);
+			}
+			return hints;
+		}
+	}
 
     /*
     * Class:     teaselib_texttospeech_implementation_TeaseLibTTS
@@ -115,11 +114,11 @@ extern "C"
             NativeObject::checkInitializedOrThrow(speechSynthesizer);
             speechSynthesizer->applyHints(JNIUtilities::stringArray(env, getHints(env, jthis)));
             speechSynthesizer->speak(JNIString(env, prompt));
-        } catch (NativeException *e) {
-            JNIException::throwNew(env, e);
-        } catch (JNIException /**e*/) {
-            // Forwarded automatically
-        }
+		} catch (NativeException* e) {
+			JNIException::throwNew(env, e);
+		} catch (JNIException* e) {
+			e->rethrow();
+		}
     }
 
     /*
@@ -136,11 +135,11 @@ extern "C"
             speechSynthesizer->applyHints(JNIUtilities::stringArray(env, getHints(env, jthis)));
             const std::wstring soundFile = speechSynthesizer->speak(JNIString(env, prompt), JNIString(env, path));
             actualPath = JNIString(env, soundFile.c_str()).detach();
-        } catch (NativeException *e) {
-            JNIException::throwNew(env, e);
-        } catch (JNIException /**e*/) {
-            // Forwarded automatically
-        }
+		} catch (NativeException* e) {
+			JNIException::throwNew(env, e);
+		} catch (JNIException* e) {
+			e->rethrow();
+		}
         return actualPath;
     }
 
@@ -156,11 +155,11 @@ extern "C"
         SpeechSynthesizer* speechSynthesizer = static_cast<SpeechSynthesizer*>(NativeObject::get(env, jthis));
         NativeObject::checkInitializedOrThrow(speechSynthesizer);
         speechSynthesizer->stop();
-    } catch (NativeException *e) {
-        JNIException::throwNew(env, e);
-    } catch (JNIException /**e*/) {
-        // Forwarded automatically
-    }
+	} catch (NativeException* e) {
+		JNIException::throwNew(env, e);
+	} catch (JNIException* e) {
+		e->rethrow();
+	}
 
     /*
     * Class:     teaselib_texttospeech_implementation_TeaseLibTTS

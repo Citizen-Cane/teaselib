@@ -23,7 +23,6 @@ import teaselib.core.media.RenderDesktopItem;
 import teaselib.core.media.RenderSound;
 import teaselib.core.speechrecognition.SpeechRecognition;
 import teaselib.core.speechrecognition.SpeechRecognition.TimeoutBehavior;
-import teaselib.core.speechrecognition.SpeechRecognitionControl;
 import teaselib.core.speechrecognition.SpeechRecognizer;
 import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
 import teaselib.core.util.ExceptionUtil;
@@ -339,13 +338,13 @@ public abstract class TeaseScript extends TeaseScriptMath {
     protected Answer awaitTimeout(long seconds, SpeechRecognition.TimeoutBehavior timeoutBehavior) {
         AtomicBoolean ignoreTimeoutInDubioMitius = new AtomicBoolean(false);
 
-        Event<SpeechRecognitionControl, SpeechRecognizedEventArgs> recognitionRejected;
+        Event<SpeechRecognizedEventArgs> recognitionRejected;
         SpeechRecognition speechRecognizer = teaseLib.globals.get(SpeechRecognizer.class).get(actor.locale());
-        EventSource<SpeechRecognitionControl, SpeechRecognizedEventArgs> speechDetectedEvents = speechRecognizer.events.recognitionRejected;
+        EventSource<SpeechRecognizedEventArgs> speechDetectedEvents = speechRecognizer.events.recognitionRejected;
         if (timeoutBehavior == TimeoutBehavior.InDubioMitius) {
             Thread scriptFunctionThread = Thread.currentThread();
             // TODO Should be SpeechDetectedEvent
-            recognitionRejected = (sender, eventArgs) -> {
+            recognitionRejected = (eventArgs) -> {
                 if (!ignoreTimeoutInDubioMitius.get()) {
                     logger.info("-{} - : timeout disabled {}", scriptFunctionThread.getName(), timeoutBehavior);
                     ignoreTimeoutInDubioMitius.set(true);

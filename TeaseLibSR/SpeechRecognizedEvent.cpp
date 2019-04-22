@@ -16,15 +16,11 @@
 
 using namespace std;
 
-SpeechRecognizedEvent::SpeechRecognizedEvent(JNIEnv *env, jobject sender, jobject jevent, const char* name)
-    : Event(env, sender, jevent, name)
+SpeechRecognizedEvent::SpeechRecognizedEvent(JNIEnv *env,  jobject jevent, const char* name)
+    : Event(env, jevent, name)
 	, ruleClass(JNIClass::getClass(env, "teaselib/core/speechrecognition/Rule"))
 	, confidenceClass(JNIClass::getClass(env, "teaselib/core/speechrecognition/Confidence"))
-{
-}
-
-SpeechRecognizedEvent::~SpeechRecognizedEvent() {
-}
+{}
 
 const char* getConfidenceFieldName(signed char confidence) {
 	if (confidence == SP_LOW_CONFIDENCE) {

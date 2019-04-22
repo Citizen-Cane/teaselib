@@ -4,12 +4,9 @@
 
 #include "SpeechRecognitionStartedEvent.h"
 
-SpeechRecognitionStartedEvent::SpeechRecognitionStartedEvent(JNIEnv *env, jobject sender, jobject jsource, const char* name)
-    : Event(env, sender, jsource, name) {
-}
-
-SpeechRecognitionStartedEvent::~SpeechRecognitionStartedEvent() {
-}
+SpeechRecognitionStartedEvent::SpeechRecognitionStartedEvent(JNIEnv *env, jobject jsource, const char* name)
+    : Event(env, jsource, name)
+{}
 
 void SpeechRecognitionStartedEvent::fire() {
     jclass eventClass = JNIClass::getClass(env, "teaselib/core/speechrecognition/events/SpeechRecognitionStartedEventArgs");

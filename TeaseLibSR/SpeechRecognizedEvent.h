@@ -35,9 +35,8 @@ private:
 
 class SpeechRecognizedEvent : public Event {
 public:
-	SpeechRecognizedEvent(JNIEnv *env, jobject sender, jobject jevent, const char* name);
-	virtual ~SpeechRecognizedEvent();
-
+	SpeechRecognizedEvent(JNIEnv *env,  jobject jevent, const char* name);
+	
 	void fire(ISpRecoResult* pResult);
 private:
 	const jclass confidenceClass;

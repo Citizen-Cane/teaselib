@@ -14,5 +14,6 @@ public:
 
 	JNIException(JNIEnv *env);
 	JNIException(JNIEnv *env, jthrowable throwable);
+	void rethrow() const;
 	JNIString getMessage() const;
 };

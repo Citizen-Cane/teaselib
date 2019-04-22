@@ -15,7 +15,6 @@ import teaselib.core.configuration.Configuration;
 import teaselib.core.events.Event;
 import teaselib.core.speechrecognition.Confidence;
 import teaselib.core.speechrecognition.SpeechRecognition;
-import teaselib.core.speechrecognition.SpeechRecognitionControl;
 import teaselib.core.speechrecognition.SpeechRecognizer;
 import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
 import teaselib.core.speechrecognition.srgs.Phrases;
@@ -57,9 +56,7 @@ public class SpeechRecognitionPronunciationDictionaryTest {
             CountDownLatch completed = new CountDownLatch(1);
             List<String> choices = Arrays.asList("Bereit", "Madame");
 
-            Event<SpeechRecognitionControl, SpeechRecognizedEventArgs> speechRecognized = (sender,
-                    eventArgs) -> completed.countDown();
-
+            Event<SpeechRecognizedEventArgs> speechRecognized = (eventArgs) -> completed.countDown();
             speechRecognition.events.recognitionCompleted.add(speechRecognized);
             try {
                 speechRecognition.startRecognition(Phrases.of(choices), Confidence.Normal);

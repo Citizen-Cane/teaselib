@@ -8,7 +8,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import teaselib.core.speechrecognition.SpeechRecognitionChoices;
-import teaselib.core.speechrecognition.SpeechRecognitionControl;
 import teaselib.core.speechrecognition.SpeechRecognitionEvents;
 import teaselib.core.speechrecognition.SpeechRecognitionImplementation;
 
@@ -25,26 +24,20 @@ public class TeaseLibSR extends SpeechRecognitionImplementation implements Speec
     }
 
     @Override
-    public void init(SpeechRecognitionEvents<SpeechRecognitionControl> events, Locale locale) throws Throwable {
-        String languageCode = languageCode(locale);
+    public void init(SpeechRecognitionEvents events, Locale locale) throws Throwable {
+        try {
+            initSR(languageCode(locale));
+        } catch (UnsupportedLanguageException e) {
+            logger.warn(e.getMessage());
+            String language = locale.getLanguage();
+            logger.info("-> trying language {}", language);
+            initSR(language);
+        }
 
         CountDownLatch awaitInitialized = new CountDownLatch(1);
         Runnable speechRecognitionService = () -> {
             try {
-                // TODO should be placed right after languageCode but when moved it crashes everything
-                initSR(events, languageCode);
-                initSREventThread(awaitInitialized);
-            } catch (UnsupportedLanguageException e) {
-                logger.warn(e.getMessage());
-                logger.info("-> trying language {}", locale.getLanguage());
-                initSR(events, locale.getLanguage());
-                try {
-                    initSREventThread(awaitInitialized);
-                } catch (Exception e1) {
-                    eventThreadException = e1;
-                } catch (Throwable t1) {
-                    eventThreadException = t1;
-                }
+                initSREventThread(events, awaitInitialized);
             } catch (Exception e) {
                 eventThreadException = e;
             } catch (Throwable t) {
@@ -68,14 +61,14 @@ public class TeaseLibSR extends SpeechRecognitionImplementation implements Speec
      * 
      * @param languageCode
      */
-    public native void initSR(SpeechRecognitionEvents<SpeechRecognitionControl> events, String languageCode);
+    public native void initSR(String languageCode);
 
     /**
      * Init the speech recognizer event handling thread. Creating the thread in native code and then attaching the VM
      * would cause the thread to get a default class loader, without the class path to teaselib, resulting in not being
      * able to create event objects
      */
-    private native void initSREventThread(CountDownLatch signalInitialized);
+    private native void initSREventThread(SpeechRecognitionEvents events, CountDownLatch signalInitialized);
 
     @Override
     public native void setChoices(List<String> choices);

@@ -4,11 +4,9 @@
 
 #include <sapi.h>
 
-class AudioLevelSignalProblemOccuredEvent : public Event
-{
+class AudioLevelSignalProblemOccuredEvent : public Event {
 public:
-	AudioLevelSignalProblemOccuredEvent(JNIEnv *env, jobject sender, jobject jevent, const char* name);
-	virtual ~AudioLevelSignalProblemOccuredEvent();
+	AudioLevelSignalProblemOccuredEvent(JNIEnv *env, jobject jevent, const char* name);
 
 	void fire(const SPINTERFERENCE interference);
 };

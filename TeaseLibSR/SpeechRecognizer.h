@@ -16,28 +16,26 @@
 #include <COMUser.h>
 
 
-class SpeechRecognizer : public NativeObject, protected COMUser
+class SpeechRecognizer : public NativeObject, private COMUser
 {
 public:
 	typedef std::vector<std::wstring> Choices;
 
-	SpeechRecognizer(JNIEnv *env, jobject jthis, jobject jevents, const wchar_t* recognizerAttributes);
+	SpeechRecognizer(JNIEnv *env, jobject jthis, const wchar_t* recognizerAttributes);
 	virtual ~SpeechRecognizer();
-	void speechRecognitionInitContext();
-	void speechRecognitionEventHandlerThread(const std::function<void(void)>& signal);
+	void startEventHandler(JNIEnv* eventHandlerEnv, jobject jevents, const std::function<void(void)>& signalInitialized);
 
 	void setChoices(const Choices& choices);
-	
 	void setChoices(const char* srgs, const size_t length);
 	void setMaxAlternates(const int maxAlternates);
 	void startRecognition();
 	void stopRecognition();
 	void emulateRecognition(const wchar_t * emulatedRecognitionResult);
+
 private:
-	COMUser thisInstance;
-	void speechRecognitionEventHandlerLoop(HANDLE hSpeechNotifyEvent);
+
+	void initContext();
 	HRESULT speechRecognitionInitAudio();
-	HRESULT speechRecognitionInitInterests();
 	HRESULT resetGrammar();
 	void checkRecogizerStatus();
 
@@ -49,10 +47,20 @@ private:
 
 	const std::wstring locale;
 	LANGID langID;
-	const HANDLE hExitEvent;
-	jobject jevents;
 
-	std::mutex eventHandlerThread;
-	HRESULT recognizerStatus;
+	class EventHandler : public JObject, private COMUser {
+	public:
+		EventHandler(JNIEnv* env, jobject jevents, ISpRecoContext * cpContext);
+		~EventHandler();
+		void processEvents(const std::function<void(void)>& signalInitialized);
+		HRESULT recognizerStatus;
+	private:
+		ISpRecoContext* cpContext;
+		HRESULT speechRecognitionInitInterests();
+		void eventLoop(HANDLE hSpeechNotifyEvent);
+		std::mutex thread;
+		const HANDLE hExitEvent;
+	};
+	EventHandler* eventHandler;
 };
 

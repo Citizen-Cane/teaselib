@@ -10,18 +10,18 @@ extern "C" {
 /*
  * Class:     teaselib_core_speechrecognition_implementation_TeaseLibSR
  * Method:    initSR
- * Signature: (Lteaselib/core/speechrecognition/SpeechRecognitionEvents;Ljava/lang/String;)V
+ * Signature: (Ljava/lang/String;)V
  */
 JNIEXPORT void JNICALL Java_teaselib_core_speechrecognition_implementation_TeaseLibSR_initSR
-  (JNIEnv *, jobject, jobject, jstring);
+  (JNIEnv *, jobject, jstring);
 
 /*
  * Class:     teaselib_core_speechrecognition_implementation_TeaseLibSR
  * Method:    initSREventThread
- * Signature: (Ljava/util/concurrent/CountDownLatch;)V
+ * Signature: (Lteaselib/core/speechrecognition/SpeechRecognitionEvents;Ljava/util/concurrent/CountDownLatch;)V
  */
 JNIEXPORT void JNICALL Java_teaselib_core_speechrecognition_implementation_TeaseLibSR_initSREventThread
-  (JNIEnv *, jobject, jobject);
+  (JNIEnv *, jobject, jobject, jobject);
 
 /*
  * Class:     teaselib_core_speechrecognition_implementation_TeaseLibSR

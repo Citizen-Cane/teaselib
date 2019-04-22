@@ -25,44 +25,43 @@ using namespace std;
 
 extern "C"
 {
-    /*
-    * Class:     teaselib_speechrecognition_implementation_TeaseLibSR
-    * Method:    initSR
-    * Signature: (Lteaselib/speechrecognition/SpeechRecognitionEvents;Ljava/lang/String;)V
-    */
+	/*
+	 * Class:     teaselib_core_speechrecognition_implementation_TeaseLibSR
+	 * Method:    initSR
+	 * Signature: (Ljava/lang/String;)V
+	 */
     JNIEXPORT void JNICALL Java_teaselib_core_speechrecognition_implementation_TeaseLibSR_initSR
-    (JNIEnv *env, jobject jthis, jobject jevents, jstring jlocale) {
+    (JNIEnv *env, jobject jthis, jstring jlocale) {
         try {
             JNIString locale(env, jlocale);
-            SpeechRecognizer* speechRecognizer = new SpeechRecognizer(env, jthis, jevents, locale);
+            SpeechRecognizer* speechRecognizer = new SpeechRecognizer(env, jthis, locale);
             NativeObject::checkInitializedOrThrow(speechRecognizer);
         } catch (NativeException *e) {
             JNIException::throwNew(env, e);
-        } catch (JNIException * /*e*/) {
-            // Forwarded automatically
-        }
+		} catch (JNIException* e) {
+			e->rethrow();
+		}
     }
+
 
 	/*
 	 * Class:     teaselib_core_speechrecognition_implementation_TeaseLibSR
 	 * Method:    initSREventThread
-	 * Signature: (Ljava/util/concurrent/CountDownLatch;)V
+	 * Signature: (Lteaselib/core/speechrecognition/SpeechRecognitionEvents;Ljava/util/concurrent/CountDownLatch;)V
 	 */
 	JNIEXPORT void JNICALL Java_teaselib_core_speechrecognition_implementation_TeaseLibSR_initSREventThread
-    (JNIEnv *env, jobject jthis, jobject jSignalInitialized) {
+    (JNIEnv *env, jobject jthis, jobject jevents, jobject jSignalInitialized) {
         try {
-			COMUser thisThreaad;
             SpeechRecognizer* speechRecognizer = static_cast<SpeechRecognizer*>(NativeObject::get(env, jthis));
             NativeObject::checkInitializedOrThrow(speechRecognizer);
-			speechRecognizer->speechRecognitionInitContext();
 			const std::function<void(void)> signalInitialized = [env, jSignalInitialized]() {
 				env->CallVoidMethod(jSignalInitialized, env->GetMethodID(env->GetObjectClass(jSignalInitialized), "countDown", "()V"));
 			};
-			speechRecognizer->speechRecognitionEventHandlerThread(signalInitialized);
+			speechRecognizer->startEventHandler(env,  jevents, signalInitialized);
         } catch (NativeException *e) {
             JNIException::throwNew(env, e);
-        } catch (JNIException * /*e*/) {
-            // Forwarded automatically
+        } catch (JNIException * e) {
+			e->rethrow();
         }
     }
 
@@ -94,9 +93,9 @@ extern "C"
             speechRecognizer->setChoices(choices);
         } catch (NativeException *e) {
             JNIException::throwNew(env, e);
-        } catch (JNIException * /*e*/) {
-            // Forwarded automatically
-        }
+		} catch (JNIException* e) {
+			e->rethrow();
+		}
     }
 
 	/*
@@ -112,12 +111,10 @@ extern "C"
 
 			JNIStringUTF8 srgs(env, jsrgs);
 			speechRecognizer->setChoices(srgs, srgs.length());
-		}
-		catch (NativeException *e) {
+		} catch (NativeException *e) {
 			JNIException::throwNew(env, e);
-		}
-		catch (JNIException * /*e*/) {
-			// Forwarded automatically
+		} catch (JNIException* e) {
+			e->rethrow();
 		}
 	}
 
@@ -134,9 +131,9 @@ extern "C"
             speechRecognizer->setMaxAlternates(maxAlternates);
         } catch (NativeException *e) {
             JNIException::throwNew(env, e);
-        } catch (JNIException /*e*/) {
-            // Forwarded automatically
-        }
+		} catch (JNIException* e) {
+			e->rethrow();
+		}
     }
 
     /*
@@ -152,9 +149,9 @@ extern "C"
             speechRecognizer->startRecognition();
         } catch (NativeException *e) {
             JNIException::throwNew(env, e);
-        } catch (JNIException /*e*/) {
-            // Forwarded automatically
-        }
+		} catch (JNIException* e) {
+			e->rethrow();
+		}
     }
 
     /*
@@ -170,11 +167,10 @@ extern "C"
 
 			speechRecognizer->emulateRecognition(JNIString(env,emulatedRecognitionResult));
 		}
-		catch (NativeException *e) {
+		catch (NativeException * e) {
 			JNIException::throwNew(env, e);
-		}
-		catch (JNIException /*e*/) {
-			// Forwarded automatically
+		} catch (JNIException * e) {
+			e->rethrow();
 		}
 	}
 
@@ -191,9 +187,9 @@ extern "C"
             speechRecognizer->stopRecognition();
         } catch (NativeException *e) {
             JNIException::throwNew(env, e);
-        } catch (JNIException /*e*/) {
-            // Forwarded automatically
-        }
+		} catch (JNIException* e) {
+			e->rethrow();
+		}
     }
 
     /*

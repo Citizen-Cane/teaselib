@@ -25,23 +25,30 @@ public class TeaseLibSR extends SpeechRecognitionImplementation implements Speec
     }
 
     @Override
-    public void init(final SpeechRecognitionEvents<SpeechRecognitionControl> events, Locale locale) throws Throwable {
+    public void init(SpeechRecognitionEvents<SpeechRecognitionControl> events, Locale locale) throws Throwable {
+        String languageCode = languageCode(locale);
+
         CountDownLatch awaitInitialized = new CountDownLatch(1);
         Runnable speechRecognitionService = () -> {
             try {
-                String languageCode = languageCode(locale);
+                // TODO should be placed right after languageCode but when moved it crashes everything
                 initSR(events, languageCode);
                 initSREventThread(awaitInitialized);
-            } catch (Exception e) {
+            } catch (UnsupportedLanguageException e) {
                 logger.warn(e.getMessage());
                 logger.info("-> trying language {}", locale.getLanguage());
                 initSR(events, locale.getLanguage());
                 try {
                     initSREventThread(awaitInitialized);
                 } catch (Exception e1) {
-                    logger.error(e.getMessage(), e);
-                    eventThreadException = e;
+                    eventThreadException = e1;
+                } catch (Throwable t1) {
+                    eventThreadException = t1;
                 }
+            } catch (Exception e) {
+                eventThreadException = e;
+            } catch (Throwable t) {
+                eventThreadException = t;
             } finally {
                 awaitInitialized.countDown();
             }

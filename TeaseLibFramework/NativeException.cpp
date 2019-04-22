@@ -4,13 +4,17 @@
 
 #include "NativeException.h"
 
-NativeException::NativeException(long errorCode, const std::wstring & message)
-	: NativeException(errorCode, message.c_str())
+NativeException::NativeException(const long errorCode, const std::wstring & message)
+	: NativeException(errorCode, message.c_str()) 
 {}
 
-NativeException::NativeException(long errorCode, const wchar_t * const message)
-: errorCode(errorCode)
-, message(message)
+NativeException::NativeException(const long errorCode, const wchar_t* message)
+	: NativeException(errorCode, message, "teaselib/core/jni/NativeException")
+{}
+
+NativeException::NativeException(long errorCode, const wchar_t* const message, const char* runtimeClass)
+	: errorCode(errorCode)
+	, message(message)
+	, runtimeClass(runtimeClass)
 {
-	assert(false);
 }

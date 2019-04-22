@@ -30,6 +30,7 @@ SpeechRecognizer::SpeechRecognizer(JNIEnv *env, jobject jthis, jobject jevents, 
     : NativeObject(env, jthis)
     , locale(locale)
 	, langID(0x0000)
+	, recognizerStatus(S_OK)
     , hExitEvent(CreateEvent(NULL, FALSE, FALSE, NULL))
     , jevents(env->NewGlobalRef(jevents)) {
     assert(env);
@@ -63,8 +64,9 @@ SpeechRecognizer::~SpeechRecognizer() {
 	assert(jevents== nullptr);
 }
 
-void SpeechRecognizer::speechRecognitionEventHandlerThread() {
+void SpeechRecognizer::speechRecognitionEventHandlerThread(const std::function<void(void)>& signal) {
 	lock_guard<mutex> lock(eventHandlerThread);
+	signal();
 
 	shared_ptr<SpeechRecognizer> releaseNativeObjects(this, [](SpeechRecognizer* speechRecognizer) {
 		speechRecognizer->env->DeleteGlobalRef(speechRecognizer->jevents);
@@ -91,7 +93,7 @@ void SpeechRecognizer::speechRecognitionEventHandlerThread() {
 			}
 			assert(SUCCEEDED(recognizerStatus));
 			if (SUCCEEDED(recognizerStatus)) {
-				speechRecognitionEventHandlerLoop(hSpeechNotifyEvent, hExitEvent);
+				speechRecognitionEventHandlerLoop(hSpeechNotifyEvent);
 			}
 		}
 	}
@@ -111,7 +113,6 @@ void SpeechRecognizer::speechRecognitionInitContext() {
     // Find the best matching installed recognizer for the language
     CComPtr<ISpObjectToken> cpRecognizerToken;
     HRESULT hr = SpFindBestToken(SPCAT_RECOGNIZERS, recognizerAttributes.c_str(), NULL, &cpRecognizerToken);
-    assert(SUCCEEDED(hr));
 	assert(SUCCEEDED(hr));
 	if (FAILED(hr)) throw new COMException(hr);
 	if (cpRecognizerToken == NULL) {
@@ -186,7 +187,7 @@ HRESULT SpeechRecognizer::speechRecognitionInitInterests() {
     return hr;
 }
 
-void SpeechRecognizer::speechRecognitionEventHandlerLoop(HANDLE hSpeechNotifyEvent, HANDLE hExitEvent) {
+void SpeechRecognizer::speechRecognitionEventHandlerLoop(HANDLE hSpeechNotifyEvent) {
     // Speech recognition event loop
     bool interrupted = false;
     while (!interrupted && SUCCEEDED(recognizerStatus)) {
@@ -202,78 +203,77 @@ void SpeechRecognizer::speechRecognitionEventHandlerLoop(HANDLE hSpeechNotifyEve
             while (S_OK == spevent.GetFrom(cpContext)) {
                 try {
                     switch (spevent.eEventId) {
-                    case SPEI_PHRASE_START: {
-                        // Start of recognition
-                        SpeechRecognitionStartedEvent(env, jthis, jevents, "recognitionStarted").fire();
-                        break;
-                    }
-                    case SPEI_HYPOTHESIS: {
-                        // Estimated result - can still be recognized false
-                        ISpRecoResult* pResult = spevent.RecoResult();
-                        LPWSTR pszCoMemResultText = NULL;
-                        recognizerStatus = pResult->GetText(SP_GETWHOLEPHRASE, SP_GETWHOLEPHRASE, false, &pszCoMemResultText, NULL);
-                        if (SUCCEEDED(recognizerStatus)) {
-                            // TODO No alternate phrases, but may produce the correct text -> create event with a single result object
-                            // wprintf(L"Hypothesis event received, text=\"%s\"\r\n", pszCoMemResultText);
-                            SpeechRecognizedEvent(env, jthis, jevents, "speechDetected").fire(pResult);
-                        }
-                        if (NULL != pszCoMemResultText) {
-                            CoTaskMemFree(pszCoMemResultText);
-                        }
-                        break;
-                    }
-                    case SPEI_FALSE_RECOGNITION: {
-                        // False recognition
-                        ISpRecoResult* pResult = spevent.RecoResult();
-                        LPWSTR pszCoMemResultText = NULL;
-                        recognizerStatus = pResult->GetText(SP_GETWHOLEPHRASE, SP_GETWHOLEPHRASE, false, &pszCoMemResultText, NULL);
-                        if (SUCCEEDED(recognizerStatus)) {
-                            // wprintf(L"False Recognition event received, text=\"%s\"\r\n", pszCoMemResultText);
-                            SpeechRecognizedEvent(env, jthis, jevents, "recognitionRejected").fire(pResult);
-                        }
-                        if (NULL != pszCoMemResultText) {
-                            CoTaskMemFree(pszCoMemResultText);
-                        }
-                        break;
-                    }
-                    case SPEI_RECOGNITION: {
-                        // Successful recognition
-                        ISpRecoResult* pResult = spevent.RecoResult();
-                        SpeechRecognizedEvent(env, jthis, jevents, "recognitionCompleted").fire(pResult);
-                        break;
-                    }
-                    case SPEI_TTS_AUDIO_LEVEL: {
-                        // Audio level for level meter
-                        assert(spevent.lParam == 0);
-                        AudioLevelUpdatedEvent(env, jthis, jevents, "audioLevelUpdated").fire(spevent.wParam);
-                        break;
-                    }
-                    case SPEI_INTERFERENCE: {
-                        // Audio interference
-                        SPINTERFERENCE interference = static_cast<SPINTERFERENCE>(spevent.lParam);
-                        assert(spevent.wParam == 0);
-                        AudioLevelSignalProblemOccuredEvent(env, jthis, jevents, "audioSignalProblemOccured").fire(interference);
-                        break;
-                    }
-                    case SPEI_RECO_STATE_CHANGE: {
-                        // The recognizer changes its state
-                        break;
-                    }
+						case SPEI_PHRASE_START: {
+							// Start of recognition
+							SpeechRecognitionStartedEvent(env, jthis, jevents, "recognitionStarted").fire();
+							break;
+						}
+						case SPEI_HYPOTHESIS: {
+							// Estimated result - can still be recognized false
+							ISpRecoResult* pResult = spevent.RecoResult();
+							LPWSTR pszCoMemResultText = NULL;
+							recognizerStatus = pResult->GetText(SP_GETWHOLEPHRASE, SP_GETWHOLEPHRASE, false, &pszCoMemResultText, NULL);
+							if (SUCCEEDED(recognizerStatus)) {
+								// TODO No alternate phrases, but may produce the correct text -> create event with a single result object
+								// wprintf(L"Hypothesis event received, text=\"%s\"\r\n", pszCoMemResultText);
+								SpeechRecognizedEvent(env, jthis, jevents, "speechDetected").fire(pResult);
+							}
+							if (NULL != pszCoMemResultText) {
+								CoTaskMemFree(pszCoMemResultText);
+							}
+							break;
+						}
+						case SPEI_FALSE_RECOGNITION: {
+							// False recognition
+							ISpRecoResult* pResult = spevent.RecoResult();
+							LPWSTR pszCoMemResultText = NULL;
+							recognizerStatus = pResult->GetText(SP_GETWHOLEPHRASE, SP_GETWHOLEPHRASE, false, &pszCoMemResultText, NULL);
+							if (SUCCEEDED(recognizerStatus)) {
+								// wprintf(L"False Recognition event received, text=\"%s\"\r\n", pszCoMemResultText);
+								SpeechRecognizedEvent(env, jthis, jevents, "recognitionRejected").fire(pResult);
+							}
+							if (NULL != pszCoMemResultText) {
+								CoTaskMemFree(pszCoMemResultText);
+							}
+							break;
+						}
+						case SPEI_RECOGNITION: {
+							// Successful recognition
+							ISpRecoResult* pResult = spevent.RecoResult();
+							SpeechRecognizedEvent(env, jthis, jevents, "recognitionCompleted").fire(pResult);
+							break;
+						}
+						case SPEI_TTS_AUDIO_LEVEL: {
+							// Audio level for level meter
+							assert(spevent.lParam == 0);
+							AudioLevelUpdatedEvent(env, jthis, jevents, "audioLevelUpdated").fire(spevent.wParam);
+							break;
+						}
+						case SPEI_INTERFERENCE: {
+							// Audio interference
+							SPINTERFERENCE interference = static_cast<SPINTERFERENCE>(spevent.lParam);
+							assert(spevent.wParam == 0);
+							AudioLevelSignalProblemOccuredEvent(env, jthis, jevents, "audioSignalProblemOccured").fire(interference);
+							break;
+						}
+						case SPEI_RECO_STATE_CHANGE: {
+							// The recognizer changes its state
+							break;
+						}
                     }
 				} catch (std::exception *e) {
 					assert(false);
-					wprintf(L"std::exception: %s\n", e->what());
-				}
-				catch (NativeException *e) {
+					wprintf(L"std::exception: %hs\n", e->what());
+				} catch (NativeException *e) {
 					// TODO log in teaselib via JNIException::throwNew(env, e) and restart on java side
-                    assert(false);
-                    wprintf(L"Native exception 0x%x: %s\n", e->errorCode, e->message.c_str());
-                } catch (JNIException *e) {
-                    // TODO log in teaselib via JNIException::throwNew(env, e) and restart on java side
-                    JNIString message = e->getMessage();
-                    assert(false);
-                    wprintf(L"JNI exception: %s\n", message.operator LPCWSTR());
-                }
+					assert(false);
+					wprintf(L"Native exception 0x%x: %s\n", e->errorCode, e->message.c_str());
+				} catch (JNIException *e) {
+					// TODO log in teaselib via JNIException::throwNew(env, e) and restart on java side
+					assert(false);
+					JNIString message = e->getMessage();
+					wprintf(L"JNI exception: %s\n", message.operator LPCWSTR());
+				}
             }
             break;
         }
@@ -463,6 +463,9 @@ HRESULT SpeechRecognizer::resetGrammar() {
 }
 
 void SpeechRecognizer::checkRecogizerStatus() {
+	// TODO Resolve thread initialization issue in java coclass - instance must be created outside handler thread
+	// thisInstance.checkThread();
+
 	assert(SUCCEEDED(recognizerStatus));
 	if (FAILED(recognizerStatus)) throw new COMException(recognizerStatus);
 

@@ -6,10 +6,12 @@
 
 #include "NativeException.h"
 
-class COMException : public NativeException
-{
+class COMException : public NativeException {
 public:
 	COMException(HRESULT hr);
-protected:
+	COMException(HRESULT hr, const wchar_t* message);
 	static std::wstring FormatMessage(HRESULT hr);
+protected:
+private:
+	static const char* RuntimeClass;
 };

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <functional>
 #include <mutex>
 #include <string>
 #include <thread>
@@ -23,7 +24,7 @@ public:
 	SpeechRecognizer(JNIEnv *env, jobject jthis, jobject jevents, const wchar_t* recognizerAttributes);
 	virtual ~SpeechRecognizer();
 	void speechRecognitionInitContext();
-	void speechRecognitionEventHandlerThread();
+	void speechRecognitionEventHandlerThread(const std::function<void(void)>& signal);
 
 	void setChoices(const Choices& choices);
 	
@@ -31,9 +32,10 @@ public:
 	void setMaxAlternates(const int maxAlternates);
 	void startRecognition();
 	void stopRecognition();
-	void emulateRecognition(const wchar_t const * emulatedRecognitionResult);
+	void emulateRecognition(const wchar_t * emulatedRecognitionResult);
 private:
-	void speechRecognitionEventHandlerLoop(HANDLE hSpeechNotifyEvent, HANDLE hExitEvent);
+	COMUser thisInstance;
+	void speechRecognitionEventHandlerLoop(HANDLE hSpeechNotifyEvent);
 	HRESULT speechRecognitionInitAudio();
 	HRESULT speechRecognitionInitInterests();
 	HRESULT resetGrammar();

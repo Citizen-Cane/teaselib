@@ -33,14 +33,12 @@ extern "C"
     JNIEXPORT void JNICALL Java_teaselib_core_speechrecognition_implementation_TeaseLibSR_initSR
     (JNIEnv *env, jobject jthis, jobject jevents, jstring jlocale) {
         try {
-            // TODO Language
             JNIString locale(env, jlocale);
-            // TODO Pass language code instead of recognizer attribute
             SpeechRecognizer* speechRecognizer = new SpeechRecognizer(env, jthis, jevents, locale);
             NativeObject::checkInitializedOrThrow(speechRecognizer);
         } catch (NativeException *e) {
             JNIException::throwNew(env, e);
-        } catch (JNIException * /**e*/) {
+        } catch (JNIException * /*e*/) {
             // Forwarded automatically
         }
     }
@@ -53,16 +51,17 @@ extern "C"
 	JNIEXPORT void JNICALL Java_teaselib_core_speechrecognition_implementation_TeaseLibSR_initSREventThread
     (JNIEnv *env, jobject jthis, jobject jSignalInitialized) {
         try {
+			COMUser thisThreaad;
             SpeechRecognizer* speechRecognizer = static_cast<SpeechRecognizer*>(NativeObject::get(env, jthis));
             NativeObject::checkInitializedOrThrow(speechRecognizer);
-            COMUser([&speechRecognizer, &env, &jthis, &jSignalInitialized]() {
-                speechRecognizer->speechRecognitionInitContext();
+			speechRecognizer->speechRecognitionInitContext();
+			const std::function<void(void)> signalInitialized = [env, jSignalInitialized]() {
 				env->CallVoidMethod(jSignalInitialized, env->GetMethodID(env->GetObjectClass(jSignalInitialized), "countDown", "()V"));
-                speechRecognizer->speechRecognitionEventHandlerThread();
-            });
+			};
+			speechRecognizer->speechRecognitionEventHandlerThread(signalInitialized);
         } catch (NativeException *e) {
             JNIException::throwNew(env, e);
-        } catch (JNIException * /**e*/) {
+        } catch (JNIException * /*e*/) {
             // Forwarded automatically
         }
     }
@@ -77,7 +76,6 @@ extern "C"
 		try {
             SpeechRecognizer* speechRecognizer = static_cast<SpeechRecognizer*>(NativeObject::get(env, jthis));
             NativeObject::checkInitializedOrThrow(speechRecognizer);
-            // jchoices is a set
             jclass listClass = JNIClass::getClass(env, "Ljava/util/List;");
             jobject iterator = env->CallObjectMethod(jchoices, env->GetMethodID(listClass, "iterator", "()Ljava/util/Iterator;"));
             jclass iteratorClass = env->FindClass("Ljava/util/Iterator;");
@@ -96,7 +94,7 @@ extern "C"
             speechRecognizer->setChoices(choices);
         } catch (NativeException *e) {
             JNIException::throwNew(env, e);
-        } catch (JNIException * /**e*/) {
+        } catch (JNIException * /*e*/) {
             // Forwarded automatically
         }
     }
@@ -118,7 +116,7 @@ extern "C"
 		catch (NativeException *e) {
 			JNIException::throwNew(env, e);
 		}
-		catch (JNIException * /**e*/) {
+		catch (JNIException * /*e*/) {
 			// Forwarded automatically
 		}
 	}
@@ -136,7 +134,7 @@ extern "C"
             speechRecognizer->setMaxAlternates(maxAlternates);
         } catch (NativeException *e) {
             JNIException::throwNew(env, e);
-        } catch (JNIException /**e*/) {
+        } catch (JNIException /*e*/) {
             // Forwarded automatically
         }
     }
@@ -154,7 +152,7 @@ extern "C"
             speechRecognizer->startRecognition();
         } catch (NativeException *e) {
             JNIException::throwNew(env, e);
-        } catch (JNIException /**e*/) {
+        } catch (JNIException /*e*/) {
             // Forwarded automatically
         }
     }
@@ -175,7 +173,7 @@ extern "C"
 		catch (NativeException *e) {
 			JNIException::throwNew(env, e);
 		}
-		catch (JNIException /**e*/) {
+		catch (JNIException /*e*/) {
 			// Forwarded automatically
 		}
 	}
@@ -193,7 +191,7 @@ extern "C"
             speechRecognizer->stopRecognition();
         } catch (NativeException *e) {
             JNIException::throwNew(env, e);
-        } catch (JNIException /**e*/) {
+        } catch (JNIException /*e*/) {
             // Forwarded automatically
         }
     }

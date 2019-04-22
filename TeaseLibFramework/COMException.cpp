@@ -7,14 +7,18 @@
 
 #include "ComException.h"
 
+
+const char* COMException::RuntimeClass = "teaselib/core/jni/COMException";
+
 COMException::COMException(HRESULT hr)
-: NativeException(hr, FormatMessage(hr).c_str())
-{
-	assert(false);
+: NativeException(hr, FormatMessage(hr).c_str(), COMException::RuntimeClass) {
 }
 
-std::wstring COMException::FormatMessage(HRESULT hr)
-{
+COMException::COMException(HRESULT hr, const wchar_t* message)
+: NativeException(hr, message, COMException::RuntimeClass) {
+}
+
+std::wstring COMException::FormatMessage(HRESULT hr) {
 	LPTSTR errorText = NULL;
 	::FormatMessage(
 		// use system message tables to retrieve error text

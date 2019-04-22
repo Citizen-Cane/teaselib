@@ -9,11 +9,12 @@
 void JNIException::throwNew(JNIEnv* env, NativeException *e)
 {
 	assert(!env->ExceptionCheck());
-	jclass runtimeClass = env->FindClass("java/lang/RuntimeException");
+	jclass runtimeClass = env->FindClass(e->runtimeClass);
 	JNIString message(env, e->message.c_str());
 	jthrowable throwable = static_cast<jthrowable>(env->NewObject(
 		runtimeClass,
-		env->GetMethodID(runtimeClass, "<init>", "(Ljava/lang/String;)V"),
+		env->GetMethodID(runtimeClass, "<init>", "(ILjava/lang/String;)V"),
+		e->errorCode,
 		message.detach()));
 	assert(false);
 	env->Throw(throwable);

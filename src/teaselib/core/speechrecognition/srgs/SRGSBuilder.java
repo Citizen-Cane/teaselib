@@ -10,6 +10,7 @@ import javax.xml.transform.TransformerFactoryConfigurationError;
 import org.w3c.dom.Element;
 
 import teaselib.core.speechrecognition.srgs.Phrases.OneOf;
+import teaselib.core.speechrecognition.srgs.Phrases.Rule;
 
 public class SRGSBuilder extends AbstractSRGSBuilder {
     public SRGSBuilder(Phrases phrases) throws ParserConfigurationException, TransformerException {
@@ -43,10 +44,12 @@ public class SRGSBuilder extends AbstractSRGSBuilder {
             if (rule.index != Phrases.COMMON_RULE) {
                 for (Phrases.OneOf item : rule) {
                     String inventoryKey = inventoryKey(rule, item);
-                    if (!inventoryItems.containsKey(inventoryKey)) {
-                        Element inventoryItem = document.createElement("item");
-                        inventoryItems.put(inventoryKey, inventoryItem);
-                        inventoryNode.appendChild(inventoryItem);
+                    if (item.choiceIndex != Phrases.COMMON_RULE) {
+                        if (!inventoryItems.containsKey(inventoryKey)) {
+                            Element inventoryItem = document.createElement("item");
+                            inventoryItems.put(inventoryKey, inventoryItem);
+                            inventoryNode.appendChild(inventoryItem);
+                        }
                     }
                 }
             }
@@ -57,6 +60,10 @@ public class SRGSBuilder extends AbstractSRGSBuilder {
 
     private static String inventoryKey(Phrases.Rule rule, OneOf item) {
         return item.choiceIndex + "_" + rule.group;
+    }
+
+    private int inventoryGroup(String inventoryKey) {
+        return Integer.parseInt(inventoryKey.substring(inventoryKey.indexOf("_") + 1));
     }
 
     private void createRule(Element grammar, Map<String, Element> inventoryItems, Phrases.Rule rule) {
@@ -93,23 +100,26 @@ public class SRGSBuilder extends AbstractSRGSBuilder {
     }
 
     private void addRuleToInventory(Map<String, Element> inventoryItems, Phrases.Rule rule) {
-        for (int choiceIndex = 0; choiceIndex < rule.size(); choiceIndex++) {
-            OneOf items = rule.get(choiceIndex);
+        for (OneOf items : rule) {
             if (items.choiceIndex == Phrases.COMMON_RULE) {
                 if (rule.size() > 1) {
                     throw new IllegalArgumentException("There may be only one entry per common rule");
                 }
                 // TODO optimize by adding common start/end rules directly to main rule
-                appendRuleRefToAllChoices(inventoryItems, ruleName(rule));
+                appendRuleRefToAllChoices(inventoryItems, rule);
             } else {
                 inventoryItems.get(inventoryKey(rule, items)).appendChild(ruleRef(choiceName(rule, items.choiceIndex)));
             }
         }
     }
 
-    private void appendRuleRefToAllChoices(Map<String, Element> inventoryItems, String name) {
-        for (Element element : inventoryItems.values()) {
-            element.appendChild(ruleRef(name));
+    private void appendRuleRefToAllChoices(Map<String, Element> inventoryItems, Rule rule) {
+        for (Map.Entry<String, Element> entry : inventoryItems.entrySet()) {
+            String key = entry.getKey();
+            int group = inventoryGroup(key);
+            if (group == rule.group) {
+                entry.getValue().appendChild(ruleRef(ruleName(rule)));
+            }
         }
     }
 

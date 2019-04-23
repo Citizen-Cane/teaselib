@@ -86,7 +86,7 @@ public class Phrases extends ArrayList<Phrases.Rule> {
 
         @Override
         public String toString() {
-            return "choice " + choiceIndex + " = " + super.toString();
+            return (choiceIndex == Phrases.COMMON_RULE ? "Common" : "choice " + choiceIndex) + " = " + super.toString();
         }
 
     }

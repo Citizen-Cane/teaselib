@@ -108,7 +108,8 @@ public class SRGSBuilder extends AbstractSRGSBuilder {
                 // TODO optimize by adding common start/end rules directly to main rule
                 appendRuleRefToAllChoices(inventoryItems, rule);
             } else {
-                inventoryItems.get(inventoryKey(rule, items)).appendChild(ruleRef(choiceName(rule, items.choiceIndex)));
+                Element element = inventoryItems.get(inventoryKey(rule, items));
+                element.appendChild(ruleRef(choiceName(rule, items.choiceIndex)));
             }
         }
     }

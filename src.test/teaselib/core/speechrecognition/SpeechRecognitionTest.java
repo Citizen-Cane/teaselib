@@ -1,6 +1,8 @@
 package teaselib.core.speechrecognition;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.util.Arrays;
 import java.util.Locale;
@@ -250,6 +252,14 @@ public class SpeechRecognitionTest {
     }
 
     @Test
+    public void testSOptionalPhraseToDistiniguishMulitpleChoices() throws InterruptedException {
+        Choices choices = new Choices(new Choice("I have it"), new Choice("I don't have it"));
+
+        assertRecognized(choices, "I have it", new Prompt.Result(0));
+        assertRecognized(choices, "I don't have it", new Prompt.Result(1));
+    }
+
+    @Test
     public void testSRGSBuilderMultiplePhrasesOfMultipleChoicesAreDistinct() throws InterruptedException {
         String[] yes = { //
                 "Yes Miss, of course", //
@@ -319,6 +329,7 @@ public class SpeechRecognitionTest {
     @Test
     public void testSRGSBuilderMultiplePhrasesOfMultipleChoicesAreDistinctWithoutOptionalParts()
             throws InterruptedException {
+        // TODO Find common rules after grouping -> group groups
         String[] yes = { //
                 "Yes Miss, of course", //
                 "Yes, of course, Miss", //

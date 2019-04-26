@@ -101,7 +101,7 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
         return true;
     }
 
-    public Sequences<T> removeFrom(Sequence<T> match) {
+    public Sequences<T> removeUpTo(Sequence<T> match) {
         Sequences<T> subLists = new Sequences<>(size(), equalsOperator);
         for (Sequence<T> listSequence : this) {
             subLists.add(new Sequence<>(listSequence.subList(0, listSequence.indexOf(match)), equalsOperator));
@@ -126,6 +126,10 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
                     equalsOperator));
         }
         return subLists;
+    }
+
+    public boolean containsOptionalParts() {
+        return stream().filter(Sequence<T>::isEmpty).count() > 0;
     }
 
     public int maxLength() {

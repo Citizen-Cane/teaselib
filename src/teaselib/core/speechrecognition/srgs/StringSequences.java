@@ -66,7 +66,13 @@ public class StringSequences extends Sequences<String> {
         while (remainder.maxLength() > 0) {
             StringSequence commonMiddle = StringSequence.of(remainder.commonMiddle());
             if (!commonMiddle.isEmpty()) {
-                slices.add(new StringSequences(remainder.removeFrom(commonMiddle), choices.equalsOperator));
+                Sequences<String> unique = remainder.removeUpTo(commonMiddle);
+                if (unique.containsOptionalParts()) {
+                    String additional = commonMiddle.remove(0);
+                    unique.stream().forEach(s -> s.add(additional));
+                }
+
+                slices.add(new StringSequences(unique, choices.equalsOperator));
                 slices.add(new StringSequences(commonMiddle));
             }
 

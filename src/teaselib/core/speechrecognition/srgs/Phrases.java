@@ -97,27 +97,27 @@ public class Phrases extends ArrayList<Phrases.Rule> {
         final int group;
         final int index;
 
-        public Rule(int group, int ruleIndex) {
+        public Rule(int group, int index) {
             this.group = group;
-            this.index = ruleIndex;
+            this.index = index;
         }
 
-        public Rule(int group, int ruleIndex, String... items) {
+        public Rule(int group, int index, String... items) {
             this.group = group;
-            this.index = ruleIndex;
+            this.index = index;
             int choiceIndex = 0;
             for (String item : items) {
                 add(new OneOf(choiceIndex++, item));
             }
         }
 
-        public Rule(int group, int ruleIndex, OneOf... items) {
-            this(group, ruleIndex, Arrays.asList(items));
+        public Rule(int group, int index, OneOf... items) {
+            this(group, index, Arrays.asList(items));
         }
 
-        public Rule(int group, int ruleIndex, List<OneOf> items) {
+        public Rule(int group, int index, List<OneOf> items) {
             this.group = group;
-            this.index = ruleIndex;
+            this.index = index;
             for (OneOf item : items) {
                 add(item);
             }
@@ -149,6 +149,19 @@ public class Phrases extends ArrayList<Phrases.Rule> {
             return stream().reduce((a, b) -> {
                 return a.choiceIndex > b.choiceIndex ? a : b;
             }).orElseGet(() -> new OneOf(0)).choiceIndex + 1;
+        }
+
+        public boolean containOptionalChoices() {
+            for (OneOf items : this) {
+                if (items.choiceIndex != Phrases.COMMON_RULE) {
+                    if (items.size() == 1) {
+                        if (items.iterator().next().isBlank()) {
+                            return true;
+                        }
+                    }
+                }
+            }
+            return false;
         }
 
         @Override
@@ -221,9 +234,36 @@ public class Phrases extends ArrayList<Phrases.Rule> {
         List<StringSequences> sliced = StringSequences.slice(allPhrases);
         Phrases phrases = new Phrases();
         for (int ruleIndex = 0; ruleIndex < sliced.size(); ruleIndex++) {
-            phrases.add(rule(choices, sliced, ruleIndex));
+            Rule rule = rule(choices, sliced, ruleIndex);
+            if (rule.containOptionalChoices()) {
+                // TODO First rule
+                phrases.add(phrases.join(phrases.getPrevious(rule), rule));
+            } else {
+                phrases.add(rule);
+            }
         }
         return phrases;
+    }
+
+    private Rule join(Rule previous, Rule rule) {
+        // TODO Refactor this so it doesn't look like an ugly hack
+        remove(previous);
+        Rule joinedRule = new Rule(rule.group, rule.index);
+        for (OneOf items : rule) {
+            OneOf joinedItems = new OneOf(items.choiceIndex);
+            for (String string : items) {
+                joinedItems.add(previous.iterator().next().iterator().next() + " " + string);
+            }
+            joinedRule.add(joinedItems);
+        }
+        return joinedRule;
+    }
+
+    private Rule getPrevious(Rule rule) {
+        Rule previous = get(size() - 1);
+        if (previous.index != rule.index - 1 || previous.group != rule.group)
+            throw new IllegalStateException("Previous rule not found:" + rule);
+        return previous;
     }
 
     static boolean haveCommonParts(String a, String b) {

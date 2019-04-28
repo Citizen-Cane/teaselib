@@ -16,12 +16,14 @@ import teaselib.core.ui.Prompt;
  */
 public class SpeechRecognitionComplexTest {
 
+    private static Choices singleChoiceMultiplePhrasesAreDistinct() {
+        String[] yes = { "Yes Miss, of course", "Of course, Miss" };
+        return new Choices(new Choice("Yes #title, of course", "Yes Miss, of course", yes));
+    }
+
     @Test
     public void testSliceSingleChoiceMultiplePhrasesAreDistinct() {
-        String[] yes = { //
-                "Yes Miss, of course", //
-                "Of course, Miss" };
-        Choices choices = new Choices(new Choice("Yes #title, of course", "Yes Miss, of course", yes));
+        Choices choices = singleChoiceMultiplePhrasesAreDistinct();
         Phrases phrases = Phrases.of(choices);
 
         // Results in "of course" recognized
@@ -41,28 +43,22 @@ public class SpeechRecognitionComplexTest {
 
     @Test
     public void testSRGSBuilderSingleChoiceMultiplePhrasesAreDistinct() throws InterruptedException {
-        String[] yes = { //
-                "Yes Miss, of course", //
-                "Of course, Miss" };
-        Choices choices = new Choices(new Choice("Yes #title, of course", "Yes Miss, of course", yes));
-
+        Choices choices = singleChoiceMultiplePhrasesAreDistinct();
+        assertRecognized(choices, withoutPunctation("Yes Miss, of course"), new Prompt.Result(0, 0));
+        assertRecognized(choices, withoutPunctation("Of course, Miss"), new Prompt.Result(0, 0));
         assertRejected(choices, "Of course");
+    }
+
+    private static Choices multipleChoicesAlternativePhrases() {
+        String[] yes = { "Yes Miss, of course", "Yes, of course, Miss", "Yes, of course", "Of course" };
+        String[] no = { "No Miss, of course not", "No, of course not, Miss", "No, of course not", "Of course not" };
+        return new Choices(new Choice("Yes #title, of course", "Yes Miss, of course", yes),
+                new Choice("No #title, of course not", "No Miss, of course not", no));
     }
 
     @Test
     public void testSliceMultipleChoicesAlternativePhrases() {
-        String[] yes = { //
-                "Yes Miss, of course", //
-                "Yes, of course, Miss", //
-                "Yes, of course", //
-                "Of course" };
-        String[] no = { //
-                "No Miss, of course not", //
-                "No, of course not, Miss", //
-                "No, of course not", //
-                "Of course not" };
-        Choices choices = new Choices(new Choice("Yes #title, of course", "Yes Miss, of course", yes),
-                new Choice("No #title, of course not", "No Miss, of course not", no));
+        Choices choices = multipleChoicesAlternativePhrases();
         Phrases phrases = Phrases.of(choices);
 
         assertEquals(3, phrases.size());
@@ -76,25 +72,17 @@ public class SpeechRecognitionComplexTest {
 
     @Test
     public void testSRGSBuilderMultipleChoicesAlternativePhrases() throws InterruptedException {
-        String[] yes = { //
-                "Yes Miss, of course", //
-                "Yes, of course, Miss", //
-                "Yes, of course", //
-                "Of course" };
-        String[] no = { //
-                "No Miss, of course not", //
-                "No, of course not, Miss", //
-                "No, of course not", //
-                "Of course not" };
-        Choices choices = new Choices(new Choice("Yes #title, of course", "Yes Miss, of course", yes),
-                new Choice("No #title, of course not", "No Miss, of course not", no));
-        for (String phrase : yes) {
-            assertRecognized(choices, withoutPunctation(phrase), new Prompt.Result(0, 0));
-        }
+        Choices choices = multipleChoicesAlternativePhrases();
 
-        for (String phrase : no) {
-            assertRecognized(choices, withoutPunctation(phrase), new Prompt.Result(1, 1));
-        }
+        assertRecognized(choices, withoutPunctation("Yes Miss, of course"), new Prompt.Result(0, 0));
+        assertRecognized(choices, withoutPunctation("Yes, of course, Miss"), new Prompt.Result(0, 0));
+        assertRecognized(choices, withoutPunctation("Yes, of course"), new Prompt.Result(0, 0));
+        assertRecognized(choices, withoutPunctation("of course"), new Prompt.Result(0, 0));
+
+        assertRecognized(choices, withoutPunctation("No Miss, of course not"), new Prompt.Result(1, 1));
+        assertRecognized(choices, withoutPunctation("No, of course not, Miss"), new Prompt.Result(1, 1));
+        assertRecognized(choices, withoutPunctation("No, of course not"), new Prompt.Result(1, 1));
+        assertRecognized(choices, withoutPunctation("of course not"), new Prompt.Result(1, 1));
 
         assertRejected(choices, "Yes Miss");
         assertRejected(choices, "No Miss");
@@ -103,15 +91,17 @@ public class SpeechRecognitionComplexTest {
         assertRejected(choices, "Of not");
     }
 
+    private static Choices optionalPhraseToDistiniguishMulitpleChoices() {
+        return new Choices(new Choice("I have it"), new Choice("I don't have it"));
+    }
+
     @Test
     public void testSliceOptionalPhraseToDistiniguishMulitpleChoices() {
-        Choices choices = new Choices(new Choice("I have it"), new Choice("I don't have it"));
+        Choices choices = optionalPhraseToDistiniguishMulitpleChoices();
         Phrases phrases = Phrases.of(choices);
 
         assertEquals(3, phrases.size());
-
         // TODO Empty One-Of element of choice 0 fails in SRGSBuilder
-
         assertEquals(Phrases.rule(0, 0, Phrases.oneOf(Phrases.COMMON_RULE, "I")), phrases.get(0));
         assertEquals(Phrases.rule(0, 1, Phrases.oneOf(0, ""), Phrases.oneOf(1, "don't")), phrases.get(1));
         assertEquals(Phrases.rule(0, 2, Phrases.oneOf(Phrases.COMMON_RULE, "have it")), phrases.get(2));
@@ -119,28 +109,17 @@ public class SpeechRecognitionComplexTest {
 
     @Test
     public void testSRGSBuilderOptionalPhraseToDistiniguishMulitpleChoices() throws InterruptedException {
-        Choices choices = new Choices(new Choice("I have it"), new Choice("I don't have it"));
-
+        Choices choices = optionalPhraseToDistiniguishMulitpleChoices();
         assertRecognized(choices, "I have it", new Prompt.Result(0));
         assertRecognized(choices, "I don't have it", new Prompt.Result(1));
     }
 
     @Test
     public void testSliceMultiplePhrasesOfMultipleChoicesAreDistinct() {
-        String[] yes = { //
-                "Yes Miss, of course", //
-                "Yes, of course, Miss", //
-                "Yes, of course" };
-        String[] no = { //
-                "No Miss, of course not", //
-                "No, of course not, Miss", //
-                "No, of course not" };
-        Choices choices = new Choices(new Choice("Yes #title, of course", "Yes Miss, of course", yes),
-                new Choice("No #title, of course not", "No Miss, of course not", no));
+        Choices choices = multiplePhrasesOfMultipleChoicesAreDistinct();
         Phrases phrases = Phrases.of(choices);
 
         assertEquals(3, phrases.size());
-
         assertEquals(Phrases.rule(0, 0, Phrases.oneOf(0, "Yes Miss", "Yes"), Phrases.oneOf(1, "No Miss", "No")),
                 phrases.get(0));
         assertEquals(Phrases.rule(0, 1, Phrases.oneOf(Phrases.COMMON_RULE, "of course")), phrases.get(1));
@@ -148,25 +127,24 @@ public class SpeechRecognitionComplexTest {
                 phrases.get(2));
     }
 
+    private static Choices multiplePhrasesOfMultipleChoicesAreDistinct() {
+        String[] yes = { "Yes Miss, of course", "Yes, of course, Miss", "Yes, of course" };
+        String[] no = { "No Miss, of course not", "No, of course not, Miss", "No, of course not" };
+        return new Choices(new Choice("Yes #title, of course", "Yes Miss, of course", yes),
+                new Choice("No #title, of course not", "No Miss, of course not", no));
+    }
+
     @Test
     public void testSRGSBuilderMultiplePhrasesOfMultipleChoicesAreDistinct() throws InterruptedException {
-        String[] yes = { //
-                "Yes Miss, of course", //
-                "Yes, of course, Miss", //
-                "Yes, of course" };
-        String[] no = { //
-                "No Miss, of course not", //
-                "No, of course not, Miss", //
-                "No, of course not" };
-        Choices choices = new Choices(new Choice("Yes #title, of course", "Yes Miss, of course", yes),
-                new Choice("No #title, of course not", "No Miss, of course not", no));
-        for (String phrase : yes) {
-            assertRecognized(choices, withoutPunctation(phrase), new Prompt.Result(0, 0));
-        }
+        Choices choices = multiplePhrasesOfMultipleChoicesAreDistinct();
 
-        for (String phrase : no) {
-            assertRecognized(choices, withoutPunctation(phrase), new Prompt.Result(1, 1));
-        }
+        assertRecognized(choices, withoutPunctation("Yes Miss, of course"), new Prompt.Result(0, 0));
+        assertRecognized(choices, withoutPunctation("Yes, of course, Miss"), new Prompt.Result(0, 0));
+        assertRecognized(choices, withoutPunctation("Yes, of course"), new Prompt.Result(0, 0));
+
+        assertRecognized(choices, withoutPunctation("No Miss, of course not"), new Prompt.Result(1, 1));
+        assertRecognized(choices, withoutPunctation("No, of course not, Miss"), new Prompt.Result(1, 1));
+        assertRecognized(choices, withoutPunctation("No, of course not"), new Prompt.Result(1, 1));
 
         assertRejected(choices, "Yes Miss");
         assertRejected(choices, "No Miss");
@@ -178,45 +156,27 @@ public class SpeechRecognitionComplexTest {
         assertRejected(choices, "Of course not");
     }
 
+    private static Choices multipleChoicesAlternativePhrasesWithOptionalPartsAreDistinct() {
+        String[] yes = { "Yes Miss, of course", "Yes, of course, Miss", "Yes, of course", "Of course", "I have it" };
+        String[] no = { "No Miss, of course not", "No, of course not, Miss", "No, of course not", "Of course not",
+                "I don't have it" };
+        return new Choices(new Choice("Yes #title, of course", "Yes Miss, of course", yes),
+                new Choice("No #title, of course not", "No Miss, of course not", no));
+    }
+
     @Test
     public void testSliceMultipleChoicesAlternativePhrasesWithOptionalPartsAreDistinct() {
-        String[] yes = { //
-                "Yes Miss, of course", //
-                "Yes, of course, Miss", //
-                "Yes, of course", //
-                "Of course", //
-                "I have it" };
-        String[] no = { //
-                "No Miss, of course not", //
-                "No, of course not, Miss", //
-                "No, of course not", //
-                "Of course not", //
-                "I don't have it" };
-        Choices choices = new Choices(new Choice("Yes #title, of course", "Yes Miss, of course", yes),
-                new Choice("No #title, of course not", "No Miss, of course not", no));
+        Choices choices = multipleChoicesAlternativePhrasesWithOptionalPartsAreDistinct();
         Phrases phrases = Phrases.of(choices);
-        assertEquals(8, phrases.size());
 
+        assertEquals(8, phrases.size());
         // TODO assert structure
     }
 
     @Test
     public void testSRGSBuilderMultipleChoicesAlternativePhrasesWithOptionalPartsAreDistinct()
             throws InterruptedException {
-        String[] yes = { //
-                "Yes Miss, of course", //
-                "Yes, of course, Miss", //
-                "Yes, of course", //
-                "Of course", //
-                "I have it" };
-        String[] no = { //
-                "No Miss, of course not", //
-                "No, of course not, Miss", //
-                "No, of course not", //
-                "Of course not", //
-                "I don't have it" };
-        Choices choices = new Choices(new Choice("Yes #title, of course", "Yes Miss, of course", yes),
-                new Choice("No #title, of course not", "No Miss, of course not", no));
+        Choices choices = multipleChoicesAlternativePhrasesWithOptionalPartsAreDistinct();
 
         assertRecognized(choices, withoutPunctation("Yes Miss, of course"), new Prompt.Result(0, 0, 0));
         assertRecognized(choices, withoutPunctation("Yes, of course, Miss"), new Prompt.Result(0, 0, 0));
@@ -237,23 +197,19 @@ public class SpeechRecognitionComplexTest {
         assertRejected(choices, "Of not");
     }
 
+    private static Choices multiplePhrasesOfMultipleChoicesAreDistinctWithoutOptionalParts() {
+        String[] yes = { "Yes Miss, of course", "Yes, of course, Miss", "Yes, of course", "I have it" };
+        String[] no = { "No Miss, of course not", "No, of course not, Miss", "No, of course not", "I don't have it" };
+        return new Choices(new Choice("Yes #title, of course", "Yes Miss, of course", yes),
+                new Choice("No #title, of course not", "No Miss, of course not", no));
+    }
+
     @Test
     public void testSliceMultiplePhrasesOfMultipleChoicesAreDistinctWithoutOptionalParts() {
-        String[] yes = { //
-                "Yes Miss, of course", //
-                "Yes, of course, Miss", //
-                "Yes, of course", //
-                "I have it" };
-        String[] no = { //
-                "No Miss, of course not", //
-                "No, of course not, Miss", //
-                "No, of course not", //
-                "I don't have it" };
-        Choices choices = new Choices(new Choice("Yes #title, of course", "Yes Miss, of course", yes),
-                new Choice("No #title, of course not", "No Miss, of course not", no));
+        Choices choices = multiplePhrasesOfMultipleChoicesAreDistinctWithoutOptionalParts();
         Phrases phrases = Phrases.of(choices);
-        assertEquals(10, phrases.size());
 
+        assertEquals(10, phrases.size());
         // TODO assert structure
         assertEquals(Phrases.rule(0, 0, Phrases.oneOf(0, "Yes")), phrases.get(0));
         assertEquals(Phrases.rule(0, 1, Phrases.oneOf(0, "Miss", "")), phrases.get(1));
@@ -263,19 +219,7 @@ public class SpeechRecognitionComplexTest {
     @Test
     public void testSRGSBuilderMultiplePhrasesOfMultipleChoicesAreDistinctWithoutOptionalParts()
             throws InterruptedException {
-        // TODO Find common rules after grouping -> group groups
-        String[] yes = { //
-                "Yes Miss, of course", //
-                "Yes, of course, Miss", //
-                "Yes, of course", //
-                "I have it" };
-        String[] no = { //
-                "No Miss, of course not", //
-                "No, of course not, Miss", //
-                "No, of course not", //
-                "I don't have it" };
-        Choices choices = new Choices(new Choice("Yes #title, of course", "Yes Miss, of course", yes),
-                new Choice("No #title, of course not", "No Miss, of course not", no));
+        Choices choices = multiplePhrasesOfMultipleChoicesAreDistinctWithoutOptionalParts();
 
         assertRecognized(choices, withoutPunctation("Yes Miss, of course"), new Prompt.Result(0, 0, 0, 0));
         assertRecognized(choices, withoutPunctation("Yes, of course, Miss"), new Prompt.Result(0, 0, 0, 0));

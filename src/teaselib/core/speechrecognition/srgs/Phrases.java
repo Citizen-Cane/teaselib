@@ -15,7 +15,7 @@ import teaselib.util.math.Partition;
 public class Phrases extends ArrayList<Phrases.Rule> {
     private static final long serialVersionUID = 1L;
 
-    static final int COMMON_RULE = Integer.MIN_VALUE;
+    public static final int COMMON_RULE = Integer.MIN_VALUE;
 
     public static Rule rule(int group, int ruleIndex, String... items) {
         return new Rule(group, ruleIndex, items);
@@ -33,7 +33,7 @@ public class Phrases extends ArrayList<Phrases.Rule> {
         return new Phrases.OneOf(choiceIndex, items);
     }
 
-    static class OneOf extends HashSet<String> {
+    public static class OneOf extends HashSet<String> {
         private static final long serialVersionUID = 1L;
 
         final int choiceIndex;
@@ -235,12 +235,13 @@ public class Phrases extends ArrayList<Phrases.Rule> {
         Phrases phrases = new Phrases();
         for (int ruleIndex = 0; ruleIndex < sliced.size(); ruleIndex++) {
             Rule rule = rule(choices, sliced, ruleIndex);
-            if (rule.containOptionalChoices()) {
-                // TODO First rule
-                phrases.add(phrases.join(phrases.getPrevious(rule), rule));
-            } else {
-                phrases.add(rule);
-            }
+            // if (rule.containOptionalChoices()) {
+            // // TODO First rule
+            // phrases.add(phrases.join(phrases.getPrevious(rule), rule));
+            // } else {
+            // phrases.add(rule);
+            // }
+            phrases.add(rule);
         }
         return phrases;
     }
@@ -267,7 +268,22 @@ public class Phrases extends ArrayList<Phrases.Rule> {
     }
 
     static boolean haveCommonParts(String a, String b) {
-        return StringSequences.slice(a, b).stream().filter(seq -> seq.size() == 1).count() > 0;
+        // TODO Optional parts must be at the same position
+        List<StringSequences> slice = StringSequences.slice(a, b);
+        // TODO turn this into production code
+        boolean haveCommonParts = slice.stream().filter((StringSequences seq) -> {
+            return seq.size() == 1;
+        }).count() > 0;
+        long c = slice.stream().filter((StringSequences seq) -> {
+            long count = seq.stream().filter((Sequence<String> s) -> {
+                return s.isEmpty();
+            }).count();
+            return count == 0;
+        }).count();
+        boolean areDefined = c == slice.size();
+        // TODO define criteria for matching phrases
+        areDefined = true;
+        return haveCommonParts && areDefined;
     }
 
     static final int FIRST_GROUP = 0;

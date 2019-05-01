@@ -3,8 +3,8 @@ package teaselib.core.speechrecognition.srgs;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -33,7 +33,7 @@ public class Phrases extends ArrayList<Phrases.Rule> {
         return new Phrases.OneOf(choiceIndex, items);
     }
 
-    public static class OneOf extends HashSet<String> {
+    public static class OneOf extends ArrayList<String> {
         private static final long serialVersionUID = 1L;
 
         final int choiceIndex;
@@ -87,6 +87,10 @@ public class Phrases extends ArrayList<Phrases.Rule> {
         @Override
         public String toString() {
             return (choiceIndex == Phrases.COMMON_RULE ? "Common" : "choice " + choiceIndex) + " = " + super.toString();
+        }
+
+        public boolean hasOptionalParts() {
+            return stream().anyMatch(String::isBlank);
         }
 
     }
@@ -152,16 +156,14 @@ public class Phrases extends ArrayList<Phrases.Rule> {
         }
 
         public boolean containOptionalChoices() {
-            for (OneOf items : this) {
-                if (items.choiceIndex != Phrases.COMMON_RULE) {
-                    if (items.size() == 1) {
-                        if (items.iterator().next().isBlank()) {
-                            return true;
-                        }
-                    }
-                }
-            }
-            return false;
+            return stream().anyMatch(
+                    items -> items.choiceIndex != Phrases.COMMON_RULE && items.stream().anyMatch(String::isBlank));
+        }
+
+        public boolean isCommon() {
+            return stream().reduce((a, b) -> {
+                return a.choiceIndex > b.choiceIndex ? a : b;
+            }).orElseGet(() -> new OneOf(COMMON_RULE)).choiceIndex == COMMON_RULE;
         }
 
         @Override
@@ -183,6 +185,7 @@ public class Phrases extends ArrayList<Phrases.Rule> {
     }
 
     public Sequences<String> flatten() {
+        // TODO Should be 0 if common rule but isn't - blocks other code
         int choices = choices();
         StringSequences flattened = StringSequences.ignoreCase(choices);
         for (int i = 0; i < choices; i++) {
@@ -235,37 +238,249 @@ public class Phrases extends ArrayList<Phrases.Rule> {
         Phrases phrases = new Phrases();
         for (int ruleIndex = 0; ruleIndex < sliced.size(); ruleIndex++) {
             Rule rule = rule(choices, sliced, ruleIndex);
-            // if (rule.containOptionalChoices()) {
-            // // TODO First rule
-            // phrases.add(phrases.join(phrases.getPrevious(rule), rule));
-            // } else {
-            // phrases.add(rule);
-            // }
             phrases.add(rule);
         }
-        return phrases;
+
+        phrases.joinRulesWithOptionalParts();
+        return withEmptyRulesRemoved(phrases);
     }
 
-    private Rule join(Rule previous, Rule rule) {
+    private static Phrases withEmptyRulesRemoved(Phrases phrases) {
+        Phrases filtered = new Phrases();
+        for (Rule rule : phrases) {
+            if (!rule.isEmpty()) {
+                filtered.add(rule);
+            }
+        }
+        return filtered;
+    }
+
+    private void joinRulesWithOptionalParts() {
+        for (Rule rule : this) {
+            if (rule.index > 0 && rule.index < rules() - 1) {
+                Rule previous = previous(rule);
+                Rule next = next(rule);
+                if (previous.containOptionalChoices() || next.containOptionalChoices()) {
+                    Aside joined = joinAside(previous, rule, next);
+                    set(indexOf(previous), joined.previous);
+                    set(indexOf(next), joined.next);
+                    set(indexOf(rule), placeholderOf(rule));
+                }
+            } else if (rule.index == 0) {
+                Rule next = next(rule);
+                if (next.containOptionalChoices()) {
+                    set(indexOf(next), joinCommonWithNext(rule, next));
+                    set(indexOf(rule), placeholderOf(rule));
+                }
+            } else if (rule.index == rules() - 1) {
+                Rule previous = previous(rule);
+                if (previous.containOptionalChoices()) {
+                    set(indexOf(previous), joinPreviousWithCommon(previous, rule));
+                    set(indexOf(rule), placeholderOf(rule));
+                }
+            }
+        }
+    }
+
+    private Rule previous(Rule rule) {
+        return get(rule.group, rule.index - 1);
+    }
+
+    private Rule next(Rule rule) {
+        return get(rule.group, rule.index + 1);
+    }
+
+    private static Rule placeholderOf(Rule previous) {
+        return new Rule(previous.group, previous.index);
+    }
+
+    private Rule get(int group, int index) {
+        for (Rule rule : this) {
+            if (rule.index == index && rule.group == group) {
+                return rule;
+            }
+        }
+        throw new NoSuchElementException("group = " + group + ", index = " + index);
+    }
+
+    // TODO when a rule contains optional parts then split choices with optinal parts into separate group rules
+    // TODO handle optional parts on both side of common words
+    // TODO Move single words from one rule to the next
+    static final class Aside {
+        final Rule previous;
+        final Rule next;
+
+        Aside(Rule rule) {
+            super();
+            this.previous = new Rule(rule.group, rule.index - 1);
+            this.next = new Rule(rule.group, rule.index + 1);
+        }
+    }
+
+    private static Aside joinAside(Rule previous, Rule common, Rule next) {
+        Aside rules = new Aside(common);
+        int choices = next.size();
+        if (previous.size() != choices) {
+            throw new IllegalArgumentException("Rule choice mismatch: " + previous + " <->" + next);
+        }
+
+        String commonWords = getCommonWordsFrom(common);
+
+        for (int choiceIndex = 0; choiceIndex < choices; choiceIndex++) {
+            OneOf previousItems = previous.get(choiceIndex);
+            OneOf nextItems = next.get(choiceIndex);
+
+            // TODO Reduce code duplication to first condition
+            if (previousItems.hasOptionalParts() && nextItems.hasOptionalParts()) {
+                joinPreviousAndNext(rules, commonWords, previousItems, nextItems);
+            } else if (previousItems.hasOptionalParts()) {
+                joinPreviousWIthCommon(rules, commonWords, previousItems, nextItems);
+            } else if (nextItems.hasOptionalParts()) {
+                joinCommonWithNext(rules, commonWords, previousItems, nextItems);
+            } else {
+                joinUnnecessaryButCannotAvoidRightNow(rules, commonWords, previousItems, nextItems);
+            }
+        }
+        return rules;
+    }
+
+    private static void joinPreviousAndNext(Aside rules, String commonWords, OneOf previousItems, OneOf nextItems) {
+        OneOf joinedPreviousItems = new OneOf(previousItems.choiceIndex);
+        OneOf joinedNextItems = new OneOf(nextItems.choiceIndex);
+        for (int i = 0; i < previousItems.size(); i++) {
+            String stringPrevious = previousItems.get(i);
+            String stringNext = nextItems.get(i);
+
+            if (stringPrevious.isBlank() && stringNext.isBlank()) {
+                throw new UnsupportedOperationException("TODO reduce optional words on both sides to new group");
+            } else if (stringPrevious.isBlank()) {
+                joinedPreviousItems.add(commonWords);
+                joinedNextItems.add(stringNext);
+            } else if (stringNext.isBlank()) {
+                joinedPreviousItems.add(stringPrevious);
+                joinedNextItems.add(commonWords);
+            } else {
+                joinedPreviousItems.add(stringPrevious + " " + commonWords);
+                joinedNextItems.add(commonWords + " " + stringNext);
+            }
+        }
+        rules.previous.add(joinedPreviousItems);
+        rules.next.add(joinedNextItems);
+    }
+
+    private static void joinPreviousWIthCommon(Aside rules, String commonWords, OneOf previousItems, OneOf nextItems) {
+        OneOf joinedPreviousItems = new OneOf(previousItems.choiceIndex);
+        OneOf joinedNextItems = new OneOf(nextItems.choiceIndex);
+        for (int i = 0; i < previousItems.size(); i++) {
+            String stringPrevious = previousItems.get(i);
+            String stringNext = nextItems.get(i);
+            if (!stringPrevious.isBlank()) {
+                joinedPreviousItems.add(stringPrevious + " " + commonWords);
+            } else {
+                joinedPreviousItems.add(commonWords);
+            }
+            // TODO replace with original, revert to enhanced for-loop
+            joinedNextItems.add(stringNext);
+        }
+        rules.previous.add(joinedPreviousItems);
+        rules.next.add(nextItems);
+    }
+
+    private static void joinCommonWithNext(Aside rules, String commonWords, OneOf previousItems, OneOf nextItems) {
+        OneOf joinedPreviousItems = new OneOf(previousItems.choiceIndex);
+        OneOf joinedNextItems = new OneOf(nextItems.choiceIndex);
+        for (int i = 0; i < nextItems.size(); i++) {
+            String stringPrevious = previousItems.get(i);
+            String stringNext = nextItems.get(i);
+            if (!stringNext.isBlank()) {
+                joinedNextItems.add(commonWords + " " + stringNext);
+            } else {
+                joinedNextItems.add(commonWords);
+            }
+            // TODO replace with original, revert to enhanced for-loop
+            joinedPreviousItems.add(stringPrevious);
+        }
+        rules.previous.add(previousItems);
+        rules.next.add(joinedNextItems);
+    }
+
+    private static void joinUnnecessaryButCannotAvoidRightNow(Aside rules, String commonWords, OneOf previousItems,
+            OneOf nextItems) {
+        OneOf joinedPreviousItems = new OneOf(previousItems.choiceIndex);
+        OneOf joinedNextItems = new OneOf(nextItems.choiceIndex);
+        // throw new IllegalArgumentException("Joining is only allowed for optional choices");
+        // Unaffected choices (without optional items) must be joined as well
+        // TODO -> split rules so that each choice is in a separate group
+        // - rules may not contain multiple choices anymore
+        // - can keep rules together if all or no choices contain optional items
+        // TODO remove duplicated code from if-clause "previousItem"
+        for (int i = 0; i < previousItems.size(); i++) {
+            String stringPrevious = previousItems.get(i);
+            String stringNext = nextItems.get(i);
+            joinedPreviousItems.add(stringPrevious + " " + commonWords);
+            // TODO replace with original, revert to enhanced for-loop
+            joinedNextItems.add(stringNext);
+        }
+        rules.previous.add(joinedPreviousItems);
+        rules.next.add(nextItems);
+    }
+
+    // TODO Move single words from one rule to the next
+    private static Rule joinCommonWithNext(Rule common, Rule next) {
         // TODO Refactor this so it doesn't look like an ugly hack
-        remove(previous);
-        Rule joinedRule = new Rule(rule.group, rule.index);
-        for (OneOf items : rule) {
+        String commonWords = getCommonWordsFrom(common);
+
+        Rule joinedRule = new Rule(next.group, next.index);
+        for (OneOf items : next) {
             OneOf joinedItems = new OneOf(items.choiceIndex);
             for (String string : items) {
-                joinedItems.add(previous.iterator().next().iterator().next() + " " + string);
+                if (!string.isBlank()) {
+                    joinedItems.add(commonWords + " " + string);
+                } else {
+                    joinedItems.add(commonWords);
+                }
             }
+            // TODO Re-index follow-up rules, or insert dummy rule that is ignored by SRGSBuilder
             joinedRule.add(joinedItems);
         }
         return joinedRule;
     }
 
-    private Rule getPrevious(Rule rule) {
-        Rule previous = get(size() - 1);
-        if (previous.index != rule.index - 1 || previous.group != rule.group)
-            throw new IllegalStateException("Previous rule not found:" + rule);
-        return previous;
+    private static Rule joinPreviousWithCommon(Rule previous, Rule common) {
+        // TODO Refactor this so it doesn't look like an ugly hack
+        String commonWords = getCommonWordsFrom(common);
+
+        Rule joinedRule = new Rule(previous.group, previous.index);
+        for (OneOf items : previous) {
+            OneOf joinedItems = new OneOf(items.choiceIndex);
+            for (String string : items) {
+                if (!string.isBlank()) {
+                    joinedItems.add(string + " " + commonWords);
+                } else {
+                    joinedItems.add(commonWords);
+                }
+            }
+            // TODO Re-index follow-up rules, or insert dummy rule that is ignored by SRGSBuilder
+            joinedRule.add(joinedItems);
+        }
+        return joinedRule;
     }
+
+    private static String getCommonWordsFrom(Rule common) {
+        OneOf item = common.iterator().next();
+        if (item.choiceIndex != Phrases.COMMON_RULE) {
+            throw new IllegalArgumentException(common.toString());
+        }
+
+        return item.iterator().next();
+    }
+
+    // private Rule getPrevious(Rule rule) {
+    // Rule previous = get(size() - 1);
+    // if (previous.index != rule.index - 1 || previous.group != rule.group)
+    // throw new IllegalStateException("Previous rule not found:" + rule);
+    // return previous;
+    // }
 
     static boolean haveCommonParts(String a, String b) {
         // TODO Optional parts must be at the same position
@@ -301,9 +516,11 @@ public class Phrases extends ArrayList<Phrases.Rule> {
                 OneOf oneOf = new OneOf(choiceIndex++, size);
                 for (int i = 0; i < size; i++) {
                     String item = sequences.get(itemIndex + i).toString();
-                    if (!oneOf.contains(item)) {
-                        oneOf.add(item);
-                    }
+                    // Optimize after optimizing optional rules in SRGSBuilder
+                    // TODO Resolve code duplication with createOneOf
+                    // if (!oneOf.contains(item)) {
+                    oneOf.add(item);
+                    // }
                 }
                 rule.add(oneOf);
                 itemIndex += size;
@@ -342,9 +559,10 @@ public class Phrases extends ArrayList<Phrases.Rule> {
         OneOf oneOf = new OneOf(choiceIndex, size);
         for (int i = 0; i < size; i++) {
             String item = sequences.get(i).toString();
-            if (!oneOf.contains(item)) {
-                oneOf.add(item);
-            }
+            // Optimize after optimizing optional rules in SRGSBuilder
+            // if (!oneOf.contains(item)) {
+            oneOf.add(item);
+            // }
         }
         return oneOf;
     }

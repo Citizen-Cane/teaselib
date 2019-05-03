@@ -95,11 +95,11 @@ public class Phrases extends ArrayList<Phrases.Rule> {
 
     }
 
-    static class Rule extends ArrayList<OneOf> {
+    public static class Rule extends ArrayList<OneOf> {
         private static final long serialVersionUID = 1L;
 
-        final int group;
-        final int index;
+        public final int group;
+        public final int index;
 
         public Rule(int group, int index) {
             this.group = group;
@@ -157,7 +157,6 @@ public class Phrases extends ArrayList<Phrases.Rule> {
             } else {
                 return 1;
             }
-
         }
 
         public boolean containOptionalChoices() {
@@ -484,22 +483,11 @@ public class Phrases extends ArrayList<Phrases.Rule> {
     }
 
     static boolean haveCommonParts(String a, String b) {
-        // TODO Optional parts must be at the same position
         List<StringSequences> slice = StringSequences.slice(a, b);
-        // TODO turn this into production code
-        boolean haveCommonParts = slice.stream().filter((StringSequences seq) -> {
-            return seq.size() == 1;
-        }).count() > 0;
-        long c = slice.stream().filter((StringSequences seq) -> {
-            long count = seq.stream().filter((Sequence<String> s) -> {
-                return s.isEmpty();
-            }).count();
-            return count == 0;
-        }).count();
-        boolean areDefined = c == slice.size();
-        // TODO define criteria for matching phrases
-        areDefined = true;
-        return haveCommonParts && areDefined;
+        boolean sequencesShareCommonParts = slice.stream().anyMatch(sequence -> sequence.size() == 1);
+        boolean withoutOptionalPartMismatches = slice.stream()
+                .noneMatch((StringSequences seq) -> seq.stream().anyMatch(Sequence<String>::isEmpty));
+        return sequencesShareCommonParts && withoutOptionalPartMismatches;
     }
 
     static final int FIRST_GROUP = 0;

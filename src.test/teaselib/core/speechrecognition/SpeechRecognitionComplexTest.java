@@ -28,16 +28,12 @@ public class SpeechRecognitionComplexTest {
         Choices choices = singleChoiceMultiplePhrasesAreDistinct();
         Phrases phrases = Phrases.of(choices);
 
-        // wrong - phrase "of course" recognized but shouldn't
-        // assertEquals(3, phrases.size());
-        // assertEquals(Phrases.rule(0, 0, Phrases.oneOf(0, "", "Yes Miss")), phrases.get(0));
-        // assertEquals(Phrases.rule(0, 1, Phrases.oneOf(Phrases.COMMON_RULE, "of course")), phrases.get(1));
-        // assertEquals(Phrases.rule(0, 2, Phrases.oneOf(0, "Miss", "")), phrases.get(2));
+        // correctly Split into groups to avoid ambiguity caused by optiona parts
+        assertEquals(0, phrases.get(0).group);
+        assertEquals(1, phrases.get(1).group);
 
-        // Optional parts are eliminated -> speech recognition succeeds -> but solution is still sub-optimal
         // TODO Split groups into common and choice parts
         // - "of course" is still a common item after eliminating ambitious optional parts
-        // -> how do we model this?
 
         assertEquals(4, phrases.size());
         assertEquals(Phrases.rule(0, 0, "Yes Miss"), phrases.get(0));
@@ -50,12 +46,15 @@ public class SpeechRecognitionComplexTest {
     public void testSRGSBuilderSingleChoiceMultiplePhrasesAreDistinct() throws InterruptedException {
         Choices choices = singleChoiceMultiplePhrasesAreDistinct();
 
+        assertRecognized(choices, withoutPunctation("Yes Miss, of course"), new Prompt.Result(0));
+        assertRecognized(choices, withoutPunctation("Of course, Miss"), new Prompt.Result(0));
+
+        assertRejected(choices, "Of course");
+        assertRejected(choices, "Yes Miss Yes Miss");
+        assertRejected(choices, "Of course of course");
         assertRejected(choices, withoutPunctation("Yes Miss, of course of course"));
         assertRejected(choices, withoutPunctation("Of course of course, Miss"));
 
-        assertRecognized(choices, withoutPunctation("Yes Miss, of course"), new Prompt.Result(0, 0));
-        assertRecognized(choices, withoutPunctation("Of course, Miss"), new Prompt.Result(0, 0));
-        assertRejected(choices, "Of course");
     }
 
     private static Choices multipleChoicesAlternativePhrases() {

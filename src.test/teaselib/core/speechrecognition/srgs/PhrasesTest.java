@@ -1,6 +1,6 @@
 package teaselib.core.speechrecognition.srgs;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 import java.util.Arrays;
 import java.util.List;
@@ -79,6 +79,19 @@ public class PhrasesTest {
         List<String> strings = Arrays.asList("Yes Miss", "Yes Mistress", "Of course Miss", "I have it");
         Partition<String> grooupedPhrases = new Partition<>(strings, Phrases::haveCommonParts);
         assertEquals(2, grooupedPhrases.groups.size());
+    }
+
+    @Test
+    public void testFlattenString() {
+        List<String> foobar = Arrays.asList("My name is Foo");
+        Phrases phrases = Phrases.of(foobar);
+
+        Sequences<String> flattened = phrases.flatten();
+        assertEquals(1, flattened.size());
+
+        List<String> restored = flattened.toStrings();
+        assertEquals(1, restored.size());
+        assertEquals("My name is Foo", restored.get(0));
     }
 
     @Test

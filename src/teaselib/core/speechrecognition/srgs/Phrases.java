@@ -150,9 +150,14 @@ public class Phrases extends ArrayList<Phrases.Rule> {
         }
 
         int choices() {
-            return stream().reduce((a, b) -> {
-                return a.choiceIndex > b.choiceIndex ? a : b;
-            }).orElseGet(() -> new OneOf(0)).choiceIndex + 1;
+            Optional<OneOf> reduce = stream().reduce((a, b) -> a.choiceIndex > b.choiceIndex ? a : b);
+            if (reduce.isPresent()) {
+                int choiceIndex = reduce.get().choiceIndex;
+                return choiceIndex == Phrases.COMMON_RULE ? 1 : choiceIndex + 1;
+            } else {
+                return 1;
+            }
+
         }
 
         public boolean containOptionalChoices() {
@@ -256,27 +261,30 @@ public class Phrases extends ArrayList<Phrases.Rule> {
     }
 
     private void joinRulesWithOptionalParts() {
-        for (Rule rule : this) {
-            if (rule.index > 0 && rule.index < rules() - 1) {
-                Rule previous = previous(rule);
-                Rule next = next(rule);
-                if (previous.containOptionalChoices() || next.containOptionalChoices()) {
-                    Aside joined = joinAside(previous, rule, next);
-                    set(indexOf(previous), joined.previous);
-                    set(indexOf(next), joined.next);
-                    set(indexOf(rule), placeholderOf(rule));
-                }
-            } else if (rule.index == 0) {
-                Rule next = next(rule);
-                if (next.containOptionalChoices()) {
-                    set(indexOf(next), joinCommonWithNext(rule, next));
-                    set(indexOf(rule), placeholderOf(rule));
-                }
-            } else if (rule.index == rules() - 1) {
-                Rule previous = previous(rule);
-                if (previous.containOptionalChoices()) {
-                    set(indexOf(previous), joinPreviousWithCommon(previous, rule));
-                    set(indexOf(rule), placeholderOf(rule));
+        int rules = rules();
+        if (rules > 1) {
+            for (Rule rule : this) {
+                if (rule.index > 0 && rule.index < rules - 1) {
+                    Rule previous = previous(rule);
+                    Rule next = next(rule);
+                    if (previous.containOptionalChoices() || next.containOptionalChoices()) {
+                        Aside joined = joinAside(previous, rule, next);
+                        set(indexOf(previous), joined.previous);
+                        set(indexOf(next), joined.next);
+                        set(indexOf(rule), placeholderOf(rule));
+                    }
+                } else if (rule.index == 0) {
+                    Rule next = next(rule);
+                    if (next.containOptionalChoices()) {
+                        set(indexOf(next), joinCommonWithNext(rule, next));
+                        set(indexOf(rule), placeholderOf(rule));
+                    }
+                } else if (rule.index == rules - 1) {
+                    Rule previous = previous(rule);
+                    if (previous.containOptionalChoices()) {
+                        set(indexOf(previous), joinPreviousWithCommon(previous, rule));
+                        set(indexOf(rule), placeholderOf(rule));
+                    }
                 }
             }
         }
@@ -474,13 +482,6 @@ public class Phrases extends ArrayList<Phrases.Rule> {
 
         return item.iterator().next();
     }
-
-    // private Rule getPrevious(Rule rule) {
-    // Rule previous = get(size() - 1);
-    // if (previous.index != rule.index - 1 || previous.group != rule.group)
-    // throw new IllegalStateException("Previous rule not found:" + rule);
-    // return previous;
-    // }
 
     static boolean haveCommonParts(String a, String b) {
         // TODO Optional parts must be at the same position

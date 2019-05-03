@@ -52,18 +52,18 @@ public class SpeechRecogntionTestUtils {
         return Arrays.stream(StringSequence.splitWords(text)).collect(Collectors.joining(" "));
     }
 
-    static void awaitResult(SpeechRecognition sr, Prompt prompt, String emulatedText, Prompt.Result expectedRules)
+    static void awaitResult(SpeechRecognition sr, Prompt prompt, String emulatedSpeech, Prompt.Result expectedRules)
             throws InterruptedException {
-        sr.emulateRecogntion(emulatedText);
+        sr.emulateRecogntion(emulatedSpeech);
         boolean dismissed = prompt.click.await(RECOGNITION_TIMEOUT, TimeUnit.SECONDS);
         if (!dismissed) {
             prompt.dismiss();
         }
         if (expectedRules != null) {
-            assertTrue("Expected recognition:: \"" + emulatedText + "\"", dismissed);
+            assertTrue("Expected recognition:: \"" + emulatedSpeech + "\"", dismissed);
             assertEquals(expectedRules, prompt.result());
         } else {
-            assertFalse("Expected rejected: \"" + emulatedText + "\"", dismissed);
+            assertFalse("Expected rejected: \"" + emulatedSpeech + "\"", dismissed);
         }
     }
 

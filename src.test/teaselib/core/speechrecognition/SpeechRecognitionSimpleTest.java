@@ -1,6 +1,8 @@
 package teaselib.core.speechrecognition;
 
-import static teaselib.core.speechrecognition.SpeechRecogntionTestUtils.*;
+import static teaselib.core.speechrecognition.SpeechRecogntionTestUtils.awaitResult;
+import static teaselib.core.speechrecognition.SpeechRecogntionTestUtils.confidence;
+import static teaselib.core.speechrecognition.SpeechRecogntionTestUtils.emulateRecognition;
 
 import java.util.Arrays;
 import java.util.Locale;
@@ -20,19 +22,7 @@ import teaselib.core.ui.SpeechRecognitionInputMethod;
  */
 public class SpeechRecognitionSimpleTest {
 
-    @Test
-    public void testResourceHandling() {
-        SpeechRecognition sr = new SpeechRecognition(Locale.ENGLISH, TeaseLibSR.class);
-        sr.close();
-    }
-
-    @Test
-    public void testSimpleSR() throws InterruptedException {
-        Choices choices = new Choices(Arrays.asList(new Choice("My name is Foo"), new Choice("My name is Bar"),
-                new Choice("My name is Foobar")));
-
-        SpeechRecognition sr = new SpeechRecognition(Locale.ENGLISH, TeaseLibSR.class);
-
+    private static void assertRecognized(Choices choices, SpeechRecognition sr) throws InterruptedException {
         for (Choice choice : choices) {
             SpeechRecognitionInputMethod inputMethod = new SpeechRecognitionInputMethod(sr, confidence,
                     Optional.empty());
@@ -40,13 +30,17 @@ public class SpeechRecognitionSimpleTest {
             prompt.lock.lockInterruptibly();
             try {
                 inputMethod.show(prompt);
-                awaitResult(sr, prompt, choice.phrases.get(0), new Prompt.Result(choices.indexOf(choice)));
+                String emulatedSpeech = choice.phrases.get(0);
+                awaitResult(sr, prompt, SpeechRecogntionTestUtils.withoutPunctation(emulatedSpeech),
+                        new Prompt.Result(choices.indexOf(choice)));
             } finally {
                 prompt.lock.unlock();
             }
         }
+    }
 
-        String[] rejected = { "My name is", "FooBar" };
+    private static void assertRejected(Choices choices, SpeechRecognition sr, String[] rejected)
+            throws InterruptedException {
         for (String speech : rejected) {
             SpeechRecognitionInputMethod inputMethod = new SpeechRecognitionInputMethod(sr, confidence,
                     Optional.empty());
@@ -54,7 +48,7 @@ public class SpeechRecognitionSimpleTest {
             prompt.lock.lockInterruptibly();
             try {
                 inputMethod.show(prompt);
-                awaitResult(sr, prompt, speech, null);
+                awaitResult(sr, prompt, SpeechRecogntionTestUtils.withoutPunctation(speech), null);
             } finally {
                 prompt.lock.unlock();
             }
@@ -62,21 +56,57 @@ public class SpeechRecognitionSimpleTest {
     }
 
     @Test
-    public void testSimpleSR2() throws InterruptedException {
-        Choices foobar = new Choices(Arrays.asList(new Choice("My name is Foo, Mam"), new Choice("My name is Bar, Mam"),
-                new Choice("My name is Foobar, Mam")));
+    public void testResourceHandling() {
+        SpeechRecognition sr = new SpeechRecognition(Locale.ENGLISH, TeaseLibSR.class);
+        sr.close();
+    }
+
+    @Test
+    public void testSimpleSRSinglePhrase() throws InterruptedException {
+        Choices choices = new Choices(Arrays.asList(new Choice("My name is Foobar")));
 
         SpeechRecognition sr = new SpeechRecognition(Locale.ENGLISH, TeaseLibSR.class);
-        SpeechRecognitionInputMethod inputMethod = new SpeechRecognitionInputMethod(sr, confidence, Optional.empty());
-        Prompt prompt = new Prompt(foobar, Arrays.asList(inputMethod));
 
-        prompt.lock.lockInterruptibly();
-        try {
-            inputMethod.show(prompt);
-            awaitResult(sr, prompt, "My name is Bar Mam", new Prompt.Result(1));
-        } finally {
-            prompt.lock.unlock();
-        }
+        assertRecognized(choices, sr);
+
+        String[] rejected = { "My name is Foo", "FooBar" };
+        assertRejected(choices, sr, rejected);
+    }
+
+    @Test
+    public void testSimpleSRMultiplePhrasesCommonStart() throws InterruptedException {
+        Choices choices = new Choices(Arrays.asList(new Choice("My name is Foo"), new Choice("My name is Bar"),
+                new Choice("My name is Foobar")));
+        SpeechRecognition sr = new SpeechRecognition(Locale.ENGLISH, TeaseLibSR.class);
+        assertRecognized(choices, sr);
+        assertRejected(choices, sr, new String[] { "My name is", "FooBar" });
+    }
+
+    @Test
+    public void testSimpleSRMultiplePhrasesCommonStartEnd() throws InterruptedException {
+        Choices choices = new Choices(Arrays.asList(new Choice("My name is Foo, Mam"),
+                new Choice("My name is Bar, Mam"), new Choice("My name is Foobar, Mam")));
+        SpeechRecognition sr = new SpeechRecognition(Locale.ENGLISH, TeaseLibSR.class);
+        assertRecognized(choices, sr);
+        assertRejected(choices, sr, new String[] { "My name is Foobar", "Mam" });
+    }
+
+    @Test
+    public void testSimpleSRMultiplePhrasesCommonEnd() throws InterruptedException {
+        Choices choices = new Choices(Arrays.asList(new Choice("I have foobar, Mam"),
+                new Choice("My name is foobar, Mam"), new Choice("There is Foobar, Mam")));
+        SpeechRecognition sr = new SpeechRecognition(Locale.ENGLISH, TeaseLibSR.class);
+        assertRecognized(choices, sr);
+        assertRejected(choices, sr, new String[] { "My name is foobar", "Mam" });
+    }
+
+    @Test
+    public void testSimpleSRMultiplePhrasesCommonMiddle() throws InterruptedException {
+        Choices choices = new Choices(Arrays.asList(new Choice("I have some foobar, Mam"),
+                new Choice("My name is foobar, Miss"), new Choice("There is Foobar, Mistress")));
+        SpeechRecognition sr = new SpeechRecognition(Locale.ENGLISH, TeaseLibSR.class);
+        assertRecognized(choices, sr);
+        assertRejected(choices, sr, new String[] { "My name is Foobar", "Miss" });
     }
 
     @Test

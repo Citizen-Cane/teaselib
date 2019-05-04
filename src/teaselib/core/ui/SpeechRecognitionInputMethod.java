@@ -20,6 +20,7 @@ import teaselib.core.speechrecognition.events.AudioSignalProblemOccuredEventArgs
 import teaselib.core.speechrecognition.events.SpeechRecognitionStartedEventArgs;
 import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
 import teaselib.core.speechrecognition.srgs.Phrases;
+import teaselib.core.speechrecognition.srgs.SimplifiedPhrases;
 import teaselib.util.SpeechRecognitionRejectedScript;
 
 /**
@@ -181,24 +182,37 @@ public class SpeechRecognitionInputMethod implements InputMethod {
         }
     }
 
+    // TODO Resolve race condition lazy initialization versus dismiss in main thread on timeout
+    // -> recognition not started yet but main thread dismisses prompt
+
     private void enableSpeechRecognition() {
+        if (speechRecognizer.isActive()) {
+            throw new IllegalStateException("Speech recognizer already active");
+        }
+
         speechRecognizer.events.recognitionStarted.add(speechRecognitionStartedEventHandler);
         speechRecognizer.events.audioSignalProblemOccured.add(audioSignalProblemEventHandler);
         speechRecognizer.events.speechDetected.add(speechDetectedEventHandler);
         speechRecognizer.events.recognitionRejected.add(recognitionRejected);
         speechRecognizer.events.recognitionCompleted.add(recognitionCompleted);
 
-        speechRecognizer.startRecognition(Phrases.of(active.get().choices), expectedConfidence);
+        Phrases phrases = SimplifiedPhrases.of(active.get().choices);
+        speechRecognizer.startRecognition(phrases, expectedConfidence);
     }
 
     private void disableSpeechRecognition() {
+        if (!speechRecognizer.isActive()) {
+            throw new IllegalStateException("Speech recognizer not active");
+        }
+
         logger.debug("Stopping speech recognition");
+        speechRecognizer.stopRecognition();
+
         speechRecognizer.events.recognitionStarted.remove(speechRecognitionStartedEventHandler);
         speechRecognizer.events.audioSignalProblemOccured.remove(audioSignalProblemEventHandler);
         speechRecognizer.events.speechDetected.remove(speechDetectedEventHandler);
         speechRecognizer.events.recognitionRejected.remove(recognitionRejected);
         speechRecognizer.events.recognitionCompleted.remove(recognitionCompleted);
-        speechRecognizer.stopRecognition();
     }
 
     @Override

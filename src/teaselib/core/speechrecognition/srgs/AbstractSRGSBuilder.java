@@ -17,8 +17,6 @@ import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
-import teaselib.core.speechrecognition.srgs.Phrases.Rule;
-
 /**
  * @author Citizen-Cane
  * 

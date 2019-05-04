@@ -1,6 +1,6 @@
 package teaselib.core.speechrecognition.srgs;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 import java.util.Arrays;
 import java.util.List;
@@ -77,7 +77,7 @@ public class PhrasesTest {
     @Test
     public void testPhraseGrouping() {
         List<String> strings = Arrays.asList("Yes Miss", "Yes Mistress", "Of course Miss", "I have it");
-        Partition<String> grooupedPhrases = new Partition<>(strings, Phrases::haveCommonParts);
+        Partition<String> grooupedPhrases = new Partition<>(strings, SimplifiedPhrases::haveCommonParts);
         assertEquals(2, grooupedPhrases.groups.size());
     }
 

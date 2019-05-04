@@ -1,8 +1,6 @@
 package teaselib.core.speechrecognition.srgs;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -13,7 +11,6 @@ import javax.xml.transform.TransformerException;
 
 import org.junit.Test;
 
-import teaselib.core.speechrecognition.srgs.Phrases.OneOf;
 import teaselib.core.ui.Choice;
 
 public class SRGSBuilderTest {
@@ -55,7 +52,7 @@ public class SRGSBuilderTest {
             if (word.startsWith("%")) {
                 Choice[] arg = args[Integer.parseInt(word.substring(1))];
                 List<OneOf> items = new ArrayList<>();
-                Phrases.Rule rule = new Phrases.Rule(groupIndex, ruleIndex++, items);
+                Rule rule = new Rule(groupIndex, ruleIndex++, items);
                 for (int choiceIndex = 0; choiceIndex < arg.length; choiceIndex++) {
                     rule.add(new OneOf(choiceIndex, arg[choiceIndex].phrases));
                 }

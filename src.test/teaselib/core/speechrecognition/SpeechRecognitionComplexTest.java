@@ -1,9 +1,7 @@
 package teaselib.core.speechrecognition;
 
-import static org.junit.Assert.assertEquals;
-import static teaselib.core.speechrecognition.SpeechRecogntionTestUtils.assertRecognized;
-import static teaselib.core.speechrecognition.SpeechRecogntionTestUtils.assertRejected;
-import static teaselib.core.speechrecognition.SpeechRecogntionTestUtils.withoutPunctation;
+import static org.junit.Assert.*;
+import static teaselib.core.speechrecognition.SpeechRecogntionTestUtils.*;
 
 import org.junit.Test;
 
@@ -225,7 +223,11 @@ public class SpeechRecognitionComplexTest {
         Choices choices = multiplePhrasesOfMultipleChoicesAreDistinctWithoutOptionalParts();
         Phrases phrases = Phrases.of(choices);
 
+        // TODO Sliced separately -> slice and group
+        // TODO "of course" is not sliced to common part, since each item ends up in a single group
+        // -> because all phrases contain an optional part
         assertEquals(10, phrases.size());
+
         // TODO assert structure
         assertEquals(Phrases.rule(0, 0, Phrases.oneOf(0, "Yes")), phrases.get(0));
         assertEquals(Phrases.rule(0, 1, Phrases.oneOf(0, "Miss", "")), phrases.get(1));

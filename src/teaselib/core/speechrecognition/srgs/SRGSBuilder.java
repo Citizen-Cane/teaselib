@@ -9,9 +9,6 @@ import javax.xml.transform.TransformerFactoryConfigurationError;
 
 import org.w3c.dom.Element;
 
-import teaselib.core.speechrecognition.srgs.Phrases.OneOf;
-import teaselib.core.speechrecognition.srgs.Phrases.Rule;
-
 public class SRGSBuilder extends AbstractSRGSBuilder {
     public SRGSBuilder(Phrases phrases) throws ParserConfigurationException, TransformerException {
         super(phrases);
@@ -22,7 +19,7 @@ public class SRGSBuilder extends AbstractSRGSBuilder {
         Element grammar = createGrammar();
         Map<String, Element> inventoryItems = createMainRule(grammar);
 
-        for (Phrases.Rule rule : phrases) {
+        for (Rule rule : phrases) {
             if (!rule.isEmpty()) {
                 createRule(grammar, inventoryItems, rule);
             }
@@ -40,9 +37,9 @@ public class SRGSBuilder extends AbstractSRGSBuilder {
         Map<String, Element> inventoryItems = new LinkedHashMap<>();
         // TODO Phrases may contain multiple rules with the same items -> reuse them
         // SpeechRecognitionTest.testSRGSBuilderMultiplePhrasesOfMultipleChoicesAreDistinctWithoutOptionalParts()
-        for (Phrases.Rule rule : phrases) {
+        for (Rule rule : phrases) {
             if (rule.index != Phrases.COMMON_RULE) {
-                for (Phrases.OneOf item : rule) {
+                for (OneOf item : rule) {
                     String inventoryKey = inventoryKey(rule, item);
                     if (item.choiceIndex != Phrases.COMMON_RULE) {
                         if (!inventoryItems.containsKey(inventoryKey)) {
@@ -58,7 +55,7 @@ public class SRGSBuilder extends AbstractSRGSBuilder {
         return inventoryItems;
     }
 
-    private static String inventoryKey(Phrases.Rule rule, OneOf item) {
+    private static String inventoryKey(Rule rule, OneOf item) {
         return item.choiceIndex + "_" + rule.group;
     }
 
@@ -66,13 +63,13 @@ public class SRGSBuilder extends AbstractSRGSBuilder {
         return Integer.parseInt(inventoryKey.substring(inventoryKey.indexOf("_") + 1));
     }
 
-    private void createRule(Element grammar, Map<String, Element> inventoryItems, Phrases.Rule rule) {
+    private void createRule(Element grammar, Map<String, Element> inventoryItems, Rule rule) {
         createRule(grammar, rule);
         addRuleToInventory(inventoryItems, rule);
     }
 
-    private void createRule(Element grammar, Phrases.Rule rule) {
-        for (Phrases.OneOf items : rule) {
+    private void createRule(Element grammar, Rule rule) {
+        for (OneOf items : rule) {
             String id = items.choiceIndex != Phrases.COMMON_RULE ? choiceName(rule, items.choiceIndex) : ruleName(rule);
             Element ruleElement = createRule(id);
             grammar.appendChild(ruleElement);
@@ -99,7 +96,7 @@ public class SRGSBuilder extends AbstractSRGSBuilder {
         }
     }
 
-    private void addRuleToInventory(Map<String, Element> inventoryItems, Phrases.Rule rule) {
+    private void addRuleToInventory(Map<String, Element> inventoryItems, Rule rule) {
         for (OneOf items : rule) {
             if (items.choiceIndex == Phrases.COMMON_RULE) {
                 if (rule.size() > 1) {

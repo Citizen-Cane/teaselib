@@ -27,7 +27,7 @@ public class Geom {
 
     public static List<Partition<Rect>.Group> partition(List<Rect> rectangles, int distance) {
         final int distance2 = distance * distance;
-        Partition.Siblings<Rect> closeToEachOther = (rect1, rect2) -> distance2(rect1, rect2) < distance2;
+        Partition.Similarity<Rect> closeToEachOther = (rect1, rect2) -> distance2(rect1, rect2) < distance2;
         Partition.Join<Rect> joinRectangles = (rect1, rect2) -> {
             Rect group = new Rect(rect1);
             join(group, rect2, group);

@@ -35,7 +35,7 @@ public class SimplifiedPhrases {
     }
 
     private static Phrases sliceAllChoicesTogether(Choices choices, List<String> allPhrases) {
-        List<StringSequences> sliced = StringSequences.slice(allPhrases);
+        List<Sequences<String>> sliced = StringSequences.of(allPhrases);
         Phrases phrases = new Phrases();
         for (int ruleIndex = 0; ruleIndex < sliced.size(); ruleIndex++) {
             Rule rule = rule(choices, sliced, ruleIndex);
@@ -259,16 +259,16 @@ public class SimplifiedPhrases {
     }
 
     static boolean haveCommonParts(String a, String b) {
-        List<StringSequences> slice = StringSequences.slice(a, b);
+        List<Sequences<String>> slice = StringSequences.of(a, b);
         boolean sequencesShareCommonParts = slice.stream().anyMatch(sequence -> sequence.size() == 1);
         boolean withoutOptionalPartMismatches = slice.stream()
-                .noneMatch((StringSequences seq) -> seq.stream().anyMatch(Sequence<String>::isEmpty));
+                .noneMatch(seq -> seq.stream().anyMatch(Sequence<String>::isEmpty));
         return sequencesShareCommonParts && withoutOptionalPartMismatches;
     }
 
     static final int FIRST_GROUP = 0;
 
-    private static Rule rule(Choices choices, List<StringSequences> sliced, int ruleIndex) {
+    private static Rule rule(Choices choices, List<Sequences<String>> sliced, int ruleIndex) {
         Rule rule = new Rule(FIRST_GROUP, ruleIndex);
         Sequences<String> sequences = sliced.get(ruleIndex);
         if (sequences.size() == 1) {
@@ -301,7 +301,7 @@ public class SimplifiedPhrases {
             Partition<String> choiceGroups = new Partition<>(choice.phrases, SimplifiedPhrases::haveCommonParts);
             for (Partition<String>.Group group : choiceGroups.groups) {
                 List<String> items = group.items;
-                List<StringSequences> sliced = StringSequences.slice(items);
+                List<Sequences<String>> sliced = StringSequences.of(items);
 
                 for (int ruleIndex = 0; ruleIndex < sliced.size(); ruleIndex++) {
                     Rule rule = new Rule(choiceGroups.groups.indexOf(group), ruleIndex);

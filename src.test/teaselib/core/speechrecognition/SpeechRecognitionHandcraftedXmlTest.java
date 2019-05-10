@@ -41,7 +41,7 @@ public class SpeechRecognitionHandcraftedXmlTest {
     private static void emulateSpeechRecognition(String resource, String emulatedRecognitionResult,
             Prompt.Result expected) throws IOException, InterruptedException {
         assertEquals("Emulated speech may not contain punctation: '" + emulatedRecognitionResult + "'",
-                Arrays.stream(StringSequence.splitWords(emulatedRecognitionResult)).collect(Collectors.joining(" ")),
+                StringSequence.splitWords(emulatedRecognitionResult).stream().collect(Collectors.joining(" ")),
                 emulatedRecognitionResult);
         ResourceLoader resources = new ResourceLoader(SpeechRecognitionHandcraftedXmlTest.class);
         String xml = Stream.toString(resources.get(resource));

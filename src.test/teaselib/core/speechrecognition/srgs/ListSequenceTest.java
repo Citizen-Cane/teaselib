@@ -4,14 +4,22 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.junit.Test;
 
 public class ListSequenceTest {
 
-    static String[] splitWords(String string) {
+    static List<String> splitWords(String string) {
         return StringSequence.splitWords(string);
+    }
+
+    public static Sequences<String> ignoreCase(String... strings) {
+        List<StringSequence> sequences = Arrays.stream(strings).map(StringSequence::ignoreCase)
+                .collect(Collectors.toList());
+        return new StringSequences(sequences, String::equalsIgnoreCase);
     }
 
     @Test
@@ -49,157 +57,140 @@ public class ListSequenceTest {
 
     @Test
     public void testCommonStartNoMatchSameLengths() {
-        Sequence<String> commonStart = StringSequences.ignoreCase("My dog jumped over the fence",
-                "The dog looked over the fence", "The dog jumped over the sofa", "The dog jumped over the fence")
-                .commonStart();
+        Sequence<String> commonStart = ignoreCase("My dog jumped over the fence", "The dog looked over the fence",
+                "The dog jumped over the sofa", "The dog jumped over the fence").commonStart();
         assertEquals(new Sequence<>(splitWords("")), commonStart);
     }
 
     @Test
     public void testCommonStartNoMatchDifferentLengths() {
-        Sequence<String> commonStart = StringSequences.ignoreCase("My dog jumped over the fence",
+        Sequence<String> commonStart = ignoreCase("My dog jumped over the fence",
                 "The dog looked over the fence Schmidt", "The dog jumped over the sofa", "One two three").commonStart();
         assertEquals(new Sequence<>(splitWords("")), commonStart);
     }
 
     @Test
     public void testCommonStart1() {
-        Sequence<String> commonStart = StringSequences.ignoreCase("The dog jumped over the fence",
-                "The dog looked over the fence", "The dog jumped over the sofa", "The dog jumped over the fence")
-                .commonStart();
+        Sequence<String> commonStart = ignoreCase("The dog jumped over the fence", "The dog looked over the fence",
+                "The dog jumped over the sofa", "The dog jumped over the fence").commonStart();
         assertEquals(new Sequence<>(splitWords("The dog")), commonStart);
     }
 
     @Test
     public void testCommonStart2() {
-        Sequence<String> commonStart = StringSequences.ignoreCase("The dog jumped over the fence",
-                "The dog jumped over the fence", "The dog jumped over the sofa", "The dog jumped over my fence")
-                .commonStart();
+        Sequence<String> commonStart = ignoreCase("The dog jumped over the fence", "The dog jumped over the fence",
+                "The dog jumped over the sofa", "The dog jumped over my fence").commonStart();
         assertEquals(new Sequence<>(splitWords("The dog jumped over")), commonStart);
     }
 
     @Test
     public void testCommonStart3() {
-        Sequence<String> commonStart = StringSequences.ignoreCase("The dog jumped over the fence",
-                "The dog jumped over the fence", "The dog jumped over the fence", "The dog jumped over the fence")
-                .commonStart();
+        Sequence<String> commonStart = ignoreCase("The dog jumped over the fence", "The dog jumped over the fence",
+                "The dog jumped over the fence", "The dog jumped over the fence").commonStart();
         assertEquals(new Sequence<>(splitWords("The dog jumped over the fence")), commonStart);
     }
 
     @Test
     public void testCommonEndSameLengths() {
-        Sequence<String> commonEnd = StringSequences.ignoreCase("My dog jumped over the fence",
-                "The dog looked over the fence", "The dog jumped over the sofa", "The dog jumped over the fence")
-                .commonEnd();
+        Sequence<String> commonEnd = ignoreCase("My dog jumped over the fence", "The dog looked over the fence",
+                "The dog jumped over the sofa", "The dog jumped over the fence").commonEnd();
         assertEquals(new Sequence<>(splitWords("")), commonEnd);
     }
 
     @Test
     public void testCommonEndDifferentLengths() {
-        Sequence<String> commonEnd = StringSequences.ignoreCase("My dog jumped over the fence",
-                "The dog looked over the fence", "The dog jumped over the fence fast", "My dog jumped over the fence")
-                .commonEnd();
+        Sequence<String> commonEnd = ignoreCase("My dog jumped over the fence", "The dog looked over the fence",
+                "The dog jumped over the fence fast", "My dog jumped over the fence").commonEnd();
         assertEquals(new Sequence<>(splitWords("")), commonEnd);
     }
 
     @Test
-    public void testCommonEnd1() {
-        Sequence<String> commonEnd = StringSequences.ignoreCase("My dog jumped over the fence",
-                "The dog looked over the fence", "The dog jumped over the fence", "The dog jumped over the fence")
-                .commonEnd();
+    public void testCommonEnd() {
+        Sequence<String> commonEnd = ignoreCase("My dog jumped over the fence", "The dog looked over the fence",
+                "The dog jumped over the fence", "The dog jumped over the fence").commonEnd();
         assertEquals(new Sequence<>(splitWords("over the fence")), commonEnd);
     }
 
     @Test
     public void testCommonEnd2() {
-        Sequence<String> commonEnd = StringSequences.ignoreCase("The dog jumped over the fence",
-                "The dog jumped over the fence", "The cat jumped over the fence", "The dog jumped over the fence")
-                .commonEnd();
+        Sequence<String> commonEnd = ignoreCase("The dog jumped over the fence", "The dog jumped over the fence",
+                "The cat jumped over the fence", "The dog jumped over the fence").commonEnd();
         assertEquals(new Sequence<>(splitWords("jumped over the fence")), commonEnd);
     }
 
     @Test
     public void testCommonEnd3() {
-        Sequence<String> commonEnd = StringSequences.ignoreCase("The dog jumped over the fence",
-                "The dog jumped over the fence", "The dog jumped over the fence", "The dog jumped over the fence")
-                .commonEnd();
+        Sequence<String> commonEnd = ignoreCase("The dog jumped over the fence", "The dog jumped over the fence",
+                "The dog jumped over the fence", "The dog jumped over the fence").commonEnd();
         assertEquals(new Sequence<>(splitWords("The dog jumped over the fence")), commonEnd);
     }
 
     @Test
     public void testCommonMiddleNoMatchSameLengths() {
-        Sequence<String> commonMiddle = StringSequences.ignoreCase("Your dog jumped over your fence",
-                "The dog looked over the fence", "The cat jumped under the sofa", "The dog jumped over my fence")
-                .commonMiddle();
+        Sequence<String> commonMiddle = ignoreCase("Your dog jumped over your fence", "The dog looked over the fence",
+                "The cat jumped under the sofa", "The dog jumped over my fence").commonMiddle();
         assertEquals(new Sequence<>(splitWords("")), commonMiddle);
     }
 
     @Test
     public void testCommonMiddleNoMatchDifferentLengths() {
-        Sequence<String> commonMiddle = StringSequences.ignoreCase("Your dog jumped over your fence",
-                "The dog looked over the fence", "The cat jumped under the sofa", "One two three").commonMiddle();
+        Sequence<String> commonMiddle = ignoreCase("Your dog jumped over your fence", "The dog looked over the fence",
+                "The cat jumped under the sofa", "One two three").commonMiddle();
         assertEquals(new Sequence<>(splitWords("")), commonMiddle);
     }
 
     @Test
     public void testCommonMiddle1() {
-        Sequence<String> commonMiddle = StringSequences.ignoreCase("My dog jumped over the fence",
-                "The cat jumped over the fence", "The dog jumped over your sofa", "The dog jumped over the fence")
-                .commonMiddle();
+        Sequence<String> commonMiddle = ignoreCase("My dog jumped over the fence", "The cat jumped over the fence",
+                "The dog jumped over your sofa", "The dog jumped over the fence").commonMiddle();
         assertEquals(new Sequence<>(splitWords("jumped over")), commonMiddle);
     }
 
     @Test
     public void testCommonMiddle2a() {
-        Sequence<String> commonMiddle = StringSequences.ignoreCase("The dog jumped over the fence",
-                "The dog jumped over the fence", "Your cat jumped over your sofa", "The dog jumped over the fence")
-                .commonMiddle();
+        Sequence<String> commonMiddle = ignoreCase("The dog jumped over the fence", "The dog jumped over the fence",
+                "Your cat jumped over your sofa", "The dog jumped over the fence").commonMiddle();
         assertEquals(new Sequence<>(splitWords("jumped over")), commonMiddle);
     }
 
     @Test
     public void testCommonMiddle2b() {
-        Sequence<String> commonMiddle = StringSequences.ignoreCase("The dog jumped over the fence",
-                "The dog jumped over the sofa", "The cat jumped over the fence", "The dog jumped over the fence")
-                .commonMiddle();
+        Sequence<String> commonMiddle = ignoreCase("The dog jumped over the fence", "The dog jumped over the sofa",
+                "The cat jumped over the fence", "The dog jumped over the fence").commonMiddle();
         assertEquals(new Sequence<>(splitWords("jumped over the")), commonMiddle);
     }
 
     @Test
     public void testCommonMiddle3() {
-        Sequence<String> commonMiddle = StringSequences.ignoreCase("The dog jumped over the fence",
-                "The dog jumped over the fence", "The dog jumped over the fence", "The dog jumped over the fence")
-                .commonMiddle();
+        Sequence<String> commonMiddle = ignoreCase("The dog jumped over the fence", "The dog jumped over the fence",
+                "The dog jumped over the fence", "The dog jumped over the fence").commonMiddle();
         assertEquals(new Sequence<>(splitWords("The dog jumped over the fence")), commonMiddle);
     }
 
     @Test
     public void testCommonMiddleFindsEnd1() {
-        Sequence<String> commonEnd = StringSequences.ignoreCase("My dog jumped over the fence",
-                "The dog looked over the fence", "The dog jumped over the fence", "The dog jumped over the fence")
-                .commonMiddle();
+        Sequence<String> commonEnd = ignoreCase("My dog jumped over the fence", "The dog looked over the fence",
+                "The dog jumped over the fence", "The dog jumped over the fence").commonMiddle();
         assertEquals(new Sequence<>(splitWords("over the fence")), commonEnd);
     }
 
     @Test
     public void testCommonMiddleFindsEnd2() {
-        Sequence<String> commonEnd = StringSequences.ignoreCase("The dog jumped over the fence",
-                "The dog jumped over the fence", "The cat jumped over the fence", "The dog jumped over the fence")
-                .commonMiddle();
+        Sequence<String> commonEnd = ignoreCase("The dog jumped over the fence", "The dog jumped over the fence",
+                "The cat jumped over the fence", "The dog jumped over the fence").commonMiddle();
         assertEquals(new Sequence<>(splitWords("jumped over the fence")), commonEnd);
     }
 
     @Test
     public void testCommonMiddleFindsEnd3() {
-        Sequence<String> commonEnd = StringSequences.ignoreCase("The dog jumped over the fence",
-                "The dog jumped over the fence", "The dog jumped over the fence", "The dog jumped over the fence")
-                .commonMiddle();
+        Sequence<String> commonEnd = ignoreCase("The dog jumped over the fence", "The dog jumped over the fence",
+                "The dog jumped over the fence", "The dog jumped over the fence").commonMiddle();
         assertEquals(new Sequence<>(splitWords("The dog jumped over the fence")), commonEnd);
     }
 
     @Test
     public void testSliceStart() {
-        List<StringSequences> slices = StringSequences.slice( //
+        List<Sequences<String>> slices = StringSequences.of( //
                 "The dog jumped over the fence, did he?", //
                 "The dog jumped under the fence", //
                 "The dog jumped over my sofa", //
@@ -209,7 +200,7 @@ public class ListSequenceTest {
 
     @Test
     public void testSliceStartSameSize() {
-        List<StringSequences> slices = StringSequences.slice( //
+        List<Sequences<String>> slices = StringSequences.of( //
                 "The dog jumped over the fence,", //
                 "The dog jumped under the fence", //
                 "The dog jumped over my sofa", //
@@ -219,7 +210,7 @@ public class ListSequenceTest {
 
     @Test
     public void testSliceMiddle() {
-        List<StringSequences> slices = StringSequences.slice( //
+        List<Sequences<String>> slices = StringSequences.of( //
                 "The dog jumped over the fence, did he?", //
                 "The dog jumped over the fence", //
                 "My cat jumped over my sofa", //
@@ -229,7 +220,7 @@ public class ListSequenceTest {
 
     @Test
     public void testSliceMiddleSameSize() {
-        List<StringSequences> slices = StringSequences.slice( //
+        List<Sequences<String>> slices = StringSequences.of( //
                 "The dog jumped over the fence", //
                 "The dog jumped over the fence", //
                 "My cat jumped over my sofa", //
@@ -239,7 +230,7 @@ public class ListSequenceTest {
 
     @Test
     public void testSliceEnd() {
-        List<StringSequences> slices = StringSequences.slice( //
+        List<Sequences<String>> slices = StringSequences.of( //
                 "The dog jumped over the fence, did he?", //
                 "The dog jumped over the fence", //
                 "Your cat crawled under my fence", //
@@ -249,7 +240,7 @@ public class ListSequenceTest {
 
     @Test
     public void testSliceEndSameSize() {
-        List<StringSequences> slices = StringSequences.slice( //
+        List<Sequences<String>> slices = StringSequences.of( //
                 "The dog jumped over the fence", //
                 "The dog jumped over the fence", //
                 "Your cat crawled under my fence", //
@@ -259,7 +250,7 @@ public class ListSequenceTest {
 
     @Test
     public void testSliceAllDifferent() {
-        List<StringSequences> slices = StringSequences.slice( //
+        List<Sequences<String>> slices = StringSequences.of( //
                 "No dog jumped over the fence, you know?", //
                 "The dog jumped under the fence", //
                 "The cat looked over my sofa", //
@@ -269,7 +260,7 @@ public class ListSequenceTest {
 
     @Test
     public void testSliceAllSame() {
-        List<StringSequences> slices = StringSequences.slice( //
+        List<Sequences<String>> slices = StringSequences.of( //
                 "The dog jumped over the fence.", //
                 "The dog jumped over the fence", //
                 "The dog jumped over the fence.", //

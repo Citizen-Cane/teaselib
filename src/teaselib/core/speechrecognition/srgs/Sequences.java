@@ -4,9 +4,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.BiPredicate;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class Sequences<T> extends ArrayList<Sequence<T>> {
@@ -27,6 +29,10 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
         this(Arrays.asList(elements), equals);
     }
 
+    public Sequences(Sequence<T> element) {
+        this(Arrays.asList(element), element.equalsOperator);
+    }
+
     public Sequences(Collection<? extends Sequence<T>> elements, BiPredicate<T, T> equals) {
         super(elements);
         this.equalsOperator = equals;
@@ -35,6 +41,47 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
     public Sequences(int initialCapacity, BiPredicate<T, T> equals) {
         super(initialCapacity);
         this.equalsOperator = equals;
+    }
+
+    public static <T> List<Sequences<T>> of(Iterable<T> elements, BiPredicate<T, T> equalsOp,
+            Function<T, List<T>> splitter) {
+        Iterator<T> choices = elements.iterator();
+        if (!choices.hasNext()) {
+            return Collections.emptyList();
+        } else {
+            Sequences<T> sequences = new Sequences<>(equalsOp);
+            for (T choice : elements) {
+                Sequence<T> e = new Sequence<>(splitter.apply(choice), sequences.equalsOperator);
+                sequences.add(e);
+            }
+            return slice(sequences);
+        }
+    }
+
+    private static <T> List<Sequences<T>> slice(Sequences<T> choices) {
+        List<Sequences<T>> slices = new ArrayList<>();
+
+        Sequence<T> commonStart = choices.commonStart();
+        if (!commonStart.isEmpty()) {
+            slices.add(new Sequences<T>(commonStart));
+        }
+        Sequences<T> remainder = commonStart.isEmpty() ? choices : choices.removeIncluding(commonStart);
+
+        while (remainder.maxLength() > 0) {
+            Sequence<T> commonMiddle = remainder.commonMiddle();
+            if (!commonMiddle.isEmpty()) {
+                Sequences<T> unique = remainder.removeUpTo(commonMiddle);
+                slices.add(new Sequences<T>(unique, choices.equalsOperator));
+                slices.add(new Sequences<T>(commonMiddle));
+            }
+
+            if (commonMiddle.isEmpty()) {
+                slices.add(remainder);
+                break;
+            }
+            remainder = remainder.removeIncluding(commonMiddle);
+        }
+        return slices;
     }
 
     public Sequence<T> commonStart() {

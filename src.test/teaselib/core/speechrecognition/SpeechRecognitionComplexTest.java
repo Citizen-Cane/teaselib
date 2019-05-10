@@ -1,7 +1,9 @@
 package teaselib.core.speechrecognition;
 
-import static org.junit.Assert.*;
-import static teaselib.core.speechrecognition.SpeechRecogntionTestUtils.*;
+import static org.junit.Assert.assertEquals;
+import static teaselib.core.speechrecognition.SpeechRecogntionTestUtils.assertRecognized;
+import static teaselib.core.speechrecognition.SpeechRecogntionTestUtils.assertRejected;
+import static teaselib.core.speechrecognition.SpeechRecogntionTestUtils.withoutPunctation;
 
 import org.junit.Test;
 
@@ -257,6 +259,46 @@ public class SpeechRecognitionComplexTest {
 
         assertRejected(choices, "Of course");
         assertRejected(choices, "Of course not");
+    }
+
+    private static Choices phrasesWithMultipleCommonStartGroups() {
+        String[] cum = { "Dear mistress, may I cum", "Please mistress, may I cum" };
+        String[] wank = { "Dear mistress, may I wank", "Please mistress, may I wank" };
+        return new Choices(new Choice("Dear mistress, may I cum", "Dear mistress, may I cum", cum),
+                new Choice("Dear mistress, may I wank", "Dear mistress, may I wank", wank));
+    }
+
+    @Test
+    public void testSlicePhrasesWithMultipleCommonStartGroups() {
+        Choices choices = phrasesWithMultipleCommonStartGroups();
+        Phrases phrases = Phrases.of(choices);
+
+        assertEquals(3, phrases.size());
+
+        // TODO the first rule has to be a common rule but isn't
+        assertEquals(Phrases.rule(0, 0, Phrases.oneOf(Phrases.COMMON_RULE, "Dear", "Please")), phrases.get(0));
+        assertEquals(Phrases.rule(0, 1, Phrases.oneOf(Phrases.COMMON_RULE, "Mistress may I")), phrases.get(1));
+        assertEquals(Phrases.rule(0, 2, Phrases.oneOf(0, "cum"), Phrases.oneOf(1, "wank")), phrases.get(2));
+    }
+
+    @Test
+    public void testSRGSBuilderPhrasesWithSeveralCommonStartGroups() throws InterruptedException {
+        Choices choices = phrasesWithMultipleCommonStartGroups();
+
+        // TODO recognition fails because the first rule has to be a common rule but isn't
+        assertRecognized(choices, withoutPunctation("Dear mistress, may I cum"), new Prompt.Result(0));
+        assertRecognized(choices, withoutPunctation("Please mistress, may I cum"), new Prompt.Result(0));
+
+        assertRecognized(choices, withoutPunctation("Dear mistress, may I wank"), new Prompt.Result(1));
+        assertRecognized(choices, withoutPunctation("Please mistress, may I cum"), new Prompt.Result(1));
+
+        assertRejected(choices, "Please Mistress");
+        assertRejected(choices, "Dear Mistress");
+
+        assertRejected(choices, "May I cum");
+        assertRejected(choices, "May I wank");
+
+        assertRejected(choices, "Mistress, may I");
     }
 
 }

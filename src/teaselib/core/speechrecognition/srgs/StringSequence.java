@@ -1,5 +1,6 @@
 package teaselib.core.speechrecognition.srgs;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.BiPredicate;
@@ -11,19 +12,15 @@ public class StringSequence extends Sequence<String> {
         super(elements, equals);
     }
 
-    private StringSequence(String[] elements, BiPredicate<String, String> equals) {
-        super(elements, equals);
-    }
-
     public StringSequence(Sequence<String> commonMiddle) {
         super(commonMiddle, commonMiddle.equalsOperator);
     }
 
-    public static String[] splitWords(String string) {
+    public static List<String> splitWords(String string) {
         if (string.isEmpty()) {
-            return new String[] {};
+            return Collections.emptyList();
         } else {
-            return string.split("[ .:,;\t\n_()]+");
+            return Arrays.asList(string.split("[ .:,;\t\n_()]+"));
         }
     }
 

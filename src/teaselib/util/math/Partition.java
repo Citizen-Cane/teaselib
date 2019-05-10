@@ -8,9 +8,9 @@ import java.util.List;
 import java.util.Spliterator;
 import java.util.function.Consumer;
 
-public class Partition<K> {
+public class Partition<K> implements Iterable<Partition<K>.Group> {
     @FunctionalInterface
-    public static interface Siblings<K> {
+    public static interface Similarity<K> {
         boolean similar(K item1, K item2);
     }
 
@@ -20,7 +20,7 @@ public class Partition<K> {
     }
 
     public final List<Group> groups;
-    final Siblings<K> siblings;
+    final Similarity<K> similarity;
     final Join<K> join;
 
     public class Group implements Iterable<K> {
@@ -69,16 +69,16 @@ public class Partition<K> {
         }
     }
 
-    public Partition(List<K> items, Siblings<K> measure) {
-        this(items, measure, (a, b) -> a, null);
+    public Partition(List<K> items, Similarity<K> similarity) {
+        this(items, similarity, (a, b) -> a, null);
     }
 
-    public Partition(List<K> items, Siblings<K> measure, Join<K> order) {
-        this(items, measure, order, null);
+    public Partition(List<K> items, Similarity<K> similarity, Join<K> joiner) {
+        this(items, similarity, joiner, null);
     }
 
-    public Partition(List<K> items, Siblings<K> siblings, Join<K> joiner, Comparator<K> comperator) {
-        this.siblings = siblings;
+    public Partition(List<K> items, Similarity<K> similarity, Join<K> joiner, Comparator<K> comperator) {
+        this.similarity = similarity;
         this.join = joiner;
         this.groups = Collections.unmodifiableList(partitionOf(items, comperator));
     }
@@ -97,7 +97,7 @@ public class Partition<K> {
         for (K item : items) {
             boolean grouped = false;
             for (Group group : initialGroups) {
-                if (siblings.similar(item, group.orderingElement)) {
+                if (similarity.similar(item, group.orderingElement)) {
                     group.join(new Group(item));
                     grouped = true;
                     break;
@@ -155,11 +155,16 @@ public class Partition<K> {
 
     private boolean similarToGroup(K item, Group group) {
         for (K k : group) {
-            if (siblings.similar(k, item)) {
+            if (similarity.similar(k, item)) {
                 return true;
             }
         }
         return false;
+    }
+
+    @Override
+    public Iterator<Group> iterator() {
+        return groups.iterator();
     }
 
     @Override

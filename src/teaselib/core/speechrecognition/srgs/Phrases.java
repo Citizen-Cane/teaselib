@@ -5,8 +5,12 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
+import java.util.function.BiPredicate;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import teaselib.core.ui.Choices;
+import teaselib.util.math.Partition;
 
 public class Phrases extends ArrayList<Rule> {
     private static final long serialVersionUID = 1L;
@@ -49,7 +53,7 @@ public class Phrases extends ArrayList<Rule> {
     public Sequences<String> flatten() {
         // TODO Should be 0 if common rule but isn't - blocks other code
         int choices = choices();
-        StringSequences flattened = StringSequences.ignoreCase(choices);
+        Sequences<String> flattened = StringSequences.of(choices);
         for (int i = 0; i < choices; i++) {
             StringSequence sequence = StringSequence.ignoreCase();
             flattened.add(sequence);
@@ -119,6 +123,37 @@ public class Phrases extends ArrayList<Rule> {
             return a.index > b.index ? a : b;
         });
         return reduced.isPresent() ? reduced.get().index + 1 : 1;
+    }
+
+    public static Phrases ofSliced(Choices choices) {
+        List<ChoiceString> all = choices.stream().flatMap(
+                choice -> choice.phrases.stream().map(phrase -> new ChoiceString(phrase, choices.indexOf(choice))))
+                .collect(Collectors.toList());
+        Partition<ChoiceString> groupedPhrases = new Partition<>(all, Phrases::haveCommonParts);
+
+        // TODO Find common parts within groups
+
+        // phrases are grouped by common slices
+        // + For each group, get the head, slice and group by common parts -> recursion
+        // + if groups don't contain any common parts, emit rules for that part
+
+        Phrases phrases = new Phrases();
+        for (Partition<ChoiceString>.Group group : groupedPhrases) {
+            BiPredicate<ChoiceString, ChoiceString> equalsOp = ChoiceString::samePhrase;
+            Function<ChoiceString, List<ChoiceString>> splitter = ChoiceString::words;
+            List<Sequences<ChoiceString>> sliced = Sequences.of(group, equalsOp, splitter);
+            for (int ruleIndex = 0; ruleIndex < sliced.size(); ruleIndex++) {
+                // Rule rule = rule(choices, sliced, ruleIndex);
+                // phrases.add(rule);
+            }
+        }
+
+        return phrases;
+    }
+
+    static boolean haveCommonParts(ChoiceString a, ChoiceString b) {
+        List<Sequences<String>> slice = StringSequences.of(a.toString(), b.toString());
+        return slice.stream().anyMatch(sequence -> sequence.size() == 1);
     }
 
 }

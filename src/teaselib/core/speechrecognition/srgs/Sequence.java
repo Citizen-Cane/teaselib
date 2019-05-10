@@ -13,7 +13,11 @@ public class Sequence<T> extends ArrayList<T> {
 
     @SafeVarargs
     public Sequence(T... elements) {
-        this(Arrays.asList(elements), Object::equals);
+        this(Arrays.asList(elements));
+    }
+
+    public Sequence(List<T> elements) {
+        this(elements, Object::equals);
     }
 
     public Sequence(T[] elements, BiPredicate<T, T> equals) {

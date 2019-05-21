@@ -2,10 +2,11 @@ package teaselib.core.speechrecognition.srgs;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
-import java.util.NoSuchElementException;
+import java.util.Map;
 import java.util.Optional;
-import java.util.function.BiPredicate;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -38,12 +39,10 @@ public class Phrases extends ArrayList<Rule> {
     }
 
     public static Phrases of(List<String> choices) {
-        // TODO More sophisticated approach
         return SimplifiedPhrases.of(choices);
     }
 
     public static Phrases of(Choices choices) {
-        // TODO More sophisticated approach
         return SimplifiedPhrases.of(choices);
     }
 
@@ -51,7 +50,6 @@ public class Phrases extends ArrayList<Rule> {
     }
 
     public Sequences<String> flatten() {
-        // TODO Should be 0 if common rule but isn't - blocks other code
         int choices = choices();
         Sequences<String> flattened = StringSequences.of(choices);
         for (int i = 0; i < choices; i++) {
@@ -88,20 +86,20 @@ public class Phrases extends ArrayList<Rule> {
     }
 
     Rule previous(Rule rule) {
-        return get(rule.group, rule.index - 1);
+        return get(rule.group, rule.index - 1).orElseThrow();
     }
 
     Rule next(Rule rule) {
-        return get(rule.group, rule.index + 1);
+        return get(rule.group, rule.index + 1).orElseThrow();
     }
 
-    private Rule get(int group, int index) {
+    private Optional<Rule> get(int group, int index) {
         for (Rule rule : this) {
             if (rule.index == index && rule.group == group) {
-                return rule;
+                return Optional.of(rule);
             }
         }
-        throw new NoSuchElementException("group = " + group + ", index = " + index);
+        return Optional.empty();
     }
 
     public int groups() {
@@ -129,26 +127,92 @@ public class Phrases extends ArrayList<Rule> {
         List<ChoiceString> all = choices.stream().flatMap(
                 choice -> choice.phrases.stream().map(phrase -> new ChoiceString(phrase, choices.indexOf(choice))))
                 .collect(Collectors.toList());
-        Partition<ChoiceString> groupedPhrases = new Partition<>(all, Phrases::haveCommonParts);
-
-        // TODO Find common parts within groups
+        Partition<ChoiceString> groups = new Partition<>(all, Phrases::haveCommonParts);
 
         // phrases are grouped by common slices
         // + For each group, get the head, slice and group by common parts -> recursion
         // + if groups don't contain any common parts, emit rules for that part
 
         Phrases phrases = new Phrases();
-        for (Partition<ChoiceString>.Group group : groupedPhrases) {
-            BiPredicate<ChoiceString, ChoiceString> equalsOp = ChoiceString::samePhrase;
-            Function<ChoiceString, List<ChoiceString>> splitter = ChoiceString::words;
-            List<Sequences<ChoiceString>> sliced = Sequences.of(group, equalsOp, splitter);
-            for (int ruleIndex = 0; ruleIndex < sliced.size(); ruleIndex++) {
-                // Rule rule = rule(choices, sliced, ruleIndex);
-                // phrases.add(rule);
-            }
+
+        int groupIndex = 0;
+        for (Partition<ChoiceString>.Group group : groups) {
+            recurse(phrases, Collections.singletonList(group), groupIndex++, 0);
         }
 
         return phrases;
+    }
+
+    // TODO Improve performance by providing sliced choice strings as input (saves us from rebuilding strings)
+    private static void recurse(Phrases phrases, List<Partition<ChoiceString>.Group> groups, int groupIndex,
+            int ruleIndex) {
+        for (Partition<ChoiceString>.Group group : groups) {
+            List<Sequences<ChoiceString>> sliced = ChoiceStringSequences.slice(group.items);
+
+            if (!sliced.isEmpty()) {
+                Sequences<ChoiceString> first = sliced.remove(0);
+                // Join if this or next contain empty slices
+                if (!sliced.isEmpty()) {
+                    Sequences<ChoiceString> second = sliced.get(0);
+                    if (first.containsOptionalParts() || second.containsOptionalParts()) {
+                        first = first.joinWith(second);
+                        sliced.remove(0);
+                    }
+                }
+
+                if (isCommon(first)) {
+                    OneOf items = new OneOf(Phrases.COMMON_RULE,
+                            first.stream().map(sequence -> sequence.join(ChoiceString::concat).phrase).distinct()
+                                    .collect(Collectors.toList()));
+                    phrases.add(new Rule(groupIndex, ruleIndex, items));
+                } else {
+                    Function<? super ChoiceString, ? extends Integer> classifier = phrase -> phrase.choice;
+                    Function<? super ChoiceString, ? extends String> mapper = phrase -> phrase.phrase;
+                    Map<Integer, List<String>> items = first.stream().filter(sequence -> !sequence.isEmpty())
+                            .map(phrase -> phrase.join(ChoiceString::concat)).collect(Collectors.groupingBy(classifier,
+                                    HashMap::new, Collectors.mapping(mapper, Collectors.toList())));
+
+                    Optional<Rule> optional = phrases.get(groupIndex, ruleIndex);
+                    Rule rule = optional.isPresent() ? optional.get() : new Rule(groupIndex, ruleIndex);
+                    items.entrySet().stream().forEach(entry -> rule.add(new OneOf(entry.getKey(), entry.getValue())));
+                    if (optional.isEmpty()) {
+                        phrases.add(rule);
+                    }
+                }
+
+                // TODO continue with rest of slice -> rebuild sequence instead of strings
+                if (!sliced.isEmpty()) {
+                    ruleIndex++;
+                    List<ChoiceString> flattened = Sequences.flatten(sliced, first.equalsOperator,
+                            ChoiceString::concat);
+                    recurse(phrases, new Partition<>(flattened, Phrases::haveCommonParts).groups, groupIndex,
+                            ruleIndex);
+                }
+            }
+        }
+    }
+
+    private static boolean isCommon(Sequences<ChoiceString> slice) {
+        return isAlreadyCommon(slice) || !differentChoices(slice);
+    }
+
+    private static boolean isAlreadyCommon(Sequences<ChoiceString> slice) {
+        return slice.size() == 1 && slice.get(0).get(0).choice == Phrases.COMMON_RULE;
+    }
+
+    private static boolean differentChoices(Sequences<ChoiceString> slice) {
+        Map<String, Integer> unique = new HashMap<>();
+        for (Sequence<ChoiceString> sequence : slice) {
+            if (!sequence.isEmpty()) {
+                ChoiceString words = sequence.join(ChoiceString::concat);
+                Integer choice = unique.get(words.phrase);
+                if (choice != null && choice != words.choice) {
+                    return false;
+                }
+                unique.put(words.phrase, words.choice);
+            }
+        }
+        return true;
     }
 
     static boolean haveCommonParts(ChoiceString a, ChoiceString b) {

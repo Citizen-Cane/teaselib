@@ -18,7 +18,15 @@ public class PhrasesSmokeTest {
     public void testSliceMultipleChoiceSinglePhraseOfOfStringsTwoOptionalParts() {
         Phrases phrases = Phrases.ofSliced(singleChoiceMultiplePhrasesAreDistinct());
 
+        // TODO Either "of course" must be common or must be different groups
         assertEquals(3, phrases.size());
+        assertEquals(Phrases.rule(0, 0, Phrases.oneOf(0, "Yes Miss")), phrases.get(0));
+        // TODO must be common part for both groups
+        assertEquals(Phrases.rule(Phrases.COMMON_RULE, 1, Phrases.oneOf(Phrases.COMMON_RULE, "of course")),
+                phrases.get(phrases.size() - 1));
+        // TODO Split into groups to avoid "of course" to be recognized
+        assertEquals(Phrases.rule(1, 1, Phrases.oneOf(0, "Miss")), phrases.get(2));
+
     }
 
     private static Choices optionalPhraseToDistiniguishMulitpleChoices() {
@@ -28,9 +36,12 @@ public class PhrasesSmokeTest {
     @Test
     public void testSliceOptionalPhraseToDistiniguishMulitpleChoices() {
         Choices choices = optionalPhraseToDistiniguishMulitpleChoices();
-        Phrases phrases = Phrases.of(choices);
+        Phrases phrases = Phrases.ofSliced(choices);
 
         assertEquals(2, phrases.size());
+        // TODO Words are joined, but rule 0,0 item 0 has to be choice 0 -> wrong join
+        assertEquals(Phrases.rule(0, 0, Phrases.oneOf(0, "I"), Phrases.oneOf(1, "I don't")), phrases.get(0));
+        assertEquals(Phrases.rule(0, 1, Phrases.oneOf(Phrases.COMMON_RULE, "have it")), phrases.get(1));
     }
 
     private static Choices phrasesWithMultipleCommonStartGroups() {
@@ -46,10 +57,8 @@ public class PhrasesSmokeTest {
         Phrases phrases = Phrases.ofSliced(choices);
 
         assertEquals(3, phrases.size());
-
-        // TODO the first rule has to be a common rule but isn't
         assertEquals(Phrases.rule(0, 0, Phrases.oneOf(Phrases.COMMON_RULE, "Dear", "Please")), phrases.get(0));
-        assertEquals(Phrases.rule(0, 1, Phrases.oneOf(Phrases.COMMON_RULE, "Mistress may I")), phrases.get(1));
+        assertEquals(Phrases.rule(0, 1, Phrases.oneOf(Phrases.COMMON_RULE, "mistress may I")), phrases.get(1));
         assertEquals(Phrases.rule(0, 2, Phrases.oneOf(0, "cum"), Phrases.oneOf(1, "wank")), phrases.get(2));
     }
 
@@ -63,10 +72,23 @@ public class PhrasesSmokeTest {
     @Test
     public void testSliceMultiplePhrasesOfMultipleChoicesAreDistinct() {
         Choices choices = multiplePhrasesOfMultipleChoicesAreDistinct();
-        Phrases phrases = Phrases.of(choices);
+        Phrases phrases = Phrases.ofSliced(choices);
 
-        // TODO All optional phrases are reduced - but "of course" should be common
-        // -> join only one common rule, or better none at all
+        // TODO Decide what is better
+        // assertEquals(Phrases.rule(0, 0, Phrases.oneOf(0, "Yes"), Phrases.oneOf(1, "No")), phrases.get(0));
+        // assertEquals(Phrases.rule(0, 1, Phrases.oneOf(Phrases.COMMON_RULE, "Miss", "")), phrases.get(1));
+        // or (already correct)
+        assertEquals(
+                Phrases.rule(0, 0, Phrases.oneOf(0, "Yes Miss", "Yes", "Yes"), Phrases.oneOf(1, "No Miss", "No", "No")),
+                phrases.get(0));
+
+        // TODO "of course" joined with next slice - check empty slice
+        assertEquals(Phrases.rule(0, 1, Phrases.oneOf(Phrases.COMMON_RULE, "of course")), phrases.get(1));
+
+        // TODO Join rule 2 & 3
+        assertEquals(Phrases.rule(0, 2, Phrases.oneOf(Phrases.COMMON_RULE, "Miss"), Phrases.oneOf(1, "not")),
+                phrases.get(2));
+
         assertEquals(3, phrases.size());
     }
 
@@ -80,9 +102,29 @@ public class PhrasesSmokeTest {
     @Test
     public void testSliceMultipleChoicesAlternativePhrases() {
         Choices choices = multipleChoicesAlternativePhrases();
-        Phrases phrases = Phrases.of(choices);
+        Phrases phrases = Phrases.ofSliced(choices);
 
-        // TODO Unnecessary joining since choices are present and "Of course" just makes alternative phrases optional
+        // TODO "of course" not sliced to common or joined with empty slices
         assertEquals(3, phrases.size());
     }
+
+    @Test
+    public void testSliceMultipleGroups() {
+        String[] yes = { //
+                "Yes Miss, of course", //
+                "Yes, of course, Miss", //
+                "I have it" };
+        String[] no = { //
+                "No Miss, of course not", //
+                "No, of course not, Miss", //
+                "I don't have it" };
+        Choices choices = new Choices(new Choice("Yes #title, of course", "Yes Miss, of course", yes),
+                new Choice("No #title, of course not", "No Miss, of course not", no));
+        Phrases phrases = Phrases.ofSliced(choices);
+
+        assertEquals(4, phrases.size());
+
+        // TODO assert rules
+    }
+
 }

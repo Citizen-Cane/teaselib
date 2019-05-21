@@ -1,78 +1,82 @@
 package teaselib.core.speechrecognition.srgs;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.BiPredicate;
+import java.util.function.BinaryOperator;
 import java.util.function.Function;
+import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 
 public class Sequences<T> extends ArrayList<Sequence<T>> {
     private static final long serialVersionUID = 1L;
 
     final transient BiPredicate<T, T> equalsOperator;
+    final transient Function<List<T>, T> joinCommonOperator;
+    final transient Function<List<T>, T> joinSequenceOperator;
 
-    public Sequences() {
-        this(T::equals);
-    }
-
-    public Sequences(BiPredicate<T, T> equals) {
+    public Sequences(BiPredicate<T, T> equals, Function<List<T>, T> joinOp, Function<List<T>, T> joinSequenceOperator) {
         super();
         this.equalsOperator = equals;
+        this.joinCommonOperator = joinOp;
+        this.joinSequenceOperator = joinSequenceOperator;
     }
 
-    public Sequences(Sequence<T>[] elements, BiPredicate<T, T> equals) {
-        this(Arrays.asList(elements), equals);
-    }
-
-    public Sequences(Sequence<T> element) {
-        this(Arrays.asList(element), element.equalsOperator);
-    }
-
-    public Sequences(Collection<? extends Sequence<T>> elements, BiPredicate<T, T> equals) {
+    public Sequences(Collection<? extends Sequence<T>> elements, BiPredicate<T, T> equals,
+            Function<List<T>, T> joinCommonOperator, Function<List<T>, T> joinSequenceOperator) {
         super(elements);
         this.equalsOperator = equals;
+        this.joinCommonOperator = joinCommonOperator;
+        this.joinSequenceOperator = joinSequenceOperator;
     }
 
-    public Sequences(int initialCapacity, BiPredicate<T, T> equals) {
+    public Sequences(int initialCapacity, BiPredicate<T, T> equals, Function<List<T>, T> joinCommonOperator,
+            Function<List<T>, T> joinSequenceOperator) {
         super(initialCapacity);
         this.equalsOperator = equals;
+        this.joinCommonOperator = joinCommonOperator;
+        this.joinSequenceOperator = joinSequenceOperator;
     }
 
     public static <T> List<Sequences<T>> of(Iterable<T> elements, BiPredicate<T, T> equalsOp,
-            Function<T, List<T>> splitter) {
+            Function<T, List<T>> splitter, Function<List<T>, T> joinCommonOperator,
+            Function<List<T>, T> joinSequenceOperator, UnaryOperator<T> emptyCloneOp) {
         Iterator<T> choices = elements.iterator();
         if (!choices.hasNext()) {
             return Collections.emptyList();
         } else {
-            Sequences<T> sequences = new Sequences<>(equalsOp);
+            Sequences<T> sequences = new Sequences<>(equalsOp, joinCommonOperator, joinSequenceOperator);
             for (T choice : elements) {
                 Sequence<T> e = new Sequence<>(splitter.apply(choice), sequences.equalsOperator);
                 sequences.add(e);
             }
-            return slice(sequences);
+            return slice(sequences, joinCommonOperator, joinSequenceOperator, emptyCloneOp);
         }
     }
 
-    private static <T> List<Sequences<T>> slice(Sequences<T> choices) {
+    private static <T> List<Sequences<T>> slice(Sequences<T> sequences, Function<List<T>, T> joinCommonOperator,
+            Function<List<T>, T> joinSequenceOperator, UnaryOperator<T> emptyCloneOp) {
         List<Sequences<T>> slices = new ArrayList<>();
 
-        Sequence<T> commonStart = choices.commonStart();
+        Sequence<T> commonStart = sequences.commonStart();
         if (!commonStart.isEmpty()) {
-            slices.add(new Sequences<T>(commonStart));
+            slices.add(new Sequences<T>(Collections.singletonList(commonStart), sequences.equalsOperator,
+                    sequences.joinCommonOperator, sequences.joinSequenceOperator));
         }
-        Sequences<T> remainder = commonStart.isEmpty() ? choices : choices.removeIncluding(commonStart);
+        Sequences<T> remainder = commonStart.isEmpty() ? sequences : sequences.removeIncluding(commonStart);
 
         while (remainder.maxLength() > 0) {
             Sequence<T> commonMiddle = remainder.commonMiddle();
             if (!commonMiddle.isEmpty()) {
-                Sequences<T> unique = remainder.removeUpTo(commonMiddle);
-                slices.add(new Sequences<T>(unique, choices.equalsOperator));
-                slices.add(new Sequences<T>(commonMiddle));
+                Sequences<T> unique = remainder.removeUpTo(commonMiddle, emptyCloneOp);
+                slices.add(
+                        new Sequences<T>(unique, sequences.equalsOperator, joinCommonOperator, joinSequenceOperator));
+                slices.add(new Sequences<T>(Collections.singletonList(commonMiddle), sequences.equalsOperator,
+                        sequences.joinCommonOperator, sequences.joinSequenceOperator));
             }
 
             if (commonMiddle.isEmpty()) {
@@ -88,7 +92,7 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
         Sequence<T> sequence = new Sequence<>(get(0), equalsOperator);
         for (int i = sequence.size(); i >= 1; --i) {
             if (allStartWithSequence(sequence)) {
-                return sequence;
+                return common(sequence);
             }
             sequence.remove(sequence.size() - 1);
         }
@@ -109,7 +113,7 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
         Sequence<T> sequence = new Sequence<>(get(0), equalsOperator);
         for (int i = sequence.size(); i >= 1; --i) {
             if (allEndWithSequence(sequence)) {
-                return sequence;
+                return common(sequence);
             }
             sequence.remove(0);
         }
@@ -132,11 +136,22 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
 
         for (Sequence<T> candidate : candidates) {
             if (allContainMiddleSequence(candidate)) {
-                return new Sequence<>(candidate, equalsOperator);
+                return common(candidate);
             }
         }
 
         return new Sequence<>(Collections.emptyList(), equalsOperator);
+    }
+
+    private Sequence<T> common(Sequence<T> candidate) {
+        List<Sequence<T>> common = stream().map(s -> s.subList(candidate)).collect(Collectors.toList());
+        List<T> joined = new ArrayList<>(candidate.size());
+        for (int i = 0; i < candidate.size(); i++) {
+            final int index = i;
+            List<T> slice = common.stream().map(e -> e.get(index)).collect(Collectors.toList());
+            joined.add(joinCommonOperator.apply(slice));
+        }
+        return new Sequence<>(joined, equalsOperator);
     }
 
     private boolean allContainMiddleSequence(Sequence<T> sequence) {
@@ -148,35 +163,42 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
         return true;
     }
 
-    public Sequences<T> removeUpTo(Sequence<T> match) {
-        Sequences<T> subLists = new Sequences<>(size(), equalsOperator);
+    public Sequences<T> removeUpTo(Sequence<T> match, UnaryOperator<T> emptyCloneOp) {
+        Sequences<T> subLists = new Sequences<>(size(), equalsOperator, joinCommonOperator, joinSequenceOperator);
         for (Sequence<T> listSequence : this) {
-            subLists.add(new Sequence<>(listSequence.subList(0, listSequence.indexOf(match)), equalsOperator));
+            List<T> subList = listSequence.subList(0, listSequence.indexOf(match));
+            if (subList.isEmpty()) {
+                subList = Collections.singletonList(emptyCloneOp.apply(listSequence.get(0)));
+            }
+            subLists.add(new Sequence<>(subList, equalsOperator));
         }
         return subLists;
     }
 
     public Sequences<T> removeExcluding(Sequence<T> match) {
-        Sequences<T> subLists = new Sequences<>(size(), equalsOperator);
+        Sequences<T> subLists = new Sequences<>(size(), equalsOperator, joinCommonOperator, joinSequenceOperator);
         for (Sequence<T> listSequence : this) {
-            subLists.add(new Sequence<>(listSequence.subList(listSequence.indexOf(match), listSequence.size()),
-                    equalsOperator));
+            List<T> subList = listSequence.subList(listSequence.indexOf(match), listSequence.size());
+            subLists.add(new Sequence<>(subList, equalsOperator));
         }
         return subLists;
     }
 
     public Sequences<T> removeIncluding(Sequence<T> match) {
-        Sequences<T> subLists = new Sequences<>(size(), equalsOperator);
+        Sequences<T> subLists = new Sequences<>(size(), equalsOperator, joinCommonOperator, joinSequenceOperator);
         for (Sequence<T> listSequence : this) {
-            subLists.add(new Sequence<>(
-                    listSequence.subList(listSequence.indexOf(match) + match.size(), listSequence.size()),
-                    equalsOperator));
+            List<T> subList = listSequence.subList(listSequence.indexOf(match) + match.size(), listSequence.size());
+            subLists.add(new Sequence<>(subList, equalsOperator));
         }
         return subLists;
     }
 
     public boolean containsOptionalParts() {
-        return stream().filter(Sequence<T>::isEmpty).count() > 0;
+        return stream().map(Sequence<T>::toString).anyMatch(String::isEmpty);
+    }
+
+    public static <T> int phraseCount(List<Sequences<T>> phrases) {
+        return phrases.stream().map(List::size).reduce(Math::max).orElse(0);
     }
 
     public int maxLength() {
@@ -188,4 +210,45 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
         return stream().map(Sequence::toString).collect(Collectors.toList());
     }
 
+    public static <T> List<T> flatten(List<Sequences<T>> sliced, BiPredicate<T, T> equalsOp,
+            BinaryOperator<T> concatOperator) {
+        int phraseCount = phraseCount(sliced);
+        if (phraseCount == 0) {
+            return Collections.emptyList();
+        }
+
+        List<T> flattened = new ArrayList<>(phraseCount);
+
+        for (int phraseIndex = 0; phraseIndex < phraseCount; phraseIndex++) {
+            Sequence<T> phrase = new Sequence<>(equalsOp);
+
+            for (int ruleIndex = 0; ruleIndex < sliced.size(); ruleIndex++) {
+                Sequences<T> sequences = sliced.get(ruleIndex);
+                Sequence<T> sequence = sequences.get(Math.min(phraseIndex, sequences.size() - 1));
+                phrase.addAll(sequence);
+            }
+
+            flattened.add(phrase.join(concatOperator));
+        }
+
+        return flattened;
+    }
+
+    public Sequences<T> joinWith(Sequences<T> second) {
+        Sequences<T> joined = new Sequences<>(equalsOperator, joinCommonOperator, joinSequenceOperator);
+        if (this.size() > second.size()) {
+            for (int i = 0; i < this.size(); i++) {
+                List<T> elements = new ArrayList<>(get(i));
+                elements.addAll(second.get(0));
+                joined.add(new Sequence<>(joinSequenceOperator.apply(elements)));
+            }
+        } else {
+            for (int i = 0; i < second.size(); i++) {
+                List<T> elements = new ArrayList<>(get(0));
+                elements.addAll(second.get(i));
+                joined.add(new Sequence<>(joinSequenceOperator.apply(elements)));
+            }
+        }
+        return joined;
+    }
 }

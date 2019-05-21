@@ -2,8 +2,11 @@ package teaselib.core.speechrecognition.srgs;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.function.BiPredicate;
+import java.util.function.BinaryOperator;
 import java.util.stream.Collectors;
 
 public class Sequence<T> extends ArrayList<T> {
@@ -18,6 +21,11 @@ public class Sequence<T> extends ArrayList<T> {
 
     public Sequence(List<T> elements) {
         this(elements, Object::equals);
+    }
+
+    public Sequence(BiPredicate<T, T> equals) {
+        super();
+        this.equalsOperator = equals;
     }
 
     public Sequence(T[] elements, BiPredicate<T, T> equals) {
@@ -88,9 +96,33 @@ public class Sequence<T> extends ArrayList<T> {
         return candidates;
     }
 
+    public Sequence<T> subList(Sequence<T> list) {
+        int from = indexOf(list);
+        return new Sequence<>(subList(from, from + list.size()));
+    }
+
+    public static <T> Sequence<T> concat(Sequence<T> a, Sequence<T> b) {
+        Sequence<T> sequence = new Sequence<>(a);
+        sequence.addAll(b);
+        return sequence;
+    }
+
     @Override
     public String toString() {
         return stream().map(T::toString).filter(t -> !t.isEmpty()).collect(Collectors.joining(" "));
+    }
+
+    public T join(BinaryOperator<T> concatOperator) {
+        Iterator<T> sequence = iterator();
+        if (!sequence.hasNext()) {
+            throw new NoSuchElementException();
+        }
+
+        T joined = sequence.next();
+        while (sequence.hasNext()) {
+            joined = concatOperator.apply(joined, sequence.next());
+        }
+        return joined;
     }
 
 }

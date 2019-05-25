@@ -36,7 +36,7 @@ public class SimplifiedPhrases {
 
     private static Phrases sliceAllChoicesTogether(Choices choices, List<String> allPhrases) {
         List<Sequences<String>> sliced = StringSequences.of(allPhrases);
-        Phrases phrases = new Phrases();
+        Phrases phrases = new Phrases(choices.size());
         for (int ruleIndex = 0; ruleIndex < sliced.size(); ruleIndex++) {
             Rule rule = rule(choices, sliced, ruleIndex);
             phrases.add(rule);
@@ -47,7 +47,7 @@ public class SimplifiedPhrases {
     }
 
     private static Phrases withEmptyRulesRemoved(Phrases phrases) {
-        Phrases filtered = new Phrases();
+        Phrases filtered = new Phrases(phrases.choiceCount);
         for (Rule rule : phrases) {
             if (!rule.isEmpty()) {
                 filtered.add(rule);
@@ -295,7 +295,7 @@ public class SimplifiedPhrases {
     }
 
     private static Phrases sliceEachChoiceSeparately(Choices choices) {
-        Phrases phrases = new Phrases();
+        Phrases phrases = new Phrases(choices.size());
         for (int choiceIndex = 0; choiceIndex < choices.size(); choiceIndex++) {
             Choice choice = choices.get(choiceIndex);
             Partition<String> choiceGroups = new Partition<>(choice.phrases, SimplifiedPhrases::haveCommonParts);

@@ -18,6 +18,8 @@ public class Phrases extends ArrayList<Rule> {
 
     public static final int COMMON_RULE = Integer.MIN_VALUE;
 
+    final int choiceCount;
+
     public static Rule rule(int group, int ruleIndex, String... items) {
         return new Rule(group, ruleIndex, items);
     }
@@ -46,7 +48,8 @@ public class Phrases extends ArrayList<Rule> {
         return SimplifiedPhrases.of(choices);
     }
 
-    Phrases() {
+    Phrases(int choiceCount) {
+        this.choiceCount = choiceCount;
     }
 
     public Sequences<String> flatten() {
@@ -133,7 +136,7 @@ public class Phrases extends ArrayList<Rule> {
         // + For each group, get the head, slice and group by common parts -> recursion
         // + if groups don't contain any common parts, emit rules for that part
 
-        Phrases phrases = new Phrases();
+        Phrases phrases = new Phrases(choices.size());
 
         int groupIndex = 0;
         for (Partition<ChoiceString>.Group group : groups) {
@@ -149,14 +152,31 @@ public class Phrases extends ArrayList<Rule> {
         for (Partition<ChoiceString>.Group group : groups) {
             List<Sequences<ChoiceString>> sliced = ChoiceStringSequences.slice(group.items);
 
+            // As in simplified phrases, a common part with optional choice parts on both sides
+            // must be joined with both sides -> produces single phrase rule, correct but not optimal
+            // TODO Keep the common part common - turn this into groups or optimize
+            // TODO Model this with rules - group index can't be used here right now, maybe need to change the data
+            // model
             if (!sliced.isEmpty()) {
                 Sequences<ChoiceString> first = sliced.remove(0);
                 // Join if this or next contain empty slices
-                if (!sliced.isEmpty()) {
+                if (!sliced.isEmpty() && !phrases.allChoicesDefined(groupIndex)) {
                     Sequences<ChoiceString> second = sliced.get(0);
+                    // before common part
+                    // too greedy -> test optional parts on both sides per phrase? - would conflict with original
+                    // intention
+                    // TODO find out when to join, and provide a clear set of rules
                     if (first.containsOptionalParts() || second.containsOptionalParts()) {
                         first = first.joinWith(second);
                         sliced.remove(0);
+                        if (!sliced.isEmpty()) {
+                            // After common
+                            second = sliced.get(0);
+                            if (second.containsOptionalParts()) {
+                                first = first.joinWith(second);
+                                sliced.remove(0);
+                            }
+                        }
                     }
                 }
 
@@ -188,6 +208,18 @@ public class Phrases extends ArrayList<Rule> {
                     recurse(phrases, new Partition<>(flattened, Phrases::haveCommonParts).groups, groupIndex,
                             ruleIndex);
                 }
+            }
+        }
+    }
+
+    private boolean allChoicesDefined(int groupIndex) {
+        int ruleIndex = 0;
+        while (true) {
+            Optional<Rule> rule = get(groupIndex, ruleIndex++);
+            if (rule.isEmpty()) {
+                return false;
+            } else if (rule.get().choices() == choiceCount) {
+                return true;
             }
         }
     }

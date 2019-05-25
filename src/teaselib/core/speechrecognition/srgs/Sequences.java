@@ -64,7 +64,7 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
 
         Sequence<T> commonStart = sequences.commonStart();
         if (!commonStart.isEmpty()) {
-            slices.add(new Sequences<T>(Collections.singletonList(commonStart), sequences.equalsOperator,
+            slices.add(new Sequences<>(Collections.singletonList(commonStart), sequences.equalsOperator,
                     sequences.joinCommonOperator, sequences.joinSequenceOperator));
         }
         Sequences<T> remainder = commonStart.isEmpty() ? sequences : sequences.removeIncluding(commonStart);
@@ -73,9 +73,8 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
             Sequence<T> commonMiddle = remainder.commonMiddle();
             if (!commonMiddle.isEmpty()) {
                 Sequences<T> unique = remainder.removeUpTo(commonMiddle, emptyCloneOp);
-                slices.add(
-                        new Sequences<T>(unique, sequences.equalsOperator, joinCommonOperator, joinSequenceOperator));
-                slices.add(new Sequences<T>(Collections.singletonList(commonMiddle), sequences.equalsOperator,
+                slices.add(new Sequences<>(unique, sequences.equalsOperator, joinCommonOperator, joinSequenceOperator));
+                slices.add(new Sequences<>(Collections.singletonList(commonMiddle), sequences.equalsOperator,
                         sequences.joinCommonOperator, sequences.joinSequenceOperator));
             }
 
@@ -242,9 +241,15 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
                 elements.addAll(second.get(0));
                 joined.add(new Sequence<>(joinSequenceOperator.apply(elements)));
             }
-        } else {
+        } else if (this.size() < second.size()) {
             for (int i = 0; i < second.size(); i++) {
                 List<T> elements = new ArrayList<>(get(0));
+                elements.addAll(second.get(i));
+                joined.add(new Sequence<>(joinSequenceOperator.apply(elements)));
+            }
+        } else {
+            for (int i = 0; i < second.size(); i++) {
+                List<T> elements = new ArrayList<>(get(i));
                 elements.addAll(second.get(i));
                 joined.add(new Sequence<>(joinSequenceOperator.apply(elements)));
             }

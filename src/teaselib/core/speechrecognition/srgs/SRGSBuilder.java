@@ -59,7 +59,7 @@ public class SRGSBuilder extends AbstractSRGSBuilder {
         return item.choiceIndex + "_" + rule.group;
     }
 
-    private int inventoryGroup(String inventoryKey) {
+    private static int inventoryGroup(String inventoryKey) {
         return Integer.parseInt(inventoryKey.substring(inventoryKey.indexOf("_") + 1));
     }
 

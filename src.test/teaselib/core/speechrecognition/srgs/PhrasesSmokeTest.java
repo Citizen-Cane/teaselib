@@ -19,24 +19,23 @@ public class PhrasesSmokeTest {
     public void testSliceMultipleChoiceSinglePhraseOfOfStringsTwoOptionalParts() {
         Phrases phrases = Phrases.ofSliced(singleChoiceMultiplePhrasesAreDistinct());
 
-        assertEquals(1, phrases.size());
         assertEquals(Phrases.rule(0, 0, Phrases.oneOf(0, "Yes Miss of course", "of course Miss")), phrases.get(0));
+        assertEquals(1, phrases.size());
     }
 
     @Test
     @Ignore
-    public void testSliceMultipleChoiceSinglePhraseOfOfStringsTwoOptionalPartsOptiomized() {
+    public void testSliceMultipleChoiceSinglePhraseOfOfStringsTwoOptionalPartsOptimized() {
         Phrases phrases = Phrases.ofSliced(singleChoiceMultiplePhrasesAreDistinct());
 
         // TODO Either "of course" must be common or must be different groups
-        assertEquals(3, phrases.size());
         assertEquals(Phrases.rule(0, 0, Phrases.oneOf(0, "Yes Miss")), phrases.get(0));
         // TODO must be common part for both groups
         assertEquals(Phrases.rule(Phrases.COMMON_RULE, 1, Phrases.oneOf(Phrases.COMMON_RULE, "of course")),
                 phrases.get(phrases.size() - 1));
         // TODO Split into groups to avoid "of course" to be recognized
         assertEquals(Phrases.rule(1, 1, Phrases.oneOf(0, "Miss")), phrases.get(2));
-
+        assertEquals(3, phrases.size());
     }
 
     private static Choices optionalPhraseToDistiniguishMulitpleChoices() {
@@ -48,10 +47,9 @@ public class PhrasesSmokeTest {
         Choices choices = optionalPhraseToDistiniguishMulitpleChoices();
         Phrases phrases = Phrases.ofSliced(choices);
 
-        assertEquals(2, phrases.size());
-        // TODO Words are joined, but rule 0,0 item 0 has to be choice 0 -> wrong join
         assertEquals(Phrases.rule(0, 0, Phrases.oneOf(0, "I"), Phrases.oneOf(1, "I don't")), phrases.get(0));
         assertEquals(Phrases.rule(0, 1, Phrases.oneOf(Phrases.COMMON_RULE, "have it")), phrases.get(1));
+        assertEquals(2, phrases.size());
     }
 
     private static Choices phrasesWithMultipleCommonStartGroups() {
@@ -66,10 +64,10 @@ public class PhrasesSmokeTest {
         Choices choices = phrasesWithMultipleCommonStartGroups();
         Phrases phrases = Phrases.ofSliced(choices);
 
-        assertEquals(3, phrases.size());
         assertEquals(Phrases.rule(0, 0, Phrases.oneOf(Phrases.COMMON_RULE, "Dear", "Please")), phrases.get(0));
         assertEquals(Phrases.rule(0, 1, Phrases.oneOf(Phrases.COMMON_RULE, "mistress may I")), phrases.get(1));
         assertEquals(Phrases.rule(0, 2, Phrases.oneOf(0, "cum"), Phrases.oneOf(1, "wank")), phrases.get(2));
+        assertEquals(3, phrases.size());
     }
 
     private static Choices multiplePhrasesOfMultipleChoicesAreDistinct() {
@@ -88,11 +86,8 @@ public class PhrasesSmokeTest {
                 Phrases.rule(0, 0, Phrases.oneOf(0, "Yes Miss", "Yes", "Yes"), Phrases.oneOf(1, "No Miss", "No", "No")),
                 phrases.get(0));
         assertEquals(Phrases.rule(0, 1, Phrases.oneOf(Phrases.COMMON_RULE, "of course")), phrases.get(1));
-
-        // TODO Join rule 2 & 3
-        assertEquals(Phrases.rule(0, 2, Phrases.oneOf(Phrases.COMMON_RULE, "Miss"), Phrases.oneOf(1, "not")),
+        assertEquals(Phrases.rule(0, 2, Phrases.oneOf(0, "Miss"), Phrases.oneOf(1, "not Miss", "not", "not")),
                 phrases.get(2));
-
         assertEquals(3, phrases.size());
     }
 
@@ -119,7 +114,10 @@ public class PhrasesSmokeTest {
         // of course not
         // TODO change data model to make this work
         // + OneOf multiple mixes too much -> use single OneOf for each phrase, build srgs over OneOf index in rule
-        assertEquals(3, phrases.size());
+        // TODO make SRGS handle multiples OneOf inventory keys per rule (currently it's ruleIndex-choice), add OneOf
+        // index - that's group-like
+        // -> add phrases in different OneOf elements, SRGS inventory references rules
+        assertEquals(1, phrases.size());
     }
 
     @Test
@@ -136,9 +134,13 @@ public class PhrasesSmokeTest {
                 new Choice("No #title, of course not", "No Miss, of course not", no));
         Phrases phrases = Phrases.ofSliced(choices);
 
-        assertEquals(4, phrases.size());
-
-        // TODO assert rules
+        assertEquals(Phrases.rule(0, 0, Phrases.oneOf(0, "Yes Miss", "Yes"), Phrases.oneOf(1, "No Miss", "No")),
+                phrases.get(0));
+        assertEquals(Phrases.rule(0, 1, Phrases.oneOf(Phrases.COMMON_RULE, "of course")), phrases.get(1));
+        assertEquals(Phrases.rule(0, 2, Phrases.oneOf(0, "Miss"), Phrases.oneOf(1, "not Miss", "not")), phrases.get(2));
+        assertEquals(Phrases.rule(1, 0, Phrases.oneOf(0, "I"), Phrases.oneOf(1, "I don't")), phrases.get(3));
+        assertEquals(Phrases.rule(1, 1, Phrases.oneOf(Phrases.COMMON_RULE, "have it")), phrases.get(4));
+        assertEquals(5, phrases.size());
     }
 
 }

@@ -84,9 +84,9 @@ public class Partition<K> implements Iterable<Partition<K>.Group> {
     }
 
     private List<Group> partitionOf(List<K> items, Comparator<K> comperator) {
-        List<Group> partitions = createInitialGroups(items);
+        List<Group> partitions = join(createInitialGroups(items));
         if (comperator != null) {
-            return sortByOrderingElementLargestFirst(join(partitions), comperator);
+            return sortByOrderingElementLargestFirst(partitions, comperator);
         } else {
             return partitions;
         }
@@ -145,8 +145,8 @@ public class Partition<K> implements Iterable<Partition<K>.Group> {
     }
 
     private boolean similar(Group group1, Group group2) {
-        for (K k : group1) {
-            if (similarToGroup(k, group2)) {
+        for (K item : group1) {
+            if (similarToGroup(item, group2)) {
                 return true;
             }
         }
@@ -154,8 +154,8 @@ public class Partition<K> implements Iterable<Partition<K>.Group> {
     }
 
     private boolean similarToGroup(K item, Group group) {
-        for (K k : group) {
-            if (similarity.similar(k, item)) {
+        for (K other : group) {
+            if (similarity.similar(other, item)) {
                 return true;
             }
         }

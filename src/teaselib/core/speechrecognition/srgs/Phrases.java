@@ -45,7 +45,7 @@ public class Phrases extends ArrayList<Rule> {
     }
 
     public static Phrases of(Choices choices) {
-        return SimplifiedPhrases.of(choices);
+        return ofSliced(choices);
     }
 
     Phrases(int choiceCount) {

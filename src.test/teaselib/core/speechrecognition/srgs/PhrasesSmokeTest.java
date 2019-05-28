@@ -1,6 +1,11 @@
 package teaselib.core.speechrecognition.srgs;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import org.junit.Ignore;
 import org.junit.Test;
@@ -141,6 +146,46 @@ public class PhrasesSmokeTest {
         assertEquals(Phrases.rule(1, 0, Phrases.oneOf(0, "I"), Phrases.oneOf(1, "I don't")), phrases.get(3));
         assertEquals(Phrases.rule(1, 1, Phrases.oneOf(Phrases.COMMON_RULE, "have it")), phrases.get(4));
         assertEquals(5, phrases.size());
+    }
+
+    private Choices simpleSRirregularPhrases() {
+        String sorry = "No Miss, I'm sorry";
+        String ready = "Yes Miss, I'm ready";
+        String haveIt = "I have it, Miss";
+        String ready2 = "Yes,it's ready, Miss";
+        String ready3 = "It's ready, Miss";
+
+        Choices choices = new Choices(Arrays.asList(new Choice(sorry), new Choice(ready), new Choice(haveIt),
+                new Choice(ready2), new Choice(ready3)));
+        return choices;
+    }
+
+    @Test
+    public void testSliceCommonMiddleEndWithTrailingEmptyChoiceString() {
+        Choices choices = new Choices(new Choice("Yes Miss, I've spurted off"),
+                new Choice("No Miss, I didn't spurt off"));
+
+        Phrases phrases = Phrases.of(choices);
+        assertEquals(4, phrases.size());
+    }
+
+    @Test
+    public void testSliceSimpleSRirregularPhrases() throws InterruptedException {
+        Choices choices = simpleSRirregularPhrases();
+        Phrases phrases = Phrases.of(choices);
+
+        Sequences<String> flattened = phrases.flatten();
+        assertEquals(5, flattened.size());
+
+        List<String> allChoices = all(choices);
+        assertEquals(allChoices, flattened.toStrings());
+
+        // TODO "I'm" is sliced as common phrase and therefore appended to all flattened phrases
+        fail("Not recognized in SpeechRecognitionSimpleTest.testRecognizeSimpleSRirregularPhrases()");
+    }
+
+    private List<String> all(Choices choices) {
+        return choices.stream().flatMap(p -> p.phrases.stream()).collect(Collectors.toList());
     }
 
 }

@@ -1,6 +1,7 @@
 package teaselib.core.speechrecognition;
 
-import static teaselib.core.speechrecognition.SpeechRecogntionTestUtils.*;
+import static teaselib.core.speechrecognition.SpeechRecogntionTestUtils.assertRecognized;
+import static teaselib.core.speechrecognition.SpeechRecogntionTestUtils.assertRejected;
 
 import org.junit.Test;
 
@@ -38,10 +39,11 @@ public class SpeechRecognitionTest {
     }
 
     @Test
-    public void testSRGSBuilderCommonMiddle() throws InterruptedException {
+    public void testSRGSBuilderCommonMiddleEnd() throws InterruptedException {
         Choices choices = new Choices(new Choice("Yes Miss, I've spurted off"),
                 new Choice("No Miss, I didn't spurt off"));
 
+        // TODO Should yield two choice 0 words since "Miss" is a common phrase here
         assertRecognized(choices, "Yes Miss I've spurted off", new Prompt.Result(0, 0));
         assertRecognized(choices, "No Miss I didn't spurt off", new Prompt.Result(1, 1));
         assertRejected(choices, "Yes Miss I didn't spurt off");

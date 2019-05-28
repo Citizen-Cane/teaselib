@@ -20,7 +20,6 @@ import teaselib.core.speechrecognition.events.AudioSignalProblemOccuredEventArgs
 import teaselib.core.speechrecognition.events.SpeechRecognitionStartedEventArgs;
 import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
 import teaselib.core.speechrecognition.srgs.Phrases;
-import teaselib.core.speechrecognition.srgs.SimplifiedPhrases;
 import teaselib.util.SpeechRecognitionRejectedScript;
 
 /**
@@ -196,7 +195,7 @@ public class SpeechRecognitionInputMethod implements InputMethod {
         speechRecognizer.events.recognitionRejected.add(recognitionRejected);
         speechRecognizer.events.recognitionCompleted.add(recognitionCompleted);
 
-        Phrases phrases = SimplifiedPhrases.of(active.get().choices);
+        Phrases phrases = Phrases.of(active.get().choices);
         speechRecognizer.startRecognition(phrases, expectedConfidence);
     }
 

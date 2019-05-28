@@ -131,8 +131,13 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
 
     public Sequence<T> commonMiddle() {
         Sequence<T> sequence = new Sequence<>(get(0), equalsOperator);
-        List<Sequence<T>> candidates = sequence.subLists();
 
+        int lastElement = sequence.size() - 1;
+        if (lastElement > 0 && sequence.get(lastElement).toString().isBlank()) {
+            sequence.remove(lastElement);
+        }
+
+        List<Sequence<T>> candidates = sequence.subLists();
         for (Sequence<T> candidate : candidates) {
             if (allContainMiddleSequence(candidate)) {
                 return common(candidate);

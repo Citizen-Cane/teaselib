@@ -1,7 +1,6 @@
 package teaselib.core.speechrecognition.srgs;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 import java.util.Arrays;
 import java.util.List;
@@ -100,7 +99,6 @@ public class PhrasesTest {
         Phrases phrases = Phrases.of(strings);
 
         Sequences<String> flattened = phrases.flatten();
-        // TODO Only first OneOf entry is processed - choice 3 is missing
         assertEquals(4, flattened.size());
 
         List<String> restored = flattened.toStrings();
@@ -156,13 +154,14 @@ public class PhrasesTest {
         Choices choices = new Choices(new Choice("Yes Miss"), new Choice("Yes Mistress"), new Choice("Of course Miss"),
                 new Choice("I have it"));
         Phrases phrases = Phrases.of(choices);
+        assertEquals(4, phrases.choices());
 
         Sequences<String> flattened = phrases.flatten();
-        // TODO Only first OneOf entry is processed - choice 3 is missing
         assertEquals(4, flattened.size());
 
         List<String> restored = flattened.toStrings();
         assertEquals(4, restored.size());
+
         assertEquals("Yes Miss", restored.get(0));
         assertEquals("Yes Mistress", restored.get(1));
         assertEquals("Of course Miss", restored.get(2));

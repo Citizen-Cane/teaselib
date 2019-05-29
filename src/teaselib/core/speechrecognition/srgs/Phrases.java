@@ -1,15 +1,16 @@
 package teaselib.core.speechrecognition.srgs;
 
-import static java.util.stream.Collectors.groupingBy;
-import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -56,6 +57,11 @@ public class Phrases extends ArrayList<Rule> {
         this.choiceCount = choiceCount;
     }
 
+    /**
+     * Flatten phrases to input strings
+     * 
+     * @return A list containing the first phrase of each choice
+     */
     public Sequences<String> flatten() {
         int choices = choices();
         Sequences<String> flattened = StringSequences.of(choices);
@@ -65,27 +71,30 @@ public class Phrases extends ArrayList<Rule> {
         }
 
         int rules = rules();
-        int relevantGroup = 0;
-        for (int choiceIndex = 0; choiceIndex < choices; choiceIndex++) {
-            for (int ruleIndex = 0; ruleIndex < rules; ruleIndex++) {
-                for (Rule rule : this) {
-                    String word = "";
-                    if (rule.group == relevantGroup && rule.index == ruleIndex) {
-                        OneOf items = rule.get(0);
-                        if (rule.size() == 1 && items.size() == 1) {
-                            if (items.choices.contains(choiceIndex) || items.choices.contains(COMMON_RULE)) {
-                                word = items.iterator().next();
-                            }
-                        } else {
-                            for (OneOf item : rule) {
-                                if (item.choices.contains(choiceIndex)) {
-                                    // Flatten can only flat first phrase
-                                    word = item.iterator().next();
-                                    break;
+        int groups = groups();
+        Set<Integer> processed = new HashSet<>();
+
+        for (int group = 0; group < groups; group++) {
+            for (int choiceIndex = 0; choiceIndex < choices; choiceIndex++) {
+                if (!processed.contains(choiceIndex)) {
+                    boolean choiceProcessed = false;
+                    for (int ruleIndex = 0; ruleIndex < rules; ruleIndex++) {
+                        for (Rule rule : this) {
+                            String word = "";
+                            if (rule.group == group && rule.index == ruleIndex) {
+                                for (OneOf items : rule) {
+                                    if (items.choices.contains(choiceIndex) || items.choices.contains(COMMON_RULE)) {
+                                        word = items.iterator().next();
+                                        choiceProcessed = true;
+                                        break;
+                                    }
                                 }
+                                flattened.get(choiceIndex).add(word);
                             }
                         }
-                        flattened.get(choiceIndex).add(word);
+                    }
+                    if (choiceProcessed) {
+                        processed.add(choiceIndex);
                     }
                 }
             }
@@ -118,10 +127,7 @@ public class Phrases extends ArrayList<Rule> {
     }
 
     public int choices() {
-        Optional<Rule> reduced = stream().reduce((a, b) -> {
-            return a.choices() > b.choices() ? a : b;
-        });
-        return reduced.isPresent() ? reduced.get().choices() : 1;
+        return choiceCount;
     }
 
     public int rules() {

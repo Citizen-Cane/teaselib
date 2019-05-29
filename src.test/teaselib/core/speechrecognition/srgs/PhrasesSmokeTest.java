@@ -1,9 +1,9 @@
 package teaselib.core.speechrecognition.srgs;
 
-import static java.util.Arrays.asList;
-import static java.util.stream.Collectors.toList;
-import static org.junit.Assert.assertEquals;
-import static teaselib.core.speechrecognition.srgs.Phrases.oneOf;
+import static java.util.Arrays.*;
+import static java.util.stream.Collectors.*;
+import static org.junit.Assert.*;
+import static teaselib.core.speechrecognition.srgs.Phrases.*;
 
 import java.util.Arrays;
 import java.util.List;
@@ -168,7 +168,7 @@ public class PhrasesSmokeTest {
         assertEqualsFlattened(choices, phrases);
     }
 
-    private Choices simpleSRirregularPhrases() {
+    private static Choices simpleSRirregularPhrases() {
         String sorry = "No Miss, I'm sorry";
         String ready = "Yes Miss, I'm ready";
         String haveIt = "I have it, Miss";
@@ -194,7 +194,7 @@ public class PhrasesSmokeTest {
         assertEqualsFlattened(choices, phrases);
     }
 
-    private void assertEqualsFlattened(Choices choices, Phrases phrases) {
+    private static void assertEqualsFlattened(Choices choices, Phrases phrases) {
         Sequences<String> flattened = phrases.flatten();
         assertEquals(choices.size(), flattened.size());
 
@@ -203,7 +203,7 @@ public class PhrasesSmokeTest {
         assertEquals(allChoices, flattened.toStrings());
     }
 
-    private List<String> firstOfEach(Choices choices) {
+    private static List<String> firstOfEach(Choices choices) {
         return choices.stream().map(p -> p.phrases.get(0)).collect(toList());
     }
 

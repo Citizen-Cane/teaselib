@@ -87,7 +87,7 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
         return slices;
     }
 
-    public Sequence<T> commonStart() {
+    Sequence<T> commonStart() {
         Sequence<T> sequence = new Sequence<>(get(0), equalsOperator);
         for (int i = sequence.size(); i >= 1; --i) {
             if (allStartWithSequence(sequence)) {
@@ -108,7 +108,7 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
         return true;
     }
 
-    public Sequence<T> commonEnd() {
+    Sequence<T> commonEnd() {
         Sequence<T> sequence = new Sequence<>(get(0), equalsOperator);
         for (int i = sequence.size(); i >= 1; --i) {
             if (allEndWithSequence(sequence)) {
@@ -129,7 +129,7 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
         return true;
     }
 
-    public Sequence<T> commonMiddle() {
+    Sequence<T> commonMiddle() {
         Sequence<T> sequence = new Sequence<>(get(0), equalsOperator);
 
         int lastElement = sequence.size() - 1;
@@ -167,7 +167,7 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
         return true;
     }
 
-    public Sequences<T> removeUpTo(Sequence<T> match, UnaryOperator<T> emptyCloneOp) {
+    Sequences<T> removeUpTo(Sequence<T> match, UnaryOperator<T> emptyCloneOp) {
         Sequences<T> subLists = new Sequences<>(size(), equalsOperator, joinCommonOperator, joinSequenceOperator);
         for (Sequence<T> listSequence : this) {
             List<T> subList = listSequence.subList(0, listSequence.indexOf(match));
@@ -179,7 +179,7 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
         return subLists;
     }
 
-    public Sequences<T> removeExcluding(Sequence<T> match) {
+    Sequences<T> removeExcluding(Sequence<T> match) {
         Sequences<T> subLists = new Sequences<>(size(), equalsOperator, joinCommonOperator, joinSequenceOperator);
         for (Sequence<T> listSequence : this) {
             List<T> subList = listSequence.subList(listSequence.indexOf(match), listSequence.size());
@@ -188,7 +188,7 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
         return subLists;
     }
 
-    public Sequences<T> removeIncluding(Sequence<T> match) {
+    Sequences<T> removeIncluding(Sequence<T> match) {
         Sequences<T> subLists = new Sequences<>(size(), equalsOperator, joinCommonOperator, joinSequenceOperator);
         for (Sequence<T> listSequence : this) {
             List<T> subList = listSequence.subList(listSequence.indexOf(match) + match.size(), listSequence.size());
@@ -201,7 +201,7 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
         return stream().map(Sequence<T>::toString).anyMatch(String::isEmpty);
     }
 
-    public static <T> int phraseCount(List<Sequences<T>> phrases) {
+    static <T> int phraseCount(List<Sequences<T>> phrases) {
         return phrases.stream().map(List::size).reduce(Math::max).orElse(0);
     }
 

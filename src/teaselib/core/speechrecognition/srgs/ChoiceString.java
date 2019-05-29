@@ -45,6 +45,8 @@ class ChoiceString {
         // TODO Assumes all phrases are the same - evaluate
         // TODO Make choice index a list, join indices, decide later about common rules
 
+        // TODO common + choice -> choice
+        // TODO choice + choice -> common
         List<Integer> results = choices.stream().map(phrase -> phrase.choice).distinct().collect(Collectors.toList());
         int choice = results.size() == 1 ? results.get(0) : Phrases.COMMON_RULE;
         return new ChoiceString(choices.get(0).phrase, choice);
@@ -60,6 +62,7 @@ class ChoiceString {
                 choice);
     }
 
+    // TODO Replace with joinSequence
     public static ChoiceString concat(ChoiceString a, ChoiceString b) {
         return new ChoiceString(String.join(" ", a.phrase, b.phrase).trim(), Math.max(a.choice, b.choice));
     }

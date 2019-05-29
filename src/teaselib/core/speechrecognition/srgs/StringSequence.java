@@ -12,10 +12,6 @@ public class StringSequence extends Sequence<String> {
         super(elements, equals);
     }
 
-    public StringSequence(Sequence<String> commonMiddle) {
-        super(commonMiddle, commonMiddle.equalsOperator);
-    }
-
     public static List<String> splitWords(String string) {
         if (string.isEmpty()) {
             return Collections.emptyList();
@@ -32,11 +28,4 @@ public class StringSequence extends Sequence<String> {
         return new StringSequence(splitWords(string), String::equalsIgnoreCase);
     }
 
-    public static StringSequence ignoreCase(List<String> elements) {
-        return new StringSequence(elements, String::equalsIgnoreCase);
-    }
-
-    public static StringSequence of(Sequence<String> sequence) {
-        return new StringSequence(sequence);
-    }
 }

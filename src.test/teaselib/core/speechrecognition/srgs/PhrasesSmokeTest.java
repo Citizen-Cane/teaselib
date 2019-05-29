@@ -24,7 +24,7 @@ public class PhrasesSmokeTest {
 
     @Test
     public void testSliceMultipleChoiceSinglePhraseOfOfStringsTwoOptionalParts() {
-        Phrases phrases = Phrases.ofSliced(singleChoiceMultiplePhrasesAreDistinct());
+        Phrases phrases = Phrases.of(singleChoiceMultiplePhrasesAreDistinct());
 
         assertEquals(Phrases.rule(0, 0, Phrases.oneOf(0, "Yes Miss of course", "of course Miss")), phrases.get(0));
         assertEquals(1, phrases.size());
@@ -33,7 +33,7 @@ public class PhrasesSmokeTest {
     @Test
     @Ignore
     public void testSliceMultipleChoiceSinglePhraseOfOfStringsTwoOptionalPartsOptimized() {
-        Phrases phrases = Phrases.ofSliced(singleChoiceMultiplePhrasesAreDistinct());
+        Phrases phrases = Phrases.of(singleChoiceMultiplePhrasesAreDistinct());
 
         // TODO Either "of course" must be common or must be different groups
         assertEquals(Phrases.rule(0, 0, Phrases.oneOf(0, "Yes Miss")), phrases.get(0));
@@ -52,7 +52,7 @@ public class PhrasesSmokeTest {
     @Test
     public void testSliceOptionalPhraseToDistiniguishMulitpleChoices() {
         Choices choices = optionalPhraseToDistiniguishMulitpleChoices();
-        Phrases phrases = Phrases.ofSliced(choices);
+        Phrases phrases = Phrases.of(choices);
 
         assertEquals(Phrases.rule(0, 0, Phrases.oneOf(0, "I"), Phrases.oneOf(1, "I don't")), phrases.get(0));
         assertEquals(Phrases.rule(0, 1, Phrases.oneOf(Arrays.asList(0, 1), "have it")), phrases.get(1));
@@ -69,7 +69,7 @@ public class PhrasesSmokeTest {
     @Test
     public void testSlicePhrasesWithMultipleCommonStartGroups() {
         Choices choices = phrasesWithMultipleCommonStartGroups();
-        Phrases phrases = Phrases.ofSliced(choices);
+        Phrases phrases = Phrases.of(choices);
 
         assertEquals(Phrases.rule(0, 0, oneOf(asList(0, 1), "Dear", "Please")), phrases.get(0));
         assertEquals(Phrases.rule(0, 1, oneOf(asList(0, 1), "mistress may I")), phrases.get(1));
@@ -89,7 +89,7 @@ public class PhrasesSmokeTest {
     @Test
     public void testSliceMultiplePhrasesOfMultipleChoicesAreDistinct() {
         Choices choices = multiplePhrasesOfMultipleChoicesAreDistinct();
-        Phrases phrases = Phrases.ofSliced(choices);
+        Phrases phrases = Phrases.of(choices);
 
         assertEquals(Phrases.rule(0, 0, Phrases.oneOf(0, "Yes Miss", "Yes"), Phrases.oneOf(1, "No Miss", "No")),
                 phrases.get(0));
@@ -111,7 +111,7 @@ public class PhrasesSmokeTest {
     @Test
     public void testSliceMultipleChoicesAlternativePhrases() {
         Choices choices = multipleChoicesAlternativePhrases();
-        Phrases phrases = Phrases.ofSliced(choices);
+        Phrases phrases = Phrases.of(choices);
 
         // TODO "of course" not sliced to common or joined with empty slices
         // Yes Miss, of course
@@ -143,7 +143,7 @@ public class PhrasesSmokeTest {
                 "I don't have it" };
         Choices choices = new Choices(new Choice("Yes #title, of course", "Yes Miss, of course", yes),
                 new Choice("No #title, of course not", "No Miss, of course not", no));
-        Phrases phrases = Phrases.ofSliced(choices);
+        Phrases phrases = Phrases.of(choices);
 
         assertEquals(Phrases.rule(0, 0, Phrases.oneOf(0, "Yes Miss", "Yes"), Phrases.oneOf(1, "No Miss", "No")),
                 phrases.get(0));

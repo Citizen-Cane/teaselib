@@ -49,10 +49,6 @@ public class Phrases extends ArrayList<Rule> {
         return Phrases.of(new Choices(choices.stream().map(Choice::new).collect(Collectors.toList())));
     }
 
-    public static Phrases of(Choices choices) {
-        return ofSliced(choices);
-    }
-
     Phrases(int choiceCount) {
         this.choiceCount = choiceCount;
     }
@@ -102,15 +98,7 @@ public class Phrases extends ArrayList<Rule> {
         return flattened;
     }
 
-    Rule previous(Rule rule) {
-        return get(rule.group, rule.index - 1).orElseThrow();
-    }
-
-    Rule next(Rule rule) {
-        return get(rule.group, rule.index + 1).orElseThrow();
-    }
-
-    private Optional<Rule> get(int group, int index) {
+    Optional<Rule> get(int group, int index) {
         for (Rule rule : this) {
             if (rule.index == index && rule.group == group) {
                 return Optional.of(rule);
@@ -119,25 +107,25 @@ public class Phrases extends ArrayList<Rule> {
         return Optional.empty();
     }
 
-    public int groups() {
+    int groups() {
         Optional<Rule> reduced = stream().reduce((a, b) -> {
             return a.group > b.group ? a : b;
         });
         return reduced.isPresent() ? reduced.get().group + 1 : 1;
     }
 
-    public int choices() {
+    int choices() {
         return choiceCount;
     }
 
-    public int rules() {
+    int rules() {
         Optional<Rule> reduced = stream().reduce((a, b) -> {
             return a.index > b.index ? a : b;
         });
         return reduced.isPresent() ? reduced.get().index + 1 : 1;
     }
 
-    public static Phrases ofSliced(Choices choices) {
+    public static Phrases of(Choices choices) {
         List<ChoiceString> all = choices.stream().flatMap(
                 choice -> choice.phrases.stream().map(phrase -> new ChoiceString(phrase, choices.indexOf(choice))))
                 .collect(Collectors.toList());

@@ -28,10 +28,6 @@ public class Sequence<T> extends ArrayList<T> {
         this.equalsOperator = equals;
     }
 
-    public Sequence(T[] elements, BiPredicate<T, T> equals) {
-        this(Arrays.asList(elements), equals);
-    }
-
     public Sequence(List<T> elements, BiPredicate<T, T> equals) {
         super(elements);
         this.equalsOperator = equals;
@@ -99,12 +95,6 @@ public class Sequence<T> extends ArrayList<T> {
     public Sequence<T> subList(Sequence<T> list) {
         int from = indexOf(list);
         return new Sequence<>(subList(from, from + list.size()));
-    }
-
-    public static <T> Sequence<T> concat(Sequence<T> a, Sequence<T> b) {
-        Sequence<T> sequence = new Sequence<>(a);
-        sequence.addAll(b);
-        return sequence;
     }
 
     @Override

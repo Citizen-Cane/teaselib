@@ -4,6 +4,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 class ChoiceString {
@@ -42,13 +43,15 @@ class ChoiceString {
             throw new NoSuchElementException();
         }
 
-        // TODO Assumes all phrases are the same - evaluate
-        // TODO Make choice index a list, join indices, decide later about common rules
-
-        // TODO common + choice -> choice
-        // TODO choice + choice -> common
-        List<Integer> results = choices.stream().map(phrase -> phrase.choice).distinct().collect(Collectors.toList());
-        int choice = results.size() == 1 ? results.get(0) : Phrases.COMMON_RULE;
+        Set<Integer> results = choices.stream().map(phrase -> phrase.choice).distinct().collect(Collectors.toSet());
+        int choice;
+        if (results.size() == 1) {
+            choice = results.iterator().next();
+        } else if (results.size() == 2 && results.contains(Phrases.COMMON_RULE)) {
+            choice = results.stream().filter(i -> i != Phrases.COMMON_RULE).reduce(Math::max).orElseThrow();
+        } else {
+            choice = Phrases.COMMON_RULE;
+        }
         return new ChoiceString(choices.get(0).phrase, choice);
     }
 
@@ -60,11 +63,6 @@ class ChoiceString {
         Integer choice = choices.stream().map(phrase -> phrase.choice).reduce(Math::max).orElseThrow();
         return new ChoiceString(choices.stream().map(element -> element.phrase).collect(Collectors.joining(" ")).trim(),
                 choice);
-    }
-
-    // TODO Replace with joinSequence
-    public static ChoiceString concat(ChoiceString a, ChoiceString b) {
-        return new ChoiceString(String.join(" ", a.phrase, b.phrase).trim(), Math.max(a.choice, b.choice));
     }
 
 }

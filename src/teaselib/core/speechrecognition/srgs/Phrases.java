@@ -172,7 +172,7 @@ public class Phrases extends ArrayList<Rule> {
 
                 if (isCommon(first)) {
                     List<Integer> choices = group.items.stream().map(p -> p.choice).distinct().collect(toList());
-                    List<ChoiceString> elements = first.stream().map(s -> s.join(ChoiceString::concat)).distinct()
+                    List<ChoiceString> elements = first.stream().map(first.joinSequenceOperator::apply).distinct()
                             .collect(toList());
                     List<String> strings = elements.stream().map(s -> s.phrase).distinct().collect(toList());
                     OneOf items = new OneOf(choices, strings);
@@ -181,7 +181,7 @@ public class Phrases extends ArrayList<Rule> {
                     Function<? super ChoiceString, ? extends Integer> classifier = phrase -> phrase.choice;
                     Function<? super ChoiceString, ? extends String> mapper = phrase -> phrase.phrase;
                     Map<Integer, List<String>> items = first.stream().filter(sequence -> !sequence.isEmpty())
-                            .map(phrase -> phrase.join(ChoiceString::concat))
+                            .map(first.joinSequenceOperator::apply)
                             .collect(groupingBy(classifier, HashMap::new, Collectors.mapping(mapper, toList())));
 
                     Optional<Rule> optional = phrases.get(groupIndex, ruleIndex);
@@ -198,7 +198,7 @@ public class Phrases extends ArrayList<Rule> {
                     ruleIndex++;
                     // TODO continue with rest of slice -> rebuild sequence instead of strings
                     List<ChoiceString> flattened = Sequences.flatten(sliced, first.equalsOperator,
-                            ChoiceString::concat);
+                            first.joinSequenceOperator);
                     List<Partition<ChoiceString>.Group> next = new Partition<>(flattened,
                             Phrases::haveCommonParts).groups;
                     recurse(phrases, next, groupIndex, ruleIndex);
@@ -236,7 +236,7 @@ public class Phrases extends ArrayList<Rule> {
         Map<String, Integer> unique = new HashMap<>();
         for (Sequence<ChoiceString> sequence : slice) {
             if (!sequence.isEmpty()) {
-                ChoiceString words = sequence.join(ChoiceString::concat);
+                ChoiceString words = slice.joinSequenceOperator.apply(sequence);
                 Integer choice = unique.get(words.phrase);
                 if (choice != null && choice != words.choice) {
                     return false;

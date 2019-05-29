@@ -2,11 +2,9 @@ package teaselib.core.speechrecognition.srgs;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.function.BiPredicate;
-import java.util.function.BinaryOperator;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class Sequence<T> extends ArrayList<T> {
@@ -102,17 +100,8 @@ public class Sequence<T> extends ArrayList<T> {
         return stream().map(T::toString).filter(t -> !t.isEmpty()).collect(Collectors.joining(" "));
     }
 
-    public T join(BinaryOperator<T> concatOperator) {
-        Iterator<T> sequence = iterator();
-        if (!sequence.hasNext()) {
-            throw new NoSuchElementException();
-        }
-
-        T joined = sequence.next();
-        while (sequence.hasNext()) {
-            joined = concatOperator.apply(joined, sequence.next());
-        }
-        return joined;
+    public T join(Function<List<T>, T> joinSequenceOperator) {
+        return joinSequenceOperator.apply(this);
     }
 
 }

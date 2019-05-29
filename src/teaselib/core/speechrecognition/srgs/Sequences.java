@@ -7,7 +7,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.BiPredicate;
-import java.util.function.BinaryOperator;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
@@ -214,8 +213,8 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
         return stream().map(Sequence::toString).collect(Collectors.toList());
     }
 
-    public static <T> List<T> flatten(List<Sequences<T>> sliced, BiPredicate<T, T> equalsOp,
-            BinaryOperator<T> concatOperator) {
+    public static <T> List<T> flatten(List<Sequences<T>> sliced, BiPredicate<T, T> equalsOperator,
+            Function<List<T>, T> joinSequenceOperator) {
         int phraseCount = phraseCount(sliced);
         if (phraseCount == 0) {
             return Collections.emptyList();
@@ -224,7 +223,7 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
         List<T> flattened = new ArrayList<>(phraseCount);
 
         for (int phraseIndex = 0; phraseIndex < phraseCount; phraseIndex++) {
-            Sequence<T> phrase = new Sequence<>(equalsOp);
+            Sequence<T> phrase = new Sequence<>(equalsOperator);
 
             for (int ruleIndex = 0; ruleIndex < sliced.size(); ruleIndex++) {
                 Sequences<T> sequences = sliced.get(ruleIndex);
@@ -232,7 +231,7 @@ public class Sequences<T> extends ArrayList<Sequence<T>> {
                 phrase.addAll(sequence);
             }
 
-            flattened.add(phrase.join(concatOperator));
+            flattened.add(joinSequenceOperator.apply(phrase));
         }
 
         return flattened;

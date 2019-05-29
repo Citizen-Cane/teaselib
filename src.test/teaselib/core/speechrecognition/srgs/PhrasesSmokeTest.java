@@ -1,15 +1,17 @@
 package teaselib.core.speechrecognition.srgs;
 
+import static java.util.Arrays.asList;
+import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static teaselib.core.speechrecognition.srgs.Phrases.oneOf;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import org.junit.Ignore;
 import org.junit.Test;
 
+import teaselib.core.speechrecognition.SpeechRecogntionTestUtils;
 import teaselib.core.ui.Choice;
 import teaselib.core.ui.Choices;
 
@@ -53,7 +55,7 @@ public class PhrasesSmokeTest {
         Phrases phrases = Phrases.ofSliced(choices);
 
         assertEquals(Phrases.rule(0, 0, Phrases.oneOf(0, "I"), Phrases.oneOf(1, "I don't")), phrases.get(0));
-        assertEquals(Phrases.rule(0, 1, Phrases.oneOf(Phrases.COMMON_RULE, "have it")), phrases.get(1));
+        assertEquals(Phrases.rule(0, 1, Phrases.oneOf(Arrays.asList(0, 1), "have it")), phrases.get(1));
         assertEquals(2, phrases.size());
     }
 
@@ -69,10 +71,12 @@ public class PhrasesSmokeTest {
         Choices choices = phrasesWithMultipleCommonStartGroups();
         Phrases phrases = Phrases.ofSliced(choices);
 
-        assertEquals(Phrases.rule(0, 0, Phrases.oneOf(Phrases.COMMON_RULE, "Dear", "Please")), phrases.get(0));
-        assertEquals(Phrases.rule(0, 1, Phrases.oneOf(Phrases.COMMON_RULE, "mistress may I")), phrases.get(1));
+        assertEquals(Phrases.rule(0, 0, oneOf(asList(0, 1), "Dear", "Please")), phrases.get(0));
+        assertEquals(Phrases.rule(0, 1, oneOf(asList(0, 1), "mistress may I")), phrases.get(1));
         assertEquals(Phrases.rule(0, 2, Phrases.oneOf(0, "cum"), Phrases.oneOf(1, "wank")), phrases.get(2));
         assertEquals(3, phrases.size());
+
+        assertEqualsFlattened(choices, phrases);
     }
 
     private static Choices multiplePhrasesOfMultipleChoicesAreDistinct() {
@@ -87,13 +91,14 @@ public class PhrasesSmokeTest {
         Choices choices = multiplePhrasesOfMultipleChoicesAreDistinct();
         Phrases phrases = Phrases.ofSliced(choices);
 
-        assertEquals(
-                Phrases.rule(0, 0, Phrases.oneOf(0, "Yes Miss", "Yes", "Yes"), Phrases.oneOf(1, "No Miss", "No", "No")),
+        assertEquals(Phrases.rule(0, 0, Phrases.oneOf(0, "Yes Miss", "Yes"), Phrases.oneOf(1, "No Miss", "No")),
                 phrases.get(0));
-        assertEquals(Phrases.rule(0, 1, Phrases.oneOf(Phrases.COMMON_RULE, "of course")), phrases.get(1));
-        assertEquals(Phrases.rule(0, 2, Phrases.oneOf(0, "Miss"), Phrases.oneOf(1, "not Miss", "not", "not")),
-                phrases.get(2));
+        assertEquals(Phrases.rule(0, 1, Phrases.oneOf(Arrays.asList(0, 1), "of course")), phrases.get(1));
+        assertEquals(Phrases.rule(0, 2, Phrases.oneOf(0, "Miss"), Phrases.oneOf(1, "not Miss", "not")), phrases.get(2));
+
         assertEquals(3, phrases.size());
+        // TODO Flatten fails because optional phrase parts didn't make it into rule 2 -> recognition fails as well
+        assertEqualsFlattened(choices, phrases);
     }
 
     private static Choices multipleChoicesAlternativePhrases() {
@@ -123,6 +128,7 @@ public class PhrasesSmokeTest {
         // index - that's group-like
         // -> add phrases in different OneOf elements, SRGS inventory references rules
         assertEquals(1, phrases.size());
+        assertEqualsFlattened(choices, phrases);
     }
 
     @Test
@@ -141,11 +147,25 @@ public class PhrasesSmokeTest {
 
         assertEquals(Phrases.rule(0, 0, Phrases.oneOf(0, "Yes Miss", "Yes"), Phrases.oneOf(1, "No Miss", "No")),
                 phrases.get(0));
-        assertEquals(Phrases.rule(0, 1, Phrases.oneOf(Phrases.COMMON_RULE, "of course")), phrases.get(1));
+        assertEquals(Phrases.rule(0, 1, Phrases.oneOf(Arrays.asList(0, 1), "of course")), phrases.get(1));
         assertEquals(Phrases.rule(0, 2, Phrases.oneOf(0, "Miss"), Phrases.oneOf(1, "not Miss", "not")), phrases.get(2));
         assertEquals(Phrases.rule(1, 0, Phrases.oneOf(0, "I"), Phrases.oneOf(1, "I don't")), phrases.get(3));
-        assertEquals(Phrases.rule(1, 1, Phrases.oneOf(Phrases.COMMON_RULE, "have it")), phrases.get(4));
+        assertEquals(Phrases.rule(1, 1, Phrases.oneOf(Arrays.asList(0, 1), "have it")), phrases.get(4));
+
         assertEquals(5, phrases.size());
+        // TODO Flatten fails because optional phrase parts didn't make it into rule 2 -> recognition fails as well
+        assertEqualsFlattened(choices, phrases);
+    }
+
+    @Test
+    public void testSliceCommonMiddleEndWithTrailingEmptyChoiceString() {
+        Choices choices = new Choices(new Choice("Yes Miss, I've spurted off"),
+                new Choice("No Miss, I didn't spurt off"));
+
+        Phrases phrases = Phrases.of(choices);
+
+        assertEquals(4, phrases.size());
+        assertEqualsFlattened(choices, phrases);
     }
 
     private Choices simpleSRirregularPhrases() {
@@ -155,37 +175,36 @@ public class PhrasesSmokeTest {
         String ready2 = "Yes,it's ready, Miss";
         String ready3 = "It's ready, Miss";
 
-        Choices choices = new Choices(Arrays.asList(new Choice(sorry), new Choice(ready), new Choice(haveIt),
-                new Choice(ready2), new Choice(ready3)));
-        return choices;
+        return new Choices(Arrays.asList(new Choice(sorry), new Choice(ready), new Choice(haveIt), new Choice(ready2),
+                new Choice(ready3)));
     }
 
     @Test
-    public void testSliceCommonMiddleEndWithTrailingEmptyChoiceString() {
-        Choices choices = new Choices(new Choice("Yes Miss, I've spurted off"),
-                new Choice("No Miss, I didn't spurt off"));
-
-        Phrases phrases = Phrases.of(choices);
-        assertEquals(4, phrases.size());
-    }
-
-    @Test
-    public void testSliceSimpleSRirregularPhrases() throws InterruptedException {
+    public void testSliceSimpleSRirregularPhrases() {
         Choices choices = simpleSRirregularPhrases();
         Phrases phrases = Phrases.of(choices);
 
-        Sequences<String> flattened = phrases.flatten();
-        assertEquals(5, flattened.size());
+        assertEquals(Phrases.rule(0, 0, Phrases.oneOf(0, "No"), Phrases.oneOf(1, "Yes"), Phrases.oneOf(2, "I have it"),
+                Phrases.oneOf(3, "Yes it's ready"), Phrases.oneOf(4, "It's ready")), phrases.get(0));
+        assertEquals(Phrases.rule(0, 1, Phrases.oneOf(Arrays.asList(0, 1, 2, 3, 4), "Miss")), phrases.get(1));
+        assertEquals(Phrases.rule(0, 2, Phrases.oneOf(Arrays.asList(0, 1), "I'm")), phrases.get(2));
+        assertEquals(Phrases.rule(0, 3, Phrases.oneOf(0, "sorry"), Phrases.oneOf(1, "ready")), phrases.get(3));
 
-        List<String> allChoices = all(choices);
-        assertEquals(allChoices, flattened.toStrings());
-
-        // TODO "I'm" is sliced as common phrase and therefore appended to all flattened phrases
-        fail("Not recognized in SpeechRecognitionSimpleTest.testRecognizeSimpleSRirregularPhrases()");
+        assertEquals(4, phrases.size());
+        assertEqualsFlattened(choices, phrases);
     }
 
-    private List<String> all(Choices choices) {
-        return choices.stream().flatMap(p -> p.phrases.stream()).collect(Collectors.toList());
+    private void assertEqualsFlattened(Choices choices, Phrases phrases) {
+        Sequences<String> flattened = phrases.flatten();
+        assertEquals(choices.size(), flattened.size());
+
+        List<String> allChoices = firstOfEach(choices).stream().map(SpeechRecogntionTestUtils::withoutPunctation)
+                .collect(toList());
+        assertEquals(allChoices, flattened.toStrings());
+    }
+
+    private List<String> firstOfEach(Choices choices) {
+        return choices.stream().map(p -> p.phrases.get(0)).collect(toList());
     }
 
 }

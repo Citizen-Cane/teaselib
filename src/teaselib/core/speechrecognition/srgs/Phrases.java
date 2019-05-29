@@ -1,5 +1,8 @@
 package teaselib.core.speechrecognition.srgs;
 
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.toList;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -10,6 +13,7 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import teaselib.core.ui.Choice;
 import teaselib.core.ui.Choices;
 import teaselib.util.math.Partition;
 
@@ -28,12 +32,12 @@ public class Phrases extends ArrayList<Rule> {
         return new Rule(group, ruleIndex, items);
     }
 
-    public static OneOf oneOf(int choiceIndex, String item) {
-        return new OneOf(choiceIndex, item);
+    public static OneOf oneOf(int choiceIndex, String... items) {
+        return new OneOf(Collections.singletonList(choiceIndex), Arrays.asList(items));
     }
 
-    public static OneOf oneOf(int choiceIndex, String... items) {
-        return new OneOf(choiceIndex, items);
+    public static OneOf oneOf(List<Integer> choices, String... items) {
+        return new OneOf(choices, Arrays.asList(items));
     }
 
     public static Phrases of(String... choices) {
@@ -41,7 +45,7 @@ public class Phrases extends ArrayList<Rule> {
     }
 
     public static Phrases of(List<String> choices) {
-        return SimplifiedPhrases.of(choices);
+        return Phrases.of(new Choices(choices.stream().map(Choice::new).collect(Collectors.toList())));
     }
 
     public static Phrases of(Choices choices) {
@@ -61,19 +65,20 @@ public class Phrases extends ArrayList<Rule> {
         }
 
         int rules = rules();
+        int relevantGroup = 0;
         for (int choiceIndex = 0; choiceIndex < choices; choiceIndex++) {
             for (int ruleIndex = 0; ruleIndex < rules; ruleIndex++) {
                 for (Rule rule : this) {
                     String word = "";
-                    if (rule.index == ruleIndex) {
+                    if (rule.group == relevantGroup && rule.index == ruleIndex) {
                         OneOf items = rule.get(0);
                         if (rule.size() == 1 && items.size() == 1) {
-                            if (items.choiceIndex == choiceIndex || items.choiceIndex == COMMON_RULE) {
+                            if (items.choices.contains(choiceIndex) || items.choices.contains(COMMON_RULE)) {
                                 word = items.iterator().next();
                             }
                         } else {
                             for (OneOf item : rule) {
-                                if (item.choiceIndex == choiceIndex) {
+                                if (item.choices.contains(choiceIndex)) {
                                     // Flatten can only flat first phrase
                                     word = item.iterator().next();
                                     break;
@@ -172,20 +177,24 @@ public class Phrases extends ArrayList<Rule> {
                 }
 
                 if (isCommon(first)) {
-                    OneOf items = new OneOf(Phrases.COMMON_RULE,
-                            first.stream().map(sequence -> sequence.join(ChoiceString::concat).phrase).distinct()
-                                    .collect(Collectors.toList()));
+                    List<Integer> choices = group.items.stream().map(p -> p.choice).distinct().collect(toList());
+                    List<ChoiceString> elements = first.stream().map(s -> s.join(ChoiceString::concat)).distinct()
+                            .collect(toList());
+                    List<String> strings = elements.stream().map(s -> s.phrase).distinct().collect(toList());
+                    OneOf items = new OneOf(choices, strings);
                     phrases.add(new Rule(groupIndex, ruleIndex, items));
                 } else {
                     Function<? super ChoiceString, ? extends Integer> classifier = phrase -> phrase.choice;
                     Function<? super ChoiceString, ? extends String> mapper = phrase -> phrase.phrase;
                     Map<Integer, List<String>> items = first.stream().filter(sequence -> !sequence.isEmpty())
-                            .map(phrase -> phrase.join(ChoiceString::concat)).collect(Collectors.groupingBy(classifier,
-                                    HashMap::new, Collectors.mapping(mapper, Collectors.toList())));
+                            .map(phrase -> phrase.join(ChoiceString::concat))
+                            .collect(groupingBy(classifier, HashMap::new, Collectors.mapping(mapper, toList())));
 
                     Optional<Rule> optional = phrases.get(groupIndex, ruleIndex);
                     Rule rule = optional.isPresent() ? optional.get() : new Rule(groupIndex, ruleIndex);
-                    items.entrySet().stream().forEach(entry -> rule.add(new OneOf(entry.getKey(), entry.getValue())));
+                    // TODO Review whether to join OneOf choices & items
+                    items.entrySet().stream().forEach(entry -> rule
+                            .add(new OneOf(Collections.singletonList(entry.getKey()), distinct(entry.getValue()))));
                     if (optional.isEmpty()) {
                         phrases.add(rule);
                     }
@@ -202,6 +211,11 @@ public class Phrases extends ArrayList<Rule> {
                 }
             }
         }
+    }
+
+    // TODO OneOf can be a set (I guess) so let's collect to set directlywhen everyting else has been settled
+    private static List<String> distinct(List<String> items) {
+        return items.stream().distinct().collect(Collectors.toList());
     }
 
     private boolean allChoicesDefined(int groupIndex) {

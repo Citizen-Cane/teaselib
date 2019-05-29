@@ -1,34 +1,33 @@
 package teaselib.core.speechrecognition.srgs;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
 public class OneOf extends ArrayList<String> {
     private static final long serialVersionUID = 1L;
 
-    final int choiceIndex;
+    final List<Integer> choices;
 
-    public OneOf(int choiceIndex) {
-        this.choiceIndex = choiceIndex;
-    }
+    // public OneOf(int choices) {
+    // this.choices = choices;
+    // }
 
-    public OneOf(int choiceIndex, int capacity) {
+    public OneOf(List<Integer> choices, int capacity) {
         super(capacity);
-        this.choiceIndex = choiceIndex;
+        this.choices = choices;
     }
 
-    public OneOf(int choiceIndex, String item) {
-        this(choiceIndex, Collections.singletonList(item));
+    public OneOf(List<Integer> choices, String item) {
+        this(choices, Collections.singletonList(item));
     }
 
-    public OneOf(int choiceIndex, String... items) {
-        this(choiceIndex, Arrays.asList(items));
-    }
+    // public OneOf(int choiceIndex, String... items) {
+    // this(choiceIndex, Arrays.asList(items));
+    // }
 
-    public OneOf(int choiceIndex, List<String> items) {
-        this.choiceIndex = choiceIndex;
+    public OneOf(List<Integer> choices, List<String> items) {
+        this.choices = choices;
         for (String item : items) {
             add(item);
         }
@@ -38,7 +37,7 @@ public class OneOf extends ArrayList<String> {
     public int hashCode() {
         final int prime = 31;
         int result = super.hashCode();
-        result = prime * result + choiceIndex;
+        result = prime * result + ((choices == null) ? 0 : choices.hashCode());
         return result;
     }
 
@@ -51,14 +50,29 @@ public class OneOf extends ArrayList<String> {
         if (getClass() != obj.getClass())
             return false;
         OneOf other = (OneOf) obj;
-        if (choiceIndex != other.choiceIndex)
+        if (choices == null) {
+            if (other.choices != null)
+                return false;
+        } else if (!choices.equals(other.choices))
             return false;
         return true;
     }
 
+    public boolean isCommon() {
+        if (choices.size() == 1 && choices.get(0) == Phrases.COMMON_RULE) {
+            return true;
+        } else {
+            return choices.size() > 1;
+        }
+    }
+
     @Override
     public String toString() {
-        return (choiceIndex == Phrases.COMMON_RULE ? "Common" : "choice " + choiceIndex) + " = " + super.toString();
+        if (isCommon()) {
+            return "Common" + (choices.size() > 1 ? choices.toString() : "") + " = " + super.toString();
+        } else {
+            return "choice " + choices + " = " + super.toString();
+        }
     }
 
     public boolean hasOptionalParts() {

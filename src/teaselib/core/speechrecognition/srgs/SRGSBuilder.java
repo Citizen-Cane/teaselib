@@ -38,10 +38,11 @@ public class SRGSBuilder extends AbstractSRGSBuilder {
         // TODO Phrases may contain multiple rules with the same items -> reuse them
         // SpeechRecognitionTest.testSRGSBuilderMultiplePhrasesOfMultipleChoicesAreDistinctWithoutOptionalParts()
         for (Rule rule : phrases) {
+            // TODO Remove since this maes no sense
             if (rule.index != Phrases.COMMON_RULE) {
                 for (OneOf item : rule) {
-                    String inventoryKey = inventoryKey(rule, item);
-                    if (item.choiceIndex != Phrases.COMMON_RULE) {
+                    if (!item.isCommon()) {
+                        String inventoryKey = inventoryKey(rule, item);
                         if (!inventoryItems.containsKey(inventoryKey)) {
                             Element inventoryItem = document.createElement("item");
                             inventoryItems.put(inventoryKey, inventoryItem);
@@ -56,7 +57,9 @@ public class SRGSBuilder extends AbstractSRGSBuilder {
     }
 
     private static String inventoryKey(Rule rule, OneOf item) {
-        return item.choiceIndex + "_" + rule.group;
+        if (item.choices.size() > 1)
+            throw new IllegalArgumentException("SRGS inventory accepts only distinct items: " + item);
+        return item.choices.get(0) + "_" + rule.group;
     }
 
     private static int inventoryGroup(String inventoryKey) {
@@ -70,7 +73,7 @@ public class SRGSBuilder extends AbstractSRGSBuilder {
 
     private void createRule(Element grammar, Rule rule) {
         for (OneOf items : rule) {
-            String id = items.choiceIndex != Phrases.COMMON_RULE ? choiceName(rule, items.choiceIndex) : ruleName(rule);
+            String id = items.isCommon() ? ruleName(rule) : choiceName(rule, items);
             Element ruleElement = createRule(id);
             grammar.appendChild(ruleElement);
 
@@ -98,7 +101,7 @@ public class SRGSBuilder extends AbstractSRGSBuilder {
 
     private void addRuleToInventory(Map<String, Element> inventoryItems, Rule rule) {
         for (OneOf items : rule) {
-            if (items.choiceIndex == Phrases.COMMON_RULE) {
+            if (items.isCommon()) {
                 if (rule.size() > 1) {
                     throw new IllegalArgumentException("There may be only one entry per common rule");
                 }
@@ -106,7 +109,7 @@ public class SRGSBuilder extends AbstractSRGSBuilder {
                 appendRuleRefToAllChoices(inventoryItems, rule);
             } else {
                 Element element = inventoryItems.get(inventoryKey(rule, items));
-                element.appendChild(ruleRef(choiceName(rule, items.choiceIndex)));
+                element.appendChild(ruleRef(choiceName(rule, items)));
             }
         }
     }

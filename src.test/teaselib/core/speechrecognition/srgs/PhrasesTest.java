@@ -1,6 +1,7 @@
 package teaselib.core.speechrecognition.srgs;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 import java.util.Arrays;
 import java.util.List;
@@ -20,24 +21,13 @@ public class PhrasesTest {
                 "Yes Miss, of course", //
                 "Of course not, Miss");
 
-        // TODO Resolve Index-Out-Of-Bounds when rules are joined -> remove this code from phrase processing
-
-        // TODO Either only two rules with "of course" replicated
-        // TODO or both choice with optional part
-        // - either different groups or
-        // - patched in SRGSBuilder as different rules
-        // must tag with different groups but common part -> SRGSBuilder can detect situation
-        // - cannot define common part for multiple groups
-        //
-        // -> SRGSBuilder must resolve OneOf
-
-        // -> number of result choice indices may differ but all result values must be the same
-
-        assertEquals(3, phrases.size());
+        fail("TODO Define how this should be split other than in a signle rule");
 
         assertEquals(Phrases.rule(0, 0, "Yes Miss", ""), phrases.get(0));
-        assertEquals(Phrases.rule(0, 1, Phrases.oneOf(Phrases.COMMON_RULE, "of course")), phrases.get(1));
+        assertEquals(Phrases.rule(0, 1, Phrases.oneOf(Arrays.asList(0, 1), "of course")), phrases.get(1));
         assertEquals(Phrases.rule(0, 2, "", "not Miss"), phrases.get(2));
+
+        assertEquals(3, phrases.size());
     }
 
     @Test
@@ -46,15 +36,12 @@ public class PhrasesTest {
                 "Yes Miss, of course", //
                 "No, of course not, Miss");
 
-        // TODO Either only two rules with "of course" replicated
-        // TODO or second choice with optional part -> Prompt.Result of different sizes
-        // -> number of result choice indices may differ but all result values must be the same
+        assertEquals(Phrases.rule(0, 0, "Yes Miss", "No"), phrases.get(0));
+        assertEquals(Phrases.rule(0, 1, Phrases.oneOf(Arrays.asList(0, 1), "of course")), phrases.get(1));
+        assertEquals(Phrases.rule(0, 2, "", "not Miss"), phrases.get(2));
+        // TODO optional phrase parts didn't make it into rule 2
 
         assertEquals(3, phrases.size());
-
-        assertEquals(Phrases.rule(0, 0, "Yes Miss", "No"), phrases.get(0));
-        assertEquals(Phrases.rule(0, 1, Phrases.oneOf(Phrases.COMMON_RULE, "of course")), phrases.get(1));
-        assertEquals(Phrases.rule(0, 2, "", "not Miss"), phrases.get(2));
     }
 
     @Test
@@ -65,19 +52,17 @@ public class PhrasesTest {
 
         assertEquals(4, phrases.size());
 
-        // TODO Split into 2 choice parts -> could be one choice part but it's not joined
-        // TODO or "of course" could be common -> "not" only in choice 1 -> Prompt.Result of different sizes
-
         assertEquals(Phrases.rule(0, 0, "Yes", "No"), phrases.get(0));
-        assertEquals(Phrases.rule(0, 1, Phrases.oneOf(Phrases.COMMON_RULE, "of course")), phrases.get(1));
+        assertEquals(Phrases.rule(0, 1, Phrases.oneOf(Arrays.asList(0, 1), "of course")), phrases.get(1));
         assertEquals(Phrases.rule(0, 2, "", "not"), phrases.get(2));
-        assertEquals(Phrases.rule(0, 3, Phrases.oneOf(Phrases.COMMON_RULE, "Miss")), phrases.get(3));
+        assertEquals(Phrases.rule(0, 3, Phrases.oneOf(Arrays.asList(0, 1), "Miss")), phrases.get(3));
     }
 
     @Test
     public void testPhraseGrouping() {
-        List<String> strings = Arrays.asList("Yes Miss", "Yes Mistress", "Of course Miss", "I have it");
-        Partition<String> grooupedPhrases = new Partition<>(strings, SimplifiedPhrases::haveCommonParts);
+        List<ChoiceString> strings = Arrays.asList(new ChoiceString("Yes Miss", 0), new ChoiceString("Yes Mistress", 0),
+                new ChoiceString("Of course Miss", 0), new ChoiceString("I have it", 0));
+        Partition<ChoiceString> grooupedPhrases = new Partition<>(strings, Phrases::haveCommonParts);
         assertEquals(2, grooupedPhrases.groups.size());
     }
 
@@ -115,6 +100,7 @@ public class PhrasesTest {
         Phrases phrases = Phrases.of(strings);
 
         Sequences<String> flattened = phrases.flatten();
+        // TODO Only first OneOf entry is processed - choice 3 is missing
         assertEquals(4, flattened.size());
 
         List<String> restored = flattened.toStrings();
@@ -158,7 +144,7 @@ public class PhrasesTest {
         Choices choices = new Choices(new Choice("Yes #title, of course", "Yes Miss, of course", yes),
                 new Choice("No #title, of course not", "No Miss, of course not", no));
         Phrases phrases = Phrases.of(choices);
-        assertEquals(8, phrases.size());
+        assertEquals(3, phrases.size());
 
         Sequences<String> flatten = phrases.flatten();
         List<String> flattened = flatten.stream().map(Sequence<String>::toString).collect(Collectors.toList());
@@ -172,6 +158,7 @@ public class PhrasesTest {
         Phrases phrases = Phrases.of(choices);
 
         Sequences<String> flattened = phrases.flatten();
+        // TODO Only first OneOf entry is processed - choice 3 is missing
         assertEquals(4, flattened.size());
 
         List<String> restored = flattened.toStrings();

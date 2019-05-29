@@ -1,6 +1,8 @@
 package teaselib.core.speechrecognition.srgs;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -54,7 +56,7 @@ public class SRGSBuilderTest {
                 List<OneOf> items = new ArrayList<>();
                 Rule rule = new Rule(groupIndex, ruleIndex++, items);
                 for (int choiceIndex = 0; choiceIndex < arg.length; choiceIndex++) {
-                    rule.add(new OneOf(choiceIndex, arg[choiceIndex].phrases));
+                    rule.add(new OneOf(Collections.singletonList(choiceIndex), arg[choiceIndex].phrases));
                 }
                 phrases.add(rule);
             } else {
@@ -66,7 +68,7 @@ public class SRGSBuilderTest {
         assertEquals(Phrases.rule(0, 0, "A"), phrases.get(0));
         assertEquals(Phrases.rule(0, 1, "leather", "rubber", ""), phrases.get(1));
         assertEquals(Phrases.rule(0, 2, "ball", "bone", "dildo"), phrases.get(2));
-        assertEquals(Phrases.rule(0, 3, new OneOf(0, "Miss", "Mistress", "dear Mistress")), phrases.get(3));
+        assertEquals(Phrases.rule(0, 3, Phrases.oneOf(0, "Miss", "Mistress", "dear Mistress")), phrases.get(3));
 
         assertTrue(phrases.get(0).get(0).contains("A"));
         assertTrue(phrases.get(1).get(0).contains("leather"));

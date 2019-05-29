@@ -1,9 +1,11 @@
 package teaselib.core.speechrecognition.srgs;
 
+import static java.util.stream.Collectors.toList;
+
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 
 public class Rule extends ArrayList<OneOf> {
     private static final long serialVersionUID = 1L;
@@ -25,7 +27,7 @@ public class Rule extends ArrayList<OneOf> {
         this.index = index;
         int choiceIndex = 0;
         for (String item : items) {
-            add(new OneOf(choiceIndex++, item));
+            add(new OneOf(Collections.singletonList(choiceIndex++), item));
         }
     }
 
@@ -64,10 +66,10 @@ public class Rule extends ArrayList<OneOf> {
     }
 
     int choices() {
-        Optional<OneOf> reduce = stream().reduce((a, b) -> a.choiceIndex > b.choiceIndex ? a : b);
-        if (reduce.isPresent()) {
-            int choiceIndex = reduce.get().choiceIndex;
-            return choiceIndex == Phrases.COMMON_RULE ? 1 : choiceIndex + 1;
+        long count = stream().map(i -> i.choices).flatMap(List::stream).filter(choice -> choice != Phrases.COMMON_RULE)
+                .distinct().count();
+        if (count > 0) {
+            return (int) count;
         } else {
             return 1;
         }
@@ -75,13 +77,12 @@ public class Rule extends ArrayList<OneOf> {
 
     public boolean containOptionalChoices() {
         return stream().anyMatch(
-                items -> items.choiceIndex != Phrases.COMMON_RULE && items.stream().anyMatch(String::isBlank));
+                items -> !items.choices.contains(Phrases.COMMON_RULE) && items.stream().anyMatch(String::isBlank));
     }
 
     public boolean isCommon() {
-        return stream().reduce((a, b) -> {
-            return a.choiceIndex > b.choiceIndex ? a : b;
-        }).orElseGet(() -> new OneOf(Phrases.COMMON_RULE)).choiceIndex == Phrases.COMMON_RULE;
+        List<Integer> choices = stream().map(item -> item.choices).flatMap(List::stream).distinct().collect(toList());
+        return choices.size() > 1 || choices.get(0) == Phrases.COMMON_RULE;
     }
 
     @Override

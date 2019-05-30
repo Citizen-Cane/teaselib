@@ -62,6 +62,10 @@ public class SRGSBuilder extends AbstractSRGSBuilder {
         return item.choices.get(0) + "_" + rule.group;
     }
 
+    private static int inventoryChoice(String inventoryKey) {
+        return Integer.parseInt(inventoryKey.substring(0, inventoryKey.indexOf("_")));
+    }
+
     private static int inventoryGroup(String inventoryKey) {
         return Integer.parseInt(inventoryKey.substring(inventoryKey.indexOf("_") + 1));
     }
@@ -122,7 +126,12 @@ public class SRGSBuilder extends AbstractSRGSBuilder {
             String key = entry.getKey();
             int group = inventoryGroup(key);
             if (group == rule.group) {
-                entry.getValue().appendChild(ruleRef(ruleName(rule)));
+                for (OneOf items : rule) {
+                    int choice = inventoryChoice(key);
+                    if (items.choices.contains(choice)) {
+                        entry.getValue().appendChild(ruleRef(ruleName(rule)));
+                    }
+                }
             }
         }
     }

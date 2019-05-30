@@ -94,7 +94,8 @@ public class PhrasesSmokeTest {
         assertEquals(Phrases.rule(0, 0, Phrases.oneOf(0, "Yes Miss", "Yes"), Phrases.oneOf(1, "No Miss", "No")),
                 phrases.get(0));
         assertEquals(Phrases.rule(0, 1, Phrases.oneOf(Arrays.asList(0, 1), "of course")), phrases.get(1));
-        assertEquals(Phrases.rule(0, 2, Phrases.oneOf(0, "Miss"), Phrases.oneOf(1, "not Miss", "not")), phrases.get(2));
+        assertEquals(Phrases.rule(0, 2, Phrases.oneOf(0, "", "Miss"), Phrases.oneOf(1, "not Miss", "not")),
+                phrases.get(2));
 
         assertEquals(3, phrases.size());
         // TODO Flatten fails because optional phrase parts didn't make it into rule 2 -> recognition fails as well
@@ -148,7 +149,8 @@ public class PhrasesSmokeTest {
         assertEquals(Phrases.rule(0, 0, Phrases.oneOf(0, "Yes Miss", "Yes"), Phrases.oneOf(1, "No Miss", "No")),
                 phrases.get(0));
         assertEquals(Phrases.rule(0, 1, Phrases.oneOf(Arrays.asList(0, 1), "of course")), phrases.get(1));
-        assertEquals(Phrases.rule(0, 2, Phrases.oneOf(0, "Miss"), Phrases.oneOf(1, "not Miss", "not")), phrases.get(2));
+        assertEquals(Phrases.rule(0, 2, Phrases.oneOf(0, "", "Miss"), Phrases.oneOf(1, "not Miss", "not")),
+                phrases.get(2));
         assertEquals(Phrases.rule(1, 0, Phrases.oneOf(0, "I"), Phrases.oneOf(1, "I don't")), phrases.get(3));
         assertEquals(Phrases.rule(1, 1, Phrases.oneOf(Arrays.asList(0, 1), "have it")), phrases.get(4));
 
@@ -188,7 +190,8 @@ public class PhrasesSmokeTest {
                 Phrases.oneOf(3, "Yes it's ready"), Phrases.oneOf(4, "It's ready")), phrases.get(0));
         assertEquals(Phrases.rule(0, 1, Phrases.oneOf(Arrays.asList(0, 1, 2, 3, 4), "Miss")), phrases.get(1));
         assertEquals(Phrases.rule(0, 2, Phrases.oneOf(Arrays.asList(0, 1), "I'm")), phrases.get(2));
-        assertEquals(Phrases.rule(0, 3, Phrases.oneOf(0, "sorry"), Phrases.oneOf(1, "ready")), phrases.get(3));
+        assertEquals(Phrases.rule(0, 3, Phrases.oneOf(0, "sorry"), Phrases.oneOf(1, "ready"), Phrases.oneOf(2, ""),
+                Phrases.oneOf(3, ""), Phrases.oneOf(4, "")), phrases.get(3));
 
         assertEquals(4, phrases.size());
         assertEqualsFlattened(choices, phrases);

@@ -53,6 +53,11 @@ public class Phrases extends ArrayList<Rule> {
         this.choiceCount = choiceCount;
     }
 
+    Phrases(int choiceCount, List<Rule> rules) {
+        this.choiceCount = choiceCount;
+        addAll(rules);
+    }
+
     /**
      * Flatten phrases to input strings
      * 
@@ -142,7 +147,10 @@ public class Phrases extends ArrayList<Rule> {
             recurse(phrases, Collections.singletonList(group), groupIndex++, 0);
         }
 
-        return phrases;
+        // remove completely empty rules that might have been added as a result of processing optional parts
+        // TODO blank OneOf elements are suppressed by the SRGSBuilder
+        return new Phrases(phrases.choiceCount,
+                phrases.stream().filter(rule -> !rule.isBlank()).collect(Collectors.toList()));
     }
 
     // TODO Improve performance by providing sliced choice strings as input (saves us from rebuilding strings)

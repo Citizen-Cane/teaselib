@@ -1,11 +1,9 @@
 package teaselib.core.speechrecognition;
 
-import static java.util.Arrays.asList;
-import static org.junit.Assert.assertEquals;
-import static teaselib.core.speechrecognition.SpeechRecogntionTestUtils.assertRecognized;
-import static teaselib.core.speechrecognition.SpeechRecogntionTestUtils.assertRejected;
-import static teaselib.core.speechrecognition.SpeechRecogntionTestUtils.withoutPunctation;
-import static teaselib.core.speechrecognition.srgs.Phrases.oneOf;
+import static java.util.Arrays.*;
+import static org.junit.Assert.*;
+import static teaselib.core.speechrecognition.SpeechRecogntionTestUtils.*;
+import static teaselib.core.speechrecognition.srgs.Phrases.*;
 
 import java.util.Arrays;
 
@@ -159,7 +157,8 @@ public class SpeechRecognitionComplexTest {
         assertEquals(Phrases.rule(0, 0, Phrases.oneOf(0, "Yes Miss", "Yes"), Phrases.oneOf(1, "No Miss", "No")),
                 phrases.get(0));
         assertEquals(Phrases.rule(0, 1, Phrases.oneOf(Arrays.asList(0, 1), "of course")), phrases.get(1));
-        assertEquals(Phrases.rule(0, 2, Phrases.oneOf(0, "Miss"), Phrases.oneOf(1, "not Miss", "not")), phrases.get(2));
+        assertEquals(Phrases.rule(0, 2, Phrases.oneOf(0, "", "Miss"), Phrases.oneOf(1, "not Miss", "not")),
+                phrases.get(2));
     }
 
     @Test
@@ -248,7 +247,8 @@ public class SpeechRecognitionComplexTest {
         assertEquals(Phrases.rule(0, 0, Phrases.oneOf(0, "Yes Miss", "Yes"), Phrases.oneOf(1, "No Miss", "No")),
                 phrases.get(0));
         assertEquals(Phrases.rule(0, 1, Phrases.oneOf(Arrays.asList(0, 1), "of course")), phrases.get(1));
-        assertEquals(Phrases.rule(0, 2, Phrases.oneOf(0, "Miss"), Phrases.oneOf(1, "not Miss", "not")), phrases.get(2));
+        assertEquals(Phrases.rule(0, 2, Phrases.oneOf(0, "", "Miss"), Phrases.oneOf(1, "not Miss", "not")),
+                phrases.get(2));
         assertEquals(Phrases.rule(1, 0, Phrases.oneOf(0, "I"), Phrases.oneOf(1, "I don't")), phrases.get(3));
         assertEquals(Phrases.rule(0, 1, Phrases.oneOf(Arrays.asList(0, 1), "have it")), phrases.get(4));
 

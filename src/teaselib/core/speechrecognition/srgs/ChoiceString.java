@@ -28,7 +28,7 @@ class ChoiceString {
 
     public List<ChoiceString> words() {
         if (phrase.isEmpty()) {
-            return Collections.emptyList();
+            return Collections.singletonList(this);
         } else {
             String[] words = phrase.split("[ .:,;\t\n_()]+");
             List<ChoiceString> collect = Arrays.stream(words).map(word -> new ChoiceString(word, choice))

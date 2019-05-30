@@ -73,43 +73,46 @@ public class SRGSBuilder extends AbstractSRGSBuilder {
 
     private void createRule(Element grammar, Rule rule) {
         for (OneOf items : rule) {
-            String id = items.isCommon() ? ruleName(rule) : choiceName(rule, items);
-            Element ruleElement = createRule(id);
-            grammar.appendChild(ruleElement);
+            if (!items.isBlank()) {
+                String id = items.isCommon() ? ruleName(rule) : choiceName(rule, items);
+                Element ruleElement = createRule(id);
+                grammar.appendChild(ruleElement);
 
-            if (items.size() == 1) {
-                String text = items.iterator().next();
-                appendText(ruleElement, text);
-            } else {
-                // TODO each group must be sorted into a different one-of item inside the main rule
-                // SpeechRecognitionTest.testSRGSBuilderMultiplePhrasesOfMultipleChoicesAreDistinctWithoutOptionalParts()
-                // FIX all groups end up in the same </item> node -> should be another <one-of>
-                Element oneOf = document.createElement("one-of");
-                for (String text : items) {
-                    // TODO starting or ending with the same words makes the distinct part optional ("No" vs "No Miss")
-                    // -> must be a separate rule path
-                    // TODO Empty items make the whole rule optional
-                    // -> must be a separate rule path
-                    Element item = document.createElement("item");
-                    oneOf.appendChild(item);
-                    appendText(item, text);
+                if (items.size() == 1) {
+                    String text = items.iterator().next();
+                    appendText(ruleElement, text);
+                } else {
+                    // TODO each group must be sorted into a different one-of item inside the main rule
+                    // SpeechRecognitionTest.testSRGSBuilderMultiplePhrasesOfMultipleChoicesAreDistinctWithoutOptionalParts()
+                    // FIX all groups end up in the same </item> node -> should be another <one-of>
+                    Element oneOf = document.createElement("one-of");
+                    for (String text : items) {
+                        // starting or ending with the same words makes the distinct part optional
+                        // ("No" vs "No Miss")
+                        // TODO for exact recognition generate separate rule path
+                        Element item = document.createElement("item");
+                        oneOf.appendChild(item);
+                        appendText(item, text);
+                    }
+                    ruleElement.appendChild(oneOf);
                 }
-                ruleElement.appendChild(oneOf);
             }
         }
     }
 
     private void addRuleToInventory(Map<String, Element> inventoryItems, Rule rule) {
         for (OneOf items : rule) {
-            if (items.isCommon()) {
-                if (rule.size() > 1) {
-                    throw new IllegalArgumentException("There may be only one entry per common rule");
+            if (!items.isBlank()) {
+                if (items.isCommon()) {
+                    if (rule.size() > 1) {
+                        throw new IllegalArgumentException("There may be only one entry per common rule");
+                    }
+                    // TODO optimize by adding common start/end rules directly to main rule
+                    appendRuleRefToAllChoices(inventoryItems, rule);
+                } else {
+                    Element element = inventoryItems.get(inventoryKey(rule, items));
+                    element.appendChild(ruleRef(choiceName(rule, items)));
                 }
-                // TODO optimize by adding common start/end rules directly to main rule
-                appendRuleRefToAllChoices(inventoryItems, rule);
-            } else {
-                Element element = inventoryItems.get(inventoryKey(rule, items));
-                element.appendChild(ruleRef(choiceName(rule, items)));
             }
         }
     }

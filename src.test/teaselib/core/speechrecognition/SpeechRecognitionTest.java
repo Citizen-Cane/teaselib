@@ -1,7 +1,8 @@
 package teaselib.core.speechrecognition;
 
-import static teaselib.core.speechrecognition.SpeechRecogntionTestUtils.assertRecognized;
-import static teaselib.core.speechrecognition.SpeechRecogntionTestUtils.assertRejected;
+import static teaselib.core.speechrecognition.SpeechRecogntionTestUtils.*;
+
+import java.util.Arrays;
 
 import org.junit.Test;
 
@@ -61,6 +62,25 @@ public class SpeechRecognitionTest {
         assertRecognized(choices, "Dear Mistress I didn't spurt off Miss", new Prompt.Result(1));
         assertRejected(choices, "I didn't spurt my load Miss");
         assertRejected(choices, "Dear Mistress I didn't spurt off");
+    }
+
+    @Test
+    public void testSimpleSRirregularPhrases() throws InterruptedException {
+        String sorry = "No Miss, I'm sorry";
+        String ready = "Yes Miss, I'm ready";
+        String haveIt = "I have it, Miss";
+        String ready2 = "Yes,it's ready, Miss";
+        String ready3 = "It's ready, Miss";
+
+        Choices choices = new Choices(Arrays.asList(new Choice(sorry), new Choice(ready), new Choice(haveIt),
+                new Choice(ready2), new Choice(ready3)));
+
+        assertRecognized(choices, sorry, new Prompt.Result(0));
+        assertRecognized(choices, ready, new Prompt.Result(1));
+        // TODO builds srgs as "I have it I'm" because I'm is treated as common for all choices but is only for 0 & 1
+        assertRecognized(choices, haveIt, new Prompt.Result(2));
+        assertRecognized(choices, ready2, new Prompt.Result(3));
+        assertRecognized(choices, ready3, new Prompt.Result(4));
     }
 
 }

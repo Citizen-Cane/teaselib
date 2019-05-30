@@ -66,6 +66,10 @@ public class OneOf extends ArrayList<String> {
         }
     }
 
+    public boolean isBlank() {
+        return isEmpty() || stream().allMatch(String::isBlank);
+    }
+
     @Override
     public String toString() {
         if (isCommon()) {

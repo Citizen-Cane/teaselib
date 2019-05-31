@@ -1,7 +1,6 @@
 package teaselib.core.javacv.util;
 
-import static org.bytedeco.javacpp.opencv_imgproc.approxPolyDP;
-import static org.bytedeco.javacpp.opencv_imgproc.boundingRect;
+import static org.bytedeco.javacpp.opencv_imgproc.*;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -28,19 +27,20 @@ public class Geom {
     public static List<Partition<Rect>.Group> partition(List<Rect> rectangles, int distance) {
         final int distance2 = distance * distance;
         Partition.Similarity<Rect> closeToEachOther = (rect1, rect2) -> distance2(rect1, rect2) < distance2;
-        Partition.Join<Rect> joinRectangles = (rect1, rect2) -> {
+        Partition.JoinOrderingElement<Rect> joinRectangles = (rect1, rect2) -> {
             Rect group = new Rect(rect1);
             join(group, rect2, group);
             return group;
         };
-        Comparator<Rect> largest = (r1, r2) -> r1.area() - r2.area();
+        Comparator<Rect> largest = (r1, r2) -> r2.area() - r1.area();
         Partition<Rect> partition = new Partition<>(rectangles, closeToEachOther, joinRectangles, largest);
         return partition.groups;
     }
 
     public static Point center(List<Rect> rectangles) {
-        Rect join = join(rectangles);
-        return join != null ? center(join) : null;
+        try (Rect join = join(rectangles);) {
+            return join != null ? center(join) : null;
+        }
     }
 
     public static int distance2(Point p1, Point p2) {

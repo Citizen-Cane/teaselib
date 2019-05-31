@@ -9,10 +9,6 @@ public class OneOf extends ArrayList<String> {
 
     final List<Integer> choices;
 
-    // public OneOf(int choices) {
-    // this.choices = choices;
-    // }
-
     public OneOf(List<Integer> choices, int capacity) {
         super(capacity);
         this.choices = choices;
@@ -21,10 +17,6 @@ public class OneOf extends ArrayList<String> {
     public OneOf(List<Integer> choices, String item) {
         this(choices, Collections.singletonList(item));
     }
-
-    // public OneOf(int choiceIndex, String... items) {
-    // this(choiceIndex, Arrays.asList(items));
-    // }
 
     public OneOf(List<Integer> choices, List<String> items) {
         this.choices = choices;

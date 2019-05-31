@@ -5,6 +5,7 @@ import static java.util.stream.Collectors.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -59,9 +60,9 @@ public class Phrases extends ArrayList<Rule> {
     }
 
     /**
-     * Flatten phrases to input strings
+     * Flattens phrases to input strings.
      * 
-     * @return A list containing the first phrase of each choice
+     * @return A list containing the first phrase of each choice.
      */
     public Sequences<String> flatten() {
         int choices = choices();
@@ -84,6 +85,7 @@ public class Phrases extends ArrayList<Rule> {
                             String word = "";
                             if (rule.group == group && rule.index == ruleIndex) {
                                 for (OneOf items : rule) {
+                                    // The sequence of the items in OneOf matters
                                     if (items.choices.contains(choiceIndex) || items.choices.contains(COMMON_RULE)) {
                                         word = items.iterator().next();
                                         choiceProcessed = true;
@@ -148,7 +150,7 @@ public class Phrases extends ArrayList<Rule> {
         }
 
         // remove completely empty rules that might have been added as a result of processing optional parts
-        // TODO blank OneOf elements are suppressed by the SRGSBuilder
+        // + blank OneOf elements are suppressed later on by the SRGSBuilder
         return new Phrases(phrases.choiceCount,
                 phrases.stream().filter(rule -> !rule.isBlank()).collect(Collectors.toList()));
     }
@@ -207,15 +209,15 @@ public class Phrases extends ArrayList<Rule> {
                     // TODO continue with rest of slice -> rebuild sequence instead of strings
                     List<ChoiceString> flattened = Sequences.flatten(sliced, first.equalsOperator,
                             first.joinSequenceOperator);
-                    List<Partition<ChoiceString>.Group> next = new Partition<>(flattened,
-                            Phrases::haveCommonParts).groups;
+                    Comparator<ChoiceString> reverse_sortOrder = (a, b) -> flattened.indexOf(a) - flattened.indexOf(b);
+                    List<Partition<ChoiceString>.Group> next = new Partition<>(flattened, Phrases::haveCommonParts,
+                            reverse_sortOrder).groups;
                     recurse(phrases, next, groupIndex, ruleIndex);
                 }
             }
         }
     }
 
-    // TODO OneOf can be a set (I guess) so let's collect to set directlywhen everyting else has been settled
     private static List<String> distinct(List<String> items) {
         return items.stream().distinct().collect(Collectors.toList());
     }

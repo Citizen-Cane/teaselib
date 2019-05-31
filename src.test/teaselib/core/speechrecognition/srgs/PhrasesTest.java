@@ -20,7 +20,7 @@ public class PhrasesTest {
                 "Yes Miss, of course", //
                 "Of course not, Miss");
 
-        fail("TODO Define how this should be split other than in a signle rule");
+        fail("TODO Define how this should be split up other than into a single rule");
 
         assertEquals(Phrases.rule(0, 0, "Yes Miss", ""), phrases.get(0));
         assertEquals(Phrases.rule(0, 1, Phrases.oneOf(Arrays.asList(0, 1), "of course")), phrases.get(1));

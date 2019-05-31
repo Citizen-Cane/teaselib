@@ -91,15 +91,16 @@ public class PhrasesSmokeTest {
         Choices choices = multiplePhrasesOfMultipleChoicesAreDistinct();
         Phrases phrases = Phrases.of(choices);
 
+        assertEqualsFlattened(choices, phrases);
+
         assertEquals(Phrases.rule(0, 0, Phrases.oneOf(0, "Yes Miss", "Yes"), Phrases.oneOf(1, "No Miss", "No")),
                 phrases.get(0));
         assertEquals(Phrases.rule(0, 1, Phrases.oneOf(Arrays.asList(0, 1), "of course")), phrases.get(1));
-        assertEquals(Phrases.rule(0, 2, Phrases.oneOf(0, "", "Miss"), Phrases.oneOf(1, "not Miss", "not")),
+        assertEquals(Phrases.rule(0, 2, Phrases.oneOf(0, "", "Miss"), Phrases.oneOf(1, "not", "not Miss")),
                 phrases.get(2));
 
         assertEquals(3, phrases.size());
         // TODO Flatten fails because optional phrase parts didn't make it into rule 2 -> recognition fails as well
-        assertEqualsFlattened(choices, phrases);
     }
 
     private static Choices multipleChoicesAlternativePhrases() {
@@ -149,7 +150,7 @@ public class PhrasesSmokeTest {
         assertEquals(Phrases.rule(0, 0, Phrases.oneOf(0, "Yes Miss", "Yes"), Phrases.oneOf(1, "No Miss", "No")),
                 phrases.get(0));
         assertEquals(Phrases.rule(0, 1, Phrases.oneOf(Arrays.asList(0, 1), "of course")), phrases.get(1));
-        assertEquals(Phrases.rule(0, 2, Phrases.oneOf(0, "", "Miss"), Phrases.oneOf(1, "not Miss", "not")),
+        assertEquals(Phrases.rule(0, 2, Phrases.oneOf(0, "", "Miss"), Phrases.oneOf(1, "not", "not Miss")),
                 phrases.get(2));
         assertEquals(Phrases.rule(1, 0, Phrases.oneOf(0, "I"), Phrases.oneOf(1, "I don't")), phrases.get(3));
         assertEquals(Phrases.rule(1, 1, Phrases.oneOf(Arrays.asList(0, 1), "have it")), phrases.get(4));
@@ -157,6 +158,46 @@ public class PhrasesSmokeTest {
         assertEquals(5, phrases.size());
         // TODO Flatten fails because optional phrase parts didn't make it into rule 2 -> recognition fails as well
         assertEqualsFlattened(choices, phrases);
+    }
+
+    @Test
+    public void testSliceMultipleGroupsDifferentPhraseOrdering() {
+        String[] yes = { "I have it", "Yes, of course, Miss", "Yes Miss, of course" };
+        String[] no = { "I don't have it", "No, of course not, Miss", "No Miss, of course not" };
+        Choices choices = new Choices(new Choice("Yes", "Yes", yes), new Choice("No", "No", no));
+        Phrases phrases = Phrases.of(choices);
+
+        assertEquals(Phrases.rule(0, 0, Phrases.oneOf(0, "I"), Phrases.oneOf(1, "I don't")), phrases.get(0));
+        assertEquals(Phrases.rule(0, 1, Phrases.oneOf(Arrays.asList(0, 1), "have it")), phrases.get(1));
+        assertEquals(Phrases.rule(1, 0, Phrases.oneOf(0, "Yes", "Yes Miss"), Phrases.oneOf(1, "No", "No Miss")),
+                phrases.get(2));
+        assertEquals(Phrases.rule(1, 1, Phrases.oneOf(Arrays.asList(0, 1), "of course")), phrases.get(3));
+        assertEquals(Phrases.rule(1, 2, Phrases.oneOf(0, "Miss", ""), Phrases.oneOf(1, "not Miss", "not")),
+                phrases.get(4));
+
+        assertEquals(5, phrases.size());
+        // TODO Flatten fails because optional phrase parts didn't make it into rule 2 -> recognition fails as well
+        assertEqualsFlattened(choices, phrases);
+    }
+
+    @Test
+    public void testSliceMultipleGroupsDifferentPhraseOrderingGroupsMixed() {
+        String[] yes = { "I have it", "Yes, of course, Miss", "Yes Miss, of course" };
+        String[] no = { "No, of course not, Miss", "I don't have it", "No Miss, of course not" };
+        Choices choices = new Choices(new Choice("Yes", "Yes", yes), new Choice("No", "No", no));
+        Phrases phrases = Phrases.of(choices);
+
+        assertEquals(Phrases.rule(0, 0, Phrases.oneOf(0, "I"), Phrases.oneOf(1, "I don't")), phrases.get(0));
+        assertEquals(Phrases.rule(0, 1, Phrases.oneOf(Arrays.asList(0, 1), "have it")), phrases.get(1));
+        assertEquals(Phrases.rule(1, 0, Phrases.oneOf(0, "Yes", "Yes Miss"), Phrases.oneOf(1, "No", "No Miss")),
+                phrases.get(2));
+        assertEquals(Phrases.rule(1, 1, Phrases.oneOf(Arrays.asList(0, 1), "of course")), phrases.get(3));
+        assertEquals(Phrases.rule(1, 2, Phrases.oneOf(0, "Miss", ""), Phrases.oneOf(1, "not Miss", "not")),
+                phrases.get(4));
+
+        assertEquals(5, phrases.size());
+        // TODO Flatten fails because optional phrase parts didn't make it into rule 2 -> recognition fails as well
+        assertFlattenedMatchesPhrases(choices, phrases);
     }
 
     @Test
@@ -204,6 +245,21 @@ public class PhrasesSmokeTest {
         List<String> allChoices = firstOfEach(choices).stream().map(SpeechRecogntionTestUtils::withoutPunctation)
                 .collect(toList());
         assertEquals(allChoices, flattened.toStrings());
+    }
+
+    private static void assertFlattenedMatchesPhrases(Choices choices, Phrases phrases) {
+        Sequences<String> flattened = phrases.flatten();
+        assertEquals(choices.size(), flattened.size());
+
+        List<String> allChoices = all(choices).stream().map(SpeechRecogntionTestUtils::withoutPunctation)
+                .collect(toList());
+        flattened.toStrings().stream().forEach(phrase -> {
+            assertTrue("Not found: " + phrase, allChoices.contains(phrase));
+        });
+    }
+
+    private static List<String> all(Choices choices) {
+        return choices.stream().flatMap(p -> p.phrases.stream()).collect(toList());
     }
 
     private static List<String> firstOfEach(Choices choices) {

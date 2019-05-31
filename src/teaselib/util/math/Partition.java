@@ -15,18 +15,18 @@ public class Partition<K> implements Iterable<Partition<K>.Group> {
     }
 
     @FunctionalInterface
-    public static interface Join<K> {
+    public static interface JoinOrderingElement<K> {
         K groups(K item1, K item2);
     }
 
     public final List<Group> groups;
     final Similarity<K> similarity;
-    final Join<K> join;
+    final JoinOrderingElement<K> orderingElementJoiner;
 
     public class Group implements Iterable<K> {
         public final List<K> items;
         private final List<K> writableItems;
-        private K orderingElement;
+        public K orderingElement;
 
         Group(K item) {
             this.writableItems = new ArrayList<>();
@@ -36,7 +36,7 @@ public class Partition<K> implements Iterable<Partition<K>.Group> {
         }
 
         void join(Group group) {
-            orderingElement = join.groups(orderingElement, group.orderingElement);
+            orderingElement = orderingElementJoiner.groups(orderingElement, group.orderingElement);
             writableItems.addAll(group.items);
         }
 
@@ -69,17 +69,28 @@ public class Partition<K> implements Iterable<Partition<K>.Group> {
         }
     }
 
+    static <K> JoinOrderingElement<K> defaultOrderingElementJoiner() {
+        return (a, b) -> a;
+    }
+
     public Partition(List<K> items, Similarity<K> similarity) {
-        this(items, similarity, (a, b) -> a, null);
+        this(items, similarity, defaultOrderingElementJoiner(), null);
     }
 
-    public Partition(List<K> items, Similarity<K> similarity, Join<K> joiner) {
-        this(items, similarity, joiner, null);
+    public Partition(List<K> items, Similarity<K> similarity, JoinOrderingElement<K> orderingElementJoiner) {
+        this(items, similarity, orderingElementJoiner, null);
     }
 
-    public Partition(List<K> items, Similarity<K> similarity, Join<K> joiner, Comparator<K> comperator) {
+    public Partition(List<K> items, Similarity<K> similarity, Comparator<K> comperator) {
         this.similarity = similarity;
-        this.join = joiner;
+        this.orderingElementJoiner = defaultOrderingElementJoiner();
+        this.groups = Collections.unmodifiableList(partitionOf(items, comperator));
+    }
+
+    public Partition(List<K> items, Similarity<K> similarity, JoinOrderingElement<K> orderingElementJoiner,
+            Comparator<K> comperator) {
+        this.similarity = similarity;
+        this.orderingElementJoiner = orderingElementJoiner;
         this.groups = Collections.unmodifiableList(partitionOf(items, comperator));
     }
 
@@ -139,8 +150,9 @@ public class Partition<K> implements Iterable<Partition<K>.Group> {
     }
 
     private List<Group> sortByOrderingElementLargestFirst(List<Group> groups, Comparator<K> comperator) {
-        Comparator<Group> c = (Group g1, Group g2) -> -comperator.compare(g1.orderingElement, g2.orderingElement);
+        Comparator<Group> c = (Group g1, Group g2) -> comperator.compare(g1.orderingElement, g2.orderingElement);
         Collections.sort(groups, c);
+        groups.stream().forEach(group -> Collections.sort(group.writableItems, comperator));
         return groups;
     }
 

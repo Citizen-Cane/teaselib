@@ -77,7 +77,6 @@ public class SpeechRecognitionTest {
 
         assertRecognized(choices, sorry, new Prompt.Result(0));
         assertRecognized(choices, ready, new Prompt.Result(1));
-        // TODO builds srgs as "I have it I'm" because I'm is treated as common for all choices but is only for 0 & 1
         assertRecognized(choices, haveIt, new Prompt.Result(2));
         assertRecognized(choices, ready2, new Prompt.Result(3));
         assertRecognized(choices, ready3, new Prompt.Result(4));

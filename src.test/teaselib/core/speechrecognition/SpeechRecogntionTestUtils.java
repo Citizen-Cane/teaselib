@@ -1,8 +1,7 @@
 package teaselib.core.speechrecognition;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static java.util.stream.Collectors.*;
+import static org.junit.Assert.*;
 
 import java.util.Arrays;
 import java.util.List;
@@ -12,6 +11,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import teaselib.core.speechrecognition.implementation.TeaseLibSRGS;
+import teaselib.core.speechrecognition.srgs.Phrases;
+import teaselib.core.speechrecognition.srgs.Sequences;
 import teaselib.core.speechrecognition.srgs.StringSequence;
 import teaselib.core.ui.Choices;
 import teaselib.core.ui.Prompt;
@@ -89,6 +90,34 @@ public class SpeechRecogntionTestUtils {
         } finally {
             prompt.lock.unlock();
         }
+    }
+
+    public static void assertEqualsFlattened(Choices choices, Phrases phrases) {
+        Sequences<String> flattened = phrases.flatten();
+        assertEquals(choices.size(), flattened.size());
+
+        List<String> allChoices = firstOfEach(choices).stream().map(SpeechRecogntionTestUtils::withoutPunctation)
+                .collect(toList());
+        assertEquals(allChoices, flattened.toStrings());
+    }
+
+    public static void assertFlattenedMatchesPhrases(Choices choices, Phrases phrases) {
+        Sequences<String> flattened = phrases.flatten();
+        assertEquals(choices.size(), flattened.size());
+
+        List<String> allChoices = all(choices).stream().map(SpeechRecogntionTestUtils::withoutPunctation)
+                .collect(toList());
+        flattened.toStrings().stream().forEach(phrase -> {
+            assertTrue("Not found: " + phrase, allChoices.contains(phrase));
+        });
+    }
+
+    private static List<String> all(Choices choices) {
+        return choices.stream().flatMap(p -> p.phrases.stream()).collect(toList());
+    }
+
+    private static List<String> firstOfEach(Choices choices) {
+        return choices.stream().map(p -> p.phrases.get(0)).collect(toList());
     }
 
 }

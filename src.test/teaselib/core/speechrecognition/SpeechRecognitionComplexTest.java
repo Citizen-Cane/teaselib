@@ -31,21 +31,7 @@ public class SpeechRecognitionComplexTest {
         Phrases phrases = Phrases.of(choices);
 
         assertEquals(1, phrases.size());
-
-        // TODO Figure out how to turn "of course" into a common phrase
-
-        // // correctly Split into groups to avoid ambiguity caused by optiona parts
-        // assertEquals(0, phrases.get(0).group);
-        // assertEquals(1, phrases.get(1).group);
-        //
-        // // TODO Split groups into common and choice parts
-        // // - "of course" is still a common item after eliminating ambitious optional parts
-        //
-        // assertEquals(4, phrases.size());
-        // assertEquals(Phrases.rule(0, 0, "Yes Miss"), phrases.get(0));
-        // assertEquals(Phrases.rule(1, 0, "Of course"), phrases.get(1));
-        // assertEquals(Phrases.rule(1, 1, "Of course"), phrases.get(2));
-        // assertEquals(Phrases.rule(1, 1, "Miss"), phrases.get(3));
+        assertEqualsFlattened(choices, phrases);
     }
 
     @Test
@@ -60,7 +46,6 @@ public class SpeechRecognitionComplexTest {
         assertRejected(choices, "Of course of course");
         assertRejected(choices, withoutPunctation("Yes Miss, of course of course"));
         assertRejected(choices, withoutPunctation("Of course of course, Miss"));
-
     }
 
     private static Choices multipleChoicesAlternativePhrases() {
@@ -77,17 +62,7 @@ public class SpeechRecognitionComplexTest {
 
         assertEquals(1, phrases.size());
         assertEquals(2, phrases.get(0).size());
-
-        // TODO turn "Of course" into common phrase but denote it as choice= 0 at the same time - use different group?
-
-        // assertEquals(3, phrases.size());
-        //
-        // assertEquals(Phrases.rule(0, 0, Phrases.oneOf(0, "Yes Miss", "Yes", ""), Phrases.oneOf(1, "No Miss", "No",
-        // "")),
-        // phrases.get(0));
-        // assertEquals(Phrases.rule(0, 1, Phrases.oneOf(Phrases.COMMON_RULE, "of course")), phrases.get(1));
-        // assertEquals(Phrases.rule(0, 2, Phrases.oneOf(0, "", "Miss"), Phrases.oneOf(1, "not", "not Miss")),
-        // phrases.get(2));
+        assertEqualsFlattened(choices, phrases);
     }
 
     @Test
@@ -120,16 +95,11 @@ public class SpeechRecognitionComplexTest {
         Choices choices = optionalPhraseToDistiniguishMulitpleChoices();
         Phrases phrases = Phrases.of(choices);
 
-        assertEquals(2, phrases.size());
-        // TODO Empty One-Of element of choice 0 fails in SRGSBuilder
         assertEquals(Phrases.rule(0, 0, Phrases.oneOf(0, "I"), Phrases.oneOf(1, "I don't")), phrases.get(0));
         assertEquals(Phrases.rule(0, 1, Phrases.oneOf(Arrays.asList(0, 1), "have it")), phrases.get(1));
 
-        // assertEquals(3, phrases.size());
-        // // TODO Empty One-Of element of choice 0 fails in SRGSBuilder
-        // assertEquals(Phrases.rule(0, 0, Phrases.oneOf(Phrases.COMMON_RULE, "I")), phrases.get(0));
-        // assertEquals(Phrases.rule(0, 1, Phrases.oneOf(0, ""), Phrases.oneOf(1, "don't")), phrases.get(1));
-        // assertEquals(Phrases.rule(0, 2, Phrases.oneOf(Phrases.COMMON_RULE, "have it")), phrases.get(2));
+        assertEquals(2, phrases.size());
+        assertEqualsFlattened(choices, phrases);
     }
 
     @Test
@@ -151,21 +121,20 @@ public class SpeechRecognitionComplexTest {
         Choices choices = multiplePhrasesOfMultipleChoicesAreDistinct();
         Phrases phrases = Phrases.of(choices);
 
-        // TODO All optional phrases are reduced - but "of course" should be common
-        // -> join only one common rule, or better none at all
         assertEquals(3, phrases.size());
         assertEquals(Phrases.rule(0, 0, Phrases.oneOf(0, "Yes Miss", "Yes"), Phrases.oneOf(1, "No Miss", "No")),
                 phrases.get(0));
         assertEquals(Phrases.rule(0, 1, Phrases.oneOf(Arrays.asList(0, 1), "of course")), phrases.get(1));
         assertEquals(Phrases.rule(0, 2, Phrases.oneOf(0, "", "Miss"), Phrases.oneOf(1, "not", "not Miss")),
                 phrases.get(2));
+
+        assertEqualsFlattened(choices, phrases);
     }
 
     @Test
     public void testSRGSBuilderMultiplePhrasesOfMultipleChoicesAreDistinct() throws InterruptedException {
         Choices choices = multiplePhrasesOfMultipleChoicesAreDistinct();
 
-        // TODO Flatten fails because optional phrase parts didn0't make it into rule 2
         assertRecognized(choices, withoutPunctation("Yes Miss, of course"), new Prompt.Result(0, 0));
         assertRecognized(choices, withoutPunctation("Yes, of course, Miss"), new Prompt.Result(0, 0));
         assertRecognized(choices, withoutPunctation("Yes, of course"), new Prompt.Result(0, 0));
@@ -197,15 +166,8 @@ public class SpeechRecognitionComplexTest {
         Choices choices = multipleChoicesAlternativePhrasesWithOptionalPartsAreDistinct();
         Phrases phrases = Phrases.of(choices);
 
-        // TODO first group sliced on single rule as in testSliceMultipleChoicesAlternativePhrases()
-        assertEquals(Phrases.rule(0, 0, Phrases.oneOf(0, "Yes Miss", "Yes"), Phrases.oneOf(1, "No Miss", "No")),
-                phrases.get(0));
-        assertEquals(Phrases.rule(0, 1, Phrases.oneOf(Arrays.asList(0, 1), "of course")), phrases.get(1));
-        assertEquals(Phrases.rule(0, 2, Phrases.oneOf(0, "Miss"), Phrases.oneOf(1, "not Miss", "not")), phrases.get(2));
-        assertEquals(Phrases.rule(1, 0, Phrases.oneOf(0, "I"), Phrases.oneOf(1, "I don't")), phrases.get(2));
-        assertEquals(Phrases.rule(0, 1, Phrases.oneOf(Arrays.asList(0, 1), "have it")), phrases.get(1));
-
-        assertEquals(5, phrases.size());
+        assertEquals(3, phrases.size());
+        assertEqualsFlattened(choices, phrases);
     }
 
     @Test
@@ -253,6 +215,7 @@ public class SpeechRecognitionComplexTest {
         assertEquals(Phrases.rule(0, 1, Phrases.oneOf(Arrays.asList(0, 1), "have it")), phrases.get(4));
 
         assertEquals(5, phrases.size());
+        assertEqualsFlattened(choices, phrases);
     }
 
     @Test
@@ -260,7 +223,6 @@ public class SpeechRecognitionComplexTest {
             throws InterruptedException {
         Choices choices = multiplePhrasesOfMultipleChoicesAreDistinctWithoutOptionalParts();
 
-        // TODO Flatten fails because optional phrase parts didn't make it into rule 2 -> recognition fails as well
         assertRecognized(choices, withoutPunctation("Yes Miss, of course"), new Prompt.Result(0, 0));
         assertRecognized(choices, withoutPunctation("Yes, of course, Miss"), new Prompt.Result(0, 0, 0, 0));
         assertRecognized(choices, withoutPunctation("Yes, of course"), new Prompt.Result(0, 0, 0, 0));
@@ -295,17 +257,17 @@ public class SpeechRecognitionComplexTest {
 
         assertEquals(3, phrases.size());
 
-        // TODO the first rule has to be a common rule but isn't
         assertEquals(Phrases.rule(0, 0, oneOf(asList(0, 1), "Dear", "Please")), phrases.get(0));
         assertEquals(Phrases.rule(0, 1, oneOf(asList(0, 1), "mistress may I")), phrases.get(1));
         assertEquals(Phrases.rule(0, 2, oneOf(0, "cum"), oneOf(1, "wank")), phrases.get(2));
+
+        assertEqualsFlattened(choices, phrases);
     }
 
     @Test
     public void testSRGSBuilderPhrasesWithSeveralCommonStartGroups() throws InterruptedException {
         Choices choices = phrasesWithMultipleCommonStartGroups();
 
-        // TODO recognition fails because the first rule has to be a common rule but isn't
         assertRecognized(choices, withoutPunctation("Dear mistress, may I cum"), new Prompt.Result(0));
         assertRecognized(choices, withoutPunctation("Please mistress, may I cum"), new Prompt.Result(0));
 
@@ -319,6 +281,59 @@ public class SpeechRecognitionComplexTest {
         assertRejected(choices, "May I wank");
 
         assertRejected(choices, "Mistress, may I");
+    }
+
+    private static Choices identicalPhrasesInDifferentChoices() {
+        String[] yes = { "Yes Miss, of course", "Yes, of course, Miss" };
+        String[] no = { "Yes Miss, of course", "No, of course not, Miss" };
+        return new Choices(new Choice("Yes #title, of course", "Yes Miss, of course", yes),
+                new Choice("No #title, of course not", "No Miss, of course not", no));
+    }
+
+    @Test
+    public void testSliceIdenticalPhrasesInDifferentChoices() {
+        Choices choices = identicalPhrasesInDifferentChoices();
+        Phrases phrases = Phrases.of(choices);
+
+        assertEquals(4, phrases.size());
+        assertEqualsFlattened(choices, phrases);
+    }
+
+    @Test
+    public void testSRGSBuilderIdenticalPhrasesInDifferentChoices() throws InterruptedException {
+        Choices choices = identicalPhrasesInDifferentChoices();
+
+        assertRecognized(choices, withoutPunctation("Yes, of course, Miss"), new Prompt.Result(0));
+        assertRecognized(choices, withoutPunctation("No, of course not, Miss"), new Prompt.Result(1));
+
+        assertRejected(choices, "Yes Miss, of course");
+    }
+
+    private static Choices oneOfCommonAndChoicesMixed() {
+        String[] yes = { "Yes Miss, of course", "Yes, of course, Miss" };
+        String[] no = { "No Miss, of course", "No, of course not, Miss" };
+        return new Choices(new Choice("Yes #title, of course", "Yes Miss, of course", yes),
+                new Choice("No #title, of course not", "No Miss, of course not", no));
+    }
+
+    @Test
+    public void testSliceOneOfCommonAndChoicesMixed() {
+        Choices choices = oneOfCommonAndChoicesMixed();
+        Phrases phrases = Phrases.of(choices);
+
+        assertEquals(4, phrases.size());
+        // TODO Flatten fails because the third rule's common(0,1) entry "Miss" appears before the empty choice 1 entry
+        assertEqualsFlattened(choices, phrases);
+    }
+
+    @Test
+    public void testSRGSBuilderOneOfCommonAndChoicesMixed() throws InterruptedException {
+        Choices choices = oneOfCommonAndChoicesMixed();
+
+        assertRecognized(choices, withoutPunctation("Yes Miss, of course"), new Prompt.Result(0));
+        assertRecognized(choices, withoutPunctation("Yes, of course, Miss"), new Prompt.Result(0));
+        assertRecognized(choices, withoutPunctation("No Miss, of course"), new Prompt.Result(1));
+        assertRecognized(choices, withoutPunctation("No, of course not, Miss"), new Prompt.Result(1));
     }
 
 }

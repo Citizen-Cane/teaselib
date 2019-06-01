@@ -186,22 +186,18 @@ public class Phrases extends ArrayList<Rule> {
                             .collect(toList());
                     List<String> strings = elements.stream().map(s -> s.phrase).distinct().collect(toList());
                     OneOf items = new OneOf(choices, strings);
-                    phrases.add(new Rule(groupIndex, ruleIndex, items));
+                    Rule rule = phrases.rule(groupIndex, ruleIndex);
+                    rule.add(items);
                 } else {
                     Function<? super ChoiceString, ? extends Integer> classifier = phrase -> phrase.choice;
                     Function<? super ChoiceString, ? extends String> mapper = phrase -> phrase.phrase;
                     Map<Integer, List<String>> items = first.stream().filter(sequence -> !sequence.isEmpty())
                             .map(first.joinSequenceOperator::apply)
-                            .collect(groupingBy(classifier, HashMap::new, Collectors.mapping(mapper, toList())));
+                            .collect(groupingBy(classifier, HashMap::new, mapping(mapper, toList())));
 
-                    Optional<Rule> optional = phrases.get(groupIndex, ruleIndex);
-                    Rule rule = optional.isPresent() ? optional.get() : new Rule(groupIndex, ruleIndex);
-                    // TODO Review whether to join OneOf choices & items
+                    Rule rule = phrases.rule(groupIndex, ruleIndex);
                     items.entrySet().stream().forEach(entry -> rule
                             .add(new OneOf(Collections.singletonList(entry.getKey()), distinct(entry.getValue()))));
-                    if (optional.isEmpty()) {
-                        phrases.add(rule);
-                    }
                 }
 
                 if (!sliced.isEmpty()) {
@@ -216,6 +212,15 @@ public class Phrases extends ArrayList<Rule> {
                 }
             }
         }
+    }
+
+    private Rule rule(int groupIndex, int ruleIndex) {
+        Optional<Rule> rule = get(groupIndex, ruleIndex);
+        if (!rule.isPresent()) {
+            rule = Optional.of(new Rule(groupIndex, ruleIndex));
+            add(rule.get());
+        }
+        return rule.get();
     }
 
     private static List<String> distinct(List<String> items) {

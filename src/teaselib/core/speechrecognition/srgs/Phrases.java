@@ -5,7 +5,6 @@ import static java.util.stream.Collectors.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -179,7 +178,7 @@ public class Phrases extends ArrayList<Rule> {
                     }
                 }
 
-                if (isCommon(first)) {
+                if (isAlreadyCommon(first)) {
                     List<Integer> choices = group.stream().map(p -> p.choice).distinct().collect(toList());
                     List<ChoiceString> elements = first.stream().map(first.joinSequenceOperator::apply).distinct()
                             .collect(toList());
@@ -187,6 +186,20 @@ public class Phrases extends ArrayList<Rule> {
                     OneOf items = new OneOf(choices, strings);
                     Rule rule = phrases.rule(groupIndex, ruleIndex);
                     rule.add(items);
+                } else if (!differentChoices(first)) {
+                    // TODO Create OneOf items for each different choice
+                    // - this should create a common(n,m) for each distinct phrase part
+                    // -> TODO map multiple phrase parts to multiple choices -> create test cases
+                    Function<? super ChoiceString, ? extends String> classifier = phrase -> phrase.phrase;
+                    Function<? super ChoiceString, ? extends Integer> mapper = phrase -> phrase.choice;
+                    Map<String, List<Integer>> items = first.stream().filter(sequence -> !sequence.isEmpty())
+                            .map(first.joinSequenceOperator::apply)
+                            .collect(groupingBy(classifier, HashMap::new, mapping(mapper, toList())));
+
+                    Rule rule = phrases.rule(groupIndex, ruleIndex);
+                    items.entrySet().stream().forEach(
+                            entry -> rule.add(new OneOf(entry.getValue(), Collections.singletonList(entry.getKey()))));
+                    // TODO Find out how this can supersede the else branch
                 } else {
                     Function<? super ChoiceString, ? extends Integer> classifier = phrase -> phrase.choice;
                     Function<? super ChoiceString, ? extends String> mapper = phrase -> phrase.phrase;
@@ -204,10 +217,7 @@ public class Phrases extends ArrayList<Rule> {
                     // TODO continue with rest of slice -> rebuild sequence instead of strings
                     List<ChoiceString> flattened = Sequences.flatten(sliced, first.equalsOperator,
                             first.joinSequenceOperator);
-                    Comparator<ChoiceString> reverse_sortOrder = (a, b) -> flattened.indexOf(a) - flattened.indexOf(b);
-                    Partition<ChoiceString> next = new Partition<>(flattened, Phrases::haveCommonParts,
-                            reverse_sortOrder);
-                    recurse(phrases, next.groups.stream().map(g -> g.items).collect(toList()), groupIndex, ruleIndex);
+                    recurse(phrases, Collections.singletonList(flattened), groupIndex, ruleIndex);
                 }
             }
         }
@@ -236,10 +246,6 @@ public class Phrases extends ArrayList<Rule> {
                 return true;
             }
         }
-    }
-
-    private static boolean isCommon(Sequences<ChoiceString> slice) {
-        return isAlreadyCommon(slice) || !differentChoices(slice);
     }
 
     private static boolean isAlreadyCommon(Sequences<ChoiceString> slice) {

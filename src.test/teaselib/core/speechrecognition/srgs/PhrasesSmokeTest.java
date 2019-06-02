@@ -273,11 +273,10 @@ public class PhrasesSmokeTest {
         assertEquals(Phrases.rule(0, 0, Phrases.oneOf(0, "No"), Phrases.oneOf(1, "Yes"), Phrases.oneOf(2, "I have it"),
                 Phrases.oneOf(3, "Yes it's ready"), Phrases.oneOf(4, "It's ready")), phrases.get(0));
         assertEquals(Phrases.rule(0, 1, Phrases.oneOf(Arrays.asList(0, 1, 2, 3, 4), "Miss")), phrases.get(1));
-        assertEquals(Phrases.rule(0, 2, Phrases.oneOf(Arrays.asList(0, 1), "I'm")), phrases.get(2));
-        assertEquals(Phrases.rule(0, 3, Phrases.oneOf(0, "sorry"), Phrases.oneOf(1, "ready"), Phrases.oneOf(2, ""),
-                Phrases.oneOf(3, ""), Phrases.oneOf(4, "")), phrases.get(3));
+        assertEquals(Phrases.rule(0, 2, Phrases.oneOf(Arrays.asList(2, 3, 4), ""), Phrases.oneOf(0, "I'm sorry"),
+                Phrases.oneOf(1, "I'm ready")), phrases.get(2));
 
-        assertEquals(4, phrases.size());
+        assertEquals(3, phrases.size());
         assertEqualsFlattened(choices, phrases);
     }
 
@@ -293,8 +292,8 @@ public class PhrasesSmokeTest {
         Choices choices = identicalPhrasesInDifferentChoices();
         Phrases phrases = Phrases.of(choices);
 
-        assertEquals(4, phrases.size());
-        assertEqualsFlattened(choices, phrases);
+        assertEquals(3, phrases.size());
+        assertFlattenedMatchesPhrases(choices, phrases);
     }
 
     private static Choices identicalPhrasesInDifferentChoices2() {
@@ -309,8 +308,8 @@ public class PhrasesSmokeTest {
         Choices choices = identicalPhrasesInDifferentChoices2();
         Phrases phrases = Phrases.of(choices);
 
-        assertEquals(4, phrases.size());
-        assertEqualsFlattened(choices, phrases);
+        assertEquals(3, phrases.size());
+        assertFlattenedMatchesPhrases(choices, phrases);
     }
 
     private static Choices identicalPhrasesInDifferentChoices3() {
@@ -326,7 +325,7 @@ public class PhrasesSmokeTest {
         Phrases phrases = Phrases.of(choices);
 
         assertEquals(3, phrases.size());
-        assertEqualsFlattened(choices, phrases);
+        assertFlattenedMatchesPhrases(choices, phrases);
     }
 
     private static Choices oneOfCommonAndChoicesMixed() {
@@ -341,8 +340,7 @@ public class PhrasesSmokeTest {
         Choices choices = oneOfCommonAndChoicesMixed();
         Phrases phrases = Phrases.of(choices);
 
-        assertEquals(4, phrases.size());
-        // TODO Flatten fails because the third rule's common(0,1) entry "Miss" appears before the empty choice 1 entry
+        assertEquals(3, phrases.size());
         assertEqualsFlattened(choices, phrases);
     }
 

@@ -108,7 +108,7 @@ public class SpeechRecogntionTestUtils {
         List<String> allChoices = all(choices).stream().map(SpeechRecogntionTestUtils::withoutPunctation)
                 .collect(toList());
         flattened.toStrings().stream().forEach(phrase -> {
-            assertTrue("Not found: " + phrase, allChoices.contains(phrase));
+            assertTrue("'" + phrase + "' not found in: " + allChoices, allChoices.contains(phrase));
         });
     }
 

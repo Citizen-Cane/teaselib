@@ -38,16 +38,16 @@ public class SRGSBuilder extends AbstractSRGSBuilder {
         // TODO Phrases may contain multiple rules with the same items -> reuse them
         // SpeechRecognitionTest.testSRGSBuilderMultiplePhrasesOfMultipleChoicesAreDistinctWithoutOptionalParts()
         for (Rule rule : phrases) {
-            // TODO Remove since this maes no sense
-            if (rule.index != Phrases.COMMON_RULE) {
-                for (OneOf item : rule) {
-                    if (!item.isCommon()) {
-                        String inventoryKey = inventoryKey(rule, item);
-                        if (!inventoryItems.containsKey(inventoryKey)) {
-                            Element inventoryItem = document.createElement("item");
-                            inventoryItems.put(inventoryKey, inventoryItem);
-                            inventoryNode.appendChild(inventoryItem);
-                        }
+            if (rule.index < 0) {
+                throw new IndexOutOfBoundsException("Rule index of " + rule);
+            }
+            for (OneOf item : rule) {
+                if (!item.isCommon()) {
+                    String inventoryKey = inventoryKey(rule, item);
+                    if (!inventoryItems.containsKey(inventoryKey)) {
+                        Element inventoryItem = document.createElement("item");
+                        inventoryItems.put(inventoryKey, inventoryItem);
+                        inventoryNode.appendChild(inventoryItem);
                     }
                 }
             }

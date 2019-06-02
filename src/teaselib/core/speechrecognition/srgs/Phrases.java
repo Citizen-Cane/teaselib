@@ -146,7 +146,7 @@ public class Phrases extends ArrayList<Rule> {
 
         int groupIndex = 0;
         for (Partition<ChoiceString>.Group group : groups) {
-            recurse(phrases, Collections.singletonList(group), groupIndex++, 0);
+            recurse(phrases, Collections.singletonList(group.items), groupIndex++, 0);
         }
 
         // remove completely empty rules that might have been added as a result of processing optional parts
@@ -156,10 +156,9 @@ public class Phrases extends ArrayList<Rule> {
     }
 
     // TODO Improve performance by providing sliced choice strings as input (saves us from rebuilding strings)
-    private static void recurse(Phrases phrases, List<Partition<ChoiceString>.Group> groups, int groupIndex,
-            int ruleIndex) {
-        for (Partition<ChoiceString>.Group group : groups) {
-            List<Sequences<ChoiceString>> sliced = ChoiceStringSequences.slice(group.items);
+    private static void recurse(Phrases phrases, List<List<ChoiceString>> groups, int groupIndex, int ruleIndex) {
+        for (List<ChoiceString> group : groups) {
+            List<Sequences<ChoiceString>> sliced = ChoiceStringSequences.slice(group);
 
             if (!sliced.isEmpty()) {
                 Sequences<ChoiceString> first = sliced.remove(0);
@@ -181,7 +180,7 @@ public class Phrases extends ArrayList<Rule> {
                 }
 
                 if (isCommon(first)) {
-                    List<Integer> choices = group.items.stream().map(p -> p.choice).distinct().collect(toList());
+                    List<Integer> choices = group.stream().map(p -> p.choice).distinct().collect(toList());
                     List<ChoiceString> elements = first.stream().map(first.joinSequenceOperator::apply).distinct()
                             .collect(toList());
                     List<String> strings = elements.stream().map(s -> s.phrase).distinct().collect(toList());
@@ -206,9 +205,9 @@ public class Phrases extends ArrayList<Rule> {
                     List<ChoiceString> flattened = Sequences.flatten(sliced, first.equalsOperator,
                             first.joinSequenceOperator);
                     Comparator<ChoiceString> reverse_sortOrder = (a, b) -> flattened.indexOf(a) - flattened.indexOf(b);
-                    List<Partition<ChoiceString>.Group> next = new Partition<>(flattened, Phrases::haveCommonParts,
-                            reverse_sortOrder).groups;
-                    recurse(phrases, next, groupIndex, ruleIndex);
+                    Partition<ChoiceString> next = new Partition<>(flattened, Phrases::haveCommonParts,
+                            reverse_sortOrder);
+                    recurse(phrases, next.groups.stream().map(g -> g.items).collect(toList()), groupIndex, ruleIndex);
                 }
             }
         }

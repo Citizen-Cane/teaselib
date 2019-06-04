@@ -159,4 +159,25 @@ public class SpeechRecognitionHandcraftedXmlTest {
         assertRejected(resource, "Dear Mistress I didn't spurt off Misstress");
     }
 
+    /**
+     * Demonstrate optional item elements in srgs xml
+     */
+    @Test
+    public void testHandcraftedOptionalCommonRule() throws InterruptedException, IOException {
+        String resource = "srgs/handcrafted_optional_commom_rule.xml";
+
+        assertRecognized(resource, "Yes Miss of course", new Prompt.Result(0));
+        assertRecognized(resource, "No of course", new Prompt.Result(1));
+
+        assertRecognized(resource, "Yes Miss of course miss", new Prompt.Result(0, 0));
+        assertRecognized(resource, "Yes of course Miss", new Prompt.Result(0, 0));
+
+        assertRecognized(resource, "No of course not Miss", new Prompt.Result(1, 1));
+        assertRecognized(resource, "No Miss of course not miss", new Prompt.Result(1, 1));
+        assertRecognized(resource, "No of course not Miss", new Prompt.Result(1, 1));
+
+        // assertRejected(resource, "No Miss of course");
+        // assertRejected(resource, "No of course not Miss");
+    }
+
 }

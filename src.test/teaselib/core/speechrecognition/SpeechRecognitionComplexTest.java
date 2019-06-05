@@ -1,9 +1,13 @@
 package teaselib.core.speechrecognition;
 
-import static java.util.Arrays.*;
-import static org.junit.Assert.*;
-import static teaselib.core.speechrecognition.SpeechRecogntionTestUtils.*;
-import static teaselib.core.speechrecognition.srgs.Phrases.*;
+import static java.util.Arrays.asList;
+import static org.junit.Assert.assertEquals;
+import static teaselib.core.speechrecognition.SpeechRecogntionTestUtils.assertEqualsFlattened;
+import static teaselib.core.speechrecognition.SpeechRecogntionTestUtils.assertFlattenedMatchesPhrases;
+import static teaselib.core.speechrecognition.SpeechRecogntionTestUtils.assertRecognized;
+import static teaselib.core.speechrecognition.SpeechRecogntionTestUtils.assertRejected;
+import static teaselib.core.speechrecognition.SpeechRecogntionTestUtils.withoutPunctation;
+import static teaselib.core.speechrecognition.srgs.Phrases.oneOf;
 
 import java.util.Arrays;
 
@@ -325,7 +329,6 @@ public class SpeechRecognitionComplexTest {
         Phrases phrases = Phrases.of(choices);
 
         assertEquals(3, phrases.size());
-        // TODO Flatten fails because the third rule's common(0,1) entry "Miss" appears before the empty choice 1 entry
         assertEqualsFlattened(choices, phrases);
     }
 
@@ -333,9 +336,8 @@ public class SpeechRecognitionComplexTest {
     public void testSRGSBuilderOneOfCommonAndChoicesMixed() throws InterruptedException {
         Choices choices = oneOfCommonAndChoicesMixed();
 
-        // TODO srgs requires Miss at the end but "" should be recognized as well
-        // rule group=0 index=2 = [Common[0, 1] = [], choice [1] = [not Miss], choice [0] = [Miss]]
-        // -> the common phrase is parsed to rule element but ignored by SRGSBuilder
+        assertRejected(choices, withoutPunctation("of course"));
+
         assertRecognized(choices, withoutPunctation("Yes Miss, of course"), new Prompt.Result(0));
         assertRecognized(choices, withoutPunctation("Yes, of course, Miss"), new Prompt.Result(0));
         assertRecognized(choices, withoutPunctation("No Miss, of course"), new Prompt.Result(1));

@@ -18,9 +18,9 @@
         <ruleref uri="#Choice_0_1__group_0"/>
         <ruleref uri="#Rule_1__group_0_common_0_1"/>
         <!-- Repeating an item 0 times makes it optional -->
-          <item repeat="0-1">
-            <ruleref uri="#Choice_2_1__group_0"/>
-          </item>
+        <item repeat="0-1">
+          <ruleref uri="#Choice_2_1__group_0"/>
+        </item>
       </item>
     </one-of>
   </rule>

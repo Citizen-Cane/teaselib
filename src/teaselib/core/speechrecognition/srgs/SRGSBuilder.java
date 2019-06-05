@@ -1,5 +1,7 @@
 package teaselib.core.speechrecognition.srgs;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -38,15 +40,16 @@ public class SRGSBuilder extends AbstractSRGSBuilder {
     private Map<String, Element> createInventory(Element mainRule) {
         Element inventoryNode = document.createElement("one-of");
         Map<String, Element> inventoryItems = new LinkedHashMap<>();
-        // TODO Phrases may contain multiple rules with the same items -> reuse them
-        // SpeechRecognitionTest.testSRGSBuilderMultiplePhrasesOfMultipleChoicesAreDistinctWithoutOptionalParts()
         for (Rule rule : phrases) {
             if (rule.index < 0) {
                 throw new IndexOutOfBoundsException("Rule index of " + rule);
             }
             for (OneOf item : rule) {
                 if (!item.isCommon()) {
-                    String inventoryKey = inventoryKey(rule, item);
+                    if (item.choices.size() > 1) {
+                        throw new IllegalArgumentException("Inventory accepts only distinct choices: " + item);
+                    }
+                    String inventoryKey = inventoryKey(rule, item.choices.get(0));
                     if (!inventoryItems.containsKey(inventoryKey)) {
                         Element inventoryItem = document.createElement("item");
                         inventoryItems.put(inventoryKey, inventoryItem);
@@ -59,10 +62,8 @@ public class SRGSBuilder extends AbstractSRGSBuilder {
         return inventoryItems;
     }
 
-    private static String inventoryKey(Rule rule, OneOf item) {
-        if (item.choices.size() > 1)
-            throw new IllegalArgumentException("SRGS inventory accepts only distinct items: " + item);
-        return item.choices.get(0) + "_" + rule.group;
+    private static String inventoryKey(Rule rule, int choice) {
+        return choice + "_" + rule.group;
     }
 
     private static int inventoryChoice(String inventoryKey) {
@@ -83,10 +84,18 @@ public class SRGSBuilder extends AbstractSRGSBuilder {
             if (items.isBlank()) {
                 // Rule elements must not be empty -> handle in inventory
                 continue;
-                // TODO add common rule (0,1) as optional one-of item to main rule
-                // -> resolves blank rules as well
             }
-            String id = items.isCommon() ? ruleName(rule) : choiceName(rule, items);
+
+            String id;
+            if (items.isCommon()) {
+                id = ruleName(rule, items);
+            } else {
+                if (items.choices.size() > 1) {
+                    throw new UnsupportedOperationException("OneOf item with multiple choices");
+                }
+                id = choiceName(rule, items.choices.get(0));
+            }
+
             Element ruleElement = createRule(id);
             grammar.appendChild(ruleElement);
 
@@ -94,14 +103,8 @@ public class SRGSBuilder extends AbstractSRGSBuilder {
                 String text = items.iterator().next();
                 appendText(ruleElement, text);
             } else {
-                // TODO each group must be sorted into a different one-of item inside the main rule
-                // SpeechRecognitionTest.testSRGSBuilderMultiplePhrasesOfMultipleChoicesAreDistinctWithoutOptionalParts()
-                // FIX all groups end up in the same </item> node -> should be another <one-of>
                 Element oneOf = document.createElement("one-of");
                 for (String text : items) {
-                    // starting or ending with the same words makes the distinct part optional
-                    // ("No" vs "No Miss")
-                    // TODO for exact recognition generate separate rule path
                     Element item = document.createElement("item");
                     oneOf.appendChild(item);
                     appendText(item, text);
@@ -115,36 +118,51 @@ public class SRGSBuilder extends AbstractSRGSBuilder {
         Set<Integer> blank = rule.stream().filter(OneOf::isBlank).map(item -> item.choices).flatMap(List::stream)
                 .collect(Collectors.toSet());
 
+        Map<String, List<Element>> addToInventory = new HashMap<>();
+
         for (OneOf items : rule) {
             if (!items.isBlank()) {
-                if (items.isCommon()) {
-                    // TODO remove this condition
-                    if (rule.size() > 1) {
-                        throw new IllegalArgumentException("There may be only one entry per common rule");
-                    }
-
+                if (items.isCommon() && rule.size() == 1) {
                     // TODO optimize by adding common start/end rules directly to main rule
                     appendRuleRefToAllChoices(inventoryItems, rule);
                 } else {
-                    Element element = inventoryItems.get(inventoryKey(rule, items));
-                    Element ruleRef = ruleRef(choiceName(rule, items));
-
-                    // TODO handle situation if blank contains only one of the common choices
-                    boolean optionalRule = blank.containsAll(items.choices);
-                    element.appendChild(optionalRule ? optionalItem(ruleRef) : ruleRef);
+                    for (int choice : items.choices) {
+                        String inventoryKey = inventoryKey(rule, choice);
+                        List<Element> elements = addToInventory.computeIfAbsent(inventoryKey, key -> new ArrayList<>());
+                        Element ruleRef = ruleRef(items.isCommon() ? ruleName(rule, items) : choiceName(rule, choice));
+                        boolean optionalRule = blank.contains(choice);
+                        elements.add(optionalRule ? optionalRuleRefItem(ruleRef) : ruleRef);
+                    }
                 }
+            }
+        }
+
+        for (Map.Entry<String, List<Element>> addElements : addToInventory.entrySet()) {
+            Element inventoryElement = inventoryItems.get(addElements.getKey());
+            List<Element> items = addElements.getValue();
+            if (items.size() == 1) {
+                inventoryElement.appendChild(items.get(0));
+            } else {
+                Element oneOf = document.createElement("one-of");
+                inventoryElement.appendChild(oneOf);
+                items.stream().forEach(ruleRef -> oneOf.appendChild(ruleRefItem(ruleRef)));
             }
         }
     }
 
-    private Element optionalItem(Element ruleRef) {
+    private Element optionalRuleRefItem(Element child) {
         Element item = document.createElement("item");
         addAttribute(item, "repeat", "0-1");
-        item.appendChild(ruleRef);
+        item.appendChild(child);
         return item;
     }
 
-    // TODO Unwind and integrate in caller
+    private Element ruleRefItem(Element child) {
+        Element item = document.createElement("item");
+        item.appendChild(child);
+        return item;
+    }
+
     private void appendRuleRefToAllChoices(Map<String, Element> inventoryItems, Rule rule) {
         for (Map.Entry<String, Element> entry : inventoryItems.entrySet()) {
             String key = entry.getKey();
@@ -153,7 +171,7 @@ public class SRGSBuilder extends AbstractSRGSBuilder {
                 for (OneOf items : rule) {
                     int choice = inventoryChoice(key);
                     if (items.choices.contains(choice)) {
-                        entry.getValue().appendChild(ruleRef(ruleName(rule)));
+                        entry.getValue().appendChild(ruleRef(ruleName(rule, items)));
                     }
                 }
             }

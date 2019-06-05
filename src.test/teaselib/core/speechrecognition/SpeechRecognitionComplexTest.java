@@ -303,15 +303,14 @@ public class SpeechRecognitionComplexTest {
         assertFlattenedMatchesPhrases(choices, phrases);
     }
 
-    // TODO All phrases are common - causes empty one-of element in main rule
-    // - caused by "no" not recognized as choice 1, but maybe caused by the same rule in multiple choices
-    // -> it's an edge case
     @Test
     public void testSRGSBuilderIdenticalPhrasesInDifferentChoices() throws InterruptedException {
         Choices choices = identicalPhrasesInDifferentChoices();
 
         assertRecognized(choices, withoutPunctation("Yes, of course, Miss"), new Prompt.Result(0));
         assertRecognized(choices, withoutPunctation("No, of course not, Miss"), new Prompt.Result(1));
+        assertRecognized(choices, "Yes Miss, of course, Miss", new Prompt.Result(0));
+        assertRecognized(choices, "Yes Miss, of course not, Miss", new Prompt.Result(1));
 
         assertRejected(choices, "Yes Miss, of course");
     }

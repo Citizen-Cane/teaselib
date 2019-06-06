@@ -1,7 +1,9 @@
 package teaselib.core.speechrecognition;
 
-import static java.util.stream.Collectors.*;
-import static org.junit.Assert.*;
+import static java.util.stream.Collectors.toList;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.util.Arrays;
 import java.util.List;
@@ -10,6 +12,8 @@ import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import teaselib.core.events.Event;
+import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
 import teaselib.core.speechrecognition.implementation.TeaseLibSRGS;
 import teaselib.core.speechrecognition.srgs.Phrases;
 import teaselib.core.speechrecognition.srgs.Sequences;
@@ -24,8 +28,11 @@ import teaselib.core.ui.SpeechRecognitionInputMethod;
  */
 public class SpeechRecogntionTestUtils {
 
-    private static final int RECOGNITION_TIMEOUT = 1;
+    private static final int RECOGNITION_TIMEOUT_MILLIS = 500;
     static final Confidence confidence = Confidence.High;
+
+    private SpeechRecogntionTestUtils() {
+    }
 
     static void assertRecognized(Choices choices, String phrase, Prompt.Result expected) throws InterruptedException {
         emulateSpeechRecognition(choices, withoutPunctation(phrase), expected);
@@ -58,22 +65,34 @@ public class SpeechRecogntionTestUtils {
 
     static void awaitResult(SpeechRecognition sr, Prompt prompt, String emulatedSpeech, Prompt.Result expectedRules)
             throws InterruptedException {
-        sr.emulateRecogntion(emulatedSpeech);
-        boolean dismissed = prompt.click.await(RECOGNITION_TIMEOUT, TimeUnit.SECONDS);
-        if (!dismissed) {
+        Event<SpeechRecognizedEventArgs> rejectedHandler = (eventArgs) -> {
+            prompt.setTimedOut();
             prompt.dismiss();
-        }
-        if (expectedRules != null) {
-            assertTrue("Expected recognition:: \"" + emulatedSpeech + "\"", dismissed);
+        };
+        sr.events.recognitionRejected.add(rejectedHandler);
+        try {
+            sr.emulateRecogntion(emulatedSpeech);
+            // TODO rejected event must occur - but doesn't - to avoid timeout work-around
+            boolean dismissed = prompt.click.await(RECOGNITION_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);
+            if (!dismissed) {
+                prompt.dismiss();
+            }
+            if (expectedRules != null) {
+                assertTrue("Expected recognition:: \"" + emulatedSpeech + "\"", dismissed);
 
-            // assertEquals(expectedRules, prompt.result());
-            assertAllTheSameChoices(expectedRules, prompt.result());
-        } else {
-            assertFalse("Expected rejected: \"" + emulatedSpeech + "\"", dismissed);
+                if (prompt.acceptedResult == Prompt.Result.Accept.Multiple) {
+                    assertEquals(expectedRules, prompt.result());
+                } else {
+                    assertAllTheSameChoices(expectedRules, prompt.result());
+                }
+            } else {
+                assertFalse("Expected rejected: \"" + emulatedSpeech + "\"", dismissed);
+            }
+        } finally {
+            sr.events.recognitionRejected.remove(rejectedHandler);
         }
     }
 
-    // TODO Remove checking for any result when the phrase to rule parser is stable and optimized
     private static void assertAllTheSameChoices(Prompt.Result expectedRules, Prompt.Result result) {
         List<Integer> choices = result.elements.stream().distinct().collect(Collectors.toList());
         assertTrue("Result contains different choices: " + result, choices.size() == 1);

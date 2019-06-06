@@ -24,6 +24,12 @@ import teaselib.core.ui.Prompt;
  */
 public class SpeechRecognitionComplexTest {
 
+    @Test
+    public void testRejected() throws InterruptedException {
+        Choices choices = new Choices(new Choice("Foo", "Foo", "Foo"));
+        assertRejected(choices, "Bar");
+    }
+
     private static Choices singleChoiceMultiplePhrasesAreDistinct() {
         String[] yes = { "Yes Miss, of course", "Of course, Miss" };
         return new Choices(new Choice("Yes #title, of course", "Yes Miss, of course", yes));

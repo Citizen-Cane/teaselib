@@ -320,7 +320,7 @@ public abstract class Script {
     }
 
     private Prompt getPrompt(Choices choices, InputMethods inputMethods, ScriptFunction scriptFunction) {
-        Prompt prompt = new Prompt(this, choices, inputMethods, scriptFunction);
+        Prompt prompt = new Prompt(this, choices, inputMethods, scriptFunction, Prompt.Result.Accept.AllSame);
         logger.info("Prompt: {}", prompt);
         for (InputMethod inputMethod : inputMethods) {
             logger.info("{} {}", inputMethod.getClass().getSimpleName(), inputMethod);

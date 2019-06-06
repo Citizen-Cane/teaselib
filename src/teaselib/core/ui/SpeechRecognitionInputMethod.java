@@ -20,6 +20,7 @@ import teaselib.core.speechrecognition.events.AudioSignalProblemOccuredEventArgs
 import teaselib.core.speechrecognition.events.SpeechRecognitionStartedEventArgs;
 import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
 import teaselib.core.speechrecognition.srgs.Phrases;
+import teaselib.core.ui.Prompt.Result;
 import teaselib.util.SpeechRecognitionRejectedScript;
 
 /**
@@ -65,6 +66,7 @@ public class SpeechRecognitionInputMethod implements InputMethod {
                 speechRecognizer.restartRecognition();
             }
         };
+
         this.recognitionRejected = (eventArgs) -> {
             if (eventArgs.result != null && eventArgs.result.length == 1) {
                 if (!speechRecognitionRejectedHandlerSignaled && speechRecognitionRejectedScript.isPresent()
@@ -95,7 +97,14 @@ public class SpeechRecognitionInputMethod implements InputMethod {
                         try {
                             List<Integer> choices = gatherResults(result);
                             if (choices.isEmpty()) {
-                                throw new IllegalArgumentException("No choice rules in: " + result);
+                                logger.info("No choice rules in: {} - rejecting ", result);
+                                eventArgs.consumed = true;
+                                fireRecognitionRejectedEvent(result);
+                            } else if (active.get().acceptedResult == Result.Accept.AllSame
+                                    && choices.stream().distinct().count() > 1) {
+                                logger.info("ambiguous choice rules {} in: {} - rejecting ", choices, result);
+                                eventArgs.consumed = true;
+                                fireRecognitionRejectedEvent(result);
                             } else {
                                 signal(new Prompt.Result(choices));
                             }
@@ -119,6 +128,11 @@ public class SpeechRecognitionInputMethod implements InputMethod {
         }
         rule.children.stream().forEach(child -> results.addAll(gatherResults(child)));
         return results;
+    }
+
+    private void fireRecognitionRejectedEvent(Rule result) {
+        SpeechRecognizedEventArgs recognitionRejectedEventArgs = new SpeechRecognizedEventArgs(result);
+        speechRecognizer.events.recognitionRejected.run(recognitionRejectedEventArgs);
     }
 
     private void logLackOfConfidence(Rule result) {

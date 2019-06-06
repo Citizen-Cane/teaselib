@@ -26,6 +26,11 @@ public class Prompt {
         public static final Result UNDEFINED = new Result(Integer.MIN_VALUE);
         public static final Result DISMISSED = new Result(-1);
 
+        public enum Accept {
+            AllSame,
+            Multiple
+        }
+
         public final List<Integer> elements;
 
         public Result(Integer value) {
@@ -88,6 +93,8 @@ public class Prompt {
     static final String NONE = "None";
 
     public final Choices choices;
+    public final Result.Accept acceptedResult;
+
     final List<InputMethod> inputMethods;
     final ScriptFutureTask scriptTask;
 
@@ -103,13 +110,19 @@ public class Prompt {
     private InputMethod resultInputMethod;
 
     public Prompt(Choices choices, List<InputMethod> inputMethods) {
-        this(null, choices, inputMethods, null);
+        this(null, choices, inputMethods, null, Result.Accept.AllSame);
     }
 
-    public Prompt(Script script, Choices choices, List<InputMethod> inputMethods, ScriptFunction scriptFunction) {
+    public Prompt(Choices choices, List<InputMethod> inputMethods, Result.Accept mode) {
+        this(null, choices, inputMethods, null, mode);
+    }
+
+    public Prompt(Script script, Choices choices, List<InputMethod> inputMethods, ScriptFunction scriptFunction,
+            Result.Accept mode) {
         this.choices = choices;
         this.inputMethods = inputMethods;
         this.scriptTask = scriptFunction != null ? new ScriptFutureTask(script, scriptFunction, this) : null;
+        this.acceptedResult = mode;
 
         this.lock = new ReentrantLock();
         this.click = lock.newCondition();

@@ -2,8 +2,6 @@ package teaselib.core.textotspeech;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.CountDownLatch;
 
@@ -17,9 +15,10 @@ import teaselib.core.speechrecognition.Confidence;
 import teaselib.core.speechrecognition.SpeechRecognition;
 import teaselib.core.speechrecognition.SpeechRecognizer;
 import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
-import teaselib.core.speechrecognition.srgs.Phrases;
 import teaselib.core.texttospeech.PronunciationDictionary;
 import teaselib.core.texttospeech.TextToSpeech;
+import teaselib.core.ui.Choice;
+import teaselib.core.ui.Choices;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class SpeechRecognitionPronunciationDictionaryTest {
@@ -40,10 +39,8 @@ public class SpeechRecognitionPronunciationDictionaryTest {
     // just look into C:\Users\xxx\AppData\Roaming\Microsoft\Speech\Files\UserLexicons\
 
     // Microsoft UPS phonemes can't be inlined into addWordTransition either,
-    // so there's no point in using SpLexicon for speech recognition
-    // -> no phoneme lexicon for Microsoft SAPI
-    // So far the only way seems to implement .NET Microsoft.Speech and use SRGS xml.
-
+    // but the phonemes chould be added to srgs
+    // TODO Add phoneme support to srgs implementation
     @Test
     public void testSpeechRecognitionPronunciation() throws InterruptedException, IOException {
         PronunciationDictionary pronunciationDictionary = new PronunciationDictionary(
@@ -54,13 +51,14 @@ public class SpeechRecognitionPronunciationDictionaryTest {
         try (SpeechRecognizer speechRecognizer = new SpeechRecognizer(new Configuration());) {
             SpeechRecognition speechRecognition = speechRecognizer.get(Locale.US);
             CountDownLatch completed = new CountDownLatch(1);
-            List<String> choices = Arrays.asList("Bereit", "Madame");
+            Choices choices = new Choices(new Choice("Bereit"), new Choice("Madame"));
 
             Event<SpeechRecognizedEventArgs> speechRecognized = (eventArgs) -> completed.countDown();
             speechRecognition.events.recognitionCompleted.add(speechRecognized);
             try {
-                speechRecognition.startRecognition(Phrases.of(choices), Confidence.Normal);
+                speechRecognition.startRecognition(choices, Confidence.Normal);
                 speechRecognition.emulateRecogntion("Hello");
+                // Speak (fr) "Madame" instead of (en) "Maydamm"
                 completed.await();
             } finally {
                 speechRecognition.events.recognitionCompleted.remove(speechRecognized);

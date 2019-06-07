@@ -2,8 +2,6 @@ package teaselib.core.textotspeech;
 
 import static org.junit.Assert.assertTrue;
 
-import java.util.Arrays;
-import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
@@ -22,9 +20,10 @@ import teaselib.core.speechrecognition.Confidence;
 import teaselib.core.speechrecognition.SpeechRecognition;
 import teaselib.core.speechrecognition.SpeechRecognizer;
 import teaselib.core.speechrecognition.hypothesis.SpeechDetectionEventHandler;
-import teaselib.core.speechrecognition.srgs.Phrases;
 import teaselib.core.texttospeech.TextToSpeech;
 import teaselib.core.texttospeech.Voice;
+import teaselib.core.ui.Choice;
+import teaselib.core.ui.Choices;
 import teaselib.core.util.Environment;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
@@ -132,14 +131,13 @@ public class MicrosoftSapiCustomPronunciationTestEnglish {
             CountDownLatch completed = new CountDownLatch(1);
             // List<String> choices = Arrays.asList("<P DISP=\"replace\" PRON=\"H EH 1 L OW W ER 1 L D\"> replace
             // </P>");
-            List<String> choices = Arrays.asList("<P>/Display/Word/H EH 1 L OW;</P>");
+            Choices choices = new Choices(new Choice("<P>/Display/Word/H EH 1 L OW;</P>"));
 
             SpeechDetectionEventHandler speechDetectionEventHandler = new SpeechDetectionEventHandler(
                     speechRecognition);
             try {
                 speechDetectionEventHandler.addEventListeners();
-                Phrases phrases = Phrases.of(choices);
-                speechRecognition.startRecognition(phrases, Confidence.Normal);
+                speechRecognition.startRecognition(choices, Confidence.Normal);
                 completed.await();
             } finally {
                 SpeechRecognition.completeSpeechRecognitionInProgress();

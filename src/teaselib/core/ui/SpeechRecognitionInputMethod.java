@@ -19,7 +19,6 @@ import teaselib.core.speechrecognition.SpeechRecognition;
 import teaselib.core.speechrecognition.events.AudioSignalProblemOccuredEventArgs;
 import teaselib.core.speechrecognition.events.SpeechRecognitionStartedEventArgs;
 import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
-import teaselib.core.speechrecognition.srgs.Phrases;
 import teaselib.core.ui.Prompt.Result;
 import teaselib.util.SpeechRecognitionRejectedScript;
 
@@ -195,7 +194,7 @@ public class SpeechRecognitionInputMethod implements InputMethod {
         }
     }
 
-    // TODO Resolve race condition lazy initialization versus dismiss in main thread on timeout
+    // TODO Resolve race condition: lazy initialization versus dismiss in main thread on timeout
     // -> recognition not started yet but main thread dismisses prompt
 
     private void enableSpeechRecognition() {
@@ -209,8 +208,7 @@ public class SpeechRecognitionInputMethod implements InputMethod {
         speechRecognizer.events.recognitionRejected.add(recognitionRejected);
         speechRecognizer.events.recognitionCompleted.add(recognitionCompleted);
 
-        Phrases phrases = Phrases.of(active.get().choices);
-        speechRecognizer.startRecognition(phrases, expectedConfidence);
+        speechRecognizer.startRecognition(active.get().choices, expectedConfidence);
     }
 
     private void disableSpeechRecognition() {

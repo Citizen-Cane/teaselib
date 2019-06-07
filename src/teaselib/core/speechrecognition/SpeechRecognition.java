@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.stream.Collectors;
 
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
@@ -23,6 +24,7 @@ import teaselib.core.speechrecognition.implementation.Unsupported;
 import teaselib.core.speechrecognition.srgs.Phrases;
 import teaselib.core.speechrecognition.srgs.SRGSBuilder;
 import teaselib.core.texttospeech.TextToSpeech;
+import teaselib.core.ui.Choices;
 import teaselib.core.util.Environment;
 import teaselib.core.util.ExceptionUtil;
 
@@ -122,6 +124,7 @@ public class SpeechRecognition {
 
     private Confidence recognitionConfidence;
 
+    private Choices choices;
     private Phrases phrases;
 
     private void lockSpeechRecognitionInProgressSyncObject() {
@@ -199,8 +202,10 @@ public class SpeechRecognition {
     }
 
     // TODO Make class stateless by moving sr process into new class with final state - remember that class upstream
-    public void startRecognition(Phrases phrases, Confidence recognitionConfidence) {
-        this.phrases = phrases;
+    // TODO Add a prepare step to allow setup in advance - all cpu computations should be done beforehand
+    public void startRecognition(Choices choices, Confidence recognitionConfidence) {
+        this.choices = choices;
+        this.phrases = Phrases.of(choices);
         this.recognitionConfidence = recognitionConfidence;
         if (sr != null) {
             delegateThread.run(() -> {
@@ -227,6 +232,7 @@ public class SpeechRecognition {
         if (sr != null) {
             delegateThread.run(() -> {
                 sr.stopRecognition();
+                // TODO Reparse phrases to srgs once before start - not on each resume
                 setupAndStartSR(SpeechRecognition.this.phrases);
                 logger.info("Speech recognition restarted");
             });
@@ -273,7 +279,9 @@ public class SpeechRecognition {
         if (sr instanceof SpeechRecognitionSRGS) {
             ((SpeechRecognitionSRGS) sr).setChoices(srgs(phrases));
         } else if (sr instanceof SpeechRecognitionChoices) {
-            ((SpeechRecognitionChoices) sr).setChoices(backwardCompatibleDeprecated(phrases));
+            List<String> firstPhraseOfEachChoice = choices.stream().map(choice -> choice.phrases.get(0))
+                    .collect(Collectors.toList());
+            ((SpeechRecognitionChoices) sr).setChoices(firstPhraseOfEachChoice);
         } else {
             throw new UnsupportedOperationException(SpeechRecognitionChoices.class.getSimpleName());
         }

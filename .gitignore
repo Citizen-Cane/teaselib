@@ -219,6 +219,10 @@ pip-log.txt
 #TeaseLib
 lib/TeaseLib.jar
 lib/TeaseLib_tests.jar
+lib/*.lib
+lib/*.dll
+lib/*.exp
+
 /bin.test/
 /bin.test.interactive/
 /.vs/

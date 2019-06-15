@@ -42,6 +42,11 @@ SpeechRecognizer::SpeechRecognizer(JNIEnv *env, jobject jthis, const wchar_t* lo
 }
 
 SpeechRecognizer::~SpeechRecognizer() {
+	// takes up to 5 seconds, and is little rude as long as other rules are active
+	HRESULT hr = cpRecognizer->SetRecoState(SPRST_INACTIVE);
+	assert(SUCCEEDED(hr));
+	if (FAILED(hr)) throw new COMException(hr);
+
 	delete eventHandler;
 }
 
@@ -59,11 +64,12 @@ void SpeechRecognizer::initContext() {
 	// Find the best matching installed recognizer for the language
 	CComPtr<ISpObjectToken> cpRecognizerToken;
 	HRESULT hr = SpFindBestToken(SPCAT_RECOGNIZERS, recognizerAttributes.c_str(), NULL, &cpRecognizerToken);
-	assert(SUCCEEDED(hr));
-	if (FAILED(hr)) throw new COMException(hr);
-	if (cpRecognizerToken == NULL) {
+	if (cpRecognizerToken == NULL || hr == SPERR_NOT_FOUND) {
 		throw new UnsupportedLanguageException(FAILED(hr) ? hr : E_INVALIDARG, (std::wstring(L"Unsupported language or region '") + locale +
 			L"'. Please install the corresponding Windows language pack.").c_str());
+	} else if (FAILED(hr)) {
+		assert(SUCCEEDED(hr));
+		throw new COMException(hr);
 	}
 
 	hr = grammarCompiler.CoCreateInstance(CLSID_SpW3CGrammarCompiler);
@@ -431,7 +437,7 @@ void SpeechRecognizer::setMaxAlternates(const int maxAlternates) {
 void SpeechRecognizer::startRecognition() {
 	checkRecogizerStatus();
 
-	HRESULT hr = cpRecognizer->SetRecoState(SPRST_ACTIVE_ALWAYS);
+	HRESULT hr = cpRecognizer->SetRecoState(SPRST_ACTIVE);
     assert(SUCCEEDED(hr));
 	if (FAILED(hr)) throw new COMException(hr);
 
@@ -445,10 +451,6 @@ void SpeechRecognizer::stopRecognition() {
 
     HRESULT hr = cpContext->SetContextState(SPCS_DISABLED);
     assert(SUCCEEDED(hr));
-	if (FAILED(hr)) throw new COMException(hr);
-
-	hr = cpRecognizer->SetRecoState(SPRST_INACTIVE_WITH_PURGE);
-	assert(SUCCEEDED(hr));
 	if (FAILED(hr)) throw new COMException(hr);
 }
 

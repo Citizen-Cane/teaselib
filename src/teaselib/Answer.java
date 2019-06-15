@@ -1,9 +1,17 @@
 package teaselib;
 
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.List;
 
 /**
+ * Answers are used to build choices for input methods. The first text is the dominant phrase - it's used for display
+ * input methods - so it should be the longest and most detailed. Users will tend to abbreviate, so shorter phrases
+ * should come last.
+ * <p>
+ * On the other hand, while chatting shorter phrases may be more appropriate, and the shorter phrase comes first.
+ * <p>
+ * TODO Improve display to slice phrases and display all groups of an answer.
+ * 
  * @author Citizen-Cane
  *
  */
@@ -14,24 +22,24 @@ public class Answer {
         RESUME
     }
 
-    public final List<String> text;
     public final Meaning meaning;
+    public final List<String> text;
 
-    public static Answer yes(String text) {
-        return new Answer(text, Meaning.YES);
+    public static Answer yes(String... text) {
+        return new Answer(Meaning.YES, text);
     }
 
-    public static Answer no(String text) {
-        return new Answer(text, Meaning.NO);
+    public static Answer no(String... text) {
+        return new Answer(Meaning.NO, text);
     }
 
-    public static Answer resume(String text) {
-        return new Answer(text, Meaning.RESUME);
+    public static Answer resume(String... text) {
+        return new Answer(Meaning.RESUME, text);
     }
 
-    public Answer(String text, Meaning meaning) {
-        this.text = Collections.singletonList(text);
+    public Answer(Meaning meaning, String... text) {
         this.meaning = meaning;
+        this.text = Arrays.asList(text);
     }
 
     @Override

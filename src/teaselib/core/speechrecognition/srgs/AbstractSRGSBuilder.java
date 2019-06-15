@@ -29,11 +29,13 @@ abstract class AbstractSRGSBuilder {
     static final String CHOICE_NODE_PREFIX = "Choice_";
 
     final Phrases phrases;
+    private final String languageCode;
     final Document document;
 
-    AbstractSRGSBuilder(Phrases phrases)
+    AbstractSRGSBuilder(Phrases phrases, String languageCode)
             throws ParserConfigurationException, TransformerFactoryConfigurationError, TransformerException {
         this.phrases = phrases;
+        this.languageCode = languageCode;
         this.document = createDocument();
         buildXML();
     }
@@ -63,7 +65,7 @@ abstract class AbstractSRGSBuilder {
         Element grammar = document.createElement("grammar");
         document.appendChild(grammar);
         addAttribute(grammar, "version", "1.0");
-        addAttribute(grammar, "xml:lang", "en-US");
+        addAttribute(grammar, "xml:lang", languageCode);
         addAttribute(grammar, "xmlns", "http://www.w3.org/2001/06/grammar");
         addAttribute(grammar, "tag-format", "semantics/1.0");
         addAttribute(grammar, "root", MAIN_RULE_NAME);

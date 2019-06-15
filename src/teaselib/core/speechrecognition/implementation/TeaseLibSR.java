@@ -25,13 +25,19 @@ public class TeaseLibSR extends SpeechRecognitionImplementation implements Speec
 
     @Override
     public void init(SpeechRecognitionEvents events, Locale locale) throws Throwable {
+        languageCode = languageCode(locale);
         try {
-            initSR(languageCode(locale));
+            initSR(getLanguageCode());
         } catch (UnsupportedLanguageException e) {
             logger.warn(e.getMessage());
-            String language = locale.getLanguage();
-            logger.info("-> trying language {}", language);
-            initSR(language);
+            int index = getLanguageCode().indexOf("-");
+            if (index < 0) {
+                throw e;
+            } else {
+                languageCode = getLanguageCode().substring(0, index);
+                logger.info("-> trying language {}", getLanguageCode());
+                initSR(getLanguageCode());
+            }
         }
 
         CountDownLatch awaitInitialized = new CountDownLatch(1);

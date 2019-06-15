@@ -3,14 +3,15 @@ package teaselib.core.speechrecognition;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static teaselib.core.speechrecognition.SpeechRecogntionTestUtils.assertEqualsFlattened;
-import static teaselib.core.speechrecognition.SpeechRecogntionTestUtils.assertFlattenedMatchesPhrases;
 import static teaselib.core.speechrecognition.SpeechRecogntionTestUtils.assertRecognized;
 import static teaselib.core.speechrecognition.SpeechRecogntionTestUtils.assertRejected;
 import static teaselib.core.speechrecognition.SpeechRecogntionTestUtils.withoutPunctation;
 import static teaselib.core.speechrecognition.srgs.Phrases.oneOf;
 
 import java.util.Arrays;
+import java.util.HashSet;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import teaselib.core.speechrecognition.srgs.Phrases;
@@ -23,6 +24,8 @@ import teaselib.core.ui.Prompt;
  *
  */
 public class SpeechRecognitionComplexTest {
+
+    private static final HashSet<Integer> CHOICES_0_1 = new HashSet<>(Arrays.asList(0, 1));
 
     @Test
     public void testRejected() throws InterruptedException {
@@ -106,7 +109,7 @@ public class SpeechRecognitionComplexTest {
         Phrases phrases = Phrases.of(choices);
 
         assertEquals(Phrases.rule(0, 0, Phrases.oneOf(0, "I"), Phrases.oneOf(1, "I don't")), phrases.get(0));
-        assertEquals(Phrases.rule(0, 1, Phrases.oneOf(Arrays.asList(0, 1), "have it")), phrases.get(1));
+        assertEquals(Phrases.rule(0, 1, Phrases.oneOf(CHOICES_0_1, "have it")), phrases.get(1));
 
         assertEquals(2, phrases.size());
         assertEqualsFlattened(choices, phrases);
@@ -134,7 +137,7 @@ public class SpeechRecognitionComplexTest {
         assertEquals(3, phrases.size());
         assertEquals(Phrases.rule(0, 0, Phrases.oneOf(0, "Yes Miss", "Yes"), Phrases.oneOf(1, "No Miss", "No")),
                 phrases.get(0));
-        assertEquals(Phrases.rule(0, 1, Phrases.oneOf(Arrays.asList(0, 1), "of course")), phrases.get(1));
+        assertEquals(Phrases.rule(0, 1, Phrases.oneOf(CHOICES_0_1, "of course")), phrases.get(1));
         assertEquals(Phrases.rule(0, 2, Phrases.oneOf(0, "", "Miss"), Phrases.oneOf(1, "not", "not Miss")),
                 phrases.get(2));
 
@@ -218,11 +221,11 @@ public class SpeechRecognitionComplexTest {
 
         assertEquals(Phrases.rule(0, 0, Phrases.oneOf(0, "Yes Miss", "Yes"), Phrases.oneOf(1, "No Miss", "No")),
                 phrases.get(0));
-        assertEquals(Phrases.rule(0, 1, Phrases.oneOf(Arrays.asList(0, 1), "of course")), phrases.get(1));
+        assertEquals(Phrases.rule(0, 1, Phrases.oneOf(CHOICES_0_1, "of course")), phrases.get(1));
         assertEquals(Phrases.rule(0, 2, Phrases.oneOf(0, "", "Miss"), Phrases.oneOf(1, "not", "not Miss")),
                 phrases.get(2));
         assertEquals(Phrases.rule(1, 0, Phrases.oneOf(0, "I"), Phrases.oneOf(1, "I don't")), phrases.get(3));
-        assertEquals(Phrases.rule(0, 1, Phrases.oneOf(Arrays.asList(0, 1), "have it")), phrases.get(4));
+        assertEquals(Phrases.rule(0, 1, Phrases.oneOf(CHOICES_0_1, "have it")), phrases.get(4));
 
         assertEquals(5, phrases.size());
         assertEqualsFlattened(choices, phrases);
@@ -265,12 +268,11 @@ public class SpeechRecognitionComplexTest {
         Choices choices = phrasesWithMultipleCommonStartGroups();
         Phrases phrases = Phrases.of(choices);
 
-        assertEquals(3, phrases.size());
-
-        assertEquals(Phrases.rule(0, 0, oneOf(asList(0, 1), "Dear", "Please")), phrases.get(0));
-        assertEquals(Phrases.rule(0, 1, oneOf(asList(0, 1), "mistress may I")), phrases.get(1));
+        assertEquals(Phrases.rule(0, 0, oneOf(new HashSet<>(asList(0, 1)), "Dear", "Please")), phrases.get(0));
+        assertEquals(Phrases.rule(0, 1, oneOf(new HashSet<>(asList(0, 1)), "mistress may I")), phrases.get(1));
         assertEquals(Phrases.rule(0, 2, oneOf(0, "cum"), oneOf(1, "wank")), phrases.get(2));
 
+        assertEquals(3, phrases.size());
         assertEqualsFlattened(choices, phrases);
     }
 
@@ -293,6 +295,48 @@ public class SpeechRecognitionComplexTest {
         assertRejected(choices, "Mistress, may I");
     }
 
+    private static Choices phrasesWithMultipleCommonEndGroups() {
+        String[] cum = { "May I cum, please", "May I cum, dear Mistress" };
+        String[] wank = { "May I wank, please", "May I wank, dear Mistress" };
+        return new Choices(new Choice("May I cum, please", "May I cum, please", cum),
+                new Choice("May I wank, please", "May I wank, please", wank));
+    }
+
+    @Test
+    @Ignore
+    public void testSlicePhrasesWithMultipleCommonEndGroups() {
+        Choices choices = phrasesWithMultipleCommonEndGroups();
+        Phrases phrases = Phrases.of(choices);
+
+        assertEquals(Phrases.rule(0, 0, oneOf(new HashSet<>(asList(0, 1)), "May I")), phrases.get(0));
+        // slicing cum/wank to choice groups doesn't work because slice() detects the remainder as all different
+        // works perfect in testSlicePhrasesWithMultipleCommonStartGroups()
+        // because there the last word is left after the common part has been matched
+        // TODO Make slice() slice common groups instead of only true common part
+        assertEquals(Phrases.rule(0, 1, oneOf(0, "cum"), oneOf(1, "wank")), phrases.get(1));
+        assertEquals(Phrases.rule(0, 2, oneOf(new HashSet<>(asList(0, 1)), "please", "dear Mistress")), phrases.get(2));
+
+        assertEquals(3, phrases.size());
+        assertEqualsFlattened(choices, phrases);
+    }
+
+    @Test
+    public void testSRGSBuilderPhrasesWithSeveralCommonEndGroups() throws InterruptedException {
+        Choices choices = phrasesWithMultipleCommonEndGroups();
+
+        assertRecognized(choices, withoutPunctation("May I cum, please"), new Prompt.Result(0));
+        assertRecognized(choices, withoutPunctation("May I cum, dear mistress"), new Prompt.Result(0));
+
+        assertRecognized(choices, withoutPunctation("May I wank, please"), new Prompt.Result(1));
+        assertRecognized(choices, withoutPunctation("May I wank, dear mistress"), new Prompt.Result(1));
+
+        assertRejected(choices, "May I cum");
+        assertRejected(choices, "May I wank");
+
+        assertRejected(choices, "please");
+        assertRejected(choices, "Dear Mistress");
+    }
+
     private static Choices identicalPhrasesInDifferentChoices() {
         String[] yes = { "Yes Miss, of course", "Yes, of course, Miss" };
         String[] no = { "Yes Miss, of course", "No, of course not, Miss" };
@@ -306,7 +350,7 @@ public class SpeechRecognitionComplexTest {
         Phrases phrases = Phrases.of(choices);
 
         assertEquals(3, phrases.size());
-        assertFlattenedMatchesPhrases(choices, phrases);
+        assertEqualsFlattened(choices, phrases);
     }
 
     @Test

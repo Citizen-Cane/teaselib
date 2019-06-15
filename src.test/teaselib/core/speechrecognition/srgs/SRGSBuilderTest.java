@@ -31,7 +31,7 @@ public class SRGSBuilderTest {
                 "The dog looked over the fence", //
                 "he dog jumped over the fence", //
                 "The dog jumped over the fence");
-        SRGSBuilder srgs = new SRGSBuilder(phrases);
+        SRGSBuilder srgs = new SRGSBuilder(phrases, "en-US");
         String xml = srgs.toXML();
         assertFalse(xml.isEmpty());
         System.out.println(xml);
@@ -56,7 +56,7 @@ public class SRGSBuilderTest {
                 List<OneOf> items = new ArrayList<>();
                 Rule rule = new Rule(groupIndex, ruleIndex++, items);
                 for (int choiceIndex = 0; choiceIndex < arg.length; choiceIndex++) {
-                    rule.add(new OneOf(Collections.singletonList(choiceIndex), arg[choiceIndex].phrases));
+                    rule.add(new OneOf(Collections.singleton(choiceIndex), arg[choiceIndex].phrases));
                 }
                 phrases.add(rule);
             } else {
@@ -83,7 +83,7 @@ public class SRGSBuilderTest {
         assertTrue(phrases.get(3).get(0).contains("dear Mistress"));
 
         // TODO Implement SRGS builder that handles multiple independent phrases
-        SRGSBuilder srgs = new SRGSBuilder(phrases);
+        SRGSBuilder srgs = new SRGSBuilder(phrases, "en-US");
         String xml = srgs.toXML();
         assertFalse(xml.isEmpty());
         System.out.println(xml);

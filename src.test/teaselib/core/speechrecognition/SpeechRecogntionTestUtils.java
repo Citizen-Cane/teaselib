@@ -1,23 +1,26 @@
 package teaselib.core.speechrecognition;
 
-import static java.util.stream.Collectors.toList;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static java.util.stream.Collectors.*;
+import static org.junit.Assert.*;
 
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import teaselib.core.events.Event;
 import teaselib.core.speechrecognition.events.SpeechRecognizedEventArgs;
 import teaselib.core.speechrecognition.implementation.TeaseLibSRGS;
+import teaselib.core.speechrecognition.srgs.OneOf;
 import teaselib.core.speechrecognition.srgs.Phrases;
+import teaselib.core.speechrecognition.srgs.Rule;
 import teaselib.core.speechrecognition.srgs.Sequences;
 import teaselib.core.speechrecognition.srgs.StringSequence;
+import teaselib.core.speechrecognition.srgs.StringSequences;
 import teaselib.core.ui.Choices;
 import teaselib.core.ui.Prompt;
 import teaselib.core.ui.SpeechRecognitionInputMethod;
@@ -112,7 +115,7 @@ public class SpeechRecogntionTestUtils {
     }
 
     public static void assertEqualsFlattened(Choices choices, Phrases phrases) {
-        Sequences<String> flattened = phrases.flatten();
+        Sequences<String> flattened = flatten(phrases);
         assertEquals(choices.size(), flattened.size());
 
         List<String> allChoices = firstOfEach(choices).stream().map(SpeechRecogntionTestUtils::withoutPunctation)
@@ -120,8 +123,8 @@ public class SpeechRecogntionTestUtils {
         assertEquals(allChoices, flattened.toStrings());
     }
 
-    public static void assertFlattenedMatchesPhrases(Choices choices, Phrases phrases) {
-        Sequences<String> flattened = phrases.flatten();
+    public static void assertChoicesAndPhrasesMatch(Choices choices, Phrases phrases) {
+        Sequences<String> flattened = flatten(phrases);
         assertEquals(choices.size(), flattened.size());
 
         List<String> allChoices = all(choices).stream().map(SpeechRecogntionTestUtils::withoutPunctation)
@@ -137,6 +140,53 @@ public class SpeechRecogntionTestUtils {
 
     private static List<String> firstOfEach(Choices choices) {
         return choices.stream().map(p -> p.phrases.get(0)).collect(toList());
+    }
+
+    /**
+     * Flattens phrases to input strings.
+     * 
+     * @return A list containing the first phrase of each choice.
+     */
+    public static Sequences<String> flatten(Phrases phrases) {
+        int choices = phrases.choices();
+        Sequences<String> flattened = StringSequences.of(choices);
+        for (int i = 0; i < choices; i++) {
+            StringSequence sequence = StringSequence.ignoreCase();
+            flattened.add(sequence);
+        }
+
+        int rules = phrases.rules();
+        int groups = phrases.groups();
+        Set<Integer> processed = new HashSet<>();
+
+        for (int group = 0; group < groups; group++) {
+            for (int choiceIndex = 0; choiceIndex < choices; choiceIndex++) {
+                if (!processed.contains(choiceIndex)) {
+                    boolean choiceProcessed = false;
+                    for (int ruleIndex = 0; ruleIndex < rules; ruleIndex++) {
+                        for (Rule rule : phrases) {
+                            String word = "";
+                            if (rule.group == group && rule.index == ruleIndex) {
+                                for (OneOf items : rule) {
+                                    // The sequence of the items in OneOf matters
+                                    if (items.choices.contains(choiceIndex)
+                                            || items.choices.contains(Phrases.COMMON_RULE)) {
+                                        word = items.iterator().next();
+                                        choiceProcessed = true;
+                                        break;
+                                    }
+                                }
+                                flattened.get(choiceIndex).add(word);
+                            }
+                        }
+                    }
+                    if (choiceProcessed) {
+                        processed.add(choiceIndex);
+                    }
+                }
+            }
+        }
+        return flattened;
     }
 
 }

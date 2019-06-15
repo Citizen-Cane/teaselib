@@ -3,22 +3,23 @@ package teaselib.core.speechrecognition.srgs;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 public class OneOf extends ArrayList<String> {
     private static final long serialVersionUID = 1L;
 
-    final List<Integer> choices;
+    public final Set<Integer> choices;
 
-    public OneOf(List<Integer> choices, int capacity) {
+    public OneOf(Set<Integer> choices, int capacity) {
         super(capacity);
         this.choices = choices;
     }
 
-    public OneOf(List<Integer> choices, String item) {
+    public OneOf(Set<Integer> choices, String item) {
         this(choices, Collections.singletonList(item));
     }
 
-    public OneOf(List<Integer> choices, List<String> items) {
+    public OneOf(Set<Integer> choices, List<String> items) {
         this.choices = choices;
         for (String item : items) {
             add(item);
@@ -51,7 +52,7 @@ public class OneOf extends ArrayList<String> {
     }
 
     public boolean isCommon() {
-        if (choices.size() == 1 && choices.get(0) == Phrases.COMMON_RULE) {
+        if (choices.size() == 1 && choices.contains(Phrases.COMMON_RULE)) {
             return true;
         } else {
             return choices.size() > 1;

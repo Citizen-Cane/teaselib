@@ -1,12 +1,13 @@
 package teaselib.core.speechrecognition.srgs;
 
-import static java.util.stream.Collectors.*;
+import static java.util.stream.Collectors.toSet;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public class Rule extends ArrayList<OneOf> {
@@ -29,7 +30,7 @@ public class Rule extends ArrayList<OneOf> {
         this.index = index;
         int choiceIndex = 0;
         for (String item : items) {
-            add(new OneOf(Collections.singletonList(choiceIndex++), item));
+            add(new OneOf(Collections.singleton(choiceIndex++), item));
         }
     }
 
@@ -79,7 +80,7 @@ public class Rule extends ArrayList<OneOf> {
     }
 
     int choices() {
-        long count = stream().map(i -> i.choices).flatMap(List::stream).filter(choice -> choice != Phrases.COMMON_RULE)
+        long count = stream().map(i -> i.choices).flatMap(Set::stream).filter(choice -> choice != Phrases.COMMON_RULE)
                 .distinct().count();
         if (count > 0) {
             return (int) count;
@@ -94,8 +95,8 @@ public class Rule extends ArrayList<OneOf> {
     }
 
     public boolean isCommon() {
-        List<Integer> choices = stream().map(item -> item.choices).flatMap(List::stream).distinct().collect(toList());
-        return choices.size() > 1 || choices.get(0) == Phrases.COMMON_RULE;
+        Set<Integer> choices = stream().map(item -> item.choices).flatMap(Set::stream).collect(toSet());
+        return choices.size() > 1 || choices.contains(Phrases.COMMON_RULE);
     }
 
     public boolean isBlank() {

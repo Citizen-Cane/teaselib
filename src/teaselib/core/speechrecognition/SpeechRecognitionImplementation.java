@@ -3,7 +3,9 @@ package teaselib.core.speechrecognition;
 import java.util.Locale;
 
 public abstract class SpeechRecognitionImplementation implements SpeechRecognitionControl, AutoCloseable {
-    protected static String languageCode(final Locale locale) {
+    protected String languageCode;
+
+    protected static String languageCode(Locale locale) {
         return locale.toString().replace("_", "-");
     }
 
@@ -11,4 +13,8 @@ public abstract class SpeechRecognitionImplementation implements SpeechRecogniti
 
     @Override
     public abstract void close();
+
+    public String getLanguageCode() {
+        return languageCode;
+    }
 }

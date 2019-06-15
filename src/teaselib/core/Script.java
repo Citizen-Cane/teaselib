@@ -276,10 +276,15 @@ public abstract class Script {
     }
 
     private Choices choices(List<Answer> answers) {
-        List<Choice> choices = answers.stream().map(
-                answer -> new Choice(answer, expandTextVariables(answer.text.get(0)), expandTextVariables(answer.text)))
+        List<Choice> choices = answers.stream().map(answer -> new Choice(answer,
+                expandTextVariables(selectPhrase(answer)), expandTextVariables(answer.text)))
                 .collect(Collectors.toList());
         return new Choices(choices);
+    }
+
+    private String selectPhrase(Answer answer) {
+        // TODO Use a random function that is not used for control flow
+        return answer.text.get(teaseLib.random(0, answer.text.size() - 1));
     }
 
     private List<Choice> showPrompt(Prompt prompt) {

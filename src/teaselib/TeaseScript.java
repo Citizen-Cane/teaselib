@@ -10,6 +10,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import teaselib.Answer.Meaning;
 import teaselib.Config.SpeechRecognition.Intention;
 import teaselib.ScriptFunction.Relation;
 import teaselib.core.ResourceLoader;
@@ -534,16 +535,28 @@ public abstract class TeaseScript extends TeaseScriptMath {
      * @return True if {@code yes} has been selected, false if {@code no} has been selected.
      */
     public final boolean askYN(String yes, String no) {
-        return showChoices(Arrays.asList(Answer.yes(yes), Answer.no(no)), null).text.get(0) == yes;
+        return askYN(Answer.yes(yes), Answer.no(no));
     }
 
     public final boolean askYN(ScriptFunction scriptFunction, String yes, String no) {
-        return showChoices(Arrays.asList(Answer.yes(yes), Answer.no(no)), scriptFunction).text.get(0) == yes;
+        return askYN(scriptFunction, Answer.yes(yes), Answer.no(no));
     }
 
     public final boolean askYN(RunnableScript script, String yes, String no) {
-        return showChoices(Arrays.asList(Answer.yes(yes), Answer.no(no)), new ScriptFunction(script)).text
-                .get(0) == yes;
+        return askYN(new ScriptFunction(script), Answer.yes(yes), Answer.no(no));
+    }
+
+    public final boolean askYN(Answer yes, Answer no) {
+        return askYN(null, yes, no);
+    }
+
+    public final boolean askYN(ScriptFunction scriptFunction, Answer yes, Answer no) {
+        if (yes.meaning != Meaning.YES)
+            throw new IllegalArgumentException(yes.toString());
+        if (yes.meaning != Meaning.NO)
+            throw new IllegalArgumentException(no.toString());
+
+        return showChoices(Arrays.asList(yes, no), null).meaning == Meaning.YES;
     }
 
     public final void deny(String no) {

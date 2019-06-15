@@ -1,11 +1,12 @@
 package teaselib.core.speechrecognition;
 
+import static java.util.stream.Collectors.*;
+
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.stream.Collectors;
 
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
@@ -175,8 +176,8 @@ public class SpeechRecognition {
                         sr = Unsupported.Instance;
                     }
                 } catch (RuntimeException e) {
-                    // TODO Handle COM-error 0x8004503a SPERR_NOT_FOUND
-                    // -> download speech recognition pack for the selected language
+                    // TODO Handle UnsupportedLanguageException and give instructions to
+                    // download speech recognition pack for the selected language
                     throw e;
                 } catch (Throwable t) {
                     throw ExceptionUtil.asRuntimeException(t);
@@ -193,6 +194,7 @@ public class SpeechRecognition {
 
     void close() {
         sr.close();
+        delegateThread.shutdown();
         sr = null;
     }
 
@@ -261,7 +263,7 @@ public class SpeechRecognition {
     private void setupAndStartSR(Phrases phrases) {
         if (!(sr instanceof SpeechRecognitionSRGS) && (enableSpeechHypothesisHandlerGlobally()
                 || SpeechRecognition.this.recognitionConfidence == Confidence.Low)) {
-            hypothesisEventHandler.setChoices(backwardCompatibleDeprecated(phrases));
+            hypothesisEventHandler.setChoices(firstPhraseOfEachChoice());
             hypothesisEventHandler.setExpectedConfidence(SpeechRecognition.this.recognitionConfidence);
             hypothesisEventHandler.enable(true);
         } else {
@@ -279,21 +281,20 @@ public class SpeechRecognition {
         if (sr instanceof SpeechRecognitionSRGS) {
             ((SpeechRecognitionSRGS) sr).setChoices(srgs(phrases));
         } else if (sr instanceof SpeechRecognitionChoices) {
-            List<String> firstPhraseOfEachChoice = choices.stream().map(choice -> choice.phrases.get(0))
-                    .collect(Collectors.toList());
+            List<String> firstPhraseOfEachChoice = firstPhraseOfEachChoice();
             ((SpeechRecognitionChoices) sr).setChoices(firstPhraseOfEachChoice);
         } else {
             throw new UnsupportedOperationException(SpeechRecognitionChoices.class.getSimpleName());
         }
     }
 
-    private static List<String> backwardCompatibleDeprecated(Phrases phrases) {
-        return phrases.flatten().toStrings();
+    private List<String> firstPhraseOfEachChoice() {
+        return choices.stream().map(choice -> choice.phrases.get(0)).collect(toList());
     }
 
     String srgs(Phrases phrases) {
         try {
-            SRGSBuilder srgs = new SRGSBuilder(phrases);
+            SRGSBuilder srgs = new SRGSBuilder(phrases, sr.languageCode);
             return srgs.toXML();
         } catch (ParserConfigurationException | TransformerException e) {
             throw ExceptionUtil.asRuntimeException(e);

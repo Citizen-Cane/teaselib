@@ -10,7 +10,7 @@ class COMException : public NativeException {
 public:
 	COMException(HRESULT hr);
 	COMException(HRESULT hr, const wchar_t* message);
-	static std::wstring FormatMessage(HRESULT hr);
+	static std::wstring Description(HRESULT hr);
 protected:
 private:
 	static const char* RuntimeClass;

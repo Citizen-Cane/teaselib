@@ -1,8 +1,10 @@
 package teaselib.core.speechrecognition.srgs;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static teaselib.core.speechrecognition.SpeechRecogntionTestUtils.flatten;
 
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -14,6 +16,8 @@ import teaselib.util.math.Partition;
 
 public class PhrasesTest {
 
+    private static final HashSet<Integer> CHOICES_0_1 = new HashSet<>(Arrays.asList(0, 1));
+
     @Test
     public void testSliceMultipleChoiceSinglePhraseOfStringsOneOptionalPart() {
         Phrases phrases = Phrases.of( //
@@ -21,7 +25,7 @@ public class PhrasesTest {
                 "No, of course not, Miss");
 
         assertEquals(Phrases.rule(0, 0, "Yes Miss", "No"), phrases.get(0));
-        assertEquals(Phrases.rule(0, 1, Phrases.oneOf(Arrays.asList(0, 1), "of course")), phrases.get(1));
+        assertEquals(Phrases.rule(0, 1, Phrases.oneOf(CHOICES_0_1, "of course")), phrases.get(1));
         assertEquals(Phrases.rule(0, 2, "", "not Miss"), phrases.get(2));
 
         assertEquals(3, phrases.size());
@@ -34,9 +38,9 @@ public class PhrasesTest {
                 "No, of course not, Miss");
 
         assertEquals(Phrases.rule(0, 0, "Yes", "No"), phrases.get(0));
-        assertEquals(Phrases.rule(0, 1, Phrases.oneOf(Arrays.asList(0, 1), "of course")), phrases.get(1));
+        assertEquals(Phrases.rule(0, 1, Phrases.oneOf(CHOICES_0_1, "of course")), phrases.get(1));
         assertEquals(Phrases.rule(0, 2, "", "not"), phrases.get(2));
-        assertEquals(Phrases.rule(0, 3, Phrases.oneOf(Arrays.asList(0, 1), "Miss")), phrases.get(3));
+        assertEquals(Phrases.rule(0, 3, Phrases.oneOf(CHOICES_0_1, "Miss")), phrases.get(3));
 
         assertEquals(4, phrases.size());
     }
@@ -54,7 +58,7 @@ public class PhrasesTest {
         List<String> foobar = Arrays.asList("My name is Foo");
         Phrases phrases = Phrases.of(foobar);
 
-        Sequences<String> flattened = phrases.flatten();
+        Sequences<String> flattened = flatten(phrases);
         assertEquals(1, flattened.size());
 
         List<String> restored = flattened.toStrings();
@@ -67,7 +71,7 @@ public class PhrasesTest {
         List<String> foobar = Arrays.asList("My name is Foo", "My name is Bar", "My name is Foobar");
         Phrases phrases = Phrases.of(foobar);
 
-        Sequences<String> flattened = phrases.flatten();
+        Sequences<String> flattened = flatten(phrases);
         assertEquals(3, flattened.size());
 
         List<String> restored = flattened.toStrings();
@@ -82,7 +86,7 @@ public class PhrasesTest {
         List<String> strings = Arrays.asList("Yes Miss", "Yes Mistress", "Of course Miss", "I have it");
         Phrases phrases = Phrases.of(strings);
 
-        Sequences<String> flattened = phrases.flatten();
+        Sequences<String> flattened = flatten(phrases);
         assertEquals(4, flattened.size());
 
         List<String> restored = flattened.toStrings();
@@ -99,7 +103,7 @@ public class PhrasesTest {
                 new Choice("My name is Foobar")));
         Phrases phrases = Phrases.of(foobar);
 
-        Sequences<String> flattened = phrases.flatten();
+        Sequences<String> flattened = flatten(phrases);
         assertEquals(3, flattened.size());
 
         List<String> restored = flattened.toStrings();
@@ -128,7 +132,7 @@ public class PhrasesTest {
         Phrases phrases = Phrases.of(choices);
         assertEquals(3, phrases.size());
 
-        Sequences<String> flatten = phrases.flatten();
+        Sequences<String> flatten = flatten(phrases);
         List<String> flattened = flatten.stream().map(Sequence<String>::toString).collect(Collectors.toList());
         assertEquals(2, flattened.size());
     }
@@ -140,7 +144,7 @@ public class PhrasesTest {
         Phrases phrases = Phrases.of(choices);
         assertEquals(4, phrases.choices());
 
-        Sequences<String> flattened = phrases.flatten();
+        Sequences<String> flattened = flatten(phrases);
         assertEquals(4, flattened.size());
 
         List<String> restored = flattened.toStrings();

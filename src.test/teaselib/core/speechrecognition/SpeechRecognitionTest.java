@@ -17,6 +17,15 @@ import teaselib.core.ui.Prompt;
 public class SpeechRecognitionTest {
 
     @Test
+    public void testSRGSBuilderSinglePhrase() throws InterruptedException {
+        Choices choices = new Choices(Arrays.asList(new Choice("Foo bar")));
+
+        assertRecognized(choices, "Foo bar", new Prompt.Result(0));
+        assertRejected(choices, "Foo");
+        assertRejected(choices, "Bar");
+    }
+
+    @Test
     public void testSRGSBuilderCommonStart() throws InterruptedException {
         Choices choices = new Choices(new Choice("Please Miss, one more"), new Choice("Please Miss, one less"),
                 new Choice("Please Miss, two more"));

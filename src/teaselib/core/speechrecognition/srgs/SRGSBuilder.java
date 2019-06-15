@@ -15,8 +15,8 @@ import javax.xml.transform.TransformerFactoryConfigurationError;
 import org.w3c.dom.Element;
 
 public class SRGSBuilder extends AbstractSRGSBuilder {
-    public SRGSBuilder(Phrases phrases) throws ParserConfigurationException, TransformerException {
-        super(phrases);
+    public SRGSBuilder(Phrases phrases, String languageCode) throws ParserConfigurationException, TransformerException {
+        super(phrases, languageCode);
     }
 
     @Override
@@ -49,7 +49,8 @@ public class SRGSBuilder extends AbstractSRGSBuilder {
                     if (item.choices.size() > 1) {
                         throw new IllegalArgumentException("Inventory accepts only distinct choices: " + item);
                     }
-                    String inventoryKey = inventoryKey(rule, item.choices.get(0));
+                    // TODO Inventory key from all choices (or common) - doesn't apply since choice size == 1
+                    String inventoryKey = inventoryKey(rule, item.choices.iterator().next());
                     if (!inventoryItems.containsKey(inventoryKey)) {
                         Element inventoryItem = document.createElement("item");
                         inventoryItems.put(inventoryKey, inventoryItem);
@@ -93,7 +94,8 @@ public class SRGSBuilder extends AbstractSRGSBuilder {
                 if (items.choices.size() > 1) {
                     throw new UnsupportedOperationException("OneOf item with multiple choices");
                 }
-                id = choiceName(rule, items.choices.get(0));
+                // TODO choice key from all choices (or common) - doesn't apply since choice size == 1
+                id = choiceName(rule, items.choices.iterator().next());
             }
 
             Element ruleElement = createRule(id);
@@ -115,7 +117,7 @@ public class SRGSBuilder extends AbstractSRGSBuilder {
     }
 
     private void addRuleToInventory(Map<String, Element> inventoryItems, Rule rule) {
-        Set<Integer> blank = rule.stream().filter(OneOf::isBlank).map(item -> item.choices).flatMap(List::stream)
+        Set<Integer> blank = rule.stream().filter(OneOf::isBlank).map(item -> item.choices).flatMap(Set::stream)
                 .collect(Collectors.toSet());
 
         Map<String, List<Element>> addToInventory = new HashMap<>();

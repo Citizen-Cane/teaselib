@@ -237,11 +237,8 @@ public class Items implements Iterable<Item> {
             matchingItems = new Items(this);
         } else {
             List<Item> matching = new ArrayList<>();
-            for (Item item : elements) {
-                if (itemImpl(item).has(attributes)) {
-                    matching.add(item);
-                }
-            }
+            elements.stream().filter(item -> (item instanceof ItemImpl)).map(Items::itemImpl)
+                    .filter(item -> item.has(attributes)).forEach(matching::add);
             matchingItems = new Items(matching, inventory);
         }
         return matchingItems;

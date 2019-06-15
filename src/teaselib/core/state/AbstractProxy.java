@@ -55,14 +55,20 @@ public class AbstractProxy<T> {
     public static ItemImpl itemImpl(Item item) {
         if (item instanceof ItemProxy)
             return itemImpl(((ItemProxy) item).item);
-        else
+        else if (item instanceof ItemImpl)
             return (ItemImpl) item;
+        else
+            throw new IllegalArgumentException(
+                    "Cannot cast item '" + item.displayName() + "' to " + ItemImpl.class.getSimpleName() + ".");
     }
 
     public static StateImpl stateImpl(State state) {
         if (state instanceof StateProxy)
             return stateImpl(((StateProxy) state).state);
-        else
+        else if (state instanceof StateImpl)
             return (StateImpl) state;
+        else
+            throw new IllegalArgumentException(
+                    "Cannot cast state '" + state + "' to " + StateImpl.class.getSimpleName() + ".");
     }
 }

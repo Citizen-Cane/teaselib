@@ -1,5 +1,7 @@
 package teaselib.util;
 
+import static java.util.stream.Collectors.*;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -236,9 +238,9 @@ public class Items implements Iterable<Item> {
         if (attributes.length == 0) {
             matchingItems = new Items(this);
         } else {
-            List<Item> matching = new ArrayList<>();
-            elements.stream().filter(item -> (item instanceof ItemImpl)).map(Items::itemImpl)
-                    .filter(item -> item.has(attributes)).forEach(matching::add);
+            List<Item> matching = elements.stream()
+                    .filter(item -> (item instanceof ItemImpl) || (item instanceof AbstractProxy))
+                    .filter(item -> itemImpl(item).has(attributes)).collect(toList());
             matchingItems = new Items(matching, inventory);
         }
         return matchingItems;

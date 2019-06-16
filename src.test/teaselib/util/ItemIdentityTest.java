@@ -277,7 +277,7 @@ public class ItemIdentityTest {
         assertEquals(ringGag, sameRingGag);
         assertEquals(sameRingGag, ringGag);
 
-        assertFalse(ringGag == sameRingGag);
+        assertNotSame(ringGag, sameRingGag);
     }
 
     @Test

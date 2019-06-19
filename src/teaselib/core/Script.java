@@ -54,6 +54,7 @@ public abstract class Script {
     public final String namespace;
 
     public final ScriptRenderer scriptRenderer;
+    protected final ScriptEvents events;
 
     protected String mood = Mood.Neutral;
     protected String displayImage = Message.ActorImage;
@@ -66,7 +67,7 @@ public abstract class Script {
      */
     protected Script(TeaseLib teaseLib, ResourceLoader resources, Actor actor, String namespace) {
         this(teaseLib, resources, actor, namespace, //
-                getOrDefault(teaseLib, ScriptRenderer.class, () -> new ScriptRenderer(teaseLib)));
+                getOrDefault(teaseLib, ScriptRenderer.class, () -> new ScriptRenderer(teaseLib)), new ScriptEvents());
 
         getOrDefault(teaseLib, Shower.class, () -> new Shower(teaseLib.host));
         getOrDefault(teaseLib, InputMethods.class, InputMethods::new);
@@ -90,15 +91,16 @@ public abstract class Script {
      * @param actor
      */
     protected Script(Script script, Actor actor) {
-        this(script.teaseLib, script.resources, actor, script.namespace, script.scriptRenderer);
+        this(script.teaseLib, script.resources, actor, script.namespace, script.scriptRenderer, script.events);
     }
 
     private Script(TeaseLib teaseLib, ResourceLoader resources, Actor actor, String namespace,
-            ScriptRenderer scriptRenderer) {
+            ScriptRenderer scriptRenderer, ScriptEvents events) {
         this.teaseLib = teaseLib;
         this.resources = resources;
         this.actor = actor;
         this.scriptRenderer = scriptRenderer;
+        this.events = events;
         this.namespace = namespace.replace(" ", "_");
 
         scriptRenderer.messageRenderer.textToSpeechPlayer.acquireVoice(actor, resources);
@@ -288,6 +290,8 @@ public abstract class Script {
     }
 
     private List<Choice> showPrompt(Prompt prompt) {
+        events.beforeChoices.run(new ScriptEventArgs());
+
         List<Choice> choice;
         try {
             choice = teaseLib.globals.get(Shower.class).show(prompt);
@@ -298,6 +302,9 @@ public abstract class Script {
         // TODO endAll() cancels renderers, but doesn't wait for completion
         // -> integrate this with endScene() which is just there to workaround the delay until the next say() command
         endAll();
+
+        events.afterChoices.run(new ScriptEventArgs());
+
         teaseLib.host.endScene();
 
         return choice;

@@ -20,19 +20,21 @@ public abstract class ReleaseAction extends ActionState {
     }
 
     @Override
-    public Options applyTo(Object... attributes) {
+    public Options applyTo(Object... peers) {
         try {
-            return super.applyTo(attributes);
+            return super.applyTo(peers);
         } finally {
             actionPerformed = false;
         }
     }
 
     @Override
-    public void removeFrom(Object... peers2) {
+    public void removeFrom(Object... peers) {
         performReleaseActionIfNecessary();
-        super.removeFrom(peers2);
+        super.removeFrom(peers);
+        // TODO needed but Why?
         remove();
+        // TODO performReleaseActionIfNecessary() called twice
     }
 
     @Override

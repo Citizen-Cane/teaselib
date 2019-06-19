@@ -2,7 +2,7 @@
 
 const char* const KeyReleaseService::Name = "KeyRelease";
 const char* const KeyReleaseService::Description = "Servo-based key release mechanism";
-const char* const KeyReleaseService::Version = "0.01";
+const char* const KeyReleaseService::Version = "0.02";
 
 /* Assembly:
  * From the Circuits folder, you'l need the following Fritzing sketches:
@@ -78,8 +78,8 @@ const char* const KeyReleaseService::Version = "0.01";
 
 const int KeyReleaseService::DefaultSetupSize = 2;
 const int DefaultHours = 1;
-const int ShortHours = 4;
-const int LongHours = 5;
+const int ShortHours = 1;
+const int LongHours = 2;
 const KeyReleaseService::Actuator KeyReleaseService::ShortRelease = {TX, DefaultHours * 60 * 60, ShortHours * 60 * 60, 30, 150};
 const KeyReleaseService::Actuator KeyReleaseService::LongRelease = {RX, DefaultHours * 60 * 60 , LongHours * 60 * 60, 150, 30};
 const KeyReleaseService::Actuator* KeyReleaseService::DefaultSetup[] = {&ShortRelease, &LongRelease};
@@ -172,6 +172,16 @@ unsigned int KeyReleaseService::process(const UDPMessage& received, char* buffer
     updatePulse(Armed);
     releaseTimer.start();
     return Ok.toBuffer(buffer);
+  }
+  else if (isCommand(received, "hold" /* actuator seconds */)) {
+    releaseTimer.stop();
+    const int index = atol(received.parameters[0]);
+    const int seconds = atol(received.parameters[1]);
+    durations[index].hold(seconds);
+    updatePulse(Holding);
+    releaseTimer.start();
+    const char* parameters[] = {sessionKey};
+    return UDPMessage("releasekey", parameters, 1).toBuffer(buffer);
   }
   else if (isCommand(received, "start" /* actuator seconds */)) {
     releaseTimer.stop();
@@ -306,6 +316,14 @@ void KeyReleaseService::updatePulse(const Status status) {
     RGB.control(true);
     RGB.color(240, 100, 0);
     updatePulse(PulseFrequencyWhenIdleOrArming);  // also (re-)starts the timer
+  } else if (status == Holding) {
+    const unsigned int nextReleaseDuration = nextRelease();
+    if (nextReleaseDuration > 0) {
+      RGB.color(0, 255, 0);
+      updatePulse(pulsePeriod(nextReleaseDuration));
+    } else {
+      updatePulse(Idle);
+    }
   } else if (status == Active) {
     const unsigned int nextReleaseDuration = nextRelease();
     if (nextReleaseDuration > 0) {
@@ -361,6 +379,11 @@ const void KeyReleaseService::Duration::arm() {
   running = true;
   elapsedSeconds = 0;
   remainingSeconds = actuator->defaultSeconds;
+}
+
+const int KeyReleaseService::Duration::hold(const int seconds) {
+  remainingSeconds = min(seconds, actuator->maximumSeconds);
+  return remainingSeconds;
 }
 
 const int KeyReleaseService::Duration::start(const int seconds) {

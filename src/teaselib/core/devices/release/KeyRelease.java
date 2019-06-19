@@ -61,6 +61,11 @@ public class KeyRelease implements Device, Device.Creatable {
     private static final String Arm = "arm";
 
     /**
+     * Hold the device actuator until the timer starts
+     */
+    private static final String Hold = "hold";
+
+    /**
      * Start the timer
      */
     private static final String Start = "start";
@@ -194,6 +199,17 @@ public class KeyRelease implements Device, Device.Creatable {
 
     String start(int actuator, int seconds) {
         RemoteDeviceMessage key = remoteDevice.sendAndReceive(new RemoteDeviceMessage(DeviceClassName, Start,
+                Arrays.asList(Integer.toString(actuator), Integer.toString(seconds))));
+        if (ReleaseKey.equals(key.command)) {
+            releaseKeys[actuator] = key.parameters.get(0);
+            return releaseKeys[actuator];
+        } else {
+            return "";
+        }
+    }
+
+    String hold(int actuator, int seconds) {
+        RemoteDeviceMessage key = remoteDevice.sendAndReceive(new RemoteDeviceMessage(DeviceClassName, Hold,
                 Arrays.asList(Integer.toString(actuator), Integer.toString(seconds))));
         if (ReleaseKey.equals(key.command)) {
             releaseKeys[actuator] = key.parameters.get(0);

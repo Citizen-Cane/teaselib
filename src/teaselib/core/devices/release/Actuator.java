@@ -71,8 +71,12 @@ public class Actuator implements Device {
         return keyRelease.arm(index);
     }
 
-    public String start(long duration, TimeUnit unit) {
-        return keyRelease.start(index, (int) TimeUnit.SECONDS.convert(duration, unit));
+    public void hold() {
+        keyRelease.hold(index, (int) TimeUnit.SECONDS.convert(keyRelease.available(index), TimeUnit.SECONDS));
+    }
+
+    public void start(long duration, TimeUnit unit) {
+        keyRelease.start(index, (int) TimeUnit.SECONDS.convert(duration, unit));
     }
 
     public int sleep(long duration, TimeUnit unit) {
@@ -122,7 +126,58 @@ public class Actuator implements Device {
         return getName();
     }
 
-    // TODO Should be a private class but need to instanciate it when persistence is required
+    // TODO Should be a private class but need to instantiate it when persistence is required
+    // - find out if constructor.setAccesible() does the trick
+    public static final class ActuatorApplyAction extends ReleaseAction {
+        private final KeyRelease keyRelease;
+        private final int actuatorIndex;
+
+        ActuatorApplyAction(TeaseLib teaseLib, String domain, KeyRelease keyRelease, String actuatorDevicePath) {
+            super(teaseLib, domain, actuatorDevicePath, ActuatorApplyAction.class);
+            this.keyRelease = keyRelease;
+            this.actuatorIndex = getActuatorIndex(actuatorDevicePath);
+        }
+
+        public ActuatorApplyAction(TeaseLib teaseLib, String domain, String actuatorDevicePath) {
+            this(teaseLib, domain, KeyRelease.getDeviceCache(teaseLib.devices, teaseLib.config)
+                    .getDevice(DeviceCache.getParentDevice(actuatorDevicePath)), actuatorDevicePath);
+        }
+
+        private static int getActuatorIndex(String devicePath) {
+            String actuatorIndex = devicePath.substring(devicePath.lastIndexOf('/') + 1);
+            return Integer.parseInt(actuatorIndex);
+        }
+
+        @Override
+        public List<String> persisted() {
+            return Arrays.asList(Persist.persist(domain), Persist.persist(item.toString()));
+        }
+
+        public ActuatorApplyAction(Storage storage) {
+            this(storage.getInstance(TeaseLib.class), storage.next(), storage.next());
+        }
+
+        @Override
+        public int hashCode() {
+            return super.hashCode();
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            return super.equals(obj);
+        }
+
+        @Override
+        protected boolean performAction() {
+            DeviceCache.connect(keyRelease, 10.0);
+            Actuator actuator = keyRelease.actuators().get(actuatorIndex);
+            long minutes = actuator.remaining(TimeUnit.MINUTES);
+            actuator.start(minutes, TimeUnit.MINUTES);
+            return true;
+        }
+    }
+
+    // TODO Should be a private class but need to instantiate it when persistence is required
     // - find out if constructor.setAccesible() does the trick
     public static final class ActuatorReleaseAction extends ReleaseAction {
         private final KeyRelease keyRelease;
@@ -168,6 +223,10 @@ public class Actuator implements Device {
             DeviceCache.connect(keyRelease, 10.0);
             return keyRelease.actuators().get(actuatorIndex).release();
         }
+    }
+
+    public String applyAction() {
+        return ActionState.persistedInstance(ActuatorApplyAction.class, TeaseLib.DefaultDomain, getDevicePath());
     }
 
     public String releaseAction() {

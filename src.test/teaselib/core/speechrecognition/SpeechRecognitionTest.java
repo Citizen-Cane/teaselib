@@ -1,6 +1,7 @@
 package teaselib.core.speechrecognition;
 
-import static teaselib.core.speechrecognition.SpeechRecogntionTestUtils.*;
+import static teaselib.core.speechrecognition.SpeechRecognitionTestUtils.assertRecognized;
+import static teaselib.core.speechrecognition.SpeechRecognitionTestUtils.assertRejected;
 
 import java.util.Arrays;
 
@@ -89,6 +90,19 @@ public class SpeechRecognitionTest {
         assertRecognized(choices, haveIt, new Prompt.Result(2));
         assertRecognized(choices, ready2, new Prompt.Result(3));
         assertRecognized(choices, ready3, new Prompt.Result(4));
+    }
+
+    @Test
+    public void testUnicode() throws InterruptedException {
+        String a = "Äh";
+        String o = "Öh";
+        String u = "Üh";
+
+        Choices choices = new Choices(Arrays.asList(new Choice(a), new Choice(o), new Choice(u)));
+
+        assertRecognized(choices, a, new Prompt.Result(0));
+        assertRecognized(choices, o, new Prompt.Result(1));
+        assertRecognized(choices, u, new Prompt.Result(2));
     }
 
 }

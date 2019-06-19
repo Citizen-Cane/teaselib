@@ -1,9 +1,11 @@
-package teaselib.core.ui;
+package teaselib.core.speechrecognition;
 
-import static org.junit.Assert.*;
+import static java.util.stream.Collectors.toList;
+import static org.junit.Assert.assertEquals;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
@@ -12,9 +14,10 @@ import org.junit.Test;
 
 import teaselib.core.configuration.Configuration;
 import teaselib.core.configuration.DebugSetup;
-import teaselib.core.speechrecognition.Confidence;
-import teaselib.core.speechrecognition.SpeechRecognition;
-import teaselib.core.speechrecognition.SpeechRecognizer;
+import teaselib.core.ui.Choice;
+import teaselib.core.ui.Choices;
+import teaselib.core.ui.Prompt;
+import teaselib.core.ui.SpeechRecognitionInputMethod;
 import teaselib.test.TestScript;
 
 public class SpeechRecognitionInputMethodTest {
@@ -26,23 +29,23 @@ public class SpeechRecognitionInputMethodTest {
 
     @Test
     public void testSpeechRecognitionInputMethod_EN_US() throws InterruptedException, IOException {
-        testSInputMethod("en-us", new Choices(choice("Yes, Miss"), choice("No, Miss")), "Yes Miss");
+        testSInputMethod("en-us", new Choices(choice("Yes, Miss"), choice("No, Miss")), "Yes, Miss");
     }
 
     @Test
     public void testSpeechRecognitionInputMethod_EN_UK() throws InterruptedException, IOException {
-        testSInputMethod("en-uk", new Choices(choice("Yes, Miss"), choice("No, Miss")), "Yes Miss");
+        testSInputMethod("en-uk", new Choices(choice("Yes, Miss"), choice("No, Miss")), "Yes, Miss");
     }
 
     @Test
     public void testSpeechRecognitionInputMethod_DE_DE() throws InterruptedException, IOException {
         testSInputMethod("de-de", new Choices(choice("Jawohl, Meister"), choice("Natürlich nicht, Meister")),
-                "Jawohl Meister");
+                "Natürlich nicht, Meister");
     }
 
     @Test
     public void testSpeechRecognitionInputMethod_FR_FR() throws InterruptedException, IOException {
-        testSInputMethod("fr-fr", new Choices(choice("Qui, Madame"), choice("Non, Madame")), "Qui Madame");
+        testSInputMethod("fr-fr", new Choices(choice("Qui, Madame"), choice("Non, Madame")), "Qui, Madame");
     }
 
     private static void testSInputMethod(String locale, Choices choices, String expected)
@@ -54,18 +57,48 @@ public class SpeechRecognitionInputMethodTest {
             SpeechRecognition sr = speechRecognizer.get(new Locale(locale));
             SpeechRecognitionInputMethod inputMethod = new SpeechRecognitionInputMethod(sr, confidence,
                     Optional.empty());
+            awaitRecognition(sr, inputMethod, new Prompt(choices, Arrays.asList(inputMethod)), expected);
+        }
+    }
+
+    @Test
+    public void testShowDismissStability() throws InterruptedException, IOException {
+        Choices choices = new Choices(choice("Yes, Miss"), choice("No, Miss"));
+        DebugSetup setup = new DebugSetup().withInput();
+        Configuration config = new Configuration(setup);
+        try (SpeechRecognizer speechRecognizer = new SpeechRecognizer(config);) {
+            SpeechRecognition sr = speechRecognizer.get(Locale.US);
+            SpeechRecognitionInputMethod inputMethod = new SpeechRecognitionInputMethod(sr, confidence,
+                    Optional.empty());
             Prompt prompt = new Prompt(choices, Arrays.asList(inputMethod));
 
-            prompt.lock.lockInterruptibly();
-            try {
-                inputMethod.show(prompt);
-                sr.emulateRecogntion(expected);
-                prompt.click.await(1, TimeUnit.SECONDS);
-                inputMethod.dismiss(prompt);
-            } finally {
-                prompt.lock.unlock();
+            for (int i = 0; i < 10; i++) {
+                prompt.lock.lockInterruptibly();
+                try {
+                    inputMethod.show(prompt);
+                    sr.emulateRecogntion("Foobar");
+                    inputMethod.dismiss(prompt);
+                } finally {
+                    prompt.lock.unlock();
+                }
             }
+            awaitRecognition(sr, inputMethod, prompt, "Yes, Miss");
         }
+    }
+
+    private static void awaitRecognition(SpeechRecognition sr, SpeechRecognitionInputMethod inputMethod, Prompt prompt,
+            String expected) throws InterruptedException {
+        prompt.lock.lockInterruptibly();
+        try {
+            inputMethod.show(prompt);
+            sr.emulateRecogntion(SpeechRecognitionTestUtils.withoutPunctation(expected));
+            prompt.click.await(1, TimeUnit.SECONDS);
+            inputMethod.dismiss(prompt);
+        } finally {
+            prompt.lock.unlock();
+        }
+        List<String> all = prompt.choices.toPhrases().stream().map(phrases -> phrases.get(0)).collect(toList());
+        assertEquals(all.indexOf(expected), prompt.result().elements.get(0).intValue());
     }
 
     @Test

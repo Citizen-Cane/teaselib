@@ -1,7 +1,7 @@
 package teaselib.core.speechrecognition.srgs;
 
 import static org.junit.Assert.assertEquals;
-import static teaselib.core.speechrecognition.SpeechRecogntionTestUtils.flatten;
+import static teaselib.core.speechrecognition.SpeechRecognitionTestUtils.flatten;
 
 import java.util.Arrays;
 import java.util.HashSet;

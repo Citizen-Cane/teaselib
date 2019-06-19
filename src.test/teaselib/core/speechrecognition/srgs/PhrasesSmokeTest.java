@@ -2,8 +2,8 @@ package teaselib.core.speechrecognition.srgs;
 
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
-import static teaselib.core.speechrecognition.SpeechRecogntionTestUtils.assertChoicesAndPhrasesMatch;
-import static teaselib.core.speechrecognition.SpeechRecogntionTestUtils.assertEqualsFlattened;
+import static teaselib.core.speechrecognition.SpeechRecognitionTestUtils.assertChoicesAndPhrasesMatch;
+import static teaselib.core.speechrecognition.SpeechRecognitionTestUtils.assertEqualsFlattened;
 import static teaselib.core.speechrecognition.srgs.Phrases.COMMON_RULE;
 import static teaselib.core.speechrecognition.srgs.Phrases.oneOf;
 

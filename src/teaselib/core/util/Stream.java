@@ -65,13 +65,23 @@ public class Stream {
         return true;
     }
 
-    public static String toString(InputStream resource) throws IOException {
-        try (InputStreamReader inputStreamReader = new InputStreamReader(resource);
+    public static String toString(InputStream inputStream) throws IOException {
+        try (InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
                 BufferedReader bufferedReader = new BufferedReader(inputStreamReader);) {
             java.util.stream.Stream<String> lines = bufferedReader.lines();
             return lines.collect(Collectors.joining(System.lineSeparator()));
         } finally {
-            resource.close();
+            inputStream.close();
+        }
+    }
+
+    public static byte[] toByteArray(InputStream inputStream) throws IOException {
+        try {
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            copy(inputStream, baos);
+            return baos.toByteArray();
+        } finally {
+            inputStream.close();
         }
     }
 

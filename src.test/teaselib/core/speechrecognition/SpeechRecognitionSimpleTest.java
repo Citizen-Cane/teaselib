@@ -1,8 +1,8 @@
 package teaselib.core.speechrecognition;
 
-import static teaselib.core.speechrecognition.SpeechRecogntionTestUtils.awaitResult;
-import static teaselib.core.speechrecognition.SpeechRecogntionTestUtils.confidence;
-import static teaselib.core.speechrecognition.SpeechRecogntionTestUtils.emulateRecognition;
+import static teaselib.core.speechrecognition.SpeechRecognitionTestUtils.awaitResult;
+import static teaselib.core.speechrecognition.SpeechRecognitionTestUtils.confidence;
+import static teaselib.core.speechrecognition.SpeechRecognitionTestUtils.emulateRecognition;
 
 import java.util.Arrays;
 import java.util.Locale;
@@ -31,7 +31,7 @@ public class SpeechRecognitionSimpleTest {
             try {
                 inputMethod.show(prompt);
                 String emulatedSpeech = choice.phrases.get(0);
-                awaitResult(sr, prompt, SpeechRecogntionTestUtils.withoutPunctation(emulatedSpeech),
+                awaitResult(sr, prompt, SpeechRecognitionTestUtils.withoutPunctation(emulatedSpeech),
                         new Prompt.Result(choices.indexOf(choice)));
             } finally {
                 prompt.lock.unlock();
@@ -48,7 +48,7 @@ public class SpeechRecognitionSimpleTest {
             prompt.lock.lockInterruptibly();
             try {
                 inputMethod.show(prompt);
-                awaitResult(sr, prompt, SpeechRecogntionTestUtils.withoutPunctation(speech), null);
+                awaitResult(sr, prompt, SpeechRecognitionTestUtils.withoutPunctation(speech), null);
             } finally {
                 prompt.lock.unlock();
             }

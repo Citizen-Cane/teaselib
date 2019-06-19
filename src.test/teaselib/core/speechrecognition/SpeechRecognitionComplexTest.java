@@ -2,10 +2,10 @@ package teaselib.core.speechrecognition;
 
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
-import static teaselib.core.speechrecognition.SpeechRecogntionTestUtils.assertEqualsFlattened;
-import static teaselib.core.speechrecognition.SpeechRecogntionTestUtils.assertRecognized;
-import static teaselib.core.speechrecognition.SpeechRecogntionTestUtils.assertRejected;
-import static teaselib.core.speechrecognition.SpeechRecogntionTestUtils.withoutPunctation;
+import static teaselib.core.speechrecognition.SpeechRecognitionTestUtils.assertEqualsFlattened;
+import static teaselib.core.speechrecognition.SpeechRecognitionTestUtils.assertRecognized;
+import static teaselib.core.speechrecognition.SpeechRecognitionTestUtils.assertRejected;
+import static teaselib.core.speechrecognition.SpeechRecognitionTestUtils.withoutPunctation;
 import static teaselib.core.speechrecognition.srgs.Phrases.oneOf;
 
 import java.util.Arrays;

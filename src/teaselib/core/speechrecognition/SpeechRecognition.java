@@ -1,6 +1,6 @@
 package teaselib.core.speechrecognition;
 
-import static java.util.stream.Collectors.*;
+import static java.util.stream.Collectors.toList;
 
 import java.util.EnumMap;
 import java.util.List;
@@ -292,10 +292,10 @@ public class SpeechRecognition {
         return choices.stream().map(choice -> choice.phrases.get(0)).collect(toList());
     }
 
-    String srgs(Phrases phrases) {
+    byte[] srgs(Phrases phrases) {
         try {
             SRGSBuilder srgs = new SRGSBuilder(phrases, sr.languageCode);
-            return srgs.toXML();
+            return srgs.toBytes();
         } catch (ParserConfigurationException | TransformerException e) {
             throw ExceptionUtil.asRuntimeException(e);
         }
@@ -309,19 +309,17 @@ public class SpeechRecognition {
         return SpeechRecognitionInProgress.isLocked();
     }
 
+    // TODO Move to SpeechRecognizer and make it non-static
     public static void completeSpeechRecognitionInProgress() {
         if (SpeechRecognitionInProgress.isLocked()) {
             logger.info("Waiting for speech recognition to complete");
             try {
                 SpeechRecognitionInProgress.lockInterruptibly();
+                SpeechRecognitionInProgress.unlock();
+                logger.info("Speech recognition in progress completed");
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 throw new ScriptInterruptedException(e);
-            } finally {
-                if (SpeechRecognitionInProgress.isLocked()) {
-                    SpeechRecognitionInProgress.unlock();
-                    logger.info("Speech recognition in progress completed");
-                }
             }
         }
     }

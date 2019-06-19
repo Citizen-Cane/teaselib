@@ -1,5 +1,6 @@
 package teaselib.core.speechrecognition.srgs;
 
+import java.io.ByteArrayOutputStream;
 import java.io.StringWriter;
 import java.util.stream.Collectors;
 
@@ -110,13 +111,22 @@ abstract class AbstractSRGSBuilder {
 
         TransformerFactory transformerFactory = TransformerFactory.newInstance();
         Transformer transformer = transformerFactory.newTransformer();
-
         transformer.setOutputProperty(OutputKeys.INDENT, "yes");
         transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "2");
-
         transformer.transform(domSource, streamResult);
 
         return result.toString();
+    }
+
+    public byte[] toBytes() throws TransformerFactoryConfigurationError, TransformerException {
+        DOMSource domSource = new DOMSource(document);
+
+        TransformerFactory transformerFactory = TransformerFactory.newInstance();
+        Transformer transformer = transformerFactory.newTransformer();
+
+        ByteArrayOutputStream srgs = new ByteArrayOutputStream();
+        transformer.transform(domSource, new StreamResult(srgs));
+        return srgs.toByteArray();
     }
 
 }

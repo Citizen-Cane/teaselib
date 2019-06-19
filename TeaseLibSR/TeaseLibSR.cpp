@@ -99,24 +99,31 @@ extern "C"
     }
 
 	/*
- * Class:     teaselib_core_speechrecognition_implementation_TeaseLibSR
- * Method:    setChoices
- * Signature: (Ljava/lang/String;)V
- */
-	JNIEXPORT void JNICALL Java_teaselib_core_speechrecognition_implementation_TeaseLibSR_setChoices__Ljava_lang_String_2
-	(JNIEnv *env, jobject jthis, jstring jsrgs) {
-		try {
+* Class:     teaselib_core_speechrecognition_implementation_TeaseLibSR
+* Method:    setChoices
+* Signature: (Ljava/lang/String;)V
+*/
+	JNIEXPORT void JNICALL Java_teaselib_core_speechrecognition_implementation_TeaseLibSR_setChoices___3B
+	(JNIEnv* env , jobject jthis , jbyteArray jsrgs) {
+	try {
 			SpeechRecognizer* speechRecognizer = static_cast<SpeechRecognizer*>(NativeObject::get(env, jthis));
 			NativeObject::checkInitializedOrThrow(speechRecognizer);
 
-			JNIStringUTF8 srgs(env, jsrgs);
-			speechRecognizer->setChoices(srgs, srgs.length());
-		} catch (NativeException *e) {
+			jboolean isCopy;
+			const BYTE* srgs = reinterpret_cast<const BYTE*>(env->GetByteArrayElements(jsrgs, &isCopy));
+			CComPtr<IStream> stream = SHCreateMemStream(reinterpret_cast<const BYTE*>(srgs), env->GetArrayLength(jsrgs));
+			if (!stream) throw new COMException(E_OUTOFMEMORY);
+
+			speechRecognizer->setChoices(stream);
+		}
+		catch (NativeException* e) {
 			JNIException::throwNew(env, e);
-		} catch (JNIException* e) {
+		}
+		catch (JNIException* e) {
 			e->rethrow();
 		}
 	}
+
 
     /*
     * Class:     teaselib_speechrecognition_implementation_TeaseLibSR

@@ -62,7 +62,6 @@ public class SpeechRecognitionPronunciationDictionaryTest {
                 completed.await();
             } finally {
                 speechRecognition.events.recognitionCompleted.remove(speechRecognized);
-                SpeechRecognition.completeSpeechRecognitionInProgress();
             }
         }
     }

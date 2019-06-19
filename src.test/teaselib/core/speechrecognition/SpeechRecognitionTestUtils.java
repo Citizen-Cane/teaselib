@@ -29,12 +29,12 @@ import teaselib.core.ui.SpeechRecognitionInputMethod;
  * @author Citizen-Cane
  *
  */
-public class SpeechRecogntionTestUtils {
+public class SpeechRecognitionTestUtils {
 
     private static final int RECOGNITION_TIMEOUT_MILLIS = 500;
     static final Confidence confidence = Confidence.High;
 
-    private SpeechRecogntionTestUtils() {
+    private SpeechRecognitionTestUtils() {
     }
 
     static void assertRecognized(Choices choices, String phrase, Prompt.Result expected) throws InterruptedException {
@@ -118,7 +118,7 @@ public class SpeechRecogntionTestUtils {
         Sequences<String> flattened = flatten(phrases);
         assertEquals(choices.size(), flattened.size());
 
-        List<String> allChoices = firstOfEach(choices).stream().map(SpeechRecogntionTestUtils::withoutPunctation)
+        List<String> allChoices = firstOfEach(choices).stream().map(SpeechRecognitionTestUtils::withoutPunctation)
                 .collect(toList());
         assertEquals(allChoices, flattened.toStrings());
     }
@@ -127,7 +127,7 @@ public class SpeechRecogntionTestUtils {
         Sequences<String> flattened = flatten(phrases);
         assertEquals(choices.size(), flattened.size());
 
-        List<String> allChoices = all(choices).stream().map(SpeechRecogntionTestUtils::withoutPunctation)
+        List<String> allChoices = all(choices).stream().map(SpeechRecognitionTestUtils::withoutPunctation)
                 .collect(toList());
         flattened.toStrings().stream().forEach(phrase -> {
             assertTrue("'" + phrase + "' not found in: " + allChoices, allChoices.contains(phrase));

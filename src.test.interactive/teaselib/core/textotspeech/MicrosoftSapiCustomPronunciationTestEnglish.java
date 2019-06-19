@@ -140,8 +140,7 @@ public class MicrosoftSapiCustomPronunciationTestEnglish {
                 speechRecognition.startRecognition(choices, Confidence.Normal);
                 completed.await();
             } finally {
-                SpeechRecognition.completeSpeechRecognitionInProgress();
-                speechDetectionEventHandler.addEventListeners();
+                speechDetectionEventHandler.removeEventListeners();
             }
         }
     }

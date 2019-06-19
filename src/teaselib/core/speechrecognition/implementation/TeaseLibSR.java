@@ -80,7 +80,7 @@ public class TeaseLibSR extends SpeechRecognitionImplementation implements Speec
     public native void setChoices(List<String> choices);
 
     /* @Override */
-    public native void setChoices(String srgs);
+    public native void setChoices(byte[] srgs);
 
     @Override
     public native void setMaxAlternates(int n);

@@ -1,9 +1,10 @@
 package teaselib.core.speechrecognition;
 
 import static org.junit.Assert.assertEquals;
-import static teaselib.core.speechrecognition.SpeechRecogntionTestUtils.awaitResult;
+import static teaselib.core.speechrecognition.SpeechRecognitionTestUtils.awaitResult;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Locale;
 import java.util.Optional;
@@ -42,14 +43,14 @@ public class SpeechRecognitionHandcraftedXmlTest {
                 StringSequence.splitWords(emulatedRecognitionResult).stream().collect(Collectors.joining(" ")),
                 emulatedRecognitionResult);
         ResourceLoader resources = new ResourceLoader(SpeechRecognitionHandcraftedXmlTest.class);
-        String xml = Stream.toString(resources.get(resource));
+        InputStream inputStream = resources.get(resource);
+        byte[] xml = Stream.toByteArray(inputStream);
         SpeechRecognition sr = new SpeechRecognition(Locale.ENGLISH, TeaseLibSRGS.class) {
             @Override
-            String srgs(Phrases phrases) {
+            byte[] srgs(Phrases phrases) {
                 return xml;
             }
         };
-
         SpeechRecognitionInputMethod inputMethod = new SpeechRecognitionInputMethod(sr, confidence, Optional.empty());
         Prompt prompt = new Prompt(Foobar, Arrays.asList(inputMethod), Prompt.Result.Accept.Multiple);
 

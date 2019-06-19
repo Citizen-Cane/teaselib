@@ -386,19 +386,17 @@ private:
 	bool errorAdded = false;
 };
 
-void SpeechRecognizer::setChoices(const char* srgs, const size_t length) {
+void SpeechRecognizer::setChoices(CComPtr<IStream>& srgs) {
 	checkRecogizerStatus();
 
-	CComPtr<IStream> xml = SHCreateMemStream(reinterpret_cast<const BYTE*>(srgs), length);
-	if (!xml) throw new COMException(E_OUTOFMEMORY);
-	CComPtr<IStream> cfg = SHCreateMemStream(NULL, 65536);
+	CComPtr<IStream> cfg = SHCreateMemStream(NULL, 999999);
 	if (!cfg) throw new COMException(E_OUTOFMEMORY);
 
 	CComObject<ErrorLog>* errors;
 	HRESULT hr = CComObject<ErrorLog>::CreateInstance(&errors);
 	if (FAILED(hr)) throw new COMException(hr);
 	CComPtr<ErrorLog> pErrors = errors;
-	hr = grammarCompiler->CompileStream(xml, cfg, NULL, NULL, pErrors, 0);
+	hr = grammarCompiler->CompileStream(srgs, cfg, NULL, NULL, pErrors, 0);
 	if (!errors->empty()) throw new NativeException(hr, *errors);
 	if (FAILED(hr)) throw new COMException(hr);
 

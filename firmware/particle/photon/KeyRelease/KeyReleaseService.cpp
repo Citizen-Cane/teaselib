@@ -165,8 +165,7 @@ unsigned int KeyReleaseService::process(const UDPMessage& received, char* buffer
     releaseTimer.stop();
     const int index = atol(received.parameters[0]);
     releaseKey(index);
-    Duration& duration = durations[index];
-    duration.arm();
+    durations[index].arm();
     delay(1000);
     armKey(index);
     updatePulse(Armed);
@@ -174,6 +173,7 @@ unsigned int KeyReleaseService::process(const UDPMessage& received, char* buffer
     return Ok.toBuffer(buffer);
   }
   else if (isCommand(received, "hold" /* actuator seconds */)) {
+    // TODO When start() has been called, disallow hold() until release -> error
     releaseTimer.stop();
     const int index = atol(received.parameters[0]);
     const int seconds = atol(received.parameters[1]);
@@ -312,18 +312,17 @@ void KeyReleaseService::updatePulse(const Status status) {
     secondsSinceLastUpdate = MaxPulseFrequency / 1000;
   }
 
+  // TODO On state change, light up the new color for a second or so before flashing
+  // to indicate immediately that a change has been applied
+
   if (status == Armed) {
     RGB.control(true);
-    RGB.color(240, 100, 0);
-    updatePulse(PulseFrequencyWhenIdleOrArming);  // also (re-)starts the timer
+    RGB.color(224, 128, 0);
+    updatePulse(PulseFrequencyWhenIdleOrArming);
   } else if (status == Holding) {
     const unsigned int nextReleaseDuration = nextRelease();
-    if (nextReleaseDuration > 0) {
-      RGB.color(0, 255, 0);
-      updatePulse(pulsePeriod(nextReleaseDuration));
-    } else {
-      updatePulse(Idle);
-    }
+    RGB.color(0, 192, 0);
+    updatePulse(PulseFrequencyWhenIdleOrArming);
   } else if (status == Active) {
     const unsigned int nextReleaseDuration = nextRelease();
     if (nextReleaseDuration > 0) {
@@ -343,7 +342,7 @@ void KeyReleaseService::updatePulse(const Status status) {
 }
 
 void KeyReleaseService::updatePulse(const int frequencyMillis) {
-  // Changing the period restarts the pulse timer, so we might not call it too often,
+  // Changing the period restarts the pulse timer, so don't update too often,
   // since the pulse is updated every second by the release timer
   if (secondsSinceLastUpdate++ * 1000 >= MaxPulseFrequency) {
     ledTimer.changePeriod(frequencyMillis);
@@ -381,8 +380,10 @@ const void KeyReleaseService::Duration::arm() {
   remainingSeconds = actuator->defaultSeconds;
 }
 
+// TODO Remove unused argument "seconds"
 const int KeyReleaseService::Duration::hold(const int seconds) {
-  remainingSeconds = min(seconds, actuator->maximumSeconds);
+  elapsedSeconds = 0;
+  remainingSeconds = actuator->defaultSeconds;
   return remainingSeconds;
 }
 

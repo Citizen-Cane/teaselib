@@ -1,6 +1,10 @@
 package teaselib.core.devices.release;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
 
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -19,6 +23,7 @@ import teaselib.Toys;
 import teaselib.core.ResourceLoader;
 import teaselib.core.StateImpl;
 import teaselib.core.TeaseLib;
+import teaselib.core.devices.ApplyAction;
 import teaselib.core.devices.ReleaseAction;
 import teaselib.core.devices.remote.RemoteDevices;
 import teaselib.core.state.StateProxy;
@@ -35,6 +40,23 @@ import teaselib.util.Items;
  *
  */
 public class ReleaseActionTest {
+
+    public static final class TestApplyActionState extends ApplyAction {
+        static final AtomicBoolean Success = new AtomicBoolean(false);
+        boolean applied = false;
+
+        public TestApplyActionState(Storage storage) {
+            super(storage, TestApplyActionState.class);
+        }
+
+        @Override
+        public boolean performAction() {
+            applied = true;
+            Success.set(applied);
+            return applied;
+        }
+    }
+
     public static final class TestReleaseActionState extends ReleaseAction {
         static final AtomicBoolean Success = new AtomicBoolean(false);
         boolean removed = false;
@@ -54,6 +76,24 @@ public class ReleaseActionTest {
     @Before
     public void resetGlobalFlag() {
         TestReleaseActionState.Success.set(false);
+    }
+
+    private static String getTestApplyAction(String domain, String devicePath) {
+        return Persist.persistedInstance(TestApplyActionState.class, Arrays.asList(domain, devicePath));
+    }
+
+    @Test
+    public void testApplyActionStatesAreSingletons() {
+        TestScript script = TestScript.getOne();
+        String domain = TeaseLib.DefaultDomain;
+        String devicePath = "KeyRelease/MyPhoton/1";
+
+        String action = getTestApplyAction(domain, devicePath);
+        State actionState1 = script.state(action);
+        State actionState2 = script.state(action);
+
+        assertEquals(actionState1, actionState2);
+        assertSame(((StateProxy) actionState1).state, ((StateProxy) actionState2).state);
     }
 
     private static String getTestReleaseAction(String domain, String devicePath) {
@@ -349,17 +389,63 @@ public class ReleaseActionTest {
     }
 
     @Test
-    public void testThatReleaseActionCanBeAttachedBeforehandWithoutApplyingToPeer() {
+    public void testReleaseActionFromSinglePeer() {
+        TestScript script = TestScript.getOne();
+
+        String domain = TeaseLib.DefaultDomain;
+        String devicePath1 = "KeyRelease/MyPhoton/1";
+        String devicePath2 = "KeyRelease/MyPhoton/2";
+
+        State removeRestraintsAction = script.teaseLib.state(domain, getTestReleaseAction(domain, devicePath1));
+        State removeChainsAction = script.teaseLib.state(domain, getTestReleaseAction(domain, devicePath2));
+
+        Items restraints = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints, Toys.Collar);
+        restraints.apply();
+        restraints.applyTo(removeRestraintsAction);
+
+        Item chains = script.item(Toys.Chains);
+        chains.applyTo(removeChainsAction);
+        chains.applyTo(restraints);
+
+        assertTrue(chains.applied());
+        assertTrue(restraints.allApplied());
+        assertTrue(removeChainsAction.applied());
+        assertTrue(removeRestraintsAction.applied());
+
+        chains.removeFrom(Toys.Collar);
+
+        // TODO Call release action when a single peer is removed since this requires to release the key
+        assertFalse(removeChainsAction.applied());
+        assertTrue(removeRestraintsAction.applied());
+
+        assertTrue(chains.applied());
+        assertTrue(restraints.anyApplied());
+    }
+
+    @Test
+    public void testThatActionStatesCanBeAttachedBeforehandWithoutApplyingToPeer() {
         TestScript script = TestScript.getOne();
 
         String domain = TeaseLib.DefaultDomain;
         String devicePath = "KeyRelease/MyPhoton/1";
+        State applyAction = script.state(getTestApplyAction(domain, devicePath));
         State releaseAction = script.state(getTestReleaseAction(domain, devicePath));
 
         Item restraints = script.item(Toys.Wrist_Restraints);
+        assertFalse(applyAction.applied());
         assertFalse(releaseAction.applied());
         assertFalse(restraints.is(script.namespace));
+        assertFalse(restraints.is(applyAction));
         assertFalse(restraints.is(releaseAction));
+
+        applyAction.applyTo(restraints);
+        assertTrue(applyAction.is(script.namespace));
+        assertTrue(applyAction.is(restraints));
+        assertTrue(applyAction.applied());
+
+        assertFalse(restraints.applied());
+        assertFalse(restraints.is(script.namespace));
+        assertTrue(restraints.is(applyAction));
 
         releaseAction.applyTo(restraints);
         assertTrue(releaseAction.is(script.namespace));
@@ -371,9 +457,19 @@ public class ReleaseActionTest {
         assertTrue(restraints.is(releaseAction));
 
         restraints.apply();
+
+        assertEquals(true, TestApplyActionState.Success.getAndSet(false));
+        assertEquals(true, (((TestApplyActionState) ((StateProxy) applyAction).state)).applied);
+
         assertTrue(restraints.applied());
         assertTrue(restraints.is(script.namespace));
+        assertTrue(restraints.is(applyAction));
         assertTrue(restraints.is(releaseAction));
+
+        assertTrue(applyAction.applied());
+        assertTrue(applyAction.is(script.namespace));
+        assertTrue(applyAction.is(restraints));
+        assertTrue(applyAction.is(Toys.Wrist_Restraints));
 
         assertTrue(releaseAction.applied());
         assertTrue(releaseAction.is(script.namespace));
@@ -383,6 +479,11 @@ public class ReleaseActionTest {
         restraints.remove();
         assertFalse(restraints.applied());
         assertFalse(restraints.is(script.namespace));
+
+        assertFalse(applyAction.is(script.namespace));
+        assertFalse(applyAction.is(Toys.Wrist_Restraints));
+        assertFalse(applyAction.applied());
+
         assertFalse(releaseAction.is(script.namespace));
         assertFalse(releaseAction.is(Toys.Wrist_Restraints));
         assertFalse(releaseAction.applied());
@@ -493,6 +594,43 @@ public class ReleaseActionTest {
         // - firstly they're proxies in order to tag items with the name space
         // - secondly, they're constructed anew each time since Actuator can't cache them (TeaseLib does)
         // - but thirdly, teaselib caches them and returns the existing instance
+    }
+
+    @Test
+    public void testThatActionStatesCanBeAttachedToItemValues() {
+        TestScript script = TestScript.getOne();
+
+        String domain = TeaseLib.DefaultDomain;
+        String devicePath = "KeyRelease/MyPhoton/1";
+        State applyAction = script.state(getTestApplyAction(domain, devicePath));
+
+        // TODO apply action to item value - Same as in hardware test
+
+        // TODO Review we should attach the current default for Toys.Wrist_Restraints
+        applyAction.applyTo(Toys.Wrist_Restraints);
+        assertTrue(applyAction.applied());
+        Item item = script.item(Toys.Wrist_Restraints);
+        assertFalse(item.applied());
+
+        // Fails since the item value is a peer of the applyAction, but not the item instance
+        // -> can't tell whether this specific instance owns the applyAction
+        assertTrue(applyAction.is(Toys.Wrist_Restraints));
+        assertTrue(item.is(applyAction));
+    }
+
+    @Test
+    public void testThatActionStatesCanBeAttachedToItemInstances() {
+        TestScript script = TestScript.getOne();
+
+        String domain = TeaseLib.DefaultDomain;
+        String devicePath = "KeyRelease/MyPhoton/1";
+        State applyAction = script.state(getTestApplyAction(domain, devicePath));
+
+        Item item = script.item(Toys.Wrist_Restraints);
+        applyAction.applyTo(item);
+
+        // Succeeds because the items instance is a peer of the action
+        assertTrue(item.is(applyAction));
     }
 
     @Test

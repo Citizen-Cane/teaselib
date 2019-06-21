@@ -19,7 +19,7 @@ import teaselib.core.events.EventSource;
 import teaselib.test.TestScript;
 import teaselib.util.Items;
 
-public class KeyReleaseScriptIntegration {
+public class KeyReleaseScriptIntegrationTest {
 
     @Test
     public void testUsageInScript() {
@@ -29,15 +29,15 @@ public class KeyReleaseScriptIntegration {
         Devices devices = script.teaseLib.devices;
         DeviceCache<KeyRelease> deviceCache = devices.get(KeyRelease.class);
 
-        // TODO Reset device
         KeyRelease keyRelease = deviceCache.getDefaultDevice();
         Actuator actuator = keyRelease.actuators().get(1, TimeUnit.HOURS);
 
         Items cuffs = script.items(Toys.Wrist_Restraints, Toys.Ankle_Restraints);
 
-        // TODO Doesn't result in a call to actuator.start()
-        script.state(actuator.applyAction()).applyTo(cuffs.valueSet());
-        script.state(actuator.releaseAction()).applyTo(cuffs.valueSet());
+        // TODO make applyAction being called on cuffs.apply() instead of here
+        // -> works with releaseAction on remove since it's called on the first remove()
+        script.state(actuator.applyAction()).applyTo(cuffs);
+        script.state(actuator.releaseAction()).applyTo(cuffs);
 
         EventSource<ScriptEventArgs> afterChoices = script.events().afterChoices;
         Event<ScriptEventArgs> renewHold = new Event<ScriptEventArgs>() {
@@ -78,11 +78,11 @@ public class KeyReleaseScriptIntegration {
         // TODO Start not called
         cuffs.apply();
         script.completeAll();
-        assertEquals("Release timer not running", available - 10, actuator.remaining(TimeUnit.SECONDS), 1.0);
+        assertEquals("Release timer not set", available - 10, actuator.remaining(TimeUnit.SECONDS), 1.0);
 
         script.say("Timer is running", Message.Delay10s);
         script.completeAll();
-        assertEquals("Release timer not running", available - 20, actuator.remaining(TimeUnit.SECONDS), 1.0);
+        assertEquals("Release timer not set", available - 20, actuator.remaining(TimeUnit.SECONDS), 1.0);
 
         script.say("Releasing key", Message.Delay10s);
         cuffs.remove();

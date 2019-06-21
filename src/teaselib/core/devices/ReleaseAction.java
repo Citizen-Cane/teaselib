@@ -30,11 +30,16 @@ public abstract class ReleaseAction extends ActionState {
 
     @Override
     public void removeFrom(Object... peers) {
+        // Fail early
         performReleaseActionIfNecessary();
+        // Book-keeping
         super.removeFrom(peers);
-        // TODO needed but Why?
+        // Remove must be called explicitely in order
+        // to change the action state to "not applied"
         remove();
-        // TODO performReleaseActionIfNecessary() called twice
+        // This is because the action is performed when a single item is removed,
+        // the action state has to be set to "not applied"
+        // to indicate the action has been performed
     }
 
     @Override

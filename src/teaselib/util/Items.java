@@ -1,6 +1,6 @@
 package teaselib.util;
 
-import static java.util.stream.Collectors.*;
+import static java.util.stream.Collectors.toList;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -505,6 +505,13 @@ public class Items implements Iterable<Item> {
         return elements.stream();
     }
 
+    // TODO remove? ->
+    /**
+     * returns the item values.
+     * 
+     * @return
+     */
+    @Deprecated
     public Set<Object> valueSet() {
         return elements.stream().map(item -> itemImpl(item).value).collect(Collectors.toCollection(LinkedHashSet::new));
     }

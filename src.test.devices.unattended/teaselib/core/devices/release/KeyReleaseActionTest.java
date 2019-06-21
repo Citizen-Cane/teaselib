@@ -1,6 +1,7 @@
 package teaselib.core.devices.release;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.util.concurrent.TimeUnit;
 
@@ -30,7 +31,11 @@ public class KeyReleaseActionTest {
             assertFalse(script.item(Toys.Wrist_Restraints).applied());
 
             State applyAction = script.state(actuator.applyAction());
+            // TODO In KeyReleaseActionsTest.testThatActionStatesCanBeAttachedBeforehandWithoutApplyingToPeer
+            // the action state is applied to item instances - in Items collection
+            // - here we apply to item values only
             applyAction.applyTo(Toys.Wrist_Restraints);
+
             // TODO assertFalse(item(Toys.Wrists_Restraints).applyTo(applyAction));
             assertFalse(script.item(Toys.Wrist_Restraints).applied());
 

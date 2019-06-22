@@ -75,6 +75,10 @@ public class Actuator implements Device {
         keyRelease.hold(index, (int) TimeUnit.SECONDS.convert(keyRelease.available(index), TimeUnit.SECONDS));
     }
 
+    public void start() {
+        start(keyRelease.available(index), TimeUnit.SECONDS);
+    }
+
     public void start(long duration, TimeUnit unit) {
         keyRelease.start(index, (int) TimeUnit.SECONDS.convert(duration, unit));
     }

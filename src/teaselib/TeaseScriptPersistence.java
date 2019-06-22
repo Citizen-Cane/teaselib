@@ -8,6 +8,7 @@ import java.util.List;
 
 import teaselib.core.ResourceLoader;
 import teaselib.core.Script;
+import teaselib.core.ScriptEvents;
 import teaselib.core.TeaseLib;
 import teaselib.core.state.ItemProxy;
 import teaselib.core.state.StateProxy;
@@ -54,11 +55,65 @@ public abstract class TeaseScriptPersistence extends Script {
         }
 
         public <T extends Enum<?>> Item item(T value) {
-            return new ItemProxy(namespace, teaseLib.item(name, value));
+            return new ItemProxy(namespace, teaseLib.item(name, value)) {
+                @Override
+                public Options apply() {
+                    Options options = super.apply();
+                    events.itemApplied.run(new ScriptEvents.ItemChangedEventArgs(item));
+                    return options;
+                }
+
+                @Override
+                public Options applyTo(Object... items) {
+                    Options options = super.applyTo(items);
+                    events.itemApplied.run(new ScriptEvents.ItemChangedEventArgs(item));
+                    return options;
+                }
+
+                @Override
+                public void removeFrom(Object... peers) {
+                    events.itemRemoved.run(new ScriptEvents.ItemChangedEventArgs(item));
+                    super.removeFrom(peers);
+                }
+
+                @Override
+                public void remove() {
+                    events.itemRemoved.run(new ScriptEvents.ItemChangedEventArgs(item));
+                    super.remove();
+                }
+            };
         }
 
+        // TODO Remove code duplication
+
         public Item item(String value) {
-            return new ItemProxy(namespace, teaseLib.item(name, value));
+            return new ItemProxy(namespace, teaseLib.item(name, value)) {
+                @Override
+                public Options apply() {
+                    Options options = super.apply();
+                    events.itemApplied.run(new ScriptEvents.ItemChangedEventArgs(item));
+                    return options;
+                }
+
+                @Override
+                public Options applyTo(Object... items) {
+                    Options options = super.applyTo(items);
+                    events.itemApplied.run(new ScriptEvents.ItemChangedEventArgs(item));
+                    return options;
+                }
+
+                @Override
+                public void removeFrom(Object... peers) {
+                    events.itemRemoved.run(new ScriptEvents.ItemChangedEventArgs(item));
+                    super.removeFrom(peers);
+                }
+
+                @Override
+                public void remove() {
+                    events.itemRemoved.run(new ScriptEvents.ItemChangedEventArgs(item));
+                    super.remove();
+                }
+            };
         }
 
         @SafeVarargs
@@ -181,11 +236,63 @@ public abstract class TeaseScriptPersistence extends Script {
         return teaseLib.new PersistentSequence<>(TeaseLib.DefaultDomain, namespace, name, values);
     }
 
-    public State state(Enum<?> item) {
-        return new StateProxy(namespace, teaseLib.state(TeaseLib.DefaultDomain, item));
+    public State state(Enum<?> value) {
+        return new StateProxy(namespace, teaseLib.state(TeaseLib.DefaultDomain, value)) {
+            @Override
+            public Options apply() {
+                Options options = super.apply();
+                events.stateApplied.run(new ScriptEvents.StateChangedEventArgs(state));
+                return options;
+            }
+
+            @Override
+            public Options applyTo(Object... items) {
+                Options options = super.applyTo(items);
+                events.stateApplied.run(new ScriptEvents.StateChangedEventArgs(state));
+                return options;
+            }
+
+            @Override
+            public void removeFrom(Object... peers) {
+                events.stateRemoved.run(new ScriptEvents.StateChangedEventArgs(state));
+                super.removeFrom(peers);
+            }
+
+            @Override
+            public void remove() {
+                events.stateRemoved.run(new ScriptEvents.StateChangedEventArgs(state));
+                super.remove();
+            }
+        };
     }
 
-    public State state(String item) {
-        return new StateProxy(namespace, teaseLib.state(TeaseLib.DefaultDomain, item));
+    public State state(String value) {
+        return new StateProxy(namespace, teaseLib.state(TeaseLib.DefaultDomain, value)) {
+            @Override
+            public Options apply() {
+                Options options = super.apply();
+                events.stateApplied.run(new ScriptEvents.StateChangedEventArgs(state));
+                return options;
+            }
+
+            @Override
+            public Options applyTo(Object... items) {
+                Options options = super.applyTo(items);
+                events.stateApplied.run(new ScriptEvents.StateChangedEventArgs(state));
+                return options;
+            }
+
+            @Override
+            public void removeFrom(Object... peers) {
+                events.stateRemoved.run(new ScriptEvents.StateChangedEventArgs(state));
+                super.removeFrom(peers);
+            }
+
+            @Override
+            public void remove() {
+                events.stateRemoved.run(new ScriptEvents.StateChangedEventArgs(state));
+                super.remove();
+            }
+        };
     }
 }
